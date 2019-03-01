@@ -9,7 +9,9 @@ module Bosh::Director
       subject(:generator) { described_class.new(logger, event_log, compiled_package_finder) }
 
       let(:release_version_model) { Models::ReleaseVersion.make }
-      let(:release_version) { instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', model: release_version_model) }
+      let(:release_version) do
+        instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', model: release_version_model, exported_from: [])
+      end
 
       let(:job) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', use_compiled_package: nil) }
       let(:template) { instance_double('Bosh::Director::DeploymentPlan::Job', release: release_version) }
@@ -18,7 +20,7 @@ module Bosh::Director
       let(:package_b) { Bosh::Director::Models::Package.make(name: 'package_b', version: '2', dependency_set_json: ['package_c'].to_json) }
       let(:package_c) { Bosh::Director::Models::Package.make(name: 'package_c', version: '3') }
 
-      let(:stemcell) { make_stemcell({operating_system: 'chrome-os', version: 'latest'}) }
+      let(:stemcell) { make_stemcell(operating_system: 'chrome-os', version: 'latest') }
       let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
       let(:compiled_package_finder) { DeploymentPlan::CompiledPackageFinder.new(logger) }
 
@@ -72,7 +74,7 @@ module Bosh::Director
           it 'correctly adds dependencies' do
             expect(::Digest::SHA1).to receive(:hexdigest).and_return('package-cache-key-a', 'package-cache-key-b', 'package-cache-key-c', 'package-cache-key-d')
 
-            package_a.dependency_set_json = ['package_b', 'package_c'].to_json
+            package_a.dependency_set_json = %w[package_b package_c].to_json
             package_b.dependency_set_json = ['package_d'].to_json
             package_c.dependency_set_json = ['package_d'].to_json
 
@@ -141,7 +143,14 @@ module Bosh::Director
 
         context 'when two packages share a dependency' do
           let(:package_d) { Bosh::Director::Models::Package.make(name: 'package_d', version: '6') }
-          let!(:compiled_package_c) { Models::CompiledPackage.make(package: package_c, stemcell_os: stemcell.os, stemcell_version: stemcell.version, dependency_key: [['package_d', '6']].to_json) }
+          let!(:compiled_package_c) do
+            Models::CompiledPackage.make(
+              package: package_c,
+              stemcell_os: stemcell.os,
+              stemcell_version: stemcell.version,
+              dependency_key: [%w[package_d 6]].to_json,
+            )
+          end
 
           before do
             release_version_model.packages << package_d
@@ -150,7 +159,7 @@ module Bosh::Director
           it 'correctly adds dependencies' do
             expect(::Digest::SHA1).to receive(:hexdigest).and_return('package-cache-key-a', 'package-cache-key-b', 'package-cache-key-c', 'package-cache-key-d')
 
-            package_a.dependency_set_json = ['package_b', 'package_c'].to_json
+            package_a.dependency_set_json = %w[package_b package_c].to_json
             package_b.dependency_set_json = ['package_d'].to_json
             package_c.dependency_set_json = ['package_d'].to_json
 

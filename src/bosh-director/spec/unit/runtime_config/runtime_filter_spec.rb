@@ -18,8 +18,8 @@ module Bosh::Director
       release_version2 = Models::ReleaseVersion.make(version: 'v2', release: release2)
       release_version1.add_template(Models::Template.make(name: 'job1', release: release1))
       release_version2.add_template(Models::Template.make(name: 'job2', release: release2))
-      planner.add_release(DeploymentPlan::ReleaseVersion.new(deployment_model, {'name' => '1', 'version' => 'v1'}))
-      planner.add_release(DeploymentPlan::ReleaseVersion.new(deployment_model, {'name' => '2', 'version' => 'v2'}))
+      planner.add_release(DeploymentPlan::ReleaseVersion.parse(deployment_model, 'name' => '1', 'version' => 'v1'))
+      planner.add_release(DeploymentPlan::ReleaseVersion.parse(deployment_model, 'name' => '2', 'version' => 'v2'))
 
       planner.cloud_planner = DeploymentPlan::CloudManifestParser.new(logger).parse(cloud_config,
         DeploymentPlan::GlobalNetworkResolver.new(planner, [], logger),

@@ -143,7 +143,7 @@ module Bosh::Director
           release_version_model.add_template(dummy_with_properties_template)
           release_version_model.add_template(dummy_with_packages_template)
 
-          release = DeploymentPlan::ReleaseVersion.new(deployment_model, 'name' => 'dummy', 'version' => '0.2-dev')
+          release = DeploymentPlan::ReleaseVersion.parse(deployment_model, 'name' => 'dummy', 'version' => '0.2-dev')
           deployment.add_release(release)
           deployment.cloud_planner = DeploymentPlan::CloudManifestParser.new(logger).parse(
             Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs,
@@ -587,7 +587,7 @@ module Bosh::Director
                 Bosh::Director::Models::Template.make(name: 'dummy_with_properties', release: release_model),
               )
 
-              release = DeploymentPlan::ReleaseVersion.new(deployment_model, 'name' => 'dummy', 'version' => '0.2-dev')
+              release = DeploymentPlan::ReleaseVersion.parse(deployment_model, 'name' => 'dummy', 'version' => '0.2-dev')
               deployment.add_release(release)
               stemcell = DeploymentPlan::Stemcell.parse(manifest_hash['stemcells'].first)
               deployment.add_stemcell(stemcell)
@@ -626,7 +626,7 @@ module Bosh::Director
             before do
               release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'dummy', release: release_model))
 
-              release = DeploymentPlan::ReleaseVersion.new(deployment_model, 'name' => 'dummy', 'version' => '0.2-dev')
+              release = DeploymentPlan::ReleaseVersion.parse(deployment_model, 'name' => 'dummy', 'version' => '0.2-dev')
               deployment.add_release(release)
               stemcell = DeploymentPlan::Stemcell.parse(manifest_hash['stemcells'].first)
               deployment.add_stemcell(stemcell)

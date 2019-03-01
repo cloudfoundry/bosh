@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::ReleaseVersion do
   def make(deployment, spec)
-    BD::DeploymentPlan::ReleaseVersion.new(deployment, spec)
+    BD::DeploymentPlan::ReleaseVersion.parse(deployment, spec)
   end
 
   def find_release(name)
@@ -20,6 +20,33 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
   def make_version(name, version)
     release = make_release(name)
     BD::Models::ReleaseVersion.make(:release => release, :version => version)
+  end
+
+  describe '#parse' do
+    it 'should correctly parse the release and create a new release version object' do
+      deployment = make_deployment('my-deployment')
+      spec = {
+        'name' => 'my-release',
+        'version' => '1.2.3+dev',
+        'exported_from' => [
+          { 'os' => 'ubuntu-xenial', 'version' => '250.9' },
+          { 'name' => 'windows-2012R2', 'version' => '2012.r10' },
+        ],
+      }
+      release_version = Bosh::Director::DeploymentPlan::ReleaseVersion.parse(deployment, spec)
+
+      expect(release_version.name).to eq('my-release')
+      expect(release_version.version).to eq('1.2.3+dev')
+      expect(release_version.exported_from.length).to eq(2)
+
+      stemcell1 = release_version.exported_from[0]
+      expect(stemcell1.os).to eq('ubuntu-xenial')
+      expect(stemcell1.version).to eq('250.9')
+
+      stemcell2 = release_version.exported_from[1]
+      expect(stemcell2.name).to eq('windows-2012R2')
+      expect(stemcell2.version).to eq('2012.r10')
+    end
   end
 
   describe 'binding release version model' do

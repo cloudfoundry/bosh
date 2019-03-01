@@ -95,8 +95,13 @@ module Bosh::Director
             deployment_model.add_release_version another_stale_release_version
             deployment_model.add_release_version same_release_version
 
-            deployment_plan_release_version_same_release = DeploymentPlan::ReleaseVersion.new(deployment_model, {'name' => 'same', 'version' => '123'})
-            deployment_plan_release_version_new_release = DeploymentPlan::ReleaseVersion.new(deployment_model, {'name' => 'new', 'version' => '123'})
+            deployment_plan_release_version_same_release = DeploymentPlan::ReleaseVersion.parse(
+              deployment_model, 'name' => 'same', 'version' => '123'
+            )
+            deployment_plan_release_version_new_release = DeploymentPlan::ReleaseVersion.parse(
+              deployment_model, 'name' => 'new', 'version' => '123'
+            )
+
             deployment_plan_release_version_same_release.bind_model
             deployment_plan_release_version_new_release.bind_model
 

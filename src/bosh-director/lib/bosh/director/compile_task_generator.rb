@@ -9,7 +9,7 @@ module Bosh::Director
     end
 
     # The compile_tasks hash passed in by the caller will be populated with CompileTasks objects
-    def generate!(compile_tasks, instance_group, template, package, stemcell)
+    def generate!(compile_tasks, instance_group, job, package, stemcell)
       # Our assumption here is that package dependency graph
       # has no cycles: this is being enforced on release upload.
       # Other than that it's a vanilla Depth-First Search (DFS).
@@ -19,36 +19,43 @@ module Bosh::Director
       task = compile_tasks[task_key]
 
       if task # We already visited this task and its dependencies
-        task.add_job(instance_group) # But we still need to register this job with task
+        task.add_job(instance_group) # But we still need to register this instance group with task
         return task
       end
 
-      release_version = template.release.model
-      package_dependency_manager = PackageDependenciesManager.new(release_version)
-      transitive_dependencies = package_dependency_manager.transitive_dependencies(package)
-      package_dependency_key = KeyGenerator.new.dependency_key_from_models(package, release_version)
-      package_cache_key = Models::CompiledPackage.create_cache_key(package, transitive_dependencies, stemcell.sha1)
+      package_dependency_manager = PackageDependenciesManager.new(job.release.model)
 
-      compiled_package =  @compiled_package_finder.find_compiled_package(
-        package,
-        stemcell,
-        package_dependency_key,
-        package_cache_key,
-        @event_log_stage,
-      )
-
-      task = CompileTask.new(package, stemcell, instance_group, package_dependency_key, package_cache_key, compiled_package)
+      task = create_task(instance_group, job, package, stemcell, package_dependency_manager)
 
       @logger.info("Processing package '#{package.desc}' dependencies")
       dependencies = package_dependency_manager.dependencies(package)
       dependencies.each do |dependency|
         @logger.info("Package '#{package.desc}' depends on package '#{dependency.desc}'")
-        dependency_task = generate!(compile_tasks, instance_group, template, dependency, stemcell)
+        dependency_task = generate!(compile_tasks, instance_group, job, dependency, stemcell)
         task.add_dependency(dependency_task)
       end
 
       compile_tasks[task_key] = task
       task
+    end
+
+    private
+
+    def create_task(instance_group, job, package, stemcell, package_dependency_manager)
+      transitive_dependencies = package_dependency_manager.transitive_dependencies(package)
+      package_dependency_key = KeyGenerator.new.dependency_key_from_models(package, job.release.model)
+      package_cache_key = Models::CompiledPackage.create_cache_key(package, transitive_dependencies, stemcell.sha1)
+
+      compiled_package =  @compiled_package_finder.find_compiled_package(
+        package: package,
+        stemcell: stemcell,
+        exported_from: job.release.exported_from,
+        dependency_key: package_dependency_key,
+        cache_key: package_cache_key,
+        event_log_stage: @event_log_stage,
+      )
+
+      CompileTask.new(package, stemcell, instance_group, package_dependency_key, package_cache_key, compiled_package)
     end
   end
 end

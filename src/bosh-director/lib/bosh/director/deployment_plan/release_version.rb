@@ -1,7 +1,7 @@
 module Bosh::Director
   module DeploymentPlan
     class ReleaseVersion
-      include ValidationHelper
+      extend ValidationHelper
 
       # @return [String] Release name
       attr_reader :name
@@ -9,15 +9,34 @@ module Bosh::Director
       attr_reader :version
       # @return [Models::ReleaseVersion] Release version model
       attr_reader :model
+      # @return [DeploymentPlan::Stemcell] Stemcell object
+      attr_reader :exported_from
 
-      # @param [DeploymentPlan] deployment_plan Deployment plan
-      # @param [Hash] spec Raw release spec from the deployment
-      #   manifest
-      def initialize(deployment_model, spec)
+      # @param [Models::Deployment] deployment_model Deployment model
+      # @param [Hash] spec Release spec
+      def self.parse(deployment_model, spec)
+        name = safe_property(spec, 'name', class: String)
+        version = safe_property(spec, 'version', class: String)
+        exported_from = safe_property(
+          spec,
+          'exported_from',
+          class: Array,
+          optional: true,
+          default: [],
+        ).map { |stemcell_hash| Stemcell.parse(stemcell_hash) }
+
+        new(deployment_model, name, version, exported_from)
+      end
+
+      # @param [Models::Deployment] deployment_model Deployment model
+      # @param [String] name Name of the release
+      # @param [String] version Version of the release
+      # @param [Array] exported_from Stemcells that the release should be compiled against
+      def initialize(deployment_model, name, version, exported_from)
         @deployment_model = deployment_model
-
-        @name = safe_property(spec, 'name', :class => String)
-        @version = safe_property(spec, 'version', :class => String)
+        @name = name
+        @version = version
+        @exported_from = exported_from
 
         @model = nil
         @jobs = {}

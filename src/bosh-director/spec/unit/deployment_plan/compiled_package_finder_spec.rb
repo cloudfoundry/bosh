@@ -16,6 +16,10 @@ module Bosh::Director
           desc: 'example-stemcell',
         )
       end
+      let(:exported_from) { [] }
+      let(:release) do
+        DeploymentPlan::ReleaseVersion.new(Models::Deployment.make, 'release-name', '42', exported_from)
+      end
 
       let(:package_dependency_manager) { PackageDependenciesManager.new(example_release_model) }
       let(:dependency_key) { KeyGenerator.new.dependency_key_from_models(example_package, example_release_model) }
@@ -47,11 +51,11 @@ module Bosh::Director
 
           it 'returns an exact matched compiled package' do
             result = compiled_package_finder.find_compiled_package(
-              example_package,
-              example_stemcell,
-              dependency_key,
-              cache_key,
-              event_log_stage,
+              package: example_package,
+              stemcell: example_stemcell,
+              dependency_key: dependency_key,
+              cache_key: cache_key,
+              event_log_stage: event_log_stage,
             )
             expect(result).to eq(exact_compiled_package)
           end
@@ -78,11 +82,11 @@ module Bosh::Director
 
           it 'will return the newest matching compiled package' do
             result = compiled_package_finder.find_compiled_package(
-              example_package,
-              example_stemcell,
-              dependency_key,
-              cache_key,
-              event_log_stage,
+              package: example_package,
+              stemcell: example_stemcell,
+              dependency_key: dependency_key,
+              cache_key: cache_key,
+              event_log_stage: event_log_stage,
             )
             expect(result).to eq(newer_compiled_package)
           end
@@ -107,11 +111,11 @@ module Bosh::Director
 
               it 'returns the compiled package' do
                 result = compiled_package_finder.find_compiled_package(
-                  example_package,
-                  example_stemcell,
-                  dependency_key,
-                  cache_key,
-                  event_log_stage,
+                  package: example_package,
+                  stemcell: example_stemcell,
+                  dependency_key: dependency_key,
+                  cache_key: cache_key,
+                  event_log_stage: event_log_stage,
                 )
                 expect(result).to eq(compiled_package)
 
@@ -130,11 +134,11 @@ module Bosh::Director
 
               it 'returns nil' do
                 result = compiled_package_finder.find_compiled_package(
-                  example_package,
-                  example_stemcell,
-                  dependency_key,
-                  cache_key,
-                  event_log_stage,
+                  package: example_package,
+                  stemcell: example_stemcell,
+                  dependency_key: dependency_key,
+                  cache_key: cache_key,
+                  event_log_stage: event_log_stage,
                 )
                 expect(result).to be_nil
 
@@ -151,11 +155,11 @@ module Bosh::Director
 
             it 'returns nil' do
               result = compiled_package_finder.find_compiled_package(
-                example_package,
-                example_stemcell,
-                dependency_key,
-                cache_key,
-                event_log_stage,
+                package: example_package,
+                stemcell: example_stemcell,
+                dependency_key: dependency_key,
+                cache_key: cache_key,
+                event_log_stage: event_log_stage,
               )
               expect(result).to be_nil
             end
@@ -178,11 +182,11 @@ module Bosh::Director
 
           it 'returns the compiled package' do
             result = compiled_package_finder.find_compiled_package(
-              example_package,
-              example_stemcell,
-              dependency_key,
-              cache_key,
-              event_log_stage,
+              package: example_package,
+              stemcell: example_stemcell,
+              dependency_key: dependency_key,
+              cache_key: cache_key,
+              event_log_stage: event_log_stage,
             )
             expect(result).to eq(compiled_package)
           end
@@ -225,11 +229,11 @@ module Bosh::Director
 
               it 'returns the compiled package' do
                 result = compiled_package_finder.find_compiled_package(
-                  example_package,
-                  example_stemcell,
-                  dependency_key,
-                  cache_key,
-                  event_log_stage,
+                  package: example_package,
+                  stemcell: example_stemcell,
+                  dependency_key: dependency_key,
+                  cache_key: cache_key,
+                  event_log_stage: event_log_stage,
                 )
                 expect(result).to eq(compiled_package)
 
@@ -248,11 +252,11 @@ module Bosh::Director
 
               it 'returns nil' do
                 result = compiled_package_finder.find_compiled_package(
-                  example_package,
-                  example_stemcell,
-                  dependency_key,
-                  cache_key,
-                  event_log_stage,
+                  package: example_package,
+                  stemcell: example_stemcell,
+                  dependency_key: dependency_key,
+                  cache_key: cache_key,
+                  event_log_stage: event_log_stage,
                 )
                 expect(result).to be_nil
 
@@ -269,14 +273,52 @@ module Bosh::Director
 
             it 'returns nil' do
               result = compiled_package_finder.find_compiled_package(
-                example_package,
-                example_stemcell,
-                dependency_key,
-                cache_key,
-                event_log_stage,
+                package: example_package,
+                stemcell: example_stemcell,
+                dependency_key: dependency_key,
+                cache_key: cache_key,
+                event_log_stage: event_log_stage,
               )
               expect(result).to be_nil
             end
+          end
+        end
+      end
+
+      context 'if given a release with exported_from' do
+        let(:example_package) { Models::Package.make(release: example_release_model, blobstore_id: nil, sha1: nil) }
+        let(:exported_from) { [DeploymentPlan::Stemcell.new('ubs-x', 'ubs-x', example_stemcell.os, '1.0')] }
+
+        context 'when there is a compiled package for exported_from stemcell' do
+          let!(:expected_compile_package) do
+            Models::CompiledPackage.make(
+              package: example_package,
+              stemcell_version: '1.0',
+              stemcell_os: example_stemcell.os,
+              dependency_key: dependency_key,
+            )
+          end
+
+          before do
+            # the decoy package
+            Models::CompiledPackage.make(
+              package: example_package,
+              stemcell_version: '1.2',
+              stemcell_os: example_stemcell.os,
+              dependency_key: dependency_key,
+            )
+          end
+
+          it 'returns the package compiled on the exported_from stemcell' do
+            compiled_package = compiled_package_finder.find_compiled_package(
+              package: example_package,
+              stemcell: example_stemcell,
+              exported_from: exported_from,
+              dependency_key: dependency_key,
+              cache_key: cache_key,
+              event_log_stage: event_log_stage,
+            )
+            expect(compiled_package).to eq(expected_compile_package)
           end
         end
       end

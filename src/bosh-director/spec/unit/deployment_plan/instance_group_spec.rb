@@ -66,7 +66,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   end
 
   let(:release1) do
-    Bosh::Director::DeploymentPlan::ReleaseVersion.new(
+    Bosh::Director::DeploymentPlan::ReleaseVersion.parse(
       deployment,
       'name' => 'release1',
       'version' => '1',
@@ -302,7 +302,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     context 'when the templates are from different releases' do
       let(:release2) do
-        Bosh::Director::DeploymentPlan::ReleaseVersion.new(deployment,
+        Bosh::Director::DeploymentPlan::ReleaseVersion.parse(deployment,
                                                            'name' => 'release2',
                                                            'version' => '1')
       end

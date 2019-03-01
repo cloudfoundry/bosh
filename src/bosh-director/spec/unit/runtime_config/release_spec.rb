@@ -76,7 +76,7 @@ module Bosh::Director
           before { expect(deployment).to receive(:release).with('release-name').and_return(release_version) }
 
           context 'when the release version matches the pre-existing release' do
-            let(:release_version) { DeploymentPlan::ReleaseVersion.new(deployment_model, release_hash) }
+            let(:release_version) { DeploymentPlan::ReleaseVersion.parse(deployment_model, release_hash) }
 
             it 'does nothing' do
               release.add_to_deployment(deployment)
@@ -85,7 +85,7 @@ module Bosh::Director
 
           context 'when the release version is different from the pre-existing release version' do
             let(:release_version) do
-              DeploymentPlan::ReleaseVersion.new(deployment_model, {'name' => 'release-name', 'version' => '0'})
+              DeploymentPlan::ReleaseVersion.parse(deployment_model, 'name' => 'release-name', 'version' => '0')
             end
 
             it 'raises' do
@@ -100,7 +100,7 @@ module Bosh::Director
             expect(deployment).to receive(:release).with('release-name').and_return(nil)
             expect(deployment).to receive(:model).and_return(deployment_model)
             expect(DeploymentPlan::ReleaseVersion).to receive(:new)
-              .with(deployment_model, release_hash)
+              .with(deployment_model, 'release-name', '42', [])
               .and_return(new_release_version)
             expect(new_release_version).to receive(:bind_model)
             expect(deployment).to receive(:add_release).with(new_release_version)

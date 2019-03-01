@@ -10,7 +10,6 @@ module Bosh::Director
         attr_reader :compilations_performed
 
         def self.create(deployment_plan)
-          # compiled_package_finder = DeploymentPlan::CompiledPackageFinder.new(Config.logger)
           new(
             deployment_plan.name,
             deployment_plan.instance_groups,
@@ -83,11 +82,11 @@ module Bosh::Director
           with_compile_lock(package.id, "#{stemcell.os}/#{stemcell.version}", @deployment_name) do
             # Check if the package was compiled in a parallel deployment
             compiled_package = @compiled_package_finder.find_compiled_package(
-              package,
-              stemcell,
-              task.dependency_key,
-              task.cache_key,
-              @event_log_stage,
+              package: package,
+              stemcell: stemcell,
+              dependency_key: task.dependency_key,
+              cache_key: task.cache_key,
+              event_log_stage: @event_log_stage,
             )
 
             if compiled_package.nil?

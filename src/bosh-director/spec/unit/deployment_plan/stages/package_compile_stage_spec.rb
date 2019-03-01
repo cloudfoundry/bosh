@@ -60,15 +60,28 @@ module Bosh::Director
       allow(thread_pool).to receive(:working?).and_return(false)
       thread_pool
     end
-    let(:network) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'default', network_settings: {'network_name' =>{'property' => 'settings'}}) }
-    let(:net) do
-      { 'default' => { 'network_name' => { 'property' => 'settings' } } }
+    let(:network) do
+      instance_double(
+        'Bosh::Director::DeploymentPlan::Network',
+        name: 'default',
+        network_settings: { network_name: { property: 'settings' } },
+      )
     end
-    let(:event_manager) {Api::EventManager.new(true)}
-    let(:job_task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
-    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, job_task.id)}
-    let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
-    let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: job_task.id, event_manager: event_manager)}
+    let(:net) do
+      { 'default' => { network_name: { property: 'settings' } } }
+    end
+    let(:event_manager) { Api::EventManager.new(true) }
+    let(:job_task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
+    let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, job_task.id) }
+    let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
+    let(:update_job) do
+      instance_double(
+        Bosh::Director::Jobs::UpdateDeployment,
+        username: 'user',
+        task_id: job_task.id,
+        event_manager: event_manager,
+      )
+    end
     let(:instance_groups_to_compile) { [] }
     let(:expected_groups) do
       [
@@ -129,12 +142,12 @@ module Bosh::Director
 
       allow(Config).to receive(:current_job).and_return(update_job)
       allow(Config).to receive(:name).and_return('fake-director-name')
-      allow(Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
+      allow(Config).to receive(:cloud_options).and_return('provider' => { 'path' => '/path/to/default/cpi' })
       allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
       allow(cloud).to receive(:info)
       allow(cloud).to receive(:request_cpi_api_version=)
       allow(cloud).to receive(:request_cpi_api_version)
-      #TODO Registry: Make sure we actually need `set_vm_metadata` call; we didn't need to allow it before introducing wrapper.
+      # TODO: Registry: Make sure we actually need `set_vm_metadata` call; we didn't need to allow it before introducing wrapper.
       # Even though wrapper::set_vm_metadata gets called now, the wrapper is real (but it houses a fake cloud). If we didn't need
       # to allow set_vm_metadata on the fake cloud before the wrapper changes, why do we need to now?
       allow(cloud).to receive(:set_vm_metadata)
@@ -163,7 +176,13 @@ module Bosh::Director
     end
 
     def prepare_samples
-      @release = instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'cf-release', model: release_version_model, version: 'new')
+      @release = instance_double(
+        'Bosh::Director::DeploymentPlan::ReleaseVersion',
+        name: 'cf-release',
+        model: release_version_model,
+        version: 'new',
+        exported_from: [],
+      )
       @release_model = Bosh::Director::Models::Release.make(name: @release.name)
       @release_model.add_version(release_version_model)
       @stemcell_a = make_stemcell(operating_system: 'chrome-os', version: '3146.1')
@@ -171,12 +190,12 @@ module Bosh::Director
 
       @p_common = make_package('common')
       @p_syslog = make_package('p_syslog')
-      @p_dea = make_package('dea', %w(ruby common))
-      @p_ruby = make_package('ruby', %w(common))
-      @p_warden = make_package('warden', %w(common))
-      @p_nginx = make_package('nginx', %w(common))
-      @p_router = make_package('p_router', %w(ruby common))
-      @p_deps_ruby = make_package('needs_ruby', %w(ruby))
+      @p_dea = make_package('dea', %w[ruby common])
+      @p_ruby = make_package('ruby', %w[common])
+      @p_warden = make_package('warden', %w[common])
+      @p_nginx = make_package('nginx', %w[common])
+      @p_router = make_package('p_router', %w[ruby common])
+      @p_deps_ruby = make_package('needs_ruby', %w[ruby])
 
       vm_type_large = instance_double('Bosh::Director::DeploymentPlan::VmType', name: 'large')
       vm_type_small = instance_double('Bosh::Director::DeploymentPlan::VmType', name: 'small')
@@ -240,8 +259,8 @@ module Bosh::Director
       {
         'result' => {
           'sha1' => "compiled #{package.id}",
-          'blobstore_id' => "blob #{package.id}"
-        }
+          'blobstore_id' => "blob #{package.id}",
+        },
       }
     end
 
@@ -442,19 +461,18 @@ module Bosh::Director
         )
 
         @j_dea = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
-          name: 'dea',
-          release: @release,
-          jobs: [@t_dea, @t_warden],
-          vm_type: @vm_type_large,
-          stemcell: @stemcell_b
-        )
+                                 name: 'dea',
+                                 release: @release,
+                                 jobs: [@t_dea, @t_warden],
+                                 vm_type: @vm_type_large,
+                                 stemcell: @stemcell_b)
       end
 
       context 'and we are using a compiled release' do
         let(:instance_groups_to_compile) { [@j_dea] }
 
         it 'does not compile any packages' do
-          expect {compiler.perform}.to raise_error PackageMissingSourceCode
+          expect { compiler.perform }.to raise_error PackageMissingSourceCode
         end
       end
     end
@@ -475,7 +493,7 @@ module Bosh::Director
           'deployment' => 'mycloud',
           'vm_type' => {},
           'stemcell' => {},
-          'networks' => net
+          'networks' => net,
         }
 
         allow(AgentClient).to receive(:with_agent_id).and_return(agent)
@@ -487,8 +505,8 @@ module Bosh::Director
           {
             'result' => {
               'sha1' => "compiled.#{name}.sha1",
-              'blobstore_id' => "blob.#{name}.id"
-            }
+              'blobstore_id' => "blob.#{name}.id",
+            },
           }
         end
 
@@ -498,23 +516,36 @@ module Bosh::Director
 
       it 'sends information about immediate dependencies of the package being compiled' do
         expect(agent).to receive(:compile_package).with(
-          anything(), # source package blobstore id
-          anything(), # source package sha1
+          anything, # source package blobstore id
+          anything, # source package sha1
           'common', # package name
           '0.1-dev.1', # package version
-          {}).ordered # immediate dependencies
+          {}
+        ).ordered # immediate dependencies
         expect(agent).to receive(:compile_package).with(
-          anything(), # source package blobstore id
-          anything(), # source package sha1
+          anything, # source package blobstore id
+          anything, # source package sha1
           'ruby', # package name
           '0.1-dev.1', # package version
-          {'common' => {'name' => 'common', 'version' => '0.1-dev.1', 'sha1' => 'compiled.common.sha1', 'blobstore_id' => 'blob.common.id'}}).ordered # immediate dependencies
+          'common' => {
+            'name' => 'common',
+            'version' => '0.1-dev.1',
+            'sha1' => 'compiled.common.sha1',
+            'blobstore_id' => 'blob.common.id',
+          },
+        ).ordered # immediate dependencies
         expect(agent).to receive(:compile_package).with(
-          anything(), # source package blobstore id
-          anything(), # source package sha1
+          anything, # source package blobstore id
+          anything, # source package sha1
           'needs_ruby', # package name
           '0.1-dev.1', # package version
-          {'ruby' => {'name' => 'ruby', 'version' => '0.1-dev.1', 'sha1' => 'compiled.ruby.sha1', 'blobstore_id' => 'blob.ruby.id'}}).ordered # immediate dependencies
+          'ruby' => {
+            'name' => 'ruby',
+            'version' => '0.1-dev.1',
+            'sha1' => 'compiled.ruby.sha1',
+            'blobstore_id' => 'blob.ruby.id',
+          },
+        ).ordered # immediate dependencies
 
         allow(@j_deps_ruby).to receive(:use_compiled_package)
 
@@ -533,6 +564,7 @@ module Bosh::Director
           name: 'release_name',
           model: release_version_model,
           version: release_version_model.version,
+          exported_from: [],
         )
       end
 
@@ -570,7 +602,7 @@ module Bosh::Director
         expect(agent).to receive(:wait_until_ready).ordered
         expect(agent).to receive(:update_settings).ordered
         expect(agent).to receive(:apply).with(initial_state).ordered
-        expect(agent).to receive(:get_state).and_return({'agent-state' => 'yes'}).ordered
+        expect(agent).to receive(:get_state).and_return('agent-state' => 'yes').ordered
         expect(agent).to receive(:compile_package).and_raise(TaskCancelled).ordered
 
         expect do
@@ -589,7 +621,6 @@ module Bosh::Director
           allow(Config).to receive(:job_cancelled?).and_raise(TaskCancelled)
           event_log_stage = instance_double('Bosh::Director::EventLog::Stage')
           allow(event_log_stage).to receive(:advance_and_track).with(anything).and_yield
-
 
           expect do
             compiler.perform
@@ -622,7 +653,7 @@ module Bosh::Director
         expect(agent_client).to receive(:compile_package).exactly(6).times do |*args|
           name = args[2]
           dot = args[3].rindex('.')
-          version, _ = args[3][0..dot-1], args[3][dot+1..-1]
+          version, = args[3][0..dot - 1], args[3][dot + 1..-1]
 
           package = Models::Package.find(name: name, version: version)
           expect(args[0]).to eq(package.blobstore_id)
@@ -633,8 +664,8 @@ module Bosh::Director
           {
             'result' => {
               'sha1' => "compiled #{package.id}",
-              'blobstore_id' => "blob #{package.id}"
-            }
+              'blobstore_id' => "blob #{package.id}",
+            },
           }
         end
 
@@ -668,14 +699,14 @@ module Bosh::Director
         expect(agent).to receive(:wait_until_ready)
         expect(agent).to receive(:update_settings)
         expect(agent).to receive(:apply).with(initial_state)
-        expect(agent).to receive(:get_state).and_return({'agent-state' => 'yes'})
+        expect(agent).to receive(:get_state).and_return('agent-state' => 'yes')
         expect(agent).to receive(:compile_package).and_raise(RuntimeError)
 
         allow(compiler).to receive(:with_compile_lock).and_yield
 
-        expect {
+        expect do
           compiler.perform
-        }.to raise_error(RuntimeError)
+        end.to raise_error(RuntimeError)
       end
     end
 
@@ -726,7 +757,8 @@ module Bosh::Director
         compiled_package = instance_double(
           'Bosh::Director::Models::CompiledPackage',
           name: 'fake-package-name', package: package,
-          stemcell_os: stemcell.os, stemcell_version: stemcell.version, blobstore_id: 'some blobstore id')
+          stemcell_os: stemcell.os, stemcell_version: stemcell.version, blobstore_id: 'some blobstore id'
+        )
         expect(BlobUtil).to receive(:exists_in_global_cache?).with(package, cache_key).and_return(false)
         expect(BlobUtil).to receive(:save_to_global_cache).with(compiled_package, cache_key)
         allow(compiler).to receive(:prepare_vm)
@@ -793,11 +825,11 @@ module Bosh::Director
           expect(instance_deleter).to receive(:delete_instance_plan).ordered
           allow(ip_provider).to receive(:release)
 
-          expect {
+          expect do
             compiler.prepare_vm(stemcell, package) do
               # nothing
             end
-          }.to raise_error RpcTimeout
+          end.to raise_error RpcTimeout
         end
       end
 
@@ -825,7 +857,6 @@ module Bosh::Director
             begin
               compiler.prepare_vm(stemcell, package) {}
             rescue exception
-              #
             end
 
             expect(Models::Vm.find(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1)).to be_nil
@@ -833,9 +864,9 @@ module Bosh::Director
         end
 
         it 'should update the database with the new VM' 's trusted certs' do
-          expect {
+          expect do
             compiler.prepare_vm(stemcell, package) {}
-          }.to change {
+          end.to change {
             matching_vm = Models::Vm.find(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1)
             matching_vm.nil? ? 0 : Models::Instance.all.select { |i| i.active_vm == matching_vm }.count
           }.from(0).to(1)

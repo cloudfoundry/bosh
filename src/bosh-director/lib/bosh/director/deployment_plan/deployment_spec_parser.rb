@@ -81,7 +81,7 @@ module Bosh::Director
         end
 
         release_specs.each do |release_spec|
-          @deployment.add_release(ReleaseVersion.new(@deployment.model, release_spec))
+          @deployment.add_release(ReleaseVersion.parse(@deployment.model, release_spec))
         end
       end
 

@@ -23,7 +23,7 @@ module Bosh::Director
         if deployment_release
           ensure_same_name_and_version(deployment_release)
         else
-          release_version = DeploymentPlan::ReleaseVersion.new(deployment.model, @release_hash)
+          release_version = DeploymentPlan::ReleaseVersion.parse(deployment.model, @release_hash)
           release_version.bind_model
           deployment.add_release(release_version)
         end
