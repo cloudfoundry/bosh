@@ -13,7 +13,7 @@ describe 'exported_from releases', type: :integration do
     [{ 'name' => 'job_using_pkg_1', 'release' => 'test_release' }]
   end
   let(:manifest) do
-    Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(name: 'ig-name', jobs: jobs).tap do |manifest|
+    Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(jobs: jobs).tap do |manifest|
       manifest.merge!(
         'releases' => [{
           'name' => 'test_release',
@@ -43,6 +43,17 @@ describe 'exported_from releases', type: :integration do
     it 'a no-op deploy does not update any VMs' do
       output = deploy(manifest_hash: manifest)
       expect(output).not_to include 'Updating instance'
+    end
+  end
+
+  context 'when the exported_from points to a compiled package that does not exist' do
+    before do
+      bosh_runner.run("upload-release #{spec_asset(decoy_newer_release)}")
+    end
+
+    it 'throws an error' do
+      output = deploy(manifest_hash: manifest, failure_expected: true)
+      expect(output).to include "Can't use release 'test_release/1'"
     end
   end
 end

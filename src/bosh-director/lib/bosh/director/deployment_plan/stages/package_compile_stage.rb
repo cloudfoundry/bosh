@@ -151,7 +151,7 @@ module Bosh::Director
               job_packages = job.package_models.map(&:name)
               release_version_model = @release_manager.find_version(release_model, job.release.version)
 
-              @package_validator.validate(release_version_model, instance_group.stemcell, job_packages)
+              @package_validator.validate(release_version_model, instance_group.stemcell, job_packages, job.release.exported_from)
             end
           end
 

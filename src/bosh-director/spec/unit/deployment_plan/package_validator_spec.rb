@@ -18,7 +18,7 @@ module Bosh::Director
           compiled_package = Models::CompiledPackage.make(package: package, stemcell_os: 'ubuntu', stemcell_version: '3567.4')
           compiled_package.save
           release_version_model.add_package(package)
-          package_validator.validate(release_version_model, stemcell, [nil])
+          package_validator.validate(release_version_model, stemcell, [nil], [])
           expect {
             package_validator.handle_faults
           }.to_not raise_error
@@ -28,7 +28,7 @@ module Bosh::Director
           compiled_package = Models::CompiledPackage.make(package: package, stemcell_os: 'ubuntu', stemcell_version: '3567.5')
           compiled_package.save
           release_version_model.add_package(package)
-          package_validator.validate(release_version_model, stemcell, [nil])
+          package_validator.validate(release_version_model, stemcell, [nil], [])
           expect {
             package_validator.handle_faults
           }.to_not raise_error
@@ -46,10 +46,49 @@ module Bosh::Director
 
         context 'when packages is not compiled' do
           it 'creates a fault' do
-            package_validator.validate(release_version_model, stemcell, [invalid_package.name, valid_package.name])
+            package_validator.validate(release_version_model, stemcell, [invalid_package.name, valid_package.name], [])
             expect {
               package_validator.handle_faults
             }.to raise_error PackageMissingSourceCode, /#{invalid_package.name}/
+          end
+        end
+      end
+
+      context 'when there is exported_from' do
+        let(:package) { Models::Package.make(sha1: nil, blobstore_id: nil) }
+        let(:exported_from) { [make_stemcell(name: 'exported-from-stemcell', operating_system: 'ubuntu', version: '3567.1')] }
+
+        context 'when there is a valid compiled package' do
+          it 'does not fault if there is an exact match' do
+            compiled_package = Models::CompiledPackage.make(package: package, stemcell_os: 'ubuntu', stemcell_version: '3567.1')
+            compiled_package.save
+            release_version_model.add_package(package)
+            package_validator.validate(release_version_model, stemcell, [package.name], exported_from)
+            expect {
+              package_validator.handle_faults
+            }.to_not raise_error
+          end
+
+          it 'creates a fault if there is a difference in patch version' do
+            compiled_package = Models::CompiledPackage.make(package: package, stemcell_os: 'ubuntu', stemcell_version: '3567.4')
+            compiled_package.save
+            release_version_model.add_package(package)
+            package_validator.validate(release_version_model, stemcell, [package.name], exported_from)
+            expect {
+              package_validator.handle_faults
+            }.to raise_error PackageMissingExportedFrom, /#{package.name}.*#{}/
+          end
+        end
+
+        context 'when packages are not compiled' do
+          let(:package) { Models::Package.make }
+
+          it 'creates a fault' do
+            release_version_model.add_package(package)
+            package_validator.validate(release_version_model, stemcell, [package.name], exported_from)
+            expect {
+              package_validator.handle_faults
+            }.to raise_error PackageMissingExportedFrom, /#{exported_from[0].desc}/
           end
         end
       end
@@ -73,8 +112,8 @@ module Bosh::Director
 
       context 'when validating for multiple stemcells' do
         it 'raises a correct error' do
-          package_validator.validate(release_version_model, stemcell1, job_packages)
-          package_validator.validate(release_version_model, stemcell2, job_packages)
+          package_validator.validate(release_version_model, stemcell1, job_packages, [])
+          package_validator.validate(release_version_model, stemcell2, job_packages, [])
 
           expect {
             package_validator.handle_faults
@@ -89,7 +128,7 @@ Can't use release 'release1\/version1'. It references packages without source co
 
       context 'when validating for single stemcell' do
         it 'raises a correct error' do
-          package_validator.validate(release_version_model, stemcell1, job_packages)
+          package_validator.validate(release_version_model, stemcell1, job_packages, [])
 
           expect { package_validator.handle_faults }.to raise_error PackageMissingSourceCode, %r{
 Can't use release 'release1/version1'. It references packages without source code and are not compiled against stemcell 'stemcell1/1':
@@ -106,7 +145,7 @@ Can't use release 'release1/version1'. It references packages without source cod
           end
 
           it 'should only fail for listed package in job' do
-            package_validator.validate(release_version_model, stemcell1, job_packages)
+            package_validator.validate(release_version_model, stemcell1, job_packages, [])
 
             expect { package_validator.handle_faults }.to raise_error PackageMissingSourceCode, %r{
 Can't use release 'release1/version1'. It references packages without source code and are not compiled against stemcell 'stemcell1/1':

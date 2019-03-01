@@ -98,6 +98,7 @@ module Bosh::Director
   PackageInvalidArchive = err(60000)
   PackageMissingSourceCode = err(60001)
   CompiledPackageDeletionFailed = err(60002)
+  PackageMissingExportedFrom = err(60003)
 
   # Models
   DeploymentNotFound = err(70000, NOT_FOUND)

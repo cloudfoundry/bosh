@@ -6,7 +6,7 @@ module Bosh::Director
         @logger = logger
       end
 
-      def validate(release_version_model, stemcell, job_packages)
+      def validate(release_version_model, stemcell, job_packages, exported_from)
         release_desc = "#{release_version_model.release.name}/#{release_version_model.version}"
 
         @logger.debug("Validating packages for release '#{release_desc}'")
@@ -15,6 +15,9 @@ module Bosh::Director
           packages_list = Bosh::Director::PackageDependenciesManager.new(release_version_model).transitive_dependencies(package)
           packages_list << package
           packages_list.each do |needed_package|
+            next if needs_exact_compiled_package?(exported_from) && has_exact_compiled_package(needed_package, exported_from)
+            add_fault(release_desc, needed_package, exported_from[0], PackageMissingExportedFrom) if needs_exact_compiled_package?(exported_from)
+
             next unless needed_package.sha1.nil? || needed_package.blobstore_id.nil?
 
             compiled_packages_list = Bosh::Director::Models::CompiledPackage.where(
@@ -26,10 +29,7 @@ module Bosh::Director
               Bosh::Common::Version::StemcellVersion.match(compiled_package.stemcell_version, stemcell.version)
             end
 
-            if compiled_packages_list.empty?
-              @faults[release_desc] ||= Set.new
-              @faults[release_desc] << Fault.new(needed_package, stemcell)
-            end
+            add_fault(release_desc, needed_package, stemcell) if compiled_packages_list.empty?
           end
         end
       end
@@ -40,7 +40,11 @@ module Bosh::Director
         msg = "\n"
         unique_stemcells = @faults.map { |_, faults| faults.map { |fault| fault.stemcell } }.flatten.to_set
 
+        exception = PackageMissingSourceCode
+
         @faults.each do |release_desc, faults|
+          exception = faults.first.exception
+
           if unique_stemcells.size > 1
             msg += message_for_multiple_stemcells(release_desc, faults)
           else
@@ -48,7 +52,7 @@ module Bosh::Director
           end
         end
 
-        raise PackageMissingSourceCode, msg
+        raise exception, msg
       end
 
       private
@@ -76,9 +80,26 @@ module Bosh::Director
         msg
       end
 
+      def needs_exact_compiled_package?(exported_from)
+        !exported_from.empty?
+      end
+
+      def has_exact_compiled_package(package, exported_from)
+        Bosh::Director::Models::CompiledPackage.find(
+          package_id: package.id,
+          stemcell_os: exported_from[0].os,
+          stemcell_version: exported_from[0].version,
+        )
+      end
+
+      def add_fault(release, package, stemcell, exception = PackageMissingSourceCode)
+        @faults[release] ||= Set.new
+        @faults[release] << Fault.new(package, stemcell, exception)
+      end
+
       private
 
-      class Fault < Struct.new(:package, :stemcell)
+      class Fault < Struct.new(:package, :stemcell, :exception)
         def package_desc
           "#{package.name}/#{package.version}"
         end
