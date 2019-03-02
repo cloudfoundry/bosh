@@ -20,7 +20,7 @@ module Bosh::Director
               next
             end
 
-            next unless needed_package.sha1.nil? || needed_package.blobstore_id.nil?
+            next if package.source?
 
             compiled_packages_list = Bosh::Director::Models::CompiledPackage.where(
               package_id: needed_package.id,

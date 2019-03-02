@@ -6,7 +6,7 @@ module Bosh::Director::Models
 
     # @return [Set<String>] A set of package names this package depends on
     def dependency_set
-      json = self.dependency_set_json
+      json = dependency_set_json
 
       ::Set.new(json ? JSON.parse(json) : nil)
     end
@@ -16,17 +16,19 @@ module Bosh::Director::Models
     end
 
     def validate
-      if !sha1.nil? || !blobstore_id.nil?
-        validates_presence [:sha1, :blobstore_id]
-      end
+      validates_presence %i[sha1 blobstore_id] if !sha1.nil? || !blobstore_id.nil?
 
-      validates_presence [:release_id, :name, :version]
-      validates_unique [:release_id, :name, :version]
-      validates_format VALID_ID, [:name, :version]
+      validates_presence %i[release_id name version]
+      validates_unique %i[release_id name version]
+      validates_format VALID_ID, %i[name version]
     end
 
     def desc
       "#{name}/#{version}"
+    end
+
+    def source?
+      !sha1.nil? || !blobstore_id.nil?
     end
   end
 end

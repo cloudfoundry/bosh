@@ -11,17 +11,13 @@ module Bosh::Director
         compiled_package = find_exact_match(package, stemcell, dependency_key)
         return compiled_package if compiled_package
 
-        compiled_package = find_newest_match(package, stemcell, dependency_key) unless package_has_source(package)
+        compiled_package = find_newest_match(package, stemcell, dependency_key) unless package.source?
         return compiled_package if compiled_package
 
         fetch_from_global_cache(package, stemcell, dependency_key, cache_key, event_log_stage)
       end
 
       private
-
-      def package_has_source(package)
-        !package.blobstore_id.nil?
-      end
 
       def find_exact_match(package, stemcell, dependency_key)
         Models::CompiledPackage.find(
