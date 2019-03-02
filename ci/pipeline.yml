@@ -532,7 +532,7 @@ jobs:
           BOSH_VSPHERE_VCENTER_VM_FOLDER: ((vcenter-vm-folder))
           BOSH_VSPHERE_VERSION: ((vsphere-version))
           DEPLOY_ARGS: |
-            -o bosh-deployment/experimental/postgres-9-4.yml \
+            -o bosh-deployment/experimental/postgres-9-4.yml
             -o bosh-deployment/vsphere/resource-pool.yml
         tags:
         - vsphere-v6.5
@@ -599,7 +599,7 @@ jobs:
           BOSH_VSPHERE_VCENTER_VM_FOLDER: ((vcenter-vm-folder))
           BOSH_VSPHERE_VERSION: ((vsphere-version))
           DEPLOY_ARGS: |
-            -o bosh-deployment/experimental/postgres-9-4.yml \
+            -o bosh-deployment/experimental/postgres-9-4.yml
             -o bosh-deployment/vsphere/resource-pool.yml
         tags:
         - vsphere-v6.5
@@ -666,7 +666,7 @@ jobs:
           BOSH_VSPHERE_VCENTER_VM_FOLDER: ((vcenter-vm-folder))
           BOSH_VSPHERE_VERSION: ((vsphere-version))
           DEPLOY_ARGS: |
-            -o bosh-deployment/experimental/postgres-9-4.yml \
+            -o bosh-deployment/experimental/postgres-9-4.yml
             -o bosh-deployment/vsphere/resource-pool.yml
         tags:
         - vsphere-v6.5
@@ -727,7 +727,7 @@ jobs:
           AWS_SSH_PRIVATE_KEY: ((aws_ssh_private_key))
           BAT_INFRASTRUCTURE: aws
           DEPLOY_ARGS: |
-            -o bosh-deployment/experimental/postgres-9-4.yml \
+            -o bosh-deployment/experimental/postgres-9-4.yml
             -o bosh-deployment/external-ip-with-registry-not-recommended.yml
         task: deploy-director
       - file: bosh-src/ci/bats/iaas/aws/prepare-bats-config.yml
@@ -1547,7 +1547,7 @@ shared:
     BOSH_VSPHERE_VCENTER_VM_FOLDER: ((vcenter-vm-folder))
     BOSH_VSPHERE_VERSION: ((vsphere-version))
     DEPLOY_ARGS: |
-      -o bosh-deployment/experimental/postgres-9-4.yml \
+      -o bosh-deployment/experimental/postgres-9-4.yml
       -o bosh-deployment/vsphere/resource-pool.yml
   tags:
   - vsphere-v6.5
