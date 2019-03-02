@@ -1369,7 +1369,7 @@ resources:
   type: git
 - name: fuzz-interval-trigger
   source:
-    interval: 15m
+    interval: 1h
   type: time
 - name: bosh-cli
   source:
