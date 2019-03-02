@@ -16,11 +16,11 @@ module Bosh::Director
           packages_list << package
           packages_list.each do |needed_package|
             if needs_exact_compiled_package?(exported_from)
-              validate_exact_compiled_package(package, exported_from[0], release_desc)
+              validate_exact_compiled_package(needed_package, exported_from[0], release_desc)
               next
             end
 
-            next if package.source?
+            next if needed_package.source?
 
             compiled_packages_list = Bosh::Director::Models::CompiledPackage.where(
               package_id: needed_package.id,
