@@ -15,8 +15,10 @@ module Bosh::Director
           packages_list = Bosh::Director::PackageDependenciesManager.new(release_version_model).transitive_dependencies(package)
           packages_list << package
           packages_list.each do |needed_package|
-            next if needs_exact_compiled_package?(exported_from) && has_exact_compiled_package(needed_package, exported_from)
-            add_fault(release_desc, needed_package, exported_from[0], PackageMissingExportedFrom) if needs_exact_compiled_package?(exported_from)
+            if needs_exact_compiled_package?(exported_from)
+              validate_exact_compiled_package(package, exported_from[0], release_desc)
+              next
+            end
 
             next unless needed_package.sha1.nil? || needed_package.blobstore_id.nil?
 
@@ -38,18 +40,18 @@ module Bosh::Director
         return if @faults.empty?
 
         msg = "\n"
-        unique_stemcells = @faults.map { |_, faults| faults.map { |fault| fault.stemcell } }.flatten.to_set
+        unique_stemcells = @faults.map { |_, faults| faults.map { |fault| fault[:stemcell] } }.flatten.to_set
 
         exception = PackageMissingSourceCode
 
         @faults.each do |release_desc, faults|
-          exception = faults.first.exception
+          exception = faults.first[:exception]
 
-          if unique_stemcells.size > 1
-            msg += message_for_multiple_stemcells(release_desc, faults)
-          else
-            msg += message_for_single_stemcell(release_desc, faults)
-          end
+          msg += if unique_stemcells.size > 1
+                   message_for_multiple_stemcells(release_desc, faults)
+                 else
+                   message_for_single_stemcell(release_desc, faults)
+                 end
         end
 
         raise exception, msg
@@ -57,24 +59,31 @@ module Bosh::Director
 
       private
 
+      def validate_exact_compiled_package(package, stemcell, release_desc)
+        return if exact_compiled_package?(package, stemcell)
+
+        add_fault(release_desc, package, stemcell, PackageMissingExportedFrom)
+      end
+
       def message_for_multiple_stemcells(release_desc, faults)
-        msg = "Can't use release '#{release_desc}'. It references packages without source code and are not compiled against intended stemcells:\n"
-        sorted_faults = faults.to_a.sort_by { |fault| fault.package.name }
+        msg = "Can't use release '#{release_desc}'. It references packages without" \
+              " source code and are not compiled against intended stemcells:\n"
+        sorted_faults = faults.to_a.sort_by { |fault| fault[:package].name }
         sorted_faults.each do |fault|
-          msg += " - '#{fault.package_desc}' against stemcell '#{fault.stemcell.desc}'\n"
+          msg += " - '#{fault[:package].desc}' against stemcell '#{fault[:stemcell].desc}'\n"
         end
 
         msg
       end
 
       def message_for_single_stemcell(release_desc, faults)
-        sorted_faults = faults.to_a.sort_by { |fault| fault.package.name }
-        stemcell_desc = faults.first.stemcell.desc
+        sorted_faults = faults.to_a.sort_by { |fault| fault[:package].name }
+        stemcell_desc = faults.first[:stemcell].desc
 
-        msg = "Can't use release '#{release_desc}'. It references packages without" +
-          " source code and are not compiled against stemcell '#{stemcell_desc}':\n"
+        msg = "Can't use release '#{release_desc}'. It references packages without" \
+              " source code and are not compiled against stemcell '#{stemcell_desc}':\n"
         sorted_faults.each do |fault|
-          msg += " - '#{fault.package_desc}'\n"
+          msg += " - '#{fault[:package].desc}'\n"
         end
 
         msg
@@ -84,25 +93,17 @@ module Bosh::Director
         !exported_from.empty?
       end
 
-      def has_exact_compiled_package(package, exported_from)
+      def exact_compiled_package?(package, stemcell)
         Bosh::Director::Models::CompiledPackage.find(
           package_id: package.id,
-          stemcell_os: exported_from[0].os,
-          stemcell_version: exported_from[0].version,
+          stemcell_os: stemcell.os,
+          stemcell_version: stemcell.version,
         )
       end
 
       def add_fault(release, package, stemcell, exception = PackageMissingSourceCode)
         @faults[release] ||= Set.new
-        @faults[release] << Fault.new(package, stemcell, exception)
-      end
-
-      private
-
-      class Fault < Struct.new(:package, :stemcell, :exception)
-        def package_desc
-          "#{package.name}/#{package.version}"
-        end
+        @faults[release] << { package: package, stemcell: stemcell, exception: exception }
       end
     end
   end

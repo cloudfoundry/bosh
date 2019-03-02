@@ -19,9 +19,9 @@ module Bosh::Director
           compiled_package.save
           release_version_model.add_package(package)
           package_validator.validate(release_version_model, stemcell, [nil], [])
-          expect {
+          expect do
             package_validator.handle_faults
-          }.to_not raise_error
+          end.to_not raise_error
         end
 
         it 'does not fault if the stemcell version number differs only in patch number' do
@@ -29,9 +29,9 @@ module Bosh::Director
           compiled_package.save
           release_version_model.add_package(package)
           package_validator.validate(release_version_model, stemcell, [nil], [])
-          expect {
+          expect do
             package_validator.handle_faults
-          }.to_not raise_error
+          end.to_not raise_error
         end
       end
 
@@ -47,9 +47,9 @@ module Bosh::Director
         context 'when packages is not compiled' do
           it 'creates a fault' do
             package_validator.validate(release_version_model, stemcell, [invalid_package.name, valid_package.name], [])
-            expect {
+            expect do
               package_validator.handle_faults
-            }.to raise_error PackageMissingSourceCode, /#{invalid_package.name}/
+            end.to raise_error PackageMissingSourceCode, /#{invalid_package.name}/
           end
         end
       end
@@ -64,9 +64,9 @@ module Bosh::Director
             compiled_package.save
             release_version_model.add_package(package)
             package_validator.validate(release_version_model, stemcell, [package.name], exported_from)
-            expect {
+            expect do
               package_validator.handle_faults
-            }.to_not raise_error
+            end.to_not raise_error
           end
 
           it 'creates a fault if there is a difference in patch version' do
@@ -74,9 +74,9 @@ module Bosh::Director
             compiled_package.save
             release_version_model.add_package(package)
             package_validator.validate(release_version_model, stemcell, [package.name], exported_from)
-            expect {
+            expect do
               package_validator.handle_faults
-            }.to raise_error PackageMissingExportedFrom, /#{package.name}.*#{}/
+            end.to raise_error PackageMissingExportedFrom, /#{package.name}/
           end
         end
 
@@ -86,9 +86,9 @@ module Bosh::Director
           it 'creates a fault' do
             release_version_model.add_package(package)
             package_validator.validate(release_version_model, stemcell, [package.name], exported_from)
-            expect {
+            expect do
               package_validator.handle_faults
-            }.to raise_error PackageMissingExportedFrom, /#{exported_from[0].desc}/
+            end.to raise_error PackageMissingExportedFrom, /#{exported_from[0].desc}/
           end
         end
       end
@@ -115,14 +115,14 @@ module Bosh::Director
           package_validator.validate(release_version_model, stemcell1, job_packages, [])
           package_validator.validate(release_version_model, stemcell2, job_packages, [])
 
-          expect {
+          expect do
             package_validator.handle_faults
-          }.to raise_error PackageMissingSourceCode, /
+          end.to raise_error PackageMissingSourceCode, %r{
 Can't use release 'release1\/version1'. It references packages without source code and are not compiled against intended stemcells:
  - 'package1\/1' against stemcell 'stemcell1\/1'
  - 'package1\/1' against stemcell 'stemcell2\/2'
  - 'package2\/2' against stemcell 'stemcell1\/1'
- - 'package2\/2' against stemcell 'stemcell2\/2'/
+ - 'package2\/2' against stemcell 'stemcell2\/2'}
         end
       end
 
