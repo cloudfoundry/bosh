@@ -82,6 +82,7 @@ module Bosh::Monitor
       nats_client_options = {
         :uri       => @mbus.endpoint,
         :autostart => false,
+        :max_reconnect_attempts => -1,
         :tls => {
           :ca_file => @mbus.server_ca_path,
           :private_key_file => @mbus.client_private_key_path,
