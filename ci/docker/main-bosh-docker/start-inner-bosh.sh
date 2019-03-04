@@ -19,6 +19,7 @@ mkdir -p ${inner_bosh_dir}
 bosh int bosh.yml \
   -o "$script_dir/inner-bosh-ops.yml" \
   -o jumpbox-user.yml \
+  -o experimental/postgres-9-4.yml \
   -v director_name=docker-inner \
   -v internal_cidr=10.245.0.0/16 \
   -v internal_gw=10.245.0.1 \
@@ -26,8 +27,8 @@ bosh int bosh.yml \
   -v docker_host="${DOCKER_HOST}" \
   -v network=director_network \
   -v docker_tls="${DOCKER_CERTS}" \
-  -o "/usr/local/bosh-deployment/misc/source-releases/bosh.yml" \
-  -o /usr/local/bosh-deployment/local-bosh-release.yml \
+  -o misc/source-releases/bosh.yml \
+  -o local-bosh-release.yml \
   -v local_bosh_release="${src_dir}" \
   ${@} > "${inner_bosh_dir}/bosh-director.yml"
 
