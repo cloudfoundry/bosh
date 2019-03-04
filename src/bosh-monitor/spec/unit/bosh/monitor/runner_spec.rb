@@ -10,6 +10,7 @@ describe Bosh::Monitor::Runner do
       expected_nats_connect_options = {
           :uri       => Bhm.mbus.endpoint,
           :autostart => false,
+          :max_reconnect_attempts => -1,
           :tls => {
             :ca_file => Bhm.mbus.server_ca_path,
             :cert_chain_file  => Bhm.mbus.client_certificate_path,
