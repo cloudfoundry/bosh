@@ -153,6 +153,21 @@ Can't use release 'release1/version1'. It references packages without source cod
           end
         end
       end
+
+      context 'when there are ExportedFrom faults' do
+        let(:stemcell) { make_stemcell(operating_system: 'ubuntu', version: '3567.4') }
+        let(:exported_from) { [make_stemcell(name: 'exported-from-stemcell', operating_system: 'ubuntu', version: '3567.1')] }
+
+        it 'lists the exported_from that is missing' do
+          package_validator.validate(release_version_model, stemcell, job_packages, exported_from)
+          expect do
+            package_validator.handle_faults
+          end.to raise_error PackageMissingExportedFrom, %r{
+Can't use release 'release1/version1'. It is exported_from stemcell 'exported-from-stemcell/3567.1', but not compiled against it:
+ - 'package1/1'
+ - 'package2/2'}
+        end
+      end
     end
   end
 end

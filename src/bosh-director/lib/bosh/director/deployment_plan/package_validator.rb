@@ -47,6 +47,11 @@ module Bosh::Director
         @faults.each do |release_desc, faults|
           exception = faults.first[:exception]
 
+          if exception == PackageMissingExportedFrom
+            msg += message_for_exported_from(release_desc, faults)
+            next
+          end
+
           msg += if unique_stemcells.size > 1
                    message_for_multiple_stemcells(release_desc, faults)
                  else
@@ -77,16 +82,26 @@ module Bosh::Director
       end
 
       def message_for_single_stemcell(release_desc, faults)
-        sorted_faults = faults.to_a.sort_by { |fault| fault[:package].name }
         stemcell_desc = faults.first[:stemcell].desc
 
         msg = "Can't use release '#{release_desc}'. It references packages without" \
               " source code and are not compiled against stemcell '#{stemcell_desc}':\n"
-        sorted_faults.each do |fault|
-          msg += " - '#{fault[:package].desc}'\n"
-        end
 
-        msg
+        msg + listed_packages(faults)
+      end
+
+      def message_for_exported_from(release_desc, faults)
+        stemcell = faults.first[:stemcell]
+        exported_from_desc = "#{stemcell.name || stemcell.os}/#{stemcell.version}"
+        msg = "Can't use release '#{release_desc}'. It is exported_from stemcell '#{exported_from_desc}', " \
+              "but not compiled against it:\n"
+
+        msg + listed_packages(faults)
+      end
+
+      def listed_packages(faults)
+        sorted_faults = faults.to_a.sort_by { |fault| fault[:package].name }
+        sorted_faults.map { |fault| " - '#{fault[:package].desc}'\n" }.join('')
       end
 
       def needs_exact_compiled_package?(exported_from)
