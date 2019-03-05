@@ -6,8 +6,8 @@ module Bosh::Director
     # @return [Models::Stemcell] What stemcell package is compiled for
     attr_reader :stemcell
 
-    # @return [Array<DeploymentPlan::Job>] Jobs interested in this package
-    attr_reader :jobs
+    # @return [Array<DeploymentPlan::InstanceGroup>] InstanceGroups interested in this package
+    attr_reader :instance_groups
 
     # @return [Models::CompiledPackage] Compiled package DB model
     attr_reader :compiled_package
@@ -25,12 +25,12 @@ module Bosh::Director
     # @return [String] A unique checksum based on the dependencies in this task
     attr_reader :cache_key
 
-    def initialize(package, stemcell, initial_job, dependency_key, cache_key, compiled_package)
+    def initialize(package:, stemcell:, initial_instance_group:, dependency_key:, cache_key:, compiled_package:)
       @package = package
       @stemcell = stemcell
 
-      @jobs = []
-      add_job(initial_job)
+      @instance_groups = []
+      add_instance_group(initial_instance_group)
       @dependencies = []
       @dependent_tasks = []
 
@@ -54,30 +54,29 @@ module Bosh::Director
       !@compiled_package.nil?
     end
 
-    # Makes compiled package available to all jobs waiting for it
+    # Makes compiled package available to all instance_groups waiting for it
     # @param [Models::CompiledPackage] compiled_package Compiled package
     # @return [void]
     def use_compiled_package(compiled_package)
       @compiled_package = compiled_package
 
-      @jobs.each do |job|
-        job.use_compiled_package(@compiled_package)
+      @instance_groups.each do |instance_group|
+        instance_group.use_compiled_package(@compiled_package)
       end
     end
 
-    # Adds job to a list of job requiring this compiled package
     # @note Cycle detection is done elsewhere
-    # @param [DeploymentPlan::Job] job Job to be added
+    # @param [DeploymentPlan::InstanceGroup] instance_group to be added
     # @return [void]
-    def add_job(job)
-      return if @jobs.include?(job)
+    def add_instance_group(instance_group)
+      return if @instance_groups.include?(instance_group)
 
-      @jobs << job
+      @instance_groups << instance_group
       return unless @compiled_package
 
-      # If package is already compiled we can make it available to job
+      # If package is already compiled we can make it available to instance_group
       # immediately, otherwise it will be done by #use_compiled_package
-      job.use_compiled_package(@compiled_package)
+      instance_group.use_compiled_package(@compiled_package)
     end
 
     # Adds a compilation task to the list of dependencies

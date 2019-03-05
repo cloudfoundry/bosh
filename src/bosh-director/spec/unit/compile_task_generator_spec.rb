@@ -13,8 +13,8 @@ module Bosh::Director
         instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', model: release_version_model, exported_from: [])
       end
 
-      let(:job) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', use_compiled_package: nil) }
-      let(:template) { instance_double('Bosh::Director::DeploymentPlan::Job', release: release_version) }
+      let(:instance_group) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', use_compiled_package: nil) }
+      let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', release: release_version) }
 
       let(:package_a) { Bosh::Director::Models::Package.make(name: 'package_a', dependency_set_json: ['package_b'].to_json) }
       let(:package_b) { Bosh::Director::Models::Package.make(name: 'package_b', version: '2', dependency_set_json: ['package_c'].to_json) }
@@ -38,12 +38,12 @@ module Bosh::Director
         context 'when the dependency is linear' do
           it 'correctly adds dependencies' do
             expect(::Digest::SHA1).to receive(:hexdigest).and_return('package-cache-key-a', 'package-cache-key-b', 'package-cache-key-c')
-            generator.generate!(compile_tasks, job, template, package_a, stemcell)
+            generator.generate!(compile_tasks, instance_group, job, package_a, stemcell)
 
             expect(compile_tasks.size).to eq(3)
 
             compile_tasks.each_value do |task|
-              expect(task.jobs).to eq([job])
+              expect(task.instance_groups).to eq([instance_group])
             end
 
             task_a = compile_tasks[[package_a.id, "#{stemcell.os}/#{stemcell.version}"]]
@@ -78,12 +78,12 @@ module Bosh::Director
             package_b.dependency_set_json = ['package_d'].to_json
             package_c.dependency_set_json = ['package_d'].to_json
 
-            generator.generate!(compile_tasks, job, template, package_a, stemcell)
+            generator.generate!(compile_tasks, instance_group, job, package_a, stemcell)
 
             expect(compile_tasks.size).to eq(4)
 
             compile_tasks.each_value do |task|
-              expect(task.jobs).to eq([job])
+              expect(task.instance_groups).to eq([instance_group])
             end
 
             task_a = compile_tasks[[package_a.id, "#{stemcell.os}/#{stemcell.version}"]]
@@ -116,11 +116,11 @@ module Bosh::Director
           it 'correctly adds dependencies' do
             expect(::Digest::SHA1).to receive(:hexdigest).and_return('package-cache-key-a', 'package-cache-key-b', 'package-cache-key-c')
 
-            generator.generate!(compile_tasks, job, template, package_a, stemcell)
+            generator.generate!(compile_tasks, instance_group, job, package_a, stemcell)
 
             expect(compile_tasks.size).to eq(3)
             compile_tasks.each_value do |task|
-              expect(task.jobs).to eq([job])
+              expect(task.instance_groups).to eq([instance_group])
             end
 
             task_a = compile_tasks[[package_a.id, "#{stemcell.os}/#{stemcell.version}"]]
@@ -163,11 +163,11 @@ module Bosh::Director
             package_b.dependency_set_json = ['package_d'].to_json
             package_c.dependency_set_json = ['package_d'].to_json
 
-            generator.generate!(compile_tasks, job, template, package_a, stemcell)
+            generator.generate!(compile_tasks, instance_group, job, package_a, stemcell)
 
             expect(compile_tasks.size).to eq(4)
             compile_tasks.each_value do |task|
-              expect(task.jobs).to eq([job])
+              expect(task.instance_groups).to eq([instance_group])
             end
 
             task_a = compile_tasks[[package_a.id, "#{stemcell.os}/#{stemcell.version}"]]
@@ -203,7 +203,7 @@ module Bosh::Director
           expect(logger).to receive(:info).with("Checking whether package '#{package_b.desc}' needs to be compiled for stemcell '#{stemcell.desc}'").ordered
           expect(logger).to receive(:info).with("Processing package '#{package_b.desc}' dependencies").ordered
 
-          generator.generate!(compile_tasks, job, template, package_a, stemcell)
+          generator.generate!(compile_tasks, instance_group, job, package_a, stemcell)
         end
       end
     end

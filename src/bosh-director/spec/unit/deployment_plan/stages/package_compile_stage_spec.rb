@@ -714,7 +714,14 @@ module Bosh::Director
       package = Models::Package.make
       stemcell = make_stemcell
 
-      task = CompileTask.new(package, stemcell, job, 'fake-dependency-key', 'fake-cache-key', nil)
+      task = CompileTask.new(
+        package: package,
+        stemcell: stemcell,
+        initial_instance_group: job,
+        dependency_key: 'fake-dependency-key',
+        cache_key: 'fake-cache-key',
+        compiled_package: nil,
+      )
 
       fake_compiled_package = instance_double('Bosh::Director::Models::CompiledPackage', name: 'fake')
       expect(compiled_package_finder).to receive(:find_compiled_package).and_return(fake_compiled_package)
@@ -728,7 +735,16 @@ module Bosh::Director
     describe 'the global blobstore' do
       let(:package) { Models::Package.make }
       let(:stemcell) { make_stemcell }
-      let(:task) { CompileTask.new(package, stemcell, job, 'fake-dependency-key', 'fake-cache-key', nil) }
+      let(:task) do
+        CompileTask.new(
+          package: package,
+          stemcell: stemcell,
+          initial_instance_group: job,
+          dependency_key: 'fake-dependency-key',
+          cache_key: 'fake-cache-key',
+          compiled_package: nil,
+        )
+      end
       let(:cache_key) { 'cache key' }
 
       before do

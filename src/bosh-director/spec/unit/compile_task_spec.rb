@@ -4,11 +4,18 @@ module Bosh::Director
   describe CompileTask do
     include Support::StemcellHelpers
 
-    let(:job) { double('job').as_null_object }
+    let(:instance_group) { double('instance_group').as_null_object }
     let(:precompiled_package) { nil }
 
     def make(package, stemcell)
-      CompileTask.new(package, stemcell, job, 'fake-dependency-key', 'fake-cache-key', precompiled_package)
+      CompileTask.new(
+        package: package,
+        stemcell: stemcell,
+        initial_instance_group: instance_group,
+        dependency_key: 'fake-dependency-key',
+        cache_key: 'fake-cache-key',
+        compiled_package: precompiled_package,
+      )
     end
 
     describe 'creation' do
@@ -26,14 +33,14 @@ module Bosh::Director
       let(:dependent_packages) { [] }
 
       subject(:task) do
-        CompileTask.new(package, stemcell, job, 'fake-dependency-key', 'fake-cache-key', precompiled_package)
+        make(package, stemcell)
       end
 
-      context 'with an initial job' do
-        let(:job) { double('job') }
+      context 'with an initial instance_group' do
+        let(:instance_group) { double('instance_group') }
 
         it 'can create' do
-          expect(task.jobs).to eq([job])
+          expect(task.instance_groups).to eq([instance_group])
         end
       end
 
@@ -106,9 +113,9 @@ module Bosh::Director
     end
 
     describe 'using compiled package' do
-      let(:job) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup') }
+      let(:instance_group) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup') }
 
-      it 'registers compiled package with job' do
+      it 'registers compiled package with instance_group' do
         package = Models::Package.make
         stemcell = Models::Stemcell.make
 
@@ -117,20 +124,20 @@ module Bosh::Director
 
         task = make(package, stemcell)
 
-        job_a = job
-        job_b = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup')
+        instance_group_a = instance_group
+        instance_group_b = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup')
 
-        expect(job_a).to receive(:use_compiled_package).with(cp)
-        expect(job_b).to receive(:use_compiled_package).with(cp)
+        expect(instance_group_a).to receive(:use_compiled_package).with(cp)
+        expect(instance_group_b).to receive(:use_compiled_package).with(cp)
 
         task.use_compiled_package(cp)
-        task.add_job(job_a)
-        task.add_job(job_b)
+        task.add_instance_group(instance_group_a)
+        task.add_instance_group(instance_group_b)
 
-        expect(task.jobs).to eq([job_a, job_b])
+        expect(task.instance_groups).to eq([instance_group_a, instance_group_b])
 
-        expect(job_a).to receive(:use_compiled_package).with(cp2)
-        expect(job_b).to receive(:use_compiled_package).with(cp2)
+        expect(instance_group_a).to receive(:use_compiled_package).with(cp2)
+        expect(instance_group_b).to receive(:use_compiled_package).with(cp2)
         task.use_compiled_package(cp2)
       end
     end

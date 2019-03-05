@@ -19,7 +19,7 @@ module Bosh::Director
       task = compile_tasks[task_key]
 
       if task # We already visited this task and its dependencies
-        task.add_job(instance_group) # But we still need to register this instance group with task
+        task.add_instance_group(instance_group) # But we still need to register this instance group with task
         return task
       end
 
@@ -55,7 +55,14 @@ module Bosh::Director
         event_log_stage: @event_log_stage,
       )
 
-      CompileTask.new(package, stemcell, instance_group, package_dependency_key, package_cache_key, compiled_package)
+      CompileTask.new(
+        package: package,
+        stemcell: stemcell,
+        initial_instance_group: instance_group,
+        dependency_key: package_dependency_key,
+        cache_key: package_cache_key,
+        compiled_package: compiled_package,
+      )
     end
   end
 end
