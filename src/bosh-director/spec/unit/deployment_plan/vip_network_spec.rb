@@ -1,35 +1,48 @@
 require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::VipNetwork do
+  include Bosh::Director::IpUtil
+
   before { @deployment_plan = instance_double('Bosh::Director::DeploymentPlan::Planner') }
   let(:instance_model) { BD::Models::Instance.make }
+  let(:network_spec) do
+    {
+      'name' => 'foo',
+      'subnets' => [
+        { 'static_ips' => ['69.69.69.69'] },
+        { 'static_ips' => ['70.70.70.70', '80.80.80.80'] },
+      ],
+    }
+  end
 
-  describe :initialize do
+  let(:azs) do
+    [
+      Bosh::Director::DeploymentPlan::AvailabilityZone.new('z1', {}),
+      Bosh::Director::DeploymentPlan::AvailabilityZone.new('z2', {}),
+    ]
+  end
+
+  describe :parse do
     it 'defaults cloud properties to empty hash' do
-      network = BD::DeploymentPlan::VipNetwork.new({
-        'name' => 'foo',
-      }, logger)
+      network = BD::DeploymentPlan::VipNetwork.parse(network_spec, azs, logger)
       expect(network.cloud_properties).to eq({})
     end
 
-    it 'raises an error when cloud properties is NOT a hash' do
-      expect do
-        BD::DeploymentPlan::VipNetwork.new({
-          'name' => 'foo',
-          'cloud_properties' => 'not_hash',
-        }, logger)
-      end.to raise_error(Bosh::Director::ValidationInvalidType)
+    it 'correctly parses the subnets defined in the network spec' do
+      vip_network = BD::DeploymentPlan::VipNetwork.parse(network_spec, azs, logger)
+      expect(vip_network).to be_a(BD::DeploymentPlan::VipNetwork)
+      expect(vip_network.subnets.size).to eq(2)
     end
   end
 
   describe :network_settings do
     before(:each) do
-      @network = BD::DeploymentPlan::VipNetwork.new({
+      @network = BD::DeploymentPlan::VipNetwork.parse({
         'name' => 'foo',
         'cloud_properties' => {
           'foz' => 'baz',
         },
-      }, logger)
+      }, azs, logger)
     end
 
     it 'should provide the VIP network settings' do

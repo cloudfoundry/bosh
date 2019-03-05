@@ -18,13 +18,13 @@ module Bosh::Director
       instance_model = Models::Instance.make
       instance = DeploymentPlan::Instance.create_from_instance_group(instance_group, instance_model.index, 'started', deployment_model, {}, nil, logger, variables_interpolator)
       instance.bind_existing_instance_model(instance_model)
-      DeploymentPlan::InstancePlan.new({
+      DeploymentPlan::InstancePlan.new(
         existing_instance: instance_model,
         desired_instance: DeploymentPlan::DesiredInstance.new,
         instance: instance,
         network_plans: [],
         variables_interpolator: variables_interpolator,
-      })
+      )
     end
     let(:deployment_model) { Models::Deployment.make(name: 'my-deployment') }
     let(:instance_group) do
@@ -35,27 +35,37 @@ module Bosh::Director
     let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
     context 'when there are vip networks' do
-      let(:vip_networks) { [vip_network_1, vip_network_2] }
-      let(:vip_network_1) do
-        DeploymentPlan::JobNetwork.new('fake-network-1', [ip_to_i('68.68.68.68'), ip_to_i('69.69.69.69')], [], vip_deployment_network_1)
+      let(:vip_networks) { [vip_network1, vip_network2] }
+      let(:vip_network1) do
+        DeploymentPlan::JobNetwork.new(
+          'fake-network-1',
+          [ip_to_i('68.68.68.68'), ip_to_i('69.69.69.69')],
+          [],
+          vip_deployment_network1,
+        )
       end
-      let(:vip_network_2) do
-        DeploymentPlan::JobNetwork.new('fake-network-2', [ip_to_i('77.77.77.77'),ip_to_i('79.79.79.79')], [], vip_deployment_network_2)
+      let(:vip_network2) do
+        DeploymentPlan::JobNetwork.new(
+          'fake-network-2',
+          [ip_to_i('77.77.77.77'), ip_to_i('79.79.79.79')],
+          [],
+          vip_deployment_network2,
+        )
       end
-      let(:vip_deployment_network_1) do
-        DeploymentPlan::VipNetwork.new({'name' => 'fake-network-1'}, logger)
+      let(:vip_deployment_network1) do
+        DeploymentPlan::VipNetwork.parse({ 'name' => 'fake-network-1' }, [], logger)
       end
-      let(:vip_deployment_network_2) do
-        DeploymentPlan::VipNetwork.new({'name' => 'fake-network-2'}, logger)
+      let(:vip_deployment_network2) do
+        DeploymentPlan::VipNetwork.parse({ 'name' => 'fake-network-2' }, [], logger)
       end
 
       it 'creates network plans with static IP from each vip network' do
         planner.add_vip_network_plans(instance_plans, vip_networks)
         expect(instance_plan.network_plans[0].reservation.ip).to eq(ip_to_i('68.68.68.68'))
-        expect(instance_plan.network_plans[0].reservation.network).to eq(vip_deployment_network_1)
+        expect(instance_plan.network_plans[0].reservation.network).to eq(vip_deployment_network1)
 
         expect(instance_plan.network_plans[1].reservation.ip).to eq(ip_to_i('77.77.77.77'))
-        expect(instance_plan.network_plans[1].reservation.network).to eq(vip_deployment_network_2)
+        expect(instance_plan.network_plans[1].reservation.network).to eq(vip_deployment_network2)
       end
 
       context 'when instance already has vip networks' do
@@ -68,10 +78,10 @@ module Bosh::Director
           it 'assigns vip static IP that instance is currently using' do
             planner.add_vip_network_plans(instance_plans, vip_networks)
             expect(instance_plan.network_plans[0].reservation.ip).to eq(ip_to_i('69.69.69.69'))
-            expect(instance_plan.network_plans[0].reservation.network).to eq(vip_deployment_network_1)
+            expect(instance_plan.network_plans[0].reservation.network).to eq(vip_deployment_network1)
 
             expect(instance_plan.network_plans[1].reservation.ip).to eq(ip_to_i('79.79.79.79'))
-            expect(instance_plan.network_plans[1].reservation.network).to eq(vip_deployment_network_2)
+            expect(instance_plan.network_plans[1].reservation.network).to eq(vip_deployment_network2)
           end
         end
 
@@ -85,10 +95,10 @@ module Bosh::Director
             planner.add_vip_network_plans(instance_plans, vip_networks)
             instance_plan = instance_plans.first
             expect(instance_plan.network_plans[0].reservation.ip).to eq(ip_to_i('68.68.68.68'))
-            expect(instance_plan.network_plans[0].reservation.network).to eq(vip_deployment_network_1)
+            expect(instance_plan.network_plans[0].reservation.network).to eq(vip_deployment_network1)
 
             expect(instance_plan.network_plans[1].reservation.ip).to eq(ip_to_i('79.79.79.79'))
-            expect(instance_plan.network_plans[1].reservation.network).to eq(vip_deployment_network_2)
+            expect(instance_plan.network_plans[1].reservation.network).to eq(vip_deployment_network2)
           end
         end
 
@@ -106,15 +116,15 @@ module Bosh::Director
             planner.add_vip_network_plans(instance_plans, vip_networks)
             first_instance_plan = instance_plans[0]
             expect(first_instance_plan.network_plans[0].reservation.ip).to eq(ip_to_i('69.69.69.69'))
-            expect(first_instance_plan.network_plans[0].reservation.network).to eq(vip_deployment_network_1)
+            expect(first_instance_plan.network_plans[0].reservation.network).to eq(vip_deployment_network1)
             expect(first_instance_plan.network_plans[1].reservation.ip).to eq(ip_to_i('79.79.79.79'))
-            expect(first_instance_plan.network_plans[1].reservation.network).to eq(vip_deployment_network_2)
+            expect(first_instance_plan.network_plans[1].reservation.network).to eq(vip_deployment_network2)
 
             second_instance_plan = instance_plans[1]
             expect(second_instance_plan.network_plans[0].reservation.ip).to eq(ip_to_i('68.68.68.68'))
-            expect(second_instance_plan.network_plans[0].reservation.network).to eq(vip_deployment_network_1)
+            expect(second_instance_plan.network_plans[0].reservation.network).to eq(vip_deployment_network1)
             expect(second_instance_plan.network_plans[1].reservation.ip).to eq(ip_to_i('77.77.77.77'))
-            expect(second_instance_plan.network_plans[1].reservation.network).to eq(vip_deployment_network_2)
+            expect(second_instance_plan.network_plans[1].reservation.network).to eq(vip_deployment_network2)
           end
         end
       end

@@ -1,21 +1,35 @@
 module Bosh::Director
   module DeploymentPlan
     class VipNetwork < Network
+      extend ValidationHelper
       include IpUtil
 
       # @return [Hash] Network cloud properties
       attr_reader :cloud_properties
+      attr_reader :subnets
+
+      def self.parse(network_spec, availability_zones, logger)
+        name = safe_property(network_spec, 'name', class: String)
+
+        subnets = safe_property(network_spec, 'subnets', class: Array, default: []).map do |subnet_spec|
+          DeploymentPlan::VipNetworkSubnet.parse(subnet_spec, name, availability_zones)
+        end
+
+        cloud_properties = safe_property(network_spec, 'cloud_properties', class: Hash, default: {})
+
+        new(name, cloud_properties, subnets, logger)
+      end
 
       ##
       # Creates a new network.
       #
-      # @param [Hash] network_spec parsed deployment manifest network section
+      # @param [Hash] network_spec parsed from the cloud config
+      # @param [VipNetworkSubnet] vip network subnets parsed from the cloud config
       # @param [Logger] logger
-      def initialize(network_spec, logger)
-        super(safe_property(network_spec, "name", :class => String), logger)
-
-        @cloud_properties = safe_property(network_spec, "cloud_properties", class: Hash, default: {})
-        @reserved_ips = Set.new
+      def initialize(name, cloud_properties, subnets, logger)
+        super(name, logger)
+        @cloud_properties = cloud_properties
+        @subnets = subnets
         @logger = TaggedLogger.new(logger, 'network-configuration')
       end
 

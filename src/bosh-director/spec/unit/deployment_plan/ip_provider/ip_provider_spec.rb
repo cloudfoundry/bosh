@@ -75,7 +75,7 @@ module Bosh::Director::DeploymentPlan
         'type' => 'vip',
       }
     end
-    let(:vip_network) { VipNetwork.new(vip_network_spec, logger) }
+    let(:vip_network) { VipNetwork.parse(vip_network_spec, [], logger) }
     let(:ip_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, manual_network) }
 
     before do
@@ -448,7 +448,7 @@ module Bosh::Director::DeploymentPlan
 
         context 'when vip network' do
           let(:existing_network_reservation) { BD::ExistingNetworkReservation.new(instance_model, vip_network, '69.69.69.69', 'vip') }
-          let(:vip_network) { BD::DeploymentPlan::VipNetwork.new({'name' => 'fake-network'}, logger) }
+          let(:vip_network) { BD::DeploymentPlan::VipNetwork.parse({ 'name' => 'fake-network' }, [], logger) }
 
           it 'marks reservation as reserved' do
             ip_provider.reserve_existing_ips(existing_network_reservation)

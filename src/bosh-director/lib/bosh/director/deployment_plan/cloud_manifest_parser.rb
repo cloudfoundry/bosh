@@ -63,7 +63,7 @@ module Bosh::Director
             when 'dynamic'
               DynamicNetwork.parse(network_spec, availability_zones, @logger)
             when 'vip'
-              VipNetwork.new(network_spec, @logger)
+              VipNetwork.parse(network_spec, availability_zones, @logger)
             else
               raise DeploymentInvalidNetworkType,
                 "Invalid network type '#{type}'"

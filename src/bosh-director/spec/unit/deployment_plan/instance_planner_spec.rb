@@ -528,7 +528,8 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     end
 
     context 'when instance has vip networks' do
-      let(:vip_network) { BD::DeploymentPlan::VipNetwork.new({ 'name' => 'fake-network' }, logger) }
+      let(:vip_network) { BD::DeploymentPlan::VipNetwork.parse({ 'name' => 'fake-network' }, [], logger) }
+
       before do
         instance_group_network = BD::DeploymentPlan::JobNetwork.new('fake-network', ['68.68.68.68'], [], vip_network)
         allow(instance_group).to receive(:networks).and_return([instance_group_network])

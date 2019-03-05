@@ -1,6 +1,7 @@
 require 'spec_helper'
+require 'unit/deployment_plan/subnet_spec'
 
-describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
+describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
   before { @network = instance_double('Bosh::Director::DeploymentPlan::Network', :name => 'net_a') }
 
   def make_subnet(properties, availability_zones)
@@ -25,6 +26,8 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
     reservation.resolve_ip(NetAddr::CIDR.create(ip))
     reservation
   end
+
+  it_behaves_like 'a subnet'
 
   describe :initialize do
     it 'should create a subnet spec' do
@@ -353,158 +356,6 @@ describe 'Bosh::Director::DeploymentPlan::ManualNetworkSubnet' do
         )
       }.to raise_error(Bosh::Director::NetworkStaticIpOutOfRange,
           "Static IP '192.168.0.5' is in network 'net_a' reserved range")
-    end
-
-    describe 'availability zone(s)' do
-      context 'when the subnet defines both az and azs properties' do
-        it 'errors' do
-          expect {
-            make_subnet(
-              {
-                'range' => '192.168.0.0/24',
-                'gateway' => '192.168.0.254',
-                'cloud_properties' => {},
-                'az' => 'foo',
-                'azs' => ['foo']
-              },
-              [
-                Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo', {}),
-              ])
-          }.to raise_error(Bosh::Director::NetworkInvalidProperty, "Network 'net_a' contains both 'az' and 'azs'. Choose one.")
-        end
-
-      end
-
-      context 'when the subnet defines azs property' do
-        describe 'when valid' do
-          it 'should return the zones' do
-            subnet = make_subnet(
-              {
-                'range' => '192.168.0.0/24',
-                'gateway' => '192.168.0.254',
-                'cloud_properties' => {},
-                'azs' => ['foo', 'bar']
-              },
-              [
-                Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo', {}),
-                Bosh::Director::DeploymentPlan::AvailabilityZone.new('bar', {})
-              ]
-            )
-            expect(subnet.availability_zone_names).to eq(['foo', 'bar'])
-          end
-        end
-
-        describe 'and the array is empty' do
-          it 'errors' do
-            expect {
-              make_subnet(
-                {
-                  'range' => '192.168.0.0/24',
-                  'gateway' => '192.168.0.254',
-                  'cloud_properties' => {},
-                  'azs' => []
-                },
-                [
-                  Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo', {}),
-                ])
-            }.to raise_error(Bosh::Director::NetworkInvalidProperty, "Network 'net_a' refers to an empty 'azs' array")
-          end
-        end
-
-        describe 'and one of the zones dont exist' do
-          it 'errors' do
-            expect {
-              make_subnet(
-              {
-                'range' => '192.168.0.0/24',
-                'gateway' => '192.168.0.254',
-                'cloud_properties' => {},
-                'azs' => ['foo', 'bar']
-              },
-              [
-                Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo', {}),
-              ])
-            }.to raise_error(Bosh::Director::NetworkSubnetUnknownAvailabilityZone, "Network 'net_a' refers to an unknown availability zone 'bar'")
-          end
-        end
-      end
-
-      context 'when the subnet defines az property' do
-
-        context 'with no availability zone specified' do
-          it 'does not care whether that az name is in the list' do
-            expect {
-              make_subnet(
-                {
-                  'range' => '192.168.0.0/24',
-                  'gateway' => '192.168.0.254',
-                  'cloud_properties' => {'foo' => 'bar'},
-                },
-                []
-              )
-            }.to_not raise_error
-          end
-        end
-
-        context 'with a nil availability zone' do
-          it 'errors' do
-            expect {
-              make_subnet(
-                {
-                  'range' => '192.168.0.0/24',
-                  'gateway' => '192.168.0.254',
-                  'cloud_properties' => {'foo' => 'bar'},
-                  'az' => nil
-                },
-                [Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo', {})]
-              )
-            }.to raise_error(BD::ValidationInvalidType)
-          end
-        end
-
-        context 'with an availability zone that is present' do
-          def make_valid_subnet
-            make_subnet(
-              {
-                'range' => '192.168.0.0/24',
-                'gateway' => '192.168.0.254',
-                'cloud_properties' => {'foo' => 'bar'},
-                'az' => 'foo'
-              },
-              [
-                Bosh::Director::DeploymentPlan::AvailabilityZone.new('bar', {}),
-                Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo', {})
-              ]
-            )
-          end
-
-          it 'is valid' do
-            expect { make_valid_subnet }.to_not raise_error
-          end
-
-          it 'is returned by the subnet' do
-            expect(make_valid_subnet.availability_zone_names).to eq(['foo'])
-          end
-        end
-
-        context 'with an availability zone that is not present' do
-          it 'errors' do
-            expect {
-              make_subnet(
-                {
-                  'range' => '192.168.0.0/24',
-                  'gateway' => '192.168.0.254',
-                  'cloud_properties' => {'foo' => 'bar'},
-                  'az' => 'foo'
-                },
-                [
-                  Bosh::Director::DeploymentPlan::AvailabilityZone.new('bar', {}),
-                ]
-              )}.to raise_error(Bosh::Director::NetworkSubnetUnknownAvailabilityZone, "Network 'net_a' refers to an unknown availability zone 'foo'")
-          end
-        end
-      end
-
     end
   end
 

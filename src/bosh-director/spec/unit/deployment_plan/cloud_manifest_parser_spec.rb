@@ -247,8 +247,47 @@ module Bosh::Director
             end
           end
 
-          context 'when network type is vip'
-          context 'when network type is unknown'
+          context 'when network type is vip' do
+            it 'parses the vip network' do
+              valid_manifest = cloud_manifest.merge(
+                'networks' => [
+                  {
+                    'name' => 'a', # for compilation
+                    'subnets' => [],
+                  },
+                  {
+                    'name' => 'vip-network',
+                    'type' => 'vip',
+                  },
+                ],
+              )
+
+              expect do
+                subject.parse(valid_manifest, global_network_resolver, ip_provider_factory)
+              end.to_not raise_error
+            end
+          end
+
+          context 'when network type is unknown' do
+            it 'raises an error' do
+              valid_manifest = cloud_manifest.merge(
+                'networks' => [
+                  {
+                    'name' => 'a', # for compilation
+                    'subnets' => [],
+                  },
+                  {
+                    'name' => 'unknown-network',
+                    'type' => 'foobar',
+                  },
+                ],
+              )
+
+              expect do
+                subject.parse(valid_manifest, global_network_resolver, ip_provider_factory)
+              end.to raise_error
+            end
+          end
 
           context 'when more than one network have same canonical name' do
             before do
