@@ -71,6 +71,7 @@ module Bosh::Director
 
         desired_instances = desired_instance_group.desired_instances
         existing_instances = job_migrator.find_existing_instances(desired_instance_group)
+
         instance_plans = instance_planner.plan_instance_group_instances(
           desired_instance_group,
           desired_instances,

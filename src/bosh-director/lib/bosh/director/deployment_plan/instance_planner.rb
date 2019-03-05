@@ -39,10 +39,11 @@ module Bosh
           end
 
           obsolete_existing_instances.each do |instance_model|
-            if instance_model.ignore
-              raise DeploymentIgnoredInstancesDeletion, "You are trying to delete instance group '#{instance_model.job}', which " +
-                  'contains ignored instance(s). Operation not allowed.'
-            end
+            next unless instance_model.ignore
+
+            raise DeploymentIgnoredInstancesDeletion, 'You are trying to delete instance group ' \
+              "'#{instance_model.job}', which " \
+              'contains ignored instance(s). Operation not allowed.'
           end
 
           obsolete_existing_instances.map do |obsolete_existing_instance|
@@ -72,6 +73,7 @@ module Bosh
         def reconcile_network_plans(instance_plans)
           instance_plans.each do |instance_plan|
             next if instance_plan.obsolete?
+
             network_plans = NetworkPlanner::ReservationReconciler.new(
               instance_plan,
               @logger,
@@ -111,8 +113,7 @@ module Bosh
             end
             lowest_indexed_desired_instance_plan = desired_instance_plans
                                                    .reject { |instance_plan| instance_plan.desired_instance.index.nil? }
-                                                   .sort_by { |instance_plan| instance_plan.desired_instance.index }
-                                                   .first
+                                                   .min_by { |instance_plan| instance_plan.desired_instance.index }
 
             desired_instance_plans.each do |instance_plan|
               instance = instance_plan.instance
@@ -129,10 +130,11 @@ module Bosh
         def fail_if_specifically_changing_state_of_ignored_vms(instance_group, existing_instance_models)
           ignored_models = existing_instance_models.select(&:ignore)
           ignored_models.each do |model|
-            unless instance_group.instance_states["#{model.index}"].nil?
-              raise JobInstanceIgnored, "You are trying to change the state of the ignored instance '#{model.job}/#{model.uuid}'. " +
-                                        'This operation is not allowed. You need to unignore it first.'
-            end
+            next if instance_group.instance_states[model.index.to_s].nil?
+
+            raise JobInstanceIgnored, 'You are trying to change the state of the ignored instance ' \
+              "'#{model.job}/#{model.uuid}'. " \
+              'This operation is not allowed. You need to unignore it first.'
           end
         end
 
@@ -144,12 +146,11 @@ module Bosh
 
           instance_plans.select(&:existing?).each do |instance_plan|
             instance = instance_plan.existing_instance
-            vm_activeness_msg = instance.active_vm ? "active vm" : "no active vm"
-            @logger.info('Existing desired instance ' +
-                         "'#{instance.job}/#{instance.index}' in az " +
-                         "'#{instance_plan.desired_instance.availability_zone}' " +
-                         "with #{vm_activeness_msg}"
-                        )
+            vm_activeness_msg = instance.active_vm ? 'active vm' : 'no active vm'
+            @logger.info('Existing desired instance ' \
+              "'#{instance.job}/#{instance.index}' in az " \
+              "'#{instance_plan.desired_instance.availability_zone}' " \
+              "with #{vm_activeness_msg}")
           end
 
           instance_plans.select(&:obsolete?).each do |instance_plan|
