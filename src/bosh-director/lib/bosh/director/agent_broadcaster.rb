@@ -1,10 +1,9 @@
 module Bosh::Director
   class AgentBroadcaster
-
     DEFAULT_BROADCAST_TIMEOUT = 10
-    VALID_SYNC_DNS_RESPONSE = 'synced'
+    VALID_SYNC_DNS_RESPONSE = 'synced'.freeze
 
-    def initialize(broadcast_timeout=DEFAULT_BROADCAST_TIMEOUT)
+    def initialize(broadcast_timeout = DEFAULT_BROADCAST_TIMEOUT)
       @logger = Config.logger
       @broadcast_timeout = broadcast_timeout
       @reactor_loop = EmReactorLoop.new
@@ -127,8 +126,8 @@ module Bosh::Director
   end
 
   class EmReactorLoop
-    def queue(&blk)
-      blk.call
+    def queue
+      yield
     end
   end
 end
