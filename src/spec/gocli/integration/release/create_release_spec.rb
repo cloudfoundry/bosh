@@ -54,6 +54,7 @@ describe 'create-release', type: :integration do
         'jobs/transitive_deps.tgz',
         'jobs/id_job.tgz',
         'jobs/job_with_bad_template.tgz',
+        'jobs/job_with_flaky_template.tgz',
         'jobs/local_dns_records_json.tgz',
         'packages/a.tgz',
         'packages/b.tgz',
@@ -182,6 +183,7 @@ describe 'create-release', type: :integration do
                                                     job_desc('transitive_deps'),
                                                     job_desc('id_job'),
                                                     job_desc('job_with_bad_template'),
+                                                    job_desc('job_with_flaky_template'),
                                                     job_desc('local_dns_records_json'),
                                                   ))
 
@@ -242,6 +244,7 @@ describe 'create-release', type: :integration do
         'jobs/transitive_deps.tgz',
         'jobs/id_job.tgz',
         'jobs/job_with_bad_template.tgz',
+        'jobs/job_with_flaky_template.tgz',
         'jobs/local_dns_records_json.tgz',
         'packages/a.tgz',
         'packages/b.tgz',

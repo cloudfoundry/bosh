@@ -146,7 +146,7 @@ module Bosh::Director
         @uuid = existing_instance_model.uuid
         check_model_not_bound
         @model = existing_instance_model
-        @desired_variable_set = existing_instance_model.variable_set
+        @desired_variable_set = @deployment_model.last_successful_variable_set || @deployment_model.current_variable_set
         @previous_variable_set = existing_instance_model.variable_set
       end
 
