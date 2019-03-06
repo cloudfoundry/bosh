@@ -262,7 +262,6 @@ describe 'run release job errand', type: :integration, with_tmp_dir: true do
         original_instance.kill_agent
 
         output = bosh_runner.run('cck --resolution delete_vm_reference', deployment_name: deployment_name)
-        p output
 
         output = bosh_runner.run('run-errand errand1 --instance service_with_errand', deployment_name: deployment_name)
 

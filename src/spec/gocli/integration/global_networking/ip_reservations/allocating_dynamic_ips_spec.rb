@@ -151,7 +151,7 @@ describe 'global networking', type: :integration do
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
       deploy_simple_manifest(manifest_hash: manifest_hash)
-      p director.instances(deployment_name: 'my-deploy')
+
       expect_running_vms_with_names_and_count({ 'first-instance-group' => 1 }, { deployment_name: 'my-deploy' })
 
       manifest_hash['instance_groups'] = [

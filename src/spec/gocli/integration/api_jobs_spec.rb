@@ -19,7 +19,6 @@ describe 'the jobs api', type: :integration do
     expect(output).to match(/Using deployment 'minimal'/)
     expect(output).to match(/Release has been created: test_release\/1/)
     expect(output).to match(/Succeeded/)
-    p output
 
     http = Net::HTTP.new('127.0.0.1', current_sandbox.director_port)
 

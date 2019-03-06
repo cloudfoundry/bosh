@@ -194,8 +194,6 @@ describe 'using director with config server and deployments having links', type:
         cert = config_server_helper.get_value(prepend_namespace('bbs'))
         cert = OpenSSL::X509::Certificate.new(cert['certificate'])
         subject = cert.subject.to_a
-        puts cert.inspect
-        puts subject.inspect
         common_name = subject.select { |name, _, _| name == 'CN' }.first[1]
         expect(common_name).to eq('q-s0.my-instance-group.a.simple.bosh')
 
@@ -240,8 +238,6 @@ describe 'using director with config server and deployments having links', type:
         cert = config_server_helper.get_value(prepend_namespace('bbs'))
         cert = OpenSSL::X509::Certificate.new(cert['certificate'])
         subject = cert.subject.to_a
-        puts cert.inspect
-        puts subject.inspect
         common_name = subject.select { |name, _, _| name == 'CN' }.first[1]
         expect(common_name).to eq('*.my-instance-group.a.simple.bosh')
 

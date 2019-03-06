@@ -101,9 +101,6 @@ describe 'cli: deployment process', type: :integration do
     deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
     vitals = director.instances_ps_vitals[0]
 
-    print vitals
-    print vitals.keys
-
     expect(vitals[:cpu_user]).to match /\d+\.?\d*[%]/
     expect(vitals[:cpu_sys]).to match /\d+\.?\d*[%]/
     expect(vitals[:cpu_wait]).to match /\d+\.?\d*[%]/
