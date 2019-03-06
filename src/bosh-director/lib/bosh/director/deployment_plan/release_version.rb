@@ -9,7 +9,7 @@ module Bosh::Director
       attr_reader :version
       # @return [Models::ReleaseVersion] Release version model
       attr_reader :model
-      # @return [DeploymentPlan::Stemcell] Stemcell object
+      # @return [ReleaseVersionExportedFrom] Stemcell object
       attr_reader :exported_from
 
       # @param [Models::Deployment] deployment_model Deployment model
@@ -23,7 +23,7 @@ module Bosh::Director
           class: Array,
           optional: true,
           default: [],
-        ).map { |stemcell_hash| Stemcell.parse(stemcell_hash) }
+        ).map { |raw| ReleaseVersionExportedFrom.parse(raw) }
 
         new(deployment_model, name, version, exported_from)
       end

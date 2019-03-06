@@ -192,6 +192,7 @@ module Bosh::Director
       end
 
       @deployment_plan.instance_groups.each(&:validate_package_names_do_not_collide!)
+      @deployment_plan.instance_groups.each(&:validate_exported_from_matches_stemcell!)
     end
 
     # Binds properties for all templates in the deployment

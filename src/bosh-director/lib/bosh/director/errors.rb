@@ -131,6 +131,7 @@ module Bosh::Director
   JobInvalidPackageSpec = err(80012)
   JobInvalidLinkSpec = err(80013)
   JobDuplicateLinkName = err(80014)
+  JobWithExportedFromMismatch = err(80015)
 
   ResourceError = err(100001)
   ResourceNotFound = err(100002, NOT_FOUND)

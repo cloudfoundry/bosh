@@ -56,7 +56,7 @@ module Bosh::Director
 
       context 'when there is exported_from' do
         let(:package) { Models::Package.make(sha1: nil, blobstore_id: nil) }
-        let(:exported_from) { [make_stemcell(name: 'exported-from-stemcell', operating_system: 'ubuntu', version: '3567.1')] }
+        let(:exported_from) { [DeploymentPlan::ReleaseVersionExportedFrom.new('ubuntu', '3567.1')] }
 
         context 'when there is a valid compiled package' do
           it 'does not fault if there is an exact match' do
@@ -88,7 +88,7 @@ module Bosh::Director
             package_validator.validate(release_version_model, stemcell, [package.name], exported_from)
             expect do
               package_validator.handle_faults
-            end.to raise_error PackageMissingExportedFrom, /#{exported_from[0].desc}/
+            end.to raise_error PackageMissingExportedFrom, %r{ubuntu/3567\.1}
           end
         end
       end
@@ -156,14 +156,14 @@ Can't use release 'release1/version1'. It references packages without source cod
 
       context 'when there are ExportedFrom faults' do
         let(:stemcell) { make_stemcell(operating_system: 'ubuntu', version: '3567.4') }
-        let(:exported_from) { [make_stemcell(name: 'exported-from-stemcell', operating_system: 'ubuntu', version: '3567.1')] }
+        let(:exported_from) { [DeploymentPlan::ReleaseVersionExportedFrom.new('ubuntu', '3567.1')] }
 
         it 'lists the exported_from that is missing' do
           package_validator.validate(release_version_model, stemcell, job_packages, exported_from)
           expect do
             package_validator.handle_faults
           end.to raise_error PackageMissingExportedFrom, %r{
-Can't use release 'release1/version1'. It is exported_from stemcell 'exported-from-stemcell/3567.1', but not compiled against it:
+Can't use release 'release1/version1'. It is exported_from stemcell 'ubuntu/3567.1', but it references packages that are not compiled against it:
  - 'package1/1'
  - 'package2/2'}
         end

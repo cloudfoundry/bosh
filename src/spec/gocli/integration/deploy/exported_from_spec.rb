@@ -13,7 +13,7 @@ describe 'exported_from releases', type: :integration do
     [{ 'name' => 'job_using_pkg_1', 'release' => 'test_release' }]
   end
   let(:manifest) do
-    Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(jobs: jobs).tap do |manifest|
+    Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(jobs: jobs, name: 'foobar').tap do |manifest|
       manifest.merge!(
         'releases' => [{
           'name' => 'test_release',
@@ -42,7 +42,7 @@ describe 'exported_from releases', type: :integration do
 
     it 'a no-op deploy does not update any VMs' do
       output = deploy(manifest_hash: manifest)
-      expect(output).not_to include 'Updating instance'
+      expect(output).not_to include 'foobar'
     end
   end
 
@@ -51,9 +51,25 @@ describe 'exported_from releases', type: :integration do
       bosh_runner.run("upload-release #{spec_asset(decoy_newer_release)}")
     end
 
-    it 'throws an error' do
+    it 'fails the deployment' do
       output = deploy(manifest_hash: manifest, failure_expected: true)
       expect(output).to include "Can't use release 'test_release/1'"
+    end
+  end
+
+  context 'when the exported_from points to the wrong os' do
+    before do
+      bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3002-aws-xen-centos-7-go_agent.tgz')}")
+    end
+
+    it 'fails the deployment' do
+      bosh_runner.run("upload-release #{spec_asset(targeted_release)}")
+      output = deploy(
+        manifest_hash: manifest.tap { |manifest| manifest['stemcells'][0]['version'] = '3002' },
+        failure_expected: true,
+      )
+
+      expect(output).to include "release 'test_release' must be exported from stemcell 'centos-7/3001.1'"
     end
   end
 end

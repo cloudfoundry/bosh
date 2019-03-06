@@ -30,7 +30,7 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
         'version' => '1.2.3+dev',
         'exported_from' => [
           { 'os' => 'ubuntu-xenial', 'version' => '250.9' },
-          { 'name' => 'windows-2012R2', 'version' => '2012.r10' },
+          { 'os' => 'windows-2012R2', 'version' => '2012.r10' },
         ],
       }
       release_version = Bosh::Director::DeploymentPlan::ReleaseVersion.parse(deployment, spec)
@@ -44,7 +44,7 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
       expect(stemcell1.version).to eq('250.9')
 
       stemcell2 = release_version.exported_from[1]
-      expect(stemcell2.name).to eq('windows-2012R2')
+      expect(stemcell2.os).to eq('windows-2012R2')
       expect(stemcell2.version).to eq('2012.r10')
     end
   end

@@ -92,9 +92,9 @@ module Bosh::Director
 
       def message_for_exported_from(release_desc, faults)
         stemcell = faults.first[:stemcell]
-        exported_from_desc = "#{stemcell.name || stemcell.os}/#{stemcell.version}"
+        exported_from_desc = "#{stemcell.os}/#{stemcell.version}"
         msg = "Can't use release '#{release_desc}'. It is exported_from stemcell '#{exported_from_desc}', " \
-              "but not compiled against it:\n"
+              "but it references packages that are not compiled against it:\n"
 
         msg + listed_packages(faults)
       end
