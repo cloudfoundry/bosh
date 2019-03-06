@@ -30,6 +30,8 @@ module Bosh::Director::Core::Templates
     end
 
     def render(spec)
+      spec = Bosh::Common::DeepCopy.copy(spec)
+
       if spec['properties_need_filtering']
         spec = remove_unused_properties(spec)
       end
@@ -41,13 +43,15 @@ module Bosh::Director::Core::Templates
         'version' => @release.version
       }
 
-      template_context = Bosh::Template::EvaluationContext.new(Bosh::Common::DeepCopy.copy(spec), @dns_encoder)
+      original_template_context = Bosh::Template::EvaluationContext.new(spec, @dns_encoder)
+
+      template_context = Bosh::Common::DeepCopy.copy(original_template_context)
       monit = monit_erb.render(template_context, @logger)
 
       errors = []
 
       rendered_files = source_erbs.map do |source_erb|
-        template_context = Bosh::Template::EvaluationContext.new(Bosh::Common::DeepCopy.copy(spec), @dns_encoder)
+        template_context = Bosh::Common::DeepCopy.copy(original_template_context) unless original_template_context == template_context
 
         begin
           file_contents = source_erb.render(template_context, @logger)
@@ -76,7 +80,7 @@ module Bosh::Director::Core::Templates
     def namespace_links_to_current_job(spec)
       return nil if spec.nil?
 
-      modified_spec = Bosh::Common::DeepCopy.copy(spec)
+      modified_spec = spec
 
       if modified_spec.has_key?('links')
         if modified_spec['links'][@template_name]
@@ -92,7 +96,7 @@ module Bosh::Director::Core::Templates
     def remove_unused_properties(spec)
       return nil if spec.nil?
 
-      modified_spec = Bosh::Common::DeepCopy.copy(spec)
+      modified_spec = spec
 
       if modified_spec.has_key?('properties')
         if modified_spec['properties'][@template_name]
