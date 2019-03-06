@@ -54,8 +54,12 @@ module Bosh::Director::Core::Templates
 
       context 'when templates do not contain local properties' do
         let(:context) { instance_double('Bosh::Template::EvaluationContext') }
+        let(:context_copy) { instance_double('Bosh::Template::EvaluationContext') }
         before do
           allow(Bosh::Template::EvaluationContext).to receive(:new).and_return(context)
+          allow(Bosh::Common::DeepCopy).to receive(:copy).and_call_original
+          allow(Bosh::Common::DeepCopy).to receive(:copy).with(context).and_return(context_copy)
+          allow(Bosh::Common::DeepCopy).to receive(:copy).with(context_copy).and_return(context_copy)
         end
 
         it 'returns a collection of rendered templates' do
@@ -67,8 +71,8 @@ module Bosh::Director::Core::Templates
           expect(rendered_file_template.dest_name).to eq('fake-template-dest-name')
           expect(rendered_file_template.contents).to eq('test template')
 
-          expect(monit_erb).to have_received(:render).with(context, logger)
-          expect(source_erb).to have_received(:render).with(context, logger)
+          expect(monit_erb).to have_received(:render).with(context_copy, logger)
+          expect(source_erb).to have_received(:render).with(context_copy, logger)
         end
       end
 
@@ -119,7 +123,7 @@ module Bosh::Director::Core::Templates
               'properties_need_filtering' => true,
               'release' => { 'name' => 'fake-release-name', 'version' => '0.1' },
             }, dns_encoder
-          ).at_least(2).times
+          ).once
         end
 
         context 'rendering templates returns errors' do
@@ -217,7 +221,7 @@ module Bosh::Director::Core::Templates
 
         it 'should have EvaluationContext called with correct spec' do
           job_template_renderer.render(raw_spec)
-          expect(Bosh::Template::EvaluationContext).to have_received(:new).with(modified_spec, dns_encoder).at_least(2).times
+          expect(Bosh::Template::EvaluationContext).to have_received(:new).with(modified_spec, dns_encoder).once
         end
 
         it 'appends a rendered template with deterministic link dns data' do
