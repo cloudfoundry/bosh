@@ -51,6 +51,17 @@ module Bosh
         @links = spec['links'] || {}
       end
 
+      def ==(other_object)
+        other_object.respond_to?('spec') &&
+          other_object.respond_to?('raw_properties') &&
+          other_object.respond_to?('name') &&
+          other_object.respond_to?('index') &&
+          @spec == other_object.spec &&
+          @raw_properties == other_object.raw_properties &&
+          @name == other_object.name &&
+          @index == other_object.index
+      end
+
       # @return [Binding] Template binding
       def get_binding
         binding.taint
