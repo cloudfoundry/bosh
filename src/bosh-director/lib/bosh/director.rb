@@ -76,7 +76,7 @@ require 'bosh/director/agent_client'
 require 'cloud/external_cpi'
 require 'cloud/external_cpi_response_wrapper'
 require 'cloud/errors'
-require 'bosh/director/compile_task'
+require 'bosh/director/compiled_package_requirement'
 require 'bosh/director/key_generator'
 require 'bosh/director/package_dependencies_manager'
 

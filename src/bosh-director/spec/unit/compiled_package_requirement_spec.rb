@@ -1,14 +1,14 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe CompileTask do
+  describe CompiledPackageRequirement do
     include Support::StemcellHelpers
 
     let(:instance_group) { double('instance_group').as_null_object }
     let(:precompiled_package) { nil }
 
     def make(package, stemcell)
-      CompileTask.new(
+      CompiledPackageRequirement.new(
         package: package,
         stemcell: stemcell,
         initial_instance_group: instance_group,
@@ -27,12 +27,12 @@ module Bosh::Director
       let(:dep_pkg2) { double('dependent package 2', fingerprint: 'dp_fingerprint2', version: '9.2-dev', name: 'zyx') }
       let(:dep_pkg1) { double('dependent package 1', fingerprint: 'dp_fingerprint1', version: '10.1-dev', name: 'abc') }
 
-      let(:dep_task2) { make(dep_pkg2, stemcell) }
-      let(:dep_task1) { make(dep_pkg1, stemcell) }
+      let(:dep_requirement2) { make(dep_pkg2, stemcell) }
+      let(:dep_requirement1) { make(dep_pkg1, stemcell) }
 
       let(:dependent_packages) { [] }
 
-      subject(:task) do
+      subject(:requirement) do
         make(package, stemcell)
       end
 
@@ -40,7 +40,7 @@ module Bosh::Director
         let(:instance_group) { double('instance_group') }
 
         it 'can create' do
-          expect(task.instance_groups).to eq([instance_group])
+          expect(requirement.instance_groups).to eq([instance_group])
         end
       end
 
@@ -48,7 +48,7 @@ module Bosh::Director
         let(:precompiled_package) { double('compiled_package') }
 
         it 'is compiled' do
-          expect(task.compiled?).to eq(true)
+          expect(requirement.compiled?).to eq(true)
         end
       end
     end
@@ -59,32 +59,32 @@ module Bosh::Director
       let(:compiled_package) { Models::CompiledPackage.make(package: package, stemcell_os: 'chrome-os', stemcell_version: 'latest') }
 
       it 'can tell if compiled' do
-        task = make(package, stemcell)
-        expect(task.ready_to_compile?).to be(true)
-        expect(task.compiled?).to be(false)
+        requirement = make(package, stemcell)
+        expect(requirement.ready_to_compile?).to be(true)
+        expect(requirement.compiled?).to be(false)
 
-        task.use_compiled_package(compiled_package)
-        expect(task.compiled?).to be(true)
-        expect(task.ready_to_compile?).to be(false) # Already compiled!
+        requirement.use_compiled_package(compiled_package)
+        expect(requirement.compiled?).to be(true)
+        expect(requirement.ready_to_compile?).to be(false) # Already compiled!
       end
 
       it 'is ready to compile when all dependencies are compiled' do
         dep1 = Models::Package.make(name: 'bar')
         dep2 = Models::Package.make(name: 'baz')
 
-        task = make(package, stemcell)
-        dep1_task = make(dep1, stemcell)
-        dep2_task = make(dep2, stemcell)
+        requirement = make(package, stemcell)
+        dep1_requirement = make(dep1, stemcell)
+        dep2_requirement = make(dep2, stemcell)
 
-        task.add_dependency(dep1_task)
-        task.add_dependency(dep2_task)
+        requirement.add_dependency(dep1_requirement)
+        requirement.add_dependency(dep2_requirement)
 
-        expect(task.all_dependencies_compiled?).to be(false)
-        dep1_task.use_compiled_package(compiled_package)
-        expect(task.all_dependencies_compiled?).to be(false)
-        dep2_task.use_compiled_package(compiled_package)
-        expect(task.all_dependencies_compiled?).to be(true)
-        expect(task.ready_to_compile?).to be(true)
+        expect(requirement.all_dependencies_compiled?).to be(false)
+        dep1_requirement.use_compiled_package(compiled_package)
+        expect(requirement.all_dependencies_compiled?).to be(false)
+        dep2_requirement.use_compiled_package(compiled_package)
+        expect(requirement.all_dependencies_compiled?).to be(true)
+        expect(requirement.ready_to_compile?).to be(true)
       end
     end
 
@@ -95,20 +95,20 @@ module Bosh::Director
         bar = Models::Package.make(name: 'bar')
         baz = Models::Package.make(name: 'baz')
 
-        foo_task = make(foo, stemcell)
-        bar_task = make(bar, stemcell)
-        baz_task = make(baz, stemcell)
+        foo_requirement = make(foo, stemcell)
+        bar_requirement = make(bar, stemcell)
+        baz_requirement = make(baz, stemcell)
 
-        expect(foo_task.dependencies).to eq([])
-        expect(bar_task.dependent_tasks).to eq([])
+        expect(foo_requirement.dependencies).to eq([])
+        expect(bar_requirement.dependent_requirements).to eq([])
 
-        foo_task.add_dependency(bar_task)
-        expect(foo_task.dependencies).to eq([bar_task])
-        expect(bar_task.dependent_tasks).to eq([foo_task])
+        foo_requirement.add_dependency(bar_requirement)
+        expect(foo_requirement.dependencies).to eq([bar_requirement])
+        expect(bar_requirement.dependent_requirements).to eq([foo_requirement])
 
-        baz_task.add_dependent_task(foo_task)
-        expect(baz_task.dependent_tasks).to eq([foo_task])
-        expect(foo_task.dependencies).to eq([bar_task, baz_task])
+        baz_requirement.add_dependent_requirement(foo_requirement)
+        expect(baz_requirement.dependent_requirements).to eq([foo_requirement])
+        expect(foo_requirement.dependencies).to eq([bar_requirement, baz_requirement])
       end
     end
 
@@ -122,7 +122,7 @@ module Bosh::Director
         cp = Models::CompiledPackage.make({stemcell_os: 'firefox_os', stemcell_version: '2'})
         cp2 = Models::CompiledPackage.make({stemcell_os: 'firefox_os', stemcell_version: '2'})
 
-        task = make(package, stemcell)
+        requirement = make(package, stemcell)
 
         instance_group_a = instance_group
         instance_group_b = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup')
@@ -130,15 +130,15 @@ module Bosh::Director
         expect(instance_group_a).to receive(:use_compiled_package).with(cp)
         expect(instance_group_b).to receive(:use_compiled_package).with(cp)
 
-        task.use_compiled_package(cp)
-        task.add_instance_group(instance_group_a)
-        task.add_instance_group(instance_group_b)
+        requirement.use_compiled_package(cp)
+        requirement.add_instance_group(instance_group_a)
+        requirement.add_instance_group(instance_group_b)
 
-        expect(task.instance_groups).to eq([instance_group_a, instance_group_b])
+        expect(requirement.instance_groups).to eq([instance_group_a, instance_group_b])
 
         expect(instance_group_a).to receive(:use_compiled_package).with(cp2)
         expect(instance_group_b).to receive(:use_compiled_package).with(cp2)
-        task.use_compiled_package(cp2)
+        requirement.use_compiled_package(cp2)
       end
     end
 
@@ -149,25 +149,25 @@ module Bosh::Director
         bar = Models::Package.make(name: 'bar', version: '42')
         cp = Models::CompiledPackage.make(package: bar, build: 152, sha1: 'deadbeef', blobstore_id: 'deadcafe', stemcell_os: 'linux', stemcell_version: '2.6.11')
 
-        foo_task = make(foo, stemcell)
-        bar_task = make(bar, stemcell)
+        foo_requirement = make(foo, stemcell)
+        bar_requirement = make(bar, stemcell)
 
-        foo_task.add_dependency(bar_task)
+        foo_requirement.add_dependency(bar_requirement)
 
         expect {
-          foo_task.dependency_spec
+          foo_requirement.dependency_spec
         }.to raise_error(DirectorError, /'bar' hasn't been compiled yet/i)
 
-        bar_task.use_compiled_package(cp)
+        bar_requirement.use_compiled_package(cp)
 
-        expect(foo_task.dependency_spec).to eq({
-            'bar' => {
-                'name' => 'bar',
-                'version' => '42.152',
-                'sha1' => 'deadbeef',
-                'blobstore_id' => 'deadcafe'
-            }
-        })
+        expect(foo_requirement.dependency_spec).to eq(
+          'bar' => {
+            'name' => 'bar',
+            'version' => '42.152',
+            'sha1' => 'deadbeef',
+            'blobstore_id' => 'deadcafe',
+          },
+        )
       end
 
       it "doesn't include nested dependencies" do
@@ -178,26 +178,26 @@ module Bosh::Director
 
         cp_bar = Models::CompiledPackage.make(package: bar, build: 152, sha1: 'deadbeef', blobstore_id: 'deadcafe', stemcell_os: 'chrome-os', stemcell_version: 'latest')
 
-        foo_task = make(foo, stemcell)
-        bar_task = make(bar, stemcell)
-        baz_task = make(baz, stemcell)
+        foo_requirement = make(foo, stemcell)
+        bar_requirement = make(bar, stemcell)
+        baz_requirement = make(baz, stemcell)
 
-        foo_task.add_dependency(bar_task)
-        bar_task.add_dependency(baz_task)
+        foo_requirement.add_dependency(bar_requirement)
+        bar_requirement.add_dependency(baz_requirement)
 
-        expect(foo_task.dependencies).to eq([bar_task]) # only includes immediate deps!
-        expect(bar_task.dependencies).to eq([baz_task])
+        expect(foo_requirement.dependencies).to eq([bar_requirement]) # only includes immediate deps!
+        expect(bar_requirement.dependencies).to eq([baz_requirement])
 
-        bar_task.use_compiled_package(cp_bar)
+        bar_requirement.use_compiled_package(cp_bar)
 
-        expect(foo_task.dependency_spec).to eq({
-            'bar' => {
-                'name' => 'bar',
-                'version' => '42.152',
-                'sha1' => 'deadbeef',
-                'blobstore_id' => 'deadcafe'
-            }
-        })
+        expect(foo_requirement.dependency_spec).to eq(
+          'bar' => {
+            'name' => 'bar',
+            'version' => '42.152',
+            'sha1' => 'deadbeef',
+            'blobstore_id' => 'deadcafe',
+          },
+        )
       end
     end
   end

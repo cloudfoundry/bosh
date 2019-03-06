@@ -1,5 +1,5 @@
 module Bosh::Director
-  class CompileTask
+  class CompiledPackageRequirement
     # @return [Models::Package] What package is being compiled
     attr_reader :package
 
@@ -16,11 +16,11 @@ module Bosh::Director
     #   even when package bits haven't changed)
     attr_accessor :dependency_key
 
-    # @return [Array<CompileTask>] Tasks this task depends on
+    # @return [Array<CompiledPackageRequirement>] Requirements this depends on
     attr_reader :dependencies
 
-    # @return [Array<CompileTask>] Tasks depending on this task
-    attr_reader :dependent_tasks
+    # @return [Array<CompiledPackageRequirement>] Requirements depending on this
+    attr_reader :dependent_requirements
 
     # @return [String] A unique checksum based on the dependencies in this task
     attr_reader :cache_key
@@ -32,7 +32,7 @@ module Bosh::Director
       @instance_groups = []
       add_instance_group(initial_instance_group)
       @dependencies = []
-      @dependent_tasks = []
+      @dependent_requirements = []
 
       @dependency_key = dependency_key
       @cache_key = cache_key
@@ -79,24 +79,24 @@ module Bosh::Director
       instance_group.use_compiled_package(@compiled_package)
     end
 
-    # Adds a compilation task to the list of dependencies
+    # Adds a package compilation spec to the list of dependencies
     # @note Cycle detection performed elsewhere
-    # @param [CompileTask] task Compilation task
-    # @param [Boolean] reciprocate If true, add self as dependent task to other
+    # @param [CompiledPackageRequirement]
+    # @param [Boolean] reciprocate If true, add self as dependency to other
     # @return [void]
-    def add_dependency(task, reciprocate = true)
-      @dependencies << task
-      task.add_dependent_task(self, false) if reciprocate
+    def add_dependency(requirement, reciprocate = true)
+      @dependencies << requirement
+      requirement.add_dependent_requirement(self, false) if reciprocate
     end
 
-    # Adds a compilation task to the list of dependent tasks
+    # Adds a compilation requirement to the list of dependencies
     # @note Cycle detection performed elsewhere
-    # @param [CompileTask] task Compilation task
+    # @param [CompiledPackageRequirement]
     # @param [Boolean] reciprocate If true, add self as dependency to to other
     # @return [void]
-    def add_dependent_task(task, reciprocate = true)
-      @dependent_tasks << task
-      task.add_dependency(self, false) if reciprocate
+    def add_dependent_requirement(requirement, reciprocate = true)
+      @dependent_requirements << requirement
+      requirement.add_dependency(self, false) if reciprocate
     end
 
     # This call only makes sense if all dependencies have already been compiled,
@@ -107,15 +107,15 @@ module Bosh::Director
     def dependency_spec
       spec = {}
 
-      @dependencies.each do |dep_task|
-        unless dep_task.compiled?
+      @dependencies.each do |dependency|
+        unless dependency.compiled?
           raise DirectorError,
                 'Cannot generate package dependency spec ' \
                 "for '#{@package.name}', " \
-                "'#{dep_task.package.name}' hasn't been compiled yet"
+                "'#{dependency.package.name}' hasn't been compiled yet"
         end
 
-        compiled_package = dep_task.compiled_package
+        compiled_package = dependency.compiled_package
 
         spec[compiled_package.name] = {
           'name' => compiled_package.name,

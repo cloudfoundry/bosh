@@ -714,7 +714,7 @@ module Bosh::Director
       package = Models::Package.make
       stemcell = make_stemcell
 
-      task = CompileTask.new(
+      requirement = CompiledPackageRequirement.new(
         package: package,
         stemcell: stemcell,
         initial_instance_group: job,
@@ -727,16 +727,16 @@ module Bosh::Director
       expect(compiled_package_finder).to receive(:find_compiled_package).and_return(fake_compiled_package)
 
       allow(compiler).to receive(:with_compile_lock).with(package.id, "#{stemcell.os}/#{stemcell.version}", deployment.name).and_yield
-      compiler.compile_package(task)
+      compiler.compile_package(requirement)
 
-      expect(task.compiled_package).to eq(fake_compiled_package)
+      expect(requirement.compiled_package).to eq(fake_compiled_package)
     end
 
     describe 'the global blobstore' do
       let(:package) { Models::Package.make }
       let(:stemcell) { make_stemcell }
-      let(:task) do
-        CompileTask.new(
+      let(:requirement) do
+        CompiledPackageRequirement.new(
           package: package,
           stemcell: stemcell,
           initial_instance_group: job,
@@ -748,7 +748,7 @@ module Bosh::Director
       let(:cache_key) { 'cache key' }
 
       before do
-        allow(task).to receive(:cache_key).and_return(cache_key)
+        allow(requirement).to receive(:cache_key).and_return(cache_key)
 
         allow(Config).to receive(:use_compiled_package_cache?).and_return(true)
 
@@ -764,7 +764,7 @@ module Bosh::Director
         compiled_package = instance_double('Bosh::Director::Models::CompiledPackage', name: 'fake')
         allow(Models::CompiledPackage).to receive(:create).and_return(compiled_package)
 
-        compiler.compile_package(task)
+        compiler.compile_package(requirement)
       end
 
       it 'should save compiled package to global cache if not exists' do
@@ -780,7 +780,7 @@ module Bosh::Director
         allow(compiler).to receive(:prepare_vm)
         allow(Models::CompiledPackage).to receive(:create).and_return(compiled_package)
 
-        compiler.compile_package(task)
+        compiler.compile_package(requirement)
       end
 
       it 'only checks the global cache if Config.use_compiled_package_cache? is set' do
@@ -794,7 +794,7 @@ module Bosh::Director
         compiled_package = instance_double('Bosh::Director::Models::CompiledPackage', name: 'fake')
         allow(Models::CompiledPackage).to receive(:create).and_return(compiled_package)
 
-        compiler.compile_package(task)
+        compiler.compile_package(requirement)
       end
     end
 

@@ -1,4 +1,4 @@
-require 'bosh/director/compile_task_generator'
+require 'bosh/director/compiled_package_requirement_generator'
 require 'digest/sha1'
 
 module Bosh::Director
@@ -35,11 +35,11 @@ module Bosh::Director
           @event_log_stage = nil
           @logger = logger
 
-          @tasks_mutex = Mutex.new
+          @requirements_mutex = Mutex.new
           @counter_mutex = Mutex.new
 
           @compilation_instance_pool = compilation_instance_pool
-          @ready_tasks = []
+          @ready_requirements = []
           @compilations_performed = 0
           @instance_groups_to_compile = instance_groups_to_compile
           @compilation_config = compilation_config
@@ -53,39 +53,42 @@ module Bosh::Director
         def perform
           validate_packages(@instance_groups_to_compile)
 
-          @logger.info('Generating a list of compile tasks')
-          compile_tasks = prepare_tasks(@instance_groups_to_compile)
+          @logger.info('Generating a list of compile requirements')
+          compile_requirements = prepare_requirements(@instance_groups_to_compile)
 
-          compile_tasks.each_value do |task|
-            if task.ready_to_compile?
-              @logger.info("Package '#{task.package.desc}' is ready to be compiled for stemcell '#{task.stemcell.desc}'")
-              @ready_tasks << task
-            end
+          compile_requirements.each_value do |requirement|
+            next unless requirement.ready_to_compile?
+
+            @logger.info(
+              "Package '#{requirement.package.desc}' is ready to be compiled for "\
+              "stemcell '#{requirement.stemcell.desc}'",
+            )
+            @ready_requirements << requirement
           end
 
-          if @ready_tasks.empty?
+          if @ready_requirements.empty?
             @logger.info('All packages are already compiled')
             return
           end
 
-          compile_packages(compile_tasks)
+          compile_packages(compile_requirements)
         end
 
-        def ready_tasks_count
-          @tasks_mutex.synchronize { @ready_tasks.size }
+        def ready_requirements_count
+          @requirements_mutex.synchronize { @ready_requirements.size }
         end
 
-        def compile_package(task)
-          package = task.package
-          stemcell = task.stemcell
+        def compile_package(requirement)
+          package = requirement.package
+          stemcell = requirement.stemcell
 
           with_compile_lock(package.id, "#{stemcell.os}/#{stemcell.version}", @deployment_name) do
             # Check if the package was compiled in a parallel deployment
             compiled_package = @compiled_package_finder.find_compiled_package(
               package: package,
               stemcell: stemcell,
-              dependency_key: task.dependency_key,
-              cache_key: task.cache_key,
+              dependency_key: requirement.dependency_key,
+              cache_key: requirement.cache_key,
               event_log_stage: @event_log_stage,
             )
 
@@ -100,7 +103,7 @@ module Bosh::Director
                     package.sha1,
                     package.name,
                     "#{package.version}.#{build}",
-                    task.dependency_spec,
+                    requirement.dependency_spec,
                   ) { Config.job_cancelled? }
 
                 task_result = agent_task['result']
@@ -113,15 +116,15 @@ module Bosh::Director
                 p.sha1 = task_result['sha1']
                 p.build = build
                 p.blobstore_id = task_result['blobstore_id']
-                p.dependency_key = task.dependency_key
+                p.dependency_key = requirement.dependency_key
               end
 
               if Config.use_compiled_package_cache?
-                if BlobUtil.exists_in_global_cache?(package, task.cache_key)
+                if BlobUtil.exists_in_global_cache?(package, requirement.cache_key)
                   @logger.info('Already exists in global package cache, skipping upload')
                 else
                   @logger.info('Uploading to global package cache')
-                  BlobUtil.save_to_global_cache(compiled_package, task.cache_key)
+                  BlobUtil.save_to_global_cache(compiled_package, requirement.cache_key)
                 end
               else
                 @logger.info('Global blobstore not configured, skipping upload')
@@ -130,7 +133,7 @@ module Bosh::Director
               @counter_mutex.synchronize { @compilations_performed += 1 }
             end
 
-            task.use_compiled_package(compiled_package)
+            requirement.use_compiled_package(compiled_package)
           end
         end
 
@@ -158,12 +161,16 @@ module Bosh::Director
           @package_validator.handle_faults
         end
 
-        def prepare_tasks(instance_groups_to_compile)
-          compile_tasks = {}
+        def prepare_requirements(instance_groups_to_compile)
+          compile_requirements = {}
           event_log_stage = Config.event_log.begin_stage('Preparing package compilation', 1)
 
           event_log_stage.advance_and_track('Finding packages to compile') do
-            compile_task_generator = CompileTaskGenerator.new(@logger, event_log_stage, @compiled_package_finder)
+            compile_requirement_generator = CompiledPackageRequirementGenerator.new(
+              @logger,
+              event_log_stage,
+              @compiled_package_finder,
+            )
 
             instance_groups_to_compile.each do |instance_group|
               stemcell = instance_group.stemcell
@@ -173,14 +180,20 @@ module Bosh::Director
 
               instance_group.jobs.each do |job|
                 job.package_models.each do |package|
-                  task = compile_task_generator.generate!(compile_tasks, instance_group, job, package, stemcell)
+                  requirement = compile_requirement_generator.generate!(
+                    compile_requirements,
+                    instance_group,
+                    job,
+                    package,
+                    stemcell,
+                  )
 
-                  instance_group.use_compiled_package(task.compiled_package) if task.compiled?
+                  instance_group.use_compiled_package(requirement.compiled_package) if requirement.compiled?
                 end
               end
             end
           end
-          compile_tasks
+          compile_requirements
         end
 
         def cancelled?
@@ -190,23 +203,23 @@ module Bosh::Director
           true
         end
 
-        def compile_packages(compile_tasks)
-          compilation_count = compile_tasks.values.count { |task| !task.compiled? }
+        def compile_packages(compile_requirements)
+          compilation_count = compile_requirements.values.count { |requirement| !requirement.compiled? }
           @event_log_stage = Config.event_log.begin_stage('Compiling packages', compilation_count)
           return if cancelled?
 
           begin
             ThreadPool.new(max_threads: @compilation_config.workers).wrap do |pool|
               loop do
-                # process as many tasks without waiting
+                # process as many requirements without waiting
                 loop do
-                  task = @tasks_mutex.synchronize { @ready_tasks.pop }
-                  break if task.nil?
+                  requirement = @requirements_mutex.synchronize { @ready_requirements.pop }
+                  break if requirement.nil?
 
-                  pool.process { process_task(task) }
+                  pool.process { process_requirement(requirement) }
                 end
 
-                break if !pool.working? && @ready_tasks.empty?
+                break if !pool.working? && @ready_requirements.empty?
 
                 sleep(0.1)
               end
@@ -223,29 +236,32 @@ module Bosh::Director
           end
         end
 
-        def enqueue_unblocked_tasks(task)
-          @tasks_mutex.synchronize do
-            @logger.info("Unblocking dependents of '#{task.package.desc}' for '#{task.stemcell.desc}'")
-            task.dependent_tasks.each do |dep_task|
-              if dep_task.ready_to_compile?
-                @logger.info("Package '#{dep_task.package.desc}' now ready to be compiled for '#{dep_task.stemcell.desc}'")
-                @ready_tasks << dep_task
-              end
+        def enqueue_unblocked_requirements(requirement)
+          @requirements_mutex.synchronize do
+            @logger.info("Unblocking dependents of '#{requirement.package.desc}' for '#{requirement.stemcell.desc}'")
+            requirement.dependent_requirements.each do |dep_requirement|
+              next unless dep_requirement.ready_to_compile?
+
+              @logger.info(
+                "Package '#{dep_requirement.package.desc}' now ready to be "\
+                "compiled for '#{dep_requirement.stemcell.desc}'",
+              )
+              @ready_requirements << dep_requirement
             end
           end
         end
 
-        def process_task(task)
-          package_desc = task.package.desc
-          stemcell_desc = task.stemcell.desc
-          task_desc = "package '#{package_desc}' for stemcell '#{stemcell_desc}'"
+        def process_requirement(requirement)
+          package_desc = requirement.package.desc
+          stemcell_desc = requirement.stemcell.desc
+          requirement_desc = "package '#{package_desc}' for stemcell '#{stemcell_desc}'"
 
           with_thread_name("compile_package(#{package_desc}, #{stemcell_desc})") do
             @event_log_stage.advance_and_track(package_desc) do
-              @logger.info("Compiling #{task_desc}")
-              compile_package(task)
-              @logger.info("Finished compiling #{task_desc}")
-              enqueue_unblocked_tasks(task)
+              @logger.info("Compiling #{requirement_desc}")
+              compile_package(requirement)
+              @logger.info("Finished compiling #{requirement_desc}")
+              enqueue_unblocked_requirements(requirement)
             end
           end
         end
