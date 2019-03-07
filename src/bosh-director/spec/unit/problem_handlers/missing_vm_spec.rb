@@ -52,6 +52,7 @@ module Bosh::Director
     let(:networks) do
       { 'a' => { 'ip' => '192.168.1.2' } }
     end
+    let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
 
     before do
       allow(Bosh::Director::DeploymentPlan::PlannerFactory).to receive(:create).with(logger).and_return(planner_factory)
@@ -59,6 +60,7 @@ module Bosh::Director
       fake_app
       allow(App.instance.blobstores.blobstore).to receive(:create).and_return('fake-blobstore-id')
       allow(Config).to receive(:preferred_cpi_api_version).and_return(2)
+      allow(deployment_model).to receive(:last_successful_variable_set).and_return(variable_set)
     end
 
     it 'registers under missing_vm type' do

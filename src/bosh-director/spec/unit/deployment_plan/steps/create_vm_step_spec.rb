@@ -34,6 +34,7 @@ module Bosh
           let(:availability_zone) { BD::DeploymentPlan::AvailabilityZone.new('az-1', {}) }
           let(:cloud_properties) { { 'ram' => '2gb' } }
           let(:network_cloud_properties) { { 'bandwidth' => '5mbps' } }
+          let(:variable_set) { Bosh::Director::Models::VariableSet.make(deployment: deployment) }
 
           let(:network_settings) do
             BD::DeploymentPlan::NetworkSettings.new(
@@ -179,6 +180,7 @@ module Bosh
           end
 
           before do
+            allow(deployment).to receive(:last_successful_variable_set).and_return(variable_set)
             allow(Config).to receive(:preferred_cpi_api_version).and_return(1)
             allow(Config).to receive(:current_job).and_return(update_job)
             Config.name = 'fake-director-name'
