@@ -2,6 +2,7 @@ require 'spec_helper'
 require 'bosh/template/evaluation_context'
 require 'bosh/template/evaluation_link_instance'
 require 'bosh/template/evaluation_link'
+require 'common/deep_copy'
 
 module Bosh
   module Template
@@ -109,7 +110,86 @@ module Bosh
       end
 
       let(:evaluation_context) do
-        EvaluationContext.new(spec, dns_encoder)
+        EvaluationContext.new(Bosh::Common::DeepCopy.copy(spec), dns_encoder)
+      end
+
+      context 'operator ==' do
+        let(:other_evaluation_context) do
+          EvaluationContext.new(Bosh::Common::DeepCopy.copy(spec), dns_encoder)
+        end
+
+        context 'when nothing changes' do
+          it 'returns true' do
+            expect(evaluation_context == other_evaluation_context).to equal(true)
+          end
+        end
+
+        context 'when spec changes' do
+          it 'returns false' do
+            evaluation_context.spec['job']['name'] = 'modified_job_name'
+            expect(evaluation_context == other_evaluation_context).to equal(false)
+          end
+        end
+
+        context 'when properties changes' do
+          it 'returns false' do
+            evaluation_context.properties.foo = 'modified_bar'
+            expect(evaluation_context == other_evaluation_context).to equal(false)
+          end
+        end
+
+        context 'when raw_properties changes' do
+          it 'returns false' do
+            evaluation_context.raw_properties['foo'] = 'modified_bar'
+            expect(evaluation_context == other_evaluation_context).to equal(false)
+          end
+        end
+
+        context 'when name changes' do
+          it 'returns false' do
+            evaluation_context.name << 'modified_name'
+            expect(evaluation_context == other_evaluation_context).to equal(false)
+          end
+        end
+
+        context 'when index changes' do
+          module MakeIndexAccessible
+            refine Bosh::Template::EvaluationContext do
+              def modify_index
+                @index = 42
+              end
+            end
+          end
+          using MakeIndexAccessible
+
+          it 'returns false' do
+            evaluation_context.modify_index
+            expect(evaluation_context.index).to equal(42)
+            expect(evaluation_context == other_evaluation_context).to equal(false)
+          end
+        end
+
+        context 'when instance variables are modified' do
+          all_members = EvaluationContext.new({}, nil).instance_variables.map { |var| var.to_s.tr('@', '') }
+          private_members = %w[dns_encoder links]
+          public_members = all_members - private_members
+          public_members.each do |member|
+            it "returns false when #{member} is modified" do
+              instance_eval <<-END_EVAL, __FILE__, __LINE__ + 1
+                class Bosh::Template::EvaluationContext
+                  def modify_#{member}
+                   @#{member} = 'foo'
+                  end
+                end
+              END_EVAL
+              evaluation_context.send("modify_#{member}")
+              expect(evaluation_context == other_evaluation_context).to(
+                equal(false),
+                "Modification of #{member} not detected by == operator. If it is a private member, add it to private_members",
+              )
+            end
+          end
+        end
       end
 
       context 'openstruct' do
