@@ -127,7 +127,7 @@ describe 'Aliasing links to DNS addresses', type: :integration do
     end
 
     let(:second_provider_group_id) do
-      JSON.parse(second_provider_instance.read_job_template('database', '.bosh/links.json'))[1]['group']
+      JSON.parse(second_provider_instance.read_job_template('database', '.bosh/links.json'))[0]['group']
     end
 
     let(:second_provider_aliases) do

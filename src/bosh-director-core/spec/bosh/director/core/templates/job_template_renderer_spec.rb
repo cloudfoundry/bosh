@@ -161,6 +161,7 @@ module Bosh::Director::Core::Templates
       context 'when spec has links' do
         let(:raw_spec) do
           {
+            'name' => 'joao-da-silva',
             'index' => 1,
             'job' => {
               'name' => 'template-name',
@@ -180,6 +181,7 @@ module Bosh::Director::Core::Templates
 
         let(:modified_spec) do
           {
+            'name' => 'joao-da-silva',
             'index' => 1,
             'job' => {
               'name' => 'template-name',
@@ -201,8 +203,23 @@ module Bosh::Director::Core::Templates
           }
         end
 
+        let(:provider1) do
+          double('provider1', instance_group: 'joao-da-silva')
+        end
+
+        let(:provider2) do
+          double('provider2', instance_group: 'bob-de-smith')
+        end
+
         let(:provider_intent) do
-          double('provider_intent', canonical_name: 'my-link', original_name: 'db_link', type: 'conn', group_name: 'my-link-conn')
+          double(
+            'provider_intent',
+            canonical_name: 'my-link',
+            original_name: 'db_link',
+            type: 'conn',
+            group_name: 'my-link-conn',
+            link_provider: provider1,
+          )
         end
 
         let(:another_provider_intent) do
@@ -212,6 +229,7 @@ module Bosh::Director::Core::Templates
             original_name: 'backup_db',
             type: 'other',
             group_name: 'another-link-other',
+            link_provider: provider2,
           )
         end
 
@@ -222,6 +240,7 @@ module Bosh::Director::Core::Templates
             original_name: 'dontcare',
             type: 'type3',
             group_name: 'yet-another-link-type3',
+            link_provider: provider1,
           )
         end
 
@@ -255,7 +274,7 @@ module Bosh::Director::Core::Templates
         it 'appends a rendered template with deterministic link dns data' do
           rendered_files = job_template_renderer.render(raw_spec).templates
 
-          expect(dns_encoder).to have_received(:id_for_group_tuple).twice
+          expect(dns_encoder).to have_received(:id_for_group_tuple).once
 
           rendered_links_file = rendered_files.pop
           expect(rendered_links_file.src_name).to(eq('.bosh/links.json'))
@@ -263,11 +282,6 @@ module Bosh::Director::Core::Templates
 
           expect(JSON.parse(rendered_links_file.contents)).to eq(
             [
-              {
-                'name' => another_provider_intent.canonical_name,
-                'type' => another_provider_intent.type,
-                'group' => '1',
-              },
               {
                 'name' => provider_intent.canonical_name,
                 'type' => provider_intent.type,

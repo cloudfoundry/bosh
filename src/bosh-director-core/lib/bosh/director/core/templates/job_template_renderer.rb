@@ -116,6 +116,10 @@ module Bosh::Director::Core::Templates
         end
       end
 
+      provider_intents = provider_intents.select do |provider_intent|
+        provider_intent.link_provider.instance_group == spec['name']
+      end
+
       data = provider_intents.map do |provider_intent|
         {
           'name' => provider_intent.canonical_name,
