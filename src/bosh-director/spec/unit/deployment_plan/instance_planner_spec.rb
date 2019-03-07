@@ -586,7 +586,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       instance_group = BD::DeploymentPlan::InstanceGroup.new(logger)
       instance_group.name = 'foo-instance_group'
       instance_group.availability_zones << az
-      instance_group.stemcell = BD::DeploymentPlan::Stemcell.new('default', 'ubuntu-stemcell', 'ubuntu', '1')
+      instance_group.stemcell = FactoryBot.build(:stemcell)
       instance_group.env = BD::DeploymentPlan::Env.new('env' => 'env-val')
       instance_group.vm_type = BD::DeploymentPlan::VmType.new(
         'name' => 'a',

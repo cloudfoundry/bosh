@@ -92,8 +92,8 @@ module Bosh::Director
       end
 
       it 'should bind stemcells' do
-        sc1 = instance_double('Bosh::Director::DeploymentPlan::Stemcell')
-        sc2 = instance_double('Bosh::Director::DeploymentPlan::Stemcell')
+        sc1 = FactoryBot.build(:stemcell)
+        sc2 = FactoryBot.build(:stemcell)
 
         expect(deployment_plan).to receive(:stemcells).and_return({'sc1' => sc1, 'sc2' => sc2})
 
