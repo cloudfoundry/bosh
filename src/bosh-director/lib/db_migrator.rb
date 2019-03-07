@@ -1,12 +1,15 @@
 require 'sequel'
 
 class DBMigrator
-  def initialize(database, type, options = {})
+  MAX_MIGRATION_ATTEMPTS = 50
+
+  def initialize(database, type, options = {}, retry_interval = 0.5)
     @migrator = case type
                 when :cpi then cpi_migrator(database, options)
                 when :director then director_migrator(database, options)
                 when :dns then dns_migrator(database, options)
                 end
+    @retry_interval = retry_interval
   end
 
   def current?
@@ -15,6 +18,16 @@ class DBMigrator
 
   def migrate
     @migrator&.run
+  end
+
+  def finished?
+    tries = 0
+    until current?
+      tries += 1
+      sleep @retry_interval
+      return false if tries >= MAX_MIGRATION_ATTEMPTS
+    end
+    true
   end
 
   private
