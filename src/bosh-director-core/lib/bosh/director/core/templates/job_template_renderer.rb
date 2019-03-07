@@ -109,7 +109,14 @@ module Bosh::Director::Core::Templates
     end
 
     def links_data(spec)
-      data = @link_provider_intents.map do |provider_intent|
+      provider_intents = @link_provider_intents.select do |provider_intent|
+        @links_provided.any? do |link_provided|
+          link_provided['name'] == provider_intent.original_name &&
+            link_provided['type'] == provider_intent.type
+        end
+      end
+
+      data = provider_intents.map do |provider_intent|
         {
           'name' => provider_intent.canonical_name,
           'type' => provider_intent.type,

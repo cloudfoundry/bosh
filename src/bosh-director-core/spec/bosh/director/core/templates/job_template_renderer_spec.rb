@@ -31,8 +31,9 @@ module Bosh::Director::Core::Templates
         }
       end
 
+      let(:links_provided) { [] }
       let(:release) { double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'fake-release-name', version: '0.1') }
-      let(:job_template_model) { double('Bosh::Director::Models::Template', provides: []) }
+      let(:job_template_model) { double('Bosh::Director::Models::Template', provides: links_provided) }
       let(:job_template) do
         double('Bosh::Director::DeploymentPlan::Job', name: 'fake-job-name', release: release, model: job_template_model)
       end
@@ -201,15 +202,42 @@ module Bosh::Director::Core::Templates
         end
 
         let(:provider_intent) do
-          double('provider_intent', canonical_name: 'my-link', type: 'type1', group_name: 'my-link-type1')
+          double('provider_intent', canonical_name: 'my-link', original_name: 'db_link', type: 'conn', group_name: 'my-link-conn')
         end
 
         let(:another_provider_intent) do
-          double('provider_intent', canonical_name: 'another-link', type: 'type2', group_name: 'another-link-type2')
+          double(
+            'provider_intent',
+            canonical_name: 'another-link',
+            original_name: 'backup_db',
+            type: 'other',
+            group_name: 'another-link-other',
+          )
         end
 
         let(:yet_another_provider_intent) do
-          double('provider_intent', canonical_name: 'yet-another-link', type: 'type3', group_name: 'yet-another-link-type3')
+          double(
+            'provider_intent',
+            canonical_name: 'yet-another-link',
+            original_name: 'dontcare',
+            type: 'type3',
+            group_name: 'yet-another-link-type3',
+          )
+        end
+
+        let(:links_provided) do
+          [
+            {
+              'name' => 'db_link',
+              'type' => 'conn',
+              'properties' => [],
+            },
+            {
+              'name' => 'backup_db',
+              'type' => 'other',
+              'properties' => [],
+            },
+          ]
         end
 
         let(:link_provider_intents) { [provider_intent, another_provider_intent, yet_another_provider_intent] }
@@ -227,21 +255,7 @@ module Bosh::Director::Core::Templates
         it 'appends a rendered template with deterministic link dns data' do
           rendered_files = job_template_renderer.render(raw_spec).templates
 
-          expect(dns_encoder).to have_received(:id_for_group_tuple).with(
-            'link',
-            provider_intent.group_name,
-            nil,
-          )
-          expect(dns_encoder).to have_received(:id_for_group_tuple).with(
-            'link',
-            another_provider_intent.group_name,
-            nil,
-          )
-          expect(dns_encoder).to have_received(:id_for_group_tuple).with(
-            'link',
-            yet_another_provider_intent.group_name,
-            nil,
-          )
+          expect(dns_encoder).to have_received(:id_for_group_tuple).twice
 
           rendered_links_file = rendered_files.pop
           expect(rendered_links_file.src_name).to(eq('.bosh/links.json'))
@@ -249,11 +263,6 @@ module Bosh::Director::Core::Templates
 
           expect(JSON.parse(rendered_links_file.contents)).to eq(
             [
-              {
-                'name' => yet_another_provider_intent.canonical_name,
-                'type' => yet_another_provider_intent.type,
-                'group' => '-1',
-              },
               {
                 'name' => another_provider_intent.canonical_name,
                 'type' => another_provider_intent.type,

@@ -43,11 +43,7 @@ module Bosh::Director::Links
     end
 
     # Used by provider, not using alias because want to update existing provider intent when alias changes
-    def find_or_create_provider_intent(
-      link_provider:,
-      link_original_name:,
-      link_type:
-    )
+    def find_or_create_provider_intent(link_provider:, link_original_name:, link_type:)
       intent = Bosh::Director::Models::Links::LinkProviderIntent.find(
         link_provider: link_provider,
         original_name: link_original_name,
