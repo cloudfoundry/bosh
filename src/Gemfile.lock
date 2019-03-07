@@ -817,6 +817,8 @@ GEM
     escape_utils (1.2.1)
     eventmachine (1.2.5)
     excon (0.49.0)
+    factory_bot (5.0.2)
+      activesupport (>= 4.2.0)
     fakefs (0.11.1)
     ffi (1.9.25)
     fog-core (1.40.1)
@@ -984,6 +986,7 @@ DEPENDENCIES
   bosh_cpi
   bundler (~> 1.17.0)
   eventmachine (~> 1.2)
+  factory_bot
   fakefs
   httpclient
   json (= 2.1.0)

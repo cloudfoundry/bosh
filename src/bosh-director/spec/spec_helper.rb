@@ -42,6 +42,7 @@ module SpecHelper
       init_database
 
       require 'blueprints'
+      require 'factories'
     end
 
     # init_logger is only used before the tests start.
