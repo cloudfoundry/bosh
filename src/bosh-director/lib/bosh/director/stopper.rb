@@ -11,6 +11,9 @@ module Bosh::Director
     def stop
       return if @instance_model.compilation || @instance_model.active_vm.nil? || @instance_plan.unresponsive_agent?
 
+      @logger.info("Running pre-stop for #{@instance_model}")
+      agent_client.run_script('pre-stop', {})
+
       if @instance_plan.skip_drain
         @logger.info("Skipping drain for '#{@instance_model}'")
       else

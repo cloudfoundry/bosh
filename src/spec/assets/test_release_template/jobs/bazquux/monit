@@ -1,0 +1,5 @@
+check process bazquux
+  with pidfile /var/vcap/sys/run/bazquux.pid
+  start program "/var/vcap/jobs/bazquux/bin/bazquux_ctl start"
+  stop program "/var/vcap/jobs/bazquux/bin/bazquux_ctl stop"
+  group vcap

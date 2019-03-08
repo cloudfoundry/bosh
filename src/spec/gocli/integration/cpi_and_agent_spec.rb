@@ -64,6 +64,7 @@ describe 'CPI and Agent:', type: :integration do
 
   def stop_jobs_sequence(agent_id)
     [
+      { target: 'agent', method: 'run_script', agent_id: agent_id, argument_matcher: match(['pre-stop', {}]) },
       { target: 'agent', method: 'drain', agent_id: agent_id },
       { target: 'agent', method: 'stop', agent_id: agent_id },
       { target: 'agent', method: 'run_script', agent_id: agent_id, argument_matcher: match(['post-stop', {}]) },

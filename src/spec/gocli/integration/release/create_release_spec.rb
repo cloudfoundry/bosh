@@ -29,6 +29,7 @@ describe 'create-release', type: :integration do
       actual = list_tar_files(release_file.path)
       expected = [
         'LICENSE',
+        'jobs/bazquux.tgz',
         'jobs/emoji-errand.tgz',
         'jobs/errand1.tgz',
         'jobs/errand_without_package.tgz',
@@ -163,6 +164,7 @@ describe 'create-release', type: :integration do
                                                     job_desc('errand_without_package'),
                                                     job_desc('fails_with_too_much_output'),
                                                     job_desc('foobar'),
+                                                    job_desc('bazquux'),
                                                     job_desc('foobar_with_bad_properties'),
                                                     job_desc('foobar_with_bad_properties_2'),
                                                     job_desc('foobar_without_packages'),
@@ -224,6 +226,7 @@ describe 'create-release', type: :integration do
         'jobs/errand_without_package.tgz',
         'jobs/fails_with_too_much_output.tgz',
         'jobs/foobar.tgz',
+        'jobs/bazquux.tgz',
         'jobs/foobar_with_bad_properties.tgz',
         'jobs/foobar_with_bad_properties_2.tgz',
         'jobs/job_with_many_packages.tgz',

@@ -1,0 +1,12 @@
+---
+name: bazquux
+templates:
+  bazquux_ctl: bin/bazquux_ctl
+  pre_stop.erb: bin/pre-stop
+
+packages: []
+
+properties:
+  test_property:
+    description: A test property
+    default: false
