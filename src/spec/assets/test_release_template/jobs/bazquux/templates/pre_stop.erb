@@ -1,8 +1,8 @@
-#!/bin/sh
+#!/bin/bash
 
-echo message on stdout of job 2 pre-stop script
+echo "Running pre-stop"
 
-if [ "true" == "<%= p('test_property') %>" ] ; then
+if <%= p('fail_on_pre_stop') %> ; then
   echo "Failed because of bad parameter on pre-stop"
   exit 1
 fi

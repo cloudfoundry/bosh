@@ -19,13 +19,13 @@ describe 'pre-stop', type: :integration do
       manifest_hash['instance_groups'].first['name'] = 'bazquux'
 
       deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
-
-      bosh_runner.run('stop bazquux/0', deployment_name: 'simple')
     end
 
     it 'runs the pre-stop script on a job if pre-stop script is present' do
+      bosh_runner.run('stop bazquux/0', deployment_name: 'simple')
+
       pre_stop_log = File.read(File.join(log_path, 'bazquux/pre-stop.stdout.log'))
-      expect(pre_stop_log).to eq("message on stdout of job 2 pre-stop script\n")
+      expect(pre_stop_log).to include('Running pre-stop')
     end
   end
 
@@ -41,7 +41,7 @@ describe 'pre-stop', type: :integration do
       manifest_hash['instance_groups'].first['instances'] = 1
       manifest_hash['instance_groups'].first['name'] = 'bazquux'
 
-      manifest_hash['instance_groups'].first['jobs'].first['properties']['test_property'] = true
+      manifest_hash['instance_groups'].first['jobs'].first['properties']['fail_on_pre_stop'] = true
 
       deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
     end

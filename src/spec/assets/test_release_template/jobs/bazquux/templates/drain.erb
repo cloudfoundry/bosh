@@ -14,7 +14,7 @@ case $DRAIN_TYPE in
   static)
     (
       echo "$@"
-      echo <%= p('test_property') %>
+      echo <%= p('fail_on_pre_stop') %>
     ) > $DRAIN_OUTPUT
 
     echo 0

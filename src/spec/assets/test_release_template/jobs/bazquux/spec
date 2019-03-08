@@ -7,6 +7,6 @@ templates:
 packages: []
 
 properties:
-  test_property:
-    description: A test property
+  fail_on_pre_stop:
+    description: If set, the job will fail on pre-stop
     default: false

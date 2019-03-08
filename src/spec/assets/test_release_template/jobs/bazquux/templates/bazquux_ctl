@@ -5,7 +5,7 @@ PIDFILE=/var/vcap/sys/run/bazquux.pid
 case $1 in
 
   start)
-    echo "test_property=<%= p('test_property') %>"
+    echo "fail_on_pre_stop=<%= p('fail_on_pre_stop') %>"
     echo "az=<%= spec.az %>"
     echo "job_name=<%= spec.job.name %>"
     echo "index=<%= spec.index %>"
