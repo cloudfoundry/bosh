@@ -144,6 +144,7 @@ module Bosh::Director
                 'dns_aliases' => [{
                   'domain' => 'my-link-provider.domain',
                   'health_filter' => 'all',
+                  'initial_health_check' => 'synchronous',
                 }],
               }.to_json,
             )
@@ -152,7 +153,7 @@ module Bosh::Director
           it 'adds the aliases to the record output' do
             expected_records = {
               'aliases' => {
-                'my-link-provider.domain' => ['q-s4.q-g11.fake-domain-name'],
+                'my-link-provider.domain' => ['q-y1s4.q-g11.fake-domain-name'],
               },
             }
             expect(blobstore).to receive(:create) do |actual_records_json|

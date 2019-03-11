@@ -100,6 +100,22 @@ describe 'Aliasing links to DNS addresses', type: :integration do
       )
     end
 
+    context 'when configuring "initial_health_check"' do
+      let(:provider_aliases) do
+        [
+          { 'domain' => 'my-service.my-domain', 'initial_health_check' => 'synchronous' },
+        ]
+      end
+
+      it 'encodes the link provider alias in an aliases.json file' do
+        expect(aliases).to eq(
+          'my-service.my-domain' => [
+            "q-s0y1.q-g#{first_provider_group_id}.bosh",
+          ],
+        )
+      end
+    end
+
     context 'when there are multiple aliases' do
       let(:provider_aliases) do
         [

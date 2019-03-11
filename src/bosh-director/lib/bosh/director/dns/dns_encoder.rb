@@ -113,6 +113,12 @@ module Bosh::Director
         end
       end
 
+      initial_health_check = criteria[:initial_health_check]
+      case initial_health_check
+      when 'synchronous' then queries << 'y1'
+      when 'asynchronous' then queries << 'y0'
+      end
+
       healthiness = {
         'healthy' => 3,
         'unhealthy' => 1,

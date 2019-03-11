@@ -101,6 +101,28 @@ module Bosh::Director
         end
       end
 
+      describe 'initial_health_check' do
+        context 'when synchronous' do
+          let(:specific_query) do
+            { initial_health_check: 'synchronous' }
+          end
+
+          it 'includes the initial health check in the query' do
+            expect(subject.encode_query(criteria)).to eq('q-s0y1.potato-group.potato-net.fake-deployment.sub.bosh')
+          end
+        end
+
+        context 'when asynchronous' do
+          let(:specific_query) do
+            { initial_health_check: 'asynchronous' }
+          end
+
+          it 'includes the initial health check in the query' do
+            expect(subject.encode_query(criteria)).to eq('q-s0y0.potato-group.potato-net.fake-deployment.sub.bosh')
+          end
+        end
+      end
+
       describe 'status' do
         context 'when default' do
           let(:specific_query) do

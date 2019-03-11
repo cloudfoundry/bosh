@@ -65,6 +65,7 @@ module Bosh::Director
             group_name: provider_intent.group_name,
             root_domain: @domain_name,
             status: dns_alias['health_filter'],
+            initial_health_check: dns_alias['initial_health_check'],
           }, true)
           dns_records.add_alias(dns_alias['domain'], target)
         end
