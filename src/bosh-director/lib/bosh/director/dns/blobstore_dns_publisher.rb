@@ -64,6 +64,7 @@ module Bosh::Director
             group_type: Models::LocalDnsEncodedGroup::Types::LINK,
             group_name: provider_intent.group_name,
             root_domain: @domain_name,
+            status: dns_alias['health_filter'],
           }, true)
           dns_records.add_alias(dns_alias['domain'], target)
         end

@@ -33,7 +33,7 @@ describe 'Aliasing links to DNS addresses', type: :integration do
   end
 
   let(:provider_aliases) do
-    [{ 'domain' => 'my-service.my-domain' }]
+    [{ 'domain' => 'my-service.my-domain', 'health_filter' => 'smart' }]
   end
 
   let(:first_provider_instance_group) do
@@ -130,10 +130,6 @@ describe 'Aliasing links to DNS addresses', type: :integration do
       JSON.parse(second_provider_instance.read_job_template('database', '.bosh/links.json'))[0]['group']
     end
 
-    let(:second_provider_aliases) do
-      second_provider_instance.dns_records['aliases']
-    end
-
     let(:provider_instance_groups) do
       [first_provider_instance_group, second_provider_instance_group]
     end
@@ -159,7 +155,7 @@ describe 'Aliasing links to DNS addresses', type: :integration do
 
     context 'when multiple providers alias different domains' do
       let(:second_provider_aliases) do
-        [{ 'domain' => 'texas.my-domain' }]
+        [{ 'domain' => 'texas.my-domain', 'health_filter' => 'all' }]
       end
 
       it 'provides both aliases' do
@@ -168,7 +164,7 @@ describe 'Aliasing links to DNS addresses', type: :integration do
             "q-s0.q-g#{first_provider_group_id}.bosh",
           ],
           'texas.my-domain' => [
-            "q-s0.q-g#{second_provider_group_id}.bosh",
+            "q-s4.q-g#{second_provider_group_id}.bosh",
           ],
         )
       end
@@ -176,14 +172,14 @@ describe 'Aliasing links to DNS addresses', type: :integration do
 
     context 'when multiple providers alias the same domain' do
       let(:second_provider_aliases) do
-        [{ 'domain' => 'my-service.my-domain' }]
+        [{ 'domain' => 'my-service.my-domain', 'health_filter' => 'healthy' }]
       end
 
       it 'merges both targets into the same alias' do
         expect(aliases).to eq(
           'my-service.my-domain' => [
             "q-s0.q-g#{first_provider_group_id}.bosh",
-            "q-s0.q-g#{second_provider_group_id}.bosh",
+            "q-s3.q-g#{second_provider_group_id}.bosh",
           ],
         )
       end
