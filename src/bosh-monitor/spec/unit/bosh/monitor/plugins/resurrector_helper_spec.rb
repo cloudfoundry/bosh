@@ -18,7 +18,7 @@ module Bosh::Monitor::Plugins::ResurrectorHelper
         allow(Bhm).to receive_messages(instance_manager: instance_manager)
 
         alerts.times do |i|
-          alert = double(Bosh::Monitor::Events::Alert, created_at: Time.now, severity: :critical, category: Bosh::Monitor::Events::Alert::CATEGORY_VM_HEALTH)
+          alert = double(Bosh::Monitor::Events::Alert, created_at: Time.now, severity: :critical)
           tracker.record(build_key(i), alert)
         end
       end
@@ -80,9 +80,9 @@ module Bosh::Monitor::Plugins::ResurrectorHelper
 
         it 'excludes those alerts' do
           now = Time.now
-          tracker.record(build_key(0), double(Bosh::Monitor::Events::Alert, created_at: (now - 610), severity: :critical, category: Bosh::Monitor::Events::Alert::CATEGORY_VM_HEALTH))
-          tracker.record(build_key(1), double(Bosh::Monitor::Events::Alert, created_at: (now - 600), severity: :critical, category: Bosh::Monitor::Events::Alert::CATEGORY_VM_HEALTH))
-          tracker.record(build_key(2), double(Bosh::Monitor::Events::Alert, created_at: (now - 60), severity: :critical, category: Bosh::Monitor::Events::Alert::CATEGORY_VM_HEALTH))
+          tracker.record(build_key(0), double(Bosh::Monitor::Events::Alert, created_at: (now - 610), severity: :critical))
+          tracker.record(build_key(1), double(Bosh::Monitor::Events::Alert, created_at: (now - 600), severity: :critical))
+          tracker.record(build_key(2), double(Bosh::Monitor::Events::Alert, created_at: (now - 60), severity: :critical))
 
           state = tracker.state_for(deployment)
           expect(state).to be_meltdown

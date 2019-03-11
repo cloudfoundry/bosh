@@ -21,11 +21,18 @@ module Bosh::Monitor::Plugins
     let(:status_uri) { "#{uri}/info" }
 
     before do
-      stub_request(:get, status_uri).
-        to_return(status: 200, body: JSON.dump({'user_authentication' => user_authentication}))
+      stub_request(:get, status_uri)
+        .to_return(status: 200, body: JSON.dump('user_authentication' => user_authentication))
     end
 
-    let(:alert) { Bhm::Events::Base.create!(:alert, alert_payload(deployment: 'd', job: 'j', instance_id: 'i', severity: 1)) }
+    let(:alert) do
+      Bhm::Events::Base.create!(:alert, alert_payload(
+                                          category: Bosh::Monitor::Events::Alert::CATEGORY_DEPLOYMENT_HEALTH,
+                                          deployment: 'd',
+                                          jobs_to_instance_ids: { 'j1' => %w[i1 i2], 'j2' => %w[i3 i4] },
+                                          severity: 1,
+                                        ))
+    end
 
     let(:user_authentication) do
       {}
@@ -45,9 +52,9 @@ module Bosh::Monitor::Plugins
         end
       end
 
-      context 'alerts with deployment, job and id' do
+      context 'alert of CATEGORY_DEPLOYMENT_HEALTH' do
         let(:event_processor) { Bhm::EventProcessor.new }
-        let(:state) { double(Bhm::Plugins::ResurrectorHelper::DeploymentState, :managed? => true, :meltdown? => false, :summary => 'summary') }
+        let(:state) { double(Bhm::Plugins::ResurrectorHelper::DeploymentState, managed?: true, meltdown?: false, summary: 'summary') }
 
         before do
           Bhm.event_processor = event_processor
@@ -55,16 +62,16 @@ module Bosh::Monitor::Plugins
           expect(Bhm::Plugins::ResurrectorHelper::AlertTracker).to receive(:new).and_return(@don)
         end
 
-        it 'should be delivered' do
+        it 'gets delivered' do
           plugin.run
 
           request_url = "#{uri}/deployments/d/scan_and_fix"
           request_data = {
-              head: {
-                  'Content-Type' => 'application/json',
-                  'authorization' => %w[user password]
-              },
-              body: '{"jobs":{"j":["i"]}}'
+            head: {
+              'Content-Type' => 'application/json',
+              'authorization' => %w[user password],
+            },
+            body: '{"jobs":{"j1":["i1","i2"],"j2":["i3","i4"]}}',
           }
           expect(plugin).to receive(:send_http_put_request).with(request_url, request_data)
 
@@ -77,7 +84,7 @@ module Bosh::Monitor::Plugins
               'type' => 'uaa',
               'options' => {
                 'url' => 'uaa-url',
-              }
+              },
             }
           end
 
@@ -85,13 +92,13 @@ module Bosh::Monitor::Plugins
             token_issuer = instance_double(CF::UAA::TokenIssuer)
 
             allow(File).to receive(:exist?).with('ca-cert').and_return(true)
-            allow(File).to receive(:read).with('ca-cert').and_return("test")
+            allow(File).to receive(:read).with('ca-cert').and_return('test')
 
             allow(CF::UAA::TokenIssuer).to receive(:new).with(
-              'uaa-url', 'client-id', 'client-secret', {ssl_ca_file: 'ca-cert'}
+              'uaa-url', 'client-id', 'client-secret', ssl_ca_file: 'ca-cert'
             ).and_return(token_issuer)
-            allow(token_issuer).to receive(:client_credentials_grant).
-              and_return(token)
+            allow(token_issuer).to receive(:client_credentials_grant)
+              .and_return(token)
           end
           let(:token) { uaa_token_info('fake-token-id') }
 
@@ -102,9 +109,9 @@ module Bosh::Monitor::Plugins
             request_data = {
               head: {
                 'Content-Type' => 'application/json',
-                'authorization' => token.auth_header
+                'authorization' => token.auth_header,
               },
-              body: '{"jobs":{"j":["i"]}}'
+              body: '{"jobs":{"j1":["i1","i2"],"j2":["i3","i4"]}}',
             }
             expect(plugin).to receive(:send_http_put_request).with(request_url, request_data)
 
@@ -113,7 +120,7 @@ module Bosh::Monitor::Plugins
         end
 
         context 'while melting down' do
-          let(:state) { double(Bhm::Plugins::ResurrectorHelper::DeploymentState, :managed? => false, :meltdown? => true, :summary => 'summary') }
+          let(:state) { double(Bhm::Plugins::ResurrectorHelper::DeploymentState, managed?: false, meltdown?: true, summary: 'summary') }
 
           it 'does not send requests to scan and fix' do
             plugin.run
@@ -125,12 +132,12 @@ module Bosh::Monitor::Plugins
             expected_time = Time.new
             allow(Time).to receive(:now).and_return(expected_time)
             alert_option = {
-                :severity => 1,
-                :title => "We are in meltdown",
-                :summary => "Skipping resurrection for instance: 'j/i'; summary",
-                :source => "HM plugin resurrector",
-                :deployment => "d",
-                :created_at => expected_time.to_i
+              severity: 1,
+              title: 'We are in meltdown',
+              summary: 'Skipping resurrection for instances: j1/i1, j1/i2, j2/i3, j2/i4; summary',
+              source: 'HM plugin resurrector',
+              deployment: 'd',
+              created_at: expected_time.to_i,
             }
             expect(event_processor).to receive(:process).with(:alert, alert_option)
             plugin.run
@@ -138,7 +145,7 @@ module Bosh::Monitor::Plugins
           end
         end
 
-        context 'when resurrection is disabled' do
+        context 'when resurrection is disabled for all instance_groups' do
           let(:resurrection_manager) { double(Bosh::Monitor::ResurrectionManager, resurrection_enabled?: false) }
           before { allow(Bhm).to receive(:resurrection_manager).and_return(resurrection_manager) }
 
@@ -154,7 +161,7 @@ module Bosh::Monitor::Plugins
             alert_option = {
               severity: 1,
               title: 'Resurrection is disabled by resurrection config',
-              summary: "Skipping resurrection for instance: 'j/i'; summary because of resurrection config",
+              summary: 'Skipping resurrection for instances: j1/i1, j1/i2, j2/i3, j2/i4; summary because of resurrection config',
               source: 'HM plugin resurrector',
               deployment: 'd',
               created_at: expected_time.to_i,
@@ -164,12 +171,78 @@ module Bosh::Monitor::Plugins
             plugin.process(alert)
           end
         end
+
+        context 'when resurrection is disabled for some instance_groups' do
+          let(:resurrection_manager) { double(Bosh::Monitor::ResurrectionManager) }
+
+          before do
+            allow(resurrection_manager).to receive(:resurrection_enabled?).with('d', 'j1').and_return(false)
+            allow(resurrection_manager).to receive(:resurrection_enabled?).with('d', 'j2').and_return(true)
+            allow(Bhm).to receive(:resurrection_manager).and_return(resurrection_manager)
+          end
+
+          it 'sends request to scan and fix for only enabled instance_groups' do
+            plugin.run
+
+            request_url = "#{uri}/deployments/d/scan_and_fix"
+            request_data = {
+              head: {
+                'Content-Type' => 'application/json',
+                'authorization' => %w[user password],
+              },
+              body: '{"jobs":{"j2":["i3","i4"]}}',
+            }
+            expect(plugin).to receive(:send_http_put_request).with(request_url, request_data)
+
+            plugin.process(alert)
+          end
+
+          it 'sends correct alerts to the EventProcessor' do
+            allow(plugin).to receive(:send_http_put_request)
+            expected_time = Time.new
+            allow(Time).to receive(:now).and_return(expected_time)
+            alert_recreate = {
+              severity: 4,
+              title: 'Recreating unresponsive VMs',
+              summary: 'Notifying Director to recreate instances: j2/i3, j2/i4; summary',
+              source: 'HM plugin resurrector',
+              deployment: 'd',
+              created_at: expected_time.to_i,
+            }
+            alert_skip = {
+              severity: 1,
+              title: 'Resurrection is disabled by resurrection config',
+              summary: 'Skipping resurrection for instances: j1/i1, j1/i2; summary because of resurrection config',
+              source: 'HM plugin resurrector',
+              deployment: 'd',
+              created_at: expected_time.to_i,
+            }
+
+            expect(event_processor).to receive(:process).with(:alert, alert_recreate)
+            expect(event_processor).to receive(:process).with(:alert, alert_skip)
+
+            plugin.run
+            plugin.process(alert)
+          end
+        end
+
+        context 'without deployment or jobs_to_instance_ids' do
+          let(:alert) { Bhm::Events::Base.create!(:alert, alert_payload) }
+
+          it 'does not send request to scan and fix' do
+            plugin.run
+
+            expect(plugin).not_to receive(:send_http_put_request)
+
+            plugin.process(alert)
+          end
+        end
       end
 
-      context 'alerts without deployment, job and id' do
-        let(:alert) { Bhm::Events::Base.create!(:alert, alert_payload) }
+      context 'alert of CATEGORY_VM_HEALTH' do
+        let(:alert) { Bhm::Events::Base.create!(:alert, alert_payload(category: Bosh::Monitor::Events::Alert::CATEGORY_VM_HEALTH)) }
 
-        it 'should not be delivered' do
+        it 'does not send request to scan and fix' do
           plugin.run
 
           expect(plugin).not_to receive(:send_http_put_request)
@@ -193,9 +266,9 @@ module Bosh::Monitor::Plugins
 
         context 'when director starts responding' do
           before do
-            state = double(Bhm::Plugins::ResurrectorHelper::DeploymentState, :managed? => true, :meltdown? => false, :summary => 'summary')
+            state = double(Bhm::Plugins::ResurrectorHelper::DeploymentState, managed?: true, meltdown?: false, summary: 'summary')
             expect(Bhm::Plugins::ResurrectorHelper::DeploymentState).to receive(:new).and_return(state)
-            stub_request(:get, status_uri).to_return({status: 500}, {status: 200, body: '{}'})
+            stub_request(:get, status_uri).to_return({ status: 500 }, { status: 200, body: '{}' })
           end
 
           it 'starts sending alerts' do

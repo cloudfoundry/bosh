@@ -1,7 +1,8 @@
 module Bosh::Monitor
   module Events
     class Alert < Base
-      CATEGORY_VM_HEALTH = "vm_health"
+      CATEGORY_VM_HEALTH = 'vm_health'.freeze
+      CATEGORY_DEPLOYMENT_HEALTH = 'deployment_health'.freeze
 
       # Considering Bosh::Agent::Alert
       SEVERITY_MAP = {
