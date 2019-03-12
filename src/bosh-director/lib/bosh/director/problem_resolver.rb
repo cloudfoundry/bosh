@@ -79,8 +79,6 @@ module Bosh::Director
       log_resolution_error(problem, e)
     end
 
-    private
-
     def log_resolution_error(problem, error)
       error_message = "Error resolving problem '#{problem.id}': #{error}"
       logger.error(error_message)
