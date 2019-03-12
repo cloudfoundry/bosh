@@ -46,7 +46,7 @@ describe 'vip networks', type: :integration do
       expect(original_instances.size).to eq(1)
       expect(original_instances.first.ips).to eq(['192.168.1.2', '69.69.69.69'])
 
-      deploy_simple_manifest(manifest_hash: updated_simple_manifest)
+      deploy_simple_manifest(manifest_hash: updated_simple_manifest, recreate: true)
 
       new_instances = director.instances
       expect(new_instances.size).to eq(2)
@@ -95,7 +95,7 @@ describe 'vip networks', type: :integration do
 
       cloud_config_hash['networks'][1]['subnets'] = [{ 'static' => ['68.68.68.68', '69.69.69.69'] }]
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
-      deploy_simple_manifest(manifest_hash: updated_simple_manifest)
+      deploy_simple_manifest(manifest_hash: updated_simple_manifest, recreate: true)
 
       new_instances = director.instances
       expect(new_instances.size).to eq(2)

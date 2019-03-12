@@ -4,7 +4,7 @@ module Bosh::Director
       extend ValidationHelper
       extend IpUtil
 
-      attr_reader :static_ips, :availability_zones
+      attr_reader :static_ips, :availability_zone_names
 
       def self.parse(subnet_spec, network_name, azs)
         static_ips = Set.new
@@ -14,14 +14,18 @@ module Bosh::Director
           static_ips.add(ip)
         end
 
-        availability_zones = parse_availability_zones(subnet_spec, network_name, azs)
+        availability_zone_names = parse_availability_zones(subnet_spec, network_name, azs)
 
-        new(static_ips, availability_zones)
+        new(static_ips, availability_zone_names)
       end
 
-      def initialize(static_ips, availability_zones)
+      def initialize(static_ips, availability_zone_names)
         @static_ips = static_ips
-        @availability_zones = availability_zones
+        @availability_zones_names = availability_zone_names
+      end
+
+      def is_reservable?(ip)
+        @static_ips.include?(ip)
       end
     end
   end

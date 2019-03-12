@@ -41,7 +41,7 @@ describe Bosh::Director::DeploymentPlan::VipNetworkSubnet do
 
     it 'checks the availability zones for their validity' do
       vip_subnet = BD::DeploymentPlan::VipNetworkSubnet.parse(subnet_spec, network_name, azs)
-      expect(vip_subnet.availability_zones).to eq(%w[z1 z2])
+      expect(vip_subnet.availability_zones_names).to eq(%w[z1 z2])
     end
   end
 end
