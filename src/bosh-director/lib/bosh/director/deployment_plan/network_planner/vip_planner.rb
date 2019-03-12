@@ -18,22 +18,22 @@ module Bosh::Director::DeploymentPlan
           end
 
           if vip_network.deployment_network.globally_allocate_ip?
-            create_dynamic_network_plans(instance_plans, vip_network)
+            create_global_networks_plans(instance_plans, vip_network)
           else
-            create_static_network_plans(instance_plans, vip_network, static_ips)
+            create_instance_defined_network_plans(instance_plans, vip_network, static_ips)
           end
         end
       end
 
       private
 
-      def create_dynamic_network_plans(instance_plans, vip_network)
+      def create_global_networks_plans(instance_plans, vip_network)
         instance_plans.each do |instance_plan|
           instance_plan.network_plans << @network_planner.network_plan_with_dynamic_reservation(instance_plan, vip_network)
         end
       end
 
-      def create_static_network_plans(instance_plans, vip_network, static_ips)
+      def create_instance_defined_network_plans(instance_plans, vip_network, static_ips)
         unplaced_instance_plans = []
 
         instance_plans.each do |plan|
