@@ -48,6 +48,10 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
+    def allocate_vip_ip(*)
+      raise NotImplementedError, 'Globally allocated VIP networks are not supported in v1 manifests'
+    end
+
     def contains_ip?(ip, network_name)
       @ips.include?({ip: ip.to_i, network_name: network_name})
     end

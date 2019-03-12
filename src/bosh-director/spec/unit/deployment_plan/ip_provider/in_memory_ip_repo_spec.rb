@@ -188,5 +188,13 @@ module Bosh::Director::DeploymentPlan
         expect(ip_repo.allocate_dynamic_ip(reservation, subnet)).to be_nil
       end
     end
+
+    context :allocate_vip_ip do
+      it 'raises an error' do
+        expect do
+          ip_repo.allocate_vip_ip(reservation, subnet)
+        end.to raise_error
+      end
+    end
   end
 end
