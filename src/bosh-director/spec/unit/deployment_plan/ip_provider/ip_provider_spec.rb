@@ -647,7 +647,74 @@ module Bosh::Director::DeploymentPlan
     describe 'with a database-backed repo' do
       let(:ip_repo) { DatabaseIpRepo.new(logger) }
       let(:ip_provider) { IpProvider.new(ip_repo, networks, logger) }
+
       it_should_behave_like 'an ip provider with any repo'
+
+      describe :reserve do
+        context 'when globally allocating vips' do
+          let(:vip_network_spec) do
+            {
+              'name' => 'my-vip-network',
+              'type' => 'vip',
+              'subnets' => [
+                {
+                  'static' => ['1.1.1.1', '2.2.2.2'],
+                },
+                {
+                  'static' => ['3.3.3.3', '4.4.4.4'],
+                },
+              ],
+            }
+          end
+
+          context 'when the reservation already exists' do
+            let(:reservation) do
+              BD::ExistingNetworkReservation.new(
+                instance_model,
+                vip_network,
+                '1.1.1.1',
+                'vip',
+              )
+            end
+
+            it 'adds the ip address to the ip repository and marks the reservation as resrved' do
+              ip_provider.reserve(reservation)
+              expect(reservation.ip).to eq(NetAddr::CIDR.create('1.1.1.1').to_i)
+              expect(reservation).to be_reserved
+            end
+          end
+
+          context 'when a new reservation is needed' do
+            let(:reservation) { BD::DesiredNetworkReservation.new_dynamic(instance_model, vip_network) }
+
+            it 'allocates an ip address for the reservation and marks the reservation as resrved' do
+              ip_provider.reserve(reservation)
+              expect(reservation.ip).to eq(NetAddr::CIDR.create('1.1.1.1').to_i)
+              expect(reservation).to be_reserved
+            end
+
+            context 'and there are no available vips' do
+              let(:vip_network_spec) do
+                {
+                  'name' => 'my-vip-network',
+                  'type' => 'vip',
+                  'subnets' => [
+                    {
+                      'static' => [],
+                    },
+                  ],
+                }
+              end
+
+              it 'raises an error' do
+                expect do
+                  ip_provider.reserve(reservation)
+                end.to raise_error
+              end
+            end
+          end
+        end
+      end
 
       describe :reserve_existing_ips do
         context 'when ExistingNetworkReservation' do

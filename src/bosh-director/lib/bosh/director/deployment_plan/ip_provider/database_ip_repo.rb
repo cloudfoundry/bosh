@@ -55,6 +55,24 @@ module Bosh::Director::DeploymentPlan
       ip_address.to_i
     end
 
+    def allocate_vip_ip(reservation, subnet)
+      begin
+        ip_address = try_to_allocate_vip_ip(reservation, subnet)
+      rescue NoMoreIPsAvailableAndStopRetrying
+        @logger.debug('Failed to allocate vip ip: no more available')
+        return nil
+      rescue IpFoundInDatabaseAndCanBeRetried
+        @logger.debug('Retrying to allocate vip ip: probably a race condition with another deployment')
+
+        # IP can be taken by other deployment that runs in parallel
+        # retry until succeeds or out of range
+        retry
+      end
+
+      @logger.debug("Allocated vip IP '#{ip_address.ip}' for #{reservation.network.name}")
+      ip_address.to_i
+    end
+
     private
 
     def try_to_allocate_dynamic_ip(reservation, subnet)
@@ -82,6 +100,20 @@ module Bosh::Director::DeploymentPlan
       unless subnet.range == ip_address || subnet.range.contains?(ip_address)
         raise NoMoreIPsAvailableAndStopRetrying
       end
+
+      save_ip(ip_address, reservation, false)
+
+      ip_address
+    end
+
+    def try_to_allocate_vip_ip(reservation, subnet)
+      addresses_in_use = Set.new(all_ip_addresses)
+
+      available_ips = subnet.static_ips - addresses_in_use
+
+      raise NoMoreIPsAvailableAndStopRetrying unless available_ips.size.positive?
+
+      ip_address = NetAddr::CIDRv4.new(available_ips.first)
 
       save_ip(ip_address, reservation, false)
 

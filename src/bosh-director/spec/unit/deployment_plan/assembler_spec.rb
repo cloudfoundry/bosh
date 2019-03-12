@@ -459,15 +459,23 @@ module Bosh::Director
             end
           end
           let(:network) { instance_double(DeploymentPlan::Network, name: 'network') }
+
           let(:create_swap_delete_instance_plan) do
-            DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: anything, instance: create_swap_delete_instance, variables_interpolator: variables_interpolator)
+            DeploymentPlan::InstancePlan.new(
+              existing_instance: instance_model,
+              desired_instance: anything,
+              instance: create_swap_delete_instance,
+              variables_interpolator: variables_interpolator,
+            )
           end
+
           let(:not_create_swap_delete_instance_plan) do
             DeploymentPlan::InstancePlan.new(existing_instance: instance_model, desired_instance: anything, instance: not_create_swap_delete_instance, variables_interpolator: variables_interpolator)
           end
 
           before do
             create_swap_delete_instance_plan.network_plans << existing_network_plan1
+
             not_create_swap_delete_instance_plan.network_plans << existing_network_plan2
 
             allow(DeploymentPlan::InstancePlanner).to receive(:new).and_return(instance_planner)

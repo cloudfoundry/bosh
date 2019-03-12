@@ -9,8 +9,8 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
     {
       'name' => 'foo',
       'subnets' => [
-        { 'static_ips' => ['69.69.69.69'] },
-        { 'static_ips' => ['70.70.70.70', '80.80.80.80'] },
+        { 'static' => ['69.69.69.69'] },
+        { 'static' => ['70.70.70.70', '80.80.80.80'] },
       ],
     }
   end
@@ -67,6 +67,62 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
       expect do
         @network.network_settings(reservation, nil)
       end.not_to raise_error
+    end
+  end
+
+  describe :ip_type do
+    context 'when the network has subnets defined' do
+      it 'returns dynamic' do
+        network = BD::DeploymentPlan::VipNetwork.parse(network_spec, azs, logger)
+        expect(network.ip_type(nil)).to eq(:dynamic)
+      end
+    end
+
+    context 'when the network does not have subnets defined' do
+      let(:network_spec) { { 'name' => 'foo' } }
+
+      it 'returns static' do
+        network = BD::DeploymentPlan::VipNetwork.parse(network_spec, azs, logger)
+        expect(network.ip_type(nil)).to eq(:static)
+      end
+    end
+  end
+
+  describe :supports_azs? do
+    context 'when subnets are defined on the network spec' do
+      it 'returns true' do
+        network = BD::DeploymentPlan::VipNetwork.parse(network_spec, azs, logger)
+        expect(network.supports_azs?).to eq(true)
+      end
+    end
+
+    context 'when subnets are not defined on the network spec' do
+      let(:network_spec) { { 'name' => 'foo' } }
+
+      it 'returns false' do
+        network = BD::DeploymentPlan::VipNetwork.parse(network_spec, azs, logger)
+        expect(network.supports_azs?).to eq(false)
+      end
+    end
+  end
+
+  describe :find_az_names_for_ip do
+    let(:network_spec) do
+      {
+        'name' => 'foo',
+        'subnets' => [
+          {
+            'static' => ['69.69.69.69'],
+            'azs' => ['z1'],
+          },
+        ],
+      }
+    end
+
+    it 'returns the availability zones associated with the given ip' do
+      network = BD::DeploymentPlan::VipNetwork.parse(network_spec, azs, logger)
+      az = network.find_az_names_for_ip(NetAddr::CIDR.create('69.69.69.69.').to_i)
+      expect(az).to include('z1')
     end
   end
 end

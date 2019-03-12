@@ -3,6 +3,7 @@ require 'spec_helper'
 module Bosh::Director::DeploymentPlan
   describe NetworkPlanner::ReservationReconciler do
     include Bosh::Director::IpUtil
+
     describe :reconcile do
       let(:network_planner) { NetworkPlanner::ReservationReconciler.new(instance_plan, logger) }
       let(:instance_model) { Bosh::Director::Models::Instance.make(availability_zone: initial_az) }
@@ -75,9 +76,11 @@ module Bosh::Director::DeploymentPlan
 
       context 'when the instance is a create-swap-delete instance' do
         let(:should_create_swap_delete?) { true }
+
         let(:desired_reservations) do
           [BD::DesiredNetworkReservation.new_dynamic(instance_model, network)]
         end
+
         let(:existing_reservations) do
           [
             BD::ExistingNetworkReservation.new(instance_model, network, '192.168.1.2', 'manual'),

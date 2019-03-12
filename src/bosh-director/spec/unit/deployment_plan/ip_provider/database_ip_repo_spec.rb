@@ -399,6 +399,109 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
+    describe :allocate_vip_ip do
+      let(:reservation) { BD::DesiredNetworkReservation.new_dynamic(instance_model, network) }
+
+      let(:network) do
+        VipNetwork.parse(
+          network_spec,
+          availability_zones,
+          logger,
+        )
+      end
+
+      let(:network_spec) do
+        {
+          'name' => 'my-vip-network',
+          'subnets' => [
+            {
+              'static' => ['69.69.69.69'],
+              'azs' => ['z1'],
+            },
+          ],
+        }
+      end
+
+      let(:availability_zones) { [BD::DeploymentPlan::AvailabilityZone.new('z1', {})] }
+
+      it 'reserves the next available vip and saves it in the database' do
+        expect do
+          ip = ip_repo.allocate_vip_ip(reservation, network.subnets.first)
+          expect(ip).to eq(cidr_ip('69.69.69.69'))
+        end.to change { BD::Models::IpAddress.count }.by(1)
+
+        ip_address = instance_model.ip_addresses.first
+        expect(ip_address.address_str.to_i).to eq(cidr_ip('69.69.69.69'))
+      end
+
+      context 'when there are no vips defined in the network' do
+        let(:network_spec) do
+          {
+            'name' => 'my-vip-network',
+            'subnets' => [
+              {
+                'static' => [],
+                'azs' => ['z1'],
+              },
+            ],
+          }
+        end
+
+        it 'should stop retrying and return nil' do
+          expect do
+            ip = ip_repo.allocate_vip_ip(reservation, network.subnets.first)
+            expect(ip).to be_nil
+          end.not_to(change { BD::Models::IpAddress.count })
+
+          expect(instance_model.ip_addresses.size).to eq(0)
+        end
+      end
+
+      context 'when there are no available vips' do
+        let(:existing_reservation) { BD::DesiredNetworkReservation.new_dynamic(instance_model, network) }
+
+        before do
+          ip_repo.allocate_vip_ip(existing_reservation, network.subnets.first)
+        end
+
+        it 'should stop retrying and return nil' do
+          expect do
+            ip = ip_repo.allocate_vip_ip(reservation, network.subnets.first)
+            expect(ip).to be_nil
+          end.not_to(change { BD::Models::IpAddress.count })
+        end
+      end
+
+      context 'when saving the IP address to the database fails' do
+        before do
+          response_values = [:raise]
+          allow_any_instance_of(Bosh::Director::Models::IpAddress).to receive(:save) do
+            v = response_values.shift
+            v == :raise ? raise(fail_error) : v
+          end
+        end
+
+        context 'for a retryable error' do
+          let(:fail_error) { Sequel::ValidationFailed.new('address and network are not unique') }
+
+          it 'retries to allocate the vip' do
+            ip = ip_repo.allocate_vip_ip(reservation, network.subnets.first)
+            expect(ip).to eq(cidr_ip('69.69.69.69'))
+          end
+        end
+
+        context 'for any other error' do
+          let(:fail_error) { Sequel::DatabaseError.new }
+
+          it 'raises the error' do
+            expect do
+              ip_repo.allocate_vip_ip(reservation, network.subnets.first)
+            end.to raise_error
+          end
+        end
+      end
+    end
+
     describe :delete do
       before do
         network_spec['subnets'].first['static'] = ['192.168.1.5']

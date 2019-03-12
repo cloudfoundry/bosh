@@ -1,6 +1,6 @@
 module Bosh::Director
   module DeploymentPlan
-    class VipNetwork < Network
+    class VipNetwork < NetworkWithSubnets
       extend ValidationHelper
       include IpUtil
 
@@ -16,7 +16,6 @@ module Bosh::Director
         end
 
         cloud_properties = safe_property(network_spec, 'cloud_properties', class: Hash, default: {})
-
         new(name, cloud_properties, subnets, logger)
       end
 
@@ -52,12 +51,27 @@ module Bosh::Director
         }
       end
 
-      def ip_type(_)
+      def ip_type(*)
+        return :dynamic if globally_allocate_ip?
+
         :static
       end
 
-      def has_azs?(_az_names)
+      def globally_allocate_ip?
+        @subnets.size.positive?
+      end
+
+      def supports_azs?
+        globally_allocate_ip?
+      end
+
+      def has_azs?(*)
         true
+      end
+
+      def find_az_names_for_ip(ip)
+        subnet = @subnets.find { |sn| sn.static_ips.include?(ip) }
+        return subnet.availability_zones if subnet
       end
     end
   end

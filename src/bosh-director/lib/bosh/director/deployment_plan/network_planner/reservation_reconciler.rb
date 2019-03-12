@@ -13,6 +13,7 @@ module Bosh::Director::DeploymentPlan
         reconciled_reservations = []
 
         existing_reservations.each do |existing_reservation|
+          # can't reuse a reservation if it switches az
           unless az_is_desired(existing_reservation)
             @logger.debug(
               "Can't reuse reservation #{existing_reservation}, existing reservation az does not match " \
