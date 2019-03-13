@@ -23,13 +23,24 @@ dns_sync_broadcaster.prep
 
 %w(TERM INT QUIT).each do |signal|
   trap(signal) do
-    dns_sync_broadcaster.stop!
-    EM.stop
+    stop(signal)
   end
+end
+
+def stop(reason)
+  Bosh::Director::Config.logger.error("Shutting down bosh-director-sync-dns: #{reason}")
+  dns_sync_broadcaster.stop!
+  EM.stop
 end
 
 EventMachine.run do
   EM.defer do
-    Thread.new { dns_sync_broadcaster.start! }
+    Thread.new do
+      begin
+        dns_sync_broadcaster.start!
+      ensure
+        stop 'Thread terminated'
+      end
+    end
   end
 end
