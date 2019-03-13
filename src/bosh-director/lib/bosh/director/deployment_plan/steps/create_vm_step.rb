@@ -13,6 +13,7 @@ module Bosh::Director
           @logger = Config.logger
           @vm_deleter = VmDeleter.new(@logger, false, Config.enable_virtual_delete_vms)
           @variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new
+          @metadata_updater = MetadataUpdater.build
         end
 
         def perform(report)
@@ -23,6 +24,8 @@ module Bosh::Director
           instance_model = instance.model
           @logger.info('Creating VM')
 
+          metadata = @metadata_updater.generate_vm_metadata(instance_model, @tags)
+
           vm = create(
             instance,
             stemcell_model.cid,
@@ -30,13 +33,21 @@ module Bosh::Director
             @instance_plan.network_settings_hash,
             @disks,
             instance.env,
+            metadata,
             cpi_factory,
             stemcell_model.api_version
           )
 
           begin
             report.vm = vm
-            update_metadata(@instance_plan, vm, cpi_factory)
+
+            @metadata_updater.update_vm_metadata(
+              vm,
+              metadata,
+              cpi_factory,
+            )
+
+            wait_until_ready(vm)
           rescue Exception => e
             @logger.error("Failed to create/contact VM #{instance_model.vm_cid}: #{e.inspect}")
             if Config.keep_unreachable_vms
@@ -50,14 +61,14 @@ module Bosh::Director
 
         private
 
-        def update_metadata(instance_plan, vm, factory)
-          instance_model = instance_plan.instance.model
-          MetadataUpdater.build.update_vm_metadata(instance_model, vm, @tags, factory)
+        def wait_until_ready(vm)
+          instance_model = @instance_plan.instance.model
+
           agent_client = AgentClient.with_agent_id(vm.agent_id, instance_model.name)
           agent_client.wait_until_ready
 
           if Config.flush_arp
-            ip_addresses = instance_plan.network_settings_hash.map do |index, network|
+            ip_addresses = @instance_plan.network_settings_hash.map do |index, network|
               network['ip']
             end.compact
 
@@ -80,7 +91,7 @@ module Bosh::Director
           [factory, stemcell_model]
         end
 
-        def create(instance, stemcell_cid, cloud_properties, network_settings, disks, env, cloud_factory, stemcell_api_version)
+        def create(instance, stemcell_cid, cloud_properties, network_settings, disks, env, metadata, cloud_factory, stemcell_api_version)
           instance_model = instance.model
           deployment_name = instance_model.deployment.name
           parent_id = add_event(deployment_name, instance_model.name, 'create')
@@ -131,7 +142,7 @@ module Bosh::Director
           count = 0
           begin
             cloud = cloud_factory.get(vm_options[:cpi], stemcell_api_version)
-            create_vm_obj = cloud.create_vm(agent_id, stemcell_cid, cloud_properties, network_settings, disks, env)
+            create_vm_obj = cloud.create_vm(agent_id, stemcell_cid, cloud_properties, network_settings, disks, env, metadata)
             vm_cid = create_vm_obj[0]
           rescue Bosh::Clouds::VMCreationFailed => e
             count += 1

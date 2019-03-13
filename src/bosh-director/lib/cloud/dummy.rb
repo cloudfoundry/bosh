@@ -75,10 +75,10 @@ module Bosh
       end
 
       # rubocop:disable ParameterLists
-      def create_vm(agent_id, stemcell_id, cloud_properties, networks, disk_cids, env)
+      def create_vm(agent_id, stemcell_id, cloud_properties, networks, disk_cids, env, metadata)
         # rubocop:enable ParameterLists
         @logger.debug('Dummy: create_vm')
-        validate_and_record_inputs(CREATE_VM_SCHEMA, __method__, agent_id, stemcell_id, cloud_properties, networks, disk_cids, env)
+        validate_and_record_inputs(CREATE_VM_SCHEMA, __method__, agent_id, stemcell_id, cloud_properties, networks, disk_cids, env, metadata)
 
         ips = []
         cmd = commands.next_create_vm_cmd

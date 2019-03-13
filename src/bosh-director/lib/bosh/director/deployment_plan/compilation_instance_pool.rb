@@ -51,7 +51,7 @@ module Bosh::Director
 
       def with_reused_vm(stemcell, package)
         instance_memo = obtain_instance_memo(stemcell)
-        @instance_provider.update_instance_compilation_metadata(instance_memo.instance, package)
+        @instance_provider.update_instance_compilation_metadata(instance_memo.instance.model, package)
         yield instance_memo.instance
         release_instance(instance_memo)
       rescue StandardError => e
@@ -69,7 +69,7 @@ module Bosh::Director
       def with_single_use_vm(stemcell, package)
         keep_failing_vm = false
         instance_memo = InstanceMemo.new(@instance_provider, stemcell)
-        @instance_provider.update_instance_compilation_metadata(instance_memo.instance, package)
+        @instance_provider.update_instance_compilation_metadata(instance_memo.instance.model, package)
         yield instance_memo.instance
       rescue StandardError => e
         @logger.info('Keeping single-use compilation VM for debugging')
@@ -221,9 +221,8 @@ module Bosh::Director
 
       def update_instance_compilation_metadata(instance, package)
         @metadata_updater.update_vm_metadata(
-          instance.model,
-          instance.model.active_vm,
-          @tags.merge(compiling: package.name),
+          instance.active_vm,
+          @metadata_updater.generate_vm_metadata(instance, @tags.merge(compiling: package.name)),
         )
       end
 

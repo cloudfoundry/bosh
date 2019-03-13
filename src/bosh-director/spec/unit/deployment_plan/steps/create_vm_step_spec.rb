@@ -228,7 +228,13 @@ module Bosh
               expect(non_default_cloud_factory).to receive(:get).with('cpi1').and_return(cloud_wrapper)
               expect(non_default_cloud_factory).to receive(:get).with('cpi1', nil).and_return(cloud_wrapper)
               expect(cloud_wrapper).to receive(:create_vm).with(
-                kind_of(String), 'old-stemcell-id', kind_of(Hash), network_settings, kind_of(Array), kind_of(Hash)
+                kind_of(String),
+                'old-stemcell-id',
+                kind_of(Hash),
+                network_settings,
+                kind_of(Array),
+                kind_of(Hash),
+                kind_of(Hash),
               ).and_return(create_vm_response)
 
               subject.perform(report)
@@ -246,7 +252,13 @@ module Bosh
 
                 expect(AZCloudFactory).to receive(:create_from_deployment).and_return(non_default_cloud_factory)
                 expect(cloud_wrapper).to receive(:create_vm).with(
-                  kind_of(String), 'stemcell-id', kind_of(Hash), network_settings, kind_of(Array), kind_of(Hash)
+                  kind_of(String),
+                  'stemcell-id',
+                  kind_of(Hash),
+                  network_settings,
+                  kind_of(Array),
+                  kind_of(Hash),
+                  kind_of(Hash),
                 ).and_return(create_vm_response)
 
                 subject.perform(report)
@@ -260,10 +272,13 @@ module Bosh
               'stemcell-id', { 'ram' => '2gb' },
               network_settings,
               disks,
-              'bosh' => {
-                'group' => expected_group,
-                'groups' => expected_groups,
-              }
+              {
+                'bosh' => {
+                  'group' => expected_group,
+                  'groups' => expected_groups,
+                },
+              },
+              kind_of(Hash),
             ).and_return(create_vm_response)
 
             expect(agent_client).to receive(:wait_until_ready)
@@ -278,10 +293,13 @@ module Bosh
               'stemcell-id', { 'ram' => '2gb' },
               network_settings,
               disks,
-              'bosh' => {
-                'group' => expected_group,
-                'groups' => expected_groups,
-              }
+              {
+                'bosh' => {
+                  'group' => expected_group,
+                  'groups' => expected_groups,
+                },
+              },
+              kind_of(Hash),
             ).and_return(create_vm_response)
 
             expect do
@@ -334,10 +352,13 @@ module Bosh
               { 'ram' => '2gb' },
               network_settings.merge(extra_ip),
               disks,
-              'bosh' => {
-                'group' => expected_group,
-                'groups' => expected_groups,
+              {
+                'bosh' => {
+                  'group' => expected_group,
+                  'groups' => expected_groups,
+                },
               },
+              kind_of(Hash),
             ).and_return(create_vm_response)
 
             allow(instance_plan).to receive(:network_settings_hash).and_return(
@@ -357,10 +378,13 @@ module Bosh
               { 'ram' => '2gb' },
               network_settings.merge(extra_ip),
               disks,
-              'bosh' => {
-                'group' => expected_group,
-                'groups' => expected_groups,
+              {
+                'bosh' => {
+                  'group' => expected_group,
+                  'groups' => expected_groups,
+                },
               },
+              kind_of(Hash),
             ).and_return(create_vm_response)
 
             allow(instance_plan).to receive(:network_settings_hash).and_return(
@@ -372,32 +396,37 @@ module Bosh
           end
 
           it 'sets vm metadata' do
-            expect(cloud_wrapper).to receive(:create_vm).with(
-              kind_of(String),
-              'stemcell-id',
-              kind_of(Hash),
-              network_settings,
-              disks,
-              'bosh' => {
-                'group' => expected_group,
-                'groups' => expected_groups,
-              },
-            ).and_return(create_vm_response)
-
             Timecop.freeze do
+              expected_metadata = {
+                'deployment' => 'deployment_name',
+                'created_at' => Time.new.getutc.strftime('%Y-%m-%dT%H:%M:%SZ'),
+                'job' => 'fake-job',
+                'instance_group' => 'fake-job',
+                'index' => '5',
+                'director' => 'fake-director-name',
+                'id' => instance_model.uuid,
+                'name' => "fake-job/#{instance_model.uuid}",
+                'mytag' => 'foobar',
+              }
+
+              expect(cloud_wrapper).to receive(:create_vm).with(
+                kind_of(String),
+                'stemcell-id',
+                kind_of(Hash),
+                network_settings,
+                disks,
+                {
+                  'bosh' => {
+                    'group' => expected_group,
+                    'groups' => expected_groups,
+                  },
+                },
+                expected_metadata,
+              ).and_return(create_vm_response)
+
               expect(cloud_wrapper).to receive(:set_vm_metadata) do |vm_cid, metadata|
                 expect(vm_cid).to eq('new-vm-cid')
-                expect(metadata).to match(
-                  'deployment' => 'deployment_name',
-                  'created_at' => Time.new.getutc.strftime('%Y-%m-%dT%H:%M:%SZ'),
-                  'job' => 'fake-job',
-                  'instance_group' => 'fake-job',
-                  'index' => '5',
-                  'director' => 'fake-director-name',
-                  'id' => instance_model.uuid,
-                  'name' => "fake-job/#{instance_model.uuid}",
-                  'mytag' => 'foobar',
-                )
+                expect(metadata).to match(expected_metadata)
               end
 
               subject.perform(report)
@@ -474,10 +503,13 @@ module Bosh
                 expect(cloud_wrapper).to receive(:create_vm).with(
                   kind_of(String), 'stemcell-id',
                   kind_of(Hash), network_settings, disks,
-                  'bosh' => {
-                    'group' => kind_of(String),
-                    'groups' => kind_of(Array),
-                  }
+                  {
+                    'bosh' => {
+                      'group' => kind_of(String),
+                      'groups' => kind_of(Array),
+                    },
+                  },
+                  kind_of(Hash),
                 ).and_return(create_vm_response)
                 subject.perform(report)
               end
@@ -508,19 +540,25 @@ module Bosh
                   allow(Config).to receive(:nats_server_ca).and_return('nats begin\nnats content\nnats end\n')
 
                   expect(cloud_wrapper).to receive(:create_vm).with(
-                    kind_of(String), 'stemcell-id',
-                    kind_of(Hash), network_settings, disks,
-                    'bosh' => {
-                      'mbus' => {
-                        'cert' => {
-                          'ca' => 'nats begin\nnats content\nnats end\n',
-                          'certificate' => 'certificate begin\ncertificate content\ncertificate end\n',
-                          'private_key' => 'pkey begin\npkey content\npkey end\n',
+                    kind_of(String),
+                    'stemcell-id',
+                    kind_of(Hash),
+                    network_settings,
+                    disks,
+                    {
+                      'bosh' => {
+                        'mbus' => {
+                          'cert' => {
+                            'ca' => 'nats begin\nnats content\nnats end\n',
+                            'certificate' => 'certificate begin\ncertificate content\ncertificate end\n',
+                            'private_key' => 'pkey begin\npkey content\npkey end\n',
+                          },
                         },
+                        'group' => kind_of(String),
+                        'groups' => kind_of(Array),
                       },
-                      'group' => kind_of(String),
-                      'groups' => kind_of(Array),
-                    }
+                    },
+                    kind_of(Hash),
                   ).and_return(create_vm_response)
                   subject.perform(report)
                 end
@@ -533,12 +571,18 @@ module Bosh
                 Config.nats_uri = nil
 
                 expect(cloud_wrapper).to receive(:create_vm).with(
-                  kind_of(String), 'stemcell-id',
-                  kind_of(Hash), network_settings, disks,
-                  'bosh' => {
-                    'group' => kind_of(String),
-                    'groups' => kind_of(Array),
-                  }
+                  kind_of(String),
+                  'stemcell-id',
+                  kind_of(Hash),
+                  network_settings,
+                  disks,
+                  {
+                    'bosh' => {
+                      'group' => kind_of(String),
+                      'groups' => kind_of(Array),
+                    },
+                  },
+                  kind_of(Hash),
                 ).and_return(create_vm_response)
                 subject.perform(report)
               end
@@ -552,7 +596,7 @@ module Bosh
 
             context 'no password is specified' do
               it 'should generate a random VM password' do
-                expect(cloud_wrapper).to receive(:create_vm) do |_, _, _, _, _, env|
+                expect(cloud_wrapper).to receive(:create_vm) do |_, _, _, _, _, env, _|
                   expect(env['bosh']['password'].length).to_not eq(0)
                 end.and_return(create_vm_response)
 
@@ -567,7 +611,7 @@ module Bosh
                 )
               end
               it 'should generate a random VM password' do
-                expect(cloud_wrapper).to receive(:create_vm) do |_, _, _, _, _, env|
+                expect(cloud_wrapper).to receive(:create_vm) do |_, _, _, _, _, env, _|
                   expect(env['bosh']['password']).to eq('custom-password')
                 end.and_return(create_vm_response)
 
@@ -583,7 +627,7 @@ module Bosh
 
             context 'no password is specified' do
               it 'should generate a random VM password' do
-                expect(cloud_wrapper).to receive(:create_vm) do |_, _, _, _, _, env|
+                expect(cloud_wrapper).to receive(:create_vm) do |_, _, _, _, _, env, _|
                   expect(env['bosh']).to eq('group' => expected_group, 'groups' => expected_groups)
                 end.and_return(create_vm_response)
 
@@ -599,7 +643,7 @@ module Bosh
               end
 
               it 'should generate a random VM password' do
-                expect(cloud_wrapper).to receive(:create_vm) do |_, _, _, _, _, env|
+                expect(cloud_wrapper).to receive(:create_vm) do |_, _, _, _, _, env, _|
                   expect(env['bosh']['password']).to eq('custom-password')
                 end.and_return(create_vm_response)
 
@@ -762,7 +806,7 @@ module Bosh
               expect(variables_interpolator).to receive(:interpolate_with_versioning).with(cloud_properties, desired_variable_set).and_return(resolved_cloud_properties)
               expect(variables_interpolator).to receive(:interpolate_with_versioning).with(unresolved_networks_settings, desired_variable_set).and_return(resolved_networks_settings)
 
-              expect(cloud_wrapper).to receive(:create_vm) do |_, _, cloud_properties_param, network_settings_param, _, env_param|
+              expect(cloud_wrapper).to receive(:create_vm) do |_, _, cloud_properties_param, network_settings_param, _, env_param, _|
                 expect(cloud_properties_param).to eq(resolved_cloud_properties)
                 expect(network_settings_param).to eq(resolved_networks_settings)
                 expect(env_param).to eq(expected_env)
@@ -789,10 +833,13 @@ module Bosh
                 { 'ram' => '2gb' },
                 network_settings,
                 disks,
-                'bosh' => {
-                  'group' => expected_group,
-                  'groups' => expected_groups,
+                {
+                  'bosh' => {
+                    'group' => expected_group,
+                    'groups' => expected_groups,
+                  },
                 },
+                kind_of(Hash),
               ).and_return(create_vm_response)
 
               expect(agent_client).to receive(:wait_until_ready)
@@ -808,10 +855,13 @@ module Bosh
                 { 'ram' => '2gb' },
                 network_settings,
                 disks,
-                'bosh' => {
-                  'group' => expected_group,
-                  'groups' => expected_groups,
+                {
+                  'bosh' => {
+                    'group' => expected_group,
+                    'groups' => expected_groups,
+                  },
                 },
+                kind_of(Hash),
               ).and_return(create_vm_response)
 
               expect(agent_client).to receive(:wait_until_ready)

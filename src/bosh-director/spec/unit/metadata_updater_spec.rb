@@ -40,13 +40,53 @@ describe Bosh::Director::MetadataUpdater do
     end
   end
 
+  describe '#generate_vm_metadata' do
+    it 'includes director metadata' do
+      director_metadata.merge!('fake-director-key1' => 'fake-director-value1')
+
+      metadata = metadata_updater.generate_vm_metadata(instance)
+      expect(metadata['fake-director-key1']).to eq('fake-director-value1')
+    end
+
+    it 'includes creation time' do
+      Timecop.freeze do
+        metadata = metadata_updater.generate_vm_metadata(instance)
+        expect(metadata['created_at']).to eq(Time.new.getutc.strftime('%Y-%m-%dT%H:%M:%SZ'))
+      end
+    end
+
+    it 'includes deployment-specific metadata' do
+      metadata = metadata_updater.generate_vm_metadata(instance)
+      expect(metadata['deployment']).to eq('deployment-value')
+    end
+
+    it 'includes instance specific metadata' do
+      metadata = metadata_updater.generate_vm_metadata(instance)
+      expect(metadata['id']).to eq('some_instance_id')
+      expect(metadata['job']).to eq('job-value')
+      expect(metadata['index']).to eq('12345')
+      expect(metadata['name']).to eq('job-value/some_instance_id')
+      expect(metadata['instance_group']).to eq('job-value')
+    end
+
+    it 'turns job index metadata into a string' do
+      metadata = metadata_updater.generate_vm_metadata(instance)
+      expect(metadata['index']).to eq('12345')
+    end
+
+    it 'includes extra metadata when passed' do
+      metadata = metadata_updater.generate_vm_metadata(instance, 'compiling' => 'fake-value')
+      expect(metadata['compiling']).to eq('fake-value')
+    end
+  end
+
   describe '#update_vm_metadata' do
     let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
 
     context 'with existing cloud factory' do
       it 'uses passed in factory' do
         expect(cloud_factory).to receive(:get).with('cpi1').and_return(cloud)
-        metadata_updater.update_vm_metadata(instance, vm, {}, cloud_factory)
+        metadata_updater.update_vm_metadata(vm, {}, cloud_factory)
       end
     end
 
@@ -59,53 +99,15 @@ describe Bosh::Director::MetadataUpdater do
       context 'when CPI supports setting vm metadata' do
         it 'updates vm metadata with provided metadata' do
           expected_vm_metadata = {'fake-custom-key1' => 'fake-custom-value1'}
-          expect(cloud).to receive(:set_vm_metadata).with('fake-vm-cid', hash_including(expected_vm_metadata))
-          metadata_updater.update_vm_metadata(instance, vm, expected_vm_metadata)
-        end
-
-        it 'updates vm metadata with director metadata' do
-          expected_vm_metadata = {'fake-director-key1' => 'fake-director-value1'}
-          director_metadata.merge!(expected_vm_metadata)
-          expect(cloud).to receive(:set_vm_metadata).with('fake-vm-cid', hash_including(expected_vm_metadata))
-          metadata_updater.update_vm_metadata(instance, vm, {})
-        end
-
-        it 'updates vm metadata with creation time' do
-          Timecop.freeze do
-            expected_vm_metadata = {'created_at' => Time.new.getutc.strftime('%Y-%m-%dT%H:%M:%SZ')}
-            expect(cloud).to receive(:set_vm_metadata).with('fake-vm-cid', hash_including(expected_vm_metadata))
-            metadata_updater.update_vm_metadata(instance, vm, {})
-          end
-        end
-
-        it 'updates vm metadata with deployment specific metadata' do
-          expect(cloud).to receive(:set_vm_metadata)
-                             .with('fake-vm-cid', hash_including('deployment' => 'deployment-value'))
-          metadata_updater.update_vm_metadata(instance, vm, {})
-        end
-
-        it 'updates vm metadata with instance specific metadata' do
-          expected_vm_metadata = {
-            'id' => 'some_instance_id',
-            'job' => 'job-value',
-            'index' => '12345',
-            'name' => 'job-value/some_instance_id',
-            'instance_group' => 'job-value',
-          }
-          expect(cloud).to receive(:set_vm_metadata).with('fake-vm-cid', hash_including(expected_vm_metadata))
-          metadata_updater.update_vm_metadata(instance, vm, {})
-        end
-
-        it 'turns job index metadata into a string' do
-          expect(cloud).to receive(:set_vm_metadata).with('fake-vm-cid', hash_including('index' => '12345'))
-          metadata_updater.update_vm_metadata(instance, vm, {})
+          expect(cloud).to receive(:set_vm_metadata).with('fake-vm-cid', expected_vm_metadata)
+          metadata_updater.update_vm_metadata(vm, expected_vm_metadata)
         end
       end
 
       context 'when CPI does not support setting vm metadata' do
         it 'does not mutate passed metadata' do
           passed_in_metadata = {}
-          metadata_updater.update_vm_metadata(instance, vm, passed_in_metadata)
+          metadata_updater.update_vm_metadata(vm, passed_in_metadata)
           expect(passed_in_metadata).to eq({})
         end
       end
@@ -115,7 +117,7 @@ describe Bosh::Director::MetadataUpdater do
 
         it 'does not set vm metadata' do
           expect(cloud).not_to receive(:set_vm_metadata)
-          metadata_updater.update_vm_metadata(instance, vm, {})
+          metadata_updater.update_vm_metadata(vm, {})
         end
       end
 
@@ -123,7 +125,7 @@ describe Bosh::Director::MetadataUpdater do
         before { allow(cloud).to receive(:set_vm_metadata).and_raise(Bosh::Clouds::NotImplemented) }
 
         it 'does not propagate raised error' do
-          expect { metadata_updater.update_vm_metadata(instance, vm, {}) }.to_not raise_error
+          expect { metadata_updater.update_vm_metadata(vm, {}) }.to_not raise_error
         end
       end
     end

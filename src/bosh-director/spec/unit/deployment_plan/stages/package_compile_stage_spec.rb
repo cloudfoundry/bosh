@@ -320,9 +320,9 @@ module Bosh::Director
         metadata_updater = instance_double('Bosh::Director::MetadataUpdater', update_vm_metadata: nil)
 
         allow(Bosh::Director::MetadataUpdater).to receive_messages(build: metadata_updater)
-        expect(metadata_updater).to receive(:update_vm_metadata).with(anything, anything, compiling: 'common')
-        expect(metadata_updater).to receive(:update_vm_metadata)
-          .with(anything, anything, hash_including(:compiling)).exactly(10).times
+        expect(metadata_updater).to receive(:generate_vm_metadata).with(anything, compiling: 'common')
+        expect(metadata_updater).to receive(:generate_vm_metadata)
+          .with(anything, hash_including(:compiling)).exactly(10).times
 
         expect(vm_creator).to receive(:create_for_instance_plan).exactly(11).times
 
@@ -485,9 +485,12 @@ module Bosh::Director
       before do
         prepare_samples
 
-        metadata_updater = instance_double('Bosh::Director::MetadataUpdater', update_vm_metadata: nil)
+        metadata_updater = Bosh::Director::MetadataUpdater.build
         allow(Bosh::Director::MetadataUpdater).to receive_messages(build: metadata_updater)
-        expect(metadata_updater).to receive(:update_vm_metadata).with(anything, anything, hash_including(:compiling))
+        expect(metadata_updater).to receive(:update_vm_metadata)
+          .with(anything, hash_including(:compiling))
+          .exactly(3).times
+          .and_return nil
 
         initial_state = {
           'deployment' => 'mycloud',
@@ -594,7 +597,20 @@ module Bosh::Director
         agent = instance_double('Bosh::Director::AgentClient')
 
         expect(cloud).to receive(:create_vm).once.ordered.
-          with(instance_of(String), stemcell.models.first.cid, {}, net, [], {'bosh' => {'group' => 'fake-director-name-mycloud-compilation-deadbeef', 'groups' => expected_groups}}).
+          with(
+            instance_of(String),
+            stemcell.models.first.cid,
+            {},
+            net,
+            [],
+            {
+              'bosh' => {
+                'group' => 'fake-director-name-mycloud-compilation-deadbeef',
+                'groups' => expected_groups,
+              },
+            },
+            kind_of(Hash),
+          ).
           and_return(vm_cid)
 
         allow(AgentClient).to receive(:with_agent_id).and_return(agent)
@@ -691,7 +707,20 @@ module Bosh::Director
         agent = instance_double('Bosh::Director::AgentClient')
 
         expect(cloud).to receive(:create_vm).
-          with(instance_of(String), @stemcell_a.models.first.cid, {}, net, [], {'bosh' => {'group' => 'fake-director-name-mycloud-compilation-deadbeef', 'groups' => expected_groups}}).
+          with(
+            instance_of(String),
+            @stemcell_a.models.first.cid,
+            {},
+            net,
+            [],
+            {
+              'bosh' => {
+                'group' => 'fake-director-name-mycloud-compilation-deadbeef',
+                'groups' => expected_groups,
+              },
+            },
+            kind_of(Hash),
+          ).
           and_return(vm_cid)
 
         allow(AgentClient).to receive(:with_agent_id).and_return(agent)

@@ -144,8 +144,20 @@ module Bosh::Director
             { 'foo' => 'bar' },
             anything,
             [],
-            'key1' => 'value1',
-            'bosh' => { 'group' => String, 'groups' => anything },
+            {
+              'key1' => 'value1',
+              'bosh' => { 'group' => String, 'groups' => anything },
+            },
+            include({
+              'director' => 'fake-director-name',
+              'deployment' => 'simple',
+              'id' => '1234-5678',
+              'job' => 'foobar',
+              'instance_group' => 'foobar',
+              'index' => '0',
+              'name' => 'foobar/1234-5678',
+              'created_at' => kind_of(String),
+            }),
           )
           .and_return('new-vm-cid')
 

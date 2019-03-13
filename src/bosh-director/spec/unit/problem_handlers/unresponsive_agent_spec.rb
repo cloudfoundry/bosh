@@ -202,9 +202,23 @@ module Bosh::Director
           # to allow set_vm_metadata on the fake cloud before the wrapper changes, why do we need to now?
           expect(cloud).to receive(:set_vm_metadata)
           expect(cloud).to receive(:delete_vm).with('vm-cid')
-          expect(cloud)
-            .to receive(:create_vm).with('agent-222', 'sc-302', { 'foo' => 'bar' }, networks, [], 'key1' => 'value1', 'bosh' => { 'group' => String, 'groups' => anything })
-                                   .and_return('new-vm-cid')
+          expect(cloud).to receive(:create_vm)
+            .with(
+              'agent-222',
+              'sc-302',
+              { 'foo' => 'bar' },
+              networks,
+              [],
+              {
+                'key1' => 'value1',
+                'bosh' => {
+                  'group' => String,
+                  'groups' => anything,
+                },
+              },
+              kind_of(Hash),
+            )
+            .and_return('new-vm-cid')
 
           expect(fake_new_agent).to receive(:wait_until_ready).ordered
           expect(fake_new_agent).to receive(:update_settings).ordered

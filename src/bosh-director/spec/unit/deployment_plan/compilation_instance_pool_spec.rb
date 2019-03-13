@@ -167,6 +167,7 @@ module Bosh::Director
       allow(deployment_model).to receive(:current_variable_set).and_return(Models::VariableSet.make)
       allow(MetadataUpdater).to receive(:new).and_return(metadata_updater)
       allow(metadata_updater).to receive(:update_vm_metadata)
+      allow(metadata_updater).to receive(:generate_vm_metadata).and_return('fake-key' => 'fake-value')
     end
 
     shared_examples_for 'a compilation vm pool' do
@@ -187,6 +188,7 @@ module Bosh::Director
           expected_network_settings,
           [],
           compilation_env,
+          kind_of(Hash),
         )
         action
       end
@@ -211,7 +213,7 @@ module Bosh::Director
       end
 
       it 'passes tags to vm' do
-        expect(metadata_updater).to receive(:update_vm_metadata).with(anything, anything, tags.merge(compiling: package.name))
+        expect(metadata_updater).to receive(:generate_vm_metadata).with(anything, tags.merge(compiling: package.name))
         action
       end
 
@@ -326,21 +328,21 @@ module Bosh::Director
       context 'after a vm is created' do
         it 'is reused' do
           original = nil
-          expect(metadata_updater).to receive(:update_vm_metadata).with(
-            anything,
+          expect(metadata_updater).to receive(:generate_vm_metadata).with(
             anything,
             tags.merge(compiling: package.name),
-          )
+          ).and_return('fake' => 'fake-first')
+          expect(metadata_updater).to receive(:update_vm_metadata).with(anything, 'fake' => 'fake-first')
           compilation_instance_pool.with_reused_vm(stemcell, package) do |instance|
             original = instance
           end
 
           reused = nil
-          expect(metadata_updater).to receive(:update_vm_metadata).with(
-            anything,
+          expect(metadata_updater).to receive(:generate_vm_metadata).with(
             anything,
             tags.merge(compiling: package2.name),
-          )
+          ).and_return('fake' => 'fake-second')
+          expect(metadata_updater).to receive(:update_vm_metadata).with(anything, 'fake' => 'fake-second')
           compilation_instance_pool.with_reused_vm(stemcell, package2) do |instance|
             reused = instance
           end
@@ -450,6 +452,7 @@ module Bosh::Director
             anything,
             anything,
             { 'instance_type' => 'big' },
+            anything,
             anything,
             anything,
             anything,
