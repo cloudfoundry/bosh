@@ -489,6 +489,14 @@ module Bosh::Director
       logger
     end
 
+    def sync_dns_scheduler_logger
+      logger = Logging::Logger.new('SyncDnsScheduler')
+      logging_config = hash.fetch('logging', {})
+      logger.add_appenders(Logging.appenders.stdout('SyncDnsSchedulerIO', layout: ThreadFormatter.layout))
+      logger.level = Logging.levelify(logging_config.fetch('level', 'debug'))
+      logger
+    end
+
     def db
       Config.configure_db(hash['db'])
     end

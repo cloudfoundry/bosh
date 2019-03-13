@@ -12,7 +12,7 @@ end
 
 module Bosh::Director
   describe 'worker' do
-    subject(:worker) { Worker.new(config, 0, 0.01) }
+    subject(:worker) { Worker.new(config, 0) }
     let(:config_hash) do
       SpecHelper.spec_get_director_config
     end
@@ -66,17 +66,9 @@ module Bosh::Director
       end
 
       it 'starts up immediately if migrations are current' do
-        allow(migrator).to receive(:current?).once.and_return(true)
+        allow(migrator).to receive(:finished?).and_return(true)
         allow(djworker).to receive(:start)
-        worker.prep
-        worker.start
-        expect(djworker).to have_received(:start)
-      end
 
-      it 'waits until migrations are current to start' do
-        allow(migrator).to receive(:current?).twice.and_return(false, true)
-
-        allow(djworker).to receive(:start)
         worker.prep
         worker.start
 
@@ -84,14 +76,18 @@ module Bosh::Director
       end
 
       it 'raises error if migrations are never current' do
-        allow(migrator).to receive(:current?).exactly(Worker::MAX_MIGRATION_ATTEMPTS).times.and_return(false)
+        allow(migrator).to receive(:finished?).and_return(false)
 
         logger = double(Logging::Logger)
         allow(config).to receive(:worker_logger).and_return(logger.tap { |l| allow(l).to receive(:error) })
         allow(djworker).to receive(:start)
 
-        expect(logger).to receive(:error).with(/Migrations not current during worker start after #{Worker::MAX_MIGRATION_ATTEMPTS} attempts./)
-        expect { worker.prep }.to raise_error(/Migrations not current after #{Worker::MAX_MIGRATION_ATTEMPTS} retries/)
+        expect(logger).to receive(:error).with(
+          /Migrations not current during worker start after #{DBMigrator::MAX_MIGRATION_ATTEMPTS} attempts./,
+        )
+        expect { worker.prep }.to raise_error(
+          /Migrations not current after #{DBMigrator::MAX_MIGRATION_ATTEMPTS} retries/,
+        )
         expect(djworker).not_to have_received(:start)
       end
     end

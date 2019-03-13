@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require 'bosh/director'
+require 'bosh/director/config'
 require 'bosh/director/sync_dns_scheduler'
 require 'bosh/director/agent_broadcaster'
 require 'bosh/director/dns/dns_version_converger'
@@ -18,24 +18,29 @@ opts.parse!(ARGV.dup)
 config_file ||= ::File.expand_path('../../config/bosh-director.yml', __FILE__)
 config = Bosh::Director::Config.load_file(config_file)
 
-Bosh::Director::App.new(config)
-
-dns_converger = Bosh::Director::DnsVersionConverger.new(
-  Bosh::Director::AgentBroadcaster.new,
-  Bosh::Director::Config.logger,
-  Bosh::Director::Config.max_threads
-)
-dns_sync_broadcaster = Bosh::Director::SyncDnsScheduler.new(dns_converger, 10)
+dns_sync_broadcaster = Bosh::Director::SyncDnsScheduler.new(config, 10)
+dns_sync_broadcaster.prep
 
 %w(TERM INT QUIT).each do |signal|
   trap(signal) do
-    dns_sync_broadcaster.stop!
-    EM.stop
+    stop(signal)
   end
+end
+
+def stop(reason)
+  Bosh::Director::Config.logger.error("Shutting down bosh-director-sync-dns: #{reason}")
+  dns_sync_broadcaster.stop!
+  EM.stop
 end
 
 EventMachine.run do
   EM.defer do
-    Thread.new { dns_sync_broadcaster.start! }
+    Thread.new do
+      begin
+        dns_sync_broadcaster.start!
+      ensure
+        stop 'Thread terminated'
+      end
+    end
   end
 end
