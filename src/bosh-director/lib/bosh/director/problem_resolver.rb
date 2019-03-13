@@ -34,8 +34,9 @@ module Bosh::Director
 
       # TODO: here we just assume :type recreate VM,
       # make sure that other problem types like re-attach disk still work
-      parallelizable_problems_for_each(problems.all) do |probs|
-        ThreadPool.new(max_threads: Config.max_threads).wrap do |pool|
+      problems_ordered_by_job(problems.all) do |probs, max_in_flight|
+        number_of_threads = [probs.size, max_in_flight].min
+        ThreadPool.new(max_threads: number_of_threads).wrap do |pool|
           probs.each do |problem|
             pool.process do
               if problem.state != 'open'
@@ -59,27 +60,38 @@ module Bosh::Director
 
     private
 
-
-    def parallelizable_problems_for_each(problems)
+    def problems_ordered_by_job(problems, &block)
       partition_jobs_by_serial(deployment_plan.instance_groups).each do |jp|
         if jp.first.update.serial?
           # all instance groups in this partition are serial
           jp.each do |ig|
-            probs = select_problems_by_instance_group(problems, ig)
-            # within an instance_group parallelize recreation of all instances
-            yield probs
+            process_ig(ig, problems, block)
           end
         else
           # all instance groups in this partition are non-serial
           # therefore, parallelize recreation of all instances in this partition
-          probs = []
-          jp.each do |ig|
-            probs_for_ig = select_problems_by_instance_group(problems, ig)
-            probs << probs_for_ig
+          # therefore, create an outer ThreadPool as ParallelMultiInstanceGroupUpdater does it in the regular deploy flow
+
+          # TODO: might not want to create a new thread for instance_groups without problems
+          ThreadPool.new(max_threads: jp.size).wrap do |pool|
+            jp.each do |ig|
+              pool.process do
+                process_ig(ig, problems, block)
+              end
+            end
           end
-          yield probs.flatten
         end
       end
+    end
+
+    def process_ig(ig, problems, block)
+      instance_group = deployment_plan.instance_groups.find do |plan_ig|
+        plan_ig.name == ig.name
+      end
+      probs = select_problems_by_instance_group(problems, ig)
+      max_in_flight = instance_group.update.max_in_flight(probs.size)
+      # within an instance_group parallelize recreation of all instances
+      block.call(probs, max_in_flight)
     end
 
     def select_problems_by_instance_group(problems, instance_group)
