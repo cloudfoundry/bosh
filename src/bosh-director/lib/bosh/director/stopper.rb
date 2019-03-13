@@ -8,11 +8,11 @@ module Bosh::Director
       @logger = logger
     end
 
-    def stop
+    def stop(intent = :keep_vm)
       return if @instance_model.compilation || @instance_model.active_vm.nil? || @instance_plan.unresponsive_agent?
 
       @logger.info("Running pre-stop for #{@instance_model}")
-      agent_client.run_script('pre-stop', {})
+      perform_pre_stop(intent)
 
       if @instance_plan.skip_drain
         @logger.info("Skipping drain for '#{@instance_model}'")
@@ -34,8 +34,30 @@ module Bosh::Director
       @agent_client ||= AgentClient.with_agent_id(@instance_model.agent_id, @instance_model.name)
     end
 
+    def perform_pre_stop(intent)
+      env = {
+        'BOSH_VM_NEXT_STATE' => 'keep',
+        'BOSH_INSTANCE_NEXT_STATE' => 'keep',
+        'BOSH_DEPLOYMENT_NEXT_STATE' => 'keep',
+      }
+
+      case intent
+      when :delete_vm
+        env['BOSH_VM_NEXT_STATE'] = 'delete'
+      when :delete_instance
+        env['BOSH_VM_NEXT_STATE'] = 'delete'
+        env['BOSH_INSTANCE_NEXT_STATE'] = 'delete'
+      when :delete_deployment
+        env['BOSH_VM_NEXT_STATE'] = 'delete'
+        env['BOSH_INSTANCE_NEXT_STATE'] = 'delete'
+        env['BOSH_DEPLOYMENT_NEXT_STATE'] = 'delete'
+      end
+
+      agent_client.run_script('pre-stop', 'env' => env)
+    end
+
     def perform_drain
-      drain_type = needs_drain_to_migrate_data? ? 'shutdown' : 'update'
+      drain_type = needs_shutdown? ? 'shutdown' : 'update'
 
       # Apply spec might change after shutdown drain (unlike update drain)
       # because instance's VM could be reconfigured.
@@ -50,7 +72,7 @@ module Bosh::Director
       end
     end
 
-    def needs_drain_to_migrate_data?
+    def needs_shutdown?
       @target_state == 'stopped' ||
         @target_state == 'detached' ||
         @instance_plan.needs_shutting_down? ||

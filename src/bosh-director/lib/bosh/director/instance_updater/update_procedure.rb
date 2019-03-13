@@ -139,9 +139,12 @@ module Bosh::Director
       end
 
       def stop
-        instance = instance_plan.instance
-        stopper = Stopper.new(instance_plan, instance.state, Config, @logger)
-        stopper.stop
+        stop_intent = deleting_vm? ? :delete_vm : :keep_vm
+        Stopper.new(instance_plan, instance.state, Config, @logger).stop(stop_intent)
+      end
+
+      def deleting_vm?
+        @needs_recreate || instance_plan.needs_shutting_down? || instance.state == 'detached'
       end
 
       def calculate_action

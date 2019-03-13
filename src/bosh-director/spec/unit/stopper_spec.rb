@@ -6,11 +6,16 @@ module Bosh::Director
     subject(:stopper) { described_class.new(instance_plan, target_state, config, logger) }
     let(:vm_model) { Models::Vm.make(cid: 'vm-cid', instance_id: instance_model.id) }
     let(:instance_model) { Models::Instance.make(spec: spec) }
-
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:target_state) { 'fake-target-state' }
     let(:config) { Config }
+    let(:options) { {} }
     let(:skip_drain) { false }
+    let(:deployment_model) { instance_double(Bosh::Director::Models::Deployment, name: 'fake-deployment') }
+    let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
+    let(:current_job_state) { 'running' }
+    let(:desired_instance) { DeploymentPlan::DesiredInstance.new(job) }
+
     let(:job) do
       instance_double(
         DeploymentPlan::InstanceGroup,
@@ -18,6 +23,7 @@ module Bosh::Director
         default_network: {},
       )
     end
+
     let(:instance) do
       instance_double(
         DeploymentPlan::Instance,
@@ -33,13 +39,17 @@ module Bosh::Director
         deployment_model: deployment_model,
       )
     end
-    let(:deployment_model) { instance_double(Bosh::Director::Models::Deployment, name: 'fake-deployment') }
-    let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
-    let(:current_job_state) {'running'}
-    let(:desired_instance) { DeploymentPlan::DesiredInstance.new(job) }
+
     let(:instance_plan) do
-      DeploymentPlan::InstancePlan.new(existing_instance: instance_model, instance: instance, desired_instance: desired_instance, skip_drain: skip_drain, variables_interpolator: variables_interpolator)
+      DeploymentPlan::InstancePlan.new(
+        existing_instance: instance_model,
+        instance: instance,
+        desired_instance: desired_instance,
+        skip_drain: skip_drain,
+        variables_interpolator: variables_interpolator,
+      )
     end
+
     let(:spec) do
       {
         'vm_type' => {
@@ -53,11 +63,22 @@ module Bosh::Director
         'networks' => {},
       }
     end
+
     let(:drain_spec) do
       {
         'networks' => {},
-        'template_hashes' =>[],
-        'configuration_hash' =>{'fake-spec' =>true}
+        'template_hashes' => [],
+        'configuration_hash' => { 'fake-spec' => true },
+      }
+    end
+
+    let(:pre_stop_options) do
+      {
+        'env' => {
+          'BOSH_VM_NEXT_STATE' => 'keep',
+          'BOSH_INSTANCE_NEXT_STATE' => 'keep',
+          'BOSH_DEPLOYMENT_NEXT_STATE' => 'keep',
+        },
       }
     end
 
@@ -76,7 +97,7 @@ module Bosh::Director
         let(:skip_drain) { true }
 
         it 'does not drain' do
-          expect(agent_client).to receive(:run_script).with('pre-stop', {}).ordered
+          expect(agent_client).to receive(:run_script).with('pre-stop', pre_stop_options).ordered
           expect(agent_client).to_not receive(:drain)
           expect(stopper).to_not receive(:sleep)
           expect(agent_client).to receive(:stop).with(no_args).ordered
@@ -122,11 +143,11 @@ module Bosh::Director
       end
 
       context 'when shutting down' do
-        before { allow(subject).to receive_messages(needs_drain_to_migrate_data?: true) }
+        before { allow(subject).to receive_messages(needs_shutdown?: true) }
 
         context 'with static drain' do
           it 'sends shutdown with next apply spec and then stops services' do
-            expect(agent_client).to receive(:run_script).with('pre-stop', {})
+            expect(agent_client).to receive(:run_script).with('pre-stop', pre_stop_options)
             expect(agent_client).to receive(:drain).with('shutdown', drain_spec).and_return(1).ordered
             expect(subject).to receive(:sleep).with(1).ordered
             expect(agent_client).to receive(:stop).with(no_args).ordered
@@ -137,7 +158,7 @@ module Bosh::Director
 
         context 'with dynamic drain' do
           it 'sends shutdown with next apply spec and then stops services' do
-            expect(agent_client).to receive(:run_script).with('pre-stop', {})
+            expect(agent_client).to receive(:run_script).with('pre-stop', pre_stop_options)
             expect(agent_client).to receive(:drain).with('shutdown', drain_spec).and_return(-2).ordered
             expect(subject).to receive(:wait_for_dynamic_drain).with(-2).ordered
             expect(agent_client).to receive(:stop).with(no_args).ordered
@@ -148,11 +169,11 @@ module Bosh::Director
       end
 
       context 'when updating' do
-        before { allow(subject).to receive_messages(needs_drain_to_migrate_data?: false) }
+        before { allow(subject).to receive_messages(needs_shutdown?: false) }
 
         context 'with static drain' do
           it 'sends update with next apply spec and then stops services' do
-            expect(agent_client).to receive(:run_script).with('pre-stop', {})
+            expect(agent_client).to receive(:run_script).with('pre-stop', pre_stop_options)
             expect(agent_client).to receive(:drain).with('update', drain_spec).and_return(1).ordered
             expect(subject).to receive(:sleep).with(1).ordered
             expect(agent_client).to receive(:stop).with(no_args).ordered
@@ -163,7 +184,7 @@ module Bosh::Director
 
         context 'with dynamic drain' do
           it 'sends update with next apply spec and then stops services' do
-            expect(agent_client).to receive(:run_script).with('pre-stop', {}).ordered
+            expect(agent_client).to receive(:run_script).with('pre-stop', pre_stop_options).ordered
             expect(agent_client).to receive(:drain).with('update', drain_spec).and_return(-2).ordered
             expect(subject).to receive(:wait_for_dynamic_drain).with(-2).ordered
             expect(agent_client).to receive(:stop).with(no_args).ordered
@@ -172,7 +193,7 @@ module Bosh::Director
           end
 
           it 'waits on the agent' do
-            allow(agent_client).to receive(:run_script).with('pre-stop', {})
+            allow(agent_client).to receive(:run_script).with('pre-stop', pre_stop_options)
             allow(agent_client).to receive(:run_script).with('post-stop', {})
             allow(agent_client).to receive(:stop)
             allow(agent_client).to receive(:drain).with('status').and_return(-1, 0)
@@ -191,7 +212,7 @@ module Bosh::Director
         end
 
         it 'drains with shutdown' do
-          expect(agent_client).to receive(:run_script).with('pre-stop', {}).ordered
+          expect(agent_client).to receive(:run_script).with('pre-stop', pre_stop_options).ordered
           expect(agent_client).to receive(:drain).with('shutdown', drain_spec).and_return(1).ordered
           expect(agent_client).to receive(:stop).ordered
           expect(agent_client).to receive(:run_script).with('post-stop', {}).ordered
@@ -207,7 +228,7 @@ module Bosh::Director
         end
 
         it 'drains with shutdown' do
-          expect(agent_client).to receive(:run_script).with('pre-stop', {}).ordered
+          expect(agent_client).to receive(:run_script).with('pre-stop', pre_stop_options).ordered
           expect(agent_client).to receive(:drain).with('shutdown', drain_spec).and_return(1).ordered
           expect(agent_client).to receive(:stop).ordered
           expect(agent_client).to receive(:run_script).with('post-stop', {}).ordered
@@ -219,7 +240,7 @@ module Bosh::Director
         let(:target_state) { 'detached' }
 
         it 'drains with shutdown' do
-          expect(agent_client).to receive(:run_script).with('pre-stop', {}).ordered
+          expect(agent_client).to receive(:run_script).with('pre-stop', pre_stop_options).ordered
           expect(agent_client).to receive(:drain).with('shutdown', drain_spec).and_return(1).ordered
           expect(agent_client).to receive(:stop).ordered
           expect(agent_client).to receive(:run_script).with('post-stop', {}).ordered
@@ -231,7 +252,7 @@ module Bosh::Director
         let(:target_state) { 'stopped' }
 
         it 'drains with shutdown' do
-          expect(agent_client).to receive(:run_script).with('pre-stop', {}).ordered
+          expect(agent_client).to receive(:run_script).with('pre-stop', pre_stop_options).ordered
           expect(agent_client).to receive(:drain).with('shutdown', drain_spec).and_return(1).ordered
           expect(agent_client).to receive(:stop).ordered
           expect(agent_client).to receive(:run_script).with('post-stop', {}).ordered
@@ -248,11 +269,85 @@ module Bosh::Director
         end
 
         it 'does not shutdown' do
-          expect(agent_client).to receive(:run_script).with('pre-stop', {}).ordered
+          expect(agent_client).to receive(:run_script).with('pre-stop', pre_stop_options).ordered
           expect(agent_client).to receive(:drain).with('update', drain_spec).and_return(1).ordered
           expect(agent_client).to receive(:stop).ordered
           expect(agent_client).to receive(:run_script).with('post-stop', {}).ordered
           subject.stop
+        end
+      end
+
+      context 'when intent for stopping is given' do
+        before do
+          allow(subject).to receive_messages(needs_shutdown?: true)
+          allow(agent_client).to receive(:run_script)
+          allow(agent_client).to receive(:drain).and_return(1)
+          allow(agent_client).to receive(:stop)
+        end
+
+        context 'when `intent` is `delete_vm`' do
+          let(:pre_stop_options) do
+            {
+              'env' => {
+                'BOSH_VM_NEXT_STATE' => 'delete',
+                'BOSH_INSTANCE_NEXT_STATE' => 'keep',
+                'BOSH_DEPLOYMENT_NEXT_STATE' => 'keep',
+              },
+            }
+          end
+
+          it 'should only set BOSH_VM_NEXT_STATE as delete' do
+            stopper.stop(:delete_vm)
+            expect(agent_client).to have_received(:run_script).with('pre-stop', pre_stop_options)
+          end
+        end
+
+        context 'when `intent` is `delete_instance`' do
+          let(:pre_stop_options) do
+            {
+              'env' => {
+                'BOSH_VM_NEXT_STATE' => 'delete',
+                'BOSH_INSTANCE_NEXT_STATE' => 'delete',
+                'BOSH_DEPLOYMENT_NEXT_STATE' => 'keep',
+              },
+            }
+          end
+
+          it 'should set BOSH_INSTANCE_NEXT_STATE_DELETE as delete' do
+            stopper.stop(:delete_instance)
+            expect(agent_client).to have_received(:run_script).with('pre-stop', pre_stop_options)
+          end
+        end
+
+        context ' when `intent` is `delete_deployment`' do
+          let(:pre_stop_options) do
+            {
+              'env' => {
+                'BOSH_VM_NEXT_STATE' => 'delete',
+                'BOSH_INSTANCE_NEXT_STATE' => 'delete',
+                'BOSH_DEPLOYMENT_NEXT_STATE' => 'delete',
+              },
+            }
+          end
+
+          it 'should only set BOSH_DEPLOYMENT_NEXT_STATE_DELETE as delete' do
+            stopper.stop(:delete_deployment)
+            expect(agent_client).to have_received(:run_script).with('pre-stop', pre_stop_options)
+          end
+        end
+      end
+
+      context 'when reason for stop is not given' do
+        before do
+          allow(subject).to receive_messages(needs_shutdown?: false)
+          allow(agent_client).to receive(:run_script)
+          allow(agent_client).to receive(:drain).and_return(1)
+          allow(agent_client).to receive(:stop)
+        end
+
+        it 'should keep all pre-stop env variables as false' do
+          stopper.stop
+          expect(agent_client).to have_received(:run_script).with('pre-stop', pre_stop_options)
         end
       end
     end

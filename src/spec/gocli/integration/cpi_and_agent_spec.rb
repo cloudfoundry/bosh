@@ -45,7 +45,14 @@ describe 'CPI and Agent:', type: :integration do
       *create_vm_sequence(vm_cid, agent_id),
       *update_settings_sequence(agent_id),
       *prepare_sequence(agent_id),
-      *stop_jobs_sequence(agent_id),
+      *stop_jobs_sequence(
+        agent_id,
+        'env' => {
+          'BOSH_VM_NEXT_STATE' => 'delete',
+          'BOSH_INSTANCE_NEXT_STATE' => 'keep',
+          'BOSH_DEPLOYMENT_NEXT_STATE' => 'keep',
+        },
+      ),
       { target: 'cpi', method: 'create_disk', response_matcher: be(disk_cid) },
       *attach_disk_sequence(vm_cid, agent_id, disk_cid),
       *update_settings_sequence(agent_id),
@@ -62,9 +69,9 @@ describe 'CPI and Agent:', type: :integration do
     ]
   end
 
-  def stop_jobs_sequence(agent_id)
+  def stop_jobs_sequence(agent_id, pre_stop_env_vars)
     [
-      { target: 'agent', method: 'run_script', agent_id: agent_id, argument_matcher: match(['pre-stop', {}]) },
+      { target: 'agent', method: 'run_script', agent_id: agent_id, argument_matcher: match(['pre-stop', pre_stop_env_vars]) },
       { target: 'agent', method: 'drain', agent_id: agent_id },
       { target: 'agent', method: 'stop', agent_id: agent_id },
       { target: 'agent', method: 'run_script', agent_id: agent_id, argument_matcher: match(['post-stop', {}]) },
@@ -119,7 +126,14 @@ describe 'CPI and Agent:', type: :integration do
       *create_vm_sequence(hotswap_vm_id, hotswap_vm_agent_id),
       *update_settings_sequence(hotswap_vm_agent_id),
       *prepare_sequence(hotswap_vm_agent_id),
-      *stop_jobs_sequence(old_vm_agent_id),
+      *stop_jobs_sequence(
+        old_vm_agent_id,
+        'env' => {
+          'BOSH_VM_NEXT_STATE' => 'delete',
+          'BOSH_INSTANCE_NEXT_STATE' => 'keep',
+          'BOSH_DEPLOYMENT_NEXT_STATE' => 'keep',
+        },
+      ),
       *snapshot_disk_sequence(old_vm_agent_id, disk_id),
       *detach_disk_sequence(old_vm_id, old_vm_agent_id, disk_id),
     ]
@@ -136,7 +150,14 @@ describe 'CPI and Agent:', type: :integration do
 
   def update_sequence(old_vm_id, old_vm_agent_id, updated_vm_id, updated_vm_agent_id, disk_id)
     [
-      *stop_jobs_sequence(old_vm_agent_id),
+      *stop_jobs_sequence(
+        old_vm_agent_id,
+        'env' => {
+          'BOSH_VM_NEXT_STATE' => 'delete',
+          'BOSH_INSTANCE_NEXT_STATE' => 'keep',
+          'BOSH_DEPLOYMENT_NEXT_STATE' => 'keep',
+        },
+      ),
       *snapshot_disk_sequence(old_vm_agent_id, disk_id),
       *detach_disk_sequence(old_vm_id, old_vm_agent_id, disk_id),
       *delete_vm_sequence(old_vm_id),
@@ -239,7 +260,14 @@ describe 'CPI and Agent:', type: :integration do
             *create_vm_sequence(deployed_vm_cid, deployed_vm_agent_id),
             *update_settings_sequence(deployed_vm_agent_id),
             *prepare_sequence(deployed_vm_agent_id),
-            *stop_jobs_sequence(deployed_vm_agent_id),
+            *stop_jobs_sequence(
+              deployed_vm_agent_id,
+              'env' => {
+                'BOSH_VM_NEXT_STATE' => 'keep',
+                'BOSH_INSTANCE_NEXT_STATE' => 'keep',
+                'BOSH_DEPLOYMENT_NEXT_STATE' => 'keep',
+              },
+            ),
             *create_disk_sequence(disk_id),
             *attach_disk_sequence(deployed_vm_cid, deployed_vm_agent_id, disk_id),
             *update_settings_sequence(deployed_vm_agent_id),
@@ -282,7 +310,14 @@ describe 'CPI and Agent:', type: :integration do
       it 'requests between BOSH Director, CPI and Agent are sent in correct order', no_create_swap_delete: true do
         expect(update_invocations).to be_sequence_of_calls(
           calls: [
-            *stop_jobs_sequence(old_vm_agent_id),
+            *stop_jobs_sequence(
+              old_vm_agent_id,
+              'env' => {
+                'BOSH_VM_NEXT_STATE' => 'delete',
+                'BOSH_INSTANCE_NEXT_STATE' => 'keep',
+                'BOSH_DEPLOYMENT_NEXT_STATE' => 'keep',
+              },
+            ),
             *snapshot_disk_sequence(old_vm_agent_id, disk_id),
             *detach_disk_sequence(old_vm_id, old_vm_agent_id, disk_id),
             *delete_vm_sequence(old_vm_id),
@@ -404,7 +439,14 @@ describe 'CPI and Agent:', type: :integration do
                 expect(final_invocations).to be_sequence_of_calls(
                   calls: [
                     *prepare_sequence(old_vm_agent_id),
-                    *stop_jobs_sequence(old_vm_agent_id),
+                    *stop_jobs_sequence(
+                      old_vm_agent_id,
+                      'env' => {
+                        'BOSH_VM_NEXT_STATE' => 'delete',
+                        'BOSH_INSTANCE_NEXT_STATE' => 'keep',
+                        'BOSH_DEPLOYMENT_NEXT_STATE' => 'keep',
+                      },
+                    ),
                     *snapshot_disk_sequence(old_vm_agent_id, disk_id),
                     *detach_disk_sequence(old_vm_id, old_vm_agent_id, disk_id),
 
@@ -464,7 +506,14 @@ describe 'CPI and Agent:', type: :integration do
 
                     # final deploy
                     *prepare_sequence(updated_vm_agent_id),
-                    *stop_jobs_sequence(updated_vm_agent_id),
+                    *stop_jobs_sequence(
+                      updated_vm_agent_id,
+                      'env' => {
+                        'BOSH_VM_NEXT_STATE' => 'keep',
+                        'BOSH_INSTANCE_NEXT_STATE' => 'keep',
+                        'BOSH_DEPLOYMENT_NEXT_STATE' => 'keep',
+                      },
+                    ),
                     *snapshot_disk_sequence(updated_vm_agent_id, disk_id),
                     *update_settings_sequence(updated_vm_agent_id),
                     *start_jobs_sequence(updated_vm_agent_id),

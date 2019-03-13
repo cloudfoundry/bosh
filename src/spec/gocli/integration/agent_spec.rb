@@ -4,6 +4,16 @@ require 'json'
 describe 'Agent', type: :integration do
   with_reset_sandbox_before_each
 
+  let(:default_pre_stop_env) do
+    {
+      'env' => {
+        'BOSH_VM_NEXT_STATE' => 'keep',
+        'BOSH_INSTANCE_NEXT_STATE' => 'keep',
+        'BOSH_DEPLOYMENT_NEXT_STATE' => 'keep',
+      },
+    }
+  end
+
   def get_messages_sent_to_agent(output)
     task_id = output.match(/^Task (\d+)$/)[1]
     task_debug = File.read("#{current_sandbox.sandbox_root}/boshdir/tasks/#{task_id}/debug")
@@ -36,7 +46,7 @@ describe 'Agent', type: :integration do
           expect(agent_messages[0]['method']).to eq('get_state')
           expect(agent_messages[1]['method']).to eq('prepare')
           expect(agent_messages[2]['method']).to eq('run_script')
-          expect(agent_messages[2]['arguments']).to eq(['pre-stop', {}])
+          expect(agent_messages[2]['arguments']).to eq(['pre-stop', default_pre_stop_env])
           expect(agent_messages[3]['method']).to eq('drain')
           expect(agent_messages[4]['method']).to eq('stop')
           expect(agent_messages[5]['method']).to eq('run_script')
@@ -62,7 +72,7 @@ describe 'Agent', type: :integration do
             expect(agent_messages[1]['method']).to eq('upload_blob')
             expect(agent_messages[2]['method']).to eq('prepare')
             expect(agent_messages[3]['method']).to eq('run_script')
-            expect(agent_messages[3]['arguments']).to eq(['pre-stop', {}])
+            expect(agent_messages[3]['arguments']).to eq(['pre-stop', default_pre_stop_env])
             expect(agent_messages[4]['method']).to eq('drain')
             expect(agent_messages[5]['method']).to eq('stop')
             expect(agent_messages[6]['method']).to eq('run_script')
@@ -123,7 +133,7 @@ describe 'Agent', type: :integration do
           expect(agent2[2]['method']).to eq('get_state')
           expect(agent2[3]['method']).to eq('prepare')
           expect(agent2[4]['method']).to eq('run_script')
-          expect(agent2[4]['arguments']).to eq(['pre-stop', {}])
+          expect(agent2[4]['arguments']).to eq(['pre-stop', default_pre_stop_env])
           expect(agent2[5]['method']).to eq('drain')
           expect(agent2[6]['method']).to eq('stop')
           expect(agent2[7]['method']).to eq('run_script')
@@ -179,7 +189,7 @@ describe 'Agent', type: :integration do
             expect(agent2[3]['method']).to eq('upload_blob')
             expect(agent2[4]['method']).to eq('prepare')
             expect(agent2[5]['method']).to eq('run_script')
-            expect(agent2[5]['arguments']).to eq(['pre-stop', {}])
+            expect(agent2[5]['arguments']).to eq(['pre-stop', default_pre_stop_env])
             expect(agent2[6]['method']).to eq('drain')
             expect(agent2[7]['method']).to eq('stop')
             expect(agent2[8]['method']).to eq('run_script')
@@ -202,7 +212,7 @@ describe 'Agent', type: :integration do
       context 'stopping and then starting an existing instance' do
         it 'should call these methods in the following order' do
           stop_job('foobar')
-          output = bosh_runner.run('start foobar', deployment_name: 'simple' )
+          output = bosh_runner.run('start foobar', deployment_name: 'simple')
           sent_messages = get_messages_sent_to_agent(output)
 
           agent_messages = sent_messages.values[0]
@@ -289,7 +299,7 @@ describe 'Agent', type: :integration do
           expect(agent_messages[0]['method']).to eq('get_state')
           expect(agent_messages[1]['method']).to eq('prepare')
           expect(agent_messages[2]['method']).to eq('run_script')
-          expect(agent_messages[2]['arguments']).to eq(['pre-stop', {}])
+          expect(agent_messages[2]['arguments']).to eq(['pre-stop', default_pre_stop_env])
           expect(agent_messages[3]['method']).to eq('drain')
           expect(agent_messages[4]['method']).to eq('stop')
           expect(agent_messages[5]['method']).to eq('run_script')
@@ -319,7 +329,7 @@ describe 'Agent', type: :integration do
         expect(agent_messages[0]['method']).to eq('get_state')
         expect(agent_messages[1]['method']).to eq('prepare')
         expect(agent_messages[2]['method']).to eq('run_script')
-        expect(agent_messages[2]['arguments']).to eq(['pre-stop', {}])
+        expect(agent_messages[2]['arguments']).to eq(['pre-stop', default_pre_stop_env])
         expect(agent_messages[3]['method']).to eq('drain')
         expect(agent_messages[4]['method']).to eq('stop')
         expect(agent_messages[5]['method']).to eq('run_script')
@@ -355,7 +365,7 @@ describe 'Agent', type: :integration do
           expect(agent_messages[1]['method']).to eq('upload_blob')
           expect(agent_messages[2]['method']).to eq('prepare')
           expect(agent_messages[3]['method']).to eq('run_script')
-          expect(agent_messages[3]['arguments']).to eq(['pre-stop', {}])
+          expect(agent_messages[3]['arguments']).to eq(['pre-stop', default_pre_stop_env])
           expect(agent_messages[4]['method']).to eq('drain')
           expect(agent_messages[5]['method']).to eq('stop')
           expect(agent_messages[6]['method']).to eq('run_script')
@@ -373,7 +383,6 @@ describe 'Agent', type: :integration do
           expect(agent_messages[14]['arguments'][0]).to eq('post-deploy')
         end
       end
-
     end
 
     context 'when post-deploy is enabled' do
@@ -392,7 +401,7 @@ describe 'Agent', type: :integration do
         expect(agent_messages[0]['method']).to eq('get_state')
         expect(agent_messages[1]['method']).to eq('prepare')
         expect(agent_messages[2]['method']).to eq('run_script')
-        expect(agent_messages[2]['arguments']).to eq(['pre-stop', {}])
+        expect(agent_messages[2]['arguments']).to eq(['pre-stop', default_pre_stop_env])
         expect(agent_messages[3]['method']).to eq('drain')
         expect(agent_messages[4]['method']).to eq('stop')
         expect(agent_messages[5]['method']).to eq('run_script')
@@ -428,7 +437,7 @@ describe 'Agent', type: :integration do
           expect(agent_messages[1]['method']).to eq('upload_blob')
           expect(agent_messages[2]['method']).to eq('prepare')
           expect(agent_messages[3]['method']).to eq('run_script')
-          expect(agent_messages[3]['arguments']).to eq(['pre-stop', {}])
+          expect(agent_messages[3]['arguments']).to eq(['pre-stop', default_pre_stop_env])
           expect(agent_messages[4]['method']).to eq('drain')
           expect(agent_messages[5]['method']).to eq('stop')
           expect(agent_messages[6]['method']).to eq('run_script')
@@ -465,7 +474,7 @@ describe 'Agent', type: :integration do
         expect(agent_messages[0]['method']).to eq('get_state')
         expect(agent_messages[1]['method']).to eq('prepare')
         expect(agent_messages[2]['method']).to eq('run_script')
-        expect(agent_messages[2]['arguments']).to eq(['pre-stop', {}])
+        expect(agent_messages[2]['arguments']).to eq(['pre-stop', default_pre_stop_env])
         expect(agent_messages[3]['method']).to eq('drain')
         expect(agent_messages[4]['method']).to eq('stop')
         expect(agent_messages[5]['method']).to eq('run_script')
@@ -478,6 +487,136 @@ describe 'Agent', type: :integration do
         expect(agent_messages[10]['method']).to eq('get_state')
         expect(agent_messages[11]['method']).to eq('run_script')
         expect(agent_messages[11]['arguments']).to eq(['post-start', {}])
+      end
+    end
+
+    describe 'drain lifecycle' do
+      let(:vm_delete_pre_stop_env) do
+        {
+          'env' => {
+            'BOSH_VM_NEXT_STATE' => 'delete',
+            'BOSH_INSTANCE_NEXT_STATE' => 'keep',
+            'BOSH_DEPLOYMENT_NEXT_STATE' => 'keep',
+          },
+        }
+      end
+
+      let(:instance_delete_pre_stop_env) do
+        {
+          'env' => {
+            'BOSH_VM_NEXT_STATE' => 'delete',
+            'BOSH_INSTANCE_NEXT_STATE' => 'delete',
+            'BOSH_DEPLOYMENT_NEXT_STATE' => 'keep',
+          },
+        }
+      end
+
+      let(:deployment_delete_pre_stop_env) do
+        {
+          'env' => {
+            'BOSH_VM_NEXT_STATE' => 'delete',
+            'BOSH_INSTANCE_NEXT_STATE' => 'delete',
+            'BOSH_DEPLOYMENT_NEXT_STATE' => 'delete',
+          },
+        }
+      end
+
+      context 'when deleting a VM' do
+        it 'sets the pre-stop environment variables correctly' do
+          manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, legacy_job: false)
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+          manifest_hash['instance_groups'][0]['jobs'][0]['properties']['test_property'] = 7
+          output = deploy_simple_manifest(manifest_hash: manifest_hash, recreate: true)
+          sent_messages = get_messages_sent_to_agent(output)
+
+          agent_messages = sent_messages.values[0]
+          expect(agent_messages.length).to eq(5)
+
+          expect(agent_messages[0]['method']).to eq('get_state')
+          expect(agent_messages[1]['method']).to eq('run_script')
+          expect(agent_messages[1]['arguments']).to eq(['pre-stop', vm_delete_pre_stop_env])
+          expect(agent_messages[2]['method']).to eq('drain')
+          expect(agent_messages[3]['method']).to eq('stop')
+          expect(agent_messages[4]['method']).to eq('run_script')
+          expect(agent_messages[4]['arguments']).to eq(['post-stop', {}])
+        end
+      end
+
+      context 'when deleting an instance' do
+        it 'sets the pre-stop environment variables correctly' do
+          manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 2, legacy_job: false)
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+          manifest_hash['instance_groups'][0]['instances'] = 1
+
+          output = deploy_simple_manifest(manifest_hash: manifest_hash, recreate: true)
+          sent_messages = get_messages_sent_to_agent(output)
+
+          agent_messages = sent_messages.values[0]
+          expect(agent_messages.length).to eq(5)
+
+          expect(agent_messages[0]['method']).to eq('get_state')
+          expect(agent_messages[1]['method']).to eq('run_script')
+          expect(agent_messages[1]['arguments']).to eq(['pre-stop', instance_delete_pre_stop_env])
+          expect(agent_messages[2]['method']).to eq('drain')
+          expect(agent_messages[3]['method']).to eq('stop')
+          expect(agent_messages[4]['method']).to eq('run_script')
+          expect(agent_messages[4]['arguments']).to eq(['post-stop', {}])
+        end
+      end
+
+      context 'when deleting a deployment' do
+        it 'sets the pre-stop environment variables correctly' do
+          manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, legacy_job: false)
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+          output = bosh_runner.run(
+            'delete-deployment',
+            deployment_name: manifest_hash['name'],
+            environment_name: current_sandbox.director_url,
+          )
+          sent_messages = get_messages_sent_to_agent(output)
+
+          agent_messages = sent_messages.values[0]
+          expect(agent_messages.length).to eq(4)
+
+          expect(agent_messages[0]['method']).to eq('run_script')
+          expect(agent_messages[0]['arguments']).to eq(['pre-stop', deployment_delete_pre_stop_env])
+          expect(agent_messages[1]['method']).to eq('drain')
+          expect(agent_messages[2]['method']).to eq('stop')
+          expect(agent_messages[3]['method']).to eq('run_script')
+          expect(agent_messages[3]['arguments']).to eq(['post-stop', {}])
+        end
+      end
+
+      context 'when no deletion of the VM is required' do
+        it 'sets the pre-stop variables correctly' do
+          manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, legacy_job: false)
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+          manifest_hash['instance_groups'][0]['jobs'][0]['properties']['test_property'] = 7
+          output = deploy_simple_manifest(manifest_hash: manifest_hash, recreate: false)
+          sent_messages = get_messages_sent_to_agent(output)
+
+          agent_messages = sent_messages.values[0]
+          expect(agent_messages.length).to eq(13)
+
+          expect(agent_messages[0]['method']).to eq('get_state')
+          expect(agent_messages[1]['method']).to eq('prepare')
+          expect(agent_messages[2]['method']).to eq('run_script')
+          expect(agent_messages[2]['arguments']).to eq(['pre-stop', default_pre_stop_env])
+          expect(agent_messages[3]['method']).to eq('drain')
+          expect(agent_messages[4]['method']).to eq('stop')
+          expect(agent_messages[5]['method']).to eq('run_script')
+          expect(agent_messages[5]['arguments']).to eq(['post-stop', {}])
+          expect(agent_messages[6]['method']).to eq('update_settings')
+          expect(agent_messages[7]['method']).to eq('apply')
+          expect(agent_messages[8]['method']).to eq('run_script')
+          expect(agent_messages[8]['arguments']).to eq(['pre-start', {}])
+          expect(agent_messages[9]['method']).to eq('start')
+          expect(agent_messages[10]['method']).to eq('get_state')
+          expect(agent_messages[11]['method']).to eq('run_script')
+          expect(agent_messages[11]['arguments']).to eq(['post-start', {}])
+          expect(agent_messages[12]['method']).to eq('run_script')
+          expect(agent_messages[12]['arguments'][0]).to eq('post-deploy')
+        end
       end
     end
   end

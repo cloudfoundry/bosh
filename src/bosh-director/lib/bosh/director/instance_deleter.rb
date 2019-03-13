@@ -12,6 +12,7 @@ module Bosh::Director
       @blobstore = App.instance.blobstores.blobstore
       @force = options.fetch(:force, false)
       @virtual_delete_vm = options.fetch(:virtual_delete_vm, false)
+      @stop_intent = options.fetch(:stop_intent, :delete_instance)
     end
 
     def delete_instance_plan(instance_plan, event_log_stage)
@@ -88,8 +89,7 @@ module Bosh::Director
     end
 
     def stop(instance_plan)
-      stopper = Stopper.new(instance_plan, 'stopped', Config, @logger)
-      stopper.stop
+      Stopper.new(instance_plan, 'stopped', Config, @logger).stop(@stop_intent)
     end
 
     # FIXME: why do we hate dependency injection?

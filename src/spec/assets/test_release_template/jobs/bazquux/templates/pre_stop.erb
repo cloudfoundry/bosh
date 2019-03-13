@@ -1,6 +1,17 @@
 #!/bin/bash
 
 echo "Running pre-stop"
+if [[ "${BOSH_VM_NEXT_STATE}" == "delete" ]] ; then
+  echo "Deleting vm"
+fi
+
+if [[ "${BOSH_INSTANCE_NEXT_STATE}" == "delete" ]] ; then
+  echo "Deleting instance"
+fi
+
+if [[ "${BOSH_DEPLOYMENT_NEXT_STATE}" == "delete" ]] ; then
+  echo "Deleting deployment"
+fi
 
 if <%= p('fail_on_pre_stop') %> ; then
   echo "Failed because of bad parameter on pre-stop"

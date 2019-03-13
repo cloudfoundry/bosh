@@ -228,6 +228,13 @@ module Bosh::Director
                 it 'does not prepare the instance' do
                   expect(prepare_instance_step).to_not have_received(:perform)
                 end
+
+                it 'stops with the correct stop intent' do
+                  expect(Stopper).to have_received(:new)
+                    .with(instance_plan, instance_state, anything, logger)
+
+                  expect(stopper).to have_received(:stop).with(:delete_vm)
+                end
               end
 
               context 'if the instance state is detached' do
@@ -237,6 +244,13 @@ module Bosh::Director
                 it 'does not prepare the instance' do
                   expect(prepare_instance_step).to_not have_received(:perform)
                 end
+
+                it 'stops with the correct stop intent' do
+                  expect(Stopper).to have_received(:new)
+                    .with(instance_plan, instance_state, anything, logger)
+
+                  expect(stopper).to have_received(:stop).with(:delete_vm)
+                end
               end
 
               context 'if instance model state is not stopped' do
@@ -245,6 +259,32 @@ module Bosh::Director
                 it 'stops and takes snapshot' do
                   expect(stopper).to have_received(:stop)
                   expect(Api::SnapshotManager).to have_received(:take_snapshot).with(instance_model, clean: true)
+                end
+              end
+
+              context 'if instance model state is not stopped' do
+                let(:instance_model_state) { 'not-stopped' }
+
+                context 'if vm requires recreate' do
+                  let(:needs_recreate) { true }
+
+                  it 'stops with the correct stop_intent' do
+                    expect(Stopper).to have_received(:new)
+                      .with(instance_plan, instance_state, anything, logger)
+
+                    expect(stopper).to have_received(:stop).with(:delete_vm)
+                  end
+                end
+
+                context 'if vm does not require recreate' do
+                  let(:needs_recreate) { false }
+
+                  it 'stops with the correct stop_intent' do
+                    expect(Stopper).to have_received(:new)
+                      .with(instance_plan, instance_state, anything, logger)
+
+                    expect(stopper).to have_received(:stop).with(:keep_vm)
+                  end
                 end
               end
 
