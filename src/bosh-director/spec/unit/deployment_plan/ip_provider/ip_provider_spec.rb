@@ -677,7 +677,7 @@ module Bosh::Director::DeploymentPlan
               )
             end
 
-            it 'adds the ip address to the ip repository and marks the reservation as resrved' do
+            it 'adds the ip address to the ip repository and marks the reservation as reserved' do
               ip_provider.reserve(reservation)
               expect(reservation.ip).to eq(NetAddr::CIDR.create('1.1.1.1').to_i)
               expect(reservation).to be_reserved
@@ -730,6 +730,27 @@ module Bosh::Director::DeploymentPlan
             expect {
               ip_provider.reserve_existing_ips(new_reservation_wanting_existing_ip)
             }.to raise_error /already reserved/
+          end
+        end
+
+        context 'when globally allocating vips' do
+          let(:vip_network) { VipNetwork.parse(vip_network_spec, [], logger) }
+          let(:reservation) { BD::ExistingNetworkReservation.new(instance_model, vip_network, '3.3.3.3', 'vip') }
+          let(:vip_network_spec) do
+            {
+              'name' => 'my-vip-network',
+              'type' => 'vip',
+              'subnets' => [
+                {
+                  'static' => ['1.1.1.1', '2.2.2.2'],
+                },
+              ],
+            }
+          end
+
+          it 'does not add a reservation that does not belong to the reservation network subnet' do
+            ip_provider.reserve_existing_ips(reservation)
+            expect(reservation).to_not be_reserved
           end
         end
       end

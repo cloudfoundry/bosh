@@ -144,6 +144,9 @@ module Bosh::Director
             @logger.debug("Reserving vip IP '#{format_ip(ip)}' for vip network '#{reservation.network.name}'")
             reservation.resolve_ip(ip)
           else
+            subnet = find_vip_network_and_subnet(reservation.ip, reservation.network)
+            return unless subnet
+
             @ip_repo.add(reservation)
           end
 
@@ -183,6 +186,10 @@ module Bosh::Director
         end
 
         return nil
+      end
+
+      def find_vip_network_and_subnet(cidr_ip, network)
+        network.subnets.find { |subnet| subnet.is_reservable?(cidr_ip) }
       end
     end
   end

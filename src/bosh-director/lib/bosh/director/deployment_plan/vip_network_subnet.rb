@@ -21,7 +21,7 @@ module Bosh::Director
 
       def initialize(static_ips, availability_zone_names)
         @static_ips = static_ips
-        @availability_zones_names = availability_zone_names
+        @availability_zone_names = availability_zone_names
       end
 
       def is_reservable?(ip)

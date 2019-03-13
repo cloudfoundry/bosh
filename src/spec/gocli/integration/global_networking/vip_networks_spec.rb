@@ -107,5 +107,36 @@ describe 'vip networks', type: :integration do
       instance_with_new_vip = new_instances.find { |new_instance| new_instance.ips.include?('68.68.68.68') }
       expect(instance_with_new_vip.ips).to eq(['192.168.1.3', '68.68.68.68'])
     end
+
+    it 'updates when the cloud config is changed', no_create_swap_delete: true do
+      deploy_simple_manifest(manifest_hash: simple_manifest)
+
+      original_instances = director.instances
+      expect(original_instances.size).to eq(1)
+      expect(original_instances.first.ips).to eq(['192.168.1.2', '69.69.69.69'])
+
+      cloud_config_hash['networks'][1]['subnets'] = [{ 'static' => ['68.68.68.68'] }]
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+      deploy_simple_manifest(manifest_hash: simple_manifest, recreate: true)
+
+      new_instances = director.instances
+      expect(new_instances.size).to eq(1)
+      expect(new_instances.first.ips).to eq(['192.168.1.2', '68.68.68.68'])
+    end
+
+    it 'successfully releases ip addresses after deletion', no_create_swap_delete: true do
+      deploy_simple_manifest(manifest_hash: simple_manifest)
+
+      original_instances = director.instances
+      expect(original_instances.size).to eq(1)
+      expect(original_instances.first.ips).to eq(['192.168.1.2', '69.69.69.69'])
+
+      bosh_runner.run('delete-deployment', deployment_name: 'simple')
+
+      deploy_simple_manifest(manifest_hash: simple_manifest, recreate: true)
+      new_instances = director.instances
+      expect(new_instances.size).to eq(1)
+      expect(new_instances.first.ips).to eq(['192.168.1.2', '69.69.69.69'])
+    end
   end
 end
