@@ -48,7 +48,7 @@ module Bosh::Director
     end
 
     def shasum
-      ::Digest::SHA1.hexdigest(to_json)
+      "sha256:#{::Digest::SHA256.hexdigest(to_json)}"
     end
 
     def to_json

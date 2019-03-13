@@ -156,7 +156,7 @@ module Bosh::Director
         end
 
         it 'returns the shasum' do
-          expect(dns_records.shasum).to eq('eae702fcc07e1d22100472f7b349f8affdb93bd6')
+          expect(dns_records.shasum).to eq('sha256:2e4cee79506738d9aa8ee467a1ce3ed0c4342f04060ecfc690a92a9ac743123e')
         end
 
         context 'when index records are enabled' do
