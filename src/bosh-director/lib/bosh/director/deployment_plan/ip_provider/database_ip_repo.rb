@@ -111,7 +111,7 @@ module Bosh::Director::DeploymentPlan
 
       available_ips = subnet.static_ips - addresses_in_use
 
-      raise NoMoreIPsAvailableAndStopRetrying unless available_ips.size.positive?
+      raise NoMoreIPsAvailableAndStopRetrying if available_ips.empty?
 
       ip_address = NetAddr::CIDRv4.new(available_ips.first)
 

@@ -10,7 +10,7 @@ module Bosh::Director::DeploymentPlan
         vip_networks.each do |vip_network|
           static_ips = vip_network.static_ips.nil? ? [] : vip_network.static_ips.dup
 
-          if static_ips.any? && vip_network.deployment_network.globally_allocate_ip?
+          if !static_ips.empty? && vip_network.deployment_network.globally_allocate_ip?
             raise(
               Bosh::Director::NetworkReservationVipMisconfigured,
               'IPs cannot be specified in both the instance group and the cloud config',

@@ -58,7 +58,7 @@ module Bosh::Director
       end
 
       def globally_allocate_ip?
-        @subnets.size.positive?
+        !@subnets.empty?
       end
 
       def supports_azs?

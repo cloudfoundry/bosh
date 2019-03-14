@@ -172,7 +172,10 @@ describe 'vip networks', type: :integration do
       instance_with_second_vip = original_instances.find { |instance| instance.ips.include?('68.68.68.68') }
       expect(instance_with_second_vip.ips).to eq(['192.168.1.3', '68.68.68.68'])
 
-      cloud_config_hash['networks'][1]['subnets'] = [{ 'static' => ['68.68.68.68', '69.69.69.69'] }]
+      cloud_config_hash['networks'][1]['subnets'] = [{
+        'static' => ['70.70.70.70', '68.68.68.68', '69.69.69.69', '80.80.80.80'],
+      }]
+
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
       deploy_simple_manifest(manifest_hash: updated_simple_manifest, recreate: true)
