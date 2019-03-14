@@ -139,4 +139,54 @@ describe 'vip networks', type: :integration do
       expect(new_instances.first.ips).to eq(['192.168.1.2', '69.69.69.69'])
     end
   end
+
+  context 'when migrating instance group defined vips to the cloud config' do
+    let(:simple_manifest) do
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'].first['instances'] = 2
+      manifest_hash['instance_groups'].first['networks'] = [
+        { 'name' => cloud_config_hash['networks'].first['name'], 'default' => %w[dns gateway] },
+        { 'name' => 'vip-network', 'static_ips' => ['69.69.69.69', '68.68.68.68'] },
+      ]
+      manifest_hash
+    end
+
+    let(:updated_simple_manifest) do
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'].first['instances'] = 2
+      manifest_hash['instance_groups'].first['networks'] = [
+        { 'name' => cloud_config_hash['networks'].first['name'], 'default' => %w[dns gateway] },
+        { 'name' => 'vip-network' },
+      ]
+      manifest_hash
+    end
+
+    it 'keeps the same vip through the migration' do
+      deploy_simple_manifest(manifest_hash: simple_manifest)
+
+      original_instances = director.instances
+      expect(original_instances.size).to eq(2)
+
+      instance_with_first_vip = original_instances.find { |instance| instance.ips.include?('69.69.69.69') }
+      expect(instance_with_first_vip.ips).to eq(['192.168.1.2', '69.69.69.69'])
+      instance_with_second_vip = original_instances.find { |instance| instance.ips.include?('68.68.68.68') }
+      expect(instance_with_second_vip.ips).to eq(['192.168.1.3', '68.68.68.68'])
+
+      cloud_config_hash['networks'][1]['subnets'] = [{ 'static' => ['68.68.68.68', '69.69.69.69'] }]
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+      deploy_simple_manifest(manifest_hash: updated_simple_manifest, recreate: true)
+
+      new_instances = director.instances
+      expect(new_instances.size).to eq(2)
+
+      new_instance_with_first_vip = new_instances.find { |new_instance| new_instance.ips.include?('69.69.69.69') }
+      expect(new_instance_with_first_vip.id).to eq(instance_with_first_vip.id)
+      expect(new_instance_with_first_vip.ips).to eq(['192.168.1.2', '69.69.69.69'])
+
+      new_instance_with_second_vip = new_instances.find { |new_instance| new_instance.ips.include?('68.68.68.68') }
+      expect(new_instance_with_second_vip.id).to eq(instance_with_second_vip.id)
+      expect(new_instance_with_second_vip.ips).to eq(['192.168.1.3', '68.68.68.68'])
+    end
+  end
 end
