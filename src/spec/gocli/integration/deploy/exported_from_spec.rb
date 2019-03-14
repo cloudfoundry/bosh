@@ -97,9 +97,9 @@ describe 'exported_from releases', type: :integration do
         'version' => '3002',
       }
       manifest['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group(
-        'jobs' => jobs,
-        'name' => 'foobar2',
-        'stemcell' => 'other-centos',
+        :jobs => jobs,
+        :name => 'foobar2',
+        :stemcell => 'other-centos',
       )
 
       manifest['releases'][0]['exported_from'] << { 'os' => 'centos-7', 'version' => '3002' }
