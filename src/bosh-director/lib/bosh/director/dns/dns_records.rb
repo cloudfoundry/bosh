@@ -1,6 +1,6 @@
 module Bosh::Director
   class DnsRecords
-    attr_reader :version
+    attr_accessor :version
 
     def initialize(version, include_index_records, dns_query_encoder)
       @version = version

@@ -472,6 +472,55 @@ module Bosh::Director
           end
         end
 
+        context 'and aliases are added to link providers' do
+          let(:deployment) do
+            Models::Deployment.create(name: 'test-deployment')
+          end
+
+          let(:link_provider) do
+            Models::Links::LinkProvider.create(
+              deployment: deployment,
+              instance_group: 'luan',
+              name: 'fooname',
+              type: 'bartype',
+            )
+          end
+
+          let!(:link_provider_intent) do
+            Models::Links::LinkProviderIntent.create(
+              link_provider: link_provider,
+              name: 'fooname',
+              type: 'bartype',
+              original_name: 'foooriginalname',
+            )
+          end
+
+          it 'adds the aliases to the record output' do
+            dns.publish_and_broadcast
+
+            link_provider_intent.update(
+              metadata: {
+                'dns_aliases' => [{
+                  'domain' => 'my-link-provider.domain',
+                  'health_filter' => 'all',
+                  'initial_health_check' => 'synchronous',
+                }],
+              }.to_json,
+            )
+
+            expected_records = {
+              'aliases' => {
+                'my-link-provider.domain' => ['q-s4y1.q-g11.fake-domain-name'],
+              },
+            }
+            expect(blobstore).to receive(:create) do |actual_records_json|
+              actual_records = JSON.parse(actual_records_json)
+              expect(actual_records).to include(expected_records)
+            end
+            dns.publish_and_broadcast
+          end
+        end
+
         context 'when the dns blobs are up to date' do
           it 'does not generate a new blob' do
             dns.publish_and_broadcast
@@ -480,7 +529,7 @@ module Bosh::Director
             dns.publish_and_broadcast
           end
 
-          it 'does not broadcast' do
+          it 'broadcasts' do
             dns.publish_and_broadcast
 
             expect(agent_broadcaster).to receive(:sync_dns)

@@ -8,42 +8,48 @@ module Bosh::Director
     end
 
     def publish_and_broadcast
-      if Config.local_dns_enabled?
+      return unless Config.local_dns_enabled?
 
-        local_dns_blob = nil
-        max_dns_record_version = nil
+      records = export_dns_records
+      new_dns_blob = create_dns_blob(records)
+      return if new_dns_blob.nil?
 
-        Config.db.transaction(isolation: :committed, retry_on: [Sequel::SerializationFailure]) do
-          local_dns_blob = Models::LocalDnsBlob.order(:version).last
-          max_dns_record_version = Models::LocalDnsRecord.max(:id)
-        end
-
-        return if local_dns_blob.nil? && max_dns_record_version.nil?
-
-        if local_dns_blob.nil? || local_dns_blob.version < max_dns_record_version
-          @logger.debug("Exporting local dns records max_dns_record_version:#{max_dns_record_version} local_dns_blob.version:#{local_dns_blob.nil? ? nil : local_dns_blob.version}")
-          records = export_dns_records
-          local_dns_blob = create_dns_blob(records)
-        end
-
-        @logger.debug("Broadcasting local_dns_blob.version:#{local_dns_blob.version}")
-        broadcast(local_dns_blob)
-      end
+      @logger.debug("Broadcasting DNS blob version:#{new_dns_blob.version}")
+      broadcast(new_dns_blob)
     end
 
     private
 
     def broadcast(dns_blob)
-      @agent_broadcaster.sync_dns(@agent_broadcaster.filter_instances(nil), dns_blob.blob.blobstore_id, dns_blob.blob.sha1, dns_blob.version) unless dns_blob.nil?
+      @agent_broadcaster.sync_dns(
+        @agent_broadcaster.filter_instances(nil),
+        dns_blob.blob.blobstore_id,
+        dns_blob.blob.sha1,
+        dns_blob.version,
+      )
     end
 
     def create_dns_blob(dns_records)
+      current_blob = Models::LocalDnsBlob.order(:version).last
+      return current_blob if current_blob.nil? || current_blob.blob.sha1 == dns_records.shasum
+
+      @logger.debug("Exporting new DNS records blob with shasum: #{dns_records.shasum}")
+
+      if current_blob
+        @logger.debug("Current DNS blob version: #{current_blob.version} has shasum #{current_blob.blob.sha1}")
+      else
+        @logger.debug('No current DNS blob')
+      end
+
+      dns_blob = Models::LocalDnsBlob.create
+      dns_records.version = dns_blob.id
+
       blob = Models::Blob.create(
         blobstore_id: @blobstore_provider.call.create(dns_records.to_json),
         sha1: dns_records.shasum,
         created_at: Time.new,
       )
-      dns_blob = Models::LocalDnsBlob.create(
+      dns_blob.update(
         blob_id: blob.id,
         version: dns_records.version,
         created_at: blob.created_at,
@@ -73,12 +79,9 @@ module Bosh::Director
     end
 
     def export_dns_records
-      local_dns_records = []
-      version = nil
-      Config.db.transaction(isolation: :committed, retry_on: [Sequel::SerializationFailure]) do
-        version = Models::LocalDnsRecord.max(:id) || 0
-        local_dns_records = Models::LocalDnsRecord.exclude(instance_id: nil).eager(:instance).all
-      end
+      current_blob = Models::LocalDnsBlob.order(:version).last
+      version = current_blob&.version || 0
+      local_dns_records = Models::LocalDnsRecord.exclude(instance_id: nil).eager(:instance).all
 
       dns_encoder = LocalDnsEncoderManager.create_dns_encoder
       dns_records = DnsRecords.new(version, Config.local_dns_include_index?, dns_encoder)

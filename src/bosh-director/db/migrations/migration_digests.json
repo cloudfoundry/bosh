@@ -151,5 +151,6 @@
   "20181017233927_add_links_json_to_local_dns_record": "90ad875b1b9ab1aa665951c10a7c1b09076779e6",
   "20181019225226_rename_table_local_dns_encoded_instance_group": "b8a98f3b040a03f8ee30a39d5c9d3bd5102858fe",
   "20190104135624_add_update_completed_to_release_versions": "648645410ac265aa009e70d3a5cc6f403febde5f",
-  "20190114153103_add_index_to_tasks": "50f68f6f1b0ce5765af6417a8b9bc0e1ffd5bb04"
+  "20190114153103_add_index_to_tasks": "50f68f6f1b0ce5765af6417a8b9bc0e1ffd5bb04",
+  "20190313231924_remove_constraints_from_local_dns_blobs": "944bca2751c4c12680cbda63dfd35e7b15dac932"
 }
