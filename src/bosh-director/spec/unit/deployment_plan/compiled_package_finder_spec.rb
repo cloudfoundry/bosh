@@ -321,6 +321,56 @@ module Bosh::Director
             expect(compiled_package).to eq(expected_compile_package)
           end
         end
+
+        context 'when there are multiple exported_froms' do
+          let(:second_stemcell) do
+            instance_double(
+              DeploymentPlan::Stemcell,
+              sha1: 'sha-123',
+              version: '1.2',
+              os: 'ubuntu-another',
+              desc: 'example-stemcell2',
+            )
+          end
+
+          let(:exported_from) do
+            [
+              DeploymentPlan::Stemcell.new('ubs-x', 'ubs-x', example_stemcell.os, '1.0'),
+              DeploymentPlan::Stemcell.new('ubs-x', 'ubs-x', second_stemcell.os, '1.2'),
+            ]
+          end
+
+          let!(:expected_compile_package) do
+            Models::CompiledPackage.make(
+              package: example_package,
+              stemcell_version: '1.2',
+              stemcell_os: second_stemcell.os,
+              dependency_key: dependency_key,
+            )
+          end
+
+          before do
+            # the decoy package
+            Models::CompiledPackage.make(
+              package: example_package,
+              stemcell_version: '1.2',
+              stemcell_os: example_stemcell.os,
+              dependency_key: dependency_key,
+            )
+          end
+
+          it 'finds an exact match for the second exported from' do
+            compiled_package = compiled_package_finder.find_compiled_package(
+              package: example_package,
+              stemcell: second_stemcell,
+              exported_from: exported_from,
+              dependency_key: dependency_key,
+              cache_key: cache_key,
+              event_log_stage: event_log_stage,
+            )
+            expect(compiled_package).to eq(expected_compile_package)
+          end
+        end
       end
     end
   end

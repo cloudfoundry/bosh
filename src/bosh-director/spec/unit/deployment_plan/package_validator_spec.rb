@@ -91,6 +91,43 @@ module Bosh::Director
             end.to raise_error PackageMissingExportedFrom, %r{ubuntu/3567\.1}
           end
         end
+
+        context 'when multiple exported_from' do
+          let(:stemcell) { make_stemcell(operating_system: 'ubuntu-xenial', version: '250.17') }
+          let(:exported_from) do
+            [
+              DeploymentPlan::ReleaseVersionExportedFrom.new('ubuntu-trusty', '3567.1'),
+              DeploymentPlan::ReleaseVersionExportedFrom.new('ubuntu-xenial', '250.17'),
+            ]
+          end
+
+          context 'and there is a match' do
+            before do
+              Models::CompiledPackage.make(package: package, stemcell_os: 'ubuntu-xenial', stemcell_version: '250.17').save
+            end
+
+            it 'should find a compiled package' do
+              release_version_model.add_package(package)
+              package_validator.validate(release_version_model, stemcell, [package.name], exported_from)
+              expect do
+                package_validator.handle_faults
+              end.to_not raise_error
+            end
+          end
+
+          context 'and there are no matches' do
+            it 'should generate a fault' do
+              release_version_model.add_package(package)
+              package_validator.validate(release_version_model, stemcell, [package.name], exported_from)
+              expect do
+                package_validator.handle_faults
+              end.to raise_error PackageMissingExportedFrom, %r{
+Can't use release 'release1\/version1':
+Packages must be exported from stemcell 'ubuntu-xenial\/250.17', but some packages are not compiled for this stemcell:
+ - '#{package.desc}'}
+            end
+          end
+        end
       end
     end
 
@@ -163,9 +200,23 @@ Can't use release 'release1/version1'. It references packages without source cod
           expect do
             package_validator.handle_faults
           end.to raise_error PackageMissingExportedFrom, %r{
-Can't use release 'release1/version1'. It is exported_from stemcell 'ubuntu/3567.1', but it references packages that are not compiled against it:
+Can't use release 'release1/version1':
+Packages must be exported from stemcell 'ubuntu/3567.1', but some packages are not compiled for this stemcell:
  - 'package1/1'
  - 'package2/2'}
+        end
+      end
+
+      context 'when a stemcell was not listed in exported_from' do
+        let(:stemcell) { make_stemcell(operating_system: 'centos', version: '123.4') }
+        let(:exported_from) { [DeploymentPlan::ReleaseVersionExportedFrom.new('ubuntu', '3567.1')] }
+
+        it 'lists the exported_from that is missing' do
+          package_validator.validate(release_version_model, stemcell, job_packages, exported_from)
+          expect do
+            package_validator.handle_faults
+          end.to raise_error StemcellNotPresentInExportedFrom, %r{
+Can't use release 'release1/version1': expected to find stemcell for 'centos/123\.4' to be configured in exported_from}
         end
       end
     end

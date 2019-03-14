@@ -287,14 +287,13 @@ module Bosh::Director
         jobs.each do |job|
           next if job.release.exported_from.empty?
 
-          exported_from = job.release.exported_from[0]
+          next if compatible_exported_from?(job.release.exported_from, stemcell)
 
-          next if exported_from.compatible_with?(stemcell)
+          msg = "Invalid release detected in instance group '#{@name}' using stemcell '#{stemcell.desc}': "\
+                "release '#{job.release.name}' must be exported from stemcell '#{stemcell.desc}'. "\
+                "Release '#{job.release.name}' is exported from: #{get_incompatible_exported_from(job.release.exported_from)}."
+          raise JobWithExportedFromMismatch, msg
 
-          raise JobWithExportedFromMismatch,
-                "Invalid release detected in instance group '#{@name}': "\
-                "release '#{job.release.name}' must be exported from stemcell '#{exported_from.os}/#{exported_from.version}', "\
-                "but the instance group will run on '#{stemcell.desc}'"
         end
       end
 
@@ -427,6 +426,20 @@ module Bosh::Director
 
       def newer_package_known_than(package)
         @packages[package.name]&.model&.id.to_i >= package.model.id
+      end
+
+      def compatible_exported_from?(exported_from_list, stemcell)
+        exported_from_list.any? do |exported_from|
+          exported_from.compatible_with?(stemcell)
+        end
+      end
+
+      def get_incompatible_exported_from(exported_from_list)
+        stemcells = []
+        exported_from_list.each do |exported_from|
+          stemcells << "'#{exported_from.os}/#{exported_from.version}'"
+        end
+        stemcells.join(', ')
       end
     end
   end

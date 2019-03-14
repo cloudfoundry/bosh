@@ -473,7 +473,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     context 'when jobs have no exported_from' do
       it 'does not raise an error' do
-        instance_group.validate_exported_from_matches_stemcell!
+        expect do
+          instance_group.validate_exported_from_matches_stemcell!
+        end.to_not raise_error
       end
     end
 
@@ -491,7 +493,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       end
 
       it 'does not raise an error' do
-        instance_group.validate_exported_from_matches_stemcell!
+        expect do
+          instance_group.validate_exported_from_matches_stemcell!
+        end.to_not raise_error
       end
     end
 
@@ -513,10 +517,67 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
           instance_group.validate_exported_from_matches_stemcell!
         end.to raise_error(
           Bosh::Director::JobWithExportedFromMismatch,
-          "Invalid release detected in instance group 'foobar': "\
-          "release 'release1' must be exported from stemcell 'the wrong one/3', "\
-          "but the instance group will run on 'linux/250.4'",
+          "Invalid release detected in instance group 'foobar' using stemcell 'linux/250.4': "\
+          "release 'release1' must be exported from stemcell 'linux/250.4'. "\
+          "Release 'release1' is exported from: 'the wrong one/3'.",
         )
+      end
+    end
+
+    context 'when there are multiple exported_from for a release' do
+      context 'and at least one of them matches the stemcell' do
+        let(:release1) do
+          Bosh::Director::DeploymentPlan::ReleaseVersion.parse(
+            deployment,
+            'name' => 'release1',
+            'version' => '1',
+            'exported_from' => [
+              {
+                'os' => 'ubuntu-trusty',
+                'version' => '3143',
+              },
+              {
+                'os' => stemcell.os,
+                'version' => stemcell.version,
+              },
+            ],
+          )
+        end
+
+        it 'does not raise an error' do
+          instance_group.validate_exported_from_matches_stemcell!
+        end
+      end
+
+      context 'and none of them matches the stemcell' do
+        let(:release1) do
+          Bosh::Director::DeploymentPlan::ReleaseVersion.parse(
+            deployment,
+            'name' => 'release1',
+            'version' => '1',
+            'exported_from' => [
+              {
+                'os' => 'the wrong one',
+                'version' => '3',
+              },
+              {
+                'os' => 'the wrong two',
+                'version' => '12',
+              },
+            ],
+          )
+        end
+
+        it 'raises an error' do
+          expect do
+            instance_group.validate_exported_from_matches_stemcell!
+          end.to raise_error(
+            Bosh::Director::JobWithExportedFromMismatch,
+            "Invalid release detected in instance group 'foobar' using stemcell 'linux/250.4': "\
+            "release 'release1' must be exported from stemcell 'linux/250.4'. "\
+            "Release 'release1' is exported from: 'the wrong one/3', 'the wrong two/12'.",
+          )
+        end
       end
     end
   end

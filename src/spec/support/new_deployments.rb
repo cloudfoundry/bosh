@@ -329,7 +329,7 @@ module Bosh::Spec
         'instances'     => options.fetch(:instances, 3),
         'networks'      => [{ 'name' => 'a' }],
         'properties'    => options.fetch(:properties, {}),
-        'stemcell' => 'default',
+        'stemcell' => options.fetch(:stemcell, 'default'),
       }
     end
 

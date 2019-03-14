@@ -16,7 +16,18 @@ module Bosh::Director
           packages_list << package
           packages_list.each do |needed_package|
             if needs_exact_compiled_package?(exported_from)
-              validate_exact_compiled_package(needed_package, exported_from[0], release_desc)
+              filtered_exported_from = exported_from.select { |e| e.compatible_with?(stemcell) }
+
+              if filtered_exported_from.empty?
+                add_fault(
+                  release_desc,
+                  needed_package,
+                  stemcell,
+                  StemcellNotPresentInExportedFrom,
+                )
+              end
+
+              validate_exact_compiled_package(needed_package, filtered_exported_from, release_desc)
               next
             end
 
@@ -52,6 +63,11 @@ module Bosh::Director
             next
           end
 
+          if exception == StemcellNotPresentInExportedFrom
+            msg += message_for_exported_from_stemcell_mismatch(release_desc, faults)
+            next
+          end
+
           msg += if unique_stemcells.size > 1
                    message_for_multiple_stemcells(release_desc, faults)
                  else
@@ -64,10 +80,14 @@ module Bosh::Director
 
       private
 
-      def validate_exact_compiled_package(package, stemcell, release_desc)
-        return if exact_compiled_package?(package, stemcell)
+      def validate_exact_compiled_package(package, stemcells, release_desc)
+        stemcells.each do |stemcell|
+          return true if exact_compiled_package?(package, stemcell)
+        end
 
-        add_fault(release_desc, package, stemcell, PackageMissingExportedFrom)
+        stemcells.each do |s|
+          add_fault(release_desc, package, s, PackageMissingExportedFrom)
+        end
       end
 
       def message_for_multiple_stemcells(release_desc, faults)
@@ -91,12 +111,23 @@ module Bosh::Director
       end
 
       def message_for_exported_from(release_desc, faults)
-        stemcell = faults.first[:stemcell]
-        exported_from_desc = "#{stemcell.os}/#{stemcell.version}"
-        msg = "Can't use release '#{release_desc}'. It is exported_from stemcell '#{exported_from_desc}', " \
-              "but it references packages that are not compiled against it:\n"
+        msg = "Can't use release '#{release_desc}':\n"
 
-        msg + listed_packages(faults)
+        faults.group_by { |fault| fault[:stemcell] }.each do |stemcell, stemcell_faults|
+          exported_from_desc = "#{stemcell.os}/#{stemcell.version}"
+
+          msg += "Packages must be exported from stemcell '#{exported_from_desc}', but some packages are not "\
+                 "compiled for this stemcell:\n"
+          msg += listed_packages(stemcell_faults)
+        end
+        msg
+      end
+
+      def message_for_exported_from_stemcell_mismatch(release_desc, faults)
+        stemcells = faults.group_by { |fault| fault[:stemcell] }.map { |s| "#{s[0].os}/#{s[0].version}" }
+
+        "Can't use release '#{release_desc}': expected to find stemcell for '#{stemcells.join("', '")}' "\
+        "to be configured in exported_from'"
       end
 
       def listed_packages(faults)

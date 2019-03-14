@@ -12,19 +12,28 @@ describe 'exported_from releases', type: :integration do
   let(:jobs) do
     [{ 'name' => 'job_using_pkg_1', 'release' => 'test_release' }]
   end
+
   let(:manifest) do
-    Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(jobs: jobs, name: 'foobar').tap do |manifest|
+    Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(
+      jobs: jobs,
+      name: 'foobar',
+      stemcell: 'centos',
+    ).tap do |manifest|
       manifest.merge!(
         'releases' => [{
           'name' => 'test_release',
           'version' => '1',
-          'exported_from' => [{ 'os' => 'centos-7', 'version' => '3001.1' }],
+          'exported_from' => [
+            { 'os' => 'centos-7', 'version' => '3001.1' },
+          ],
         }],
-        'stemcells' => [{
-          'alias' => 'default',
-          'os' => 'centos-7',
-          'version' => '3001',
-        }],
+        'stemcells' => [
+          {
+            'alias' => 'centos',
+            'os' => 'centos-7',
+            'version' => '3001',
+          },
+        ],
       )
     end
   end
@@ -69,7 +78,33 @@ describe 'exported_from releases', type: :integration do
         failure_expected: true,
       )
 
-      expect(output).to include "release 'test_release' must be exported from stemcell 'centos-7/3001.1'"
+      expect(output).to include "release 'test_release' must be exported from stemcell "\
+      "'bosh-aws-xen-centos-7-go_agent/3002'. Release 'test_release' is exported from: 'centos-7/3001.1'."
+    end
+  end
+
+  context 'when multiple instance groups use different stemcells' do
+    before do
+      bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3002-aws-xen-centos-7-go_agent.tgz')}")
+      bosh_runner.run("upload-release #{spec_asset(targeted_release)}")
+      bosh_runner.run("upload-release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3002.tgz')}")
+    end
+
+    it 'is able to deploy' do
+      manifest['stemcells'] << {
+        alias: 'other-centos',
+        os: 'centos-7',
+        version: '3002',
+      }
+      manifest['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group(
+        jobs: jobs,
+        name: 'foobar2',
+        stemcell: 'other-centos',
+      )
+
+      manifest['releases'][0]['exported_from'] << { 'os' => 'centos-7', 'version' => '3002' }
+
+      deploy(manifest_hash: manifest)
     end
   end
 end

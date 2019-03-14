@@ -6,7 +6,7 @@ module Bosh::Director
       end
 
       def find_compiled_package(package:, stemcell:, exported_from: [], dependency_key:, cache_key:, event_log_stage:)
-        return find_exact_match(package, exported_from[0], dependency_key) unless exported_from.empty?
+        return find_exact_match_with_exported_from(package, exported_from, dependency_key) unless exported_from.empty?
 
         compiled_package = find_exact_match(package, stemcell, dependency_key)
         return compiled_package if compiled_package
@@ -18,6 +18,13 @@ module Bosh::Director
       end
 
       private
+
+      def find_exact_match_with_exported_from(package, exported_from, dependency_key)
+        exported_from.each do |stemcell|
+          result = find_exact_match(package, stemcell, dependency_key)
+          return result if result
+        end
+      end
 
       def find_exact_match(package, stemcell, dependency_key)
         Models::CompiledPackage.find(

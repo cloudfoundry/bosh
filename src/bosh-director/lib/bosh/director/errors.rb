@@ -99,6 +99,7 @@ module Bosh::Director
   PackageMissingSourceCode = err(60001)
   CompiledPackageDeletionFailed = err(60002)
   PackageMissingExportedFrom = err(60003)
+  StemcellNotPresentInExportedFrom = err(60004)
 
   # Models
   DeploymentNotFound = err(70000, NOT_FOUND)
