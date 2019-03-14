@@ -2,43 +2,43 @@
 name: director
 
 templates:
-  pre-start.erb: bin/pre-start
-  post-start.erb: bin/post-start
-  director.yml.erb: config/director.yml
-  worker_ctl.erb: bin/worker_ctl
-  ps_utils.sh: bin/ps_utils.sh
-  drain: bin/drain
-  sudoers: config/sudoers
-  stemcell-copy.sh: bin/stemcell-copy
-  restore-db: bin/restore-db
-  task_logrotate.sh: bin/task_logrotate
-  task_logrotate.cron: config/task_logrotate.cron
-  director.pem.erb: config/ssl/director.pem
-  director.key.erb: config/ssl/director.key
-  nginx.conf.erb: config/nginx.conf
-  mime.types: config/mime.types
-  config_server_ca.cert.erb: config/config_server_ca.cert
-  uaa_server_ca.cert.erb: config/uaa_server_ca.cert
   bbr_backup: bin/bbr/backup
-  bbr_restore: bin/bbr/restore
   bbr_config.json.erb: config/bbr.json
-  nats_server_ca.pem.erb: config/nats_server_ca.pem
-  nats_client_certificate.pem.erb: config/nats_client_certificate.pem
-  nats_client_private_key.erb: config/nats_client_private_key
-  nats_client_ca_certificate.pem.erb: config/nats_client_ca_certificate.pem
-  nats_client_ca_private_key.erb: config/nats_client_ca_private_key
+  bbr_restore: bin/bbr/restore
   bpm.yml: config/bpm.yml
-  utils.sh: helpers/utils.sh
+  certificate_expiry.json.erb: config/certificate_expiry.json
+  config_server_ca.cert.erb: config/config_server_ca.cert
+  console: bin/console
   db_ca.pem.erb: config/db/ca.pem
   db_client_certificate.pem.erb: config/db/client_certificate.pem
   db_client_private_key.key.erb: config/db/client_private_key.key
+  director.key.erb: config/ssl/director.key
+  director.pem.erb: config/ssl/director.pem
+  director.yml.erb: config/director.yml
   director: bin/director
-  scheduler: bin/scheduler
-  sync-dns: bin/sync-dns
-  console: bin/console
+  drain: bin/drain
   env.erb: env
+  mime.types: config/mime.types
+  nats_client_ca_certificate.pem.erb: config/nats_client_ca_certificate.pem
+  nats_client_ca_private_key.erb: config/nats_client_ca_private_key
+  nats_client_certificate.pem.erb: config/nats_client_certificate.pem
+  nats_client_private_key.erb: config/nats_client_private_key
+  nats_server_ca.pem.erb: config/nats_server_ca.pem
+  nginx.conf.erb: config/nginx.conf
+  post-start.erb: bin/post-start
+  pre-start.erb: bin/pre-start
+  ps_utils.sh: bin/ps_utils.sh
+  restore-db: bin/restore-db
+  scheduler: bin/scheduler
+  stemcell-copy.sh: bin/stemcell-copy
+  sudoers: config/sudoers
+  sync-dns: bin/sync-dns
+  task_logrotate.cron: config/task_logrotate.cron
+  task_logrotate.sh: bin/task_logrotate
   trigger-one-time-sync-dns: bin/trigger-one-time-sync-dns
-  certificate_expiry.json.erb: config/certificate_expiry.json
+  uaa_server_ca.cert.erb: config/uaa_server_ca.cert
+  utils.sh: helpers/utils.sh
+  worker_ctl.erb: bin/worker_ctl
 
 packages:
 - director

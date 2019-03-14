@@ -299,11 +299,88 @@ describe 'director templates' do
       end
     end
 
+    describe 'bbr_config.json' do
+      let(:template) { job.template('config/bbr.json') }
+
+      it 'renders' do
+        bbr_config = JSON.parse(template.render(properties))
+        expect(bbr_config['adapter']).to eq('postgres')
+        expect(bbr_config['username']).to eq('bosh')
+        expect(bbr_config['password']).to eq('fake-password')
+        expect(bbr_config['host']).to eq('127.0.0.1')
+        expect(bbr_config['port']).to eq(5432)
+        expect(bbr_config['database']).to eq('bosh')
+        expect(bbr_config.key?('tls')).to eq(false)
+      end
+
+      context 'with the mysql2 adapter' do
+        let(:properties) do
+          default_properties.merge(
+            'director' => {
+              'db' => {
+                'adapter' => 'mysql2',
+                'user' => 'bosh',
+                'password' => 'fake-password',
+                'host' => '127.0.0.1',
+                'port' => 1234,
+                'database' => 'bosh',
+              },
+            },
+          )
+        end
+
+        it 'converts the adapter to `mysqql`' do
+          bbr_config = JSON.parse(template.render(properties))
+          expect(bbr_config['adapter']).to eq('mysql')
+        end
+      end
+
+      context 'with tls enabled' do
+        let(:properties) do
+          default_properties.merge(
+            'director' => {
+              'db' => {
+                'user' => 'bosh',
+                'password' => 'fake-password',
+                'host' => '127.0.0.1',
+                'port' => 1234,
+                'database' => 'bosh',
+                'tls' => {
+                  'enabled' => true,
+                  'skip_host_verify' => true,
+                  'cert' => {
+                    'ca' => 'ca-certificate',
+                    'certificate' => 'certificate',
+                    'private_key' => 'private_key',
+                  },
+                },
+              },
+            },
+          )
+        end
+
+        it 'correctly renders tls configuration' do
+          bbr_config = JSON.parse(template.render(properties))
+          expect(bbr_config['adapter']).to eq('postgres')
+          expect(bbr_config['username']).to eq('bosh')
+          expect(bbr_config['password']).to eq('fake-password')
+          expect(bbr_config['host']).to eq('127.0.0.1')
+          expect(bbr_config['port']).to eq(1234)
+          expect(bbr_config['database']).to eq('bosh')
+          expect(bbr_config['tls']['cert']['ca']).to eq('ca-certificate')
+          expect(bbr_config['tls']['cert']['certificate']).to eq('certificate')
+          expect(bbr_config['tls']['cert']['private_key']).to eq('private_key')
+          expect(bbr_config['tls']['skip_host_verify']).to eq(true)
+        end
+      end
+    end
+
     # rubocop:disable Metrics/MethodLength
     describe 'certificate expiry template' do
       before do
         @key, @cert, @expiry = create_key_and_csr_cert
       end
+
       # rubocop:disable Metrics/BlockLength
       it_should_behave_like 'a rendered file' do
         let(:file_name) { '../jobs/director/templates/certificate_expiry.json.erb' }
