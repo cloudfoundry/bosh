@@ -31,7 +31,14 @@ module Bosh::Director
       before do
         allow(PreCleanupStage).to receive(:new).with(base_job.logger, deployment_plan).and_return(pre_cleanup)
         allow(UpdateActiveVmCpisStage).to receive(:new).with(base_job.logger, deployment_plan).and_return(update_active_vm_cpis)
-        allow(SetupStage).to receive(:new).with(base_job, deployment_plan, vm_creator, anything, anything).and_return(setup)
+        allow(SetupStage).to receive(:new).with(
+          base_job: base_job,
+          deployment_plan: deployment_plan,
+          vm_creator: vm_creator,
+          local_dns_records_repo: anything,
+          local_dns_aliases_repo: anything,
+          dns_publisher: anything,
+        ).and_return(setup)
         allow(DownloadPackagesStage).to receive(:new).with(base_job, deployment_plan).and_return(download_packages_step)
         allow(UpdateInstanceGroupsStage).to receive(:new)
           .with(base_job, deployment_plan, multi_instance_group_updater).and_return(update_instance_groups)

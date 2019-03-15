@@ -10,12 +10,11 @@ module Bosh::Director
     def publish_and_broadcast
       return unless Config.local_dns_enabled?
 
-      records = export_dns_records
-      new_dns_blob = create_dns_blob(records)
-      return if new_dns_blob.nil?
+      dns_blob = dns_blob_to_broadcast
+      return if dns_blob.nil?
 
-      @logger.debug("Broadcasting DNS blob version:#{new_dns_blob.version}")
-      broadcast(new_dns_blob)
+      @logger.debug("Broadcasting DNS blob version:#{dns_blob.version}")
+      broadcast(dns_blob)
     end
 
     private
@@ -29,64 +28,82 @@ module Bosh::Director
       )
     end
 
-    def create_dns_blob(dns_records)
-      current_blob = Models::LocalDnsBlob.order(:version).last
-      return current_blob if current_blob.nil? || current_blob.blob.sha1 == dns_records.shasum
+    def records_version
+      Models::LocalDnsRecord.max(:id) || 0
+    end
 
-      @logger.debug("Exporting new DNS records blob with shasum: #{dns_records.shasum}")
+    def aliases_version
+      Models::LocalDnsAlias.max(:id) || 0
+    end
 
-      if current_blob
+    def dns_blob_to_broadcast
+      latest_records_version = latest_aliases_version = current_blob = nil
+      Config.db.transaction(isolation: :committed, retry_on: [Sequel::SerializationFailure]) do
+        latest_records_version = records_version
+        latest_aliases_version = aliases_version
+        current_blob = Models::LocalDnsBlob.order(:version).last
+      end
+
+      return current_blob if current_blob &&
+                             current_blob.records_version >= latest_records_version &&
+                             current_blob.aliases_version >= latest_aliases_version
+
+      if current_blob&.blob
         @logger.debug("Current DNS blob version: #{current_blob.version} has shasum #{current_blob.blob.sha1}")
       else
         @logger.debug('No current DNS blob')
       end
 
+      exported = export_dns_records
+
+      @logger.debug("Exporting new DNS records blob with shasum: #{exported[:records].shasum}")
+
+      create_dns_blob(exported)
+    end
+
+    def create_dns_blob(records:, records_version:, aliases_version:)
       dns_blob = Models::LocalDnsBlob.create
-      dns_records.version = dns_blob.id
+      records.version = dns_blob.id
 
       blob = Models::Blob.create(
-        blobstore_id: @blobstore_provider.call.create(dns_records.to_json),
-        sha1: dns_records.shasum,
+        blobstore_id: @blobstore_provider.call.create(records.to_json),
+        sha1: records.shasum,
         created_at: Time.new,
       )
       dns_blob.update(
         blob_id: blob.id,
-        version: dns_records.version,
+        version: records.version,
         created_at: blob.created_at,
+        records_version: records_version,
+        aliases_version: aliases_version,
       )
 
       dns_blob
     end
 
-    def add_aliases(dns_records, dns_encoder)
-      provider_intents = Models::Links::LinkProviderIntent.all
-      provider_intents.each do |provider_intent|
-        next unless provider_intent.metadata
-
-        aliases = JSON.parse(provider_intent.metadata)['dns_aliases']
-        aliases&.each do |dns_alias|
-          target = dns_encoder.encode_query({
-            deployment_name: provider_intent.link_provider.deployment.name,
-            group_type: Models::LocalDnsEncodedGroup::Types::LINK,
-            group_name: provider_intent.group_name,
-            root_domain: @domain_name,
-            status: dns_alias['health_filter'],
-            initial_health_check: dns_alias['initial_health_check'],
-          }, true)
-          dns_records.add_alias(dns_alias['domain'], target)
-        end
+    def add_aliases(aliases, dns_records)
+      aliases.each do |a|
+        dns_records.add_alias(a.domain, a.target)
       end
     end
 
     def export_dns_records
       current_blob = Models::LocalDnsBlob.order(:version).last
       version = current_blob&.version || 0
-      local_dns_records = Models::LocalDnsRecord.exclude(instance_id: nil).eager(:instance).all
+
+      aliases = latest_aliases_version = local_dns_records = latest_records_version = nil
+      Config.db.transaction(isolation: :committed, retry_on: [Sequel::SerializationFailure]) do
+        latest_records_version = records_version
+        latest_aliases_version = aliases_version
+
+        local_dns_records = Models::LocalDnsRecord.exclude(instance_id: nil).eager(:instance).all
+        aliases = Models::LocalDnsAlias.exclude(deployment_id: nil).all
+      end
 
       dns_encoder = LocalDnsEncoderManager.create_dns_encoder
       dns_records = DnsRecords.new(version, Config.local_dns_include_index?, dns_encoder)
 
-      add_aliases(dns_records, dns_encoder)
+      add_aliases(aliases, dns_records)
 
       local_dns_records.each do |dns_record|
         dns_records.add_record(
@@ -103,7 +120,8 @@ module Bosh::Director
           links: dns_record.links,
         )
       end
-      dns_records
+
+      { records: dns_records, records_version: latest_records_version, aliases_version: latest_aliases_version }
     end
   end
 end

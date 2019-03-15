@@ -1,5 +1,5 @@
 module Bosh::Director
-  class LocalDnsRepo
+  class LocalDnsRecordsRepo
     def initialize(logger, root_domain)
       @logger = logger
       @root_domain = root_domain

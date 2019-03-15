@@ -11,7 +11,7 @@ module Bosh::Director
     let(:dns_publisher) { instance_double(BlobstoreDnsPublisher, publish_and_broadcast: nil) }
     let(:domain) { Models::Dns::Domain.make(name: 'bosh') }
     let(:ip_provider) { instance_double(DeploymentPlan::IpProvider) }
-    let(:local_dns_repo) { instance_double(LocalDnsRepo, delete_for_instance: nil) }
+    let(:local_dns_records_repo) { instance_double(LocalDnsRecordsRepo, delete_for_instance: nil) }
     let(:powerdns_manager) { instance_double(PowerDnsManager, delete_dns_for_instance: nil) }
     let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
     let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
@@ -24,7 +24,7 @@ module Bosh::Director
       allow(Config).to receive(:current_job).and_return(delete_job)
       allow(Bosh::Director::Config).to receive(:record_events).and_return(true)
       allow(BlobstoreDnsPublisher).to receive(:new).and_return(dns_publisher)
-      allow(LocalDnsRepo).to receive(:new).and_return(local_dns_repo)
+      allow(LocalDnsRecordsRepo).to receive(:new).and_return(local_dns_records_repo)
       allow(Bosh::Director::CloudFactory).to receive(:create).and_return(cloud_factory)
       allow(cloud_factory).to receive(:get).with('', 25).and_return(cloud)
     end
@@ -190,7 +190,7 @@ module Bosh::Director
           expect(powerdns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
 
           expect(dns_publisher).to receive(:publish_and_broadcast)
-          expect(local_dns_repo).to receive(:delete_for_instance)
+          expect(local_dns_records_repo).to receive(:delete_for_instance)
 
           expect(cloud).to receive(:delete_vm).with(existing_instance.vm_cid)
           expect(ip_provider).to receive(:release).with(reservation)
@@ -245,7 +245,7 @@ module Bosh::Director
               expect(powerdns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
 
               expect(dns_publisher).to receive(:publish_and_broadcast)
-              expect(local_dns_repo).to receive(:delete_for_instance)
+              expect(local_dns_records_repo).to receive(:delete_for_instance)
 
               expect(cloud).to receive(:delete_vm).with(existing_instance.vm_cid)
               expect(ip_provider).to receive(:release).with(reservation)
@@ -274,7 +274,7 @@ module Bosh::Director
               expect(powerdns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
 
               expect(dns_publisher).to receive(:publish_and_broadcast)
-              expect(local_dns_repo).to receive(:delete_for_instance)
+              expect(local_dns_records_repo).to receive(:delete_for_instance)
 
               expect(ip_provider).to receive(:release).with(reservation)
 
@@ -293,7 +293,7 @@ module Bosh::Director
               allow(powerdns_manager).to receive(:delete_dns_for_instance).and_raise('failed')
 
               allow(dns_publisher).to receive(:publish_and_broadcast)
-              allow(local_dns_repo).to receive(:delete_for_instance)
+              allow(local_dns_records_repo).to receive(:delete_for_instance)
             end
 
             it 'drains, deletes vm, snapshots, disks, releases old reservations' do
@@ -349,7 +349,7 @@ module Bosh::Director
             expect(powerdns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
 
             expect(dns_publisher).to receive(:publish_and_broadcast)
-            expect(local_dns_repo).to receive(:delete_for_instance)
+            expect(local_dns_records_repo).to receive(:delete_for_instance)
 
             expect(ip_provider).to receive(:release).with(reservation)
 

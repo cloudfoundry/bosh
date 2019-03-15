@@ -12,28 +12,26 @@ module Bosh::Director
         end
 
         def perform
-          begin
-            @logger.info('Updating deployment')
-            PreCleanupStage.new(@logger, @deployment_plan).perform
-            UpdateActiveVmCpisStage.new(@logger, @deployment_plan).perform
-            setup_stage.perform
-            DownloadPackagesStage.new(@base_job, @deployment_plan).perform
-            UpdateInstanceGroupsStage.new(@base_job, @deployment_plan, @multi_instance_group_updater).perform
-            UpdateErrandsStage.new(@base_job, @deployment_plan).perform
-            @logger.info('Committing updates')
-            PersistDeploymentStage.new(@deployment_plan).perform
-            @logger.info('Finished updating deployment')
-            CleanupStemcellReferencesStage.new(@deployment_plan).perform
-          end
+          @logger.info('Updating deployment')
+          PreCleanupStage.new(@logger, @deployment_plan).perform
+          UpdateActiveVmCpisStage.new(@logger, @deployment_plan).perform
+          setup_stage.perform
+          DownloadPackagesStage.new(@base_job, @deployment_plan).perform
+          UpdateInstanceGroupsStage.new(@base_job, @deployment_plan, @multi_instance_group_updater).perform
+          UpdateErrandsStage.new(@base_job, @deployment_plan).perform
+          @logger.info('Committing updates')
+          PersistDeploymentStage.new(@deployment_plan).perform
+          @logger.info('Finished updating deployment')
+          CleanupStemcellReferencesStage.new(@deployment_plan).perform
         end
 
         private
 
         def vm_creator
           return @vm_creator if @vm_creator
+
           template_blob_cache = @deployment_plan.template_blob_cache
           agent_broadcaster = AgentBroadcaster.new
-          vm_deleter = Bosh::Director::VmDeleter.new(@logger, false, Config.enable_virtual_delete_vms)
           @vm_creator = Bosh::Director::VmCreator.new(
             @logger,
             template_blob_cache,
@@ -44,14 +42,23 @@ module Bosh::Director
         end
 
         def setup_stage
-          local_dns_repo = LocalDnsRepo.new(@logger, Config.root_domain)
+          local_dns_records_repo = LocalDnsRecordsRepo.new(@logger, Config.root_domain)
+          local_dns_aliases_repo = LocalDnsAliasesRepo.new(@logger, Config.root_domain)
           dns_publisher = BlobstoreDnsPublisher.new(
-            lambda { App.instance.blobstores.blobstore },
+            -> { App.instance.blobstores.blobstore },
             Config.root_domain,
             AgentBroadcaster.new,
-            @logger
+            @logger,
           )
-          SetupStage.new(@base_job, @deployment_plan, vm_creator, local_dns_repo, dns_publisher)
+
+          SetupStage.new(
+            base_job: @base_job,
+            deployment_plan:  @deployment_plan,
+            vm_creator: vm_creator,
+            local_dns_records_repo: local_dns_records_repo,
+            local_dns_aliases_repo: local_dns_aliases_repo,
+            dns_publisher: dns_publisher,
+          )
         end
       end
     end

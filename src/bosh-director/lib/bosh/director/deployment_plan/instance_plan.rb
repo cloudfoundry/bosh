@@ -219,7 +219,7 @@ module Bosh
             end
           end
 
-          diff = LocalDnsRepo.new(@logger, Config.root_domain).diff(self)
+          diff = LocalDnsRecordsRepo.new(@logger, Config.root_domain).diff(self)
           if diff.changes?
             log_changes(:local_dns_changed?, diff.obsolete + diff.unaffected, diff.unaffected + diff.missing, instance)
           end

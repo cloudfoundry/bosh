@@ -129,31 +129,17 @@ module Bosh::Director
         context 'and there are aliases in the link providers' do
           before do
             deployment = Models::Deployment.create(name: 'test-deployment')
-            provider = Models::Links::LinkProvider.create(
+            Models::LocalDnsAlias.create(
               deployment: deployment,
-              instance_group: 'luan',
-              name: 'fooname',
-              type: 'bartype',
-            )
-            Models::Links::LinkProviderIntent.create(
-              link_provider: provider,
-              name: 'fooname',
-              type: 'bartype',
-              original_name: 'foooriginalname',
-              metadata: {
-                'dns_aliases' => [{
-                  'domain' => 'my-link-provider.domain',
-                  'health_filter' => 'all',
-                  'initial_health_check' => 'synchronous',
-                }],
-              }.to_json,
+              domain: 'my-link-provider.domain',
+              target: 'q-s4y1.q-g11.fake-domain.name',
             )
           end
 
           it 'adds the aliases to the record output' do
             expected_records = {
               'aliases' => {
-                'my-link-provider.domain' => ['q-s4y1.q-g11.fake-domain-name'],
+                'my-link-provider.domain' => ['q-s4y1.q-g11.fake-domain.name'],
               },
             }
             expect(blobstore).to receive(:create) do |actual_records_json|
@@ -239,8 +225,11 @@ module Bosh::Director
           previous_version = Bosh::Director::Models::LocalDnsBlob.last.version
           dns.publish_and_broadcast
           local_dns_blob = Bosh::Director::Models::LocalDnsBlob.last
+          expected_records_version = Bosh::Director::Models::LocalDnsRecord.max(:id)
+
           expect(local_dns_blob.blob.blobstore_id).to eq('blob_id_1')
           expect(local_dns_blob.version).to be > previous_version
+          expect(local_dns_blob.records_version).to eq(expected_records_version)
         end
 
         it 'broadcasts the blob to the agents' do
@@ -477,35 +466,12 @@ module Bosh::Director
             Models::Deployment.create(name: 'test-deployment')
           end
 
-          let(:link_provider) do
-            Models::Links::LinkProvider.create(
-              deployment: deployment,
-              instance_group: 'luan',
-              name: 'fooname',
-              type: 'bartype',
-            )
-          end
-
-          let!(:link_provider_intent) do
-            Models::Links::LinkProviderIntent.create(
-              link_provider: link_provider,
-              name: 'fooname',
-              type: 'bartype',
-              original_name: 'foooriginalname',
-            )
-          end
-
           it 'adds the aliases to the record output' do
             dns.publish_and_broadcast
-
-            link_provider_intent.update(
-              metadata: {
-                'dns_aliases' => [{
-                  'domain' => 'my-link-provider.domain',
-                  'health_filter' => 'all',
-                  'initial_health_check' => 'synchronous',
-                }],
-              }.to_json,
+            Models::LocalDnsAlias.create(
+              deployment: deployment,
+              domain: 'my-link-provider.domain',
+              target: 'q-s4y1.q-g11.fake-domain-name',
             )
 
             expected_records = {

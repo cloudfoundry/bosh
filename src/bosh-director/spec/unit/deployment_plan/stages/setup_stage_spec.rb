@@ -5,7 +5,16 @@ module Bosh::Director
   module DeploymentPlan::Stages
     describe SetupStage do
       describe 'deployment prepare & update' do
-        subject { SetupStage.new(base_job, deployment_plan, vm_creator, local_dns_repo, dns_publisher) }
+        subject do
+          SetupStage.new(
+            base_job: base_job,
+            deployment_plan: deployment_plan,
+            vm_creator: vm_creator,
+            local_dns_records_repo: local_dns_records_repo,
+            local_dns_aliases_repo: local_dns_aliases_repo,
+            dns_publisher: dns_publisher,
+          )
+        end
 
         let(:base_job) { instance_double(Jobs::BaseJob, logger: logger) }
         let(:vm_creator) { instance_double(VmCreator) }
@@ -39,26 +48,33 @@ module Bosh::Director
         let(:tags) do
           { 'some' => 'tags' }
         end
-        let(:local_dns_repo) { instance_double(LocalDnsRepo) }
+        let(:local_dns_records_repo) { instance_double(LocalDnsRecordsRepo) }
+        let(:local_dns_aliases_repo) { instance_double(LocalDnsAliasesRepo) }
         let(:dns_publisher) { instance_double(BlobstoreDnsPublisher) }
+        let(:deployment_model) { instance_double(Models::Deployment) }
 
         let(:deployment_plan) do
-          instance_double(DeploymentPlan::Planner,
-                          instance_plans_with_create_swap_delete_and_needs_duplicate_vm: instance_plans_with_create_swap_delete_and_needs_duplicate_vm,
-                          instance_plans_with_missing_vms: instance_plans_with_missing_vms,
-                          skipped_instance_plans_with_create_swap_delete_and_needs_duplicate_vm: [],
-                          ip_provider: ip_provider,
-                          availability_zones: [
-                            instance_double(DeploymentPlan::AvailabilityZone, name: 'zone1'),
-                            instance_double(DeploymentPlan::AvailabilityZone, name: 'zone2'),
-                          ],
-                          tags: tags)
+          instance_double(
+            DeploymentPlan::Planner,
+            instance_plans_with_create_swap_delete_and_needs_duplicate_vm:
+              instance_plans_with_create_swap_delete_and_needs_duplicate_vm,
+            instance_plans_with_missing_vms: instance_plans_with_missing_vms,
+            skipped_instance_plans_with_create_swap_delete_and_needs_duplicate_vm: [],
+            ip_provider: ip_provider,
+            availability_zones: [
+              instance_double(DeploymentPlan::AvailabilityZone, name: 'zone1'),
+              instance_double(DeploymentPlan::AvailabilityZone, name: 'zone2'),
+            ],
+            model: deployment_model,
+            tags: tags,
+          )
         end
 
         before do
           allow(vm_creator).to receive(:create_for_instance_plans)
           allow(base_job).to receive(:task_checkpoint)
-          allow(local_dns_repo).to receive(:update_for_instance)
+          allow(local_dns_records_repo).to receive(:update_for_instance)
+          allow(local_dns_aliases_repo).to receive(:update_for_deployment)
           allow(dns_publisher).to receive(:publish_and_broadcast)
         end
 
@@ -81,10 +97,12 @@ module Bosh::Director
             subject.perform
           end
 
-          it 'updates and publishes local dns records for the missing plans' do
-            expect(local_dns_repo).to receive(:update_for_instance).with(deployment_plan_instance_plan_0).ordered
-            expect(local_dns_repo).to receive(:update_for_instance).with(deployment_plan_instance_plan_1).ordered
+          it 'updates and publishes local dns information' do
+            expect(local_dns_records_repo).to receive(:update_for_instance).with(deployment_plan_instance_plan_0).ordered
+            expect(local_dns_records_repo).to receive(:update_for_instance).with(deployment_plan_instance_plan_1).ordered
+            expect(local_dns_aliases_repo).to receive(:update_for_deployment).with(deployment_model)
             expect(dns_publisher).to receive(:publish_and_broadcast).ordered
+
             subject.perform
           end
         end

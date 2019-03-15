@@ -2,12 +2,20 @@ module Bosh::Director
   module DeploymentPlan
     module Stages
       class SetupStage
-        def initialize(base_job, deployment_plan, vm_creator, local_dns_repo, dns_publisher)
+        def initialize(
+          base_job:,
+          deployment_plan:,
+          vm_creator:,
+          local_dns_records_repo:,
+          local_dns_aliases_repo:,
+          dns_publisher:
+        )
           @base_job = base_job
           @logger = base_job.logger
           @deployment_plan = deployment_plan
           @vm_creator = vm_creator
-          @local_dns_repo = local_dns_repo
+          @local_dns_records_repo = local_dns_records_repo
+          @local_dns_aliases_repo = local_dns_aliases_repo
           @dns_publisher = dns_publisher
         end
 
@@ -39,8 +47,10 @@ module Bosh::Director
             @deployment_plan.tags,
           )
 
+          @local_dns_aliases_repo.update_for_deployment(@deployment_plan.model)
+
           missing_plans.each do |plan|
-            @local_dns_repo.update_for_instance(plan)
+            @local_dns_records_repo.update_for_instance(plan)
           end
           @dns_publisher.publish_and_broadcast
 

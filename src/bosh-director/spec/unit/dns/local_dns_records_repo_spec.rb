@@ -1,8 +1,8 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe LocalDnsRepo do
-    subject(:local_dns_repo) { LocalDnsRepo.new(logger, root_domain) }
+  describe LocalDnsRecordsRepo do
+    subject(:local_dns_records_repo) { LocalDnsRecordsRepo.new(logger, root_domain) }
     let(:deployment_model) { Models::Deployment.make(name: 'bosh.1') }
     let(:root_domain) { 'bosh1.tld' }
     let(:instance) { instance_double(Bosh::Director::DeploymentPlan::Instance, model: instance_model) }
@@ -62,13 +62,13 @@ module Bosh::Director
       context 'when a matching record already exists' do
         it 'does not change the records' do
           expect do
-            local_dns_repo.update_for_instance(instance_plan)
+            local_dns_records_repo.update_for_instance(instance_plan)
           end.to_not(change { Models::LocalDnsRecord.max(:id) })
           expect(Models::LocalDnsRecord.all).to eq([local_dns_record_0])
         end
 
         it 'does not have changes on the diff' do
-          diff = local_dns_repo.diff(instance_plan)
+          diff = local_dns_records_repo.diff(instance_plan)
           expect(diff.changes?).to be(false)
         end
       end
@@ -78,7 +78,7 @@ module Bosh::Director
 
         it 'inserts a new record' do
           expect do
-            local_dns_repo.update_for_instance(instance_plan)
+            local_dns_records_repo.update_for_instance(instance_plan)
           end.to change { Models::LocalDnsRecord.max(:id) }.by(1)
 
           records = Models::LocalDnsRecord.all
@@ -94,7 +94,7 @@ module Bosh::Director
         end
 
         it 'will compute the difference between the instance model and the existing local dns records' do
-          diff = local_dns_repo.diff(instance_plan)
+          diff = local_dns_records_repo.diff(instance_plan)
           expect(diff.changes?).to be(true)
           expect(diff.obsolete).to eq([{
             ip: '5678',
@@ -134,12 +134,12 @@ module Bosh::Director
 
         it 'causes the max id to increase' do
           expect do
-            local_dns_repo.update_for_instance(instance_plan)
+            local_dns_records_repo.update_for_instance(instance_plan)
           end.to change { Models::LocalDnsRecord.max(:id) }.by(1)
         end
 
         it 'inserts a record for the new network and ip' do
-          local_dns_repo.update_for_instance(instance_plan)
+          local_dns_records_repo.update_for_instance(instance_plan)
           records = Models::LocalDnsRecord.all
           expect(records.size).to eq(2)
 
@@ -155,14 +155,14 @@ module Bosh::Director
         end
 
         it 'does not delete the record for the original ip' do
-          local_dns_repo.update_for_instance(instance_plan)
+          local_dns_records_repo.update_for_instance(instance_plan)
 
           original_record = Models::LocalDnsRecord.order(:id).first
           expect(original_record).to eq(local_dns_record_0)
         end
 
         it 'will compute the difference between the instance model and the existing local dns records' do
-          diff = local_dns_repo.diff(instance_plan)
+          diff = local_dns_records_repo.diff(instance_plan)
 
           expect(diff.obsolete).to be_empty
           expect(diff.missing).to eq([{
@@ -210,19 +210,19 @@ module Bosh::Director
         end
 
         it 'should delete the obsolete record' do
-          local_dns_repo.update_for_instance(instance_plan)
+          local_dns_records_repo.update_for_instance(instance_plan)
           expect(Models::LocalDnsRecord.exclude(instance_id: nil).all).to contain_exactly(local_dns_record_1)
         end
 
         it 'should insert a tombstone' do
           expect do
-            local_dns_repo.update_for_instance(instance_plan)
+            local_dns_records_repo.update_for_instance(instance_plan)
           end.to change { Models::LocalDnsRecord.where(instance_id: nil).count }.by(1)
         end
 
         it 'should have a higher max id' do
           expect do
-            local_dns_repo.update_for_instance(instance_plan)
+            local_dns_records_repo.update_for_instance(instance_plan)
           end.to change { Models::LocalDnsRecord.max(:id) }.by(1)
         end
       end
@@ -248,18 +248,18 @@ module Bosh::Director
 
         it 'should delete the obsolete records' do
           expect(Models::LocalDnsRecord.exclude(instance_id: nil).all.size).to eq(2)
-          local_dns_repo.update_for_instance(instance_plan)
+          local_dns_records_repo.update_for_instance(instance_plan)
           expect(Models::LocalDnsRecord.exclude(instance_id: nil).all).to be_empty
         end
 
         it 'should insert a single tombstone' do
           expect do
-            local_dns_repo.update_for_instance(instance_plan)
+            local_dns_records_repo.update_for_instance(instance_plan)
           end.to change { Models::LocalDnsRecord.where(instance_id: nil).count }.by(1)
         end
 
         it 'will compute the difference between the instance model and the existing local dns records' do
-          diff = local_dns_repo.diff(instance_plan)
+          diff = local_dns_records_repo.diff(instance_plan)
 
           expect(diff.obsolete).to eq([
                                         {
@@ -307,7 +307,7 @@ module Bosh::Director
 
         it 'inserts a new record' do
           expect do
-            local_dns_repo.update_for_instance(instance_plan)
+            local_dns_records_repo.update_for_instance(instance_plan)
           end.to change { Models::LocalDnsRecord.max(:id) }.by(1)
 
           records = Models::LocalDnsRecord.all
@@ -323,7 +323,7 @@ module Bosh::Director
         end
 
         it 'will compute the difference between the instance model and the existing local dns records' do
-          diff = local_dns_repo.diff(instance_plan)
+          diff = local_dns_records_repo.diff(instance_plan)
           expect(diff.changes?).to be(true)
           expect(diff.obsolete).to eq([{
             ip: '1234',
@@ -354,21 +354,21 @@ module Bosh::Director
       it 'causes the max id to increase when instance deployment changes' do
         instance_model.update('deployment' => Models::Deployment.make(name: 'bosh.2'))
         expect do
-          local_dns_repo.update_for_instance(instance_plan)
+          local_dns_records_repo.update_for_instance(instance_plan)
         end.to change { Models::LocalDnsRecord.max(:id) }.by(1)
       end
 
       it 'causes the max id to increase when instance availability_zone changes' do
         instance_model.update('availability_zone' => 'az2')
         expect do
-          local_dns_repo.update_for_instance(instance_plan)
+          local_dns_records_repo.update_for_instance(instance_plan)
         end.to change { Models::LocalDnsRecord.max(:id) }.by(1)
       end
 
       it 'causes the max id to increase when instance job changes' do
         instance_model.update('job' => 'instance-group-1')
         expect do
-          local_dns_repo.update_for_instance(instance_plan)
+          local_dns_records_repo.update_for_instance(instance_plan)
         end.to change { Models::LocalDnsRecord.max(:id) }.by(1)
       end
 
@@ -379,12 +379,12 @@ module Bosh::Director
 
         it 'causes the max id to increase' do
           expect do
-            local_dns_repo.update_for_instance(instance_plan)
+            local_dns_records_repo.update_for_instance(instance_plan)
           end.to change { Models::LocalDnsRecord.max(:id) }.by(1)
         end
 
         it 'inserts a record for the new network' do
-          local_dns_repo.update_for_instance(instance_plan)
+          local_dns_records_repo.update_for_instance(instance_plan)
 
           records = Models::LocalDnsRecord.all
           expect(records.size).to eq(1)
@@ -410,7 +410,7 @@ module Bosh::Director
         end
 
         before do
-          local_dns_repo.update_for_instance(instance_plan)
+          local_dns_records_repo.update_for_instance(instance_plan)
           spec = instance_model.spec
           spec['networks']['net-name-3'] = { 'ip' => '3233' }
           instance_model.spec = spec
@@ -418,13 +418,13 @@ module Bosh::Director
 
         it 'causes the max id to increase' do
           expect do
-            local_dns_repo.update_for_instance(instance_plan)
+            local_dns_records_repo.update_for_instance(instance_plan)
           end.to change { Models::LocalDnsRecord.max(:id) }.by(1)
           expect(Models::LocalDnsRecord.count).to eq(3)
         end
 
         it 'inserts a record for the new network and ip' do
-          local_dns_repo.update_for_instance(instance_plan)
+          local_dns_records_repo.update_for_instance(instance_plan)
 
           records = Models::LocalDnsRecord.order(:id).all
           expect(records.size).to eq(3)
@@ -455,7 +455,7 @@ module Bosh::Director
         end
 
         it 'does not delete the record for the original ip' do
-          local_dns_repo.update_for_instance(instance_plan)
+          local_dns_records_repo.update_for_instance(instance_plan)
 
           original_record = Models::LocalDnsRecord.order(:id).first
           expect(original_record).to eq(local_dns_record_0)
@@ -469,7 +469,7 @@ module Bosh::Director
               'obsolete records: [], new records: [net-name-3/3233], unmodified '\
               'records: [net-name-2/9876, net-name/1234]',
             )
-          local_dns_repo.update_for_instance(instance_plan)
+          local_dns_records_repo.update_for_instance(instance_plan)
         end
       end
 
@@ -479,14 +479,14 @@ module Bosh::Director
         end
 
         it 'deletes all the records' do
-          local_dns_repo.update_for_instance(instance_plan)
+          local_dns_records_repo.update_for_instance(instance_plan)
           expect(Models::LocalDnsRecord.exclude(instance_id: nil).count).to eq(0)
         end
 
         # SQLite will reuse the max id if the latest record is deleted unless AUTOINCREMENT is set on the primary key.
         it 'causes the max id to increase', if: ENV.fetch('DB', 'sqlite') != 'sqlite' do
           expect do
-            local_dns_repo.update_for_instance(instance_plan)
+            local_dns_records_repo.update_for_instance(instance_plan)
           end.to change { Models::LocalDnsRecord.max(:id) }.by(1)
         end
       end
@@ -497,14 +497,14 @@ module Bosh::Director
         end
 
         it 'deletes all the records' do
-          local_dns_repo.update_for_instance(instance_plan)
+          local_dns_records_repo.update_for_instance(instance_plan)
           expect(Models::LocalDnsRecord.exclude(instance_id: nil).count).to eq(0)
         end
 
         # SQLite will reuse the max id if the latest record is deleted unless AUTOINCREMENT is set on the primary key.
         it 'causes the max id to increase', if: ENV.fetch('DB', 'sqlite') != 'sqlite' do
           expect do
-            local_dns_repo.update_for_instance(instance_plan)
+            local_dns_records_repo.update_for_instance(instance_plan)
           end.to change { Models::LocalDnsRecord.max(:id) }.by(1)
         end
       end
@@ -534,13 +534,13 @@ module Bosh::Director
         end
 
         it 'deletes the record for that network name' do
-          local_dns_repo.update_for_instance(instance_plan)
+          local_dns_records_repo.update_for_instance(instance_plan)
           expect(Models::LocalDnsRecord.exclude(instance_id: nil)).to contain_exactly(local_dns_record_1)
         end
 
         it 'causes the max id to increase' do
           expect do
-            local_dns_repo.update_for_instance(instance_plan)
+            local_dns_records_repo.update_for_instance(instance_plan)
           end.to change { Models::LocalDnsRecord.max(:id) || 0 }.by(1)
         end
       end
@@ -549,7 +549,7 @@ module Bosh::Director
         let!(:active_vm) {}
 
         it 'sets the agent_id to nil' do
-          local_dns_repo.update_for_instance(instance_plan)
+          local_dns_records_repo.update_for_instance(instance_plan)
 
           records = Models::LocalDnsRecord.all
           expect(records.size).to eq(1)
@@ -567,7 +567,7 @@ module Bosh::Director
           expect(Models::LocalDnsRecord).to receive(:create).and_raise(RuntimeError, 'everything is broken')
 
           expect do
-            local_dns_repo.update_for_instance(instance_plan)
+            local_dns_records_repo.update_for_instance(instance_plan)
           end.to raise_error(RuntimeError, 'everything is broken')
 
           expect(Models::LocalDnsRecord.all).to eq(original_records)
@@ -617,7 +617,7 @@ module Bosh::Director
         end
 
         it 'deletes the records' do
-          local_dns_repo.delete_for_instance(instance_model)
+          local_dns_records_repo.delete_for_instance(instance_model)
           expect(Models::LocalDnsRecord.exclude(instance_id: nil).all).to eq([local_dns_record_too])
         end
 
@@ -627,7 +627,7 @@ module Bosh::Director
           expect(Models::LocalDnsRecord).to receive(:create).and_raise(RuntimeError, 'everything is broken')
 
           expect do
-            local_dns_repo.delete_for_instance(instance_model)
+            local_dns_records_repo.delete_for_instance(instance_model)
           end.to raise_error(RuntimeError, 'everything is broken')
 
           expect(Models::LocalDnsRecord.all).to eq(original_records)
@@ -636,7 +636,7 @@ module Bosh::Director
         # SQLite will reuse the max id if the latest record is deleted unless AUTOINCREMENT is set on the primary key.
         it 'causes the max id to increase', if: ENV.fetch('DB', 'sqlite') != 'sqlite' do
           expect do
-            local_dns_repo.delete_for_instance(instance_model)
+            local_dns_records_repo.delete_for_instance(instance_model)
           end.to change { Models::LocalDnsRecord.max(:id) }.by(1)
         end
       end
@@ -648,7 +648,7 @@ module Bosh::Director
 
         it 'does not cause the max id to increase' do
           expect do
-            local_dns_repo.delete_for_instance(instance_model)
+            local_dns_records_repo.delete_for_instance(instance_model)
           end.to_not(change { Models::LocalDnsRecord.max(:id) })
         end
       end
