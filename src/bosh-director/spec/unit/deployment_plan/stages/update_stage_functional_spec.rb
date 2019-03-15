@@ -115,7 +115,14 @@ module Bosh::Director::DeploymentPlan::Stages
       allow(agent_client).to receive(:apply)
       allow(agent_client).to receive(:drain).and_return(0)
       allow(agent_client).to receive(:stop)
-      allow(agent_client).to receive(:run_script).with('pre-stop', {})
+      allow(agent_client).to receive(:run_script).with(
+        'pre-stop',
+        'env' => {
+          'BOSH_VM_NEXT_STATE' => 'delete',
+          'BOSH_INSTANCE_NEXT_STATE' => 'delete',
+          'BOSH_DEPLOYMENT_NEXT_STATE' => 'keep',
+        },
+      )
       allow(agent_client).to receive(:run_script).with('post-stop', {})
       allow(agent_client).to receive(:wait_until_ready)
       allow(agent_client).to receive(:update_settings)
