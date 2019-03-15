@@ -57,3 +57,7 @@ properties:
 
   blobstore.tls.cert.private_key:
     description: SSL cert key for blobstore nginx server
+
+  blobstore.bbr.enabled:
+    description: Enable bbr backup and restore operations
+    default: true

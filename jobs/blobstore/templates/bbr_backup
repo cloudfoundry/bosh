@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 
-set -eux
+set -eu
+
+<% if !p('blobstore.bbr.enabled') %>
+
+echo "job property 'blobstore.bbr.enabled' is disabled" \
+  | tee $ARTIFACT_DIRECTORY/backup-skipped
+
+<% else %>
+
+set -x
 
 # BBR reuses the backup directory (hard set to /var/vcap/store/backup/blobstore)
 # and it does not clean out this directory
@@ -14,3 +23,5 @@ fi
 # The '-l' flag to `cp` hard link all the things. `ln` does not work recursively
 # for directories. BBR does not follow symlinks.
 cp -rlp /var/vcap/store/blobstore/* $ARTIFACT_DIRECTORY
+
+<% end %>

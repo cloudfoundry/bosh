@@ -1,6 +1,20 @@
 #!/usr/bin/env bash
 
-set -eux
+<% if !p('blobstore.bbr.enabled') %>
+
+echo "restore skipped because job property 'blobstore.bbr.enabled' is disabled"
+exit 0
+<% else %>
+
+set -eu
+
+if [[ -e $ARTIFACT_DIRECTORY/backup-skipped ]]; then
+  echo "restore skipped: backup artifact says: $( cat $ARTIFACT_DIRECTORY/backup-skipped )"
+
+  exit 0
+fi
+
+set -x
 
 rm -rf /var/vcap/store/blobstore/*
 
@@ -12,3 +26,5 @@ if [ -n "$(ls -A /var/vcap/store/blobstore/store)" ]; then
   find /var/vcap/store/blobstore/store -type d | xargs -n 127 chmod 0700
   find /var/vcap/store/blobstore/store -type f | xargs -n 127 chmod 0600
 fi
+
+<% end %>
