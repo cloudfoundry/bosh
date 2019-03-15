@@ -144,7 +144,8 @@ module Bosh::Director
       end
 
       def deleting_vm?
-        @needs_recreate || instance_plan.needs_shutting_down? || instance.state == 'detached'
+        @needs_recreate || instance_plan.needs_shutting_down? || instance.state == 'detached' ||
+          (instance_plan.should_create_swap_delete? && instance_plan.instance.model.vms.count > 1)
       end
 
       def calculate_action
