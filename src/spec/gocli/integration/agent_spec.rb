@@ -490,7 +490,7 @@ describe 'Agent', type: :integration do
       end
     end
 
-    describe 'drain lifecycle' do
+    describe 'pre-stop lifecycle' do
       let(:vm_delete_pre_stop_env) do
         {
           'env' => {
@@ -544,11 +544,11 @@ describe 'Agent', type: :integration do
 
       context 'when deleting an instance' do
         it 'sets the pre-stop environment variables correctly' do
-          manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 2, legacy_job: false)
+          manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, legacy_job: false)
           deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
-          manifest_hash['instance_groups'][0]['instances'] = 1
+          manifest_hash['instance_groups'][0]['instances'] = 0
 
-          output = deploy_simple_manifest(manifest_hash: manifest_hash, recreate: true)
+          output = deploy_simple_manifest(manifest_hash: manifest_hash)
           sent_messages = get_messages_sent_to_agent(output)
 
           agent_messages = sent_messages.values[0]
