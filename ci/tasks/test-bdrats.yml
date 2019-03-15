@@ -1,0 +1,17 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: bosh/main-bosh-docker
+
+inputs:
+- name: bosh-src
+- name: stemcell
+- name: bosh-release
+- name: bosh-disaster-recovery-acceptance-tests
+  path: gopath/src/github.com/cloudfoundry-incubator/bosh-disaster-recovery-acceptance-tests
+
+run:
+  path: bosh-src/ci/tasks/test-bdrats.sh

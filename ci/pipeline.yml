@@ -16,7 +16,7 @@ groups:
       - bats-ubuntu-xenial
       - bats-ubuntu-xenial-aws
       - brats-ubuntu-xenial
-      - bbr-ubuntu-xenial
+      - bosh-disaster-recovery-acceptance-tests
       - upgrade-tests
       - blobstore-performance
       - upload-compiled-staging-tarball
@@ -39,11 +39,9 @@ groups:
       - bats-ubuntu-xenial
       - bats-ubuntu-xenial-aws
 
-  - name: brats/bbr
+  - name: brats
     jobs:
-      - compile-bbr-xenial
       - brats-ubuntu-xenial
-      - bbr-ubuntu-xenial
 
   # - name: version
   #   jobs:
@@ -452,23 +450,6 @@ jobs:
         BOSH_SRC_PATH: bosh-src/src
         RUBY_VERSION: 2.4.5
 
-  - name: compile-bbr-xenial
-    plan:
-    - aggregate:
-      - get: bosh-src
-      - get: release
-        resource: bbr-sdk-release
-        trigger: true
-      - get: stemcell
-        resource: warden-ubuntu-xenial
-        trigger: true
-    - task: export-release
-      file: bosh-src/ci/tasks/export-release.yml
-      privileged: true
-    - put: bbr-compiled-xenial
-      params:
-        file: "compiled-release/*.tgz"
-
   - name: candidate-release
     plan:
     - get: bosh-src
@@ -715,108 +696,24 @@ jobs:
               GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
             action: destroy
 
-  - name: bbr-ubuntu-xenial
-    serial: true
+  - name: bosh-disaster-recovery-acceptance-tests
     plan:
     - aggregate:
       - get: bosh-src
         passed: [compile-bosh-dev-release-xenial]
       - get: stemcell
         resource: warden-ubuntu-xenial
-        passed: [compile-bbr-xenial]
       - get: bosh-candidate-release-tarballs
         passed: [compile-bosh-dev-release-xenial]
       - get: bosh-release
         resource: bosh-compiled-candidate-xenial
         trigger: true
         passed: [compile-bosh-dev-release-xenial]
-      - get: bbr-compiled-release
-        resource: bbr-compiled-xenial
-        passed: [compile-bbr-xenial]
+      - get: bosh-disaster-recovery-acceptance-tests
     - do:
-      - put: brats-terraform
-        attempts: 2
-        params:
-          env_name: bbr-ubuntu-xenial-((branch_name))
-          terraform_source: bosh-src/ci/brats
-          vars:
-            rds_mysql_username: ((brats-rds-mysql-external-db-user))
-            rds_mysql_password: ((brats-rds-mysql-external-db-password))
-            rds_mysql_databasename: ((brats-rds-mysql-external-db-name))
-            rds_postgres_username: ((brats-rds-postgres-external-db-user))
-            rds_postgres_password: ((brats-rds-postgres-external-db-password))
-            rds_postgres_databasename: ((brats-rds-postgres-external-db-name))
-            aws_access_key_id: ((bosh-ci-database-terraform-rds-aws-access-key-id))
-            aws_secret_access_key: ((bosh-ci-database-terraform-rds-aws-secret-access-key))
-            gcp_mysql_username: ((brats-gcp-mysql-external-db-user))
-            gcp_mysql_password: ((brats-gcp-mysql-external-db-password))
-            gcp_mysql_databasename: ((brats-gcp-mysql-external-db-name))
-            gcp_postgres_username: ((brats-gcp-postgres-external-db-user))
-            gcp_postgres_password: ((brats-gcp-postgres-external-db-password))
-            gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
-            gcp_private_network_name: bbr-ubuntu-xenial-((branch_name))
-          env:
-            GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
-      - task: create-ssl-certificates
-        file: bosh-src/ci/tasks/create-brats-ssl-certificates.yml
-        attempts: 2
-        params:
-          GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
-        input_mapping:
-          terraform-output: brats-terraform
-      - task: test-bbr
-        file: bosh-src/ci/tasks/test-bbr.yml
-        tags: ["worker-brats"]
-        input_mapping:
-          database-metadata: brats-terraform
+      - task: test-bdrats
+        file: bosh-src/ci/tasks/test-bdrats.yml
         privileged: true
-        params: &brats-dbs-params
-          RDS_MYSQL_EXTERNAL_DB_USER: ((brats-rds-mysql-external-db-user))
-          RDS_MYSQL_EXTERNAL_DB_PASSWORD: ((brats-rds-mysql-external-db-password))
-          RDS_MYSQL_EXTERNAL_DB_NAME: ((brats-rds-mysql-external-db-name))
-          RDS_POSTGRES_EXTERNAL_DB_USER: ((brats-rds-postgres-external-db-user))
-          RDS_POSTGRES_EXTERNAL_DB_PASSWORD: ((brats-rds-postgres-external-db-password))
-          RDS_POSTGRES_EXTERNAL_DB_NAME: ((brats-rds-postgres-external-db-name))
-          GCP_MYSQL_EXTERNAL_DB_USER: ((brats-gcp-mysql-external-db-user))
-          GCP_MYSQL_EXTERNAL_DB_PASSWORD: ((brats-gcp-mysql-external-db-password))
-          GCP_MYSQL_EXTERNAL_DB_NAME: ((brats-gcp-mysql-external-db-name))
-          GCP_POSTGRES_EXTERNAL_DB_USER: ((brats-gcp-postgres-external-db-user))
-          GCP_POSTGRES_EXTERNAL_DB_PASSWORD: ((brats-gcp-postgres-external-db-password))
-          GCP_POSTGRES_EXTERNAL_DB_NAME: ((brats-gcp-postgres-external-db-name))
-          GCP_PRIVATE_NETWORK_NAME: bbr-ubuntu-xenial-((branch_name))
-          STEMCELL_OS: ubuntu-xenial
-      ensure:
-        do:
-        - task: cleanup-external-dbs
-          file: bosh-src/ci/tasks/test-brats-db-cleanup.yml
-          input_mapping:
-            database-metadata: brats-terraform
-          params: *brats-dbs-params
-        - put: brats-terraform
-          get_params: { action: destroy }
-          params:
-            env_name: bbr-ubuntu-xenial-((branch_name))
-            terraform_source: bosh-src/ci/brats
-            action: destroy
-            vars:
-              rds_mysql_username: ((brats-rds-mysql-external-db-user))
-              rds_mysql_password: ((brats-rds-mysql-external-db-password))
-              rds_mysql_databasename: ((brats-rds-mysql-external-db-name))
-              rds_postgres_username: ((brats-rds-postgres-external-db-user))
-              rds_postgres_password: ((brats-rds-postgres-external-db-password))
-              rds_postgres_databasename: ((brats-rds-postgres-external-db-name))
-              aws_access_key_id: ((bosh-ci-database-terraform-rds-aws-access-key-id))
-              aws_secret_access_key: ((bosh-ci-database-terraform-rds-aws-secret-access-key))
-              gcp_mysql_username: ((brats-gcp-mysql-external-db-user))
-              gcp_mysql_password: ((brats-gcp-mysql-external-db-password))
-              gcp_mysql_databasename: ((brats-gcp-mysql-external-db-name))
-              gcp_postgres_username: ((brats-gcp-postgres-external-db-user))
-              gcp_postgres_password: ((brats-gcp-postgres-external-db-password))
-              gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
-              gcp_private_network_name: bbr-ubuntu-xenial-((branch_name))
-            env:
-              GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
-            action: destroy
 
   - name: deploy-acceptance-env
     serial: true
@@ -832,14 +729,14 @@ jobs:
           passed:
           - bats-ubuntu-xenial
           - brats-ubuntu-xenial
-          - bbr-ubuntu-xenial
+          - bosh-disaster-recovery-acceptance-tests
         - get: candidate-release
           resource: bosh-candidate-release-tarballs
           trigger: true
           passed:
           - bats-ubuntu-xenial
           - brats-ubuntu-xenial
-          - bbr-ubuntu-xenial
+          - bosh-disaster-recovery-acceptance-tests
       - task: deploy-env
         file: bosh-src/ci/tasks/setup-env.yml
         params:
@@ -860,7 +757,7 @@ jobs:
       passed:
       - bats-ubuntu-xenial
       - brats-ubuntu-xenial
-      - bbr-ubuntu-xenial
+      - bosh-disaster-recovery-acceptance-tests
     - put: bosh-compiled-staging-tarballs
       params:
         file: "compiled-release/*.tgz"
@@ -874,7 +771,7 @@ jobs:
           passed:
           - bats-ubuntu-xenial
           - brats-ubuntu-xenial
-          - bbr-ubuntu-xenial
+          - bosh-disaster-recovery-acceptance-tests
       - put: tracker-output
         params:
           repos:
@@ -1032,18 +929,11 @@ resources:
       secret_access_key: ((bosh-compiled-releases-aws-secret-access-key))
       regexp: "bosh-.*dev\\.(\\d+).*xenial.*.tgz"
 
-  - name: bbr-sdk-release
-    type: bosh-io-release
+  - name: bosh-disaster-recovery-acceptance-tests
+    type: git
     source:
-      repository:  cloudfoundry-incubator/backup-and-restore-sdk-release
-
-  - name: bbr-compiled-xenial
-    type: s3
-    source:
-      bucket: ((bbr_compiled_release_bucket))
-      access_key_id: ((candidate_release_access_key_id))
-      secret_access_key: ((candidate_release_secret_access_key))
-      regexp: "xenial/backup-and-restore-sdk-(.*).tgz"
+      uri: https://github.com/jfmyers9/bosh-disaster-recovery-acceptance-tests.git
+      branch: wip-add-ginkgo-to-vendor
 
   - name: integration-tests-parallel-runtime
     type: s3
