@@ -8,6 +8,12 @@ module Bosh::Director
 
     def update_for_deployment(deployment_model)
       model_diff = diff(deployment_model)
+      @logger.debug(
+        "Updating local dns aliases for deployment '#{deployment_model.name}': " \
+        "obsolete: #{dump(model_diff[:obsolete])}, " \
+        "new: #{dump(model_diff[:new])}, " \
+        "unmodified: #{dump(model_diff[:unmodified])}",
+      )
 
       model_diff[:new].each do |model|
         Models::LocalDnsAlias.create(model)
@@ -19,10 +25,21 @@ module Bosh::Director
 
       return unless model_diff[:new].empty? && !model_diff[:obsolete].empty?
 
+      @logger.debug(
+        "Deleting local dns aliases for deployment '#{deployment_model.name}' aliases: #{dump(model_diff[:obsolete])}",
+      )
       Models::LocalDnsAlias.create(domain: "#{SecureRandom.uuid}-tombstone")
     end
 
     private
+
+    def dump(aliases)
+      strings = aliases.map do |a|
+        "#{a[:domain]}: #{a[:target]}"
+      end
+
+      "{#{strings.sort.join(', ')}}"
+    end
 
     def diff(deployment_model)
       existing_models = Models::LocalDnsAlias.where(deployment: deployment_model).map do |model|
