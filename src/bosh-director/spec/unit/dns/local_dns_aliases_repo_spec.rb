@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe LocalDnsAliasesRepo do
-    subject(:local_dns_aliases_repo) { LocalDnsAliasesRepo.new(nil, root_domain) }
+    subject(:local_dns_aliases_repo) { LocalDnsAliasesRepo.new(logger, root_domain) }
     let(:root_domain) { 'bosh1.tld' }
 
     describe '#update_for_deployment' do
