@@ -531,7 +531,11 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       let(:vip_network) { BD::DeploymentPlan::VipNetwork.parse({ 'name' => 'fake-network' }, [], logger) }
 
       before do
-        instance_group_network = BD::DeploymentPlan::JobNetwork.new('fake-network', ['68.68.68.68'], [], vip_network)
+        instance_group_network = BD::DeploymentPlan::JobNetwork.make(
+          name: 'fake-network',
+          static_ips: ['68.68.68.68'],
+          deployment_network: vip_network,
+        )
         allow(instance_group).to receive(:networks).and_return([instance_group_network])
       end
 
@@ -746,7 +750,10 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
     context 'when network reservation is needed' do
       before do
-        instance_group_network = BD::DeploymentPlan::JobNetwork.new('fake-network', nil, [], manual_network)
+        instance_group_network = BD::DeploymentPlan::JobNetwork.make(
+          static_ips: nil,
+          deployment_network: manual_network,
+        )
         allow(instance_group).to receive(:networks).and_return([instance_group_network])
       end
 

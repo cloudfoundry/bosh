@@ -24,7 +24,7 @@ module Bosh::Director::DeploymentPlan
       ]
     end
     let(:deployment_network) { ManualNetwork.new('network_A', deployment_subnets, nil) }
-    let(:job_network) { JobNetwork.new('network_A', nil, [], deployment_network) }
+    let(:job_network) { JobNetwork.make(name: 'network_A', deployment_network: deployment_network) }
 
     describe 'network_plan_with_dynamic_reservation' do
       it 'creates network plan for requested instance plan and network' do

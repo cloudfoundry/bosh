@@ -76,8 +76,13 @@ module Bosh::Director::DeploymentPlan
 
         expect(networks.count).to eq(1)
         expect(networks.first).to be_a_job_network(
-            JobNetwork.new('a', ['192.168.1.1', '192.168.1.2'], ['dns', 'gateway'], manifest_networks.first)
+          JobNetwork.make(
+            name: 'a',
+            static_ips: ['192.168.1.1', '192.168.1.2'],
+            default_for: %w[dns gateway],
+            deployment_network: manifest_networks.first,
           )
+        )
         expect(networks.first.static_ips).to eq([ip_to_i('192.168.1.1'), ip_to_i('192.168.1.2')])
       end
     end
