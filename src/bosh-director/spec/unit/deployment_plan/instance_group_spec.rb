@@ -790,13 +790,13 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       end
 
       context 'when instance_group does not have static ips' do
-        let(:job_network) { instance_double(Bosh::Director::DeploymentPlan::JobNetwork, static?: false) }
+        let(:job_network) { Bosh::Director::DeploymentPlan::JobNetwork.make(static_ips: nil) }
 
         it { should be_should_create_swap_delete }
       end
 
       context 'when instance_group has static ips' do
-        let(:job_network) { instance_double(Bosh::Director::DeploymentPlan::JobNetwork, static?: true) }
+        let(:job_network) { Bosh::Director::DeploymentPlan::JobNetwork.make(static_ips: ['1.1.1.1']) }
 
         it { should_not be_should_create_swap_delete }
       end

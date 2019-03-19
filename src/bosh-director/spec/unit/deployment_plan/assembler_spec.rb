@@ -240,7 +240,7 @@ module Bosh::Director
         let(:instance_group_1) { make_instance_group('ig-1', 'fake-instance-group-1') }
         let(:instance_group_2) { make_instance_group('ig-2', 'fake-instance-group-2') }
 
-        let(:instance_group_network) { double(DeploymentPlan::JobNetwork) }
+        let(:instance_group_network) { DeploymentPlan::JobNetwork.make }
 
         before do
           allow(instance_group_network).to receive(:name).and_return('my-network-name')

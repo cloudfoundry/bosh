@@ -108,7 +108,9 @@ module Bosh::Director::DeploymentPlan
           ]
         end
         let(:deployment_network) { ManualNetwork.new('network_A', deployment_subnets, nil) }
-        let(:job_networks) { [JobNetwork.new('network_A', job_static_ips, [], deployment_network)] }
+        let(:job_networks) do
+          [JobNetwork.make(name: 'network_A', static_ips: job_static_ips, deployment_network: deployment_network)]
+        end
         let(:job_static_ips) { ['192.168.1.10', '192.168.1.11'] }
         let(:desired_azs) { [AvailabilityZone.new('zone_1', {})] }
         let(:subnet_azs) { ['zone_1'] }

@@ -74,7 +74,9 @@ module Bosh::Director::DeploymentPlan
         ),
       ]
     end
-    let(:job_networks) { [JobNetwork.new('network_A', job_static_ips, [], deployment_network)] }
+    let(:job_networks) do
+      [JobNetwork.make(name: 'network_A', static_ips: job_static_ips, deployment_network: deployment_network)]
+    end
 
     before do
       Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
