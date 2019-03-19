@@ -22,8 +22,7 @@ module Bosh::Director::DeploymentPlan
           ['192.168.1.10', '192.168.1.11', '192.168.1.12', '192.168.1.13', '192.168.1.14'])
       ]
     end
-    let(:deployment_network) { ManualNetwork.new('network_A', deployment_subnets, nil) }
-    let(:job_networks) { [JobNetwork.new('network_A', nil, [], deployment_network)] }
+    let(:job_networks) { [JobNetwork.make(name: 'network_A')] }
 
     # we don't care about instances in this test, it is hard to make them, because they need deployment plan
     let(:instance_repo) do
