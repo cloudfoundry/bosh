@@ -92,8 +92,9 @@ module Bosh::Director
       end
 
       it 'should bind stemcells' do
-        sc1 = FactoryBot.build(:stemcell)
-        sc2 = FactoryBot.build(:stemcell)
+        sc1 = DeploymentPlan::Stemcell.make
+        sc2 = DeploymentPlan::Stemcell.make(os: 'arch-linux')
+        expect(sc2.os).to eq('arch-linux')
 
         expect(deployment_plan).to receive(:stemcells).and_return({'sc1' => sc1, 'sc2' => sc2})
 
