@@ -42,6 +42,7 @@ module Bosh::Director
         :name,
         :nats_server_ca,
         :nats_uri,
+        :parallel_problem_resolution,
         :process_uuid,
         :remove_dev_tools,
         :result,
@@ -231,6 +232,7 @@ module Bosh::Director
         @verify_multidigest_path = config['verify_multidigest_path']
         @enable_cpi_resize_disk = config.fetch('enable_cpi_resize_disk', false)
         @default_update_vm_strategy = config.fetch('default_update_vm_strategy', nil)
+        @parallel_problem_resolution = config.fetch('parallel_problem_resolution', true)
 
         cpi_config = config.fetch('cpi')
         max_cpi_api_version = cpi_config.fetch('max_supported_api_version')

@@ -14,6 +14,7 @@ module Bosh::Director
       @other_deployment = Models::Deployment.make(name: 'othercloud')
       allow(Bosh::Director::Config).to receive(:current_job).and_return(job)
       allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
+      allow(Bosh::Director::Config).to receive(:parallel_problem_resolution).and_return(true)
 
       allow(Bosh::Director::CloudFactory).to receive(:create).and_return(cloud_factory)
       allow(cloud_factory).to receive(:get).with('', nil).and_return(cloud)
@@ -32,13 +33,32 @@ module Bosh::Director
 
     describe '#apply_resolutions' do
       context 'when execution succeeds' do
-        it 'applies all resolutions' do
+        before do
+          allow(Bosh::Director::Config).to receive(:max_threads).and_return(5)
+        end
+        context 'when parallel resurrection is turned on' do
+          it 'resolves the problems parallel' do
+            test_apply_resolutions
+            expect(ThreadPool).to have_received(:new).with(max_threads: 5)
+          end
+        end
+
+        context 'when parallel resurrection is turned off' do
+          before do
+            allow(Bosh::Director::Config).to receive(:parallel_problem_resolution).and_return(false)
+          end
+          it 'resolves the problems serial' do
+            test_apply_resolutions
+            expect(ThreadPool).not_to have_received(:new)
+          end
+        end
+
+        def test_apply_resolutions
           disks = []
           problems = []
 
           agent = double('agent')
           expect(agent).to receive(:list_disk).and_return([])
-
           expect(cloud).to receive(:detach_disk).exactly(1).times
 
           allow(AgentClient).to receive(:with_agent_id).and_return(agent)
@@ -51,7 +71,6 @@ module Bosh::Director
 
           resolver = make_resolver(@deployment)
 
-          expect(Bosh::Director::Config).to receive(:max_threads).and_return(5)
           expect(resolver).to receive(:track_and_log).with(/Disk 'disk-cid-\d+' \(0M\) for instance 'job-\d+\/uuid-\d+ \(\d+\)' is inactive \(.*\): .*/).twice.and_call_original
           expect(resolver.apply_resolutions({ problems[0].id.to_s => 'delete_disk', problems[1].id.to_s => 'ignore' })).to eq([2, nil])
 
@@ -60,6 +79,7 @@ module Bosh::Director
 
           expect(Models::DeploymentProblem.filter(state: 'open').count).to eq(0)
         end
+
 
         it 'notices and logs extra resolutions' do
           disks = (1..3).map { |_| Models::PersistentDisk.make(:active => false) }

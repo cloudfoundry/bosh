@@ -41,6 +41,7 @@ params = {
       'use_dns_addresses' => p('director.local_dns.use_dns_addresses'),
   },
   'audit_log_path' => '/var/vcap/sys/log/director',
+  'parallel_problem_resolution' => p('director.parallel_problem_resolution', true)
 }
 
 director_db = {

@@ -31,19 +31,17 @@ module Bosh::Director
 
       begin_stage('Applying problem resolutions', problems.count)
 
-      ThreadPool.new(max_threads: Config.max_threads).wrap do |pool|
-        problems.each do |problem|
-          pool.process do
-            if problem.state != 'open'
-              reason = "state is '#{problem.state}'"
-              track_and_log("Ignoring problem #{problem.id} (#{reason})")
-            elsif problem.deployment_id != @deployment.id
-              reason = 'not a part of this deployment'
-              track_and_log("Ignoring problem #{problem.id} (#{reason})")
-            else
-              apply_resolution(problem)
+      if Config.parallel_problem_resolution
+        ThreadPool.new(max_threads: Config.max_threads).wrap do |pool|
+          problems.each do |problem|
+            pool.process do
+              process_problem(problem)
             end
           end
+        end
+      else
+        problems.each do |problem|
+          process_problem(problem)
         end
       end
 
@@ -53,6 +51,18 @@ module Bosh::Director
     end
 
     private
+
+    def process_problem(problem)
+      if problem.state != 'open'
+        reason = "state is '#{problem.state}'"
+        track_and_log("Ignoring problem #{problem.id} (#{reason})")
+      elsif problem.deployment_id != @deployment.id
+        reason = 'not a part of this deployment'
+        track_and_log("Ignoring problem #{problem.id} (#{reason})")
+      else
+        apply_resolution(problem)
+      end
+    end
 
     def apply_resolution(problem)
       handler = ProblemHandlers::Base.create_from_model(problem)

@@ -629,6 +629,33 @@ describe Bosh::Director::Config do
     end
   end
 
+  describe 'parallel_problem_resolution' do
+    it 'defaults to true' do
+      described_class.configure(test_config)
+      expect(described_class.parallel_problem_resolution).to be_truthy
+    end
+
+    context 'when explicitly set' do
+      context 'when set to true' do
+        before { test_config['parallel_problem_resolution'] = true }
+
+        it 'resolves to true' do
+          described_class.configure(test_config)
+          expect(described_class.parallel_problem_resolution).to be_truthy
+        end
+      end
+
+      context 'when set to false' do
+        before { test_config['parallel_problem_resolution'] = false }
+
+        it 'resolves to false' do
+          described_class.configure(test_config)
+          expect(described_class.parallel_problem_resolution).to be_falsey
+        end
+      end
+    end
+  end
+
   describe '#configure_db' do
     let(:database) { instance_double(Sequel::Database) }
 

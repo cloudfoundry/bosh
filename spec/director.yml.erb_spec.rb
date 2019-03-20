@@ -591,6 +591,26 @@ describe 'director.yml.erb' do
         expect(parsed_yaml['agent']['env']['bosh']).to eq({'foo' => 'bar'})
       end
     end
+
+    describe 'parallel_problem_resolution property' do
+      before do
+        merged_manifest_properties['director']['cpi_job'] = 'test-cpi'
+      end
+
+      context 'when parallel_problem_resolution not specified' do
+        it 'should be the default value' do
+          expect(parsed_yaml['parallel_problem_resolution']).to eq(true)
+        end
+      end
+      context 'when parallel_problem_resolution specified' do
+        before do
+          merged_manifest_properties['director']['parallel_problem_resolution'] = false
+        end
+        it 'should be the specified value' do
+          expect(parsed_yaml['parallel_problem_resolution']).to eq(false)
+        end
+      end
+    end
   end
 
   describe Bosh::Template::Test do
