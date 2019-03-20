@@ -27,8 +27,10 @@ module Support
         template_model = Bosh::Director::Models::Template.make(name: deployment_manifest['jobs'].first['templates'].first['name'])
         version.add_template(template_model)
       elsif deployment_manifest.has_key?('instance_groups')
-        template_model = Bosh::Director::Models::Template.make(name: deployment_manifest['instance_groups'].first['jobs'].first['name'])
-        version.add_template(template_model)
+        deployment_manifest['instance_groups'].first['jobs'].each do |job|
+          template_model = Bosh::Director::Models::Template.make(name: job['name'])
+          version.add_template(template_model)
+        end
       end
 
     end

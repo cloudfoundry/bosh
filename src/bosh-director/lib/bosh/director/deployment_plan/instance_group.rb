@@ -222,7 +222,7 @@ module Bosh::Director
         result['logs'] = first_job.logs if first_job.logs
         # --- /Legacy ---
 
-        @jobs.each do |job|
+        @jobs.sort_by(&:name).each do |job|
           job_entry = {
             'name' => job.name,
             'version' => job.version,

@@ -379,4 +379,37 @@ describe 'basic functionality', type: :integration do
       expect(File.exist?(depl_addon_instance.job_path('dummy'))).to eq(true)
     end
   end
+
+  context 'when a runtime config changes the job ordering' do
+    let(:runtime_config) do
+      {
+        'releases' => [
+          { 'name' => 'bosh-release', 'version' => '0.1-dev' },
+        ],
+        'addons' => [
+          { 'name' => 'addon1', 'jobs' => [{ 'name' => 'bazquux', 'release' => 'bosh-release' }] },
+          { 'name' => 'addon2', 'jobs' => [{ 'name' => 'foobar_without_packages', 'release' => 'bosh-release' }] },
+        ],
+      }
+    end
+
+    before do
+      prepare_for_deploy(runtime_config_hash: runtime_config)
+    end
+
+    it 'does not cause updates if job ordering within instance group changes' do
+      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+
+      runtime_config['addons'] = [
+        { 'name' => 'addon2', 'jobs' => [{ 'name' => 'foobar_without_packages', 'release' => 'bosh-release' }] },
+        { 'name' => 'addon1', 'jobs' => [{ 'name' => 'bazquux', 'release' => 'bosh-release' }] },
+      ]
+
+      bosh_runner.run("update-runtime-config #{yaml_file('runtime-config', runtime_config).path}")
+
+      output = deploy_simple_manifest(manifest_hash: manifest_hash)
+      expect(output).to_not include('Updating')
+    end
+  end
 end

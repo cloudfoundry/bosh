@@ -390,7 +390,7 @@ module Bosh
           # though, because we got it from the spec function in job.rb which
           # automatically makes it non-legacy.
           converted_current = InstanceGroup.convert_from_legacy_spec(@instance.current_job_spec)
-          changed = job.spec != converted_current
+          changed = ordered_spec(job.spec) != ordered_spec(converted_current)
           log_changes(__method__, converted_current, job.spec, @instance) if changed
           changed
         end
@@ -467,6 +467,13 @@ module Bosh
           old_state_msg = old_state.is_a?(String) ? old_state : old_state.to_json
           new_state_msg = new_state.is_a?(String) ? new_state : new_state.to_json
           @logger.debug("#{method_sym} changed FROM: #{old_state_msg} TO: #{new_state_msg} on instance #{instance}")
+        end
+
+        def ordered_spec(spec)
+          return spec unless spec.is_a? Hash
+
+          spec['templates'] = spec['templates'].sort_by { |t| t['name'] } if spec.key?('templates')
+          spec
         end
       end
 

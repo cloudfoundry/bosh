@@ -1551,6 +1551,44 @@ module Bosh::Director::DeploymentPlan
           end
         end
 
+        context 'when there is a different order for templates (jobs)' do
+          let(:job1_template) { Bosh::Director::Models::Template.make(name: 'job1') }
+          let(:job2_template) { Bosh::Director::Models::Template.make(name: 'job2') }
+
+          let(:deployment_manifest) do
+            Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(jobs: [{ 'name' => 'job1' }, { 'name' => 'job2' }])
+          end
+
+          let(:instance_group_spec) do
+            Bosh::Spec::NewDeployments.simple_instance_group(jobs: [{ 'name' => 'job1' }, { 'name' => 'job2' }])
+          end
+
+          let(:desired_deployment_plan_jobs) do
+            [
+              instance_double(
+                Bosh::Director::DeploymentPlan::Job,
+                model: job1_template,
+              ),
+              instance_double(
+                Bosh::Director::DeploymentPlan::Job,
+                model: job2_template,
+              ),
+            ]
+          end
+
+          before do
+            another_spec = instance_group.spec
+            job1 = another_spec['templates'].first
+            job2 = another_spec['templates'][1]
+            another_spec['templates'] = [job2, job1]
+            allow(instance).to receive(:current_job_spec).and_return(another_spec)
+          end
+
+          it 'does not detect change' do
+            expect(instance_plan.job_changed?).to be_falsey
+          end
+        end
+
         context 'that does not match the job spec' do
           before do
             instance_group.jobs = [job]
