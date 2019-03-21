@@ -132,14 +132,24 @@ module Bosh::Director
             Models::LocalDnsAlias.create(
               deployment: deployment,
               domain: 'my-link-provider.domain',
-              target: 'q-s4y1.q-g11.fake-domain.name',
+              health_filter: 'all',
+              initial_health_check: 'synchronous',
+              group_id: '11',
             )
           end
 
           it 'adds the aliases to the record output' do
             expected_records = {
               'aliases' => {
-                'my-link-provider.domain' => ['q-s4y1.q-g11.fake-domain.name'],
+                'my-link-provider.domain' => [
+                  {
+                    'root_domain' => 'fake-domain-name',
+                    'health_filter' => 'all',
+                    'initial_health_check' => 'synchronous',
+                    'group_id' => '11',
+                    'placeholder_type' => nil,
+                  },
+                ],
               },
             }
             expect(blobstore).to receive(:create) do |actual_records_json|
@@ -471,12 +481,22 @@ module Bosh::Director
             Models::LocalDnsAlias.create(
               deployment: deployment,
               domain: 'my-link-provider.domain',
-              target: 'q-s4y1.q-g11.fake-domain-name',
+              health_filter: 'all',
+              initial_health_check: 'synchronous',
+              group_id: '11',
             )
 
             expected_records = {
               'aliases' => {
-                'my-link-provider.domain' => ['q-s4y1.q-g11.fake-domain-name'],
+                'my-link-provider.domain' => [
+                  {
+                    'root_domain' => 'fake-domain-name',
+                    'health_filter' => 'all',
+                    'initial_health_check' => 'synchronous',
+                    'group_id' => '11',
+                    'placeholder_type' => nil,
+                  },
+                ],
               },
             }
             expect(blobstore).to receive(:create) do |actual_records_json|

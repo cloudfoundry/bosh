@@ -35,7 +35,7 @@ module Bosh::Director
 
     def dump(aliases)
       strings = aliases.map do |a|
-        "#{a[:domain]}: #{a[:target]}"
+        "#{a[:domain]}: #{a}"
       end
 
       "{#{strings.sort.join(', ')}}"
@@ -66,19 +66,17 @@ module Bosh::Director
 
         aliases = JSON.parse(provider_intent.metadata)['dns_aliases']
         aliases&.map do |dns_alias|
-          target = @dns_encoder.encode_query({
-            deployment_name: deployment_model.name,
-            group_type: Models::LocalDnsEncodedGroup::Types::LINK,
-            group_name: provider_intent.group_name,
-            root_domain: @root_domain,
-            status: dns_alias['health_filter'],
-            initial_health_check: dns_alias['initial_health_check'],
-          }, true)
-
           {
             deployment_id: deployment_model.id,
             domain: dns_alias['domain'],
-            target: target,
+            group_id: @dns_encoder.id_for_group_tuple(
+              Models::LocalDnsEncodedGroup::Types::LINK,
+              provider_intent.group_name,
+              deployment_model.name,
+            ),
+            health_filter: dns_alias['health_filter'],
+            initial_health_check: dns_alias['initial_health_check'],
+            placeholder_type: dns_alias['placeholder_type'],
           }
         end
       end.compact

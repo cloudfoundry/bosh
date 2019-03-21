@@ -32,6 +32,10 @@ module Bosh::Director
               {
                 domain: 'foo2.bar',
               },
+              {
+                domain: '_.foo.bar',
+                placeholder_type: 'uuid',
+              },
             ],
           }.to_json,
         )
@@ -47,17 +51,31 @@ module Bosh::Director
       it 'creates and saves local dns alias models' do
         local_dns_aliases_repo.update_for_deployment(deployment_model)
 
-        expect(Models::LocalDnsAlias.count).to eq(2)
+        expect(Models::LocalDnsAlias.count).to eq(3)
 
         local_dns_alias = Models::LocalDnsAlias.find(domain: 'foo.bar')
         expect(local_dns_alias.deployment_id).to eq(deployment_model.id)
         expect(local_dns_alias.domain).to eq('foo.bar')
-        expect(local_dns_alias.target).to eq("q-s3y1.q-g#{group1.id}.#{root_domain}")
+        expect(local_dns_alias.health_filter).to eq('healthy')
+        expect(local_dns_alias.initial_health_check).to eq('synchronous')
+        expect(local_dns_alias.group_id).to eq(group1.id.to_s)
+        expect(local_dns_alias.placeholder_type).to be_nil
 
         local_dns_alias = Models::LocalDnsAlias.find(domain: 'foo2.bar')
         expect(local_dns_alias.deployment_id).to eq(deployment_model.id)
         expect(local_dns_alias.domain).to eq('foo2.bar')
-        expect(local_dns_alias.target).to eq("q-s0.q-g#{group1.id}.#{root_domain}")
+        expect(local_dns_alias.health_filter).to be_nil
+        expect(local_dns_alias.initial_health_check).to be_nil
+        expect(local_dns_alias.group_id).to eq(group1.id.to_s)
+        expect(local_dns_alias.placeholder_type).to be_nil
+
+        local_dns_alias = Models::LocalDnsAlias.find(domain: '_.foo.bar')
+        expect(local_dns_alias.deployment_id).to eq(deployment_model.id)
+        expect(local_dns_alias.domain).to eq('_.foo.bar')
+        expect(local_dns_alias.health_filter).to be_nil
+        expect(local_dns_alias.initial_health_check).to be_nil
+        expect(local_dns_alias.group_id).to eq(group1.id.to_s)
+        expect(local_dns_alias.placeholder_type).to eq('uuid')
       end
 
       it 'does not update unchanged links' do
@@ -92,7 +110,10 @@ module Bosh::Director
             local_dns_alias = Models::LocalDnsAlias.find(domain: 'updated-foo.bar')
             expect(local_dns_alias.deployment_id).to eq(deployment_model.id)
             expect(local_dns_alias.domain).to eq('updated-foo.bar')
-            expect(local_dns_alias.target).to eq("q-s0.q-g#{group1.id}.#{root_domain}")
+            expect(local_dns_alias.health_filter).to be_nil
+            expect(local_dns_alias.initial_health_check).to be_nil
+            expect(local_dns_alias.group_id).to eq(group1.id.to_s)
+            expect(local_dns_alias.placeholder_type).to be_nil
           end
 
           it 'bumps the version' do
