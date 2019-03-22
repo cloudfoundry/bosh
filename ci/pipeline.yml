@@ -932,8 +932,8 @@ resources:
   - name: bosh-disaster-recovery-acceptance-tests
     type: git
     source:
-      uri: https://github.com/jfmyers9/bosh-disaster-recovery-acceptance-tests.git
-      branch: wip-add-ginkgo-to-vendor
+      uri: https://github.com/cloudfoundry-incubator/bosh-disaster-recovery-acceptance-tests.git
+      branch: master
 
   - name: integration-tests-parallel-runtime
     type: s3
