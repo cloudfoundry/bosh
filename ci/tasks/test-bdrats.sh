@@ -19,6 +19,7 @@ ${src_dir}/bosh-src/ci/docker/main-bosh-docker/start-bosh.sh \
   -o uaa.yml \
   -o credhub.yml \
   -o local-bosh-release-tarball.yml \
+  -o hm/disable.yml \
   -v local_bosh_release=${BOSH_RELEASE_PATH}
 
 source /tmp/local-bosh/director/env
