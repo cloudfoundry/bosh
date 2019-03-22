@@ -10,7 +10,7 @@ module Bosh::Director
     def update_persistent_disk(instance_plan)
       @logger.info('Updating persistent disk')
 
-      check_persistent_disk(instance_plan) unless has_multiple_persistent_disks?(instance_plan)
+      sync_persistent_disk(instance_plan) unless has_multiple_persistent_disks?(instance_plan)
 
       return unless instance_plan.persistent_disk_changed?
 
@@ -106,24 +106,36 @@ module Bosh::Director
     # Synchronizes persistent_disks with the agent.
     # (Currently assumes that we only have 1 persistent disk.)
     # @return [void]
-    def check_persistent_disk(instance_plan)
+    def sync_persistent_disk(instance_plan)
       instance = instance_plan.instance
       return if instance.model.persistent_disks.empty?
+
       agent_disk_cid = agent_mounted_disks(instance.model).first
 
       if agent_disk_cid.nil? && !instance_plan.needs_disk?
         @logger.debug('Disk is already detached')
       elsif agent_disk_cid != instance.model.managed_persistent_disk_cid
-        raise AgentDiskOutOfSync,
-              "'#{instance}' has invalid disks: agent reports " \
-              "'#{agent_disk_cid}' while director record shows " \
-              "'#{instance.model.managed_persistent_disk_cid}'"
+        handle_disk_mismatch(agent_disk_cid, instance, instance_plan)
       end
 
       instance.model.persistent_disks.each do |disk|
         unless disk.active
           @logger.warn("'#{instance}' has inactive disk #{disk.disk_cid}")
         end
+      end
+    end
+
+    def handle_disk_mismatch(agent_disk_cid, instance, instance_plan)
+      if agent_disk_cid.nil?
+        @logger.warn("Agent of '#{instance}' reports no disk while director record shows " \
+                     "'#{instance.model.managed_persistent_disk_cid}'. " \
+                     'Re-attaching existing persistent disk...')
+        attach_disks_if_needed(instance_plan)
+      else
+        raise AgentDiskOutOfSync,
+              "'#{instance}' has invalid disks: agent reports " \
+              "'#{agent_disk_cid}' while director record shows " \
+              "'#{instance.model.managed_persistent_disk_cid}'"
       end
     end
 

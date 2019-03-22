@@ -566,10 +566,14 @@ module Bosh::Director
         context 'when we still need disk' do
           let(:job_persistent_disk_size) { 100 }
 
-          it 'raises' do
-            expect do
-              disk_manager.update_persistent_disk(instance_plan)
-            end.to raise_error AgentDiskOutOfSync, "'job-name/my-uuid-1 (1)' has invalid disks: agent reports '' while director record shows 'disk123'"
+          it 're-attaches the disk' do
+            expect(logger).to receive(:warn).with(
+              "Agent of 'job-name/my-uuid-1 (1)' reports no disk while director record shows 'disk123'. " \
+              'Re-attaching existing persistent disk...',
+            )
+            expect(subject).to receive(:attach_disks_if_needed)
+
+            disk_manager.update_persistent_disk(instance_plan)
           end
         end
       end
