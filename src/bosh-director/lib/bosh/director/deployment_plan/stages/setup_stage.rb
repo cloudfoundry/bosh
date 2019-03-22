@@ -52,6 +52,7 @@ module Bosh::Director
           missing_plans.each do |plan|
             @local_dns_records_repo.update_for_instance(plan)
           end
+
           @dns_publisher.publish_and_broadcast
 
           @base_job.task_checkpoint

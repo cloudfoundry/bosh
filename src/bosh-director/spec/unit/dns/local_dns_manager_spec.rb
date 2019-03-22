@@ -7,6 +7,8 @@ module Bosh::Director
     end
 
     let(:instance_model) { Models::Instance.make }
+    let(:instance_plan) { instance_double(DeploymentPlan::InstancePlan, instance: deployment_instance) }
+    let(:deployment_instance) { instance_double(DeploymentPlan::Instance, model: instance_model) }
     let(:local_dns_records_repo) { instance_double(LocalDnsRecordsRepo) }
     let(:blobstore_dns_publisher) { instance_double(BlobstoreDnsPublisher) }
 
@@ -21,10 +23,10 @@ module Bosh::Director
 
     describe '#update_dns_for_instance' do
       it 'should delegate to local_dns_records_repo and publish' do
-        expect(local_dns_records_repo).to receive(:update_for_instance).with(instance_model)
-        expect(blobstore_dns_publisher).to receive(:publish_and_broadcast)
+        expect(local_dns_records_repo).to receive(:update_for_instance).with(instance_plan)
+        expect(blobstore_dns_publisher).to receive(:publish_and_send_to_instance).with(instance_model)
 
-        local_dns_manager.update_dns_record_for_instance(instance_model)
+        local_dns_manager.update_dns_record_for_instance(instance_plan)
       end
     end
 

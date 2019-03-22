@@ -8,20 +8,40 @@ module Bosh::Director
     end
 
     def publish_and_broadcast
-      return unless Config.local_dns_enabled?
-
-      dns_blob = dns_blob_to_broadcast
+      dns_blob = publish
       return if dns_blob.nil?
 
       @logger.debug("Broadcasting DNS blob version:#{dns_blob.version}")
       broadcast(dns_blob)
     end
 
+    def publish_and_send_to_instance(instance_model)
+      dns_blob = publish
+      return if dns_blob.nil?
+
+      send_to_instance(dns_blob, instance_model)
+    end
+
     private
+
+    def publish
+      return unless Config.local_dns_enabled?
+
+      dns_blob_to_broadcast
+    end
 
     def broadcast(dns_blob)
       @agent_broadcaster.sync_dns(
         @agent_broadcaster.filter_instances(nil),
+        dns_blob.blob.blobstore_id,
+        dns_blob.blob.sha1,
+        dns_blob.version,
+      )
+    end
+
+    def send_to_instance(dns_blob, instance_model)
+      @agent_broadcaster.sync_dns(
+        [instance_model],
         dns_blob.blob.blobstore_id,
         dns_blob.blob.sha1,
         dns_blob.version,

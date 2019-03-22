@@ -19,9 +19,9 @@ module Bosh::Director
       @logger = logger
     end
 
-    def update_dns_record_for_instance(instance_model)
-      @dns_repo.update_for_instance(instance_model)
-      @blobstore_publisher.publish_and_broadcast
+    def update_dns_record_for_instance(instance_plan)
+      @dns_repo.update_for_instance(instance_plan)
+      @blobstore_publisher.publish_and_send_to_instance(instance_plan.instance.model)
     end
 
     def delete_dns_for_instance(instance_model)
