@@ -86,8 +86,12 @@ describe 'local DNS', type: :integration do
         it 'updates /etc/hosts with the new info for an instance hostname' do
           manifest_deployment = initial_deployment(5)
 
-          deploy_simple_manifest(manifest_hash: manifest_deployment, recreate: true)
-          etc_hosts = parse_agent_etc_hosts(4)
+          output = deploy_simple_manifest(manifest_hash: manifest_deployment, recreate: true)
+
+          # the last instance is the only one with all latest IPs; others rely on background syncing
+          last_instance_index = output.scan(/Updating instance job_to_test_local_dns: [^ ]+ \((\d+)\)/).last[0]
+
+          etc_hosts = parse_agent_etc_hosts(last_instance_index)
           expect(etc_hosts.size).to eq(5), "expected etc_hosts to have 5 lines, got contents #{etc_hosts} with size #{etc_hosts.size}"
           expect(etc_hosts).to match_array(generate_instance_dns)
         end
