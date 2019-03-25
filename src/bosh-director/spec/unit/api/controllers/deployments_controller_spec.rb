@@ -2513,7 +2513,15 @@ module Bosh::Director
 
           context 'PUT /:deployment/jobs/:job/:index_or_id/resurrection' do
             it 'allows access to owned deployment' do
-              expect(put('/owned_deployment/jobs/dea/0/resurrection', '{}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(200)
+              put('/owned_deployment/jobs/dea/0/resurrection', '{}', 'CONTENT_TYPE' => 'application/json')
+
+              expect(last_response.status).to eq(410)
+              expect(last_response.body).to include(
+                'This endpoint has been removed. Please use '\
+                  'https://bosh.io/docs/resurrector/#enable-with-resurrection-config to configure resurrection for the '\
+                  'deployment or instance group. If you need to prevent a single instance from being resurrected, '\
+                  'consider using https://bosh.io/docs/cli-v2/#ignore.',
+              )
             end
             it 'denies access to other deployment' do
               expect(put('/other_deployment/jobs/dea/0/resurrection', '{}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(401)
