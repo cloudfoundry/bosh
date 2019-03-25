@@ -50,16 +50,15 @@ describe 'cli: deployment process', type: :integration do
 
     output = scrub_random_ids(table(output))
     expect(output).to contain_exactly(
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-1', 'ips' => '192.168.1.2', 'state' => 'started', 'vm_cid' => /\d+/, 'vm_type' => 'a', 'disk_cids' => '', 'agent_id' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'index' => '0', 'resurrection_paused'=> 'false', 'bootstrap' => 'true', 'ignore' => 'false'},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-2', 'ips' => '192.168.2.2', 'state' => 'started', 'vm_cid' => /\d+/, 'vm_type' => 'a', 'disk_cids' => '', 'agent_id' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'index' => '1', 'resurrection_paused'=> 'false', 'bootstrap' => 'false', 'ignore' => 'false'},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-3', 'ips' => '192.168.3.2', 'state' => 'started', 'vm_cid' => /\d+/, 'vm_type' => 'a', 'disk_cids' => '', 'agent_id' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'index' => '2', 'resurrection_paused'=> 'false', 'bootstrap' => 'false', 'ignore' => 'false'},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-1', 'ips' => '192.168.1.2', 'state' => 'started', 'vm_cid' => /\d+/, 'vm_type' => 'a', 'disk_cids' => '', 'agent_id' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'index' => '0', 'bootstrap' => 'true', 'ignore' => 'false'},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-2', 'ips' => '192.168.2.2', 'state' => 'started', 'vm_cid' => /\d+/, 'vm_type' => 'a', 'disk_cids' => '', 'agent_id' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'index' => '1', 'bootstrap' => 'false', 'ignore' => 'false'},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-3', 'ips' => '192.168.3.2', 'state' => 'started', 'vm_cid' => /\d+/, 'vm_type' => 'a', 'disk_cids' => '', 'agent_id' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'index' => '2', 'bootstrap' => 'false', 'ignore' => 'false'},
     )
 
     first_row = output.first
     expect(first_row).to have_key('vm_cid')
     expect(first_row).to have_key('disk_cids')
     expect(first_row).to have_key('agent_id')
-    expect(first_row).to have_key('resurrection_paused')
     expect(first_row).to have_key('ignore')
     expect(output.length).to eq(3)
 

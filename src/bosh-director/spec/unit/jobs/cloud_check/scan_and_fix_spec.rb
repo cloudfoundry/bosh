@@ -162,18 +162,6 @@ module Bosh::Director
       end
     end
 
-    it 'should not recreate vms with resurrection_paused turned on' do
-      unresponsive_instance = Models::Instance.find(deployment: deployment, job: 'job1', index: 0, uuid: 'job1index0')
-      unresponsive_instance.resurrection_paused = true
-      unresponsive_instance.save
-
-      missing_vm_instance = Models::Instance.find(deployment: deployment, job: 'job1', index: 1, uuid: 'job1index1')
-      missing_vm_instance.resurrection_paused = true
-      missing_vm_instance.save
-
-      expect(scan_and_fix.resolutions(jobs)).to be_empty
-    end
-
     describe '#resolutions' do
       it 'only lists resolutions for jobs whose state is either "unresponsive_agent" or "missing_vm"' do
         res = scan_and_fix.resolutions(jobs)

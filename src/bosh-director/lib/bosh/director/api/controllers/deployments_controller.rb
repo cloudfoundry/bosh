@@ -147,15 +147,14 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      put '/:deployment/jobs/:job/:index_or_id/resurrection', consumes: :json do
-        payload = json_decode(request.body.read)
-        @resurrector_manager.set_pause_for_instance(
-          deployment,
-          params[:job],
-          params[:index_or_id],
-          payload['resurrection_paused'],
-        )
-        status(200)
+      put '/:deployment/jobs/:job/:index_or_id/resurrection' do
+        gone_status = 410
+        status(gone_status)
+
+        'This endpoint has been removed. Please use '\
+          'https://bosh.io/docs/resurrector/#enable-with-resurrection-config to configure resurrection for the '\
+          'deployment or instance group. If you need to prevent a single instance from being resurrected, '\
+          'consider using https://bosh.io/docs/cli-v2/#ignore.'
       end
 
       put '/:deployment/instance_groups/:instancegroup/:id/ignore', consumes: :json do
@@ -551,7 +550,8 @@ module Bosh::Director
       def deployment_has_instance_to_resurrect?(deployment)
         return false if deployment.nil?
         return false if @resurrector_manager.pause_for_all?
-        instances = @instance_manager.filter_by(deployment, resurrection_paused: false, ignore: false)
+
+        instances = @instance_manager.filter_by(deployment, ignore: false)
         instances.any?
       end
 

@@ -75,7 +75,6 @@ module Bosh::Director
           vm_type: vm_type_name,
           vitals: job_vitals,
           processes: processes,
-          resurrection_paused: instance.resurrection_paused,
           az: instance.availability_zone,
           id: instance.uuid,
           bootstrap: instance.bootstrap,

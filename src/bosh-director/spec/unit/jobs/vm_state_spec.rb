@@ -182,7 +182,7 @@ module Bosh::Director
       [RpcTimeout, RpcRemoteException].each do |error|
         context "when get_state raises an #{error}" do
           it 'should handle unresponsive agents' do
-            instance.update(resurrection_paused: true, job: 'dea', index: 50)
+            instance.update(job: 'dea', index: 50)
 
             expect(agent).to receive(:get_state).with('full').and_raise(error)
 
@@ -194,21 +194,10 @@ module Bosh::Director
             expect(status['vm_created_at']).to eq(time.utc.iso8601)
             expect(status['agent_id']).to eq('fake-agent-id')
             expect(status['job_state']).to eq('unresponsive agent')
-            expect(status['resurrection_paused']).to be_truthy
             expect(status['job_name']).to eq('dea')
             expect(status['index']).to eq(50)
           end
         end
-      end
-
-      it 'should get the resurrection paused status' do
-        instance.update(resurrection_paused: true)
-        stub_agent_get_state_to_return_state_with_vitals
-
-        job.perform
-
-        status = JSON.parse(Models::Task.first(id: task.id).result_output)
-        expect(status['resurrection_paused']).to be(true)
       end
 
       it 'should get the default ignore status of a vm' do

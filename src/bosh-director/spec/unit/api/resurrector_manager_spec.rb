@@ -18,61 +18,6 @@ module Bosh::Director
         allow(InstanceLookup).to receive_messages(new: instance_lookup)
       end
 
-      describe 'set_pause_for_instance' do
-        context 'get instance by index' do
-          let(:deployment_name) { 'DEPLOYMENT' }
-          let(:job_name) { 'JOB' }
-          let(:index_or_id) { '3' }
-
-          context 'setting pause to true' do
-            it 'configures the instance to pause resurrection functionality' do
-              expect(instance_lookup).to receive(:by_attributes)
-              expect(instance_lookup).to_not receive(:by_uuid)
-              expect(instance).to receive(:resurrection_paused=).with(true).ordered
-              expect(instance).to receive(:save).ordered
-              resurrection_manager.set_pause_for_instance(deployment_name, job_name, index_or_id, true)
-            end
-          end
-
-          context 'setting pause to false' do
-            it 'configures the instance to (re)start resurrection functionality' do
-              expect(instance_lookup).to receive(:by_attributes)
-              expect(instance_lookup).to_not receive(:by_uuid)
-              expect(instance).to receive(:resurrection_paused=).with(false).ordered
-              expect(instance).to receive(:save).ordered
-              resurrection_manager.set_pause_for_instance(deployment_name, job_name, index_or_id, false)
-            end
-          end
-        end
-
-        context 'get instance by uuid' do
-          let(:deployment_name) { 'DEPLOYMENT' }
-          let(:job_name) { 'JOB' }
-          let(:index_or_id) { '4153fb47-1565-4873-a541-3c50e4bfec04' }
-
-          context 'setting pause to true' do
-            it 'configures the instance to pause resurrection functionality' do
-              expect(instance_lookup).to receive(:by_uuid)
-              expect(instance_lookup).to_not receive(:by_attributes)
-              expect(instance).to receive(:resurrection_paused=).with(true).ordered
-              expect(instance).to receive(:save).ordered
-              resurrection_manager.set_pause_for_instance(deployment_name, job_name, index_or_id, true)
-            end
-          end
-
-          context 'setting pause to false' do
-            it 'configures the instance to (re)start resurrection functionality' do
-              expect(instance_lookup).to receive(:by_uuid)
-              expect(instance_lookup).to_not receive(:by_attributes)
-              expect(instance).to receive(:resurrection_paused=).with(false).ordered
-              expect(instance).to receive(:save).ordered
-              resurrection_manager.set_pause_for_instance(deployment_name, job_name, index_or_id, false)
-            end
-          end
-        end
-
-      end
-
       describe 'set_pause_for_all' do
         context 'setting pause to true' do
           it 'configures all instances to pause resurrection functionality' do

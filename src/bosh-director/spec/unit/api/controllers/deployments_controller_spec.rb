@@ -554,15 +554,6 @@ module Bosh::Director
             Models::Deployment.create(name: 'foo', manifest: YAML.dump({'foo' => 'bar'}))
           end
 
-          it 'allows putting the job instance into different resurrection_paused values' do
-            instance = Models::Instance.
-                create(:deployment => deployment, :job => 'dea',
-                       :index => '0', :state => 'started', :variable_set => Models::VariableSet.create(deployment: deployment))
-            put '/foo/jobs/dea/0/resurrection', JSON.generate('resurrection_paused' => true), { 'CONTENT_TYPE' => 'application/json' }
-            expect(last_response.status).to eq(200)
-            expect(instance.reload.resurrection_paused).to be(true)
-          end
-
           it 'allows putting the job instance into different ignore state' do
             instance = Models::Instance.
                 create(:deployment => deployment, :job => 'dea',
@@ -1764,12 +1755,7 @@ module Bosh::Director
             context 'when global resurrection is on' do
               let (:resurrection_paused) {'false'}
 
-              it 'does not run scan_and_fix task if instances resurrection is off' do
-                Models::Instance.make(deployment: deployment, job: 'job', index: 0, resurrection_paused: true)
-                should_not_enqueue_scan_and_fix
-              end
-
-              it 'runs scan_and_fix task if instances resurrection is on' do
+              it 'runs scan_and_fix task' do
                 Models::Instance.make(deployment: deployment, job: 'job', index: 0)
                 should_enqueue_scan_and_fix
               end
@@ -1778,8 +1764,8 @@ module Bosh::Director
             context 'when global resurrection is off' do
               let (:resurrection_paused) {'true'}
 
-              it 'does not run scan_and_fix task if instances resurrection is off' do
-                Models::Instance.make(deployment: deployment, job: 'job', index: 0, resurrection_paused: true)
+              it 'does not run scan_and_fix task' do
+                Models::Instance.make(deployment: deployment, job: 'job', index: 0)
                 should_not_enqueue_scan_and_fix
               end
             end
@@ -1787,7 +1773,7 @@ module Bosh::Director
 
           context 'when there are only ignored vms' do
             it 'does not call the resurrector' do
-              Models::Instance.make(deployment: deployment, job: 'job', index: 0, resurrection_paused: false, ignore: true)
+              Models::Instance.make(deployment: deployment, job: 'job', index: 0, ignore: true)
 
               put '/mycloud/scan_and_fix', JSON.generate('jobs' => {'job' => [0]}), {'CONTENT_TYPE' => 'application/json'}
               expect(last_response).not_to be_redirect
