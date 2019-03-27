@@ -386,12 +386,11 @@ module Bosh
           job = @desired_instance.instance_group
           return true if @instance.current_job_spec.nil?
 
-          # The agent job spec could be in legacy form.  job_spec cannot be,
-          # though, because we got it from the spec function in job.rb which
-          # automatically makes it non-legacy.
-          converted_current = InstanceGroup.convert_from_legacy_spec(@instance.current_job_spec)
-          changed = ordered_spec(job.spec) != ordered_spec(converted_current)
-          log_changes(__method__, converted_current, job.spec, @instance) if changed
+          current_spec = sanitize_and_sort(@instance.current_job_spec)
+          job_spec = sanitize_and_sort(job.spec)
+
+          changed =  current_spec != job_spec
+          log_changes(__method__, current_spec, job_spec, @instance) if changed
           changed
         end
 
@@ -469,11 +468,11 @@ module Bosh
           @logger.debug("#{method_sym} changed FROM: #{old_state_msg} TO: #{new_state_msg} on instance #{instance}")
         end
 
-        def ordered_spec(spec)
+        def sanitize_and_sort(spec)
           return spec unless spec.is_a? Hash
 
           spec['templates'] = spec['templates'].sort_by { |t| t['name'] } if spec.key?('templates')
-          spec
+          spec.select { |k, _| %w[name templates].include?(k) }
         end
       end
 

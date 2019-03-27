@@ -1543,8 +1543,10 @@ module Bosh::Director::DeploymentPlan
           { 'job' => instance_group.spec }
         end
 
+        let(:current_spec) { instance_group.spec.merge('template' => 'something-random', 'random-key' => 'bogus') }
+
         context 'that fully matches the job spec' do
-          before { allow(instance).to receive(:current_job_spec).and_return(instance_group.spec) }
+          before { allow(instance).to receive(:current_job_spec).and_return(current_spec) }
 
           it 'returns false' do
             expect(instance_plan.job_changed?).to eq(false)

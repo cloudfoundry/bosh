@@ -145,29 +145,6 @@ module Bosh::Director
         jobs << job_to_add
       end
 
-      # Takes in a job spec and returns a job spec in the new format, if it
-      # needs to be modified.  The new format has "templates" key, which is an
-      # array with each template's data.  This is used for job collocation,
-      # specifically for the agent's current job spec when compared to the
-      # director's.  We only convert their template to a single array entry
-      # because it should be impossible for the agent to have a job spec with
-      # multiple templates in legacy form.
-      def self.convert_from_legacy_spec(job_spec)
-        return job_spec unless legacy_spec?(job_spec)
-        job = {
-          'name' => job_spec['template'],
-          'version' => job_spec['version'],
-          'sha1' => job_spec['sha1'],
-          'blobstore_id' => job_spec['blobstore_id'],
-        }
-
-        # Supporting 'template_scoped_properties' for legacy spec is going to be messy.
-        # So we will support this feature if a user want to use legacy spec. If they
-        # want to use properties per template, let them use the regular way of defining
-        # templates, i.e. by using the 'templates' key
-        job_spec['templates'] = [job]
-      end
-
       def obsolete_instance_plans
         @instance_plans.select(&:obsolete?)
       end
@@ -205,24 +182,15 @@ module Bosh::Director
       # populate agent state.
       # @return [Hash] Hash representation
       def spec
-        result = { 'name' => @name }
+        result = { 'name' => @name, 'templates' => [] }
 
         return nil if @jobs.empty?
 
-        first_job = @jobs[0]
-        result.merge!(
-          'templates' => [],
-          # --- Legacy ---
-          'template' => first_job.name,
-          'version' => first_job.version,
-          'sha1' => first_job.sha1,
-          'blobstore_id' => first_job.blobstore_id,
-        )
+        default_errand = @jobs.first
+        result['template'] = default_errand.name
+        result['version'] = default_errand.version
 
-        result['logs'] = first_job.logs if first_job.logs
-        # --- /Legacy ---
-
-        @jobs.sort_by(&:name).each do |job|
+        @jobs.each do |job|
           job_entry = {
             'name' => job.name,
             'version' => job.version,
@@ -233,6 +201,7 @@ module Bosh::Director
           job_entry['logs'] = job.logs if job.logs
           result['templates'] << job_entry
         end
+
         result
       end
 

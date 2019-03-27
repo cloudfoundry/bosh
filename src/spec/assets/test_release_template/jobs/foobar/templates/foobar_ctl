@@ -11,7 +11,6 @@ case $1 in
     echo "index=<%= spec.index %>"
     echo "bootstrap=<%= spec.bootstrap %>"
     echo "raw_properties=<%= raw_properties %>"
-    echo "spec=<%= spec %>"
 
     <% if_p('network_name') do |net_name| %>
       echo "<%= net_name %>_ip=<%= spec.networks.send(net_name).ip.strip %>"

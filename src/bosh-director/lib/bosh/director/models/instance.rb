@@ -133,6 +133,7 @@ module Bosh::Director::Models
       current_prop = spec
       property_path.split('.').each do |prop|
         return nil if current_prop.nil? || !current_prop.is_a?(Hash)
+
         current_prop = current_prop[prop]
       end
       current_prop
