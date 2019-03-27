@@ -4,14 +4,7 @@ describe 'nats server', type: :integration do
   let(:vm_type) do
     {
       'name' => 'smurf-vm-type',
-      'cloud_properties' => {'legacy_agent_path' => get_legacy_agent_path('before-info-endpoint-20170719')}
     }
-  end
-
-  let(:cloud_config_to_enable_legacy_agent) do
-    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
-    cloud_config_hash['vm_types'] = [vm_type]
-    cloud_config_hash
   end
 
   let(:manifest_hash) do
@@ -49,20 +42,14 @@ describe 'nats server', type: :integration do
   context 'is mutual TLS only' do
     with_reset_sandbox_before_each
 
-    context 'and connecting agent is legacy' do
-      it 'should fail the deployment' do
-        output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_to_enable_legacy_agent, failure_expected: true)
-        expect(output).to match(/Timed out pinging to \b.+\b after \b.+\b seconds/)
-      end
-    end
+    it 'should deploy successfully' do
+      output, exit_code = deploy_from_scratch(
+        manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups,
+        return_exit_code: true,
+      )
 
-    context 'and connecting agent is updated' do
-      it 'should deploy successfully' do
-        output, exit_code = deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups, return_exit_code: true)
-
-        expect(exit_code).to eq(0)
-        expect(output).to include('Succeeded')
-      end
+      expect(exit_code).to eq(0)
+      expect(output).to include('Succeeded')
     end
   end
 end
