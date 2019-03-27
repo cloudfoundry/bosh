@@ -38,7 +38,6 @@ describe 'nats.cfg.erb' do
         log_file: /var/vcap/sys/log/nats/nats.log
 
         authorization {
-
           DIRECTOR_PERMISSIONS: {
             publish: [
               "agent.*",
