@@ -46,28 +46,6 @@ describe 'nats server', type: :integration do
     }
   end
 
-  context 'is allowing legacy clients' do
-    with_reset_sandbox_before_each(nats_allow_legacy_clients: true)
-
-    context 'and connecting agent is legacy' do
-      it 'should deploy successfully' do
-        output, exit_code = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_to_enable_legacy_agent, return_exit_code: true)
-
-        expect(exit_code).to eq(0)
-        expect(output).to include('Succeeded')
-      end
-    end
-
-    context 'and connecting agent is updated' do
-      it 'should deploy successfully' do
-        output, exit_code = deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups, return_exit_code: true)
-
-        expect(exit_code).to eq(0)
-        expect(output).to include('Succeeded')
-      end
-    end
-  end
-
   context 'is mutual TLS only' do
     with_reset_sandbox_before_each
 

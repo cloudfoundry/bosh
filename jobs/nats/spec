@@ -46,6 +46,3 @@ properties:
   nats.tls.timeout:
     description: Timeout (in seconds) for TLS handshake
     default: 30
-  nats.allow_legacy_agents:
-    default: true
-    description: Flag for allowing legacy agents

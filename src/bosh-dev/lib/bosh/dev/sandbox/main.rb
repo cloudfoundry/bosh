@@ -57,10 +57,8 @@ module Bosh::Dev::Sandbox
     attr_reader :cpi
 
     attr_reader :nats_log_path
-    attr_reader :nats_host
 
-    attr_reader :nats_url, :nats_user, :nats_password, :nats_allow_legacy_clients
-    attr_reader :nats_needs_restart
+    attr_reader :nats_url
 
     attr_reader :dummy_cpi_api_version
 
@@ -69,7 +67,7 @@ module Bosh::Dev::Sandbox
     def self.from_env
       db_opts = {
         type: ENV['DB'] || 'postgresql',
-        tls_enabled: ENV['DB_TLS']=='true'
+        tls_enabled: ENV['DB_TLS'] == 'true',
       }
       db_opts[:password] = ENV['DB_PASSWORD'] if ENV['DB_PASSWORD']
 
@@ -102,10 +100,6 @@ module Bosh::Dev::Sandbox
       @verify_multidigest_path = File.join(REPO_ROOT, 'tmp', 'verify-multidigest', 'verify-multidigest')
       @dummy_cpi_api_version = nil
 
-      @nats_user = 'mbus'
-      @nats_password = 'password'
-      @nats_allow_legacy_clients = false
-      @nats_needs_restart = false
       @nats_log_path = File.join(@logs_path, 'nats.log')
       setup_nats
 
@@ -351,24 +345,12 @@ module Bosh::Dev::Sandbox
       @keep_unreachable_vms = options.fetch(:keep_unreachable_vms, false)
       @with_incorrect_nats_server_ca = options.fetch(:with_incorrect_nats_server_ca, false)
       old_tls_enabled_value = @db_config[:tls_enabled]
-      @db_config[:tls_enabled] = options.fetch(:tls_enabled, ENV['DB_TLS']=='true')
+      @db_config[:tls_enabled] = options.fetch(:tls_enabled, ENV['DB_TLS'] == 'true')
       @dummy_cpi_api_version = options.fetch(:dummy_cpi_api_version, 1)
-
-      check_if_nats_need_reset(options.fetch(:nats_allow_legacy_clients, false))
-      setup_database(@db_config, old_tls_enabled_value)
-    end
-
-    def check_if_nats_need_reset(allow_legacy_clients)
-      @nats_needs_restart = @nats_allow_legacy_clients != allow_legacy_clients
-      @nats_allow_legacy_clients = allow_legacy_clients
-
-      if @nats_allow_legacy_clients
-        @nats_url = "nats://#{@nats_user}:#{@nats_password}@127.0.0.1:#{nats_port}"
-      else
-        @nats_url = "nats://127.0.0.1:#{nats_port}"
-      end
-
+      @nats_url = "nats://127.0.0.1:#{nats_port}"
       @cpi.options['nats'] = @nats_url
+
+      setup_database(@db_config, old_tls_enabled_value)
     end
 
     def certificate_path
@@ -474,7 +456,7 @@ module Bosh::Dev::Sandbox
 
       load_db_and_populate_blobstore(@test_initial_state) unless @test_initial_state.nil?
 
-      if @nats_needs_restart || !@nats_process.running?
+      unless @nats_process.running?
         @nats_process.stop
         start_nats
       end

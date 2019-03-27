@@ -7,10 +7,7 @@ logtime: true
 
 log_file: /var/vcap/sys/log/nats/nats.log
 
-authorization {<% if p('nats.allow_legacy_agents') %>
-  username: "<%= p("nats.user") %>"
-  password: "<%= p('nats.password') %>"<% end %>
-
+authorization
   DIRECTOR_PERMISSIONS: {
     publish: [
       "agent.*",
@@ -55,7 +52,6 @@ tls {
   verify:     true
   timeout:    <%= p('nats.tls.timeout') %>
   enable_cert_authorization: true
-  allow_legacy_clients: <%= p('nats.allow_legacy_agents') %>
 }
 
 ping_interval: <%= p('nats.ping_interval') %>
