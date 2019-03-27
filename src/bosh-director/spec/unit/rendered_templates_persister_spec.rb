@@ -16,13 +16,13 @@ module Bosh::Director
 
         let(:rendered_templates_archive) { instance_double('Bosh::Director::Core::Templates::RenderedTemplatesArchive') }
 
-        let(:rendered_job_instance) { instance_double('Bosh::Director::Core::Templates::RenderedJobInstance')}
+        let(:rendered_job_instance) { instance_double('Bosh::Director::Core::Templates::RenderedJobInstance') }
 
         let(:compressed_rendered_job_templates) { instance_double('Bosh::Director::Core::Templates::CompressedRenderedJobTemplates') }
 
         let(:compressed_archived_sha1) { 'my_compressed_archived_sha1' }
 
-        let(:compressed_template_contents) { 'some-text-be-be-saved'}
+        let(:compressed_template_contents) { 'some-text-be-be-saved' }
 
         let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
         let(:template_contents) { 'compressed contents' }
@@ -73,7 +73,8 @@ module Bosh::Director
 
           context 'when persist through agent fails with AgentUnsupportedAction error' do
             it 'should delegate to persist_to_blobstore' do
-              allow(rendered_job_instance).to receive(:persist_through_agent).and_raise(AgentUnsupportedAction.new("Action unsupported"))
+              allow(rendered_job_instance).to receive(:persist_through_agent)
+                .and_raise(AgentUnsupportedAction.new('Action unsupported'))
 
               expect(subject).to receive(:persist_on_blobstore)
               perform_persist
@@ -82,7 +83,8 @@ module Bosh::Director
 
           context 'when persist through agent fails with AgentUploadBlobUnableToOpenFile error' do
             it 'should delegate to persist_to_blobstore' do
-              allow(rendered_job_instance).to receive(:persist_through_agent).and_raise(AgentUploadBlobUnableToOpenFile.new("'Upload blob' action: failed to open blob"))
+              upload_error = AgentUploadBlobUnableToOpenFile.new("'Upload blob' action: failed to open blob")
+              allow(rendered_job_instance).to receive(:persist_through_agent).and_raise(upload_error)
 
               expect(subject).to receive(:persist_on_blobstore)
               perform_persist
@@ -97,12 +99,12 @@ module Bosh::Director
         let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
         let(:instance_plan) { instance_double('Bosh::Director::DeploymentPlan::InstancePlan') }
         let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
-        let(:instance_model) { instance_double('Bosh::Director::Models::Instance')}
+        let(:instance_model) { instance_double('Bosh::Director::Models::Instance') }
 
-        let(:latest_rendered_templates_archive) { instance_double('Bosh::Director::Models::RenderedTemplatesArchive')}
+        let(:latest_rendered_templates_archive) { instance_double('Bosh::Director::Models::RenderedTemplatesArchive') }
         let(:rendered_templates_archive) { instance_double('Bosh::Director::Core::Templates::RenderedTemplatesArchive') }
 
-        let(:rendered_job_instance) { instance_double('Bosh::Director::Core::Templates::RenderedJobInstance')}
+        let(:rendered_job_instance) { instance_double('Bosh::Director::Core::Templates::RenderedJobInstance') }
 
         let(:compressed_rendered_job_templates) { instance_double('Bosh::Director::Core::Templates::CompressedRenderedJobTemplates') }
 
@@ -116,9 +118,9 @@ module Bosh::Director
 
         let(:old_configuration_hash) { 'stored-configuration-hash' }
         let(:matching_configuration_hash) { 'stored-configuration-hash' }
-        let(:non_matching_configuration_hash) { 'some-other-configuration-hash'}
+        let(:non_matching_configuration_hash) { 'some-other-configuration-hash' }
 
-        let(:compressed_template_contents) { 'some-text-be-be-saved'}
+        let(:compressed_template_contents) { 'some-text-be-be-saved' }
 
         before do
           allow(instance_plan).to receive(:instance).and_return(instance)
@@ -161,14 +163,12 @@ module Bosh::Director
         end
 
         context 'when a rendered templates archive already exists in the DB' do
-
           context 'when the stored templates config hash matches the new templates config hash' do
             before do
               allow(instance).to receive(:configuration_hash).and_return(matching_configuration_hash)
             end
 
             context 'when blobstore does not already have the templates' do
-
               before do
                 allow(blobstore).to receive(:exists?).with(old_blobstore_id).and_return(false)
               end
@@ -180,7 +180,7 @@ module Bosh::Director
               end
 
               it 'updates the DB with the new blobstore ID and sha1' do
-                expect(latest_rendered_templates_archive).to receive(:update).with({:blobstore_id => new_blobstore_id, :sha1 => new_sha1})
+                expect(latest_rendered_templates_archive).to receive(:update).with(blobstore_id: new_blobstore_id, sha1: new_sha1)
 
                 perform_persist
               end
@@ -228,7 +228,7 @@ module Bosh::Director
 
             it 'persists blob record in the database' do
               expect(instance_model).to receive(:add_rendered_templates_archive).with(
-                :blobstore_id => new_blobstore_id,
+                blobstore_id: new_blobstore_id,
                 sha1: new_sha1,
                 content_sha1: non_matching_configuration_hash,
                 created_at: smurf_time,

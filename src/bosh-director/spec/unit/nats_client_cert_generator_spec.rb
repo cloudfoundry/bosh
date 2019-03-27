@@ -4,10 +4,10 @@ module Bosh
   module Director
     describe NatsClientCertGenerator do
       subject do
-        NatsClientCertGenerator.new(logger )
+        NatsClientCertGenerator.new(logger)
       end
 
-      let(:Config) {instance_double('Config')}
+      let(:Config) { instance_double('Config') }
 
       shared_examples_for 'agents nats certificates generation' do
         it 'generates a valid certificate signed by the root ca' do
@@ -19,13 +19,13 @@ module Bosh
           result = subject.generate_nats_client_certificate 'test.123'
           desired = OpenSSL::X509::ExtensionFactory.new.create_ext('extendedKeyUsage', 'clientAuth', true).to_s
           details = []
-          result[:cert].extensions.each{ |ext| details.push(ext.to_s) }
+          result[:cert].extensions.each { |ext| details.push(ext.to_s) }
           expect(details).to include(desired)
         end
 
         it 'includes the common name passed in, in the certificate' do
           result = subject.generate_nats_client_certificate 'test.123'
-          expect(result[:cert].subject.to_a).to include(['CN','test.123',12])
+          expect(result[:cert].subject.to_a).to include(['CN', 'test.123', 12])
         end
 
         it 'certs have different serial numbers' do
@@ -54,41 +54,45 @@ module Bosh
         it 'throws an invalid CA error if ca private key path is nil' do
           allow(Config).to receive(:nats_client_ca_private_key_path).and_return(nil)
 
-          expect{ subject }.to raise_error(
+          expect { subject }.to raise_error(
             DeploymentNATSClientCertificateGenerationError,
-            'Client certificate generation error. Config for nats_client_ca_private_key_path is nil.')
+            'Client certificate generation error. Config for nats_client_ca_private_key_path is nil.',
+          )
         end
 
         it 'throws an invalid CA error if ca certificate path is nil' do
           allow(Config).to receive(:nats_client_ca_certificate_path).and_return(nil)
 
-          expect{ subject }.to raise_error(
+          expect { subject }.to raise_error(
             DeploymentNATSClientCertificateGenerationError,
-            'Client certificate generation error. Config for nats_client_ca_certificate_path is nil.')
+            'Client certificate generation error. Config for nats_client_ca_certificate_path is nil.',
+          )
         end
 
         it 'throws an invalid CA error if ca private key path is not found' do
           allow(Config).to receive(:nats_client_ca_private_key_path).and_return('/invalid/path')
 
-          expect{ subject }.to raise_error(
+          expect { subject }.to raise_error(
             DeploymentNATSClientCertificateGenerationError,
-            'Client certificate generation error. Config for nats_client_ca_private_key_path is not found.')
+            'Client certificate generation error. Config for nats_client_ca_private_key_path is not found.',
+          )
         end
 
         it 'throws an invalid CA error if ca certificate path is not found' do
           allow(Config).to receive(:nats_client_ca_certificate_path).and_return('/invalid/path')
 
-          expect{ subject }.to raise_error(
+          expect { subject }.to raise_error(
             DeploymentNATSClientCertificateGenerationError,
-            'Client certificate generation error. Config for nats_client_ca_certificate_path is not found.')
+            'Client certificate generation error. Config for nats_client_ca_certificate_path is not found.',
+          )
         end
 
         it 'throws an invalid CA error if an error occurs while loading the certificate' do
           allow(Config).to receive(:nats_client_ca_certificate_path).and_return(asset('nats/invalid_nats_ca_certificate.pem'))
 
           expect { subject }.to raise_error(DeploymentNATSClientCertificateGenerationError) do |error|
-           expect(error.message).to include('Error occurred while loading CA Certificate to generate NATS Client certificates')
-           expect(error.message).to include('OpenSSL::X509::CertificateError: nested asn1 error')
+            expect(error.message).to include('Error occurred while loading CA Certificate to generate NATS Client certificates')
+            expect(error.message).to include('OpenSSL::X509::CertificateError: nested asn1 error')
           end
         end
 
@@ -128,7 +132,6 @@ module Bosh
 
         it_behaves_like 'agents nats certificates generation'
       end
-
 
       context 'when the CA used to sign the agent certificates is an Intermediate CA' do
         let(:root_public_key) do

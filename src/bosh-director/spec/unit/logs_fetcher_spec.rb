@@ -10,9 +10,9 @@ module Bosh::Director
     let(:log_bundles_cleaner) { instance_double(Bosh::Director::LogBundlesCleaner) }
     let(:mock_instance_model) do
       instance_double(Bosh::Director::Models::Instance,
-      job: 'some-job',
-      uuid: 'some-uuid',
-      index: 'some-index')
+                      job: 'some-job',
+                      uuid: 'some-uuid',
+                      index: 'some-index')
     end
     let(:filters) do
       filters = double 'filters'
@@ -30,17 +30,17 @@ module Bosh::Director
         before do
           expect(log).to receive(:info).with(match /some-log-type.*some-filters/)
           expect(log_bundles_cleaner).to receive(:clean)
-          expect(instance_manager).
-            to receive(:agent_client_for).
-            with(mock_instance_model).
-            and_return mock_agent
+          expect(instance_manager)
+            .to receive(:agent_client_for)
+            .with(mock_instance_model)
+            .and_return mock_agent
         end
 
         context 'when the agent finds logs for that type and filters' do
           it 'returns the blobstore ID' do
-            expect(mock_agent).to receive(:fetch_logs).and_return({
-              'blobstore_id' => 'blobid1'
-            })
+            expect(mock_agent).to receive(:fetch_logs).and_return(
+              'blobstore_id' => 'blobid1',
+            )
 
             blob, sha = subject.fetch(mock_instance_model, 'some-log-type', filters)
             expect(blob).to eq 'blobid1'
@@ -48,10 +48,10 @@ module Bosh::Director
           end
 
           it 'returns the sha as well if the agent provides one' do
-            expect(mock_agent).to receive(:fetch_logs).and_return({
+            expect(mock_agent).to receive(:fetch_logs).and_return(
               'blobstore_id' => 'blobid1',
-              'sha1' => 'sha1-digest'
-            })
+              'sha1' => 'sha1-digest',
+            )
 
             blob, sha = subject.fetch(mock_instance_model, 'some-log-type', filters)
             expect(blob).to eq 'blobid1'
@@ -59,9 +59,9 @@ module Bosh::Director
           end
 
           it 'registers the blob with the cleaner when marked persistent' do
-            expect(mock_agent).to receive(:fetch_logs).and_return({
-              'blobstore_id' => 'blobid1'
-            })
+            expect(mock_agent).to receive(:fetch_logs).and_return(
+              'blobstore_id' => 'blobid1',
+            )
 
             expect(log_bundles_cleaner).to receive(:register_blobstore_id).with('blobid1')
 
@@ -71,13 +71,13 @@ module Bosh::Director
 
         context 'when the agent does not find the logs' do
           it 'raises an error' do
-            expect(mock_agent).to receive(:fetch_logs).and_return({
-              'blobstore_id' => nil
-            })
+            expect(mock_agent).to receive(:fetch_logs).and_return(
+              'blobstore_id' => nil,
+            )
 
-            expect {
+            expect do
               subject.fetch(mock_instance_model, 'some-log-type', filters)
-            }.to raise_error AgentTaskNoBlobstoreId
+            end.to raise_error AgentTaskNoBlobstoreId
           end
         end
       end

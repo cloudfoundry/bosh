@@ -26,7 +26,7 @@ module Bosh::Director
 
         expect(fake_local_blobstore).to receive(:get).with('blob_id', an_instance_of(File))
         expect(compiled_package_cache_blobstore).to receive(:create) do |file, cache_filename|
-          expect(file.to_path).to match %r[/blob$]
+          expect(file.to_path).to match %r{/blob$}
           expect(cache_filename).to eq('package_name-cache_sha1')
         end
 
@@ -44,7 +44,6 @@ module Bosh::Director
         expect(compiled_package_cache_blobstore).to receive(:exists?).with('package_name-cache_sha1').and_return(false)
         expect(BlobUtil.exists_in_global_cache?(package, cache_key)).to eq(false)
       end
-
     end
 
     describe 'fetch_from_global_cache' do
@@ -76,7 +75,7 @@ module Bosh::Director
 
         expect(compiled_package_cache_blobstore).to receive(:get) do |sha, file|
           expect(sha).to eq('package_name-cache_sha1')
-          expect(file.to_path).to match %r[/blob$]
+          expect(file.to_path).to match %r{/blob$}
         end
         expect(BlobUtil.fetch_from_global_cache(package, stemcell, cache_key, dep_key)).to eq(mock_compiled_package)
       end
@@ -90,7 +89,7 @@ module Bosh::Director
 
       it 'deletes blob' do
         expect(fake_local_blobstore).to receive(:delete).with('fake-blobstore-id')
-        expect{ BlobUtil.delete_blob('fake-blobstore-id') }.to_not raise_error
+        expect { BlobUtil.delete_blob('fake-blobstore-id') }.to_not raise_error
       end
     end
   end

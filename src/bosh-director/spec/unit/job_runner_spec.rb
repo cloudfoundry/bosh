@@ -21,16 +21,16 @@ module Bosh::Director
     before { FileUtils.mkdir_p(task_dir) }
 
     before { allow(Config).to receive(:cloud_options).and_return({}) }
-    before { allow(Config).to receive(:runtime).and_return({'instance' => 'name/id', 'ip' => '127.0.127.0'}) }
+    before { allow(Config).to receive(:runtime).and_return('instance' => 'name/id', 'ip' => '127.0.127.0') }
 
     def make_runner(job_class, task_id)
       JobRunner.new(job_class, task_id, 'workername1')
     end
 
     it "doesn't accept job class that is not a subclass of base job" do
-      expect {
+      expect do
         make_runner(Class.new, 42)
-      }.to raise_error(DirectorError, /invalid director job/i)
+      end.to raise_error(DirectorError, /invalid director job/i)
     end
 
     it 'performs the requested job with provided args' do
@@ -42,9 +42,9 @@ module Bosh::Director
     end
 
     it 'whines when no task is found' do
-      expect {
+      expect do
         make_runner(sample_job_class, 155)
-      }.to raise_error(TaskNotFound)
+      end.to raise_error(TaskNotFound)
     end
 
     context 'when task directory is missing' do
@@ -62,21 +62,21 @@ module Bosh::Director
       task_result = double('result file')
 
       task_writer = TaskDBWriter.new(:event_output, task.id)
-      allow(TaskDBWriter).to receive(:new).
-        with(:event_output, task.id).and_return(task_writer)
+      allow(TaskDBWriter).to receive(:new)
+        .with(:event_output, task.id).and_return(task_writer)
 
       allow(EventLog::Log)
         .to receive(:new)
         .with(task_writer)
         .and_return(event_log)
 
-      allow(TaskDBWriter).to receive(:new).
-        with(:result_output, task.id).
-        and_return(task_result)
+      allow(TaskDBWriter).to receive(:new)
+        .with(:result_output, task.id)
+        .and_return(task_result)
 
       make_runner(sample_job_class, 42)
 
-      logger_repo = Logging::Repository.instance()
+      logger_repo = Logging::Repository.instance
 
       config = Config
       expect(config.event_log).to eq(event_log)
@@ -87,7 +87,7 @@ module Bosh::Director
     it 'logs the worker name and process information' do
       runner = make_runner(sample_job_class, 42)
 
-      logger = Logging::Repository.instance().fetch('DirectorJobRunner')
+      logger = Logging::Repository.instance.fetch('DirectorJobRunner')
       allow(logger).to receive(:info)
       expect(logger).to receive(:info).with("Running from worker 'workername1' on name/id (127.0.127.0)")
       runner.run
@@ -100,7 +100,7 @@ module Bosh::Director
       Config.logger.debug('(10.01s) (conn: 123123123) SELECT NULL')
       Config.logger.debug('after')
 
-      log_contents = File.read(task_dir+'/debug')
+      log_contents = File.read(task_dir + '/debug')
 
       expect(log_contents).to include('before')
       expect(log_contents).to include('after')
@@ -113,15 +113,15 @@ module Bosh::Director
         Config.logger.debug('test')
 
         time = Time.new
-        time_format = time.strftime("%Y-%m-%dT%H:%M:%S.") << "%06d " % time.usec
-        log_contents = File.read(task_dir+'/debug')
+        time_format = time.strftime('%Y-%m-%dT%H:%M:%S.') << format('%06d ', time.usec)
+        log_contents = File.read(task_dir + '/debug')
         expect(log_contents).to match /D, \[#{time_format}.*\] \[\] DEBUG -- DirectorJobRunner: test/
       end
     end
 
     it 'handles task cancellation' do
       job = Class.new(Jobs::BaseJob) do
-        define_method(:perform) do |*args|
+        define_method(:perform) do |*_args|
           raise TaskCancelled, 'task cancelled'
         end
       end
@@ -133,7 +133,7 @@ module Bosh::Director
 
     it 'handles task error' do
       job = Class.new(Jobs::BaseJob) do
-        define_method(:perform) { |*args| raise 'Oops' }
+        define_method(:perform) { |*_args| raise 'Oops' }
       end
 
       make_runner(job, 42).run

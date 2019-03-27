@@ -97,6 +97,7 @@ module Bosh::Director
 
       10.times do
         return result if queue.length == 2
+
         sleep 0.1
       end
 

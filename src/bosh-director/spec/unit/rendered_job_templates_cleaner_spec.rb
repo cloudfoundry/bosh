@@ -16,7 +16,7 @@ module Bosh::Director
         Models::RenderedTemplatesArchive.make(
           blobstore_id: 'fake-blob-id',
           instance: instance_model,
-          created_at: Time.new(2013, 02, 01),
+          created_at: Time.new(2013, 0o2, 0o1),
         )
       end
 
@@ -30,7 +30,9 @@ module Bosh::Director
       it 'removes *stale* archives from the database even if the archives are not in the blobstore' do
         allow(instance_model).to receive(:stale_rendered_templates_archives).and_return([stale_archive])
         expect(blobstore).to receive(:delete).with('fake-blob-id').and_raise Bosh::Blobstore::NotFound
-        expect(logger).to receive(:debug).with("Blobstore#delete error: Bosh::Blobstore::NotFound, will ignore this error and delete the db record")
+        expect(logger).to receive(:debug).with(
+          'Blobstore#delete error: Bosh::Blobstore::NotFound, will ignore this error and delete the db record',
+        )
         expect(stale_archive).to receive(:delete).with(no_args)
         perform
       end
@@ -45,7 +47,7 @@ module Bosh::Director
         Models::RenderedTemplatesArchive.make(
           blobstore_id: 'fake-blob-id',
           instance: instance_model,
-          created_at: Time.new(2013, 02, 01),
+          created_at: Time.new(2013, 0o2, 0o1),
         )
       end
 
@@ -59,7 +61,9 @@ module Bosh::Director
       it 'removes *all* archives from the database even if the archives are not in the blobstore' do
         allow(instance_model).to receive(:rendered_templates_archives).and_return([stale_archive])
         expect(blobstore).to receive(:delete).with('fake-blob-id').and_raise Bosh::Blobstore::NotFound
-        expect(logger).to receive(:debug).with("Blobstore#delete error: Bosh::Blobstore::NotFound, will ignore this error and delete the db record")
+        expect(logger).to receive(:debug).with(
+          'Blobstore#delete error: Bosh::Blobstore::NotFound, will ignore this error and delete the db record',
+        )
         expect(stale_archive).to receive(:delete).with(no_args)
         perform
       end

@@ -12,8 +12,8 @@ module Bosh::Director
     let(:powerdns_manager) { instance_double(PowerDnsManager) }
     let(:dns_enabled) { false }
     let(:task) { Models::Task.make(id: 42) }
-    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
-    let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
+    let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
+    let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
 
     describe '#delete' do
       let!(:instance_1) { Models::Instance.make }

@@ -8,7 +8,6 @@ require 'spec_helper'
 describe Bosh::Director::Config do
   let(:test_config) { SpecHelper.spec_get_director_config }
 
-
   context 'max_tasks' do
     it 'can set max_tasks in config' do
       test_config['max_tasks'] = 10
@@ -110,10 +109,10 @@ describe Bosh::Director::Config do
   context 'database' do
     let(:database_options) do
       {
-          'adapter' => 'sqlite',
-          'connection_options' => {
-              'max_connections' => 32
-          }
+        'adapter' => 'sqlite',
+        'connection_options' => {
+          'max_connections' => 32,
+        },
 
       }
     end
@@ -133,8 +132,8 @@ describe Bosh::Director::Config do
 
     it 'merges connection options together with the rest of the database options' do
       expected_options = {
-          'adapter' => 'sqlite',
-          'max_connections' => 32
+        'adapter' => 'sqlite',
+        'max_connections' => 32,
       }
       expect(Sequel).to receive(:connect).with(expected_options).and_return(database_connection)
       described_class.configure_db(database_options)

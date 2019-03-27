@@ -43,7 +43,7 @@ describe Bosh::Director::DownloadHelper do
     end
 
     context 'when using credentials' do
-      let(:remote_file) { 'http://user:password@example.com/file.tgz'}
+      let(:remote_file) { 'http://user:password@example.com/file.tgz' }
 
       it 'sets basic auth for the call' do
         expect(Net::HTTP).to receive(:start).with('example.com', 80, :ENV, use_ssl: false).and_yield(http).once
@@ -124,9 +124,9 @@ describe Bosh::Director::DownloadHelper do
           allow(Net::HTTP).to receive(:start).with('redirector.example.com', 80, :ENV, use_ssl: false).and_yield(http)
           expect(http).to receive(:request).with(redirect_request).and_yield(http_302)
 
-          expect {
+          expect do
             download_remote_file('resource', redirect_url, local_file)
-          }.to raise_error(Bosh::Director::ResourceError, "No location header for redirect found at '#{redirect_url}'.")
+          end.to raise_error(Bosh::Director::ResourceError, "No location header for redirect found at '#{redirect_url}'.")
         end
       end
 
@@ -134,9 +134,9 @@ describe Bosh::Director::DownloadHelper do
         allow(Net::HTTP).to receive(:start).and_yield(http)
         expect(http).to receive(:request).and_yield(http_302).exactly(10).times
 
-        expect {
+        expect do
           download_remote_file('resource', redirect_url, local_file)
-        }.to raise_error(Bosh::Director::ResourceError, "Too many redirects at '#{remote_file}'.")
+        end.to raise_error(Bosh::Director::ResourceError, "Too many redirects at '#{remote_file}'.")
       end
     end
 
@@ -144,27 +144,26 @@ describe Bosh::Director::DownloadHelper do
       expect(Net::HTTP).to receive(:start).with('example.com', 80, :ENV, use_ssl: false).and_yield(http)
       expect(http).to receive(:request).and_yield(http_404)
 
-      expect {
+      expect do
         download_remote_file('resource', remote_file, local_file)
-      }.to raise_error(Bosh::Director::ResourceNotFound, "No resource found at '#{remote_file}'.")
+      end.to raise_error(Bosh::Director::ResourceNotFound, "No resource found at '#{remote_file}'.")
     end
 
     it 'should return a ResourceError exception if remote server returns an error code' do
       allow(Net::HTTP).to receive(:start).and_yield(http)
       expect(http).to receive(:request).and_yield(http_500)
 
-      expect {
+      expect do
         download_remote_file('resource', remote_file, local_file)
-      }.to raise_error(Bosh::Director::ResourceError, 'Downloading remote resource failed. Check task debug log for details.')
+      end.to raise_error(Bosh::Director::ResourceError, 'Downloading remote resource failed. Check task debug log for details.')
     end
 
     it 'should return a ResourceError exception if there is a connection error' do
       allow(Net::HTTP).to receive(:start).and_raise(Timeout::Error)
 
-      expect {
+      expect do
         download_remote_file('resource', remote_file, local_file)
-      }.to raise_error(Bosh::Director::ResourceError, 'Downloading remote resource failed. Check task debug log for details.')
+      end.to raise_error(Bosh::Director::ResourceError, 'Downloading remote resource failed. Check task debug log for details.')
     end
-
   end
 end

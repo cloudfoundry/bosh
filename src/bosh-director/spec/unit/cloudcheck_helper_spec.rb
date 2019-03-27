@@ -25,7 +25,7 @@ module Bosh::Director
         job: 'mysql_node',
         index: 0,
         spec: spec,
-        availability_zone: 'az1'
+        availability_zone: 'az1',
       )
       instance
     end
@@ -72,8 +72,8 @@ module Bosh::Director
     before do
       allow(AgentClient).to receive(:with_agent_id).with(instance.agent_id, instance.name, anything).and_return(agent_client)
       allow(AgentClient).to receive(:with_agent_id).with(instance.agent_id, instance.name).and_return(agent_client)
-      allow(agent_client).to receive(:sync_dns) do |_,_,_,&blk|
-        blk.call({'value' => 'synced'})
+      allow(agent_client).to receive(:sync_dns) do |_, _, _, &blk|
+        blk.call('value' => 'synced')
       end.and_return(0)
       allow(Bosh::Director::Core::Templates::TemplateBlobCache).to receive(:new).and_return(template_cache)
       allow(VmDeleter).to receive(:new).and_return(vm_deleter)
@@ -106,17 +106,17 @@ module Bosh::Director
       it 'raises a ProblemHandlerError if agent is still unresponsive' do
         allow(agent_client).to receive(:wait_until_ready).and_raise(Bosh::Director::RpcTimeout)
 
-        expect {
+        expect do
           test_problem_handler.reboot_vm(instance)
-        }.to raise_error(ProblemHandlerError, 'Agent still unresponsive after reboot')
+        end.to raise_error(ProblemHandlerError, 'Agent still unresponsive after reboot')
       end
 
       it 'raises a ProblemHandlerError if task is cancelled' do
         allow(agent_client).to receive(:wait_until_ready).and_raise(Bosh::Director::TaskCancelled)
 
-        expect {
+        expect do
           test_problem_handler.reboot_vm(instance)
-        }.to raise_error(ProblemHandlerError, 'Task was cancelled')
+        end.to raise_error(ProblemHandlerError, 'Task was cancelled')
       end
     end
 
@@ -124,9 +124,9 @@ module Bosh::Director
       before { fake_job_context }
 
       it 'deletes VM reference' do
-        expect {
+        expect do
           test_problem_handler.delete_vm_reference(instance)
-        }.to change {
+        end.to change {
           vm = Models::Vm.where(instance_id: instance.id).first
           vm.nil? ? 0 : Models::Vm.where(instance_id: instance.id, active: true).count
         }.from(1).to(0)
@@ -140,9 +140,9 @@ module Bosh::Director
         end
 
         it 'does not error' do
-          expect {
+          expect do
             test_problem_handler.delete_vm_reference(instance)
-          }.to_not raise_error
+          end.to_not raise_error
         end
       end
     end
@@ -162,9 +162,9 @@ module Bosh::Director
         before { allow(agent_client).to receive(:list_disk).and_return(['fake-disk-cid']) }
 
         it 'fails' do
-          expect {
+          expect do
             test_problem_handler.delete_vm(instance)
-          }.to raise_error 'VM has persistent disk attached'
+          end.to raise_error 'VM has persistent disk attached'
         end
       end
     end
@@ -174,25 +174,25 @@ module Bosh::Director
         it "doesn't recreate VM if apply spec is unknown" do
           instance.update(spec_json: nil)
 
-          expect {
+          expect do
             test_problem_handler.apply_resolution(:recreate_vm)
-          }.to raise_error(ProblemHandlerError, 'Unable to look up VM apply spec')
+          end.to raise_error(ProblemHandlerError, 'Unable to look up VM apply spec')
         end
 
         it 'whines on invalid spec format' do
           instance.update(spec_json: 'error')
 
-          expect {
+          expect do
             test_problem_handler.apply_resolution(:recreate_vm)
-          }.to raise_error(ProblemHandlerError, 'Invalid apply spec format')
+          end.to raise_error(ProblemHandlerError, 'Invalid apply spec format')
         end
 
         it 'whines on invalid env format' do
-          instance.update(spec: {'env' => 'bar'})
+          instance.update(spec: { 'env' => 'bar' })
 
-          expect {
+          expect do
             test_problem_handler.apply_resolution(:recreate_vm)
-          }.to raise_error(ProblemHandlerError, 'Invalid VM environment format')
+          end.to raise_error(ProblemHandlerError, 'Invalid VM environment format')
         end
       end
 
@@ -201,18 +201,18 @@ module Bosh::Director
           {
             'vm_type' => {
               'name' => 'vm-type',
-              'cloud_properties' => {'foo' => 'bar'},
+              'cloud_properties' => { 'foo' => 'bar' },
             },
             'stemcell' => {
               'name' => 'stemcell-name',
-              'version' => '3.0.2'
+              'version' => '3.0.2',
             },
             'env' => {
-              'key1' => 'value1'
+              'key1' => 'value1',
             },
             'networks' => {
-              'ip' => '192.1.3.4'
-            }
+              'ip' => '192.1.3.4',
+            },
           }
         end
         before do
@@ -221,20 +221,19 @@ module Bosh::Director
           allow(PowerDnsManagerProvider).to receive(:create).and_return(powerdns_manager)
         end
 
-
         context 'recreates the vm' do
           before { fake_job_context }
 
           def expect_vm_gets_created
             expect(vm_deleter).to receive(:delete_for_instance) do |instance|
-              expect(instance.cloud_properties_hash).to eq({'foo' => 'bar'})
-              expect(instance.vm_env).to eq({'key1' => 'value1'})
+              expect(instance.cloud_properties_hash).to eq('foo' => 'bar')
+              expect(instance.vm_env).to eq('key1' => 'value1')
             end
 
             expect(vm_creator).to receive(:create_for_instance_plan) do |instance_plan, ipp, disks, tags, use_existing|
-              expect(instance_plan.network_settings_hash).to eq({'ip' => '192.1.3.4'})
-              expect(instance_plan.instance.cloud_properties).to eq({'foo' => 'bar'})
-              expect(instance_plan.instance.env).to eq({'key1' => 'value1'})
+              expect(instance_plan.network_settings_hash).to eq('ip' => '192.1.3.4')
+              expect(instance_plan.instance.cloud_properties).to eq('foo' => 'bar')
+              expect(instance_plan.instance.env).to eq('key1' => 'value1')
               expect(ipp).to eq(ip_provider)
               expect(disks).to eq([])
               expect(tags).to eq({})
@@ -243,7 +242,7 @@ module Bosh::Director
 
             expect(rendered_templates_persister).to receive(:persist)
 
-            expect(agent_client).to receive(:apply).with({'networks' => {'ip' => '192.1.3.4'}}).ordered
+            expect(agent_client).to receive(:apply).with('networks' => { 'ip' => '192.1.3.4' }).ordered
             expect(agent_client).to receive(:run_script).with('pre-start', {}).ordered
             expect(agent_client).to receive(:start).ordered
 
@@ -251,7 +250,11 @@ module Bosh::Director
             expect(Bosh::Director::DnsNameGenerator).to receive(:dns_record_name).with(0, 'mysql_node', 'ip', deployment_model.name, 'bosh').and_return('index.record.name')
             expect(Bosh::Director::DnsNameGenerator).to receive(:dns_record_name).with(instance.uuid, 'mysql_node', 'ip', deployment_model.name, 'bosh').and_return('uuid.record.name')
 
-            expect(powerdns_manager).to receive(:update_dns_record_for_instance).with(instance, {'index.record.name' => nil, 'uuid.record.name' => nil})
+            expect(powerdns_manager).to receive(:update_dns_record_for_instance).with(
+              instance,
+              'index.record.name' => nil,
+              'uuid.record.name' => nil,
+            )
             expect(powerdns_manager).to receive(:flush_dns_cache)
 
             expect(template_cache).to receive(:clean_cache!)
@@ -267,24 +270,24 @@ module Bosh::Director
               {
                 'vm_type' => {
                   'name' => 'vm-type',
-                  'cloud_properties' => {'foo' => 'bar'},
+                  'cloud_properties' => { 'foo' => 'bar' },
                 },
                 'stemcell' => {
                   'name' => 'stemcell-name',
-                  'version' => '3.0.2'
+                  'version' => '3.0.2',
                 },
                 'env' => {
-                  'key1' => 'value1'
+                  'key1' => 'value1',
                 },
                 'networks' => {
-                  'ip' => '192.1.3.4'
+                  'ip' => '192.1.3.4',
                 },
                 'update' => {
                   'canaries' => 1,
                   'max_in_flight' => 10,
                   'canary_watch_time' => '1000-30000',
-                  'update_watch_time' => '1000-30000'
-                }
+                  'update_watch_time' => '1000-30000',
+                },
               }
             end
 
@@ -295,7 +298,7 @@ module Bosh::Director
             end
 
             it 'runs post start when applying recreate_vm resolution' do
-              allow(agent_client).to receive(:get_state).and_return({'job_state' => 'running'})
+              allow(agent_client).to receive(:get_state).and_return('job_state' => 'running')
               expect_vm_gets_created
               expect(agent_client).to receive(:run_script).with('post-start', {})
               test_problem_handler.apply_resolution(:recreate_vm)

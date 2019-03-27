@@ -17,7 +17,7 @@ module Bosh::Director
       {
         scheduler: fake_scheduler,
         cloud: cloud,
-        queue: queue
+        queue: queue,
       }
     end
     let(:cloud) { double(:Cloud) }
@@ -58,7 +58,7 @@ module Bosh::Director
 
     module Jobs
       class FakeJobNoWork
-        def self.has_work(params)
+        def self.has_work(_params)
           false
         end
       end
@@ -66,7 +66,7 @@ module Bosh::Director
 
     module Jobs
       class FakeJobHasWork
-        def self.has_work(params)
+        def self.has_work(_params)
           true
         end
       end
@@ -74,8 +74,8 @@ module Bosh::Director
 
     describe 'scheduling jobs' do
       it 'schedules jobs at the appropriate time' do
-        expect(fake_scheduler).to receive(:cron).with('0 1 * * *').
-            and_yield(double('Job', next_time: 'tomorrow'))
+        expect(fake_scheduler).to receive(:cron).with('0 1 * * *')
+                                                .and_yield(double('Job', next_time: 'tomorrow'))
         expect(queue).to receive(:enqueue).with('scheduler', Jobs::FakeJob, 'scheduled FakeJob', params)
 
         scheduler.start!
@@ -109,8 +109,8 @@ module Bosh::Director
       describe 'scheduling jobs with a custom schedule message' do
         let(:job_name) { 'FakeJobWithScheduleMessage' }
         it 'sends the scheduled message' do
-          expect(fake_scheduler).to receive(:cron).with('0 1 * * *').
-              and_yield(double('Job', next_time: 'tomorrow'))
+          expect(fake_scheduler).to receive(:cron).with('0 1 * * *')
+                                                  .and_yield(double('Job', next_time: 'tomorrow'))
 
           expect(queue).to receive(:enqueue).with('scheduler', Jobs::FakeJobWithScheduleMessage, 'class with schedule message', params)
 

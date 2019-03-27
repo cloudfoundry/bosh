@@ -609,8 +609,8 @@ module Bosh::Director
 
           # Detecting if interpolated config changed for short-circuit in disk_manager, another call from checking before determining differences
           expect(variables_interpolator).to receive(:interpolated_versioned_variables_changed?).exactly(2).times
-                                            .with(anything, anything, anything, anything)
-                                            .and_return(false)
+            .with(anything, anything, anything, anything)
+                                                                                               .and_return(false)
 
           # 1 call to interpolate before we send to CPI
           expect(variables_interpolator).to receive(:interpolate_with_versioning).exactly(1).times.with(cloud_properties, desired_variable_set).and_return(interpolated_cloud_properties)
@@ -625,8 +625,8 @@ module Bosh::Director
         it 'does not save PersistentDisk model with the interpolated cloud config' do
           allow(variables_interpolator).to receive(:interpolate_with_versioning).with(cloud_properties, anything).and_return(interpolated_cloud_properties)
           allow(variables_interpolator).to receive(:interpolated_versioned_variables_changed?)
-                                            .with(anything, anything, anything, anything)
-                                            .and_return(false)
+            .with(anything, anything, anything, anything)
+            .and_return(false)
           disk_manager.update_persistent_disk(instance_plan)
           expect(Models::PersistentDisk.first.cloud_properties).to eq(cloud_properties)
         end

@@ -4,7 +4,7 @@ require 'fakefs/spec_helpers'
 describe Bosh::Director::StaleFileKiller do
   describe '#kill' do
     include FakeFS::SpecHelpers
-    let(:dir) { '/some/dir'}
+    let(:dir) { '/some/dir' }
     let(:old_file_path) { File.join(dir, 'over_one_hour') }
     let(:young_file_path) { File.join(dir, 'under_one_hour') }
 

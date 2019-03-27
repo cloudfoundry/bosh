@@ -14,7 +14,7 @@ module Bosh::Director
     before do
       allow(Bosh::Director::Config).to receive(:uuid).and_return('snoopy-uuid')
       allow(Bosh::Director::Config).to receive(:preferred_cpi_api_version).and_return(1)
-      allow(Bosh::Director::Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
+      allow(Bosh::Director::Config).to receive(:cloud_options).and_return('provider' => { 'path' => '/path/to/default/cpi' })
       allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi',
                                                              'snoopy-uuid',
                                                              instance_of(Logging::Logger),
@@ -226,6 +226,5 @@ module Bosh::Director
         end
       end
     end
-
   end
 end

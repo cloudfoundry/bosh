@@ -55,7 +55,7 @@ module Bosh::Director
 
     describe 'compilation readiness' do
       let(:package) { Models::Package.make(name: 'foo') }
-      let(:stemcell) { Models::Stemcell.make({operating_system: 'chrome-os', version: 'latest'}) }
+      let(:stemcell) { Models::Stemcell.make(operating_system: 'chrome-os', version: 'latest') }
       let(:compiled_package) { Models::CompiledPackage.make(package: package, stemcell_os: 'chrome-os', stemcell_version: 'latest') }
 
       it 'can tell if compiled' do
@@ -119,8 +119,8 @@ module Bosh::Director
         package = Models::Package.make
         stemcell = Models::Stemcell.make
 
-        cp = Models::CompiledPackage.make({stemcell_os: 'firefox_os', stemcell_version: '2'})
-        cp2 = Models::CompiledPackage.make({stemcell_os: 'firefox_os', stemcell_version: '2'})
+        cp = Models::CompiledPackage.make(stemcell_os: 'firefox_os', stemcell_version: '2')
+        cp2 = Models::CompiledPackage.make(stemcell_os: 'firefox_os', stemcell_version: '2')
 
         requirement = make(package, stemcell)
 
@@ -154,9 +154,9 @@ module Bosh::Director
 
         foo_requirement.add_dependency(bar_requirement)
 
-        expect {
+        expect do
           foo_requirement.dependency_spec
-        }.to raise_error(DirectorError, /'bar' hasn't been compiled yet/i)
+        end.to raise_error(DirectorError, /'bar' hasn't been compiled yet/i)
 
         bar_requirement.use_compiled_package(cp)
 
@@ -173,8 +173,8 @@ module Bosh::Director
       it "doesn't include nested dependencies" do
         stemcell = Models::Stemcell.make
         foo = Models::Package.make(name:  'foo')
-        bar = Models::Package.make(name:  'bar', :version => '42')
-        baz = Models::Package.make(name:  'baz', :version => '17')
+        bar = Models::Package.make(name:  'bar', version: '42')
+        baz = Models::Package.make(name:  'baz', version: '17')
 
         cp_bar = Models::CompiledPackage.make(package: bar, build: 152, sha1: 'deadbeef', blobstore_id: 'deadcafe', stemcell_os: 'chrome-os', stemcell_version: 'latest')
 

@@ -104,12 +104,12 @@ module Bosh::Director
 
           it 'denies others' do
             expect(subject.is_granted?(acl_subject, acl_right, [
-              'bosh.read', # denies global read scope
-              'bosh.fake-director-uuid.read', # denies director-specific read scope
-              'bosh.unexpected-uuid.admin', # other director-specific admin scope
-              'bosh.unexpected-uuid.read',  # other director-specific read != admin
-              'bosh.teams.security.read', # team specific reads
-            ])).to eq(false)
+                                         'bosh.read', # denies global read scope
+                                         'bosh.fake-director-uuid.read', # denies director-specific read scope
+                                         'bosh.unexpected-uuid.admin', # other director-specific admin scope
+                                         'bosh.unexpected-uuid.read',  # other director-specific read != admin
+                                         'bosh.teams.security.read', # team specific reads
+                                       ])).to eq(false)
           end
         end
 
@@ -130,12 +130,12 @@ module Bosh::Director
 
           it 'denies others' do
             expect(subject.is_granted?(acl_subject, acl_right, [
-              'bosh.read', # denies global read scope
-              'bosh.fake-director-uuid.read', # denies director-specific read scope
-              'bosh.unexpected-uuid.admin', # other director-specific admin scope
-              'bosh.unexpected-uuid.read',  # other director-specific read != admin
-              'bosh.teams.security.read', # team specific reads
-            ])).to eq(false)
+                                         'bosh.read', # denies global read scope
+                                         'bosh.fake-director-uuid.read', # denies director-specific read scope
+                                         'bosh.unexpected-uuid.admin', # other director-specific admin scope
+                                         'bosh.unexpected-uuid.read',  # other director-specific read != admin
+                                         'bosh.teams.security.read', # team specific reads
+                                       ])).to eq(false)
           end
         end
 

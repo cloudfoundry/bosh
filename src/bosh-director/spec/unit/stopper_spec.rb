@@ -54,11 +54,11 @@ module Bosh::Director
       {
         'vm_type' => {
           'name' => 'vm-type-name',
-          'cloud_properties' => {}
+          'cloud_properties' => {},
         },
         'stemcell' => {
           'name' => 'stemcell-name',
-          'version' => '2.0.6'
+          'version' => '2.0.6',
         },
         'networks' => {},
       }
@@ -107,7 +107,7 @@ module Bosh::Director
       end
 
       context 'when it is instance with unresponsive agent' do
-        let(:current_job_state) {'unresponsive'}
+        let(:current_job_state) { 'unresponsive' }
 
         it 'does not drain and stop' do
           expect(agent_client).to_not receive(:drain)

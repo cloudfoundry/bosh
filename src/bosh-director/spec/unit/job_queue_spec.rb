@@ -38,7 +38,7 @@ module Bosh::Director
     describe '#enqueue' do
       it 'enqueues a job' do
         expect(Delayed::Job.count).to eq(0)
-        retval = subject.enqueue('whoami', job_class, description, ['foo', 'bar'], deployment)
+        subject.enqueue('whoami', job_class, description, %w[foo bar], deployment)
         expect(Delayed::Job.count).to eq(1)
         expect(Delayed::Job.first[:queue]).to eq('sample')
       end
@@ -46,7 +46,7 @@ module Bosh::Director
       it 'enqueues a job with a context id' do
         expect(Delayed::Job.count).to eq(0)
         context_id = 'example-context-id'
-        retval = subject.enqueue('whoami', job_class, description, ['foo', 'bar'], deployment, context_id)
+        retval = subject.enqueue('whoami', job_class, description, %w[foo bar], deployment, context_id)
         expect(retval.context_id).to eq(context_id)
       end
 
@@ -72,13 +72,13 @@ module Bosh::Director
       it 'should create the task debug output file' do
         task = subject.enqueue('fake-user', job_class, description, [], deployment)
 
-        expect(File.exists?(File.join(tmpdir, 'tasks', task.id.to_s, 'debug'))).to be(true)
+        expect(File.exist?(File.join(tmpdir, 'tasks', task.id.to_s, 'debug'))).to be(true)
       end
 
       it 'should create a new task model' do
-        expect {
+        expect do
           subject.enqueue('fake-user', job_class, description, [], deployment)
-        }.to change {
+        end.to change {
           Models::Task.count
         }.from(0).to(1)
       end
@@ -91,9 +91,9 @@ module Bosh::Director
       end
 
       it 'persists deployment teams on the task so that they can be referenced even when the deployment database record has been deleted' do
-        expect {
+        expect do
           subject.enqueue('fake-user', job_class, description, [], deployment)
-        }.to change {
+        end.to change {
           Models::Task.where(teams: teams).count
         }.from(0).to(1)
       end

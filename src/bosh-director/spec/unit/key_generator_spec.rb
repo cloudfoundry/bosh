@@ -13,9 +13,9 @@ module Bosh::Director
         let(:compiled_packages) { [] }
 
         it 'raise an error' do
-          expect {
+          expect do
             key_generator.dependency_key_from_manifest('bad-package', compiled_packages)
-          }.to raise_error ReleaseExistingPackageHashMismatch, "Package 'bad-package' not found in the release manifest."
+          end.to raise_error ReleaseExistingPackageHashMismatch, "Package 'bad-package' not found in the release manifest."
         end
       end
 
@@ -27,14 +27,14 @@ module Bosh::Director
               'version' => 'fake-pkg0-version',
               'fingerprint' => 'fake-pkg0-fingerprint',
               'stemcell' => 'ubuntu-trusty/3000',
-              'dependencies' => []
+              'dependencies' => [],
             },
             {
               'name' => 'fake-pkg2',
               'version' => 'fake-pkg2-version',
               'fingerprint' => 'fake-pkg2-fingerprint',
               'stemcell' => 'ubuntu-trusty/3000',
-              'dependencies' => []
+              'dependencies' => [],
             },
           ]
         end
@@ -53,28 +53,28 @@ module Bosh::Director
               'version' => 'fake-pkg0-version',
               'fingerprint' => 'fake-pkg0-fingerprint',
               'stemcell' => 'ubuntu-trusty/3000',
-              'dependencies' => ['fake-pkg2']
+              'dependencies' => ['fake-pkg2'],
             },
             {
               'name' => 'fake-pkg1',
               'version' => 'fake-pkg1-version',
               'fingerprint' => 'fake-pkg1-fingerprint',
               'stemcell' => 'ubuntu-trusty/3000',
-              'dependencies' => []
+              'dependencies' => [],
             },
             {
               'name' => 'fake-pkg2',
               'version' => 'fake-pkg2-version',
               'fingerprint' => 'fake-pkg2-fingerprint',
               'stemcell' => 'ubuntu-trusty/3000',
-              'dependencies' => ['fake-pkg3']
+              'dependencies' => ['fake-pkg3'],
             },
             {
               'name' => 'fake-pkg3',
               'version' => 'fake-pkg3-version',
               'fingerprint' => 'fake-pkg3-fingerprint',
               'stemcell' => 'ubuntu-trusty/3000',
-              'dependencies' => []
+              'dependencies' => [],
             },
           ]
         end
@@ -96,21 +96,21 @@ module Bosh::Director
               'version' => 'fake-pkg1-version',
               'fingerprint' => 'fake-pkg1-fingerprint',
               'stemcell' => 'ubuntu-trusty/3000',
-              'dependencies' => ['fake-pkg2', 'fake-pkg3']
+              'dependencies' => ['fake-pkg2', 'fake-pkg3'],
             },
             {
               'name' => 'fake-pkg2',
               'version' => 'fake-pkg2-version',
               'fingerprint' => 'fake-pkg2-fingerprint',
               'stemcell' => 'ubuntu-trusty/3000',
-              'dependencies' => []
+              'dependencies' => [],
             },
             {
               'name' => 'fake-pkg3',
               'version' => 'fake-pkg3-version',
               'fingerprint' => 'fake-pkg3-fingerprint',
               'stemcell' => 'ubuntu-trusty/3000',
-              'dependencies' => []
+              'dependencies' => [],
             },
           ]
         end
@@ -180,7 +180,7 @@ module Bosh::Director
         end
 
         context 'there multiple releases using the same packages' do
-          let(:new_release) { Models::Release.make(name: 'new-release')}
+          let(:new_release) { Models::Release.make(name: 'new-release') }
 
           let(:package) do
             Models::Package.make(name: 'pkg-1', version: '1.1', release: new_release, dependency_set_json: ['pkg-2'].to_json)
@@ -231,13 +231,18 @@ module Bosh::Director
     context 'when comparing dependency keys from the release manifest and Models::Package' do
       let(:package) do
         package_d = Models::Package.make(name: 'd', version: '1.4', release: release)
-        package_b = Models::Package.make(name: 'b', version: '1.7', release: release, dependency_set_json: ['d', 'z'].shuffle.to_json)
+        package_b = Models::Package.make(
+          name: 'b',
+          version: '1.7',
+          release: release,
+          dependency_set_json: %w[d z].shuffle.to_json,
+        )
         package_x = Models::Package.make(name: 'x', version: '1.7', release: release)
         package_z = Models::Package.make(name: 'z', version: '1.7', release: release)
 
         [package_x, package_b, package_d, package_z].shuffle.each { |p| release_version.packages << p }
 
-        Models::Package.make(name: 'parent', version: '1.1', release: release, dependency_set_json: ['b', 'x'].shuffle.to_json)
+        Models::Package.make(name: 'parent', version: '1.1', release: release, dependency_set_json: %w[b x].shuffle.to_json)
       end
 
       let(:compiled_packages) do
@@ -247,35 +252,35 @@ module Bosh::Director
             'version' => '1.1',
             'fingerprint' => 'fake-pkg1-fingerprint',
             'stemcell' => 'ubuntu-trusty/3000',
-            'dependencies' => ['x', 'b'].shuffle
+            'dependencies' => %w[x b].shuffle,
           },
           {
             'name' => 'd',
             'version' => '1.4',
             'fingerprint' => 'fake-pkg2-fingerprint',
             'stemcell' => 'ubuntu-trusty/3000',
-            'dependencies' => []
+            'dependencies' => [],
           },
           {
             'name' => 'b',
             'version' => '1.7',
             'fingerprint' => 'fake-pkg3-fingerprint',
             'stemcell' => 'ubuntu-trusty/3000',
-            'dependencies' => ['d', 'z'].shuffle
+            'dependencies' => %w[d z].shuffle,
           },
           {
             'name' => 'x',
             'version' => '1.7',
             'fingerprint' => 'fake-pkg3-fingerprint',
             'stemcell' => 'ubuntu-trusty/3000',
-            'dependencies' => []
+            'dependencies' => [],
           },
           {
             'name' => 'z',
             'version' => '1.7',
             'fingerprint' => 'fake-pkg3-fingerprint',
             'stemcell' => 'ubuntu-trusty/3000',
-            'dependencies' => []
+            'dependencies' => [],
           },
         ].shuffle
       end

@@ -3,7 +3,6 @@ require 'timecop'
 
 module Bosh::Director
   describe AgentBroadcaster do
-
     after { Timecop.return }
 
     let(:ip_addresses) { ['10.0.0.1'] }
@@ -73,8 +72,8 @@ module Bosh::Director
 
     describe '#delete_arp_entries' do
       it 'successfully broadcast :delete_arp_entries call' do
-        expect(AgentClient).to receive(:with_agent_id).
-          with(instance1.agent_id, instance1.name).and_return(agent)
+        expect(AgentClient).to receive(:with_agent_id)
+          .with(instance1.agent_id, instance1.name).and_return(agent)
         expect(agent).to receive(:delete_arp_entries).with(ips: ip_addresses)
 
         agent_broadcast.delete_arp_entries('fake-vm-cid-to-exclude', ip_addresses)
@@ -94,7 +93,7 @@ module Bosh::Director
     describe '#sync_dns' do
       let(:start_time) { Time.now }
       let(:end_time) { start_time + 0.01 }
-      let(:reactor) {instance_double(EmReactorLoop)}
+      let(:reactor) { instance_double(EmReactorLoop) }
 
       before do
         Timecop.freeze(start_time)
@@ -113,7 +112,7 @@ module Bosh::Director
             .with(instance1.agent_id, instance1.name).and_return(agent)
 
           expect(agent).to receive(:sync_dns).with('fake-blob-id', 'fake-sha1', 1) do |&blk|
-            blk.call({'value' => 'synced'})
+            blk.call('value' => 'synced')
             Timecop.freeze(end_time)
           end.and_return('instance-1-req-id')
 
@@ -121,7 +120,7 @@ module Bosh::Director
             .with(instance2.agent_id, instance2.name).and_return(agent2)
 
           expect(agent2).to receive(:sync_dns).with('fake-blob-id', 'fake-sha1', 1) do |&blk|
-            blk.call({'value' => 'synced'})
+            blk.call('value' => 'synced')
           end.and_return('instance-2-req-id')
 
           agent_broadcast.sync_dns([instance1, instance2], 'fake-blob-id', 'fake-sha1', 1)
@@ -131,7 +130,7 @@ module Bosh::Director
       end
 
       context 'when some agents fail' do
-        let!(:instances) { [instance1, instance2]}
+        let!(:instances) { [instance1, instance2] }
 
         context 'and agent succeeds within retry count' do
           it 'retries broadcasting to failed agents' do
@@ -139,19 +138,19 @@ module Bosh::Director
             expect(logger).to receive(:error).with('agent_broadcaster: sync_dns[agent-2]: received unexpected response {"value"=>"unsynced"}')
             expect(logger).to receive(:info).with('agent_broadcaster: sync_dns: attempted 2 agents in 10ms (1 successful, 1 failed, 0 unresponsive)')
 
-            expect(AgentClient).to receive(:with_agent_id).
-              with(instance1.agent_id, instance1.name) do
+            expect(AgentClient).to receive(:with_agent_id)
+              .with(instance1.agent_id, instance1.name) do
               expect(agent).to receive(:sync_dns) do |&blk|
-                blk.call({'value' => 'synced'})
+                blk.call('value' => 'synced')
                 Timecop.freeze(end_time)
               end
               agent
             end
 
-            expect(AgentClient).to receive(:with_agent_id).
-              with(instance2.agent_id, instance2.name) do
+            expect(AgentClient).to receive(:with_agent_id)
+              .with(instance2.agent_id, instance2.name) do
               expect(agent).to receive(:sync_dns) do |&blk|
-                blk.call({'value' => 'unsynced'})
+                blk.call('value' => 'unsynced')
               end
               agent
             end
@@ -164,12 +163,12 @@ module Bosh::Director
       end
 
       context 'that we are able to update the AgentDnsVersion' do
-        let!(:instances) { [instance1]}
+        let!(:instances) { [instance1] }
 
         before do
           expect(AgentClient).to receive(:with_agent_id) do
             expect(agent).to receive(:sync_dns) do |&blk|
-              blk.call({'value' => 'synced'})
+              blk.call('value' => 'synced')
               Timecop.freeze(end_time)
             end
             agent
@@ -221,7 +220,7 @@ module Bosh::Director
       end
 
       context 'when some agents are unresponsive' do
-        let!(:instances) { [instance1, instance2]}
+        let!(:instances) { [instance1, instance2] }
 
         context 'and agent succeeds within retry count' do
           it 'logs broadcasting fail to failed agents' do
@@ -229,23 +228,23 @@ module Bosh::Director
             expect(logger).to receive(:warn).with('agent_broadcaster: sync_dns: no response received for 1 agent(s): [agent-2]')
             expect(logger).to receive(:info).with(/agent_broadcaster: sync_dns: attempted 2 agents in \d+ms \(1 successful, 0 failed, 1 unresponsive\)/)
 
-            expect(AgentClient).to receive(:with_agent_id).
-              with(instance1.agent_id, instance1.name) do
+            expect(AgentClient).to receive(:with_agent_id)
+              .with(instance1.agent_id, instance1.name) do
               expect(agent).to receive(:sync_dns) do |&blk|
-                blk.call({'value' => 'synced'})
+                blk.call('value' => 'synced')
                 Timecop.travel(end_time)
               end.and_return('sync_dns_request_id_1')
               agent
             end
 
-            expect(AgentClient).to receive(:with_agent_id).
-              with(instance2.agent_id, instance2.name) do
+            expect(AgentClient).to receive(:with_agent_id)
+              .with(instance2.agent_id, instance2.name) do
               expect(agent).to receive(:sync_dns).and_return('sync_dns_request_id_2')
               agent
             end.once
 
-            expect(AgentClient).to receive(:with_agent_id).
-              with(instance2.agent_id, instance2.name) do
+            expect(AgentClient).to receive(:with_agent_id)
+              .with(instance2.agent_id, instance2.name) do
               expect(agent).to receive(:cancel_sync_dns).with('sync_dns_request_id_2')
               agent
             end.once
@@ -269,7 +268,7 @@ module Bosh::Director
 
           allow(AgentClient).to receive(:with_agent_id) do
             allow(agent).to receive(:sync_dns) do |&blk|
-              blk.call({'value' => 'synced'})
+              blk.call('value' => 'synced')
             end
             agent
           end

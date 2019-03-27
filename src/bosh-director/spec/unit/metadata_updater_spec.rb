@@ -34,7 +34,8 @@ describe Bosh::Director::MetadataUpdater do
 
       updater = instance_double('Bosh::Director::MetadataUpdater')
       expect(described_class).to receive(:new).with(
-          {'director' => 'fake-director-name'}, logger).and_return(updater)
+        { 'director' => 'fake-director-name' }, logger
+      ).and_return(updater)
 
       expect(described_class.build).to eq(updater)
     end
@@ -58,13 +59,13 @@ describe Bosh::Director::MetadataUpdater do
 
       context 'when CPI supports setting vm metadata' do
         it 'updates vm metadata with provided metadata' do
-          expected_vm_metadata = {'fake-custom-key1' => 'fake-custom-value1'}
+          expected_vm_metadata = { 'fake-custom-key1' => 'fake-custom-value1' }
           expect(cloud).to receive(:set_vm_metadata).with('fake-vm-cid', hash_including(expected_vm_metadata))
           metadata_updater.update_vm_metadata(instance, vm, expected_vm_metadata)
         end
 
         it 'updates vm metadata with director metadata' do
-          expected_vm_metadata = {'fake-director-key1' => 'fake-director-value1'}
+          expected_vm_metadata = { 'fake-director-key1' => 'fake-director-value1' }
           director_metadata.merge!(expected_vm_metadata)
           expect(cloud).to receive(:set_vm_metadata).with('fake-vm-cid', hash_including(expected_vm_metadata))
           metadata_updater.update_vm_metadata(instance, vm, {})
@@ -72,7 +73,7 @@ describe Bosh::Director::MetadataUpdater do
 
         it 'updates vm metadata with creation time' do
           Timecop.freeze do
-            expected_vm_metadata = {'created_at' => Time.new.getutc.strftime('%Y-%m-%dT%H:%M:%SZ')}
+            expected_vm_metadata = { 'created_at' => Time.new.getutc.strftime('%Y-%m-%dT%H:%M:%SZ') }
             expect(cloud).to receive(:set_vm_metadata).with('fake-vm-cid', hash_including(expected_vm_metadata))
             metadata_updater.update_vm_metadata(instance, vm, {})
           end
@@ -80,7 +81,7 @@ describe Bosh::Director::MetadataUpdater do
 
         it 'updates vm metadata with deployment specific metadata' do
           expect(cloud).to receive(:set_vm_metadata)
-                             .with('fake-vm-cid', hash_including('deployment' => 'deployment-value'))
+            .with('fake-vm-cid', hash_including('deployment' => 'deployment-value'))
           metadata_updater.update_vm_metadata(instance, vm, {})
         end
 
@@ -130,14 +131,14 @@ describe Bosh::Director::MetadataUpdater do
   end
 
   describe '#update_disk_metadata' do
-    let(:disk) { BD::Models::PersistentDisk.make(instance: instance, disk_cid: 'fake-disk-cid')}
+    let(:disk) { BD::Models::PersistentDisk.make(instance: instance, disk_cid: 'fake-disk-cid') }
     before do
       instance.add_persistent_disk(disk) if disk
     end
 
     context 'when CPI supports setting disk metadata' do
       it 'adds director metadata' do
-        expected_disk_metadata = {'fake-director-key1' => 'fake-director-value1'}
+        expected_disk_metadata = { 'fake-director-key1' => 'fake-director-value1' }
         director_metadata.merge!(expected_disk_metadata)
         expect(cloud).to receive(:set_disk_metadata).with('fake-disk-cid', hash_including(expected_disk_metadata))
         metadata_updater.update_disk_metadata(cloud, disk, {})
@@ -145,7 +146,7 @@ describe Bosh::Director::MetadataUpdater do
 
       it 'adds deployment specific metadata' do
         expect(cloud).to receive(:set_disk_metadata).with('fake-disk-cid',
-          hash_including({'deployment' => 'deployment-value'}))
+                                                          hash_including('deployment' => 'deployment-value'))
         metadata_updater.update_disk_metadata(cloud, disk, {})
       end
 
@@ -165,19 +166,19 @@ describe Bosh::Director::MetadataUpdater do
       end
 
       it 'turns job index metadata into a string' do
-        expect(cloud).to receive(:set_disk_metadata).with('fake-disk-cid', hash_including({'instance_index' => '12345'}))
+        expect(cloud).to receive(:set_disk_metadata).with('fake-disk-cid', hash_including('instance_index' => '12345'))
         metadata_updater.update_disk_metadata(cloud, disk, {})
       end
 
       it 'updates disk metadata with provided metadata' do
-        expected_disk_metadata = {'fake-custom-key1' => 'fake-custom-value1'}
+        expected_disk_metadata = { 'fake-custom-key1' => 'fake-custom-value1' }
         expect(cloud).to receive(:set_disk_metadata).with('fake-disk-cid', hash_including(expected_disk_metadata))
         metadata_updater.update_disk_metadata(cloud, disk, expected_disk_metadata)
       end
 
       it 'updates disk metadata with attachment time' do
         Timecop.freeze do
-          expected_disk_metadata = {'attached_at' => Time.new.getutc.strftime('%Y-%m-%dT%H:%M:%SZ')}
+          expected_disk_metadata = { 'attached_at' => Time.new.getutc.strftime('%Y-%m-%dT%H:%M:%SZ') }
           expect(cloud).to receive(:set_disk_metadata).with('fake-disk-cid', hash_including(expected_disk_metadata))
           metadata_updater.update_disk_metadata(cloud, disk, {})
         end

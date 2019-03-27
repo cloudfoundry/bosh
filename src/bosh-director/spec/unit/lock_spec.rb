@@ -56,7 +56,7 @@ module Bosh::Director
     end
 
     it 'should return immediately with lock busy if try lock fails to get lock' do
-      lock_a = Lock.new('foo', { timeout: 0, task_id: 1 })
+      lock_a = Lock.new('foo', timeout: 0, task_id: 1)
       lock_b = Lock.new('foo', timeout: 0)
 
       ran_once = false
@@ -101,7 +101,12 @@ module Bosh::Director
 
           expect { lock.lock {} }.to change {
             Models::Event.where(
-                action: 'acquire', object_type: 'lock', object_name: 'foo', user: 'current-user', task: "#{task.id}", deployment: 'my-deployment'
+              action: 'acquire',
+              object_type: 'lock',
+              object_name: 'foo',
+              user: 'current-user',
+              task: task.id.to_s,
+              deployment: 'my-deployment',
             ).count
           }.from(0).to(1)
         end
@@ -113,7 +118,12 @@ module Bosh::Director
 
           expect { lock.lock {} }.to change {
             Models::Event.where(
-                action: 'release', object_type: 'lock', object_name: 'foo', user: 'current-user', task: "#{task.id}", deployment: 'my-deployment'
+              action: 'release',
+              object_type: 'lock',
+              object_name: 'foo',
+              user: 'current-user',
+              task: task.id.to_s,
+              deployment: 'my-deployment',
             ).count
           }.from(0).to(1)
         end
@@ -134,9 +144,10 @@ module Bosh::Director
       context 'when a lock is lost' do
         def destroy_lock_record(lock_name)
           Thread.new do
-            until false
+            loop do
               x = Models::Lock.where(name: lock_name).delete
               break if x > 0
+
               sleep 0.1
             end
           end
@@ -152,7 +163,12 @@ module Bosh::Director
           lock.lock { sleep 2 }
 
           expect(Models::Event.where(
-              action: 'lost', object_type: 'lock', object_name: 'foo', user: 'current-user', task: "#{task.id}", deployment: 'my-deployment'
+            action: 'lost',
+            object_type: 'lock',
+            object_name: 'foo',
+            user: 'current-user',
+            task: task.id.to_s,
+            deployment: 'my-deployment',
           ).count).to eq 1
         end
 

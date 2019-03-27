@@ -2,8 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe PackageDependenciesManager do
-
-    subject(:package_dependency_manager){ PackageDependenciesManager.new(release_version) }
+    subject(:package_dependency_manager) { PackageDependenciesManager.new(release_version) }
 
     let(:release) do
       Models::Release.make(name: 'that-release')
@@ -28,7 +27,6 @@ module Bosh::Director
     let(:package3_dependency_set) { [] }
 
     describe '#transitive_dependencies' do
-
       context 'when the dependency is linear' do
         it 'returns the packages the provided package depends on (imediately & transitively)' do
           expect(package_dependency_manager.transitive_dependencies(package1)).to eq(Set.new([package2, package3]))
@@ -40,7 +38,7 @@ module Bosh::Director
       context 'when two packages share a dependency' do
         let(:package4) { Models::Package.new(name: 'package4', dependency_set: package4_dependency_set) }
 
-        let(:package1_dependency_set) { ['package2', 'package3'] }
+        let(:package1_dependency_set) { %w[package2 package3] }
         let(:package2_dependency_set) { ['package4'] }
         let(:package3_dependency_set) { ['package4'] }
         let(:package4_dependency_set) { [] }
@@ -59,9 +57,9 @@ module Bosh::Director
         it 'blows up' do
           release_version.packages.delete(package3)
 
-          expect {
+          expect do
             package_dependency_manager.transitive_dependencies(package2)
-          }.to raise_error "Package name 'package3' not found in release 'that-release/1'"
+          end.to raise_error "Package name 'package3' not found in release 'that-release/1'"
         end
       end
     end
@@ -77,12 +75,11 @@ module Bosh::Director
         it 'blows up' do
           release_version.packages.delete(package3)
 
-          expect {
+          expect do
             package_dependency_manager.dependencies(package2)
-          }.to raise_error "Package name 'package3' not found in release 'that-release/1'"
+          end.to raise_error "Package name 'package3' not found in release 'that-release/1'"
         end
       end
     end
-
   end
 end

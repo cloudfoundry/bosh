@@ -49,7 +49,7 @@ module Bosh::Director
         job2 = DeploymentPlan::Job.new(release_version, 'dummy')
         job2.bind_existing_model(Models::Template.make(blobstore_id: 'my-blobstore-id'))
 
-        allow(instance_plan).to receive_message_chain(:spec, :as_template_spec).and_return({'template' => 'spec'})
+        allow(instance_plan).to receive_message_chain(:spec, :as_template_spec).and_return('template' => 'spec')
         allow(instance_plan).to receive(:templates).and_return([job1, job2])
       end
 
@@ -97,18 +97,18 @@ module Bosh::Director
         end
 
         it 'formats the error messages' do
-          expected = <<-EXPECTED.strip
-- Unable to render jobs for instance group 'my_instance_group'. Errors are:
-  - Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP code '404'
-  - Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP code '404'
-  - Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
+          expected = <<~EXPECTED.strip
+            - Unable to render jobs for instance group 'my_instance_group'. Errors are:
+              - Failed to find variable '/TestDirector/simple/i_am_not_here_1' from config server: HTTP code '404'
+              - Failed to find variable '/TestDirector/simple/i_am_not_here_2' from config server: HTTP code '404'
+              - Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
           EXPECTED
 
-          expect {
+          expect do
             perform
-          }.to raise_error { |error|
+          end.to(raise_error do |error|
             expect(error.message).to eq(expected)
-          }
+          end)
         end
       end
     end

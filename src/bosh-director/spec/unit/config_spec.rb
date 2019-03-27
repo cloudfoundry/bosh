@@ -6,19 +6,19 @@ require 'spec_helper'
 #
 
 describe Bosh::Director::Config do
-  let(:test_config) { YAML.load(spec_asset('test-director-config.yml')) }
+  let(:test_config) { YAML.safe_load(spec_asset('test-director-config.yml')) }
   let(:temp_dir) { Dir.mktmpdir }
   let(:base_config) do
     blobstore_dir = File.join(temp_dir, 'blobstore')
     FileUtils.mkdir_p(blobstore_dir)
 
-    config = YAML.load(spec_asset('test-director-config.yml'))
+    config = YAML.safe_load(spec_asset('test-director-config.yml'))
     config['dir'] = temp_dir
     config['blobstore'] = {
-        'provider' => 'local',
-        'options' => {
-            'blobstore_path' => blobstore_dir,
-        }
+      'provider' => 'local',
+      'options' => {
+        'blobstore_path' => blobstore_dir,
+      },
     }
     config['snapshots']['enabled'] = true
     config
@@ -44,7 +44,7 @@ describe Bosh::Director::Config do
   describe 'director ips' do
     before do
       allow(Socket).to receive(:ip_address_list).and_return([
-        instance_double(Addrinfo, ip_address: '127.0.0.1',   ip?: true, ipv4_loopback?: true,  ipv6_loopback?: false, ipv6_linklocal?: false),
+        instance_double(Addrinfo, ip_address: '127.0.0.1', ip?: true, ipv4_loopback?: true, ipv6_loopback?: false, ipv6_linklocal?: false),
         instance_double(Addrinfo, ip_address: '10.10.0.6',   ip?: true, ipv4_loopback?: false, ipv6_loopback?: false, ipv6_linklocal?: false),
         instance_double(Addrinfo, ip_address: '10.11.0.16',  ip?: true, ipv4_loopback?: false, ipv6_loopback?: false, ipv6_linklocal?: false),
         instance_double(Addrinfo, ip_address: '::1',         ip?: true, ipv4_loopback?: false, ipv6_loopback?: true,  ipv6_linklocal?: false),
@@ -81,9 +81,9 @@ describe Bosh::Director::Config do
     context 'when hash contains a non integral value' do
       it 'raises an error' do
         test_config['max_vm_create_tries'] = 'bad number'
-        expect{
+        expect do
           described_class.configure(test_config)
-        }.to raise_error(ArgumentError)
+        end.to raise_error(ArgumentError)
       end
     end
   end
@@ -163,7 +163,7 @@ describe Bosh::Director::Config do
   describe '#configure' do
     context 'logger' do
       let(:log_dir) { Dir.mktmpdir }
-      let(:log_file) { File.join(log_dir,'logfile') }
+      let(:log_file) { File.join(log_dir, 'logfile') }
       after { FileUtils.rm_rf(log_dir) }
 
       context 'when the config specifies a file logger' do
@@ -173,7 +173,7 @@ describe Bosh::Director::Config do
           appender = Logging::Appender.new('file')
           expect(Logging.appenders).to receive(:file).with(
             'Director',
-            hash_including(filename: 'fake-file')
+            hash_including(filename: 'fake-file'),
           ).and_return(appender)
           described_class.configure(test_config)
         end
@@ -242,16 +242,16 @@ describe Bosh::Director::Config do
             {
               'provider' => 'local',
               'options' => {
-                'blobstore_path' => '/path/to/blobstore'
-              }
+                'blobstore_path' => '/path/to/blobstore',
+              },
             },
             {
               'provider' => 'local',
               'options' => {
-                'blobstore_path' => '/path/to/blobstore'
-              }
-            }
-          ]
+                'blobstore_path' => '/path/to/blobstore',
+              },
+            },
+          ],
         }
       end
 
@@ -263,20 +263,20 @@ describe Bosh::Director::Config do
 
     context 'config server' do
       context 'when enabled' do
-        before {
+        before do
           test_config['config_server'] = {
-              'enabled' => true,
-              'url' => 'https://127.0.0.1:8080',
-              'ca_cert_path' => '/var/vcap/jobs/director/config/config_server_ca.cert'
+            'enabled' => true,
+            'url' => 'https://127.0.0.1:8080',
+            'ca_cert_path' => '/var/vcap/jobs/director/config/config_server_ca.cert',
           }
 
           test_config['config_server']['uaa'] = {
-              'url' => 'fake-uaa-url',
-              'client_id' => 'fake-client-id',
-              'client_secret' => 'fake-client-secret',
-              'ca_cert_path' => 'fake-uaa-ca-cert-path'
+            'url' => 'fake-uaa-url',
+            'client_id' => 'fake-client-id',
+            'client_secret' => 'fake-client-secret',
+            'ca_cert_path' => 'fake-uaa-ca-cert-path',
           }
-        }
+        end
 
         it 'should have parsed out config server values' do
           described_class.configure(test_config)
@@ -299,9 +299,9 @@ describe Bosh::Director::Config do
         end
 
         context 'when url is not https' do
-          before {
-            test_config["config_server"]["url"] = "http://127.0.0.1:8080"
-          }
+          before do
+            test_config['config_server']['url'] = 'http://127.0.0.1:8080'
+          end
 
           it 'errors' do
             expect {  described_class.configure(test_config) }.to raise_error(ArgumentError, 'Config Server URL should always be https. Currently it is http://127.0.0.1:8080')
@@ -310,14 +310,14 @@ describe Bosh::Director::Config do
       end
 
       context 'when disabled' do
-        before {
-          test_config["config_server_enabled"] = false
-        }
+        before do
+          test_config['config_server_enabled'] = false
+        end
 
         it 'should not have parsed out the values' do
           described_class.configure(test_config)
 
-          expect(described_class.config_server).to eq({"enabled"=>false})
+          expect(described_class.config_server).to eq('enabled' => false)
         end
       end
     end
@@ -367,7 +367,7 @@ describe Bosh::Director::Config do
     after { FileUtils.rm_rf(temp_dir) }
 
     describe 'authentication configuration' do
-      let(:test_config) { base_config.merge({'user_management' => {'provider' => provider}}) }
+      let(:test_config) { base_config.merge('user_management' => { 'provider' => provider }) }
 
       context 'when no user_management config is specified' do
         let(:test_config) { base_config }
@@ -409,7 +409,7 @@ describe Bosh::Director::Config do
         end
 
         it 'creates the UAAIdentityProvider with the configured key' do
-          request_env = {'HTTP_AUTHORIZATION' => "bearer #{token}"}
+          request_env = { 'HTTP_AUTHORIZATION' => "bearer #{token}" }
           user = config.identity_provider.get_user(request_env, {})
           expect(user.username).to eq('larry')
         end
@@ -419,7 +419,7 @@ describe Bosh::Director::Config do
 
   describe '#root_domain' do
     context 'when no dns_domain is set in config' do
-      let(:test_config) { base_config.merge({'dns' => {}}) }
+      let(:test_config) { base_config.merge('dns' => {}) }
       it 'returns bosh' do
         described_class.configure(test_config)
         expect(described_class.root_domain).to eq('bosh')
@@ -427,7 +427,7 @@ describe Bosh::Director::Config do
     end
 
     context 'when dns_domain is set in config' do
-      let(:test_config) { base_config.merge({'dns' => {'domain_name' => 'test-domain-name'}}) }
+      let(:test_config) { base_config.merge('dns' => { 'domain_name' => 'test-domain-name' }) }
       it 'returns the DNS domain' do
         described_class.configure(test_config)
         expect(described_class.root_domain).to eq('test-domain-name')
@@ -489,7 +489,7 @@ describe Bosh::Director::Config do
   end
 
   describe '#nats_rpc' do
-    let(:some_client) { instance_double(Bosh::Director::NatsRpc)}
+    let(:some_client) { instance_double(Bosh::Director::NatsRpc) }
 
     before do
       described_class.configure(test_config)
@@ -497,11 +497,11 @@ describe Bosh::Director::Config do
 
     it 'initializes a new nats rpc client with the appropriate params' do
       expect(Bosh::Director::NatsRpc).to receive(:new)
-                                           .with(test_config['mbus'],
-                                                 test_config['nats']['server_ca_path'],
-                                                 test_config['nats']['client_private_key_path'],
-                                                 test_config['nats']['client_certificate_path'])
-                                           .and_return(some_client)
+        .with(test_config['mbus'],
+              test_config['nats']['server_ca_path'],
+              test_config['nats']['client_private_key_path'],
+              test_config['nats']['client_certificate_path'])
+        .and_return(some_client)
       expect(described_class.nats_rpc).to eq(some_client)
     end
   end
@@ -517,29 +517,29 @@ describe Bosh::Director::Config do
 
     context 'when nats_ca is specified' do
       it 'returns non-nil' do
-        expect(described_class.nats_server_ca).to eq("whatever makes you happy")
+        expect(described_class.nats_server_ca).to eq('whatever makes you happy')
       end
     end
 
     context 'when nats_tls is specified' do
       context 'when ca certificate is specified' do
         it 'returns non-nil' do
-          expect(described_class.nats_client_ca_certificate_path).to eq("/path/to/client_ca_certificate_path")
+          expect(described_class.nats_client_ca_certificate_path).to eq('/path/to/client_ca_certificate_path')
         end
       end
       context 'when ca private_key is specified' do
         it 'returns non-nil' do
-          expect(described_class.nats_client_ca_private_key_path).to eq("/path/to/client_ca_private_key_path")
+          expect(described_class.nats_client_ca_private_key_path).to eq('/path/to/client_ca_private_key_path')
         end
       end
       context 'when private_key is specified' do
         it 'returns non-nil' do
-          expect(described_class.nats_client_private_key_path).to eq("/path/to/director_private_key_path")
+          expect(described_class.nats_client_private_key_path).to eq('/path/to/director_private_key_path')
         end
       end
       context 'when certificate is specified' do
         it 'returns non-nil' do
-          expect(described_class.nats_client_certificate_path).to eq("/path/to/director_certificate_path")
+          expect(described_class.nats_client_certificate_path).to eq('/path/to/director_certificate_path')
         end
       end
     end
@@ -549,9 +549,9 @@ describe Bosh::Director::Config do
     it 'stores an event' do
       described_class.configure(test_config)
 
-      expect {
-        described_class.log_director_start_event('custom-type', 'custom-name', {'custom' => 'context'})
-      }.to change {
+      expect do
+        described_class.log_director_start_event('custom-type', 'custom-name', 'custom' => 'context')
+      end.to change {
         Bosh::Director::Models::Event.count
       }.from(0).to(1)
 
@@ -561,7 +561,7 @@ describe Bosh::Director::Config do
       expect(event.action).to eq('start')
       expect(event.object_type).to eq('custom-type')
       expect(event.object_name).to eq('custom-name')
-      expect(event.context).to eq({'custom' => 'context'})
+      expect(event.context).to eq('custom' => 'context')
     end
   end
 
@@ -579,7 +579,7 @@ describe Bosh::Director::Config do
       end
 
       it 'raises an error' do
-        expect{ described_class.configure(base_config) }.to raise_error(ArgumentError)
+        expect { described_class.configure(base_config) }.to raise_error(ArgumentError)
       end
     end
   end
@@ -588,17 +588,18 @@ describe Bosh::Director::Config do
     it 'stores start event' do
       allow(SecureRandom).to receive(:uuid).and_return('director-uuid')
       described_class.configure(test_config)
-      expect {
+      expect do
         described_class.log_director_start
-      }.to change {
-        Bosh::Director::Models::Event.count }.from(0).to(1)
+      end.to change {
+               Bosh::Director::Models::Event.count
+             } .from(0).to(1)
       expect(Bosh::Director::Models::Event.count).to eq(1)
       event = Bosh::Director::Models::Event.first
       expect(event.user).to eq('_director')
       expect(event.action).to eq('start')
       expect(event.object_type).to eq('director')
       expect(event.object_name).to eq('director-uuid')
-      expect(event.context).to eq({'version' => '0.0.2'})
+      expect(event.context).to eq('version' => '0.0.2')
     end
   end
 
@@ -674,10 +675,10 @@ describe Bosh::Director::Config do
           'host' => '127.0.0.1',
           'port' => 5432,
           'nil_value' => nil,
-          'empty_value' => ''
+          'empty_value' => '',
         }
 
-        expect(Sequel).to receive(:connect).with({'host' => '127.0.0.1', 'port' => 5432}).and_return(database)
+        expect(Sequel).to receive(:connect).with('host' => '127.0.0.1', 'port' => 5432).and_return(database)
         described_class.configure_db(parameters)
       end
     end
@@ -689,12 +690,12 @@ describe Bosh::Director::Config do
           'port' => 5432,
           'connection_options' => {
             'max_connections' => 100,
-            'foo' => 'bar'
-          }
+            'foo' => 'bar',
+          },
         }
 
         expect(Sequel).to receive(:connect).with(
-          {'host' => '127.0.0.1', 'port' => 5432, 'max_connections' =>100, 'foo' => 'bar'}
+          'host' => '127.0.0.1', 'port' => 5432, 'max_connections' => 100, 'foo' => 'bar',
         ).and_return(database)
 
         described_class.configure_db(parameters)
@@ -708,12 +709,12 @@ describe Bosh::Director::Config do
             'host' => 'rds-somewhere',
             'port' => 7000,
             'max_connections' => 100,
-            'foo' => 'bar'
-          }
+            'foo' => 'bar',
+          },
         }
 
         expect(Sequel).to receive(:connect).with(
-          {'host' => 'rds-somewhere', 'port' => 7000, 'max_connections' =>100, 'foo' => 'bar'}
+          'host' => 'rds-somewhere', 'port' => 7000, 'max_connections' => 100, 'foo' => 'bar',
         ).and_return(database)
 
         described_class.configure_db(parameters)
@@ -730,35 +731,35 @@ describe Bosh::Director::Config do
 
       context 'postgres' do
         it_behaves_like 'db connects with custom parameters' do
-            let(:config) do
-              {
-                'adapter' => 'postgres',
-                'host' => '127.0.0.1',
-                'port' => 5432,
-                'tls' => {
-                  'enabled' => true,
-                  'cert' => {
-                    'ca' => '/path/to/root/ca',
-                    'certificate' => '/path/to/client/certificate',
-                    'private_key' => '/path/to/client/private_key',
-                  },
-                  'bosh_internal' => {
-                    'ca_provided' => true,
-                    'mutual_tls_enabled' => false,
-                  }
-                }
-              }
-            end
+          let(:config) do
+            {
+              'adapter' => 'postgres',
+              'host' => '127.0.0.1',
+              'port' => 5432,
+              'tls' => {
+                'enabled' => true,
+                'cert' => {
+                  'ca' => '/path/to/root/ca',
+                  'certificate' => '/path/to/client/certificate',
+                  'private_key' => '/path/to/client/private_key',
+                },
+                'bosh_internal' => {
+                  'ca_provided' => true,
+                  'mutual_tls_enabled' => false,
+                },
+              },
+            }
+          end
 
-            let(:connection_parameters) do
-              {
-                'adapter' => 'postgres',
-                'host' => '127.0.0.1',
-                'port' => 5432,
-                'sslmode' => 'verify-full',
-                'sslrootcert' => '/path/to/root/ca',
-              }
-            end
+          let(:connection_parameters) do
+            {
+              'adapter' => 'postgres',
+              'host' => '127.0.0.1',
+              'port' => 5432,
+              'sslmode' => 'verify-full',
+              'sslrootcert' => '/path/to/root/ca',
+            }
+          end
         end
 
         context 'when user defines TLS options in connection_options' do
@@ -778,12 +779,12 @@ describe Bosh::Director::Config do
                   'bosh_internal' => {
                     'ca_provided' => true,
                     'mutual_tls_enabled' => false,
-                  }
+                  },
                 },
                 'connection_options' => {
                   'sslmode' => 'something-custom',
-                  'sslrootcert' => '/some/unknow/path'
-                }
+                  'sslrootcert' => '/some/unknow/path',
+                },
               }
             end
 
@@ -793,7 +794,7 @@ describe Bosh::Director::Config do
                 'host' => '127.0.0.1',
                 'port' => 5432,
                 'sslmode' => 'something-custom',
-                'sslrootcert' => '/some/unknow/path'
+                'sslrootcert' => '/some/unknow/path',
               }
             end
           end
@@ -816,8 +817,8 @@ describe Bosh::Director::Config do
                   'bosh_internal' => {
                     'ca_provided' => false,
                     'mutual_tls_enabled' => false,
-                  }
-                }
+                  },
+                },
               }
             end
 
@@ -848,9 +849,9 @@ describe Bosh::Director::Config do
                   },
                   'bosh_internal' => {
                     'ca_provided' => true,
-                    'mutual_tls_enabled' => true
-                  }
-                }
+                    'mutual_tls_enabled' => true,
+                  },
+                },
               }
             end
 
@@ -868,7 +869,6 @@ describe Bosh::Director::Config do
               }
             end
           end
-
         end
       end
 
@@ -889,8 +889,8 @@ describe Bosh::Director::Config do
                 'bosh_internal' => {
                   'ca_provided' => true,
                   'mutual_tls_enabled' => false,
-                }
-              }
+                },
+              },
             }
           end
 
@@ -923,13 +923,13 @@ describe Bosh::Director::Config do
                   'bosh_internal' => {
                     'ca_provided' => true,
                     'mutual_tls_enabled' => false,
-                  }
+                  },
                 },
                 'connection_options' => {
                   'ssl_mode' => 'something-custom',
                   'sslca' => '/some/unknow/path',
                   'sslverify' => false,
-                }
+                },
               }
             end
 
@@ -963,8 +963,8 @@ describe Bosh::Director::Config do
                   'bosh_internal' => {
                     'ca_provided' => false,
                     'mutual_tls_enabled' => false,
-                  }
-                }
+                  },
+                },
               }
             end
 
@@ -996,9 +996,9 @@ describe Bosh::Director::Config do
                   },
                   'bosh_internal' => {
                     'ca_provided' => true,
-                    'mutual_tls_enabled' => true
-                  }
-                }
+                    'mutual_tls_enabled' => true,
+                  },
+                },
               }
             end
 
@@ -1015,13 +1015,12 @@ describe Bosh::Director::Config do
               }
             end
           end
-
         end
       end
     end
   end
 
-  # TODO this can be deleted once the CPI api version no longer needs to be specified in the spec
+  # TODO: this can be deleted once the CPI api version no longer needs to be specified in the spec
   describe 'preferred_cpi_api_version' do
     context 'when preferred_cpi_api_version is set' do
       before do

@@ -99,7 +99,6 @@ module Bosh::Director
               deployment_model.name,
               'action',
             )
-
         end
       end
     end

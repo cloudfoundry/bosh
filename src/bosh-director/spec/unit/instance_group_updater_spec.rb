@@ -259,7 +259,7 @@ module Bosh::Director
           plan
         end
 
-        let(:instance_model) { Bosh::Director::Models::Instance.make() }
+        let(:instance_model) { Bosh::Director::Models::Instance.make }
 
         let(:needed_instance_plans) { [canary_plan, changed_instance_plan, unchanged_instance_plan] }
 
@@ -334,10 +334,10 @@ module Bosh::Director
 
         it 'should delete them' do
           allow(Bosh::Director::Config.event_log).to receive(:begin_stage).and_call_original
-          expect(Bosh::Director::Config.event_log).to receive(:begin_stage).
-            with('Deleting unneeded instances', 1, ['job_name'])
-          expect(instance_deleter).to receive(:delete_instance_plans).
-            with([instance_plan], instance_of(Bosh::Director::EventLog::Stage), {max_threads: 1})
+          expect(Bosh::Director::Config.event_log).to receive(:begin_stage)
+            .with('Deleting unneeded instances', 1, ['job_name'])
+          expect(instance_deleter).to receive(:delete_instance_plans)
+            .with([instance_plan], instance_of(Bosh::Director::EventLog::Stage), max_threads: 1)
 
           instance_group_updater.update
         end
@@ -501,9 +501,9 @@ module Bosh::Director
         'tags' => ['job_name'],
         'total' => options[:total],
         'task' => options[:task],
-        'state' => options[:state]
+        'state' => options[:state],
       }
-      events['index'] = options[:index] if options.has_key?(:index)
+      events['index'] = options[:index] if options.key?(:index)
       events
     end
 
