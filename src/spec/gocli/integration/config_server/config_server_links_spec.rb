@@ -144,9 +144,15 @@ describe 'using director with config server and deployments having links', type:
 
         bosh_runner.run('recreate consumer_instance_group', deployment_name: manifest['name'], include_credentials: false, env: client_env)
 
-        link_instance = director.instance('consumer_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
-        template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
-        expect(template['links']['properties']['fibonacci']).to eq('Pisa')
+        link_instance = director.instance(
+          'consumer_instance_group',
+          '0',
+          deployment_name: 'simple',
+          include_credentials: false,
+          env: client_env,
+        )
+        template = YAML.safe_load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+        expect(template['links']['properties']['fibonacci']).to eq('leonardo')
 
         link_instance = director.instance('consumer_instance_group', '1', deployment_name: 'simple', include_credentials: false,  env: client_env)
         template = YAML.load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))

@@ -9,6 +9,55 @@ module Bosh
           subject { CreateVmStep.new(instance_plan, agent_broadcaster, disks, tags, use_existing )}
           let(:use_existing) { false }
           let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
+          let(:disks) { [instance.model.managed_persistent_disk_cid].compact }
+          let(:cloud_factory) { instance_double(AZCloudFactory) }
+          let(:cloud) { instance_double('Bosh::Clouds::ExternalCpi', :request_cpi_api_version= => nil) }
+          let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
+          let(:vm_type) { DeploymentPlan::VmType.new('name' => 'fake-vm-type', 'cloud_properties' => cloud_properties) }
+          let(:stemcell_model) { Models::Stemcell.make(cid: 'stemcell-id', name: 'fake-stemcell', version: '123') }
+          let(:event_manager) { Api::EventManager.new(true) }
+          let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
+          let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
+          let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
+          let(:env) { DeploymentPlan::Env.new({}) }
+          let(:dns_encoder) { instance_double(DnsEncoder) }
+          let(:create_vm_response) { ['new-vm-cid', {}, {}] }
+          let(:metadata_err) { 'metadata_err' }
+          let(:report) { Stages::Report.new }
+          let(:delete_vm_step) { instance_double(DeleteVmStep) }
+          let(:expected_group) { 'fake-director-name-deployment-name-fake-job' }
+          let(:vm_model) { Models::Vm.make(cid: 'new-vm-cid', instance: instance_model, cpi: 'cpi1') }
+          let(:tags) { { 'mytag' => 'foobar' } }
+          let(:availability_zone) { BD::DeploymentPlan::AvailabilityZone.new('az-1', {}) }
+          let(:cloud_properties) { { 'ram' => '2gb' } }
+          let(:network_cloud_properties) { { 'bandwidth' => '5mbps' } }
+          let(:variable_set) { Bosh::Director::Models::VariableSet.make(deployment: deployment) }
+          let(:instance_model) { Models::Instance.make(uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment, availability_zone: 'az1') }
+
+          let(:network_settings) do
+            BD::DeploymentPlan::NetworkSettings.new(
+              instance_group.name,
+              'deployment_name',
+              { 'gateway' => 'name' },
+              [reservation],
+              {},
+              availability_zone,
+              5,
+              'uuid-1',
+              'bosh',
+              false,
+            ).to_hash
+          end
+
+          let(:update_job) do
+            instance_double(
+              Jobs::UpdateDeployment,
+              username: 'user',
+              task_id: task.id,
+              event_manager: event_manager,
+            )
+          end
+
           let(:agent_client) do
             instance_double(
               AgentClient,
@@ -18,39 +67,24 @@ module Bosh
               get_state: nil
             )
           end
+
           let(:vm_deleter) do
             vm_deleter = VmDeleter.new(logger, false, false)
             allow(VmDeleter).to receive(:new).and_return(vm_deleter)
             vm_deleter
           end
-          let(:disks) {[instance.model.managed_persistent_disk_cid].compact}
-          let(:cloud_factory) { instance_double(AZCloudFactory) }
-          let(:cloud) { instance_double('Bosh::Clouds::ExternalCpi') }
-          let(:network_settings) { BD::DeploymentPlan::NetworkSettings.new(instance_group.name, 'deployment_name', {'gateway' => 'name'}, [reservation], {}, availability_zone, 5, 'uuid-1', 'bosh', false).to_hash }
-          let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
+
           let(:deployment_plan) do
             instance_double(DeploymentPlan::Planner, model: deployment, name: 'deployment_name', recreate: false)
           end
-          let(:availability_zone) do
-            BD::DeploymentPlan::AvailabilityZone.new('az-1', {})
-          end
-          let(:cloud_properties) { {'ram' => '2gb'} }
-          let(:network_cloud_properties) { {'bandwidth' => '5mbps'} }
-          let(:vm_type) { DeploymentPlan::VmType.new({'name' => 'fake-vm-type', 'cloud_properties' => cloud_properties}) }
-          let(:stemcell_model) { Models::Stemcell.make(:cid => 'stemcell-id', name: 'fake-stemcell', version: '123') }
+
           let(:stemcell) do
             stemcell_model
             stemcell = DeploymentPlan::Stemcell.parse({'name' => 'fake-stemcell', 'version' => '123'})
             stemcell.add_stemcell_models
             stemcell
           end
-          let(:event_manager) { Api::EventManager.new(true)}
-          let(:update_job) {instance_double(Jobs::UpdateDeployment, username: 'user', task_id: task.id, event_manager: event_manager)}
-          let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
-          let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
-          let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
-          let(:env) { DeploymentPlan::Env.new({}) }
-          let(:dns_encoder) { instance_double(DnsEncoder) }
+
           let(:instance) do
             instance = DeploymentPlan::Instance.create_from_instance_group(
               instance_group,
@@ -64,6 +98,7 @@ module Bosh
             instance.bind_existing_instance_model(instance_model)
             instance
           end
+
           let(:reservation) do
             subnet = BD::DeploymentPlan::DynamicNetworkSubnet.new('dns', network_cloud_properties, ['az-1'])
             network = BD::DeploymentPlan::DynamicNetwork.new('name', [subnet], logger)
@@ -94,13 +129,6 @@ module Bosh
             instance_group.persistent_disk_collection.add_by_disk_size(1024)
             instance_group
           end
-          let(:instance_model) { Models::Instance.make(uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment, availability_zone: 'az1') }
-
-          let(:tags) do
-            {
-              'mytag' => 'foobar'
-            }
-          end
 
           let(:expected_groups) {
             [
@@ -112,8 +140,7 @@ module Bosh
               'fake-director-name-deployment-name-fake-job'
             ]
           }
-          let(:expected_group) { 'fake-director-name-deployment-name-fake-job' }
-          let(:vm_model) { Models::Vm.make(cid: 'new-vm-cid', instance: instance_model, cpi: 'cpi1') }
+
           let(:extra_ip) do
             {
               'a' => {
@@ -125,11 +152,9 @@ module Bosh
                 'gateway' => '192.168.1.1'
               }}
           end
-          let(:metadata_err) { 'metadata_err' }
-          let(:report) { Stages::Report.new }
-          let(:delete_vm_step) { instance_double(DeleteVmStep) }
 
           before do
+            allow(deployment).to receive(:last_successful_variable_set).and_return(variable_set)
             allow(Config).to receive(:current_job).and_return(update_job)
             Config.name = 'fake-director-name'
             Config.max_vm_create_tries = 2

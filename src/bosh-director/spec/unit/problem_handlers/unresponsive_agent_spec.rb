@@ -4,12 +4,36 @@ module Bosh::Director
   describe ProblemHandlers::UnresponsiveAgent do
     let(:planner) { instance_double(Bosh::Director::DeploymentPlan::Planner, use_short_dns_addresses?: false, ip_provider: double(:ip_provider)) }
     let(:planner_factory) { instance_double(Bosh::Director::DeploymentPlan::PlannerFactory) }
+    let(:deployment_model) do
+      manifest = Bosh::Spec::Deployments.legacy_manifest
+      Models::Deployment.make(name: manifest['name'], manifest: YAML.dump(manifest))
+    end
+    let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+    let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
+    let(:agent) { double(Bosh::Director::AgentClient) }
+    let(:instance) do
+      Models::Instance.make(
+        job: 'mysql_node',
+        index: 0,
+        uuid: 'uuid-1',
+        deployment: deployment_model,
+        cloud_properties_hash: { 'foo' => 'bar' },
+        spec: { 'networks' => networks },
+      )
+    end
+    let(:vm) do
+      Models::Vm.make(
+        cid: 'vm-cid',
+        agent_id: 'agent-007',
+        instance_id: instance.id,
+      )
+    end
 
     def make_handler(instance, cloud, _, data = {})
       handler = ProblemHandlers::UnresponsiveAgent.new(instance.id, data)
       allow(handler).to receive(:cloud).and_return(cloud)
-      allow(AgentClient).to receive(:with_agent_id).with(@instance.agent_id, anything).and_return(@agent)
-      allow(AgentClient).to receive(:with_agent_id).with(@instance.agent_id).and_return(@agent)
+      allow(AgentClient).to receive(:with_agent_id).with(instance.agent_id, anything).and_return(agent)
+      allow(AgentClient).to receive(:with_agent_id).with(instance.agent_id).and_return(agent)
       handler
     end
 
@@ -17,43 +41,24 @@ module Bosh::Director
       allow(Config).to receive(:uuid).and_return('woof-uuid')
       allow(Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
 
-      @cloud = instance_double(Bosh::Clouds::ExternalCpi)
-      allow(@cloud).to receive(:info)
-      allow(@cloud).to receive(:request_cpi_api_version).and_return(1)
-      allow(@cloud).to receive(:request_cpi_api_version=)
-      allow(Bosh::Clouds::ExternalCpi).to receive(:new).with('/path/to/default/cpi', 'woof-uuid', stemcell_api_version: nil).and_return(@cloud)
+      allow(cloud).to receive(:info)
+      allow(cloud).to receive(:request_cpi_api_version).and_return(1)
+      allow(cloud).to receive(:request_cpi_api_version=)
+      allow(Bosh::Clouds::ExternalCpi).to receive(:new)
+        .with('/path/to/default/cpi', 'woof-uuid', stemcell_api_version: nil).and_return(cloud)
 
-      @agent = double(Bosh::Director::AgentClient)
-
-      allow(@agent).to receive(:sync_dns) do |_,_,_,&blk|
+      allow(agent).to receive(:sync_dns) do |_, _, _, &blk|
         blk.call({'value' => 'synced'})
       end.and_return(0)
 
-      manifest = Bosh::Spec::Deployments.legacy_manifest
-      deployment_model = Models::Deployment.make(name: manifest['name'], manifest: YAML.dump(manifest))
-
-      @instance = Models::Instance.make(
-        job: 'mysql_node',
-        index: 0,
-        uuid: 'uuid-1',
-        deployment: deployment_model,
-        cloud_properties_hash: {'foo' => 'bar'},
-        spec: {'networks' => networks},
-      )
-
-      @vm = Models::Vm.make(
-        cid: 'vm-cid',
-        agent_id: 'agent-007',
-        instance_id: @instance.id
-      )
-
-      @instance.active_vm = @vm
-      @instance.save
+      instance.active_vm = vm
+      instance.save
       allow(Bosh::Director::Config).to receive(:current_job).and_return(job)
       allow(Bosh::Director::Config).to receive(:name).and_return('fake-director-name')
 
       allow(Bosh::Director::DeploymentPlan::PlannerFactory).to receive(:create).with(logger).and_return(planner_factory)
-      allow(planner_factory).to receive(:create_from_model).with(@instance.deployment).and_return(planner)
+      allow(planner_factory).to receive(:create_from_model).with(instance.deployment).and_return(planner)
+      allow(deployment_model).to receive(:last_successful_variable_set).and_return(variable_set)
     end
 
     let!(:local_dns_blob) { Models::LocalDnsBlob.make }
@@ -63,11 +68,11 @@ module Bosh::Director
     let(:networks) { {'A' => {'ip' => '1.1.1.1'}, 'B' => {'ip' => '2.2.2.2'}, 'C' => {'ip' => '3.3.3.3'}} }
 
     let :handler do
-      make_handler(@instance, @cloud, @agent)
+      make_handler(instance, cloud, agent)
     end
 
     it 'registers under unresponsive_agent type' do
-      handler = ProblemHandlers::Base.create_by_type(:unresponsive_agent, @instance.id, {})
+      handler = ProblemHandlers::Base.create_by_type(:unresponsive_agent, instance.id, {})
       expect(handler).to be_kind_of(ProblemHandlers::UnresponsiveAgent)
     end
 
@@ -77,14 +82,14 @@ module Bosh::Director
 
     describe 'reboot_vm resolution' do
       it 'skips reboot if CID is not present' do
-        @instance.active_vm = nil
+        instance.active_vm = nil
         expect {
           handler.apply_resolution(:reboot_vm)
         }.to raise_error(ProblemHandlerError, /is no longer in the database/)
       end
 
       it 'skips reboot if agent is now alive' do
-        expect(@agent).to receive(:ping).and_return(:pong)
+        expect(agent).to receive(:ping).and_return(:pong)
 
         expect {
           handler.apply_resolution(:reboot_vm)
@@ -92,18 +97,18 @@ module Bosh::Director
       end
 
       it 'reboots VM' do
-        expect(@agent).to receive(:ping).and_raise(RpcTimeout)
-        expect(@cloud).to receive(:reboot_vm).with('vm-cid')
-        expect(@agent).to receive(:wait_until_ready)
+        expect(agent).to receive(:ping).and_raise(RpcTimeout)
+        expect(cloud).to receive(:reboot_vm).with('vm-cid')
+        expect(agent).to receive(:wait_until_ready)
 
         handler.apply_resolution(:reboot_vm)
       end
 
       it 'reboots VM and whines if it is still unresponsive' do
-        expect(@agent).to receive(:ping).and_raise(RpcTimeout)
-        expect(@cloud).to receive(:reboot_vm).with('vm-cid')
-        expect(@agent).to receive(:wait_until_ready).
-          and_raise(RpcTimeout)
+        expect(agent).to receive(:ping).and_raise(RpcTimeout)
+        expect(cloud).to receive(:reboot_vm).with('vm-cid')
+        expect(agent).to receive(:wait_until_ready)
+          .and_raise(RpcTimeout)
 
         expect {
           handler.apply_resolution(:reboot_vm)
@@ -113,7 +118,7 @@ module Bosh::Director
 
     describe 'recreate_vm resolution' do
       it 'skips recreate if CID is not present' do
-        @instance.active_vm = nil
+        instance.active_vm = nil
 
         expect {
           handler.apply_resolution(:recreate_vm)
@@ -121,7 +126,7 @@ module Bosh::Director
       end
 
       it "doesn't recreate VM if agent is now alive" do
-        allow(@agent).to receive_messages(ping: :pong)
+        allow(agent).to receive_messages(ping: :pong)
 
         expect {
           handler.apply_resolution(:recreate_vm)
@@ -164,7 +169,7 @@ module Bosh::Director
 
         before do
           Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
-          @instance.update(spec: spec)
+          instance.update(spec: spec)
           allow(AgentClient).to receive(:with_agent_id).with('agent-222', anything).and_return(fake_new_agent)
           allow(AgentClient).to receive(:with_agent_id).with('agent-222').and_return(fake_new_agent)
           allow(SecureRandom).to receive_messages(uuid: 'agent-222')
@@ -177,12 +182,12 @@ module Bosh::Director
         end
 
         def expect_vm_to_be_created
-          allow(@agent).to receive(:ping).and_raise(RpcTimeout)
+          allow(agent).to receive(:ping).and_raise(RpcTimeout)
 
-          expect(@cloud).to receive(:delete_vm).with('vm-cid')
-          expect(@cloud).
-            to receive(:create_vm).with('agent-222', 'sc-302', {'foo' => 'bar'}, networks, [], {'key1' => 'value1', 'bosh' => {'group' => String, 'groups' => anything}})
-                 .and_return('new-vm-cid')
+          expect(cloud).to receive(:delete_vm).with('vm-cid')
+          expect(cloud)
+            .to receive(:create_vm).with('agent-222', 'sc-302', { 'foo' => 'bar' }, networks, [], 'key1' => 'value1', 'bosh' => { 'group' => String, 'groups' => anything })
+                                   .and_return('new-vm-cid')
 
           expect(fake_new_agent).to receive(:wait_until_ready).ordered
           expect(fake_new_agent).to receive(:update_settings).ordered
@@ -273,7 +278,7 @@ module Bosh::Director
     describe 'delete_vm resolution' do
 
       it 'skips deleting VM if agent is now alive' do
-        expect(@agent).to receive(:ping).and_return(:pong)
+        expect(agent).to receive(:ping).and_return(:pong)
 
         expect {
           handler.apply_resolution(:delete_vm)
@@ -281,8 +286,8 @@ module Bosh::Director
       end
 
       it 'deletes VM from Cloud' do
-        expect(@cloud).to receive(:delete_vm).with('vm-cid')
-        expect(@agent).to receive(:ping).and_raise(RpcTimeout)
+        expect(cloud).to receive(:delete_vm).with('vm-cid')
+        expect(agent).to receive(:ping).and_raise(RpcTimeout)
         expect {
           handler.apply_resolution(:delete_vm)
         }.to change {
@@ -294,7 +299,7 @@ module Bosh::Director
     describe 'delete_vm_reference resolution' do
 
       it 'skips deleting VM ref if agent is now alive' do
-        expect(@agent).to receive(:ping).and_return(:pong)
+        expect(agent).to receive(:ping).and_return(:pong)
 
         expect {
           handler.apply_resolution(:delete_vm_reference)
@@ -302,7 +307,7 @@ module Bosh::Director
       end
 
       it 'deletes VM reference' do
-        expect(@agent).to receive(:ping).and_raise(RpcTimeout)
+        expect(agent).to receive(:ping).and_raise(RpcTimeout)
         expect {
           handler.apply_resolution(:delete_vm_reference)
         }.to change {

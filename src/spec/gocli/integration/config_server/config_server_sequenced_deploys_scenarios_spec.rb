@@ -5,17 +5,15 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
 
   let(:manifest_hash) do
     Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge(
-      {
-        'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
-          name: 'our_instance_group',
-          jobs: [
-            {'name' => 'job_1_with_many_properties',
-             'properties' => job_properties
-            }
-          ],
-          instances: 1
-        )]
-      })
+      'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
+        name: 'our_instance_group',
+        jobs: [
+          { 'name' => 'job_1_with_many_properties',
+            'properties' => job_properties },
+        ],
+        instances: 1,
+      )],
+    )
   end
   let(:deployment_name) { manifest_hash['name'] }
   let(:director_name) { current_sandbox.director_name }
@@ -27,13 +25,15 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
       ]
     end
   end
-  let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger)}
-  let(:client_env) { {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => "#{current_sandbox.certificate_path}"} }
+  let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger) }
+  let(:client_env) do
+    { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => current_sandbox.certificate_path.to_s }
+  end
   let(:job_properties) do
     {
       'gargamel' => {
-        'color' => '((my_placeholder))'
-      }
+        'color' => '((my_placeholder))',
+      },
     }
   end
 
@@ -152,7 +152,7 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
     let(:job_properties) do
       {
         'gargamel' => {
-          'color' => '((my_placeholder))'
+          'color' => '((my_placeholder))',
         },
         'fail_instance_index' => 1,
         'fail_on_job_start' => false,
@@ -161,18 +161,17 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
     end
     let(:manifest_hash) do
       Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge(
-        {
-          'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
-            name: 'our_instance_group',
-            jobs: [
-              {
-                'name' => 'job_with_bad_template',
-                'properties' => job_properties
-              }
-            ],
-            instances: 2
-          )]
-        })
+        'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
+          name: 'our_instance_group',
+          jobs: [
+            {
+              'name' => 'job_with_bad_template',
+              'properties' => job_properties,
+            },
+          ],
+          instances: 3,
+        )],
+      )
     end
     before do
       manifest_hash['update']['canaries'] = 1
@@ -210,20 +209,191 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
         deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env, failure_expected: true)
       end
 
-      it 'should use latest variables set for successful instance' do
-        bosh_runner.run('recreate our_instance_group/0', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
+      it 'should use the last successfully deployed variable set on recreate' do
+        bosh_runner.run('recreate our_instance_group',
+                        deployment_name: 'simple',
+                        json: true,
+                        include_credentials: false,
+                        env: client_env)
 
-        instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
-        template_hash = YAML.load(instance.read_job_template('job_with_bad_template', 'config/config.yml'))
-        expect(template_hash['gargamel_color']).to eq('dogs are more happy')
+        successfully_updated_instance = director.instance('our_instance_group', '0',
+                                                          deployment_name: 'simple',
+                                                          include_credentials: false,
+                                                          env: client_env)
+        template_hash = YAML.load(successfully_updated_instance.read_job_template('job_with_bad_template', 'config/config.yml'))
+        expect(template_hash['gargamel_color']).to eq('cats are happy')
+
+        failed_instance = director.instance('our_instance_group', '1',
+                                            deployment_name: 'simple',
+                                            include_credentials: false,
+                                            env: client_env)
+        template_hash = YAML.load(failed_instance.read_job_template('job_with_bad_template', 'config/config.yml'))
+        expect(template_hash['gargamel_color']).to eq('cats are happy')
+
+        untouched_instance = director.instance('our_instance_group', '2',
+                                               deployment_name: 'simple',
+                                               include_credentials: false,
+                                               env: client_env)
+        template_hash = YAML.load(untouched_instance.read_job_template('job_with_bad_template', 'config/config.yml'))
+        expect(template_hash['gargamel_color']).to eq('cats are happy')
       end
 
-      it 'should use latest variables set for failing instance' do
-        bosh_runner.run('recreate our_instance_group/1', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
+      it 'should use the last successfully deployed variable set on restart' do
+        bosh_runner.run(
+          'restart our_instance_group',
+          deployment_name: 'simple',
+          json: true,
+          include_credentials: false,
+          env: client_env,
+        )
 
-        instance = director.instance('our_instance_group', '1', deployment_name: 'simple', include_credentials: false, env: client_env)
-        template_hash = YAML.load(instance.read_job_template('job_with_bad_template', 'config/config.yml'))
-        expect(template_hash['gargamel_color']).to eq('dogs are more happy')
+        successfully_updated_instance = director.instance('our_instance_group', '0',
+                                                          deployment_name: 'simple',
+                                                          include_credentials: false,
+                                                          env: client_env)
+        template_hash = YAML.load(successfully_updated_instance.read_job_template('job_with_bad_template', 'config/config.yml'))
+        expect(template_hash['gargamel_color']).to eq('cats are happy')
+
+        failed_instance = director.instance('our_instance_group', '1',
+                                            deployment_name: 'simple',
+                                            include_credentials: false,
+                                            env: client_env)
+        template_hash = YAML.load(failed_instance.read_job_template('job_with_bad_template', 'config/config.yml'))
+        expect(template_hash['gargamel_color']).to eq('cats are happy')
+
+        untouched_instance = director.instance('our_instance_group', '2',
+                                               deployment_name: 'simple',
+                                               include_credentials: false,
+                                               env: client_env)
+        template_hash = YAML.load(untouched_instance.read_job_template('job_with_bad_template', 'config/config.yml'))
+        expect(template_hash['gargamel_color']).to eq('cats are happy')
+      end
+    end
+  end
+
+  describe 'given a successful deployment that used config server values' do
+    let(:manifest_hash) do
+      Bosh::Spec::NewDeployments.manifest_with_release.merge(
+        'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
+          name: 'our_instance_group',
+          jobs: [
+            {
+              'name' => 'job_with_bad_template',
+              'properties' => job_properties,
+            },
+          ],
+          instances: 3,
+        )],
+        'variables' => variables,
+      )
+    end
+
+    let(:job_properties) do
+      {
+        'gargamel' => {
+          'color' => '((my_placeholder))',
+        },
+        'fail_instance_index' => 1,
+        'fail_on_job_start' => false,
+        'fail_on_template_rendering' => false,
+      }
+    end
+
+    let(:variables) do
+      [
+        {
+          'name' => 'var_a',
+          'type' => 'password',
+        },
+      ]
+    end
+
+    before do
+      config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
+      deploy_from_scratch(
+        no_login: true,
+        manifest_hash: manifest_hash,
+        cloud_config_hash: cloud_config,
+        include_credentials: false,
+        env: client_env,
+      )
+      config_server_helper.put_value(prepend_namespace('my_placeholder'), 'dogs are more happy')
+    end
+
+    context 'when a variable name changes in the next deploy' do
+      before do
+        manifest_hash['instance_groups'][0]['jobs'][0]['properties']['gargamel']['color'] = '((new_var_name))'
+        manifest_hash['variables'][0]['name'] = 'new_var_name'
+
+        config_server_helper.put_value(prepend_namespace('new_var_name'), 'dogs and cats are happy')
+      end
+
+      it 'should roll back to the last successfully deployed variable set if the deploy fails' do
+        job_properties['fail_on_job_start'] = true
+
+        output, exit_code = deploy_from_scratch(
+          no_login: true,
+          manifest_hash: manifest_hash,
+          cloud_config_hash: cloud_config,
+          include_credentials: false,
+          env: client_env,
+          failure_expected: true,
+          return_exit_code: true,
+        )
+        expect(exit_code).to_not eq(0)
+        expect(output).to include('pre-start scripts failed')
+
+        expect do
+          bosh_runner.run(
+            'recreate our_instance_group/1',
+            deployment_name: 'simple',
+            json: true,
+            include_credentials: false,
+            env: client_env,
+          )
+        end.to_not raise_error
+
+        successfully_updated_instance = director.instance('our_instance_group', '0',
+                                                          deployment_name: 'simple',
+                                                          include_credentials: false,
+                                                          env: client_env)
+        template_hash = YAML.load(successfully_updated_instance.read_job_template('job_with_bad_template', 'config/config.yml'))
+        expect(template_hash['gargamel_color']).to eq('cats are happy')
+
+        failed_instance = director.instance('our_instance_group', '1',
+                                            deployment_name: 'simple',
+                                            include_credentials: false,
+                                            env: client_env)
+        template_hash = YAML.load(failed_instance.read_job_template('job_with_bad_template', 'config/config.yml'))
+        expect(template_hash['gargamel_color']).to eq('cats are happy')
+
+        untouched_instance = director.instance('our_instance_group', '2',
+                                               deployment_name: 'simple',
+                                               include_credentials: false,
+                                               env: client_env)
+        template_hash = YAML.load(untouched_instance.read_job_template('job_with_bad_template', 'config/config.yml'))
+        expect(template_hash['gargamel_color']).to eq('cats are happy')
+      end
+
+      it 'correctly uses the latest variable set if the deploy succeeds' do
+        _, exit_code = deploy_from_scratch(
+          no_login: true,
+          manifest_hash: manifest_hash,
+          cloud_config_hash: cloud_config,
+          include_credentials: false,
+          env: client_env,
+          return_exit_code: true,
+        )
+        expect(exit_code).to eq(0)
+
+        (0..2).each do |index|
+          instance = director.instance('our_instance_group', index.to_s,
+                                       deployment_name: 'simple',
+                                       include_credentials: false,
+                                       env: client_env)
+          template_hash = YAML.load(instance.read_job_template('job_with_bad_template', 'config/config.yml'))
+          expect(template_hash['gargamel_color']).to eq('dogs and cats are happy')
+        end
       end
     end
   end

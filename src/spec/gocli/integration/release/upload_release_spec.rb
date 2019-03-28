@@ -92,9 +92,9 @@ describe 'upload release', type: :integration do
         end
 
         out = bosh_runner.run("upload-release #{release_file2.path}")
-        expect(out).to match /Creating new packages: bar\//
-        expect(out).to match /Processing 17 existing packages/
-        expect(out).to match /Processing 26 existing jobs/
+        expect(out).to match(%r{Creating new packages: bar\/})
+        expect(out).to match(/Processing 17 existing packages/)
+        expect(out).to match(/Processing 26 existing jobs/)
 
         table_output = table(bosh_runner.run('releases', json: true))
         expect(table_output).to include({'name'=> 'bosh-release', 'version'=> '0+dev.2', 'commit_hash'=> String})

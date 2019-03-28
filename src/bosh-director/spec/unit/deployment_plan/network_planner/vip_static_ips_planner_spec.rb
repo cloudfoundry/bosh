@@ -16,7 +16,7 @@ module Bosh::Director
 
     def make_instance_plan
       instance_model = Models::Instance.make
-      instance = DeploymentPlan::Instance.create_from_instance_group(instance_group, instance_model.index, 'started', deployment, {}, nil, logger)
+      instance = DeploymentPlan::Instance.create_from_instance_group(instance_group, instance_model.index, 'started', deployment_model, {}, nil, logger)
       instance.bind_existing_instance_model(instance_model)
       DeploymentPlan::InstancePlan.new({
         existing_instance: instance_model,
@@ -25,7 +25,7 @@ module Bosh::Director
         network_plans: [],
       })
     end
-    let(:deployment) { instance_double(DeploymentPlan::Planner) }
+    let(:deployment_model) { Models::Deployment.make(name: 'my-deployment') }
     let(:instance_group) do
       instance_group = DeploymentPlan::InstanceGroup.new(logger)
       instance_group.name = 'fake-job'
