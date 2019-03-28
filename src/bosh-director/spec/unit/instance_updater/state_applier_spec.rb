@@ -58,15 +58,10 @@ module Bosh::Director
         'update_watch_time' => update_watch_time,
       )
     end
-    let(:plan) do
-      instance_double('Bosh::Director::DeploymentPlan::Planner',
-                      name: 'fake-deployment',
-                      model: deployment)
-    end
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
     let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', 'a' => 'b') }
     let(:instance) do
-      DeploymentPlan::Instance.create_from_instance_group(instance_group, 0, instance_state, plan, {}, availability_zone, logger, variables_interpolator)
+      DeploymentPlan::Instance.create_from_instance_group(instance_group, 0, instance_state, deployment, {}, availability_zone, logger, variables_interpolator)
     end
     let(:instance_model) { Models::Instance.make(deployment: deployment, state: instance_model_state, uuid: 'uuid-1') }
     let(:blobstore) { instance_double(Bosh::Blobstore::Client) }

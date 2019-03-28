@@ -492,9 +492,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     it 'allocates a VM to all non obsolete instances if they are not already bound to a VM' do
       az = BD::DeploymentPlan::AvailabilityZone.new('az', {})
-      instance0 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', nil, {}, az, logger, variables_interpolator)
+      instance0 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', deployment, {}, az, logger, variables_interpolator)
       instance0.bind_existing_instance_model(BD::Models::Instance.make(bootstrap: true))
-      instance1 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', nil, {}, az, logger, variables_interpolator)
+      instance1 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', deployment, {}, az, logger, variables_interpolator)
       instance_plan0 = BD::DeploymentPlan::InstancePlan.new(
         desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance),
         existing_instance: nil,
@@ -518,9 +518,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     it 'makes sure theres a model and binds instance networks' do
       az = BD::DeploymentPlan::AvailabilityZone.new('az', {})
-      instance0 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', nil, {}, az, logger, variables_interpolator)
+      instance0 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', deployment, {}, az, logger, variables_interpolator)
       instance0.bind_existing_instance_model(BD::Models::Instance.make(bootstrap: true))
-      instance1 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', nil, {}, az, logger, variables_interpolator)
+      instance1 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', deployment, {}, az, logger, variables_interpolator)
       instance0_reservation = BD::DesiredNetworkReservation.new_dynamic(instance0.model, network)
       instance0_obsolete_reservation = BD::DesiredNetworkReservation.new_dynamic(instance0.model, network)
       instance1_reservation = BD::DesiredNetworkReservation.new_dynamic(instance1.model, network)

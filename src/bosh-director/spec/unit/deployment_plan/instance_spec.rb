@@ -12,6 +12,7 @@ module Bosh::Director::DeploymentPlan
     let(:in_memory_ip_repo) { InMemoryIpRepo.new(logger) }
     let(:ip_provider) { IpProvider.new(in_memory_ip_repo, {}, logger) }
     let(:variables_interpolator) { Bosh::Director::ConfigServer::VariablesInterpolator.new }
+    let(:deployment_variable_set) { Bosh::Director::Models::VariableSet.make(deployment: deployment) }
 
     before do
       Bosh::Director::Config.current_job = Bosh::Director::Jobs::BaseJob.new
@@ -63,6 +64,10 @@ module Bosh::Director::DeploymentPlan
 
       let(:instance_model) { Bosh::Director::Models::Instance.make(bootstrap: true) }
 
+      before do
+        allow(deployment).to receive(:last_successful_variable_set).and_return(deployment_variable_set)
+      end
+
       it 'raises an error if instance already has a model' do
         instance.bind_existing_instance_model(instance_model)
 
@@ -76,35 +81,51 @@ module Bosh::Director::DeploymentPlan
         expect(instance.model).to eq(instance_model)
       end
 
-      it 'sets the instance desired and previous variable_set' do
+      it 'sets the previous and desired variable sets correctly' do
         variable_set_model = Bosh::Director::Models::VariableSet.make(deployment: deployment)
         instance_model.variable_set = variable_set_model
         instance.bind_existing_instance_model(instance_model)
 
-        expect(instance.desired_variable_set).to eq(variable_set_model)
+        expect(instance.desired_variable_set).to eq(deployment_variable_set)
         expect(instance.previous_variable_set).to eq(variable_set_model)
+      end
+
+      context 'if there is no successfully deployed variable set' do
+        before do
+          allow(deployment).to receive(:last_successful_variable_set).and_return(nil)
+          allow(deployment).to receive(:current_variable_set).and_return(deployment_variable_set)
+        end
+
+        it 'sets the desired variable set to the current variable set' do
+          variable_set_model = Bosh::Director::Models::VariableSet.make(deployment: deployment)
+          instance_model.variable_set = variable_set_model
+          instance.bind_existing_instance_model(instance_model)
+
+          expect(instance.desired_variable_set).to eq(deployment_variable_set)
+          expect(instance.previous_variable_set).to eq(variable_set_model)
+        end
       end
     end
 
     describe '#bind_new_instance_model' do
-      it 'sets the instance model, uuid, and instance model variable_set' do
-        variable_set_model = Bosh::Director::Models::VariableSet.make(deployment: deployment)
+      before do
+        allow(deployment).to receive(:current_variable_set).and_return(deployment_variable_set)
+      end
 
+      it 'sets the instance model, uuid, and instance model variable_set' do
         expect(instance.model).to be_nil
         expect(instance.uuid).to be_nil
 
         instance.bind_new_instance_model
         expect(instance.model).not_to be_nil
-        expect(instance.model.variable_set).to eq(variable_set_model)
+        expect(instance.model.variable_set).to eq(deployment_variable_set)
         expect(instance.uuid).not_to be_nil
       end
 
       it 'sets the previous and desired variable set to current deployment variable set' do
-        variable_set_model = Bosh::Director::Models::VariableSet.make(deployment: deployment)
-
         instance.bind_new_instance_model
-        expect(instance.desired_variable_set).to eq(variable_set_model)
-        expect(instance.previous_variable_set).to eq(variable_set_model)
+        expect(instance.desired_variable_set).to eq(deployment_variable_set)
+        expect(instance.previous_variable_set).to eq(deployment_variable_set)
       end
     end
 
@@ -204,6 +225,7 @@ module Bosh::Director::DeploymentPlan
         model
       end
       before do
+        allow(deployment).to receive(:current_variable_set).and_return(deployment_variable_set)
         instance.bind_existing_instance_model(instance_model)
       end
 

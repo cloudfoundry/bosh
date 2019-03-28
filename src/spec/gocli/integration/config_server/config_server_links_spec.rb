@@ -192,7 +192,7 @@ describe 'using director with config server and deployments having links', type:
           env: client_env,
         )
         template = YAML.safe_load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
-        expect(template['links']['properties']['fibonacci']).to eq('Pisa')
+        expect(template['links']['properties']['fibonacci']).to eq('leonardo')
 
         link_instance = director.instance(
           'consumer_instance_group',

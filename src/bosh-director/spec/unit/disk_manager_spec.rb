@@ -48,8 +48,10 @@ module Bosh::Director
     let(:event_manager) { Api::EventManager.new(true) }
     let(:task_id) { 42 }
     let(:update_job) { instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: task_id, event_manager: event_manager) }
+    let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
 
     before do
+      allow(deployment_model).to receive(:last_successful_variable_set).and_return(variable_set)
       instance.bind_existing_instance_model(instance_model)
       allow(AgentClient).to receive(:with_agent_id).with(instance_model.agent_id).and_return(agent_client)
       allow(agent_client).to receive(:list_disk).and_return(['disk123'])
@@ -279,7 +281,7 @@ module Bosh::Director
         context 'when uuid has been set' do
           let(:instance_plan) do
             instance_model.uuid = '123-456-789'
-            instance = DeploymentPlan::Instance.create_from_instance_group(instance_group, 1, 'started', nil, {}, nil, logger, variables_interpolator)
+            instance = DeploymentPlan::Instance.create_from_instance_group(instance_group, 1, 'started', deployment_model, {}, nil, logger, variables_interpolator)
             instance.bind_existing_instance_model(instance_model)
 
             DeploymentPlan::InstancePlan.new(existing_instance: instance_model,
