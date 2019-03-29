@@ -21,8 +21,9 @@ describe 'nats.cfg.erb' do
               'auth_timeout' => 10,
               'allow_legacy_agents' => true,
               'tls' => {
-                'timeout' => 10
-              }
+                'timeout' => 10,
+              },
+              'max_payload' => 1048576,
             }
           }
         }
@@ -89,6 +90,7 @@ describe 'nats.cfg.erb' do
 
           ping_interval: 7
           ping_max: 10
+          max_payload: 1048576
         HEREDOC
       end
     end
@@ -109,7 +111,8 @@ describe 'nats.cfg.erb' do
               'allow_legacy_agents' => false,
               'tls' => {
                 'timeout' => 10
-              }
+              },
+              'max_payload' => 1048576,
             }
           }
         }
@@ -174,6 +177,7 @@ describe 'nats.cfg.erb' do
 
           ping_interval: 7
           ping_max: 10
+          max_payload: 1048576
         HEREDOC
       end
     end
