@@ -21,7 +21,8 @@ describe 'nats.cfg.erb' do
             'auth_timeout' => 10,
             'tls' => {
               'timeout' => 10,
-            }
+            },
+            'max_payload' => '1048576',
           }
         }
       }
@@ -86,6 +87,7 @@ describe 'nats.cfg.erb' do
 
         ping_interval: 7
         ping_max: 10
+        max_payload: 1048576
       HEREDOC
     end
   end
