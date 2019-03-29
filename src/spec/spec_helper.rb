@@ -31,7 +31,6 @@ RSpec.configure do |c|
   c.filter_run focus: true if ENV['FOCUS']
   c.filter_run_excluding db: :postgresql unless ENV['DB'] == 'postgresql'
   c.include BlueShell::Matchers
-  c.include FactoryBot::Syntax::Methods
 
   c.before(:suite) do
     agent_dir = File.expand_path('../../go/src/github.com/cloudfoundry/bosh-agent', __FILE__)
@@ -49,8 +48,6 @@ RSpec.configure do |c|
           "#{release_major_and_minor_version}; local version is #{local_major_and_minor_version}"
       end
     end
-
-    FactoryBot.find_definitions
   end
 end
 

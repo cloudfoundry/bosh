@@ -14,6 +14,7 @@ require 'timecop'
 
 require 'archive/tar/minitar'
 require 'machinist/sequel'
+require 'factory_bot'
 require 'sham'
 require 'support/buffered_logger'
 
@@ -246,6 +247,8 @@ RSpec.configure do |rspec|
   rspec.around(:each) do |example|
     SpecHelper.reset_database(example)
   end
+
+  rspec.include FactoryBot::Syntax::Methods
 
   rspec.before(:each) do
     SpecHelper.reset(logger)
