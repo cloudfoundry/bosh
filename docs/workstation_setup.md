@@ -13,7 +13,7 @@
 
 2. Install mysql (needed by the mysql2 gem)
 
-  `brew install mysql`
+    `brew install mysql`
 
 3. Setup & Start mysql (required for running integration tests with mysql)
     - start mysql as root
