@@ -616,6 +616,96 @@ module Bosh::Director
             end
           end
         end
+
+        describe 'POST /cancel' do
+          let(:state) { :queued }
+          let!(:tasks_queued) do
+            [Models::Task.make(
+              type: :update_deployment,
+              state: state,
+            ),
+             Models::Task.make(
+               type: :scan_and_fix,
+               state: state,
+             )]
+          end
+          let!(:task_processing) do
+            Models::Task.make(
+              type: :update_deployment,
+              state: :processing,
+            )
+          end
+
+          before do
+            basic_authorize 'admin', 'admin'
+            post('/cancel', JSON.dump(body), 'CONTENT_TYPE' => 'application/json')
+          end
+
+          context 'without filter' do
+            let(:body) { nil }
+            it 'updates all queued tasks to be state cancelling' do
+              tasks_queued.each do |task|
+                expect(task.reload.state).to eq('cancelling')
+              end
+              expect(task_processing.reload.state).to eq('processing')
+            end
+
+            it 'responds with status 204' do
+              expect(last_response.status).to eq(204)
+            end
+          end
+
+          context 'with filter on state cancelled' do
+            let(:body) { { 'state' => 'cancelled' } }
+            let!(:task_cancelled) do
+              Models::Task.make(
+                type: :update_deployment,
+                state: :cancelled,
+              )
+            end
+
+            it 'does not change task states' do
+              tasks_queued.each do |t|
+                expect(t.reload.state).to eq('queued')
+              end
+              expect(task_processing.reload.state).to eq('processing')
+              expect(task_cancelled.reload.state).to eq('cancelled')
+            end
+
+            it 'responds with status 204' do
+              expect(last_response.status).to eq(204)
+            end
+          end
+
+          context 'with filter on state processing' do
+            let(:body) { { 'state' => 'processing' } }
+            it 'updates all processed tasks to be state cancelling' do
+              tasks_queued.each do |t|
+                expect(t.reload.state).to eq('queued')
+              end
+              expect(task_processing.reload.state).to eq('cancelling')
+            end
+
+            it 'responds with status 204' do
+              expect(last_response.status).to eq(204)
+            end
+          end
+
+          context 'with filter on type scan_and_fix' do
+            context 'without filter on state' do
+              let(:body) { { 'type' => 'scan_and_fix' } }
+              it 'updates queued scan_and_fix tasks to be state cancelling' do
+                expect(tasks_queued[0].reload.state).to eq('queued')
+                expect(tasks_queued[1].reload.state).to eq('cancelling')
+                expect(task_processing.reload.state).to eq('processing')
+              end
+
+              it 'responds with status 204' do
+                expect(last_response.status).to eq(204)
+              end
+            end
+          end
+        end
       end
     end
   end

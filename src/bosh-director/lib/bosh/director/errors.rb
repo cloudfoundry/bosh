@@ -52,6 +52,7 @@ module Bosh::Director
 
   TaskNotFound = err(10000, NOT_FOUND)
   TaskCancelled = err(10001, OK)
+  TaskUnexpectedState = err(10002)
 
   # User management
   UserNotFound = err(20000, NOT_FOUND)

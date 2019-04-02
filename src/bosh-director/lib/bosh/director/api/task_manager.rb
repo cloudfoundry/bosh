@@ -7,10 +7,36 @@ module Bosh::Director
       # @raise [TaskNotFound]
       def find_task(task_id)
         task = Models::Task[task_id]
-        if task.nil?
-          raise TaskNotFound, "Task #{task_id} not found"
-        end
+        raise TaskNotFound, "Task #{task_id} not found" if task.nil?
+
         task
+      end
+
+      def select(selector)
+        selector ||= {}
+        state = selector.fetch('state', 'queued')
+        type = selector['type']
+
+        sql = Models::Task.where(state: state)
+        sql = sql.where(type: type) unless type.nil?
+        sql.all
+      end
+
+      def cancel_tasks(tasks)
+        tasks.each do |task|
+          begin
+            cancel(task)
+          rescue TaskUnexpectedState
+            Config.logger.info("Cannot cancel task #{task.id}: invalid state (#{task.state})")
+          end
+        end
+      end
+
+      def cancel(task)
+        raise TaskUnexpectedState unless task.cancellable?
+
+        task.state = :cancelling
+        task.save
       end
 
       # Returns hash representation of the task
@@ -18,15 +44,15 @@ module Bosh::Director
       # @return [Hash] Hash task representation
       def task_to_hash(task)
         {
-          "id" => task.id,
-          "state" => task.state,
-          "description" => task.description,
-          "timestamp" => task.timestamp.to_i,
-          "started_at" => task.started_at ? task.started_at.to_i: nil,
-          "result" => task.result,
-          "user" => task.username || "admin",
-          "deployment" => task.deployment_name,
-          "context_id" => task.context_id
+          'id' => task.id,
+          'state' => task.state,
+          'description' => task.description,
+          'timestamp' => task.timestamp.to_i,
+          'started_at' => task.started_at ? task.started_at.to_i : nil,
+          'result' => task.result,
+          'user' => task.username || 'admin',
+          'deployment' => task.deployment_name,
+          'context_id' => task.context_id,
         }
       end
 

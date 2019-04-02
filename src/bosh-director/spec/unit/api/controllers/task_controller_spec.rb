@@ -62,10 +62,6 @@ module Bosh::Director
           context 'when the task is processing' do
             let(:state) { :processing }
 
-            it 'updates the task to be state cancelling' do
-              expect(task.reload.state).to eq('cancelling')
-            end
-
             it 'responds with status 204' do
               expect(last_response.status).to eq(204)
             end
@@ -73,10 +69,6 @@ module Bosh::Director
 
           context 'when the task is queued' do
             let(:state) { :queued }
-
-            it 'updates the task to be state cancelling' do
-              expect(task.reload.state).to eq('cancelling')
-            end
 
             it 'responds with status 204' do
               expect(last_response.status).to eq(204)

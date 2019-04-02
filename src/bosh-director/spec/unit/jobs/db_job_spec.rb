@@ -76,7 +76,7 @@ module Bosh::Director
         end
 
         it 'safely updates the task once and only once (to avoid two jobs separately trying to claim the task)' do
-          expect(task_dataset).to receive(:update).once.and_return(1)
+          expect(task_dataset).to receive(:first).once.and_return(task)
           expect(Models::Task).to receive(:where).once.and_return(task_dataset)
 
           db_job.perform
@@ -85,7 +85,15 @@ module Bosh::Director
         it 'raises error when task is not in queue state' do
           task.update(state: 'processing')
           expect { db_job.perform }.to raise_error(DirectorError, "Cannot perform job for task #{task.id} (not in 'queued' state)")
+        end
       end
+
+      context 'when task in queue is in state cancelling' do
+        it 'transitions to cancelled state' do
+          task.update(state: 'cancelling')
+          db_job.perform
+          expect(task.reload.state).to eq('cancelled')
+        end
       end
 
       context 'when forked process is signaled' do
@@ -127,7 +135,7 @@ module Bosh::Director
 
       context 'when db connection times out when pulling record' do
         before do
-          allow(task_dataset).to receive(:update).once.and_return(1)
+          allow(task_dataset).to receive(:first).once.and_return(task)
         end
 
         it 'retries on Sequel::DatabaseConnectionError' do

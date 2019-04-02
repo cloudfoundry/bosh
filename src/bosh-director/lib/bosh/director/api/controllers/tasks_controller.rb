@@ -159,6 +159,13 @@ module Bosh::Director
         end
       end
 
+      post '/cancel', consumes: [:json] do
+        task_selector = json_decode(request.body.read)
+        tasks = @task_manager.select(task_selector)
+        @task_manager.cancel_tasks(tasks)
+        status(204)
+      end
+
       private
 
       def task_timeout?(task)

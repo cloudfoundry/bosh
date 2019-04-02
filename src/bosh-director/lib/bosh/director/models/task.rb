@@ -23,5 +23,9 @@ module Bosh::Director::Models
         self.add_team(t)
       end
     end
+
+    def cancellable?
+      %w[processing queued].include?(state)
+    end
   end
 end

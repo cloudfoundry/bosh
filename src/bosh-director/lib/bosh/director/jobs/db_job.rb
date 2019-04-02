@@ -20,11 +20,7 @@ module Bosh::Director
       end
 
       def perform
-        Config.db.transaction(:retry_on => [Sequel::DatabaseConnectionError]) do
-          if Models::Task.where(id: @task_id, state: 'queued').update(state: 'processing', checkpoint_time: Time.now) != 1
-            raise DirectorError, "Cannot perform job for task #{@task_id} (not in 'queued' state)"
-          end
-        end
+        update_task_state
 
         process_status = ForkedProcess.run do
           perform_args = []
@@ -53,6 +49,25 @@ module Bosh::Director
       end
 
       private
+
+      def update_task_state
+        Config.db.transaction(retry_on: [Sequel::DatabaseConnectionError]) do
+          task = Models::Task.where(id: @task_id).first
+          raise DirectorError, "Task #{@task_id} not found in queue" unless task
+
+          task.checkpoint_time = Time.now
+          if task.state == 'cancelling'
+            task.state = 'cancelled'
+            Config.logger.debug("Task #{@task_id} cancelled")
+          elsif task.state == 'queued'
+            task.state = 'processing'
+          else
+            task.save
+            raise DirectorError, "Cannot perform job for task #{@task_id} (not in 'queued' state)"
+          end
+          task.save
+        end
+      end
 
       def fail_task
         Models::Task.first(id: @task_id).update(state: 'error')
