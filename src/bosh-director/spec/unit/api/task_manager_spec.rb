@@ -10,11 +10,11 @@ describe Bosh::Director::Api::TaskManager do
         src = File.join(dir, 'foobar.gz')
         dst = File.join(dir, 'foobar')
 
-        expect(File.exists?(dst)).to be(false)
+        expect(File.exist?(dst)).to be(false)
 
         manager.decompress(src, dst)
 
-        expect(File.exists?(dst)).to be(true)
+        expect(File.exist?(dst)).to be(true)
       end
     end
 

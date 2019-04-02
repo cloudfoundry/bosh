@@ -35,8 +35,8 @@ module Bosh::Director
         expect(last_response.headers['Date']).not_to be_nil
       end
 
-      it 'allows Basic HTTP Auth with admin/admin credentials for ' +
-          "test purposes (even though user doesn't exist)" do
+      it 'allows Basic HTTP Auth with admin/admin credentials for ' \
+         "test purposes (even though user doesn't exist)" do
         basic_authorize 'admin', 'admin'
         get '/'
         expect(last_response.status).to eq(200)
@@ -56,7 +56,6 @@ module Bosh::Director
 
       describe 'API calls' do
         describe 'GET /' do
-
           let(:parsed_body) { JSON.parse(last_response.body) }
 
           context 'when user has admin access' do
@@ -90,10 +89,10 @@ module Bosh::Director
             context 'when a state is passed' do
               it 'filters all but tasks with that state' do
                 expected_task = Models::Task.make(
-                  type: :update_deployment, state: :queued
+                  type: :update_deployment, state: :queued,
                 )
                 filtered_task = Models::Task.make(
-                  type: :update_deployment, state: :processing
+                  type: :update_deployment, state: :processing,
                 )
                 get '/?state=queued'
                 expect(last_response.status).to eq(200)
@@ -105,12 +104,12 @@ module Bosh::Director
 
             context 'when a limit is passed' do
               before do
-                (1..20).map { |i|
+                (1..20).map do |_i|
                   Models::Task.make(
-                    :type => :update_deployment,
-                    :state => :queued,
+                    type: :update_deployment,
+                    state: :queued,
                   )
-                }
+                end
               end
 
               context 'when the limit is less than 1' do
@@ -149,16 +148,13 @@ module Bosh::Director
 
               let!(:all_tasks) do # one task of every type
                 (
-                Bosh::Director::Jobs.constants.inject([]) { |memo, const|
+                Bosh::Director::Jobs.constants.each_with_object([]) do |const, memo|
                   klass = Bosh::Director::Jobs.const_get(const)
-                  if klass.ancestors.include?(Bosh::Director::Jobs::BaseJob)
-                    memo << klass
-                  end
-                  memo
-                } - [Bosh::Director::Jobs::BaseJob]
-                ).map(&:job_type).map { |job_type|
+                  memo << klass if klass.ancestors.include?(Bosh::Director::Jobs::BaseJob)
+                end - [Bosh::Director::Jobs::BaseJob]
+              ).map(&:job_type).map do |job_type|
                   Models::Task.make(type: job_type)
-                }
+                end
               end
 
               context 'when verbose is set to 1' do
@@ -197,14 +193,14 @@ module Bosh::Director
           context 'when user has readonly access' do
             before do
               team_a = Models::Team.make(name: 'team_a')
-              (1..20).map { |i|
+              (1..20).map do |i|
                 make_task_with_team(
-                  :type => :update_deployment,
-                  :state => :queued,
-                  :deployment_name => "deployment_dev#{i%2}",
-                  :teams => i%2 == 0 ? [team_a, team_rocket] : [team_rocket, dev]
+                  type: :update_deployment,
+                  state: :queued,
+                  deployment_name: "deployment_dev#{i % 2}",
+                  teams: i.even? ? [team_a, team_rocket] : [team_rocket, dev],
                 )
-              }
+              end
 
               basic_authorize 'dev-team-member', 'dev-team-member'
             end
@@ -237,14 +233,14 @@ module Bosh::Director
                 get '/?limit=10'
                 expect(last_response.status).to eq(200)
                 expect(parsed_body.size).to eq(10)
-                expect(parsed_body.all?{ |e| e['deployment'] != 'deployment3' }).to eq(true)
+                expect(parsed_body.all? { |e| e['deployment'] != 'deployment3' }).to eq(true)
               end
 
               it 'shows the limit amount of tasks and filter by deployment' do
                 get "/?deployment=#{deployment_name_2}&limit=11"
                 expect(last_response.status).to eq(200)
                 expect(parsed_body.size).to eq(10)
-                expect(parsed_body.all?{ |e| e['deployment'] == 'deployment2' }).to eq(true)
+                expect(parsed_body.all? { |e| e['deployment'] == 'deployment2' }).to eq(true)
               end
             end
 
@@ -265,7 +261,7 @@ module Bosh::Director
             end
 
             context 'when task has a deployment associated with it and the deployment has already been deleted' do
-              let(:prod) { Models::Team.make(name: 'prod')}
+              let(:prod) { Models::Team.make(name: 'prod') }
               it 'should show up in the response' do
                 make_task_with_team(type: 'update_deployment', deployment_name: 'deleted_deployment', teams: [team_rocket, prod])
                 make_task_with_team(type: 'delete_deployment', deployment_name: 'deleted_deployment', teams: [team_rocket, dev])
@@ -294,7 +290,7 @@ module Bosh::Director
               get "/?context_id=#{context_id}"
               expect(last_response.status).to eq(200)
               expect(parsed_body.size).to eq(2)
-              expect(parsed_body.all?{ |e| e['context_id'] == context_id }).to eq(true)
+              expect(parsed_body.all? { |e| e['context_id'] == context_id }).to eq(true)
             end
           end
         end
@@ -372,7 +368,7 @@ module Bosh::Director
                 basic_authorize 'dev-team-member', 'dev-team-member'
               end
 
-              let(:task) { make_task_with_team(state: 'queued', deployment_name: deployment_name_1, :teams =>[team_rocket]) }
+              let(:task) { make_task_with_team(state: 'queued', deployment_name: deployment_name_1, teams: [team_rocket]) }
               it 'returns 401' do
                 get "/#{task.id}"
                 expect(last_response.status).to eq(401)
@@ -385,7 +381,7 @@ module Bosh::Director
                 basic_authorize 'dev-team-member', 'dev-team-member'
               end
 
-              let(:task) { make_task_with_team(state: 'queued', deployment_name: deployment_name_1, :teams => [team_rocket, dev]) }
+              let(:task) { make_task_with_team(state: 'queued', deployment_name: deployment_name_1, teams: [team_rocket, dev]) }
               it 'returns 200' do
                 get "/#{task.id}"
                 expect(last_response.status).to eq(200)
@@ -395,7 +391,6 @@ module Bosh::Director
         end
 
         describe 'get task output' do
-
           context 'user has admin access' do
             before(:each) { basic_authorize 'admin', 'admin' }
 
@@ -418,14 +413,14 @@ module Bosh::Director
               output_file.close
 
               # Range test
-              get "/#{task.id}/output", {}, {'HTTP_RANGE' => 'bytes=0-3'}
+              get "/#{task.id}/output", {}, { 'HTTP_RANGE' => 'bytes=0-3' }
               expect(last_response.status).to eq(206)
               expect(last_response.body).to eq('Test')
               expect(last_response.headers['Content-Length']).to eq('4')
               expect(last_response.headers['Content-Range']).to eq('bytes 0-3/11')
 
               # Range test
-              get "/#{task.id}/output", {}, {'HTTP_RANGE' => 'bytes=5-'}
+              get "/#{task.id}/output", {}, { 'HTTP_RANGE' => 'bytes=5-' }
               expect(last_response.status).to eq(206)
               expect(last_response.body).to eq('output')
               expect(last_response.headers['Content-Length']).to eq('6')
@@ -433,17 +428,18 @@ module Bosh::Director
             end
 
             it 'has API call that return task output from db with ranges' do
-              task1 = Models::Task.make(state: 'queued', description: 'fake-description', event_output: "Test output", output: "something")
+              task1 = Models::Task.make(state: 'queued', description: 'fake-description',
+                                        event_output: 'Test output', output: 'something')
 
               # Range test
-              get "/#{task1.id}/output?type=event", {}, {'HTTP_RANGE' => 'bytes=0-3'}
+              get "/#{task1.id}/output?type=event", {}, { 'HTTP_RANGE' => 'bytes=0-3' }
               expect(last_response.status).to eq(206)
               expect(last_response.body).to eq('Test')
               expect(last_response.headers['Content-Length']).to eq('4')
               expect(last_response.headers['Content-Range']).to eq('bytes 0-3/11')
 
               # Range test
-              get "/#{task1.id}/output?type=event", {}, {'HTTP_RANGE' => 'bytes=5-'}
+              get "/#{task1.id}/output?type=event", {}, { 'HTTP_RANGE' => 'bytes=5-' }
               expect(last_response.status).to eq(206)
               expect(last_response.body).to eq('output')
               expect(last_response.headers['Content-Length']).to eq('6')
@@ -451,7 +447,7 @@ module Bosh::Director
             end
 
             it 'supports returning different types of output (debug, cpi, event, result) from file' do
-              %w(debug event cpi result).each do |log_type|
+              %w[debug event cpi result].each do |log_type|
                 output_file = File.new(File.join(temp_dir, log_type), 'w+')
                 output_file.print("Test output #{log_type}")
                 output_file.close
@@ -465,7 +461,7 @@ module Bosh::Director
               task.output = temp_dir
               task.save
 
-              %w(debug event cpi result).each do |log_type|
+              %w[debug event cpi result].each do |log_type|
                 get "/#{task.id}/output?type=#{log_type}"
                 expect(last_response.status).to eq(200)
                 expect(last_response.body).to eq("Test output #{log_type}")
@@ -488,7 +484,7 @@ module Bosh::Director
               task.event_output = 'Test output event from db'
               task.save
 
-              %w(event result).each do |log_type|
+              %w[event result].each do |log_type|
                 get "/#{task.id}/output?type=#{log_type}"
                 expect(last_response.status).to eq(200)
                 expect(last_response.body).to eq("Test output #{log_type} from db")
@@ -511,10 +507,9 @@ module Bosh::Director
           end
 
           context 'user has readonly access' do
-
             before(:each) { basic_authorize 'reader', 'reader' }
 
-            let(:task) { Models::Task.make(state: 'queued', description: 'fake-description', event_output: "Test output") }
+            let(:task) { Models::Task.make(state: 'queued', description: 'fake-description', event_output: 'Test output') }
 
             it 'returns 401 for empty output type' do
               get "/#{task.id}/output"
@@ -560,18 +555,16 @@ module Bosh::Director
               )
             end
             let(:task_deleted) do
-              Models::Task.make(type: :update_deployment, state: :queued, deployment_name: 'deleted',)
+              Models::Task.make(type: :update_deployment, state: :queued, deployment_name: 'deleted')
             end
 
             let(:task_no_deployment) { Models::Task.make(type: :update_deployment, state: :queued) }
 
             before(:each) do
-              Models::Deployment.create_with_teams(:name => deployment_name_1,
-                :teams => [team_rocket, dev]
-              )
-              Models::Deployment.create_with_teams(:name => deployment_name_2,
-                :teams => [team_rocket]
-              )
+              Models::Deployment.create_with_teams(name: deployment_name_1,
+                                                   teams: [team_rocket, dev])
+              Models::Deployment.create_with_teams(name: deployment_name_2,
+                                                   teams: [team_rocket])
               basic_authorize 'dev-team-member', 'dev-team-member'
             end
 
