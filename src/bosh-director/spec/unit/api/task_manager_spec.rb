@@ -154,7 +154,7 @@ module Bosh::Director
         end
 
         it 'logs non-cancellable tasks' do
-          expect(logger).to receive(:info).with('Cannot cancel task 1: invalid state (timeout)')
+          expect(logger).to receive(:info).with("Cannot cancel task #{non_cancellable_task.id}: invalid state (timeout)")
           manager.cancel_tasks([cancellable_task, non_cancellable_task])
         end
 
