@@ -90,21 +90,21 @@ module Bosh::Director
           end
 
           context 'by not using array for state value' do
-            let(:selector) { { 'state' => 'processing' } }
+            let(:selector) { { 'states' => 'processing' } }
             it 'selects all queued tasks (which is the default)' do
               expect(tasks).to match_array(tasks_queued)
             end
           end
 
           context 'by using empty array for state value' do
-            let(:selector) { { 'state' => [] } }
+            let(:selector) { { 'states' => [] } }
             it 'selects all queued tasks (which is the default)' do
               expect(tasks).to match_array(tasks_queued)
             end
           end
 
           context 'by not using array for type value' do
-            let(:selector) { { 'type' => 'update_deployment' } }
+            let(:selector) { { 'types' => 'update_deployment' } }
             it 'selects all queued tasks (which is the default)' do
               expect(tasks).to match_array(tasks_queued)
             end
@@ -113,8 +113,8 @@ module Bosh::Director
           context 'by using invalid state but valid type selector' do
             let(:selector) do
               {
-                'type' => %w[update_deployment],
-                'state' => 'processing',
+                'types' => %w[update_deployment],
+                'states' => 'processing',
               }
             end
             it 'selects queued tasks (which is the default) respecting the type' do
@@ -125,8 +125,8 @@ module Bosh::Director
           context 'by using invalid type but valid state selector' do
             let(:selector) do
               {
-                'type' => 'update_deployment',
-                'state' => %w[processing],
+                'types' => 'update_deployment',
+                'states' => %w[processing],
               }
             end
             it 'selects all types (which is the default) but respecting state' do
@@ -137,28 +137,28 @@ module Bosh::Director
 
         context 'when using valid selector' do
           context 'with single type selector' do
-            let(:selector) { { 'type' => %w[scan_and_fix] } }
+            let(:selector) { { 'types' => %w[scan_and_fix] } }
             it 'selects only tasks of that type' do
               expect(tasks).to contain_exactly(tasks_queued[1])
             end
           end
 
           context 'with multiple types selector' do
-            let(:selector) { { 'type' => %w[scan_and_fix update_deployment] } }
+            let(:selector) { { 'types' => %w[scan_and_fix update_deployment] } }
             it "selects only tasks of these types with the default state 'queued'" do
               expect(tasks).to match_array(tasks_queued)
             end
           end
 
           context 'with single state selector' do
-            let(:selector) { { 'state' => %w[processing] } }
+            let(:selector) { { 'states' => %w[processing] } }
             it 'selects only tasks of that state' do
               expect(tasks).to match_array(tasks_processing)
             end
           end
 
           context 'with multiple states selector' do
-            let(:selector) { { 'state' => %w[processing queued] } }
+            let(:selector) { { 'states' => %w[processing queued] } }
             it 'selects only tasks of these states' do
               expect(tasks).to match_array([tasks_queued, tasks_processing].flatten)
             end
@@ -166,8 +166,8 @@ module Bosh::Director
 
           context 'with both type and state selector' do
             let(:selector) do
-              { 'type' => %w[update_deployment],
-                'state' => %w[queued] }
+              { 'types' => %w[update_deployment],
+                'states' => %w[queued] }
             end
             it 'selects tasks of that type and state' do
               expect(tasks).to contain_exactly(tasks_queued[0])

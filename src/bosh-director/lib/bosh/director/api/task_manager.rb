@@ -16,10 +16,10 @@ module Bosh::Director
         selector ||= {}
 
         default_states = ['queued']
-        states = selector.fetch('state', default_states)
+        states = selector.fetch('states', default_states)
         states = default_states if !states.is_a?(Array) || states.empty?
 
-        types = selector.fetch('type', [])
+        types = selector.fetch('types', [])
         types = [] unless types.is_a?(Array)
 
         sql = Models::Task.where(state: states)
