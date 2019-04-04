@@ -66,45 +66,112 @@ module Bosh::Director
              state: state,
            )]
         end
-        let!(:task_processing) do
-          Models::Task.make(
+        let!(:tasks_processing) do
+          [Models::Task.make(
             type: :update_deployment,
             state: :processing,
-          )
+          ),
+           Models::Task.make(
+             type: :ssh,
+             state: :processing,
+           )]
         end
 
         let(:tasks) do
           manager.select(selector)
         end
 
-        context 'with nil selector' do
-          let(:selector) { nil }
-          it 'selects all queued tasks' do
-            expect(tasks).to match_array(tasks_queued)
+        context 'when selector is partially invalid' do
+          context 'by using nil selector' do
+            let(:selector) { nil }
+            it 'selects all queued tasks (which is the default)' do
+              expect(tasks).to match_array(tasks_queued)
+            end
+          end
+
+          context 'by not using array for state value' do
+            let(:selector) { { 'state' => 'processing' } }
+            it 'selects all queued tasks (which is the default)' do
+              expect(tasks).to match_array(tasks_queued)
+            end
+          end
+
+          context 'by using empty array for state value' do
+            let(:selector) { { 'state' => [] } }
+            it 'selects all queued tasks (which is the default)' do
+              expect(tasks).to match_array(tasks_queued)
+            end
+          end
+
+          context 'by not using array for type value' do
+            let(:selector) { { 'type' => 'update_deployment' } }
+            it 'selects all queued tasks (which is the default)' do
+              expect(tasks).to match_array(tasks_queued)
+            end
+          end
+
+          context 'by using invalid state but valid type selector' do
+            let(:selector) do
+              {
+                'type' => %w[update_deployment],
+                'state' => 'processing',
+              }
+            end
+            it 'selects queued tasks (which is the default) respecting the type' do
+              expect(tasks).to contain_exactly(tasks_queued[0])
+            end
+          end
+
+          context 'by using invalid type but valid state selector' do
+            let(:selector) do
+              {
+                'type' => 'update_deployment',
+                'state' => %w[processing],
+              }
+            end
+            it 'selects all types (which is the default) but respecting state' do
+              expect(tasks).to match_array(tasks_processing)
+            end
           end
         end
 
-        context 'with type selector' do
-          let(:selector) { { 'type' => 'scan_and_fix' } }
-          it 'selects only tasks of that type' do
-            expect(tasks).to contain_exactly(tasks_queued[1])
+        context 'when using valid selector' do
+          context 'with single type selector' do
+            let(:selector) { { 'type' => %w[scan_and_fix] } }
+            it 'selects only tasks of that type' do
+              expect(tasks).to contain_exactly(tasks_queued[1])
+            end
           end
-        end
 
-        context 'with state selector' do
-          let(:selector) { { 'state' => 'processing' } }
-          it 'selects only tasks of that state' do
-            expect(tasks).to contain_exactly(task_processing)
+          context 'with multiple types selector' do
+            let(:selector) { { 'type' => %w[scan_and_fix update_deployment] } }
+            it "selects only tasks of these types with the default state 'queued'" do
+              expect(tasks).to match_array(tasks_queued)
+            end
           end
-        end
 
-        context 'with both type and state selector' do
-          let(:selector) do
-            { 'type' => 'update_deployment',
-              'state' => 'queued' }
+          context 'with single state selector' do
+            let(:selector) { { 'state' => %w[processing] } }
+            it 'selects only tasks of that state' do
+              expect(tasks).to match_array(tasks_processing)
+            end
           end
-          it 'selects  tasks of that type and state' do
-            expect(tasks).to contain_exactly(tasks_queued[0])
+
+          context 'with multiple states selector' do
+            let(:selector) { { 'state' => %w[processing queued] } }
+            it 'selects only tasks of these states' do
+              expect(tasks).to match_array([tasks_queued, tasks_processing].flatten)
+            end
+          end
+
+          context 'with both type and state selector' do
+            let(:selector) do
+              { 'type' => %w[update_deployment],
+                'state' => %w[queued] }
+            end
+            it 'selects tasks of that type and state' do
+              expect(tasks).to contain_exactly(tasks_queued[0])
+            end
           end
         end
       end

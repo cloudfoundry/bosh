@@ -656,7 +656,7 @@ module Bosh::Director
           end
 
           context 'with filter on state cancelled' do
-            let(:body) { { 'state' => 'cancelled' } }
+            let(:body) { { 'state' => ['cancelled'] } }
             let!(:task_cancelled) do
               Models::Task.make(
                 type: :update_deployment,
@@ -678,7 +678,7 @@ module Bosh::Director
           end
 
           context 'with filter on state processing' do
-            let(:body) { { 'state' => 'processing' } }
+            let(:body) { { 'state' => ['processing'] } }
             it 'updates all processed tasks to be state cancelling' do
               tasks_queued.each do |t|
                 expect(t.reload.state).to eq('queued')
@@ -693,7 +693,7 @@ module Bosh::Director
 
           context 'with filter on type scan_and_fix' do
             context 'without filter on state' do
-              let(:body) { { 'type' => 'scan_and_fix' } }
+              let(:body) { { 'type' => ['scan_and_fix'] } }
               it 'updates queued scan_and_fix tasks to be state cancelling' do
                 expect(tasks_queued[0].reload.state).to eq('queued')
                 expect(tasks_queued[1].reload.state).to eq('cancelling')
