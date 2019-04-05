@@ -49,6 +49,7 @@ module Bosh::Director::DeploymentPlan
         logger: logger,
         tags: tags,
         variables_interpolator: variables_interpolator,
+        link_provider_intents: link_provider_intents,
       )
     end
 
@@ -60,6 +61,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     let(:desired_deployment_plan_jobs) { [] }
+    let(:link_provider_intents) { [] }
 
     let!(:variable_set_model) { BD::Models::VariableSet.make(deployment: deployment_model) }
     let(:instance_model) do
@@ -1880,21 +1882,29 @@ module Bosh::Director::DeploymentPlan
           ]
         end
 
+        let(:link_provider_intents) do
+          [
+            instance_double(
+              BD::Models::Links::LinkProviderIntent,
+              link_provider: provider1,
+              group_name: 'desired-link-1-desired-link-type-1',
+            ),
+            instance_double(
+              BD::Models::Links::LinkProviderIntent,
+              link_provider: provider1,
+              group_name: 'desired-link-2-desired-link-type-2',
+            ),
+          ]
+        end
+
         let(:desired_template) do
           instance_double(
             Bosh::Director::Models::Template,
-            provides: [
-              {
-                'name' => 'desired-link-1',
-                'type' => 'desired-link-type-1',
-              },
-              {
-                'name' => 'desired-link-2',
-                'type' => 'desired-link-type-2',
-              },
-            ],
+            provides: [],
           )
         end
+
+        let(:provider1) { double(:provider1, instance_group: 'instance-group-name') }
 
         it 'enumerates instance group properties and link properties' do
           properties = subject.instance_group_properties
@@ -1915,46 +1925,6 @@ module Bosh::Director::DeploymentPlan
           allow(instance_model).to receive(:active_vm).and_return nil
           agent_id = subject.instance_group_properties[:agent_id]
           expect(agent_id).to be_nil
-        end
-      end
-
-      context 'when job templates are not present' do
-        let(:desired_deployment_plan_jobs) { [] }
-
-        let(:existing_templates) do
-          [instance_double(
-            Bosh::Director::Models::Template,
-            provides: [
-              {
-                'name' => 'existing-link-1',
-                'type' => 'existing-link-type-1',
-              },
-              {
-                'name' => 'existing-link-2',
-                'type' => 'existing-link-type-2',
-              },
-            ],
-          )]
-        end
-
-        before do
-          allow(instance_model).to receive(:templates).and_return(existing_templates)
-        end
-
-        it 'falls back on the instance model templates' do
-          properties = subject.instance_group_properties
-
-          expect(properties).to eq(
-            instance_id: instance_model.id,
-            az:  nil,
-            deployment: 'simple',
-            agent_id: 'active-vm-agent-id',
-            instance_group: 'instance-group-name',
-            links: [
-              { name: 'existing-link-1-existing-link-type-1' },
-              { name: 'existing-link-2-existing-link-type-2' },
-            ],
-          )
         end
       end
     end

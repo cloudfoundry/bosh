@@ -18,6 +18,7 @@ module Bosh
                        use_dns_addresses: false,
                        use_short_dns_addresses: false,
                        use_link_dns_addresses: false,
+                       link_provider_intents: [],
                        logger: Config.logger,
                        tags: {},
                        variables_interpolator:)
@@ -31,6 +32,7 @@ module Bosh
           @use_dns_addresses = use_dns_addresses
           @use_short_dns_addresses = use_short_dns_addresses
           @use_link_dns_addresses = use_link_dns_addresses
+          @link_provider_intents = link_provider_intents
           @logger = logger
           @tags = tags
           @powerdns_manager = PowerDnsManagerProvider.create
@@ -249,8 +251,6 @@ module Bosh
         end
 
         def instance_group_properties
-          desired_job_templates = templates.map(&:model)
-          job_templates = desired_job_templates.empty? ? instance.model.templates : desired_job_templates
           agent_id = instance.model.active_vm&.agent_id
 
           properties = {
@@ -260,11 +260,12 @@ module Bosh
             agent_id: agent_id,
             instance_group: instance.model.job,
           }
-          links = job_templates.flat_map(&:provides).map do |link_provider|
-            {
-              name: "#{link_provider['name']}-#{link_provider['type']}",
-            }
+          links = @link_provider_intents.select do |lpi|
+            lpi.link_provider.instance_group == properties[:instance_group]
+          end.map do |lpi|
+            { name: lpi.group_name }
           end
+
           properties.merge(links: links)
         end
 

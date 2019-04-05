@@ -204,11 +204,15 @@ module Bosh::Director::Core::Templates
         end
 
         let(:provider1) do
-          double('provider1', instance_group: 'joao-da-silva')
+          double('provider1', instance_group: 'joao-da-silva', name: 'fake-job-name')
         end
 
         let(:provider2) do
           double('provider2', instance_group: 'bob-de-smith')
+        end
+
+        let(:provider3) do
+          double('provider3', instance_group: 'joao-da-silva', name: 'another-job-name')
         end
 
         let(:provider_intent) do
@@ -240,23 +244,8 @@ module Bosh::Director::Core::Templates
             original_name: 'dontcare',
             type: 'type3',
             group_name: 'yet-another-link-type3',
-            link_provider: provider1,
+            link_provider: provider3,
           )
-        end
-
-        let(:links_provided) do
-          [
-            {
-              'name' => 'db_link',
-              'type' => 'conn',
-              'properties' => [],
-            },
-            {
-              'name' => 'backup_db',
-              'type' => 'other',
-              'properties' => [],
-            },
-          ]
         end
 
         let(:link_provider_intents) { [provider_intent, another_provider_intent, yet_another_provider_intent] }
