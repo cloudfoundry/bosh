@@ -161,6 +161,17 @@ module Bosh::Director
 
       post '/cancel', consumes: [:json] do
         task_selector = json_decode(request.body.read)
+
+        cancellable_states = %w[queued processing]
+        states = task_selector['states'] if task_selector
+        states&.each do |state|
+          unless cancellable_states.include?(state)
+            status(400)
+            body "#{state} is not one of the cancellable states: #{cancellable_states.join(', ')}"
+            return
+          end
+        end
+
         tasks = @task_manager.select(task_selector)
         @task_manager.cancel_tasks(tasks)
         status(204)

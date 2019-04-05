@@ -625,7 +625,7 @@ module Bosh::Director
               state: state,
             ),
              Models::Task.make(
-               type: :scan_and_fix,
+               type: :cck_scan_and_fix,
                state: state,
              )]
           end
@@ -655,25 +655,12 @@ module Bosh::Director
             end
           end
 
-          context 'with filter on state cancelled' do
-            let(:body) { { 'states' => ['cancelled'] } }
-            let!(:task_cancelled) do
-              Models::Task.make(
-                type: :update_deployment,
-                state: :cancelled,
-              )
-            end
+          context 'with filter on non-cancellable state' do
+            let(:body) { { 'states' => %w[queued done] } }
 
-            it 'does not change task states' do
-              tasks_queued.each do |t|
-                expect(t.reload.state).to eq('queued')
-              end
-              expect(task_processing.reload.state).to eq('processing')
-              expect(task_cancelled.reload.state).to eq('cancelled')
-            end
-
-            it 'responds with status 204' do
-              expect(last_response.status).to eq(204)
+            it 'responds with status 400' do
+              expect(last_response.status).to eq(400)
+              expect(last_response.body).to eq('done is not one of the cancellable states: queued, processing')
             end
           end
 
@@ -691,10 +678,10 @@ module Bosh::Director
             end
           end
 
-          context 'with filter on type scan_and_fix' do
+          context 'with filter on type cck_scan_and_fix' do
             context 'without filter on state' do
-              let(:body) { { 'types' => ['scan_and_fix'] } }
-              it 'updates queued scan_and_fix tasks to be state cancelling' do
+              let(:body) { { 'types' => ['cck_scan_and_fix'] } }
+              it 'updates queued cck_scan_and_fix tasks to be state cancelling' do
                 expect(tasks_queued[0].reload.state).to eq('queued')
                 expect(tasks_queued[1].reload.state).to eq('cancelling')
                 expect(task_processing.reload.state).to eq('processing')

@@ -62,7 +62,7 @@ module Bosh::Director
             state: state,
           ),
            Models::Task.make(
-             type: :scan_and_fix,
+             type: :cck_scan_and_fix,
              state: state,
              deployment_name: 'dummy',
            )]
@@ -147,14 +147,14 @@ module Bosh::Director
           end
 
           context 'with single type selector' do
-            let(:selector) { { 'types' => %w[scan_and_fix] } }
+            let(:selector) { { 'types' => %w[cck_scan_and_fix] } }
             it 'selects only tasks of that type' do
               expect(tasks).to contain_exactly(tasks_queued[1])
             end
           end
 
           context 'with multiple types selector' do
-            let(:selector) { { 'types' => %w[scan_and_fix update_deployment] } }
+            let(:selector) { { 'types' => %w[cck_scan_and_fix update_deployment] } }
             it "selects only tasks of these types with the default state 'queued'" do
               expect(tasks).to match_array(tasks_queued)
             end
