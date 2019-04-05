@@ -22,8 +22,11 @@ module Bosh::Director
         types = selector.fetch('types', [])
         types = [] unless types.is_a?(Array)
 
+        deployment = selector['deployment']
+
         sql = Models::Task.where(state: states)
         sql = sql.where(type: types) unless types.empty?
+        sql = sql.where(deployment_name: deployment) if deployment
         sql.all
       end
 

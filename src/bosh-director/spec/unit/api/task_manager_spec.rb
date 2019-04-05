@@ -64,16 +64,19 @@ module Bosh::Director
            Models::Task.make(
              type: :scan_and_fix,
              state: state,
+             deployment_name: 'dummy',
            )]
         end
         let!(:tasks_processing) do
           [Models::Task.make(
             type: :update_deployment,
             state: :processing,
+            deployment_name: 'not-dummy',
           ),
            Models::Task.make(
              type: :ssh,
              state: :processing,
+             deployment_name: 'dummy',
            )]
         end
 
@@ -136,6 +139,13 @@ module Bosh::Director
         end
 
         context 'when using valid selector' do
+          context 'when deployment is given' do
+            let(:selector) { { 'deployment' => 'dummy' } }
+            it 'selects all queued tasks for this deployment' do
+              expect(tasks).to contain_exactly(tasks_queued[1])
+            end
+          end
+
           context 'with single type selector' do
             let(:selector) { { 'types' => %w[scan_and_fix] } }
             it 'selects only tasks of that type' do
