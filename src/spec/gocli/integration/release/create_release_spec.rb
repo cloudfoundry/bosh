@@ -159,29 +159,41 @@ describe 'create-release', type: :integration do
 
         expect(release_manifest['jobs']).to match(a_collection_containing_exactly(
                                                     job_desc('emoji-errand'),
-                                                    job_desc('errand1'),
+                                                    job_desc('errand1', ['errand1']),
                                                     job_desc('errand_without_package'),
-                                                    job_desc('fails_with_too_much_output'),
-                                                    job_desc('foobar'),
+                                                    job_desc('fails_with_too_much_output', ['fails_with_too_much_output']),
+                                                    job_desc('foobar', %w[foo bar]),
                                                     job_desc('bazquux'),
-                                                    job_desc('foobar_with_bad_properties'),
-                                                    job_desc('foobar_with_bad_properties_2'),
+                                                    job_desc('foobar_with_bad_properties', %w[foo bar]),
+                                                    job_desc('foobar_with_bad_properties_2', %w[foo bar]),
                                                     job_desc('foobar_without_packages'),
-                                                    job_desc('job_with_many_packages'),
-                                                    job_desc('has_drain_script'),
-                                                    job_desc('job_with_blocking_compilation'),
+                                                    job_desc('job_with_many_packages',
+                                                             %w[
+                                                               foo_1
+                                                               foo_2
+                                                               foo_3
+                                                               foo_4
+                                                               foo_5
+                                                               foo_6
+                                                               foo_7
+                                                               foo_8
+                                                               foo_9
+                                                               foo_10
+                                                             ]),
+                                                    job_desc('has_drain_script', %w[foo bar]),
+                                                    job_desc('job_with_blocking_compilation', ['blocking_package']),
                                                     job_desc('job_1_with_pre_start_script'),
                                                     job_desc('job_2_with_pre_start_script'),
                                                     job_desc('job_1_with_post_deploy_script'),
                                                     job_desc('job_2_with_post_deploy_script'),
                                                     job_desc('job_3_with_broken_post_deploy_script'),
-                                                    job_desc('job_that_modifies_properties'),
+                                                    job_desc('job_that_modifies_properties', %w[foo bar]),
                                                     job_desc('job_1_with_many_properties'),
                                                     job_desc('job_2_with_many_properties'),
                                                     job_desc('job_3_with_many_properties'),
                                                     job_desc('job_with_property_types'),
                                                     job_desc('job_with_post_start_script'),
-                                                    job_desc('transitive_deps'),
+                                                    job_desc('transitive_deps', ['a']),
                                                     job_desc('id_job'),
                                                     job_desc('job_with_bad_template'),
                                                     job_desc('local_dns_records_json'),
@@ -495,12 +507,13 @@ describe 'create-release', type: :integration do
     )
   end
 
-  def job_desc(name)
+  def job_desc(name, packages = [])
     match(
       'name' => name,
       'version' => SHA2_REGEXP,
       'fingerprint' => SHA2_REGEXP,
       'sha1' => SHA2_PREFIXED_REGEXP,
+      'packages' => packages,
     )
   end
 
