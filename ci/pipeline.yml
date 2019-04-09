@@ -801,7 +801,7 @@ jobs:
           repository: bosh-src-latest-with-release-commit
           tag: bosh-master-with-final/tag-name
           annotate: bosh-master-with-final/annotate-msg
-          rebase: true
+          merge: true
       - put: bosh-master
         params:
           repository: bosh-master-with-final
