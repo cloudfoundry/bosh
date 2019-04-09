@@ -162,7 +162,6 @@ describe 'create-release', type: :integration do
                                                     job_desc('errand_without_package'),
                                                     job_desc('fails_with_too_much_output', ['fails_with_too_much_output']),
                                                     job_desc('foobar', %w[foo bar]),
-                                                    job_desc('bazquux'),
                                                     job_desc('foobar_with_bad_properties', %w[foo bar]),
                                                     job_desc('foobar_with_bad_properties_2', %w[foo bar]),
                                                     job_desc('foobar_without_packages'),
