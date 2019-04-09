@@ -3,7 +3,6 @@ groups:
   - unit-2.4
   - unit-2.4-mysql
   - unit-2.4-postgres
-  - unit-2.4-db-migrations-rds
   - integration-db-tls-postgres
   - integration-db-tls-postgres-hotswap
   - integration-db-tls-mysql
@@ -25,11 +24,9 @@ groups:
   name: bosh
 - jobs:
   - unit-2.4-mysql
-  - unit-2.4-db-migrations-rds
   name: mysql
 - jobs:
   - unit-2.4-postgres
-  - unit-2.4-db-migrations-rds
   - integration-db-tls-postgres-hotswap
   name: postgres
 - jobs:
@@ -140,41 +137,6 @@ jobs:
       task: test-postgres-9.6
       timeout: 2h
   public: true
-  serial: true
-- build_logs_to_retain: 250
-  name: unit-2.4-db-migrations-rds
-  plan:
-  - params:
-      acquire: true
-    put: rds-pool
-  - get: bosh-src
-    trigger: true
-  - aggregate:
-    - file: bosh-src/ci/tasks/test-unit-remote-db.yml
-      params:
-        AWS_ACCESS_KEY_ID: ((mysql-rds-aws-access-key-id))
-        AWS_REGION: ((mysql-rds-aws-region))
-        AWS_SECRET_ACCESS_KEY: ((mysql-rds-aws-secret-access-key))
-        DB: mysql
-        DB_HOST: ((mysql-rds-host))
-        DB_PASSWORD: ((mysql-rds-password))
-        DB_USER: ((mysql-rds-user))
-        RDS_MYSQL_DB_IDENTIFIER: ((mysql-rds-db-identifier))
-      privileged: true
-      task: test-mysql-rds
-      timeout: 3h
-    - file: bosh-src/ci/tasks/test-unit-remote-db.yml
-      params:
-        DB: postgresql
-        DB_HOST: ((postgresql-rds-host))
-        DB_PASSWORD: ((postgresql-rds-password))
-        DB_USER: ((postgresql-rds-user))
-      privileged: true
-      task: test-postgresql-rds
-    ensure:
-      params:
-        release: rds-pool
-      put: rds-pool
   serial: true
 - build_logs_to_retain: 250
   name: blobstore-performance
@@ -475,7 +437,6 @@ jobs:
     - unit-2.4
     - unit-2.4-mysql
     - unit-2.4-postgres
-    - unit-2.4-db-migrations-rds
     - fuzz-tests
     - upgrade-tests
     - blobstore-performance
@@ -1467,13 +1428,6 @@ resources:
   source:
     repository: bosh/main-postgres-9.6
   type: docker-image
-- name: rds-pool
-  source:
-    branch: master
-    pool: unit-24-db-migrations-rds
-    private_key: ((bosh_ci_pools_deploy_key))
-    uri: git@github.com:cloudfoundry/bosh-ci-pools
-  type: pool
 - name: terraform
   source:
     storage:
