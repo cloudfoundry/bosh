@@ -6,6 +6,7 @@ module Bosh::Spec
 
   class Director
     include Support::TableHelpers
+
     def initialize(runner, waiter, agents_base_dir, db, director_nats_config, logger)
       @runner = runner
       @waiter = waiter
@@ -188,6 +189,16 @@ module Bosh::Spec
       end
 
       @logger.debug('Failed to wait for resurrection to complete')
+    end
+
+    def insert_task(state, type, deployment)
+      @db[:tasks].insert(
+        state: state,
+        type: type,
+        description: 'fake task',
+        timestamp: Time.now,
+        deployment_name: deployment,
+      )
     end
 
     private
