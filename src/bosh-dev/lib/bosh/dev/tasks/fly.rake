@@ -30,8 +30,7 @@ namespace :fly do
   end
 
   def concourse_target
-    raise ArgumentError, "CONCOURSE_TARGET not set" unless ENV.key? 'CONCOURSE_TARGET'
-    "-t #{ENV['CONCOURSE_TARGET']}"
+    "-t #{ENV.fetch('CONCOURSE_TARGET', 'production')}"
   end
 
   def prepare_env(additional_env = {})
