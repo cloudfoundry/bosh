@@ -91,9 +91,12 @@ module Bosh::Director
           index_assigner,
           network_reservation_repository,
           variables_interpolator,
+          link_provider_intents,
           options,
         )
       end
+
+      let(:link_provider_intents) { [] }
 
       before do
         BD::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
@@ -152,6 +155,7 @@ module Bosh::Director
                 use_short_dns_addresses: false,
                 use_link_dns_addresses: false,
                 variables_interpolator: variables_interpolator,
+                link_provider_intents: [],
               )
               instance_plan_factory.obsolete_instance_plan(existing_instance_model)
             end
@@ -169,6 +173,7 @@ module Bosh::Director
                   use_short_dns_addresses: true,
                   use_link_dns_addresses: false,
                   variables_interpolator: variables_interpolator,
+                  link_provider_intents: [],
                 )
                 instance_plan_factory.obsolete_instance_plan(existing_instance_model)
               end
@@ -190,6 +195,7 @@ module Bosh::Director
                 use_dns_addresses: false,
                 use_link_dns_addresses: false,
                 variables_interpolator: variables_interpolator,
+                link_provider_intents: [],
               )
               instance_plan_factory.obsolete_instance_plan(existing_instance_model)
             end
@@ -227,6 +233,19 @@ module Bosh::Director
             end
           end
         end
+
+        context 'when there are link provider intents' do
+          let(:link_provider_intents) { double(:link_provider_intents) }
+
+          it 'passes them when creating an instance plan' do
+            expect(InstancePlan).to receive(:new).with(
+              include(
+                link_provider_intents: link_provider_intents,
+              ),
+            )
+            instance_plan_factory.obsolete_instance_plan(existing_instance_model)
+          end
+        end
       end
 
       describe '#desired_existing_instance_plan' do
@@ -246,6 +265,7 @@ module Bosh::Director
             use_link_dns_addresses: anything,
             tags: tags,
             variables_interpolator: variables_interpolator,
+            link_provider_intents: [],
           )
 
           instance_plan_factory.desired_existing_instance_plan(existing_instance_model, desired_instance)
@@ -267,6 +287,7 @@ module Bosh::Director
               use_short_dns_addresses: anything,
               use_link_dns_addresses: anything,
               variables_interpolator: anything,
+              link_provider_intents: [],
             )
             instance_plan_factory.desired_existing_instance_plan(existing_instance_model, desired_instance)
           end
@@ -302,6 +323,7 @@ module Bosh::Director
                 use_short_dns_addresses: false,
                 use_link_dns_addresses: false,
                 variables_interpolator: variables_interpolator,
+                link_provider_intents: [],
               )
               instance_plan_factory.desired_existing_instance_plan(existing_instance_model, desired_instance)
             end
@@ -319,6 +341,7 @@ module Bosh::Director
                   use_short_dns_addresses: true,
                   use_link_dns_addresses: false,
                   variables_interpolator: anything,
+                  link_provider_intents: [],
                 )
                 instance_plan_factory.obsolete_instance_plan(existing_instance_model)
               end
@@ -342,9 +365,23 @@ module Bosh::Director
                 use_short_dns_addresses: false,
                 use_link_dns_addresses: false,
                 variables_interpolator: anything,
+                link_provider_intents: [],
               )
               instance_plan_factory.desired_existing_instance_plan(existing_instance_model, desired_instance)
             end
+          end
+        end
+
+        context 'when there are link provider intents' do
+          let(:link_provider_intents) { double(:link_provider_intents) }
+
+          it 'passes them when creating an instance plan' do
+            expect(InstancePlan).to receive(:new).with(
+              include(
+                link_provider_intents: link_provider_intents,
+              ),
+            )
+            instance_plan_factory.desired_existing_instance_plan(existing_instance_model, desired_instance)
           end
         end
       end
@@ -365,6 +402,7 @@ module Bosh::Director
             use_link_dns_addresses: anything,
             tags: tags,
             variables_interpolator: anything,
+            link_provider_intents: [],
           )
 
           instance_plan_factory.desired_new_instance_plan(desired_instance)
@@ -399,6 +437,7 @@ module Bosh::Director
                 use_short_dns_addresses: false,
                 use_link_dns_addresses: false,
                 variables_interpolator: anything,
+                link_provider_intents: [],
               )
               instance_plan_factory.desired_new_instance_plan(desired_instance)
             end
@@ -416,6 +455,7 @@ module Bosh::Director
                   use_short_dns_addresses: true,
                   use_link_dns_addresses: false,
                   variables_interpolator: anything,
+                  link_provider_intents: [],
                 )
                 instance_plan_factory.obsolete_instance_plan(existing_instance_model)
               end
@@ -438,9 +478,23 @@ module Bosh::Director
                 use_short_dns_addresses: false,
                 use_link_dns_addresses: false,
                 variables_interpolator: anything,
+                link_provider_intents: [],
               )
               instance_plan_factory.desired_new_instance_plan(desired_instance)
             end
+          end
+        end
+
+        context 'when there are link provider intents' do
+          let(:link_provider_intents) { double(:link_provider_intents) }
+
+          it 'passes them when creating an instance plan' do
+            expect(InstancePlan).to receive(:new).with(
+              include(
+                link_provider_intents: link_provider_intents,
+              ),
+            )
+            instance_plan_factory.desired_new_instance_plan(desired_instance)
           end
         end
       end

@@ -2,7 +2,19 @@ module Bosh
   module Director
     module DeploymentPlan
       class InstancePlanFactory
-        def initialize(instance_repo, states_by_existing_instance, skip_drain_decider, index_assigner, network_reservation_repository, variables_interpolator, options = {})
+        # rubocop:disable Metrics/ParameterLists
+        def initialize(
+          instance_repo,
+          states_by_existing_instance,
+          skip_drain_decider,
+          index_assigner,
+          network_reservation_repository,
+          variables_interpolator,
+          link_provider_intents,
+          options = {}
+        )
+          # rubocop:enable Metrics/ParameterLists
+
           @instance_repo = instance_repo
           @skip_drain_decider = skip_drain_decider
           @recreate_deployment = options.fetch('recreate', false)
@@ -10,6 +22,7 @@ module Bosh
           @states_by_existing_instance = states_by_existing_instance
           @index_assigner = index_assigner
           @network_reservation_repository = network_reservation_repository
+          @link_provider_intents = link_provider_intents
           @use_dns_addresses = options.fetch('use_dns_addresses', false)
           @use_short_dns_addresses = options.fetch('use_short_dns_addresses', false)
           @use_link_dns_addresses = options.fetch('use_link_dns_addresses', false)
@@ -31,6 +44,7 @@ module Bosh
             use_short_dns_addresses: @use_short_dns_addresses,
             use_link_dns_addresses: @use_link_dns_addresses,
             variables_interpolator: @variables_interpolator,
+            link_provider_intents: @link_provider_intents,
           )
         end
 
@@ -52,6 +66,7 @@ module Bosh
             use_link_dns_addresses: @use_link_dns_addresses,
             tags: @tags,
             variables_interpolator: @variables_interpolator,
+            link_provider_intents: @link_provider_intents,
           )
         end
 
@@ -70,6 +85,7 @@ module Bosh
             use_link_dns_addresses: @use_link_dns_addresses,
             tags: @tags,
             variables_interpolator: @variables_interpolator,
+            link_provider_intents: @link_provider_intents,
           )
         end
 

@@ -54,6 +54,7 @@ module Bosh::Director
         allow(deployment_plan).to receive(:use_link_dns_names?).and_return(false)
         allow(deployment_plan).to receive(:randomize_az_placement?).and_return(false)
         allow(deployment_plan).to receive(:recreate_persistent_disks?).and_return(false)
+        allow(deployment_plan).to receive(:link_provider_intents).and_return([])
       end
 
       it 'should bind releases and their templates' do
@@ -128,6 +129,7 @@ module Bosh::Director
             anything,
             anything,
             anything,
+            anything,
             expected_options,
           ).and_call_original
           assembler.bind_models(tags: { 'key1' => 'value1' })
@@ -152,6 +154,7 @@ module Bosh::Director
               'use_link_dns_addresses' => false,
             }
             expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(
+              anything,
               anything,
               anything,
               anything,
@@ -185,6 +188,7 @@ module Bosh::Director
                 anything,
                 anything,
                 anything,
+                anything,
                 expected_options,
               ).and_call_original
               assembler.bind_models
@@ -209,6 +213,7 @@ module Bosh::Director
               'use_link_dns_addresses' => false,
             }
             expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(
+              anything,
               anything,
               anything,
               anything,

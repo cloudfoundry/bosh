@@ -17,7 +17,19 @@ module Bosh::Director::DeploymentPlan
     let(:index_assigner) { PlacementPlanner::IndexAssigner.new(deployment_model) }
     let(:instance_repo) { Bosh::Director::DeploymentPlan::InstanceRepository.new(network_reservation_repository, logger, variables_interpolator) }
     let(:instance_plans) { zone_picker.place_and_match_in(desired_instances, existing_instances) }
-    let(:instance_plan_factory) { InstancePlanFactory.new(instance_repo, {}, SkipDrain.new(true), index_assigner, network_reservation_repository, variables_interpolator) }
+
+    let(:instance_plan_factory) do
+      InstancePlanFactory.new(
+        instance_repo,
+        {},
+        SkipDrain.new(true),
+        index_assigner,
+        network_reservation_repository,
+        variables_interpolator,
+        [],
+      )
+    end
+
     let(:network_planner) { NetworkPlanner::Planner.new(logger) }
     let(:network_reservation_repository) { BD::DeploymentPlan::NetworkReservationRepository.new(planner, logger) }
     let(:planner) { planner_factory.create_from_manifest(manifest, cloud_configs, [], {}) }

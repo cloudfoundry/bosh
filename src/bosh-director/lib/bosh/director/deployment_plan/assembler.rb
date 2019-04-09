@@ -50,6 +50,7 @@ module Bosh::Director
         index_assigner,
         network_reservation_repository,
         @variables_interpolator,
+        @deployment_plan.link_provider_intents,
         'recreate' => @deployment_plan.recreate,
         'use_dns_addresses' => @deployment_plan.use_dns_addresses?,
         'use_short_dns_addresses' => @deployment_plan.use_short_dns_addresses?,

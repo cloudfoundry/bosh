@@ -6,7 +6,20 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
   subject(:instance_planner) { BD::DeploymentPlan::InstancePlanner.new(instance_plan_factory, logger) }
   let(:network_reservation_repository) { BD::DeploymentPlan::NetworkReservationRepository.new(deployment, logger) }
-  let(:instance_plan_factory) { BD::DeploymentPlan::InstancePlanFactory.new(instance_repo, {}, skip_drain_decider, index_assigner, network_reservation_repository, variables_interpolator, options) }
+
+  let(:instance_plan_factory) do
+    BD::DeploymentPlan::InstancePlanFactory.new(
+      instance_repo,
+      {},
+      skip_drain_decider,
+      index_assigner,
+      network_reservation_repository,
+      variables_interpolator,
+      [],
+      options,
+    )
+  end
+
   let(:index_assigner) { BD::DeploymentPlan::PlacementPlanner::IndexAssigner.new(deployment_model) }
   let(:options) do
     {}

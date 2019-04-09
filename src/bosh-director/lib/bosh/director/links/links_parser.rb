@@ -65,9 +65,14 @@ module Bosh::Director::Links
             job_properties: job_properties,
             instance_group_name: instance_group_name,
           ),
+          process_release_providers(
+            current_release_template_model,
+            manifest_provides_links,
+            deployment_model,
+            instance_group_name,
+            job_properties,
+          ),
         )
-        errors.concat(process_release_providers(current_release_template_model, manifest_provides_links, deployment_model,
-                                                instance_group_name, job_properties))
 
         unless manifest_provides_links.empty?
           warning = 'Manifest defines unknown providers:'

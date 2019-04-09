@@ -8,7 +8,18 @@ module Bosh::Director::DeploymentPlan
     let(:network_reservation_repository) { BD::DeploymentPlan::NetworkReservationRepository.new(instance_double(Bosh::Director::DeploymentPlan::Planner), logger) }
     let(:skip_drain_decider) { SkipDrain.new(true) }
     let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
-    let(:instance_plan_factory) { InstancePlanFactory.new(instance_repo, {}, skip_drain_decider, index_assigner, network_reservation_repository, variables_interpolator, 'randomize_az_placement' => randomize_az_placement) }
+    let(:instance_plan_factory) do
+      InstancePlanFactory.new(
+        instance_repo,
+        {},
+        skip_drain_decider,
+        index_assigner,
+        network_reservation_repository,
+        variables_interpolator,
+        [],
+        'randomize_az_placement' => randomize_az_placement,
+      )
+    end
     let(:index_assigner) { PlacementPlanner::IndexAssigner.new(deployment_model) }
     let(:deployment_model) { Bosh::Director::Models::Deployment.make }
     let(:test_random_tie_strategy) { PlacementPlanner::TieStrategy::RandomWins }
