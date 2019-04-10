@@ -4,12 +4,9 @@ require 'delayed_job'
 module Bosh
   module Director
     class Worker
-      MAX_MIGRATION_ATTEMPTS = 50
-
-      def initialize(config, index = 0, retry_interval = 0.5)
+      def initialize(config, index = 0)
         @config = config
         @index = index
-        @retry_interval = retry_interval
       end
 
       def prep
@@ -64,16 +61,12 @@ module Bosh
           raise 'Bosh::Director::Models were loaded before ensuring migrations are current. Cowardly refusing to start worker.'
         end
         migrator = DBMigrator.new(@config.db, :director)
-        tries = 0
-        until migrator.current?
-          tries += 1
-          sleep @retry_interval
-          if tries >= MAX_MIGRATION_ATTEMPTS
-            @config.worker_logger.error("Migrations not current during worker start after #{tries} attempts.")
-            raise "Migrations not current after #{MAX_MIGRATION_ATTEMPTS} retries"
-          end
+        unless migrator.finished?
+          @config.worker_logger.error(
+            "Migrations not current during worker start after #{DBMigrator::MAX_MIGRATION_ATTEMPTS} attempts.",
+          )
+          raise "Migrations not current after #{DBMigrator::MAX_MIGRATION_ATTEMPTS} retries"
         end
-
         require 'bosh/director'
       end
 
