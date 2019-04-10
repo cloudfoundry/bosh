@@ -88,24 +88,6 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
     end
   end
 
-  describe :supports_azs? do
-    context 'when subnets are defined on the network spec' do
-      it 'returns true' do
-        network = BD::DeploymentPlan::VipNetwork.parse(network_spec, azs, logger)
-        expect(network.supports_azs?).to eq(true)
-      end
-    end
-
-    context 'when subnets are not defined on the network spec' do
-      let(:network_spec) { { 'name' => 'foo' } }
-
-      it 'returns false' do
-        network = BD::DeploymentPlan::VipNetwork.parse(network_spec, azs, logger)
-        expect(network.supports_azs?).to eq(false)
-      end
-    end
-  end
-
   describe :find_az_names_for_ip do
     let(:network_spec) do
       {

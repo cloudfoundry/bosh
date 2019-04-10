@@ -1046,6 +1046,7 @@ describe 'using director with config server', type: :integration do
               'cloud_properties' => {
                 'smurf_1' => '((/smurf_1_variable_vip_network))',
               },
+              'subnets' => [{ 'azs' => ['z1'], 'static' => ['8.8.8.8'] }],
             },
           ]
         end
@@ -1059,7 +1060,6 @@ describe 'using director with config server', type: :integration do
             },
             {
               'name' => 'vip',
-              'static_ips' => ['8.8.8.8'],
             },
           ]
           config_server_helper.put_value('/smurf_1_variable_vip_network', 'cat_1_vip_network')

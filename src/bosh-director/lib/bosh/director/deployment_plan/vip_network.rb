@@ -51,6 +51,10 @@ module Bosh::Director
         }
       end
 
+      def vip?
+        true
+      end
+
       def ip_type(*)
         return :dynamic if globally_allocate_ip?
 
@@ -59,10 +63,6 @@ module Bosh::Director
 
       def globally_allocate_ip?
         !@subnets.empty?
-      end
-
-      def supports_azs?
-        globally_allocate_ip?
       end
 
       def has_azs?(*)

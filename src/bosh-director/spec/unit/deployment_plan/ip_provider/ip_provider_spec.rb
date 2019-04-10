@@ -447,8 +447,10 @@ module Bosh::Director::DeploymentPlan
         end
 
         context 'when vip network' do
-          let(:existing_network_reservation) { BD::ExistingNetworkReservation.new(instance_model, vip_network, '69.69.69.69', 'vip') }
-          let(:vip_network) { BD::DeploymentPlan::VipNetwork.parse({ 'name' => 'fake-network' }, [], logger) }
+          let(:existing_network_reservation) do
+            BD::ExistingNetworkReservation.new(instance_model, static_vip_network, '69.69.69.69', 'vip')
+          end
+          let(:static_vip_network) { BD::DeploymentPlan::VipNetwork.parse({ 'name' => 'fake-network' }, [], logger) }
 
           it 'marks reservation as reserved' do
             ip_provider.reserve_existing_ips(existing_network_reservation)
@@ -490,84 +492,6 @@ module Bosh::Director::DeploymentPlan
             it 'reserves IP' do
               ip_provider.reserve_existing_ips(existing_network_reservation)
               expect(existing_network_reservation).to be_reserved
-            end
-          end
-
-          context 'when reservation network does not have subnet that includes reservation IP' do
-            let(:manual_network_spec) do
-              {
-                'name' => 'my-manual-network',
-                'subnets' => [
-                  {
-                    'range' => '10.10.10.0/24',
-                    'gateway' => '10.10.10.1',
-                  }
-                ]
-              }
-            end
-
-            context 'when another network has subnet that includes that IP' do
-              let(:networks) do
-                {
-                  'my-manual-network' => manual_network,
-                  'my-another-network' => another_manual_network,
-                }
-              end
-
-              it 'reserves IP and updates reservation network' do
-                ip_provider.reserve_existing_ips(existing_network_reservation)
-                expect(existing_network_reservation).to be_reserved
-                expect(existing_network_reservation.network.name).to eq('my-another-network')
-              end
-            end
-
-            context 'when there are NO networks with subnets that can fit existing IP' do
-              it 'should not reserve IP' do
-                reservation_outside_subnet = BD::ExistingNetworkReservation.new(instance_model, manual_network, '10.0.0.1', 'manual')
-                ip_provider.reserve_existing_ips(reservation_outside_subnet)
-
-                expect(reservation_outside_subnet).not_to be_reserved
-              end
-            end
-          end
-
-          context 'when reservation network was deleted' do
-            let(:networks) do
-              { 'my-another-network' => another_manual_network }
-            end
-
-            it 'finds the network that has subnet that includes reservation IP' do
-              ip_provider.reserve_existing_ips(existing_network_reservation)
-              expect(existing_network_reservation).to be_reserved
-              expect(existing_network_reservation.network.name).to eq('my-another-network')
-            end
-          end
-
-          context 'when there are several networks that have overlapping subnet ranges that include reservation IP' do
-            let(:networks) do
-              {
-                'my-manual-network' => manual_network,
-                'my-another-network' => another_manual_network,
-              }
-            end
-
-            let(:manual_network_spec) do
-              {
-                'name' => 'my-manual-network',
-                'subnets' => [
-                  {
-                    'range' => '192.168.1.0/24',
-                    'gateway' => '192.168.1.1',
-                    'reserved' => ['192.168.1.2']
-                  }
-                ]
-              }
-            end
-
-            it 'picks the network that has subnet that does not have reservation IP in reserved range' do
-              ip_provider.reserve_existing_ips(existing_network_reservation)
-              expect(existing_network_reservation).to be_reserved
-              expect(existing_network_reservation.network.name).to eq('my-another-network')
             end
           end
 
@@ -624,7 +548,7 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
-    describe 'with an in-memory repo' do
+    describe 'with an in-memory repo for v1 manifests' do
       let(:ip_repo) { InMemoryIpRepo.new(logger) }
       let(:ip_provider) { IpProvider.new(ip_repo, networks, logger) }
       it_should_behave_like 'an ip provider with any repo'
@@ -730,27 +654,6 @@ module Bosh::Director::DeploymentPlan
             expect {
               ip_provider.reserve_existing_ips(new_reservation_wanting_existing_ip)
             }.to raise_error /already reserved/
-          end
-        end
-
-        context 'when globally allocating vips' do
-          let(:vip_network) { VipNetwork.parse(vip_network_spec, [], logger) }
-          let(:reservation) { BD::ExistingNetworkReservation.new(instance_model, vip_network, '3.3.3.3', 'vip') }
-          let(:vip_network_spec) do
-            {
-              'name' => 'my-vip-network',
-              'type' => 'vip',
-              'subnets' => [
-                {
-                  'static' => ['1.1.1.1', '2.2.2.2'],
-                },
-              ],
-            }
-          end
-
-          it 'does not add a reservation that does not belong to the reservation network subnet' do
-            ip_provider.reserve_existing_ips(reservation)
-            expect(reservation).to_not be_reserved
           end
         end
       end

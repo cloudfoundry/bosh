@@ -7,18 +7,28 @@ module Bosh::Director
 
       subject(:network_reservation_repository) { NetworkReservationRepository.new(deployment_plan, logger) }
       let(:existing_instance_model) { Models::Instance.make }
-      let(:network) { BD::DeploymentPlan::DynamicNetwork.new('name-7', [], logger) }
+      let(:manual_network_subnet) do
+        ManualNetworkSubnet.new(
+          'name-7',
+          NetAddr::CIDR.create('192.168.1.1/24'),
+          nil,
+          nil,
+          nil,
+          nil,
+          nil,
+          [],
+          [],
+        )
+      end
+      let(:network) { BD::DeploymentPlan::ManualNetwork.new('name-7', [manual_network_subnet], logger) }
       let(:deployment_plan) do
         ip_repo = BD::DeploymentPlan::InMemoryIpRepo.new(logger)
         ip_provider = BD::DeploymentPlan::IpProvider.new(ip_repo, {'name-7' => network}, logger)
-        instance_double(Planner,
-          network: network,
-          ip_provider: ip_provider
-        )
+        instance_double(Planner, network: network, networks: [network], ip_provider: ip_provider)
       end
 
       context 'when the existing instance model has ip addresses' do
-        let(:ip_address) { Models::IpAddress.make }
+        let(:ip_address) { Models::IpAddress.make(address_str: NetAddr::CIDR.create('192.168.1.1').to_i.to_s) }
 
         before do
           existing_instance_model.add_ip_address(ip_address)
@@ -33,7 +43,7 @@ module Bosh::Director
         end
       end
 
-      context 'when the existing instance model has no ip addresses, but has instance state' do
+      context 'when the existing instance model has no ip addresses, but has instance state for v1 manifests' do
         let(:state) do
           {
             'networks' =>
@@ -41,8 +51,8 @@ module Bosh::Director
                 'name-7' => {
                   'ip' => '192.168.1.1',
                   'type' => 'dynamic'
-                }
-              }
+                },
+              },
           }
         end
 

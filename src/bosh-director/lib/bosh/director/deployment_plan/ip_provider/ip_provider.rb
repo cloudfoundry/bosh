@@ -43,29 +43,21 @@ module Bosh::Director
       end
 
       def reserve_existing_ips(reservation)
-        if reservation.network.is_a?(DynamicNetwork)
-          if reservation.network_type == 'dynamic'
-            # Marking reservation as reserved so that it keeps existing reservation and
-            # does not recreate VM
-            reserve_dynamic(reservation)
-          end
+        case reservation.network
 
+        when DynamicNetwork
+          # Marking reservation as "reserved" so that it keeps existing reservation and
+          # does not recreate VM
+
+          reserve_dynamic(reservation) if reservation.network_type == 'dynamic'
           # If previous network type was not dynamic we should release reservation from DB
-          return
-        end
-
-        if reservation.network.is_a?(VipNetwork)
+        when VipNetwork
           reserve_vip(reservation)
-          return
+        when ManualNetwork
+          subnet = reservation.network.subnets.find { |snet| snet.is_reservable?(reservation.ip) }
+
+          reserve_manual_with_subnet(reservation, subnet) if subnet
         end
-
-        @logger.debug('Reserving existing ips')
-        network, subnet = find_network_and_subnet_containing(reservation.ip, reservation.network.name)
-        return unless subnet
-
-        @logger.debug("Marking existing IP #{format_ip(reservation.ip)} as reserved")
-        reservation.resolve_network(network)
-        reserve_manual_with_subnet(reservation, subnet)
       end
 
       private
@@ -141,12 +133,8 @@ module Bosh::Director
               )
             end
 
-            @logger.debug("Reserving vip IP '#{format_ip(ip)}' for vip network '#{reservation.network.name}'")
             reservation.resolve_ip(ip)
           else
-            subnet = find_vip_network_and_subnet(reservation.ip, reservation.network)
-            return unless subnet
-
             @ip_repo.add(reservation)
           end
 
@@ -173,23 +161,6 @@ module Bosh::Director
             subnet.availability_zone_names.include?(instance_az_name)
           end
         end
-      end
-
-      def find_network_and_subnet_containing(cidr_ip, network_name)
-        networks = @networks.values.dup
-
-        networks.unshift(networks.find { |network| network.name == network_name }).compact!
-
-        networks.select(&:manual?).each do |network|
-          subnet = network.subnets.find { |subnet| subnet.is_reservable?(cidr_ip) }
-          return [network, subnet] if subnet
-        end
-
-        return nil
-      end
-
-      def find_vip_network_and_subnet(cidr_ip, network)
-        network.subnets.find { |subnet| subnet.is_reservable?(cidr_ip) }
       end
     end
   end

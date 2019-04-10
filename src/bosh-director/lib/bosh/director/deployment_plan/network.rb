@@ -51,11 +51,15 @@ module Bosh::Director
       def validate_reference_from_job!(job_network_spec, job_name)
       end
 
-      def supports_azs?
+      def manual?
         false
       end
 
-      def manual?
+      def vip?
+        false
+      end
+
+      def dynamic?
         false
       end
 
@@ -78,10 +82,6 @@ module Bosh::Director
         end
 
         false
-      end
-
-      def supports_azs?
-        true
       end
 
       def availability_zones

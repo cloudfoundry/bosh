@@ -5,25 +5,49 @@ module Bosh::Director
     let(:deployment_model) { Models::Deployment.make(name: 'foo-deployment') }
     let(:cloud_config) { Models::Config.make(:cloud_with_manifest_v2) }
     let(:runtime_config) { Models::Config.make(type: 'runtime') }
+    let(:cloud_planner) { instance_double(DeploymentPlan::CloudPlanner) }
     let(:deployment) do
-      DeploymentPlan::Planner.new(
+      deployment = DeploymentPlan::Planner.new(
         {name: 'foo-deployment', properties: {}},
         '',
         '',
-        cloud_config,
+        [cloud_config],
         runtime_config,
         deployment_model
       )
+      deployment.cloud_planner = cloud_planner
+      deployment
     end
+    let(:global_network_resolver) { instance_double(DeploymentPlan::GlobalNetworkResolver, reserved_ranges: Set.new) }
     let(:network) do
-      DeploymentPlan::ManualNetwork.new('fake-network', [], logger)
+      DeploymentPlan::ManualNetwork.parse(
+        manual_network_spec,
+        [
+          BD::DeploymentPlan::AvailabilityZone.new('az-1', {}),
+          BD::DeploymentPlan::AvailabilityZone.new('az-2', {}),
+        ],
+        global_network_resolver,
+        logger,
+      )
+    end
+    let(:manual_network_spec) do
+      {
+        'name' => 'fake-network',
+        'subnets' => [
+          {
+            'range' => '192.168.0.0/24',
+            'gateway' => '192.168.0.4',
+          },
+        ],
+      }
     end
     let(:instance_model) { Models::Instance.make(deployment: deployment_model) }
     let!(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
     let(:ip_provider) { DeploymentPlan::IpProvider.new(DeploymentPlan::InMemoryIpRepo.new(logger), {'fake-network' => network}, logger) }
     before do
-      allow(deployment).to receive(:network).with('fake-network').and_return(network)
       allow(deployment).to receive(:ip_provider).and_return(ip_provider)
+      allow(cloud_planner).to receive(:networks).and_return([network])
+      allow(deployment).to receive(:network).with('fake-network').and_return(network)
     end
 
     describe 'create_from_db' do
@@ -61,11 +85,95 @@ module Bosh::Director
           before do
             instance_model.add_ip_address(ip_model1)
             instance_model.add_ip_address(ip_model2)
+            allow(deployment).to receive(:network).with('fake-network').and_return(network)
           end
 
           it 'creates reservations based on IP addresses' do
             reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, logger)
             expect(reservations.map(&:ip)).to eq([ip1, ip2])
+          end
+        end
+
+        context 'when the network name saved in the database is of type Manual or Vip Global (ips in cloud config)' do
+          before do
+            instance_model.add_ip_address(ip_model1)
+            allow(cloud_planner).to receive(:networks).and_return(network_with_subnets)
+          end
+
+          context 'if the IP is contained in that network range' do
+            let(:network_with_subnets) { [DeploymentPlan::VipNetwork.parse(network_spec, [], logger)] }
+            let(:network_spec) do
+              {
+                'name' => 'fake-network',
+                'subnets' => [
+                  { 'static' => ['192.168.0.1'] },
+                ],
+              }
+            end
+
+            it 'assigns that network to the reservation' do
+              reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, logger)
+              expect(reservations.first.network).to eq(network_with_subnets.first)
+            end
+          end
+
+          context 'if the IP is not contained in that network range' do
+            let(:network_with_subnets) { [existing_network, new_network] }
+            let(:existing_network) { DeploymentPlan::VipNetwork.parse(existing_network_spec, [], logger) }
+            let(:new_network) { DeploymentPlan::VipNetwork.parse(new_network_spec, [], logger) }
+            let(:existing_network_spec) do
+              {
+                'name' => 'fake-network',
+                'subnets' => [
+                  { 'static' => ['192.168.0.2'] },
+                ],
+              }
+            end
+
+            let(:new_network_spec) do
+              {
+                'name' => 'new-network',
+                'subnets' => [
+                  { 'static' => ['192.168.0.1'] },
+                ],
+              }
+            end
+
+            it 'assigns the closest matching network in the cloud config' do
+              reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, logger)
+              expect(reservations.first.network).to eq(new_network)
+            end
+          end
+        end
+
+        context 'when the network name saved in the database is of type Vip Static (ips in instance groups)' do
+          let(:network_with_subnets) { [] }
+          let(:static_vip_network) { DeploymentPlan::VipNetwork.new('dummy', nil, [], nil) }
+
+          before do
+            instance_model.add_ip_address(ip_model1)
+            allow(cloud_planner).to receive(:networks).and_return([static_vip_network])
+            allow(deployment).to receive(:network).with('fake-network').and_return(static_vip_network)
+          end
+
+          it 'returns the network with matching name' do
+            reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, logger)
+            expect(reservations.first.network).to eq(static_vip_network)
+          end
+        end
+
+        context 'when there are no network subnets that contain the IP or matches by name' do
+          let(:dummy_network) { DeploymentPlan::Network.new('fake-network', logger) }
+          before do
+            instance_model.add_ip_address(ip_model1)
+            allow(cloud_planner).to receive(:networks).and_return([])
+            allow(cloud_planner).to receive(:network).with('fake-network').and_return(nil)
+            allow(DeploymentPlan::Network).to receive(:new).and_return(dummy_network)
+          end
+
+          it 'assigns a placeholder network' do
+            reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, logger)
+            expect(reservations.first.network).to eq(dummy_network)
           end
         end
       end

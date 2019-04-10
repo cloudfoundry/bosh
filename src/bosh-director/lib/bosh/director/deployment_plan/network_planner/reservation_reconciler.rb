@@ -13,8 +13,10 @@ module Bosh::Director::DeploymentPlan
         reconciled_reservations = []
 
         existing_reservations.each do |existing_reservation|
+          next unless existing_reservation.reserved?
+
           # can't reuse a reservation if it switches az
-          unless az_is_desired(existing_reservation)
+          if az_does_not_match_and_cant_be_ignored(existing_reservation, @instance_plan.desired_instance.az)
             @logger.debug(
               "Can't reuse reservation #{existing_reservation}, existing reservation az does not match " \
               "desired az '#{@instance_plan.desired_instance.availability_zone}'",
@@ -27,14 +29,15 @@ module Bosh::Director::DeploymentPlan
               (reservation.dynamic? || reservation.ip == existing_reservation.ip)
           end
 
-          if desired_reservation && existing_reservation.reserved?
+          if desired_reservation
             @logger.debug(
               "For desired reservation #{desired_reservation} found existing reservation " \
               "on the same network #{existing_reservation}",
             )
 
             if both_are_dynamic_reservations(existing_reservation, desired_reservation) ||
-               both_are_static_reservations_with_same_ip(existing_reservation, desired_reservation)
+               both_are_static_reservations_with_same_ip(existing_reservation, desired_reservation) ||
+               both_are_vip_reservations(existing_reservation, desired_reservation)
 
               @logger.debug("Reusing existing reservation #{existing_reservation} for '#{desired_reservation}'")
 
@@ -89,8 +92,8 @@ module Bosh::Director::DeploymentPlan
 
       def reservation_contains_assigned_address?(existing_reservation, desired_reservation)
         return true if existing_reservation.network == desired_reservation.network
-        return false unless desired_reservation.network.manual?
-        return false unless existing_reservation.network.manual?
+
+        return false if desired_reservation.network.is_a?(DynamicNetwork) || existing_reservation.network.is_a?(DynamicNetwork)
 
         desired_reservation.network.subnets.any? do |subnet|
           if existing_reservation.instance_model.availability_zone != '' && !subnet.availability_zone_names.nil?
@@ -112,17 +115,23 @@ module Bosh::Director::DeploymentPlan
           reservation.ip == existing_reservation.ip
       end
 
-      def az_is_desired(existing_reservation)
-        return true unless existing_reservation.network.supports_azs?
+      def both_are_vip_reservations(existing_reservation, desired_reservation)
+        existing_reservation.network.vip? && desired_reservation.network.vip?
+      end
 
-        ip_az_names = existing_reservation.network.find_az_names_for_ip(existing_reservation.ip)
-        @logger.debug("Reservation #{existing_reservation} belongs to azs: #{ip_az_names}")
+      def az_does_not_match_and_cant_be_ignored(existing_reservation, desired_az)
+        existing_ip_az_names = if existing_reservation.network.vip? && !existing_reservation.network.globally_allocate_ip?
+                                 [existing_reservation.instance_model.availability_zone].compact
+                               else
+                                 existing_reservation.network.find_az_names_for_ip(existing_reservation.ip).to_a.compact
+                               end
 
-        desired_az = @instance_plan.desired_instance.az
-        return true if ip_az_names.to_a.compact.empty? && desired_az.nil?
-        return false if desired_az.nil?
+        @logger.debug("Existing reservation belongs to azs: #{existing_ip_az_names}, desired az is #{desired_az}")
 
-        ip_az_names.to_a.include?(desired_az.name)
+        return false if existing_ip_az_names.empty? && desired_az.nil?
+        return true if desired_az.nil?
+
+        !existing_ip_az_names.include?(desired_az.name)
       end
 
       def network_allocations_changed?(desired_reservations, unplaced_existing_reservations)

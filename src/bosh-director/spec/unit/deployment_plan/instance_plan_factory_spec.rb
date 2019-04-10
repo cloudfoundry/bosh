@@ -52,6 +52,7 @@ module Bosh::Director
         instance_double(
           Planner,
           network: network,
+          networks: [network],
           ip_provider: BD::DeploymentPlan::IpProvider.new(ip_repo, { 'name-7' => network }, logger),
           model: deployment_model,
         )

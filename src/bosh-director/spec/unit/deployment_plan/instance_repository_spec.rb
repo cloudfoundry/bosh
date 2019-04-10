@@ -11,6 +11,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
     BD::Models::VariableSet.create(deployment: model)
     instance_double('Bosh::Director::DeploymentPlan::Planner',
       network: network,
+      networks: [network],
       ip_provider: ip_provider,
       model: model
     )

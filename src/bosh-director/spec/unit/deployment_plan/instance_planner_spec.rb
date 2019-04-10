@@ -28,7 +28,8 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
   let(:logger) { instance_double(Logger, debug: nil, info: nil) }
   let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
   let(:instance_repo) { BD::DeploymentPlan::InstanceRepository.new(network_reservation_repository, logger, variables_interpolator) }
-  let(:deployment) { instance_double(BD::DeploymentPlan::Planner, model: deployment_model) }
+  let(:networks) { [] }
+  let(:deployment) { instance_double(BD::DeploymentPlan::Planner, model: deployment_model, networks: networks) }
   let(:deployment_model) { BD::Models::Deployment.make }
   let(:variable_set_model) { BD::Models::VariableSet.create(deployment: deployment_model) }
   let(:az) do
@@ -762,6 +763,8 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     end
 
     context 'when network reservation is needed' do
+      let(:networks) { [manual_network] }
+
       before do
         instance_group_network = BD::DeploymentPlan::JobNetwork.make(
           static_ips: nil,

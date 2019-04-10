@@ -210,6 +210,36 @@ module Bosh::Director::DeploymentPlan
           existing_reservations[0].resolve_type(:dynamic)
         end
 
+        context 'when the existing ip is part of a vip static network but the desired network is a global vip network' do
+          let(:network) { VipNetwork.new('static-vip-network', nil, [], logger) }
+          let(:network_spec) do
+            {
+              'name' => 'global-vip-network',
+              'subnets' => [
+                { 'static' => ['192.168.1.1', '192.168.1.2'], azs: [instance_model.availability_zone] },
+              ],
+            }
+          end
+          let(:network2) { VipNetwork.parse(network_spec, [], logger) }
+
+          let(:existing_reservations) { [BD::ExistingNetworkReservation.new(instance_model, network, '192.168.1.2', 'vip')] }
+          let(:initial_az) { 'zone_1' }
+          it 'should keep the existing reservation' do
+            network_plans = network_planner.reconcile(existing_reservations)
+            obsolete_plans = network_plans.select(&:obsolete?)
+            existing_plans = network_plans.select(&:existing?)
+            desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
+
+            expect(obsolete_plans.count).to eq(0)
+            expect(existing_plans.count).to eq(1)
+            expect(desired_plans.count).to eq(0)
+
+            expect(existing_plans[0].reservation.network.name).to eq('global-vip-network')
+            expect(existing_plans[0].reservation.instance_model).to eq(instance_model)
+            expect(ip_to_netaddr(existing_plans[0].reservation.ip)).to eq('192.168.1.2')
+          end
+        end
+
         context 'when the network name changes' do
           let(:initial_az) { 'zone_1' }
           let(:network2) { ManualNetwork.new('my-network-2', subnets, logger) }
