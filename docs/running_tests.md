@@ -121,17 +121,17 @@ go/src/github.com/cloudfoundry/bosh-cli$ cd out && git init
 go/src/github.com/cloudfoundry/bosh-cli/out$ mv bosh bosh-cli-dev-linux-amd64
 ```
 
-In `src/bosh-dev/lib/bosh/dev/tasks/fly.rake` append the input folder as follows
+Then execute the integration tests with an additional parameter to set the
+directory of the bosh-cli:
 
 ```
-   def execute(task, command_options = nil, additional_env = {})
-     env = prepare_env(additional_env)
-     sh("#{env} fly #{concourse_target} sync")
-     sh(
--      "#{env} fly #{concourse_target} execute #{concourse_tag} #{command_options} -c ../ci/tasks/#{task}.yml -i bosh-src=$PWD/../",
-+      "#{env} fly #{concourse_target} execute #{concourse_tag} #{command_options} -c ../ci/tasks/#{task}.yml -i bosh-src=$PWD/../ -i bosh-cli=#{ENV['HOME']}/go/src/github.com/cloudfoundry/bosh-cli/out/",
-     )
-   end
+bosh/src$ CONCOURSE_TARGET=bosh bundle exec rake fly:integration[$HOME/go/src/github.com/cloudfoundry/bosh-cli/out/]
+```
+
+To focus on a given spec file you can use the environment variable `SPEC_PATH`
+
+```
+bosh/src$ SPEC_PATH=./spec/gocli/integration/cancel_tasks_spec.rb CONCOURSE_TARGET=bosh bundle exec rake fly:integration
 ```
 
 ### Acceptance Tests (BATs)

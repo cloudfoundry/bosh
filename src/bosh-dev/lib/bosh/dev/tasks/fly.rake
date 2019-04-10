@@ -11,8 +11,11 @@ namespace :fly do
 
   # bundle exec rake fly:integration
   desc 'Fly integration gocli specs'
-  task :integration do
-    execute('test-integration-gocli', '-p --inputs-from bosh/integration-db-tls-postgres',
+  task :integration, [:cli_dir] do |_, args|
+    command_opts = '-p --inputs-from bosh/integration-db-tls-postgres'
+    command_opts += " -i bosh-cli=#{args[:cli_dir]}" if args[:cli_dir]
+
+    execute('test-integration-gocli', command_opts,
             DB: (ENV['DB'] || 'postgresql'), SPEC_PATH: (ENV['SPEC_PATH'] || nil))
   end
 
