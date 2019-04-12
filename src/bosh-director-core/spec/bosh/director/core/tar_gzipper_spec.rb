@@ -1,6 +1,7 @@
 require 'spec_helper'
 
 require 'tmpdir'
+require 'tempfile'
 require 'fileutils'
 require 'bosh/director/core/tar_gzipper'
 
@@ -9,6 +10,7 @@ module Bosh::Director::Core
     let(:base_dir) { Dir.mktmpdir }
     let(:sources) { %w(1 one) }
     let(:dest) { Tempfile.new('logs') } # must keep tempfile reference lest it rm
+    let!(:backup) { Tempfile.new('backup.tgz') }
     let(:errored_retval) { ['stdout string', 'a stderr message', double('Status', success?: false, exitstatus: 5)] }
     let(:success_retval) { ['', '', double('Status', success?: true)] }
 
@@ -25,25 +27,26 @@ module Bosh::Director::Core
     after do
       FileUtils.rm_rf(base_dir)
       FileUtils.rm_rf(dest.path)
+      FileUtils.rm_rf(backup.path)
     end
 
     context 'when copy first feature is enabled' do
       it 'copies the files to a temp directory before archiving' do
         allow(Dir).to receive(:mktmpdir).and_yield('/tempthing')
-        expect(FileUtils).to receive(:cp_r).with(%w(/foo/./baz /foo/bar), '/tempthing/')
+        expect(FileUtils).to receive(:cp_r).with(%w[/foo/./baz /foo/bar], '/tempthing/')
         allow(Pathname).to receive(:new).and_return(instance_double('Pathname', exist?: true, absolute?: true))
 
         expect(Open3).to receive(:capture3)
-        .with(*%w(tar -C /tempthing -czf /tmp/backup.tgz ./baz bar))
-        .and_return(success_retval)
+          .with('tar', '-C', '/tempthing', '-czf', backup.path, './baz', 'bar')
+          .and_return(success_retval)
 
-        subject.compress('/foo', %w(./baz bar), '/tmp/backup.tgz', copy_first: true)
+        subject.compress('/foo', %w[./baz bar], backup.path, copy_first: true)
       end
     end
 
     it 'raises when a source has a path depth greater than 1' do # sources that contain a '/'
       expect {
-        subject.compress('/var/vcap/foo', %w(foo/bar), '/tmp/backup.tgz')
+        subject.compress('/var/vcap/foo', %w[foo/bar], backup.path)
       }.to raise_error("Sources must have a path depth of 1 and contain no '/'")
     end
 
