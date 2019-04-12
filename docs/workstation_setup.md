@@ -91,7 +91,7 @@
 10. Download `bosh-agent` dependency:
     ```
     cd ~/workspace/bosh/src
-    rake spec:integration:download_bosh_agent
+    bundle exec rake spec:integration:download_bosh_agent
     ```
 
 ## Issues
