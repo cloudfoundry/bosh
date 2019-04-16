@@ -25,9 +25,9 @@ properties:
   nats.ping_max_outstanding:
     description: Maximum number of pings before declaring a client unresponsive
     default: 2
-  nats.max_payload:
-    description: Maximum message size in bytes, default 1MB
-    default: 1048576
+  nats.max_payload_mb:
+    description: Maximum message size in megabytes
+    default: 1
   nats.user:
     description: Username clients must use to access nats mbus
   nats.password:
