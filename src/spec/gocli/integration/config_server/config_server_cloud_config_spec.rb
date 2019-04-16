@@ -15,7 +15,7 @@ describe 'using director with config server', type: :integration do
       },
       'instance_groups' => [{
         'name' => 'our_instance_group',
-        'templates' => [{
+        'jobs' => [{
           'name' => 'job_1_with_many_properties',
           'properties' => {
             'gargamel' => {
@@ -267,7 +267,7 @@ describe 'using director with config server', type: :integration do
         },
         'instance_groups' => [{
           'name' => 'our_instance_group',
-          'templates' => [{
+          'jobs' => [{
             'name' => 'job_1_with_many_properties',
             'properties' => {
               'gargamel' => {
@@ -327,14 +327,14 @@ describe 'using director with config server', type: :integration do
         'name' => 'foo-deployment',
         'director_uuid' => nil,
         'releases' => [{ 'name' => 'bosh-release', 'version' => 'latest' }],
-        'jobs' => [
+        'instance_groups' => [
           {
             'azs' => ['z1'],
             'instances' => 1,
             'name' => 'hjMOn',
             'networks' => [{ 'name' => 'j6XUS1M', 'static_ips' => ['192.168.3.246'] }],
             'vm_type' => 'dMF8vIexnI',
-            'templates' => [{
+            'jobs' => [{
               'name' => 'foobar',
               'release' => 'bosh-release',
             }],

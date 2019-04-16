@@ -266,7 +266,8 @@ describe 'vm_types and stemcells', type: :integration do
   end
 
   #TODO Remove this test when backward compatibility of resource pool is no longer required
-  context 'when migrating from resource pool to vm_type and stemcell' do
+  # TODO: Remove test when done removing v1 manifest support
+  xcontext 'when migrating from resource pool to vm_type and stemcell' do
     it 'should not recreate instance when with vm_type and stemcell do not change' do
       env_hash = {
         'env1' => 'env_value1',

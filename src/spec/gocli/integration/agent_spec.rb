@@ -122,9 +122,7 @@ describe 'Agent', type: :integration do
           agent2.shift
 
           # director may make multiple ping calls when agent is slow to start
-          while agent2[0]['method'] == 'ping'
-            agent2.shift
-          end
+          agent2.shift while agent2[0]['method'] == 'ping'
 
           expect(agent2.length).to eq(15)
 
@@ -177,9 +175,7 @@ describe 'Agent', type: :integration do
             agent2.shift
 
             # director may make multiple ping calls when agent is slow to start
-            while agent2[0]['method'] == 'ping'
-              agent2.shift
-            end
+            agent2.shift while agent2[0]['method'] == 'ping'
 
             expect(agent2.length).to eq(17)
 
@@ -270,56 +266,17 @@ describe 'Agent', type: :integration do
 
   describe 'deploy' do
     let(:manifest_hash) do
-      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, legacy_job: true)
-      manifest_hash['properties'] = {
+      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
+      manifest_hash['instance_groups'][0]['jobs'][0]['properties'] = {
         'test_property' => 5,
       }
       manifest_hash
     end
 
     context 'updating the deployment with a property change' do
-      context 'when using manifest v2' do
-        let(:manifest_hash) do
-          manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, legacy_job: false)
-          manifest_hash['instance_groups'][0]['jobs'][0]['properties'] = {
-            'test_property' => 5,
-          }
-          manifest_hash
-        end
-
-        it 'should call these methods in the following order' do
-          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
-          manifest_hash['instance_groups'][0]['jobs'][0]['properties']['test_property'] = 7
-          output = deploy_simple_manifest(manifest_hash: manifest_hash)
-          sent_messages = get_messages_sent_to_agent(output)
-
-          agent_messages = sent_messages.values[0]
-          expect(agent_messages.length).to eq(13)
-
-          expect(agent_messages[0]['method']).to eq('get_state')
-          expect(agent_messages[1]['method']).to eq('prepare')
-          expect(agent_messages[2]['method']).to eq('run_script')
-          expect(agent_messages[2]['arguments']).to eq(['pre-stop', default_pre_stop_env])
-          expect(agent_messages[3]['method']).to eq('drain')
-          expect(agent_messages[4]['method']).to eq('stop')
-          expect(agent_messages[5]['method']).to eq('run_script')
-          expect(agent_messages[5]['arguments']).to eq(['post-stop', {}])
-          expect(agent_messages[6]['method']).to eq('update_settings')
-          expect(agent_messages[7]['method']).to eq('apply')
-          expect(agent_messages[8]['method']).to eq('run_script')
-          expect(agent_messages[8]['arguments']).to eq(['pre-start', {}])
-          expect(agent_messages[9]['method']).to eq('start')
-          expect(agent_messages[10]['method']).to eq('get_state')
-          expect(agent_messages[11]['method']).to eq('run_script')
-          expect(agent_messages[11]['arguments']).to eq(['post-start', {}])
-          expect(agent_messages[12]['method']).to eq('run_script')
-          expect(agent_messages[12]['arguments'][0]).to eq('post-deploy')
-        end
-      end
-
       it 'should call these methods in the following order' do
-        deploy_from_scratch(manifest_hash: manifest_hash)
-        manifest_hash['properties']['test_property'] = 7
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+        manifest_hash['instance_groups'][0]['jobs'][0]['properties']['test_property'] = 7
         output = deploy_simple_manifest(manifest_hash: manifest_hash)
         sent_messages = get_messages_sent_to_agent(output)
 
@@ -345,43 +302,43 @@ describe 'Agent', type: :integration do
         expect(agent_messages[12]['method']).to eq('run_script')
         expect(agent_messages[12]['arguments'][0]).to eq('post-deploy')
       end
+    end
 
-      context 'when enable_nats_delivered_templates is set to TRUE' do
-        with_reset_sandbox_before_each(enable_nats_delivered_templates: true)
+    context 'when enable_nats_delivered_templates is set to TRUE' do
+      with_reset_sandbox_before_each(enable_nats_delivered_templates: true)
 
-        before do
-          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
-        end
+      before do
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+      end
 
-        it 'should call these methods in the following order' do
-          manifest_hash['properties']['test_property'] = 7
-          output = deploy_simple_manifest(manifest_hash: manifest_hash)
-          sent_messages = get_messages_sent_to_agent(output)
+      it 'should call these methods in the following order' do
+        manifest_hash['instance_groups'][0]['jobs'][0]['properties']['test_property'] = 7
+        output = deploy_simple_manifest(manifest_hash: manifest_hash)
+        sent_messages = get_messages_sent_to_agent(output)
 
-          agent_messages = sent_messages.values[0]
-          expect(agent_messages.length).to eq(15)
+        agent_messages = sent_messages.values[0]
+        expect(agent_messages.length).to eq(15)
 
-          expect(agent_messages[0]['method']).to eq('get_state')
-          expect(agent_messages[1]['method']).to eq('upload_blob')
-          expect(agent_messages[2]['method']).to eq('prepare')
-          expect(agent_messages[3]['method']).to eq('run_script')
-          expect(agent_messages[3]['arguments']).to eq(['pre-stop', default_pre_stop_env])
-          expect(agent_messages[4]['method']).to eq('drain')
-          expect(agent_messages[5]['method']).to eq('stop')
-          expect(agent_messages[6]['method']).to eq('run_script')
-          expect(agent_messages[6]['arguments']).to eq(['post-stop', {}])
-          expect(agent_messages[7]['method']).to eq('update_settings')
-          expect(agent_messages[8]['method']).to eq('upload_blob')
-          expect(agent_messages[9]['method']).to eq('apply')
-          expect(agent_messages[10]['method']).to eq('run_script')
-          expect(agent_messages[10]['arguments']).to eq(['pre-start', {}])
-          expect(agent_messages[11]['method']).to eq('start')
-          expect(agent_messages[12]['method']).to eq('get_state')
-          expect(agent_messages[13]['method']).to eq('run_script')
-          expect(agent_messages[13]['arguments']).to eq(['post-start', {}])
-          expect(agent_messages[14]['method']).to eq('run_script')
-          expect(agent_messages[14]['arguments'][0]).to eq('post-deploy')
-        end
+        expect(agent_messages[0]['method']).to eq('get_state')
+        expect(agent_messages[1]['method']).to eq('upload_blob')
+        expect(agent_messages[2]['method']).to eq('prepare')
+        expect(agent_messages[3]['method']).to eq('run_script')
+        expect(agent_messages[3]['arguments']).to eq(['pre-stop', default_pre_stop_env])
+        expect(agent_messages[4]['method']).to eq('drain')
+        expect(agent_messages[5]['method']).to eq('stop')
+        expect(agent_messages[6]['method']).to eq('run_script')
+        expect(agent_messages[6]['arguments']).to eq(['post-stop', {}])
+        expect(agent_messages[7]['method']).to eq('update_settings')
+        expect(agent_messages[8]['method']).to eq('upload_blob')
+        expect(agent_messages[9]['method']).to eq('apply')
+        expect(agent_messages[10]['method']).to eq('run_script')
+        expect(agent_messages[10]['arguments']).to eq(['pre-start', {}])
+        expect(agent_messages[11]['method']).to eq('start')
+        expect(agent_messages[12]['method']).to eq('get_state')
+        expect(agent_messages[13]['method']).to eq('run_script')
+        expect(agent_messages[13]['arguments']).to eq(['post-start', {}])
+        expect(agent_messages[14]['method']).to eq('run_script')
+        expect(agent_messages[14]['arguments'][0]).to eq('post-deploy')
       end
     end
 
@@ -391,7 +348,7 @@ describe 'Agent', type: :integration do
       it 'calls post-deploy' do
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
-        manifest_hash['properties']['test_property'] = 7
+        manifest_hash['instance_groups'][0]['jobs'][0]['properties']['test_property'] = 7
         output = deploy_simple_manifest(manifest_hash: manifest_hash)
         sent_messages = get_messages_sent_to_agent(output)
 
@@ -426,7 +383,7 @@ describe 'Agent', type: :integration do
         end
 
         it 'calls post-deploy with upload_blobs' do
-          manifest_hash['properties']['test_property'] = 7
+          manifest_hash['instance_groups'][0]['jobs'][0]['properties']['test_property'] = 7
           output = deploy_simple_manifest(manifest_hash: manifest_hash)
           sent_messages = get_messages_sent_to_agent(output)
 
@@ -463,7 +420,7 @@ describe 'Agent', type: :integration do
       it 'does not call post-deploy' do
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
-        manifest_hash['properties']['test_property'] = 7
+        manifest_hash['instance_groups'][0]['jobs'][0]['properties']['test_property'] = 7
         output = deploy_simple_manifest(manifest_hash: manifest_hash)
 
         sent_messages = get_messages_sent_to_agent(output)
@@ -523,7 +480,7 @@ describe 'Agent', type: :integration do
 
       context 'when deleting a VM' do
         it 'sets the pre-stop environment variables correctly' do
-          manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, legacy_job: false)
+          manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
           deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
           manifest_hash['instance_groups'][0]['jobs'][0]['properties']['test_property'] = 7
           output = deploy_simple_manifest(manifest_hash: manifest_hash, recreate: true)
@@ -544,7 +501,7 @@ describe 'Agent', type: :integration do
 
       context 'when deleting an instance' do
         it 'sets the pre-stop environment variables correctly' do
-          manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, legacy_job: false)
+          manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
           deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
           manifest_hash['instance_groups'][0]['instances'] = 0
 
@@ -566,7 +523,7 @@ describe 'Agent', type: :integration do
 
       context 'when deleting a deployment' do
         it 'sets the pre-stop environment variables correctly' do
-          manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, legacy_job: false)
+          manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
           deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
           output = bosh_runner.run(
             'delete-deployment',
@@ -589,7 +546,7 @@ describe 'Agent', type: :integration do
 
       context 'when no deletion of the VM is required' do
         it 'sets the pre-stop variables correctly' do
-          manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, legacy_job: false)
+          manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
           deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
           manifest_hash['instance_groups'][0]['jobs'][0]['properties']['test_property'] = 7
           output = deploy_simple_manifest(manifest_hash: manifest_hash, recreate: false)

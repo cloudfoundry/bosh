@@ -1,6 +1,7 @@
 require 'spec_helper'
 
-describe 'legacy deployment', type: :integration do
+# TODO: Remove test when done removing v1 manifest support
+xdescribe 'legacy deployment', type: :integration do
   with_reset_sandbox_before_each
 
   let(:legacy_manifest_hash) do

@@ -140,7 +140,8 @@ describe 'migrated from', type: :integration do
     manifest_hash
   end
 
-  context 'when migrating to availability zones' do
+  # TODO: Remove test when done removing v1 manifest support ?? Not as sure about this one
+  xcontext 'when migrating to availability zones' do
     let(:disk_pool_spec) do
       {
         'name' => 'fast_disks',
@@ -153,7 +154,7 @@ describe 'migrated from', type: :integration do
       legacy_manifest = Bosh::Spec::Deployments.legacy_manifest
       legacy_manifest['networks'].first['subnets'] = [subnet1, subnet2]
       legacy_manifest['disk_pools'] = [disk_pool_spec]
-      legacy_manifest['jobs'] = [
+      legacy_manifest['instance_groups'] = [
         etcd_z1_instance_group,
         etcd_z2_instance_group,
       ]

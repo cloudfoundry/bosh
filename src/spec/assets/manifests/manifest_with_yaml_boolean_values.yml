@@ -1,6 +1,8 @@
 director_uuid: deadbeef
-jobs:
+instance_groups:
 - instances: 1
+  jobs:
+  - name: foobar
   name: foobar
   networks:
   - name: a
@@ -9,8 +11,6 @@ jobs:
       "n": "yes"
       "y": "no"
   stemcell: default
-  templates:
-  - name: foobar
   vm_type: a
 name: simple
 releases:

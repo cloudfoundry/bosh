@@ -32,7 +32,12 @@ module Bosh::Director::DeploymentPlan
 
     let(:network_planner) { NetworkPlanner::Planner.new(logger) }
     let(:network_reservation_repository) { BD::DeploymentPlan::NetworkReservationRepository.new(planner, logger) }
-    let(:planner) { planner_factory.create_from_manifest(manifest, cloud_configs, [], {}) }
+    let(:planner) do
+      planner = planner_factory.create_from_manifest(manifest, cloud_configs, [], {})
+      stemcell = Stemcell.parse(manifest_hash['stemcells'].first)
+      planner.add_stemcell(stemcell)
+      planner
+    end
     let(:planner_factory) { PlannerFactory.new(deployment_manifest_migrator, manifest_validator, deployment_repo, logger) }
     let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new }
     let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, YAML.dump(manifest_hash), cloud_config_hash, nil) }
@@ -52,7 +57,7 @@ module Bosh::Director::DeploymentPlan
         'dns' => ['8.8.8.8'],
         'static' => static_ips,
         'reserved' => [],
-        'cloud_properties' => {}
+        'cloud_properties' => {},
       }
       spec['azs'] = zone_names if zone_names
       spec
@@ -62,13 +67,13 @@ module Bosh::Director::DeploymentPlan
         { 'name' => 'a',
           'subnets' => [
             make_subnet_spec('192.168.1.0/24', ['192.168.1.10 - 192.168.1.14'], ['zone1']),
-            make_subnet_spec('192.168.2.0/24', ['192.168.2.10 - 192.168.2.14'], ['zone2'])
+            make_subnet_spec('192.168.2.0/24', ['192.168.2.10 - 192.168.2.14'], ['zone2']),
           ] },
         { 'name' => 'b',
           'subnets' => [
             make_subnet_spec('10.10.1.0/24', ['10.10.1.10 - 10.10.1.14'], ['zone1']),
-            make_subnet_spec('10.10.2.0/24', ['10.10.2.10 - 10.10.2.14'], ['zone2'])
-          ] }
+            make_subnet_spec('10.10.2.0/24', ['10.10.2.10 - 10.10.2.14'], ['zone2']),
+          ] },
       ]
     end
 
@@ -76,22 +81,16 @@ module Bosh::Director::DeploymentPlan
       {
         'networks' => networks_spec,
         'compilation' => { 'workers' => 1, 'network' => 'a', 'cloud_properties' => {}, 'az' => cloud_config_availability_zones.first['name'] },
-        'resource_pools' => [
-          {
-            'name' => 'a',
-            'size' => 3,
-            'cloud_properties' => {},
-            'network' => 'a',
-            'stemcell' => { 'name' => 'ubuntu-stemcell', 'version' => '1' }
-          }
-        ],
-        'azs' => cloud_config_availability_zones
+        'vm_types' => [{
+          'name' => 'tiny',
+        }],
+        'azs' => cloud_config_availability_zones,
       }
     end
     let(:cloud_config_availability_zones) do
       [
         { 'name' => 'zone1', 'cloud_properties' => { foo: 'bar' } },
-        { 'name' => 'zone2', 'cloud_properties' => { foo: 'baz' } }
+        { 'name' => 'zone2', 'cloud_properties' => { foo: 'baz' } },
       ]
     end
     let(:manifest_hash) do
@@ -100,17 +99,19 @@ module Bosh::Director::DeploymentPlan
         'director_uuid' => 'deadbeef',
         'releases' => [{ 'name' => 'bosh-release', 'version' => '0.1-dev' }],
         'update' => { 'canaries' => 2, 'canary_watch_time' => 4000, 'max_in_flight' => 1, 'update_watch_time' => 20 },
-        'jobs' => [
+        'stemcells' => [{ 'name' => 'ubuntu-stemcell', 'version' => '1', 'alias' => 'default' }],
+        'instance_groups' => [
           {
             'name' => 'fake-job',
-            'templates' => [{ 'name' => 'foobar' }],
-            'resource_pool' => 'a',
+            'jobs' => [{ 'name' => 'foobar' }],
+            'vm_type' => 'tiny',
+            'stemcell' => 'default',
             'instances' => desired_instance_count,
             'networks' => job_networks,
             'properties' => {},
-            'azs' => job_availability_zones
-          }
-        ]
+            'azs' => job_availability_zones,
+          },
+        ],
       }
     end
 
@@ -136,17 +137,17 @@ module Bosh::Director::DeploymentPlan
               { 'name' => 'a',
                 'subnets' => [
                   make_subnet_spec('192.168.1.0/24', ['192.168.1.10 - 192.168.1.14'], nil),
-                  make_subnet_spec('192.168.2.0/24', ['192.168.2.10 - 192.168.2.14'], nil)
+                  make_subnet_spec('192.168.2.0/24', ['192.168.2.10 - 192.168.2.14'], nil),
                 ] },
               { 'name' => 'b',
                 'subnets' => [
                   make_subnet_spec('10.10.1.0/24', ['10.10.1.10 - 10.10.1.14'], nil),
-                  make_subnet_spec('10.10.2.0/24', ['10.10.2.10 - 10.10.2.14'], nil)
-                ] }
+                  make_subnet_spec('10.10.2.0/24', ['10.10.2.10 - 10.10.2.14'], nil),
+                ] },
             ]
           end
           before do
-            manifest_hash['jobs'].each { |entry| entry.delete('azs') }
+            manifest_hash['instance_groups'].each { |entry| entry.delete('azs') }
             cloud_config_hash['compilation'].delete('az')
           end
 
@@ -164,7 +165,7 @@ module Bosh::Director::DeploymentPlan
             expect(obsolete_instance_plans).to eq([])
             expect(new_instance_plans.map(&:desired_instance).map(&:az).map(&:name)).to eq(%w[zone1 zone1 zone1])
             expect(new_instance_plans.map(&:network_plans).flatten.map(&:reservation).map(&:ip)).to eq(
-              [ip_to_i('192.168.1.10'), ip_to_i('192.168.1.11'), ip_to_i('192.168.1.12')]
+              [ip_to_i('192.168.1.10'), ip_to_i('192.168.1.11'), ip_to_i('192.168.1.12')],
             )
           end
         end
@@ -200,8 +201,8 @@ module Bosh::Director::DeploymentPlan
                 'subnets' => [
                   make_subnet_spec('192.168.1.0/24',
                                    ['192.168.1.10 - 192.168.1.14'],
-                                   %w[zone1 zone2])
-                ] }
+                                   %w[zone1 zone2]),
+                ] },
             ]
           end
 
@@ -223,7 +224,7 @@ module Bosh::Director::DeploymentPlan
           let(:job_networks) do
             [
               { 'name' => 'a', 'static_ips' => ['192.168.1.10', '192.168.1.11'], 'default' => %w[dns gateway] },
-              { 'name' => 'b', 'static_ips' => ['10.10.1.10', '10.10.1.11'] }
+              { 'name' => 'b', 'static_ips' => ['10.10.1.10', '10.10.1.11'] },
             ]
           end
 
@@ -234,12 +235,12 @@ module Bosh::Director::DeploymentPlan
 
             expect(new_instance_plans[0].desired_instance.az.name).to eq('zone1')
             expect(new_instance_plans[0].network_plans.map(&:reservation).map(&:ip)).to eq(
-              [ip_to_i('192.168.1.10'), ip_to_i('10.10.1.10')]
+              [ip_to_i('192.168.1.10'), ip_to_i('10.10.1.10')],
             )
 
             expect(new_instance_plans[1].desired_instance.az.name).to eq('zone1')
             expect(new_instance_plans[1].network_plans.map(&:reservation).map(&:ip)).to eq(
-              [ip_to_i('192.168.1.11'), ip_to_i('10.10.1.11')]
+              [ip_to_i('192.168.1.11'), ip_to_i('10.10.1.11')],
             )
           end
         end
@@ -249,7 +250,7 @@ module Bosh::Director::DeploymentPlan
           let(:job_networks) do
             [
               { 'name' => 'a', 'static_ips' => ['192.168.1.10', '192.168.2.10'], 'default' => %w[dns gateway] },
-              { 'name' => 'b', 'static_ips' => ['10.10.1.10', '10.10.2.10'] }
+              { 'name' => 'b', 'static_ips' => ['10.10.1.10', '10.10.2.10'] },
             ]
           end
 
@@ -260,12 +261,12 @@ module Bosh::Director::DeploymentPlan
 
             expect(new_instance_plans[0].desired_instance.az.name).to eq('zone1')
             expect(new_instance_plans[0].network_plans.map(&:reservation).map(&:ip)).to eq(
-              [ip_to_i('192.168.1.10'), ip_to_i('10.10.1.10')]
+              [ip_to_i('192.168.1.10'), ip_to_i('10.10.1.10')],
             )
 
             expect(new_instance_plans[1].desired_instance.az.name).to eq('zone2')
             expect(new_instance_plans[1].network_plans.map(&:reservation).map(&:ip)).to eq(
-              [ip_to_i('192.168.2.10'), ip_to_i('10.10.2.10')]
+              [ip_to_i('192.168.2.10'), ip_to_i('10.10.2.10')],
             )
           end
         end
@@ -277,7 +278,7 @@ module Bosh::Director::DeploymentPlan
               { 'name' => 'a', 'static_ips' => ['192.168.1.10-192.168.1.12', '192.168.2.10'], 'default' => %w[dns gateway] },
               { 'name' => 'b', 'static_ips' => ['10.10.1.10 - 10.10.1.11', '10.10.2.10-10.10.2.11'] },
               { 'name' => 'c', 'static_ips' => ['172.16.1.10', '172.16.2.10-172.16.2.12'] },
-              { 'name' => 'd', 'static_ips' => ['64.8.1.10', '64.8.2.10', '64.8.3.10-64.8.3.11'] }
+              { 'name' => 'd', 'static_ips' => ['64.8.1.10', '64.8.2.10', '64.8.3.10-64.8.3.11'] },
             ]
           end
           let(:job_availability_zones) { %w[z1 z2 z3 z4] }
@@ -286,24 +287,24 @@ module Bosh::Director::DeploymentPlan
               { 'name' => 'a',
                 'subnets' => [
                   make_subnet_spec('192.168.1.0/24', ['192.168.1.10 - 192.168.1.14'], %w[z1 z2 z3]),
-                  make_subnet_spec('192.168.2.0/24', ['192.168.2.10 - 192.168.2.14'], ['z4'])
+                  make_subnet_spec('192.168.2.0/24', ['192.168.2.10 - 192.168.2.14'], ['z4']),
                 ] },
               { 'name' => 'b',
                 'subnets' => [
                   make_subnet_spec('10.10.1.0/24', ['10.10.1.10 - 10.10.1.14'], %w[z1 z2]),
-                  make_subnet_spec('10.10.2.0/24', ['10.10.2.10 - 10.10.2.14'], %w[z3 z4])
+                  make_subnet_spec('10.10.2.0/24', ['10.10.2.10 - 10.10.2.14'], %w[z3 z4]),
                 ] },
               { 'name' => 'c',
                 'subnets' => [
                   make_subnet_spec('172.16.1.0/24', ['172.16.1.10 - 172.16.1.14'], ['z1']),
-                  make_subnet_spec('172.16.2.0/24', ['172.16.2.10 - 172.16.2.14'], %w[z2 z3 z4])
+                  make_subnet_spec('172.16.2.0/24', ['172.16.2.10 - 172.16.2.14'], %w[z2 z3 z4]),
                 ] },
               { 'name' => 'd',
                 'subnets' => [
                   make_subnet_spec('64.8.1.0/24', ['64.8.1.10 - 64.8.1.14'], ['z1']),
                   make_subnet_spec('64.8.2.0/24', ['64.8.2.10 - 64.8.2.14'], ['z2']),
-                  make_subnet_spec('64.8.3.0/24', ['64.8.3.10 - 64.8.3.14'], %w[z3 z4])
-                ] }
+                  make_subnet_spec('64.8.3.0/24', ['64.8.3.10 - 64.8.3.14'], %w[z3 z4]),
+                ] },
             ]
           end
           let(:cloud_config_availability_zones) do
@@ -335,14 +336,14 @@ module Bosh::Director::DeploymentPlan
           let(:job_networks) do
             [
               { 'name' => 'a', 'static_ips' => ['192.168.1.10', '192.168.2.10'], 'default' => %w[dns gateway] },
-              { 'name' => 'b', 'static_ips' => ['10.10.1.10', '10.10.1.11'] }
+              { 'name' => 'b', 'static_ips' => ['10.10.1.10', '10.10.1.11'] },
             ]
           end
 
           it 'raises an error' do
             expect { instance_plans }.to raise_error(
               Bosh::Director::InstanceGroupNetworkInstanceIpMismatch,
-              "Failed to evenly distribute static IPs between zones for instance group 'fake-job'"
+              "Failed to evenly distribute static IPs between zones for instance group 'fake-job'",
             )
           end
         end
@@ -356,7 +357,7 @@ module Bosh::Director::DeploymentPlan
             let(:existing_instances) do
               [
                 existing_instance_with_az_and_ips('zone1', ['192.168.1.10']),
-                existing_instance_with_az_and_ips('zone2', ['192.168.2.10'])
+                existing_instance_with_az_and_ips('zone2', ['192.168.2.10']),
               ]
             end
 
@@ -377,7 +378,7 @@ module Bosh::Director::DeploymentPlan
             let(:existing_instances) do
               [
                 existing_instance_with_az_and_ips('zone1', ['192.168.1.10']),
-                existing_instance_with_az_and_ips('zone2', ['192.168.2.10'])
+                existing_instance_with_az_and_ips('zone2', ['192.168.2.10']),
               ]
             end
             let(:job_availability_zones) { ['zone1'] }
@@ -391,7 +392,7 @@ module Bosh::Director::DeploymentPlan
                 new_instance_plans
               end.to raise_error(
                 Bosh::Director::NetworkReservationError,
-                "Existing instance 'fake-job/#{existing_instances[1].index}' is using IP '192.168.2.10' in availability zone 'zone2'"
+                "Existing instance 'fake-job/#{existing_instances[1].index}' is using IP '192.168.2.10' in availability zone 'zone2'",
               )
             end
           end
@@ -402,7 +403,7 @@ module Bosh::Director::DeploymentPlan
             let(:existing_instances) do
               [
                 existing_instance_with_az_and_ips('zone1', ['192.168.1.10']),
-                existing_instance_with_az_and_ips('zone2', ['192.168.2.10'])
+                existing_instance_with_az_and_ips('zone2', ['192.168.2.10']),
               ]
             end
             let(:job_availability_zones) { %w[zone1 zone2] }
@@ -468,8 +469,8 @@ module Bosh::Director::DeploymentPlan
               [
                 { 'name' => 'a',
                   'subnets' => [
-                    make_subnet_spec('192.168.1.0/24', ['192.168.1.10 - 192.168.1.14'], new_subnet_azs)
-                  ] }
+                    make_subnet_spec('192.168.1.0/24', ['192.168.1.10 - 192.168.1.14'], new_subnet_azs),
+                  ] },
               ]
             end
             let(:new_subnet_azs) { %w[zone2 zone1] }
@@ -494,7 +495,7 @@ module Bosh::Director::DeploymentPlan
                   new_instance_plans
                 end.to raise_error(
                   Bosh::Director::NetworkReservationError,
-                  "Existing instance 'fake-job/#{existing_instances[0].index}' is using IP '192.168.1.10' in availability zone 'zone1'"
+                  "Existing instance 'fake-job/#{existing_instances[0].index}' is using IP '192.168.1.10' in availability zone 'zone1'",
                 )
               end
             end
@@ -505,7 +506,7 @@ module Bosh::Director::DeploymentPlan
               let(:existing_instances) do
                 [
                   existing_instance_with_az_and_ips('zone1', ['192.168.1.10']),
-                  existing_instance_with_az_and_ips('zone1', ['192.168.1.12'])
+                  existing_instance_with_az_and_ips('zone1', ['192.168.1.12']),
                 ]
               end
               it 'should distribute the instances across the azs taking into account the existing instances' do
@@ -528,7 +529,7 @@ module Bosh::Director::DeploymentPlan
             let(:existing_instances) do
               [
                 existing_instance_with_az_and_ips('zone1', ['192.168.1.10']),
-                existing_instance_with_az_and_ips('zone2', ['192.168.2.10'])
+                existing_instance_with_az_and_ips('zone2', ['192.168.2.10']),
               ]
             end
 
@@ -549,7 +550,7 @@ module Bosh::Director::DeploymentPlan
           let(:job_networks) do
             [
               { 'name' => 'a', 'static_ips' => a_static_ips, 'default' => %w[dns gateway] },
-              { 'name' => 'b', 'static_ips' => b_static_ips }
+              { 'name' => 'b', 'static_ips' => b_static_ips },
             ]
           end
 
@@ -563,7 +564,7 @@ module Bosh::Director::DeploymentPlan
                   existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '10.10.1.10']),
                   existing_instance_with_az_and_ips('zone2', ['192.168.2.10', '10.10.2.10']),
                   existing_instance_with_az_and_ips('zone1', ['192.168.1.11', '10.10.1.11']),
-                  existing_instance_with_az_and_ips('zone2', ['192.168.2.11', '10.10.2.11'])
+                  existing_instance_with_az_and_ips('zone2', ['192.168.2.11', '10.10.2.11']),
                 ]
               end
 
@@ -574,22 +575,22 @@ module Bosh::Director::DeploymentPlan
 
                 expect(existing_instance_plans[0].desired_instance.az.name).to eq('zone1')
                 expect(existing_instance_plans[0].network_plans.map(&:reservation).map(&:ip)).to match_array(
-                  [ip_to_i('192.168.1.10'), ip_to_i('10.10.1.10')]
+                  [ip_to_i('192.168.1.10'), ip_to_i('10.10.1.10')],
                 )
 
                 expect(existing_instance_plans[1].desired_instance.az.name).to eq('zone2')
                 expect(existing_instance_plans[1].network_plans.map(&:reservation).map(&:ip)).to match_array(
-                  [ip_to_i('192.168.2.10'), ip_to_i('10.10.2.10')]
+                  [ip_to_i('192.168.2.10'), ip_to_i('10.10.2.10')],
                 )
 
                 expect(existing_instance_plans[2].desired_instance.az.name).to eq('zone1')
                 expect(existing_instance_plans[2].network_plans.map(&:reservation).map(&:ip)).to match_array(
-                  [ip_to_i('192.168.1.11'), ip_to_i('10.10.1.11')]
+                  [ip_to_i('192.168.1.11'), ip_to_i('10.10.1.11')],
                 )
 
                 expect(existing_instance_plans[3].desired_instance.az.name).to eq('zone2')
                 expect(existing_instance_plans[3].network_plans.map(&:reservation).map(&:ip)).to match_array(
-                  [ip_to_i('192.168.2.11'), ip_to_i('10.10.2.11')]
+                  [ip_to_i('192.168.2.11'), ip_to_i('10.10.2.11')],
                 )
               end
             end
@@ -600,7 +601,7 @@ module Bosh::Director::DeploymentPlan
                   existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '10.10.1.10']),
                   existing_instance_with_az_and_ips('zone2', ['192.168.2.14', '10.10.2.14']),
                   existing_instance_with_az_and_ips('zone1', ['192.168.1.14', '10.10.1.14']),
-                  existing_instance_with_az_and_ips('zone2', ['192.168.2.11', '10.10.2.11'])
+                  existing_instance_with_az_and_ips('zone2', ['192.168.2.11', '10.10.2.11']),
                 ]
               end
 
@@ -614,22 +615,22 @@ module Bosh::Director::DeploymentPlan
 
                 expect(existing_instance_plans[0].desired_instance.az.name).to eq('zone1')
                 expect(existing_instance_plans[0].network_plans.map(&:reservation).map(&:ip)).to match_array(
-                  [ip_to_i('192.168.1.10'), ip_to_i('10.10.1.10')]
+                  [ip_to_i('192.168.1.10'), ip_to_i('10.10.1.10')],
                 )
 
                 expect(existing_instance_plans[1].desired_instance.az.name).to eq('zone2')
                 expect(existing_instance_plans[1].network_plans.map(&:reservation).map(&:ip)).to match_array(
-                  [ip_to_i('192.168.2.11'), ip_to_i('10.10.2.11')]
+                  [ip_to_i('192.168.2.11'), ip_to_i('10.10.2.11')],
                 )
 
                 expect(existing_instance_plans[2].desired_instance.az.name).to eq('zone2')
                 expect(existing_instance_plans[2].network_plans.map(&:reservation).map(&:ip)).to match_array(
-                  [ip_to_i('192.168.2.10'), ip_to_i('10.10.2.10')]
+                  [ip_to_i('192.168.2.10'), ip_to_i('10.10.2.10')],
                 )
 
                 expect(existing_instance_plans[3].desired_instance.az.name).to eq('zone1')
                 expect(existing_instance_plans[3].network_plans.map(&:reservation).map(&:ip)).to match_array(
-                  [ip_to_i('192.168.1.11'), ip_to_i('10.10.1.12')]
+                  [ip_to_i('192.168.1.11'), ip_to_i('10.10.1.12')],
                 )
               end
             end
@@ -638,7 +639,7 @@ module Bosh::Director::DeploymentPlan
               let(:desired_instance_count) { 1 }
               let(:existing_instances) do
                 [
-                  existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '10.10.2.10'])
+                  existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '10.10.2.10']),
                 ]
               end
               let(:a_static_ips) { ['192.168.1.10'] }
@@ -651,7 +652,7 @@ module Bosh::Director::DeploymentPlan
 
                 expect(existing_instance_plans[0].desired_instance.az.name).to eq('zone1')
                 expect(existing_instance_plans[0].network_plans.map(&:reservation).map(&:ip)).to match_array(
-                  [ip_to_i('192.168.1.10'), ip_to_i('10.10.1.10')]
+                  [ip_to_i('192.168.1.10'), ip_to_i('10.10.1.10')],
                 )
               end
 
@@ -660,7 +661,7 @@ module Bosh::Director::DeploymentPlan
                 let(:existing_instances) do
                   [
                     existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '10.10.1.10']),
-                    existing_instance_with_az_and_ips('zone1', ['192.168.1.11', '10.10.1.11'])
+                    existing_instance_with_az_and_ips('zone1', ['192.168.1.11', '10.10.1.11']),
                   ]
                 end
                 let(:a_static_ips) { ['192.168.1.10 - 192.168.1.11', '192.168.2.10'] }
@@ -670,7 +671,7 @@ module Bosh::Director::DeploymentPlan
                   expect(new_instance_plans.size).to eq(1)
                   expect(new_instance_plans[0].desired_instance.az.name).to eq('zone2')
                   expect(new_instance_plans[0].network_plans.map(&:reservation).map(&:ip)).to match_array(
-                    [ip_to_i('192.168.2.10'), ip_to_i('10.10.2.10')]
+                    [ip_to_i('192.168.2.10'), ip_to_i('10.10.2.10')],
                   )
                   expect(obsolete_instance_plans).to eq([])
                   expect(existing_instance_plans.size).to eq(2)
@@ -683,7 +684,7 @@ module Bosh::Director::DeploymentPlan
                   [
                     existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '10.10.1.10']),
                     existing_instance_with_az_and_ips('zone1', ['192.168.1.11', '10.10.1.11']),
-                    existing_instance_with_az_and_ips('zone2', ['192.168.2.10', '10.10.2.10'])
+                    existing_instance_with_az_and_ips('zone2', ['192.168.2.10', '10.10.2.10']),
                   ]
                 end
                 let(:a_static_ips) { ['192.168.1.10', '192.168.2.10'] }
@@ -694,7 +695,7 @@ module Bosh::Director::DeploymentPlan
                   expect(existing_instance_plans.size).to eq(2)
                   expect(existing_instance_plans.map(&:existing_instance)).to match_array([
                                                                                             existing_instances[0],
-                                                                                            existing_instances[2]
+                                                                                            existing_instances[2],
                                                                                           ])
 
                   expect(obsolete_instance_plans.size).to eq(1)
@@ -709,7 +710,7 @@ module Bosh::Director::DeploymentPlan
               let(:existing_instances) do
                 [
                   existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '10.10.2.10']),
-                  existing_instance_with_az_and_ips('zone2', ['192.168.2.10', '10.10.2.11'])
+                  existing_instance_with_az_and_ips('zone2', ['192.168.2.10', '10.10.2.11']),
                 ]
               end
               let(:a_static_ips) { ['192.168.1.10', '192.168.2.10'] }
@@ -729,18 +730,18 @@ module Bosh::Director::DeploymentPlan
                   { 'name' => 'a',
                     'subnets' => [
                       make_subnet_spec('192.168.1.0/24', ['192.168.1.10 - 192.168.1.14'], nil),
-                      make_subnet_spec('192.168.2.0/24', ['192.168.2.10 - 192.168.2.14'], nil)
+                      make_subnet_spec('192.168.2.0/24', ['192.168.2.10 - 192.168.2.14'], nil),
                     ] },
                   { 'name' => 'b',
                     'subnets' => [
                       make_subnet_spec('10.10.1.0/24', ['10.10.1.10 - 10.10.1.14'], nil),
-                      make_subnet_spec('10.10.2.0/24', ['10.10.2.10 - 10.10.2.14'], nil)
-                    ] }
+                      make_subnet_spec('10.10.2.0/24', ['10.10.2.10 - 10.10.2.14'], nil),
+                    ] },
                 ]
               end
 
               before do
-                manifest_hash['jobs'].each { |entry| entry.delete('azs') }
+                manifest_hash['instance_groups'].each { |entry| entry.delete('azs') }
                 cloud_config_hash['compilation'].delete('az')
               end
 
@@ -749,7 +750,7 @@ module Bosh::Director::DeploymentPlan
                 let(:existing_instances) do
                   [
                     existing_instance_with_az_and_ips(nil, ['192.168.1.10', '10.10.1.10']),
-                    existing_instance_with_az_and_ips(nil, ['192.168.2.10', '10.10.2.11'])
+                    existing_instance_with_az_and_ips(nil, ['192.168.2.10', '10.10.2.11']),
                   ]
                 end
                 let(:a_static_ips) { ['192.168.1.10', '192.168.2.10'] }
@@ -764,7 +765,7 @@ module Bosh::Director::DeploymentPlan
                 let(:existing_instances) do
                   [
                     existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '10.10.1.10']),
-                    existing_instance_with_az_and_ips('zone2', ['192.168.2.10', '10.10.2.11'])
+                    existing_instance_with_az_and_ips('zone2', ['192.168.2.10', '10.10.2.11']),
                   ]
                 end
 
@@ -773,7 +774,7 @@ module Bosh::Director::DeploymentPlan
                     new_instance_plans
                   end.to raise_error(
                     Bosh::Director::NetworkReservationError,
-                    "Existing instance 'fake-job/#{existing_instances[0].index}' is using IP '192.168.1.10' in availability zone 'zone1'"
+                    "Existing instance 'fake-job/#{existing_instances[0].index}' is using IP '192.168.1.10' in availability zone 'zone1'",
                   )
                 end
               end
@@ -786,20 +787,20 @@ module Bosh::Director::DeploymentPlan
                 { 'name' => 'a',
                   'subnets' => [
                     make_subnet_spec('192.168.1.0/24', ['192.168.1.10 - 192.168.1.14'], ['zone1']),
-                    make_subnet_spec('192.168.2.0/24', ['192.168.2.10 - 192.168.2.14'], %w[zone1 zone2])
+                    make_subnet_spec('192.168.2.0/24', ['192.168.2.10 - 192.168.2.14'], %w[zone1 zone2]),
                   ] },
                 { 'name' => 'b',
                   'subnets' => [
                     make_subnet_spec('10.10.1.0/24', ['10.10.1.10 - 10.10.1.14'], ['zone1']),
-                    make_subnet_spec('10.10.2.0/24', ['10.10.2.10 - 10.10.2.14'], %w[zone1 zone2])
-                  ] }
+                    make_subnet_spec('10.10.2.0/24', ['10.10.2.10 - 10.10.2.14'], %w[zone1 zone2]),
+                  ] },
               ]
             end
             let(:desired_instance_count) { 2 }
             let(:existing_instances) do
               [
                 existing_instance_with_az_and_ips('zone1', ['192.168.5.10', '10.10.5.10']),
-                existing_instance_with_az_and_ips('zone1', ['192.168.6.10', '10.10.6.11'])
+                existing_instance_with_az_and_ips('zone1', ['192.168.6.10', '10.10.6.11']),
               ]
             end
             let(:a_static_ips) { ['192.168.1.10', '192.168.2.10'] }
@@ -810,12 +811,12 @@ module Bosh::Director::DeploymentPlan
               expect(existing_instance_plans.size).to eq(2)
               expect(existing_instance_plans[0].desired_instance.az.name).to eq('zone1')
               expect(existing_instance_plans[0].network_plans.map(&:reservation).map(&:ip)).to match_array(
-                [ip_to_i('192.168.1.10'), ip_to_i('10.10.1.10')]
+                [ip_to_i('192.168.1.10'), ip_to_i('10.10.1.10')],
               )
 
               expect(existing_instance_plans[1].desired_instance.az.name).to eq('zone1')
               expect(existing_instance_plans[1].network_plans.map(&:reservation).map(&:ip)).to match_array(
-                [ip_to_i('192.168.2.10'), ip_to_i('10.10.2.10')]
+                [ip_to_i('192.168.2.10'), ip_to_i('10.10.2.10')],
               )
             end
           end
@@ -825,12 +826,12 @@ module Bosh::Director::DeploymentPlan
             let(:job_networks) do
               [
                 { 'name' => 'a', 'static_ips' => a_static_ips, 'default' => %w[dns gateway] },
-                { 'name' => 'b' }
+                { 'name' => 'b' },
               ]
             end
             let(:existing_instances) do
               [
-                existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '192.168.2.10'])
+                existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '192.168.2.10']),
               ]
             end
             let(:a_static_ips) { ['192.168.1.10 - 192.168.1.11'] }
@@ -857,14 +858,14 @@ module Bosh::Director::DeploymentPlan
               let(:job_networks) do
                 [
                   { 'name' => 'a', 'static_ips' => a_static_ips, 'default' => %w[dns gateway] },
-                  { 'name' => 'b' }
+                  { 'name' => 'b' },
                 ]
               end
               let(:a_static_ips) { ['192.168.1.10 - 192.168.1.11'] }
 
               let(:existing_instances) do
                 [
-                  existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '192.168.2.10'])
+                  existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '192.168.2.10']),
                 ]
               end
 
@@ -889,7 +890,7 @@ module Bosh::Director::DeploymentPlan
           let(:existing_instances) do
             [
               existing_instance_with_az_and_ips('zone1', ['192.168.1.10'], 'old-network-name'),
-              existing_instance_with_az_and_ips('zone2', ['192.168.2.10'], 'old-network-name')
+              existing_instance_with_az_and_ips('zone2', ['192.168.2.10'], 'old-network-name'),
             ]
           end
 
@@ -923,14 +924,14 @@ module Bosh::Director::DeploymentPlan
 
     def existing_instance_with_az_and_ips(az, ips, network_name = 'a')
       instance = Bosh::Director::Models::Instance.make(
-        availability_zone: az, deployment: deployment_model, job: job.name
+        availability_zone: az, deployment: deployment_model, job: job.name,
       )
       ips.each do |ip|
         instance.add_ip_address(
           Bosh::Director::Models::IpAddress.make(
             address_str: NetAddr::CIDR.create(ip).to_i.to_s,
-            network_name: network_name
-          )
+            network_name: network_name,
+          ),
         )
       end
       instance

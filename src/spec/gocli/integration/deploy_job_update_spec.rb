@@ -54,7 +54,7 @@ describe 'deploy job update', type: :integration do
 
       bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
 
-      cloud_config_hash['vm_types'][0]['properties'] = {'prop1' => 'val1'}
+      cloud_config_hash['vm_types'][0]['properties'] = { 'prop1' => 'val1' }
 
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
       upload_runtime_config(runtime_config_hash: runtime_config_hash)
@@ -80,7 +80,8 @@ describe 'deploy job update', type: :integration do
       expect(deploy_output).to_not match(/dummy2/)
     end
 
-    context 'when using legacy deployment configuration' do
+    # TODO: Remove test when done removing v1 manifest support
+    xcontext 'when using legacy deployment configuration' do
       let(:legacy_manifest_hash) { Bosh::Spec::Deployments.legacy_manifest }
       let(:modified_legacy_manifest_hash) do
         modified_legacy_manifest_hash = Bosh::Spec::Deployments.legacy_manifest
@@ -114,7 +115,8 @@ describe 'deploy job update', type: :integration do
         end
       end
 
-      context 'when previous deployment was in the legacy style and there is no cloud config in the system' do
+      # TODO: Remove test when done removing v1 manifest support
+      xcontext 'when previous deployment was in the legacy style and there is no cloud config in the system' do
         before do
           create_and_upload_test_release
           upload_stemcell
@@ -165,7 +167,7 @@ describe 'deploy job update', type: :integration do
   def start_and_finish_times_for_job_updates(task_id)
     jobs = {}
     events(task_id).select do |e|
-      e['stage'] == 'Updating instance' && %w(started finished).include?(e['state'])
+      e['stage'] == 'Updating instance' && %w[started finished].include?(e['state'])
     end.each do |e|
       jobs[e['task']] ||= {}
       jobs[e['task']][e['state']] = e['time']

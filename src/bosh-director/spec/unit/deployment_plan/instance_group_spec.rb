@@ -146,7 +146,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         'instances' => 1,
         'networks' => [{ 'name' => 'fake-network-name' }],
         'properties' => props,
-        'template' => %w[foo bar],
+        'jobs' => [],
         'update' => update,
       }
     end
@@ -211,7 +211,10 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
           { 'name' => 'fake-network-name', 'default' => %w[dns gateway] },
           { 'name' => 'fake-network-name2' },
         ],
-        'template' => %w[foo bar],
+        'jobs' => [
+          { 'name' => 'foo', 'release' => 'appcloud' },
+          { 'name' => 'bar', 'release' => 'appcloud' },
+        ],
       }
     end
 
@@ -295,7 +298,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       let(:spec) do
         {
           'name' => 'foobar',
-          'templates' => [
+          'jobs' => [
             { 'name' => 'foo', 'release' => 'release1' },
             { 'name' => 'bar', 'release' => 'release1' },
           ],
@@ -307,7 +310,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         }
       end
 
-      context 'when templates depend on packages with the same name (i.e. same package)' do
+      context 'when jobs depend on packages with the same name (i.e. same package)' do
         before do
           release1_foo_job_model.package_names = ['same-name']
           release1_foo_job_model.save
@@ -322,11 +325,11 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       end
     end
 
-    context 'when the templates are from different releases' do
+    context 'when the jobs are from different releases' do
       let(:release2) do
         Bosh::Director::DeploymentPlan::ReleaseVersion.parse(deployment,
-                                                           'name' => 'release2',
-                                                           'version' => '1')
+                                                             'name' => 'release2',
+                                                             'version' => '1')
       end
       let(:release2_foo_job) do
         r = Bosh::Director::DeploymentPlan::Job.new(release2, 'foo')
@@ -391,7 +394,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       let(:spec) do
         {
           'name' => 'foobar',
-          'templates' => [
+          'jobs' => [
             { 'name' => 'foo', 'release' => 'release1' },
             { 'name' => 'bar', 'release' => 'release2', 'links' => { 'a' => 'x.y.z.zz' } },
           ],
@@ -403,7 +406,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         }
       end
 
-      context 'when templates do not depend on packages with the same name' do
+      context 'when jobs do not depend on packages with the same name' do
         before do
           link_provider = instance_double(Bosh::Director::Models::Links::LinkProvider)
           allow(links_manager).to receive(:find_or_create_provider).and_return(link_provider)
@@ -414,7 +417,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         end
       end
 
-      context 'when templates depend on packages with the same name' do
+      context 'when jobs depend on packages with the same name' do
         let(:release2_package1_name) { 'same-name' }
 
         context 'fingerprints are different' do
@@ -586,7 +589,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     let(:spec) do
       {
         'name' => 'job1',
-        'template' => 'foo',
+        'jobs' => [{ 'name' => 'foo', 'release' => 'release1' }],
         'release' => 'release1',
         'instances' => 1,
         'vm_type' => 'dea',
@@ -597,8 +600,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     end
 
     before do
-      allow(release1).to receive(:name).and_return('cf')
-
       allow(release1_foo_job).to receive(:version).and_return('200')
       allow(release1_foo_job).to receive(:sha1).and_return('fake_sha1')
       allow(release1_foo_job).to receive(:blobstore_id).and_return('blobstore_id_for_foo_job')
@@ -609,14 +610,14 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       allow(plan).to receive(:properties).with(no_args).and_return({})
     end
 
-    context "when a template has 'logs'" do
+    context "when a job has 'logs'" do
       before do
         allow(release1_foo_job).to receive(:logs).and_return(
           'filter_name1' => 'foo/*',
         )
       end
 
-      it 'contains name, release for the job, and logs spec for each template' do
+      it 'contains name, release for the job, and logs spec for each job' do
         expect(instance_group.spec).to eq(
           'name' => 'job1',
           'template' => 'foo',
@@ -821,7 +822,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         'stemcell' => 'dea',
         'networks' => [{ 'name' => 'fake-network-name' }],
         'properties' => {},
-        'template' => %w[foo bar],
+        'jobs' => [],
       }
     end
 
@@ -905,7 +906,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         'stemcell' => 'dea',
         'networks' => [{ 'name' => 'fake-network-name' }],
         'properties' => {},
-        'template' => %w[foo bar],
+        'jobs' => [],
       }
     end
 
@@ -992,7 +993,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         'stemcell' => 'dea',
         'networks' => [{ 'name' => 'fake-network-name' }],
         'properties' => {},
-        'template' => %w[foo bar],
+        'jobs' => [],
       }
     end
     let(:variable_set1) { instance_double(Bosh::Director::Models::VariableSet) }
@@ -1029,7 +1030,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         'stemcell' => 'dea',
         'networks' => [{ 'name' => 'fake-network-name' }],
         'properties' => {},
-        'template' => %w[foo bar],
+        'jobs' => [],
       }
     end
     let(:current_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }

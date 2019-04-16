@@ -12,7 +12,7 @@ module Bosh::Director
     # @param [Exception] exception
     # @return [DirectorError] Director error
     def self.create_from_exception(exception)
-      if exception.kind_of?(DirectorError)
+      if exception.is_a?(DirectorError)
         exception
       else
         DirectorError.new(exception.message)
@@ -42,7 +42,7 @@ module Bosh::Director
       super
       @response_code = 500
       @error_code = 100
-      @format = "Director error: %s"
+      @format = 'Director error: %s'
     end
   end
 
@@ -166,7 +166,7 @@ module Bosh::Director
   NetworkReservationIpReserved = err(130013)
   NetworkReservationVipMisconfigured = err(130014)
 
-  # Manifest parsing: job section
+  # Manifest parsing: instance group section
   InstanceGroupMissingRelease = err(140001)
   InstanceGroupUnknownRelease = err(140002)
   InstanceGroupUnknownResourcePool = err(140003)
@@ -176,7 +176,7 @@ module Bosh::Director
   InstanceGroupInvalidInstanceState = err(140007)
   InstanceGroupInvalidState = err(140008)
   JobMissingNetwork = err(140009)
-  InstanceGroupInvalidTemplates = err(140010)
+  InstanceGroupInvalidJobs = err(140010)
   JobInvalidLifecycle = err(140011)
   InstanceGroupUnknownDiskType = err(140012)
   InstanceGroupInvalidPersistentDisk = err(140013)
@@ -190,15 +190,19 @@ module Bosh::Director
   JobInstanceIgnored = err(140021)
   InstanceGroupBadVmConfiguration = err(140022)
 
-  # Manifest parsing: job networks section
+  V1DeprecatedJob = err(140023)
+  V1DeprecatedTemplate = err(140024)
+  V1DeprecatedResourcePool = err(140025)
+
+  # Manifest parsing: instance group networks section
   JobUnknownNetwork = err(150001)
   InstanceGroupNetworkInstanceIpMismatch = err(150002)
   JobNetworkInvalidDefault = err(150003)
   JobNetworkMultipleDefaults = err(150004)
   JobNetworkMissingDefault = err(150005)
-  JobNetworkMissingRequiredAvailabilityZone= err(150006)
-  JobStaticIpsFromInvalidAvailabilityZone= err(150007)
-  JobStaticIPNotSupportedOnDynamicNetwork= err(150008)
+  JobNetworkMissingRequiredAvailabilityZone = err(150006)
+  JobStaticIpsFromInvalidAvailabilityZone = err(150007)
+  JobStaticIPNotSupportedOnDynamicNetwork = err(150008)
   JobInvalidStaticIPs = err(150009)
 
   # Network
@@ -245,7 +249,7 @@ module Bosh::Director
   DeploymentIgnoredInstancesModification = err(190020)
   DeploymentIgnoredInstancesDeletion = err(190021)
   DeploymentDuplicateVariableName = err(190022)
-  DeploymentNATSClientCertificateGenerationError= err(190023)
+  DeploymentNATSClientCertificateGenerationError = err(190023)
   DeploymentRequired = err(190024)
   DeploymentInvalidConfigReference = err(190025)
 
@@ -305,7 +309,7 @@ module Bosh::Director
   # Disk errors
   DeletingPersistentDiskError = err(520000)
   AttachDiskErrorUnknownInstance = err(520001)
-  AttachDiskNoPersistentDisk =  err(520002)
+  AttachDiskNoPersistentDisk = err(520002)
   AttachDiskInvalidInstanceState = err(520003)
 
   # Addons

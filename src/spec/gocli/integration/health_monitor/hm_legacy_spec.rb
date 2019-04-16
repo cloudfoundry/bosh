@@ -1,6 +1,7 @@
 require_relative '../../spec_helper'
 
-describe 'health_monitor with legacy manifest', type: :integration, hm: true do
+# TODO: Remove test when done removing v1 manifest support
+xdescribe 'health_monitor with legacy manifest', type: :integration, hm: true do
   context 'if fix_stateful_nodes director option is not set' do
     with_reset_sandbox_before_each(director_fix_stateful_nodes: false)
     with_reset_hm_before_each

@@ -49,7 +49,8 @@ describe 'global networking', type: :integration do
       upload_stemcell
     end
 
-    context 'using legacy network configuration (no cloud config)' do
+    # TODO: Remove test when done removing v1 manifest support
+    xcontext 'using legacy network configuration (no cloud config)' do
       it 'gives the correct error message when there are not enough IPs for compilation (legacy)' do
         manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest({
           name: 'my-deploy',

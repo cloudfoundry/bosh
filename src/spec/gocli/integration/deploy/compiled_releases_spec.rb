@@ -209,7 +209,7 @@ describe 'compiled releases', type: :integration do
         'instance_groups' => [
           {
             'name' => 'job_with_many_packages',
-            'templates' => [
+            'jobs' => [
               {
                 'name' => 'job_with_many_packages',
               },

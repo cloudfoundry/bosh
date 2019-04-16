@@ -107,7 +107,8 @@ describe 'network configuration', type: :integration do
       deploy_simple_manifest(manifest_hash: manifest_hash) # expected to not failed
     end
 
-    it 'does not recreate VM when re-deploying with legacy (non-cloud-config) unchanged dynamic and vip networking' do
+    # TODO: Remove test when done removing v1 manifest support
+    xit 'does not recreate VM when re-deploying with legacy (non-cloud-config) unchanged dynamic and vip networking' do
       cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
       cloud_config_hash['networks'] = [{
         'name' => 'a',

@@ -21,7 +21,8 @@ describe 'resurrector', type: :integration, hm: true do
     manifest_hash
   end
 
-  context 'when we have legacy deployments deployed' do
+  # TODO: Remove test when done removing v1 manifest support
+  xcontext 'when we have legacy deployments deployed' do
     with_reset_hm_before_each
     let(:legacy_manifest) do
       legacy_manifest = Bosh::Spec::Deployments.legacy_manifest

@@ -9,7 +9,8 @@ describe 'global networking', type: :integration do
     upload_stemcell
   end
 
-  describe 'IP allocation without cloud config' do
+  # TODO: Remove test when done removing v1 manifest support
+  xdescribe 'IP allocation without cloud config' do
     context 'when there are many compilation packages' do
       let(:cloud_config_hash) do
         cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
@@ -227,7 +228,8 @@ describe 'global networking', type: :integration do
       manifest_hash
     end
 
-    context 'when two jobs use two resource pools which refer to the same stemcell' do
+    # TODO: Remove test when done removing v1 manifest support
+    xcontext 'when two jobs use two resource pools which refer to the same stemcell' do
       before do
         manifest_hash['resource_pools'] << {'name' => 'b', 'stemcell' => {'name' => 'ubuntu-stemcell', 'version' => '1'}}
       end
@@ -239,7 +241,8 @@ describe 'global networking', type: :integration do
       end
     end
 
-    context 'when two jobs use different resource pools which refer to different stemcells' do
+    # TODO: Remove test when done removing v1 manifest support
+    xcontext 'when two jobs use different resource pools which refer to different stemcells' do
       before do
         bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_2.tgz')}")
         manifest_hash['resource_pools'] << {'name' => 'b', 'stemcell' => {'name' => 'centos-stemcell', 'version' => '2'}}

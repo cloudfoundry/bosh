@@ -8,7 +8,7 @@ describe 'template', type: :integration do
     manifest_hash['instance_groups'] = [
       {
         'name' => 'id_job',
-        'templates' => ['name' => 'id_job'],
+        'jobs' => ['name' => 'id_job'],
         'vm_type' => 'a',
         'instances' => 1,
         'networks' => [{
@@ -32,7 +32,7 @@ describe 'template', type: :integration do
     manifest_hash['instance_groups'] = [
       {
         'name' => 'id_job',
-        'templates' => ['name' => 'id_job'],
+        'jobs' => ['name' => 'id_job'],
         'vm_type' => 'a',
         'instances' => 1,
         'networks' => [{

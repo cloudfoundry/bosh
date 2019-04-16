@@ -113,7 +113,8 @@ describe 'env values in instance groups and resource pools', type: :integration 
     end
   end
 
-  context 'when resource pool env is using variables (legacy manifest)' do
+  # TODO: Remove test when done removing v1 manifest support
+  xcontext 'when resource pool env is using variables (legacy manifest)' do
     with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa')
 
     let(:env_hash) do

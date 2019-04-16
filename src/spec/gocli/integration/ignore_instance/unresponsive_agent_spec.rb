@@ -3,7 +3,8 @@ require 'spec_helper'
 describe 'unresponsive agent', type: :integration do
   with_reset_sandbox_before_each
 
-  context 'when using v1 manifest' do
+  # TODO: Remove test when done removing v1 manifest support
+  xcontext 'when using v1 manifest' do
     it 'should timeout and fail' do
       manifest_hash = Bosh::Spec::Deployments.legacy_manifest
 

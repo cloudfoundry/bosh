@@ -2,14 +2,13 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Addon::Filter do
-
     subject(:addon_filter) { Addon::Filter.parse(filter_spec, filter_type) }
     let(:deployment_name) { 'dep1' }
     let(:deployment_model) { Models::Deployment.make(name: deployment_name) }
     let(:deployment_plan) do
-      planner_attributes = {name: deployment_name, properties: {}}
-      cloud_config = Bosh::Spec::Deployments.simple_cloud_config
-      manifest = Bosh::Spec::Deployments.simple_manifest
+      planner_attributes = { name: deployment_name, properties: {} }
+      cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
+      manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
       planner = DeploymentPlan::Planner.new(planner_attributes, manifest, YAML.dump(manifest), [Models::Config.make(:cloud, content: YAML.dump(cloud_config))], Bosh::Spec::Deployments.simple_runtime_config, deployment_model)
 
       release1 = Models::Release.make(name: '1')
@@ -21,9 +20,12 @@ module Bosh::Director
       planner.add_release(DeploymentPlan::ReleaseVersion.parse(deployment_model, 'name' => '1', 'version' => 'v1'))
       planner.add_release(DeploymentPlan::ReleaseVersion.parse(deployment_model, 'name' => '2', 'version' => 'v2'))
 
+      stemcell = DeploymentPlan::Stemcell.parse(manifest['stemcells'].first)
+      planner.add_stemcell(stemcell)
+
       planner.cloud_planner = DeploymentPlan::CloudManifestParser.new(logger).parse(cloud_config,
-        DeploymentPlan::GlobalNetworkResolver.new(planner, [], logger),
-        DeploymentPlan::IpProviderFactory.new(true, logger))
+                                                                                    DeploymentPlan::GlobalNetworkResolver.new(planner, [], logger),
+                                                                                    DeploymentPlan::IpProviderFactory.new(true, logger))
       planner.update = DeploymentPlan::UpdateConfig.new(manifest['update'])
 
       planner
@@ -34,12 +36,12 @@ module Bosh::Director
     end
 
     let(:instance_group1) do
-      group1_spec = Bosh::Spec::Deployments.simple_instance_group(name: 'group1', jobs: [{'name' => 'job1', 'release' => '1'}])
+      group1_spec = Bosh::Spec::NewDeployments.simple_instance_group(name: 'group1', jobs: [{ 'name' => 'job1', 'release' => '1' }])
       DeploymentPlan::InstanceGroup.parse(deployment_plan, group1_spec, Config.event_log, logger)
     end
 
     let(:instance_group2) do
-      group2_spec = Bosh::Spec::Deployments.simple_instance_group(name: 'group2', jobs: [{'name' => 'job1', 'release' => '1'}, {'name' => 'job2', 'release' => '2'}])
+      group2_spec = Bosh::Spec::NewDeployments.simple_instance_group(name: 'group2', jobs: [{ 'name' => 'job1', 'release' => '1' }, { 'name' => 'job2', 'release' => '2' }])
       DeploymentPlan::InstanceGroup.parse(deployment_plan, group2_spec, Config.event_log, logger)
     end
 
@@ -69,8 +71,8 @@ module Bosh::Director
       context 'when ONLY jobs key is present in the filter spec' do
         let(:filter_spec) do
           {
-            'jobs' => [{'name' => 'job1', 'release' => '1'}, {'name' => 'job2', 'release' => '2'}],
-            'deployments' => []
+            'jobs' => [{ 'name' => 'job1', 'release' => '1' }, { 'name' => 'job2', 'release' => '2' }],
+            'deployments' => [],
           }
         end
 
@@ -82,7 +84,7 @@ module Bosh::Director
 
         context 'when no instance groups contains corresponding job and release' do
           it 'returns false' do
-            filter_spec['jobs'] = [{'name' => 'job1', 'release' => '2'}]
+            filter_spec['jobs'] = [{ 'name' => 'job1', 'release' => '2' }]
             expect(subject.applies?(deployment_name, [], instance_group1)).to eq(false)
           end
         end
@@ -91,8 +93,8 @@ module Bosh::Director
       context 'when BOTH deployments key and jobs key are present in the filter spec' do
         let(:filter_spec) do
           {
-            'jobs' => [{'name' => 'job1', 'release' => '1'}, {'name' => 'job2', 'release' => '2'}],
-            'deployments' => ['dep1']
+            'jobs' => [{ 'name' => 'job1', 'release' => '1' }, { 'name' => 'job2', 'release' => '2' }],
+            'deployments' => ['dep1'],
           }
         end
 

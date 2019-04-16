@@ -34,7 +34,8 @@ describe 'migrating to cloud config', type: :integration do
     deploy_simple_manifest(options)
   end
 
-  context 'when we have legacy deployments deployed' do
+  # TODO: Remove test when done removing v1 manifest support
+  xcontext 'when we have legacy deployments deployed' do
     let(:legacy_manifest) do
       legacy_manifest = Bosh::Spec::Deployments.legacy_manifest
       legacy_manifest['jobs'].first['instances'] = 1

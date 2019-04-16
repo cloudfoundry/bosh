@@ -1,6 +1,7 @@
 require_relative '../spec_helper'
 
-describe 'disk pools', type: :integration do
+# TODO: Remove test when done removing v1 manifest support
+xdescribe 'disk pools', type: :integration do
   with_reset_sandbox_before_each
 
   def deploy_with_disk_pool(disk_size, cloud_properties={})

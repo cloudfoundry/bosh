@@ -13,10 +13,10 @@ module Bosh::Director
       # @return [DeploymentPlan::Planner] Deployment as build from deployment_spec
       def parse(deployment_interpolated_manifest, options = {})
         @deployment_manifest = deployment_interpolated_manifest
-        @job_states = safe_property(options, 'job_states', :class => Hash, :default => {})
+        @job_states = safe_property(options, 'job_states', class: Hash, default: {})
 
         parse_options = {
-          'is_deploy_action' => !!options['is_deploy_action']
+          'is_deploy_action' => !options['is_deploy_action'].nil?,
         }
 
         if options['canaries']
@@ -44,20 +44,19 @@ module Bosh::Director
       private
 
       def parse_stemcells
-        if @deployment_manifest.has_key?('stemcells')
-          safe_property(@deployment_manifest, 'stemcells', :class => Array).each do |stemcell_hash|
-            alias_val = safe_property(stemcell_hash, 'alias', :class => String)
-            if @deployment.stemcells.has_key?(alias_val)
-              raise StemcellAliasAlreadyExists, "Duplicate stemcell alias '#{alias_val}'"
-            end
-            @deployment.add_stemcell(Stemcell.parse(stemcell_hash))
-          end
+        return unless @deployment_manifest.key?('stemcells')
+
+        safe_property(@deployment_manifest, 'stemcells', class: Array).each do |stemcell_hash|
+          alias_val = safe_property(stemcell_hash, 'alias', class: String)
+          raise StemcellAliasAlreadyExists, "Duplicate stemcell alias '#{alias_val}'" if @deployment.stemcells.key?(alias_val)
+
+          @deployment.add_stemcell(Stemcell.parse(stemcell_hash))
         end
       end
 
       def parse_properties
         @deployment.properties = safe_property(@deployment_manifest, 'properties',
-          :class => Hash, :default => {})
+                                               class: Hash, default: {})
       end
 
       def parse_addons
@@ -67,15 +66,15 @@ module Bosh::Director
       def parse_releases
         release_specs = []
 
-        if @deployment_manifest.has_key?('release')
-          if @deployment_manifest.has_key?('releases')
+        if @deployment_manifest.key?('release')
+          if @deployment_manifest.key?('releases')
             raise DeploymentAmbiguousReleaseSpec,
-              "Deployment manifest contains both 'release' and 'releases' " +
-                'sections, please use one of the two.'
+                  "Deployment manifest contains both 'release' and 'releases' " \
+                  'sections, please use one of the two.'
           end
           release_specs << @deployment_manifest['release']
         else
-          safe_property(@deployment_manifest, 'releases', :class => Array).each do |release|
+          safe_property(@deployment_manifest, 'releases', class: Array).each do |release|
             release_specs << release
           end
         end
@@ -86,35 +85,34 @@ module Bosh::Director
       end
 
       def parse_update(parse_options)
-        update_spec = safe_property(@deployment_manifest, 'update', :class => Hash)
+        update_spec = safe_property(@deployment_manifest, 'update', class: Hash)
         @deployment.update = UpdateConfig.new(update_spec.merge(parse_options))
       end
 
       def parse_instance_groups(parse_options)
-        if @deployment_manifest.has_key?('jobs') && @deployment_manifest.has_key?('instance_groups')
-          raise JobBothInstanceGroupAndJob, "Deployment specifies both jobs and instance_groups keys, only one is allowed"
+        if @deployment_manifest.key?('jobs')
+          raise V1DeprecatedJob, 'Jobs are no longer supported, please use instance groups instead'
         end
 
-        jobs = safe_property(@deployment_manifest, 'jobs', :class => Array, :default => [])
-        instance_groups = safe_property(@deployment_manifest, 'instance_groups', :class => Array, :default => [])
+        instance_groups = safe_property(@deployment_manifest, 'instance_groups', class: Array, default: [])
 
-        jobs = instance_groups unless instance_groups.empty?
-
-        jobs.each do |job_spec|
-          # get state specific for this job or all jobs
-          state_overrides = @job_states.fetch(job_spec['name'], @job_states.fetch('*', {}))
-          job_spec = job_spec.recursive_merge(state_overrides)
-          @deployment.add_instance_group(InstanceGroup.parse(@deployment, job_spec, @event_log, @logger, parse_options))
+        instance_groups.each do |instance_group_spec|
+          # get state specific for this instance_group or all instance_groups
+          state_overrides = @job_states.fetch(instance_group_spec['name'], @job_states.fetch('*', {}))
+          instance_group_spec = instance_group_spec.recursive_merge(state_overrides)
+          @deployment.add_instance_group(
+            InstanceGroup.parse(@deployment, instance_group_spec, @event_log, @logger, parse_options),
+          )
         end
       end
 
       def parse_variables
-        variables_spec = safe_property(@deployment_manifest, 'variables', :class => Array, :default => [])
+        variables_spec = safe_property(@deployment_manifest, 'variables', class: Array, default: [])
         @deployment.set_variables(VariablesSpecParser.new(@logger, @deployment.model).parse(variables_spec))
       end
 
       def parse_features
-        features_spec = safe_property(@deployment_manifest, 'features', :class => Hash, :default => {})
+        features_spec = safe_property(@deployment_manifest, 'features', class: Hash, default: {})
         @deployment.set_features(DeploymentFeaturesParser.new(@logger).parse(features_spec))
       end
     end

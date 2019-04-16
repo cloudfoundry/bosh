@@ -1,37 +1,46 @@
 require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::ManualNetwork do
-  let(:manifest_hash) do
-    manifest_hash = Bosh::Spec::Deployments.legacy_manifest
-    manifest_hash['networks'].first['subnets'].first['range'] = network_range
-    manifest_hash['networks'].first['subnets'].first['reserved'] << '192.168.1.3'
-    manifest_hash['networks'].first['subnets'].first['static'] = static_ips
-    manifest_hash
+  let(:cloud_config_hash) do
+    cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
+    cloud_config['networks'].first['subnets'].first['range'] = network_range
+    cloud_config['networks'].first['subnets'].first['reserved'] << '192.168.1.3'
+    cloud_config['networks'].first['subnets'].first['static'] = static_ips
+    cloud_config
   end
-  let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, YAML.dump(manifest_hash), {}, nil) }
+  let(:manifest_hash) do
+    manifest = Bosh::Spec::NewDeployments.minimal_manifest
+    manifest['stemcells'].first['version'] = 1
+    manifest
+  end
+  let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, YAML.dump(manifest_hash), cloud_config_hash, nil) }
   let(:network_range) { '192.168.1.0/24' }
   let(:static_ips) { [] }
-  let(:network_spec) { manifest_hash['networks'].first }
+  let(:network_spec) { cloud_config_hash['networks'].first }
   let(:planner_factory) do
     BD::DeploymentPlan::PlannerFactory.create(BD::Config.logger)
   end
   let(:deployment_plan) do
-    planner_factory.create_from_manifest(manifest, [], [], {})
+    cloud_configs = [Bosh::Director::Models::Config.make(:cloud, content: YAML.dump(cloud_config_hash))]
+    planner = planner_factory.create_from_manifest(manifest, cloud_configs, [], {})
+    stemcell = BD::DeploymentPlan::Stemcell.parse(manifest_hash['stemcells'].first)
+    planner.add_stemcell(stemcell)
+    planner
   end
   let(:global_network_resolver) do
     BD::DeploymentPlan::GlobalNetworkResolver.new(deployment_plan, [], logger)
   end
   let(:instance_model) { BD::Models::Instance.make }
 
-  subject(:manual_network) do
+  let(:manual_network) do
     BD::DeploymentPlan::ManualNetwork.parse(
       network_spec,
       [
         BD::DeploymentPlan::AvailabilityZone.new('zone_1', {}),
-        BD::DeploymentPlan::AvailabilityZone.new('zone_2', {})
+        BD::DeploymentPlan::AvailabilityZone.new('zone_2', {}),
       ],
       global_network_resolver,
-      logger
+      logger,
     )
   end
 
@@ -56,11 +65,11 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     release = Bosh::Director::Models::Release.make(name: 'bosh-release')
     template = Bosh::Director::Models::Template.make(
       name: 'foobar',
-      release: release
+      release: release,
     )
     release_version = Bosh::Director::Models::ReleaseVersion.make(
       version: '0.1-dev',
-      release: release
+      release: release,
     )
     release_version.add_template(template)
   end
@@ -77,8 +86,8 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
 
     context 'when network is managed' do
       let(:network_spec) do
-        manifest_hash['networks'].first['managed'] = true
-        manifest_hash['networks'].first
+        cloud_config_hash['networks'].first['managed'] = true
+        cloud_config_hash['networks'].first
       end
 
       it 'should set the managed property for managed networks' do
@@ -95,11 +104,15 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     end
 
     context 'when there are overlapping subnets' do
-      let(:manifest) do
-        manifest = Bosh::Spec::Deployments.legacy_manifest
-        manifest['networks'].first['subnets'] << Bosh::Spec::Deployments
-          .subnet('range' => '192.168.1.0/28')
-        Bosh::Director::Manifest.new(manifest, YAML.dump(manifest), {}, nil)
+      let(:cloud_config_hash) do
+        # Replacing manifest changes below with CC changes
+        cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
+        cloud_config['networks'].first['subnets'].first['range'] = network_range
+        cloud_config['networks'].first['subnets'].first['reserved'] << '192.168.1.3'
+        cloud_config['networks'].first['subnets'].first['static'] = static_ips
+        cloud_config['networks'].first['subnets'] << Bosh::Spec::Deployments
+                                                     .subnet('range' => '192.168.1.0/28')
+        cloud_config
       end
 
       it 'should raise an error' do
@@ -111,11 +124,15 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
   end
 
   describe :network_settings do
+    before do
+      # manual_network needs to be evaluated before instance_model for unclear reasons
+      manual_network
+    end
     it 'should provide the network settings from the subnet' do
       reservation = BD::DesiredNetworkReservation.new_static(
         instance_model,
         manual_network,
-        '192.168.1.2'
+        '192.168.1.2',
       )
 
       expect(manual_network.network_settings(reservation, [])).to eq(
@@ -125,7 +142,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
         'cloud_properties' => {},
         'gateway' => '192.168.1.1',
         'dns' => ['192.168.1.1', '192.168.1.2'],
-        'default' => []
+        'default' => [],
       )
     end
 
@@ -133,7 +150,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
       reservation = BD::DesiredNetworkReservation.new_static(
         instance_model,
         manual_network,
-        '192.168.1.2'
+        '192.168.1.2',
       )
 
       expect(manual_network.network_settings(reservation)).to eq(
@@ -143,14 +160,14 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
         'cloud_properties' => {},
         'gateway' => '192.168.1.1',
         'dns' => ['192.168.1.1', '192.168.1.2'],
-        'default' => %w[dns gateway]
+        'default' => %w[dns gateway],
       )
     end
 
     it 'should fail when there is no IP' do
       reservation = BD::DesiredNetworkReservation.new_dynamic(
         instance_model,
-        manual_network
+        manual_network,
       )
 
       expect do
@@ -166,19 +183,19 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
           {
             'range' => '10.1.0.0/24',
             'gateway' => '10.1.0.1',
-            'az' => 'zone_1'
+            'az' => 'zone_1',
           },
           {
             'range' => '10.2.0.0/24',
             'gateway' => '10.2.0.1',
-            'az' => 'zone_2'
+            'az' => 'zone_2',
           },
           {
             'range' => '10.4.0.0/24',
             'gateway' => '10.4.0.1',
-            'az' => 'zone_1'
-          }
-        ]
+            'az' => 'zone_1',
+          },
+        ],
       )
     end
 
@@ -194,14 +211,14 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
           {
             'range' => '10.1.0.0/24',
             'gateway' => '10.1.0.1',
-            'az' => 'zone_1'
+            'az' => 'zone_1',
           },
           {
             'range' => '10.2.0.0/24',
             'gateway' => '10.2.0.1',
-            'az' => 'zone_2'
-          }
-        ]
+            'az' => 'zone_2',
+          },
+        ],
       )
     end
 
@@ -228,7 +245,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     context 'when there are no subnets' do
       let(:network_spec) do
         Bosh::Spec::Deployments.network.merge(
-          'subnets' => []
+          'subnets' => [],
         )
       end
 
@@ -245,13 +262,13 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
           {
             'range' => '10.10.1.0/24',
             'gateway' => '10.10.1.1',
-            'az' => 'zone_1'
+            'az' => 'zone_1',
           },
           {
             'range' => '10.10.2.0/24',
-            'gateway' => '10.10.2.1'
-          }
-        ]
+            'gateway' => '10.10.2.1',
+          },
+        ],
       )
     end
 
@@ -259,7 +276,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
       expect { manual_network }.to raise_error(
         Bosh::Director::JobInvalidAvailabilityZone,
         "Subnets on network 'a' must all either specify availability " \
-        'zone or not'
+        'zone or not',
       )
     end
   end

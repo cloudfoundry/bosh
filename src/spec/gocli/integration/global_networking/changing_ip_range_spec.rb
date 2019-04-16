@@ -38,7 +38,8 @@ describe 'Changing ip ranges', type: :integration do
       expect(new_instance_1.vm_cid).to eq(original_instance_1.vm_cid)
     end
 
-    context 'using legacy network configuration (no cloud config)' do
+    # TODO: Remove test when done removing v1 manifest support
+    xcontext 'using legacy network configuration (no cloud config)' do
       it 'should recreate VMs outside of the range in the new range, but not touch VMs that are ok' do
         deployment_manifest = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(template: 'foobar_without_packages', instances: 2, available_ips: 2)
         deploy_simple_manifest(manifest_hash: deployment_manifest)

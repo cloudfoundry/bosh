@@ -68,7 +68,8 @@ describe 'global networking', type: :integration do
       manifest_hash
     end
 
-    context 'using legacy network configuration (no cloud config)' do
+    # TODO: Remove test when done removing v1 manifest support
+    xcontext 'using legacy network configuration (no cloud config)' do
       it 'only recreates VMs that change when the list of static IPs changes' do
         manifest_hash = Bosh::Spec::NetworkingManifest.legacy_deployment_manifest(
           static_ips: ['192.168.1.10', '192.168.1.11', '192.168.1.12'],
