@@ -56,4 +56,4 @@ tls {
 
 ping_interval: <%= p('nats.ping_interval') %>
 ping_max: <%= p('nats.ping_max_outstanding') %>
-max_payload: <%= p('nats.max_payload') %>
+max_payload: <%= (1048576 * p('nats.max_payload_mb').to_f).to_i %>
