@@ -170,7 +170,7 @@ describe 'director.yml.erb' do
       end
 
       it 'should contain the version' do
-        expect(parsed_yaml['version']).to eq('267.11.0')
+        expect(parsed_yaml['version']).to eq('267.12.0')
       end
 
       context 'when domain name specified without all other dns properties' do
