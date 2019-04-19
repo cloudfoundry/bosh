@@ -10,4 +10,10 @@ RSpec.configure do |config|
     puts RSpec::Core::Formatters::ConsoleCodes.wrap(warning, :yellow)
     config.filter_run_excluding create_swap_delete: true
   end
+
+  if ENV['SKIP_RUN_SCRIPT_ENV'] == 'true'
+    warning = 'Skipping tests using env params to run_script'
+    puts RSpec::Core::Formatters::ConsoleCodes.wrap(warning, :yellow)
+    config.filter_run_excluding run_script_env: true
+  end
 end

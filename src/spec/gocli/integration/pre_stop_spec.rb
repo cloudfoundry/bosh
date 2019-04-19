@@ -30,49 +30,51 @@ describe 'pre-stop', type: :integration do
       expect(pre_stop_log).to include('Running pre-stop')
     end
 
-    it 'passes BOSH_VM_NEXT_STATE when deleting the vm' do
-      manifest_hash['instance_groups'].first['jobs'].first['properties']['fail_on_pre_stop'] = true
-      deploy_from_scratch(
-        cloud_config_hash: cloud_config_hash,
-        manifest_hash: manifest_hash,
-      )
+    describe 'NEXT_STATE env vars', run_script_env: true do
+      it 'passes BOSH_VM_NEXT_STATE when deleting the vm' do
+        manifest_hash['instance_groups'].first['jobs'].first['properties']['fail_on_pre_stop'] = true
+        deploy_from_scratch(
+          cloud_config_hash: cloud_config_hash,
+          manifest_hash: manifest_hash,
+        )
 
-      bosh_runner.run('stop --hard bazquux/0', deployment_name: 'simple', failure_expected: true)
-      pre_stop_log = File.read(File.join(log_path, 'bazquux/pre-stop.stdout.log'))
-      expect(pre_stop_log).to include('Deleting vm')
-    end
+        bosh_runner.run('stop --hard bazquux/0', deployment_name: 'simple', failure_expected: true)
+        pre_stop_log = File.read(File.join(log_path, 'bazquux/pre-stop.stdout.log'))
+        expect(pre_stop_log).to include('Deleting vm')
+      end
 
-    it 'passes BOSH_INSTANCE_NEXT_STATE when deleting the instance' do
-      manifest_hash['instance_groups'].first['jobs'].first['properties']['fail_on_pre_stop'] = true
-      deploy_from_scratch(
-        cloud_config_hash: cloud_config_hash,
-        manifest_hash: manifest_hash,
-      )
+      it 'passes BOSH_INSTANCE_NEXT_STATE when deleting the instance' do
+        manifest_hash['instance_groups'].first['jobs'].first['properties']['fail_on_pre_stop'] = true
+        deploy_from_scratch(
+          cloud_config_hash: cloud_config_hash,
+          manifest_hash: manifest_hash,
+        )
 
-      manifest_hash['instance_groups'].first['instances'] = 0
-      deploy_from_scratch(
-        cloud_config_hash: cloud_config_hash,
-        manifest_hash: manifest_hash,
-        failure_expected: true,
-      )
+        manifest_hash['instance_groups'].first['instances'] = 0
+        deploy_from_scratch(
+          cloud_config_hash: cloud_config_hash,
+          manifest_hash: manifest_hash,
+          failure_expected: true,
+        )
 
-      pre_stop_log = File.read(File.join(log_path, 'bazquux/pre-stop.stdout.log'))
-      expect(pre_stop_log).to include('Deleting vm')
-      expect(pre_stop_log).to include('Deleting instance')
-    end
+        pre_stop_log = File.read(File.join(log_path, 'bazquux/pre-stop.stdout.log'))
+        expect(pre_stop_log).to include('Deleting vm')
+        expect(pre_stop_log).to include('Deleting instance')
+      end
 
-    it 'passes BOSH_DEPLOYMENT_NEXT_STATE when deleting the deployment' do
-      manifest_hash['instance_groups'].first['jobs'].first['properties']['fail_on_pre_stop'] = true
-      deploy_from_scratch(
-        cloud_config_hash: cloud_config_hash,
-        manifest_hash: manifest_hash,
-      )
+      it 'passes BOSH_DEPLOYMENT_NEXT_STATE when deleting the deployment' do
+        manifest_hash['instance_groups'].first['jobs'].first['properties']['fail_on_pre_stop'] = true
+        deploy_from_scratch(
+          cloud_config_hash: cloud_config_hash,
+          manifest_hash: manifest_hash,
+        )
 
-      bosh_runner.run('delete-deployment', deployment_name: 'simple', failure_expected: true)
-      pre_stop_log = File.read(File.join(log_path, 'bazquux/pre-stop.stdout.log'))
-      expect(pre_stop_log).to include('Deleting vm')
-      expect(pre_stop_log).to include('Deleting instance')
-      expect(pre_stop_log).to include('Deleting deployment')
+        bosh_runner.run('delete-deployment', deployment_name: 'simple', failure_expected: true)
+        pre_stop_log = File.read(File.join(log_path, 'bazquux/pre-stop.stdout.log'))
+        expect(pre_stop_log).to include('Deleting vm')
+        expect(pre_stop_log).to include('Deleting instance')
+        expect(pre_stop_log).to include('Deleting deployment')
+      end
     end
   end
 
