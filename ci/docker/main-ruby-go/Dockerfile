@@ -1,4 +1,6 @@
-FROM ubuntu:14.04
+FROM ubuntu:xenial
+
+RUN apt-get clean && apt-get update && apt-get install -y locales
 
 RUN locale-gen en_US.UTF-8
 RUN dpkg-reconfigure locales
@@ -30,3 +32,4 @@ RUN cd /tmp && ./install-ruby.sh && rm install-ruby.sh
 
 COPY --from=golang:1 /usr/local/go /usr/local/go
 ENV GOROOT=/usr/local/go PATH=/usr/local/go/bin:$PATH
+ENV PATH /opt/rubies/ruby-2.4.5/bin:$PATH
