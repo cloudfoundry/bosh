@@ -2,8 +2,8 @@
 
 set -e
 
-state_path() { bosh-cli int director-state/director.yml --path="$1" ; }
-creds_path() { bosh-cli int director-state/director-creds.yml --path="$1" ; }
+state_path() { "$bosh_cli" int director-state/director.yml --path="$1" ; }
+creds_path() { "$bosh_cli" int director-state/director-creds.yml --path="$1" ; }
 
 chmod +x bosh-cli/alpha-bosh-cli-*-linux-amd64
 bosh_cli="$(command -v bosh-cli/alpha-bosh-cli-*-linux-amd64)"
