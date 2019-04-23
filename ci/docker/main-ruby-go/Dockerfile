@@ -1,4 +1,4 @@
-FROM ubuntu:xenial
+FROM ubuntu:14.04
 
 RUN apt-get clean && apt-get update && apt-get install -y locales
 
