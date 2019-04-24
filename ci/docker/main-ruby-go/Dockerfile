@@ -1,4 +1,4 @@
-FROM ubuntu:14.04
+FROM ubuntu:xenial
 
 RUN apt-get clean && apt-get update && apt-get install -y locales
 
@@ -21,6 +21,7 @@ RUN apt-get install -y \
 	xvfb \
 	jq \
 	realpath \
+	sudo \
 	&& apt-get clean
 
 # Nokogiri dependencies

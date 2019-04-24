@@ -2,7 +2,7 @@ FROM bosh/main-ruby-go
 
 # BOSH dependencies
 RUN apt-get update && apt-get install -y \
-	libmariadbclient-dev \
+  libmariadb-client-lgpl-dev \
 	redis-server \
 	libpq-dev \
 	sqlite3 \
