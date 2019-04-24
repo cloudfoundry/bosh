@@ -99,19 +99,9 @@ jobs:
   - aggregate:
     - get: bosh-src
       trigger: true
-    - get: bosh-main-postgres-9.3
     - get: bosh-main-postgres-9.4
-    - get: bosh-main-postgres-9.5
     - get: bosh-main-postgres-9.6
   - aggregate:
-    - file: bosh-src/ci/tasks/test-unit.yml
-      image: bosh-main-postgres-9.3
-      params:
-        DB: postgresql
-        DB_VERSION: 9.3
-      privileged: true
-      task: test-postgres-9.3
-      timeout: 2h
     - file: bosh-src/ci/tasks/test-unit.yml
       image: bosh-main-postgres-9.4
       params:
@@ -119,14 +109,6 @@ jobs:
         DB_VERSION: 9.4
       privileged: true
       task: test-postgres-9.4
-      timeout: 2h
-    - file: bosh-src/ci/tasks/test-unit.yml
-      image: bosh-main-postgres-9.5
-      params:
-        DB: postgresql
-        DB_VERSION: 9.5
-      privileged: true
-      task: test-postgres-9.5
       timeout: 2h
     - file: bosh-src/ci/tasks/test-unit.yml
       image: bosh-main-postgres-9.6
@@ -1412,17 +1394,9 @@ resources:
   source:
     repository: bosh/main-mysql-5.7
   type: docker-image
-- name: bosh-main-postgres-9.3
-  source:
-    repository: bosh/main-postgres-9.3
-  type: docker-image
 - name: bosh-main-postgres-9.4
   source:
     repository: bosh/main-postgres-9.4
-  type: docker-image
-- name: bosh-main-postgres-9.5
-  source:
-    repository: bosh/main-postgres-9.5
   type: docker-image
 - name: bosh-main-postgres-9.6
   source:
