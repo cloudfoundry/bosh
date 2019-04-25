@@ -10,6 +10,7 @@ inputs:
   - name: bosh-src
   - name: environment
   - name: director-state
+  - name: bosh-cli
 
 params:
   STEMCELL_NAME: null
