@@ -103,7 +103,6 @@ module Bosh::Director::ConfigServer
         ['jobs', Integer, 'templates', Integer, 'consumes', String, 'properties'],
         ['instance_groups', Integer, 'env'],
         ['jobs', Integer, 'env'],
-        ['resource_pools', Integer, 'env'],
         ['addons', Integer, 'properties'],
         ['addons', Integer, 'jobs', Integer, 'properties'],
         ['addons', Integer, 'jobs', Integer, 'consumes', String, 'properties'],

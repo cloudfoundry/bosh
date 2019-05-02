@@ -178,7 +178,6 @@ module Bosh::Director
           end
         end
 
-        template_hash.merge!({'resource_pool' => @full_spec['vm_type']['name']}) unless @full_spec['vm_type'].nil?
         template_hash.merge({
           'ip' => ip,
           'networks' => modified_networks_hash

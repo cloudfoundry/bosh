@@ -3,7 +3,7 @@ module Bosh
     module DeploymentPlan
       class ManifestValidator
 
-        CLOUD_MANIFEST_KEYS = ['resource_pools', 'compilation', 'disk_pools', 'networks']
+        CLOUD_MANIFEST_KEYS = ['compilation', 'disk_pools', 'networks']
 
         def validate(manifest, cloud_config)
           raise_if_has_key(manifest, 'vm_types')

@@ -12,13 +12,13 @@ module Bosh::Director
       )
     end
     let(:planner_factory) { instance_double(Bosh::Director::DeploymentPlan::PlannerFactory) }
-    let(:manifest) { Bosh::Spec::Deployments.legacy_manifest }
+    let(:manifest) { Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups }
     let(:deployment_model) { Models::Deployment.make(name: manifest['name'], manifest: YAML.dump(manifest)) }
     let!(:local_dns_blob) { Models::LocalDnsBlob.make }
 
     let!(:instance) do
       instance = Models::Instance.make(
-        job: manifest['jobs'].first['name'],
+        job: manifest['instance_groups'].first['name'],
         index: 0,
         uuid: '1234-5678',
         deployment: deployment_model,
@@ -45,7 +45,7 @@ module Bosh::Director
           'name' => 'steve',
           'cloud_properties' => { 'foo' => 'bar' },
         },
-        'stemcell' => manifest['resource_pools'].first['stemcell'],
+        'stemcell' => manifest['stemcells'].first,
         'networks' => networks,
       }
     end
@@ -172,7 +172,7 @@ module Bosh::Director
               'name' => 'steve',
               'cloud_properties' => { 'foo' => 'bar' },
             },
-            'stemcell' => manifest['resource_pools'].first['stemcell'],
+            'stemcell' => manifest['stemcells'].first,
             'networks' => networks,
             'update' => {
               'canaries' => 1,

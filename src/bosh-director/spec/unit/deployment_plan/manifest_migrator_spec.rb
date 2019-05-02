@@ -62,7 +62,6 @@ module Bosh
           context 'when cloud config is not set' do
             let(:manifest_hash) do
               {
-                'resource_pools' => ['pool'],
                 'compilation' => ['comp'],
                 'disk_pools' => ['disk-pools'],
                 'networks' => ['networks']
@@ -70,7 +69,6 @@ module Bosh
             end
 
             it 'constructs cloud config from deployment manifest' do
-              expect(migrated_cloud_config['resource_pools']).to eq(['pool'])
               expect(migrated_cloud_config['compilation']).to eq(['comp'])
               expect(migrated_cloud_config['disk_pools']).to eq(['disk-pools'])
               expect(migrated_cloud_config['networks']).to eq(['networks'])

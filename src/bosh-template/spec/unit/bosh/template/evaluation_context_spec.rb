@@ -101,7 +101,6 @@ module Bosh
           'id' => 'deadbeef',
           'bootstrap' => true,
           'az' => 'foo-az',
-          'resource_pool' => 'a',
           'release' => {
             'name' => 'test',
             'version' => '1.0',
@@ -213,10 +212,6 @@ module Bosh
 
         it 'supports looking up template availability zone' do
           expect(eval_template('<%= spec.az %>', evaluation_context)).to eq(evaluation_context.spec.az)
-        end
-
-        it 'exposes an resource pool' do
-          expect(eval_template('<%= spec.resource_pool %>', evaluation_context)).to eq('a')
         end
 
         it 'supports looking up whether template is bootstrap or not' do

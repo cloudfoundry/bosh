@@ -15,11 +15,14 @@ describe 'cli: cleanup', type: :integration do
       bosh_runner.run("upload-release #{spec_asset('test_release.tgz')}")
       bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
       bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
-      deployment_manifest = yaml_file('simple', Bosh::Spec::Deployments.minimal_legacy_manifest)
-      bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal_legacy_manifest')
 
-      bosh_runner.run("export-release test_release/1 toronto-os/1", deployment_name: 'minimal_legacy_manifest')
-      bosh_runner.run("export-release test_release/1 centos-7/3001", deployment_name: 'minimal_legacy_manifest')
+      cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
+      upload_cloud_config(cloud_config)
+      manifest_hash = Bosh::Spec::NewDeployments.minimal_manifest
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+
+      bosh_runner.run('export-release test_release/1 toronto-os/1', deployment_name: 'minimal')
+      bosh_runner.run('export-release test_release/1 centos-7/3001', deployment_name: 'minimal')
     end
 
     it 'should clean up compiled exported releases of compiled releases' do

@@ -3,22 +3,6 @@ require_relative '../../spec_helper'
 describe 'export-release', type: :integration do
   with_reset_sandbox_before_each
 
-  context 'with a classic manifest' do
-    before{
-      bosh_runner.run("upload-release #{spec_asset('test_release.tgz')}")
-      bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
-      deploy_simple_manifest({manifest_hash: Bosh::Spec::Deployments.minimal_legacy_manifest})
-    }
-
-    it 'compiles all packages of the release against the requested stemcell with classic manifest' do
-      out = bosh_runner.run('export-release test_release/1 toronto-os/1', deployment_name: 'minimal_legacy_manifest')
-      expect(out).to match(/Compiling packages/)
-      expect(out).to match(/Compiling packages: pkg_2\/f5c1c303c2308404983cf1e7566ddc0a22a22154 \(\d{2}:\d{2}:\d{2}\)/)
-      expect(out).to match(/Compiling packages: pkg_1\/16b4c8ef1574b3f98303307caad40227c208371f \(\d{2}:\d{2}:\d{2}\)/)
-      expect(out).to match(/Task ([0-9]+) done/)
-    end
-  end
-
   context 'with no source packages and no compiled packages against the targeted stemcell' do
     it 'should raise an error' do
       upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)

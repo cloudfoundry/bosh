@@ -36,12 +36,6 @@ module Bosh::Director::ConfigServer
           'director_uuid' => '((director_uuid_placeholder))',
           'smurf' => '((/my/name/is/smurf/12-3))',
           'gargamel' => '((my/name/is/gar_gamel))',
-          'resource_pools' => [
-          {
-            'name' => 'rp',
-            'env' => env
-          }
-        ],
           'instance_groups' => [
           {
             'name' => 'db',
@@ -66,8 +60,6 @@ module Bosh::Director::ConfigServer
           {'variables'=>['((director_uuid_placeholder))'], 'path'=>['director_uuid'],'is_key'=> false},
           {'variables'=>['((/my/name/is/smurf/12-3))'], 'path'=>['smurf'], 'is_key'=>false},
           {'variables'=>['((my/name/is/gar_gamel))'], 'path'=>['gargamel'], 'is_key'=>false},
-          {'variables'=>['((my_db_passwd))'], 'path'=>['resource_pools', 0, 'env', 'b', 0, 'f'], 'is_key'=> false},
-          {'variables'=>['((secret2))'], 'path'=>['resource_pools', 0, 'env', 'b', 1, 1], 'is_key'=>false},
           {'variables'=>['((nuclear_launch_code))'], 'path'=>['instance_groups', 0, 'jobs', 0, 'properties', 'a', 'b', 'c'], 'is_key'=>false},
           {'variables'=>['((job_name))'], 'path'=>['instance_groups', 0, 'jobs', 1, 'name'], 'is_key'=>false},
           {'variables'=>['((secret_key))'], 'path'=>['instance_groups', 0, 'properties', 'a', 2], 'is_key'=>false},
@@ -138,10 +130,8 @@ module Bosh::Director::ConfigServer
 
           expected_replacements = [
             {'variables'=>['((director_uuid_placeholder))'], 'path'=>['director_uuid'], 'is_key' =>false},
-            {'variables'=>['((my_db_passwd))'], 'path'=>['resource_pools', 0, 'env', 'b', 0, 'f'], 'is_key' =>false},
             {'variables'=>['((/my/name/is/smurf/12-3))'], 'path'=>['smurf'], 'is_key' =>false},
             {'variables'=>['((my/name/is/gar_gamel))'], 'path'=>['gargamel'], 'is_key' =>false},
-            {'variables'=>['((secret2))'], 'path'=>['resource_pools', 0, 'env', 'b', 1, 1], 'is_key' =>false},
             {'variables'=>['((job_name))'], 'path'=>['instance_groups', 0, 'jobs', 1, 'name'], 'is_key' =>false},
             {'variables'=>['((address_placeholder))'], 'path'=>['instance_groups', 0, 'jobs', 0, 'consumes', 'primary_db', 'instances', 0, 'address'], 'is_key' =>false}
           ]

@@ -309,20 +309,16 @@ module Bosh::Director
         vm_resources = safe_property(@instance_group_spec, 'vm_resources', class: Hash, optional: true)
 
         statement_count = [vm_type_name, vm_resources].compact.count
-        if statement_count.zero?
-          raise InstanceGroupBadVmConfiguration,
-                "Instance group '#{@instance_group.name}' is missing either 'vm_type' or 'vm_resources' section."
-        elsif statement_count > 1
-          raise InstanceGroupBadVmConfiguration,
-                "Instance group '#{@instance_group.name}' can only specify 'vm_type' or 'vm_resources' keys."
+        raise_vm_configuration_error(statement_count) if statement_count != 1
+
+        vm_type = @deployment.vm_type(vm_type_name)
+
+        if vm_type_name && vm_type.nil?
+          raise InstanceGroupUnknownVmType,
+                "Instance group '#{@instance_group.name}' references an unknown vm type '#{vm_type_name}'"
         end
 
-        vm_type = nil
-
-        if vm_type_name
-          vm_type = @deployment.vm_type(vm_type_name)
-          raise InstanceGroupUnknownVmType, "Instance group '#{@instance_group.name}' references an unknown vm type '#{vm_type_name}'" unless vm_type
-        elsif vm_resources
+        if vm_resources
           vm_resources = VmResources.new(vm_resources)
           @logger.debug("Using 'vm_resources' block for instance group '#{@instance_group.name}'")
         end
@@ -342,6 +338,17 @@ module Bosh::Director
         @instance_group.vm_extensions = vm_extensions
         @instance_group.stemcell = stemcell
         @instance_group.env = Env.new(env_hash)
+      end
+
+      def raise_vm_configuration_error(statement_count)
+        case statement_count
+        when 0
+          raise InstanceGroupBadVmConfiguration,
+                "Instance group '#{@instance_group.name}' is missing either 'vm_type' or 'vm_resources' section."
+        else
+          raise InstanceGroupBadVmConfiguration,
+                "Instance group '#{@instance_group.name}' can only specify 'vm_type' or 'vm_resources' keys."
+        end
       end
 
       def parse_update_config(parse_options)

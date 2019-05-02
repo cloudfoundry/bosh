@@ -265,61 +265,6 @@ describe 'vm_types and stemcells', type: :integration do
 
   end
 
-  #TODO Remove this test when backward compatibility of resource pool is no longer required
-  # TODO: Remove test when done removing v1 manifest support
-  xcontext 'when migrating from resource pool to vm_type and stemcell' do
-    it 'should not recreate instance when with vm_type and stemcell do not change' do
-      env_hash = {
-        'env1' => 'env_value1',
-        'env2' => 'env_value2',
-        'bosh' => {
-          'group' => 'testdirector-simple-foobar',
-          'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
-        },
-      }
-
-      manifest_hash = Bosh::Spec::Deployments.legacy_manifest
-      manifest_hash['resource_pools'].first['env'] = env_hash
-
-      deploy_from_scratch(manifest_hash: manifest_hash)
-
-      create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
-      expect(create_vm_invocations.count).to be > 0
-      expect(create_vm_invocations.last.inputs['env']).to match(expected_env_hash)
-
-      stemcell_hash = manifest_hash['resource_pools'].first['stemcell']
-      stemcell_hash['alias'] = 'default'
-      manifest_hash['stemcells'] = [stemcell_hash]
-
-      cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
-      vm_type1 = Bosh::Spec::Deployments.vm_type
-      vm_type2 = Bosh::Spec::Deployments.vm_type
-      vm_type2['name'] = 'a'
-      cloud_config_hash['vm_types'] = [vm_type1, vm_type2]
-      upload_cloud_config(cloud_config_hash: cloud_config_hash)
-
-      manifest_hash.delete('resource_pools')
-      manifest_hash.delete('networks')
-      manifest_hash.delete('compilation')
-
-      manifest_hash['jobs'] = [{
-          'name' => 'foobar',
-          'templates' => ['name' => 'foobar'],
-          'vm_type' => 'a',
-          'stemcell' => 'default',
-          'instances' => 3,
-          'networks' => [{ 'name' => 'a' }],
-          'properties' => {},
-          'env' => env_hash
-        }]
-
-      deploy_simple_manifest(manifest_hash: manifest_hash)
-
-      new_create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
-      expect(new_create_vm_invocations.count).to eq(create_vm_invocations.count)
-    end
-  end
-
   context 'cloud config has vm_extensions and compilation consuming some vm extensions' do
 
     let(:vm_extension_1) do

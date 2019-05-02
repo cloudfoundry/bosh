@@ -381,46 +381,6 @@ module Bosh::Director
           end
         end
 
-        context 'when cloud config has stemcells with version latest' do
-          let(:cloud_config_hash) do
-            {
-              'resource_pools' => [
-                {
-                  'name' => 'rp1',
-                  'stemcell' => { 'name' => 'simple', 'version' => 'latest' },
-                },
-              ],
-            }
-          end
-
-          it 'replaces latest with the latest version number' do
-            manifest_object.resolve_aliases
-            expect(manifest_object.to_hash['resource_pools'].first['stemcell']).to eq(
-              'name' => 'simple', 'version' => '3169',
-            )
-          end
-        end
-
-        context 'when cloud config has stemcells with version prefix' do
-          let(:cloud_config_hash) do
-            {
-              'resource_pools' => [
-                {
-                  'name' => 'rp1',
-                  'stemcell' => { 'name' => 'simple', 'version' => '3169.latest' },
-                },
-              ],
-            }
-          end
-
-          it 'replaces the correct version match' do
-            manifest_object.resolve_aliases
-            expect(manifest_object.to_hash['resource_pools'].first['stemcell']).to eq(
-              'name' => 'simple', 'version' => '3169',
-            )
-          end
-        end
-
         context 'when manifest has uninterpolated stemcells property' do
           let(:manifest_hash) do
             {
@@ -444,32 +404,6 @@ module Bosh::Director
           it 'keeps the uninterpolated value' do
             manifest_object.resolve_aliases
             expect(manifest_object.to_hash['stemcells']).to eq(['((foo))'])
-          end
-        end
-
-        context 'when manifest has uninterpolated resource_pools property' do
-          let(:cloud_config_hash) do
-            {
-              'resource_pools' => '((bar))',
-            }
-          end
-
-          it 'keeps the uninterpolated value' do
-            manifest_object.resolve_aliases
-            expect(manifest_object.to_hash['resource_pools']).to eq('((bar))')
-          end
-        end
-
-        context 'when manifest has uninterpolated resource_pool items' do
-          let(:cloud_config_hash) do
-            {
-              'resource_pools' => ['((bar))'],
-            }
-          end
-
-          it 'keeps the uninterpolated value' do
-            manifest_object.resolve_aliases
-            expect(manifest_object.to_hash['resource_pools']).to eq(['((bar))'])
           end
         end
       end

@@ -326,25 +326,10 @@ module ManifestHelper
     def default_iaas_manifest(overrides = {})
       {
         'networks' => [ManifestHelper.network],
-        'resource_pools' => [ManifestHelper.resource_pool],
         'compilation' => {
           'workers' => 1,
           'network' => 'network-name',
           'cloud_properties' => {},
-        },
-      }.merge(overrides)
-    end
-
-    def default_manifest_with_jobs(overrides = {})
-      {
-        'name' => 'deployment-name',
-        'releases' => [release],
-        'jobs' => [job],
-        'update' => {
-          'max_in_flight' => 10,
-          'canaries' => 2,
-          'canary_watch_time' => 1000,
-          'update_watch_time' => 1000,
         },
       }.merge(overrides)
     end
@@ -372,25 +357,6 @@ module ManifestHelper
 
     def disk_pool(name = 'dp-name')
       { 'name' => name, 'disk_size' => 10000 }
-    end
-
-    def job(overrides = {})
-      {
-        'name' => 'job-name',
-        'resource_pool' => 'rp-name',
-        'instances' => 1,
-        'networks' => [{ 'name' => 'network-name' }],
-        'templates' => [{ 'name' => 'template-name', 'release' => 'release-name' }],
-      }.merge(overrides)
-    end
-
-    def resource_pool(overrides = {})
-      {
-        'name' => 'rp-name',
-        'network' => 'network-name',
-        'stemcell' => { 'name' => 'default', 'version' => '1' },
-        'cloud_properties' => {},
-      }.merge(overrides)
     end
   end
 end

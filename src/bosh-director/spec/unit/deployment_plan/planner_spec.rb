@@ -31,36 +31,7 @@ module Bosh::Director
         YAML.dump minimal_manifest
       end
 
-      let(:minimal_manifest) do
-        {
-          'name' => 'minimal',
-
-          'releases' => [{
-            'name' => 'appcloud',
-            'version' => '0.1' # It's our dummy valid release from spec/assets/valid_release.tgz
-          }],
-
-          'networks' => [{
-            'name' => 'a',
-            'subnets' => [],
-          }],
-
-          'compilation' => {
-            'workers' => 1,
-            'network' => 'a',
-            'cloud_properties' => {},
-          },
-
-          'resource_pools' => [],
-
-          'update' => {
-            'canaries' => 2,
-            'canary_watch_time' => 4000,
-            'max_in_flight' => 1,
-            'update_watch_time' => 20,
-          },
-        }
-      end
+      let(:minimal_manifest) { Bosh::Spec::NewDeployments.minimal_manifest }
 
       describe 'with invalid options' do
         it 'raises an error if name are not given' do
@@ -76,18 +47,6 @@ module Bosh::Director
 
       describe 'with valid options' do
         let(:stemcell_model) { Bosh::Director::Models::Stemcell.create(name: 'default', version: '1', cid: 'abc') }
-        let(:resource_pool_spec) do
-          {
-            'name' => 'default',
-            'cloud_properties' => {},
-            'network' => 'default',
-            'stemcell' => {
-              'name' => 'default',
-              'version' => '1',
-            },
-          }
-        end
-        let(:resource_pools) { [ResourcePool.new(resource_pool_spec)] }
         let(:vm_type) { VmType.new('name' => 'vm_type') }
 
         before do
@@ -100,7 +59,6 @@ module Bosh::Director
             disk_types: [],
             availability_zones_list: {},
             vm_type: vm_type,
-            resource_pools: resource_pools,
             compilation: nil,
             logger: logger,
           )

@@ -8,7 +8,6 @@ module Bosh::Director
         'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
         'agent_id' => 'fake-agent-id',
         'job_state' => 'running',
-        'resource_pool' => {},
         'processes' => [
           { 'name' => 'fake-process-1', 'state' => 'running' },
           { 'name' => 'fake-process-2', 'state' => 'failing' },
@@ -64,7 +63,6 @@ module Bosh::Director
           'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
           'agent_id' => 'fake-agent-id',
           'job_state' => 'running',
-          'resource_pool' => {},
         )
 
         job.perform
@@ -76,7 +74,6 @@ module Bosh::Director
         expect(status['active']).to eq(true)
         expect(status['agent_id']).to eq('fake-agent-id')
         expect(status['job_state']).to eq('running')
-        expect(status['resource_pool']).to be_nil
         expect(status['vitals']).to be_nil
         expect(status['vm_created_at']).to eq(time.utc.iso8601)
       end
@@ -142,7 +139,6 @@ module Bosh::Director
         expect(status['active']).to eq(true)
         expect(status['agent_id']).to eq('fake-agent-id')
         expect(status['job_state']).to eq('running')
-        expect(status['resource_pool']).to be_nil
         expect(status['vm_created_at']).to eq(time.utc.iso8601)
         expect(status['vitals']['load']).to eq(%w[1 5 15])
         expect(status['vitals']['cpu']).to eq('user' => 'u', 'sys' => 's', 'wait' => 'w')
@@ -366,7 +362,6 @@ module Bosh::Director
             { 'name' => 'fake-process-1', 'state' => 'running' },
             { 'name' => 'fake-process-2', 'state' => 'failing' },
           ],
-          'resource_pool' => {},
         )
 
         job.perform
@@ -377,7 +372,6 @@ module Bosh::Director
         expect(status['active']).to eq(true)
         expect(status['agent_id']).to eq('fake-agent-id')
         expect(status['job_state']).to eq('running')
-        expect(status['resource_pool']).to eq('fake-vm-type')
         expect(status['vitals']).to be_nil
         expect(status['processes']).to eq([{ 'name' => 'fake-process-1', 'state' => 'running' },
                                            { 'name' => 'fake-process-2', 'state' => 'failing' }])
@@ -412,7 +406,6 @@ module Bosh::Director
               { 'name' => 'fake-process-1', 'state' => 'stopped' },
               { 'name' => 'fake-process-2', 'state' => 'stopped' },
             ],
-            'resource_pool' => {},
           }
         end
         let(:agent_state) do
@@ -427,7 +420,6 @@ module Bosh::Director
               { 'name' => 'fake-process-1', 'state' => 'running' },
               { 'name' => 'fake-process-2', 'state' => 'failing' },
             ],
-            'resource_pool' => {},
           }
         end
 
@@ -465,7 +457,6 @@ module Bosh::Director
             expect(status['active']).to eq(true)
             expect(status['agent_id']).to eq('fake-agent-id')
             expect(status['job_state']).to eq('running')
-            expect(status['resource_pool']).to eq('fake-vm-type')
             expect(status['vitals']).to be_nil
             expect(status['processes']).to eq([{ 'name' => 'fake-process-1', 'state' => 'running' },
                                                { 'name' => 'fake-process-2', 'state' => 'failing' }])
@@ -476,7 +467,6 @@ module Bosh::Director
             expect(status['active']).to eq(false)
             expect(status['agent_id']).to eq('other_agent_id')
             expect(status['job_state']).to eq('stopped')
-            expect(status['resource_pool']).to eq('fake-vm-type')
             expect(status['vitals']).to be_nil
             expect(status['processes']).to eq([{ 'name' => 'fake-process-1', 'state' => 'stopped' },
                                                { 'name' => 'fake-process-2', 'state' => 'stopped' }])
@@ -497,7 +487,6 @@ module Bosh::Director
             expect(status['active']).to eq(true)
             expect(status['agent_id']).to eq('fake-agent-id')
             expect(status['job_state']).to eq('running')
-            expect(status['resource_pool']).to eq('fake-vm-type')
             expect(status['vitals']).to be_nil
             expect(status['processes']).to eq([{ 'name' => 'fake-process-1', 'state' => 'running' },
                                                { 'name' => 'fake-process-2', 'state' => 'failing' }])

@@ -1339,7 +1339,6 @@ module Bosh::Director
                   'name' => "job-#{i}",
                   'spec' => { 'templates' => [{ 'name' => 'job_using_pkg_1' }] },
                   'instances' => 1,
-                  'resource_pool' => 'a',
                   'networks' => [{ 'name' => 'a' }],
                 }
               end

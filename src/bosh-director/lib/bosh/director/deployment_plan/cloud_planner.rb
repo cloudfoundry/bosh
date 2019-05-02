@@ -6,7 +6,6 @@ module Bosh::Director
       def initialize(options)
         @networks = self.class.index_by_name(options.fetch(:networks))
         @global_network_resolver = options.fetch(:global_network_resolver)
-        @resource_pools = self.class.index_by_name(options.fetch(:resource_pools))
         @vm_types = self.class.index_by_name(options.fetch(:vm_types, {}))
         @vm_extensions = self.class.index_by_name(options.fetch(:vm_extensions, {}))
         @disk_types = self.class.index_by_name(options.fetch(:disk_types))
@@ -37,14 +36,6 @@ module Bosh::Director
         @availability_zones.values
       end
 
-      def resource_pools
-        @resource_pools.values
-      end
-
-      def resource_pool(name)
-        @resource_pools[name]
-      end
-
       def vm_types
         @vm_types.values
       end
@@ -63,10 +54,6 @@ module Bosh::Director
         end
 
         @vm_extensions[name]
-      end
-
-      def add_resource_pool(resource_pool)
-        @resource_pools[resource_pool.name] = resource_pool
       end
 
       def networks

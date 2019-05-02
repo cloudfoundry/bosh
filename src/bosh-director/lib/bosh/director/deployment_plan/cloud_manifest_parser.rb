@@ -12,7 +12,6 @@ module Bosh::Director
         azs = parse_availability_zones(cloud_manifest)
         az_list = CloudPlanner.index_by_name(azs)
         networks = parse_networks(cloud_manifest, global_network_resolver, azs)
-        resource_pools = parse_resource_pools(cloud_manifest)
         vm_types = parse_vm_types(cloud_manifest)
         vm_extensions = parse_vm_extensions(cloud_manifest)
         disk_types = parse_disk_types(cloud_manifest)
@@ -24,7 +23,6 @@ module Bosh::Director
           global_network_resolver: global_network_resolver,
           ip_provider_factory: ip_provider_factory,
           compilation: compilation_config,
-          resource_pools: resource_pools,
           vm_types: vm_types,
           vm_extensions: vm_extensions,
           disk_types: disk_types,
@@ -95,29 +93,6 @@ module Bosh::Director
         end
 
         config
-      end
-
-      def parse_resource_pools(cloud_manifest)
-        resource_pools = safe_property(cloud_manifest, 'resource_pools', :class => Array, optional: true)
-
-        if resource_pools.nil?
-          return {}
-        end
-
-        if resource_pools.empty?
-          raise DeploymentNoResourcePools, 'No resource_pools specified'
-        end
-
-        parsed_resource_pools = resource_pools.map do |rp_spec|
-          ResourcePool.new(rp_spec)
-        end
-
-        duplicates = detect_duplicates(parsed_resource_pools) { |rp| rp.name }
-        unless duplicates.empty?
-          raise DeploymentDuplicateResourcePoolName, "Duplicate resource pool name '#{duplicates.first.name}'"
-        end
-
-        parsed_resource_pools
       end
 
       def parse_vm_types(cloud_manifest)

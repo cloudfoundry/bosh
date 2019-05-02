@@ -50,7 +50,7 @@ module Bosh::Director
       # @return [Boolean] Indicates whether VMs should be drained
       attr_reader :skip_drain
 
-      # Hash with resolved aliases for stemcells, resource_pools and releases
+      # Hash with resolved aliases for stemcells and releases
       attr_reader :uninterpolated_manifest_hash
 
       # Text with raw manifest content
@@ -123,13 +123,10 @@ module Bosh::Director
                      :deleted_network,
                      :availability_zone,
                      :availability_zones,
-                     :resource_pools,
-                     :resource_pool,
                      :vm_types,
                      :vm_type,
                      :vm_extensions,
                      :vm_extension,
-                     :add_resource_pool,
                      :disk_types,
                      :disk_type,
                      :compilation,

@@ -24,7 +24,6 @@ module Bosh::Director
           'networks' => [{ 'name' => 'network-name' }],
           'compilation' => {},
           'update' => {},
-          'resource_pools' => [],
         }
       end
       let(:planner_attributes) do

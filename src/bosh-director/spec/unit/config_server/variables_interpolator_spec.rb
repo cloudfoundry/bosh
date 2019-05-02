@@ -473,7 +473,6 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
       ignored_subtrees << ['jobs', index_type, 'templates', index_type, 'consumes', any_string, 'properties']
       ignored_subtrees << ['instance_groups', index_type, 'env']
       ignored_subtrees << ['jobs', index_type, 'env']
-      ignored_subtrees << ['resource_pools', index_type, 'env']
       ignored_subtrees << ['addons', index_type, 'properties']
       ignored_subtrees << ['addons', index_type, 'jobs', index_type, 'properties']
       ignored_subtrees << ['addons', index_type, 'jobs', index_type, 'consumes', any_string, 'properties']

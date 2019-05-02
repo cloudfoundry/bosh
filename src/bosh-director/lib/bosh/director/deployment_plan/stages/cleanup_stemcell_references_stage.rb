@@ -7,11 +7,7 @@ module Bosh::Director
         end
 
         def perform
-          current_stemcell_models = @deployment_planner.resource_pools.map { |pool| pool.stemcell.models }.flatten
-
-          @deployment_planner.stemcells.values.map(&:models).flatten.each do |stemcell|
-            current_stemcell_models << stemcell
-          end
+          current_stemcell_models = @deployment_planner.stemcells.values.map(&:models).flatten
 
           deployment_plan_model = @deployment_planner.model
 

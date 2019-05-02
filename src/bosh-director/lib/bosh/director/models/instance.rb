@@ -100,25 +100,7 @@ module Bosh::Director::Models
         return 'error'
       end
 
-      if result['resource_pool'].nil?
-        result
-      else
-        if result['vm_type'].nil?
-          result['vm_type'] = {
-            'name' => result['resource_pool']['name'],
-            'cloud_properties' => result['resource_pool']['cloud_properties']
-          }
-        end
-
-        if result['resource_pool']['stemcell'] && result['stemcell'].nil?
-          result['stemcell'] = result['resource_pool']['stemcell']
-          result['stemcell']['alias'] = result['resource_pool']['name']
-        end
-
-        result.delete('resource_pool')
-
-        result
-      end
+      result
     end
 
     def spec=(spec)

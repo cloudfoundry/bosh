@@ -6,38 +6,7 @@ module Bosh::Director
       subject { described_class.new(deployment_planner) }
       let(:deployment_model) { Models::Deployment.make }
       let(:deployment_planner) { instance_double(DeploymentPlan::Planner) }
-
-      let(:minimal_manifest) do
-        {
-          'name' => 'minimal',
-
-          'releases' => [{
-            'name' => 'appcloud',
-            'version' => '0.1' # It's our dummy valid release from spec/assets/valid_release.tgz
-          }],
-
-          'networks' => [{
-            'name' => 'a',
-            'subnets' => [],
-          }],
-
-          'compilation' => {
-            'workers' => 1,
-            'network' => 'a',
-            'cloud_properties' => {},
-          },
-
-          'resource_pools' => [],
-
-          'update' => {
-            'canaries' => 2,
-            'canary_watch_time' => 4000,
-            'max_in_flight' => 1,
-            'update_watch_time' => 20
-          }
-        }
-      end
-
+      let(:minimal_manifest) { Bosh::Spec::NewDeployments.minimal_manifest }
       let(:raw_manifest_text) do
       %Q(---
         name: minimal

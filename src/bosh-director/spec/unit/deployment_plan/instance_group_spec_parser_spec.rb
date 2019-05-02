@@ -45,6 +45,7 @@ module Bosh::Director
 
       describe '#parse' do
         before do
+          allow(deployment_plan).to receive(:vm_type).with(nil).and_return(nil)
           allow(deployment_plan).to receive(:vm_type).with('fake-vm-type').and_return(
             VmType.new(
               'name' => 'fake-vm-type',
