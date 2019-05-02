@@ -53,7 +53,7 @@ module Bosh::Director
 
           SetupStage.new(
             base_job: @base_job,
-            deployment_plan:  @deployment_plan,
+            deployment_plan: @deployment_plan,
             vm_creator: vm_creator,
             local_dns_records_repo: local_dns_records_repo,
             local_dns_aliases_repo: local_dns_aliases_repo,

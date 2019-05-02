@@ -1887,12 +1887,12 @@ module Bosh::Director::DeploymentPlan
             instance_double(
               BD::Models::Links::LinkProviderIntent,
               link_provider: provider1,
-              group_name: 'desired-link-1-desired-link-type-1',
+              group_name: 'desired-link-2-desired-link-type-2',
             ),
             instance_double(
               BD::Models::Links::LinkProviderIntent,
               link_provider: provider1,
-              group_name: 'desired-link-2-desired-link-type-2',
+              group_name: 'desired-link-1-desired-link-type-1',
             ),
           ]
         end

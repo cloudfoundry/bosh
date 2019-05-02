@@ -260,11 +260,12 @@ module Bosh
             agent_id: agent_id,
             instance_group: instance.model.job,
           }
+
           links = @link_provider_intents.select do |lpi|
             lpi.link_provider.instance_group == properties[:instance_group]
           end.map do |lpi|
             { name: lpi.group_name }
-          end
+          end.sort_by { |entry| entry[:name] }
 
           properties.merge(links: links)
         end
