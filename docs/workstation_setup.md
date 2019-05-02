@@ -57,9 +57,8 @@
 
 6. Get Golang dependencies
 
-    Install vet and golint
-    * `go get code.google.com/p/go.tools/cmd/vet`
-    * `go get -u github.com/golang/lint/golint`
+    Install golint
+    * `go get -u golang.org/x/lint/golint`
 
     Optional: Install direnv to keep your GOPATH correct when working with the bosh-agent submodule
     * `brew install direnv`
