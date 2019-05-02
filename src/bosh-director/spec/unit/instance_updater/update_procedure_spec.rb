@@ -121,6 +121,9 @@ module Bosh::Director
             allow(instance_plan).to receive(:already_detached?) { raise 'Should never get here!' }
 
             update_procedure.perform
+
+            expect(links_manager).to have_received(:bind_links_to_instance).with(instance)
+            expect(instance).to have_received(:update_variable_set)
             expect(dns_state_updater).to have_received(:update_dns_for_instance).with(
               instance_plan,
               dns_record_info,

@@ -38,9 +38,10 @@ module Bosh::Director
       end
 
       def perform
-        @instance_variable_and_links_updated = false
-
         # Optimization to only update DNS if nothing else changed.
+        @links_manager.bind_links_to_instance(instance)
+        instance.update_variable_set
+
         if dns_change_only?
           @logger.debug('Only change is DNS configuration')
           update_dns_if_changed
@@ -88,9 +89,6 @@ module Bosh::Director
         # It will update the rendered templates on the VM
         unless Config.enable_nats_delivered_templates && @needs_recreate
           @rendered_templates_persister.persist(instance_plan)
-          @links_manager.bind_links_to_instance(instance)
-          instance.update_variable_set
-          @instance_variable_and_links_updated = true
         end
 
         unless instance_plan.needs_shutting_down? || instance.state == 'detached'
@@ -117,10 +115,6 @@ module Bosh::Director
       def update_instance
         instance_plan.release_obsolete_network_plans(@ip_provider)
         instance.update_state
-        return if @instance_variable_and_links_updated
-
-        @links_manager.bind_links_to_instance(instance)
-        instance.update_variable_set
       end
 
       def converge_vm
