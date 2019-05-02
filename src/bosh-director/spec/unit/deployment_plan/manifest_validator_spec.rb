@@ -59,7 +59,6 @@ module Bosh
         context 'with cloud-config' do
           let(:manifest_hash) do
             {
-              'resource_pools' => ['fake-resource-pool'],
               'compilation' => ['fake-compilation'],
             }
           end
@@ -69,9 +68,9 @@ module Bosh
             expect {
               manifest_validator.validate(manifest_hash, cloud_config_hash)
             }.to raise_error(
-                DeploymentInvalidProperty,
-                'Deployment manifest should not contain cloud config properties: ["resource_pools", "compilation"]'
-              )
+              DeploymentInvalidProperty,
+              'Deployment manifest should not contain cloud config properties: ["compilation"]',
+            )
           end
         end
       end

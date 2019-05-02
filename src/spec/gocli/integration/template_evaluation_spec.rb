@@ -23,7 +23,6 @@ describe 'template', type: :integration do
     id_instance = director.instance('id_job', '0')
     template = YAML.load(id_instance.read_job_template('id_job', 'config.yml'))
     expect(template['id']).to match /[a-f0-9\-]/
-    expect(template['resource_pool']).to eq 'a'
   end
 
 
