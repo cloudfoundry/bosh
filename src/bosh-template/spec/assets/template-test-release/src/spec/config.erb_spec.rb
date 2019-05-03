@@ -135,7 +135,8 @@ module Bosh::Template::Test
                     'password' => 'asdf1234',
                     'port' => 4321,
                     'name' => 'webserverdb',
-                  }
+                  },
+                  address: 'primary-db.link.address.bosh',
                 )
               ]
               rendered_config = JSON.parse(template.render(merged_manifest_properties, consumes: links))
@@ -145,6 +146,7 @@ module Bosh::Template::Test
               expect(rendered_config['db']['password']).to eq('asdf1234')
               expect(rendered_config['db']['port']).to eq(4321)
               expect(rendered_config['db']['database']).to eq('webserverdb')
+              expect(rendered_config['db']['address']).to eq('primary-db.link.address.bosh')
             end
 
             context 'when the release does not consume the provided link' do
