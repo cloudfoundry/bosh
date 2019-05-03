@@ -10,7 +10,6 @@ groups:
       # - load-tests-mysql
       # - legacy-load-tests-postgres
       # - legacy-load-tests-mysql
-      - fuzz-tests
       - candidate-release
       - finalize-bosh-release
       - export-final-release
@@ -299,25 +298,6 @@ jobs:
             DB: mysql
             RUBY_VERSION: 2.4.4
 
-  - name: fuzz-tests
-    public: true
-    serial: true
-    build_logs_to_retain: 2500
-    plan:
-    - { get: fuzz-interval-trigger, trigger: true }
-    - { get: bosh-src, trigger: true }
-    - { get: bosh-agent }
-    - { get: bosh-fuzz-tests }
-    - { get: bosh-cli }
-
-    - task: test
-      privileged: true
-      file: bosh-fuzz-tests/ci/tasks/test.yml
-      tags: ["bosh-integration"]
-      params:
-        BOSH_SRC_PATH: bosh-src/src
-        RUBY_VERSION: 2.4.4
-
   - name: candidate-release
     plan:
     - get: bosh-src
@@ -326,7 +306,6 @@ jobs:
       - unit-2.4
       - unit-2.4-mysql
       - unit-2.4-postgres
-      - fuzz-tests
       - upgrade-tests
       - blobstore-performance
     - get: bosh-cli
@@ -535,12 +514,6 @@ resources:
       bucket: davcli
       region_name: us-east-1
 
-  - name: bosh-fuzz-tests
-    type: git
-    source:
-      uri: https://github.com/cloudfoundry-incubator/bosh-fuzz-tests.git
-      branch: master
-
   # - name: bosh-load-tests-workspace
   #   type: git
   #   source:
@@ -553,11 +526,6 @@ resources:
       uri: ((bosh_src_url))
       branch: master
       private_key: ((github_deployment_key))
-
-  - name: fuzz-interval-trigger
-    type: time
-    source:
-      interval: 15m
 
   # - name: load-tests-interval
   #   type: time
