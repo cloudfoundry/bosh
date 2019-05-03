@@ -29,7 +29,7 @@ module Bosh::Director::BoshDigest
           expect { subject.verify(file_path, 'expected-sha') }.to_not raise_error
         end
 
-        it 'does not raise an error when expected sha is incorrect' do
+        it 'does raise an error when expected sha is incorrect' do
           process_status = instance_double('Process::Status', exitstatus: 1)
           allow(Open3).to receive(:capture3).with(multi_digest_path, "verify-multi-digest", "fake-file-path", "expected-sha").
             and_return(['foo', 'bar', process_status])
