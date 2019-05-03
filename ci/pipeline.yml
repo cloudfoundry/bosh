@@ -135,7 +135,6 @@ jobs:
   - name: gate
     serial_groups:
       - blobstore-performance
-      - fuzz-tests
       - integration-db-tls-mysql
       - integration-db-tls-postgres
       - integration-db-tls-postgres-hotswap
@@ -390,13 +389,10 @@ jobs:
 
   - name: fuzz-tests
     public: true
-    serial: true
-    serial_groups: [fuzz-tests]
     build_logs_to_retain: 2500
     plan:
     - { get: fuzz-interval-trigger, trigger: true }
     - get: bosh-src
-      passed: [gate]
       trigger: true
     - { get: bosh-agent }
     - { get: bosh-fuzz-tests }
@@ -418,7 +414,6 @@ jobs:
       - unit-2.4
       - unit-2.4-mysql
       - unit-2.4-postgres
-      - fuzz-tests
       - upgrade-tests
       - blobstore-performance
       - integration-db-tls-mysql
