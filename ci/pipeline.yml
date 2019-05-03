@@ -6,7 +6,6 @@ groups:
   - integration-db-tls-postgres
   - integration-db-tls-postgres-hotswap
   - integration-db-tls-mysql
-  - fuzz-tests
   - candidate-release
   - bats-centos
   - bats-ubuntu-trusty
@@ -360,26 +359,6 @@ jobs:
       task: upgrade-with-mysql
   public: true
   serial: true
-- build_logs_to_retain: 2500
-  name: fuzz-tests
-  plan:
-  - get: fuzz-interval-trigger
-    trigger: true
-  - get: bosh-src
-    trigger: true
-  - get: bosh-agent
-  - get: bosh-fuzz-tests
-  - get: bosh-cli
-  - file: bosh-fuzz-tests/ci/tasks/test.yml
-    params:
-      BOSH_SRC_PATH: bosh-src/src
-      RUBY_VERSION: 2.4.4
-    privileged: true
-    tags:
-    - bosh-integration-6
-    task: test
-  public: true
-  serial: true
 - name: compile-bbr-xenial
   plan:
   - aggregate:
@@ -419,7 +398,6 @@ jobs:
     - unit-2.4
     - unit-2.4-mysql
     - unit-2.4-postgres
-    - fuzz-tests
     - upgrade-tests
     - blobstore-performance
     - integration-db-tls-mysql
@@ -1305,15 +1283,6 @@ resources:
     regexp: davcli-(.*)-linux-amd64
     region_name: us-east-1
   type: s3
-- name: bosh-fuzz-tests
-  source:
-    branch: master
-    uri: https://github.com/cloudfoundry-incubator/bosh-fuzz-tests.git
-  type: git
-- name: fuzz-interval-trigger
-  source:
-    interval: 1h
-  type: time
 - name: bosh-cli
   source:
     bucket: ((bosh_cli_aws_s3_alpha_release_bucket))
