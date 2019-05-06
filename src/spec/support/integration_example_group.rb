@@ -439,9 +439,6 @@ end
 
 RSpec.configure do |config|
   config.include(IntegrationExampleGroup, type: :integration)
-  config.include(IntegrationExampleGroup, type: :upgrade)
   config.include(IntegrationSandboxHelpers, type: :integration)
-  config.include(IntegrationSandboxHelpers, type: :upgrade)
   config.extend(IntegrationSandboxBeforeHelpers, type: :integration)
-  config.extend(IntegrationSandboxBeforeHelpers, type: :upgrade)
 end

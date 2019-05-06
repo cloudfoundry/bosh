@@ -26,11 +26,6 @@ namespace :spec do
       run_integration_specs(spec_path: 'spec/gocli/integration', tags: 'hm')
     end
 
-    desc 'Run BOSH gocli upgrade tests against a local sandbox'
-    task upgrade: :install_dependencies do
-      run_integration_specs(spec_path: 'spec/gocli/integration_upgrade')
-    end
-
     desc 'Install BOSH integration test dependencies (currently Nginx, UAA, and Config Server)'
     task :install_dependencies do
       FileUtils.mkdir_p('tmp')
@@ -119,8 +114,6 @@ namespace :spec do
   end
 
   task integration_gocli: %w[spec:integration:gocli]
-
-  task upgrade: %w[spec:integration:upgrade]
 
   desc 'Run all release unit tests (ERB templates)'
   task :release_unit do

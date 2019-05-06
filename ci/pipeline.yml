@@ -16,7 +16,6 @@ groups:
       - bats-ubuntu-xenial-aws
       - brats-ubuntu-xenial
       - bosh-disaster-recovery-acceptance-tests
-      - upgrade-tests
       - blobstore-performance
       - upload-compiled-staging-tarball
       - deploy-acceptance-env
@@ -141,7 +140,6 @@ jobs:
       - unit-2.4
       - unit-2.4-mysql
       - unit-2.4-postgres
-      - upgrade-tests
     plan:
     - get: bosh-src
       trigger: true
@@ -359,34 +357,6 @@ jobs:
           file: parallel-runtime-log/parallel_runtime_rspec.log
           acl: public-read
 
-  - name: upgrade-tests
-    public: true
-    serial: true
-    serial_groups: [upgrade-tests]
-    build_logs_to_retain: 250
-    plan:
-      - aggregate:
-        - get: bosh-src
-          passed: [gate]
-          trigger: true
-        - get: bosh-cli
-          trigger: true
-        - get: bosh-agent
-      - aggregate:
-        - task: upgrade-with-postgres
-          privileged: true
-          file: bosh-src/ci/tasks/test-upgrade.yml
-          tags: ["bosh-integration-4"]
-          params:
-            DB: postgresql
-
-        - task: upgrade-with-mysql
-          privileged: true
-          file: bosh-src/ci/tasks/test-upgrade.yml
-          tags: ["bosh-integration-5"]
-          params:
-            DB: mysql
-
   - name: fuzz-tests
     public: true
     build_logs_to_retain: 2500
@@ -414,7 +384,6 @@ jobs:
       - unit-2.4
       - unit-2.4-mysql
       - unit-2.4-postgres
-      - upgrade-tests
       - blobstore-performance
       - integration-db-tls-mysql
       - integration-db-tls-postgres
