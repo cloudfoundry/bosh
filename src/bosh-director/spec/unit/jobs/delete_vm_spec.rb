@@ -113,7 +113,7 @@ module Bosh::Director
           it 'should store event' do
             expect(cloud).to receive(:delete_vm).with(vm_cid)
             job.perform
-            event1 = Bosh::Director::Models::Event.first
+            event1 = Bosh::Director::Models::Event.order(:timestamp).first
             expect(event1.user).to eq(task.username)
             expect(event1.action).to eq('delete')
             expect(event1.object_type).to eq('vm')
@@ -122,7 +122,7 @@ module Bosh::Director
             expect(event1.deployment).to be_nil
             expect(event1.task).to eq(task.id.to_s)
 
-            event2 = Bosh::Director::Models::Event.all.last
+            event2 = Bosh::Director::Models::Event.order(:timestamp).last
             expect(event2.parent_id).to eq(event1.id)
             expect(event2.user).to eq(task.username)
             expect(event2.action).to eq('delete')
