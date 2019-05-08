@@ -603,7 +603,6 @@ module Bosh::Spec
     def self.minimal_manifest
       {
         'name' => 'minimal',
-        'director_uuid' => 'deadbeef',
 
         'releases' => [{
           'name'    => 'test_release',
@@ -632,7 +631,6 @@ module Bosh::Spec
     def self.dummy_deployment
       {
         'name' => 'dummy',
-        'director_uuid' => 'deadbeef',
 
         'releases' => [{
           'name'    => 'dummy',
@@ -653,7 +651,6 @@ module Bosh::Spec
     def self.manifest_with_jobs
       {
         'name' => 'minimal',
-        'director_uuid' => 'deadbeef',
 
         'releases' => [{
           'name' => 'appcloud',
@@ -737,7 +734,6 @@ module Bosh::Spec
     def self.test_deployment_manifest
       {
         'name' => 'test_deployment',
-        'director_uuid' => 'deadbeef',
 
         'releases' => [{
           'name' => 'test_release',
@@ -770,7 +766,6 @@ module Bosh::Spec
     def self.test_deployment_manifest_referencing_multiple_releases
       {
         'name' => 'multiple_release_deployment',
-        'director_uuid' => 'deadbeef',
 
         'releases' => [{
           'name' => 'test_release',
@@ -805,7 +800,6 @@ module Bosh::Spec
     def self.minimal_legacy_manifest
       simple_cloud_config.merge(
         'name' => 'minimal_legacy_manifest',
-        'director_uuid' => 'deadbeef',
 
         'releases' => [{
           'name' => 'test_release',
@@ -824,7 +818,6 @@ module Bosh::Spec
     def self.multiple_release_manifest
       {
         'name' => 'minimal',
-        'director_uuid' => 'deadbeef',
 
         'releases' => [{
           'name' => 'test_release',

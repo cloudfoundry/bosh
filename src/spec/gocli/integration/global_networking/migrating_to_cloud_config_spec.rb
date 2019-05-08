@@ -96,7 +96,6 @@ describe 'migrating to cloud config', type: :integration do
       let(:legacy_manifest) do
         {
           'name' => 'simple',
-          'director_uuid' => 'deadbeef',
           'releases' => [{'name' => 'bosh-release', 'version' => '0.1-dev'}],
           'networks' => [
             {
@@ -164,7 +163,6 @@ describe 'migrating to cloud config', type: :integration do
       let(:second_deployment_manifest) do
         {
           'name' => 'simple',
-          'director_uuid' => 'deadbeef',
           'releases' => [{'name' => 'bosh-release', 'version' => '0.1-dev'}],
           'stemcells' => [
             {'name' => 'ubuntu-stemcell', 'version' => '1', 'alias' => 'a_stemcell'}

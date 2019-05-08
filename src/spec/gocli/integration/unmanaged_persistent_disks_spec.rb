@@ -42,7 +42,6 @@ describe 'multiple persistent disks', type: :integration do
   let(:manifest_hash) do
     {
       'name' => 'simple',
-      'director_uuid' => 'deadbeef',
       'releases' =>[{'name' => 'bosh-release', 'version' => '0.1-dev'}],
       'update' => {
         'canaries' =>2,

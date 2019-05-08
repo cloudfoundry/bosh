@@ -9,7 +9,6 @@ describe 'compiled releases', type: :integration do
       let(:manifest_hash) do
         {
           'name' => 'minimal',
-          'director_uuid' => 'deadbeef',
 
           'releases' => [{
             'name' => 'test_release',

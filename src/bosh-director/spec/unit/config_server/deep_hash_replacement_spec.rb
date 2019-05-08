@@ -33,7 +33,6 @@ module Bosh::Director::ConfigServer
       let(:sample_hash) do
         {
           'name' => 'test_manifest',
-          'director_uuid' => '((director_uuid_placeholder))',
           'smurf' => '((/my/name/is/smurf/12-3))',
           'gargamel' => '((my/name/is/gar_gamel))',
           'instance_groups' => [
@@ -57,7 +56,6 @@ module Bosh::Director::ConfigServer
 
       it 'creates replacement map for all necessary variables' do
         expected_result = [
-          {'variables'=>['((director_uuid_placeholder))'], 'path'=>['director_uuid'],'is_key'=> false},
           {'variables'=>['((/my/name/is/smurf/12-3))'], 'path'=>['smurf'], 'is_key'=>false},
           {'variables'=>['((my/name/is/gar_gamel))'], 'path'=>['gargamel'], 'is_key'=>false},
           {'variables'=>['((nuclear_launch_code))'], 'path'=>['instance_groups', 0, 'jobs', 0, 'properties', 'a', 'b', 'c'], 'is_key'=>false},
@@ -129,7 +127,6 @@ module Bosh::Director::ConfigServer
           ignored_subtrees << ['properties']
 
           expected_replacements = [
-            {'variables'=>['((director_uuid_placeholder))'], 'path'=>['director_uuid'], 'is_key' =>false},
             {'variables'=>['((/my/name/is/smurf/12-3))'], 'path'=>['smurf'], 'is_key' =>false},
             {'variables'=>['((my/name/is/gar_gamel))'], 'path'=>['gargamel'], 'is_key' =>false},
             {'variables'=>['((job_name))'], 'path'=>['instance_groups', 0, 'jobs', 1, 'name'], 'is_key' =>false},

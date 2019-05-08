@@ -96,7 +96,6 @@ module Bosh::Director::DeploymentPlan
     let(:manifest_hash) do
       {
         'name' => 'simple',
-        'director_uuid' => 'deadbeef',
         'releases' => [{ 'name' => 'bosh-release', 'version' => '0.1-dev' }],
         'update' => { 'canaries' => 2, 'canary_watch_time' => 4000, 'max_in_flight' => 1, 'update_watch_time' => 20 },
         'stemcells' => [{ 'name' => 'ubuntu-stemcell', 'version' => '1', 'alias' => 'default' }],

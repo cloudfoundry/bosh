@@ -39,7 +39,6 @@ describe 'calculated vm properties', type: :integration do
   let(:deployment_manifest_with_vm_block) do
     {
       'name' => 'simple',
-      'director_uuid'  => 'deadbeef',
 
       'releases' => [{
         'name'    => 'bosh-release',

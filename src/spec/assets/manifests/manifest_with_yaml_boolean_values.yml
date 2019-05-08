@@ -1,4 +1,3 @@
-director_uuid: deadbeef
 instance_groups:
 - instances: 1
   jobs:

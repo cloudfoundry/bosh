@@ -5,7 +5,6 @@ describe 'using director with config server', type: :integration do
   let(:manifest_hash) do
     {
       'name' => 'simple',
-      'director_uuid' => 'deadbeef',
       'releases' => [{ 'name' => 'bosh-release', 'version' => '0.1-dev' }],
       'update' => {
         'canaries' => 2,
@@ -257,7 +256,6 @@ describe 'using director with config server', type: :integration do
     let(:manifest_hash) do
       {
         'name' => 'simple',
-        'director_uuid' => 'deadbeef',
         'releases' => [{ 'name' => 'bosh-release', 'version' => '0.1-dev' }],
         'update' => {
           'canaries' => 2,
@@ -325,7 +323,6 @@ describe 'using director with config server', type: :integration do
     let(:manifest_hash) do
       {
         'name' => 'foo-deployment',
-        'director_uuid' => nil,
         'releases' => [{ 'name' => 'bosh-release', 'version' => 'latest' }],
         'instance_groups' => [
           {
@@ -535,7 +532,6 @@ describe 'using director with config server', type: :integration do
     let(:manifest_hash) do
       {
         'name' => 'my-dep',
-        'director_uuid' => 'deadbeef',
         'releases' => [{ 'name' => 'bosh-release', 'version' => '0.1-dev' }],
         'update' => {
           'canaries' => 2,

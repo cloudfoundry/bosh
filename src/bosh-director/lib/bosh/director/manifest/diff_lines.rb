@@ -22,7 +22,6 @@ module Bosh::Director
       disk_types
       disk_pools
       name
-      director_uuid
       stemcells
       releases
       update

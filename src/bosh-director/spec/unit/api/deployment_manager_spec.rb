@@ -10,7 +10,6 @@ module Bosh::Director
     end
 
     before do
-      Bosh::Director::Models::DirectorAttribute.make(name: 'uuid', value: 'fake-director-uuid')
       allow(Config).to receive(:base_dir).and_return('/tmp')
     end
 
@@ -164,6 +163,5 @@ module Bosh::Director
         end
       end
     end
-
   end
 end
