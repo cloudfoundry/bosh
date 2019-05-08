@@ -5,7 +5,9 @@ module Bosh::Director
   describe Jobs::Ssh do
     include FakeFS::SpecHelpers
 
-    subject(:job) { described_class.new(deployment.id, {'target' => target, 'command' => 'fake-command', 'params' => {'user' => 'user-ssh'}, :blobstore => {}}) }
+    subject(:job) do
+      described_class.new(deployment.id, 'target' => target, 'command' => 'fake-command', 'params' => { 'user' => 'user-ssh' })
+    end
 
     let(:deployment) { Models::Deployment.make(name: 'name-1') }
     let(:variable_set) { Models::VariableSet.make(deployment: deployment) }

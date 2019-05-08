@@ -15,7 +15,6 @@ module Bosh::Director
         @target_payload = options["target"]
         @command = options["command"]
         @params = options["params"]
-        @blobstore = options.fetch(:blobstore) { App.instance.blobstores.blobstore }
         @instance_manager = Api::InstanceManager.new
       end
 

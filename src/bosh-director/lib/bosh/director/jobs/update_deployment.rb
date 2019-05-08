@@ -11,7 +11,6 @@ module Bosh::Director
       end
 
       def initialize(manifest_text, cloud_config_ids, runtime_config_ids, options = {})
-        @blobstore = App.instance.blobstores.blobstore
         @manifest_text = manifest_text
         @cloud_config_ids = cloud_config_ids
         @runtime_config_ids = runtime_config_ids

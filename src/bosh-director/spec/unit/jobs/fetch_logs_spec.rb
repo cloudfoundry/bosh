@@ -4,7 +4,7 @@ require 'timecop'
 
 module Bosh::Director
   describe Jobs::FetchLogs do
-    subject(:fetch_logs) { Jobs::FetchLogs.new(instances, blobstore: blobstore, 'filters' => 'filter1,filter2') }
+    subject(:fetch_logs) { Jobs::FetchLogs.new(instances, 'filters' => 'filter1,filter2') }
     let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
     let(:task) { Models::Task.make(id: 42) }
     let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
@@ -12,6 +12,7 @@ module Bosh::Director
 
     before {
       allow(Config).to receive(:event_log).and_return(event_log)
+      allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
     }
 
     describe 'DJ job class expectations' do
