@@ -9,7 +9,7 @@ module Bosh::Director::Test
     # Checksums are filled in automatically to satisfy integrity checks.
     # @param [Hash] manifest Release manifest
     # @return [String] Directory containing release.tgz
-    def create_release_tarball(manifest)
+    def create_release_tarball(manifest, options = {})
       tmp_dir = Dir.mktmpdir
       release_dir = Dir.mktmpdir
 
@@ -63,6 +63,7 @@ module Bosh::Director::Test
       end
 
       packages = manifest[packages_dir_name] || []
+      packages = [] if options[:skip_packages]
       packages.each do |package|
         package_dir = File.join(packages_dir, package["name"])
         FileUtils.mkdir(package_dir)

@@ -237,16 +237,17 @@ module Bosh::Director
           end
 
           if existing_package
-            if existing_package.release_versions.include?(@release_version_model)
-              if existing_package.blobstore_id.nil?
-                packages.each do |package|
-                  next if package.blobstore_id.nil?
+            if existing_package.blobstore_id.nil?
+              packages.each do |package|
+                next if package.blobstore_id.nil?
 
-                  package_meta['blobstore_id'] = package.blobstore_id
-                  package_meta['sha1'] = package.sha1
-                  break
-                end
+                package_meta['blobstore_id'] = package.blobstore_id
+                package_meta['sha1'] = package.sha1
+                break
               end
+            end
+
+            if existing_package.release_versions.include?(@release_version_model)
               registered_packages << [existing_package, package_meta]
             else
               existing_packages << [existing_package, package_meta]

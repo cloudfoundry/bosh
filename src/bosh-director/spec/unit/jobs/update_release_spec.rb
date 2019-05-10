@@ -1380,5 +1380,98 @@ module Bosh::Director
         end
       end
     end
+
+    describe 're-using existing packages' do
+      subject(:job) { Jobs::UpdateRelease.new(release_path, {}) }
+
+      let(:manifest) do
+        {
+          'name' => 'appcloud',
+          'version' => release_version,
+          'commit_hash' => '12345678',
+          'uncommitted_changes' => true,
+          'jobs' => [],
+          'packages' => manifest_packages,
+        }
+      end
+
+      let(:manifest_packages) do
+        [
+          {
+            'sha1' => 'fakesha1',
+            'fingerprint' => 'fake-fingerprint-1',
+            'name' => 'fake-name-1',
+            'version' => 'fake-version-1',
+          },
+        ]
+      end
+
+      let(:release_dir) { Test::ReleaseHelper.new.create_release_tarball(manifest, skip_packages: true) }
+      let(:release_path) { File.join(release_dir, 'release.tgz') }
+      let(:release_version) { '42+dev.6' }
+      let(:release) { Models::Release.make(name: 'appcloud') }
+      let(:other_release) { Models::Release.make(name: 'other-release') }
+      let(:release_version_model) do
+        Models::ReleaseVersion.make(
+          release: release,
+          version: release_version,
+          commit_hash: '12345678',
+          uncommitted_changes: true,
+          update_completed: true,
+        )
+      end
+
+      let!(:existing_package_without_source) do
+        Models::Package.make(
+          fingerprint: 'fake-fingerprint-1',
+          name: 'fake-name-1',
+          version: 'fake-version-1',
+          release: release,
+          blobstore_id: nil,
+          sha1: nil,
+        )
+      end
+
+      let!(:existing_package_with_source_and_different_release) do
+        Models::Package.make(
+          fingerprint: 'fake-fingerprint-1',
+          name: 'fake-name-1',
+          version: 'fake-version-1',
+          release: other_release,
+        )
+      end
+
+      before do
+        allow(job).to receive(:with_release_lock).and_yield
+        allow(blobstore).to receive(:get).and_return([existing_package_with_source_and_different_release])
+        allow(blobstore).to receive(:create).and_return(existing_package_with_source_and_different_release.blobstore_id)
+      end
+
+      it 'copies the source from the other releases package' do
+        expect do
+          subject.perform
+        end.to_not raise_error
+
+        expect(existing_package_without_source.reload.blobstore_id).to(
+          eq(existing_package_with_source_and_different_release.blobstore_id),
+        )
+      end
+
+      context 'when the package is already associated with the release version' do
+        before do
+          release_version_model.add_package(existing_package_without_source)
+        end
+
+        it 'backfills the source for the existing package from other packages' do
+          expect do
+            subject.perform
+          end.to_not raise_error
+
+          expect(existing_package_without_source.reload.blobstore_id).to(
+            eq(existing_package_with_source_and_different_release.blobstore_id),
+          )
+        end
+      end
+    end
   end
 end
