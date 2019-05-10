@@ -237,14 +237,6 @@ module Bosh::Director
           end
 
           if existing_package
-            # clean up 'broken' dependency_set (a bug was including transitives)
-            # dependency ordering impacts fingerprint
-            # TODO: The following code can be removed after some reasonable time period (added 2014.10.06)
-            if existing_package.dependency_set != package_meta['dependencies']
-              existing_package.dependency_set = package_meta['dependencies']
-              existing_package.save
-            end
-
             if existing_package.release_versions.include?(@release_version_model)
               if existing_package.blobstore_id.nil?
                 packages.each do |package|
@@ -259,7 +251,6 @@ module Bosh::Director
             else
               existing_packages << [existing_package, package_meta]
             end
-
           else
             # We found a package with the same fingerprint but different
             # (release, name, version) tuple, so we need to make a copy
