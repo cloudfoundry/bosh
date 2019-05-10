@@ -67,3 +67,6 @@ Style/TrailingCommaInArguments:
 
 Style/MultilineBlockChain:
   Enabled: false
+
+Style/DoubleNegation:
+  Enabled: false

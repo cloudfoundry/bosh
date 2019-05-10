@@ -10,12 +10,12 @@ module Bosh::Director
     end
     let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
     let(:task) { Models::Task.make(id: 42) }
-    let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
-    let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
+    let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
+    let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
 
-    before {
+    before do
       allow(Config).to receive(:event_log).and_return(event_log)
-    }
+    end
 
     describe 'DJ job class expectations' do
       let(:job_type) { :update_release }
@@ -33,44 +33,44 @@ module Bosh::Director
 
       let(:manifest_jobs) do
         [
-            {
-                'name' => 'fake-job-1',
-                'version' => 'fake-version-1',
-                'sha1' => 'fakesha11',
-                'fingerprint' => 'fake-fingerprint-1',
-                'templates' => {}
-            },
-            {
-                'name' => 'fake-job-2',
-                'version' => 'fake-version-2',
-                'sha1' => 'fake-sha1-2',
-                'fingerprint' => 'fake-fingerprint-2',
-                'templates' => {}
-            }
+          {
+            'name' => 'fake-job-1',
+            'version' => 'fake-version-1',
+            'sha1' => 'fakesha11',
+            'fingerprint' => 'fake-fingerprint-1',
+            'templates' => {},
+          },
+          {
+            'name' => 'fake-job-2',
+            'version' => 'fake-version-2',
+            'sha1' => 'fake-sha1-2',
+            'fingerprint' => 'fake-fingerprint-2',
+            'templates' => {},
+          },
         ]
       end
       let(:manifest_compiled_packages) do
         [
-            {
-                'sha1' => 'fakesha1',
-                'fingerprint' => 'fake-fingerprint-1',
-                'name' => 'fake-name-1',
-                'version' => 'fake-version-1'
-            },
-            {
-                'sha1' => 'fakesha2',
-                'fingerprint' => 'fake-fingerprint-2',
-                'name' => 'fake-name-2',
-                'version' => 'fake-version-2'
-            }
+          {
+            'sha1' => 'fakesha1',
+            'fingerprint' => 'fake-fingerprint-1',
+            'name' => 'fake-name-1',
+            'version' => 'fake-version-1',
+          },
+          {
+            'sha1' => 'fakesha2',
+            'fingerprint' => 'fake-fingerprint-2',
+            'name' => 'fake-name-2',
+            'version' => 'fake-version-2',
+          },
         ]
       end
       let(:manifest) do
         {
-            'name' => 'appcloud',
-            'version' => release_version,
-            'jobs' => manifest_jobs,
-            'compiled_packages' => manifest_compiled_packages,
+          'name' => 'appcloud',
+          'version' => release_version,
+          'jobs' => manifest_jobs,
+          'compiled_packages' => manifest_compiled_packages,
         }
       end
 
@@ -86,14 +86,14 @@ module Bosh::Director
       end
 
       it 'should process packages for compiled release' do
-          expect(job).to receive(:create_packages)
-          expect(job).to receive(:use_existing_packages)
-          expect(job).to receive(:create_compiled_packages)
-          expect(job).to receive(:register_template).twice
-          expect(job).to receive(:create_job).twice
+        expect(job).to receive(:create_packages)
+        expect(job).to receive(:use_existing_packages)
+        expect(job).to receive(:create_compiled_packages)
+        expect(job).to receive(:register_template).twice
+        expect(job).to receive(:create_job).twice
 
-          job.perform
-        end
+        job.perform
+      end
     end
 
     describe '#perform' do
@@ -121,7 +121,7 @@ module Bosh::Director
       let(:release) { Models::Release.make(name: 'appcloud') }
       let(:manifest_packages) { nil }
       let(:manifest_jobs) { nil }
-      let(:status) { instance_double(Process::Status, exitstatus: 0)}
+      let(:status) { instance_double(Process::Status, exitstatus: 0) }
 
       before do
         allow(Open3).to receive(:capture3).and_return([nil, 'some error', status])
@@ -177,7 +177,7 @@ module Bosh::Director
           end
 
           context 'when the digest does not match' do
-            let(:status) { instance_double(Process::Status, exitstatus: 1)}
+            let(:status) { instance_double(Process::Status, exitstatus: 1) }
             let(:job_options) do
               { 'remote' => true, 'location' => 'release_location', 'sha1' => 'sha1:potato' }
             end
@@ -186,12 +186,11 @@ module Bosh::Director
               allow(job).to receive(:release_path).and_return(release_path)
               expect(job).to receive(:download_remote_release)
 
-              expect {
+              expect do
                 job.perform
-              }.to raise_exception(Bosh::Director::ReleaseSha1DoesNotMatch, 'some error')
+              end.to raise_exception(Bosh::Director::ReleaseSha1DoesNotMatch, 'some error')
             end
           end
-
         end
       end
 
@@ -223,7 +222,7 @@ module Bosh::Director
             'name' => 'appcloud',
             'version' => '42.6-dev',
             'jobs' => [],
-            'packages' => []
+            'packages' => [],
           }
         end
 
@@ -244,18 +243,18 @@ module Bosh::Director
         end
 
         it 'raises an error' do
-          expect {
+          expect do
             job.perform
-          }.to raise_exception(Bosh::Director::ReleaseInvalidArchive)
+          end.to raise_exception(Bosh::Director::ReleaseInvalidArchive)
         end
 
         it 'deletes release archive and the release dir' do
           expect(FileUtils).to receive(:rm_rf).with(release_dir)
           expect(FileUtils).to receive(:rm_rf).with(release_path)
 
-          expect {
+          expect do
             job.perform
-          }.to raise_exception(Bosh::Director::ReleaseInvalidArchive)
+          end.to raise_exception(Bosh::Director::ReleaseInvalidArchive)
         end
       end
 
@@ -293,8 +292,8 @@ module Bosh::Director
                   'sha1' => 'fakesha1',
                   'fingerprint' => 'fake-fingerprint-1',
                   'name' => 'fake-name-1',
-                  'version' => 'fake-version-1'
-                }
+                  'version' => 'fake-version-1',
+                },
               ]
             end
 
@@ -311,9 +310,9 @@ module Bosh::Director
           context 'when there are no job and package changes' do
             it 'still can pass and set a next release version' do
               # it just generate the next release version without creating/registering package
-              expect {
+              expect do
                 job.perform
-              }.to_not raise_error
+              end.to_not raise_error
 
               rv = Models::ReleaseVersion.filter(version: '42+dev.7').first
               expect(rv).to_not be_nil
@@ -340,9 +339,9 @@ module Bosh::Director
         end
 
         it 'fails with a ReleaseVersionCommitHashMismatch exception' do
-          expect {
+          expect do
             job.perform
-          }.to raise_exception(Bosh::Director::ReleaseVersionCommitHashMismatch, /#{previous_release_version.commit_hash}/)
+          end.to raise_exception(Bosh::Director::ReleaseVersionCommitHashMismatch, /#{previous_release_version.commit_hash}/)
         end
       end
 
@@ -351,15 +350,15 @@ module Bosh::Director
           # We only want to verify that the proper error is raised
           # If version can not be validated because it has wrong model format
           # Currently SemiSemantic Version validates version that matches the model format
-          stub_const("Bosh::Director::Models::VALID_ID", /^[a-z0-9]+$/i)
+          stub_const('Bosh::Director::Models::VALID_ID', /^[a-z0-9]+$/i)
         end
 
         let(:release_version) { 'bad-version' }
 
         it 'raises an error ReleaseVersionInvalid' do
-          expect {
+          expect do
             job.perform
-          }.to raise_error(Sequel::ValidationFailed)
+          end.to raise_error(Sequel::ValidationFailed)
         end
       end
 
@@ -370,14 +369,14 @@ module Bosh::Director
               'sha1' => 'fakesha1',
               'fingerprint' => 'fake-fingerprint-1',
               'name' => 'fake-name-1',
-              'version' => 'fake-version-1'
+              'version' => 'fake-version-1',
             },
             {
               'sha1' => 'fakesha2',
               'fingerprint' => 'fake-fingerprint-2',
               'name' => 'fake-name-2',
-              'version' => 'fake-version-2'
-            }
+              'version' => 'fake-version-2',
+            },
           ]
         end
 
@@ -387,15 +386,15 @@ module Bosh::Director
 
         it "creates packages that don't already exist" do
           expect(job).to receive(:create_packages).with([
-            {
-              'sha1' => 'fakesha2',
-              'fingerprint' => 'fake-fingerprint-2',
-              'name' => 'fake-name-2',
-              'version' => 'fake-version-2',
-              'dependencies' => [],
-              'compiled_package_sha1' => 'fakesha2',
-            }
-          ], release_dir)
+                                                          {
+                                                            'sha1' => 'fakesha2',
+                                                            'fingerprint' => 'fake-fingerprint-2',
+                                                            'name' => 'fake-name-2',
+                                                            'version' => 'fake-version-2',
+                                                            'dependencies' => [],
+                                                            'compiled_package_sha1' => 'fakesha2',
+                                                          },
+                                                        ], release_dir)
           job.perform
         end
 
@@ -406,9 +405,12 @@ module Bosh::Director
 
           allow(job).to receive(:create_packages)
 
-          expect {
+          expect do
             job.perform
-          }.to raise_exception(Bosh::Director::ReleaseInvalidPackage, /package 'fake-name-2' had different fingerprint in previously uploaded release 'appcloud\/42\+dev.6'/)
+          end.to raise_exception(
+            Bosh::Director::ReleaseInvalidPackage,
+            %r{package 'fake-name-2' had different fingerprint in previously uploaded release 'appcloud\/42\+dev.6'},
+          )
         end
       end
 
@@ -420,15 +422,15 @@ module Bosh::Director
               'version' => 'fake-version-1',
               'sha1' => 'fakesha11',
               'fingerprint' => 'fake-fingerprint-1',
-              'templates' => {}
+              'templates' => {},
             },
             {
               'name' => 'fake-job-2',
               'version' => 'fake-version-2',
               'sha1' => 'fake-sha1-2',
               'fingerprint' => 'fake-fingerprint-2',
-              'templates' => {}
-            }
+              'templates' => {},
+            },
           ]
         end
 
@@ -448,33 +450,47 @@ module Bosh::Director
         end
 
         it 'raises an error if a different fingerprint was detected for an already existing job' do
-          corrupted_job = Models::Template.make(release: release, name: 'fake-job-1', version: 'fake-version-1', fingerprint: 'different-finger-print', sha1: 'fakesha11')
-          release_version = Models::ReleaseVersion.make(release: release, version: '42+dev.6', commit_hash: '12345678', uncommitted_changes: true)
+          corrupted_job = Models::Template.make(
+            release: release,
+            name: 'fake-job-1',
+            version: 'fake-version-1',
+            fingerprint: 'different-finger-print',
+            sha1: 'fakesha11',
+          )
+          release_version = Models::ReleaseVersion.make(
+            release: release,
+            version: '42+dev.6',
+            commit_hash: '12345678',
+            uncommitted_changes: true,
+          )
           release_version.add_template(corrupted_job)
 
           allow(job).to receive(:process_packages)
 
-          expect {
+          expect do
             job.perform
-          }.to raise_exception(Bosh::Director::ReleaseExistingJobFingerprintMismatch, /job 'fake-job-1' had different fingerprint in previously uploaded release 'appcloud\/42\+dev.6'/)
+          end.to raise_exception(
+            Bosh::Director::ReleaseExistingJobFingerprintMismatch,
+            %r{job 'fake-job-1' had different fingerprint in previously uploaded release 'appcloud\/42\+dev.6'},
+          )
         end
 
         it "creates jobs that don't already exist" do
           Models::Template.make(
-              release: release,
-              name: 'fake-job-1',
-              version: 'fake-version-1',
-              fingerprint: 'fake-fingerprint-1'
+            release: release,
+            name: 'fake-job-1',
+            version: 'fake-version-1',
+            fingerprint: 'fake-fingerprint-1',
           )
           expect(job).to receive(:create_jobs).with([
-              {
-                  'sha1' => 'fake-sha1-2',
-                  'fingerprint' => 'fake-fingerprint-2',
-                  'name' => 'fake-job-2',
-                  'version' => 'fake-version-2',
-                  'templates' => {},
-              }
-          ], release_dir)
+                                                      {
+                                                        'sha1' => 'fake-sha1-2',
+                                                        'fingerprint' => 'fake-fingerprint-2',
+                                                        'name' => 'fake-job-2',
+                                                        'version' => 'fake-version-2',
+                                                        'templates' => {},
+                                                      },
+                                                    ], release_dir)
           job.perform
         end
 
@@ -490,39 +506,41 @@ module Bosh::Director
       end
 
       context 'when manifest contains packages and jobs' do
-        let(:manifest_jobs) do [
+        let(:manifest_jobs) do
+          [
             {
-                'name' => 'zbz',
-                'version' => '666',
-                'templates' => {},
-                'packages' => %w(zbb),
-                'fingerprint' => 'job-fingerprint-3'
-            }
-        ]
+              'name' => 'zbz',
+              'version' => '666',
+              'templates' => {},
+              'packages' => %w[zbb],
+              'fingerprint' => 'job-fingerprint-3',
+            },
+          ]
         end
-        let(:manifest_packages) do [
+        let(:manifest_packages) do
+          [
             {
-                'name' => 'foo',
-                'version' => '2.33-dev',
-                'dependencies' => %w(bar),
-                'fingerprint' => 'package-fingerprint-1',
-                'sha1' => 'packagesha11'
+              'name' => 'foo',
+              'version' => '2.33-dev',
+              'dependencies' => %w[bar],
+              'fingerprint' => 'package-fingerprint-1',
+              'sha1' => 'packagesha11',
             },
             {
-                'name' => 'bar',
-                'version' => '3.14-dev',
-                'dependencies' => [],
-                'fingerprint' => 'package-fingerprint-2',
-                'sha1' => 'packagesha12'
+              'name' => 'bar',
+              'version' => '3.14-dev',
+              'dependencies' => [],
+              'fingerprint' => 'package-fingerprint-2',
+              'sha1' => 'packagesha12',
             },
             {
-                'name' => 'zbb',
-                'version' => '333',
-                'dependencies' => [],
-                'fingerprint' => 'package-fingerprint-3',
-                'sha1' => 'packagesha13'
-            }
-        ]
+              'name' => 'zbb',
+              'version' => '333',
+              'dependencies' => [],
+              'fingerprint' => 'package-fingerprint-3',
+              'sha1' => 'packagesha13',
+            },
+          ]
         end
 
         it 'process packages should include all packages from the manifest in the packages array, even previously existing ones' do
@@ -560,49 +578,49 @@ module Bosh::Director
               'version' => '33',
               'templates' => {
                 'bin/test.erb' => 'bin/test',
-                'config/zb.yml.erb' => 'config/zb.yml'
+                'config/zb.yml.erb' => 'config/zb.yml',
               },
-              'packages' => %w(foo bar),
-              'fingerprint' => 'job-fingerprint-1'
+              'packages' => %w[foo bar],
+              'fingerprint' => 'job-fingerprint-1',
             },
             {
               'name' => 'zaz',
               'version' => '0.2-dev',
               'templates' => {},
-              'packages' => %w(bar),
-              'fingerprint' => 'job-fingerprint-2'
+              'packages' => %w[bar],
+              'fingerprint' => 'job-fingerprint-2',
             },
             {
               'name' => 'zbz',
               'version' => '666',
               'templates' => {},
-              'packages' => %w(zbb),
-              'fingerprint' => 'job-fingerprint-3'
-            }
+              'packages' => %w[zbb],
+              'fingerprint' => 'job-fingerprint-3',
+            },
           ],
           'packages' => [
             {
               'name' => 'foo',
               'version' => '2.33-dev',
-              'dependencies' => %w(bar),
+              'dependencies' => %w[bar],
               'fingerprint' => 'package-fingerprint-1',
-              'sha1' => 'packagesha11'
+              'sha1' => 'packagesha11',
             },
             {
               'name' => 'bar',
               'version' => '3.14-dev',
               'dependencies' => [],
               'fingerprint' => 'package-fingerprint-2',
-              'sha1' => 'packagesha12'
+              'sha1' => 'packagesha12',
             },
             {
               'name' => 'zbb',
               'version' => '333',
               'dependencies' => [],
               'fingerprint' => 'package-fingerprint-3',
-              'sha1' => 'packagesha13'
-            }
-          ]
+              'sha1' => 'packagesha13',
+            },
+          ],
         }
       end
 
@@ -655,22 +673,24 @@ module Bosh::Director
           @job.perform
 
           zbbs = Models::Package.filter(release_id: @release.id, name: 'zbb').all
-          expect(zbbs.map(&:version)).to match_array(%w(25 333))
+          expect(zbbs.map(&:version)).to match_array(%w[25 333])
 
           # Fingerprints are the same because package contents did not change
-          expect(zbbs.map(&:fingerprint)).to match_array(%w(package-fingerprint-3 package-fingerprint-3))
+          expect(zbbs.map(&:fingerprint)).to match_array(%w[package-fingerprint-3 package-fingerprint-3])
 
           # SHA1s are the same because first blob was copied
-          expect(zbbs.map(&:sha1)).to match_array(%w(packagesha1old packagesha1old))
+          expect(zbbs.map(&:sha1)).to match_array(%w[packagesha1old packagesha1old])
         end
 
         it 'associates newly created packages to the release version' do
           @job.perform
 
           rv = Models::ReleaseVersion.filter(release_id: @release.id, version: '42+dev.1').first
-          expect(rv.packages.map(&:version)).to match_array(%w(2.33-dev 3.14-dev 333))
-          expect(rv.packages.map(&:fingerprint)).to match_array(%w(package-fingerprint-1 package-fingerprint-2 package-fingerprint-3))
-          expect(rv.packages.map(&:sha1)).to match_array(%w(packagesha11 packagesha12 packagesha1old))
+          expect(rv.packages.map(&:version)).to match_array(%w[2.33-dev 3.14-dev 333])
+          expect(rv.packages.map(&:fingerprint)).to match_array(
+            %w[package-fingerprint-1 package-fingerprint-2 package-fingerprint-3],
+          )
+          expect(rv.packages.map(&:sha1)).to match_array(%w[packagesha11 packagesha12 packagesha1old])
         end
       end
 
@@ -686,22 +706,24 @@ module Bosh::Director
           @job.perform
 
           zbbs = Models::Package.filter(release_id: @release.id, name: 'zbb').all
-          expect(zbbs.map(&:version)).to match_array(%w(26 25 333))
+          expect(zbbs.map(&:version)).to match_array(%w[26 25 333])
 
           # Fingerprints are the same because package contents did not change
-          expect(zbbs.map(&:fingerprint)).to match_array(%w(package-fingerprint-3 package-fingerprint-3 package-fingerprint-3))
+          expect(zbbs.map(&:fingerprint)).to match_array(%w[package-fingerprint-3 package-fingerprint-3 package-fingerprint-3])
 
           # SHA1s are the same because first blob was copied
-          expect(zbbs.map(&:sha1)).to match_array(%w(packagesha125 packagesha125 packagesha126))
+          expect(zbbs.map(&:sha1)).to match_array(%w[packagesha125 packagesha125 packagesha126])
         end
 
         it 'associates newly created packages to the release version' do
           @job.perform
 
           rv = Models::ReleaseVersion.filter(release_id: @release.id, version: '42+dev.1').first
-          expect(rv.packages.map(&:version)).to match_array(%w(2.33-dev 3.14-dev 333))
-          expect(rv.packages.map(&:fingerprint)).to match_array(%w(package-fingerprint-1 package-fingerprint-2 package-fingerprint-3))
-          expect(rv.packages.map(&:sha1)).to match_array(%w(packagesha11 packagesha12 packagesha125))
+          expect(rv.packages.map(&:version)).to match_array(%w[2.33-dev 3.14-dev 333])
+          expect(rv.packages.map(&:fingerprint)).to match_array(
+            %w[package-fingerprint-1 package-fingerprint-2 package-fingerprint-3],
+          )
+          expect(rv.packages.map(&:sha1)).to match_array(%w[packagesha11 packagesha12 packagesha125])
         end
       end
 
@@ -716,22 +738,24 @@ module Bosh::Director
           @job.perform
 
           zbbs = Models::Package.filter(release_id: @release.id, name: 'zbb').all
-          expect(zbbs.map(&:version)).to match_array(%w(25 333))
+          expect(zbbs.map(&:version)).to match_array(%w[25 333])
 
           # Fingerprints are different because package contents are different
-          expect(zbbs.map(&:fingerprint)).to match_array(%w(package-fingerprint-old package-fingerprint-3))
+          expect(zbbs.map(&:fingerprint)).to match_array(%w[package-fingerprint-old package-fingerprint-3])
 
           # SHA1s are different because package tars are different
-          expect(zbbs.map(&:sha1)).to match_array(%w(packagesha125 packagesha13))
+          expect(zbbs.map(&:sha1)).to match_array(%w[packagesha125 packagesha13])
         end
 
         it 'associates newly created packages to the release version' do
           @job.perform
 
           rv = Models::ReleaseVersion.filter(release_id: @release.id, version: '42+dev.1').first
-          expect(rv.packages.map(&:version)).to match_array(%w(2.33-dev 3.14-dev 333))
-          expect(rv.packages.map(&:fingerprint)).to match_array(%w(package-fingerprint-1 package-fingerprint-2 package-fingerprint-3))
-          expect(rv.packages.map(&:sha1)).to match_array(%w(packagesha11 packagesha12 packagesha13))
+          expect(rv.packages.map(&:version)).to match_array(%w[2.33-dev 3.14-dev 333])
+          expect(rv.packages.map(&:fingerprint)).to match_array(
+            %w[package-fingerprint-1 package-fingerprint-2 package-fingerprint-3],
+          )
+          expect(rv.packages.map(&:sha1)).to match_array(%w[packagesha11 packagesha12 packagesha13])
         end
       end
 
@@ -746,11 +770,11 @@ module Bosh::Director
           @job.perform
 
           zbzs = Models::Template.filter(release_id: @release.id, name: 'zbz').all
-          expect(zbzs.map(&:version)).to match_array(%w(28 666))
-          expect(zbzs.map(&:fingerprint)).to match_array(%w(job-fingerprint-3 job-fingerprint-3))
+          expect(zbzs.map(&:version)).to match_array(%w[28 666])
+          expect(zbzs.map(&:fingerprint)).to match_array(%w[job-fingerprint-3 job-fingerprint-3])
 
           rv = Models::ReleaseVersion.filter(release_id: @release.id, version: '42+dev.1').first
-          expect(rv.templates.map(&:fingerprint)).to match_array(%w(job-fingerprint-1 job-fingerprint-2 job-fingerprint-3))
+          expect(rv.templates.map(&:fingerprint)).to match_array(%w[job-fingerprint-1 job-fingerprint-2 job-fingerprint-3])
         end
       end
 
@@ -765,37 +789,37 @@ module Bosh::Director
           @job.perform
 
           zbzs = Models::Template.filter(release_id: @release.id, name: 'zbz').all
-          expect(zbzs.map(&:version)).to match_array(%w(28 666))
-          expect(zbzs.map(&:fingerprint)).to match_array(%w(job-fingerprint-old job-fingerprint-3))
+          expect(zbzs.map(&:version)).to match_array(%w[28 666])
+          expect(zbzs.map(&:fingerprint)).to match_array(%w[job-fingerprint-old job-fingerprint-3])
 
           rv = Models::ReleaseVersion.filter(release_id: @release.id, version: '42+dev.1').first
-          expect(rv.templates.map(&:fingerprint)).to match_array(%w(job-fingerprint-1 job-fingerprint-2 job-fingerprint-3))
+          expect(rv.templates.map(&:fingerprint)).to match_array(%w[job-fingerprint-1 job-fingerprint-2 job-fingerprint-3])
         end
       end
 
       it 'uses major+dev.1 version for initial rebase if no version exists' do
         @rv.destroy
-        Models::Package.each { |p| p.destroy }
-        Models::Template.each { |t| t.destroy }
+        Models::Package.each(&:destroy)
+        Models::Template.each(&:destroy)
 
         @job.perform
 
         foos = Models::Package.filter(release_id: @release.id, name: 'foo').all
         bars = Models::Package.filter(release_id: @release.id, name: 'bar').all
 
-        expect(foos.map { |foo| foo.version }).to match_array(%w(2.33-dev))
-        expect(bars.map { |bar| bar.version }).to match_array(%w(3.14-dev))
+        expect(foos.map(&:version)).to match_array(%w[2.33-dev])
+        expect(bars.map(&:version)).to match_array(%w[3.14-dev])
 
         bazs = Models::Template.filter(release_id: @release.id, name: 'baz').all
         zazs = Models::Template.filter(release_id: @release.id, name: 'zaz').all
 
-        expect(bazs.map { |baz| baz.version }).to match_array(%w(33))
-        expect(zazs.map { |zaz| zaz.version }).to match_array(%w(0.2-dev))
+        expect(bazs.map(&:version)).to match_array(%w[33])
+        expect(zazs.map(&:version)).to match_array(%w[0.2-dev])
 
         rv = Models::ReleaseVersion.filter(release_id: @release.id, version: '42+dev.1').first
 
-        expect(rv.packages.map { |p| p.version }).to match_array(%w(2.33-dev 3.14-dev 333))
-        expect(rv.templates.map { |t| t.version }).to match_array(%w(0.2-dev 33 666))
+        expect(rv.packages.map(&:version)).to match_array(%w[2.33-dev 3.14-dev 333])
+        expect(rv.templates.map(&:version)).to match_array(%w[0.2-dev 33 666])
       end
 
       it 'performs the rebase if same release is being rebased twice', if: ENV.fetch('DB', 'sqlite') != 'sqlite' do
@@ -810,9 +834,9 @@ module Bosh::Director
         @release_path = File.join(@release_dir, 'release.tgz')
         @job = Jobs::UpdateRelease.new(@release_path, 'rebase' => true)
 
-        expect {
+        expect do
           @job.perform
-        }.to_not raise_error
+        end.to_not raise_error
 
         rv = Models::ReleaseVersion.filter(release_id: @release.id, version: '42+dev.2').first
         expect(rv).to_not be_nil
@@ -870,8 +894,8 @@ module Bosh::Director
               'fingerprint' => 'fake-fingerprint-1',
               'name' => 'fake-name-1',
               'version' => 'fake-version-1',
-              'dependencies' => []
-            }
+              'dependencies' => [],
+            },
           ]
         end
 
@@ -883,7 +907,7 @@ module Bosh::Director
               version: 'fake-version-1',
               fingerprint: 'fake-fingerprint-1',
               blobstore_id: 'fake-pkg-blobstore-id-1',
-              sha1: 'fakesha1'
+              sha1: 'fakesha1',
             )
             release_version_model.add_package(package)
             package
@@ -907,11 +931,11 @@ module Bosh::Director
             expect(BlobUtil).to receive(:delete_blob).with('fake-job-blobstore-id-2')
 
             expect(BlobUtil).to receive(:create_blob).with(
-              File.join(release_dir, 'packages', 'fake-name-1.tgz')
+              File.join(release_dir, 'packages', 'fake-name-1.tgz'),
             ).and_return('new-blobstore-id-after-fix')
 
             expect(BlobUtil).to receive(:create_blob).with(
-              File.join(release_dir, 'jobs', 'fake-name-2.tgz')
+              File.join(release_dir, 'jobs', 'fake-name-2.tgz'),
             ).and_return('new-job-blobstore-id-after-fix')
 
             job.perform
@@ -927,7 +951,7 @@ module Bosh::Director
               release: another_release,
               version: '41+dev.1',
               commit_hash: '23456789',
-              uncommitted_changes: true
+              uncommitted_changes: true,
             )
           end
 
@@ -938,7 +962,7 @@ module Bosh::Director
               version: 'fake-version-1',
               fingerprint: 'fake-fingerprint-1',
               blobstore_id: 'fake-blobstore-id-1',
-              sha1: 'fakesha1'
+              sha1: 'fakesha1',
             ).save
 
             old_release_version_model.add_package(package)
@@ -962,7 +986,7 @@ module Bosh::Director
               version: 'fake-version-1',
               fingerprint: 'fake-fingerprint-1',
               blobstore_id: 'fake-pkg-blobstore-id-1',
-              sha1: 'fakepkgsha1'
+              sha1: 'fakepkgsha1',
             )
             release_version_model.add_package(package)
             package
@@ -981,15 +1005,15 @@ module Bosh::Director
           it 'eliminates package when broken or missing' do
             expect(BlobUtil).to receive(:delete_blob).with('fake-pkg-blobstore-id-1')
             expect(BlobUtil).to receive(:create_blob).with(
-              File.join(release_dir, 'packages', 'fake-name-1.tgz')
+              File.join(release_dir, 'packages', 'fake-name-1.tgz'),
             ).and_return('new-pkg-blobstore-id-1')
             expect(BlobUtil).to receive(:create_blob).with(
-              File.join(release_dir, 'jobs', 'fake-name-2.tgz')
+              File.join(release_dir, 'jobs', 'fake-name-2.tgz'),
             ).and_return('new-job-blobstore-id-1')
             expect(BlobUtil).to receive(:delete_blob).with('fake-compiled-pkg-blobstore-id-1')
-            expect {
+            expect do
               job.perform
-            }.to change { Models::CompiledPackage.dataset.count }.from(1).to(0)
+            end.to change { Models::CompiledPackage.dataset.count }.from(1).to(0)
           end
         end
       end
@@ -1003,8 +1027,8 @@ module Bosh::Director
               'fingerprint' => 'fake-fingerprint-1',
               'name' => 'fake-name-1',
               'version' => 'fake-version-1',
-              'stemcell' => 'macintosh os/7.1'
-            }
+              'stemcell' => 'macintosh os/7.1',
+            },
           ]
         end
         let(:manifest) do
@@ -1035,7 +1059,7 @@ module Bosh::Director
               dependency_key: 'blarg',
               sha1: 'fakecompiledsha1',
               stemcell_os: 'macintosh os',
-              stemcell_version: '7.1'
+              stemcell_version: '7.1',
             )
             package.add_compiled_package compiled_package
             compiled_package
@@ -1046,7 +1070,7 @@ module Bosh::Director
               dependency_key: '[]',
               sha1: 'fakecompiledsha1',
               stemcell_os: 'macintosh os',
-              stemcell_version: '7.1'
+              stemcell_version: '7.1',
             )
             package.add_compiled_package compiled_package
             compiled_package
@@ -1055,11 +1079,13 @@ module Bosh::Director
           it 're-uploads all compiled packages to replace old ones' do
             expect(BlobUtil).to receive(:delete_blob).with('fake-compiled-blobstore-id-1')
             expect(BlobUtil).to receive(:create_blob).with(
-              File.join(release_dir, 'compiled_packages', 'fake-name-1.tgz')
+              File.join(release_dir, 'compiled_packages', 'fake-name-1.tgz'),
             ).and_return('new-compiled-blobstore-id-after-fix')
-            expect {
+            expect do
               job.perform
-            }.to change { compiled_package.reload.blobstore_id }.from('fake-compiled-blobstore-id-1').to('new-compiled-blobstore-id-after-fix')
+            end.to change {
+              compiled_package.reload.blobstore_id
+            }.from('fake-compiled-blobstore-id-1').to('new-compiled-blobstore-id-after-fix')
           end
         end
 
@@ -1070,7 +1096,7 @@ module Bosh::Director
               release: another_release,
               version: '41+dev.1',
               commit_hash: '23456789',
-              uncommitted_changes: true
+              uncommitted_changes: true,
             )
           end
           let!(:existing_package) do
@@ -1078,7 +1104,7 @@ module Bosh::Director
               release: another_release,
               name: 'fake-name-1',
               version: 'fake-version-1',
-              fingerprint: 'fake-fingerprint-1'
+              fingerprint: 'fake-fingerprint-1',
             ).save
 
             old_release_version_model.add_package(package)
@@ -1089,7 +1115,7 @@ module Bosh::Director
               release: another_release,
               name: 'fake-name-2',
               version: 'fake-version-2',
-              fingerprint: 'fake-fingerprint-1'
+              fingerprint: 'fake-fingerprint-1',
             ).save
 
             old_release_version_model.add_package(package)
@@ -1097,11 +1123,11 @@ module Bosh::Director
           end
           let!(:existing_compiled_package_with_different_dependencies) do
             existing_compiled_package = Models::CompiledPackage.make(
-                blobstore_id: 'fake-existing-compiled-blobstore-id-2',
-                dependency_key: 'fake-existing-compiled-dependency-key-1-other',
-                sha1: 'fakeexistingcompiledsha1',
-                stemcell_os: 'macintosh os',
-                stemcell_version: '7.1',
+              blobstore_id: 'fake-existing-compiled-blobstore-id-2',
+              dependency_key: 'fake-existing-compiled-dependency-key-1-other',
+              sha1: 'fakeexistingcompiledsha1',
+              stemcell_os: 'macintosh os',
+              stemcell_version: '7.1',
             )
             existing_package.add_compiled_package existing_compiled_package
             existing_compiled_package
@@ -1113,27 +1139,28 @@ module Bosh::Director
               dependency_key: '[]',
               sha1: 'fakeexistingcompiledsha1',
               stemcell_os: 'macintosh os',
-              stemcell_version: '7.1'
-            ).tap {|c| existing_package.add_compiled_package(c) }
+              stemcell_version: '7.1',
+            ).tap { |c| existing_package.add_compiled_package(c) }
           end
 
           let!(:matching_existing_compiled_package_from_same_release_version) do
             Models::CompiledPackage.make(
-                blobstore_id: 'fake-existing-compiled-blobstore-id-A',
-                dependency_key: '[]',
-                sha1: 'fakeexistingcompiledsha1',
-                stemcell_os: 'macintosh os',
-                stemcell_version: '7.1'
-            ).tap {|c| existing_package_with_same_fingerprint.add_compiled_package(c) }
+              blobstore_id: 'fake-existing-compiled-blobstore-id-A',
+              dependency_key: '[]',
+              sha1: 'fakeexistingcompiledsha1',
+              stemcell_os: 'macintosh os',
+              stemcell_version: '7.1',
+            ).tap { |c| existing_package_with_same_fingerprint.add_compiled_package(c) }
           end
           it 'replaces existing compiled packages and copy blobs' do
             expect(BlobUtil).to receive(:delete_blob).with('fake-existing-compiled-blobstore-id-1')
             expect(BlobUtil).to receive(:delete_blob).with('fake-existing-compiled-blobstore-id-A')
             expect(BlobUtil).to receive(:create_blob).with(
-              File.join(release_dir, 'compiled_packages', 'fake-name-1.tgz')
+              File.join(release_dir, 'compiled_packages', 'fake-name-1.tgz'),
             ).and_return('new-existing-compiled-blobstore-id-after-fix', 'new-existing-compiled-blobstore-id-A-after-fix')
             expect(BlobUtil).to receive(:copy_blob).with(
-               'new-existing-compiled-blobstore-id-after-fix').and_return('new-compiled-blobstore-id')
+              'new-existing-compiled-blobstore-id-after-fix',
+            ).and_return('new-compiled-blobstore-id')
             expect(existing_compiled_package.reload.blobstore_id).to eq('fake-existing-compiled-blobstore-id-1')
             expect(matching_existing_compiled_package_from_same_release_version.reload.blobstore_id).to eq('fake-existing-compiled-blobstore-id-A')
             job.perform
@@ -1157,11 +1184,11 @@ module Bosh::Director
 
       it 'should create simple packages without blobstore_id or sha1' do
         @job.create_package({
-                                'name' => 'test_package',
-                                'version' => '1.0',
-                                'sha1' => nil,
-                                'dependencies' => %w(foo_package bar_package)
-                            }, release_dir)
+          'name' => 'test_package',
+          'version' => '1.0',
+          'sha1' => nil,
+          'dependencies' => %w[foo_package bar_package],
+        }, release_dir)
 
         package = Models::Package[name: 'test_package', version: '1.0']
         expect(package).not_to be_nil
@@ -1191,15 +1218,15 @@ module Bosh::Director
           f.write(create_package('test' => 'test contents'))
         end
 
-        expect(blobstore).to receive(:create).
-          with(satisfy { |obj| obj.path == package_path }).
-          and_return('blob_id')
+        expect(blobstore).to receive(:create)
+          .with(satisfy { |obj| obj.path == package_path })
+          .and_return('blob_id')
 
         @job.create_package({
           'name' => 'test_package',
           'version' => '1.0',
           'sha1' => 'some-sha',
-          'dependencies' => %w(foo_package bar_package)
+          'dependencies' => %w[foo_package bar_package],
         }, release_dir)
 
         package = Models::Package[name: 'test_package', version: '1.0']
@@ -1222,8 +1249,8 @@ module Bosh::Director
         @job.create_package({
           'name' => 'test_package',
           'version' => '1.0', 'sha1' => 'some-sha',
-          'dependencies' => ['foo_package', 'bar_package'],
-          'blobstore_id' => 'blah',
+          'dependencies' => %w[foo_package bar_package],
+          'blobstore_id' => 'blah'
         }, release_dir)
 
         package = Models::Package[name: 'test_package', version: '1.0']
@@ -1239,14 +1266,14 @@ module Bosh::Director
         result = Bosh::Exec::Result.new('cmd', 'output', 1)
         expect(Bosh::Exec).to receive(:sh).and_return(result)
 
-        expect {
+        expect do
           @job.create_package({
             'name' => 'test_package',
             'version' => '1.0',
             'sha1' => 'some-sha',
-            'dependencies' => %w(foo_package bar_package),
+            'dependencies' => %w[foo_package bar_package],
           }, release_dir)
-        }.to raise_exception(Bosh::Director::PackageInvalidArchive)
+        end.to raise_exception(Bosh::Director::PackageInvalidArchive)
       end
 
       def create_package(files)
@@ -1254,7 +1281,7 @@ module Bosh::Director
 
         Archive::Tar::Minitar::Writer.open(io) do |tar|
           files.each do |key, value|
-            tar.add_file(key, {:mode => "0644", :mtime => 0}) { |os, _| os.write(value) }
+            tar.add_file(key, mode: '0644', mtime: 0) { |os, _| os.write(value) }
           end
         end
 
@@ -1270,20 +1297,20 @@ module Bosh::Director
 
       it 'should normalize nil dependencies' do
         packages = [
-          {'name' => 'A'},
-          {'name' => 'B', 'dependencies' => ['A']}
+          { 'name' => 'A' },
+          { 'name' => 'B', 'dependencies' => ['A'] },
         ]
         @job.resolve_package_dependencies(packages)
         expect(packages).to eql([
-          {'name' => 'A', 'dependencies' => []},
-          {'name' => 'B', 'dependencies' => ['A']}
-        ])
+                                  { 'name' => 'A', 'dependencies' => [] },
+                                  { 'name' => 'B', 'dependencies' => ['A'] },
+                                ])
       end
 
       it 'should not allow cycles' do
         packages = [
-          {'name' => 'A', 'dependencies' => ['B']},
-          {'name' => 'B', 'dependencies' => ['A']}
+          { 'name' => 'A', 'dependencies' => ['B'] },
+          { 'name' => 'B', 'dependencies' => ['A'] },
         ]
         expect { @job.resolve_package_dependencies(packages) }.to raise_exception
       end

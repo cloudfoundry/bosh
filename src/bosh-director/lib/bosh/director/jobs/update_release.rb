@@ -39,25 +39,23 @@ module Bosh::Director
       # Extracts release tarball, verifies release manifest and saves release in DB
       # @return [void]
       def perform
-        logger.info("Processing update release")
-        logger.info("Release rebase will be performed") if @rebase
+        logger.info('Processing update release')
+        logger.info('Release rebase will be performed') if @rebase
 
-        single_step_stage("Downloading remote release") { download_remote_release } if release_url
+        single_step_stage('Downloading remote release') { download_remote_release } if release_url
 
-        single_step_stage("Verifying remote release") { verify_sha } if sha1
+        single_step_stage('Verifying remote release') { verify_sha } if sha1
 
         release_dir = nil
-        single_step_stage("Extracting release") { release_dir = extract_release }
+        single_step_stage('Extracting release') { release_dir = extract_release }
 
-        single_step_stage("Verifying manifest") { verify_manifest(release_dir) }
+        single_step_stage('Verifying manifest') { verify_manifest(release_dir) }
 
         with_release_lock(@name) { process_release(release_dir) }
 
         "Created release '#{@name}/#{@version}'"
-
       rescue Exception => e
         raise e
-
       ensure
         FileUtils.rm_rf(release_dir) if release_dir
         FileUtils.rm_rf(release_path) if release_path
@@ -72,11 +70,11 @@ module Bosh::Director
       def extract_release
         release_dir = Dir.mktmpdir
 
-        result = Bosh::Exec.sh("tar -C #{release_dir} -xzf #{release_path} 2>&1", :on_error => :return)
+        result = Bosh::Exec.sh("tar -C #{release_dir} -xzf #{release_path} 2>&1", on_error: :return)
         if result.failed?
           logger.error("Failed to extract release archive '#{release_path}' into dir '#{release_dir}', tar returned #{result.exit_status}, output: #{result.output})")
           FileUtils.rm_rf(release_dir)
-          raise ReleaseInvalidArchive, "Extracting release archive failed. Check task debug log for details."
+          raise ReleaseInvalidArchive, 'Extracting release archive failed. Check task debug log for details.'
         end
 
         release_dir
@@ -85,40 +83,39 @@ module Bosh::Director
       # @param [String] release_dir local path to the unpacked release
       # @return [void]
       def verify_manifest(release_dir)
-        manifest_file = File.join(release_dir, "release.MF")
-        raise ReleaseManifestNotFound, "Release manifest not found" unless File.file?(manifest_file)
+        manifest_file = File.join(release_dir, 'release.MF')
+        raise ReleaseManifestNotFound, 'Release manifest not found' unless File.file?(manifest_file)
 
         @manifest = YAML.load_file(manifest_file)
 
-        #handle compiled_release case
-        @compiled_release = !!@manifest["compiled_packages"]
-        @packages_folder = @compiled_release ? "compiled_packages" : "packages"
+        # handle compiled_release case
+        @compiled_release = !!@manifest['compiled_packages']
+        @packages_folder = @compiled_release ? 'compiled_packages' : 'packages'
 
         normalize_manifest
 
-        @name = @manifest["name"]
+        @name = @manifest['name']
 
         begin
-          @version = Bosh::Common::Version::ReleaseVersion.parse(@manifest["version"])
-          logger.info("Formatted version '#{@manifest["version"]}' => '#{@version}'") unless @version.to_s == @manifest["version"]
+          @version = Bosh::Common::Version::ReleaseVersion.parse(@manifest['version'])
+          logger.info("Formatted version '#{@manifest['version']}' => '#{@version}'") unless @version.to_s == @manifest['version']
         rescue SemiSemantic::ParseError
-          raise ReleaseVersionInvalid, "Release version invalid: #{@manifest["version"]}"
+          raise ReleaseVersionInvalid, "Release version invalid: #{@manifest['version']}"
         end
 
-        @commit_hash = @manifest.fetch("commit_hash", nil)
-        @uncommitted_changes = @manifest.fetch("uncommitted_changes", nil)
+        @commit_hash = @manifest.fetch('commit_hash', nil)
+        @uncommitted_changes = @manifest.fetch('uncommitted_changes', nil)
       end
 
       def verify_sha
-        begin
-          @multi_digest_verifier.verify(release_path, sha1)
-        rescue Bosh::Director::BoshDigest::ShaMismatchError => e
-          raise Bosh::Director::ReleaseSha1DoesNotMatch.new(e)
-        end
+        @multi_digest_verifier.verify(release_path, sha1)
+      rescue Bosh::Director::BoshDigest::ShaMismatchError => e
+        raise Bosh::Director::ReleaseSha1DoesNotMatch, e
       end
 
       def compiled_release
         raise "Don't know what kind of release we have until verify_release is called" unless @manifest
+
         @compiled_release
       end
 
@@ -130,7 +127,7 @@ module Bosh::Director
       # @param [String] release_dir local path to the unpacked release
       # @return [void]
       def process_release(release_dir)
-        @release_model = Models::Release.find_or_create(:name => @name)
+        @release_model = Models::Release.find_or_create(name: @name)
 
         @version = next_release_version if @rebase
 
@@ -154,14 +151,17 @@ module Bosh::Director
           @release_version_model.save
         end
 
-        single_step_stage("Resolving package dependencies") do
+        single_step_stage('Resolving package dependencies') do
           resolve_package_dependencies(manifest_packages)
         end
 
         process_packages(release_dir)
         process_jobs(release_dir)
 
-        event_log_stage = Config.event_log.begin_stage(@compiled_release ? "Compiled Release has been created" : "Release has been created", 1)
+        event_log_stage = Config.event_log.begin_stage(
+          @compiled_release ? 'Compiled Release has been created' : 'Release has been created',
+          1,
+        )
         event_log_stage.advance_and_track("#{@name}/#{@version}") {}
 
         @release_version_model.update_completed = true
@@ -183,19 +183,19 @@ module Bosh::Director
       def resolve_package_dependencies(packages)
         packages_by_name = {}
         packages.each do |package|
-          packages_by_name[package["name"]] = package
-          package["dependencies"] ||= []
+          packages_by_name[package['name']] = package
+          package['dependencies'] ||= []
         end
         logger.info("Resolving package dependencies for #{packages_by_name.keys.inspect}")
 
         dependency_lookup = lambda do |package_name|
-          packages_by_name[package_name]["dependencies"]
+          packages_by_name[package_name]['dependencies']
         end
-        result = Bosh::Director::CycleHelper.check_for_cycle(packages_by_name.keys, :connected_vertices => true, &dependency_lookup)
+        result = Bosh::Director::CycleHelper.check_for_cycle(packages_by_name.keys, connected_vertices: true, &dependency_lookup)
 
         packages.each do |package|
-          name = package["name"]
-          dependencies = package["dependencies"]
+          name = package['name']
+          dependencies = package['dependencies']
           all_dependencies = result[:connected_vertices][name]
           logger.info("Resolved package dependencies for '#{name}': #{dependencies.pretty_inspect} => #{all_dependencies.pretty_inspect}")
         end
@@ -207,7 +207,7 @@ module Bosh::Director
       # @param [String] release_dir local path to the unpacked release
       # @return [void]
       def process_packages(release_dir)
-        logger.info("Checking for new packages in release")
+        logger.info('Checking for new packages in release')
 
         new_packages = []
         existing_packages = []
@@ -232,19 +232,19 @@ module Bosh::Director
 
           existing_package = packages.find do |package|
             package.release_id == @release_model.id &&
-            package.name == package_meta['name'] &&
-            package.version == package_meta['version']
+              package.name == package_meta['name'] &&
+              package.version == package_meta['version']
           end
 
           if existing_package
             if existing_package.release_versions.include?(@release_version_model)
               if existing_package.blobstore_id.nil?
                 packages.each do |package|
-                  unless package.blobstore_id.nil?
-                    package_meta['blobstore_id'] = package.blobstore_id
-                    package_meta['sha1'] = package.sha1
-                    break
-                  end
+                  next if package.blobstore_id.nil?
+
+                  package_meta['blobstore_id'] = package.blobstore_id
+                  package_meta['sha1'] = package.sha1
+                  break
                 end
               end
               registered_packages << [existing_package, package_meta]
@@ -256,11 +256,11 @@ module Bosh::Director
             # (release, name, version) tuple, so we need to make a copy
             # of the package blob and create a new db entry for it
             packages.each do |package|
-              unless package.blobstore_id.nil?
-                package_meta['blobstore_id'] = package.blobstore_id
-                package_meta['sha1'] = package.sha1
-                break
-              end
+              next if package.blobstore_id.nil?
+
+              package_meta['blobstore_id'] = package.blobstore_id
+              package_meta['sha1'] = package.sha1
+              break
             end
             new_packages << package_meta
           end
@@ -289,7 +289,7 @@ module Bosh::Director
         return false if packages.empty?
 
         had_effect = false
-        single_step_stage("Processing #{packages.size} existing package#{"s" if packages.size > 1}") do
+        single_step_stage("Processing #{packages.size} existing package#{'s' if packages.size > 1}") do
           packages.each do |package, package_meta|
             package_desc = "#{package.name}/#{package.version}"
             logger.info("Adding source for package '#{package_desc}'")
@@ -305,13 +305,11 @@ module Bosh::Director
       # @param [Array<Array>] packages Existing packages metadata.
       # @return [Array<Hash>] array of registered package models and their metadata, empty if no packages were changed.
       def use_existing_packages(packages, release_dir)
-        if packages.empty?
-          return []
-        end
+        return [] if packages.empty?
 
         package_refs = []
 
-        single_step_stage("Processing #{packages.size} existing package#{"s" if packages.size > 1}") do
+        single_step_stage("Processing #{packages.size} existing package#{'s' if packages.size > 1}") do
           packages.each do |package, package_meta|
             package_desc = "#{package.name}/#{package.version}"
             logger.info("Using existing package '#{package_desc}'")
@@ -331,7 +329,7 @@ module Bosh::Director
           end
         end
 
-        return package_refs
+        package_refs
       end
 
       # Creates packages using provided metadata
@@ -339,16 +337,14 @@ module Bosh::Director
       # @param [String] release_dir local path to the unpacked release
       # @return [Array<Hash>, boolean] array of package models and their metadata, empty if no packages were changed.
       def create_packages(package_metas, release_dir)
-        if package_metas.empty?
-          return []
-        end
+        return [] if package_metas.empty?
 
         package_refs = []
 
-        event_log_stage = Config.event_log.begin_stage("Creating new packages", package_metas.size)
+        event_log_stage = Config.event_log.begin_stage('Creating new packages', package_metas.size)
 
         package_metas.each do |package_meta|
-          package_desc = "#{package_meta["name"]}/#{package_meta["version"]}"
+          package_desc = "#{package_meta['name']}/#{package_meta['version']}"
           package = nil
           event_log_stage.advance_and_track(package_desc) do
             logger.info("Creating new package '#{package_desc}'")
@@ -356,12 +352,12 @@ module Bosh::Director
             register_package(package)
           end
 
-          if @compiled_release
-            package_refs << {
-              package: package,
-              package_meta: package_meta,
-            }
-          end
+          next unless @compiled_release
+
+          package_refs << {
+            package: package,
+            package_meta: package_meta,
+          }
         end
 
         package_refs
@@ -434,6 +430,7 @@ module Bosh::Director
         if release_version_model_dependency_key != CompiledRelease::Manifest.new(@manifest).dependency_key(package.name)
           raise ReleasePackageDependencyKeyMismatch, "The uploaded release contains package dependencies in '#{package.name}' that do not match database records."
         end
+
         compiled_package.dependency_key = release_version_model_dependency_key
 
         compiled_package.build = Models::CompiledPackage.generate_build_number(package, stemcell_os, stemcell_version)
@@ -450,15 +447,16 @@ module Bosh::Director
       # @param [String] release_dir local path to the unpacked release
       # @return [void]
       def create_package(package_meta, release_dir)
-        name, version = package_meta['name'], package_meta['version']
+        name = package_meta['name']
+        version = package_meta['version']
 
         package_attrs = {
-            :release => @release_model,
-            :name => name,
-            :sha1 => nil,
-            :blobstore_id => nil,
-            :fingerprint => package_meta['fingerprint'],
-            :version => version
+          release: @release_model,
+          name: name,
+          sha1: nil,
+          blobstore_id: nil,
+          fingerprint: package_meta['fingerprint'],
+          version: version,
         }
 
         package = Models::Package.new(package_attrs)
@@ -481,7 +479,7 @@ module Bosh::Director
         if @fix
           package.sha1 = sha1
 
-          if package.blobstore_id != nil
+          unless package.blobstore_id.nil?
             delete_compiled_packages(package)
             validate_tgz(package_tgz, desc)
             fix_package(package, package_tgz)
@@ -497,6 +495,7 @@ module Bosh::Director
           end
         else
           return false unless package.blobstore_id.nil?
+
           package.sha1 = sha1
 
           if existing_blob
@@ -514,7 +513,7 @@ module Bosh::Director
       end
 
       def validate_tgz(tgz, desc)
-        result = Bosh::Exec.sh("tar -tzf #{tgz} 2>&1", :on_error => :return)
+        result = Bosh::Exec.sh("tar -tzf #{tgz} 2>&1", on_error: :return)
         if result.failed?
           logger.error("Extracting #{desc} archive failed, tar returned #{result.exit_status}, output: #{result.output}")
           raise PackageInvalidArchive, "Extracting #{desc} archive failed. Check task debug log for details."
@@ -534,7 +533,7 @@ module Bosh::Director
       # @param [String] release_dir local path to the unpacked release
       # @return [void]
       def process_jobs(release_dir)
-        logger.info("Checking for new jobs in release")
+        logger.info('Checking for new jobs in release')
 
         new_jobs = []
         existing_jobs = []
@@ -542,18 +541,21 @@ module Bosh::Director
 
         manifest_jobs.each do |job_meta|
           # Checking whether we might have the same bits somewhere
-          @release_version_model.templates.select { |t| t.name == job_meta["name"] }.each do |tmpl|
-            if tmpl.fingerprint != job_meta["fingerprint"]
-              raise ReleaseExistingJobFingerprintMismatch, "job '#{job_meta["name"]}' had different fingerprint in previously uploaded release '#{@name}/#{@version}'"
-            end
+          @release_version_model.templates.select { |t| t.name == job_meta['name'] }.each do |tmpl|
+            next unless tmpl.fingerprint != job_meta['fingerprint']
+
+            raise(
+              ReleaseExistingJobFingerprintMismatch,
+              "job '#{job_meta['name']}' had different fingerprint in previously uploaded release '#{@name}/#{@version}'",
+            )
           end
 
-          jobs = Models::Template.where(fingerprint: job_meta["fingerprint"]).all
+          jobs = Models::Template.where(fingerprint: job_meta['fingerprint']).all
 
           template = jobs.find do |job|
             job.release_id == @release_model.id &&
-            job.name == job_meta["name"] &&
-            job.version == job_meta["version"]
+              job.name == job_meta['name'] &&
+              job.version == job_meta['version']
           end
 
           if template.nil?
@@ -573,9 +575,9 @@ module Bosh::Director
       def create_jobs(jobs, release_dir)
         return false if jobs.empty?
 
-        event_log_stage = Config.event_log.begin_stage("Creating new jobs", jobs.size)
+        event_log_stage = Config.event_log.begin_stage('Creating new jobs', jobs.size)
         jobs.each do |job_meta|
-          job_desc = "#{job_meta["name"]}/#{job_meta["version"]}"
+          job_desc = "#{job_meta['name']}/#{job_meta['version']}"
           event_log_stage.advance_and_track(job_desc) do
             logger.info("Creating new template '#{job_desc}'")
             template = create_job(job_meta, release_dir)
@@ -588,7 +590,7 @@ module Bosh::Director
 
       def create_job(job_meta, release_dir)
         release_job = ReleaseJob.new(job_meta, @release_model, release_dir, logger)
-        logger.info("Creating job template '#{job_meta['name']}/#{job_meta['version']}' " +
+        logger.info("Creating job template '#{job_meta['name']}/#{job_meta['version']}' " \
             'from provided bits')
         release_job.update
       end
@@ -598,7 +600,7 @@ module Bosh::Director
       def use_existing_jobs(jobs, release_dir)
         return false if jobs.empty?
 
-        single_step_stage("Processing #{jobs.size} existing job#{"s" if jobs.size > 1}") do
+        single_step_stage("Processing #{jobs.size} existing job#{'s' if jobs.size > 1}") do
           jobs.each do |template, job_meta|
             job_desc = "#{template.name}/#{template.version}"
 
@@ -625,10 +627,10 @@ module Bosh::Director
 
       def find_compiled_packages(pkg_id, stemcell_os, stemcell_version, dependency_key)
         Models::CompiledPackage.where(
-            :package_id => pkg_id,
-            :stemcell_os => stemcell_os,
-            :stemcell_version => stemcell_version,
-            :dependency_key => dependency_key
+          package_id: pkg_id,
+          stemcell_os: stemcell_os,
+          stemcell_version: stemcell_version,
+          dependency_key: dependency_key,
         )
       end
 
@@ -650,7 +652,7 @@ module Bosh::Director
       # Returns the next release version (to be used for rebased release)
       # @return [String]
       def next_release_version
-        attrs = {:release_id => @release_model.id}
+        attrs = { release_id: @release_model.id }
         models = Models::ReleaseVersion.filter(attrs).all
         strings = models.map(&:version)
         list = Bosh::Common::Version::ReleaseVersionList.parse(strings)
