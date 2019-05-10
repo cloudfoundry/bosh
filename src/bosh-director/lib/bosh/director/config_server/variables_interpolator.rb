@@ -109,7 +109,6 @@ module Bosh::Director::ConfigServer
       ]
 
       deployment_model = get_deployment_by_name(deployment_manifest['name'])
-
       @config_server_client.interpolate_with_versioning(
         deployment_manifest,
         deployment_model.current_variable_set,

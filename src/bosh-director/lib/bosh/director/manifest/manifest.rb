@@ -96,7 +96,6 @@ module Bosh::Director
       runtime_config_hash = runtime_config.raw_manifest
 
       manifest_hash = manifest_hash.nil? ? {} : manifest_hash
-
       manifest_hash = Bosh::Common::DeepCopy.copy(manifest_hash)
 
       if resolve_interpolation

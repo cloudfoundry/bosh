@@ -188,35 +188,6 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      get '/:deployment/rotate' do
-        deployment_name = params[:deployment]
-        action = params[:action]
-        model = @deployment_manager.find_by_name(deployment_name)
-        manifest = Manifest.load_from_model(model)
-
-        variables = manifest.manifest_hash.fetch('variables', [])
-
-        variable_rotation_manager = Bosh::Director::Api::VariableRotationManager.new(
-          variables,
-          deployment_name,
-        )
-
-        case action
-        when 'plan'
-          { 'leaf_certificates' => variable_rotation_manager.deployment_leaf_certificates }.to_json
-        when 'generate'
-          case params[:type]
-          when 'leaf'
-            regenerated_leaf_certs = variable_rotation_manager.regenerate_leaf_certificates
-            { 'regenerated_leaf_certificates' => regenerated_leaf_certs }.to_json
-          else
-            status(400)
-          end
-        else
-          status(400)
-        end
-      end
-
       def used_cloud_config_state(deployment)
         latest_cloud_configs = Models::Config.latest_set_for_teams('cloud', *deployment.teams).map(&:id).sort
         if deployment.cloud_configs.empty?
@@ -340,13 +311,27 @@ module Bosh::Director
       end
 
       get '/:deployment/variables' do
-        result = deployment.variables.map do |variable|
+        manifest = Manifest.load_from_model(deployment)
+        manifest_variables = manifest.manifest_hash.fetch('variables', [])
+        manifest_variables.select! { |v| v['type'] == params['type'] } if params['type']
+        manifest_variables = manifest_variables.map do |mv|
+          fullname = Bosh::Director::ConfigServer::ConfigServerHelper.add_prefix_if_not_absolute(
+            mv['name'],
+            Bosh::Director::Config.name,
+            deployment.name,
+          )
           {
-            'id' => variable.variable_id,
-            'name' => variable.variable_name,
+            'name' => fullname,
+            'type' => mv['type'],
           }
-        end.uniq
+        end
+        variable_names = manifest_variables.map { |v| v['name'] }
 
+        deployment_variables = deployment.variables.map { |v| { 'id' => v.variable_id, 'name' => v.variable_name } }
+        deployment_variables = deployment_variables.select { |dv| variable_names.include? dv['name'] }
+
+        all_variables = deployment_variables + manifest_variables
+        result = all_variables.group_by { |v| v['name'] }.map { |_, v| v.reduce(:merge) }
         json_encode(result)
       end
 

@@ -2176,244 +2176,70 @@ module Bosh::Director
         end
 
         describe 'variables' do
-          let(:deployment_1) { Models::Deployment.make(name: 'test_deployment_1', manifest: '') }
-          let(:deployment_2) { Models::Deployment.make(name: 'test_deployment_2', manifest: '') }
-
-          let(:variable_set_1) { Models::VariableSet.make(id: 1, deployment: deployment_1) }
-          let(:variable_set_2) { Models::VariableSet.make(id: 2, deployment: deployment_1) }
-          let(:variable_set_3) { Models::VariableSet.make(id: 12, deployment: deployment_2) }
-          let(:variable_set_4) { Models::VariableSet.make(id: 13, deployment: deployment_2) }
+          let(:deployment_manifest) do
+            {
+              'name' => 'test_deployment',
+              'variables' => [
+                { 'name' => 'var_name_1', 'type' => 'var_type_1' },
+                { 'name' => 'var_name_2', 'type' => 'var_type_2' },
+              ],
+            }
+          end
+          let(:deployment) { Models::Deployment.make(name: 'test_deployment', manifest: deployment_manifest.to_yaml) }
+          let(:variable_set) { Models::VariableSet.make(id: 1, deployment: deployment) }
 
           before do
             basic_authorize 'admin', 'admin'
 
-            Models::Variable.make(id: 1, variable_id: 'var_id_1', variable_name: 'var_name_1', variable_set_id: variable_set_1.id)
-            Models::Variable.make(id: 2, variable_id: 'var_id_2', variable_name: 'var_name_2', variable_set_id: variable_set_1.id)
-            Models::Variable.make(id: 3, variable_id: 'var_id_1', variable_name: 'var_name_1', variable_set_id: variable_set_2.id)
-            Models::Variable.make(id: 4, variable_id: 'var_id_3', variable_name: 'var_name_3', variable_set_id: variable_set_2.id)
-
-            Models::Variable.make(id: 5, variable_id: 'var_id_1', variable_name: 'var_name_1', variable_set_id: variable_set_3.id)
-            Models::Variable.make(id: 6, variable_id: 'var_id_2', variable_name: 'var_name_2', variable_set_id: variable_set_3.id)
-            Models::Variable.make(id: 7, variable_id: 'var_id_3', variable_name: 'var_name_3', variable_set_id: variable_set_4.id)
-            Models::Variable.make(id: 8, variable_id: 'var_id_4', variable_name: 'var_name_4', variable_set_id: variable_set_4.id)
-          end
-
-          it 'returns a unique list of variable ids and names' do
-            get '/test_deployment_1/variables'
-            expect(last_response.status).to eq(200)
-            vars_1 = JSON.parse(last_response.body)
-            expect(vars_1).to match_array([
-              {'id' => 'var_id_1', 'name' => 'var_name_1'},
-              {'id' => 'var_id_2', 'name' => 'var_name_2'},
-              {'id' => 'var_id_3', 'name' => 'var_name_3'}
-            ])
-
-            get '/test_deployment_2/variables'
-            expect(last_response.status).to eq(200)
-            vars_2 = JSON.parse(last_response.body)
-            expect(vars_2).to match_array([
-              {'id' => 'var_id_1', 'name' => 'var_name_1'},
-              {'id' => 'var_id_2', 'name' => 'var_name_2'},
-              {'id' => 'var_id_3', 'name' => 'var_name_3'},
-              {'id' => 'var_id_4', 'name' => 'var_name_4'}
-            ])
-          end
-
-          context 'when deployment does not have variables' do
-            before { Models::Deployment.make(name: 'test_deployment_3', manifest: '') }
-
-            it 'returns an empty array' do
-              get '/test_deployment_3/variables'
-              expect(last_response.status).to eq(200)
-              vars_3 = JSON.parse(last_response.body)
-              expect(vars_3).to be_empty
-            end
-          end
-        end
-
-        describe 'certificates rotation' do
-          before do
-            authorize 'admin', 'admin'
-            Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
-          end
-
-          let(:manifest) do
-            {
-              'name' => 'deployment-name',
-              'variables' => [
-                {
-                  'name' => '/my_absolute_ca',
-                  'type' => 'certificate',
-                  'options' => {
-                    'is_ca' => true,
-                  }
-                },
-                {
-                  'name' => '/my_absolute_leaf',
-                  'type' => 'certificate',
-                  'options' => {
-                    'ca' => '/my_absolute_ca',
-                  },
-                },
-                {
-                  'name' => 'my_ca',
-                  'type' => 'certificate',
-                  'options' => {
-                    'is_ca' => true,
-                  },
-                },
-                {
-                  'name' => 'my_leaf',
-                  'type' => 'certificate',
-                  'options' => {
-                    'ca' => 'my_ca',
-                  },
-                },
-                {
-                  'name' => 'my_password',
-                  'type' => 'password',
-                },
-                {
-                  'name' => 'my_intermediate_ca',
-                  'type' => 'certificate',
-                  'options' => {
-                    'is_ca' => true,
-                    'ca' => 'my_ca',
-                  },
-                },
-                {
-                  'name' => 'my_intermediate_leaf',
-                  'type' => 'certificate',
-                  'options' => {
-                    'ca' => 'my_intermediate_ca',
-                  },
-                },
-                {
-                  'name' => '/my_absolute_intermediate_ca',
-                  'type' => 'certificate',
-                  'options' => {
-                    'is_ca' => true,
-                    'ca' => '/my_absolute_ca',
-                  },
-                },
-                {
-                  'name' => '/my_absolute_intermediate_leaf',
-                  'type' => 'certificate',
-                  'options' => {
-                    'ca' => '/my_absolute_intermediate_ca',
-                  },
-                },
-                {
-                  'name' => 'my_random_type',
-                  'type' => 'random_type',
-                },
-                {
-                  'name' => 'my_rsa_keys',
-                  'type' => 'rsa',
-                },
-              ],
-            }
-          end
-
-          let!(:deployment_model) do
-            Models::Deployment.make(
-              name: 'deployment-name',
-              manifest: manifest.to_yaml,
+            Models::Variable.make(
+              id: 1,
+              variable_id: 'var_id_1',
+              variable_name: '/Test Director/test_deployment/var_name_1',
+              variable_set_id: variable_set.id,
+            )
+            Models::Variable.make(
+              id: 2,
+              variable_id: 'var_id_2',
+              variable_name: '/Test Director/test_deployment/var_name_2',
+              variable_set_id: variable_set.id,
             )
           end
 
-          context 'with action "plan"' do
-            it 'should return a structure detailing which are the leaf certificates' do
-              response = get('/deployment-name/rotate', action: 'plan')
-              expect(response.status).to eq(200)
-              result = JSON.parse(response.body)
-
-              expect(result['leaf_certificates']).to match_array(
+          context 'without variable type specified' do
+            it 'returns a unique list of variable ids and names' do
+              get '/test_deployment/variables'
+              expect(last_response.status).to eq(200)
+              vars = JSON.parse(last_response.body)
+              expect(vars).to match_array(
                 [
-                  {
-                    'type' => 'variable',
-                    'name' => '/my_absolute_leaf',
-                  },
-                  {
-                    'name' => '/Test Director/deployment-name/my_intermediate_leaf',
-                    'type' => 'variable',
-                  },
-                  {
-                    'name' => '/Test Director/deployment-name/my_leaf',
-                    'type' => 'variable',
-                  },
-                  {
-                    'type' => 'variable',
-                    'name' => '/my_absolute_intermediate_leaf',
-                  },
+                  { 'id' => 'var_id_1', 'name' => '/Test Director/test_deployment/var_name_1', 'type' => 'var_type_1' },
+                  { 'id' => 'var_id_2', 'name' => '/Test Director/test_deployment/var_name_2', 'type' => 'var_type_2' },
                 ],
               )
             end
 
-            context 'variables are not defined in manifest' do
-              let(:manifest) do
-                {
-                  'name' => 'deployment-name',
-                }
-              end
+            context 'when deployment does not have variables' do
+              let(:deployment_manifest) { { 'name' => 'test_deployment' } }
 
-              it 'should produce no certificates' do
-                response = get('/deployment-name/rotate', action: 'plan')
-                expect(response.status).to eq(200)
-                result = JSON.parse(response.body)
-                expect(result['leaf_certificates']).to be_empty
+              it 'returns an empty array' do
+                get '/test_deployment/variables'
+                expect(last_response.status).to eq(200)
+                vars = JSON.parse(last_response.body)
+                expect(vars).to be_empty
               end
             end
           end
 
-          context 'with action "generate"' do
-            let(:config_server) { instance_double(Bosh::Director::ConfigServer::ConfigServerClient) }
-
-            before(:each) do
-              allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create_default_client).and_return(config_server)
-              allow(config_server).to receive(:force_regenerate_value)
-            end
-
-            context 'and for type "leaf"' do
-              it 'should call credhub to generate updated leaf certificates' do
-                response = get('/deployment-name/rotate', action: 'generate', type: 'leaf')
-                expect(response.status).to eq(200)
-
-                result = JSON.parse(response.body)
-                expect(result['regenerated_leaf_certificates']).to match_array(
-                  [
-                    {
-                      'type' => 'variable',
-                      'name' => '/my_absolute_leaf',
-                    },
-                    {
-                      'name' => '/Test Director/deployment-name/my_intermediate_leaf',
-                      'type' => 'variable',
-                    },
-                    {
-                      'name' => '/Test Director/deployment-name/my_leaf',
-                      'type' => 'variable',
-                    },
-                    {
-                      'type' => 'variable',
-                      'name' => '/my_absolute_intermediate_leaf',
-                    },
-                  ],
-                )
-              end
-            end
-
-            context 'with unsupported type' do
-              it 'should return a "bad request" error' do
-                response = get('/deployment-name/rotate', action: 'generate', type: 'unknown_type')
-                expect(response.status).to eq(400)
-              end
-            end
-          end
-
-          context 'with an unsupported action' do
-            it 'should return a "bad request" error' do
-              expect(get('/deployment-name/rotate', action: 'invalid_action').status).to eq(400)
+          context 'with variable type specified' do
+            it 'returns only the subset of variables of the specified type' do
+              get('/test_deployment/variables', type: 'var_type_1')
+              expect(last_response.status).to eq(200)
+              result = JSON.parse(last_response.body)
+              expect(result).to match_array(
+                [
+                  { 'id' => 'var_id_1', 'name' => '/Test Director/test_deployment/var_name_1', 'type' => 'var_type_1' },
+                ],
+              )
             end
           end
         end
