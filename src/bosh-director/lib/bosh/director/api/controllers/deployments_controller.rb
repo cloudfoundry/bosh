@@ -312,26 +312,28 @@ module Bosh::Director
 
       get '/:deployment/variables' do
         manifest = Manifest.load_from_model(deployment)
-        manifest_variables = manifest.manifest_hash.fetch('variables', [])
-        manifest_variables.select! { |v| v['type'] == params['type'] } if params['type']
-        manifest_variables = manifest_variables.map do |mv|
+        manifest_variables = manifest.to_hash.fetch('variables', [])
+
+        name_to_type = {}
+        manifest_variables.each do |mv|
           fullname = Bosh::Director::ConfigServer::ConfigServerHelper.add_prefix_if_not_absolute(
             mv['name'],
             Bosh::Director::Config.name,
             deployment.name,
           )
+          name_to_type[fullname] = mv['type']
+        end
+
+        result = deployment.variables.map do |variable|
           {
-            'name' => fullname,
-            'type' => mv['type'],
+            'name' => variable.variable_name,
+            'id' => variable.variable_id,
+            'type' => name_to_type[variable.variable_name] || '',
           }
         end
-        variable_names = manifest_variables.map { |v| v['name'] }
 
-        deployment_variables = deployment.variables.map { |v| { 'id' => v.variable_id, 'name' => v.variable_name } }
-        deployment_variables = deployment_variables.select { |dv| variable_names.include? dv['name'] }
+        result.select! { |v| v['type'] == params['type'] } if params['type']
 
-        all_variables = deployment_variables + manifest_variables
-        result = all_variables.group_by { |v| v['name'] }.map { |_, v| v.reduce(:merge) }
         json_encode(result)
       end
 
