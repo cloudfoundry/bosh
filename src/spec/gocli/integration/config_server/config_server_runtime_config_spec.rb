@@ -373,19 +373,19 @@ describe 'using director with config server', type: :integration do
 
         let(:unnamed_runtime_config_expected_variables) do
           [
-            {'id' => String, 'name' => '/JoeService'},
-            {'id' => String, 'name' => '/addon_release_version_placeholder'},
-            {'id' => String, 'name' => '/TestDirector/simple/my_placeholder'},
-            {'id' => String, 'name' => '/bob'},
-            {'id' => String, 'name' => '/joeCA'}
+            { 'id' => String, 'name' => '/JoeService', 'type' => 'certificate' },
+            { 'id' => String, 'name' => '/addon_release_version_placeholder', 'type' => '' },
+            { 'id' => String, 'name' => '/TestDirector/simple/my_placeholder', 'type' => '' },
+            { 'id' => String, 'name' => '/bob', 'type' => 'password' },
+            { 'id' => String, 'name' => '/joeCA', 'type' => 'certificate' },
           ]
         end
 
         let(:named_runtime_config_expected_variables) do
           [
-            {'id' => String, 'name' => '/JoeService2'},
-            {'id' => String, 'name' => '/joeCA2'},
-            {'id' => String, 'name' => '/bob2'}
+            { 'id' => String, 'name' => '/JoeService2', 'type' => 'certificate' },
+            { 'id' => String, 'name' => '/joeCA2', 'type' => 'certificate' },
+            { 'id' => String, 'name' => '/bob2', 'type' => 'password' },
           ]
         end
 
