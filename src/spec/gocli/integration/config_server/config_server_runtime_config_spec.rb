@@ -372,21 +372,11 @@ describe 'using director with config server', type: :integration do
         end
 
         let(:unnamed_runtime_config_expected_variables) do
-          [
-            {'id' => String, 'name' => '/JoeService'},
-            {'id' => String, 'name' => '/addon_release_version_placeholder'},
-            {'id' => String, 'name' => '/TestDirector/simple/my_placeholder'},
-            {'id' => String, 'name' => '/bob'},
-            {'id' => String, 'name' => '/joeCA'}
-          ]
+          %w[/JoeService /addon_release_version_placeholder /TestDirector/simple/my_placeholder /bob /joeC]
         end
 
         let(:named_runtime_config_expected_variables) do
-          [
-            {'id' => String, 'name' => '/JoeService2'},
-            {'id' => String, 'name' => '/joeCA2'},
-            {'id' => String, 'name' => '/bob2'}
-          ]
+          %w[/JoeService2 /joeCA2 /bob2]
         end
 
         before do
@@ -404,7 +394,7 @@ describe 'using director with config server', type: :integration do
           expect(config_server_helper.get_value('/JoeService')['certificate']).to include('-----BEGIN CERTIFICATE-----')
 
           variables = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: deployment_name, env: client_env))
-          expect(variables).to match_array(unnamed_runtime_config_expected_variables)
+          expect(variables.map { |v| v['name'] }).to match_array(unnamed_runtime_config_expected_variables)
         end
 
         context 'with multiple runtime configs with variables' do
@@ -422,6 +412,7 @@ describe 'using director with config server', type: :integration do
             expect(config_server_helper.get_value('/JoeService2')['certificate']).to include('-----BEGIN CERTIFICATE-----')
 
             variables = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: deployment_name, env: client_env))
+            variables = variables.map { |v| v['name'] }
             expect(variables).to match_array(unnamed_runtime_config_expected_variables + named_runtime_config_expected_variables)
           end
         end
