@@ -370,7 +370,7 @@ describe 'using director with config server', type: :integration do
         end
 
         let(:unnamed_runtime_config_expected_variables) do
-          %w[/JoeService /addon_release_version_placeholder /TestDirector/simple/my_placeholder /bob /joeC]
+          %w[/JoeService /addon_release_version_placeholder /TestDirector/simple/my_placeholder /bob /joeCA]
         end
 
         let(:named_runtime_config_expected_variables) do
