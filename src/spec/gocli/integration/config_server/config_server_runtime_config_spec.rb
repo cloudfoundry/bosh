@@ -372,21 +372,11 @@ describe 'using director with config server', type: :integration do
         end
 
         let(:unnamed_runtime_config_expected_variables) do
-          [
-            { 'id' => String, 'name' => '/JoeService', 'type' => 'certificate' },
-            { 'id' => String, 'name' => '/addon_release_version_placeholder', 'type' => '' },
-            { 'id' => String, 'name' => '/TestDirector/simple/my_placeholder', 'type' => '' },
-            { 'id' => String, 'name' => '/bob', 'type' => 'password' },
-            { 'id' => String, 'name' => '/joeCA', 'type' => 'certificate' },
-          ]
+          %w[/JoeService /addon_release_version_placeholder /TestDirector/simple/my_placeholder /bob /joeCA]
         end
 
         let(:named_runtime_config_expected_variables) do
-          [
-            { 'id' => String, 'name' => '/JoeService2', 'type' => 'certificate' },
-            { 'id' => String, 'name' => '/joeCA2', 'type' => 'certificate' },
-            { 'id' => String, 'name' => '/bob2', 'type' => 'password' },
-          ]
+          %w[/JoeService2 /joeCA2 /bob2]
         end
 
         before do
@@ -404,6 +394,7 @@ describe 'using director with config server', type: :integration do
           expect(config_server_helper.get_value('/JoeService')['certificate']).to include('-----BEGIN CERTIFICATE-----')
 
           variables = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: deployment_name, env: client_env))
+          variables = variables.map { |v| v['name'] }
           expect(variables).to match_array(unnamed_runtime_config_expected_variables)
         end
 
@@ -422,6 +413,7 @@ describe 'using director with config server', type: :integration do
             expect(config_server_helper.get_value('/JoeService2')['certificate']).to include('-----BEGIN CERTIFICATE-----')
 
             variables = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: deployment_name, env: client_env))
+            variables = variables.map { |v| v['name'] }
             expect(variables).to match_array(unnamed_runtime_config_expected_variables + named_runtime_config_expected_variables)
           end
         end

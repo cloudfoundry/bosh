@@ -2176,17 +2176,15 @@ module Bosh::Director
         end
 
         describe 'variables' do
+          let(:deployment_manifest) { { 'name' => 'test_deployment' } }
+          let!(:deployment) { Models::Deployment.make(name: 'test_deployment', manifest: deployment_manifest.to_yaml) }
+          let!(:variable_set) { Models::VariableSet.make(id: 1, deployment: deployment) }
+
           before do
             basic_authorize 'admin', 'admin'
           end
 
-          # RP The setup isn't working out for this test amongst the others
-          # TODO fix it
-          xit 'returns an empty array if there are no variables' do
-            deployment_manifest = { name: 'test_deployment' }
-            deployment = Models::Deployment.make(name: 'test_deployment', manifest: deployment_manifest.to_yaml)
-            Models::VariableSet.make(id: 2, deployment: deployment)
-
+          it 'returns an empty array if there are no variables' do
             get '/test_deployment/variables'
             expect(last_response.status).to eq(200)
             vars = JSON.parse(last_response.body)
@@ -2203,8 +2201,6 @@ module Bosh::Director
                 ],
               }
             end
-            let(:deployment) { Models::Deployment.make(name: 'test_deployment', manifest: deployment_manifest.to_yaml) }
-            let(:variable_set) { Models::VariableSet.make(id: 1, deployment: deployment) }
 
             before do
               Models::Variable.make(
