@@ -9,8 +9,8 @@ module Bosh::Director::DeploymentPlan
     end
     let(:index) { 0 }
     let(:state) { 'started' }
-    let(:in_memory_ip_repo) { InMemoryIpRepo.new(logger) }
-    let(:ip_provider) { IpProvider.new(in_memory_ip_repo, {}, logger) }
+    let(:ip_repo) { DatabaseIpRepo.new(logger) }
+    let(:ip_provider) { IpProvider.new(ip_repo, {}, logger) }
     let(:variables_interpolator) { Bosh::Director::ConfigServer::VariablesInterpolator.new }
     let(:deployment_variable_set) { Bosh::Director::Models::VariableSet.make(deployment: deployment) }
 
@@ -22,7 +22,6 @@ module Bosh::Director::DeploymentPlan
     end
 
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
-    let(:network_resolver) { GlobalNetworkResolver.new(plan, [], logger) }
     let(:instance_group) do
       instance_double(
         'Bosh::Director::DeploymentPlan::InstanceGroup',

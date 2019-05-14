@@ -5,7 +5,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
   let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
   let(:plan) do
     network = BD::DeploymentPlan::DynamicNetwork.new('name-7', [], logger)
-    ip_repo = BD::DeploymentPlan::InMemoryIpRepo.new(logger)
+    ip_repo = BD::DeploymentPlan::DatabaseIpRepo.new(logger)
     ip_provider = BD::DeploymentPlan::IpProvider.new(ip_repo, {'name-7' => network}, logger)
     model = BD::Models::Deployment.make
     BD::Models::VariableSet.create(deployment: model)

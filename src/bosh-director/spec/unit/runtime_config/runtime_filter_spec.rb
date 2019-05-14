@@ -23,9 +23,8 @@ module Bosh::Director
       stemcell = DeploymentPlan::Stemcell.parse(manifest['stemcells'].first)
       planner.add_stemcell(stemcell)
 
-      planner.cloud_planner = DeploymentPlan::CloudManifestParser.new(logger).parse(cloud_config,
-                                                                                    DeploymentPlan::GlobalNetworkResolver.new(planner, [], logger),
-                                                                                    DeploymentPlan::IpProviderFactory.new(true, logger))
+      planner.cloud_planner = DeploymentPlan::CloudManifestParser
+                              .new(logger).parse(cloud_config, DeploymentPlan::IpProviderFactory.new(logger))
       planner.update = DeploymentPlan::UpdateConfig.new(manifest['update'])
 
       planner

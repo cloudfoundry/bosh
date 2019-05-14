@@ -7,71 +7,54 @@ module Bosh
       let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest }
 
       describe '#validate_manifest' do
-
         it 'raises error when disk_types is present' do
           manifest_hash['disk_types'] = ['foo']
-          expect {
-            manifest_validator.validate(manifest_hash, nil)
-          }.to raise_error(
-              Bosh::Director::DeploymentInvalidProperty,
-              "Deployment manifest contains 'disk_types' section, but it can only be used with cloud-config enabled on your bosh director."
-            )
+          expect do
+            manifest_validator.validate(manifest_hash)
+          end.to raise_error(
+            Bosh::Director::DeploymentInvalidProperty,
+            "Deployment manifest contains 'disk_types' section, but this can only be set in a cloud-config.",
+          )
         end
 
         it 'raises error when vm_type is present' do
           manifest_hash['vm_types'] = ['foo']
-          expect {
-            manifest_validator.validate(manifest_hash, nil)
-          }.to raise_error(
-              Bosh::Director::DeploymentInvalidProperty,
-              "Deployment manifest contains 'vm_types' section, but it can only be used with cloud-config enabled on your bosh director."
-            )
+          expect do
+            manifest_validator.validate(manifest_hash)
+          end.to raise_error(
+            Bosh::Director::DeploymentInvalidProperty,
+            "Deployment manifest contains 'vm_types' section, but this can only be set in a cloud-config.",
+          )
         end
 
         it 'raises error when azs is present' do
           manifest_hash['azs'] = ['foo']
-          expect {
-            manifest_validator.validate(manifest_hash, nil)
-          }.to raise_error(
-              Bosh::Director::DeploymentInvalidProperty,
-              "Deployment manifest contains 'azs' section, but it can only be used with cloud-config enabled on your bosh director."
-            )
+          expect do
+            manifest_validator.validate(manifest_hash)
+          end.to raise_error(
+            Bosh::Director::DeploymentInvalidProperty,
+            "Deployment manifest contains 'azs' section, but this can only be set in a cloud-config.",
+          )
         end
 
-        context 'without cloud-config' do
-          it 'accepts a manifest without jobs' do
-            manifest_hash.delete('jobs')
-
-            expect { manifest_validator.validate(manifest_hash, {}) }.not_to raise_error
-          end
-
-          it 'raises error when migrated_from is present' do
-            manifest_hash['jobs'].first['migrated_from'] = [{'name' => 'old'}]
-            expect {
-              manifest_validator.validate(manifest_hash, {})
-            }.to raise_error(
-                Bosh::Director::DeploymentInvalidProperty,
-                "Deployment manifest instance groups contain 'migrated_from', but it can only be used with cloud-config enabled on your bosh director."
-              )
-          end
+        it 'raises error when compilation is present' do
+          manifest_hash['compilation'] = ['foo']
+          expect do
+            manifest_validator.validate(manifest_hash)
+          end.to raise_error(
+            Bosh::Director::DeploymentInvalidProperty,
+            "Deployment manifest contains 'compilation' section, but this can only be set in a cloud-config.",
+          )
         end
 
-        context 'with cloud-config' do
-          let(:manifest_hash) do
-            {
-              'compilation' => ['fake-compilation'],
-            }
-          end
-          let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
-
-          it 'raises invalid property error' do
-            expect {
-              manifest_validator.validate(manifest_hash, cloud_config_hash)
-            }.to raise_error(
-              DeploymentInvalidProperty,
-              'Deployment manifest should not contain cloud config properties: ["compilation"]',
-            )
-          end
+        it 'raises a deprecation error when networks is present as a manifest key' do
+          manifest_hash['networks'] = ['foo']
+          expect do
+            manifest_validator.validate(manifest_hash)
+          end.to raise_error(
+            Bosh::Director::V1DeprecatedNetworks,
+            "Deployment 'networks' are no longer supported. Network definitions must now be provided in a cloud-config.",
+          )
         end
       end
     end

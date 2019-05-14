@@ -337,7 +337,7 @@ module Bosh::Director::DeploymentPlan
             'cloud_properties' => { 'foo' => 'bar' },
           }
         end
-        let(:subnet) { ManualNetworkSubnet.parse(network_spec['name'], subnet_spec, [availability_zone], []) }
+        let(:subnet) { ManualNetworkSubnet.parse(network_spec['name'], subnet_spec, [availability_zone]) }
         let(:network) { ManualNetwork.new(network_spec['name'], [subnet], logger) }
 
         it 'returns a valid instance template_spec' do

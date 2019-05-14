@@ -5,7 +5,6 @@ module Bosh::Director
 
       def initialize(options)
         @networks = self.class.index_by_name(options.fetch(:networks))
-        @global_network_resolver = options.fetch(:global_network_resolver)
         @vm_types = self.class.index_by_name(options.fetch(:vm_types, {}))
         @vm_extensions = self.class.index_by_name(options.fetch(:vm_extensions, {}))
         @disk_types = self.class.index_by_name(options.fetch(:disk_types))
@@ -17,15 +16,6 @@ module Bosh::Director
 
       def ip_provider
         @ip_provider ||= @ip_provider_factory.new_ip_provider(@networks)
-      end
-
-      def deleted_network(name)
-        ManualNetwork.parse(
-          {'subnets' => [], 'name' => name},
-          [],
-          @global_network_resolver,
-          @logger
-        )
       end
 
       def availability_zone(name)
@@ -70,10 +60,6 @@ module Bosh::Director
 
       def disk_type(name)
         @disk_types[name]
-      end
-
-      def using_global_networking?
-        false
       end
 
       def self.index_by_name(collection)

@@ -8,26 +8,25 @@ module Bosh::Director
         @logger = logger
       end
 
-      def parse(cloud_manifest, global_network_resolver, ip_provider_factory)
+      def parse(cloud_manifest, ip_provider_factory)
         azs = parse_availability_zones(cloud_manifest)
         az_list = CloudPlanner.index_by_name(azs)
-        networks = parse_networks(cloud_manifest, global_network_resolver, azs)
+        networks = parse_networks(cloud_manifest, azs)
         vm_types = parse_vm_types(cloud_manifest)
         vm_extensions = parse_vm_extensions(cloud_manifest)
         disk_types = parse_disk_types(cloud_manifest)
         compilation_config = parse_compilation(cloud_manifest, networks, az_list, vm_types, vm_extensions)
 
-        CloudPlanner.new({
+        CloudPlanner.new(
           availability_zones_list: az_list,
           networks: networks,
-          global_network_resolver: global_network_resolver,
           ip_provider_factory: ip_provider_factory,
           compilation: compilation_config,
           vm_types: vm_types,
           vm_extensions: vm_extensions,
           disk_types: disk_types,
           logger: @logger,
-        })
+        )
       end
 
       def parse_availability_zones(cloud_manifest)
@@ -46,7 +45,7 @@ module Bosh::Director
 
       private
 
-      def parse_networks(cloud_manifest, global_network_resolver, availability_zones)
+      def parse_networks(cloud_manifest, availability_zones)
         networks = safe_property(cloud_manifest, 'networks', :class => Array)
         if networks.empty?
           raise DeploymentNoNetworks, 'No networks specified'
@@ -57,7 +56,7 @@ module Bosh::Director
 
           case type
             when 'manual'
-              ManualNetwork.parse(network_spec, availability_zones, global_network_resolver, @logger)
+              ManualNetwork.parse(network_spec, availability_zones, @logger)
             when 'dynamic'
               DynamicNetwork.parse(network_spec, availability_zones, @logger)
             when 'vip'

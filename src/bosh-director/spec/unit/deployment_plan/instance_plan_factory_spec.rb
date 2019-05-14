@@ -47,7 +47,7 @@ module Bosh::Director
       let(:range) { NetAddr::CIDR.create('192.168.1.1/24') }
       let(:manual_network_subnet) { ManualNetworkSubnet.new('name-7', range, nil, nil, nil, nil, nil, [], []) }
       let(:network) { BD::DeploymentPlan::ManualNetwork.new('name-7', [manual_network_subnet], logger) }
-      let(:ip_repo) { BD::DeploymentPlan::InMemoryIpRepo.new(logger) }
+      let(:ip_repo) { BD::DeploymentPlan::DatabaseIpRepo.new(logger) }
       let(:deployment_plan) do
         instance_double(
           Planner,
@@ -110,6 +110,8 @@ module Bosh::Director
         allow(instance_group).to receive(:name).and_return('group-name')
         allow(index_assigner).to receive(:assign_index)
         allow(plan_instance).to receive(:update_description)
+        Bosh::Director::Config.current_job = Bosh::Director::Jobs::BaseJob.new
+        Bosh::Director::Config.current_job.task_id = 'fake-task-id'
       end
 
       describe '#obsolete_instance_plan' do
@@ -125,7 +127,7 @@ module Bosh::Director
 
         it 'fetches network reservations' do
           instance_plan_factory.obsolete_instance_plan(existing_instance_model)
-          expect(ip_repo.contains_ip?(ip_to_i('192.168.1.1'), 'name-7')).to eq(true)
+          expect(Bosh::Director::Models::IpAddress.find(address_str: ip_to_i('192.168.1.1')).network_name).to eq('name-7')
         end
 
         context 'use_dns_addresses' do

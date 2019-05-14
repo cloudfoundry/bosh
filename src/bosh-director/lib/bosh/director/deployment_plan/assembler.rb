@@ -39,8 +39,6 @@ module Bosh::Director
       network_reservation_repository = Bosh::Director::DeploymentPlan::NetworkReservationRepository.new(@deployment_plan, @logger)
       states_by_existing_instance = current_states_by_instance(instances, fix)
 
-      migrate_existing_instances_to_global_networking(network_reservation_repository, states_by_existing_instance)
-
       instance_repo = Bosh::Director::DeploymentPlan::InstanceRepository.new(network_reservation_repository, @logger, @variables_interpolator)
       index_assigner = Bosh::Director::DeploymentPlan::PlacementPlanner::IndexAssigner.new(@deployment_plan.model)
       instance_plan_factory = Bosh::Director::DeploymentPlan::InstancePlanFactory.new(
@@ -220,19 +218,6 @@ module Bosh::Director
     def migrate_legacy_dns_records
       @deployment_plan.instance_models.each do |instance_model|
         @powerdns_manager.migrate_legacy_records(instance_model)
-      end
-    end
-
-    def migrate_existing_instances_to_global_networking(network_reservation_repository, states_by_existing_instance)
-      return unless @deployment_plan.using_global_networking?
-
-      # in the case where this is their first transition to global networking, we need to make sure we have already
-      # populated the database/models with the existing IPs. Do this first before we start any of our planning.
-      @deployment_plan.instance_models.each do |existing_instance|
-        network_reservation_repository.migrate_existing_instance_network_reservations(
-          existing_instance,
-          states_by_existing_instance[existing_instance]
-        )
       end
     end
 

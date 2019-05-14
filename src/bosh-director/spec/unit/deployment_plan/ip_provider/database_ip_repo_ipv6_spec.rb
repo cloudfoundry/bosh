@@ -20,13 +20,11 @@ module Bosh::Director::DeploymentPlan
         ],
       }
     end
-    let(:global_network_resolver) { instance_double(GlobalNetworkResolver, reserved_ranges: Set.new) }
     let(:availability_zones) { [BD::DeploymentPlan::AvailabilityZone.new('az-1', {})] }
     let(:network) do
       ManualNetwork.parse(
         network_spec,
         availability_zones,
-        global_network_resolver,
         logger
       )
     end
@@ -35,7 +33,6 @@ module Bosh::Director::DeploymentPlan
         network.name,
         network_spec['subnets'].first,
         availability_zones,
-        []
       )
     end
 
@@ -44,7 +41,6 @@ module Bosh::Director::DeploymentPlan
       ManualNetwork.parse(
         other_network_spec,
         availability_zones,
-        global_network_resolver,
         logger
       )
     end
@@ -54,7 +50,6 @@ module Bosh::Director::DeploymentPlan
         other_network.name,
         other_network_spec['subnets'].first,
         availability_zones,
-        []
       )
     end
 
@@ -76,7 +71,7 @@ module Bosh::Director::DeploymentPlan
 
       let(:network_without_static_pool) do
         network_spec['subnets'].first['static'] = []
-        ManualNetwork.parse(network_spec, availability_zones, global_network_resolver, logger)
+        ManualNetwork.parse(network_spec, availability_zones, logger)
       end
 
       context 'when reservation changes type' do

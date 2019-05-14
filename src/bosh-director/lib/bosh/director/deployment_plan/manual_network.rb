@@ -8,14 +8,13 @@ module Bosh::Director
 
       attr_accessor :subnets
 
-      def self.parse(network_spec, availability_zones, global_network_resolver, logger)
+      def self.parse(network_spec, availability_zones, logger)
         name = safe_property(network_spec, 'name', class: String)
         managed = Config.network_lifecycle_enabled? && safe_property(network_spec, 'managed', default: false)
-        reserved_ranges = global_network_resolver.reserved_ranges
         subnet_specs = safe_property(network_spec, 'subnets', class: Array)
         subnets = []
         subnet_specs.each do |subnet_spec|
-          new_subnet = ManualNetworkSubnet.parse(name, subnet_spec, availability_zones, reserved_ranges, managed)
+          new_subnet = ManualNetworkSubnet.parse(name, subnet_spec, availability_zones, managed)
           subnets.each do |subnet|
             raise NetworkOverlappingSubnets, "Network '#{name}' has overlapping subnets" if subnet.overlaps?(new_subnet)
           end

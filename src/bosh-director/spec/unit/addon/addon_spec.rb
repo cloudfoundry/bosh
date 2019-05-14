@@ -149,8 +149,7 @@ module Bosh::Director
           deployment.add_stemcell(stemcell)
           deployment.cloud_planner = DeploymentPlan::CloudManifestParser.new(logger).parse(
             Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs,
-            DeploymentPlan::GlobalNetworkResolver.new(deployment, [], logger),
-            DeploymentPlan::IpProviderFactory.new(true, logger),
+            DeploymentPlan::IpProviderFactory.new(logger),
           )
 
           deployment.add_instance_group(instance_group)
@@ -575,8 +574,7 @@ module Bosh::Director
               deployment.add_stemcell(stemcell)
               deployment.cloud_planner = DeploymentPlan::CloudManifestParser.new(logger).parse(
                 Bosh::Spec::NewDeployments.simple_cloud_config,
-                DeploymentPlan::GlobalNetworkResolver.new(deployment, [], logger),
-                DeploymentPlan::IpProviderFactory.new(true, logger),
+                DeploymentPlan::IpProviderFactory.new(logger),
               )
               instance_group1 = instance_group_parser.parse(
                 Bosh::Spec::NewDeployments.simple_instance_group(jobs: [{ 'name' => 'dummy', 'release' => 'dummy' }]),
@@ -614,8 +612,7 @@ module Bosh::Director
               deployment.add_stemcell(stemcell)
               deployment.cloud_planner = DeploymentPlan::CloudManifestParser.new(logger).parse(
                 Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs,
-                DeploymentPlan::GlobalNetworkResolver.new(deployment, [], logger),
-                DeploymentPlan::IpProviderFactory.new(true, logger),
+                DeploymentPlan::IpProviderFactory.new(logger),
               )
               jobs = [{ 'name' => 'dummy', 'release' => 'dummy' }]
               instance_group = instance_group_parser.parse(

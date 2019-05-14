@@ -3,8 +3,7 @@ require 'spec_helper'
 module Bosh::Director::DeploymentPlan
   describe IpProvider do
     let(:instance_model) { Bosh::Director::Models::Instance.make }
-    let(:deployment_plan) { instance_double(Planner, name: 'fake-deployment', using_global_networking?: using_global_networking) }
-    let(:global_network_resolver) { instance_double(GlobalNetworkResolver, reserved_ranges: Set.new) }
+    let(:deployment_plan) { instance_double(Planner, name: 'fake-deployment') }
     let(:networks) do
       { 'my-manual-network' => manual_network }
     end
@@ -49,7 +48,6 @@ module Bosh::Director::DeploymentPlan
           BD::DeploymentPlan::AvailabilityZone.new('az-1', {}),
           BD::DeploymentPlan::AvailabilityZone.new('az-2', {})
         ],
-        global_network_resolver,
         logger
       )
     end
@@ -65,7 +63,6 @@ module Bosh::Director::DeploymentPlan
           ]
         },
         [],
-        global_network_resolver,
         logger
       )
     end
@@ -524,7 +521,6 @@ module Bosh::Director::DeploymentPlan
                   ]
                 },
                 [],
-                global_network_resolver,
                 logger
               )
             end
@@ -543,26 +539,6 @@ module Bosh::Director::DeploymentPlan
 
               expect(existing_network_reservation.network.name).to eq('my-another-network')
             end
-          end
-        end
-      end
-    end
-
-    describe 'with an in-memory repo for v1 manifests' do
-      let(:ip_repo) { InMemoryIpRepo.new(logger) }
-      let(:ip_provider) { IpProvider.new(ip_repo, networks, logger) }
-      it_should_behave_like 'an ip provider with any repo'
-
-      describe :reserve_existing_ips do
-        context 'when ExistingNetworkReservation' do
-          let(:existing_network_reservation) { BD::ExistingNetworkReservation.new(instance_model, manual_network, '192.168.1.2', 'manual') }
-
-          it 'should add existing IP to list of reserved IPs' do
-            ip_provider.reserve_existing_ips(existing_network_reservation)
-
-            expect {
-              ip_provider.reserve_existing_ips(existing_network_reservation)
-            }.to raise_error BD::NetworkReservationAlreadyInUse
           end
         end
       end

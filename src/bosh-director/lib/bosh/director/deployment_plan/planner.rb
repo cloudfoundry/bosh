@@ -120,7 +120,6 @@ module Bosh::Director
       def_delegators :@cloud_planner,
                      :networks,
                      :network,
-                     :deleted_network,
                      :availability_zone,
                      :availability_zones,
                      :vm_types,
@@ -272,10 +271,6 @@ module Bosh::Director
       # @return [Array<Bosh::Director::DeploymentPlan::InstanceGroup>] InstanceGroups with errand lifecycle
       def errand_instance_groups
         @instance_groups.select(&:errand?)
-      end
-
-      def using_global_networking?
-        CloudConfig::CloudConfigsConsolidator.have_cloud_configs?(@cloud_configs)
       end
 
       def set_variables(variables_obj)

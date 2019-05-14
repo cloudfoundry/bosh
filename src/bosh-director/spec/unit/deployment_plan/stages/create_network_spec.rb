@@ -8,7 +8,6 @@ module Bosh::Director
       before :each do
         allow(deployment_plan).to receive(:model).and_return(deployment_model)
         allow(deployment_plan).to receive(:instance_groups).and_return([instance_group])
-        allow(deployment_plan).to receive(:using_global_networking?).and_return(false)
         allow(instance_group).to receive(:networks).and_return([job_network])
         allow(job_network).to receive(:deployment_network).and_return(network)
         allow(network).to receive(:managed?).and_return(true)
@@ -29,7 +28,6 @@ module Bosh::Director
       let(:instance_group) { instance_double(Bosh::Director::DeploymentPlan::InstanceGroup) }
       let(:deployment_plan) { instance_double(Bosh::Director::DeploymentPlan::Planner) }
       let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', 'old' => 'value') }
-      let(:network_resolver) { Bosh::Director::DeploymentPlan::GlobalNetworkResolver.new(deployment_plan, [], logger) }
 
       context 'valid spec' do
         let(:network_spec) do
@@ -60,7 +58,6 @@ module Bosh::Director
           Bosh::Director::DeploymentPlan::ManualNetwork.parse(
             network_spec,
             [availability_zone],
-            network_resolver,
             logger,
           )
         end
@@ -180,7 +177,6 @@ module Bosh::Director
           Bosh::Director::DeploymentPlan::ManualNetwork.parse(
             network_spec,
             [availability_zone],
-            network_resolver,
             logger,
           )
         end
@@ -221,7 +217,6 @@ module Bosh::Director
           Bosh::Director::DeploymentPlan::ManualNetwork.parse(
             network_spec,
             [availability_zone],
-            network_resolver,
             logger,
           )
         end

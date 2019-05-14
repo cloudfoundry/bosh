@@ -5,7 +5,6 @@ module Bosh::Director
     describe CloudPlanner do
       subject { described_class.new({
         :networks => {},
-        :global_network_resolver => [],
         :disk_types => [],
         :availability_zones_list => [],
         :compilation => {},

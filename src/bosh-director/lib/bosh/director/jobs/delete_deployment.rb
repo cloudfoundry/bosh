@@ -24,7 +24,7 @@ module Bosh::Director
 
           fail_if_ignored_instances_found(deployment_model)
 
-          ip_provider = DeploymentPlan::IpProviderFactory.new(true, logger)
+          ip_provider = DeploymentPlan::IpProviderFactory.new(logger)
 
           powerdns_manager = PowerDnsManagerProvider.create
           disk_manager = DiskManager.new(logger)

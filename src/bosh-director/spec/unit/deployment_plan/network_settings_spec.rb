@@ -42,12 +42,11 @@ module Bosh::Director::DeploymentPlan
           }],
         },
         [],
-        GlobalNetworkResolver.new(plan, [], logger),
         logger,
       )
     end
 
-    let(:plan) { instance_double(Planner, using_global_networking?: true, name: 'fake-deployment') }
+    let(:plan) { instance_double(Planner, name: 'fake-deployment') }
     let(:use_short_dns_addresses) { false }
     let(:use_link_dns_addresses) { false }
 
@@ -189,7 +188,6 @@ module Bosh::Director::DeploymentPlan
               ]
             },
             [],
-            GlobalNetworkResolver.new(plan, [], logger),
             logger
           )
           Bosh::Director::DesiredNetworkReservation.new_dynamic(nil, network)
@@ -432,7 +430,6 @@ module Bosh::Director::DeploymentPlan
               ],
             },
             [],
-            GlobalNetworkResolver.new(plan, [], logger),
             logger,
           )
           Bosh::Director::DesiredNetworkReservation.new_dynamic(nil, network)

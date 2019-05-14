@@ -27,9 +27,6 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     planner.add_stemcell(stemcell)
     planner
   end
-  let(:global_network_resolver) do
-    BD::DeploymentPlan::GlobalNetworkResolver.new(deployment_plan, [], logger)
-  end
   let(:instance_model) { BD::Models::Instance.make }
 
   let(:manual_network) do
@@ -39,7 +36,6 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
         BD::DeploymentPlan::AvailabilityZone.new('zone_1', {}),
         BD::DeploymentPlan::AvailabilityZone.new('zone_2', {}),
       ],
-      global_network_resolver,
       logger,
     )
   end

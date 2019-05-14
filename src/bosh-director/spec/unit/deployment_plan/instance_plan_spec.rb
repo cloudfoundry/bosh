@@ -116,8 +116,7 @@ module Bosh::Director::DeploymentPlan
       )
     end
     let(:instance_state) { 'started' }
-    let(:network_resolver) { GlobalNetworkResolver.new(deployment_plan, [], logger) }
-    let(:network) { ManualNetwork.parse(network_spec, [availability_zone], network_resolver, logger) }
+    let(:network) { ManualNetwork.parse(network_spec, [availability_zone], logger) }
     let(:reservation) do
       reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
       reservation.resolve_ip('192.168.1.3')

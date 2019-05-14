@@ -9,11 +9,8 @@ module Bosh::Director
       attr_accessor :cloud_properties, :range, :gateway, :restricted_ips,
                     :static_ips, :netmask
 
-      def self.parse(network_name, subnet_spec, availability_zones, legacy_reserved_ranges, managed = false)
+      def self.parse(network_name, subnet_spec, availability_zones, managed = false)
         @logger = Config.logger
-
-        reserved_ranges = legacy_reserved_ranges.map { |r| r.first == r.last ? r.first.to_s : "#{r.first}-#{r.last}" }.join(', ')
-        @logger.debug("reserved ranges #{reserved_ranges}")
 
         sn_name = safe_property(subnet_spec, 'name', optional: !managed)
         range_property = safe_property(subnet_spec, 'range', class: String, optional: managed)
@@ -72,12 +69,6 @@ module Bosh::Director
             end
 
             static_ips.add(ip)
-          end
-
-          legacy_reserved_ranges.each do |cidr_range|
-            cidr_range.range(0, nil, Objectify: true).each do |ip|
-              restricted_ips.add(ip.to_i) unless static_ips.include?(ip.to_i)
-            end
           end
         end
 

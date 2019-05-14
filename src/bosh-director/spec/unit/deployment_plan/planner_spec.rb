@@ -54,8 +54,7 @@ module Bosh::Director
           deployment_model.add_variable_set(Models::VariableSet.make(deployment: deployment_model))
           cloud_planner = CloudPlanner.new(
             networks: [Network.new('default', logger)],
-            global_network_resolver: GlobalNetworkResolver.new(planner, [], logger),
-            ip_provider_factory: IpProviderFactory.new(true, logger),
+            ip_provider_factory: IpProviderFactory.new(logger),
             disk_types: [],
             availability_zones_list: {},
             vm_type: vm_type,
@@ -509,32 +508,6 @@ module Bosh::Director
 
             it 'returns FALSE' do
               expect(subject.use_link_dns_names?).to be_falsey
-            end
-          end
-        end
-
-        describe '#using_global_networking?' do
-          context 'when cloud configs are empty' do
-            it 'returns false' do
-              expect(subject.using_global_networking?).to be_falsey
-            end
-          end
-
-          context 'when cloud configs are not empty' do
-            let(:cloud_configs) do
-              [
-                Models::Config.make(
-                  :cloud,
-                  content: \
-                    '--- {"networks":[{"name":"test","subnets":[]}],'\
-                    '"compilation":{"workers":1,"canary_watch_time":1,'\
-                    '"update_watch_time":1,"serial":false,"network":"test"}}',
-                ),
-              ]
-            end
-
-            it 'returns true' do
-              expect(subject.using_global_networking?).to be_truthy
             end
           end
         end

@@ -18,7 +18,6 @@ module Bosh::Director
       deployment.cloud_planner = cloud_planner
       deployment
     end
-    let(:global_network_resolver) { instance_double(DeploymentPlan::GlobalNetworkResolver, reserved_ranges: Set.new) }
     let(:network) do
       DeploymentPlan::ManualNetwork.parse(
         manual_network_spec,
@@ -26,7 +25,6 @@ module Bosh::Director
           BD::DeploymentPlan::AvailabilityZone.new('az-1', {}),
           BD::DeploymentPlan::AvailabilityZone.new('az-2', {}),
         ],
-        global_network_resolver,
         logger,
       )
     end
@@ -43,11 +41,15 @@ module Bosh::Director
     end
     let(:instance_model) { Models::Instance.make(deployment: deployment_model) }
     let!(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
-    let(:ip_provider) { DeploymentPlan::IpProvider.new(DeploymentPlan::InMemoryIpRepo.new(logger), {'fake-network' => network}, logger) }
+    let(:ip_provider) do
+      DeploymentPlan::IpProvider.new(DeploymentPlan::DatabaseIpRepo.new(logger), { 'fake-network' => network }, logger)
+    end
     before do
       allow(deployment).to receive(:ip_provider).and_return(ip_provider)
       allow(cloud_planner).to receive(:networks).and_return([network])
       allow(deployment).to receive(:network).with('fake-network').and_return(network)
+      Bosh::Director::Config.current_job = Bosh::Director::Jobs::BaseJob.new
+      Bosh::Director::Config.current_job.task_id = 'fake-task-id'
     end
 
     describe 'create_from_db' do
@@ -56,17 +58,17 @@ module Bosh::Director
         let(:ip2) { NetAddr::CIDR.create('192.168.0.2').to_i }
 
         let(:ip_model1) do
-          Models::IpAddress.make(address_str: ip1.to_s, network_name: 'fake-network')
+          Models::IpAddress.make(address_str: ip1.to_s, instance: instance_model, network_name: 'fake-network')
         end
 
         let(:ip_model2) do
-          Models::IpAddress.make(address_str: ip2.to_s, network_name: 'fake-network')
+          Models::IpAddress.make(address_str: ip2.to_s, instance: instance_model, network_name: 'fake-network')
         end
 
         context 'when there is a last VM with IP addresses' do
           before do
-            vm1 = BD::Models::Vm.make(instance_id: instance_model.id)
-            vm2 = BD::Models::Vm.make(instance_id: instance_model.id)
+            vm1 = BD::Models::Vm.make(instance: instance_model)
+            vm2 = BD::Models::Vm.make(instance: instance_model)
 
             vm2.add_ip_address(ip_model1)
             vm2.add_ip_address(ip_model2)

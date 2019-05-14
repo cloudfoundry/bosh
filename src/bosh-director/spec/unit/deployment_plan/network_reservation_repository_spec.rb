@@ -22,9 +22,14 @@ module Bosh::Director
       end
       let(:network) { BD::DeploymentPlan::ManualNetwork.new('name-7', [manual_network_subnet], logger) }
       let(:deployment_plan) do
-        ip_repo = BD::DeploymentPlan::InMemoryIpRepo.new(logger)
+        ip_repo = BD::DeploymentPlan::DatabaseIpRepo.new(logger)
         ip_provider = BD::DeploymentPlan::IpProvider.new(ip_repo, {'name-7' => network}, logger)
         instance_double(Planner, network: network, networks: [network], ip_provider: ip_provider)
+      end
+
+      before do
+        Bosh::Director::Config.current_job = Bosh::Director::Jobs::BaseJob.new
+        Bosh::Director::Config.current_job.task_id = 'fake-task-id'
       end
 
       context 'when the existing instance model has ip addresses' do

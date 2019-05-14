@@ -5,16 +5,13 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
   before { @network = instance_double('Bosh::Director::DeploymentPlan::Network', :name => 'net_a') }
 
   def make_subnet(properties, availability_zones)
-    BD::DeploymentPlan::ManualNetworkSubnet.parse(@network.name, properties, availability_zones, reserved_ranges)
+    BD::DeploymentPlan::ManualNetworkSubnet.parse(@network.name, properties, availability_zones)
   end
 
   def make_managed_subnet(properties, availability_zones)
-    BD::DeploymentPlan::ManualNetworkSubnet.parse(@network.name, properties, availability_zones, reserved_ranges, true)
+    BD::DeploymentPlan::ManualNetworkSubnet.parse(@network.name, properties, availability_zones, true)
   end
 
-  let(:reserved_ranges) do
-    {}
-  end
   let(:instance) { instance_double(BD::DeploymentPlan::Instance, model: BD::Models::Instance.make) }
 
   def create_static_reservation(ip)
@@ -128,35 +125,6 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
           []
         )
       }.to raise_error(BD::ValidationMissingField)
-    end
-
-    context 'when generating log output' do
-      before do
-        allow(Bosh::Director::Config).to receive(:logger).and_return(logger)
-      end
-      let(:reserved_ranges) do
-        Set.new [
-          NetAddr::CIDR.create('192.168.2.2/32'),
-          NetAddr::CIDR.create('192.168.0.0/24'),
-          NetAddr::CIDR.create('192.168.1.0/24'),
-        ]
-      end
-      it 'should log a reasonable debug message' do
-        expect(logger).to receive(:debug).with('reserved ranges 192.168.2.2, 192.168.0.0-192.168.0.255, 192.168.1.0-192.168.1.255')
-        subnet = make_subnet(
-            {
-                'range' => '192.168.0.0/24',
-                'gateway' => '192.168.0.254',
-                'reserved' => [
-                    '192.168.0.10 - 192.168.0.20',
-                    '192.168.0.30 - 192.168.0.50',
-                    '192.168.0.100'
-                ],
-                'cloud_properties' => {'foo' => 'bar'}
-            },
-            [],
-        )
-      end
     end
 
     context 'gateway property' do

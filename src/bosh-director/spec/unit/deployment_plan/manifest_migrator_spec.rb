@@ -59,22 +59,6 @@ module Bosh
         end
 
         describe 'cloud_config' do
-          context 'when cloud config is not set' do
-            let(:manifest_hash) do
-              {
-                'compilation' => ['comp'],
-                'disk_pools' => ['disk-pools'],
-                'networks' => ['networks']
-              }
-            end
-
-            it 'constructs cloud config from deployment manifest' do
-              expect(migrated_cloud_config['compilation']).to eq(['comp'])
-              expect(migrated_cloud_config['disk_pools']).to eq(['disk-pools'])
-              expect(migrated_cloud_config['networks']).to eq(['networks'])
-            end
-          end
-
           context 'when cloud config is set' do
             let(:cloud_config) do
               { 'vm_types' => 'cloud-config' }

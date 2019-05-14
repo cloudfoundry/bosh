@@ -7,7 +7,6 @@ module Bosh::Director
       instance_double(
         Bosh::Director::DeploymentPlan::Planner,
         name: 'simple',
-        using_global_networking?: false,
         skip_drain: BD::DeploymentPlan::AlwaysSkipDrain.new,
         recreate: false,
         model: deployment_model,

@@ -54,7 +54,6 @@ module Bosh
         )
       end
 
-      let(:global_network_resolver) { instance_double(DeploymentPlan::GlobalNetworkResolver, reserved_ranges: Set.new) }
       let(:networks) do
         { 'my-manual-network' => manual_network }
       end
@@ -78,7 +77,6 @@ module Bosh
         DeploymentPlan::ManualNetwork.parse(
           manual_network_spec,
           [BD::DeploymentPlan::AvailabilityZone.new('az-1', {})],
-          global_network_resolver,
           logger,
         )
       end
@@ -220,7 +218,7 @@ module Bosh
       end
 
       describe '#create_for_instance_plans' do
-        let(:ip_repo) { DeploymentPlan::InMemoryIpRepo.new(logger) }
+        let(:ip_repo) { DeploymentPlan::DatabaseIpRepo.new(logger) }
         let(:ip_provider) { DeploymentPlan::IpProvider.new(ip_repo, networks, logger) }
 
         it 'creates vms for the given instance plans' do
