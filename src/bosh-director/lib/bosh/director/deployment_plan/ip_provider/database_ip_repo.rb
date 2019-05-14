@@ -84,17 +84,11 @@ module Bosh::Director::DeploymentPlan
 
       addresses_we_cant_allocate.merge(subnet.restricted_ips.to_a) unless subnet.restricted_ips.empty?
       addresses_we_cant_allocate.merge(subnet.static_ips.to_a) unless subnet.static_ips.empty?
-      # find first in-use address whose subsequent address is not in use
-      # the subsequent address must be free
-      addr = addresses_we_cant_allocate
-               .to_a
-               .reject {|a| a < first_range_address }
-               .sort
-               .find { |a| !addresses_we_cant_allocate.include?(a+1) }
+      addr = find_first_available_address(addresses_we_cant_allocate, first_range_address)
       if subnet.range.version == 6
-        ip_address = NetAddr::CIDRv6.new(addr+1)
+        ip_address = NetAddr::CIDRv6.new(addr)
       else
-        ip_address = NetAddr::CIDRv4.new(addr+1)
+        ip_address = NetAddr::CIDRv4.new(addr)
       end
 
       unless subnet.range == ip_address || subnet.range.contains?(ip_address)
@@ -104,6 +98,15 @@ module Bosh::Director::DeploymentPlan
       save_ip(ip_address, reservation, false)
 
       ip_address
+    end
+
+    def find_first_available_address(addresses_we_cant_allocate, first_address)
+      last_address_we_cant_use = addresses_we_cant_allocate
+                                 .to_a
+                                 .reject { |a| a < first_address }
+                                 .sort
+                                 .find { |a| !addresses_we_cant_allocate.include?(a + 1) }
+      last_address_we_cant_use + 1
     end
 
     def try_to_allocate_vip_ip(reservation, subnet)
