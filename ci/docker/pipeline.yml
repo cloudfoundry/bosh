@@ -2,6 +2,8 @@ groups:
 - name: bosh:docker-images
   jobs:
   - build-bosh-agent
+  - build-os-image-stemcell-builder
+  - build-os-image-stemcell-publisher
   - build-bosh-blobstore-client
   - build-main-bats-aws
   - build-main-ruby-go
@@ -161,6 +163,30 @@ jobs:
       - put: main-image
         params:
           build: "bosh-src/ci/docker/main"
+        get_params:
+          skip_download: true
+
+  - name: build-os-image-stemcell-publisher
+    public: true
+    serial: true
+    plan:
+      - get: bosh-linux-stemcell-builder
+        trigger: true
+      - put: os-image-stemcell-publisher
+        params:
+          build: "bosh-linux-stemcell-builder/ci/docker/os-image-stemcell-publisher"
+        get_params:
+          skip_download: true
+
+  - name: build-os-image-stemcell-builder
+    public: true
+    serial: true
+    plan:
+      - get: bosh-linux-stemcell-builder
+        trigger: true
+      - put: os-image-stemcell-builder
+        params:
+          build: "bosh-linux-stemcell-builder/ci/docker/os-image-stemcell-builder"
         get_params:
           skip_download: true
 
@@ -325,6 +351,14 @@ resources:
         - "ci/docker"
         - "ci/pipelines/docker-images/tasks"
 
+  - name: bosh-linux-stemcell-builder
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh-linux-stemcell-builder
+      branch: master
+      paths:
+        - "ci/docker"
+
   - name: bosh-agent-src
     type: git
     source:
@@ -422,6 +456,22 @@ resources:
     type: docker-image
     source:
       repository: bosh/main-base
+      email: ((dockerhub_email))
+      username: ((dockerhub_username))
+      password: ((dockerhub_password))
+
+  - name: os-image-stemcell-publisher
+    type: docker-image
+    source:
+      repository: bosh/os-image-stemcell-publisher
+      email: ((dockerhub_email))
+      username: ((dockerhub_username))
+      password: ((dockerhub_password))
+
+  - name: os-image-stemcell-builder
+    type: docker-image
+    source:
+      repository: bosh/os-image-stemcell-builder
       email: ((dockerhub_email))
       username: ((dockerhub_username))
       password: ((dockerhub_password))
