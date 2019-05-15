@@ -10,12 +10,11 @@ module Bosh::Director
         @disk_types = self.class.index_by_name(options.fetch(:disk_types))
         @availability_zones = options.fetch(:availability_zones_list)
         @compilation = options.fetch(:compilation)
-        @ip_provider_factory = options.fetch(:ip_provider_factory)
         @logger = options.fetch(:logger)
       end
 
       def ip_provider
-        @ip_provider ||= @ip_provider_factory.new_ip_provider(@networks)
+        @ip_provider ||= IpProvider.new(DatabaseIpRepo.new(@logger), @networks, @logger)
       end
 
       def availability_zone(name)

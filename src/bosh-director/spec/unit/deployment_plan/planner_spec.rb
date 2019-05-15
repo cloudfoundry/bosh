@@ -54,7 +54,6 @@ module Bosh::Director
           deployment_model.add_variable_set(Models::VariableSet.make(deployment: deployment_model))
           cloud_planner = CloudPlanner.new(
             networks: [Network.new('default', logger)],
-            ip_provider_factory: IpProviderFactory.new(logger),
             disk_types: [],
             availability_zones_list: {},
             vm_type: vm_type,

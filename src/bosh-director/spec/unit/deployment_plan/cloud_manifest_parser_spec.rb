@@ -10,10 +10,9 @@ module Bosh::Director
       }
     end
     let(:event_log) { Config.event_log }
-    let(:ip_provider_factory) { Bosh::Director::DeploymentPlan::IpProviderFactory.new(logger) }
 
     describe '#parse' do
-      let(:parsed_cloud_planner) { subject.parse(cloud_manifest, ip_provider_factory) }
+      let(:parsed_cloud_planner) { subject.parse(cloud_manifest) }
       let(:cloud_manifest) { Bosh::Spec::Deployments.simple_cloud_config }
 
       context 'when availability zones section is specified' do
@@ -165,7 +164,7 @@ module Bosh::Director
                       }]
                   })
                 expect {
-                  subject.parse(valid_manifest, ip_provider_factory)
+                  subject.parse(valid_manifest)
                 }.to_not raise_error
               end
 
@@ -190,7 +189,7 @@ module Bosh::Director
                   })
 
                 expect {
-                  subject.parse(invalid_manifest, ip_provider_factory)
+                  subject.parse(invalid_manifest)
                 }.to raise_error(NetworkSubnetUnknownAvailabilityZone)
               end
             end
@@ -219,7 +218,7 @@ module Bosh::Director
                       }]
                   })
                 expect {
-                  subject.parse(valid_manifest, ip_provider_factory)
+                  subject.parse(valid_manifest)
                 }.to_not raise_error
               end
 
@@ -240,7 +239,7 @@ module Bosh::Director
                   })
 
                 expect {
-                  subject.parse(invalid_manifest, ip_provider_factory)
+                  subject.parse(invalid_manifest)
                 }.to raise_error(NetworkSubnetUnknownAvailabilityZone)
               end
             end
@@ -262,7 +261,7 @@ module Bosh::Director
               )
 
               expect do
-                subject.parse(valid_manifest, ip_provider_factory)
+                subject.parse(valid_manifest)
               end.to_not raise_error
             end
           end
@@ -283,7 +282,7 @@ module Bosh::Director
               )
 
               expect do
-                subject.parse(valid_manifest, ip_provider_factory)
+                subject.parse(valid_manifest)
               end.to raise_error
             end
           end

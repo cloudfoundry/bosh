@@ -87,8 +87,7 @@ module Bosh
                                    runtime_config_consolidator.runtime_configs,
                                    deployment_model,
                                    plan_options)
-          ip_provider_factory = IpProviderFactory.new(@logger)
-          deployment.cloud_planner = CloudManifestParser.new(@logger).parse(cloud_manifest, ip_provider_factory)
+          deployment.cloud_planner = CloudManifestParser.new(@logger).parse(cloud_manifest)
 
           DeploymentSpecParser.new(deployment, Config.event_log, @logger).parse(manifest_hash, plan_options)
 

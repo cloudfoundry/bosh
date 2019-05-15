@@ -24,7 +24,9 @@ module Bosh::Director
 
           fail_if_ignored_instances_found(deployment_model)
 
-          ip_provider = DeploymentPlan::IpProviderFactory.new(logger)
+          # IP Provider is never used by the instance deleter in this case
+          # We also don't have access to the networks to properly instantiate one
+          ip_provider = DeploymentPlan::IpProvider.new(nil, nil, logger)
 
           powerdns_manager = PowerDnsManagerProvider.create
           disk_manager = DiskManager.new(logger)

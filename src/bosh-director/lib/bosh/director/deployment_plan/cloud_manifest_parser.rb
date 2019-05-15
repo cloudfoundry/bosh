@@ -8,7 +8,7 @@ module Bosh::Director
         @logger = logger
       end
 
-      def parse(cloud_manifest, ip_provider_factory)
+      def parse(cloud_manifest)
         azs = parse_availability_zones(cloud_manifest)
         az_list = CloudPlanner.index_by_name(azs)
         networks = parse_networks(cloud_manifest, azs)
@@ -20,7 +20,6 @@ module Bosh::Director
         CloudPlanner.new(
           availability_zones_list: az_list,
           networks: networks,
-          ip_provider_factory: ip_provider_factory,
           compilation: compilation_config,
           vm_types: vm_types,
           vm_extensions: vm_extensions,
