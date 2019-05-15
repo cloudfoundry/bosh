@@ -11,12 +11,12 @@ module Bosh::Director
     def stop(intent = :keep_vm)
       return if @instance_model.compilation || @instance_model.active_vm.nil? || @instance_plan.unresponsive_agent?
 
-      @logger.info("Running pre-stop for #{@instance_model}")
-      perform_pre_stop(intent)
-
       if @instance_plan.skip_drain
-        @logger.info("Skipping drain for '#{@instance_model}'")
+        @logger.info("Skipping pre-stop and drain for '#{@instance_model}'")
       else
+        @logger.info("Running pre-stop for #{@instance_model}")
+        perform_pre_stop(intent)
+
         @logger.info("Running drain for #{@instance_model}")
         perform_drain
       end

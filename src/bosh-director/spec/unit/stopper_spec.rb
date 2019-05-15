@@ -96,8 +96,16 @@ module Bosh::Director
       context 'when skip_drain is set to true' do
         let(:skip_drain) { true }
 
+        it 'does not execute pre-stop' do
+          expect(agent_client).to_not receive(:run_script).with('pre-stop', {})
+          expect(agent_client).to_not receive(:drain)
+          expect(stopper).to_not receive(:sleep)
+          expect(agent_client).to receive(:stop).with(no_args).ordered
+          expect(agent_client).to receive(:run_script).with('post-stop', {}).ordered
+          stopper.stop
+        end
+
         it 'does not drain' do
-          expect(agent_client).to receive(:run_script).with('pre-stop', pre_stop_options).ordered
           expect(agent_client).to_not receive(:drain)
           expect(stopper).to_not receive(:sleep)
           expect(agent_client).to receive(:stop).with(no_args).ordered
@@ -110,6 +118,7 @@ module Bosh::Director
         let(:current_job_state) { 'unresponsive' }
 
         it 'does not drain and stop' do
+          expect(agent_client).to_not receive(:run_script).with('pre-stop', {})
           expect(agent_client).to_not receive(:drain)
           expect(stopper).to_not receive(:sleep)
           expect(agent_client).to_not receive(:stop)
@@ -122,6 +131,7 @@ module Bosh::Director
         before { instance_model.compilation = true }
 
         it 'does not drain and stop' do
+          expect(agent_client).to_not receive(:run_script).with('pre-stop', {})
           expect(agent_client).to_not receive(:drain)
           expect(stopper).to_not receive(:sleep)
           expect(agent_client).to_not receive(:stop)
@@ -130,10 +140,11 @@ module Bosh::Director
         end
       end
 
-      context 'when it instance does not have vm' do
+      context 'when the instance does not have vm' do
         before { instance_model.active_vm = nil }
 
         it 'does not drain and stop' do
+          expect(agent_client).to_not receive(:run_script).with('pre-stop', {})
           expect(agent_client).to_not receive(:drain)
           expect(stopper).to_not receive(:sleep)
           expect(agent_client).to_not receive(:stop)
