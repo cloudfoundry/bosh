@@ -360,23 +360,5 @@ Can't use release 'test_release/1'. It references packages without source code a
         expect(output).to include('Succeeded')
       end
     end
-
-    # TODO: Remove test when done removing v1 manifest support
-    xcontext 'before global networking' do
-      before do
-        bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
-        bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
-        legacy_manifest = Bosh::Spec::Deployments.simple_cloud_config.merge(
-          Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5')
-        )
-        deploy_simple_manifest(manifest_hash: legacy_manifest)
-      end
-
-      it 'allocates non-conflicting IPs for compilation VMs' do
-        bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
-        output = bosh_runner.run('export-release test_release/1 centos-7/3001', deployment_name: 'test_deployment')
-        expect(output).to include('Succeeded')
-      end
-    end
   end
 end

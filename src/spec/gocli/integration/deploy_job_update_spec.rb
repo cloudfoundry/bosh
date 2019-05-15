@@ -79,58 +79,6 @@ describe 'deploy job update', type: :integration do
       expect(deploy_output).to_not match(/addons:/)
       expect(deploy_output).to_not match(/dummy2/)
     end
-
-    # TODO: Remove test when done removing v1 manifest support
-    xcontext 'when using legacy deployment configuration' do
-      let(:legacy_manifest_hash) { Bosh::Spec::Deployments.legacy_manifest }
-      let(:modified_legacy_manifest_hash) do
-        modified_legacy_manifest_hash = Bosh::Spec::Deployments.legacy_manifest
-        modified_legacy_manifest_hash['resource_pools'][0]['size'] = 2
-        modified_legacy_manifest_hash['update']['canary_watch_time'] = 0
-        modified_legacy_manifest_hash['jobs'][0]['instances'] = 2
-        modified_legacy_manifest_hash
-      end
-
-      context 'when previous deployment was in the legacy style' do
-        before do
-          create_and_upload_test_release
-          upload_stemcell
-          deploy_simple_manifest(manifest_hash: legacy_manifest_hash)
-        end
-
-        context 'when cloud config was uploaded' do
-          before do
-            upload_cloud_config(cloud_config_hash: cloud_config_hash)
-          end
-
-          context 'when new deployment was updated to not contain cloud properties' do
-            it 'succeeds and correctly reports changes' do
-              deploy_output = deploy(manifest_hash: manifest_hash, redact_diff: true)
-
-              expect(deploy_output).to match(/- resource_pools:/)
-              expect(deploy_output).to match(/\+ vm_types:/)
-              expect(deploy_output).to_not match(/disk_pools:/)
-            end
-          end
-        end
-      end
-
-      # TODO: Remove test when done removing v1 manifest support
-      xcontext 'when previous deployment was in the legacy style and there is no cloud config in the system' do
-        before do
-          create_and_upload_test_release
-          upload_stemcell
-          deploy_simple_manifest(manifest_hash: legacy_manifest_hash)
-        end
-
-        it 'correctly reports changes between the legacy deployments' do
-          deploy_output = deploy(manifest_hash: modified_legacy_manifest_hash, failure_expected: true, redact_diff: true)
-          expect(deploy_output).to match(/resource_pools:/)
-          expect(deploy_output).to match(/update:/)
-          expect(deploy_output).to match(/jobs:/)
-        end
-      end
-    end
   end
 
   it 'stops deployment when a job update fails' do

@@ -107,40 +107,6 @@ describe 'network configuration', type: :integration do
       deploy_simple_manifest(manifest_hash: manifest_hash) # expected to not failed
     end
 
-    # TODO: Remove test when done removing v1 manifest support
-    xit 'does not recreate VM when re-deploying with legacy (non-cloud-config) unchanged dynamic and vip networking' do
-      cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
-      cloud_config_hash['networks'] = [{
-        'name' => 'a',
-        'type' => 'dynamic',
-        'cloud_properties' => {}
-      },
-        {
-          'name' => 'b',
-          'type' => 'vip',
-          'static_ips' => ['69.69.69.69'],
-        }
-      ]
-
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
-      manifest_hash['instance_groups'].first['instances'] = 1
-      manifest_hash['instance_groups'].first['networks'].first['default'] = ['dns', 'gateway']
-      manifest_hash['instance_groups'].first['networks'] << {'name' => 'b', 'static_ips' => ['69.69.69.69']}
-
-      legacy_manifest = Bosh::Spec::Deployments.legacy_manifest
-      legacy_manifest['networks'] = cloud_config_hash['networks']
-      legacy_manifest['jobs'].first['instances'] = 1
-      legacy_manifest['jobs'].first['networks'].first['default'] = ['dns', 'gateway']
-      legacy_manifest['jobs'].first['networks'] << {'name' => 'b', 'static_ips' => ['69.69.69.69']}
-
-      current_sandbox.cpi.commands.make_create_vm_always_use_dynamic_ip('127.0.0.101')
-
-      deploy_from_scratch(manifest_hash: legacy_manifest, legacy: true)
-      agent_id = director.instances.first.agent_id
-      deploy_simple_manifest(manifest_hash: legacy_manifest, legacy: true)
-      expect(director.instances.map(&:agent_id)).to eq([agent_id])
-    end
-
     it 'does not recreate VM when re-deploying with cloud-config unchanged dynamic and vip networking' do
       cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
       cloud_config_hash['networks'] = [{
