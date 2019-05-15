@@ -23,14 +23,7 @@ Deleting an instance results in all of its IPs being released. This applies to c
 
 ## IP management
 
-The IP provider is responsible for IP management. If director is not using cloud config, then IP allocations are managed by [`InMemoryIpRepo`](../bosh-director/lib/bosh/director/deployment_plan/ip_provider/in_memory_ip_repo.rb). Once cloud config is uploaded, the director enters *global networking* mode where IP allocations are managed by [`DatabaseIpRepo`](../bosh-director/lib/bosh/director/deployment_plan/ip_provider/database_ip_repo.rb).
-### InMemoryIpRepo
-
-For every deployment, `InMemoryIpRepo` constructs the state of the world for the deployment from scratch. IP space is not shared between deployments.
-
-Current IP address allocations are determined by querying the running VMs (via `get_state` agent call). Every current IP address is marked as reserved in memory before allocating new IP addresses for new instances.
-
-Re-reserving the same IP-address within a deployment will cause a `NetworkReservationAlreadyInUse` error.
+The IP provider is responsible for IP management. IP allocations are managed by [`DatabaseIpRepo`](../bosh-director/lib/bosh/director/deployment_plan/ip_provider/database_ip_repo.rb).
 
 ### DatabaseIpRepo
 
@@ -47,10 +40,9 @@ are configured for static IPs, we create static reservations; otherwise we creat
 reservation can exist per network for a given instance. Requesting a second reservation for the same network will
 throw a `NetworkReservationAlreadyExists` error.
 
-2. For existing instances we create the set of the current network reservations. For `InMemoryIpRepo` (without cloud config) the set is constructed from current state of VMs (`get_state` agent call).
-For `DatabaseIpRepo` (with cloud config) the set is constructed from the director database.
+2. For existing instances we create the set of the current network reservations from the director database.
 For dynamic networks and VIP networks with static reservations, the network assigned to the reservation is the one that matches by name in the new cloud config, otherwise it is nil.
-For manual networks and VIP networks with automatic reservations, the network asssigned is the one that contains the saved IP in its subnet
+For manual networks and VIP networks with automatic reservations, the network assigned is the one that contains the saved IP in its subnet
 range.
 After these existing reservations are created, the IPs are reserved.
 
@@ -91,7 +83,7 @@ existing reservation can be reconciled with a desired reservation in the followi
 ## Releasing IPs for non-existent networks/subnets
 
 When an existing instance has an IP address reservation on a network that no longer exists, we assign the existing reservation a placeholder network (represented in code as a generic `Network`). The IP does not get reserved.
-By attaching the IP to a reservation with a dummy network, we make sure it follows the standard reservation release code path when the reservation is marked as obsolete via either the `InMemoryIpRepo` or `DatabaseIpRepo`.
+By attaching the IP to a reservation with a dummy network, we make sure it follows the standard reservation release code path when the reservation is marked as obsolete via the `DatabaseIpRepo`.
 This ensures the IP is removed safely, as opposed to an one-off deletion from the database.
 
 ## Releasing IPs for non-existent instances
