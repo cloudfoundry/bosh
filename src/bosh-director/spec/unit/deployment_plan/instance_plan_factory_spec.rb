@@ -127,7 +127,7 @@ module Bosh::Director
 
         it 'fetches network reservations' do
           instance_plan_factory.obsolete_instance_plan(existing_instance_model)
-          expect(Bosh::Director::Models::IpAddress.find(address_str: ip_to_i('192.168.1.1')).network_name).to eq('name-7')
+          expect(Bosh::Director::Models::IpAddress.find(address_str: ip_to_i('192.168.1.1').to_s).network_name).to eq('name-7')
         end
 
         context 'use_dns_addresses' do
