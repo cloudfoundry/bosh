@@ -9,7 +9,6 @@ module Bosh::Director::DeploymentPlan
     let(:availability_zones) { job.availability_zones }
     let(:cloud_configs) { [Bosh::Director::Models::Config.make(:cloud, content: YAML.dump(cloud_config_hash))] }
     let!(:deployment_model) { Bosh::Director::Models::Deployment.make(manifest: YAML.dump(manifest_hash), name: manifest_hash['name']) }
-    let(:deployment_manifest_migrator) { instance_double(ManifestMigrator) }
     let(:deployment_repo) { DeploymentRepo.new }
     let(:desired_instances) { [].tap { |a| desired_instance_count.times { a << new_desired_instance } } }
     let(:desired_instance_count) { 3 }
@@ -38,7 +37,7 @@ module Bosh::Director::DeploymentPlan
       planner.add_stemcell(stemcell)
       planner
     end
-    let(:planner_factory) { PlannerFactory.new(deployment_manifest_migrator, manifest_validator, deployment_repo, logger) }
+    let(:planner_factory) { PlannerFactory.new(manifest_validator, deployment_repo, logger) }
     let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new }
     let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, YAML.dump(manifest_hash), cloud_config_hash, nil) }
     let(:job) { planner.instance_groups.first }
@@ -116,7 +115,6 @@ module Bosh::Director::DeploymentPlan
 
     before do
       fake_job
-      allow(deployment_manifest_migrator).to receive(:migrate) { |deployment_manifest, cloud_config| [deployment_manifest, cloud_config] }
 
       Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
       release = Bosh::Director::Models::Release.make(name: 'bosh-release')

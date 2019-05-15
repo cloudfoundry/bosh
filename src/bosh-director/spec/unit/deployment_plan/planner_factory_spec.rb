@@ -4,11 +4,10 @@ module Bosh
   module Director
     module DeploymentPlan
       describe PlannerFactory do
-        subject { PlannerFactory.new(deployment_manifest_migrator, manifest_validator, deployment_repo, logger) }
+        subject { PlannerFactory.new(manifest_validator, deployment_repo, logger) }
         let(:deployment_repo) { DeploymentRepo.new }
         let(:deployment_name) { 'simple' }
         let(:manifest_hash) { Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups }
-        let(:deployment_manifest_migrator) { instance_double(ManifestMigrator) }
         let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new }
         let(:cloud_configs) { [Models::Config.make(:cloud, content: YAML.dump(cloud_config_hash))] }
         let(:runtime_config_models) { [instance_double(Bosh::Director::Models::Config)] }
@@ -36,7 +35,6 @@ module Bosh
         end
 
         before do
-          allow(deployment_manifest_migrator).to receive(:migrate) { |deployment_manifest, cloud_config| [deployment_manifest, cloud_config] }
           allow(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator).to receive(:new).with(runtime_config_models).and_return(runtime_config_consolidator)
           allow(runtime_config_consolidator).to receive(:interpolate_manifest_for_deployment).with('simple').and_return({})
           allow(runtime_config_consolidator).to receive(:tags).and_return({})
@@ -56,15 +54,6 @@ module Bosh
           it 'returns a planner' do
             expect(planner).to be_a(Planner)
             expect(planner.name).to eq('simple')
-          end
-
-          it 'migrates the deployment manifest to handle legacy structure' do
-            allow(deployment_manifest_migrator).to receive(:migrate) do |manifest, cloud_config|
-              manifest.manifest_hash['name'] = 'migrated_name'
-              [manifest, cloud_config]
-            end
-
-            expect(planner.name).to eq('migrated_name')
           end
 
           it 'resolves aliases in manifest' do
@@ -94,18 +83,13 @@ module Bosh
           end
 
           it 'logs the migrated manifests' do
-            allow(deployment_manifest_migrator).to receive(:migrate) do |manifest, cloud_config|
-              manifest.manifest_hash['name'] = 'migrated_name'
-              [manifest, cloud_config]
-            end
-
             planner
             expected_deployment_manifest_log = <<~LOGMESSAGE
-              Migrated deployment manifest:
-              {"name"=>"migrated_name", "releases"=>[{"name"=>"bosh-release", "version"=>"0.1-dev"}], "stemcells"=>[{"name"=>"ubuntu-stemcell", "version"=>"1", "alias"=>"default"}], "update"=>{"canaries"=>2, "canary_watch_time"=>4000, "max_in_flight"=>1, "update_watch_time"=>20}, "instance_groups"=>[{"name"=>"foobar", "stemcell"=>"default", "vm_type"=>"a", "instances"=>3, "networks"=>[{"name"=>"a"}], "properties"=>{}, "jobs"=>[{"name"=>"foobar", "properties"=>{}}]}]}
+              Deployment manifest:
+              {"name"=>"simple", "releases"=>[{"name"=>"bosh-release", "version"=>"0.1-dev"}], "stemcells"=>[{"name"=>"ubuntu-stemcell", "version"=>"1", "alias"=>"default"}], "update"=>{"canaries"=>2, "canary_watch_time"=>4000, "max_in_flight"=>1, "update_watch_time"=>20}, "instance_groups"=>[{"name"=>"foobar", "stemcell"=>"default", "vm_type"=>"a", "instances"=>3, "networks"=>[{"name"=>"a"}], "properties"=>{}, "jobs"=>[{"name"=>"foobar", "properties"=>{}}]}]}
             LOGMESSAGE
             expected_cloud_manifest_log = <<~LOGMESSAGE
-              Migrated cloud config manifest:
+              Cloud config manifest:
               {"networks"=>[{"name"=>"a", "subnets"=>[{"range"=>"192.168.1.0/24", "gateway"=>"192.168.1.1", "dns"=>["192.168.1.1", "192.168.1.2"], "static"=>["192.168.1.10"], "reserved"=>[], "cloud_properties"=>{}}]}], "compilation"=>{"workers"=>1, "network"=>"a", "cloud_properties"=>{}}, "vm_types"=>[{"name"=>"a", "cloud_properties"=>{}}]}
             LOGMESSAGE
             expect(logger_io.string).to include(expected_deployment_manifest_log)

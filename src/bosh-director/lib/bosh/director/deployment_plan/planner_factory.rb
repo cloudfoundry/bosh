@@ -18,20 +18,17 @@ module Bosh
         include ValidationHelper
 
         def self.create(logger)
-          deployment_manifest_migrator = Bosh::Director::DeploymentPlan::ManifestMigrator.new
           manifest_validator = Bosh::Director::DeploymentPlan::ManifestValidator.new
           deployment_repo = Bosh::Director::DeploymentPlan::DeploymentRepo.new
 
           new(
-            deployment_manifest_migrator,
             manifest_validator,
             deployment_repo,
             logger
           )
         end
 
-        def initialize(deployment_manifest_migrator, manifest_validator, deployment_repo, logger)
-          @deployment_manifest_migrator = deployment_manifest_migrator
+        def initialize(manifest_validator, deployment_repo, logger)
           @manifest_validator = manifest_validator
           @deployment_repo = deployment_repo
           @logger = logger
@@ -53,19 +50,19 @@ module Bosh
         def parse_from_manifest(manifest, cloud_config_consolidator, runtime_config_consolidator, options)
           @manifest_validator.validate(manifest.manifest_hash)
 
-          migrated_manifest_object, cloud_manifest = @deployment_manifest_migrator.migrate(manifest, manifest.cloud_config_hash)
+          cloud_manifest = manifest.cloud_config_hash
           manifest.resolve_aliases
-          migrated_manifest_hash = migrated_manifest_object.manifest_hash
-          @logger.debug("Migrated deployment manifest:\n#{migrated_manifest_object.manifest_hash}")
-          @logger.debug("Migrated cloud config manifest:\n#{cloud_manifest}")
-          name = migrated_manifest_hash['name']
+          manifest_hash = manifest.manifest_hash
+          @logger.debug("Deployment manifest:\n#{manifest_hash}")
+          @logger.debug("Cloud config manifest:\n#{cloud_manifest}")
+          name = manifest_hash['name']
 
           deployment_model = @deployment_repo.find_or_create_by_name(name, options)
           deployment_model.add_variable_set(created_at: Time.now, writable: true) if deployment_model.variable_sets.empty?
 
           attrs = {
             name: name,
-            properties: migrated_manifest_hash.fetch('properties', {}),
+            properties: manifest_hash.fetch('properties', {}),
           }
 
           plan_options = {
@@ -77,15 +74,15 @@ module Bosh
             'job_states' => options['job_states'] || {},
             'max_in_flight' => validate_and_get_argument(options['max_in_flight'], 'max_in_flight'),
             'canaries' => validate_and_get_argument(options['canaries'], 'canaries'),
-            'tags' => parse_tags(migrated_manifest_hash, runtime_config_consolidator),
+            'tags' => parse_tags(manifest_hash, runtime_config_consolidator),
           }
 
           @logger.info('Creating deployment plan')
           @logger.info("Deployment plan options: #{plan_options}")
 
           deployment = Planner.new(attrs,
-                                   migrated_manifest_object.manifest_hash,
-                                   migrated_manifest_object.manifest_text,
+                                   manifest.manifest_hash,
+                                   manifest.manifest_text,
                                    cloud_config_consolidator.cloud_configs,
                                    runtime_config_consolidator.runtime_configs,
                                    deployment_model,
@@ -93,7 +90,7 @@ module Bosh
           ip_provider_factory = IpProviderFactory.new(@logger)
           deployment.cloud_planner = CloudManifestParser.new(@logger).parse(cloud_manifest, ip_provider_factory)
 
-          DeploymentSpecParser.new(deployment, Config.event_log, @logger).parse(migrated_manifest_hash, plan_options)
+          DeploymentSpecParser.new(deployment, Config.event_log, @logger).parse(manifest_hash, plan_options)
 
           unless deployment.addons.empty?
             deployment.addons.each do |addon|
