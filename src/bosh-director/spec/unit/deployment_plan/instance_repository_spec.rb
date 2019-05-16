@@ -1,20 +1,19 @@
 require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::InstanceRepository do
-  subject(:instance_repository) { BD::DeploymentPlan::InstanceRepository.new(network_reservation_repository, logger, variables_interpolator) }
+  subject(:instance_repository) { BD::DeploymentPlan::InstanceRepository.new(logger, variables_interpolator) }
   let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
   let(:plan) do
     network = BD::DeploymentPlan::DynamicNetwork.new('name-7', [], logger)
     ip_repo = BD::DeploymentPlan::DatabaseIpRepo.new(logger)
-    ip_provider = BD::DeploymentPlan::IpProvider.new(ip_repo, {'name-7' => network}, logger)
+    ip_provider = BD::DeploymentPlan::IpProvider.new(ip_repo, { 'name-7' => network }, logger)
     model = BD::Models::Deployment.make
     BD::Models::VariableSet.create(deployment: model)
     instance_double('Bosh::Director::DeploymentPlan::Planner',
-      network: network,
-      networks: [network],
-      ip_provider: ip_provider,
-      model: model
-    )
+                    network: network,
+                    networks: [network],
+                    ip_provider: ip_provider,
+                    model: model)
   end
 
   let(:job) do
@@ -22,8 +21,6 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
     job.name = 'job-name'
     job
   end
-
-  let(:network_reservation_repository) { Bosh::Director::DeploymentPlan::NetworkReservationRepository.new(plan, logger) }
 
   before do
     allow(SecureRandom).to receive(:uuid).and_return('uuid-1')
@@ -47,7 +44,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
     end
 
     it 'returns an instance with correct current state' do
-      instance = instance_repository.fetch_existing(existing_instance, {'job_state' => 'unresponsive'}, job, nil, plan)
+      instance = instance_repository.fetch_existing(existing_instance, { 'job_state' => 'unresponsive' }, job, nil, plan)
       expect(instance.model).to eq(existing_instance)
       expect(instance.current_job_state).to eq('unresponsive')
     end
@@ -65,39 +62,12 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
     describe 'binding existing reservations' do
       context 'when instance has reservations in db' do
         before do
-          existing_instance.add_ip_address(BD::Models::IpAddress.make(address_str: "123"))
+          existing_instance.add_ip_address(BD::Models::IpAddress.make(address_str: '123'))
         end
 
         it 'is using reservation from database' do
           instance = instance_repository.fetch_existing(existing_instance, {}, job, nil, plan)
           expect(instance.existing_network_reservations.map(&:ip)).to eq([123])
-        end
-      end
-
-      context 'when instance does not have reservations in database' do
-        context 'when instance has reservations on dynamic networks' do
-          let(:instance_spec) do
-            { 'networks' => { 'name-7' => { 'type' => 'dynamic', 'ip' => '10.10.0.10' } } }
-          end
-
-          it 'creates reservations from state' do
-            instance = instance_repository.fetch_existing(existing_instance, {'networks' => {'name-7' => {'ip' => 345}}}, job, nil, plan)
-            expect(instance.existing_network_reservations.map(&:ip)).to eq([345])
-          end
-        end
-
-        context 'when binding reservations with state' do
-          it 'creates reservations from state' do
-            instance = instance_repository.fetch_existing(existing_instance, {'networks' => {'name-7' => {'ip' => 345}}}, job, nil, plan)
-            expect(instance.existing_network_reservations.map(&:ip)).to eq([345])
-          end
-        end
-
-        context 'when binding without state' do
-          it 'has no reservations' do
-            instance = instance_repository.fetch_existing(existing_instance, nil, job, nil, plan)
-            expect(instance.existing_network_reservations.map(&:ip)).to eq([])
-          end
         end
       end
     end
@@ -106,7 +76,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
   describe '#fetch_obsolete_existing' do
     let(:env) do
       {
-        'key1' => 'value1'
+        'key1' => 'value1',
       }
     end
     let(:stemcell) { BD::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302') }
@@ -114,16 +84,16 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
       {
         'vm_type' => {
           'name' => 'vm-type',
-          'cloud_properties' => {'foo' => 'bar'},
+          'cloud_properties' => { 'foo' => 'bar' },
         },
         'stemcell' => {
           'name' => stemcell.name,
-          'version' => stemcell.version
+          'version' => stemcell.version,
         },
         'env' => env,
         'networks' => {
           'ip' => '192.168.1.1',
-        }
+        },
       }
     end
 
@@ -133,7 +103,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
       end
 
       it 'returns an instance with a bound Models::Instance' do
-        instance = instance_repository.fetch_obsolete_existing(existing_instance, {})
+        instance = instance_repository.fetch_obsolete_existing(existing_instance, {}, plan)
 
         expect(instance.model).to eq(existing_instance)
         expect(instance.uuid).to eq(existing_instance.uuid)
@@ -148,14 +118,14 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
     end
 
     it 'returns an instance with correct current state' do
-      instance = instance_repository.fetch_obsolete_existing(existing_instance, {'job_state' => 'unresponsive'})
+      instance = instance_repository.fetch_obsolete_existing(existing_instance, { 'job_state' => 'unresponsive' }, plan)
       expect(instance.model).to eq(existing_instance)
       expect(instance.current_job_state).to eq('unresponsive')
     end
 
     context 'when existing instance does NOT have a VM' do
       it 'Models::Instance should not have a stemcell' do
-        instance = instance_repository.fetch_obsolete_existing(existing_instance, {})
+        instance = instance_repository.fetch_obsolete_existing(existing_instance, {}, plan)
 
         expect(instance.stemcell).to be_nil
       end
@@ -166,7 +136,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
         {}
       end
       it 'returns an instance with no spec' do
-        instance = instance_repository.fetch_obsolete_existing(existing_instance, {})
+        instance = instance_repository.fetch_obsolete_existing(existing_instance, {}, plan)
         expect(instance.model).to eq(existing_instance)
         expect(instance.uuid).to eq(existing_instance.uuid)
         expect(instance.state).to eq(existing_instance.state)
@@ -181,35 +151,12 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
     context 'binding existing reservations' do
       context 'when instance has reservations in db' do
         before do
-          existing_instance.add_ip_address(BD::Models::IpAddress.make(address_str: "123"))
+          existing_instance.add_ip_address(BD::Models::IpAddress.make(address_str: '123'))
         end
 
         it 'is using reservation from database' do
-          instance = instance_repository.fetch_obsolete_existing(existing_instance, {})
+          instance = instance_repository.fetch_obsolete_existing(existing_instance, {}, plan)
           expect(instance.existing_network_reservations.map(&:ip)).to eq([123])
-        end
-      end
-
-      context 'when instance does not have reservations in database' do
-        context 'when instance has reservations on dynamic networks' do
-          it 'creates reservations from state' do
-            instance = instance_repository.fetch_obsolete_existing(existing_instance, {'networks' => {'name-7' => {'ip' => 345}}})
-            expect(instance.existing_network_reservations.map(&:ip)).to eq([345])
-          end
-        end
-
-        context 'when binding reservations with state' do
-          it 'creates reservations from state' do
-            instance = instance_repository.fetch_obsolete_existing(existing_instance, {'networks' => {'name-7' => {'ip' => 345}}})
-            expect(instance.existing_network_reservations.map(&:ip)).to eq([345])
-          end
-        end
-
-        context 'when binding without state' do
-          it 'has no reservations' do
-            instance = instance_repository.fetch_obsolete_existing(existing_instance, nil)
-            expect(instance.existing_network_reservations.map(&:ip)).to eq([])
-          end
         end
       end
     end

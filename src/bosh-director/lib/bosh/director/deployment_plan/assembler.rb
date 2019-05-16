@@ -36,17 +36,15 @@ module Bosh::Director
 
       migrate_legacy_dns_records
 
-      network_reservation_repository = Bosh::Director::DeploymentPlan::NetworkReservationRepository.new(@deployment_plan, @logger)
       states_by_existing_instance = current_states_by_instance(instances, fix)
 
-      instance_repo = Bosh::Director::DeploymentPlan::InstanceRepository.new(network_reservation_repository, @logger, @variables_interpolator)
+      instance_repo = Bosh::Director::DeploymentPlan::InstanceRepository.new(@logger, @variables_interpolator)
       index_assigner = Bosh::Director::DeploymentPlan::PlacementPlanner::IndexAssigner.new(@deployment_plan.model)
       instance_plan_factory = Bosh::Director::DeploymentPlan::InstancePlanFactory.new(
         instance_repo,
         states_by_existing_instance,
-        @deployment_plan.skip_drain,
+        @deployment_plan,
         index_assigner,
-        network_reservation_repository,
         @variables_interpolator,
         @deployment_plan.link_provider_intents,
         'recreate' => @deployment_plan.recreate,

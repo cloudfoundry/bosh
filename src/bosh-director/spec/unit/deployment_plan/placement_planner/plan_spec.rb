@@ -4,23 +4,21 @@ module Bosh::Director::DeploymentPlan
   describe PlacementPlanner::Plan do
     subject(:plan) { PlacementPlanner::Plan.new(instance_plan_factory, network_planner, logger) }
     let(:network_planner) { NetworkPlanner::Planner.new(logger) }
-    let(:network_reservation_repository) { BD::DeploymentPlan::NetworkReservationRepository.new(deployment, logger) }
     let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
     let(:instance_plan_factory) do
       InstancePlanFactory.new(
         instance_repo,
         {},
-        SkipDrain.new(true),
+        deployment,
         index_assigner,
-        network_reservation_repository,
         variables_interpolator,
         [],
       )
     end
 
     let(:index_assigner) { PlacementPlanner::IndexAssigner.new(deployment_model) }
-    let(:instance_repo) { Bosh::Director::DeploymentPlan::InstanceRepository.new(network_reservation_repository, logger, variables_interpolator) }
+    let(:instance_repo) { Bosh::Director::DeploymentPlan::InstanceRepository.new(logger, variables_interpolator) }
     let(:instance_plans) do
       plan.create_instance_plans(desired, existing, job_networks, availability_zones, 'jobname')
     end
@@ -42,7 +40,7 @@ module Bosh::Director::DeploymentPlan
         existing_instance_with_az(1, zone_2.name),
       ]
     end
-    let(:deployment) { instance_double(Planner, model: deployment_model) }
+    let(:deployment) { instance_double(Planner, model: deployment_model, skip_drain: SkipDrain.new(true)) }
     let(:deployment_model) {  Bosh::Director::Models::Deployment.make }
 
     let(:deployment_network) { ManualNetwork.new('network_A', deployment_subnets, nil) }

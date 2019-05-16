@@ -6,22 +6,20 @@ module Bosh
         def initialize(
           instance_repo,
           states_by_existing_instance,
-          skip_drain_decider,
+          deployment_plan,
           index_assigner,
-          network_reservation_repository,
           variables_interpolator,
           link_provider_intents,
           options = {}
         )
           # rubocop:enable Metrics/ParameterLists
 
+          @deployment_plan = deployment_plan
           @instance_repo = instance_repo
-          @skip_drain_decider = skip_drain_decider
           @recreate_deployment = options.fetch('recreate', false)
           @recreate_persistent_disks = options.fetch('recreate_persistent_disks', false)
           @states_by_existing_instance = states_by_existing_instance
           @index_assigner = index_assigner
-          @network_reservation_repository = network_reservation_repository
           @link_provider_intents = link_provider_intents
           @use_dns_addresses = options.fetch('use_dns_addresses', false)
           @use_short_dns_addresses = options.fetch('use_short_dns_addresses', false)
@@ -33,12 +31,12 @@ module Bosh
 
         def obsolete_instance_plan(existing_instance_model)
           existing_instance_state = instance_state(existing_instance_model)
-          instance = @instance_repo.fetch_obsolete_existing(existing_instance_model, existing_instance_state)
+          instance = @instance_repo.fetch_obsolete_existing(existing_instance_model, existing_instance_state, @deployment_plan)
           InstancePlan.new(
             desired_instance: nil,
             existing_instance: existing_instance_model,
             instance: instance,
-            skip_drain: @skip_drain_decider.for_job(existing_instance_model.job),
+            skip_drain: @deployment_plan.skip_drain.for_job(existing_instance_model.job),
             recreate_deployment: @recreate_deployment,
             use_dns_addresses: @use_dns_addresses,
             use_short_dns_addresses: @use_short_dns_addresses,
@@ -58,7 +56,7 @@ module Bosh
             desired_instance: desired_instance,
             existing_instance: existing_instance_model,
             instance: instance,
-            skip_drain: @skip_drain_decider.for_job(desired_instance.instance_group.name),
+            skip_drain: @deployment_plan.skip_drain.for_job(desired_instance.instance_group.name),
             recreate_deployment: @recreate_deployment,
             recreate_persistent_disks: @recreate_persistent_disks,
             use_dns_addresses: @use_dns_addresses,
@@ -78,7 +76,7 @@ module Bosh
             desired_instance: desired_instance,
             existing_instance: nil,
             instance: instance,
-            skip_drain: @skip_drain_decider.for_job(desired_instance.instance_group.name),
+            skip_drain: @deployment_plan.skip_drain.for_job(desired_instance.instance_group.name),
             recreate_deployment: @recreate_deployment,
             use_dns_addresses: @use_dns_addresses,
             use_short_dns_addresses: @use_short_dns_addresses,

@@ -47,7 +47,7 @@ module Bosh::Director
 
       attr_writer :cloud_planner
 
-      # @return [Boolean] Indicates whether VMs should be drained
+      # @return [DeploymentPlan::SkipDrain] Indicates whether VMs should be drained
       attr_reader :skip_drain
 
       # Hash with resolved aliases for stemcells and releases

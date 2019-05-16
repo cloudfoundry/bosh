@@ -5,15 +5,13 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
   include BD::IpUtil
 
   subject(:instance_planner) { BD::DeploymentPlan::InstancePlanner.new(instance_plan_factory, logger) }
-  let(:network_reservation_repository) { BD::DeploymentPlan::NetworkReservationRepository.new(deployment, logger) }
 
   let(:instance_plan_factory) do
     BD::DeploymentPlan::InstancePlanFactory.new(
       instance_repo,
       {},
-      skip_drain_decider,
+      deployment,
       index_assigner,
-      network_reservation_repository,
       variables_interpolator,
       [],
       options,
@@ -27,9 +25,18 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
   let(:skip_drain_decider) { BD::DeploymentPlan::AlwaysSkipDrain.new }
   let(:logger) { instance_double(Logger, debug: nil, info: nil) }
   let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
-  let(:instance_repo) { BD::DeploymentPlan::InstanceRepository.new(network_reservation_repository, logger, variables_interpolator) }
+  let(:instance_repo) { BD::DeploymentPlan::InstanceRepository.new(logger, variables_interpolator) }
   let(:networks) { [] }
-  let(:deployment) { instance_double(BD::DeploymentPlan::Planner, model: deployment_model, networks: networks) }
+
+  let(:deployment) do
+    instance_double(
+      BD::DeploymentPlan::Planner,
+      model: deployment_model,
+      networks: networks,
+      skip_drain: skip_drain_decider,
+    )
+  end
+
   let(:deployment_model) { BD::Models::Deployment.make }
   let(:variable_set_model) { BD::Models::VariableSet.create(deployment: deployment_model) }
   let(:az) do

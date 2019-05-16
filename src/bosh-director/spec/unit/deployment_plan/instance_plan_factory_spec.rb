@@ -5,11 +5,10 @@ module Bosh::Director
     describe InstancePlanFactory do
       include Bosh::Director::IpUtil
 
-      let(:instance_repo) { BD::DeploymentPlan::InstanceRepository.new(network_reservation_repository, logger, variables_interpolator) }
+      let(:instance_repo) { BD::DeploymentPlan::InstanceRepository.new(logger, variables_interpolator) }
       let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
       let(:skip_drain) { SkipDrain.new(true) }
       let(:index_assigner) { instance_double('Bosh::Director::DeploymentPlan::PlacementPlanner::IndexAssigner') }
-      let(:network_reservation_repository) { NetworkReservationRepository.new(deployment_plan, logger) }
       let(:existing_instance_model) do
         instance_model = Models::Instance.make(
           deployment: deployment_model,
@@ -55,6 +54,7 @@ module Bosh::Director
           networks: [network],
           ip_provider: BD::DeploymentPlan::IpProvider.new(ip_repo, { 'name-7' => network }, logger),
           model: deployment_model,
+          skip_drain: skip_drain,
         )
       end
       let(:desired_instance) do
@@ -88,9 +88,8 @@ module Bosh::Director
         InstancePlanFactory.new(
           instance_repo,
           states_by_existing_instance,
-          skip_drain,
+          deployment_plan,
           index_assigner,
-          network_reservation_repository,
           variables_interpolator,
           link_provider_intents,
           options,
@@ -123,11 +122,6 @@ module Bosh::Director
         it 'populates the instance plan existing model' do
           instance_plan = instance_plan_factory.obsolete_instance_plan(existing_instance_model)
           expect(instance_plan.existing_instance).to eq(existing_instance_model)
-        end
-
-        it 'fetches network reservations' do
-          instance_plan_factory.obsolete_instance_plan(existing_instance_model)
-          expect(Bosh::Director::Models::IpAddress.find(address_str: ip_to_i('192.168.1.1').to_s).network_name).to eq('name-7')
         end
 
         context 'use_dns_addresses' do

@@ -14,23 +14,21 @@ module Bosh::Director::DeploymentPlan
     let(:desired_instance_count) { 3 }
     let(:event_log) { Bosh::Director::EventLog::Log.new(StringIO.new('')) }
     let(:index_assigner) { PlacementPlanner::IndexAssigner.new(deployment_model) }
-    let(:instance_repo) { Bosh::Director::DeploymentPlan::InstanceRepository.new(network_reservation_repository, logger, variables_interpolator) }
+    let(:instance_repo) { Bosh::Director::DeploymentPlan::InstanceRepository.new(logger, variables_interpolator) }
     let(:instance_plans) { zone_picker.place_and_match_in(desired_instances, existing_instances) }
 
     let(:instance_plan_factory) do
       InstancePlanFactory.new(
         instance_repo,
         {},
-        SkipDrain.new(true),
+        planner,
         index_assigner,
-        network_reservation_repository,
         variables_interpolator,
         [],
       )
     end
 
     let(:network_planner) { NetworkPlanner::Planner.new(logger) }
-    let(:network_reservation_repository) { BD::DeploymentPlan::NetworkReservationRepository.new(planner, logger) }
     let(:planner) do
       planner = planner_factory.create_from_manifest(manifest, cloud_configs, [], {})
       stemcell = Stemcell.parse(manifest_hash['stemcells'].first)

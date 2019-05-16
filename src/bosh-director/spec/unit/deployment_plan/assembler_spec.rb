@@ -127,7 +127,6 @@ module Bosh::Director
             anything,
             anything,
             anything,
-            anything,
             expected_options,
           ).and_call_original
           assembler.bind_models(tags: { 'key1' => 'value1' })
@@ -152,7 +151,6 @@ module Bosh::Director
               'use_link_dns_addresses' => false,
             }
             expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(
-              anything,
               anything,
               anything,
               anything,
@@ -186,7 +184,6 @@ module Bosh::Director
                 anything,
                 anything,
                 anything,
-                anything,
                 expected_options,
               ).and_call_original
               assembler.bind_models
@@ -211,7 +208,6 @@ module Bosh::Director
               'use_link_dns_addresses' => false,
             }
             expect(DeploymentPlan::InstancePlanFactory).to receive(:new).with(
-              anything,
               anything,
               anything,
               anything,

@@ -5,21 +5,20 @@ module Bosh::Director::DeploymentPlan
     subject(:zone_picker) { PlacementPlanner::AvailabilityZonePicker.new(instance_plan_factory, network_planner, job_networks, desired_azs, random_tie_strategy: test_random_tie_strategy ) }
 
     let(:network_planner) { NetworkPlanner::Planner.new(logger) }
-    let(:network_reservation_repository) { BD::DeploymentPlan::NetworkReservationRepository.new(instance_double(Bosh::Director::DeploymentPlan::Planner), logger) }
     let(:skip_drain_decider) { SkipDrain.new(true) }
     let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
     let(:instance_plan_factory) do
       InstancePlanFactory.new(
         instance_repo,
         {},
-        skip_drain_decider,
+        deployment_plan,
         index_assigner,
-        network_reservation_repository,
         variables_interpolator,
         [],
         'randomize_az_placement' => randomize_az_placement,
       )
     end
+    let(:deployment_plan) { instance_double(Bosh::Director::DeploymentPlan::Planner, skip_drain: skip_drain_decider) }
     let(:index_assigner) { PlacementPlanner::IndexAssigner.new(deployment_model) }
     let(:deployment_model) { Bosh::Director::Models::Deployment.make }
     let(:test_random_tie_strategy) { PlacementPlanner::TieStrategy::RandomWins }

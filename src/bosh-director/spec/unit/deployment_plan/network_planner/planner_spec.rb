@@ -11,8 +11,7 @@ module Bosh::Director::DeploymentPlan
     let(:desired_instance) { DesiredInstance.new(job, deployment) }
     let(:instance_model) { Bosh::Director::Models::Instance.make }
     let(:job) { InstanceGroup.new(logger) }
-    let(:network_reservation_repository) {NetworkReservationRepository.new(planner, logger)}
-    let(:instance_repository) { InstanceRepository.new(network_reservation_repository, logger, variables_interpolator) }
+    let(:instance_repository) { InstanceRepository.new(logger, variables_interpolator) }
     let(:instance) { instance_repository.fetch_existing(instance_model, {}, job, desired_instance.index, deployment) }
     let(:deployment_subnets) do
       [
