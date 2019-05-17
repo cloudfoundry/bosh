@@ -2196,8 +2196,8 @@ module Bosh::Director
               {
                 'name' => 'test_deployment',
                 'variables' => [
-                  { 'name' => 'var_name_1', 'type' => 'var_type_1' },
-                  { 'name' => 'var_name_2', 'type' => 'var_type_2' },
+                  { 'name' => 'var_name_1' },
+                  { 'name' => 'var_name_2' },
                 ],
               }
             end
@@ -2223,19 +2223,8 @@ module Bosh::Director
               vars = JSON.parse(last_response.body)
               expect(vars).to match_array(
                 [
-                  { 'id' => 'var_id_1', 'name' => '/Test Director/test_deployment/var_name_1', 'type' => 'var_type_1' },
-                  { 'id' => 'var_id_2', 'name' => '/Test Director/test_deployment/var_name_2', 'type' => 'var_type_2' },
-                ],
-              )
-            end
-
-            it 'returns only the subset of variables of the specified type' do
-              get('/test_deployment/variables', type: 'var_type_1')
-              expect(last_response.status).to eq(200)
-              result = JSON.parse(last_response.body)
-              expect(result).to match_array(
-                [
-                  { 'id' => 'var_id_1', 'name' => '/Test Director/test_deployment/var_name_1', 'type' => 'var_type_1' },
+                  { 'id' => 'var_id_1', 'name' => '/Test Director/test_deployment/var_name_1' },
+                  { 'id' => 'var_id_2', 'name' => '/Test Director/test_deployment/var_name_2' },
                 ],
               )
             end

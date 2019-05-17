@@ -311,28 +311,12 @@ module Bosh::Director
       end
 
       get '/:deployment/variables' do
-        manifest = Manifest.load_from_model(deployment)
-        manifest_variables = manifest.to_hash.fetch('variables', [])
-
-        name_to_type = {}
-        manifest_variables.each do |mv|
-          fullname = Bosh::Director::ConfigServer::ConfigServerHelper.add_prefix_if_not_absolute(
-            mv['name'],
-            Bosh::Director::Config.name,
-            deployment.name,
-          )
-          name_to_type[fullname] = mv['type']
-        end
-
         result = deployment.variables.map do |variable|
           {
-            'name' => variable.variable_name,
             'id' => variable.variable_id,
-            'type' => name_to_type[variable.variable_name] || '',
+            'name' => variable.variable_name,
           }
-        end
-
-        result.select! { |v| v['type'] == params['type'] } if params['type']
+        end.uniq
 
         json_encode(result)
       end
