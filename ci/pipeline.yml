@@ -558,8 +558,6 @@ jobs:
             gcp_private_network_name: brats-ubuntu-xenial-((branch_name))
           env:
             GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
-            TF_LOG: DEBUG
-            TL_LOG_PATH: terraform.debug.log
       - task: create-ssl-certificates
         attempts: 2
         file: bosh-src/ci/tasks/create-brats-ssl-certificates.yml
