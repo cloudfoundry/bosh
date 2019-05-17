@@ -1,3 +1,4 @@
+require 'bosh/director/jobs/helpers/compiled_packages_to_delete_picker'
 require 'bosh/director/jobs/helpers/releases_to_delete_picker'
 require 'bosh/director/jobs/helpers/stemcells_to_delete_picker'
 require 'bosh/director/jobs/helpers/stemcell_deleter'

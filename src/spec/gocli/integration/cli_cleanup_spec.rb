@@ -95,7 +95,7 @@ describe 'cli: cleanup', type: :integration do
 
       clean_task_id = bosh_runner.get_most_recent_task_id
       cleanup_debug_logs = bosh_runner.run("task #{clean_task_id} --debug")
-      expect(cleanup_debug_logs).to match /Deleted 2 dns blob\(s\)/
+      expect(cleanup_debug_logs).to match(/Deleting dns blobs/)
 
       output = table(bosh_runner.run('releases', failure_expected: true, json: true))
       expect(output).to eq([])
