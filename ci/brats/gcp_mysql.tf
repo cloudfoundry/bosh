@@ -1,5 +1,3 @@
-variable "gcp_mysql_username" {}
-variable "gcp_mysql_password" {}
 variable "gcp_mysql_databasename" {}
 
 resource "google_sql_database_instance" "mysql-master" {
@@ -29,12 +27,6 @@ resource "google_sql_database_instance" "mysql-master" {
 resource "google_sql_database" "mysql" {
   instance  = "${google_sql_database_instance.mysql-master.name}"
   name      = "${var.gcp_mysql_databasename}"
-}
-
-resource "google_sql_user" "mysql" {
-  instance = "${google_sql_database_instance.mysql-master.name}"
-  name     = "${var.gcp_mysql_username}"
-  password = "${var.gcp_mysql_password}"
 }
 
 output "gcp_mysql_endpoint" {
