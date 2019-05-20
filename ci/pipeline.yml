@@ -574,13 +574,11 @@ jobs:
         stemcell: warden-ubuntu-trusty-stemcell
         bosh-src: bosh-master
     - task: push-bosh-compiled-releases
-      file: bosh-master/ci/tasks/push-bosh-compiled-release.yml
-      input_mapping:
-        bosh-src: bosh-master
+      file: bosh-src/ci/tasks/push-bosh-compiled-release.yml
       params:
         AWS_ACCESS_KEY_ID: ((bosh-compiled-releases-aws-access-key-id))
         AWS_SECRET_ACCESS_KEY: ((bosh-compiled-releases-aws-secret-access-key))
-        git_private_key: ((bosh-compiled-releases-index-deploy-key))
+        git_private_key: ((lts_compiled_releases_private_key))
 
 resources:
   - name: bosh-src
@@ -593,11 +591,11 @@ resources:
   - name: candidate-version
     type: semver
     source:
-      bucket: ((candidate_release_bucket))
+      access_key_id: ((lts_candidate_release_access_key_id))
+      bucket: ((lts_candidate_release_bucket))
+      initial_version: 266.17.0
       key: 266.x/version
-      initial_version: 266.0.0
-      access_key_id: ((candidate_release_access_key_id))
-      secret_access_key: ((candidate_release_secret_access_key))
+      secret_access_key: ((lts_candidate_release_secret_access_key))
 
   - name: bosh-candidate-release-tarballs
     type: s3
@@ -672,10 +670,21 @@ resources:
       version_family: 3586.latest
 
   - name: warden-ubuntu-trusty-stemcell
-    type: bosh-io-stemcell
+    type: metalink-repository
     source:
-      name: bosh-warden-boshlite-ubuntu-trusty-go_agent
-      version_family: 3586.latest
+      uri: git+ssh://git@github.com:pivotal-cf/bosh-core-lts-stemcells-index.git//published/ubuntu-trusty
+      options:
+        private_key: ((stemcells_index_private_key))
+      version: 3586.x
+      url_handlers:
+        - type: s3
+          include:
+            - (s3|https)://.*
+          options:
+            access_key: ((lts_stemcell_aws_access_key))
+            secret_key: ((lts_stemcell_aws_secret_key))
+      include_files:
+        - '*-warden-*.tgz'
 
   - name: vsphere-esxi-centos-7
     type: bosh-io-stemcell
@@ -744,3 +753,9 @@ resources:
       pool: brats
       private_key: ((bosh_ci_pools_deploy_key))
 
+resource_types:
+
+  - name: metalink-repository
+    type: docker-image
+    source:
+      repository: dpb587/metalink-repository-resource
