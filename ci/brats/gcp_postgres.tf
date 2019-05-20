@@ -11,6 +11,7 @@ resource "google_sql_database_instance" "postgres-master" {
     # type. See argument reference below.
     tier = "db-f1-micro"
     ip_configuration {
+      ipv4_enabled = true
       authorized_networks = [
         {
           name = "concourse"
