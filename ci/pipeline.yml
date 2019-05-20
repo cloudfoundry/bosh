@@ -562,6 +562,8 @@ jobs:
           GCP_POSTGRES_PASSWORD: ((brats-gcp-postgres-external-db-password))
           GCP_MYSQL_USERNAME: ((brats-gcp-mysql-external-db-user))
           GCP_MYSQL_PASSWORD: ((brats-gcp-mysql-external-db-password))
+        input_mapping:
+          terraform-output: brats-terraform
       - task: create-ssl-certificates
         attempts: 2
         file: bosh-src/ci/tasks/create-brats-ssl-certificates.yml
@@ -605,6 +607,8 @@ jobs:
             GCP_POSTGRES_PASSWORD: ((brats-gcp-postgres-external-db-password))
             GCP_MYSQL_USERNAME: ((brats-gcp-mysql-external-db-user))
             GCP_MYSQL_PASSWORD: ((brats-gcp-mysql-external-db-password))
+          input_mapping:
+            terraform-output: brats-terraform
         - put: brats-terraform
           get_params: { action: destroy }
           params:
