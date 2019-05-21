@@ -61,7 +61,6 @@ require 'bosh/director/validation_helper'
 require 'bosh/director/download_helper'
 require 'bosh/director/formatter_helper'
 require 'bosh/director/tagged_logger'
-require 'bosh/director/legacy_deployment_helper'
 require 'bosh/director/duplicate_detector'
 
 require 'bosh/director/version'

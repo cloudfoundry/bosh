@@ -2,7 +2,6 @@ module Bosh::Director
   module Jobs
     class UpdateDeployment < BaseJob
       include LockHelper
-      include LegacyDeploymentHelper
 
       @queue = :normal
 
@@ -317,18 +316,11 @@ module Bosh::Director
       def cloud_config_models
         return @cloud_config_models if @cloud_config_models
 
-        if ignore_cloud_config?(manifest_hash)
-          warning = "Ignoring cloud config. Manifest contains 'networks' section."
-          logger.debug(warning)
-          @event_log.warn_deprecated(warning)
-          @cloud_config_models = nil
+        @cloud_config_models = Bosh::Director::Models::Config.find_by_ids(@cloud_config_ids)
+        if cloud_config_models.empty?
+          logger.debug('No cloud config uploaded yet.')
         else
-          @cloud_config_models = Bosh::Director::Models::Config.find_by_ids(@cloud_config_ids)
-          if cloud_config_models.empty?
-            logger.debug('No cloud config uploaded yet.')
-          else
-            logger.debug("Cloud config:\n#{Bosh::Director::CloudConfig::CloudConfigsConsolidator.new(cloud_config_models).raw_manifest}")
-          end
+          logger.debug("Cloud config:\n#{Bosh::Director::CloudConfig::CloudConfigsConsolidator.new(cloud_config_models).raw_manifest}")
         end
 
         @cloud_config_models

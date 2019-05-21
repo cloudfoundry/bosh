@@ -4,7 +4,6 @@ module Bosh::Director
   class DeploymentPlan::Assembler
     include LockHelper
     include IpUtil
-    include LegacyDeploymentHelper
 
     def self.create(deployment_plan, variables_interpolator)
       new(deployment_plan, Api::StemcellManager.new, PowerDnsManagerProvider.create, variables_interpolator)
@@ -122,26 +121,23 @@ module Bosh::Director
     def current_states_by_instance(existing_instances, fix = false)
       lock = Mutex.new
       current_states_by_existing_instance = {}
-      is_version_1_manifest = ignore_cloud_config?(@deployment_plan.uninterpolated_manifest_hash)
 
       ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
         existing_instances.each do |existing_instance|
-          if existing_instance.vm_cid && (!existing_instance.ignore || is_version_1_manifest)
-            pool.process do
-              with_thread_name("binding agent state for (#{existing_instance}") do
-                # getting current state to obtain IP of dynamic networks
-                begin
-                  state = DeploymentPlan::AgentStateMigrator.new(@logger).get_state(existing_instance)
-                rescue Bosh::Director::RpcTimeout, Bosh::Director::RpcRemoteException => e
-                  if fix
-                    state = {'job_state' => 'unresponsive'}
-                  else
-                    raise e, "#{existing_instance.name}: #{e.message}"
-                  end
-                end
-                lock.synchronize do
-                  current_states_by_existing_instance.merge!(existing_instance => state)
-                end
+          next unless existing_instance.vm_cid && !existing_instance.ignore
+
+          pool.process do
+            with_thread_name("binding agent state for (#{existing_instance}") do
+              # getting current state to obtain IP of dynamic networks
+              begin
+                state = DeploymentPlan::AgentStateMigrator.new(@logger).get_state(existing_instance)
+              rescue Bosh::Director::RpcTimeout, Bosh::Director::RpcRemoteException => e
+                raise e, "#{existing_instance.name}: #{e.message}" unless fix
+
+                state = { 'job_state' => 'unresponsive' }
+              end
+              lock.synchronize do
+                current_states_by_existing_instance.merge!(existing_instance => state)
               end
             end
           end

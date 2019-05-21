@@ -4,7 +4,6 @@ module Bosh::Director
   module Api::Controllers
     class DeploymentsController < BaseController
       register Bosh::Director::Api::Extensions::DeploymentsSecurity
-      include LegacyDeploymentHelper
 
       def initialize(config)
         super(config)
@@ -420,10 +419,8 @@ module Bosh::Director
           manifest_text = request.body.read
           manifest_hash = validate_manifest_yml(manifest_text, nil)
 
-          ignore_cc = ignore_cloud_config?(manifest_hash)
-
           if deployment
-            before_manifest = Manifest.load_from_model(deployment, resolve_interpolation: false, ignore_cloud_config: ignore_cc)
+            before_manifest = Manifest.load_from_model(deployment, resolve_interpolation: false)
             before_manifest.resolve_aliases
             teams = deployment.teams
           else
@@ -431,7 +428,7 @@ module Bosh::Director
             teams = Bosh::Director::Models::Team.transform_admin_team_scope_to_teams(token_scopes)
           end
 
-          after_cloud_configs = ignore_cc ? nil : Bosh::Director::Models::Config.latest_set_for_teams('cloud', *teams)
+          after_cloud_configs = Bosh::Director::Models::Config.latest_set_for_teams('cloud', *teams)
           after_runtime_configs = Bosh::Director::Models::Config.latest_set_for_teams('runtime', *teams)
 
           after_manifest = Manifest.load_from_hash(

@@ -75,10 +75,6 @@ module Bosh::Director
         let(:assembler) { instance_double(DeploymentPlan::Assembler, bind_models: nil) }
         let(:variable_set) { Bosh::Director::Models::VariableSet.make(deployment: deployment_model) }
 
-        let(:mock_manifest) do
-          Manifest.new(YAML.load(manifest_content), nil, nil)
-        end
-
         before do
           allow(LocalDnsEncoderManager).to receive(:new_encoder_with_updated_index).with(planner).and_return(dns_encoder)
           allow(DeploymentPlan::Stages::PackageCompileStage).to receive(:create).with(planner).and_return(compile_stage)
@@ -533,9 +529,9 @@ module Bosh::Director
               expect(job.perform).to eq('/deployments/deployment-name')
 
               expect(Manifest).to have_received(:load_from_hash)
-                .with(anything, anything, nil, anything)
+                .with(anything, anything, Array, anything)
               expect(planner_factory).to have_received(:create_from_manifest)
-                .with(anything, nil, anything, anything)
+                .with(anything, Array, anything, anything)
             end
           end
 
@@ -596,14 +592,14 @@ module Bosh::Director
             end
 
             it 'uses options manifest_text value as manifest_text' do
-              expect(Bosh::Director::Manifest).to receive(:load_from_hash).with(Hash, manifest_text, nil, Array)
+              expect(Bosh::Director::Manifest).to receive(:load_from_hash).with(Hash, manifest_text, Array, Array)
               job.perform
             end
           end
 
           context 'when manifest_text is not specified in options' do
             it 'uses manifest value as manifest_text' do
-              expect(Bosh::Director::Manifest).to receive(:load_from_hash).with(Hash, manifest_content, nil, Array)
+              expect(Bosh::Director::Manifest).to receive(:load_from_hash).with(Hash, manifest_content, Array, Array)
               job.perform
             end
           end
