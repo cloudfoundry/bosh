@@ -90,7 +90,7 @@ var _ = Describe("BoshDns", func() {
 				"-v", fmt.Sprintf("linked-template-release-path=%s", linkedTemplateReleasePath),
 				"--vars-store", "creds.yml",
 			)
-			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
+			Eventually(session, 20*time.Minute).Should(gexec.Exit(0))
 		})
 
 		It("can find instances using the address helper with short names", func() {
@@ -154,7 +154,7 @@ var _ = Describe("BoshDns", func() {
 				"-v", fmt.Sprintf("linked-template-release-path=%s", linkedTemplateReleasePath),
 				"--vars-store", "creds.yml",
 			)
-			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
+			Eventually(session, 20*time.Minute).Should(gexec.Exit(0))
 		})
 
 		It("can find instances using the address helper", func() {

@@ -36,10 +36,12 @@ var _ = Describe("director console", func() {
 		Expect(err).ShouldNot(HaveOccurred())
 		Expect(ttyF.Close()).NotTo(HaveOccurred())
 
+		Eventually(session.Out, 1*time.Minute).Should(gbytes.Say(`bosh/[0-9a-f\-]{36}:~\$ `))
+
 		_, err = ptyF.Write([]byte("sudo /var/vcap/jobs/director/bin/console\n"))
 		Expect(err).NotTo(HaveOccurred())
 
-		Eventually(session.Out, 30*time.Second).Should(gbytes.Say(`irb`))
+		Eventually(session.Out, 1*time.Minute).Should(gbytes.Say(`irb`))
 
 		_, err = ptyF.Write([]byte("Bosh::Director::VERSION\n"))
 		Expect(err).NotTo(HaveOccurred())

@@ -142,5 +142,5 @@ func uploadStemcell(stemcellUrl string) {
 
 func uploadRelease(releaseUrl string) {
 	session := bosh("-n", "upload-release", releaseUrl)
-	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+	Eventually(session, 4*time.Minute).Should(gexec.Exit(0))
 }
