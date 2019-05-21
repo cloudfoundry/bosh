@@ -164,19 +164,8 @@ jobs:
       - aggregate:
         - get: bosh-src
           trigger: true
-        - get: bosh-main-postgres-9.3
         - get: bosh-main-postgres-9.4
-        - get: bosh-main-postgres-9.5
-        - get: bosh-main-postgres-9.6
       - aggregate:
-        - task: test-postgres-9.3
-          timeout: 2h
-          privileged: true
-          file: bosh-src/ci/tasks/test-unit.yml
-          image: bosh-main-postgres-9.3
-          params:
-            DB: postgresql
-            DB_VERSION: 9.3
         - task: test-postgres-9.4
           timeout: 2h
           privileged: true
@@ -185,22 +174,6 @@ jobs:
           params:
             DB: postgresql
             DB_VERSION: 9.4
-        - task: test-postgres-9.5
-          timeout: 2h
-          privileged: true
-          file: bosh-src/ci/tasks/test-unit.yml
-          image: bosh-main-postgres-9.5
-          params:
-            DB: postgresql
-            DB_VERSION: 9.5
-        - task: test-postgres-9.6
-          timeout: 2h
-          privileged: true
-          file: bosh-src/ci/tasks/test-unit.yml
-          image: bosh-main-postgres-9.6
-          params:
-            DB: postgresql
-            DB_VERSION: 9.6
 
   - name: blobstore-performance
     public: true
@@ -725,25 +698,10 @@ resources:
     source:
       repository: bosh/main-mysql-5.7
 
-  - name: bosh-main-postgres-9.3
-    type: docker-image
-    source:
-      repository: bosh/main-postgres-9.3
-
   - name: bosh-main-postgres-9.4
     type: docker-image
     source:
       repository: bosh/main-postgres-9.4
-
-  - name: bosh-main-postgres-9.5
-    type: docker-image
-    source:
-      repository: bosh/main-postgres-9.5
-
-  - name: bosh-main-postgres-9.6
-    type: docker-image
-    source:
-      repository: bosh/main-postgres-9.6
 
   - name: brats-mutex
     type: pool
