@@ -465,19 +465,6 @@ module Bosh::Director
             expect(parsed_deployment.instance_groups).to eq([])
           end
         end
-
-        context 'when there is a jobs key' do
-          before do
-            manifest_hash.merge!('jobs' => [
-                                   { 'name' => 'instance-group-1-name' },
-                                   { 'name' => 'instance-group-2-name' },
-                                 ])
-          end
-
-          it 'throws a deprecation error' do
-            expect { parsed_deployment }.to raise_error(V1DeprecatedJob, 'Jobs are no longer supported, please use instance groups instead')
-          end
-        end
       end
 
       describe 'variables key' do

@@ -194,6 +194,7 @@ module Bosh::Director
   V1DeprecatedTemplate = err(140024)
   V1DeprecatedResourcePool = err(140025)
   V1DeprecatedNetworks = err(140026)
+  V1DeprecatedDiskPools = err(140027)
 
   # Manifest parsing: instance group networks section
   JobUnknownNetwork = err(150001)

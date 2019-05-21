@@ -387,103 +387,42 @@ module Bosh::Director
         end
       end
 
-      describe 'disk_pools' do
-        context 'when there is at least one disk_pool' do
-          context 'when each resource pool has a unique name' do
+      describe 'disk_types' do
+        context 'when there is at least one disk_type' do
+          context 'when each disk type has a unique name' do
             before do
-              cloud_manifest['disk_pools'] = [
-                Bosh::Spec::Deployments.disk_pool.merge({'name' => 'dk1-name'}),
-                Bosh::Spec::Deployments.disk_pool.merge({'name' => 'dk2-name'})
+              cloud_manifest['disk_types'] = [
+                Bosh::Spec::Deployments.disk_type.merge('name' => 'dk1-name'),
+                Bosh::Spec::Deployments.disk_type.merge('name' => 'dk2-name'),
               ]
             end
 
-            it 'creates DiskPools for each entry' do
+            it 'creates DiskTypes for each entry' do
               expect(parsed_cloud_planner.disk_types.map(&:class)).to eq([DeploymentPlan::DiskType, DeploymentPlan::DiskType])
               expect(parsed_cloud_planner.disk_types.map(&:name)).to eq(['dk1-name', 'dk2-name'])
             end
 
-            it 'allows to look up disk_pool by name' do
+            it 'allows to look up disk_type by name' do
               expect(parsed_cloud_planner.disk_type('dk1-name').name).to eq('dk1-name')
               expect(parsed_cloud_planner.disk_type('dk2-name').name).to eq('dk2-name')
             end
           end
 
-          context 'when more than one disk pool have same name' do
-            before do
-              cloud_manifest['disk_pools'] = [
-                Bosh::Spec::Deployments.disk_pool.merge({'name' => 'same-name'}),
-                Bosh::Spec::Deployments.disk_pool.merge({'name' => 'same-name'})
-              ]
-            end
-
-            it 'raises an error' do
-              expect {
-                parsed_cloud_planner
-              }.to raise_error(
-                  DeploymentDuplicateDiskTypeName,
-                  "Duplicate disk pool name 'same-name'",
-                )
-            end
-          end
-        end
-
-        describe 'disk_types' do
-          context 'when there is at least one disk_type' do
-            context 'when each disk type has a unique name' do
-              before do
-                cloud_manifest['disk_types'] = [
-                  Bosh::Spec::Deployments.disk_type.merge({'name' => 'dk1-name'}),
-                  Bosh::Spec::Deployments.disk_type.merge({'name' => 'dk2-name'})
-                ]
-              end
-
-              it 'creates DiskTypes for each entry' do
-                expect(parsed_cloud_planner.disk_types.map(&:class)).to eq([DeploymentPlan::DiskType, DeploymentPlan::DiskType])
-                expect(parsed_cloud_planner.disk_types.map(&:name)).to eq(['dk1-name', 'dk2-name'])
-              end
-
-              it 'allows to look up disk_type by name' do
-                expect(parsed_cloud_planner.disk_type('dk1-name').name).to eq('dk1-name')
-                expect(parsed_cloud_planner.disk_type('dk2-name').name).to eq('dk2-name')
-              end
-            end
-
-            context 'when more than one disk type have same name' do
-              before do
-                cloud_manifest['disk_types'] = [
-                  Bosh::Spec::Deployments.disk_type.merge({'name' => 'same-name'}),
-                  Bosh::Spec::Deployments.disk_type.merge({'name' => 'same-name'})
-                ]
-              end
-
-              it 'raises an error' do
-                expect {
-                  parsed_cloud_planner
-                }.to raise_error(
-                    DeploymentDuplicateDiskTypeName,
-                    "Duplicate disk type name 'same-name'",
-                  )
-              end
-            end
-          end
-
-          context 'when user specified both disk_pool and disk-type' do
+          context 'when more than one disk type have same name' do
             before do
               cloud_manifest['disk_types'] = [
-                Bosh::Spec::Deployments.disk_type.merge({'name' => 'disk-name'})
-              ]
-              cloud_manifest['disk_pools'] = [
-                Bosh::Spec::Deployments.disk_pool.merge({'name' => 'pool-name'})
+                Bosh::Spec::Deployments.disk_type.merge('name' => 'same-name'),
+                Bosh::Spec::Deployments.disk_type.merge('name' => 'same-name'),
               ]
             end
 
             it 'raises an error' do
-              expect {
+              expect do
                 parsed_cloud_planner
-              }.to raise_error(
-                  DeploymentInvalidDiskSpecification,
-                  "Both 'disk_types' and 'disk_pools' are specified, only one key is allowed. 'disk_pools' key will be DEPRECATED in the future."
-                )
+              end.to raise_error(
+                DeploymentDuplicateDiskTypeName,
+                "Duplicate disk type name 'same-name'",
+              )
             end
           end
         end

@@ -124,31 +124,15 @@ module Bosh::Director
       end
 
       def parse_disk_types(cloud_manifest)
-        disk_pools = safe_property(cloud_manifest, 'disk_pools', :class => Array, :optional => true, :default => [])
         disk_types = safe_property(cloud_manifest, 'disk_types', :class => Array, :optional => true, :default => [])
 
-        if disk_pools.any? && disk_types.any?
-          raise DeploymentInvalidDiskSpecification, "Both 'disk_types' and 'disk_pools' are specified, only one key is allowed. 'disk_pools' key will be DEPRECATED in the future."
-        end
-
-        disk_names = []
-
-        if disk_pools.any?
-          disk_source = 'pool'
-          disk_names = disk_pools
-        elsif disk_types.any?
-          disk_source = 'type'
-          disk_names = disk_types
-        end
-
-        parsed_disk_types = disk_names.map do |dp_spec|
+        parsed_disk_types = disk_types.map do |dp_spec|
           DiskType.parse(dp_spec)
         end
 
-
         duplicates = detect_duplicates(parsed_disk_types) { |dp| dp.name }
         unless duplicates.empty?
-          raise DeploymentDuplicateDiskTypeName, "Duplicate disk #{disk_source} name '#{duplicates.first.name}'"
+          raise DeploymentDuplicateDiskTypeName, "Duplicate disk type name '#{duplicates.first.name}'"
         end
 
         parsed_disk_types

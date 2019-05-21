@@ -90,10 +90,6 @@ module Bosh::Director
       end
 
       def parse_instance_groups(parse_options)
-        if @deployment_manifest.key?('jobs')
-          raise V1DeprecatedJob, 'Jobs are no longer supported, please use instance groups instead'
-        end
-
         instance_groups = safe_property(@deployment_manifest, 'instance_groups', class: Array, default: [])
 
         instance_groups.each do |instance_group_spec|

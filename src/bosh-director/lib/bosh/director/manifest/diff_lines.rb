@@ -20,7 +20,6 @@ module Bosh::Director
       compilation
       networks
       disk_types
-      disk_pools
       name
       stemcells
       releases

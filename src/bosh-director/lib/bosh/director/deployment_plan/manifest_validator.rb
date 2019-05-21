@@ -12,6 +12,16 @@ module Bosh
             raise Bosh::Director::V1DeprecatedNetworks,
                   "Deployment 'networks' are no longer supported. Network definitions must now be provided in a cloud-config."
           end
+
+          if manifest.key?('disk_pools')
+            raise Bosh::Director::V1DeprecatedDiskPools,
+                  'disk_pools is no longer supported. Disk definitions must now be provided as disk_types in a cloud-config'
+          end
+
+          if manifest.key?('jobs')
+            raise Bosh::Director::V1DeprecatedJob,
+                  'Jobs are no longer supported, please use instance groups instead'
+          end
         end
 
         private
