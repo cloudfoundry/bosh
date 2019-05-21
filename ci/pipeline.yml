@@ -593,7 +593,7 @@ resources:
     source:
       access_key_id: ((lts_candidate_release_access_key_id))
       bucket: ((lts_candidate_release_bucket))
-      initial_version: 266.17.0
+      initial_version: 266.16.0
       key: 266.x/version
       secret_access_key: ((lts_candidate_release_secret_access_key))
 
