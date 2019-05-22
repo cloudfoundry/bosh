@@ -99,7 +99,6 @@ module Bosh::Spec
       }
 
       instance_group_hash['env'] = opts[:env] if opts.key?(:env)
-      instance_group_hash['persistent_disk_pool'] = opts[:persistent_disk_pool] if opts[:persistent_disk_pool]
       instance_group_hash['persistent_disk_type'] = opts[:persistent_disk_type] if opts[:persistent_disk_type]
       instance_group_hash['networks'].first['static_ips'] = opts[:static_ips] if opts.key?(:static_ips)
       instance_group_hash['azs'] = opts[:azs] if opts.key?(:azs)

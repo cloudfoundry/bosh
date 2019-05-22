@@ -98,9 +98,6 @@ module Bosh::Director
         if collection.length == 1 && collection[0].managed?
           # supply both for reverse compatibility with old agent
           spec['persistent_disk'] = collection[0].size
-          # old agents will ignore this pool
-          # keep disk pool for backwards compatibility
-          spec['persistent_disk_pool'] = collection[0].spec
           spec['persistent_disk_type'] = collection[0].spec
         end
 

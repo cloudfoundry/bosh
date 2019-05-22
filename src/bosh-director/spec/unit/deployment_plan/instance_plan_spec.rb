@@ -1358,7 +1358,7 @@ module Bosh::Director::DeploymentPlan
       context 'when there is a change' do
         let(:instance_group_spec) do
           instance_group_spec = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups['instance_groups'].first
-          instance_group_spec['persistent_disk_pool'] = 'disk_a'
+          instance_group_spec['persistent_disk_type'] = 'disk_a'
           instance_group_spec
         end
 

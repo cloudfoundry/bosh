@@ -76,7 +76,7 @@ describe 'recreate instance', type: :integration do
   end
 
   it 'recreates vms for an instance created with a persistent disk' do
-    manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(persistent_disk_pool: 'fast_disks')
+    manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(persistent_disk_type: 'fast_disks')
     cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
     cloud_config['disk_types'] = [
       {

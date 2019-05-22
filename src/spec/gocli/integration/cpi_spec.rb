@@ -331,8 +331,8 @@ describe 'CPI calls', type: :integration do
             static_ips: ['192.168.1.11'],
             instances: 1,
             jobs: ['name' => 'foobar'],
-            persistent_disk_pool: Bosh::Spec::NewDeployments.disk_type['name']
-          )
+            persistent_disk_type: Bosh::Spec::NewDeployments.disk_type['name'],
+          ),
         ]
 
         # add tags
@@ -586,8 +586,8 @@ describe 'CPI calls', type: :integration do
             static_ips: ['192.168.1.11'],
             instances: 1,
             jobs: ['name' => 'foobar'],
-            persistent_disk_pool: Bosh::Spec::NewDeployments.disk_type['name']
-          )
+            persistent_disk_type: Bosh::Spec::NewDeployments.disk_type['name'],
+          ),
         ]
 
         # add tags

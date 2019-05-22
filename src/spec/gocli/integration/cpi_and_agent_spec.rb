@@ -171,7 +171,7 @@ describe 'CPI and Agent:', type: :integration do
 
   let(:manifest_hash) do
     manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: instances)
-    manifest_hash['instance_groups'].first['persistent_disk_pool'] = Bosh::Spec::NewDeployments::DISK_TYPE['name']
+    manifest_hash['instance_groups'].first['persistent_disk_type'] = Bosh::Spec::NewDeployments::DISK_TYPE['name']
     manifest_hash
   end
 
@@ -281,7 +281,7 @@ describe 'CPI and Agent:', type: :integration do
     context 'on an update deployment with persistent disk' do
       let(:updated_manifest_hash) do
         updated_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
-        updated_manifest_hash['instance_groups'].first['persistent_disk_pool'] = Bosh::Spec::NewDeployments::DISK_TYPE['name']
+        updated_manifest_hash['instance_groups'].first['persistent_disk_type'] = Bosh::Spec::NewDeployments::DISK_TYPE['name']
         updated_manifest_hash['instance_groups'].first['env'] = { 'bosh' => { 'password' => 'foobar' } }
         updated_manifest_hash
       end
@@ -466,7 +466,7 @@ describe 'CPI and Agent:', type: :integration do
                 failing_manifest_hash = Bosh::Common::DeepCopy.copy(manifest_hash)
                 failing_manifest_hash['releases'] = [{ 'name' => 'bosh-release', 'version' => '0.1-dev' }]
                 failing_manifest_hash['instance_groups']
-                  .first['persistent_disk_pool'] = Bosh::Spec::NewDeployments::DISK_TYPE['name']
+                  .first['persistent_disk_type'] = Bosh::Spec::NewDeployments::DISK_TYPE['name']
                 failing_manifest_hash['instance_groups'].first['env'] = { 'bosh' => { 'password' => 'foobar' } }
                 failing_manifest_hash['instance_groups'].first['jobs'] = [
                   {

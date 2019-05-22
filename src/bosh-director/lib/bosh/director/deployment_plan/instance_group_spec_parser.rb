@@ -209,18 +209,15 @@ module Bosh::Director
         disk_pool_name = safe_property(@instance_group_spec, 'persistent_disk_pool', class: String, optional: true)
         persistent_disks = safe_property(@instance_group_spec, 'persistent_disks', class: Array, optional: true)
 
-        if [disk_size, disk_type_name, disk_pool_name, persistent_disks].compact!.size > 1
-          raise InstanceGroupInvalidPersistentDisk,
-                "Instance group '#{@instance_group.name}' specifies more than one of the following keys:" \
-                " 'persistent_disk', 'persistent_disk_type', 'persistent_disk_pool' and 'persistent_disks'. Choose one."
+        if disk_pool_name
+          raise V1DeprecatedDiskPools,
+                '`persistent_disk_pool` is not supported as an `instance_groups` key. Please use `persistent_disk_type` instead.'
         end
 
-        if disk_type_name
-          disk_name = disk_type_name
-          disk_source = 'type'
-        else
-          disk_name = disk_pool_name
-          disk_source = 'pool'
+        if [disk_size, disk_type_name, persistent_disks].compact!.size > 1
+          raise InstanceGroupInvalidPersistentDisk,
+                "Instance group '#{@instance_group.name}' specifies more than one of the following keys:" \
+                " 'persistent_disk', 'persistent_disk_type', and 'persistent_disks'. Choose one."
         end
 
         persistent_disk_collection = PersistentDiskCollection.new(@logger)
@@ -234,11 +231,11 @@ module Bosh::Director
           persistent_disk_collection.add_by_disk_size(disk_size) unless disk_size == 0
         end
 
-        if disk_name
-          disk_type = @deployment.disk_type(disk_name)
+        if disk_type_name
+          disk_type = @deployment.disk_type(disk_type_name)
           if disk_type.nil?
             raise InstanceGroupUnknownDiskType,
-                  "Instance group '#{@instance_group.name}' references an unknown disk #{disk_source} '#{disk_name}'"
+                  "Instance group '#{@instance_group.name}' references an unknown disk type '#{disk_type_name}'"
           end
 
           persistent_disk_collection.add_by_disk_type(disk_type)

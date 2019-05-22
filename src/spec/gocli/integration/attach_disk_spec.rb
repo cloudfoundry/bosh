@@ -99,7 +99,7 @@ describe 'attach disk', type: :integration do
       bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_with_api_version.tgz')}")
 
       manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
-      instance_group = Bosh::Spec::NewDeployments.simple_instance_group(persistent_disk_pool: 'disk_a', instances: 1)
+      instance_group = Bosh::Spec::NewDeployments.simple_instance_group(persistent_disk_type: 'disk_a', instances: 1)
       manifest_hash['instance_groups'] = [instance_group]
       cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
       cloud_config['disk_types'] = [Bosh::Spec::NewDeployments.disk_type]

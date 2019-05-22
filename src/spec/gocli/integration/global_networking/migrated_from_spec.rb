@@ -98,11 +98,11 @@ describe 'migrated from', type: :integration do
   end
 
   let(:etcd_z1_instance_group) do
-    Bosh::Spec::Deployments.simple_instance_group(instances: 1, name: 'etcd_z1', persistent_disk_pool: 'fast_disks')
+    Bosh::Spec::Deployments.simple_instance_group(instances: 1, name: 'etcd_z1', persistent_disk_type: 'fast_disks')
   end
 
   let(:etcd_z2_instance_group) do
-    Bosh::Spec::Deployments.simple_instance_group(instances: 1, name: 'etcd_z2', persistent_disk_pool: 'fast_disks')
+    Bosh::Spec::Deployments.simple_instance_group(instances: 1, name: 'etcd_z2', persistent_disk_type: 'fast_disks')
   end
 
   let(:etcd_instance_group) do

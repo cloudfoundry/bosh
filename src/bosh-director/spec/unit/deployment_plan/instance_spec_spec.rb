@@ -494,11 +494,6 @@ module Bosh::Director::DeploymentPlan
           'address' => 'uuid-1.fake-job.default.fake-deployment.bosh',
           'update' => {},
           'persistent_disk' => 0,
-          'persistent_disk_pool' => {
-            'name' => String,
-            'disk_size' => 0,
-            'cloud_properties' => {},
-          },
           'persistent_disk_type' => {
             'name' => String,
             'disk_size' => 0,

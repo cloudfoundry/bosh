@@ -5,7 +5,7 @@ describe 'cli: events', type: :integration do
 
   def first_part_of_test
     manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
-    manifest_hash['instance_groups'][0]['persistent_disk_pool'] = 'disk_a'
+    manifest_hash['instance_groups'][0]['persistent_disk_type'] = 'disk_a'
     manifest_hash['instance_groups'][0]['instances'] = 1
     cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
     disk_type = Bosh::Spec::NewDeployments.disk_type

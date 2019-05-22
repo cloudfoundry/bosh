@@ -774,9 +774,9 @@ module Bosh::Director
 
         describe 'persistent_disk_type key' do
           it 'parses persistent_disk_type' do
-            instance_group_spec['persistent_disk_type'] = 'fake-disk-pool-name'
+            instance_group_spec['persistent_disk_type'] = 'fake-disk-type-name'
             expect(deployment_plan).to receive(:disk_type)
-              .with('fake-disk-pool-name')
+              .with('fake-disk-type-name')
               .and_return(disk_type)
 
             expect(disk_collection).to receive(:add_by_disk_type).with(disk_type)
@@ -785,43 +785,28 @@ module Bosh::Director
           end
 
           it 'complains about unknown disk type' do
-            instance_group_spec['persistent_disk_type'] = 'unknown-disk-pool'
+            instance_group_spec['persistent_disk_type'] = 'unknown-disk-type'
             expect(deployment_plan).to receive(:disk_type)
-              .with('unknown-disk-pool')
+              .with('unknown-disk-type')
               .and_return(nil)
 
             expect do
               parsed_instance_group
             end.to raise_error(
               InstanceGroupUnknownDiskType,
-              "Instance group 'instance-group-name' references an unknown disk type 'unknown-disk-pool'",
+              "Instance group 'instance-group-name' references an unknown disk type 'unknown-disk-type'",
             )
           end
         end
 
-        describe 'persistent_disk_pool key' do
-          it 'parses persistent_disk_pool' do
+        describe 'validating persistent_disk_pool key' do
+          it 'raises a validation error when present' do
             instance_group_spec['persistent_disk_pool'] = 'fake-disk-pool-name'
-            expect(deployment_plan).to receive(:disk_type)
-              .with('fake-disk-pool-name')
-              .and_return(disk_type)
-
-            expect(PersistentDiskCollection).to receive_message_chain(:new, :add_by_disk_type).with(disk_type)
-
-            parsed_instance_group
-          end
-
-          it 'complains about unknown disk pool' do
-            instance_group_spec['persistent_disk_pool'] = 'unknown-disk-pool'
-            expect(deployment_plan).to receive(:disk_type)
-              .with('unknown-disk-pool')
-              .and_return(nil)
-
             expect do
               parsed_instance_group
             end.to raise_error(
-              InstanceGroupUnknownDiskType,
-              "Instance group 'instance-group-name' references an unknown disk pool 'unknown-disk-pool'",
+              V1DeprecatedDiskPools,
+              '`persistent_disk_pool` is not supported as an `instance_groups` key. Please use `persistent_disk_type` instead.',
             )
           end
         end
@@ -895,18 +880,6 @@ module Bosh::Director
         end
 
         context 'when job has multiple persistent_disks keys' do
-          it 'raises an error if persistent_disk and persistent_disk_pool are both present' do
-            instance_group_spec['persistent_disk'] = 300
-            instance_group_spec['persistent_disk_pool'] = 'fake-disk-pool-name'
-
-            expect do
-              parsed_instance_group
-            end.to raise_error(
-              InstanceGroupInvalidPersistentDisk,
-              "Instance group 'instance-group-name' specifies more than one of the following keys: 'persistent_disk', 'persistent_disk_type', 'persistent_disk_pool' and 'persistent_disks'. Choose one.",
-            )
-          end
-
           it 'raises an error if persistent_disk and persistent_disk_type are both present' do
             instance_group_spec['persistent_disk'] = 300
             instance_group_spec['persistent_disk_type'] = 'fake-disk-pool-name'
@@ -915,19 +888,8 @@ module Bosh::Director
               parsed_instance_group
             end.to raise_error(
               InstanceGroupInvalidPersistentDisk,
-              "Instance group 'instance-group-name' specifies more than one of the following keys: 'persistent_disk', 'persistent_disk_type', 'persistent_disk_pool' and 'persistent_disks'. Choose one.",
-            )
-          end
-
-          it 'raises an error if persistent_disk_type and persistent_disk_pool are both present' do
-            instance_group_spec['persistent_disk_type'] = 'fake-disk-pool-name'
-            instance_group_spec['persistent_disk_pool'] = 'fake-disk-pool-name'
-
-            expect do
-              parsed_instance_group
-            end.to raise_error(
-              InstanceGroupInvalidPersistentDisk,
-              "Instance group 'instance-group-name' specifies more than one of the following keys: 'persistent_disk', 'persistent_disk_type', 'persistent_disk_pool' and 'persistent_disks'. Choose one.",
+              "Instance group 'instance-group-name' specifies more than one of the following keys: " \
+              "'persistent_disk', 'persistent_disk_type', and 'persistent_disks'. Choose one.",
             )
           end
         end
