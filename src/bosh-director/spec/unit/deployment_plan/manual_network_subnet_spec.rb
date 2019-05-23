@@ -325,6 +325,25 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
       }.to raise_error(Bosh::Director::NetworkStaticIpOutOfRange,
           "Static IP '192.168.0.5' is in network 'net_a' reserved range")
     end
+
+    it 'should include the directors ip addresses in the reserved range' do
+      ip1 = NetAddr::CIDR.create('192.168.1.1')
+      ip2 = NetAddr::CIDR.create('192.168.1.2')
+
+      allow(Bosh::Director::Config).to receive(:director_ips).and_return([ip1.to_s, ip2.to_s])
+      subnet = make_subnet(
+        {
+          'range' => '192.168.0.0/24',
+          'reserved' => ['192.168.0.0', '192.168.0.1', '192.168.0.255'],
+          'gateway' => '192.168.0.1',
+          'cloud_properties' => { 'foo' => 'bar' },
+        },
+        [],
+      )
+
+      expect(subnet.restricted_ips).to include(ip1.to_i)
+      expect(subnet.restricted_ips).to include(ip2.to_i)
+    end
   end
 
   describe :overlaps? do

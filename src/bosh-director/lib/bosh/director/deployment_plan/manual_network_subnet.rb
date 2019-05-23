@@ -59,6 +59,12 @@ module Bosh::Director
             restricted_ips.add(ip)
           end
 
+          Config.director_ips&.each do |cidr|
+            each_ip(cidr) do |ip|
+              restricted_ips.add(ip)
+            end
+          end
+
           each_ip(static_property) do |ip|
             if restricted_ips.include?(ip)
               raise NetworkStaticIpOutOfRange, "Static IP '#{format_ip(ip)}' is in network '#{network_name}' reserved range"
