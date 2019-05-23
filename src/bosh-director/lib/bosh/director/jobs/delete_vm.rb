@@ -39,11 +39,12 @@ module Bosh::Director
             logger.info("vm #{@vm_cid} does not exist")
             Config.event_log.warn("VM #{@vm_cid} does not exist. Deletion is skipped")
           rescue Exception => e
-            raise e
-          ensure
             add_event(parent_id, e)
-            "vm #{@vm_cid} deleted" unless e
+            raise e
           end
+
+          add_event(parent_id)
+          "vm #{@vm_cid} deleted" unless e
         end
       end
 
