@@ -42,7 +42,7 @@ module Bosh::Director
             raise e
           ensure
             add_event(parent_id, e)
-            return "vm #{@vm_cid} deleted" unless e
+            "vm #{@vm_cid} deleted" unless e
           end
         end
       end
@@ -51,17 +51,16 @@ module Bosh::Director
 
       def add_event(parent_id = nil, error = nil)
         event = Config.current_job.event_manager.create_event(
-            {
-                parent_id: parent_id,
-                user: Config.current_job.username,
-                action: 'delete',
-                object_type: 'vm',
-                object_name: @vm_cid,
-                task: Config.current_job.task_id,
-                deployment: @deployment_name,
-                instance: @instance_name,
-                error: error
-            })
+          parent_id: parent_id,
+          user: Config.current_job.username,
+          action: 'delete',
+          object_type: 'vm',
+          object_name: @vm_cid,
+          task: Config.current_job.task_id,
+          deployment: @deployment_name,
+          instance: @instance_name,
+          error: error,
+        )
         event.id
       end
     end
