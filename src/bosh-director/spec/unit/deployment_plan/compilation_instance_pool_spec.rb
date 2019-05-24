@@ -595,7 +595,7 @@ module Bosh::Director
         allow(Config).to receive(:enable_virtual_delete_vms).and_return(false)
         allow(Config).to receive(:logger).and_return(logger)
         allow(DiskManager).to receive(:new).with(logger).and_return(disk_manager)
-        allow(InstanceDeleter).to receive(:new).with(ip_provider, powerdns_manager, disk_manager).and_return(instance_deleter)
+        allow(InstanceDeleter).to receive(:new).with(powerdns_manager, disk_manager).and_return(instance_deleter)
         allow(InstanceReuser).to receive(:new).and_return(instance_reuser)
         allow(PowerDnsManagerProvider).to receive(:create).and_return(powerdns_manager)
         allow(VmCreator).to receive(:new)

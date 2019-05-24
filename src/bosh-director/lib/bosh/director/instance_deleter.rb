@@ -1,8 +1,7 @@
 module Bosh::Director
   # Coordinates the safe deletion of an instance and all associates resources.
   class InstanceDeleter
-    def initialize(ip_provider, powerdns_manager, disk_manager, options={})
-      @ip_provider = ip_provider
+    def initialize(powerdns_manager, disk_manager, options = {})
       @powerdns_manager = powerdns_manager
       @disk_manager = disk_manager
       @logger = Config.logger
@@ -47,10 +46,6 @@ module Bosh::Director
           end
         end
 
-        instance_plan.network_plans.each do |network_plan|
-          reservation = network_plan.reservation
-          @ip_provider.release(reservation) if reservation.reserved?
-        end
         instance_plan.release_all_network_plans
 
         instance_model.destroy

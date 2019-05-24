@@ -9,16 +9,15 @@ module Bosh::Director
             InstanceReuser.new,
             make_instance_provider(logger, deployment_plan),
             logger,
-            make_instance_deleter(logger, deployment_plan),
+            make_instance_deleter(logger),
             deployment_plan.compilation,
           )
         end
 
         private
 
-        def make_instance_deleter(logger, deployment_plan)
+        def make_instance_deleter(logger)
           Bosh::Director::InstanceDeleter.new(
-            deployment_plan.ip_provider,
             PowerDnsManagerProvider.create,
             DiskManager.new(logger),
           )
