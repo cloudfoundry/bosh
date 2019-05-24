@@ -601,6 +601,7 @@ describe 'Links', type: :integration do
         end
 
         it 'cck should not create new links' do
+          bosh_runner.run('update-resurrection off')
           original_instance = director.instance('secondary_instance_group', '0')
 
           original_instance.kill_agent
