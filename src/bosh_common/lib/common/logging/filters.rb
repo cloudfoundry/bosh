@@ -12,7 +12,7 @@ module Bosh::Common::Logging
   def self.query_redaction_filter
     Bosh::Common::Logging::RegexFilter.new(
       [
-        { /^(\(\d+\.\d+s\) \(conn: \d+\) (INSERT INTO "[^"]+"|UPDATE "[^"]+"|DELETE FROM "[^"]+")).+/m => '\1 <redacted>' },
+        { /^(\(\d+\.\d+s\) \(conn: \d+\) (INSERT INTO ("|`).*?("|`)|UPDATE ("|`).*?("|`)|DELETE FROM ("|`).*?("|`))).+/m => '\1 <redacted>' },
       ],
     )
   end
