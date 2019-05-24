@@ -249,6 +249,91 @@ describe 'deploy with create-swap-delete', type: :integration do
 
         expect(new_vm).to be_create_swap_deleted(old_vm)
       end
+
+      context 'when the network is too small' do
+        let(:manifest) do
+          manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(instances: 2)
+          manifest['update'] = manifest['update'].merge('vm_strategy' => 'create-swap-delete')
+          manifest
+        end
+
+        let(:cloud_config) do
+          cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
+          cloud_config['networks'][0]['type'] = network_type
+          cloud_config['networks'][0]['subnets'][0]['range'] = '192.168.1.0/29' # 192.168.1.0 - 192.168.1.7 broadcast
+          cloud_config['networks'][0]['subnets'][0]['reserved'] = ['192.168.1.3', '192.168.1.1', '192.168.1.2']
+          cloud_config['networks'][0]['subnets'][0].delete('static')
+          cloud_config
+        end
+
+        let(:larger_network_cloud_config) do
+          cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
+          cloud_config['networks'][0]['type'] = network_type
+          cloud_config['networks'][0]['subnets'][0]['range'] = '192.168.1.0/29'
+          cloud_config['networks'][0]['subnets'][0]['reserved'] = ['192.168.1.1', '192.168.1.2']
+          cloud_config['networks'][0]['subnets'][0].delete('static')
+          cloud_config
+        end
+
+        it 'will eventually deploy successfully when the network range is expanded' do
+          output = deploy_simple_manifest(manifest_hash: manifest, recreate: true, failure_expected: true)
+          expect(output).to include('Failed to reserve IP')
+
+          upload_cloud_config(cloud_config_hash: larger_network_cloud_config)
+
+          _, exit_code = deploy_simple_manifest(manifest_hash: manifest, recreate: true, return_exit_code: true)
+          expect(exit_code).to eq(0)
+        end
+      end
+    end
+
+    context 'when templating fails' do
+      let(:network_type) { 'manual' }
+
+      let(:cloud_config) do
+        cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
+        cloud_config['networks'][0]['type'] = network_type
+        cloud_config['networks'][0]['subnets'][0]['range'] = '192.168.1.0/29' # 8 ips in range
+        cloud_config['networks'][0]['subnets'][0]['reserved'] = ['192.168.1.1', '192.168.1.2']
+        # ips available: 8 from cidr range - 2 auto-reserved by bosh - 2 manually reserved  = 4
+        cloud_config['networks'][0]['subnets'][0].delete('static')
+        cloud_config
+      end
+
+      let(:instance_count) { 2 }
+
+      let(:manifest) do
+        manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(instances: instance_count)
+        manifest['update'] = manifest['update'].merge('vm_strategy' => 'delete-create')
+        manifest
+      end
+
+      let(:job_with_bad_template) do
+        {
+          'name' => 'job_with_bad_template',
+          'release' => 'bosh-release',
+          'properties' => {},
+        }
+      end
+      let(:manifest_with_bad_templating) do
+        bad_manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(instances: instance_count)
+        bad_manifest['update'] = bad_manifest['update'].merge('vm_strategy' => 'create-swap-delete')
+        bad_manifest['instance_groups'][0]['jobs'] << job_with_bad_template
+        bad_manifest
+      end
+
+      before do
+        # reserves an extra IP for each instance due to create-swap-delete
+        output = deploy_simple_manifest(manifest_hash: manifest_with_bad_templating, recreate: true, failure_expected: true)
+        expect(output).to include('Unable to render instance groups')
+      end
+
+      it 'can re-use create-swap-delete IPs from the failed deployment' do
+        manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(instances: 4)
+        manifest['update'] = manifest['update'].merge('vm_strategy' => 'delete-create')
+        _, exit_code = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
+        expect(exit_code).to eq(0)
+      end
     end
 
     context 'when the instance is on a manual network' do

@@ -5,6 +5,8 @@ module Bosh::Director
 
       @queue = :normal
 
+      attr_reader :deployment_plan
+
       def self.job_type
         :update_deployment
       end
@@ -32,13 +34,22 @@ module Bosh::Director
 
           notifier.send_start_event unless dry_run?
 
-          prepare_deployment
+          parse_manifest
 
-          warn_if_any_ignored_instances
+          begin
+            prepare_deployment
 
-          next_releases, next_stemcells = get_stemcells_and_releases
+            warn_if_any_ignored_instances
 
-          context = event_context(next_releases, previous_releases, next_stemcells, previous_stemcells)
+            next_releases, next_stemcells = get_stemcells_and_releases
+
+            context = event_context(next_releases, previous_releases, next_stemcells, previous_stemcells)
+
+            render_templates_and_snapshot_errand_variables
+          rescue Exception => e
+            cleanup_orphaned_ips
+            raise e
+          end
 
           deploy(context)
 
@@ -53,8 +64,6 @@ module Bosh::Director
       private
 
       def deploy(context)
-        render_templates_and_snapshot_errand_variables
-
         return if dry_run?
 
         DeploymentPlan::Stages::PackageCompileStage.create(deployment_plan).perform
@@ -85,6 +94,11 @@ module Bosh::Director
             should_bind_new_variable_set: deploy_action?,
           )
         end
+      end
+
+      def cleanup_orphaned_ips
+        orphaned_ips = deployment_plan.instance_models.flat_map(&:ip_addresses).reject(&:orphaned_vm).reject(&:vm_id)
+        orphaned_ips.each(&:destroy)
       end
 
       def mark_orphaned_networks
@@ -362,9 +376,7 @@ module Bosh::Director
         @notifier ||= DeploymentPlan::Notifier.new(deployment_name, Config.nats_rpc, logger)
       end
 
-      def deployment_plan
-        return @deployment_plan if @deployment_plan
-
+      def parse_manifest
         deployment_manifest = Manifest.load_from_hash(manifest_hash, manifest_text, cloud_config_models, runtime_config_models)
         planner_factory = DeploymentPlan::PlannerFactory.create(logger)
 
