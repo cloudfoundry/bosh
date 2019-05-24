@@ -21,37 +21,75 @@ describe Bosh::Common::Logging do
   describe '#query_redaction_filter' do
     let(:subject) { described_class.query_redaction_filter }
 
-    describe 'insert db queries' do
-      describe 'insert into statements' do
-        let(:event_data) { '(1.001s) (conn: 123123) INSERT INTO "tablefoo" VALUES ("sensitive")' }
+    describe 'postgres' do
+      describe 'insert db queries' do
+        describe 'insert into statements' do
+          let(:event_data) { '(1.001s) (conn: 123123) INSERT INTO "tablefoo" VALUES ("sensitive")' }
 
-        it 'redacts them' do
-          expect(subject.allow(event).data).to eq('(1.001s) (conn: 123123) INSERT INTO "tablefoo" <redacted>')
+          it 'redacts them' do
+            expect(subject.allow(event).data).to eq('(1.001s) (conn: 123123) INSERT INTO "tablefoo" <redacted>')
+          end
+        end
+
+        describe 'multiline insert into statements' do
+          let(:event_data) { "(1.001s) (conn: 123123) INSERT INTO \"tablefoo\"\nVALUES (\"sensitive\")" }
+
+          it 'redacts them' do
+            expect(subject.allow(event).data).to eq('(1.001s) (conn: 123123) INSERT INTO "tablefoo" <redacted>')
+          end
         end
       end
 
-      describe 'multiline insert into statements' do
-        let(:event_data) { "(1.001s) (conn: 123123) INSERT INTO \"tablefoo\"\nVALUES (\"sensitive\")" }
+      describe 'update db queries' do
+        let(:event_data) { '(1.001s) (conn: 123123) UPDATE "tablefoo" SET secret = "sensitive" WHERE secret = "c1oudc0w"' }
 
         it 'redacts them' do
-          expect(subject.allow(event).data).to eq('(1.001s) (conn: 123123) INSERT INTO "tablefoo" <redacted>')
+          expect(subject.allow(event).data).to eq('(1.001s) (conn: 123123) UPDATE "tablefoo" <redacted>')
+        end
+      end
+
+      describe 'delete db queries' do
+        let(:event_data) { '(1.001s) (conn: 123123) DELETE FROM "tablefoo" WHERE secret = "sensitive"' }
+
+        it 'redacts them' do
+          expect(subject.allow(event).data).to eq('(1.001s) (conn: 123123) DELETE FROM "tablefoo" <redacted>')
         end
       end
     end
 
-    describe 'update db queries' do
-      let(:event_data) { '(1.001s) (conn: 123123) UPDATE "tablefoo" SET secret = "sensitive" WHERE secret = "c1oudc0w"' }
+    describe 'mysql' do
+      describe 'insert db queries' do
+        describe 'insert into statements' do
+          let(:event_data) { '(1.001s) (conn: 123123) INSERT INTO `tablefoo` VALUES (`sensitive`)' }
 
-      it 'redacts them' do
-        expect(subject.allow(event).data).to eq('(1.001s) (conn: 123123) UPDATE "tablefoo" <redacted>')
+          it 'redacts them' do
+            expect(subject.allow(event).data).to eq('(1.001s) (conn: 123123) INSERT INTO `tablefoo` <redacted>')
+          end
+        end
+
+        describe 'multiline insert into statements' do
+          let(:event_data) { "(1.001s) (conn: 123123) INSERT INTO `tablefoo`\nVALUES (`sensitive`)" }
+
+          it 'redacts them' do
+            expect(subject.allow(event).data).to eq('(1.001s) (conn: 123123) INSERT INTO `tablefoo` <redacted>')
+          end
+        end
       end
-    end
 
-    describe 'delete db queries' do
-      let(:event_data) { '(1.001s) (conn: 123123) DELETE FROM "tablefoo" WHERE secret = "sensitive"' }
+      describe 'update db queries' do
+        let(:event_data) { '(1.001s) (conn: 123123) UPDATE `tablefoo` SET secret = `sensitive` WHERE secret = `c1oudc0w`' }
 
-      it 'redacts them' do
-        expect(subject.allow(event).data).to eq('(1.001s) (conn: 123123) DELETE FROM "tablefoo" <redacted>')
+        it 'redacts them' do
+          expect(subject.allow(event).data).to eq('(1.001s) (conn: 123123) UPDATE `tablefoo` <redacted>')
+        end
+      end
+
+      describe 'delete db queries' do
+        let(:event_data) { '(1.001s) (conn: 123123) DELETE FROM `tablefoo` WHERE secret = `sensitive`' }
+
+        it 'redacts them' do
+          expect(subject.allow(event).data).to eq('(1.001s) (conn: 123123) DELETE FROM `tablefoo` <redacted>')
+        end
       end
     end
   end
