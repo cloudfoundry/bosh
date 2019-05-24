@@ -32,6 +32,10 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
     expect(handler).to be_kind_of(Bosh::Director::ProblemHandlers::MissingDisk)
   end
 
+  it 'is not an instance problem' do
+    expect(handler.instance_problem?).to be_falsey
+  end
+
   it 'has well-formed description' do
     expect(handler.description).to eq("Disk 'disk-cid' (mysql_node/uuid-42, 300M) is missing")
   end

@@ -40,6 +40,10 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
     expect(@handler.description).to eq("Disk 'disk-cid' (300M) for instance 'mysql_node/52C6C66A-6DF3-4D4E-9EB1-FFE63AD755D7 (3)' is inactive")
   end
 
+  it 'is not an instance problem' do
+    expect(@handler.instance_problem?).to be_falsey
+  end
+
   describe 'invalid states' do
     it 'is invalid if disk is gone' do
       @disk.destroy

@@ -47,15 +47,13 @@ module Bosh::Director
         serial_updater = SerialMultiInstanceGroupUpdater.new(@instance_group_updater_factory)
         parallel_updater = ParallelMultiInstanceGroupUpdater.new(@instance_group_updater_factory)
 
-        partition_jobs_by_serial(jobs).each do |jp|
+        BatchMultiInstanceGroupUpdater.partition_jobs_by_serial(jobs).each do |jp|
           updater = jp.first.update.serial? ? serial_updater : parallel_updater
           updater.run(base_job, ip_provider, jp)
         end
       end
 
-      private
-
-      def partition_jobs_by_serial(jobs)
+      def self.partition_jobs_by_serial(jobs)
         job_partitions = []
         last_partition = []
 

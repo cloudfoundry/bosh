@@ -89,6 +89,10 @@ module Bosh::Director
       expect(handler).to be_kind_of(ProblemHandlers::UnresponsiveAgent)
     end
 
+    it 'is not an instance problem' do
+      expect(handler.instance_problem?).to be_truthy
+    end
+
     it 'has well-formed description' do
       expect(handler.description).to eq("VM for 'mysql_node/uuid-1 (0)' with cloud ID 'vm-cid' is not responding.")
     end

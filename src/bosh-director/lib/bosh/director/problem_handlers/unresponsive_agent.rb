@@ -27,6 +27,10 @@ module Bosh::Director
         "VM for '#{@instance}'#{with_vm_cid} is not responding."
       end
 
+      def instance_problem?
+        true
+      end
+
       resolution :ignore do
         plan { 'Skip for now' }
         action { }
