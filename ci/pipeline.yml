@@ -5,9 +5,7 @@ groups:
   - unit-2.4-postgres
   - integration-db-tls-postgres
   - integration-db-tls-postgres-hotswap
-  - integration-db-tls-mysql
   - candidate-release
-  - bats-centos
   - bats-ubuntu-xenial
   - brats-ubuntu-xenial
   - bbr-ubuntu-xenial
@@ -25,7 +23,6 @@ groups:
   - integration-db-tls-postgres-hotswap
   name: postgres
 - jobs:
-  - bats-centos
   - bats-ubuntu-xenial
   name: bats
 - jobs:
@@ -56,17 +53,9 @@ jobs:
   - aggregate:
     - get: bosh-src
       trigger: true
-    - get: bosh-main-mysql-5.5
     - get: bosh-main-mysql-5.6
     - get: bosh-main-mysql-5.7
   - aggregate:
-    - file: bosh-src/ci/tasks/test-unit.yml
-      image: bosh-main-mysql-5.5
-      params:
-        DB: mysql
-      privileged: true
-      task: test-mysql-5.5
-      timeout: 2h
     - file: bosh-src/ci/tasks/test-unit.yml
       image: bosh-main-mysql-5.6
       params:
@@ -90,7 +79,6 @@ jobs:
     - get: bosh-src
       trigger: true
     - get: bosh-main-postgres-9.4
-    - get: bosh-main-postgres-9.6
   - aggregate:
     - file: bosh-src/ci/tasks/test-unit.yml
       image: bosh-main-postgres-9.4
@@ -99,14 +87,6 @@ jobs:
         DB_VERSION: 9.4
       privileged: true
       task: test-postgres-9.4
-      timeout: 2h
-    - file: bosh-src/ci/tasks/test-unit.yml
-      image: bosh-main-postgres-9.6
-      params:
-        DB: postgresql
-        DB_VERSION: 9.6
-      privileged: true
-      task: test-postgres-9.6
       timeout: 2h
   public: true
   serial: true
@@ -248,81 +228,6 @@ jobs:
   public: true
   serial: true
 - build_logs_to_retain: 250
-  name: integration-db-tls-mysql
-  plan:
-  - aggregate:
-    - get: bosh-src
-      trigger: true
-    - get: bosh-cli
-      trigger: true
-    - get: bosh-agent
-    - get: bosh-main-mysql-5.7
-    - get: integration-tests-parallel-runtime
-  - config:
-      image_resource:
-        source:
-          repository: bosh/main
-        type: docker-image
-      inputs:
-      - name: bosh-src
-        path: uninstalled-bosh-src
-      - name: bosh-cli
-      - name: bosh-agent
-      outputs:
-      - name: bosh-src
-      params:
-        RUBY_VERSION: 2.4.4
-      platform: linux
-      run:
-        args:
-        - -cex
-        - |
-          mv ./bosh-cli/*bosh-cli-*-linux-amd64 /usr/local/bin/bosh
-          chmod +x /usr/local/bin/bosh
-          source uninstalled-bosh-src/ci/tasks/utils.sh
-          agent_path=uninstalled-bosh-src/src/go/src/github.com/cloudfoundry/
-          mkdir -p $agent_path
-          cp -r bosh-agent $agent_path
-          pushd uninstalled-bosh-src/src
-            source /etc/profile.d/chruby.sh
-            chruby $RUBY_VERSION
-
-            bundle install --local
-            bundle exec rake spec:integration:install_dependencies
-          popd
-          rsync -a uninstalled-bosh-src/ bosh-src/
-        path: /bin/bash
-    task: install-dependencies
-  - config:
-      image_resource:
-        source:
-          repository: bosh/main-mysql-5.7
-        type: docker-image
-      inputs:
-      - name: bosh-src
-      - name: bosh-cli
-      - name: bosh-agent
-      outputs:
-      - name: parallel-runtime-log
-      params:
-        DB: mysql
-        DB_TLS: true
-        RUBY_VERSION: 2.4.4
-        SHA2_MODE: true
-      platform: linux
-      run:
-        path: bosh-src/ci/tasks/test-integration-gocli.sh
-    privileged: true
-    tags:
-    - bosh-integration-3
-    task: tests
-  - params:
-      acl: public-read
-      file: parallel-runtime-log/parallel_runtime_rspec.log
-    put: integration-tests-parallel-runtime
-  public: true
-  serial: true
-- build_logs_to_retain: 250
   name: upgrade-tests
   plan:
   - aggregate:
@@ -375,7 +280,6 @@ jobs:
     - unit-2.4-postgres
     - upgrade-tests
     - blobstore-performance
-    - integration-db-tls-mysql
     - integration-db-tls-postgres
     - integration-db-tls-postgres-hotswap
     trigger: true
@@ -388,73 +292,6 @@ jobs:
   - params:
       file: release/bosh-dev-release.tgz
     put: bosh-candidate-release-tarballs
-- name: bats-centos
-  plan:
-  - do:
-    - aggregate:
-      - get: bosh-release
-        passed:
-        - candidate-release
-        resource: bosh-candidate-release-tarballs
-        trigger: true
-      - get: cpi-release
-      - get: stemcell
-        resource: vsphere-esxi-centos-7
-      - get: bosh-cli
-      - get: bats
-      - get: bosh-deployment
-      - get: bosh-src
-        passed:
-        - candidate-release
-    - params:
-        acquire: true
-      put: environment
-    - do:
-      - file: bosh-src/ci/bats/tasks/deploy-director.yml
-        params:
-          BAT_INFRASTRUCTURE: vsphere
-          BOSH_CLIENT: ((stemcell-test-director-username))
-          BOSH_CLIENT_SECRET: ((stemcell-test-director-password))
-          BOSH_VSPHERE_VCENTER: ((vcenter-ip))
-          BOSH_VSPHERE_VCENTER_CLUSTER: ((vcenter-cluster))
-          BOSH_VSPHERE_VCENTER_DATASTORE: ((vcenter-datastore))
-          BOSH_VSPHERE_VCENTER_DC: ((vcenter-dc))
-          BOSH_VSPHERE_VCENTER_DISK_PATH: ((vcenter-disk-path))
-          BOSH_VSPHERE_VCENTER_PASSWORD: ((vcenter-password))
-          BOSH_VSPHERE_VCENTER_RP: ((vcenter-rp))
-          BOSH_VSPHERE_VCENTER_TEMPLATE_FOLDER: ((vcenter-template-folder))
-          BOSH_VSPHERE_VCENTER_USER: ((vcenter-user))
-          BOSH_VSPHERE_VCENTER_VLAN: ((vcenter-vlan))
-          BOSH_VSPHERE_VCENTER_VM_FOLDER: ((vcenter-vm-folder))
-          BOSH_VSPHERE_VERSION: ((vsphere-version))
-          DEPLOY_ARGS: |
-            -o bosh-deployment/experimental/postgres-9-4.yml
-            -o bosh-deployment/vsphere/resource-pool.yml
-        tags:
-        - vsphere-v6.5
-        task: deploy-director
-      - file: bosh-src/ci/bats/iaas/vsphere/prepare-bats-config.yml
-        params:
-          STEMCELL_NAME: bosh-vsphere-esxi-centos-7-go_agent
-        tags:
-        - vsphere-v6.5
-        task: prepare-bats
-      - file: bats/ci/tasks/run-bats.yml
-        tags:
-        - vsphere-v6.5
-        task: run-bats
-      ensure:
-        do:
-        - file: bosh-src/ci/bats/tasks/destroy-director.yml
-          tags:
-          - vsphere-v6.5
-          task: teardown
-    ensure:
-      do:
-      - params:
-          release: environment
-        put: environment
-  serial: true
 - name: bats-ubuntu-xenial
   plan:
   - do:
@@ -777,7 +614,6 @@ jobs:
     - get: bosh-src
       passed:
       - bats-ubuntu-xenial
-      - bats-centos
       - brats-ubuntu-xenial
       - bbr-ubuntu-xenial
       trigger: true
@@ -791,13 +627,11 @@ jobs:
   - aggregate:
     - get: bosh-src
       passed:
-      - bats-centos
       - bats-ubuntu-xenial
       - delivery
     - get: bosh-master
     - get: bosh-dev-release
       passed:
-      - bats-centos
       - bats-ubuntu-xenial
       resource: bosh-candidate-release-tarballs
     - get: bosh-cli
@@ -948,10 +782,6 @@ resources:
     name: bosh-warden-boshlite-ubuntu-xenial-go_agent
     version_family: 97.latest
   type: bosh-io-stemcell
-- name: vsphere-esxi-centos-7
-  source:
-    name: bosh-vsphere-esxi-centos-7-go_agent
-  type: bosh-io-stemcell
 - name: cpi-release
   source:
     repository: cloudfoundry-incubator/bosh-vsphere-cpi-release
@@ -967,10 +797,6 @@ resources:
     token: ((tracker_api_token))
     tracker_url: https://www.pivotaltracker.com
   type: tracker
-- name: bosh-main-mysql-5.5
-  source:
-    repository: bosh/main-mysql-5.5
-  type: docker-image
 - name: bosh-main-mysql-5.6
   source:
     repository: bosh/main-mysql-5.6
@@ -982,10 +808,6 @@ resources:
 - name: bosh-main-postgres-9.4
   source:
     repository: bosh/main-postgres-9.4
-  type: docker-image
-- name: bosh-main-postgres-9.6
-  source:
-    repository: bosh/main-postgres-9.6
   type: docker-image
 - name: bosh-master
   source:
