@@ -45,6 +45,10 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
     expect(handler).to be_kind_of(Bosh::Director::ProblemHandlers::MountInfoMismatch)
   end
 
+  it 'is not an instance problem' do
+    expect(@handler.instance_problem?).to be_falsey
+  end
+
   it 'has description' do
     expect(@handler.description).to match(/Inconsistent mount information/)
     expect(@handler.description).to match(/Not mounted in any VM/)

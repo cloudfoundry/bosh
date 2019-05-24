@@ -16,6 +16,10 @@ module Bosh::Director
         "Problem (#{@original_type} #{@resource_id}) is no longer valid: #{@error}"
       end
 
+      def instance_problem?
+        false
+      end
+
       resolution :close do
         plan { "Close problem" }
         action { }

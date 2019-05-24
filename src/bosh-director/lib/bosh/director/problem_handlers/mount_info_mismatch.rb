@@ -41,6 +41,10 @@ module Bosh::Director
         out
       end
 
+      def instance_problem?
+        false
+      end
+
       resolution :ignore do
         plan { "Ignore" }
         action { }

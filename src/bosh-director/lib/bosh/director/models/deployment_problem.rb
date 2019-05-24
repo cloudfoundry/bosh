@@ -40,8 +40,11 @@ module Bosh::Director::Models
     end
 
     def open?
-      state == "open"
+      state == 'open'
     end
 
+    def instance_problem?
+      handler.instance_problem?
+    end
   end
 end

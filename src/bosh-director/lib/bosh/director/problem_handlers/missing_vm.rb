@@ -38,6 +38,10 @@ module Bosh::Director
         end
         "VM for '#{@instance}'#{with_vm_cid} missing."
       end
+
+      def instance_problem?
+        true
+      end
     end
   end
 end

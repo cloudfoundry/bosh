@@ -33,6 +33,10 @@ module Bosh::Director
         "Disk #{disk_label} is inactive"
       end
 
+      def instance_problem?
+        false
+      end
+
       resolution :ignore do
         plan { 'Skip for now' }
         action { }
