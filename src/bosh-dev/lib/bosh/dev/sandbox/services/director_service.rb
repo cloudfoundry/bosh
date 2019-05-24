@@ -141,6 +141,10 @@ module Bosh::Dev::Sandbox
       connection_config
     end
 
+    def read_log
+      @process.stdout_contents
+    end
+
     private
 
     def migrate_database
