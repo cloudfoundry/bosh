@@ -76,6 +76,17 @@ module Bosh
             'Jobs are no longer supported, please use instance groups instead',
           )
         end
+
+        it 'raises a deprecation error when resource_pools is present as a manifest key' do
+          manifest_hash['resource_pools'] = ['foo']
+          puts manifest_hash.inspect
+          expect do
+            manifest_validator.validate(manifest_hash)
+          end.to raise_error(
+            Bosh::Director::V1DeprecatedResourcePools,
+            'resource_pools is no longer supported. You must now define resources in a cloud-config',
+          )
+        end
       end
     end
   end

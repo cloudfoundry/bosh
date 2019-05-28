@@ -146,51 +146,6 @@ module Bosh::Spec
       )
     end
 
-    def self.simple_os_specific_cloud_config
-      resource_pools = [
-        {
-          'name' => 'a',
-          'size' => 1,
-          'cloud_properties' => {},
-          'network' => 'a',
-          'stemcell' => {
-            'os' => 'toronto-os',
-            'version' => 'latest',
-          },
-        },
-        {
-          'name' => 'b',
-          'size' => 1,
-          'cloud_properties' => {},
-          'network' => 'a',
-          'stemcell' => {
-            'os' => 'toronto-centos',
-            'version' => 'latest',
-          },
-        },
-      ]
-      minimal_cloud_config.merge(
-        'networks' => [network],
-        'resource_pools' => resource_pools,
-      )
-    end
-
-    def self.simple_network_specific_cloud_config
-      minimal_cloud_config.merge(
-        'networks' => [
-          {
-            'name' => 'a',
-            'subnets' => [subnet],
-          },
-          {
-            'name' => 'b',
-            'subnets' => [subnet],
-          },
-        ],
-        'resource_pools' => [resource_pool],
-      )
-    end
-
     def self.simple_cloud_config_with_multiple_azs_and_cpis
       cloud_config = simple_cloud_config_with_multiple_azs
 
@@ -853,7 +808,7 @@ module Bosh::Spec
 
     def self.simple_manifest
       test_release_manifest.merge(
-        'jobs' => [simple_job],
+        'instance_groups' => [simple_instance_group],
       )
     end
 
@@ -910,6 +865,24 @@ module Bosh::Spec
 
       job_hash
     end
+
+    def self.simple_instance_group(opts = {})
+      job_hash = {
+        'name' => opts.fetch(:name, 'foobar'),
+        'jobs' => opts[:jobs] || opts[:jobs] || ['name' => 'foobar'],
+        'resource_pool' => opts.fetch(:resource_pool, 'a'),
+        'instances' => opts.fetch(:instances, 3),
+        'networks' => [{ 'name' => opts.fetch(:network_name, 'a') }],
+        'properties' => opts.fetch(:properties, {}),
+      }
+
+      job_hash['networks'].first['static_ips'] = opts[:static_ips] if opts.key?(:static_ips)
+      job_hash['persistent_disk_pool'] = opts[:persistent_disk_pool] if opts[:persistent_disk_pool]
+      job_hash['azs'] = opts[:azs] if opts.key?(:azs)
+
+      job_hash
+    end
+
     # Aliasing class method simple_job to simple_instance_group
     singleton_class.send(:alias_method, :simple_instance_group, :simple_job)
 
@@ -926,8 +899,8 @@ module Bosh::Spec
 
     def self.manifest_with_errand
       manifest = simple_manifest.merge('name' => 'errand')
-      manifest['jobs'].find { |job| job['name'] == 'foobar' }['instances'] = 1
-      manifest['jobs'] << simple_errand_job
+      manifest['instance_groups'].find { |ig| ig['name'] == 'foobar' }['instances'] = 1
+      manifest['instance_groups'] << simple_errand_job
       manifest
     end
 
@@ -982,7 +955,7 @@ module Bosh::Spec
 
     def self.manifest_errand_with_placeholders
       manifest = manifest_with_errand
-      manifest['jobs'][1]['properties']['errand1']['stdout'] = '((placeholder))'
+      manifest['instance_groups'][1]['properties']['errand1']['stdout'] = '((placeholder))'
       manifest
     end
   end

@@ -22,6 +22,11 @@ module Bosh
             raise Bosh::Director::V1DeprecatedJob,
                   'Jobs are no longer supported, please use instance groups instead'
           end
+
+          if manifest.key?('resource_pools')
+            raise Bosh::Director::V1DeprecatedResourcePools,
+                  'resource_pools is no longer supported. You must now define resources in a cloud-config'
+          end
         end
 
         private
