@@ -8,12 +8,14 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   let(:fake_ip_provider) { instance_double(Bosh::Director::DeploymentPlan::IpProvider, reserve: nil, reserve_existing_ips: nil) }
   let(:vm_type) { Bosh::Director::DeploymentPlan::VmType.new('name' => 'dea') }
   let(:stemcell) do
-    instance_double(
-      'Bosh::Director::DeploymentPlan::Stemcell',
+    model = Bosh::Director::Models::Stemcell.make(name: 'linux', version: '250.4')
+    new_stemcell = Bosh::Director::DeploymentPlan::Stemcell.make(
+      name: model.name,
       os: 'linux',
-      version: '250.4',
-      desc: 'linux/250.4',
+      version: model.version,
     )
+    new_stemcell.add_stemcell_models
+    new_stemcell
   end
   let(:env) { instance_double('Bosh::Director::DeploymentPlan::Env') }
   let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
@@ -520,7 +522,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
           instance_group.validate_exported_from_matches_stemcell!
         end.to raise_error(
           Bosh::Director::JobWithExportedFromMismatch,
-          "Invalid release detected in instance group 'foobar' using stemcell 'linux/250.4': "\
+          "Invalid release detected in instance group 'foobar' using stemcell '#{stemcell.desc}': "\
           "release 'release1' must be exported from stemcell 'linux/250.4'. "\
           "Release 'release1' is exported from: 'the wrong one/3'.",
         )

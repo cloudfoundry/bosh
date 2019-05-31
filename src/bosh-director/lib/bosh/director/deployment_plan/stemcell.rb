@@ -7,6 +7,7 @@ module Bosh::Director
       attr_reader :name
       attr_reader :version
       attr_reader :models
+      attr_writer :deployment_model
 
       def self.parse(spec)
         name_alias = safe_property(spec, 'alias', class: String, optional: true)
@@ -66,8 +67,6 @@ module Bosh::Director
           model.add_deployment(deployment_model) unless model.deployments.include?(deployment_model)
         end
       end
-
-      attr_writer :deployment_model
 
       def desc
         return nil unless @models

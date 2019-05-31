@@ -75,6 +75,7 @@ module Bosh::Director::Models
     name      { Sham.name }
     version   { Sham.version }
     cid       { Sham.stemcell_cid }
+    operating_system { Sham.name }
   end
 
   StemcellUpload.blueprint do

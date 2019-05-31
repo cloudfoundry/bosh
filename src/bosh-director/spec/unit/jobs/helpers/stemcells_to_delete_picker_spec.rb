@@ -20,10 +20,7 @@ module Bosh::Director
       end
       context 'when removing all stemcells' do
         it 'picks unused stemcells' do
-          expect(stemcells_to_delete_picker.pick(0)).to match_array([
-                {'name' => 'stemcell-a', 'operating_system' => nil, 'version' => '1', 'cid' => '1', 'deployments' => [], 'cpi' => '', 'api_version' => nil},
-                {'name' => 'stemcell-b', 'operating_system' => nil, 'version' => '2', 'cid' => '2', 'deployments' => [], 'cpi' => '', 'api_version' => nil}
-              ])
+          expect(stemcells_to_delete_picker.pick(0).map { |a| a['name'] }).to match_array(['stemcell-a', 'stemcell-b'])
         end
       end
 
@@ -36,10 +33,7 @@ module Bosh::Director
         end
 
         it 'leaves out the latest two versions of each stemcell' do
-          expect(stemcells_to_delete_picker.pick(2)).to match_array([
-                {'name' => 'stemcell-a', 'operating_system' => nil, 'version' => '1', 'cid' => '1', 'deployments' => [], 'cpi' => '', 'api_version' => nil},
-                {'name' => 'stemcell-b', 'operating_system' => nil, 'version' => '2', 'cid' => '2', 'deployments' => [], 'cpi' => '', 'api_version' => nil}
-              ])
+          expect(stemcells_to_delete_picker.pick(2).map { |a| a['name'] }).to match_array(['stemcell-a', 'stemcell-b'])
         end
       end
     end
