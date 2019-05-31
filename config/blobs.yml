@@ -6,10 +6,6 @@ davcli/davcli-0.0.33-linux-amd64:
   size: 7650033
   object_id: 332c86ac-1f03-47a1-6b70-27b981c80734
   sha: sha256:16869bcdced5bb8221293ded97b9294f2639c5442b1b4ceb844c4e04d6a1f98b
-gnatsd/gnatsd-0.9.6-bosh.13-linux-amd64:
-  size: 9513901
-  object_id: 6f71e068-e47d-4840-463c-47d313e1a5bd
-  sha: 7d720bbf685c508c0fd566769253f91b0c7269e9
 gnatsd/gnatsd-1.3.0-bosh.2-linux-amd64:
   size: 10471093
   object_id: cbc9d252-ca0c-4120-6f36-1a6e856b1f03
