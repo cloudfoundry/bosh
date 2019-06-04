@@ -273,7 +273,7 @@ describe 'cli: variables', type: :integration do
       end
     end
 
-    it 'returns deployments for variables' do
+    xit 'returns deployments for variables' do
       config_server_helper.put_value(prepend_namespace('random_property'), 'random_prop_now')
       config_server_helper.put_value(prepend_namespace('other_property'), 'other_prop_now')
 
