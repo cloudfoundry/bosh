@@ -8,15 +8,15 @@ describe 'template', type: :integration do
     manifest_hash['instance_groups'] = [
       {
         'name' => 'id_job',
-        'jobs' => ['name' => 'id_job'],
+        'jobs' => ['name' => 'id_job', 'release' => 'bosh-release'],
         'vm_type' => 'a',
         'instances' => 1,
         'networks' => [{
-            'name' => 'a',
-          }],
+          'name' => 'a',
+        }],
         'properties' => {},
-        'stemcell' => 'default'
-      }
+        'stemcell' => 'default',
+      },
     ]
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 
@@ -25,21 +25,20 @@ describe 'template', type: :integration do
     expect(template['id']).to match /[a-f0-9\-]/
   end
 
-
   it 'gives VMs the same id on `deploy --recreate`' do
     manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'] = [
       {
         'name' => 'id_job',
-        'jobs' => ['name' => 'id_job'],
+        'jobs' => ['name' => 'id_job', 'release' => 'bosh-release'],
         'vm_type' => 'a',
         'instances' => 1,
         'networks' => [{
-            'name' => 'a',
-          }],
+          'name' => 'a',
+        }],
         'properties' => {},
-        'stemcell' => 'default'
-      }
+        'stemcell' => 'default',
+      },
     ]
 
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
@@ -72,20 +71,18 @@ describe 'template', type: :integration do
   it 'prints all template evaluation errors when there are errors in multiple job deployment templates' do
     manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'] = [
-        {
-            'name' => 'foobar',
-            'jobs' => [
-                {'name' => 'foobar_with_bad_properties'},
-                {'name' => 'foobar_with_bad_properties_2'}
-            ],
-            'vm_type' => 'a',
-            'instances' => 1,
-            'networks' => [{
-                               'name' => 'a',
-                           }],
-            'properties' => {},
-            'stemcell' => 'default'
-        }
+      {
+        'name' => 'foobar',
+        'jobs' => [
+          { 'name' => 'foobar_with_bad_properties', 'release' => 'bosh-release' },
+          { 'name' => 'foobar_with_bad_properties_2', 'release' => 'bosh-release' },
+        ],
+        'vm_type' => 'a',
+        'instances' => 1,
+        'networks' => [{ 'name' => 'a' }],
+        'properties' => {},
+        'stemcell' => 'default',
+      },
     ]
 
     output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config, failure_expected: true)

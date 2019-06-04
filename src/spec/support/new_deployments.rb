@@ -93,6 +93,7 @@ module Bosh::Spec
         'jobs' => opts.fetch(
           :jobs, [{
             'name' => opts.fetch(:job_name, 'foobar'),
+            'release' => opts.fetch(:job_release, 'bosh-release'),
             'properties' => {},
           }]
         ),
@@ -354,12 +355,13 @@ module Bosh::Spec
       }
     end
 
-    def self.test_deployment_manifest_with_job(job_name)
+    def self.test_deployment_manifest_with_job(job_name, release)
       test_deployment_manifest.merge(
         'instance_groups' => [{
           'name'          => job_name,
           'jobs' => [{
             'name' => job_name,
+            'release' => release,
           }],
           'vm_type' => 'a',
           'instances' => 1,

@@ -78,8 +78,12 @@ describe 'Links', type: :integration do
     let(:api_instance_group_spec) do
       spec = Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'my_api',
-        jobs: [{'name' => 'api_server', 'consumes' => links}],
-        instances: 1
+        jobs: [
+          'name' => 'api_server',
+          'release' => 'bosh-release',
+          'consumes' => links,
+        ],
+        instances: 1,
       )
       spec['azs'] = ['z1']
       spec
@@ -88,9 +92,13 @@ describe 'Links', type: :integration do
     let(:aliased_instance_group_spec) do
       spec = Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'aliased_postgres',
-        jobs: [{'name' => 'backup_database', 'provides' => {'backup_db' => {'as' => 'link_alias'}}}],
+        jobs: [
+          'name' => 'backup_database',
+          'release' => 'bosh-release',
+          'provides' => { 'backup_db' => { 'as' => 'link_alias' } },
+        ],
         instances: 1,
-        )
+      )
       spec['azs'] = ['z1']
       spec
     end
@@ -105,9 +113,13 @@ describe 'Links', type: :integration do
       let(:new_api_instance_group_spec) do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'new_api_job',
-          jobs: [{'name' => 'api_server', 'consumes' => links}],
+          jobs: [
+            'name' => 'api_server',
+            'release' => 'bosh-release',
+            'consumes' => links,
+          ],
           instances: 1,
-          )
+        )
         spec['migrated_from'] = ['name' => 'my_api']
         spec['azs'] = ['z1']
         spec
@@ -116,10 +128,14 @@ describe 'Links', type: :integration do
       let(:new_aliased_instance_group_spec) do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'new_aliased_job',
-          jobs: [{'name' => 'backup_database', 'provides' => {'backup_db' => {'as' => 'link_alias'}}}],
-          instances: 1
+          jobs: [
+            'name' => 'backup_database',
+            'release' => 'bosh-release',
+            'provides' => { 'backup_db' => { 'as' => 'link_alias' } },
+          ],
+          instances: 1,
         )
-        spec['migrated_from'] = [{'name' => 'aliased_postgres'}]
+        spec['migrated_from'] = [{ 'name' => 'aliased_postgres' }]
         spec['azs'] = ['z1']
         spec
       end
@@ -210,13 +226,15 @@ describe 'Links', type: :integration do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'test_another_group',
           jobs: [
-            {'name' => 'backup_database',
-             'provides' => {
-               'backup_db' => {'as' => 'link_alias2'}
-             }
-            }
+            {
+              'name' => 'backup_database',
+              'release' => 'bosh-release',
+              'provides' => {
+                'backup_db' => { 'as' => 'link_alias2' },
+              },
+            },
           ],
-          instances: 1
+          instances: 1,
         )
         spec['azs'] = ['z1']
         spec
@@ -228,13 +246,14 @@ describe 'Links', type: :integration do
           jobs: [
             {
               'name' => 'api_server',
+              'release' => 'bosh-release',
               'consumes' => {
-                'db' => {'from' => 'link_alias2'},
-                'backup_db' => {'from' => 'link_alias2'}
-              }
-            }
+                'db' => { 'from' => 'link_alias2' },
+                'backup_db' => { 'from' => 'link_alias2' },
+              },
+            },
           ],
-          instances: 1
+          instances: 1,
         )
         spec['azs'] = ['z1']
         spec
@@ -243,8 +262,12 @@ describe 'Links', type: :integration do
       let(:new_aliased_instance_group_spec) do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'new_aliased_job',
-          jobs: [{'name' => 'backup_database', 'provides' => {'backup_db' => {'as' => 'link_alias'}}}],
-          instances: 1
+          jobs: [
+            'name' => 'backup_database',
+            'release' => 'bosh-release',
+            'provides' => { 'backup_db' => { 'as' => 'link_alias' } },
+          ],
+          instances: 1,
         )
         spec['migrated_from'] = [{'name' => 'aliased_postgres'}, {'name' => 'test_another_group'}]
         spec['azs'] = ['z1']
@@ -254,9 +277,13 @@ describe 'Links', type: :integration do
       let(:new_api_instance_group_spec) do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'new_api_job',
-          jobs: [{'name' => 'api_server', 'consumes' => links}],
+          jobs: [
+            'name' => 'api_server',
+            'release' => 'bosh-release',
+            'consumes' => links,
+          ],
           instances: 1,
-          )
+        )
         spec['migrated_from'] = [{'name' => 'my_api'}, {'name' => 'test_another_consumer_group'}]
         spec['azs'] = ['z1']
         spec
@@ -303,9 +330,13 @@ describe 'Links', type: :integration do
       let(:merged_instance_group_spec) do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'merged_instance_group',
-          jobs: [{'name' => 'api_server', 'consumes' => links}],
+          jobs: [
+            'name' => 'api_server',
+            'release' => 'bosh-release',
+            'consumes' => links,
+          ],
           instances: 1,
-          )
+        )
         spec['migrated_from'] = [{'name' => api_instance_group_spec['name']},
                                  {'name' => second_api_instance_group_spec['name']}]
         spec['azs'] = ['z1']
@@ -336,11 +367,19 @@ describe 'Links', type: :integration do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'merged_group',
           jobs: [
-            {'name' => 'backup_database', 'provides' => {'backup_db' => {'as' => 'link_alias'}}},
-            {'name' => 'database', 'provides' => {'db' => {'as' => 'db2'}}},
+            {
+              'name' => 'backup_database',
+              'release' => 'bosh-release',
+              'provides' => { 'backup_db' => { 'as' => 'link_alias' } },
+            },
+            {
+              'name' => 'database',
+              'release' => 'bosh-release',
+              'provides' => { 'db' => { 'as' => 'db2' } },
+            },
           ],
           instances: 1,
-          )
+        )
         spec['migrated_from'] = [{'name' => aliased_instance_group_spec['name']}, {'name' => secondary_aliased_instance_group_spec['name']}]
         spec['azs'] = ['z1']
         spec
@@ -364,6 +403,7 @@ describe 'Links', type: :integration do
           spec['name'] = 'secondary_instance_group'
           spec['jobs'] << {
             'name' => 'provider_fail',
+            'release' => 'bosh-release',
             'provides' => { 'provider_fail' => { 'shared' => true } },
             'properties' => { 'b' => 'adding_b' },
           }
@@ -374,9 +414,21 @@ describe 'Links', type: :integration do
           spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'merged_group',
             jobs: [
-              { 'name' => 'backup_database', 'provides' => { 'backup_db' => { 'as' => 'link_alias' } } },
-              { 'name' => 'database', 'provides' => { 'db' => { 'as' => 'db2' } } },
-              { 'name' => 'provider_fail', 'provides' => { 'provider_fail' => { 'shared' => true } } },
+              {
+                'name' => 'backup_database',
+                'release' => 'bosh-release',
+                'provides' => { 'backup_db' => { 'as' => 'link_alias' } },
+              },
+              {
+                'name' => 'database',
+                'release' => 'bosh-release',
+                'provides' => { 'db' => { 'as' => 'db2' } },
+              },
+              {
+                'name' => 'provider_fail',
+                'release' => 'bosh-release',
+                'provides' => { 'provider_fail' => { 'shared' => true } },
+              },
             ],
             instances: 1,
           )
@@ -393,6 +445,7 @@ describe 'Links', type: :integration do
             name: 'consuming_instance_group',
             jobs: [{
               'name' => 'consumer',
+              'release' => 'bosh-release',
               'consumes' => { 'provider' => { 'from' => 'provider_fail', 'deployment' => 'simple' } },
             }],
             instances: 1,
@@ -434,10 +487,19 @@ describe 'Links', type: :integration do
             spec = Bosh::Spec::NewDeployments.simple_instance_group(
               name: 'merged_group',
               jobs: [
-                { 'name' => 'backup_database', 'provides' => { 'backup_db' => { 'as' => 'link_alias' } } },
-                { 'name' => 'database', 'provides' => { 'db' => { 'as' => 'db2' } } },
+                {
+                  'name' => 'backup_database',
+                  'release' => 'bosh-release',
+                  'provides' => { 'backup_db' => { 'as' => 'link_alias' } },
+                },
+                {
+                  'name' => 'database',
+                  'release' => 'bosh-release',
+                  'provides' => { 'db' => { 'as' => 'db2' } },
+                },
                 {
                   'name' => 'provider_fail',
+                  'release' => 'bosh-release',
                   'provides' => { 'provider_fail' => { 'shared' => true } },
                   'properties' => { 'b' => 'important value' },
                 },
@@ -470,6 +532,7 @@ describe 'Links', type: :integration do
           spec['name'] = 'secondary_instance_group'
           spec['jobs'] << {
             'name' => 'provider_fail',
+            'release' => 'bosh-release',
             'provides' => { 'provider_fail' => { 'shared' => true } },
             'properties' => { 'b' => 'adding_b' },
           }
@@ -480,9 +543,21 @@ describe 'Links', type: :integration do
           spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'merged_group',
             jobs: [
-              { 'name' => 'backup_database', 'provides' => { 'backup_db' => { 'as' => 'link_alias' } } },
-              { 'name' => 'database', 'provides' => { 'db' => { 'as' => 'db2' } } },
-              { 'name' => 'provider_fail', 'provides' => { 'provider_fail' => { 'shared' => true } } },
+              {
+                'name' => 'backup_database',
+                'release' => 'bosh-release',
+                'provides' => { 'backup_db' => { 'as' => 'link_alias' } },
+              },
+              {
+                'name' => 'database',
+                'release' => 'bosh-release',
+                'provides' => { 'db' => { 'as' => 'db2' } },
+              },
+              {
+                'name' => 'provider_fail',
+                'release' => 'bosh-release',
+                'provides' => { 'provider_fail' => { 'shared' => true } },
+              },
             ],
             instances: 1,
           )
@@ -546,6 +621,7 @@ describe 'Links', type: :integration do
           spec['name'] = 'secondary_instance_group'
           spec['jobs'] << {
             'name' => 'provider_fail',
+            'release' => 'bosh-release',
             'properties' => { 'b' => 'adding_b' },
           }
           spec
@@ -555,9 +631,21 @@ describe 'Links', type: :integration do
           spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'merged_group',
             jobs: [
-              { 'name' => 'backup_database', 'provides' => { 'backup_db' => { 'as' => 'link_alias' } } },
-              { 'name' => 'database', 'provides' => { 'db' => { 'as' => 'db2' } } },
-              { 'name' => 'provider_fail', 'properties' => { 'b' => 'adding_b' } },
+              {
+                'name' => 'backup_database',
+                'release' => 'bosh-release',
+                'provides' => { 'backup_db' => { 'as' => 'link_alias' } },
+              },
+              {
+                'name' => 'database',
+                'release' => 'bosh-release',
+                'provides' => { 'db' => { 'as' => 'db2' } },
+              },
+              {
+                'name' => 'provider_fail',
+                'release' => 'bosh-release',
+                'properties' => { 'b' => 'adding_b' },
+              },
             ],
             instances: 1,
           )

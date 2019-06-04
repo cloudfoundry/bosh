@@ -7,6 +7,7 @@ describe 'env values in instance groups and resource pools', type: :integration 
         name: 'our_instance_group',
         jobs: [
           { 'name' => 'job_1_with_many_properties',
+            'release' => 'bosh-release',
             'properties' => job_properties },
         ],
         instances: 1,
@@ -71,7 +72,7 @@ describe 'env values in instance groups and resource pools', type: :integration 
       manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'] = [{
         'name' => 'foobar',
-        'jobs' => ['name' => 'job_1_with_many_properties'],
+        'jobs' => ['name' => 'job_1_with_many_properties', 'release' => 'bosh-release'],
         'vm_type' => 'a',
         'stemcell' => 'default',
         'instances' => 1,

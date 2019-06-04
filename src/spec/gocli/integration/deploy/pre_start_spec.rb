@@ -14,8 +14,14 @@ describe 'pre-start scripts', type: :integration do
         'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
           name: 'job_with_templates_having_prestart_scripts',
           jobs: [
-            { 'name' => 'job_1_with_pre_start_script' },
-            { 'name' => 'job_2_with_pre_start_script' },
+            {
+              'name' => 'job_1_with_pre_start_script',
+              'release' => 'bosh-release',
+            },
+            {
+              'name' => 'job_2_with_pre_start_script',
+              'release' => 'bosh-release',
+            },
           ],
           instances: 1,
         )],
@@ -57,7 +63,10 @@ describe 'pre-start scripts', type: :integration do
         Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
           name: 'job_with_templates_having_prestart_scripts',
           jobs: [
-            { 'name' => 'job_1_with_pre_start_script' },
+            {
+              'name' => 'job_1_with_pre_start_script',
+              'release' => 'release_with_prestart_script',
+            },
           ],
           instances: 1,
         ),
@@ -100,8 +109,14 @@ describe 'pre-start scripts', type: :integration do
           Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
             name: 'job_with_templates_having_prestart_scripts',
             jobs: [
-              { 'name' => 'job_with_valid_pre_start_script' },
-              { 'name' => 'job_with_corrupted_pre_start_script' },
+              {
+                'name' => 'job_with_valid_pre_start_script',
+                'release' => 'release_with_corrupted_pre_start',
+              },
+              {
+                'name' => 'job_with_corrupted_pre_start_script',
+                'release' => 'release_with_corrupted_pre_start',
+              },
             ],
             instances: 1,
           ),

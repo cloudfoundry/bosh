@@ -43,6 +43,7 @@ describe 'Links', type: :integration do
         jobs: [
           {
             'name' => 'api_server_with_optional_db_link',
+            'release' => 'bosh-release',
             'consumes' => {
               'link_that_does_not_exist' => {},
             },
@@ -82,6 +83,7 @@ describe 'Links', type: :integration do
         jobs: [
           {
             'name' => 'provider',
+            'release' => 'bosh-release',
             'consumes' => {
               'link_that_does_not_exist' => {},
             },
@@ -121,6 +123,7 @@ describe 'Links', type: :integration do
         jobs: [
           {
             'name' => 'provider',
+            'release' => 'bosh-release',
             'provides' => {
               'link_that_does_not_exist' => {},
             },
@@ -160,6 +163,7 @@ describe 'Links', type: :integration do
         jobs: [
           {
             'name' => 'api_server_with_optional_db_link',
+            'release' => 'bosh-release',
             'provides' => {
               'link_that_does_not_exist' => {},
             },

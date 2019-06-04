@@ -212,7 +212,6 @@ module Bosh::Director
 
       @j_dea = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
         name: 'dea',
-        release: @release,
         jobs: [@t_dea, @t_warden],
         vm_type: vm_type_large,
         stemcell: @stemcell_a
@@ -220,7 +219,6 @@ module Bosh::Director
 
       @j_router = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
         name: 'router',
-        release: @release,
         jobs: [@t_nginx, @t_router, @t_warden],
         vm_type: vm_type_small,
         stemcell: @stemcell_b
@@ -228,7 +226,6 @@ module Bosh::Director
 
       @j_deps_ruby = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
         name: 'needs_ruby',
-        release: @release,
         jobs: [@t_deps_ruby],
         vm_type: vm_type_small,
         stemcell: @stemcell_b
@@ -365,7 +362,6 @@ module Bosh::Director
 
         @j_dea = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
           name: 'dea',
-          release: @release,
           jobs: [@t_dea, @t_warden],
           vm_type: @vm_type_large,
           stemcell: @stemcell_b
@@ -462,7 +458,6 @@ module Bosh::Director
 
         @j_dea = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
                                  name: 'dea',
-                                 release: @release,
                                  jobs: [@t_dea, @t_warden],
                                  vm_type: @vm_type_large,
                                  stemcell: @stemcell_b)
@@ -571,7 +566,6 @@ module Bosh::Director
       let(:instance_group) do
         instance_double(
           'Bosh::Director::DeploymentPlan::InstanceGroup',
-          release: release_version,
           name: 'job_name',
           stemcell: stemcell,
         )

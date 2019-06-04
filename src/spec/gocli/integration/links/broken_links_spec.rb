@@ -45,7 +45,12 @@ describe 'broken links', type: :integration do
   let(:first_node_instance_group_spec) do
     Bosh::Spec::NewDeployments.simple_instance_group(
       name: 'first_node',
-      jobs: [{ 'name' => 'node', 'consumes' => first_node_links, 'provides' => { 'node2' => { 'as' => 'alias2' } } }],
+      jobs: [
+        'name' => 'node',
+        'release' => 'bosh-release',
+        'consumes' => first_node_links,
+        'provides' => { 'node2' => { 'as' => 'alias2' } },
+      ],
       instances: 1,
       static_ips: ['192.168.1.10'],
       azs: ['z1'],
@@ -62,7 +67,12 @@ describe 'broken links', type: :integration do
   let(:second_node_instance_group_spec) do
     Bosh::Spec::NewDeployments.simple_instance_group(
       name: 'second_node',
-      jobs: [{ 'name' => 'node', 'consumes' => second_node_links, 'provides' => { 'node2' => { 'as' => 'alias2' } } }],
+      jobs: [
+        'name' => 'node',
+        'release' => 'bosh-release',
+        'consumes' => second_node_links,
+        'provides' => { 'node2' => { 'as' => 'alias2' } },
+      ],
       instances: 1,
       static_ips: ['192.168.1.11'],
       azs: ['z1'],
@@ -91,7 +101,7 @@ describe 'broken links', type: :integration do
     let(:first_provider_instance) do
       Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'first_provider',
-        jobs: [{ 'name' => 'provider', 'provides' => provide_links }],
+        jobs: [{ 'name' => 'provider', 'release' => 'bosh-release', 'provides' => provide_links }],
         instances: 1,
         static_ips: ['192.168.1.11'],
         azs: ['z1'],
@@ -101,7 +111,7 @@ describe 'broken links', type: :integration do
     let(:second_provider_instance) do
       Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'second_provider',
-        jobs: [{ 'name' => 'provider', 'provides' => provide_links }],
+        jobs: [{ 'name' => 'provider', 'release' => 'bosh-release', 'provides' => provide_links }],
         instances: 1,
         static_ips: ['192.168.1.12'],
         azs: ['z1'],
@@ -117,7 +127,7 @@ describe 'broken links', type: :integration do
     let(:first_consumer_instance) do
       Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'first_consumer',
-        jobs: [{ 'name' => 'consumer', 'consumes' => consume_links }],
+        jobs: [{ 'name' => 'consumer', 'release' => 'bosh-release', 'consumes' => consume_links }],
         instances: 1,
         static_ips: ['192.168.1.13'],
         azs: ['z1'],
@@ -127,7 +137,7 @@ describe 'broken links', type: :integration do
     let(:second_consumer_instance) do
       Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'second_consumer',
-        jobs: [{ 'name' => 'consumer' }],
+        jobs: [{ 'name' => 'consumer', 'release' => 'bosh-release' }],
         instances: 1,
         static_ips: ['192.168.1.14'],
         azs: ['z1'],
@@ -168,7 +178,12 @@ OUTPUT
     let(:first_node_instance_group_spec) do
       Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'first_node',
-        jobs: [{ 'name' => 'node', 'consumes' => first_node_links, 'provides' => { 'node2' => { 'as' => 'alias1' } } }],
+        jobs: [
+          'name' => 'node',
+          'release' => 'bosh-release',
+          'consumes' => first_node_links,
+          'provides' => { 'node2' => { 'as' => 'alias1' } },
+        ],
         instances: 1,
         static_ips: ['192.168.1.10'],
         azs: ['z1'],
@@ -185,7 +200,12 @@ OUTPUT
     let(:second_node_instance_group_spec) do
       Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'second_node',
-        jobs: [{ 'name' => 'node', 'consumes' => second_node_links, 'provides' => { 'node1' => { 'as' => 'node1a' }, 'node2' => { 'as' => 'alias2' } } }],
+        jobs: [
+          'name' => 'node',
+          'release' => 'bosh-release',
+          'consumes' => second_node_links,
+          'provides' => { 'node1' => { 'as' => 'node1a' }, 'node2' => { 'as' => 'alias2' } },
+        ],
         instances: 1,
         static_ips: ['192.168.1.11'],
         azs: ['z1'],

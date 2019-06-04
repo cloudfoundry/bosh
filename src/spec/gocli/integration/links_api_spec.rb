@@ -59,6 +59,7 @@ describe 'links api', type: :integration do
   let(:explicit_provider) do
     {
       'name' => 'provider',
+      'release' => 'bosh-release',
       'provides' => { 'provider' => { 'as' => 'foo' } },
     }
   end
@@ -66,14 +67,15 @@ describe 'links api', type: :integration do
   let(:explicit_consumer) do
     {
       'name' => 'consumer',
+      'release' => 'bosh-release',
       'consumes' => { 'provider' => { 'from' => 'foo' } },
     }
   end
 
   let(:implicit_provider_and_consumer) do
     [
-      { 'name' => 'provider' },
-      { 'name' => 'consumer' },
+      { 'name' => 'provider', 'release' => 'bosh-release' },
+      { 'name' => 'consumer', 'release' => 'bosh-release' },
     ]
   end
 
@@ -195,7 +197,7 @@ describe 'links api', type: :integration do
     end
 
     context 'when deployment has an implicit link provider' do
-      let(:jobs) { [{ 'name' => 'provider' }] }
+      let(:jobs) { [{ 'name' => 'provider', 'release' => 'bosh-release' }] }
 
       it 'should return the correct number of providers' do
         expected_response = [provider_response]
@@ -218,6 +220,7 @@ describe 'links api', type: :integration do
           [
             {
               'name' => 'provider',
+              'release' => 'bosh-release',
               'provides' => {
                 'provider' => {
                   'as' => 'foo',
@@ -239,6 +242,7 @@ describe 'links api', type: :integration do
         let(:updated_manifest_hash) do
           manifest_hash.tap do |mh|
             mh['instance_groups'][0]['jobs'][0]['provides']['provider']['as'] = 'bar'
+            mh['instance_groups'][0]['jobs'][0]['release'] = 'bosh-release'
           end
         end
 
@@ -259,6 +263,7 @@ describe 'links api', type: :integration do
         [
           {
             'name' => 'api_server_with_optional_db_link',
+            'release' => 'bosh-release',
             'provides' => {'smurf' => {'shared' => true}},
             'custom_provider_definitions' => [
               {
@@ -336,9 +341,13 @@ describe 'links api', type: :integration do
 
       let(:jobs) do
         [
-          { 'name' => 'provider' },
+          {
+            'name' => 'provider',
+            'release' => 'bosh-release',
+          },
           {
             'name' => 'alternate_provider',
+            'release' => 'bosh-release',
             'provides' => { 'provider' => { 'as' => 'provider' } },
           },
         ]
@@ -408,7 +417,7 @@ describe 'links api', type: :integration do
       end
 
       context 'and the consumer is optional' do
-        let(:jobs) { [{ 'name' => 'api_server_with_optional_db_link' }] }
+        let(:jobs) { [{ 'name' => 'api_server_with_optional_db_link', 'release' => 'bosh-release' }] }
 
         it 'should still create a consumer' do
           expected_response = [consumer_response('api_server_with_optional_db_link', 'db').merge('optional' => true)]
@@ -421,6 +430,7 @@ describe 'links api', type: :integration do
         let(:updated_manifest_hash) do
           manifest_hash.tap do |mh|
             mh['instance_groups'][0]['jobs'][0]['name'] = 'alternate_provider'
+            mh['instance_groups'][0]['jobs'][0]['release'] = 'bosh-release'
           end
         end
 
@@ -495,6 +505,7 @@ describe 'links api', type: :integration do
           [
             {
               'name' => 'provider',
+              'release' => 'bosh-release',
               'provides' => {
                 'provider' => {
                   'as' => 'foo',
@@ -518,6 +529,7 @@ describe 'links api', type: :integration do
             'jobs' => [
               {
                 'name' => 'consumer',
+                'release' => 'bosh-release',
                 'consumes' => {
                   'provider' => {
                     'from' => 'foo',
@@ -598,6 +610,7 @@ describe 'links api', type: :integration do
         [
           {
             'name' => 'consumer',
+            'release' => 'bosh-release',
             'consumes' => {
               'provider' => {
                 'instances' => [{ 'address' => 'teswfbquts.cabsfabuo7yr.us-east-1.rds.amazonaws.com' }],
@@ -637,6 +650,7 @@ describe 'links api', type: :integration do
         [
           {
             'name' => 'disk_consumer',
+            'release' => 'bosh-release',
             'consumes' => {
               'disk_provider' => { 'from' => 'low-iops-persistent-disk-name' },
               'backup_disk_provider' => { 'from' => 'high-iops-persistent-disk-name' },
@@ -686,10 +700,9 @@ describe 'links api', type: :integration do
     end
 
     context 'when consumer is removed from deployment' do
-      let(:jobs) { explicit_provider_and_consumer }
+      let(:jobs) { [explicit_provider] }
 
       it 'should remove consumer data from link_consumer' do
-        manifest_hash['instance_groups'][0]['jobs'].pop
         deploy_simple_manifest(manifest_hash: manifest_hash)
 
         expect(get_links).to be_empty
@@ -702,12 +715,13 @@ describe 'links api', type: :integration do
           [
             {
               'name' => 'api_server_with_optional_db_link',
+              'release' => 'bosh-release',
               'custom_provider_definitions' => [
                 {
                   'name' => 'smurf',
                   'type' => 'db',
-                }
-              ]
+                },
+              ],
             },
           ]
         end
@@ -720,7 +734,7 @@ describe 'links api', type: :integration do
               'link_consumer_id' => '1',
               'link_provider_id' => '1',
               'created_at' => String,
-            }
+            },
           ]
 
           expect(get_links).to match_array(expected_response)
@@ -781,10 +795,12 @@ describe 'links api', type: :integration do
         [
           {
             'name' => 'provider',
+            'release' => 'bosh-release',
             'provides' => { 'provider' => { 'as' => 'bar' } },
           },
           {
             'name' => 'consumer',
+            'release' => 'bosh-release',
             'consumes' => { 'provider' => { 'from' => 'bar' } },
           },
         ]
@@ -825,8 +841,8 @@ describe 'links api', type: :integration do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'instance_group',
           jobs: [
-            { 'name' => 'api_server_2_instances' },
-            { 'name' => 'database' },
+            { 'name' => 'api_server_2_instances', 'release' => 'bosh-release' },
+            { 'name' => 'database', 'release' => 'bosh-release' },
           ],
           instances: 2,
         )
@@ -868,9 +884,9 @@ describe 'links api', type: :integration do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'instance_group',
           jobs: [
-            { 'name' => 'errand_with_optional_links' },
-            { 'name' => 'database' },
-            { 'name' => 'provider' },
+            { 'name' => 'errand_with_optional_links', 'release' => 'bosh-release' },
+            { 'name' => 'database', 'release' => 'bosh-release' },
+            { 'name' => 'provider', 'release' => 'bosh-release' },
           ],
           instances: 2,
         )
@@ -921,6 +937,7 @@ describe 'links api', type: :integration do
         [
           {
             'name' => 'provider',
+            'release' => 'bosh-release',
             'provides' => {
               'provider' => {
                 'as' => 'foo',
@@ -936,6 +953,7 @@ describe 'links api', type: :integration do
           [
             {
               'name' => 'mongo_db',
+              'release' => 'bosh-release',
               'provides' => {
                 'read_only_db' => {
                   'as' => 'foo',
@@ -1185,6 +1203,7 @@ describe 'links api', type: :integration do
             [
               {
                 'name' => 'provider',
+                'release' => 'bosh-release',
                 'provides' => {
                   'provider' => {
                     'as' => 'foo',
@@ -1348,6 +1367,7 @@ describe 'links api', type: :integration do
       [
         {
           'name' => 'provider',
+          'release' => 'bosh-release',
           'provides' => {
             'provider' => {
               'as' => 'foo',
@@ -1392,6 +1412,7 @@ describe 'links api', type: :integration do
       [
         {
           'name' => 'provider',
+          'release' => 'bosh-release',
           'provides' => {
             'provider' => {
               'as' => 'foo',
@@ -1429,6 +1450,7 @@ describe 'links api', type: :integration do
       [
         {
           'name' => 'provider',
+          'release' => 'bosh-release',
           'provides' => {
             'provider' => {
               'as' => 'foo',
@@ -1583,6 +1605,7 @@ describe 'links api', type: :integration do
       let(:explicit_consumer) do
         {
           'name' => 'consumer',
+          'release' => 'bosh-release',
           'consumes' => {
             'provider' => {
               'address' => '192.168.1.254',

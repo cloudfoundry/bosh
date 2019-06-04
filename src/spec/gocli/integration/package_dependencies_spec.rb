@@ -10,7 +10,12 @@ describe 'package dependencies', type: :integration do
     manifest_hash['instance_groups'] = [
       {
         'name'          => 'transitive_deps',
-        'jobs'          => ['name' => 'transitive_deps'],
+        'jobs'          => [
+          {
+            'name' => 'transitive_deps',
+            'release' => 'bosh-release',
+          },
+        ],
         'vm_type' => 'a',
         'instances'     => 1,
         'networks'      => [{ 'name' => 'a' }],

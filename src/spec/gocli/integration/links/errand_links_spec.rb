@@ -45,7 +45,7 @@ describe 'Links in errands', type: :integration do
         manifest['instance_groups'] = [
           Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'first_ig',
-            jobs: [{ 'name' => 'provider' }],
+            jobs: [{ 'name' => 'provider', 'release' => 'bosh-release' }],
             azs: ['z1'],
             instances: 1,
           ).tap do |ig|
@@ -74,7 +74,7 @@ describe 'Links in errands', type: :integration do
           manifest['instance_groups'] = [
             Bosh::Spec::NewDeployments.simple_instance_group(
               name: 'first_ig',
-              jobs: [{ 'name' => 'provider', 'provides' => { 'provider' => { 'shared' => true } } }],
+              jobs: [{ 'name' => 'provider', 'release' => 'bosh-release', 'provides' => { 'provider' => { 'shared' => true } } }],
               azs: ['z1'],
               instances: 1,
             ).tap do |ig|
@@ -98,7 +98,7 @@ describe 'Links in errands', type: :integration do
           manifest['instance_groups'] = [
             Bosh::Spec::NewDeployments.simple_instance_group(
               name: 'consuming_ig',
-              jobs: [{ 'name' => 'consumer', 'consumes' => { 'provider' => { 'from' => 'foo' } } }],
+              jobs: [{ 'name' => 'consumer', 'release' => 'bosh-release', 'consumes' => { 'provider' => { 'from' => 'foo' } } }],
               azs: ['z1'],
               instances: 1,
             ).tap do |ig|
@@ -107,7 +107,7 @@ describe 'Links in errands', type: :integration do
             end,
             Bosh::Spec::NewDeployments.simple_instance_group(
               name: 'first_ig',
-              jobs: [{ 'name' => 'provider', 'provides' => { 'provider' => { 'as' => 'foo' } } }],
+              jobs: [{ 'name' => 'provider', 'release' => 'bosh-release', 'provides' => { 'provider' => { 'as' => 'foo' } } }],
               azs: ['z1'],
               instances: 1,
             ).tap do |ig|

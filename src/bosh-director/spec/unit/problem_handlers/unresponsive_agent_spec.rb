@@ -150,32 +150,32 @@ module Bosh::Director
         let(:spec) do
           {
             'deployment' => 'simple',
-            'job' => {'name' => 'job'},
+            'job' => { 'name' => 'job', 'release' => 'bosh-release' },
             'index' => 0,
             'vm_type' => {
               'name' => 'fake-vm-type',
-              'cloud_properties' => {'foo' => 'bar'},
+              'cloud_properties' => { 'foo' => 'bar' },
             },
             'stemcell' => {
               'name' => 'stemcell-name',
-              'version' => '3.0.2'
+              'version' => '3.0.2',
             },
             'networks' => networks,
             'template_hashes' => {},
-            'configuration_hash' => {'configuration' => 'hash'},
-            'rendered_templates_archive' => {'some' => 'template'},
-            'env' => {'key1' => 'value1'}
+            'configuration_hash' => { 'configuration' => 'hash' },
+            'rendered_templates_archive' => { 'some' => 'template' },
+            'env' => { 'key1' => 'value1' },
           }
         end
         let(:agent_spec) do
           {
             'deployment' => 'simple',
-            'job' => {'name' => 'job'},
+            'job' => { 'name' => 'job', 'release' => 'bosh-release' },
             'index' => 0,
             'networks' => networks,
             'template_hashes' => {},
-            'configuration_hash' => {'configuration' => 'hash'},
-            'rendered_templates_archive' => {'some' => 'template'}
+            'configuration_hash' => { 'configuration' => 'hash' },
+            'rendered_templates_archive' => { 'some' => 'template' },
           }
         end
         let(:fake_new_agent) { double(Bosh::Director::AgentClient) }
@@ -208,7 +208,12 @@ module Bosh::Director
 
           expect(fake_new_agent).to receive(:wait_until_ready).ordered
           expect(fake_new_agent).to receive(:update_settings).ordered
-          expect(fake_new_agent).to receive(:apply).with({'deployment' => 'simple', 'job' => {'name' => 'job'}, 'index' => 0, 'networks' => networks}).ordered
+          expect(fake_new_agent).to receive(:apply).with(
+            'deployment' => 'simple',
+            'job' => { 'name' => 'job', 'release' => 'bosh-release' },
+            'index' => 0,
+            'networks' => networks,
+          ).ordered
           expect(fake_new_agent).to receive(:get_state).and_return(agent_spec).ordered
           expect(fake_new_agent).to receive(:apply).with(agent_spec).ordered
           expect(fake_new_agent).to receive(:run_script).with('pre-start', {}).ordered
@@ -222,27 +227,27 @@ module Bosh::Director
           let(:spec) do
             {
               'deployment' => 'simple',
-              'job' => {'name' => 'job'},
+              'job' => { 'name' => 'job', 'release' => 'bosh-release' },
               'index' => 0,
               'vm_type' => {
                 'name' => 'fake-vm-type',
-                'cloud_properties' => {'foo' => 'bar'},
+                'cloud_properties' => { 'foo' => 'bar' },
               },
               'stemcell' => {
                 'name' => 'stemcell-name',
-                'version' => '3.0.2'
+                'version' => '3.0.2',
               },
               'networks' => networks,
               'template_hashes' => {},
-              'configuration_hash' => {'configuration' => 'hash'},
-              'rendered_templates_archive' => {'some' => 'template'},
-              'env' => {'key1' => 'value1'},
+              'configuration_hash' => { 'configuration' => 'hash' },
+              'rendered_templates_archive' => { 'some' => 'template' },
+              'env' => { 'key1' => 'value1' },
               'update' => {
                 'canaries' => 1,
                 'max_in_flight' => 10,
                 'canary_watch_time' => '1000-30000',
-                'update_watch_time' => '1000-30000'
-              }
+                'update_watch_time' => '1000-30000',
+              },
             }
           end
 

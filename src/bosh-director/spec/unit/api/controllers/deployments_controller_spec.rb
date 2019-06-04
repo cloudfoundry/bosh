@@ -21,12 +21,12 @@ module Bosh::Director
         manifest_hash['name'] = deployment_name
         manifest_hash['instance_groups'] << {
           'name' => 'another-errand',
-          'jobs' => [{'name' => 'errand1'}],
+          'jobs' => [{ 'name' => 'errand1', 'release' => 'bosh-release' }],
           'stemcell' => 'default',
           'lifecycle' => 'errand',
           'vm_type' => 'a',
           'instances' => 1,
-          'networks' => [{'name' => 'a'}]
+          'networks' => [{ 'name' => 'a' }],
         }
         manifest_hash
       end
@@ -1859,12 +1859,12 @@ module Bosh::Director
             let(:service_errand) do
               {
                 'name' => 'service_errand_job',
-                'jobs' => [{'name' => 'job_with_bin_run'}],
+                'jobs' => [{ 'name' => 'job_with_bin_run', 'release' => 'bosh-release' }],
                 'lifecycle' => 'service',
                 'vm_type' => 'a',
                 'stemcell' => 'default',
                 'instances' => 1,
-                'networks' => [{'name' => 'a'}]
+                'networks' => [{ 'name' => 'a' }],
               }
             end
 

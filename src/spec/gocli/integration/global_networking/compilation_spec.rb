@@ -97,7 +97,11 @@ describe 'global networking', type: :integration do
   context 'when compilation fails' do
     it 'releases its IP for next deploy' do
       upload_cloud_config
-      failing_compilation_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, job: 'fails_with_too_much_output')
+      failing_compilation_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(
+        instances: 1,
+        job: 'fails_with_too_much_output',
+        job_release: 'bosh-release',
+      )
       deploy_simple_manifest(manifest_hash: failing_compilation_manifest, failure_expected: true)
 
       compilation_vm_ips = current_sandbox.cpi.invocations_for_method('create_vm').map do |invocation|

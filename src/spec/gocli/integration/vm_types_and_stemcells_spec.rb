@@ -11,7 +11,7 @@ describe 'vm_types and stemcells', type: :integration do
       'env2' => 'env_value2',
       'bosh' => {
         'group' => 'testdirector-simple-foobar',
-        'groups' =>['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar']
+        'groups' => ['testdirector', 'simple', 'foobar', 'testdirector-simple', 'simple-foobar', 'testdirector-simple-foobar'],
       },
     }
   end
@@ -26,13 +26,13 @@ describe 'vm_types and stemcells', type: :integration do
     manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'] = [{
       'name' => 'foobar',
-      'jobs' => [{'name' => 'foobar'}],
+      'jobs' => [{ 'name' => 'foobar', 'release' => 'bosh-release' }],
       'vm_type' => 'a',
       'stemcell' => 'default',
       'instances' => 1,
       'networks' => [{ 'name' => 'a' }],
       'properties' => {},
-      'env' => env_hash
+      'env' => env_hash,
     }]
     manifest_hash
   end
@@ -49,7 +49,7 @@ describe 'vm_types and stemcells', type: :integration do
         'release_s' => 'bosh-release/0+dev.1',
         'stemcell_s' => 'ubuntu-stemcell/1',
         'team_s' => '',
-      }
+      },
     ])
   end
 
@@ -102,7 +102,7 @@ describe 'vm_types and stemcells', type: :integration do
 
       manifest_hash['instance_groups'] = [{
         'name' => 'foobar',
-        'jobs' => [{'name' => 'foobar'}],
+        'jobs' => [{ 'name' => 'foobar', 'release' => 'bosh-release' }],
         'vm_type' => 'a',
         'stemcell' => 'default',
         'instances' => 3,
@@ -124,7 +124,7 @@ describe 'vm_types and stemcells', type: :integration do
         m = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
         m['instance_groups'] = [{
           'name' => 'foobar',
-          'jobs' => [{ 'name' => 'foobar' }],
+          'jobs' => [{ 'name' => 'foobar', 'release' => 'bosh-release' }],
           'vm_type' => 'a',
           'stemcell' => 'default',
           'instances' => 1,
@@ -138,7 +138,7 @@ describe 'vm_types and stemcells', type: :integration do
         m = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
         m['instance_groups'] = [{
           'name' => 'foobar',
-          'jobs' => [{ 'name' => 'foobar' }],
+          'jobs' => [{ 'name' => 'foobar', 'release' => 'bosh-release' }],
           'vm_type' => 'a',
           'stemcell' => 'centos',
           'instances' => 1,
@@ -224,10 +224,10 @@ describe 'vm_types and stemcells', type: :integration do
   it 'recreates instance when with vm_type changes' do
     cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
 
-    vm_type1 = Bosh::Spec::Deployments.vm_type
-    vm_type2 = Bosh::Spec::Deployments.vm_type
+    vm_type1 = Bosh::Spec::NewDeployments.vm_type
+    vm_type2 = Bosh::Spec::NewDeployments.vm_type
     vm_type2['name'] = 'renamed-vm-type'
-    vm_type3 = Bosh::Spec::Deployments.vm_type
+    vm_type3 = Bosh::Spec::NewDeployments.vm_type
     vm_type3['name'] = 'changed-vm-type-cloud-properties'
     vm_type3['cloud_properties']['blarg'] = ['ful']
     cloud_config_hash['vm_types'] = [vm_type1, vm_type2, vm_type3]
@@ -235,14 +235,14 @@ describe 'vm_types and stemcells', type: :integration do
     manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
 
     manifest_hash['instance_groups'] = [{
-        'name' => 'foobar',
-        'jobs' => [{'name' => 'foobar'}],
-        'vm_type' => 'vm-type-name',
-        'stemcell' => 'default',
-        'instances' => 3,
-        'networks' => [{ 'name' => 'a' }],
-        'properties' => {},
-      }]
+      'name' => 'foobar',
+      'jobs' => [{ 'name' => 'foobar', 'release' => 'bosh-release' }],
+      'vm_type' => 'a',
+      'stemcell' => 'default',
+      'instances' => 3,
+      'networks' => [{ 'name' => 'a' }],
+      'properties' => {},
+    }]
 
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
 
@@ -318,17 +318,17 @@ describe 'vm_types and stemcells', type: :integration do
       let(:manifest_hash) do
         manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
         manifest_hash['instance_groups'] = [{
-            'name' => 'foobar',
-            'jobs' => [{'name' => 'foobar'}],
-            'vm_type' => 'vm-type-1-name',
-            'vm_extensions' => ['vm-extension-1-name', 'vm-extension-2-name'],
-            'azs' => ['a'],
-            'stemcell' => 'default',
-            'instances' => 1,
-            'networks' => [{ 'name' => 'a' }],
-            'properties' => {},
-            'env' => env_hash
-          }]
+          'name' => 'foobar',
+          'jobs' => [{ 'name' => 'foobar', 'release' => 'bosh-release' }],
+          'vm_type' => 'vm-type-1-name',
+          'vm_extensions' => ['vm-extension-1-name', 'vm-extension-2-name'],
+          'azs' => ['a'],
+          'stemcell' => 'default',
+          'instances' => 1,
+          'networks' => [{ 'name' => 'a' }],
+          'properties' => {},
+          'env' => env_hash,
+        }]
         manifest_hash
       end
 

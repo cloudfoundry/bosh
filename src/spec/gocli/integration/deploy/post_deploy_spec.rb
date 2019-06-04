@@ -15,15 +15,15 @@ describe 'post deploy scripts', type: :integration do
           'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
             name: 'job_with_post_deploy_script',
             jobs: [
-              { 'name' => 'job_1_with_post_deploy_script' },
-              { 'name' => 'job_2_with_post_deploy_script' },
+              { 'name' => 'job_1_with_post_deploy_script', 'release' => 'bosh-release' },
+              { 'name' => 'job_2_with_post_deploy_script', 'release' => 'bosh-release' },
             ],
             instances: 1,
           ), Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
             name: 'another_job_with_post_deploy_script',
             jobs: [
-              { 'name' => 'job_1_with_post_deploy_script' },
-              { 'name' => 'job_2_with_post_deploy_script' },
+              { 'name' => 'job_1_with_post_deploy_script', 'release' => 'bosh-release' },
+              { 'name' => 'job_2_with_post_deploy_script', 'release' => 'bosh-release' },
             ],
             instances: 1,
           )],
@@ -127,8 +127,8 @@ describe 'post deploy scripts', type: :integration do
           'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
             name: 'job_with_post_deploy_script',
             jobs: [
-              { 'name' => 'job_1_with_post_deploy_script' },
-              { 'name' => 'job_3_with_broken_post_deploy_script' },
+              { 'name' => 'job_1_with_post_deploy_script', 'release' => 'bosh-release' },
+              { 'name' => 'job_3_with_broken_post_deploy_script', 'release' => 'bosh-release' },
             ],
             instances: 1,
           )],
@@ -178,15 +178,15 @@ describe 'post deploy scripts', type: :integration do
           'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
             name: 'job_with_post_deploy_script',
             jobs: [
-              { 'name' => 'job_1_with_post_deploy_script' },
-              { 'name' => 'job_2_with_post_deploy_script' },
+              { 'name' => 'job_1_with_post_deploy_script', 'release' => 'bosh-release' },
+              { 'name' => 'job_2_with_post_deploy_script', 'release' => 'bosh-release' },
             ],
             instances: 1,
           ),
                                 Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
                                   name: 'job_with_errand',
                                   jobs: [
-                                    { 'name' => 'errand1' },
+                                    { 'name' => 'errand1', 'release' => 'bosh-release' },
                                   ],
                                   instances: 1,
                                   lifecycle: 'errand',
@@ -253,15 +253,15 @@ describe 'post deploy scripts', type: :integration do
         'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
           name: 'job_with_post_deploy_script',
           jobs: [
-            { 'name' => 'job_1_with_post_deploy_script' },
-            { 'name' => 'job_2_with_post_deploy_script' },
+            { 'name' => 'job_1_with_post_deploy_script', 'release' => 'bosh-release' },
+            { 'name' => 'job_2_with_post_deploy_script', 'release' => 'bosh-release' },
           ],
           instances: 1,
         ), Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
           name: 'another_job_with_post_deploy_script',
           jobs: [
-            { 'name' => 'job_1_with_post_deploy_script' },
-            { 'name' => 'job_2_with_post_deploy_script' },
+            { 'name' => 'job_1_with_post_deploy_script', 'release' => 'bosh-release' },
+            { 'name' => 'job_2_with_post_deploy_script', 'release' => 'bosh-release' },
           ],
           instances: 1,
         )],

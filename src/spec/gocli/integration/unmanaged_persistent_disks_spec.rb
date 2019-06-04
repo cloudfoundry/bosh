@@ -64,6 +64,7 @@ describe 'multiple persistent disks', type: :integration do
       'jobs' => [
         {
           'name' => 'disk_using_job',
+          'release' => 'bosh-release',
           'consumes' => {
             'slow-disk-link-name' => {'from' => 'low-iops-persistent-disk-name'},
             'fast-disk-link-name' => {'from' => 'high-iops-persistent-disk-name'},

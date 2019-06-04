@@ -62,9 +62,13 @@ describe 'using director with config server and deployments having links', type:
       jobs: [
         {
           'name' => provider_job_name,
+          'release' => 'bosh-release',
           'properties' => { 'name_space' => { 'fibonacci' => '((fibonacci_placeholder))' } },
         },
-        { 'name' => 'http_proxy_with_requires' },
+        {
+          'name' => 'http_proxy_with_requires',
+          'release' => 'bosh-release',
+        },
       ],
       instances: 1,
     )
@@ -134,6 +138,7 @@ describe 'using director with config server and deployments having links', type:
           jobs: [
             {
               'name' => 'http_proxy_with_requires',
+              'release' => 'bosh-release',
             },
           ],
           instances: 2,
@@ -147,6 +152,7 @@ describe 'using director with config server and deployments having links', type:
           jobs: [
             {
               'name' => provider_job_name,
+              'release' => 'bosh-release',
               'properties' => { 'name_space' => { 'fibonacci' => '((fibonacci_placeholder))' } },
             },
           ],
@@ -212,6 +218,7 @@ describe 'using director with config server and deployments having links', type:
           name: 'property_job',
           jobs: [{
             'name' => 'consumer',
+            'release' => 'bosh-release',
             'consumes' => {
               'provider' => {
                 'properties' => {
@@ -300,6 +307,7 @@ describe 'using director with config server and deployments having links', type:
         jobs: [
           {
             'name' => provider_job_name,
+            'release' => 'bosh-release',
             'properties' => {
               'listen_port' => 15_672,
               'name_space' => {
@@ -645,6 +653,7 @@ describe 'using director with config server and deployments having links', type:
           jobs: [
             {
               'name' => 'database',
+              'release' => 'bosh-release',
               'properties' => {
                 'foo' => '((smurfy-variable))',
                 'test' => 'whatever',
@@ -719,7 +728,7 @@ describe 'using director with config server and deployments having links', type:
       spec = Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'consumer_instance_group',
         jobs: [
-          { 'name' => 'consumer' },
+          { 'name' => 'consumer', 'release' => 'bosh-release' },
         ],
         instances: 1,
       )
@@ -733,6 +742,7 @@ describe 'using director with config server and deployments having links', type:
         jobs: [
           {
             'name' => 'provider',
+            'release' => 'bosh-release',
             'provides' => { 'provider' => { 'shared' => true } },
             'properties' => {
               'b' => '((random_password_b))',
@@ -767,6 +777,7 @@ describe 'using director with config server and deployments having links', type:
           jobs: [
             {
               'name' => 'consumer_no_instance_address',
+              'release' => 'bosh-release',
               'consumes' => {
                 'provider' => { 'from' => 'provider', 'deployment' => 'simple' },
               },
@@ -814,6 +825,7 @@ describe 'using director with config server and deployments having links', type:
           jobs: [
             {
               'name' => 'consumer_no_instance_address',
+              'release' => 'bosh-release',
               'consumes' => {
                 'provider' => { 'from' => 'provider', 'deployment' => 'simple' },
               },
@@ -831,6 +843,7 @@ describe 'using director with config server and deployments having links', type:
           jobs: [
             {
               'name' => 'provider',
+              'release' => 'bosh-release',
               'provides' => { 'provider' => { 'shared' => true } },
               'properties' => {
                 'b' => '((/random_password_b))',
@@ -896,7 +909,7 @@ describe 'using director with config server and deployments having links', type:
           spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'consumer_instance_group',
             jobs: [
-              { 'name' => 'consumer_no_instance_address' },
+              { 'name' => 'consumer_no_instance_address', 'release' => 'bosh-release' },
             ],
             instances: 1,
           )

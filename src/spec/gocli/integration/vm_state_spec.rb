@@ -69,7 +69,8 @@ describe 'vm state', type: :integration do
       second_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(
         name: 'second',
         instances: 1,
-        job: 'foobar_without_packages'
+        job: 'foobar_without_packages',
+        job_release: 'bosh-release',
       )
       # this deploy takes the newly freed IP
       deploy_simple_manifest(manifest_hash: second_manifest_hash)

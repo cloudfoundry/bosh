@@ -63,7 +63,16 @@ describe 'cli: package compilation', type: :integration do
     cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
 
     manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
-    manifest_hash['instance_groups'].first['jobs'] = [{ 'name' => 'foobar' }, { 'name' => 'goobaz' }]
+    manifest_hash['instance_groups'].first['jobs'] = [
+      {
+        'name' => 'foobar',
+        'release' => 'release_compilation_test',
+      },
+      {
+        'name' => 'goobaz',
+        'release' => 'release_compilation_test',
+      },
+    ]
     manifest_hash['instance_groups'].first['instances'] = 1
 
     manifest_hash['releases'].first['name'] = 'release_compilation_test'

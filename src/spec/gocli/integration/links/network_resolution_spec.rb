@@ -40,7 +40,7 @@ describe 'network resolution', type: :integration do
   let(:api_instance_group_spec) do
     spec = Bosh::Spec::NewDeployments.simple_instance_group(
       name: 'my_api',
-      jobs: [{ 'name' => 'api_server', 'consumes' => links }],
+      jobs: [{ 'name' => 'api_server', 'release' => 'bosh-release', 'consumes' => links }],
       instances: 1,
     )
     spec['azs'] = ['z1']
@@ -50,7 +50,7 @@ describe 'network resolution', type: :integration do
   let(:mysql_instance_group_spec) do
     spec = Bosh::Spec::NewDeployments.simple_instance_group(
       name: 'mysql',
-      jobs: [{ 'name' => 'database' }],
+      jobs: [{ 'name' => 'database', 'release' => 'bosh-release' }],
       instances: 2,
       static_ips: ['192.168.1.10', '192.168.1.11'],
     )
@@ -65,7 +65,7 @@ describe 'network resolution', type: :integration do
   let(:postgres_instance_group_spec) do
     spec = Bosh::Spec::NewDeployments.simple_instance_group(
       name: 'postgres',
-      jobs: [{ 'name' => 'backup_database' }],
+      jobs: [{ 'name' => 'backup_database', 'release' => 'bosh-release' }],
       instances: 1,
       static_ips: ['192.168.1.12'],
     )
@@ -76,7 +76,11 @@ describe 'network resolution', type: :integration do
   let(:aliased_instance_group_spec) do
     spec = Bosh::Spec::NewDeployments.simple_instance_group(
       name: 'aliased_postgres',
-      jobs: [{ 'name' => 'backup_database', 'provides' => { 'backup_db' => { 'as' => 'link_alias' } } }],
+      jobs: [
+        'name' => 'backup_database',
+        'release' => 'bosh-release',
+        'provides' => { 'backup_db' => { 'as' => 'link_alias' } },
+      ],
       instances: 1,
     )
     spec['azs'] = ['z1']
@@ -203,7 +207,7 @@ describe 'network resolution', type: :integration do
       let(:mysql_instance_group_spec) do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'mysql',
-          jobs: [{ 'name' => 'database' }],
+          jobs: [{ 'name' => 'database', 'release' => 'bosh-release' }],
           instances: 2,
           static_ips: ['192.168.1.10', '192.168.1.11'],
         )
@@ -240,7 +244,7 @@ describe 'network resolution', type: :integration do
     it 'uses the network from link when only one network is available' do
       mysql_instance_group_spec = Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'mysql',
-        jobs: [{ 'name' => 'database' }],
+        jobs: [{ 'name' => 'database', 'release' => 'bosh-release' }],
         instances: 1,
         static_ips: ['192.168.1.10'],
       )

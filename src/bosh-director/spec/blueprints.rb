@@ -208,7 +208,7 @@ module Bosh::Director::Models
   Config.blueprint(:cloud_with_manifest) do
     type { 'cloud' }
     name { 'default' }
-    content { YAML.dump(Bosh::Spec::Deployments.simple_cloud_config) }
+    content { YAML.dump(Bosh::Spec::NewDeployments.simple_cloud_config) }
   end
 
   Config.blueprint(:cloud_with_manifest_v2) do

@@ -9,8 +9,14 @@ describe 'errand jobs', type: :integration do
         Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
           name: 'job_with_post_deploy_script',
           jobs: [
-            { 'name' => 'job_1_with_post_deploy_script' },
-            { 'name' => 'job_2_with_post_deploy_script' },
+            {
+              'name' => 'job_1_with_post_deploy_script',
+              'release' => 'bosh-release',
+            },
+            {
+              'name' => 'job_2_with_post_deploy_script',
+              'release' => 'bosh-release',
+            },
           ],
           instances: 1,
         ),
@@ -43,9 +49,9 @@ describe 'errand jobs', type: :integration do
       expect(File.exist?(job_with_errand_instance.file_path('jobs/foobar/monit'))).to be_falsey
 
       new_manifest = manifest
-      new_manifest['instance_groups'][0]['jobs'] << { 'name' => 'foobar' }
-      new_manifest['instance_groups'][1]['jobs'] << { 'name' => 'foobar' }
-      new_manifest['instance_groups'][2]['jobs'] << { 'name' => 'foobar' }
+      new_manifest['instance_groups'][0]['jobs'] << { 'name' => 'foobar', 'release' => 'bosh-release' }
+      new_manifest['instance_groups'][1]['jobs'] << { 'name' => 'foobar', 'release' => 'bosh-release' }
+      new_manifest['instance_groups'][2]['jobs'] << { 'name' => 'foobar', 'release' => 'bosh-release' }
       deploy_simple_manifest(manifest_hash: new_manifest)
 
       job_with_post_deploy_script_instance = director.instance('job_with_post_deploy_script', '0')

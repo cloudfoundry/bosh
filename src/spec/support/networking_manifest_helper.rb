@@ -6,11 +6,11 @@ module Bosh::Spec
       job_opts[:static_ips] = opts[:static_ips] if opts[:static_ips]
 
       if opts[:legacy_job]
-        job_opts[:templates] = [{'name' => opts[:template]}] if opts[:template]
+        job_opts[:templates] = [{ 'name' => opts[:template] }] if opts[:template]
         manifest = opts.fetch(:manifest, Bosh::Spec::Deployments.legacy_manifest)
         manifest['jobs'] = [Bosh::Spec::Deployments.simple_job(job_opts)]
       else
-        job_opts[:jobs] = [{'name' => opts[:job]}] if opts[:job]
+        job_opts[:jobs] = [{ 'name' => opts[:job], 'release' => opts[:job_release] }] if opts[:job]
         manifest = opts.fetch(:manifest, Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups)
         manifest['instance_groups'] = [Bosh::Spec::NewDeployments.simple_instance_group(job_opts)]
       end

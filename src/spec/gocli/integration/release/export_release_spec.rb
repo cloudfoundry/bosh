@@ -10,7 +10,7 @@ describe 'export-release', type: :integration do
       bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
       bosh_runner.run("upload-release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
 
-      manifest = Bosh::Spec::NewDeployments.test_deployment_manifest_with_job('job_using_pkg_5')
+      manifest = Bosh::Spec::NewDeployments.test_deployment_manifest_with_job('job_using_pkg_5', 'bosh-release')
       manifest['stemcells'] = [{'name' => 'bosh-aws-xen-hvm-centos-7-go_agent', 'alias' => 'default', 'version' => '3001'}]
       deploy_simple_manifest(manifest_hash: manifest)
 

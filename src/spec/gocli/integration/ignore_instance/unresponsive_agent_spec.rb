@@ -23,7 +23,12 @@ describe 'unresponsive agent', type: :integration do
       manifest_hash['instance_groups'].clear
       manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
         name: 'foobar1',
-        jobs: [{ 'name' => 'job_1_with_pre_start_script' }],
+        jobs: [
+          {
+            'name' => 'job_1_with_pre_start_script',
+            'release' => 'bosh-release',
+          },
+        ],
         instances: 2,
       )
 

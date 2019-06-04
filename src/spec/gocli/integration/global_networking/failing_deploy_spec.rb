@@ -23,6 +23,7 @@ describe 'failing deploy', type: :integration do
       name: 'first',
       instances: 1,
       job: 'foobar_without_packages',
+      job_release: 'bosh-release',
     )
     deploy_from_scratch(manifest_hash: first_manifest_hash, failure_expected: true, legacy: false)
 
@@ -38,6 +39,7 @@ describe 'failing deploy', type: :integration do
       name: 'second',
       instances: 1,
       job: 'foobar_without_packages',
+      job_release: 'bosh-release',
     )
     deploy_simple_manifest(manifest_hash: second_manifest_hash)
 
@@ -55,6 +57,7 @@ describe 'failing deploy', type: :integration do
       name: 'first',
       instances: 1,
       job: 'foobar_without_packages',
+      job_release: 'bosh-release',
       static_ips: ['192.168.1.10'],
     )
     deploy_from_scratch(
@@ -75,6 +78,7 @@ describe 'failing deploy', type: :integration do
       name: 'second',
       instances: 1,
       job: 'foobar_without_packages',
+      job_release: 'bosh-release',
       static_ips: ['192.168.1.10'],
     )
     second_deploy_output = deploy_simple_manifest(manifest_hash: second_manifest_hash, failure_expected: true)
@@ -91,6 +95,7 @@ describe 'failing deploy', type: :integration do
     manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(
       instances: 1,
       job: 'foobar_without_packages',
+      job_release: 'bosh-release',
       static_ips: ['192.168.1.10'],
     )
     deploy_from_scratch(
@@ -115,6 +120,7 @@ describe 'failing deploy', type: :integration do
       name: 'second',
       instances: 1,
       job: 'foobar_without_packages',
+      job_release: 'bosh-release',
       static_ips: ['192.168.1.10'],
     )
     deploy_simple_manifest(manifest_hash: second_manifest_hash)
@@ -124,7 +130,11 @@ describe 'failing deploy', type: :integration do
   it 'releases IP when subsequent deploy does not need failing instance' do
     current_sandbox.cpi.commands.make_create_vm_always_fail
 
-    manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, job: 'foobar_without_packages')
+    manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(
+      instances: 1,
+      job: 'foobar_without_packages',
+      job_release: 'bosh-release',
+    )
     deploy_from_scratch(
       manifest_hash: manifest_hash,
       cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config,

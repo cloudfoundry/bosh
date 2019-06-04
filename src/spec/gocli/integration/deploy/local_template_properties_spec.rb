@@ -11,6 +11,7 @@ describe 'local template properties', type: :integration do
           jobs: [
             {
               'name' => 'job_1_with_many_properties',
+              'release' => 'bosh-release',
               'properties' => {
                 'smurfs' => {
                   'color' => 'red',
@@ -20,7 +21,10 @@ describe 'local template properties', type: :integration do
                 },
               },
             },
-            { 'name' => 'job_2_with_many_properties' },
+            {
+              'name' => 'job_2_with_many_properties',
+              'release' => 'bosh-release',
+            },
           ],
           instances: 1,
           properties: {
@@ -66,6 +70,7 @@ describe 'local template properties', type: :integration do
           jobs: [
             {
               'name' => 'job_1_with_many_properties',
+              'release' => 'bosh-release',
               'properties' => {
                 'smurfs' => {
                   'color' => 'reddish',
@@ -75,7 +80,10 @@ describe 'local template properties', type: :integration do
                 },
               },
             },
-            { 'name' => 'job_2_with_many_properties' },
+            {
+              'name' => 'job_2_with_many_properties',
+              'release' => 'bosh-release',
+            },
           ],
           instances: 1,
           properties: {
@@ -110,13 +118,17 @@ describe 'local template properties', type: :integration do
             jobs: [
               {
                 'name' => 'job_1_with_many_properties',
+                'release' => 'bosh-release',
                 'properties' => {
                   'smurfs' => {
                     'color' => 'red',
                   },
                 },
               },
-              { 'name' => 'job_2_with_many_properties' },
+              {
+                'name' => 'job_2_with_many_properties',
+                'release' => 'bosh-release',
+              },
             ],
             instances: 1,
             properties: {
@@ -155,6 +167,7 @@ describe 'local template properties', type: :integration do
             jobs: [
               {
                 'name' => 'job_1_with_many_properties',
+                'release' => 'bosh-release',
                 'properties' => {
                   'smurfs' => {
                     'color' => 'pink',
@@ -166,6 +179,7 @@ describe 'local template properties', type: :integration do
               },
               {
                 'name' => 'job_2_with_many_properties',
+                'release' => 'bosh-release',
                 'properties' => {
                   'smurfs' => {
                     'color' => 'brown',
@@ -214,6 +228,7 @@ describe 'local template properties', type: :integration do
             jobs: [
               {
                 'name' => 'job_1_with_many_properties',
+                'release' => 'bosh-release',
                 'properties' => {
                   'smurfs' => {
                     'color' => 'pink',
@@ -225,6 +240,7 @@ describe 'local template properties', type: :integration do
               },
               {
                 'name' => 'job_2_with_many_properties',
+                'release' => 'bosh-release',
                 'properties' => {
                   'smurfs' => {
                     'color' => 'yellow',
@@ -242,6 +258,7 @@ describe 'local template properties', type: :integration do
             jobs: [
               {
                 'name' => 'job_1_with_many_properties',
+                'release' => 'bosh-release',
                 'properties' => {
                   'smurfs' => {
                     'color' => 'navy',
@@ -251,7 +268,10 @@ describe 'local template properties', type: :integration do
                   },
                 },
               },
-              { 'name' => 'job_2_with_many_properties' },
+              {
+                'name' => 'job_2_with_many_properties',
+                'release' => 'bosh-release',
+              },
             ],
             instances: 1,
             properties: {

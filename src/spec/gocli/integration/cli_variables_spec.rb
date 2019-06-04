@@ -12,6 +12,7 @@ describe 'cli: variables', type: :integration do
         name: '((ig_placeholder))',
         jobs: [
           { 'name' => 'job_with_property_types',
+            'release' => 'bosh-release',
             'properties' => job_properties },
         ],
         instances: 1,
@@ -152,6 +153,7 @@ describe 'cli: variables', type: :integration do
             jobs: [
               {
                 'name' => 'job_with_bad_template',
+                'release' => 'bosh-release',
                 'properties' => {
                   'gargamel' => {
                     'color' => '((random_property))',
@@ -166,6 +168,7 @@ describe 'cli: variables', type: :integration do
             jobs: [
               {
                 'name' => 'job_with_bad_template',
+                'release' => 'bosh-release',
                 'properties' => {
                   'gargamel' => {
                     'color' => '((other_property))',
@@ -351,6 +354,7 @@ describe 'cli: variables', type: :integration do
               jobs: [
                 {
                   'name' => 'job_with_bad_template',
+                  'release' => 'bosh-release',
                   'properties' => {
                     'gargamel' => {
                       'color' => '((random_property))',
@@ -367,6 +371,7 @@ describe 'cli: variables', type: :integration do
               jobs: [
                 {
                   'name' => 'job_with_bad_template',
+                  'release' => 'bosh-release',
                   'properties' => {
                     'gargamel' => {
                       'color' => '((other_property))',

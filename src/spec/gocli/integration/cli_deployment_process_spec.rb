@@ -39,14 +39,12 @@ describe 'cli: deployment process', type: :integration do
         {
           'name' => 'a',
           'cloud_properties' => {
-            'my-property' => 'foo'
-          }
-        }
+            'my-property' => 'foo',
+          },
+        },
       ]
       cloud_config
     end
-
-
 
     context 'given two deployments from one release' do
       it 'is successful' do
@@ -87,14 +85,20 @@ describe 'cli: deployment process', type: :integration do
 
           old_spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'instanceGroup1',
-            jobs: [{'name' => 'foobar_without_packages'}]
+            jobs: [
+              {
+                'name' => 'foobar_without_packages',
+                'release' => 'bosh-release',
+              },
+            ],
           )
           old_spec['properties'] = {
-            'foobar' => {'foo' => "baaar\nbaz"},
+            'foobar' => { 'foo' => "baaar\nbaz" },
             'array_property' => ['value1', 'value2'],
-            'hash_array_property' => [{'a' => 'b'}, {'b' => 'c'}, {'yy' => 'z'}],
-            'name_range_hash_array_property' => [{'name' => 'old_name'}, {'range' => 'old_range'}],
-            'old_property' => 'delete_me'}
+            'hash_array_property' => [{ 'a' => 'b' }, { 'b' => 'c' }, { 'yy' => 'z' }],
+            'name_range_hash_array_property' => [{ 'name' => 'old_name' }, { 'range' => 'old_range' }],
+            'old_property' => 'delete_me',
+          }
 
           old_manifest['instance_groups'] = [old_spec]
           old_manifest
@@ -105,7 +109,12 @@ describe 'cli: deployment process', type: :integration do
 
           spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'instanceGroup1',
-            jobs: [{'name' => 'foobar_without_packages'}]
+            jobs: [
+              {
+                'name' => 'foobar_without_packages',
+                'release' => 'bosh-release',
+              },
+            ],
           )
           spec['properties'] = {
             'foobar' => {'foo' => "bar\nbaz"},

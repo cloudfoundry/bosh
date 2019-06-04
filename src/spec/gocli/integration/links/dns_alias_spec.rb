@@ -60,21 +60,24 @@ describe 'Aliasing links to DNS addresses', type: :integration do
     let(:first_provider_instance_group) do
       spec = Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'mysql',
-        jobs: [{
-          'name' => 'database',
-          'provides' => {
-            'db' => {
-              'aliases' => [
-                {
-                  'domain' => 'my-service.my-domain',
-                  'health_filter' => 'all',
-                  'initial_health_check' => 'synchronous',
-                  'placeholder_type' => 'uuid',
-                },
-              ],
+        jobs: [
+          {
+            'name' => 'database',
+            'release' => 'bosh-release',
+            'provides' => {
+              'db' => {
+                'aliases' => [
+                  {
+                    'domain' => 'my-service.my-domain',
+                    'health_filter' => 'all',
+                    'initial_health_check' => 'synchronous',
+                    'placeholder_type' => 'uuid',
+                  },
+                ],
+              },
             },
           },
-        }],
+        ],
         instances: 1,
       )
       spec['azs'] = ['z1']
@@ -85,19 +88,26 @@ describe 'Aliasing links to DNS addresses', type: :integration do
     let(:second_provider_instance_group) do
       spec = Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'yoursql',
-        jobs: [{
-          'name' => 'database',
-          'provides' => {
-            'db' => {
-              'as' => 'mydb',
-              'aliases' => second_provider_aliases,
+        jobs: [
+          {
+            'name' => 'database',
+            'release' => 'bosh-release',
+            'provides' => {
+              'db' => {
+                'as' => 'mydb',
+                'aliases' => second_provider_aliases,
+              },
             },
           },
-        }],
+        ],
         instances: 1,
       )
       spec['azs'] = ['z1']
-      spec['networks'] = [{ 'name' => 'manual-network' }]
+      spec['networks'] = [
+        {
+          'name' => 'manual-network',
+        },
+      ]
       spec
     end
 
@@ -189,6 +199,7 @@ describe 'Aliasing links to DNS addresses', type: :integration do
         jobs: [
           {
             'name' => 'database',
+            'release' => 'bosh-release',
             'custom_provider_definitions' => [
               {
                 'name' => 'my-custom-link',
@@ -210,6 +221,7 @@ describe 'Aliasing links to DNS addresses', type: :integration do
           },
           {
             'name' => 'provider',
+            'release' => 'bosh-release',
             'provides' => {
               'provider' => {
                 'aliases' => [
@@ -229,15 +241,18 @@ describe 'Aliasing links to DNS addresses', type: :integration do
     let(:second_provider_instance_group) do
       spec = Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'yoursql',
-        jobs: [{
-          'name' => 'database',
-          'provides' => {
-            'db' => {
-              'as' => 'mydb',
-              'aliases' => second_provider_aliases,
+        jobs: [
+          {
+            'name' => 'database',
+            'release' => 'bosh-release',
+            'provides' => {
+              'db' => {
+                'as' => 'mydb',
+                'aliases' => second_provider_aliases,
+              },
             },
           },
-        }],
+        ],
         instances: 1,
       )
       spec['azs'] = ['z1']

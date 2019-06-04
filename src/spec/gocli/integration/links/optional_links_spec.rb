@@ -32,7 +32,11 @@ describe 'optional links', type: :integration do
   let(:api_instance_group_with_optional_db_link) do
     spec = Bosh::Spec::NewDeployments.simple_instance_group(
       name: 'my_api',
-      jobs: [{ 'name' => 'api_server_with_optional_db_link', 'consumes' => links }],
+      jobs: [
+        'name' => 'api_server_with_optional_db_link',
+        'release' => 'bosh-release',
+        'consumes' => links,
+      ],
       instances: 1,
     )
     spec['azs'] = ['z1']
@@ -42,7 +46,11 @@ describe 'optional links', type: :integration do
   let(:api_instance_group_with_optional_links_spec_1) do
     spec = Bosh::Spec::NewDeployments.simple_instance_group(
       name: 'my_api',
-      jobs: [{ 'name' => 'api_server_with_optional_links_1', 'consumes' => links }],
+      jobs: [
+        'name' => 'api_server_with_optional_links_1',
+        'release' => 'bosh-release',
+        'consumes' => links,
+      ],
       instances: 1,
     )
     spec['azs'] = ['z1']
@@ -52,7 +60,11 @@ describe 'optional links', type: :integration do
   let(:api_instance_group_with_optional_links_spec_2) do
     spec = Bosh::Spec::NewDeployments.simple_instance_group(
       name: 'my_api',
-      jobs: [{ 'name' => 'api_server_with_optional_links_2', 'consumes' => links }],
+      jobs: [
+        'name' => 'api_server_with_optional_links_2',
+        'release' => 'bosh-release',
+        'consumes' => links,
+      ],
       instances: 1,
     )
     spec['azs'] = ['z1']
@@ -62,7 +74,10 @@ describe 'optional links', type: :integration do
   let(:mysql_instance_group_spec) do
     spec = Bosh::Spec::NewDeployments.simple_instance_group(
       name: 'mysql',
-      jobs: [{ 'name' => 'database' }],
+      jobs: [
+        'name' => 'database',
+        'release' => 'bosh-release',
+      ],
       instances: 2,
       static_ips: ['192.168.1.10', '192.168.1.11'],
     )
@@ -77,7 +92,10 @@ describe 'optional links', type: :integration do
   let(:postgres_instance_group_spec) do
     spec = Bosh::Spec::NewDeployments.simple_instance_group(
       name: 'postgres',
-      jobs: [{ 'name' => 'backup_database' }],
+      jobs: [
+        'name' => 'backup_database',
+        'release' => 'bosh-release',
+      ],
       instances: 1,
       static_ips: ['192.168.1.12'],
     )
@@ -395,7 +413,10 @@ describe 'optional links', type: :integration do
     let(:api_instance_group_with_bad_optional_links) do
       spec = Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'my_api',
-        jobs: [{ 'name' => 'api_server_with_bad_optional_links' }],
+        jobs: [
+          'name' => 'api_server_with_bad_optional_links',
+          'release' => 'bosh-release',
+        ],
         instances: 1,
       )
       spec['azs'] = ['z1']
@@ -423,7 +444,10 @@ describe 'optional links', type: :integration do
     let(:api_server_with_optional_db_links) do
       spec = Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'optional_db',
-        jobs: [{ 'name' => 'api_server_with_optional_db_link' }],
+        jobs: [
+          'name' => 'api_server_with_optional_db_link',
+          'release' => 'bosh-release',
+        ],
         instances: 1,
         static_ips: ['192.168.1.13'],
       )

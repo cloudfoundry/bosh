@@ -31,17 +31,17 @@ describe 'health_monitor: 1', type: :integration, hm: true do
     expect(resurrected_instance.vm_cid).to_not eq(original_instance.vm_cid)
   end
 
-
   it 'runs the pre-start scripts when the VM is resurrected' do
-    manifest_hash = Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge({
-                        'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
-                                       name: 'ig_with_jobs_having_prestart_scripts',
-                                       jobs: [
-                                           {'name' => 'job_1_with_pre_start_script'},
-                                           {'name' => 'job_2_with_pre_start_script'}
-                                       ],
-                                       instances: 1)]
-                    })
+    manifest_hash = Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge(
+      'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
+        name: 'ig_with_jobs_having_prestart_scripts',
+        jobs: [
+          { 'name' => 'job_1_with_pre_start_script', 'release' => 'bosh-release' },
+          { 'name' => 'job_2_with_pre_start_script', 'release' => 'bosh-release' },
+        ],
+        instances: 1,
+      )],
+    )
 
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
 

@@ -110,7 +110,7 @@ describe 'runtime config', type: :integration do
 
       manifest_hash['instance_groups'] = [Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'instance_group',
-        jobs: [{ 'name' => 'job_using_pkg_1' }],
+        jobs: [{ 'name' => 'job_using_pkg_1', 'release' => 'test_release_2' }],
         instances: 1,
         static_ips: ['192.168.1.10'],
       )]

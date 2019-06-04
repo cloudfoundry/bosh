@@ -7,7 +7,7 @@ describe 'tags', type: :integration do
     manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'] = [{
       'name' => 'foobar',
-      'jobs' => ['name' => 'id_job'],
+      'jobs' => ['name' => 'id_job', 'release' => 'bosh-release'],
       'vm_type' => 'a',
       'stemcell' => 'default',
       'instances' => 1,
@@ -15,7 +15,7 @@ describe 'tags', type: :integration do
       'properties' => {},
     }, {
       'name' => 'goobar',
-      'jobs' => ['name' => 'errand_without_package'],
+      'jobs' => ['name' => 'errand_without_package', 'release' => 'bosh-release'],
       'vm_type' => 'a',
       'stemcell' => 'default',
       'instances' => 1,

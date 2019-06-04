@@ -7,7 +7,12 @@ describe 'stop command', type: :integration do
     manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'] << {
       'name' => 'another-job',
-      'jobs' => [{'name' => 'foobar'}],
+      'jobs' => [
+        {
+          'name' => 'foobar',
+          'release' => 'bosh-release',
+        },
+      ],
       'vm_type' => 'a',
       'instances' => 1,
       'networks' => [{'name' => 'a'}],

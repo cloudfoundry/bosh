@@ -853,6 +853,7 @@ module Bosh::Spec
         'instances' => opts.fetch(:instances, 3),
         'networks' => [{ 'name' => opts.fetch(:network_name, 'a') }],
         'properties' => {},
+        'release' => opts.fetch(:job_release, 'bosh-release'),
       }
 
       job_hash['networks'].first['static_ips'] = opts[:static_ips] if opts.key?(:static_ips)

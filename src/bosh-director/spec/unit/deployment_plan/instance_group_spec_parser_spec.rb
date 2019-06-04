@@ -4,7 +4,15 @@ module Bosh::Director
   module DeploymentPlan
     describe InstanceGroupSpecParser do
       subject(:parser) { described_class.new(deployment_plan, event_log, logger) }
-
+      let(:template) do
+        Models::Template.make(name: 'job-name')
+      end
+      let(:release) do
+        Models::Release.make(name: 'fake-release').tap do |mock|
+          allow(mock).to receive(:templates).and_return [template]
+        end
+      end
+      let(:fake_releases) { { 'fake-release' => release } }
       let(:deployment_plan) do
         instance_double(
           Planner,
@@ -19,7 +27,7 @@ module Bosh::Director
           ),
           name: 'fake-deployment',
           networks: [network],
-          releases: {},
+          releases: fake_releases,
           use_tmpfs_config: nil,
         )
       end
@@ -62,19 +70,47 @@ module Bosh::Director
           allow(deployment_plan).to receive(:disk_type).and_return(disk_type)
           allow(deployment_plan).to receive(:release).and_return(job_rel_ver)
           allow(PersistentDiskCollection).to receive(:new).and_return(disk_collection)
+
+          allow(Api::ReleaseManager).to receive(:new).and_return fake_manager
         end
+
         let(:parse_options) do
           { 'is_deploy_action' => true }
         end
         let(:parsed_instance_group) { parser.parse(instance_group_spec, parse_options) }
         let(:disk_type) { instance_double(DiskType) }
-        let(:job_rel_ver) { instance_double(ReleaseVersion, template: nil) }
+        let(:fake_manager) do
+          instance_double(Api::ReleaseManager).tap do |mock|
+            allow(mock).to receive(:find_version).and_return(release)
+            allow(mock).to receive(:find_by_name).and_return(release)
+          end
+        end
+        let(:fake_job) do
+          instance_double(
+            DeploymentPlan::Job,
+            add_properties: nil,
+            name: 'job-name',
+          )
+        end
+        let(:job_rel_ver) do
+          instance_double(
+            ReleaseVersion,
+            template: { name: 'job-name' },
+            name: 'fake-release',
+            version: '1',
+            get_or_create_template: fake_job,
+          )
+        end
 
         let(:instance_group_spec) do
           {
             'name' => 'instance-group-name',
-            'jobs' => [],
-            'release' => 'fake-release-name',
+            'jobs' => [
+              {
+                'name' => 'job-name',
+                'release' => 'fake-release',
+              },
+            ],
             'vm_type' => 'fake-vm-type',
             'stemcell' => 'fake-stemcell',
             'env' => { 'key' => 'value' },
@@ -122,217 +158,25 @@ module Bosh::Director
           end
         end
 
-        describe 'release key' do
-          it 'parses release' do
-            instance_group = parsed_instance_group
-            expect(instance_group.release).to eq(job_rel_ver)
-          end
-
-          it 'complains about unknown release' do
-            instance_group_spec['release'] = 'unknown-release-name'
-            expect(deployment_plan).to receive(:release)
-              .with('unknown-release-name')
-              .and_return(nil)
-
-            expect do
-              parsed_instance_group
-            end.to raise_error(
-              InstanceGroupUnknownRelease,
-              "Instance group 'instance-group-name' references an unknown release 'unknown-release-name'",
-            )
-          end
-
-          context 'when there is no job-level release defined' do
-            before { instance_group_spec.delete('release') }
-
-            context 'when the deployment has zero releases'
-
-            context 'when the deployment has exactly one release' do
-              it "picks the deployment's release" do
-                deployment_release = instance_double(ReleaseVersion, name: '')
-                allow(deployment_plan).to receive(:releases).and_return([deployment_release])
-
-                instance_group = parsed_instance_group
-                expect(instance_group.release).to eq(deployment_release)
-              end
-            end
-
-            context 'when the deployment has more than one release' do
-              it 'does not pick a release' do
-                instance_group_spec.delete('release')
-
-                allow(deployment_plan).to receive(:releases).and_return([instance_double(ReleaseVersion, name: ''), instance_double(ReleaseVersion, name: '')])
-
-                instance_group = parsed_instance_group
-                expect(instance_group.release).to be_nil
-              end
-            end
-          end
-        end
-
         describe 'jobs key' do
-          before { instance_group_spec.delete('jobs') }
+          # before { instance_group_spec.delete('jobs') }
 
           context 'when value is an array of hashes' do
-            context 'when one of the hashes specifies a release' do
+            context 'when a job does not specify a release' do
               before do
                 instance_group_spec['jobs'] = [{
                   'name' => 'job-name',
-                  'release' => 'fake-release',
                   'consumes' => { 'a' => { 'from' => 'link_name' } },
                 }]
-                release_model_1 = Models::Release.make(name: 'fake-release-1')
-                version = Models::ReleaseVersion.make(version: '1.0.0')
-                release_model_1.add_version(version)
-
-                release_model_2 = Models::Release.make(name: 'fake-release-2')
-                fake_release_version_model = Models::ReleaseVersion.make(version: '1', release: release_model_2)
-                fake_release_version_model.add_template(Models::Template.make(
-                                                          name: 'job-name',
-                                                          release: release_model_2,
-                                                          spec: { consumes: [{ 'name' => 'a', 'type' => 'db' }] },
-                                                        ))
-
-                deployment_model = Models::Deployment.make(name: 'deployment')
-                version.add_deployment(deployment_model)
               end
 
-              let(:rel_ver) { instance_double(ReleaseVersion, name: 'fake-release-2', version: '1') }
-
-              context 'when job specifies a release' do
-                let(:job) { make_job('job-name', rel_ver) }
-
-                before do
-                  instance_group_spec['release'] = 'fake-release'
-                  allow(deployment_plan).to receive(:release)
-                    .with('fake-release')
-                    .and_return(rel_ver)
-
-                  allow(rel_ver).to receive(:get_or_create_template)
-                    .with('job-name')
-                    .and_return(job)
-                  allow(job).to receive(:add_properties)
-                end
-
-                it 'sets job template from release specified in a hash' do
-                  instance_group = parsed_instance_group
-                  expect(instance_group.jobs).to eq([job])
-                end
-              end
-
-              context 'when job does not specify a release' do
-                let(:deployment_rel_ver) { instance_double(ReleaseVersion, name: '') }
-                let(:job) { make_job('job-name', nil) }
-
-                let(:provides_job) { instance_double(Job, name: 'z') }
-                let(:provides_instance_group) { instance_double(InstanceGroup, name: 'y') }
-
-                before do
-                  instance_group_spec.delete('release')
-                  allow(deployment_plan).to receive(:releases).and_return([deployment_rel_ver])
-                  allow(deployment_plan).to receive(:release)
-                    .with('fake-release')
-                    .and_return(rel_ver)
-
-                  allow(provides_instance_group).to receive(:jobs).and_return([provides_job])
-                  allow(deployment_plan).to receive(:instance_groups).and_return([provides_instance_group])
-
-                  allow(rel_ver).to receive(:get_or_create_template)
-                    .with('job-name')
-                    .and_return(job)
-                  allow(job).to receive(:add_properties)
-                end
-
-                it 'sets job template from release specified in a hash' do
-                  instance_group = parsed_instance_group
-                  expect(instance_group.jobs).to eq([job])
-                end
-              end
-            end
-
-            context 'when one of the hashes does not specify a release' do
-              let(:job_rel_ver) do
-                instance_double(
-                  ReleaseVersion,
-                  name: 'fake-template-release',
-                  version: '1',
-                  template: nil,
+              it 'should error' do
+                expect do
+                  parsed_instance_group
+                end.to raise_error(
+                  ValidationMissingField,
+                  /Required property 'release' was not specified in object/,
                 )
-              end
-
-              before do
-                instance_group_spec['jobs'] = [{ 'name' => 'job-name' }]
-                release_model = Models::Release.make(name: 'fake-template-release')
-                release_version_model = Models::ReleaseVersion.make(version: '1', release: release_model)
-                release_version_model.add_template(Models::Template.make(name: 'job-name', release: release_model))
-              end
-
-              context 'when job specifies a release' do
-                before { instance_group_spec['release'] = 'fake-job-release' }
-
-                it 'sets job template from job release' do
-                  allow(deployment_plan).to receive(:release)
-                    .with('fake-job-release')
-                    .and_return(job_rel_ver)
-
-                  job = make_job('job-name', nil)
-                  allow(job).to receive(:add_properties)
-                  expect(job_rel_ver).to receive(:get_or_create_template)
-                    .with('job-name')
-                    .and_return(job)
-
-                  instance_group = parsed_instance_group
-                  expect(instance_group.jobs).to eq([job])
-                end
-              end
-
-              context 'when job does not specify a release' do
-                before { instance_group_spec.delete('release') }
-
-                context 'when deployment has multiple releases' do
-                  before { allow(deployment_plan).to receive(:releases).and_return([deployment_rel_ver, deployment_rel_ver]) }
-                  let(:deployment_rel_ver) { instance_double(ReleaseVersion, name: '') }
-
-                  it 'raises an error because there is not default release specified' do
-                    expect do
-                      parsed_instance_group
-                    end.to raise_error(
-                      InstanceGroupMissingRelease,
-                      "Cannot tell what release template 'job-name' (instance group 'instance-group-name') is supposed to use, please explicitly specify one",
-                    )
-                  end
-                end
-
-                context 'when deployment has a single release' do
-                  let(:deployment_rel_ver) { instance_double(ReleaseVersion, name: 'fake-template-release', version: '1') }
-                  let(:job) { make_job('job-name', nil) }
-                  before do
-                    allow(deployment_plan).to receive(:releases).and_return([deployment_rel_ver])
-                    allow(job).to receive(:add_properties)
-                  end
-
-                  it 'sets job template from deployment release because first release assumed as default' do
-                    expect(deployment_rel_ver).to receive(:get_or_create_template)
-                      .with('job-name')
-                      .and_return(job)
-
-                    instance_group = parsed_instance_group
-                    expect(instance_group.jobs).to eq([job])
-                  end
-                end
-
-                context 'when deployment has 0 releases' do
-                  before { allow(deployment_plan).to receive(:releases).and_return([]) }
-
-                  it 'raises an error because there is not default release specified' do
-                    expect do
-                      parsed_instance_group
-                    end.to raise_error(
-                      InstanceGroupMissingRelease,
-                      "Cannot tell what release template 'job-name' (instance group 'instance-group-name') is supposed to use, please explicitly specify one",
-                    )
-                  end
-                end
               end
             end
 
@@ -362,32 +206,8 @@ module Bosh::Director
 
             context 'when multiple hashes have the same name' do
               before do
-                instance_group_spec['jobs'] = [
-                  { 'name' => 'job-name1' },
-                  { 'name' => 'job-name2' },
-                  { 'name' => 'job-name1' },
-                ]
-              end
+                instance_group_spec['jobs'] << { 'name' => 'job-name', 'release' => 'fake-release' }
 
-              before do # resolve release and template objs
-                instance_group_spec['release'] = 'fake-job-release'
-
-                release_model = Models::Release.make(name: 'fake-release')
-                release_version_model = Models::ReleaseVersion.make(version: '1', release: release_model)
-                release_version_model.add_template(Models::Template.make(name: 'job-name1', release: release_model))
-                release_version_model.add_template(Models::Template.make(name: 'job-name2', release: release_model))
-                release_version_model.add_template(Models::Template.make(name: 'job-name3', release: release_model))
-
-                job_rel_ver = instance_double(ReleaseVersion, name: 'fake-release', version: '1')
-                allow(deployment_plan).to receive(:release)
-                  .with('fake-job-release')
-                  .and_return(job_rel_ver)
-
-                allow(job_rel_ver).to receive(:get_or_create_template) do |name|
-                  job = instance_double(Job, name: name)
-                  allow(job).to receive(:add_properties)
-                  job
-                end
               end
 
               it 'raises an error because job dirs on a VM will become ambiguous' do
@@ -396,53 +216,66 @@ module Bosh::Director
                   parsed_instance_group
                 end.to raise_error(
                   InstanceGroupInvalidJobs,
-                  "Colocated job 'job-name1' is already added to the instance group 'fake-instance-group-name'",
+                  "Colocated job 'job-name' is already added to the instance group 'fake-instance-group-name'",
                 )
               end
             end
 
             context 'when multiple hashes reference different releases' do
+              let(:release_model_1) { Models::Release.make(name: 'release1') }
+              let(:release_model_2) { Models::Release.make(name: 'release2') }
+              let(:fake_manager) do
+                instance_double(Api::ReleaseManager).tap do |mock|
+                  allow(mock).to receive(:find_version).and_return(release_model_1, release_model_2)
+                  allow(mock).to receive(:find_by_name).and_return(release_model_1, release_model_2)
+                end
+              end
+
               before do
-                release_model_1 = Models::Release.make(name: 'release1')
                 release_version_model_1 = Models::ReleaseVersion.make(version: '1', release: release_model_1)
                 release_version_model_1.add_template(Models::Template.make(name: 'job-name1', release: release_model_1))
 
-                release_model_2 = Models::Release.make(name: 'release2')
                 release_version_model_2 = Models::ReleaseVersion.make(version: '1', release: release_model_2)
                 release_version_model_2.add_template(Models::Template.make(name: 'job-name2', release: release_model_2))
-              end
+                allow(deployment_plan).to receive(:releases).and_return(
+                  [
+                    { 'release1' => release_model_1 },
+                    { 'release2' => release_model_2 },
+                  ],
+                )
 
-              it 'uses the correct release for each job' do
                 instance_group_spec['jobs'] = [
                   { 'name' => 'job-name1', 'release' => 'release1' },
                   { 'name' => 'job-name2', 'release' => 'release2' },
                 ]
 
+              end
+
+              it 'uses the correct release for each job' do
+                instance_group_spec['name'] = 'instance-group-name'
+
                 rel_ver1 = instance_double(ReleaseVersion, name: 'release1', version: '1')
+                job1 = make_job('job1', rel_ver1)
+                allow(job1).to receive(:add_properties)
                 allow(deployment_plan).to receive(:release)
                   .with('release1')
                   .and_return(rel_ver1)
-
-                job1 = make_job('job1', rel_ver1)
-                allow(job1).to receive(:add_properties)
 
                 expect(rel_ver1).to receive(:get_or_create_template)
                   .with('job-name1')
                   .and_return(job1)
 
                 rel_ver2 = instance_double(ReleaseVersion, name: 'release2', version: '1')
+                job2 = make_job('job2', rel_ver2)
+                allow(job2).to receive(:add_properties)
                 allow(deployment_plan).to receive(:release)
                   .with('release2')
                   .and_return(rel_ver2)
-
-                job2 = make_job('job2', rel_ver2)
-                allow(job2).to receive(:add_properties)
 
                 expect(rel_ver2).to receive(:get_or_create_template)
                   .with('job-name2')
                   .and_return(job2)
 
-                instance_group_spec['name'] = 'instance-group-name'
                 parsed_instance_group
               end
             end
@@ -491,11 +324,11 @@ module Bosh::Director
                         'life' => 'life_value',
                       },
                     },
+                    'release' => 'fake-release',
                   },
                 ]
-                instance_group_spec['release'] = 'fake-release'
 
-                release_model = Models::Release.make(name: 'fake-release')
+                release_model = Models::Release.make(name: 'fake-release1')
                 release_version_model = Models::ReleaseVersion.make(version: '1', release: release_model)
                 release_version_model.add_template(Models::Template.make(name: 'job-name', release: release_model))
               end
@@ -539,11 +372,11 @@ module Bosh::Director
                 instance_group_spec['jobs'] = [
                   {
                     'name' => 'job-name',
+                    'release' => 'fake-job-release',
                   },
                 ]
 
                 instance_group_spec['properties'] = props
-                instance_group_spec['release'] = 'fake-job-release'
 
                 release_model = Models::Release.make(name: 'fake-release-version')
                 release_version_model = Models::ReleaseVersion.make(version: '1', release: release_model)
@@ -602,13 +435,7 @@ module Bosh::Director
                   instance_group_spec['properties'] = props
                   instance_group_spec['property_mappings'] = { 'db' => 'ccdb', 'mem' => 'dea.max_memory' }
 
-                  instance_group_spec['release'] = 'fake-job-release'
-
-                  allow(deployment_plan).to receive(:release)
-                    .with('fake-job-release')
-                    .and_return(job_rel_ver)
-
-                  job = make_job('job-name', nil)
+                  job = make_job('job-name', 'fake-job-release')
                   allow(job_rel_ver).to receive(:get_or_create_template)
                     .with('job-name')
                     .and_return(job)
@@ -631,13 +458,15 @@ module Bosh::Director
                     'release' => 'fake-release',
                   },
                 ]
-                release_model = Models::Release.make(name: 'fake-release')
+                release_model = Models::Release.make(name: 'fake-release-2')
                 version = Models::ReleaseVersion.make(version: '1', release: release_model)
-                version.add_template(Models::Template.make(
-                                       name: 'job-name',
-                                       release: release_model,
-                                       spec: {},
-                                     ))
+                version.add_template(
+                  Models::Template.make(
+                    name: 'job-name',
+                    release: release_model,
+                    spec: {},
+                  ),
+                )
                 release_model.add_version(version)
 
                 deployment_model = Models::Deployment.make(name: 'deployment')
@@ -716,7 +545,8 @@ module Bosh::Director
             it 'raises a deprecation error' do
               expect { parsed_instance_group }.to raise_error(
                 V1DeprecatedTemplate,
-                "Instance group 'instance-group-name' specifies template or templates. This is no longer supported, please use jobs instead",
+                "Instance group 'instance-group-name' specifies template or templates. This is no longer supported, "\
+                'please use jobs instead',
               )
             end
           end
@@ -845,8 +675,10 @@ module Bosh::Director
               instance_group_spec['persistent_disks'] = [{ 'name' => '', 'type' => 'disk-type-small' }]
               expect do
                 parsed_instance_group
-              end.to raise_error InstanceGroupInvalidPersistentDisk,
-                                 "Instance group 'instance-group-name' persistent_disks's section contains a disk with no name"
+              end.to raise_error(
+                InstanceGroupInvalidPersistentDisk,
+                "Instance group 'instance-group-name' persistent_disks's section contains a disk with no name",
+              )
             end
 
             it 'complains about two disks with the same name' do
@@ -857,8 +689,10 @@ module Bosh::Director
 
               expect do
                 parsed_instance_group
-              end.to raise_error InstanceGroupInvalidPersistentDisk,
-                                 "Instance group 'instance-group-name' persistent_disks's section contains duplicate names"
+              end.to raise_error(
+                InstanceGroupInvalidPersistentDisk,
+                "Instance group 'instance-group-name' persistent_disks's section contains duplicate names",
+              )
             end
 
             it 'complains about unknown disk type' do
@@ -1155,7 +989,8 @@ module Bosh::Director
                 parsed_instance_group
               end.to raise_error(
                 InstanceGroupNetworkInstanceIpMismatch,
-                "Instance group 'instance-group-name' has 4 instances but was allocated 3 static IPs in network 'fake-network-name'",
+                "Instance group 'instance-group-name' has 4 instances but was allocated 3 static IPs "\
+                "in network 'fake-network-name'",
               )
             end
           end
@@ -1167,7 +1002,8 @@ module Bosh::Director
                 parsed_instance_group
               end.to raise_error(
                 InstanceGroupNetworkInstanceIpMismatch,
-                "Instance group 'instance-group-name' has 2 instances but was allocated 3 static IPs in network 'fake-network-name'",
+                "Instance group 'instance-group-name' has 2 instances but was allocated 3 static IPs in "\
+                "network 'fake-network-name'",
               )
             end
           end
@@ -1192,8 +1028,8 @@ module Bosh::Director
               end.to raise_error(
                 JobNetworkMultipleDefaults,
                 "Instance group 'instance-group-name' specified more than one network to contain default. " \
-                  "'dns' has default networks: 'fake-network-name', 'duped-network'. " \
-                  "'gateway' has default networks: 'fake-network-name', 'duped-network'.",
+                "'dns' has default networks: 'fake-network-name', 'duped-network'. " \
+                "'gateway' has default networks: 'fake-network-name', 'duped-network'.",
               )
             end
           end
@@ -1255,7 +1091,8 @@ module Bosh::Director
               expect do
                 parsed_instance_group
               end.to raise_error(
-                JobInvalidAvailabilityZone, "Instance group 'instance-group-name' has invalid availability zone '3', string expected"
+                JobInvalidAvailabilityZone,
+                "Instance group 'instance-group-name' has invalid availability zone '3', string expected",
               )
             end
 
@@ -1268,7 +1105,8 @@ module Bosh::Director
               expect do
                 parsed_instance_group
               end.to raise_error(
-                JobUnknownAvailabilityZone, "Instance group 'instance-group-name' references unknown availability zone 'nonexistent_zone'"
+                JobUnknownAvailabilityZone, "Instance group 'instance-group-name' references unknown "\
+                "availability zone 'nonexistent_zone'"
               )
             end
 
@@ -1279,7 +1117,8 @@ module Bosh::Director
                 parsed_instance_group
               end.to raise_error(
                 JobNetworkMissingRequiredAvailabilityZone,
-                "Instance group 'instance-group-name' must specify availability zone that matches availability zones of network 'fake-network-name'",
+                "Instance group 'instance-group-name' must specify availability zone that matches availability "\
+                "zones of network 'fake-network-name'",
               )
             end
 
@@ -1377,7 +1216,7 @@ module Bosh::Director
                 end.to raise_error(
                   DeploymentInvalidMigratedFromJob,
                   "Instance group 'job-1' specified for migration to instance group 'instance-group-name' refers to availability zone 'unknown_az'. " \
-                    "Az 'unknown_az' is not in the list of availability zones of instance group 'instance-group-name'.",
+                  "Az 'unknown_az' is not in the list of availability zones of instance group 'instance-group-name'.",
                 )
               end
             end

@@ -10,7 +10,7 @@ describe 'local DNS', type: :integration do
   before do
     cloud_config['networks'][0]['name'] = network_name
     cloud_config['compilation']['network'] = network_name
-    upload_cloud_config({cloud_config_hash: cloud_config})
+    upload_cloud_config(cloud_config_hash: cloud_config)
     upload_stemcell
     create_and_upload_test_release(force: true)
   end
@@ -30,7 +30,12 @@ describe 'local DNS', type: :integration do
 
   it 'sends records for vms that have not yet been created' do
     initial_manifest = initial_manifest(2, 1)
-    initial_manifest['instance_groups'][0]['jobs'] = ['name' => 'local_dns_records_json']
+    initial_manifest['instance_groups'][0]['jobs'] = [
+      {
+        'name' => 'local_dns_records_json',
+        'release' => 'bosh-release',
+      },
+    ]
     deploy_simple_manifest(manifest_hash: initial_manifest)
 
     instance = director.instance('job_to_test_local_dns', '0', deployment_name: deployment_name)
@@ -343,9 +348,10 @@ describe 'local DNS', type: :integration do
         Bosh::Spec::NewDeployments.simple_instance_group(
           name: instance_group_name,
           instances: number_of_instances,
-          azs: ['z1', 'z2']
-        )
-      ]
+          azs: %w[z1 z2],
+          job_release: 'bosh-release',
+        ),
+      ],
     )
     manifest_deployment['name'] = deployment_name
     manifest_deployment['instance_groups'][0]['networks'][0]['name'] = network_name

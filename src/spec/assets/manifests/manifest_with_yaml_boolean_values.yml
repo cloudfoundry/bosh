@@ -2,6 +2,7 @@ instance_groups:
 - instances: 1
   jobs:
   - name: foobar
+    release: bosh-release
   name: foobar
   networks:
   - name: a

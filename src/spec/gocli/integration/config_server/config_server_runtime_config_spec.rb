@@ -5,17 +5,18 @@ describe 'using director with config server', type: :integration do
 
   let(:manifest_hash) do
     Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge(
-      {
-        'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
-          name: 'our_instance_group',
-          jobs: [
-            {'name' => 'job_1_with_many_properties',
-             'properties' => job_properties
-            }
-          ],
-          instances: 1
-        )]
-      })
+      'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
+        name: 'our_instance_group',
+        jobs: [
+          {
+            'name' => 'job_1_with_many_properties',
+            'release' => 'bosh-release',
+            'properties' => job_properties,
+          },
+        ],
+        instances: 1,
+      )],
+    )
   end
   let(:client_env) do
     { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => current_sandbox.certificate_path.to_s }

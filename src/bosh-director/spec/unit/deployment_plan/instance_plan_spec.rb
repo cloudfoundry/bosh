@@ -137,7 +137,7 @@ module Bosh::Director::DeploymentPlan
       instance_group
     end
 
-    let(:network_spec) { Bosh::Spec::Deployments.simple_cloud_config['networks'].first }
+    let(:network_spec) { Bosh::Spec::NewDeployments.simple_cloud_config['networks'].first }
     let(:cloud_config_manifest) { Bosh::Spec::NewDeployments.simple_cloud_config }
     let(:deployment_manifest) { Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups }
     let(:deployment_model) do
@@ -1559,11 +1559,21 @@ module Bosh::Director::DeploymentPlan
           let(:job2_template) { Bosh::Director::Models::Template.make(name: 'job2') }
 
           let(:deployment_manifest) do
-            Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(jobs: [{ 'name' => 'job1' }, { 'name' => 'job2' }])
+            Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(
+              jobs: [
+                { 'name' => 'job1', 'release' => 'bosh-release' },
+                { 'name' => 'job2', 'release' => 'bosh-release' },
+              ],
+            )
           end
 
           let(:instance_group_spec) do
-            Bosh::Spec::NewDeployments.simple_instance_group(jobs: [{ 'name' => 'job1' }, { 'name' => 'job2' }])
+            Bosh::Spec::NewDeployments.simple_instance_group(
+              jobs: [
+                { 'name' => 'job1', 'release' => 'bosh-release' },
+                { 'name' => 'job2', 'release' => 'bosh-release' },
+              ],
+            )
           end
 
           let(:desired_deployment_plan_jobs) do

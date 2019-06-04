@@ -32,7 +32,7 @@ describe 'exporting release with templates that have links', type: :integration 
   let(:mongo_db_spec) do
     spec = Bosh::Spec::NewDeployments.simple_instance_group(
       name: 'mongo',
-      jobs: [{ 'name' => 'mongo_db' }],
+      jobs: [{ 'name' => 'mongo_db', 'release' => 'bosh-release' }],
       instances: 1,
       static_ips: ['192.168.1.13'],
     )

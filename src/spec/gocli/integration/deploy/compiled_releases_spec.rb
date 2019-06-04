@@ -99,7 +99,7 @@ describe 'compiled releases', type: :integration do
 
       context 'and they contain identical packages' do
         let(:manifest) do
-          manifest = Bosh::Spec::NewDeployments.test_deployment_manifest_with_job('job_using_pkg_5')
+          manifest = Bosh::Spec::NewDeployments.test_deployment_manifest_with_job('job_using_pkg_5', 'test_release')
           manifest['stemcells'].first.delete('os')
           manifest['stemcells'].first['name'] = 'bosh-aws-xen-hvm-centos-7-go_agent'
           manifest['stemcells'].first['version'] = '3001'
@@ -121,7 +121,7 @@ describe 'compiled releases', type: :integration do
 
       context 'and they contain one different package' do
         let(:manifest) do
-          manifest = Bosh::Spec::NewDeployments.test_deployment_manifest_with_job('job_using_pkg_5')
+          manifest = Bosh::Spec::NewDeployments.test_deployment_manifest_with_job('job_using_pkg_5', 'test_release')
           manifest['stemcells'].first.delete('os')
           manifest['stemcells'].first['name'] = 'bosh-aws-xen-hvm-centos-7-go_agent'
           manifest['stemcells'].first['version'] = '3001'
@@ -154,7 +154,7 @@ describe 'compiled releases', type: :integration do
 
         it 'fails with an error message saying there is no way to compile for that stemcell' do
           out = deploy(
-            manifest_hash: Bosh::Spec::NewDeployments.test_deployment_manifest_with_job('job_using_pkg_5'),
+            manifest_hash: Bosh::Spec::NewDeployments.test_deployment_manifest_with_job('job_using_pkg_5', 'test_release'),
             failure_expected: true,
           )
           expect(out).to include('Error:')
@@ -211,6 +211,7 @@ describe 'compiled releases', type: :integration do
             'jobs' => [
               {
                 'name' => 'job_with_many_packages',
+                'release' => 'bosh-release',
               },
             ],
             'vm_type' => 'a',

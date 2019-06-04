@@ -10,6 +10,7 @@ describe 'using director with config server and the certs are not trusted', type
           name: 'our_instance_group',
           jobs: [
             {'name' => 'job_1_with_many_properties',
+             'release' => 'bosh-release',
              'properties' => {
                'gargamel' => {
                  'color' => '((my_placeholder))'

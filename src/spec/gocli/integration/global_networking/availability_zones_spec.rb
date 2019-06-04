@@ -127,8 +127,8 @@ describe 'availability zones', type: :integration do
           'dns' => ['192.168.2.1', '192.168.2.2'],
           'reserved' => [],
           'cloud_properties' => {},
-          'az' => 'my-az2'
-        }
+          'az' => 'my-az2',
+        },
       ]
 
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
@@ -142,39 +142,44 @@ describe 'availability zones', type: :integration do
     it 'places the job instance in the correct subnet in dynamic network based on the availability zone' do
       simple_manifest['instance_groups'].first['instances'] = 2
       simple_manifest['instance_groups'].first['azs'] = ['my-az', 'my-az2']
-      simple_manifest['instance_groups'].first['jobs'] =[{'name' => 'foobar_without_packages'}]
+      simple_manifest['instance_groups'].first['jobs'] = [
+        {
+          'name' => 'foobar_without_packages',
+          'release' => 'bosh-release',
+        },
+      ]
 
       cloud_config_hash['azs'] = [
         {
           'name' => 'my-az',
-          'cloud_properties' => {'az_name' => 'my-az'}
+          'cloud_properties' => { 'az_name' => 'my-az' },
         },
         {
           'name' => 'my-az2',
-          'cloud_properties' => {'az_name' => 'my-az2'}
-        }
+          'cloud_properties' => { 'az_name' => 'my-az2' },
+        },
       ]
 
       cloud_config_hash['networks'].first['type'] = 'dynamic'
       cloud_config_hash['networks'].first['subnets'] = [
         {
           'dns' => ['192.168.1.1'],
-          'cloud_properties' => {'first-subnet-key' => 'first-subnet-value'},
-          'az' => 'my-az'
+          'cloud_properties' => { 'first-subnet-key' => 'first-subnet-value' },
+          'az' => 'my-az',
         },
         {
           'dns' => ['192.168.2.1'],
-          'cloud_properties' => {'second-subnet-key' => 'second-subnet-value'},
-          'az' => 'my-az2'
-        }
+          'cloud_properties' => { 'second-subnet-key' => 'second-subnet-value' },
+          'az' => 'my-az2',
+        },
       ]
 
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
-      current_sandbox.cpi.commands.set_dynamic_ips_for_azs({
+      current_sandbox.cpi.commands.set_dynamic_ips_for_azs(
         'my-az' => '192.168.1.1',
-        'my-az2' => '192.168.2.1'
-      })
+        'my-az2' => '192.168.2.1',
+      )
       deploy_simple_manifest(manifest_hash: simple_manifest)
 
       network_cloud_properties = current_sandbox.cpi.invocations_for_method('create_vm').map do |invocation|
@@ -182,8 +187,8 @@ describe 'availability zones', type: :integration do
       end
 
       expect(network_cloud_properties).to contain_exactly(
-        {'first-subnet-key' => 'first-subnet-value'},
-        {'second-subnet-key' => 'second-subnet-value'}
+        { 'first-subnet-key' => 'first-subnet-value' },
+        { 'second-subnet-key' => 'second-subnet-value' },
       )
 
       expect(director.instances.count).to eq(2)
@@ -200,14 +205,14 @@ describe 'availability zones', type: :integration do
           {
             'name' => 'my-az',
             'cloud_properties' => {
-              'availability_zone' => 'my-az'
-            }
+              'availability_zone' => 'my-az',
+            },
           },
           {
             'name' => 'my-az2',
             'cloud_properties' => {
               'availability_zone' => 'my-az2',
-            }
+            },
           },
         ]
 
@@ -219,7 +224,7 @@ describe 'availability zones', type: :integration do
             'static' => ['192.168.1.51', '192.168.1.52'],
             'reserved' => [],
             'cloud_properties' => {},
-            'az' => 'my-az'
+            'az' => 'my-az',
           },
           {
             'range' => '192.168.2.0/24',
@@ -227,8 +232,8 @@ describe 'availability zones', type: :integration do
             'dns' => ['8.8.8.8'],
             'reserved' => [],
             'cloud_properties' => {},
-            'az' => 'my-az2'
-          }
+            'az' => 'my-az2',
+          },
         ]
       end
 
@@ -551,7 +556,11 @@ describe 'availability zones', type: :integration do
         ]
         upload_cloud_config(cloud_config_hash: cloud_hash)
 
-        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, job: 'foobar_without_packages')
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(
+          instances: 1,
+          job: 'foobar_without_packages',
+          job_release: 'bosh-release',
+        )
         manifest['instance_groups'].first['azs'] = ['my-az']
 
         deploy_simple_manifest(manifest_hash: manifest)
@@ -613,7 +622,11 @@ describe 'availability zones', type: :integration do
         ]
         upload_cloud_config(cloud_config_hash: cloud_hash)
 
-        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, job: 'foobar_without_packages')
+        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(
+          instances: 1,
+          job: 'foobar_without_packages',
+          job_release: 'bosh-release',
+        )
         manifest['instance_groups'].first['azs'] = ['my-az']
 
         deploy_simple_manifest(manifest_hash: manifest)

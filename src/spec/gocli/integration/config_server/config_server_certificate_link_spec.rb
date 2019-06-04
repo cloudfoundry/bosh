@@ -103,6 +103,7 @@ describe 'using director with config server and deployments having links', type:
   let(:provider_job) do
     {
       'name' => 'provider',
+      'release' => 'bosh-release',
       'provides' => {
         'my_endpoint' => {
           'as' => 'http_endpoint',

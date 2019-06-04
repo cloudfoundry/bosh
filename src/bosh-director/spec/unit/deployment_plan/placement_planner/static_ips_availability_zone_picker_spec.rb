@@ -99,7 +99,7 @@ module Bosh::Director::DeploymentPlan
         'instance_groups' => [
           {
             'name' => 'fake-job',
-            'jobs' => [{ 'name' => 'foobar' }],
+            'jobs' => [{ 'name' => 'foobar', 'release' => 'bosh-release' }],
             'vm_type' => 'tiny',
             'stemcell' => 'default',
             'instances' => desired_instance_count,

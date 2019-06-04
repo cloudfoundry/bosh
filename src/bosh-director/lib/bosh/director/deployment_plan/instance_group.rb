@@ -27,9 +27,6 @@ module Bosh::Director
 
       attr_accessor :persistent_disk_collection
 
-      # @return [DeploymentPlan::ReleaseVersion] Release this instance group belongs to
-      attr_accessor :release
-
       # @return [DeploymentPlan::Stemcell]
       attr_accessor :stemcell
 
@@ -93,7 +90,6 @@ module Bosh::Director
       def initialize(logger)
         @logger = logger
 
-        @release = nil
         @jobs = []
         @properties = nil # Actual instance group properties
 

@@ -3,6 +3,19 @@ require_relative '../spec_helper'
 describe 'start job', type: :integration do
   with_reset_sandbox_before_each
 
+  let(:manifest_hash) { Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups }
+
+  before do
+    manifest_hash['instance_groups'] << {
+      'name' => 'another-job',
+      'jobs' => [{ 'name' => 'foobar', 'release' => 'bosh-release' }],
+      'vm_type' => 'a',
+      'instances' => 1,
+      'networks' => [{ 'name' => 'a' }],
+      'stemcell' => 'default',
+    }
+  end
+
   it 'starts a job instance only' do
     deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups)
 
@@ -27,16 +40,6 @@ describe 'start job', type: :integration do
   end
 
   it 'starts vms for a given job / the whole deployment' do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
-    manifest_hash['instance_groups']<< {
-      'name' => 'another-job',
-      'jobs' => [{'name'=> 'foobar'}],
-      'vm_type' => 'a',
-      'instances' => 1,
-      'networks' => [{'name' => 'a'}],
-      'stemcell' => 'default',
-    }
-
     manifest_hash['instance_groups'].first['instances'] = 2
     deploy_from_scratch(manifest_hash: manifest_hash)
     bosh_runner.run('stop', deployment_name: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME)
@@ -59,16 +62,6 @@ describe 'start job', type: :integration do
   end
 
   it 'respects --canaries' do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
-    manifest_hash['instance_groups']<< {
-      'name' => 'another-job',
-      'jobs' => [{'name' => 'foobar'}],
-      'vm_type' => 'a',
-      'instances' => 1,
-      'networks' => [{'name' => 'a'}],
-      'stemcell' => 'default',
-    }
-
     manifest_hash['update']['canaries'] = 0
     manifest_hash['instance_groups'].first['instances']= 5
     deploy_from_scratch(manifest_hash: manifest_hash)
@@ -97,16 +90,6 @@ describe 'start job', type: :integration do
   end
 
   it 'respects --max-in-flight' do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
-    manifest_hash['instance_groups']<< {
-      'name' => 'another-job',
-      'jobs' => [{'name' => 'foobar'}],
-      'vm_type' => 'a',
-      'instances' => 1,
-      'networks' => [{'name' => 'a'}],
-      'stemcell' => 'default',
-    }
-
     manifest_hash['update']['max_in_flight'] = 20
     manifest_hash['update']['canaries'] = 0
     manifest_hash['instance_groups'].first['instances']= 10

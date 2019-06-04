@@ -431,6 +431,7 @@ describe 'deploy with create-swap-delete', type: :integration do
         jobs: [
           {
             'name' => 'api_server',
+            'release' => 'bosh-release',
             'consumes' => {
               'db' => {
                 'from' => 'mysql_link',
@@ -446,6 +447,7 @@ describe 'deploy with create-swap-delete', type: :integration do
         jobs: [
           {
             'name' => 'database',
+            'release' => 'bosh-release',
             'provides' => {
               'db' => {
                 'as' => 'mysql_link',
