@@ -79,7 +79,6 @@ module Bosh
 
         it 'raises a deprecation error when resource_pools is present as a manifest key' do
           manifest_hash['resource_pools'] = ['foo']
-          puts manifest_hash.inspect
           expect do
             manifest_validator.validate(manifest_hash)
           end.to raise_error(
