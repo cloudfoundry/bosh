@@ -272,6 +272,22 @@ describe 'cli: variables', type: :integration do
         expect(variables.map { |obj| obj['name'] }.uniq.length).to eq(2)
       end
     end
+
+    it 'returns deployments for variables' do
+      config_server_helper.put_value(prepend_namespace('random_property'), 'random_prop_now')
+      config_server_helper.put_value(prepend_namespace('other_property'), 'other_prop_now')
+
+      deploy_from_scratch(
+        manifest_hash: manifest_hash,
+        cloud_config_hash: cloud_config,
+        include_credentials: false,
+        env: client_env,
+      )
+
+      output = bosh_runner.run('curl /variables?name=random_property')
+
+      expect(output).to eq('hello there')
+    end
   end
 
   context 'when you have unused variable sets' do

@@ -254,6 +254,7 @@ require 'bosh/director/api/controllers/link_providers_controller'
 require 'bosh/director/api/controllers/link_consumers_controller'
 require 'bosh/director/api/controllers/links_controller'
 require 'bosh/director/api/controllers/link_address_controller'
+require 'bosh/director/api/controllers/variables_controller'
 require 'bosh/director/api/route_configuration'
 
 require 'bosh/director/step_executor'

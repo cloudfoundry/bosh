@@ -41,6 +41,7 @@ module Bosh
           controllers['/link_consumers'] = Bosh::Director::Api::Controllers::LinkConsumersController.new(@config)
           controllers['/link_address'] = Bosh::Director::Api::Controllers::LinkAddressController.new(@config)
           controllers['/links'] = Bosh::Director::Api::Controllers::LinksController.new(@config)
+          controllers['/variables'] = Bosh::Director::Api::Controllers::VariablesController.new(@config)
           controllers
         end
       end
