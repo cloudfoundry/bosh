@@ -1,7 +1,7 @@
 require_relative '../spec_helper'
 
 describe 'deployed variables endpoint', type: :integration do
-  with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa') # <- user
+  with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa')
 
   let(:deployment_name) { manifest_hash['name'] }
   let(:director_name) { current_sandbox.director_name }
@@ -29,19 +29,15 @@ describe 'deployed variables endpoint', type: :integration do
         'secret_recipe' => 'poutine',
       },
       'smurfs' => {
-        'happiness_level' => '((happiness_level))',
+        'happiness_level' => '((/happiness_level))',
         'phone_password' => '12345',
       },
     }
   end
 
-  def prepend_namespace(key)
-    "/#{director_name}/#{deployment_name}/#{key}"
-  end
-
-  it 'can list deployed_variables' do
-    config_server_helper.put_value(prepend_namespace('happiness_level'), 'sad')
-    config_server_helper.put_value(prepend_namespace('happiness_level'), 'elated')
+  before do
+    config_server_helper.put_value('/happiness_level', 'sad')
+    config_server_helper.put_value('/happiness_level', 'elated')
 
     deploy_from_scratch(
       manifest_hash: manifest_hash,
@@ -50,15 +46,30 @@ describe 'deployed variables endpoint', type: :integration do
       env: client_env,
     )
 
+    manifest_hash['name'] = 'simple_2'
+
+    config_server_helper.put_value('/happiness_level', 'meh')
+
+    deploy_from_scratch(
+      manifest_hash: manifest_hash,
+      cloud_config_hash: cloud_config,
+      include_credentials: false,
+      env: client_env,
+    )
+  end
+  it 'can list deployed_variables' do
     output = bosh_runner.run(
-      "curl /deployed_variables/#{CGI.escape(prepend_namespace('happiness_level'))}",
+      "curl /deployed_variables/#{CGI.escape('/happiness_level')}",
       include_credentials: false,
       env: client_env,
       json: true,
     )
     parsed_output = JSON.parse(JSON.parse(output)['Blocks'][0])
 
-    expect(parsed_output['deployments'][0]['name']).to eq(deployment_name)
+    expect(parsed_output['deployments'][0]['name']).to eq('simple')
     expect(parsed_output['deployments'][0]['version']).to eq('1')
+
+    expect(parsed_output['deployments'][1]['name']).to eq('simple_2')
+    expect(parsed_output['deployments'][1]['version']).to eq('2')
   end
 end
