@@ -2,17 +2,16 @@ require 'bosh/director/api/controllers/base_controller'
 
 module Bosh::Director
   module Api::Controllers
-    class VariablesController < BaseController
+    class DeployedVariablesController < BaseController
       register Bosh::Director::Api::Extensions::DeploymentsSecurity
+      set :protection, except: :path_traversal
 
       def initialize(config)
         super(config)
       end
 
-      # GET /variables?name=/foo/bar/baz
-      get '/', authorization: :create_deployment do
-        return status(422) unless params['name']
-
+      # GET /deployed_variables/:name
+      get '/:name', authorization: :read do
         response = {
           'deployments' => [],
         }
@@ -22,7 +21,7 @@ module Bosh::Director
         all_deployments.map do |deployment|
           next unless @permission_authorizer.is_granted?(deployment, :read, token_scopes)
 
-          variable = deployment.last_successful_variable_set.find_variable_by_name(params['name'])
+          variable = deployment.last_successful_variable_set.find_variable_by_name(params[:name])
           next unless variable
 
           deployment_using_variable = {
