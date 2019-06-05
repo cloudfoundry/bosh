@@ -145,7 +145,7 @@ describe 'global networking', type: :integration do
       manifest_hash['instance_groups'] = [Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'first-instance-group',
         instances: 1,
-        jobs: [{ 'name' => 'foobar_without_packages' }],
+        job_name: 'foobar_without_packages',
       )]
 
       upload_cloud_config(cloud_config_hash: cloud_config_hash)

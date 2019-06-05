@@ -9,7 +9,7 @@ describe 'dry run', type: :integration do
       manifest_hash['instance_groups'] = [
         {
           'name' => 'foobar',
-          'jobs' => ['name' => 'foobar_with_bad_properties'],
+          'jobs' => ['name' => 'foobar_with_bad_properties', 'release' => 'bosh-release'],
           'vm_type' => 'a',
           'instances' => 1,
           'networks' => [{

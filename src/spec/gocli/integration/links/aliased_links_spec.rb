@@ -32,7 +32,7 @@ describe 'aliased links', type: :integration do
   let(:api_instance_group_spec) do
     spec = Bosh::Spec::NewDeployments.simple_instance_group(
       name: 'my_api',
-      jobs: [{ 'name' => 'api_server', 'consumes' => links }],
+      jobs: [{ 'name' => 'api_server', 'release' => 'bosh-release', 'consumes' => links }],
       instances: 1,
     )
     spec['azs'] = ['z1']
@@ -42,7 +42,11 @@ describe 'aliased links', type: :integration do
   let(:aliased_instance_group_spec) do
     spec = Bosh::Spec::NewDeployments.simple_instance_group(
       name: 'aliased_postgres',
-      jobs: [{ 'name' => 'backup_database', 'provides' => { 'backup_db' => { 'as' => 'link_alias' } } }],
+      jobs: [
+        'name' => 'backup_database',
+        'release' => 'bosh-release',
+        'provides' => { 'backup_db' => { 'as' => 'link_alias' } },
+      ],
       instances: 1,
     )
     spec['azs'] = ['z1']
@@ -56,99 +60,102 @@ describe 'aliased links', type: :integration do
     upload_cloud_config(cloud_config_hash: cloud_config)
   end
 
-    context 'properties with aliased links' do
-      let(:db3_instance_group) do
-        spec = Bosh::Spec::NewDeployments.simple_instance_group(
-          name: 'db3',
-          jobs: [
-            {
-              'name' => 'http_server_with_provides',
-              'provides' => {
-                'http_endpoint' => { 'as' => 'http_endpoint2', 'shared' => true },
-              },
+  context 'properties with aliased links' do
+    let(:db3_instance_group) do
+      spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        name: 'db3',
+        jobs: [
+          {
+            'name' => 'http_server_with_provides',
+            'release' => 'bosh-release',
+            'provides' => {
+              'http_endpoint' => { 'as' => 'http_endpoint2', 'shared' => true },
             },
-            { 'name' => 'kv_http_server' },
-          ],
-          instances: 1,
-        )
-        spec['azs'] = ['z1']
-        spec['properties'] = {
-          'listen_port' => 8082,
-          'kv_http_server' => { 'listen_port' => 8081 },
-          'name_space' => { 'prop_a' => 'job_value', 'fibonacci' => 1 },
-        }
-        spec
-      end
-
-      let(:other2_instance_group) do
-        spec = Bosh::Spec::NewDeployments.simple_instance_group(
-          name: 'other2',
-          jobs: [
-            {
-              'name' => 'http_proxy_with_requires',
-              'properties' => { 'http_proxy_with_requires.listen_port' => 21 },
-              'consumes' => {
-                'proxied_http_endpoint' => { 'from' => 'http_endpoint2', 'shared' => true },
-                'logs_http_endpoint' => 'nil',
-              },
-            },
-            { 'name' => 'http_server_with_provides', 'properties' => { 'listen_port' => 8446 } },
-          ],
-          instances: 1,
-        )
-        spec['azs'] = ['z1']
-        spec
-      end
-
-      let(:new_instance_group) do
-        job_spec = Bosh::Spec::NewDeployments.simple_instance_group(
-          name: 'new_job',
-          jobs: [
-            {
-              'name' => 'http_proxy_with_requires',
-              'consumes' => {
-                'proxied_http_endpoint' => { 'from' => 'new_provides', 'shared' => true },
-                'logs_http_endpoint' => 'nil',
-              },
-            },
-            {
-              'name' => 'http_server_with_provides',
-              'provides' => {
-                'http_endpoint' => { 'as' => 'new_provides' },
-              },
-            },
-          ],
-          instances: 1,
-        )
-        job_spec['azs'] = ['z1']
-        job_spec
-      end
-
-      let(:manifest) do
-        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
-        manifest['instance_groups'] = [db3_instance_group, other2_instance_group, new_instance_group]
-        manifest['properties'] = { 'listen_port' => 9999 }
-        manifest
-      end
-
-      it 'is able to pick the right value for the property from global, job, template and default values' do
-        deploy_simple_manifest(manifest_hash: manifest)
-        instances = director.instances
-        link_instance = director.find_instance(instances, 'other2', '0')
-        template = YAML.safe_load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
-        expect(template['links']).to contain_exactly(
-          ['address', /^192.168.1.\d+$/],
-          ['properties', { 'listen_port' => 8082, 'name_space' => { 'prop_a' => 'job_value' }, 'fibonacci' => 1 }],
-        )
-
-        link_instance = director.find_instance(instances, 'new_job', '0')
-        template = YAML.safe_load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
-        expect(template['links']).to contain_exactly(
-          ['address', /^192.168.1.\d+$/],
-          ['properties', { 'listen_port' => 9999, 'name_space' => { 'prop_a' => 'default' } }],
-        )
-      end
+          },
+          { 'name' => 'kv_http_server' },
+        ],
+        instances: 1,
+      )
+      spec['azs'] = ['z1']
+      spec['properties'] = {
+        'listen_port' => 8082,
+        'kv_http_server' => { 'listen_port' => 8081 },
+        'name_space' => { 'prop_a' => 'job_value', 'fibonacci' => 1 },
+      }
+      spec
     end
+
+    let(:other2_instance_group) do
+      spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        name: 'other2',
+        jobs: [
+          {
+            'name' => 'http_proxy_with_requires',
+            'release' => 'bosh-release',
+            'properties' => { 'http_proxy_with_requires.listen_port' => 21 },
+            'consumes' => {
+              'proxied_http_endpoint' => { 'from' => 'http_endpoint2', 'shared' => true },
+              'logs_http_endpoint' => 'nil',
+            },
+          },
+          { 'name' => 'http_server_with_provides', 'properties' => { 'listen_port' => 8446 } },
+        ],
+        instances: 1,
+      )
+      spec['azs'] = ['z1']
+      spec
+    end
+
+    let(:new_instance_group) do
+      job_spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        name: 'new_job',
+        jobs: [
+          {
+            'name' => 'http_proxy_with_requires',
+            'release' => 'bosh-release',
+            'consumes' => {
+              'proxied_http_endpoint' => { 'from' => 'new_provides', 'shared' => true },
+              'logs_http_endpoint' => 'nil',
+            },
+          },
+          {
+            'name' => 'http_server_with_provides',
+            'provides' => {
+              'http_endpoint' => { 'as' => 'new_provides' },
+            },
+          },
+        ],
+        instances: 1,
+      )
+      job_spec['azs'] = ['z1']
+      job_spec
+    end
+
+    let(:manifest) do
+      manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+      manifest['instance_groups'] = [db3_instance_group, other2_instance_group, new_instance_group]
+      manifest['properties'] = { 'listen_port' => 9999 }
+      manifest
+    end
+
+    it 'is able to pick the right value for the property from global, job, template and default values' do
+      deploy_simple_manifest(manifest_hash: manifest)
+      instances = director.instances
+      link_instance = director.find_instance(instances, 'other2', '0')
+      template = YAML.safe_load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+      expect(template['links']).to contain_exactly(
+        ['address', /^192.168.1.\d+$/],
+        ['properties', { 'listen_port' => 8082, 'name_space' => { 'prop_a' => 'job_value' }, 'fibonacci' => 1 }],
+      )
+
+      link_instance = director.find_instance(instances, 'new_job', '0')
+      template = YAML.safe_load(link_instance.read_job_template('http_proxy_with_requires', 'config/config.yml'))
+      expect(template['links']).to contain_exactly(
+        ['address', /^192.168.1.\d+$/],
+        ['properties', { 'listen_port' => 9999, 'name_space' => { 'prop_a' => 'default' } }],
+      )
+    end
+  end
 
   context 'when provide link is aliased using "as", and the consume link references the new alias' do
     let(:manifest) do
@@ -193,6 +200,7 @@ describe 'aliased links', type: :integration do
           name: 'provider_instance_group',
           jobs: [{
             'name' => 'http_server_with_provides',
+            'release' => 'bosh-release',
             'properties' => {
               'listen_port' => 11_111,
               'name_space' => {
@@ -223,10 +231,12 @@ describe 'aliased links', type: :integration do
           jobs: [
             {
               'name' => 'http_proxy_with_requires',
+              'release' => 'bosh-release',
               'consumes' => { 'proxied_http_endpoint' => { 'from' => 'link_http_alias' } },
             },
             {
               'name' => 'tcp_proxy_with_requires',
+              'release' => 'bosh-release',
               'consumes' => { 'proxied_http_endpoint' => { 'from' => 'link_tcp_alias' } },
             },
           ],
@@ -264,6 +274,7 @@ describe 'aliased links', type: :integration do
           name: 'provider1_http_instance_group',
           jobs: [{
             'name' => 'http_server_with_provides',
+            'release' => 'bosh-release',
             'properties' => {
               'listen_port' => 11_111,
               'name_space' => {
@@ -283,6 +294,7 @@ describe 'aliased links', type: :integration do
           name: 'provider2_http_instance_group',
           jobs: [{
             'name' => 'http_server_with_provides',
+            'release' => 'bosh-release',
             'properties' => {
               'listen_port' => 1234,
               'name_space' => {
@@ -301,8 +313,16 @@ describe 'aliased links', type: :integration do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'consumer_instance_group',
           jobs: [
-            { 'name' => 'http_proxy_with_requires', 'consumes' => { 'proxied_http_endpoint' => { 'from' => 'link_http_1' } } },
-            { 'name' => 'tcp_proxy_with_requires', 'consumes' => { 'proxied_http_endpoint' => { 'from' => 'link_http_2' } } },
+            {
+              'name' => 'http_proxy_with_requires',
+              'release' => 'bosh-release',
+              'consumes' => { 'proxied_http_endpoint' => { 'from' => 'link_http_1' } },
+            },
+            {
+              'name' => 'tcp_proxy_with_requires',
+              'release' => 'bosh-release',
+              'consumes' => { 'proxied_http_endpoint' => { 'from' => 'link_http_2' } },
+            },
           ],
           instances: 1,
         )
@@ -338,6 +358,7 @@ describe 'aliased links', type: :integration do
           name: 'provider_1_db',
           jobs: [{
             'name' => 'backup_database',
+            'release' => 'bosh-release',
             'properties' => {
               'foo' => 'wow',
             },
@@ -354,6 +375,7 @@ describe 'aliased links', type: :integration do
           name: 'provider_2_db',
           jobs: [{
             'name' => 'backup_database',
+            'release' => 'bosh-release',
             'properties' => {
               'foo' => 'omg_no_keyboard',
             },
@@ -369,7 +391,11 @@ describe 'aliased links', type: :integration do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'consumer_instance_group',
           jobs: [
-            { 'name' => 'api_server', 'consumes' => { 'db' => { 'from' => 'db_1' }, 'backup_db' => { 'from' => 'db_2' } } },
+            {
+              'name' => 'api_server',
+              'release' => 'bosh-release',
+              'consumes' => { 'db' => { 'from' => 'db_1' }, 'backup_db' => { 'from' => 'db_2' } },
+            },
           ],
           instances: 1,
         )

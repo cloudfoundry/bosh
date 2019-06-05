@@ -8,7 +8,7 @@ describe 'cli: logs', type: :integration do
     manifest['instance_groups'] = [Bosh::Spec::NewDeployments.simple_instance_group(instances: 2, name: 'first-job')]
     manifest['instance_groups'] << {
       'name' => 'another-job',
-      'jobs' => [{ 'name' => 'foobar' }],
+      'jobs' => [{ 'name' => 'foobar', 'release' => 'bosh-release' }],
       'vm_type' => 'a',
       'instances' => 1,
       'networks' => [{ 'name' => 'a' }],
@@ -17,7 +17,7 @@ describe 'cli: logs', type: :integration do
 
     manifest['instance_groups'] << {
       'name' => 'fake-errand-name',
-      'jobs' => [{ 'name' => 'errand_without_package' }],
+      'jobs' => [{ 'name' => 'errand_without_package', 'release' => 'bosh-release' }],
       'vm_type' => 'a',
       'instances' => 1,
       'lifecycle' => 'errand',

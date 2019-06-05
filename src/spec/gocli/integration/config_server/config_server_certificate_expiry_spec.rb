@@ -58,9 +58,13 @@ describe 'using director with config server and deployments having variables', t
       jobs: [
         {
           'name' => provider_job_name,
+          'release' => 'bosh-release',
           'properties' => { 'name_space' => { 'fibonacci' => '((/bob))' } },
         },
-        { 'name' => 'http_proxy_with_requires' },
+        {
+          'name' => 'http_proxy_with_requires',
+          'release' => 'bosh-release',
+        },
       ],
       instances: 1,
     )
@@ -168,9 +172,10 @@ describe 'using director with config server and deployments having variables', t
           jobs: [
             {
               'name' => provider_job_name,
+              'release' => 'bosh-release',
               'properties' => { 'name_space' => { 'fibonacci' => '((/JoeService))' } },
             },
-            { 'name' => 'http_proxy_with_requires' },
+            { 'name' => 'http_proxy_with_requires', 'release' => 'bosh-release' },
           ],
           instances: 1,
         )

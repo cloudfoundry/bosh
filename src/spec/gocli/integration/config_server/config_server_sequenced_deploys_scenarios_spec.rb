@@ -9,6 +9,7 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
         name: 'our_instance_group',
         jobs: [
           { 'name' => 'job_1_with_many_properties',
+            'release' => 'bosh-release',
             'properties' => job_properties },
         ],
         instances: 1,
@@ -166,6 +167,7 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
           jobs: [
             {
               'name' => 'job_with_bad_template',
+              'release' => 'bosh-release',
               'properties' => job_properties,
             },
           ],
@@ -279,6 +281,7 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
           jobs: [
             {
               'name' => 'job_with_bad_template',
+              'release' => 'bosh-release',
               'properties' => job_properties,
             },
           ],

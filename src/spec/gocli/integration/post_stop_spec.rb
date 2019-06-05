@@ -8,8 +8,8 @@ describe 'post-stop', type: :integration do
   let(:job_2_result) { true }
   let(:jobs) do
     [
-      { 'name' => 'job-1', 'properties' => { 'succeed' => job_1_result } },
-      { 'name' => 'job-2', 'properties' => { 'succeed' => job_2_result } },
+      { 'name' => 'job-1', 'release' => 'post-stop', 'properties' => { 'succeed' => job_1_result } },
+      { 'name' => 'job-2', 'release' => 'post-stop', 'properties' => { 'succeed' => job_2_result } },
     ]
   end
   let(:manifest) do

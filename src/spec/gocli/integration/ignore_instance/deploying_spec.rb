@@ -14,9 +14,9 @@ describe 'deploying with ignored instances', type: :integration do
       manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
         name: 'foobar1',
         jobs: [
-          { 'name' => 'job_1_with_pre_start_script' },
-          { 'name' => 'job_with_post_start_script' },
-          { 'name' => 'job_1_with_post_deploy_script' },
+          { 'name' => 'job_1_with_pre_start_script', 'release' => 'bosh-release' },
+          { 'name' => 'job_with_post_start_script', 'release' => 'bosh-release' },
+          { 'name' => 'job_1_with_post_deploy_script', 'release' => 'bosh-release' },
         ],
         instances: 2,
       )
@@ -137,8 +137,8 @@ describe 'deploying with ignored instances', type: :integration do
       manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
         name: 'foobar1',
         jobs: [
-          { 'name' => 'job_1_with_pre_start_script' },
-          { 'name' => 'job_2_with_pre_start_script' },
+          { 'name' => 'job_1_with_pre_start_script', 'release' => 'bosh-release' },
+          { 'name' => 'job_2_with_pre_start_script', 'release' => 'bosh-release' },
         ],
         instances: 1,
       )
@@ -177,8 +177,8 @@ describe 'deploying with ignored instances', type: :integration do
       manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
         name: 'foobar1',
         jobs: [
-          { 'name' => 'job_1_with_pre_start_script' },
-          { 'name' => 'job_2_with_pre_start_script' },
+          { 'name' => 'job_1_with_pre_start_script', 'release' => 'bosh-release' },
+          { 'name' => 'job_2_with_pre_start_script', 'release' => 'bosh-release' },
         ],
         instances: 3,
       )

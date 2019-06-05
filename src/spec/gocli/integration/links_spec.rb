@@ -40,7 +40,7 @@ describe 'Links', type: :integration do
     let(:implied_instance_group_spec) do
       spec = Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'my_api',
-        jobs: [{ 'name' => 'api_server' }],
+        jobs: [{ 'name' => 'api_server', 'release' => 'bosh-release' }],
         instances: 1,
       )
       spec['azs'] = ['z1']
@@ -50,7 +50,7 @@ describe 'Links', type: :integration do
     let(:api_instance_group_spec) do
       spec = Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'my_api',
-        jobs: [{ 'name' => 'api_server', 'consumes' => links }],
+        jobs: [{ 'name' => 'api_server', 'release' => 'bosh-release', 'consumes' => links }],
         instances: 1,
       )
       spec['azs'] = ['z1']
@@ -60,7 +60,7 @@ describe 'Links', type: :integration do
     let(:mysql_instance_group_spec) do
       spec = Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'mysql',
-        jobs: [{ 'name' => 'database' }],
+        jobs: [{ 'name' => 'database', 'release' => 'bosh-release' }],
         instances: 2,
         static_ips: ['192.168.1.10', '192.168.1.11'],
       )
@@ -75,7 +75,7 @@ describe 'Links', type: :integration do
     let(:postgres_instance_group_spec) do
       spec = Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'postgres',
-        jobs: [{ 'name' => 'backup_database' }],
+        jobs: [{ 'name' => 'backup_database', 'release' => 'bosh-release' }],
         instances: 1,
         static_ips: ['192.168.1.12'],
       )
@@ -86,7 +86,11 @@ describe 'Links', type: :integration do
     let(:aliased_instance_group_spec) do
       spec = Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'aliased_postgres',
-        jobs: [{ 'name' => 'backup_database', 'provides' => { 'backup_db' => { 'as' => 'link_alias' } } }],
+        jobs: [
+          'name' => 'backup_database',
+          'release' => 'bosh-release',
+          'provides' => { 'backup_db' => { 'as' => 'link_alias' } },
+        ],
         instances: 1,
       )
       spec['azs'] = ['z1']
@@ -96,7 +100,7 @@ describe 'Links', type: :integration do
     let(:mongo_db_spec) do
       spec = Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'mongo',
-        jobs: [{ 'name' => 'mongo_db' }],
+        jobs: [{ 'name' => 'mongo_db', 'release' => 'bosh-release' }],
         instances: 1,
         static_ips: ['192.168.1.13'],
       )
@@ -119,8 +123,12 @@ describe 'Links', type: :integration do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'my_links',
           jobs: [
-            { 'name' => 'provider', 'properties' => { 'b' => 'value_b', 'nested' => { 'three' => 'bar' } } },
-            { 'name' => 'consumer' },
+            {
+              'name' => 'provider',
+              'release' => 'bosh-release',
+              'properties' => { 'b' => 'value_b', 'nested' => { 'three' => 'bar' } },
+            },
+            { 'name' => 'consumer', 'release' => 'bosh-release' },
           ],
           instances: 1,
         )
@@ -226,12 +234,13 @@ describe 'Links', type: :integration do
       it 'returns error when conflicting with release spec in same job' do
         custom_provider_job = {
           'name' => 'mongo_db',
+          'release' => 'bosh-release',
           'custom_provider_definitions' => [
             {
               'name' => 'read_only_db',
-              'type' => 'smurf'
-            }
-          ]
+              'type' => 'smurf',
+            },
+          ],
         }
         mongo_db_spec['jobs'] = [custom_provider_job]
         manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
@@ -244,6 +253,7 @@ describe 'Links', type: :integration do
       it 'returns error when conflicting with another custom definition' do
         custom_provider_job = {
           'name' => 'mongo_db',
+          'release' => 'bosh-release',
           'custom_provider_definitions' => [
             {
               'name' => 'gargamel',
@@ -253,7 +263,7 @@ describe 'Links', type: :integration do
               'name' => 'gargamel',
               'type' => 'person'
             }
-          ]
+          ],
         }
         mongo_db_spec['jobs'] = [custom_provider_job]
         manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
@@ -271,6 +281,7 @@ describe 'Links', type: :integration do
           jobs: [
             {
               'name' => 'provider_without_provides',
+              'release' => 'bosh-release',
               'custom_provider_definitions' => [
                 {
                   'name' => 'provider',
@@ -283,14 +294,17 @@ describe 'Links', type: :integration do
                     'nested.two',
                     'nested.three',
                   ]
-                }
+                },
               ],
-              'properties' => { 'b' => 'value_b', 'nested' => {'three' => 'bar'} },
+              'properties' => { 'b' => 'value_b', 'nested' => { 'three' => 'bar' } },
             },
-            {'name' => 'consumer'},
+            {
+              'name' => 'consumer',
+              'release' => 'bosh-release',
+            },
           ],
           instances: 1,
-          )
+        )
         spec['azs'] = ['z1']
         spec
       end
@@ -320,7 +334,7 @@ describe 'Links', type: :integration do
       let(:first_node_instance_group_spec) do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'first_node',
-          jobs: [{ 'name' => 'node', 'consumes' => first_node_links }],
+          jobs: [{ 'name' => 'node', 'release' => 'bosh-release', 'consumes' => first_node_links }],
           instances: 1,
           static_ips: ['192.168.1.10'],
         )
@@ -338,7 +352,7 @@ describe 'Links', type: :integration do
       let(:second_node_instance_group_spec) do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'second_node',
-          jobs: [{ 'name' => 'node', 'consumes' => second_node_links }],
+          jobs: [{ 'name' => 'node', 'release' => 'bosh-release', 'consumes' => second_node_links }],
           instances: 1,
           static_ips: ['192.168.1.11'],
         )
@@ -416,7 +430,7 @@ describe 'Links', type: :integration do
         let(:instance_group_with_same_type_links) do
           spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'duplicate_link_type_job',
-            jobs: [{ 'name' => 'database_with_two_provided_link_of_same_type' }],
+            jobs: [{ 'name' => 'database_with_two_provided_link_of_same_type', 'release' => 'bosh-release' }],
             instances: 1,
           )
           spec['azs'] = ['z1']
@@ -440,6 +454,7 @@ describe 'Links', type: :integration do
         let(:manual_api_server) do
           {
             'name' => 'api_server_with_optional_db_link',
+            'release' => 'bosh-release',
             'consumes' => {
               'db' => {
                 'address' => '192.168.1.254',
@@ -499,6 +514,7 @@ describe 'Links', type: :integration do
         let(:manual_api_server) do
           {
             'name' => 'api_server',
+            'release' => 'bosh-release',
             'consumes' => {
               'db' => {
                 'address' => '192.168.1.254',
@@ -539,6 +555,7 @@ describe 'Links', type: :integration do
         let(:manual_api_server) do
           {
             'name' => 'api_server_with_optional_db_link',
+            'release' => 'bosh-release',
             'consumes' => {
               'db' => {
                 'address' => '192.168.1.254',
@@ -562,6 +579,7 @@ describe 'Links', type: :integration do
         let(:manual_api_server2) do
           {
             'name' => 'api_server_with_optional_db_link',
+            'release' => 'bosh-release',
             'consumes' => {
               'db' => {
                 'address' => '192.168.1.253',
@@ -598,7 +616,11 @@ describe 'Links', type: :integration do
       let(:mysql_instance_group_spec) do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'mysql',
-          jobs: [{ 'name' => 'database', 'properties' => { 'test' => 'test value' } }],
+          jobs: [
+            'name' => 'database',
+            'release' => 'bosh-release',
+            'properties' => { 'test' => 'test value' },
+          ],
           instances: 2,
           static_ips: ['192.168.1.10', '192.168.1.11'],
         )
@@ -625,7 +647,7 @@ describe 'Links', type: :integration do
       let(:mysql_instance_group_spec) do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'mysql',
-          jobs: [{ 'name' => 'provider_fail' }],
+          jobs: [{ 'name' => 'provider_fail', 'release' => 'bosh-release' }],
           instances: 2,
           static_ips: ['192.168.1.10', '192.168.1.11'],
         )
@@ -724,7 +746,7 @@ describe 'Links', type: :integration do
     let(:mysql_instance_group_spec) do
       spec = Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'mysql',
-        jobs: [{ 'name' => 'database' }],
+        jobs: [{ 'name' => 'database', 'release' => 'bosh-release' }],
         instances: 1,
         static_ips: ['192.168.1.10'],
       )
@@ -763,7 +785,7 @@ describe 'Links', type: :integration do
     let(:bad_properties_instance_group_spec) do
       spec = Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'api_server_with_bad_link_types',
-        jobs: [{ 'name' => 'api_server_with_bad_link_types' }],
+        jobs: [{ 'name' => 'api_server_with_bad_link_types', 'release' => 'bosh-release' }],
         instances: 1,
         static_ips: ['192.168.1.10'],
       )

@@ -233,9 +233,9 @@ describe 'CPI calls', type: :integration do
             name: 'first-job',
             static_ips: ['192.168.1.10'],
             instances: 1,
-            jobs: ['name' => 'foobar_without_packages'],
-            persistent_disk_type: Bosh::Spec::NewDeployments.disk_type['name']
-          )
+            jobs: ['name' => 'foobar_without_packages', 'release' => 'bosh-release'],
+            persistent_disk_type: Bosh::Spec::NewDeployments.disk_type['name'],
+          ),
         ]
         cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
         cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.10', '192.168.1.11']
@@ -330,7 +330,7 @@ describe 'CPI calls', type: :integration do
             name: 'first-job',
             static_ips: ['192.168.1.11'],
             instances: 1,
-            jobs: ['name' => 'foobar'],
+            jobs: ['name' => 'foobar', 'release' => 'bosh-release'],
             persistent_disk_type: Bosh::Spec::NewDeployments.disk_type['name'],
           ),
         ]
@@ -487,9 +487,9 @@ describe 'CPI calls', type: :integration do
             name: 'first-job',
             static_ips: ['192.168.1.10'],
             instances: 1,
-            jobs: ['name' => 'foobar_without_packages'],
-            persistent_disk_type: Bosh::Spec::NewDeployments.disk_type['name']
-          )
+            jobs: ['name' => 'foobar_without_packages', 'release' => 'bosh-release'],
+            persistent_disk_type: Bosh::Spec::NewDeployments.disk_type['name'],
+          ),
         ]
         cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
         cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.10', '192.168.1.11']
@@ -585,7 +585,7 @@ describe 'CPI calls', type: :integration do
             name: 'first-job',
             static_ips: ['192.168.1.11'],
             instances: 1,
-            jobs: ['name' => 'foobar'],
+            jobs: ['name' => 'foobar', 'release' => 'bosh-release'],
             persistent_disk_type: Bosh::Spec::NewDeployments.disk_type['name'],
           ),
         ]

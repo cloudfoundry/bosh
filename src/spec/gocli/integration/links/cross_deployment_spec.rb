@@ -67,7 +67,14 @@ describe 'cross deployment links', type: :integration do
   let(:first_deployment_instance_group_spec) do
     spec = Bosh::Spec::NewDeployments.simple_instance_group(
       name: 'first_deployment_node',
-      jobs: [{ 'name' => 'node', 'consumes' => first_deployment_consumed_links, 'provides' => first_deployment_provided_links }],
+      jobs: [
+        {
+          'name' => 'node',
+          'release' => 'bosh-release',
+          'consumes' => first_deployment_consumed_links,
+          'provides' => first_deployment_provided_links,
+        },
+      ],
       instances: 1,
       static_ips: ['192.168.1.10'],
     )
@@ -90,7 +97,7 @@ describe 'cross deployment links', type: :integration do
   let(:second_deployment_instance_group_spec) do
     spec = Bosh::Spec::NewDeployments.simple_instance_group(
       name: 'second_deployment_node',
-      jobs: [{ 'name' => 'node', 'consumes' => second_deployment_consumed_links }],
+      jobs: [{ 'name' => 'node', 'release' => 'bosh-release', 'consumes' => second_deployment_consumed_links }],
       instances: 1,
       static_ips: ['192.168.1.11'],
     )
@@ -355,7 +362,14 @@ describe 'cross deployment links', type: :integration do
         let(:first_deployment_instance_group_spec) do
           spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'first_deployment_node',
-            jobs: [{ 'name' => 'node', 'consumes' => first_deployment_consumed_links, 'provides' => first_deployment_provided_links }],
+            jobs: [
+              {
+                'name' => 'node',
+                'release' => 'bosh-release',
+                'consumes' => first_deployment_consumed_links,
+                'provides' => first_deployment_provided_links,
+              },
+            ],
             instances: 0,
             static_ips: [],
           )

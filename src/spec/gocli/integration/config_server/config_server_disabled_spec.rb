@@ -16,6 +16,7 @@ describe 'using director with config server disabled', type: :integration do
       'instance_groups' => [{
         'name' => 'ig_1',
         'jobs' => [{
+          'release' => 'bosh-release',
           'name' => 'job_1_with_many_properties',
           'properties' => {
             'gargamel' => {

@@ -16,6 +16,7 @@ describe 'using director with config server', type: :integration do
         'name' => 'our_instance_group',
         'jobs' => [{
           'name' => 'job_1_with_many_properties',
+          'release' => 'bosh-release',
           'properties' => {
             'gargamel' => {
               'color' => 'pitch black',
@@ -267,6 +268,7 @@ describe 'using director with config server', type: :integration do
           'name' => 'our_instance_group',
           'jobs' => [{
             'name' => 'job_1_with_many_properties',
+            'release' => 'bosh-release',
             'properties' => {
               'gargamel' => {
                 'color' => 'pitch black',
@@ -545,6 +547,7 @@ describe 'using director with config server', type: :integration do
             'jobs' => [
               {
                 'name' => 'job_1_with_many_properties',
+                'release' => 'bosh-release',
                 'properties' => {
                   'gargamel' => {
                     'color' => 'pitch black',

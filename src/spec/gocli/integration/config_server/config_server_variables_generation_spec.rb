@@ -9,17 +9,17 @@ describe 'variable generation with config server', type: :integration do
 
   let(:manifest_hash) do
     Bosh::Spec::NewDeployments.manifest_with_release.merge(
-      {
-        'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
-          name: 'our_instance_group',
-          jobs: [
-            {'name' => 'job_1_with_many_properties',
-             'properties' => job_properties
-            }
-          ],
-          instances: 1
-        )]
-      })
+      'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
+        name: 'our_instance_group',
+        jobs: [
+          {
+            'name' => 'job_1_with_many_properties',
+            'properties' => job_properties,
+          },
+        ],
+        instances: 1,
+      )],
+    )
   end
   let(:deployment_name) { manifest_hash['name'] }
   let(:director_name) { current_sandbox.director_name }
@@ -360,7 +360,10 @@ describe 'variable generation with config server', type: :integration do
               manifest_hash['addons'] = [{
                'name' => 'addon1',
                'jobs' => [
-                   {'name' => 'job_2_with_many_properties', 'release' => 'bosh-release'}
+                 {
+                   'name' => 'job_2_with_many_properties',
+                   'release' => 'bosh-release',
+                 },
                ],
                'properties' => {
                    'gargamel' => {'color' => '((var_c))'},
@@ -375,20 +378,20 @@ describe 'variable generation with config server', type: :integration do
           context 'when addon JOB properties reference the variables' do
             before do
               manifest_hash['addons'] = [{
-                   'name' => 'addon1',
-                   'jobs' => [
-                       {
-                           'name' => 'job_2_with_many_properties',
-                           'release' => 'bosh-release',
-                           'properties' => {'gargamel' => {'color' => '((var_c))'}, 'smurfs' => {'color' => '((/var_d))'}},
-                       },
-                       {
-                           'name' => 'foobar',
-                           'release' => 'bosh-release',
-                           'properties' => {},
-                       }
-                   ],
-               }]
+                'name' => 'addon1',
+                'jobs' => [
+                  {
+                    'name' => 'job_2_with_many_properties',
+                    'release' => 'bosh-release',
+                    'properties' => { 'gargamel' => { 'color' => '((var_c))' }, 'smurfs' => { 'color' => '((/var_d))' } },
+                  },
+                  {
+                    'name' => 'foobar',
+                    'release' => 'bosh-release',
+                    'properties' => {},
+                  },
+                ],
+              }]
             end
 
             it_behaves_like 'a deployment manifest that has addons section with variables'
@@ -397,41 +400,41 @@ describe 'variable generation with config server', type: :integration do
           context 'when runtime config exists as well on the director' do
             let(:runtime_config) do
               {
-                  'releases' => [{'name' => 'bosh-release', 'version' => '0.1-dev'}],
-                  'addons' => [
-                    {
-                        'name' => 'foobar_addon',
-                        'jobs' => [
-                            {
-                                'name' => 'foobar',
-                                'release' => 'bosh-release',
-                                'properties' => {
-                                    'test_property' => '((var_e))'
-                                }
-                            }
-                        ],
-
-                  }],
-                  'variables' => [
+                'releases' => [{ 'name' => 'bosh-release', 'version' => '0.1-dev' }],
+                'addons' => [
+                  {
+                    'name' => 'foobar_addon',
+                    'jobs' => [
                       {
-                          'name' => 'var_e',
-                          'type' => 'password'
-                      }
-                  ]
+                        'name' => 'foobar',
+                        'release' => 'bosh-release',
+                        'properties' => {
+                          'test_property' => '((var_e))',
+                        },
+                      },
+                    ],
+                  },
+                ],
+                'variables' => [
+                  {
+                    'name' => 'var_e',
+                    'type' => 'password',
+                  },
+                ],
               }
             end
 
             before do
               manifest_hash['addons'] = [{
-                   'name' => 'addon1',
-                   'jobs' => [
-                       {
-                           'name' => 'job_2_with_many_properties',
-                           'release' => 'bosh-release',
-                           'properties' => {'gargamel' => {'color' => '((var_c))'}, 'smurfs' => {'color' => '((/var_d))'}},
-                       }
-                   ],
-               }]
+                'name' => 'addon1',
+                'jobs' => [
+                  {
+                    'name' => 'job_2_with_many_properties',
+                    'release' => 'bosh-release',
+                    'properties' => { 'gargamel' => { 'color' => '((var_c))' }, 'smurfs' => { 'color' => '((/var_d))' } },
+                  },
+                ],
+              }]
             end
 
             it 'should deploy successfully with deployment addons and runtime-config addons' do

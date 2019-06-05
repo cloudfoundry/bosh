@@ -190,9 +190,7 @@ describe 'consuming and providing', type: :integration do
       let(:db_instance_group) do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'provider_instance_group',
-          jobs: [
-            { 'name' => 'provider' },
-          ],
+          job_name: 'provider',
           instances: 1,
         )
         spec['azs'] = ['z1']
@@ -202,9 +200,7 @@ describe 'consuming and providing', type: :integration do
       let(:db_instance_group2) do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'provider_instance_group2',
-          jobs: [
-            { 'name' => 'provider' },
-          ],
+          job_name: 'provider',
           instances: 1,
         )
         spec['azs'] = ['z1']
@@ -238,9 +234,9 @@ describe 'consuming and providing', type: :integration do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'instance_group',
           jobs: [
-            { 'name' => 'database' },
-            { 'name' => 'errand_with_optional_links' },
-            { 'name' => 'provider' },
+            { 'name' => 'database', 'release' => 'bosh-release' },
+            { 'name' => 'errand_with_optional_links', 'release' => 'bosh-release' },
+            { 'name' => 'provider', 'release' => 'bosh-release' },
           ],
           instances: 1,
         )
@@ -269,20 +265,24 @@ describe 'consuming and providing', type: :integration do
     let(:provider_instance_group) do
       spec = Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'provider_instance_group',
-        jobs: [{
-          'name' => 'database',
-          'provides' => { 'db' => { 'as' => 'link_db_alias' } },
-          'properties' => {
-            'foo' => 'props_db_bar',
+        jobs: [
+          {
+            'name' => 'database',
+            'provides' => { 'db' => { 'as' => 'link_db_alias' } },
+            'properties' => {
+              'foo' => 'props_db_bar',
+            },
+            'release' => 'bosh-release',
           },
-        },
-               {
-                 'name' => 'backup_database',
-                 'provides' => { 'backup_db' => { 'as' => 'link_backup_db_alias' } },
-                 'properties' => {
-                   'foo' => 'props_backup_db_bar',
-                 },
-               }],
+          {
+            'name' => 'backup_database',
+            'provides' => { 'backup_db' => { 'as' => 'link_backup_db_alias' } },
+            'properties' => {
+              'foo' => 'props_backup_db_bar',
+            },
+            'release' => 'bosh-release',
+          },
+        ],
         instances: 1,
       )
       spec['azs'] = ['z1']
@@ -299,6 +299,7 @@ describe 'consuming and providing', type: :integration do
               'db' => { 'from' => 'link_db_alias' },
               'backup_db' => { 'from' => 'link_backup_db_alias' },
             },
+            'release' => 'bosh-release',
           },
         ],
         instances: 1,
@@ -358,6 +359,7 @@ describe 'consuming and providing', type: :integration do
           {
             'name' => 'provider_job',
             'provides' => provides_definition,
+            'release' => 'bosh-release',
           },
         ],
         instances: 2,
@@ -371,6 +373,7 @@ describe 'consuming and providing', type: :integration do
         jobs: [
           {
             'name' => 'consumer_job',
+            'release' => 'bosh-release',
             'consumes' => consumes_definition,
           },
         ],
@@ -469,12 +472,14 @@ describe 'consuming and providing', type: :integration do
           jobs: [{
                    'name' => 'database',
                    'provides' => { 'db' => 'nil' },
+                   'release' => 'bosh-release',
                    'properties' => {
                      'foo' => 'props_db_bar',
                    },
                  },
                  {
                    'name' => 'backup_database',
+                   'release' => 'bosh-release',
                    'provides' => { 'backup_db' => { 'as' => 'link_backup_db_alias' } },
                    'properties' => {
                      'foo' => 'props_backup_db_bar',
@@ -491,6 +496,7 @@ describe 'consuming and providing', type: :integration do
           name: 'provider_instance_group_2',
           jobs: [{
                    'name' => 'database',
+                   'release' => 'bosh-release',
                    'provides' => { 'db' => db_provider },
                    'properties' => {
                      'foo' => 'props_db_bar',
@@ -499,6 +505,7 @@ describe 'consuming and providing', type: :integration do
                  {
                    'name' => 'backup_database',
                    'provides' => { 'backup_db' => { 'as' => 'link_backup_db_alias2' } },
+                   'release' => 'bosh-release',
                    'properties' => {
                      'foo' => 'props_backup_db_bar',
                    },
@@ -515,6 +522,7 @@ describe 'consuming and providing', type: :integration do
           jobs: [
             {
               'name' => 'api_server',
+              'release' => 'bosh-release',
               'consumes' => {
                 'db' => { 'from' => 'link_db_alias' },
                 'backup_db' => { 'from' => 'link_backup_db_alias' },
