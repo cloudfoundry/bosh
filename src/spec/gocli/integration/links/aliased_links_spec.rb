@@ -72,7 +72,10 @@ describe 'aliased links', type: :integration do
               'http_endpoint' => { 'as' => 'http_endpoint2', 'shared' => true },
             },
           },
-          { 'name' => 'kv_http_server' },
+          {
+            'name' => 'kv_http_server',
+            'release' => 'bosh-release',
+          },
         ],
         instances: 1,
       )
@@ -98,7 +101,11 @@ describe 'aliased links', type: :integration do
               'logs_http_endpoint' => 'nil',
             },
           },
-          { 'name' => 'http_server_with_provides', 'properties' => { 'listen_port' => 8446 } },
+          {
+            'name' => 'http_server_with_provides',
+            'release' => 'bosh-release',
+            'properties' => { 'listen_port' => 8446 },
+          },
         ],
         instances: 1,
       )
@@ -120,6 +127,7 @@ describe 'aliased links', type: :integration do
           },
           {
             'name' => 'http_server_with_provides',
+            'release' => 'bosh-release',
             'provides' => {
               'http_endpoint' => { 'as' => 'new_provides' },
             },
@@ -198,27 +206,34 @@ describe 'aliased links', type: :integration do
       let(:provider_instance_group) do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'provider_instance_group',
-          jobs: [{
-            'name' => 'http_server_with_provides',
-            'release' => 'bosh-release',
-            'properties' => {
-              'listen_port' => 11_111,
-              'name_space' => {
-                'prop_a' => 'http_provider_some_prop_a',
+          jobs: [
+            {
+              'name' => 'http_server_with_provides',
+              'release' => 'bosh-release',
+              'properties' => {
+                'listen_port' => 11_111,
+                'name_space' => {
+                  'prop_a' => 'http_provider_some_prop_a',
+                },
+              },
+              'provides' => {
+                'http_endpoint' => {
+                  'as' => 'link_http_alias',
+                },
               },
             },
-            'provides' => { 'http_endpoint' => { 'as' => 'link_http_alias' } },
-          },
-                 {
-                   'name' => 'tcp_server_with_provides',
-                   'properties' => {
-                     'listen_port' => 77_777,
-                     'name_space' => {
-                       'prop_a' => 'tcp_provider_some_prop_a',
-                     },
-                   },
-                   'provides' => { 'http_endpoint' => { 'as' => 'link_tcp_alias' } },
-                 }],
+            {
+              'name' => 'tcp_server_with_provides',
+              'release' => 'bosh-release',
+              'properties' => {
+                'listen_port' => 77_777,
+                'name_space' => {
+                  'prop_a' => 'tcp_provider_some_prop_a',
+                },
+              },
+              'provides' => { 'http_endpoint' => { 'as' => 'link_tcp_alias' } },
+            },
+          ],
           instances: 1,
         )
         spec['azs'] = ['z1']

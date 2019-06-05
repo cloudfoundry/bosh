@@ -14,6 +14,7 @@ describe 'variable generation with config server', type: :integration do
         jobs: [
           {
             'name' => 'job_1_with_many_properties',
+            'release' => 'bosh-release',
             'properties' => job_properties,
           },
         ],
@@ -468,16 +469,21 @@ describe 'variable generation with config server', type: :integration do
           let(:manifest_hash) do
             Bosh::Spec::Deployments.test_release_manifest.merge(
               {
-                'jobs' => [Bosh::Spec::Deployments.job_with_many_templates(
-                  name: 'our_instance_group',
-                  templates: [
-                    {'name' => 'job_with_property_types',
-                     'properties' => job_properties
-                    }
-                  ],
-                  instances: 3
-                )]
-              })
+                'jobs' => [
+                  Bosh::Spec::Deployments.job_with_many_templates(
+                    name: 'our_instance_group',
+                    templates: [
+                      {
+                        'name' => 'job_with_property_types',
+                        'release' => 'bosh-release',
+                        'properties' => job_properties,
+                      },
+                    ],
+                    instances: 3,
+                  ),
+                ],
+              },
+            )
           end
 
           let (:variables) do

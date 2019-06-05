@@ -162,21 +162,22 @@ describe 'Links with local_dns enabled', type: :integration do
               jobs: [
                 {
                   'name' => 'api_server',
+                  'release' => 'bosh-release',
                   'consumes' => {
                     'db' => {
                       'address' => 'broker.external-db.com',
                       'instances' => [],
-                      'properties' => {'foo' => 'bar'},
+                      'properties' => { 'foo' => 'bar' },
                     },
                     'backup_db' => {
                       'address' => 'nothing',
                       'instances' => [],
-                      'properties' => {'foo' => 'bar'},
+                      'properties' => { 'foo' => 'bar' },
                     },
-                    'release' => 'bosh-release',
-                  }
-                }],
-              instances: 1
+                  },
+                },
+              ],
+              instances: 1,
             )
             instance_group_spec['networks'] = [{ 'name' => 'manual-network'}]
             instance_group_spec['azs'] = ['z1']

@@ -42,8 +42,14 @@ describe 'consuming and providing', type: :integration do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'provider_instance_group',
           jobs: [
-            { 'name' => 'provider' },
-            { 'name' => 'app_server' },
+            {
+              'name' => 'provider',
+              'release' => 'bosh-release',
+            },
+            {
+              'name' => 'app_server',
+              'release' => 'bosh-release',
+            },
           ],
           instances: 1,
         )
@@ -74,9 +80,13 @@ describe 'consuming and providing', type: :integration do
           jobs: [
             {
               'name' => 'provider',
+              'release' => 'bosh-release',
               'provides' => { 'provider' => { 'as' => 'link_provider' } },
             },
-            { 'name' => 'app_server' },
+            {
+              'name' => 'app_server',
+              'release' => 'bosh-release',
+            },
           ],
           instances: 1,
         )
@@ -105,9 +115,18 @@ describe 'consuming and providing', type: :integration do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'provider_instance_group',
           jobs: [
-            { 'name' => 'provider' },
-            { 'name' => 'consumer' },
-            { 'name' => 'app_server' },
+            {
+              'name' => 'provider',
+              'release' => 'bosh-release',
+            },
+            {
+              'name' => 'consumer',
+              'release' => 'bosh-release',
+            },
+            {
+              'name' => 'app_server',
+              'release' => 'bosh-release',
+            },
           ],
           instances: 1,
         )
@@ -141,8 +160,14 @@ describe 'consuming and providing', type: :integration do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'instance_group',
           jobs: [
-            { 'name' => 'api_server_2_instances' },
-            { 'name' => 'database' },
+            {
+              'name' => 'api_server_2_instances',
+              'release' => 'bosh-release',
+            },
+            {
+              'name' => 'database',
+              'release' => 'bosh-release',
+            },
           ],
           instances: 2,
         )
@@ -178,8 +203,14 @@ describe 'consuming and providing', type: :integration do
         spec = Bosh::Spec::NewDeployments.simple_instance_group(
           name: 'instance_group',
           jobs: [
-            { 'name' => 'database' },
-            { 'name' => 'errand_with_optional_links' },
+            {
+              'name' => 'database',
+              'release' => 'bosh-release',
+            },
+            {
+              'name' => 'errand_with_optional_links',
+              'release' => 'bosh-release',
+            },
           ],
           instances: 1,
         )
@@ -359,7 +390,7 @@ describe 'consuming and providing', type: :integration do
           {
             'name' => 'provider_job',
             'provides' => provides_definition,
-            'release' => 'bosh-release',
+            'release' => releases.first['name'],
           },
         ],
         instances: 2,
@@ -373,7 +404,7 @@ describe 'consuming and providing', type: :integration do
         jobs: [
           {
             'name' => 'consumer_job',
-            'release' => 'bosh-release',
+            'release' => releases.first['name'],
             'consumes' => consumes_definition,
           },
         ],

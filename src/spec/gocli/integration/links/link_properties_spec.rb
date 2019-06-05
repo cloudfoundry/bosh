@@ -32,7 +32,19 @@ describe 'checking link properties', type: :integration do
   let(:instance_group_with_nil_properties) do
     spec = Bosh::Spec::NewDeployments.simple_instance_group(
       name: 'property_job',
-      jobs: [{ 'name' => 'provider', 'properties' => { 'a' => 'deployment_a' } }, { 'name' => 'consumer' }],
+      jobs: [
+        {
+          'name' => 'provider',
+          'release' => 'bosh-release',
+          'properties' => {
+            'a' => 'deployment_a',
+          },
+        },
+        {
+          'name' => 'consumer',
+          'release' => 'bosh-release',
+        },
+      ],
       instances: 1,
       static_ips: ['192.168.1.10'],
       properties: {},

@@ -533,7 +533,14 @@ describe 'Links', type: :integration do
         let(:manual_api_instance_group_spec) do
           spec = Bosh::Spec::NewDeployments.simple_instance_group(
             name: 'my_manual_api',
-            jobs: [manual_api_server, { 'name' => 'api_server_with_optional_db_link' }],
+            jobs: [
+              manual_api_server,
+              {
+                'name' => 'api_server_with_optional_db_link',
+                'release' => 'bosh-release',
+
+              },
+            ],
             instances: 1,
           )
           spec['azs'] = ['z1']
