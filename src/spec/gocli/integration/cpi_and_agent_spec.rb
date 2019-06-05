@@ -471,6 +471,7 @@ describe 'CPI and Agent:', type: :integration do
                 failing_manifest_hash['instance_groups'].first['jobs'] = [
                   {
                     'name' => 'job_with_bad_template',
+                    'release' => 'bosh-release',
                     'properties' => {
                       'gargamel' => {
                         'color' => 'chartreuse',
