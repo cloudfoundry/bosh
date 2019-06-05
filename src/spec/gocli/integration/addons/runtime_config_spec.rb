@@ -77,7 +77,7 @@ describe 'runtime config', type: :integration do
   end
 
   it 'succeeds when deployment and runtime config both have the same release with the same version' do
-    runtime_config_file = yaml_file('runtime_config.yml', Bosh::Spec::Deployments.simple_runtime_config)
+    runtime_config_file = yaml_file('runtime_config.yml', Bosh::Spec::NewDeployments.simple_runtime_config)
     expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
     bosh_runner.run("upload-release #{spec_asset('test_release.tgz')}")
@@ -97,7 +97,7 @@ describe 'runtime config', type: :integration do
     it 'deploys it after comparing both versions as a string' do
       bosh_runner.run("upload-release #{spec_asset('test_release_2.tgz')}")
 
-      runtime_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::Deployments.simple_runtime_config)
+      runtime_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::NewDeployments.simple_runtime_config)
       runtime_config['releases'][0]['version'] = 2
       runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
       expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')

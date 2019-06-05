@@ -9,8 +9,14 @@ module Bosh::Director
       planner_attributes = { name: deployment_name, properties: {} }
       cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
       manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
-      planner = DeploymentPlan::Planner.new(planner_attributes, manifest, YAML.dump(manifest), [Models::Config.make(:cloud, content: YAML.dump(cloud_config))], Bosh::Spec::Deployments.simple_runtime_config, deployment_model)
-
+      planner = DeploymentPlan::Planner.new(
+        planner_attributes,
+        manifest,
+        YAML.dump(manifest),
+        [Models::Config.make(:cloud, content: YAML.dump(cloud_config))],
+        Bosh::Spec::NewDeployments.simple_runtime_config,
+        deployment_model,
+      )
       release1 = Models::Release.make(name: '1')
       release2 = Models::Release.make(name: '2')
       release_version1 = Models::ReleaseVersion.make(version: 'v1', release: release1)

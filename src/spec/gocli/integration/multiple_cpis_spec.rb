@@ -5,7 +5,11 @@ describe 'Using multiple CPIs', type: :integration do
 
   let(:stemcell_filename) { spec_asset('valid_stemcell.tgz') }
   let(:cloud_config) { Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs_and_cpis }
-  let(:cpi_config) { Bosh::Spec::Deployments.multi_cpi_config(current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI)) }
+
+  let(:cpi_config) do
+    Bosh::Spec::NewDeployments.multi_cpi_config(current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI))
+  end
+
   let(:instance_group) { Bosh::Spec::NewDeployments.simple_instance_group(azs: %w[z1 z2]) }
   let(:deployment) { Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge('instance_groups' => [instance_group]) }
   let(:cloud_config_manifest) { yaml_file('cloud_manifest', cloud_config) }

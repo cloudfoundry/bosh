@@ -4,7 +4,7 @@ module Bosh::Director
   describe CpiConfig::CpiManifestParser do
     subject(:parser) { described_class.new }
     let(:event_log) { Config.event_log }
-    let(:cpi_manifest) { Bosh::Spec::Deployments.multi_cpi_config }
+    let(:cpi_manifest) { Bosh::Spec::NewDeployments.multi_cpi_config }
 
     describe '#parse' do
       let(:parsed_cpis) { subject.parse(cpi_manifest) }

@@ -106,8 +106,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
         cloud_config['networks'].first['subnets'].first['range'] = network_range
         cloud_config['networks'].first['subnets'].first['reserved'] << '192.168.1.3'
         cloud_config['networks'].first['subnets'].first['static'] = static_ips
-        cloud_config['networks'].first['subnets'] << Bosh::Spec::Deployments
-                                                     .subnet('range' => '192.168.1.0/28')
+        cloud_config['networks'].first['subnets'] << Bosh::Spec::NewDeployments.subnet('range' => '192.168.1.0/28')
         cloud_config
       end
 
@@ -174,7 +173,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
 
   describe 'azs' do
     let(:network_spec) do
-      Bosh::Spec::Deployments.network.merge(
+      Bosh::Spec::NewDeployments.network.merge(
         'subnets' => [
           {
             'range' => '10.1.0.0/24',
@@ -202,7 +201,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
 
   describe 'validate_has_job' do
     let(:network_spec) do
-      Bosh::Spec::Deployments.network.merge(
+      Bosh::Spec::NewDeployments.network.merge(
         'subnets' => [
           {
             'range' => '10.1.0.0/24',
@@ -240,7 +239,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
 
     context 'when there are no subnets' do
       let(:network_spec) do
-        Bosh::Spec::Deployments.network.merge(
+        Bosh::Spec::NewDeployments.network.merge(
           'subnets' => [],
         )
       end
@@ -253,7 +252,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
 
   context 'when any subnet has AZs, then all subnets must contain AZs' do
     let(:network_spec) do
-      Bosh::Spec::Deployments.network.merge(
+      Bosh::Spec::NewDeployments.network.merge(
         'subnets' => [
           {
             'range' => '10.10.1.0/24',

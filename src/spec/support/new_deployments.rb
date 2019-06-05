@@ -56,6 +56,13 @@ module Bosh::Spec
       }
     end
 
+    def self.vm_extension
+      {
+        'name' => 'vm-extension-name',
+        'cloud_properties' => { 'my' => 'cloud_property' },
+      }
+    end
+
     def self.simple_errand_instance_group
       {
         'name' => 'fake-errand-name',
@@ -138,20 +145,22 @@ module Bosh::Spec
     end
 
     def self.minimal_manifest_with_ubuntu_stemcell
-      minimal_manifest.merge('stemcells' => [
-                               {
-                                 'name' => 'ubuntu-stemcell',
-                                 'version' => '1',
-                                 'alias' => 'default',
-                               },
-                             ])
+      minimal_manifest.merge(
+        'stemcells' => [
+          {
+            'name' => 'ubuntu-stemcell',
+            'version' => '1',
+            'alias' => 'default',
+          },
+        ],
+      )
     end
 
     def self.manifest_with_release
       minimal_manifest.merge(
         'name' => DEFAULT_DEPLOYMENT_NAME,
         'releases' => [{
-          'name'    => 'bosh-release',
+          'name' => 'bosh-release',
           'version' => '0.1-dev',
         }],
       )
@@ -161,7 +170,7 @@ module Bosh::Spec
       minimal_manifest_with_ubuntu_stemcell.merge(
         'name' => DEFAULT_DEPLOYMENT_NAME,
         'releases' => [{
-          'name'    => 'bosh-release',
+          'name' => 'bosh-release',
           'version' => '0.1-dev',
         }],
       )
@@ -283,6 +292,12 @@ module Bosh::Spec
       )
     end
 
+    def self.simple_runtime_config(release = 'test_release_2', version = '2')
+      {
+        'releases' => [{ 'name' => release, 'version' => version }],
+      }
+    end
+
     def self.single_cpi_config(name = 'cpi-name1', properties = { 'somekey' => 'someval' }, exec_path = nil)
       cpi_config = {
         'cpis' => [
@@ -312,6 +327,31 @@ module Bosh::Spec
             'type' => 'cpi-type2',
             'properties' => {
               'somekey2' => 'someval2',
+            },
+          },
+        ],
+      }
+      cpi_config['cpis'].each { |cpi| cpi['exec_path'] = exec_path } unless exec_path.nil?
+      cpi_config
+    end
+
+    def self.multi_cpi_config_with_variables(exec_path = nil)
+      cpi_config = {
+        'cpis' => [
+          {
+            'name' => 'cpi-name1',
+            'type' => 'cpi-type1',
+            'properties' => {
+              'someKeyFoo1' => '((/cpi-someFooVal1-var))',
+              'someKeyBar1' => '((/cpi-someBarVal1-var))',
+            },
+          },
+          {
+            'name' => 'cpi-name2',
+            'type' => 'cpi-type2',
+            'properties' => {
+              'someKeyFoo2' => '((/cpi-someFooVal2-var))',
+              'someKeyBar2' => '((/cpi-someBarVal2-var))',
             },
           },
         ],

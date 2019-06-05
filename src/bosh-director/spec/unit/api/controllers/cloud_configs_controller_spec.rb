@@ -19,7 +19,7 @@ module Bosh::Director
         before { authorize 'admin', 'admin' }
 
         it 'creates a new cloud config' do
-          content = YAML.dump(Bosh::Spec::Deployments.simple_cloud_config)
+          content = YAML.dump(Bosh::Spec::NewDeployments.simple_cloud_config)
           expect {
             post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
           }.to change(Models::Config, :count).from(0).to(1)
@@ -28,7 +28,7 @@ module Bosh::Director
         end
 
         it 'creates a new cloud config when one exists with different content' do
-          content = YAML.dump(Bosh::Spec::Deployments.simple_cloud_config)
+          content = YAML.dump(Bosh::Spec::NewDeployments.simple_cloud_config)
           Models::Config.make(:cloud, content: content+"123")
 
           expect {
@@ -39,7 +39,7 @@ module Bosh::Director
         end
 
         it 'ignores cloud config when config already exists' do
-          content = YAML.dump(Bosh::Spec::Deployments.simple_cloud_config)
+          content = YAML.dump(Bosh::Spec::NewDeployments.simple_cloud_config)
           Models::Config.make(:cloud, content: content)
 
           expect {
@@ -93,7 +93,7 @@ module Bosh::Director
       it 'creates a new event' do
         authorize('admin', 'admin')
 
-        content = YAML.dump(Bosh::Spec::Deployments.simple_cloud_config)
+        content = YAML.dump(Bosh::Spec::NewDeployments.simple_cloud_config)
         expect {
           post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
         }.to change(Bosh::Director::Models::Event, :count).from(0).to(1)

@@ -34,7 +34,7 @@ module Bosh::Director
       { 'apply' => 'spec', 'env' => { 'vm_env' => 'json' } }
     end
     let(:deployment_model) do
-      manifest = Bosh::Spec::Deployments.legacy_manifest
+      manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
       Models::Deployment.make(name: manifest['name'], manifest: YAML.dump(manifest))
     end
     let(:test_problem_handler) { ProblemHandlers::Base.create_by_type(:test_problem_handler, instance.uuid, {}) }

@@ -265,7 +265,7 @@ module Bosh::Director
         before { authorize('admin', 'admin') }
 
         it 'creates a new runtime config' do
-          properties = YAML.dump(Bosh::Spec::Deployments.simple_runtime_config)
+          properties = YAML.dump(Bosh::Spec::NewDeployments.simple_runtime_config)
           expect {
             post '/', properties, {'CONTENT_TYPE' => 'text/yaml'}
           }.to change(Bosh::Director::Models::Config, :count).from(0).to(1)
@@ -277,7 +277,7 @@ module Bosh::Director
         end
 
         it 'creates a new runtime config when one exists with different content' do
-          content = YAML.dump(Bosh::Spec::Deployments.simple_runtime_config)
+          content = YAML.dump(Bosh::Spec::NewDeployments.simple_runtime_config)
           Models::Config.make(:runtime, content: content+"123")
 
           expect {
@@ -288,7 +288,7 @@ module Bosh::Director
         end
 
         it 'ignores runtime config when config already exists' do
-          content = YAML.dump(Bosh::Spec::Deployments.simple_runtime_config)
+          content = YAML.dump(Bosh::Spec::NewDeployments.simple_runtime_config)
           Models::Config.make(:runtime, content: content)
 
           expect {
@@ -317,7 +317,7 @@ module Bosh::Director
         end
 
         it 'creates a new event' do
-          properties = YAML.dump(Bosh::Spec::Deployments.simple_runtime_config)
+          properties = YAML.dump(Bosh::Spec::NewDeployments.simple_runtime_config)
           expect {
             post '/', properties, {'CONTENT_TYPE' => 'text/yaml'}
           }.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
@@ -342,7 +342,7 @@ module Bosh::Director
 
         context 'when version field is an integer' do
           let(:runtime_config_version_int) do
-            config = Bosh::Spec::Deployments.simple_runtime_config
+            config = Bosh::Spec::NewDeployments.simple_runtime_config
             config['releases'].first['version'] = 2
             YAML.dump(config)
           end
@@ -353,13 +353,14 @@ module Bosh::Director
             end.to change(Bosh::Director::Models::Config, :count).from(0).to(1)
 
             expect(last_response.status).to eq(201)
-            expect(Bosh::Director::Models::Config.first.content).to eq(YAML.dump(Bosh::Spec::Deployments.simple_runtime_config))
+            expect(Bosh::Director::Models::Config.first.content)
+              .to eq(YAML.dump(Bosh::Spec::NewDeployments.simple_runtime_config))
           end
         end
 
         context 'when releases block does not contain version field' do
           let(:invalid_runtime_config) do
-            config = Bosh::Spec::Deployments.simple_runtime_config
+            config = Bosh::Spec::NewDeployments.simple_runtime_config
             config['releases'].first.delete('version')
             YAML.dump(config)
           end
@@ -378,7 +379,7 @@ module Bosh::Director
           let(:path) { '/?name=' }
 
           it "creates a new runtime config with name 'default'" do
-            properties = YAML.dump(Bosh::Spec::Deployments.simple_runtime_config)
+            properties = YAML.dump(Bosh::Spec::NewDeployments.simple_runtime_config)
 
             post path, properties, {'CONTENT_TYPE' => 'text/yaml'}
 
@@ -389,7 +390,7 @@ module Bosh::Director
 
         context 'when a name is passed in via a query param' do
           let(:path) { '/?name=smurf' }
-          let(:content) { YAML.dump(Bosh::Spec::Deployments.simple_runtime_config) }
+          let(:content) { YAML.dump(Bosh::Spec::NewDeployments.simple_runtime_config) }
 
           it 'creates a new named runtime config' do
             post path, content, {'CONTENT_TYPE' => 'text/yaml'}
@@ -426,7 +427,8 @@ module Bosh::Director
         before { basic_authorize 'reader', 'reader' }
 
         it 'denies access' do
-          expect(post('/', YAML.dump(Bosh::Spec::Deployments.simple_runtime_config), {'CONTENT_TYPE' => 'text/yaml'}).status).to eq(401)
+          expect(post('/', YAML.dump(Bosh::Spec::NewDeployments.simple_runtime_config), 'CONTENT_TYPE' => 'text/yaml').status)
+            .to eq(401)
         end
       end
     end

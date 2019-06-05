@@ -2,15 +2,15 @@ require_relative '../spec_helper'
 
 describe 'cli runtime config', type: :integration do
   with_reset_sandbox_before_each
-  let(:un_named_rc) { Bosh::Spec::Deployments.simple_runtime_config }
+  let(:un_named_rc) { Bosh::Spec::NewDeployments.simple_runtime_config }
   let(:named_rc_1) do
-    rc = Bosh::Spec::Deployments.simple_runtime_config
+    rc = Bosh::Spec::NewDeployments.simple_runtime_config
     rc['releases'][0] = { 'name' => 'named_rc_1', 'version' => '1' }
     rc
   end
 
   let(:named_rc_2) do
-    rc = Bosh::Spec::Deployments.simple_runtime_config
+    rc = Bosh::Spec::NewDeployments.simple_runtime_config
     rc['releases'][0] = { 'name' => 'named_rc_2', 'version' => '1' }
     rc
   end
@@ -108,7 +108,7 @@ describe 'cli runtime config', type: :integration do
   end
 
   it "gives an error when release version is 'latest'" do
-    runtime_config = Bosh::Spec::Deployments.runtime_config_latest_release
+    runtime_config = Bosh::Spec::NewDeployments.simple_runtime_config('bosh-release', 'latest')
     upload_runtime_config(runtime_config_hash: runtime_config)
     output, exit_code = deploy_from_scratch(
       manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups,
@@ -139,7 +139,7 @@ describe 'cli runtime config', type: :integration do
   end
 
   it 'does not fail when runtime config is very large' do
-    runtime_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::Deployments.simple_runtime_config)
+    runtime_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::NewDeployments.simple_runtime_config)
 
     (0..10_001).each do |i|
       runtime_config["boshbosh#{i}"] = 'smurfsAreBlueGargamelIsBrownPinkpantherIsPinkAndPikachuIsYellow'

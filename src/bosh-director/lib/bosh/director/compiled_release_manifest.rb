@@ -3,9 +3,9 @@ require 'bosh/director'
 
 module Bosh::Director
   class CompiledReleaseManifest
-    def initialize(compiled_package_group, templates, stemcell)
+    def initialize(compiled_package_group, jobs, stemcell)
       @compiled_packages = compiled_package_group
-      @templates = templates
+      @jobs = jobs
       @stemcell = stemcell
     end
 
@@ -23,12 +23,12 @@ module Bosh::Director
         }
       end
 
-      manifest['jobs'] = @templates.map do |template|
+      manifest['jobs'] = @jobs.map do |job|
         {
-          'name' => template.name,
-          'version' => template.version,
-          'fingerprint' => template.fingerprint,
-          'sha1' => template.sha1,
+          'name' => job.name,
+          'version' => job.version,
+          'fingerprint' => job.fingerprint,
+          'sha1' => job.sha1,
         }
       end
 

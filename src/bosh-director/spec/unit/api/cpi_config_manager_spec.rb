@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Bosh::Director::Api::CpiConfigManager do
   subject(:manager) { Bosh::Director::Api::CpiConfigManager.new }
-  let(:valid_cpi_manifest) { Bosh::Spec::Deployments.multi_cpi_config }
+  let(:valid_cpi_manifest) { Bosh::Spec::NewDeployments.multi_cpi_config }
   let(:dumped_valid_cpi_manifest)  { YAML.dump(valid_cpi_manifest) }
   let(:user) {'username-1'}
 

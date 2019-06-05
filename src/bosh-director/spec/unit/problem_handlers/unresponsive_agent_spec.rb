@@ -13,7 +13,7 @@ module Bosh::Director
     end
     let(:planner_factory) { instance_double(Bosh::Director::DeploymentPlan::PlannerFactory) }
     let(:deployment_model) do
-      manifest = Bosh::Spec::Deployments.legacy_manifest
+      manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
       Models::Deployment.make(name: manifest['name'], manifest: YAML.dump(manifest))
     end
     let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }

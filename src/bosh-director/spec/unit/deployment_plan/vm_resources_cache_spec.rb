@@ -2,13 +2,13 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe VmResourcesCache do
-    subject {VmResourcesCache.new(cloud_factory, logger)}
+    subject { VmResourcesCache.new(cloud_factory, logger) }
 
     let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
-    let(:fake_cpi1) {instance_double(Bosh::Clouds::ExternalCpi)}
-    let(:fake_cpi2) {instance_double(Bosh::Clouds::ExternalCpi)}
+    let(:fake_cpi1) { instance_double(Bosh::Clouds::ExternalCpi) }
+    let(:fake_cpi2) { instance_double(Bosh::Clouds::ExternalCpi) }
 
-    let(:cloud_config) {Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs_and_cpis}
+    let(:cloud_config) { Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs_and_cpis }
 
     let(:vm_resources) do
       {

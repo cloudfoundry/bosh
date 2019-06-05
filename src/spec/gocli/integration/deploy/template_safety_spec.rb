@@ -44,7 +44,7 @@ describe 'when a release job modifies a global property in the ERB script', type
   end
 
   it 'does not modify the property for other templates' do
-    deployment_name = Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME
+    deployment_name = Bosh::Spec::NewDeployments::DEFAULT_DEPLOYMENT_NAME
     bosh_runner.run("deploy -d #{deployment_name} #{deployment_manifest.path}")
 
     target_instance = director.instance('test_group', '0')

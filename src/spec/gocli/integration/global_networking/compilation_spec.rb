@@ -172,28 +172,8 @@ describe 'global networking', type: :integration do
       create_vm_invocation = current_sandbox.cpi.invocations_for_method('create_vm')[0]
 
       expect(create_vm_invocation.inputs['cloud_properties']).to eq({
-        'instance_type' => 'something'
+        'instance_type' => 'something',
       })
-    end
-  end
-
-  context 'when reuse_compilation_vms is set to true' do
-    let(:manifest_hash) do
-      legacy_manifest = Bosh::Spec::Deployments.legacy_manifest
-      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(manifest: legacy_manifest, instances: 1, template: 'job_with_many_packages', legacy_job: true)
-      manifest_hash['jobs'].first['networks'].first.delete('static_ips')
-      manifest_hash['jobs'] << {
-        'name' => 'consul',
-        'templates' => [{'name' => 'transitive_deps'}],
-        'resource_pool' => 'b',
-        'instances' => 1,
-        'networks' => [{'name' => 'a'}],
-      }
-      manifest_hash['networks'].first['subnets'].first.delete('static')
-      manifest_hash['networks'].first['subnets'].first['reserved'] = ['192.168.1.5-192.168.1.255'] # 3 available ips
-      manifest_hash['compilation']['reuse_compilation_vms'] = true
-      manifest_hash['compilation']['workers'] = 1
-      manifest_hash
     end
   end
 end

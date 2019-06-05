@@ -5,25 +5,12 @@ module Bosh::Spec
       job_opts[:instances] = opts[:instances] if opts[:instances]
       job_opts[:static_ips] = opts[:static_ips] if opts[:static_ips]
 
-      if opts[:legacy_job]
-        job_opts[:templates] = [{ 'name' => opts[:template] }] if opts[:template]
-        manifest = opts.fetch(:manifest, Bosh::Spec::Deployments.legacy_manifest)
-        manifest['jobs'] = [Bosh::Spec::Deployments.simple_job(job_opts)]
-      else
-        job_opts[:jobs] = [{ 'name' => opts[:job], 'release' => opts.fetch(:job_release, 'bosh-release') }] if opts[:job]
-        manifest = opts.fetch(:manifest, Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups)
-        manifest['instance_groups'] = [Bosh::Spec::NewDeployments.simple_instance_group(job_opts)]
-      end
+      job_opts[:jobs] = [{ 'name' => opts[:job], 'release' => opts.fetch(:job_release, 'bosh-release') }] if opts[:job]
+      manifest = opts.fetch(:manifest, Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups)
+      manifest['instance_groups'] = [Bosh::Spec::NewDeployments.simple_instance_group(job_opts)]
 
       manifest['name'] = opts.fetch(:name, 'simple')
 
-      manifest
-    end
-
-    def self.legacy_deployment_manifest(opts)
-      manifest = deployment_manifest(opts.merge(manifest: Bosh::Spec::Deployments.legacy_manifest, legacy_job: true))
-      manifest['networks'].first['subnets'] = [make_subnet(opts)]
-      manifest['networks'].first['subnets'].first['static'] = opts.fetch(:static_ips, [])
       manifest
     end
 

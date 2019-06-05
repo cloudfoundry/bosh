@@ -58,7 +58,7 @@ module IntegrationExampleGroup
   end
 
   def upload_runtime_config(options={})
-    runtime_config_hash = options.fetch(:runtime_config_hash, Bosh::Spec::Deployments.simple_runtime_config)
+    runtime_config_hash = options.fetch(:runtime_config_hash, Bosh::Spec::NewDeployments.simple_runtime_config)
     name = options.fetch(:name, '')
     runtime_config_manifest = yaml_file('simple', runtime_config_hash)
     bosh_runner.run("update-runtime-config --name=#{name} #{runtime_config_manifest.path}", options)
@@ -98,7 +98,7 @@ module IntegrationExampleGroup
   def deploy(options={})
     cmd = options.fetch(:no_color, false) ? '--no-color ' : ''
 
-    deployment_hash = options.fetch(:manifest_hash, Bosh::Spec::Deployments.simple_manifest)
+    deployment_hash = options.fetch(:manifest_hash, Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups)
     cmd += " -d #{deployment_hash['name']}"
 
     cmd += ' deploy'
@@ -127,7 +127,7 @@ module IntegrationExampleGroup
   end
 
   def stop_job(vm_name)
-    bosh_runner.run("stop -d #{Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME} #{vm_name}", {})
+    bosh_runner.run("stop -d #{Bosh::Spec::NewDeployments::DEFAULT_DEPLOYMENT_NAME} #{vm_name}", {})
   end
 
   def orphaned_disks
@@ -245,11 +245,14 @@ module IntegrationExampleGroup
     end
   end
 
-  def expect_running_vms_with_names_and_count(instance_group_names_to_instance_counts, options={deployment_name: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME})
+  def expect_running_vms_with_names_and_count(
+    instance_group_names_to_instance_counts,
+    options = { deployment_name: Bosh::Spec::NewDeployments::DEFAULT_DEPLOYMENT_NAME }
+  )
     instances = director.instances(options)
     check_for_unknowns(instances)
     names = instances.map(&:instance_group_name)
-    total_expected_vms = instance_group_names_to_instance_counts.values.inject(0) {|sum, count| sum + count}
+    total_expected_vms = instance_group_names_to_instance_counts.values.inject(0) { |sum, count| sum + count }
     updated_vms = instances.select { |instance| !instance.vm_cid.empty? }
 
     expect(updated_vms.size).to eq(total_expected_vms), "Expected #{total_expected_vms} VMs, got #{updated_vms.size}. Present were VMs with job name: #{names}"

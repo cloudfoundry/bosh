@@ -13,8 +13,12 @@ module Bosh
         let(:runtime_config_models) { [instance_double(Bosh::Director::Models::Config)] }
         let(:runtime_config_consolidator) { instance_double(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator) }
         let(:cloud_config_hash) { Bosh::Spec::NewDeployments.simple_cloud_config }
-        let(:runtime_config_hash) { Bosh::Spec::Deployments.simple_runtime_config }
-        let(:manifest_with_config_keys) { Bosh::Spec::Deployments.simple_manifest.merge('name' => 'with_keys') }
+        let(:runtime_config_hash) { Bosh::Spec::NewDeployments.simple_runtime_config }
+
+        let(:manifest_with_config_keys) do
+          Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups.merge('name' => 'with_keys')
+        end
+
         let(:manifest) { Manifest.new(manifest_hash, YAML.dump(manifest_hash), cloud_config_hash, runtime_config_hash) }
         let(:plan_options) do
           {}
@@ -212,7 +216,7 @@ module Bosh
 
               context 'and the runtime config does has applicable jobs' do
                 let(:runtime_config_hash) do
-                  Bosh::Spec::Deployments.simple_runtime_config.merge(
+                  Bosh::Spec::NewDeployments.simple_runtime_config.merge(
                     'addons' => [
                       {
                         'name' => 'first_addon',
@@ -237,7 +241,7 @@ module Bosh
 
               context 'with runtime variables' do
                 let(:runtime_config_hash) do
-                  Bosh::Spec::Deployments.simple_runtime_config.merge(
+                  Bosh::Spec::NewDeployments.simple_runtime_config.merge(
                     'variables' => [{
                       'name' => '/dns_healthcheck_server_tlsX',
                       'type' => 'certificate',
@@ -332,7 +336,7 @@ module Bosh
             end
 
             it "throws an error if the version of a release is 'latest'" do
-              invalid_manifest = Bosh::Spec::Deployments.runtime_config_latest_release
+              invalid_manifest = Bosh::Spec::NewDeployments.simple_runtime_config('bosh-release', 'latest')
               allow(runtime_config_consolidator).to receive(:interpolate_manifest_for_deployment).with(String).and_return(invalid_manifest)
 
               expect do

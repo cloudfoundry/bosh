@@ -35,7 +35,7 @@ module Bosh::Director
     let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
     let(:manifest_hash) do
-      manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
+      manifest_hash = Bosh::Spec::NewDeployments.manifest_with_errand
       manifest_hash['name'] = 'fake-dep-name'
       manifest_hash
     end

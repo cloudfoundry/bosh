@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Bosh::Director::Api::CloudConfigManager do
   subject(:manager) { Bosh::Director::Api::CloudConfigManager.new }
-  let(:valid_cloud_manifest) { YAML.dump(Bosh::Spec::Deployments.simple_cloud_config) }
+  let(:valid_cloud_manifest) { YAML.dump(Bosh::Spec::NewDeployments.simple_cloud_config) }
   let(:user) {'username-1'}
   let(:event_manager) {Bosh::Director::Api::EventManager.new(true)}
 

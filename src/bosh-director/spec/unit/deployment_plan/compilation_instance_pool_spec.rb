@@ -374,7 +374,7 @@ module Bosh::Director
         let(:cloud_config) do
           Models::Config.make(
             :cloud,
-            raw_manifest: Bosh::Spec::Deployments.simple_cloud_config.merge(
+            raw_manifest: Bosh::Spec::NewDeployments.simple_cloud_config.merge(
               'azs' => [{ 'name' => 'foo-az' }],
             ),
           )

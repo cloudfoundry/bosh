@@ -38,7 +38,7 @@ describe 'cli: stemcell', type: :integration do
       stemcell_filename = spec_asset('valid_stemcell.tgz')
 
       cpi_path = current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI)
-      cpi_config_manifest = yaml_file('cpi_manifest', Bosh::Spec::Deployments.multi_cpi_config(cpi_path))
+      cpi_config_manifest = yaml_file('cpi_manifest', Bosh::Spec::NewDeployments.multi_cpi_config(cpi_path))
       bosh_runner.run("update-cpi-config #{cpi_config_manifest.path}")
 
       out = bosh_runner.run("upload-stemcell #{stemcell_filename}")

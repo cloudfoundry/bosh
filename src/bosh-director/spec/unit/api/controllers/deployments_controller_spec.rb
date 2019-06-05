@@ -1329,7 +1329,7 @@ module Bosh::Director
             version.add_template(Models::Template.make(name: 'job_using_pkg_1', release: release))
           end
           let(:deployment) { Models::Deployment.create(:name => 'test_deployment', :manifest => manifest) }
-          let(:default_manifest) { Bosh::Spec::Deployments.remote_stemcell_manifest('stemcell_url', 'stemcell_sha1') }
+          let(:default_manifest) { Bosh::Spec::NewDeployments.minimal_manifest }
 
           context 'multiple instances' do
             let(:manifest) do
@@ -1511,7 +1511,7 @@ module Bosh::Director
             end
 
             context 'is "service"' do
-              let(:manifest) { YAML.dump(default_manifest.merge(Bosh::Spec::Deployments.test_release_job)) }
+              let(:manifest) { YAML.dump(default_manifest.merge(Bosh::Spec::NewDeployments.simple_instance_group)) }
               let(:instance_lifecycle) { 'service' }
 
               context 'and state is either "started" or "stopped"' do
@@ -1563,7 +1563,7 @@ module Bosh::Director
             end
 
             context 'is "errand"' do
-              let(:manifest) { YAML.dump(default_manifest.merge(Bosh::Spec::Deployments.test_release_job)) }
+              let(:manifest) { YAML.dump(default_manifest.merge(Bosh::Spec::NewDeployments.simple_instance_group)) }
               let(:instance_lifecycle) { 'errand' }
 
               it 'sets "expects_vm" to "false"' do

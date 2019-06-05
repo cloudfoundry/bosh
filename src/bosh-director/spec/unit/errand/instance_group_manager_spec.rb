@@ -90,7 +90,7 @@ module Bosh::Director
     end
 
     describe '#delete_vms' do
-      let(:manifest) { Bosh::Spec::Deployments.legacy_manifest }
+      let(:manifest) { Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups }
       let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(manifest)) }
 
       let(:instance1_model) do

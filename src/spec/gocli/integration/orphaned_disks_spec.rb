@@ -9,7 +9,7 @@ describe 'orphaned disks', type: :integration do
     manifest_hash['name'] = 'first-deployment'
     manifest_hash['instance_groups'] = [Bosh::Spec::NewDeployments.simple_instance_group(persistent_disk_type: 'disk_a', instances: 1, name: 'first-instance-group')]
     cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
-    disk_type = Bosh::Spec::Deployments.disk_type
+    disk_type = Bosh::Spec::NewDeployments.disk_type
     disk_type['cloud_properties'] = {'my' => 'property'}
     cloud_config['disk_types'] = [disk_type]
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
@@ -59,7 +59,7 @@ describe 'orphaned disks', type: :integration do
     manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'] = [Bosh::Spec::NewDeployments.simple_instance_group(persistent_disk_type: 'disk_a')]
     cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
-    cloud_config['disk_types'] = [Bosh::Spec::Deployments.disk_type]
+    cloud_config['disk_types'] = [Bosh::Spec::NewDeployments.disk_type]
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
     bosh_runner.run('delete-deployment', deployment_name: 'simple')
 

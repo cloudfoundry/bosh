@@ -118,7 +118,7 @@ describe 'basic functionality', type: :integration do
     id = File.read("#{agent_dir}/instance/id")
 
     expect(instance_name).to eq('fake-name1')
-    expect(deployment_name).to eq(Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME)
+    expect(deployment_name).to eq(Bosh::Spec::NewDeployments::DEFAULT_DEPLOYMENT_NAME)
     expect(az_name).to eq('zone-1')
     expect(id).to eq(instance.id)
   end

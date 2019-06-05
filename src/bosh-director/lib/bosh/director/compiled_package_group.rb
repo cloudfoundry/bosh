@@ -2,10 +2,10 @@ module Bosh::Director
   class CompiledPackageGroup
     attr_reader :release_version
 
-    def initialize(release_version, stemcell, templates)
+    def initialize(release_version, stemcell, jobs)
       @release_version = release_version
       @stemcell = stemcell
-      @package_names = templates.map(&:package_names).flatten.uniq
+      @package_names = jobs.map(&:package_names).flatten.uniq
     end
 
     def compiled_packages

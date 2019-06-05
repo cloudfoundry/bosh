@@ -8,7 +8,7 @@ describe 'cpi config', type: :integration do
   end
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger)}
   let(:cpi_path) { current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI) }
-  let(:valid_cpi_config_file) {yaml_file('cpi_manifest', Bosh::Spec::Deployments.multi_cpi_config_with_variables(cpi_path)) }
+  let(:valid_cpi_config_file) { yaml_file('cpi_manifest', Bosh::Spec::NewDeployments.multi_cpi_config_with_variables(cpi_path)) }
 
   before do
     cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs_and_cpis)
@@ -30,8 +30,8 @@ describe 'cpi config', type: :integration do
         bosh_runner.run("update-cpi-config #{valid_cpi_config_file.path}", include_credentials: false,  env: client_env)
       end
 
-      it "the fetched cpi config should NOT contain any interpolated values" do
-        fetched_cpi_config = bosh_runner.run("cpi-config", include_credentials: false,  env: client_env)
+      it 'the fetched cpi config should NOT contain any interpolated values' do
+        fetched_cpi_config = bosh_runner.run('cpi-config', include_credentials: false, env: client_env)
 
         expect(fetched_cpi_config).to_not include('some-foo-val-1')
         expect(fetched_cpi_config).to_not include('some-bar-val-1')
@@ -108,7 +108,7 @@ describe 'cpi config', type: :integration do
 
     describe 'when multiple cpis are defined with some relative variables' do
       let(:invalid_cpi_config_file) do
-        cpis_config = Bosh::Spec::Deployments.multi_cpi_config_with_variables(cpi_path)
+        cpis_config = Bosh::Spec::NewDeployments.multi_cpi_config_with_variables(cpi_path)
         cpis_config['cpis'][0]['properties']['someRelKey'] = '((some-rel-val))'
         yaml_file('cpi_manifest', cpis_config)
       end

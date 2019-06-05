@@ -40,7 +40,7 @@ module Bosh::Director
       end
 
       let(:deployment_model) do
-        Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.minimal_manifest))
+        Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::NewDeployments.minimal_manifest))
       end
 
       let(:range) { NetAddr::CIDR.create('192.168.1.1/24') }

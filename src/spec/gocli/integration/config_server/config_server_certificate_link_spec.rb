@@ -148,7 +148,7 @@ describe 'using director with config server and deployments having links', type:
 
   context 'when the runtime config has variable which consumes' do
     let(:runtime_config) do
-      Bosh::Spec::Deployments.runtime_config_latest_release.tap do |config|
+      Bosh::Spec::NewDeployments.simple_runtime_config.tap do |config|
         config['variables'] = variables
         config['releases'] = []
       end

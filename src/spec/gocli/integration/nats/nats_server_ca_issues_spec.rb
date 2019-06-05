@@ -6,10 +6,8 @@ describe 'using director with nats server', type: :integration do
 
     it 'throws certificate validator error' do
       # This test does not upload the specific release intentionally to force a failure
-      upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
-
+      upload_cloud_config
       output, exit_code = deploy_from_scratch(
-        manifest_hash: Bosh::Spec::Deployments.simple_manifest,
         failure_expected: true,
         return_exit_code: true,
       )

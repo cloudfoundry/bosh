@@ -12,7 +12,7 @@ module Bosh::Director
     let(:event_log) { Config.event_log }
 
     describe '#parse' do
-      let(:runtime_manifest) { Bosh::Spec::Deployments.simple_runtime_config }
+      let(:runtime_manifest) { Bosh::Spec::NewDeployments.simple_runtime_config }
 
       it "raises RuntimeInvalidReleaseVersion if a release uses version 'latest'" do
         runtime_manifest['releases'][0]['version'] = 'latest'

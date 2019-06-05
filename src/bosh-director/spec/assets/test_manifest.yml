@@ -1,19 +1,26 @@
 ---
 name: my-test-deployment
 
-releases:
-- {name: redis, version: 12}
+stemcells:
+- name: ubuntu
+  version: latest
 
-jobs:
+releases:
+- name: redis
+  version: 12
+
+instance_groups:
 - name: redis-master
   instances: 1
-  templates:
-  - {name: redis-server, release: redis}
+  jobs:
+  - name: redis-server
+    release: redis
+    properties:
+      redis:
+        max_connections: 10
   persistent_disk: 10_240
-  resource_pool: redis-servers
+  vm_type: default
+  stemcell: ubuntu
   networks:
   - name: default
 
-properties:
-  redis:
-    max_connections: 10

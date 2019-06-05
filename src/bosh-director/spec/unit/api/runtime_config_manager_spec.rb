@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Bosh::Director::Api::RuntimeConfigManager do
   subject(:manager) { Bosh::Director::Api::RuntimeConfigManager.new }
-  let(:valid_runtime_manifest) { YAML.dump(Bosh::Spec::Deployments.simple_runtime_config) }
+  let(:valid_runtime_manifest) { YAML.dump(Bosh::Spec::NewDeployments.simple_runtime_config) }
 
   describe '#update' do
     it 'saves default runtime config' do

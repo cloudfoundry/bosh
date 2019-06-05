@@ -196,12 +196,6 @@ module Bosh::Spec
       )
     end
 
-    def self.simple_runtime_config
-      {
-        'releases' => [{ 'name' => 'test_release_2', 'version' => '2' }],
-      }
-    end
-
     def self.runtime_config_latest_release
       {
         'releases' => [{ 'name' => 'bosh-release', 'version' => 'latest' }],
@@ -350,29 +344,6 @@ module Bosh::Spec
       }
     end
 
-    def self.multi_cpi_config(exec_path = nil)
-      cpi_config = {
-        'cpis' => [
-          {
-            'name' => 'cpi-name1',
-            'type' => 'cpi-type',
-            'properties' => {
-              'somekey' => 'someval',
-            },
-          },
-          {
-            'name' => 'cpi-name2',
-            'type' => 'cpi-type2',
-            'properties' => {
-              'somekey2' => 'someval2',
-            },
-          },
-        ],
-      }
-      cpi_config['cpis'].each { |cpi| cpi['exec_path'] = exec_path } unless exec_path.nil?
-      cpi_config
-    end
-
     def self.multi_cpi_config_with_variables(exec_path = nil)
       cpi_config = {
         'cpis' => [
@@ -485,24 +456,6 @@ module Bosh::Spec
       )
     end
 
-    def self.stemcell_os_specific_addon_manifest
-      test_release_manifest.merge(
-        'jobs' => [
-          simple_job(resource_pool: 'a', name: 'has-addon-vm', instances: 1),
-          simple_job(resource_pool: 'b', name: 'no-addon-vm', instances: 1),
-        ],
-      )
-    end
-
-    def self.network_specific_addon_manifest
-      test_release_manifest.merge(
-        'jobs' => [
-          simple_job(network_name: 'a', name: 'has-addon-vm', instances: 1),
-          simple_job(network_name: 'b', name: 'no-addon-vm', instances: 1),
-        ],
-      )
-    end
-
     def self.resource_pool
       {
         'name' => 'a',
@@ -573,203 +526,6 @@ module Bosh::Spec
       }
     end
 
-    def self.dummy_job
-      {
-        'name' => 'dummy',
-        'templates' => [{ 'name' => 'dummy', 'release' => 'dummy' }],
-        'resource_pool' => 'a',
-        'networks' => [{ 'name' => 'a' }],
-        'instances' => 1,
-      }
-    end
-
-    def self.dummy_deployment
-      {
-        'name' => 'dummy',
-
-        'releases' => [{
-          'name'    => 'dummy',
-          'version' => '0.2-dev' # It's our dummy valid release from spec/assets/dummy-release.tgz
-        }],
-
-        'update' => {
-          'canaries' => 2,
-          'canary_watch_time' => 4000,
-          'max_in_flight'     => 1,
-          'update_watch_time' => 20,
-        },
-
-        'jobs' => [dummy_job],
-      }
-    end
-
-    def self.manifest_with_jobs
-      {
-        'name' => 'minimal',
-
-        'releases' => [{
-          'name' => 'appcloud',
-          'version' => '0.1' # It's our dummy valid release from spec/assets/valid_release.tgz
-        }],
-
-        'update' => {
-          'canaries' => 2,
-          'canary_watch_time' => 4000,
-          'max_in_flight' => 1,
-          'update_watch_time' => 20,
-        },
-
-        'jobs' => [{
-          'name' => 'cacher',
-          'templates' => [{
-            'name' => 'cacher',
-            'release' => 'appcloud',
-          }],
-          'resource_pool' => 'a',
-          'instances' => 3,
-          'networks' => [{ 'name' => 'a' }],
-        }],
-      }
-    end
-
-    def self.deployment_manifest_with_addon
-      minimal_manifest.merge(
-        'name' => DEFAULT_DEPLOYMENT_NAME,
-        'releases' => [
-          {
-            'name' => 'bosh-release',
-            'version' => '0.1-dev',
-          },
-          { 'name' => 'dummy2',
-            'version' => '0.2-dev' },
-        ],
-        'jobs' => [{
-          'name' => 'foobar',
-          'templates' => [{ 'name' => 'foobar', 'release' => 'bosh-release' }],
-          'instances' => 1,
-          'resource_pool' => 'a',
-          'networks' => [{ 'name' => 'a' }],
-        }],
-        'addons' => [{
-          'name' => 'addon1',
-          'jobs' => [{ 'name' => 'dummy_with_properties', 'release' => 'dummy2' }],
-          'properties' => { 'dummy_with_properties' => { 'echo_value' => 'prop_value' } },
-        }],
-      )
-    end
-
-    def self.complex_deployment_manifest_with_addon
-      minimal_manifest.merge(
-        'name' => DEFAULT_DEPLOYMENT_NAME,
-        'releases' => [
-          {
-            'name' => 'bosh-release',
-            'version' => '0.1-dev',
-          },
-          { 'name' => 'dummy2',
-            'version' => '0.2-dev' },
-        ],
-        'jobs' => [
-          simple_job(resource_pool: 'b', name: 'has-rc-addon-vm', templates: [{ 'name' => 'foobar', 'release' => 'bosh-release' }], instances: 1),
-          simple_job(resource_pool: 'a', name: 'has-depl-rc-addons-vm', templates: [{ 'name' => 'foobar', 'release' => 'bosh-release' }], instances: 1),
-          simple_job(resource_pool: 'a', name: 'has-depl-addon-vm', templates: [{ 'name' => 'foobar_without_packages', 'release' => 'bosh-release' }], instances: 1),
-        ],
-        'addons' => [
-          'name' => 'addon1',
-          'jobs' => [{ 'name' => 'dummy', 'release' => 'dummy2' }],
-          'include' => {
-            'stemcell' => [
-              { 'os' => 'toronto-os' },
-            ],
-          },
-        ],
-      )
-    end
-
-    def self.test_deployment_manifest
-      {
-        'name' => 'test_deployment',
-
-        'releases' => [{
-          'name' => 'test_release',
-          'version' => '1',
-        }],
-
-        'update' => {
-          'canaries' => 2,
-          'canary_watch_time' => 4000,
-          'max_in_flight'     => 1,
-          'update_watch_time' => 20,
-        },
-      }
-    end
-
-    def self.test_deployment_manifest_with_job(job_name)
-      test_deployment_manifest.merge(
-        'jobs' => [{
-          'name' => job_name,
-          'templates' => [{
-            'name' => job_name,
-          }],
-          'resource_pool' => 'a',
-          'instances'     => 1,
-          'networks'      => [{ 'name' => 'a' }],
-        }],
-      )
-    end
-
-    def self.test_deployment_manifest_referencing_multiple_releases
-      {
-        'name' => 'multiple_release_deployment',
-
-        'releases' => [{
-          'name' => 'test_release',
-          'version' => '1',
-        }, {
-          'name'    => 'test_release_a',
-          'version' => '1',
-        }],
-
-        'update' => {
-          'canaries' => 2,
-          'canary_watch_time' => 4000,
-          'max_in_flight'     => 1,
-          'update_watch_time' => 20,
-        },
-        'jobs' => [{
-          'name' => 'job_name',
-          'templates' => [{
-            'name'    => 'job_using_pkg_1_and_2',
-            'release' => 'test_release',
-          }, {
-            'name' => 'job_using_pkg_5',
-            'release' => 'test_release_a',
-          }],
-          'resource_pool' => 'a',
-          'instances'     => 1,
-          'networks'      => [{ 'name' => 'a' }],
-        }],
-      }
-    end
-
-    def self.minimal_legacy_manifest
-      simple_cloud_config.merge(
-        'name' => 'minimal_legacy_manifest',
-
-        'releases' => [{
-          'name' => 'test_release',
-          'version' => '1' # It's our dummy valid release from spec/assets/test_release.tgz
-        }],
-
-        'update' => {
-          'canaries' => 2,
-          'canary_watch_time' => 4000,
-          'max_in_flight'     => 1,
-          'update_watch_time' => 20,
-        },
-      )
-    end
-
     def self.multiple_release_manifest
       {
         'name' => 'minimal',
@@ -791,10 +547,6 @@ module Bosh::Spec
       }
     end
 
-    def self.legacy_manifest
-      simple_cloud_config.merge(simple_manifest)
-    end
-
     def self.test_release_manifest
       minimal_manifest.merge(
         'name' => DEFAULT_DEPLOYMENT_NAME,
@@ -803,12 +555,6 @@ module Bosh::Spec
           'name'    => 'bosh-release',
           'version' => '0.1-dev',
         }],
-      )
-    end
-
-    def self.simple_manifest
-      test_release_manifest.merge(
-        'instance_groups' => [simple_instance_group],
       )
     end
 
@@ -831,133 +577,6 @@ module Bosh::Spec
           'url' => local_release_path,
         }],
       )
-    end
-
-    def self.test_release_job
-      {
-        'jobs' => [{
-          'name' => 'job',
-          'templates' => [{ 'name' => 'job_using_pkg_1' }],
-          'instances' => 1,
-          'resource_pool' => 'a',
-          'networks' => [{ 'name' => 'a' }],
-        }],
-      }
-    end
-
-    def self.simple_job(opts = {})
-      job_hash = {
-        'name' => opts.fetch(:name, 'foobar'),
-        'templates' => opts[:templates] || opts[:jobs] || ['name' => 'foobar'],
-        'resource_pool' => opts.fetch(:resource_pool, 'a'),
-        'instances' => opts.fetch(:instances, 3),
-        'networks' => [{ 'name' => opts.fetch(:network_name, 'a') }],
-        'properties' => {},
-        'release' => opts.fetch(:job_release, 'bosh-release'),
-      }
-
-      job_hash['networks'].first['static_ips'] = opts[:static_ips] if opts.key?(:static_ips)
-
-      job_hash['persistent_disk_pool'] = opts[:persistent_disk_pool] if opts[:persistent_disk_pool]
-
-      job_hash['azs'] = opts[:azs] if opts.key?(:azs)
-
-      job_hash['properties'] = opts[:properties] if opts.key?(:properties)
-
-      job_hash
-    end
-
-    def self.simple_instance_group(opts = {})
-      job_hash = {
-        'name' => opts.fetch(:name, 'foobar'),
-        'jobs' => opts[:jobs] || opts[:jobs] || ['name' => 'foobar'],
-        'resource_pool' => opts.fetch(:resource_pool, 'a'),
-        'instances' => opts.fetch(:instances, 3),
-        'networks' => [{ 'name' => opts.fetch(:network_name, 'a') }],
-        'properties' => opts.fetch(:properties, {}),
-      }
-
-      job_hash['networks'].first['static_ips'] = opts[:static_ips] if opts.key?(:static_ips)
-      job_hash['persistent_disk_pool'] = opts[:persistent_disk_pool] if opts[:persistent_disk_pool]
-      job_hash['azs'] = opts[:azs] if opts.key?(:azs)
-
-      job_hash
-    end
-
-    # Aliasing class method simple_job to simple_instance_group
-    singleton_class.send(:alias_method, :simple_instance_group, :simple_job)
-
-    def self.job_with_many_templates(options = {})
-      {
-        'name' => options.fetch(:name),
-        'templates' => options.fetch(:templates),
-        'resource_pool' => 'a',
-        'instances'     => options.fetch(:instances, 3),
-        'networks'      => [{ 'name' => 'a' }],
-        'properties'    => options.fetch(:properties, {}),
-      }
-    end
-
-    def self.manifest_with_errand
-      manifest = simple_manifest.merge('name' => 'errand')
-      manifest['instance_groups'].find { |ig| ig['name'] == 'foobar' }['instances'] = 1
-      manifest['instance_groups'] << simple_errand_job
-      manifest
-    end
-
-    def self.manifest_with_errand_job_on_service_instance
-      manifest = simple_manifest
-      manifest['jobs'] = [service_job_with_errand]
-      manifest
-    end
-
-    def self.service_job_with_errand
-      {
-        'name' => 'service_with_errand',
-        'templates' => [{ 'release' => 'bosh-release', 'name' => 'errand1' }],
-        'lifecycle' => 'service',
-        'resource_pool' => 'a',
-        'instances' => 1,
-        'networks' => [{ 'name' => 'a' }],
-        'properties' => {
-          'errand1' => {
-            'exit_code' => 0,
-            'stdout' => 'fake-errand-stdout-service',
-            'stderr' => 'fake-errand-stderr-service',
-            'run_package_file' => true,
-          },
-        },
-      }
-    end
-
-    def self.simple_errand_job
-      {
-        'name' => 'fake-errand-name',
-        'templates' => [
-          {
-            'release' => 'bosh-release',
-            'name' => 'errand1',
-          },
-        ],
-        'lifecycle' => 'errand',
-        'resource_pool' => 'a',
-        'instances' => 1,
-        'networks' => [{ 'name' => 'a' }],
-        'properties' => {
-          'errand1' => {
-            'exit_code' => 0,
-            'stdout' => 'fake-errand-stdout',
-            'stderr' => 'fake-errand-stderr',
-            'run_package_file' => true,
-          },
-        },
-      }
-    end
-
-    def self.manifest_errand_with_placeholders
-      manifest = manifest_with_errand
-      manifest['instance_groups'][1]['properties']['errand1']['stdout'] = '((placeholder))'
-      manifest
     end
   end
 end

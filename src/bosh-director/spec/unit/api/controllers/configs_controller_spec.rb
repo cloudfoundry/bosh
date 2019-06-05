@@ -419,7 +419,7 @@ module Bosh::Director
 
           context 'when version field is an integer' do
             let(:config_data) do
-              config = Bosh::Spec::Deployments.simple_runtime_config
+              config = Bosh::Spec::NewDeployments.simple_runtime_config
               config['releases'].first['version'] = 2
               YAML.dump(config)
             end
@@ -430,14 +430,14 @@ module Bosh::Director
               end.to change(Models::Config, :count).from(0).to(1)
 
               expect(last_response.status).to eq(201)
-              expect(Models::Config.first.content).to eq(YAML.dump(Bosh::Spec::Deployments.simple_runtime_config))
-              expect(JSON.parse(last_response.body)['content']).to eq(YAML.dump(Bosh::Spec::Deployments.simple_runtime_config))
+              expect(Models::Config.first.content).to eq(YAML.dump(Bosh::Spec::NewDeployments.simple_runtime_config))
+              expect(JSON.parse(last_response.body)['content']).to eq(YAML.dump(Bosh::Spec::NewDeployments.simple_runtime_config))
             end
           end
 
           context 'when releases block does not contain version field' do
             let(:config_data) do
-              config = Bosh::Spec::Deployments.simple_runtime_config
+              config = Bosh::Spec::NewDeployments.simple_runtime_config
               config['releases'].first.delete('version')
               YAML.dump(config)
             end

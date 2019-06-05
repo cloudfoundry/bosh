@@ -7,7 +7,7 @@ describe 'cli configs', type: :integration do
 
   context 'can upload a config' do
     context 'when config uses placeholders' do
-      let(:config) { yaml_file('config.yml', Bosh::Spec::Deployments.manifest_errand_with_placeholders) }
+      let(:config) { yaml_file('config.yml', Bosh::Spec::NewDeployments.manifest_errand_with_placeholders) }
 
       it 'replaces placeholders' do
         expect(bosh_runner.run("update-config -v placeholder=my-data --type=my-type --name=default #{config.path}")).to include('Succeeded')
@@ -79,7 +79,7 @@ describe 'cli configs', type: :integration do
   end
 
   context 'can list configs' do
-    let(:second_config) { yaml_file('second_config.yml', Bosh::Spec::Deployments.manifest_errand_with_placeholders) }
+    let(:second_config) { yaml_file('second_config.yml', Bosh::Spec::NewDeployments.manifest_errand_with_placeholders) }
 
     it 'lists configs' do
       bosh_runner.run("update-config --type=my-type --name=default #{config.path}")
@@ -210,7 +210,7 @@ describe 'cli configs', type: :integration do
   end
 
   context 'can diff configs' do
-    let(:other_config) { yaml_file('config.yml', Bosh::Spec::Deployments.manifest_errand_with_placeholders) }
+    let(:other_config) { yaml_file('config.yml', Bosh::Spec::NewDeployments.manifest_errand_with_placeholders) }
 
     it 'diffs two saved configs' do
       bosh_runner.run("update-config --type=my-type --name=default #{config.path}")

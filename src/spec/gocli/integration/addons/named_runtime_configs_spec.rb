@@ -79,25 +79,6 @@ describe 'named runtime configs', type: :integration do
     end
   end
 
-  it 'keeps the same configs versions for changing job state' do
-    pending('#145206217: Changing instance groups states uses the latest cloud and runtime configs versions')
-    deploy_from_scratch
-
-    named_runtime_config1['addons'][0]['jobs'] = [
-      { 'name' => 'job_using_pkg_3', 'release' => 'test_release' },
-    ]
-
-    named_runetime_config_file1 = yaml_file('runtime_config.yml', named_runtime_config1)
-    expect(bosh_runner.run("update-runtime-config --name=rc_1 #{named_runetime_config_file1.path}")).to include('Succeeded')
-
-    bosh_runner.run('recreate -d simple')
-
-    director.instances.each do |foobar_instance|
-      expect(File.exist?(foobar_instance.job_path('job_using_pkg_1'))).to be_truthy
-      expect(File.exist?(foobar_instance.job_path('job_using_pkg_3'))).to be_falsey
-    end
-  end
-
   context 'when a named runtime config is updated' do
     let(:named_runtime_config1) do
       {

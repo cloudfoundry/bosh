@@ -18,7 +18,6 @@ describe 'deliver rendered templates through nats', type: :integration do
 
   let(:manifest_hash) do
     manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
-    manifest_hash['stemcells'] = [Bosh::Spec::Deployments.stemcell]
     manifest_hash['instance_groups'] = [{
        'name' => 'our_instance_group',
        'jobs' => [{
