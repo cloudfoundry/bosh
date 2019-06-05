@@ -118,6 +118,42 @@ module Bosh::Director
             ],
           )
         end
+
+        context 'with a user with team permissions' do
+          before do
+            deployment_1.teams = [Models::Team.make(name: 'dev')]
+            deployment_2.teams = [Models::Team.make(name: 'TheEvilTeam')]
+            basic_authorize 'dev-team-member', 'dev-team-member'
+          end
+
+          it 'only returns variables for deployments that the user is authorized to see' do
+            get '/%2FTest%20Director%2Ftest_deployment%2Fvar_name_1' # CGI.escape full variable path
+            expect(last_response.status).to eq(200)
+            vars = JSON.parse(last_response.body)
+            expect(vars['deployments']).to match_array(
+              [
+                { 'name' => 'test_deployment_1', 'version' => 'var_id_1' },
+              ],
+            )
+          end
+        end
+
+        context 'when a deployment has no successful variable set' do
+          before do
+            deployment_1.cleanup_variable_sets([])
+          end
+
+          it 'still returns the relevant deployments' do
+            get '/%2FTest%20Director%2Ftest_deployment%2Fvar_name_1' # CGI.escape full variable path
+            expect(last_response.status).to eq(200)
+            vars = JSON.parse(last_response.body)
+            expect(vars['deployments']).to match_array(
+              [
+                { 'name' => 'test_deployment_2', 'version' => 'var_id_1' },
+              ],
+            )
+          end
+        end
       end
     end
   end

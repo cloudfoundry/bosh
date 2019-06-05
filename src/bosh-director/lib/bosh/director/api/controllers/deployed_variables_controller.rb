@@ -11,25 +11,23 @@ module Bosh::Director
       end
 
       # GET /deployed_variables/:name
-      get '/:name', authorization: :read do
-        response = {
-          'deployments' => [],
-        }
-
-        all_deployments = Bosh::Director::Models::Deployment.order_by(Sequel.asc(:name)).all
-
-        all_deployments.map do |deployment|
+      get '/:name', authorization: :list_deployments do
+        all_deployments = Models::Deployment.order_by(Sequel.asc(:name)).all
+        deployments_response = all_deployments.map do |deployment|
           next unless @permission_authorizer.is_granted?(deployment, :read, token_scopes)
 
-          variable = deployment.last_successful_variable_set.find_variable_by_name(params[:name])
+          variable = deployment.last_successful_variable_set&.find_variable_by_name(params[:name])
           next unless variable
 
-          deployment_using_variable = {
+          {
             'name' => deployment.name,
             'version' => variable.variable_id,
           }
-          response['deployments'] << deployment_using_variable
-        end
+        end.compact
+
+        response = {
+          'deployments' => deployments_response,
+        }
 
         json_encode(response)
       end
