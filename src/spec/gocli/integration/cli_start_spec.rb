@@ -83,13 +83,12 @@ describe 'start job', type: :integration do
     # all vms should be started
     bosh_runner.run('stop', deployment_name: Bosh::Spec::NewDeployments::DEFAULT_DEPLOYMENT_NAME)
     expect(director.instances.map(&:last_known_state).uniq).to match_array(['stopped'])
-    output = bosh_runner.run('start --canaries 2', {
-      json: true,
-      deployment_name: Bosh::Spec::NewDeployments::DEFAULT_DEPLOYMENT_NAME,
-    })
+    output = bosh_runner.run('start --canaries 2',
+                             json: true,
+                             deployment_name: Bosh::Spec::NewDeployments::DEFAULT_DEPLOYMENT_NAME)
     lines = parse_blocks(output)
 
-    foobar_canary_regex = /Updating instance foobar: foobar\/[0-9a-f]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12} \(\d\) \(canary\)/
+    foobar_canary_regex = %r(Updating instance foobar: foobar\/[0-9a-f]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12} \(\d\) \(canary\))
 
     foobar_canary_lines = lines.select { |line| foobar_canary_regex.match(line) }
     expect(foobar_canary_lines.size).to eq(2)
@@ -116,13 +115,12 @@ describe 'start job', type: :integration do
     # all vms should be started
     bosh_runner.run('stop', deployment_name: Bosh::Spec::NewDeployments::DEFAULT_DEPLOYMENT_NAME)
     expect(director.instances.map(&:last_known_state).uniq).to match_array(['stopped'])
-    output = bosh_runner.run('start --max-in-flight 1', {
-      deployment_name: Bosh::Spec::NewDeployments::DEFAULT_DEPLOYMENT_NAME,
-      json: true,
-    })
+    output = bosh_runner.run('start --max-in-flight 1',
+                             deployment_name: Bosh::Spec::NewDeployments::DEFAULT_DEPLOYMENT_NAME,
+                             json: true)
     lines = parse_blocks(output)
 
-    foobar_update_regex = /Updating instance foobar: foobar\/[0-9a-f]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12} \(\d\)/
+    foobar_update_regex = %r(Updating instance foobar: foobar\/[0-9a-f]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12} \(\d\))
 
     foobar_update_lines = lines.select { |l| foobar_update_regex.match(l) }
     expect(foobar_update_lines.size).to eq(10)

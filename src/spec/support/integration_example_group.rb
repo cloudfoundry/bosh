@@ -31,7 +31,7 @@ module IntegrationExampleGroup
     @bosh_runner ||= make_a_bosh_runner
   end
 
-  def make_a_bosh_runner(opts={})
+  def make_a_bosh_runner(opts = {})
     Bosh::Spec::BoshGoCliRunner.new(
       opts.fetch(:work_dir, ClientSandbox.bosh_work_dir),
       opts.fetch(:config_path, ClientSandbox.bosh_config),
@@ -51,20 +51,20 @@ module IntegrationExampleGroup
     @waiter ||= Bosh::Spec::Waiter.new(logger)
   end
 
-  def upload_cloud_config(options={})
+  def upload_cloud_config(options = {})
     cloud_config_hash = options.fetch(:cloud_config_hash, Bosh::Spec::NewDeployments.simple_cloud_config)
     cloud_config_manifest = yaml_file('simple', cloud_config_hash)
     bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}", options)
   end
 
-  def upload_runtime_config(options={})
+  def upload_runtime_config(options = {})
     runtime_config_hash = options.fetch(:runtime_config_hash, Bosh::Spec::NewDeployments.simple_runtime_config)
     name = options.fetch(:name, '')
     runtime_config_manifest = yaml_file('simple', runtime_config_hash)
     bosh_runner.run("update-runtime-config --name=#{name} #{runtime_config_manifest.path}", options)
   end
 
-  def create_and_upload_test_release(options={})
+  def create_and_upload_test_release(options = {})
     create_args = options.fetch(:force, false) ? '--force' : ''
     bosh_runner.run_in_dir("create-release #{create_args}", ClientSandbox.test_release_dir, options)
     bosh_runner.run_in_dir('upload-release', ClientSandbox.test_release_dir, options)
@@ -77,11 +77,11 @@ module IntegrationExampleGroup
     create_and_upload_test_release(force: true)
   end
 
-  def upload_stemcell(options={})
+  def upload_stemcell(options = {})
     bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}", options)
   end
 
-  def upload_stemcell_2(options={})
+  def upload_stemcell_2(options = {})
     bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_2.tgz')}", options)
   end
 
@@ -95,7 +95,7 @@ module IntegrationExampleGroup
     yaml_file('simple', manifest_hash)
   end
 
-  def deploy(options={})
+  def deploy(options = {})
     cmd = options.fetch(:no_color, false) ? '--no-color ' : ''
 
     deployment_hash = options.fetch(:manifest_hash, Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups)
@@ -110,18 +110,18 @@ module IntegrationExampleGroup
     cmd += options.fetch(:json, false) ? ' --json' : ''
 
     if options[:skip_drain]
-      if options[:skip_drain].is_a?(Array)
-        cmd += options[:skip_drain].map { |skip| " --skip-drain=#{skip}" }.join('')
-      else
-        cmd += " --skip-drain"
-      end
+      cmd += if options[:skip_drain].is_a?(Array)
+               options[:skip_drain].map { |skip| " --skip-drain=#{skip}" }.join('')
+             else
+               ' --skip-drain'
+             end
     end
 
-    if options[:manifest_file]
-      cmd += " #{spec_asset(options[:manifest_file])}"
-    else
-      cmd += " #{deployment_file(deployment_hash).path}"
-    end
+    cmd += if options[:manifest_file]
+             " #{spec_asset(options[:manifest_file])}"
+           else
+             " #{deployment_file(deployment_hash).path}"
+           end
 
     bosh_runner.run(cmd, options)
   end
@@ -134,45 +134,44 @@ module IntegrationExampleGroup
     table(bosh_runner.run('disks -o', json: true))
   end
 
-  def deploy_from_scratch(options={})
+  def deploy_from_scratch(options = {})
     prepare_for_deploy(options)
     deploy_simple_manifest(options)
   end
 
-  def prepare_for_deploy(options={})
+  def prepare_for_deploy(options = {})
     create_and_upload_test_release(options)
     upload_stemcell(options)
     upload_cloud_config(options) unless options[:legacy]
-    if options[:runtime_config_hash]
-      upload_runtime_config(options)
-    end
+    upload_runtime_config(options) if options[:runtime_config_hash]
   end
 
-  def deploy_simple_manifest(options={})
+  def deploy_simple_manifest(options = {})
     return_exit_code = options.fetch(:return_exit_code, false)
 
-    output, exit_code = deploy(options.merge({return_exit_code: true}))
+    output, exit_code = deploy(options.merge(return_exit_code: true))
 
-    if exit_code != 0 && !options.fetch(:failure_expected, false)
-      raise "Deploy failed. Exited #{exit_code}: #{output}"
-    end
+    raise "Deploy failed. Exited #{exit_code}: #{output}" if exit_code != 0 && !options.fetch(:failure_expected, false)
 
     return_exit_code ? [output, exit_code] : output
   end
 
-  def run_errand(errand_job_name, options={})
+  def run_errand(errand_job_name, options = {})
     failure_expected = options.fetch(:failure_expected, true)
     output, exit_code = bosh_runner.run(
       "run-errand #{errand_job_name}",
-      options.merge({return_exit_code: true, failure_expected: failure_expected})
+      options.merge(return_exit_code: true, failure_expected: failure_expected),
     )
-    return output, exit_code == 0
+    [output, exit_code.zero?]
   end
 
   def yaml_file(name, object)
     FileUtils.mkdir_p(ClientSandbox.manifests_dir)
     file_path = File.join(ClientSandbox.manifests_dir, "#{name}-#{SecureRandom.uuid}")
-    File.open(file_path, 'w') { |f| f.write(Psych.dump(object)); f }
+    File.open(file_path, 'w') do |f|
+      f.write(Psych.dump(object))
+      f
+    end
   end
 
   def spec_asset(name)
@@ -188,7 +187,11 @@ module IntegrationExampleGroup
   end
 
   def scrub_event_time(bosh_output)
-    sub_in_records(bosh_output, /[A-Za-z]{3} [A-Za-z]{3}\s{1,2}[0-9]{1,2} [0-9]{2}:[0-9]{2}:[0-9]{2} UTC [0-9]{4}/, 'xxx xxx xx xx:xx:xx UTC xxxx')
+    sub_in_records(
+      bosh_output,
+      /[A-Za-z]{3} [A-Za-z]{3}\s{1,2}[0-9]{1,2} [0-9]{2}:[0-9]{2}:[0-9]{2} UTC [0-9]{4}/,
+      'xxx xxx xx xx:xx:xx UTC xxxx',
+    )
   end
 
   def scrub_event_parent_ids(bosh_output)
@@ -216,33 +219,35 @@ module IntegrationExampleGroup
   end
 
   def scrub_time(bosh_output)
-    output = sub_in_records(bosh_output, /[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} [-+][0-9]{4}/, '0000-00-00 00:00:00 -0000')
+    output = sub_in_records(
+      bosh_output,
+      /[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} [-+][0-9]{4}/,
+      '0000-00-00 00:00:00 -0000',
+    )
     sub_in_records(output, /[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} UTC/, '0000-00-00 00:00:00 UTC')
   end
 
   def extract_agent_messages(nats_messages, agent_id)
-    nats_messages.select { |val|
+    nats_messages.select do |val|
       # messages for the agent we care about
       val[0] == "agent.#{agent_id}"
-    }.map { |val|
+    end.map do |val|
       # parse JSON payload
       JSON.parse(val[1])
-    }.flat_map { |val|
+    end.flat_map do |val|
       # extract method from messages that have it
       val['method'] ? [val['method']] : []
-    }
+    end
   end
 
-  def expect_table(cmd, expected, options={})
+  def expect_table(cmd, expected, options = {})
     options[:json] = true
     expect(table(bosh_runner.run(cmd, options))).to contain_exactly(*expected)
   end
 
   def check_for_unknowns(instances)
     uniq_vm_names = instances.map(&:instance_group_name).uniq
-    if uniq_vm_names.size == 1 && uniq_vm_names.first == 'unknown'
-      bosh_runner.print_agent_debug_logs(instances.first.agent_id)
-    end
+    bosh_runner.print_agent_debug_logs(instances.first.agent_id) if uniq_vm_names.size == 1 && uniq_vm_names.first == 'unknown'
   end
 
   def expect_running_vms_with_names_and_count(
@@ -253,13 +258,19 @@ module IntegrationExampleGroup
     check_for_unknowns(instances)
     names = instances.map(&:instance_group_name)
     total_expected_vms = instance_group_names_to_instance_counts.values.inject(0) { |sum, count| sum + count }
-    updated_vms = instances.select { |instance| !instance.vm_cid.empty? }
+    updated_vms = instances.reject { |instance| instance.vm_cid.empty? }
 
-    expect(updated_vms.size).to eq(total_expected_vms), "Expected #{total_expected_vms} VMs, got #{updated_vms.size}. Present were VMs with job name: #{names}"
+    expect(updated_vms.size).to(
+      eq(total_expected_vms),
+      "Expected #{total_expected_vms} VMs, got #{updated_vms.size}. Present were VMs with job name: #{names}",
+    )
 
     instance_group_names_to_instance_counts.each do |instance_group_name, expected_count|
       actual_count = names.select { |name| name == instance_group_name }.size
-      expect(actual_count).to eq(expected_count), "Expected instance group #{instance_group_name} to have #{expected_count} VMs, got #{actual_count}"
+      expect(actual_count).to(
+        eq(expected_count),
+        "Expected instance group #{instance_group_name} to have #{expected_count} VMs, got #{actual_count}",
+      )
     end
 
     expect(updated_vms.map(&:last_known_state).uniq).to eq(['running'])
@@ -287,12 +298,12 @@ module IntegrationExampleGroup
 
   def sub_in_records(output, regex_pattern, replace_pattern)
     output.map do |record|
-      if record.kind_of?(Hash)
+      if record.is_a?(Hash)
         record.each do |key, value|
           record[key] = value.gsub(regex_pattern, replace_pattern)
         end
         record
-      elsif record.kind_of?(String)
+      elsif record.is_a?(String)
         record.gsub(regex_pattern, replace_pattern)
       else
         raise 'Unknown record type'
@@ -306,11 +317,11 @@ module IntegrationSandboxHelpers
     unless sandbox_started?
       at_exit do
         begin
-          status = $! ? ($!.is_a?(::SystemExit) ? $!.status : 1) : 0
+          status = $ERROR_INFO ? ($ERROR_INFO.is_a?(::SystemExit) ? $ERROR_INFO.status : 1) : 0
           logger.info("\n  Stopping sandboxed environment for BOSH tests...")
           current_sandbox.stop
           cleanup_client_sandbox_dir
-        rescue => e
+        rescue StandardError => e
           logger.error "Failed to stop sandbox! #{e.message}\n#{e.backtrace.join("\n")}"
         ensure
           exit(status)
@@ -329,7 +340,7 @@ module IntegrationSandboxHelpers
     reconfigure_sandbox(options)
     if !sandbox_started?
       start_sandbox
-    elsif example == nil || !example.metadata[:no_reset]
+    elsif example.nil? || !example.metadata[:no_reset]
       current_sandbox.reset
     end
   end
@@ -341,6 +352,7 @@ module IntegrationSandboxHelpers
   def current_sandbox
     sandbox = Thread.current[:sandbox]
     raise "call prepare_sandbox to set up this thread's sandbox" if sandbox.nil?
+
     sandbox
   end
 
@@ -358,7 +370,7 @@ module IntegrationSandboxHelpers
 
   def setup_test_release_dir(destination_dir = ClientSandbox.test_release_dir)
     FileUtils.rm_rf(destination_dir)
-    FileUtils.cp_r(TEST_RELEASE_TEMPLATE, destination_dir, :preserve => true)
+    FileUtils.cp_r(TEST_RELEASE_TEMPLATE, destination_dir, preserve: true)
 
     final_config_path = File.join(destination_dir, 'config', 'final.yml')
     final_config = YAML.load_file(final_config_path)
@@ -366,7 +378,7 @@ module IntegrationSandboxHelpers
     File.open(final_config_path, 'w') { |file| file.write(YAML.dump(final_config)) }
 
     Dir.chdir(destination_dir) do
-      ignore = %w(
+      ignore = %w[
         blobs
         dev-releases
         config/dev.yml
@@ -379,7 +391,7 @@ module IntegrationSandboxHelpers
         blobs
         .blobs
         .DS_Store
-      )
+      ]
 
       File.open('.gitignore', 'w+') do |f|
         f.write(ignore.join("\n") + "\n")
@@ -396,7 +408,7 @@ module IntegrationSandboxHelpers
   private
 
   def setup_bosh_work_dir
-    FileUtils.cp_r(BOSH_WORK_TEMPLATE, ClientSandbox.bosh_work_dir, :preserve => true)
+    FileUtils.cp_r(BOSH_WORK_TEMPLATE, ClientSandbox.bosh_work_dir, preserve: true)
   end
 
   def setup_home_dir
@@ -411,7 +423,7 @@ module IntegrationSandboxHelpers
 end
 
 module IntegrationSandboxBeforeHelpers
-  def with_reset_sandbox_before_each(options={})
+  def with_reset_sandbox_before_each(options = {})
     before do |example|
       reset_sandbox(example, options)
     end

@@ -20,20 +20,20 @@ module Bosh::Director
 
         it 'creates a new cpi config' do
           cpi_config = YAML.dump(Bosh::Spec::NewDeployments.multi_cpi_config)
-          expect {
-            post '/', cpi_config, {'CONTENT_TYPE' => 'text/yaml'}
-          }.to change(Bosh::Director::Models::Config, :count).from(0).to(1)
+          expect do
+            post '/', cpi_config, 'CONTENT_TYPE' => 'text/yaml'
+          end.to change(Bosh::Director::Models::Config, :count).from(0).to(1)
 
           expect(Bosh::Director::Models::Config.first.content).to eq(cpi_config)
         end
 
         it 'creates a new cpi config when one exists with different content' do
           content = YAML.dump(Bosh::Spec::NewDeployments.multi_cpi_config)
-          Models::Config.make(:cpi, content: content+"123")
+          Models::Config.make(:cpi, content: content + '123')
 
-          expect {
-            post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
-          }.to change(Models::Config, :count)
+          expect do
+            post '/', content, 'CONTENT_TYPE' => 'text/yaml'
+          end.to change(Models::Config, :count)
 
           expect(last_response.status).to eq(201)
         end
@@ -42,15 +42,15 @@ module Bosh::Director
           content = YAML.dump(Bosh::Spec::NewDeployments.multi_cpi_config)
           Models::Config.make(:cpi, content: content)
 
-          expect {
-            post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
-          }.to_not change(Models::Config, :count)
+          expect do
+            post '/', content, 'CONTENT_TYPE' => 'text/yaml'
+          end.to_not change(Models::Config, :count)
 
           expect(last_response.status).to eq(201)
         end
 
         it 'gives a nice error when request body is not a valid yml' do
-          post '/', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
+          post '/', "}}}i'm not really yaml, hah!", 'CONTENT_TYPE' => 'text/yaml'
 
           expect(last_response.status).to eq(400)
           expect(JSON.parse(last_response.body)['code']).to eq(440001)
@@ -58,20 +58,20 @@ module Bosh::Director
         end
 
         it 'gives a nice error when request body is empty' do
-          post '/', '', {'CONTENT_TYPE' => 'text/yaml'}
+          post '/', '', 'CONTENT_TYPE' => 'text/yaml'
 
           expect(last_response.status).to eq(400)
           expect(JSON.parse(last_response.body)).to eq(
-                                                        'code' => 440001,
-                                                        'description' => 'Manifest should not be empty',
-                                                    )
+            'code' => 440001,
+            'description' => 'Manifest should not be empty',
+          )
         end
 
         it 'creates a new event' do
           properties = YAML.dump(Bosh::Spec::NewDeployments.multi_cpi_config)
-          expect {
-            post '/', properties, {'CONTENT_TYPE' => 'text/yaml'}
-          }.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
+          expect do
+            post '/', properties, 'CONTENT_TYPE' => 'text/yaml'
+          end.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
           event = Bosh::Director::Models::Event.first
           expect(event.object_type).to eq('cpi-config')
           expect(event.action).to eq('update')
@@ -79,15 +79,14 @@ module Bosh::Director
         end
 
         it 'creates a new event with error' do
-          expect {
-            post '/', {}, {'CONTENT_TYPE' => 'text/yaml'}
-          }.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
+          expect do
+            post '/', {}, { 'CONTENT_TYPE' => 'text/yaml' }
+          end.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
           event = Bosh::Director::Models::Event.first
           expect(event.object_type).to eq('cpi-config')
           expect(event.action).to eq('update')
           expect(event.user).to eq('admin')
           expect(event.error).to eq('Manifest should not be empty')
-
         end
       end
 
@@ -112,7 +111,7 @@ module Bosh::Director
           let(:expected_diff) { '{"diff":[["cpis:","added"],["- name: cpi-name1","added"],["  type: cpi-type","added"],["  properties:","added"],["    somekey: someval","added"],["- name: cpi-name2","added"],["  type: cpi-type2","added"],["  properties:","added"],["    somekey2: someval2","added"]]}' }
 
           it 'shows property values in plain text' do
-            post '/diff?redact=false', cpi_config, {'CONTENT_TYPE' => 'text/yaml'}
+            post '/diff?redact=false', cpi_config, 'CONTENT_TYPE' => 'text/yaml'
 
             expect(last_response.status).to eq(200)
             expect(last_response.body).to eq(expected_diff)
@@ -121,7 +120,7 @@ module Bosh::Director
 
         describe 'when cpi config is new' do
           it "shows a full 'added' diff" do
-            post '/diff', cpi_config, {'CONTENT_TYPE' => 'text/yaml'}
+            post '/diff', cpi_config, 'CONTENT_TYPE' => 'text/yaml'
 
             expect(last_response.status).to eq(200)
             expect(last_response.body).to eq(expected_diff)
@@ -130,11 +129,11 @@ module Bosh::Director
 
         describe 'when previous cpi config is nil' do
           before do
-            cpi_config = Bosh::Director::Models::Config.make(:cpi, raw_manifest: nil)
+            Bosh::Director::Models::Config.make(:cpi, raw_manifest: nil)
           end
 
           it "shows a full 'added' diff" do
-            post '/diff', cpi_config, {'CONTENT_TYPE' => 'text/yaml'}
+            post '/diff', cpi_config, 'CONTENT_TYPE' => 'text/yaml'
 
             expect(last_response.status).to eq(200)
             expect(last_response.body).to eq(expected_diff)
@@ -145,17 +144,18 @@ module Bosh::Director
           before do
             Bosh::Director::Api::CpiConfigManager.new.update(cpi_config)
           end
+
           let(:expected_diff) { '{"diff":[["cpis:","removed"],["- name: cpi-name1","removed"],["  type: cpi-type","removed"],["  properties:","removed"],["    somekey: \"<redacted>\"","removed"],["- name: cpi-name2","removed"],["  type: cpi-type2","removed"],["  properties:","removed"],["    somekey2: \"<redacted>\"","removed"]]}' }
 
           it 'shows a full "removed" diff for nil' do
-            post '/diff', '--- {}', { 'CONTENT_TYPE' => 'text/yaml' }
+            post '/diff', '--- {}', 'CONTENT_TYPE' => 'text/yaml'
 
             expect(last_response.status).to eq(200)
             expect(last_response.body).to eq(expected_diff)
           end
 
           it 'shows a full "removed" diff for empty hash' do
-            post '/diff', '--- {}', { 'CONTENT_TYPE' => 'text/yaml' }
+            post '/diff', '--- {}', 'CONTENT_TYPE' => 'text/yaml'
 
             expect(last_response.status).to eq(200)
             expect(last_response.body).to eq(expected_diff)
@@ -167,7 +167,7 @@ module Bosh::Director
         before { basic_authorize 'reader', 'reader' }
 
         it 'denies access' do
-          expect(post('/diff', cpi_config, {'CONTENT_TYPE' => 'text/yaml'}).status).to eq(401)
+          expect(post('/diff', cpi_config, 'CONTENT_TYPE' => 'text/yaml').status).to eq(401)
         end
       end
     end
@@ -178,18 +178,15 @@ module Bosh::Director
 
         it 'returns the number of cpi configs specified by ?limit' do
           Bosh::Director::Models::Config.make(:cpi,
-              content: 'config_from_time_immortal',
-              created_at: Time.now - 3,
-          )
-           Bosh::Director::Models::Config.make(:cpi,
-              content: 'config_from_last_year',
-              created_at: Time.now - 2,
-          )
+                                              content: 'config_from_time_immortal',
+                                              created_at: Time.now - 3)
+          Bosh::Director::Models::Config.make(:cpi,
+                                              content: 'config_from_last_year',
+                                              created_at: Time.now - 2)
           newer_cpi_config_properties = "---\nsuper_shiny: new_config"
           Bosh::Director::Models::Config.make(:cpi,
-              content: newer_cpi_config_properties,
-              created_at: Time.now - 1,
-          )
+                                              content: newer_cpi_config_properties,
+                                              created_at: Time.now - 1)
 
           get '/?limit=2'
 
@@ -215,9 +212,9 @@ module Bosh::Director
 
       describe 'when user has readonly access' do
         before { basic_authorize 'reader', 'reader' }
-        before {
+        before do
           Bosh::Director::Models::Config.make(content: '{}')
-        }
+        end
 
         it 'denies access' do
           expect(get('/?limit=2').status).to eq(401)
@@ -244,34 +241,33 @@ module Bosh::Director
         before { authorize('admin', 'admin') }
 
         context 'when YAML is valid' do
-
           context 'when cpi_config does not exist' do
             it 'returns the delta' do
-              post '/diff', YAML.dump(new_cpi_config), {'CONTENT_TYPE' => 'text/yaml'}
+              post '/diff', YAML.dump(new_cpi_config), 'CONTENT_TYPE' => 'text/yaml'
               diff = JSON.parse(last_response.body)['diff']
 
               expect(last_response.status).to eq(200)
               expect(diff).to eq(
                 [['cpis:', 'added'],
-                  ['- name: cpi-name', 'added'],
-                  ['  type: cpi-type', 'added'],
-                  ['  properties:', 'added'],
-                  ['    somekey: "<redacted>"', 'added']]
+                 ['- name: cpi-name', 'added'],
+                 ['  type: cpi-type', 'added'],
+                 ['  properties:', 'added'],
+                 ['    somekey: "<redacted>"', 'added']],
               )
             end
 
             context 'when `redact=false` option is given' do
               it 'returns the delta with actual values' do
-                post '/diff?redact=false', YAML.dump(new_cpi_config), {'CONTENT_TYPE' => 'text/yaml'}
+                post '/diff?redact=false', YAML.dump(new_cpi_config), 'CONTENT_TYPE' => 'text/yaml'
                 diff = JSON.parse(last_response.body)['diff']
 
                 expect(last_response.status).to eq(200)
                 expect(diff).to eq(
                   [['cpis:', 'added'],
-                    ['- name: cpi-name', 'added'],
-                    ['  type: cpi-type', 'added'],
-                    ['  properties:', 'added'],
-                    ['    somekey: someotherval', 'added']]
+                   ['- name: cpi-name', 'added'],
+                   ['  type: cpi-type', 'added'],
+                   ['  properties:', 'added'],
+                   ['    somekey: someotherval', 'added']],
                 )
               end
             end
@@ -294,11 +290,10 @@ module Bosh::Director
 
             it 'returns the delta' do
               Bosh::Director::Models::Config.make(:cpi,
-                content: YAML.dump(old_cpi_config),
-                created_at: Time.now - 3,
-              )
+                                                  content: YAML.dump(old_cpi_config),
+                                                  created_at: Time.now - 3)
 
-              post '/diff', YAML.dump(new_cpi_config), {'CONTENT_TYPE' => 'text/yaml'}
+              post '/diff', YAML.dump(new_cpi_config), 'CONTENT_TYPE' => 'text/yaml'
               diff = JSON.parse(last_response.body)['diff']
 
               expect(diff.size).to be > 0
@@ -313,20 +308,19 @@ module Bosh::Director
             end
 
             it 'returns 200 with a body containing an empty diff and the error message' do
-              post '/diff', YAML.dump(new_cpi_config), {'CONTENT_TYPE' => 'text/yaml'}
+              post '/diff', YAML.dump(new_cpi_config), 'CONTENT_TYPE' => 'text/yaml'
 
               expect(last_response.status).to eq(200)
 
               expect(JSON.parse(last_response.body)['diff']).to eq([])
               expect(JSON.parse(last_response.body)['error']).to include('Unable to diff cpi_config:')
             end
-
           end
         end
 
         context 'when invalid YAML is given' do
           it 'returns a nice error message' do
-            post '/diff', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
+            post '/diff', "}}}i'm not really yaml, hah!", 'CONTENT_TYPE' => 'text/yaml'
 
             expect(last_response.status).to eq(400)
             expect(JSON.parse(last_response.body)['code']).to eq(440001)
@@ -336,7 +330,7 @@ module Bosh::Director
 
         context 'when YAML is nil' do
           it 'returns a nice error message' do
-            post '/diff', nil, {'CONTENT_TYPE' => 'text/yaml'}
+            post '/diff', nil, 'CONTENT_TYPE' => 'text/yaml'
 
             expect(last_response.status).to eq(400)
             expect(JSON.parse(last_response.body)['code']).to eq(440001)
@@ -349,14 +343,11 @@ module Bosh::Director
         before { authorize 'invalid-user', 'invalid-password' }
 
         it 'returns 401' do
-          post '/diff', YAML.dump({}), {'CONTENT_TYPE' => 'text/yaml'}
+          post '/diff', YAML.dump({}), 'CONTENT_TYPE' => 'text/yaml'
 
           expect(last_response.status).to eq(401)
         end
       end
-
     end
-
   end
 end
-

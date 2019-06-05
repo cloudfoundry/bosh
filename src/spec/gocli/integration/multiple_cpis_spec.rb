@@ -231,7 +231,7 @@ describe 'Using multiple CPIs', type: :integration do
 
       output = bosh_runner.run("deploy --recreate #{deployment_manifest.path}", deployment_name: 'simple', failure_expected: true)
       error_message = "CPI 'cpi-name2' not found in cpi-config"
-      expect(output).to match /#{error_message}/
+      expect(output).to match(/#{error_message}/)
 
       # Bosh can't delete VM since its CPI no longer exists
       output = table(bosh_runner.run('vms', deployment_name: 'simple', json: true))
@@ -297,7 +297,7 @@ describe 'Using multiple CPIs', type: :integration do
 
       output = bosh_runner.run("deploy --recreate #{deployment_manifest.path}", deployment_name: 'simple', failure_expected: true)
       error_message = "CPI 'cpi-name2' not found in cpi-config"
-      expect(output).to match /#{error_message}/
+      expect(output).to match(/#{error_message}/)
 
       # Bosh can't delete VM since its CPI no longer exists
       output = table(bosh_runner.run('vms', deployment_name: 'simple', json: true))

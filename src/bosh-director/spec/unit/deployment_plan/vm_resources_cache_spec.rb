@@ -45,7 +45,9 @@ module Bosh::Director::DeploymentPlan
     end
 
     it 'logs the vm cloud properties returned by the CPI' do
-      expect(logger).to receive(:info).with("CPI cpi-name1 calculated vm cloud properties '#{vm_cloud_properties1}' for vm requirements '#{vm_resources}'")
+      expect(logger)
+        .to receive(:info)
+        .with("CPI cpi-name1 calculated vm cloud properties '#{vm_cloud_properties1}' for vm requirements '#{vm_resources}'")
 
       subject.get_vm_cloud_properties('cpi-name1', vm_resources)
     end
@@ -90,6 +92,5 @@ module Bosh::Director::DeploymentPlan
         expect(fake_cpi1).to have_received(:calculate_vm_cloud_properties).twice
       end
     end
-
   end
 end

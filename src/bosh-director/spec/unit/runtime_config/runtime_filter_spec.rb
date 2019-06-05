@@ -40,12 +40,18 @@ module Bosh::Director
     end
 
     let(:instance_group1) do
-      group1_spec = Bosh::Spec::NewDeployments.simple_instance_group(name: 'group1', jobs: [{ 'name' => 'job1', 'release' => '1' }])
+      group1_spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        name: 'group1',
+        jobs: [{ 'name' => 'job1', 'release' => '1' }],
+      )
       DeploymentPlan::InstanceGroup.parse(deployment_plan, group1_spec, Config.event_log, logger)
     end
 
     let(:instance_group2) do
-      group2_spec = Bosh::Spec::NewDeployments.simple_instance_group(name: 'group2', jobs: [{ 'name' => 'job1', 'release' => '1' }, { 'name' => 'job2', 'release' => '2' }])
+      group2_spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        name: 'group2',
+        jobs: [{ 'name' => 'job1', 'release' => '1' }, { 'name' => 'job2', 'release' => '2' }],
+      )
       DeploymentPlan::InstanceGroup.parse(deployment_plan, group2_spec, Config.event_log, logger)
     end
 
@@ -112,7 +118,7 @@ module Bosh::Director
 
     describe '#applies?' do
       context 'include' do
-        let (:filter_type) { :include }
+        let(:filter_type) { :include }
 
         context 'when RuntimeManifest does not have an include section' do
           let(:filter_spec) { nil }
@@ -136,7 +142,7 @@ module Bosh::Director
       end
 
       context 'exclude' do
-        let (:filter_type) { :exclude }
+        let(:filter_type) { :exclude }
 
         context 'when RuntimeManifest does not have an include section' do
           let(:filter_spec) { nil }
