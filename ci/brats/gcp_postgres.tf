@@ -1,4 +1,5 @@
-variable "gcp_postgres_databasename" {}
+variable "gcp_postgres_databasename" {
+}
 
 resource "google_sql_database_instance" "postgres-master" {
   database_version = "POSTGRES_9_6"
@@ -10,29 +11,28 @@ resource "google_sql_database_instance" "postgres-master" {
     tier = "db-f1-micro"
     ip_configuration {
       ipv4_enabled = true
-      authorized_networks = [
-        {
-          name = "concourse"
-          value = "104.196.254.104"
-        },
-        {
-          name = "pivotal"
-          value = "209.234.137.222/32"
-        }
-      ]
+      authorized_networks {
+        name  = "concourse"
+        value = "104.196.254.104"
+      }
+      authorized_networks {
+        name  = "pivotal"
+        value = "209.234.137.222/32"
+      }
     }
   }
 }
 
 resource "google_sql_database" "postgres" {
-  instance  = "${google_sql_database_instance.postgres-master.name}"
-  name      = "${var.gcp_postgres_databasename}"
+  instance = google_sql_database_instance.postgres-master.name
+  name     = var.gcp_postgres_databasename
 }
 
 output "gcp_postgres_endpoint" {
-  value = "${google_sql_database_instance.postgres-master.first_ip_address}"
+  value = google_sql_database_instance.postgres-master.first_ip_address
 }
 
 output "gcp_postgres_instance_name" {
-  value = "${google_sql_database_instance.postgres-master.name}"
+  value = google_sql_database_instance.postgres-master.name
 }
+
