@@ -21,10 +21,10 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'sequel',    '~>4.49.0'
   spec.add_dependency 'sinatra',   '~>1.4.2'
   spec.add_dependency 'thin',      '~>1.7.0'
-  spec.add_dependency 'fog-openstack'
+  spec.add_dependency 'fog-openstack', '~>0.1.31'
   spec.add_dependency 'aws-sdk'
-  spec.add_dependency 'fog-core',   '~>1.40.1'
+  spec.add_dependency 'fog-core',   '~>1.45.0'
   spec.add_dependency 'builder',    '~>3.1.4'
-  spec.add_dependency 'excon',      '~>0.49.0'
+  spec.add_dependency 'excon',      '~>0.58.0'
   spec.add_dependency 'bosh_cpi'
 end
