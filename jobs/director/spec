@@ -455,39 +455,6 @@ properties:
   # Cpi
   director.cpi_job:
     description: Name of cpi job (null to use bundled cpi gems)
-  agent.blobstore.credentials_source:
-    description: AWS or GCP Credential Source (static / env_or_profile / none)
-    default: 'static'
-  agent.blobstore.access_key_id:
-    description: AWS access_key_id for agent used by s3 blobstore plugin
-  agent.blobstore.secret_access_key:
-    description: AWS secret_access_key for agent used by s3 blobstore plugin
-  agent.blobstore.json_key:
-    description: Contents of a GCP JSON service account file used for static credentials_source (optional)
-  agent.blobstore.s3_region:
-    description: AWS region for agent used by s3 blobstore plugin
-  agent.blobstore.address:
-    description: Address for agent to connect to blobstore server used by simple blobstore plugin
-  agent.blobstore.port:
-    description: Port for agent to connect to blobstore server used by simple blobstore plugin
-  agent.blobstore.host:
-    description: Host of blobstore server used by simple blobstore plugin
-  agent.blobstore.use_ssl:
-    description: Whether the simple blobstore plugin should use SSL to connect to the blobstore server
-    default: true
-  agent.blobstore.ssl_verify_peer:
-    description: Verify the SSL certificate used on the blobstore?
-    default: true
-  agent.blobstore.s3_signature_version:
-    description: Signature version of the blobstore used by s3 blobstore plugin (optional, if not provided the s3 client decides which version to use)
-  agent.blobstore.server_side_encryption:
-    description: Server-side encryption algorithm used when storing blobs in S3 (Optional - "AES256"|"aws:kms")
-  agent.blobstore.sse_kms_key_id:
-    description: AWS KMS key ID to use for object encryption. All GET and PUT requests for an object protected by AWS KMS will fail if not made via SSL or using SigV4.
-  agent.blobstore.storage_class:
-    description: Storage Class used when storing blobs in GCS (optional, if not provided uses bucket default)
-  agent.blobstore.encryption_key:
-    description: Customer-Supplied Encryption key used when storing blobs in GCS (Optional - Base64 encoded 32 byte key)
   agent.nats.address:
     description: Address for agent to connect to nats
   agent.env.bosh:
