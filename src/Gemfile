@@ -16,7 +16,7 @@ gem 'json', '=2.1.0'
 
 gem 'talentbox-delayed_job_sequel', '~>4.3'
 
-gem 'bundler', '~>1.16.0'
+gem 'bundler', '~>1.17.0'
 
 gem 'ruby-prof', '0.17.0'
 
