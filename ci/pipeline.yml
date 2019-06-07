@@ -534,6 +534,7 @@ jobs:
     plan:
     - aggregate:
       - get: bosh-master
+      - get: bosh-src
       - get: candidate-version
         passed: [finalize-bosh-release]
         trigger: true
