@@ -166,14 +166,14 @@ jobs:
     serial_groups: [unit-2.4-mysql]
     build_logs_to_retain: 250
     plan:
-      - aggregate:
+      - in_parallel:
         - get: bosh-src
           passed: [gate]
           trigger: true
         - get: bosh-main-mysql-5.5
         - get: bosh-main-mysql-5.6
         - get: bosh-main-mysql-5.7
-      - aggregate:
+      - in_parallel:
         - task: test-mysql-5.5
           timeout: 2h
           privileged: true
@@ -202,14 +202,14 @@ jobs:
     serial: true
     build_logs_to_retain: 250
     plan:
-      - aggregate:
+      - in_parallel:
         - get: bosh-src
           passed: [gate]
           trigger: true
         - get: bosh-main-postgres-9.4
         - get: bosh-main-postgres-9.6
         - get: bosh-main-postgres-10
-      - aggregate:
+      - in_parallel:
         - task: test-postgres-9.4
           timeout: 2h
           privileged: true
@@ -257,7 +257,7 @@ jobs:
     serial_groups: [integration-db-tls-postgres]
     build_logs_to_retain: 250
     plan:
-      - aggregate:
+      - in_parallel:
         - get: bosh-src
           trigger: true
           passed: [gate]
@@ -287,7 +287,7 @@ jobs:
     serial_groups: [integration-db-tls-postgres-hotswap]
     build_logs_to_retain: 250
     plan:
-      - aggregate:
+      - in_parallel:
         - get: bosh-src
           trigger: true
           passed: [gate]
@@ -318,7 +318,7 @@ jobs:
     serial_groups: [integration-db-tls-mysql]
     build_logs_to_retain: 250
     plan:
-      - aggregate:
+      - in_parallel:
         - get: bosh-src
           passed: [gate]
           trigger: true
@@ -400,7 +400,7 @@ jobs:
 
   - name: compile-bosh-dev-release-xenial
     plan:
-    - aggregate:
+    - in_parallel:
       - get: bosh-src
         passed: [candidate-release]
       - get: release
@@ -421,7 +421,7 @@ jobs:
     serial: true
     plan:
     - do:
-      - aggregate:
+      - in_parallel:
         - get: bosh-candidate-release-tarballs
           passed: [compile-bosh-dev-release-xenial]
         - get: bosh-release
@@ -456,7 +456,7 @@ jobs:
     serial: true
     plan:
     - do:
-      - aggregate:
+      - in_parallel:
         - get: stemcell
           resource: aws-xen-hvm-ubuntu-xenial
           trigger: true
@@ -522,7 +522,7 @@ jobs:
   - name: brats-ubuntu-xenial
     serial: true
     plan:
-    - aggregate:
+    - in_parallel:
       - get: bosh-src
         passed: [compile-bosh-dev-release-xenial]
       - get: bosh-dns-release
@@ -633,7 +633,7 @@ jobs:
 
   - name: bosh-disaster-recovery-acceptance-tests
     plan:
-    - aggregate:
+    - in_parallel:
       - get: bosh-src
         passed: [compile-bosh-dev-release-xenial]
       - get: stemcell
@@ -653,7 +653,7 @@ jobs:
   - name: deploy-acceptance-env
     serial: true
     plan:
-      - aggregate:
+      - in_parallel:
         - get: bbl-state
           resource: acceptance-env-state
         - get: zookeeper-release
@@ -699,7 +699,7 @@ jobs:
 
   - name: delivery
     plan:
-      - aggregate:
+      - in_parallel:
         - get: bosh-src
           version: every
           trigger: true
@@ -715,7 +715,7 @@ jobs:
   - name: finalize-release
     serial: true
     plan:
-      - aggregate:
+      - in_parallel:
         - get: bosh-src
           passed: [deploy-acceptance-env, delivery]
         - get: bosh-src-latest
@@ -752,7 +752,7 @@ jobs:
   - name: export-final-release
     serial: true
     plan:
-    - aggregate:
+    - in_parallel:
       - get: bosh-master
       - get: version
         passed: [finalize-release]
