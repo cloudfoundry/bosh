@@ -21,28 +21,6 @@ groups:
       - deploy-acceptance-env
       - delivery
 
-  - name: mysql
-    jobs:
-      - unit-2.4-mysql
-
-  - name: postgres
-    jobs:
-      - unit-2.4-postgres
-      - integration-db-tls-postgres-hotswap
-
-  - name: bats
-    jobs:
-      - bats-ubuntu-xenial
-      - bats-ubuntu-xenial-aws
-
-  - name: brats
-    jobs:
-      - brats-ubuntu-xenial
-
-  # - name: version
-  #   jobs:
-  #     - bump-candidate-major
-
   - name: PM
     jobs:
       - bump-major
