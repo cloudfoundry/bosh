@@ -50,12 +50,12 @@ jobs:
 - build_logs_to_retain: 250
   name: unit-2.4-mysql
   plan:
-  - aggregate:
+  - in_parallel:
     - get: bosh-src
       trigger: true
     - get: bosh-main-mysql-5.6
     - get: bosh-main-mysql-5.7
-  - aggregate:
+  - in_parallel:
     - file: bosh-src/ci/tasks/test-unit.yml
       image: bosh-main-mysql-5.6
       params:
@@ -75,11 +75,11 @@ jobs:
 - build_logs_to_retain: 250
   name: unit-2.4-postgres
   plan:
-  - aggregate:
+  - in_parallel:
     - get: bosh-src
       trigger: true
     - get: bosh-main-postgres-9.4
-  - aggregate:
+  - in_parallel:
     - file: bosh-src/ci/tasks/test-unit.yml
       image: bosh-main-postgres-9.4
       params:
@@ -105,7 +105,7 @@ jobs:
 - build_logs_to_retain: 250
   name: integration-db-tls-postgres
   plan:
-  - aggregate:
+  - in_parallel:
     - get: bosh-src
       trigger: true
     - get: bosh-cli
@@ -167,7 +167,7 @@ jobs:
 - build_logs_to_retain: 250
   name: integration-db-tls-postgres-hotswap
   plan:
-  - aggregate:
+  - in_parallel:
     - get: bosh-src
       trigger: true
     - get: bosh-cli
@@ -230,14 +230,14 @@ jobs:
 - build_logs_to_retain: 250
   name: upgrade-tests
   plan:
-  - aggregate:
+  - in_parallel:
     - get: bosh-src
       trigger: true
     - get: bosh-cli
       trigger: true
     - get: bosh-agent
     - get: bosh-main-postgres-9.4
-  - aggregate:
+  - in_parallel:
     - file: bosh-src/ci/tasks/test-upgrade.yml
       image: bosh-main-postgres-9.4
       params:
@@ -257,7 +257,7 @@ jobs:
   serial: true
 - name: compile-bbr-xenial
   plan:
-  - aggregate:
+  - in_parallel:
     - get: bosh-src
     - get: release
       resource: bbr-sdk-release
@@ -295,7 +295,7 @@ jobs:
 - name: bats-ubuntu-xenial
   plan:
   - do:
-    - aggregate:
+    - in_parallel:
       - get: bosh-release
         passed:
         - candidate-release
@@ -361,7 +361,7 @@ jobs:
   serial: true
 - name: brats-ubuntu-xenial
   plan:
-  - aggregate:
+  - in_parallel:
     - get: bosh-src
       passed:
       - candidate-release
@@ -483,7 +483,7 @@ jobs:
   serial: true
 - name: bbr-ubuntu-xenial
   plan:
-  - aggregate:
+  - in_parallel:
     - get: bosh-src
       passed:
       - candidate-release
@@ -610,7 +610,7 @@ jobs:
   serial: true
 - name: delivery
   plan:
-  - aggregate:
+  - in_parallel:
     - get: bosh-src
       passed:
       - bats-ubuntu-xenial
@@ -624,7 +624,7 @@ jobs:
     put: tracker-output
 - name: finalize-bosh-release
   plan:
-  - aggregate:
+  - in_parallel:
     - get: bosh-src
       passed:
       - bats-ubuntu-xenial
@@ -659,7 +659,7 @@ jobs:
 - name: export-final-release
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: bosh-master
     - get: candidate-version
       passed: [finalize-bosh-release]
