@@ -95,7 +95,7 @@ jobs:
     plan:
       - { get: bosh-src, trigger: true }
       - { get: every-sunday, trigger: true }
-      - aggregate:
+      - in_parallel:
         - task: test-mysql-5.5
           privileged: true
           config:
@@ -151,7 +151,7 @@ jobs:
     plan:
       - { get: bosh-src, trigger: true }
       - { get: every-sunday, trigger: true }
-      - aggregate:
+      - in_parallel:
         - task: test-postgres-9.3
           privileged: true
           config:
@@ -228,7 +228,7 @@ jobs:
       - put: rds-pool
         params: {acquire: true}
       - { get: bosh-src, trigger: true }
-      - aggregate:
+      - in_parallel:
         - task: test-mysql-rds
           privileged: true
           file: bosh-src/ci/tasks/test-unit-remote-db.yml
@@ -272,7 +272,7 @@ jobs:
     serial: true
     build_logs_to_retain: 250
     plan:
-      - aggregate:
+      - in_parallel:
         - get: bosh-src
           trigger: true
         - get: bosh-cli
@@ -280,7 +280,7 @@ jobs:
         - get: every-sunday
           trigger: true
         - get: bosh-main-postgres-9.4
-      - aggregate:
+      - in_parallel:
         - task: upgrade-with-postgres
           privileged: true
           file: bosh-src/ci/tasks/test-upgrade.yml
@@ -322,7 +322,7 @@ jobs:
     serial: true
     plan:
     - do:
-      - aggregate:
+      - in_parallel:
         - get: bosh-release
           resource: bosh-candidate-release-tarballs
           trigger: true
@@ -361,7 +361,7 @@ jobs:
     serial: true
     plan:
     - do:
-      - aggregate:
+      - in_parallel:
         - get: bosh-release
           resource: bosh-candidate-release-tarballs
           trigger: true
@@ -400,7 +400,7 @@ jobs:
     serial: true
     plan:
     - do:
-      - aggregate:
+      - in_parallel:
         - get: bosh-src
           passed:
           - candidate-release
@@ -423,7 +423,7 @@ jobs:
   - name: finalize-bosh-release
     serial: true
     plan:
-      - aggregate:
+      - in_parallel:
         - get: bosh-src
           passed:
             - bats-centos
@@ -459,7 +459,7 @@ jobs:
   - name: export-final-release
     serial: true
     plan:
-    - aggregate:
+    - in_parallel:
       - get: bosh-master
       - get: candidate-version
         passed: [finalize-bosh-release]
