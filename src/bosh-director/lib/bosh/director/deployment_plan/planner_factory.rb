@@ -36,6 +36,7 @@ module Bosh
 
         def create_from_model(deployment_model, options = {})
           manifest = Manifest.load_from_model(deployment_model)
+
           create_from_manifest(manifest, deployment_model.cloud_configs, deployment_model.runtime_configs, options)
         end
 

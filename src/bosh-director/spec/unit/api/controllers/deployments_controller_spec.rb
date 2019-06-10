@@ -421,6 +421,51 @@ module Bosh::Director
           end
         end
 
+        describe 'stopping an instance in isolation' do
+          let!(:deployment) { Models::Deployment.create(name: 'test-deployment', manifest: YAML.dump('foo' => 'bar')) }
+          let!(:instance) { Models::Instance.make(deployment: deployment, job: 'dea', index: '2') }
+
+          context 'for a generic soft stop request' do
+            let(:task) { instance_double('Bosh::Director::Models::Task', id: 1) }
+            let(:job_queue) { instance_double('Bosh::Director::JobQueue', enqueue: task) }
+            before { allow(JobQueue).to receive(:new).and_return(job_queue) }
+
+            it 'enqueues a StopInstance task' do
+              expect(job_queue).to receive(:enqueue).with(
+                'admin',
+                Jobs::StopInstance,
+                'stop instance',
+                ['test-deployment', instance.id, { hard: false, skip_drain: false }],
+                deployment,
+                '',
+              ).and_return(task)
+
+              post '/test-deployment/jobs/dea/2/actions/stop'
+              expect(last_response).to be_redirect
+            end
+          end
+
+          context 'when skip_drain and hard stop are both requested' do
+            let(:task) { instance_double('Bosh::Director::Models::Task', id: 1) }
+            let(:job_queue) { instance_double('Bosh::Director::JobQueue', enqueue: task) }
+            before { allow(JobQueue).to receive(:new).and_return(job_queue) }
+
+            it 'enqueues a StopInstance task with the correct options' do
+              expect(job_queue).to receive(:enqueue).with(
+                'admin',
+                Jobs::StopInstance,
+                'stop instance',
+                ['test-deployment', instance.id, { hard: true, skip_drain: true }],
+                deployment,
+                '',
+              ).and_return(task)
+
+              post '/test-deployment/jobs/dea/2/actions/stop?skip_drain=true&hard=true'
+              expect(last_response).to be_redirect
+            end
+          end
+        end
+
         describe 'job management' do
           context 'when team-authorized' do
             before do

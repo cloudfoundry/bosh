@@ -130,6 +130,19 @@ module IntegrationExampleGroup
     bosh_runner.run("stop -d #{Bosh::Spec::NewDeployments::DEFAULT_DEPLOYMENT_NAME} #{vm_name}", {})
   end
 
+  def isolated_stop(
+    deployment: Bosh::Spec::NewDeployments::DEFAULT_DEPLOYMENT_NAME,
+    instance_group:,
+    index: nil,
+    id: nil,
+    params: {}
+  )
+    url = "/deployments/#{deployment}/jobs/#{instance_group}/#{id || index}/actions/stop?#{params.to_query}"
+    curl_output = bosh_runner.run("curl -X POST #{url}", json: true)
+    task_id = JSON.parse(parse_blocks(curl_output)[0])['id']
+    bosh_runner.run("task #{task_id}")
+  end
+
   def orphaned_disks
     table(bosh_runner.run('disks -o', json: true))
   end

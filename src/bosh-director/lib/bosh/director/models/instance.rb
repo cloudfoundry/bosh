@@ -178,6 +178,14 @@ module Bosh::Director::Models
       instance_active_vm.nil? ? ::Digest::SHA1.hexdigest('') : instance_active_vm.trusted_certs_sha1
     end
 
+    def stopped?
+      state == 'stopped'
+    end
+
+    def detached?
+      state == 'detached'
+    end
+
     private
 
     def object_or_nil(value)

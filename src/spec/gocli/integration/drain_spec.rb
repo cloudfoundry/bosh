@@ -81,6 +81,11 @@ describe 'drain', type: :integration do
       expect(File).to exist(drain_file)
     end
 
+    it 'runs drain script for isolated stop' do
+      isolated_stop(instance_group: 'foobar', index: 0)
+      expect(File).to exist(drain_file)
+    end
+
     it 'runs drain script for restart' do
       bosh_runner.run('restart foobar/0', deployment_name: deployment_name)
       expect(File).to exist(drain_file)
@@ -125,6 +130,11 @@ describe 'drain', type: :integration do
 
     it 'does not run drain script for stop' do
       bosh_runner.run('stop foobar/0 --skip-drain', deployment_name: deployment_name)
+      expect(File).not_to exist(drain_file)
+    end
+
+    it 'does not run drain script for isolated stop' do
+      isolated_stop(instance_group: 'foobar', index: 0, params: { skip_drain: true })
       expect(File).not_to exist(drain_file)
     end
 
