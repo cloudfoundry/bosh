@@ -14,7 +14,7 @@ if [[ "${branch}" != "master" ]]; then
   pipeline="bosh:${branch}"
 fi
 
-fly -t production set-pipeline -p "${pipeline}" \
+fly -t director set-pipeline -p "${pipeline}" \
     -c ci/pipeline.yml \
     --load-vars-from <(lpass show -G "bosh concourse secrets" --notes) \
     -l <(lpass show --note "bats-concourse-pool:vsphere secrets") \
