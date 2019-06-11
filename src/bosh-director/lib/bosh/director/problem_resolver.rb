@@ -39,14 +39,9 @@ module Bosh::Director
       begin_stage('Applying problem resolutions', all_problems.size)
 
       if Config.parallel_problem_resolution && all_problems.size > 1
-        ig_to_problems = problems_by_instance_group(all_problems)
-
-        problems_serially_ordered_by_job(ig_to_problems) do |ig_problems, max_in_flight|
-          n_threads = [ig_problems.size, max_in_flight, Config.max_threads].min
-          parallel_each(n_threads, ig_problems) do |problem|
-            process_problem(problem)
-          end
-        end
+        igs_to_problems = problems_by_instance_group(all_problems)
+        partitions_to_problem_igs = filter_instance_groups(igs_to_problems)
+        process_partitions(partitions_to_problem_igs, igs_to_problems)
       else
         all_problems.each do |problem|
           process_problem(problem)
@@ -60,9 +55,9 @@ module Bosh::Director
 
     private
 
-    def parallel_each(n_threads, ary)
-      if n_threads > 1
-        ThreadPool.new(max_threads: n_threads).wrap do |pool|
+    def parallel_each(num_threads, ary)
+      if num_threads > 1
+        ThreadPool.new(max_threads: num_threads).wrap do |pool|
           ary.each do |entry|
             pool.process do
               yield entry
@@ -84,27 +79,40 @@ module Bosh::Director
       end
     end
 
-    def problems_serially_ordered_by_job(ig_to_problems, &block)
-      BatchMultiInstanceGroupUpdater.partition_jobs_by_serial(@instance_groups).each do |jp|
+    def filter_instance_groups(igs_to_problems)
+      ig_partition_to_ig_names_with_problems = {}
+      BatchMultiInstanceGroupUpdater.partition_jobs_by_serial(@instance_groups).each do |ig_partition|
         igs_with_problems = []
-        jp.each { |ig| igs_with_problems << ig.name if ig_to_problems.key?(ig.name) }
-        n_threads = [igs_with_problems.size, Config.max_threads].min
-        parallel_each(jp.first.update.serial? ? 1 : n_threads, igs_with_problems) do |ig_name|
-          process_ig(ig_name, ig_to_problems[ig_name], block)
+        ig_partition.each { |ig| igs_with_problems << ig.name if igs_to_problems.key?(ig.name) }
+        ig_partition_to_ig_names_with_problems[ig_partition] = igs_with_problems
+      end
+      ig_partition_to_ig_names_with_problems
+    end
+
+    def process_partitions(ig_partition_to_ig_names_with_problems, igs_to_problems)
+      ig_partition_to_ig_names_with_problems.each do |ig_partition, igs_with_problems|
+        num_threads = ig_partition.first.update.serial? ? 1 : [igs_with_problems.size, Config.max_threads].min
+
+        parallel_each(num_threads, igs_with_problems) do |ig_name|
+          process_instance_group(ig_name, igs_to_problems[ig_name])
         end
       end
     end
 
-    def process_ig(ig_name, problems, block)
+    def process_instance_group(ig_name, problems)
       instance_group = @instance_groups.find do |plan_ig|
         plan_ig.name == ig_name
       end
       max_in_flight = instance_group.update.max_in_flight(problems.size)
-      block.call(problems, max_in_flight)
+
+      num_threads = [problems.size, max_in_flight, Config.max_threads].min
+      parallel_each(num_threads, problems) do |problem|
+        process_problem(problem)
+      end
     end
 
     def problems_by_instance_group(problems)
-      instance_group_to_problems = {}
+      instance_groups_to_problems = {}
       problems.each do |p|
         begin
           if p.instance_problem?
@@ -113,12 +121,12 @@ module Bosh::Director
             disk = Models::PersistentDisk.where(id: p.resource_id).first
             instance = Models::Instance.where(id: disk.instance_id).first if disk
           end
-          (instance_group_to_problems[instance.job] ||= []) << p if instance
+          (instance_groups_to_problems[instance.job] ||= []) << p if instance
         rescue StandardError => e
           log_resolution_error(p, e)
         end
       end
-      instance_group_to_problems
+      instance_groups_to_problems
     end
 
     def apply_resolution(problem)

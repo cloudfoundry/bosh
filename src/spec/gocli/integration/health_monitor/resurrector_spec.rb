@@ -97,7 +97,7 @@ describe 'resurrector', type: :integration, hm: true do
       state: 'done',
     ).order(:id).first
 
-    expect(resurrection_task).to be_truthy
+    expect(resurrection_task.any?).to be_truthy
     expect(resurrection_task[:event_output]).to match(/.*ig_1.*ig_1.*ig_1.*ig_1.*ig_2.*ig_2.*ig_2.*ig_2.*/m)
   end
 
@@ -126,7 +126,7 @@ describe 'resurrector', type: :integration, hm: true do
       state: 'done',
     ).order(:id).first
 
-    expect(resurrection_task).to be_truthy
+    expect(resurrection_task.any?).to be_truthy
     expect(resurrection_task[:event_output]).to match(/Applying.*started.*\n.*Applying.*started.*\n.*Applying.*finished/m)
   end
 end

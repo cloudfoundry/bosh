@@ -12,11 +12,11 @@ module Bosh::Director
     let(:update_deployment) { double }
     let(:parallel_problem_resolution) { true }
     let(:parallel_update_config) { instance_double('Bosh::Director::DeploymentPlan::UpdateConfig', serial?: false) }
-    let(:n_igs_with_problems) { 4 }
-    let(:n_problems_in_ig) { 3 }
+    let(:num_problem_instance_groups) { 4 }
+    let(:problems_per_instance_group) { 3 }
     let(:igs) do
       igs = []
-      (1..n_igs_with_problems).each do |i|
+      (1..num_problem_instance_groups).each do |i|
         igs << instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: "ig-#{i}", update: parallel_update_config)
       end
       igs
@@ -52,8 +52,8 @@ module Bosh::Director
 
     def test_instance_apply_resolutions
       problem_resolutions = {}
-      (1..n_igs_with_problems).each do |n|
-        n_problems_in_ig.times do
+      (1..num_problem_instance_groups).each do |n|
+        problems_per_instance_group.times do
           instance = Models::Instance.make(job: "ig-#{n}", deployment_id: @deployment.id)
           problem = Models::DeploymentProblem.make(
             deployment_id: @deployment.id,
@@ -86,8 +86,8 @@ module Bosh::Director
 
         context 'when parallel resurrection is turned on' do
           context 'when only one problem exists per instance group' do
-            let(:n_igs_with_problems) { 1 }
-            let(:n_problems_in_ig) { 1 }
+            let(:num_problem_instance_groups) { 1 }
+            let(:problems_per_instance_group) { 1 }
 
             it 'does not create a threadpool for processing the problem' do
               test_instance_apply_resolutions
@@ -107,17 +107,20 @@ module Bosh::Director
           context 'when max_in_flight is one' do
             let(:max_in_flight) { 1 }
 
-            it 'does not create a threadpool for processing the problem' do
+            it 'only creates one threadpool for instance groups with problems' do
               test_instance_apply_resolutions
-              expect(ThreadPool).to have_received(:new).once.with(max_threads: n_igs_with_problems)
+              expect(ThreadPool).to have_received(:new).once
+              expect(ThreadPool).to have_received(:new).with(max_threads: num_problem_instance_groups)
             end
           end
 
           context 'when the number instances with problems is smaller than max_in_flight and max_threads' do
             it 'respects number of instances with problems' do
               test_instance_apply_resolutions
-              expect(ThreadPool).to have_received(:new).once.with(max_threads: n_igs_with_problems)
-              expect(ThreadPool).to have_received(:new).exactly(n_igs_with_problems).times.with(max_threads: n_problems_in_ig)
+              expect(ThreadPool).to have_received(:new).once.with(max_threads: num_problem_instance_groups)
+              expect(ThreadPool).to have_received(:new)
+                .exactly(num_problem_instance_groups).times
+                .with(max_threads: problems_per_instance_group)
             end
           end
 
@@ -126,8 +129,10 @@ module Bosh::Director
 
             it 'respects max_in_flight' do
               test_instance_apply_resolutions
-              expect(ThreadPool).to have_received(:new).once.with(max_threads: n_igs_with_problems)
-              expect(ThreadPool).to have_received(:new).exactly(n_igs_with_problems).times.with(max_threads: max_in_flight)
+              expect(ThreadPool).to have_received(:new).once.with(max_threads: num_problem_instance_groups)
+              expect(ThreadPool).to have_received(:new)
+                .exactly(num_problem_instance_groups).times
+                .with(max_threads: max_in_flight)
             end
           end
 
@@ -135,7 +140,9 @@ module Bosh::Director
             let(:max_threads) { 2 }
             it 'respects max_threads' do
               test_instance_apply_resolutions
-              expect(ThreadPool).to have_received(:new).exactly(1 + n_igs_with_problems).times.with(max_threads: max_threads)
+              expect(ThreadPool).to have_received(:new)
+                .exactly(1 + num_problem_instance_groups).times
+                .with(max_threads: max_threads)
             end
           end
 
@@ -158,8 +165,8 @@ module Bosh::Director
               non_serial_igs_with_problems = 2
               expect(ThreadPool).to have_received(:new).once.with(max_threads: non_serial_igs_with_problems)
               expect(ThreadPool).to have_received(:new).exactly(
-                n_igs_with_problems,
-              ).times.with(max_threads: n_problems_in_ig)
+                num_problem_instance_groups,
+              ).times.with(max_threads: problems_per_instance_group)
             end
           end
         end
