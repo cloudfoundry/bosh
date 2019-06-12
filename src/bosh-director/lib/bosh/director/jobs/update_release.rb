@@ -207,17 +207,34 @@ module Bosh::Director
       # @param [String] release_dir local path to the unpacked release
       # @return [void]
       def process_packages(release_dir)
-        PackageProcessor.process(
-          release_dir,
-          @compiled_release,
+        new_packages, existing_packages, registered_packages = PackageProcessor.process(
           @release_version_model,
           @release_model,
           @name,
           @version,
           manifest_packages,
           logger,
-          self,
         )
+
+        created_package_refs = create_packages(new_packages, release_dir)
+
+        existing_package_refs = use_existing_packages(existing_packages, release_dir)
+
+
+        if @compiled_release
+          registered_package_refs = registered_packages.map do |pkg, pkg_meta|
+            {
+              package: pkg,
+              package_meta: pkg_meta,
+            }
+          end
+
+          all_package_refs = Array(created_package_refs) | Array(existing_package_refs) | registered_package_refs
+          create_compiled_packages(all_package_refs, release_dir)
+          return
+        end
+
+        backfill_source_for_packages(registered_packages, release_dir)
       end
 
       # @return [boolean] true if sources were added to at least one package; false if the call had no effect.

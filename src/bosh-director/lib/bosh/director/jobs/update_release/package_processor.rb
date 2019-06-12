@@ -3,33 +3,27 @@ module Bosh::Director
     class UpdateRelease
       class PackageProcessor
         def initialize(
-          release_dir,
-          compiled_release,
-          release_version_model,
-          release_model,
-          name,
-          version,
-          manifest_packages,
-          logger,
-          update_release
+            release_version_model,
+            release_model,
+            name,
+            version,
+            manifest_packages,
+            logger
         )
 
-          @release_dir = release_dir
-          @compiled_release = compiled_release
           @release_version_model = release_version_model
           @release_model = release_model
           @name = name
           @version = version
           @manifest_packages = manifest_packages
           @logger = logger
-          @update_release = update_release
 
           @new_packages = []
           @existing_packages = []
           @registered_packages = []
         end
 
-        attr_reader :logger, :release_dir, :manifest_packages, :update_release
+        attr_reader :logger, :manifest_packages
 
         def self.process(*args)
           PackageProcessor.new(*args).process
@@ -63,7 +57,7 @@ module Bosh::Director
             end
           end
 
-          persist_packages
+          return [@new_packages, @existing_packages, @registered_packages]
         end
 
         private
@@ -71,7 +65,7 @@ module Bosh::Director
         def validate_package_fingerprint!(package_meta)
           # Checking whether we might have the same bits somewhere (in any release, not just the one being uploaded)
           @release_version_model.packages.select { |pv| pv.name == package_meta['name'] }.each do |package|
-            if package.fingerprint !=  package_meta['fingerprint']
+            if package.fingerprint != package_meta['fingerprint']
               raise ReleaseInvalidPackage, "package '#{package_meta['name']}' had different fingerprint in previously uploaded release '#{@name}/#{@version}'"
             end
           end
@@ -108,29 +102,6 @@ module Bosh::Director
           end
 
           @new_packages << package_meta
-        end
-
-        def persist_packages
-          created_package_refs = update_release.create_packages(@new_packages, release_dir)
-
-          existing_package_refs = update_release.use_existing_packages(@existing_packages, release_dir)
-
-          if @compiled_release
-            all_package_refs = Array(created_package_refs) | Array(existing_package_refs) | registered_package_refs
-            update_release.create_compiled_packages(all_package_refs, release_dir)
-            return
-          end
-
-          update_release.backfill_source_for_packages(@registered_packages, release_dir)
-        end
-
-        def registered_package_refs
-          @registered_packages.map do |pkg, pkg_meta|
-            {
-              package: pkg,
-              package_meta: pkg_meta,
-            }
-          end
         end
       end
     end
