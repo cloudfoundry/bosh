@@ -142,7 +142,7 @@ module Bosh::Director
             [new_package_metadata]
           end
 
-          let(:release_model) { double(id: 1) }
+          let(:release_model) { double(id: release.id) }
 
           let!(:release_version_model) do
             release.add_version(Models::ReleaseVersion.make)
@@ -208,7 +208,7 @@ module Bosh::Director
                     version: package_version,
                     blobstore_id: another_blobstore_id,
                     dependency_set_json: '{}',
-                    release_id: release.id,
+                    release_id: release.id+1,
                   )
 
                   expect(update_release).to receive(:create_packages).with([], release_dir)
@@ -275,7 +275,7 @@ module Bosh::Director
 
           context 'and is not preexisting' do
             context 'and has a nil blobstore id' do
-              let(:release_model) { double(id: 2) }
+              let(:release_model) { double(id: release.id+1) }
 
               let(:blobstore_id) { nil }
 
@@ -296,7 +296,7 @@ module Bosh::Director
 
               context 'but does not match release id' do
 
-                let(:release_model) { double(id: 2) }
+                let(:release_model) { double(id: release.id+1) }
 
                 it 'copies metadata from the existing package' do
                   expect(update_release).to receive(:use_existing_packages).with([], release_dir)
