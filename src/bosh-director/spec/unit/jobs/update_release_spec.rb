@@ -8,7 +8,7 @@ module Bosh::Director
       allow(Bosh::Director::Config).to receive(:verify_multidigest_path).and_return('some/path')
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
     end
-    let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
+    let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient', create: true) }
     let(:task) { Models::Task.make(id: 42) }
     let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
     let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
@@ -82,13 +82,10 @@ module Bosh::Director
         allow(Dir).to receive(:mktmpdir).and_return(release_dir)
         allow(job).to receive(:with_release_lock).and_yield
         allow(blobstore).to receive(:create)
-        allow(job).to receive(:register_package)
+        allow(Jobs::UpdateRelease::PackagePersister).to receive(:persist)
       end
 
       it 'should process packages for compiled release' do
-        expect(job).to receive(:create_packages)
-        expect(job).to receive(:use_existing_packages)
-        expect(job).to receive(:create_compiled_packages)
         expect(job).to receive(:register_template).twice
         expect(job).to receive(:create_job).twice
 
@@ -278,7 +275,7 @@ module Bosh::Director
       end
 
       context 'release already exists' do
-        before { Models::ReleaseVersion.make(release: release, version: '42+dev.6', commit_hash: '12345678', uncommitted_changes: true) }
+        let!(:release_version_model) { Models::ReleaseVersion.make(release: release, version: '42+dev.6', commit_hash: '12345678', uncommitted_changes: true) }
 
         context 'when rebase is passed' do
           let(:job_options) do
@@ -298,10 +295,21 @@ module Bosh::Director
             end
 
             it 'sets a next release version' do
-              expect(job).to receive(:create_package)
-              expect(job).to receive(:register_package)
+              allow(Jobs::UpdateRelease::PackageProcessor).to receive(:process).and_return [manifest_packages, [], []]
+              allow(Jobs::UpdateRelease::PackagePersister).to receive(:persist)
               job.perform
 
+              expect(Jobs::UpdateRelease::PackagePersister).to have_received(:persist).with(
+                manifest_packages,
+                [],
+                [],
+                false,
+                release_dir,
+                false,
+                manifest.tap { |m| m['packages'].each { |p| p['dependencies'] = [] } },
+                Models::ReleaseVersion.last,
+                release,
+              )
               rv = Models::ReleaseVersion.filter(version: '42+dev.7').first
               expect(rv).to_not be_nil
             end
@@ -326,7 +334,7 @@ module Bosh::Director
           end
 
           it 'does not create a release' do
-            expect(job).not_to receive(:create_package)
+            expect(Jobs::UpdateRelease::PackagePersister).not_to receive(:create_package)
             expect(job).not_to receive(:create_job)
             job.perform
           end
@@ -384,26 +392,10 @@ module Bosh::Director
           Models::Package.make(release: release, name: 'fake-name-1', version: 'fake-version-1', fingerprint: 'fake-fingerprint-1')
         end
 
-        it "creates packages that don't already exist" do
-          expect(job).to receive(:create_packages).with([
-                                                          {
-                                                            'sha1' => 'fakesha2',
-                                                            'fingerprint' => 'fake-fingerprint-2',
-                                                            'name' => 'fake-name-2',
-                                                            'version' => 'fake-version-2',
-                                                            'dependencies' => [],
-                                                            'compiled_package_sha1' => 'fakesha2',
-                                                          },
-                                                        ], release_dir)
-          job.perform
-        end
-
         it 'raises an error if a different fingerprint was detected for an already existing package' do
           pkg = Models::Package.make(release: release, name: 'fake-name-2', version: 'fake-version-2', fingerprint: 'different-finger-print', sha1: 'fakesha2')
           release_version = Models::ReleaseVersion.make(release: release, version: '42+dev.6', commit_hash: '12345678', uncommitted_changes: true)
           release_version.add_package(pkg)
-
-          allow(job).to receive(:create_packages)
 
           expect do
             job.perform
@@ -1168,125 +1160,6 @@ module Bosh::Director
             expect(matching_existing_compiled_package_from_same_release_version.reload.blobstore_id).to eq('new-existing-compiled-blobstore-id-A-after-fix')
           end
         end
-      end
-    end
-
-    describe 'create_package_for_compiled_release' do
-      let(:release_dir) { Dir.mktmpdir }
-      after { FileUtils.rm_rf(release_dir) }
-
-      before do
-        @release = Models::Release.make
-        @job = Jobs::UpdateRelease.new(release_dir)
-        @job.release_model = @release
-        @job.instance_variable_set(:@compiled_release, true)
-      end
-
-      it 'should create simple packages without blobstore_id or sha1' do
-        @job.create_package({
-          'name' => 'test_package',
-          'version' => '1.0',
-          'sha1' => nil,
-          'dependencies' => %w[foo_package bar_package],
-        }, release_dir)
-
-        package = Models::Package[name: 'test_package', version: '1.0']
-        expect(package).not_to be_nil
-        expect(package.name).to eq('test_package')
-        expect(package.version).to eq('1.0')
-        expect(package.release).to eq(@release)
-        expect(package.sha1).to be_nil
-        expect(package.blobstore_id).to be_nil
-      end
-    end
-
-    describe 'create_package' do
-      let(:release_dir) { Dir.mktmpdir }
-      after { FileUtils.rm_rf(release_dir) }
-
-      before do
-        @release = Models::Release.make
-        @job = Jobs::UpdateRelease.new(release_dir)
-        @job.release_model = @release
-      end
-
-      it 'should create simple packages' do
-        FileUtils.mkdir_p(File.join(release_dir, 'packages'))
-        package_path = File.join(release_dir, 'packages', 'test_package.tgz')
-
-        File.open(package_path, 'w') do |f|
-          f.write(create_package('test' => 'test contents'))
-        end
-
-        expect(blobstore).to receive(:create)
-          .with(satisfy { |obj| obj.path == package_path })
-          .and_return('blob_id')
-
-        @job.create_package({
-          'name' => 'test_package',
-          'version' => '1.0',
-          'sha1' => 'some-sha',
-          'dependencies' => %w[foo_package bar_package],
-        }, release_dir)
-
-        package = Models::Package[name: 'test_package', version: '1.0']
-        expect(package).not_to be_nil
-        expect(package.name).to eq('test_package')
-        expect(package.version).to eq('1.0')
-        expect(package.release).to eq(@release)
-        expect(package.sha1).to eq('some-sha')
-        expect(package.blobstore_id).to eq('blob_id')
-      end
-
-      it 'should copy package blob' do
-        expect(BlobUtil).to receive(:copy_blob).and_return('blob_id')
-        FileUtils.mkdir_p(File.join(release_dir, 'packages'))
-        package_path = File.join(release_dir, 'packages', 'test_package.tgz')
-        File.open(package_path, 'w') do |f|
-          f.write(create_package('test' => 'test contents'))
-        end
-
-        @job.create_package({
-          'name' => 'test_package',
-          'version' => '1.0', 'sha1' => 'some-sha',
-          'dependencies' => %w[foo_package bar_package],
-          'blobstore_id' => 'blah'
-        }, release_dir)
-
-        package = Models::Package[name: 'test_package', version: '1.0']
-        expect(package).not_to be_nil
-        expect(package.name).to eq('test_package')
-        expect(package.version).to eq('1.0')
-        expect(package.release).to eq(@release)
-        expect(package.sha1).to eq('some-sha')
-        expect(package.blobstore_id).to eq('blob_id')
-      end
-
-      it 'should fail if cannot extract package archive' do
-        result = Bosh::Exec::Result.new('cmd', 'output', 1)
-        expect(Bosh::Exec).to receive(:sh).and_return(result)
-
-        expect do
-          @job.create_package({
-            'name' => 'test_package',
-            'version' => '1.0',
-            'sha1' => 'some-sha',
-            'dependencies' => %w[foo_package bar_package],
-          }, release_dir)
-        end.to raise_exception(Bosh::Director::PackageInvalidArchive)
-      end
-
-      def create_package(files)
-        io = StringIO.new
-
-        Archive::Tar::Minitar::Writer.open(io) do |tar|
-          files.each do |key, value|
-            tar.add_file(key, mode: '0644', mtime: 0) { |os, _| os.write(value) }
-          end
-        end
-
-        io.close
-        gzip(io.string)
       end
     end
 
