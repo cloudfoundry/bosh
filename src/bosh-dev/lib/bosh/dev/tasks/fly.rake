@@ -33,7 +33,7 @@ namespace :fly do
   end
 
   def concourse_target
-    "-t #{ENV.fetch('CONCOURSE_TARGET', 'production')}"
+    "-t #{ENV.fetch('CONCOURSE_TARGET', 'director')}"
   end
 
   def prepare_env(additional_env = {})
