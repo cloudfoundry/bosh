@@ -122,22 +122,23 @@ module Bosh::Director
       end
 
       describe 'Compiled release upload' do
-        subject(:job) do
-          Jobs::UpdateRelease::PackagePersister.new(
-            manifest_compiled_packages,
+        def persist_packages(manifest_packages, compiled_flag)
+          Jobs::UpdateRelease::PackagePersister.persist(
+            manifest_packages,
             [],
             [],
-            true,
+            compiled_flag,
             release_dir,
             false,
             manifest,
-            release_version,
+            release_version_model,
             release,
           )
         end
 
         let(:release_dir) { Test::ReleaseHelper.new.create_release_tarball(manifest) }
         let(:release_version) { '42+dev.6' }
+        let(:release_version_model) { Models::ReleaseVersion.make(version: release_version) }
         let(:release) { Models::Release.make(name: 'appcloud') }
 
         let(:manifest_jobs) do
@@ -165,12 +166,18 @@ module Bosh::Director
               'fingerprint' => 'fake-fingerprint-1',
               'name' => 'fake-name-1',
               'version' => 'fake-version-1',
+              'compiled_package_sha1' => 'compiled-sha1-1',
+              'stemcell' => 'foo/bar',
+              'dependencies' => [],
             },
             {
               'sha1' => 'fakesha2',
               'fingerprint' => 'fake-fingerprint-2',
               'name' => 'fake-name-2',
               'version' => 'fake-version-2',
+              'compiled_package_sha1' => 'compiled-sha1-2',
+              'stemcell' => 'foo/bar',
+              'dependencies' => [],
             },
           ]
         end
@@ -192,28 +199,51 @@ module Bosh::Director
         end
 
         it 'should process packages for compiled release' do
-          expect(job).to receive(:create_packages)
-          expect(job).to receive(:use_existing_packages)
-          expect(job).to receive(:create_compiled_packages)
+          ['fake-name-1.tgz', 'fake-name-2.tgz'].each do |name|
+            tgz = "#{release_dir}/compiled_packages/#{name}"
+            allow(Bosh::Exec).to receive(:sh).with(
+              "tar -tzf #{tgz} 2>&1",
+              on_error: :return,
+            ).and_return(instance_double(Bosh::Exec::Result, failed?: false))
+            expect(BlobUtil).to receive(:create_blob).with(tgz).and_return(1)
+          end
+          expect(BlobUtil).to_not receive(:copy_blob)
 
-          job.persist
+          persist_packages(manifest_compiled_packages, true)
+          packages = Models::Package.all
+          expect(packages.length).to eq(2)
+          packages[0].tap do |p|
+            expect(p.sha1).to eq(nil)
+            expect(p.compiled_packages.length).to eq(1)
+            expect(p.compiled_packages.first.sha1).to eq('compiled-sha1-1')
+            expect(p.compiled_packages.first.dependency_key_sha1).to eq('97d170e1550eee4afc0af065b78cda302a97674c')
+            expect(p.compiled_packages.first.stemcell_os).to eq('foo')
+            expect(p.compiled_packages.first.stemcell_version).to eq('bar')
+            expect(p.compiled_packages.first.build).to eq(1)
+            expect(p.compiled_packages.first.blobstore_id).to eq('1')
+            expect(p.fingerprint).to eq('fake-fingerprint-1')
+            expect(p.name).to eq('fake-name-1')
+            expect(p.version).to eq('fake-version-1')
+          end
+          packages[1].tap do |p|
+            expect(p.sha1).to eq(nil)
+            expect(p.compiled_packages.length).to eq(1)
+            expect(p.compiled_packages.first.sha1).to eq('compiled-sha1-2')
+            expect(p.compiled_packages.first.dependency_key_sha1).to eq('97d170e1550eee4afc0af065b78cda302a97674c')
+            expect(p.compiled_packages.first.stemcell_os).to eq('foo')
+            expect(p.compiled_packages.first.stemcell_version).to eq('bar')
+            expect(p.compiled_packages.first.build).to eq(1)
+            expect(p.compiled_packages.first.blobstore_id).to eq('1')
+            expect(p.fingerprint).to eq('fake-fingerprint-2')
+            expect(p.name).to eq('fake-name-2')
+            expect(p.version).to eq('fake-version-2')
+          end
+
+          compiled_packages = Models::CompiledPackage.all
+          expect(compiled_packages.length).to eq(2)
         end
 
         context 'when there are packages in manifest' do
-          subject(:job) do
-            Jobs::UpdateRelease::PackagePersister.new(
-              manifest_packages,
-              [],
-              [],
-              false,
-              release_dir,
-              false,
-              manifest,
-              release_version,
-              release,
-            )
-          end
-
           let(:manifest_packages) do
             [
               {
@@ -234,17 +264,29 @@ module Bosh::Director
           end
 
           it "creates packages that don't already exist" do
-            expect(job).to receive(:create_packages).with([
-              {
-                'sha1' => 'fakesha2',
-                'fingerprint' => 'fake-fingerprint-2',
-                'name' => 'fake-name-2',
-                'version' => 'fake-version-2',
-                'dependencies' => [],
-                'compiled_package_sha1' => 'fakesha2',
-              },
-            ], release_dir)
-            job.persist
+            tgz = "#{release_dir}/packages/fake-name-2.tgz"
+            allow(Bosh::Exec).to receive(:sh).with(
+              "tar -tzf #{tgz} 2>&1",
+              on_error: :return,
+            ).and_return(instance_double(Bosh::Exec::Result, failed?: false))
+            expect(BlobUtil).to receive(:create_blob).with(tgz).and_return(1)
+
+            persist_packages(manifest_packages, false)
+
+            packages = Models::Package.all
+            expect(packages.length).to eq(2)
+            packages[0].tap do |p|
+              expect(p.sha1).to eq('sha1-1')
+              expect(p.fingerprint).to eq('fake-fingerprint-1')
+              expect(p.name).to eq('fake-name-1')
+              expect(p.version).to eq('fake-version-1')
+            end
+            packages[1].tap do |p|
+              expect(p.sha1).to eq('fakesha2')
+              expect(p.fingerprint).to eq('fake-fingerprint-2')
+              expect(p.name).to eq('fake-name-2')
+              expect(p.version).to eq('fake-version-2')
+            end
           end
         end
       end
