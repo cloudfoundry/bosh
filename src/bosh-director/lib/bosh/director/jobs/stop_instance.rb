@@ -40,9 +40,11 @@ module Bosh::Director
             stop(instance_plan, instance_model)
           end
 
-          event_log_stage = event_log.begin_stage('Deleting VM')
-          event_log_stage.advance_and_track(instance_model.vm_cid) do
-            detach_instance(instance_model) if @options['hard']
+          if @options['hard']
+            event_log_stage = event_log.begin_stage('Deleting VM')
+            event_log_stage.advance_and_track(instance_model.vm_cid) do
+              detach_instance(instance_model)
+            end
           end
         end
       end
