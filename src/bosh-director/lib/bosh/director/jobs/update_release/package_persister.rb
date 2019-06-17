@@ -318,7 +318,7 @@ module Bosh::Director
         def create_compiled_package(package, package_sha1, stemcell_os, stemcell_version, release_dir, other_compiled_package)
           if other_compiled_package.nil?
             tgz = File.join(release_dir, 'compiled_packages', "#{package.name}.tgz")
-            validate_tgz(tgz, "#{package.name}.tgz")
+            self.class.validate_tgz(logger, tgz, "#{package.name}.tgz")
                          blobstore_id = BlobUtil.create_blob(tgz)
                          sha1 = package_sha1
           else
