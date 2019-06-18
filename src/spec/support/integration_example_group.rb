@@ -137,7 +137,7 @@ module IntegrationExampleGroup
     id: nil,
     params: {}
   )
-    url = "/deployments/#{deployment}/jobs/#{instance_group}/#{id || index}/actions/stop?#{params.to_query}"
+    url = "/deployments/#{deployment}/instance_groups/#{instance_group}/#{id || index}/actions/stop?#{params.to_query}"
     curl_output = bosh_runner.run("curl -X POST #{url}", json: true)
     task_id = JSON.parse(parse_blocks(curl_output)[0])['id']
     bosh_runner.run("task #{task_id}")

@@ -440,7 +440,7 @@ module Bosh::Director
                 '',
               ).and_return(task)
 
-              post '/test-deployment/jobs/dea/2/actions/stop'
+              post '/test-deployment/instance_groups/dea/2/actions/stop'
               expect(last_response).to be_redirect
             end
           end
@@ -460,7 +460,7 @@ module Bosh::Director
                 '',
               ).and_return(task)
 
-              post '/test-deployment/jobs/dea/2/actions/stop?skip_drain=true&hard=true'
+              post '/test-deployment/instance_groups/dea/2/actions/stop?skip_drain=true&hard=true'
               expect(last_response).to be_redirect
             end
           end

@@ -117,7 +117,7 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      post '/:deployment/jobs/:job/:index_or_id/actions/:action' do
+      post '/:deployment/instance_groups/:job/:index_or_id/actions/:action' do
         validate_instance_index_or_id(params[:index_or_id])
 
         instance = @instance_manager.find_by_name(deployment, params[:job], params[:index_or_id])
