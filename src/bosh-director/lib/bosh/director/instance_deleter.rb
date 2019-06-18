@@ -83,7 +83,7 @@ module Bosh::Director
     end
 
     def stop(instance_plan)
-      Stopper.new(instance_plan, 'stopped', Config, @logger).stop(@stop_intent)
+      Stopper.stop(intent: @stop_intent, instance_plan: instance_plan, target_state: 'stopped', logger: @logger)
     end
 
     # FIXME: why do we hate dependency injection?

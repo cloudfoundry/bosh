@@ -134,7 +134,7 @@ module Bosh::Director
 
       def stop
         stop_intent = deleting_vm? ? :delete_vm : :keep_vm
-        Stopper.new(instance_plan, instance.state, Config, @logger).stop(stop_intent)
+        Stopper.stop(intent: stop_intent, instance_plan: instance_plan, target_state: instance.state, logger: @logger)
       end
 
       def deleting_vm?

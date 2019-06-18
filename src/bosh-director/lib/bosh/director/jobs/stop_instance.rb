@@ -60,11 +60,9 @@ module Bosh::Director
       end
 
       def stop(instance_plan, instance_model)
-        if @options['hard']
-          Stopper.new(instance_plan, 'detached', Config, @logger).stop(:delete_vm)
-        else
-          Stopper.new(instance_plan, 'stopped', Config, @logger).stop(:keep_vm)
-        end
+        intent = @options['hard'] ? :delete_vm : :keep_vm
+        target_state = @options['hard'] ? 'detached' : 'stopped'
+        Stopper.stop(intent: intent, instance_plan: instance_plan, target_state: target_state, logger: @logger)
 
         Api::SnapshotManager.take_snapshot(instance_model, clean: true)
         @logger.debug("Setting instance #{@instance_id} state to stopped")

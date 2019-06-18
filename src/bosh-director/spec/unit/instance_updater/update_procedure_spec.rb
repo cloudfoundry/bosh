@@ -51,7 +51,6 @@ module Bosh::Director
       let(:recreate_handler) { double(InstanceUpdater::RecreateHandler, perform: nil) }
       let(:should_create_swap_delete?) { false }
       let(:state_applier) { double(InstanceUpdater::StateApplier, apply: nil) }
-      let(:stopper) { double(Stopper, stop: nil) }
       let(:unmount_instance_disk_step) { double(Steps::UnmountInstanceDisksStep, perform: nil) }
       let(:vm_creator) { nil }
 
@@ -106,7 +105,6 @@ module Bosh::Director
         allow(Steps::PrepareInstanceStep).to receive(:new).and_return(prepare_instance_step)
         allow(Steps::UnmountInstanceDisksStep).to receive(:new).and_return(unmount_instance_disk_step)
         allow(Steps::DeleteVmStep).to receive(:new).and_return(delete_vm_step)
-        allow(Stopper).to receive(:new).and_return(stopper)
         allow(Api::SnapshotManager).to receive(:take_snapshot)
         allow(InstanceUpdater::StateApplier).to receive(:new).and_return(state_applier)
         allow(AgentClient).to receive(:with_agent_id).and_return(agent)
@@ -149,6 +147,7 @@ module Bosh::Director
 
           before do
             allow(Config).to receive(:enable_nats_delivered_templates).and_return(enable_nats_delivered_templates)
+            allow(Stopper).to receive(:stop)
 
             update_procedure.perform
           end
@@ -233,10 +232,11 @@ module Bosh::Director
                 end
 
                 it 'stops with the correct stop intent' do
-                  expect(Stopper).to have_received(:new)
-                    .with(instance_plan, instance_state, anything, logger)
-
-                  expect(stopper).to have_received(:stop).with(:delete_vm)
+                  expect(Stopper).to have_received(:stop).with(hash_including(
+                                                                 intent: :delete_vm,
+                                                                 instance_plan: instance_plan,
+                                                                 target_state: instance_state,
+                                                               ))
                 end
               end
 
@@ -249,10 +249,11 @@ module Bosh::Director
                 end
 
                 it 'stops with the correct stop intent' do
-                  expect(Stopper).to have_received(:new)
-                    .with(instance_plan, instance_state, anything, logger)
-
-                  expect(stopper).to have_received(:stop).with(:delete_vm)
+                  expect(Stopper).to have_received(:stop).with(hash_including(
+                                                                 intent: :delete_vm,
+                                                                 instance_plan: instance_plan,
+                                                                 target_state: instance_state,
+                                                               ))
                 end
               end
 
@@ -260,7 +261,7 @@ module Bosh::Director
                 let(:instance_model_state) { 'not-stopped' }
 
                 it 'stops and takes snapshot' do
-                  expect(stopper).to have_received(:stop)
+                  expect(Stopper).to have_received(:stop)
                   expect(Api::SnapshotManager).to have_received(:take_snapshot).with(instance_model, clean: true)
                 end
               end
@@ -272,10 +273,11 @@ module Bosh::Director
                   let(:needs_recreate) { true }
 
                   it 'stops with the correct stop_intent' do
-                    expect(Stopper).to have_received(:new)
-                      .with(instance_plan, instance_state, anything, logger)
-
-                    expect(stopper).to have_received(:stop).with(:delete_vm)
+                    expect(Stopper).to have_received(:stop).with(hash_including(
+                                                                   intent: :delete_vm,
+                                                                   instance_plan: instance_plan,
+                                                                   target_state: instance_state,
+                                                                 ))
                   end
                 end
 
@@ -283,10 +285,11 @@ module Bosh::Director
                   let(:needs_recreate) { false }
 
                   it 'stops with the correct stop_intent' do
-                    expect(Stopper).to have_received(:new)
-                      .with(instance_plan, instance_state, anything, logger)
-
-                    expect(stopper).to have_received(:stop).with(:keep_vm)
+                    expect(Stopper).to have_received(:stop).with(hash_including(
+                                                                   intent: :keep_vm,
+                                                                   instance_plan: instance_plan,
+                                                                   target_state: instance_state,
+                                                                 ))
                   end
                 end
               end
@@ -295,7 +298,7 @@ module Bosh::Director
                 let(:instance_model_state) { 'stopped' }
 
                 it 'does not stop or take snapshot' do
-                  expect(stopper).to_not have_received(:stop)
+                  expect(Stopper).to_not have_received(:stop)
                   expect(Api::SnapshotManager).to_not have_received(:take_snapshot)
                 end
               end
@@ -385,7 +388,7 @@ module Bosh::Director
             end
 
             context 'and the instance vm is not being recreated' do
-              let(:needs_recreate)  { false }
+              let(:needs_recreate) { false }
               let(:should_create_swap_delete?) { false }
 
               it 'does not recreate the vm' do

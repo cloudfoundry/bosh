@@ -71,7 +71,6 @@ module Bosh::Director
         let(:deployment_plan) { instance_double(DeploymentPlan::Planner, model: deployment_model) }
         let(:job) { DeploymentPlan::InstanceGroup.new(logger) }
         let(:network) { instance_double(DeploymentPlan::ManualNetwork, name: 'manual-network') }
-        let(:stopper) { instance_double(Stopper) }
         let(:vm_deleter) { VmDeleter.new(logger, false, false) }
 
         let(:job_templates_cleaner) do
@@ -93,9 +92,8 @@ module Bosh::Director
           allow(event_log_stage).to receive(:advance_and_track).and_yield
 
           allow(VmDeleter).to receive(:new).and_return(vm_deleter)
-          allow(Stopper).to receive(:new).with(instance_plan, 'stopped', Config, logger).and_return(stopper)
 
-          allow(stopper).to receive(:stop)
+          allow(Stopper).to receive(:stop).with(hash_including(instance_plan: instance_plan, target_state: 'stopped'))
           allow(vm_deleter).to receive(:delete_for_instance).and_call_original
           allow(disk_manager).to receive(:delete_persistent_disks).and_call_original
 
@@ -120,7 +118,7 @@ module Bosh::Director
         end
 
         it 'should record deletion event' do
-          expect(stopper).to receive(:stop)
+          expect(Stopper).to receive(:stop)
           expect(vm_deleter).to receive(:delete_for_instance).with(existing_instance, true, true).and_call_original
           expect(cloud).to receive(:delete_vm).with(existing_instance.vm_cid)
           expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/my-uuid-1 (5)')
@@ -150,7 +148,7 @@ module Bosh::Director
         end
 
         it 'should record deletion event with error' do
-          allow(stopper).to receive(:stop).and_raise(RpcTimeout)
+          allow(Stopper).to receive(:stop).and_raise(RpcTimeout)
 
           expect do
             deleter.delete_instance_plans([instance_plan], event_log_stage)
@@ -175,7 +173,7 @@ module Bosh::Director
         end
 
         it 'drains, deletes snapshots, dns records, persistent disk' do
-          expect(stopper).to receive(:stop)
+          expect(Stopper).to receive(:stop)
           expect(powerdns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
 
           expect(dns_publisher).to receive(:publish_and_broadcast)
@@ -205,7 +203,7 @@ module Bosh::Director
           end
 
           it 'should delete the instance synchronously' do
-            expect(stopper).to receive(:stop)
+            expect(Stopper).to receive(:stop)
             expect(vm_deleter).to receive(:delete_for_instance).with(existing_instance, true, false).and_call_original
             expect(cloud).to receive(:delete_vm).with(existing_instance.vm_cid)
             expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/my-uuid-1 (5)')
@@ -224,7 +222,7 @@ module Bosh::Director
 
           context 'when stopping fails' do
             before do
-              allow(stopper).to receive(:stop).and_raise(RpcTimeout)
+              allow(Stopper).to receive(:stop).and_raise(RpcTimeout)
             end
 
             it 'deletes snapshots, persistent disk' do
@@ -255,7 +253,7 @@ module Bosh::Director
             end
 
             it 'drains, deletes snapshots, persistent disk' do
-              expect(stopper).to receive(:stop)
+              expect(Stopper).to receive(:stop)
               expect(disk_manager).to receive(:delete_persistent_disks).with(existing_instance)
               expect(powerdns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
 
@@ -281,7 +279,7 @@ module Bosh::Director
             end
 
             it 'drains, deletes vm, snapshots, disks' do
-              expect(stopper).to receive(:stop)
+              expect(Stopper).to receive(:stop)
               expect(cloud).to receive(:delete_vm).with(existing_instance.vm_cid)
 
               expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/my-uuid-1 (5)')
@@ -302,7 +300,7 @@ module Bosh::Director
             end
 
             it 'drains, deletes vm, snapshots, disks' do
-              expect(stopper).to receive(:stop)
+              expect(Stopper).to receive(:stop)
               expect(cloud).to receive(:delete_vm).with(existing_instance.vm_cid)
 
               expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/my-uuid-1 (5)')
@@ -325,7 +323,7 @@ module Bosh::Director
 
           it 'deletes snapshots, persistent disk, vm should not be deleted from cloud' do
             expect(VmDeleter).to receive(:new).with(anything, anything, true)
-            expect(stopper).to receive(:stop)
+            expect(Stopper).to receive(:stop)
             expect(cloud).not_to receive(:delete_vm)
 
             expect(powerdns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
