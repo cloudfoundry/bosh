@@ -300,15 +300,15 @@ module Bosh::Director
               job.perform
 
               expect(Jobs::UpdateRelease::PackagePersister).to have_received(:persist).with(
-                manifest_packages,
-                [],
-                [],
-                false,
-                release_dir,
-                false,
-                manifest.tap { |m| m['packages'].each { |p| p['dependencies'] = [] } },
-                Models::ReleaseVersion.last,
-                release,
+                new_packages:          manifest_packages,
+                existing_packages:     [],
+                registered_packages:   [],
+                compiled_release:      false,
+                release_dir:           release_dir,
+                fix:                   false,
+                manifest:              manifest.tap { |m| m['packages'].each { |p| p['dependencies'] = [] } },
+                release_version_model: Models::ReleaseVersion.last,
+                release_model:         release,
               )
               rv = Models::ReleaseVersion.filter(version: '42+dev.7').first
               expect(rv).to_not be_nil

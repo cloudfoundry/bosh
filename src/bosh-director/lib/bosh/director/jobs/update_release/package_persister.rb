@@ -3,15 +3,15 @@ module Bosh::Director
     class UpdateRelease < BaseJob
       class PackagePersister < BaseJob
         def initialize(
-          new_packages,
-          existing_packages,
-          registered_packages,
-          compiled_release,
-          release_dir,
-          fix,
-          manifest,
-          release_version_model,
-          release_model
+          new_packages:,
+          existing_packages:,
+          registered_packages:,
+          compiled_release:,
+          release_dir:,
+          fix:,
+          manifest:,
+          release_version_model:,
+          release_model:
         )
           @compiled_release = compiled_release
           @new_packages = new_packages
@@ -34,7 +34,14 @@ module Bosh::Director
         # @param [Hash] package_meta Package metadata
         # @param [String] release_dir local path to the unpacked release
         # @return [void]
-        def self.create_package(logger, release_model, fix, compiled_release, package_meta, release_dir)
+        def self.create_package(
+          logger:,
+          release_model:,
+          fix:,
+          compiled_release:,
+          package_meta:,
+          release_dir:
+        )
           name = package_meta['name']
           version = package_meta['version']
 
@@ -53,6 +60,14 @@ module Bosh::Director
           save_package_source_blob(logger, package, fix, package_meta, release_dir) unless compiled_release
 
           package.save
+        end
+
+        def self.validate_tgz(logger, tgz, desc)
+          result = Bosh::Exec.sh("tar -tzf #{tgz} 2>&1", on_error: :return)
+          if result.failed?
+            logger.error("Extracting #{desc} archive failed, tar returned #{result.exit_status}, output: #{result.output}")
+            raise PackageInvalidArchive, "Extracting #{desc} archive failed. Check task debug log for details."
+          end
         end
 
         # @return [boolean] true if a new blob was created; false otherwise
@@ -98,14 +113,6 @@ module Bosh::Director
           package.blobstore_id = BlobUtil.create_blob(package_tgz)
 
           true
-        end
-
-        def self.validate_tgz(logger, tgz, desc)
-          result = Bosh::Exec.sh("tar -tzf #{tgz} 2>&1", on_error: :return)
-          if result.failed?
-            logger.error("Extracting #{desc} archive failed, tar returned #{result.exit_status}, output: #{result.output}")
-            raise PackageInvalidArchive, "Extracting #{desc} archive failed. Check task debug log for details."
-          end
         end
 
         private_class_method def self.fix_package(logger, package, package_tgz)
@@ -281,7 +288,14 @@ module Bosh::Director
             package = nil
             event_log_stage.advance_and_track(package_desc) do
               logger.info("Creating new package '#{package_desc}'")
-              package = self.class.create_package(logger, @release_model, @fix, @compiled_release, package_meta, release_dir)
+              package = self.class.create_package(
+                logger:           logger,
+                release_model:    @release_model,
+                fix:              @fix,
+                compiled_release: @compiled_release,
+                package_meta:     package_meta,
+                release_dir:      release_dir,
+              )
               register_package(package)
             end
 

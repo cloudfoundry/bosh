@@ -29,12 +29,19 @@ module Bosh::Director
             .with(satisfy { |obj| obj.path == package_path })
             .and_return('blob_id')
 
-          Jobs::UpdateRelease::PackagePersister.create_package(Logging::Logger.new, release, false, false, {
-            'name' => 'test_package',
-            'version' => '1.0',
-            'sha1' => 'some-sha',
-            'dependencies' => %w[foo_package bar_package],
-          }, release_dir)
+          Jobs::UpdateRelease::PackagePersister.create_package(
+            logger: Logging::Logger.new,
+            release_model: release,
+            fix: false,
+            compiled_release: false,
+            package_meta: {
+              'name' => 'test_package',
+              'version' => '1.0',
+              'sha1' => 'some-sha',
+              'dependencies' => %w[foo_package bar_package],
+            },
+            release_dir: release_dir,
+          )
 
           package = Models::Package[name: 'test_package', version: '1.0']
           expect(package).not_to be_nil
@@ -53,12 +60,19 @@ module Bosh::Director
             f.write(create_package('test' => 'test contents'))
           end
 
-          Jobs::UpdateRelease::PackagePersister.create_package(Logging::Logger.new, release, false, false, {
-            'name' => 'test_package',
-            'version' => '1.0', 'sha1' => 'some-sha',
-            'dependencies' => %w[foo_package bar_package],
-            'blobstore_id' => 'blah'
-          }, release_dir)
+          Jobs::UpdateRelease::PackagePersister.create_package(
+            logger: Logging::Logger.new,
+            release_model: release,
+            fix: false,
+            compiled_release: false,
+            package_meta: {
+              'name' => 'test_package',
+              'version' => '1.0', 'sha1' => 'some-sha',
+              'dependencies' => %w[foo_package bar_package],
+              'blobstore_id' => 'blah'
+            },
+            release_dir: release_dir,
+          )
 
           package = Models::Package[name: 'test_package', version: '1.0']
           expect(package).not_to be_nil
@@ -74,12 +88,19 @@ module Bosh::Director
           expect(Bosh::Exec).to receive(:sh).and_return(result)
 
           expect do
-            Jobs::UpdateRelease::PackagePersister.create_package(Logging::Logger.new, release, false, false, {
-              'name' => 'test_package',
-              'version' => '1.0',
-              'sha1' => 'some-sha',
-              'dependencies' => %w[foo_package bar_package],
-            }, release_dir)
+            Jobs::UpdateRelease::PackagePersister.create_package(
+              logger: Logging::Logger.new,
+              release_model: release,
+              fix: false,
+              compiled_release: false,
+              package_meta: {
+                'name' => 'test_package',
+                'version' => '1.0',
+                'sha1' => 'some-sha',
+                'dependencies' => %w[foo_package bar_package],
+              },
+              release_dir: release_dir,
+            )
           end.to raise_exception(Bosh::Director::PackageInvalidArchive)
         end
 
@@ -104,12 +125,19 @@ module Bosh::Director
         let(:release) { Models::Release.make }
 
         it 'should create simple packages without blobstore_id or sha1' do
-          Jobs::UpdateRelease::PackagePersister.create_package(Logging::Logger.new, release, false, true, {
-            'name' => 'test_package',
-            'version' => '1.0',
-            'sha1' => nil,
-            'dependencies' => %w[foo_package bar_package],
-          }, release_dir)
+          Jobs::UpdateRelease::PackagePersister.create_package(
+            logger: Logging::Logger.new,
+            release_model: release,
+            fix: false,
+            compiled_release: true,
+            package_meta: {
+              'name' => 'test_package',
+              'version' => '1.0',
+              'sha1' => nil,
+              'dependencies' => %w[foo_package bar_package],
+            },
+            release_dir: release_dir,
+          )
 
           package = Models::Package[name: 'test_package', version: '1.0']
           expect(package).not_to be_nil
@@ -124,15 +152,15 @@ module Bosh::Director
       describe 'Compiled release upload' do
         def persist_packages(manifest_packages, compiled_flag)
           Jobs::UpdateRelease::PackagePersister.persist(
-            manifest_packages,
-            [],
-            [],
-            compiled_flag,
-            release_dir,
-            false,
-            manifest,
-            release_version_model,
-            release,
+            new_packages:          manifest_packages,
+            existing_packages:     [],
+            registered_packages:   [],
+            compiled_release:      compiled_flag,
+            release_dir:           release_dir,
+            fix:                   false,
+            manifest:              manifest,
+            release_version_model: release_version_model,
+            release_model:         release,
           )
         end
 

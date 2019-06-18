@@ -217,15 +217,15 @@ module Bosh::Director
         )
 
         PackagePersister.persist(
-          new_packages,
-          existing_packages,
-          registered_packages,
-          @compiled_release,
-          release_dir,
-          @fix,
-          @manifest,
-          @release_version_model,
-          @release_model,
+          new_packages:          new_packages,
+          existing_packages:     existing_packages,
+          registered_packages:   registered_packages,
+          compiled_release:      @compiled_release,
+          release_dir:           release_dir,
+          fix:                   @fix,
+          manifest:              @manifest,
+          release_version_model: @release_version_model,
+          release_model:         @release_model,
         )
       end
 
