@@ -108,7 +108,7 @@ module Bosh::Director
           end
         end
 
-        def self.fix_package(logger, package, package_tgz)
+        private_class_method def self.fix_package(logger, package, package_tgz)
           begin
             logger.info("Deleting package '#{package.name}/#{package.version}'")
             BlobUtil.delete_blob(package.blobstore_id)
@@ -121,7 +121,7 @@ module Bosh::Director
           package.save
         end
 
-        def self.delete_compiled_packages(logger, package)
+        private_class_method def self.delete_compiled_packages(logger, package)
           package.compiled_packages.each do |compiled_pkg|
             logger.info("Deleting compiled package '#{compiled_pkg.name}' for \
   '#{compiled_pkg.stemcell_os}/#{compiled_pkg.stemcell_version}' with blobstore_id '#{compiled_pkg.blobstore_id}'")
