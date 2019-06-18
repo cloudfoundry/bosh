@@ -8,8 +8,7 @@ Layout/IndentHash:
   EnforcedStyle: consistent
 
 Layout/MultilineMethodCallIndentation:
-  EnforcedStyle: aligned
-
+  EnforcedStyle: indented
 
 
 # Metrics
