@@ -40,7 +40,7 @@ module Bosh::Director
 
       if Config.parallel_problem_resolution && all_problems.size > 1
         igs_to_problems = problems_by_instance_group(all_problems)
-        partitions_to_problem_igs = filter_instance_groups(igs_to_problems)
+        partitions_to_problem_igs = partition_instance_groups_by_serial(igs_to_problems.keys)
         process_partitions(partitions_to_problem_igs, igs_to_problems)
       else
         all_problems.each do |problem|
@@ -79,14 +79,13 @@ module Bosh::Director
       end
     end
 
-    def filter_instance_groups(igs_to_problems)
-      ig_partition_to_ig_names_with_problems = {}
-      BatchMultiInstanceGroupUpdater.partition_jobs_by_serial(@instance_groups).each do |ig_partition|
-        igs_with_problems = []
-        ig_partition.each { |ig| igs_with_problems << ig.name if igs_to_problems.key?(ig.name) }
-        ig_partition_to_ig_names_with_problems[ig_partition] = igs_with_problems
-      end
-      ig_partition_to_ig_names_with_problems
+    def partition_instance_groups_by_serial(all_igs_with_problems)
+      Hash[
+        BatchMultiInstanceGroupUpdater.partition_jobs_by_serial(@instance_groups).map do |ig_partition|
+          igs_with_problems = ig_partition.map(&:name).select { |ig_name| all_igs_with_problems.include?(ig_name) }
+          [ig_partition, igs_with_problems]
+        end
+      ]
     end
 
     def process_partitions(ig_partition_to_ig_names_with_problems, igs_to_problems)
@@ -112,21 +111,25 @@ module Bosh::Director
     end
 
     def problems_by_instance_group(problems)
-      instance_groups_to_problems = {}
-      problems.each do |p|
+      instance_model_to_problem = lambda do |p|
         begin
           if p.instance_problem?
-            instance = Models::Instance.where(id: p.resource_id).first
+            return [Models::Instance.where(id: p.resource_id).first, p]
           else
             disk = Models::PersistentDisk.where(id: p.resource_id).first
-            instance = Models::Instance.where(id: disk.instance_id).first if disk
+            return [Models::Instance.where(id: disk.instance_id).first, p] if disk
           end
-          (instance_groups_to_problems[instance.job] ||= []) << p if instance
         rescue StandardError => e
           log_resolution_error(p, e)
         end
       end
-      instance_groups_to_problems
+
+      problems
+        .map(&instance_model_to_problem)
+        .compact
+        .each_with_object(Hash.new { [] }) do |(instance_model, problem), ig_name_to_problems|
+          ig_name_to_problems[instance_model.job] <<= problem
+        end
     end
 
     def apply_resolution(problem)
