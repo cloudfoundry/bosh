@@ -75,7 +75,7 @@ The integration test are run in a sandbox, detailed logs can be found in folder 
 
 #### Custom bosh-cli
 
-To use a custom go-cli in integration tests change `bosh` in  `src/spec/gocli/support/bosh_go_cli_runner.rb`.
+To use a custom go-cli in integration tests change `bosh` in  `src/spec/support/bosh_go_cli_runner.rb`.
 You can also export `BOSH_CLI` to point to a binary.
 
 #### Cleaning the sandbox cache manually
