@@ -138,12 +138,13 @@ describe 'Using multiple CPIs', type: :integration do
               'ips' => /.*/,
               'deployment' => 'simple',
             },
-            { 'instance' => %r{foobar/.*},
+            {
+              'instance' => %r{foobar/.*},
               'process_state' => 'running',
               'az' => 'z2',
               'ips' => /.*/,
               'deployment' => 'simple',
-            }
+            },
           )
 
           # start the transition of using new cpi names
@@ -181,11 +182,13 @@ describe 'Using multiple CPIs', type: :integration do
               'ips' => /.*/,
               'deployment' => 'simple',
             },
-            { 'instance' => %r{foobar/.*},
+            {
+              'instance' => %r{foobar/.*},
               'process_state' => 'running',
               'az' => 'z2',
-              'ips' => /.*/ },
+              'ips' => /.*/,
               'deployment' => 'simple',
+            },
           )
 
           # now that our deployment is on the latest cloud-config, it no longer has a dependence on the old cpi names
@@ -230,8 +233,7 @@ describe 'Using multiple CPIs', type: :integration do
           'process_state' => 'running',
           'az' => 'z2',
           'ips' => /.*/,
-          'deployment' => 'simple',
-        }
+          'deployment' => 'simple' },
       )
 
       # Remove z2 CPI
@@ -300,8 +302,7 @@ describe 'Using multiple CPIs', type: :integration do
           'process_state' => 'running',
           'az' => 'z2',
           'ips' => /.*/,
-          'deployment' => 'simple',
-        }
+          'deployment' => 'simple' },
       )
 
       # Remove z2 CPI
@@ -389,8 +390,7 @@ describe 'Using multiple CPIs', type: :integration do
           'process_state' => 'running',
           'az' => 'z2',
           'ips' => /.*/,
-          'deployment' => 'simple',
-        }
+          'deployment' => 'simple' },
       )
 
       # Remove z2 from cloud config
