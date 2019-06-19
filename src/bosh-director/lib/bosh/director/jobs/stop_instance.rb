@@ -25,11 +25,10 @@ module Bosh::Director
           return if instance_model.detached? # implies stopped
 
           deployment_plan = DeploymentPlan::PlannerFactory.create(@logger)
-                                                          .create_from_model(instance_model.deployment)
+            .create_from_model(instance_model.deployment)
           deployment_plan.releases.each(&:bind_model)
 
           instance_group = deployment_plan.instance_groups.find { |ig| ig.name == instance_model.job }
-
           instance_group.jobs.each(&:bind_models)
 
           instance_plan = construct_instance_plan(instance_model, deployment_plan, instance_group, @options)

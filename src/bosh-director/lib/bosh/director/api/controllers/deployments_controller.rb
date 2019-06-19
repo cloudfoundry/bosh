@@ -117,26 +117,40 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      post '/:deployment/instance_groups/:job/:index_or_id/actions/:action' do
+      post '/:deployment/instance_groups/:instance_group/:index_or_id/actions/stop' do
         validate_instance_index_or_id(params[:index_or_id])
 
-        instance = @instance_manager.find_by_name(deployment, params[:job], params[:index_or_id])
+        instance = @instance_manager.find_by_name(deployment, params[:instance_group], params[:index_or_id])
         options = {
           skip_drain: params['skip_drain'] == 'true',
           hard: params['hard'] == 'true',
         }
 
-        if params[:action] == 'stop'
-          task = JobQueue.new.enqueue(
-            current_user,
-            Jobs::StopInstance,
-            'stop instance',
-            [deployment.name, instance.id, options],
-            deployment,
-            @current_context_id,
-          )
-          redirect "/tasks/#{task.id}"
-        end
+        task = JobQueue.new.enqueue(
+          current_user,
+          Jobs::StopInstance,
+          'stop instance',
+          [deployment.name, instance.id, options],
+          deployment,
+          @current_context_id,
+        )
+        redirect "/tasks/#{task.id}"
+      end
+
+      post '/:deployment/instance_groups/:instance_group/:index_or_id/actions/start' do
+        validate_instance_index_or_id(params[:index_or_id])
+
+        instance = @instance_manager.find_by_name(deployment, params[:instance_group], params[:index_or_id])
+
+        task = JobQueue.new.enqueue(
+          current_user,
+          Jobs::StartInstance,
+          'start instance',
+          [deployment.name, instance.id, {}],
+          deployment,
+          @current_context_id,
+        )
+        redirect "/tasks/#{task.id}"
       end
 
       # GET /deployments/foo/jobs/dea/2/logs

@@ -50,11 +50,11 @@ module Bosh::Director
       vm_deleter.delete_for_instance(instance_model)
     end
 
-    def recreate_vm_skip_post_start(instance_model)
+    def recreate_vm_without_wait(instance_model)
       recreate_vm(instance_model, false)
     end
 
-    def recreate_vm(instance_model, run_post_start = true)
+    def recreate_vm(instance_model, wait_for_running = true)
       @logger.debug("Recreating Vm: #{instance_model})")
       delete_vm_from_cloud(instance_model)
 
@@ -125,7 +125,7 @@ module Bosh::Director
             cleaner,
             @logger,
             {}
-          ).apply(update_config, run_post_start)
+          ).apply(update_config, wait_for_running)
         end
 
         InstanceUpdater::InstanceState.with_instance_update(instance_model, &cloud_check_procedure)

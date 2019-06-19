@@ -7,7 +7,6 @@ module Bosh::Director
   # (hopefully few) components that require it.
 
   class App
-
     class << self
       # Some places need to reference the authoritative app instance
       # from class methods.

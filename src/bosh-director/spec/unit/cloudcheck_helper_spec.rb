@@ -14,8 +14,8 @@ module Bosh::Director
         action { recreate_vm(@instance) }
       end
 
-      resolution :recreate_vm_skip_post_start do
-        action { recreate_vm_skip_post_start(@instance) }
+      resolution :recreate_vm_without_wait do
+        action { recreate_vm_without_wait(@instance) }
       end
     end
 
@@ -291,14 +291,17 @@ module Bosh::Director
               }
             end
 
-            it 'skips running post start when applying recreate_vm_skip_post_start resolution' do
+            before do
+              allow(agent_client).to receive(:get_state).and_return('job_state' => 'running')
+            end
+
+            it 'skips running post start when applying recreate_vm_without_wait resolution' do
               expect_vm_gets_created
               expect(agent_client).to_not receive(:run_script).with('post-start', {})
-              test_problem_handler.apply_resolution(:recreate_vm_skip_post_start)
+              test_problem_handler.apply_resolution(:recreate_vm_without_wait)
             end
 
             it 'runs post start when applying recreate_vm resolution' do
-              allow(agent_client).to receive(:get_state).and_return('job_state' => 'running')
               expect_vm_gets_created
               expect(agent_client).to receive(:run_script).with('post-start', {})
               test_problem_handler.apply_resolution(:recreate_vm)

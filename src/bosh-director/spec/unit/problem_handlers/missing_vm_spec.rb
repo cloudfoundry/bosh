@@ -67,9 +67,9 @@ module Bosh::Director
       expect(handler).to be_kind_of(described_class)
     end
 
-    it 'should call recreate_vm_skip_post_start when set to auto' do
-      allow(handler).to receive(:recreate_vm_skip_post_start)
-      expect(handler).to receive(:recreate_vm_skip_post_start).with(instance)
+    it 'should call recreate_vm_without_wait when set to auto' do
+      allow(handler).to receive(:recreate_vm_without_wait)
+      expect(handler).to receive(:recreate_vm_without_wait).with(instance)
       handler.auto_resolve
     end
 
@@ -183,16 +183,16 @@ module Bosh::Director
           }
         end
 
-        describe 'recreate_vm_skip_post_start' do
+        describe 'recreate_vm_without_wait' do
           it 'has a plan' do
-            plan_summary = handler.instance_eval(&ProblemHandlers::MissingVM.plan_for(:recreate_vm_skip_post_start))
+            plan_summary = handler.instance_eval(&ProblemHandlers::MissingVM.plan_for(:recreate_vm_without_wait))
             expect(plan_summary).to eq('Recreate VM without waiting for processes to start')
           end
 
           it 'recreates a VM and skips post_start script' do
             expect_vm_to_be_created
             expect(fake_new_agent).to_not receive(:run_script).with('post-start', {})
-            handler.apply_resolution(:recreate_vm_skip_post_start)
+            handler.apply_resolution(:recreate_vm_without_wait)
 
             expect(Models::Vm.find(agent_id: 'agent-007', cid: 'vm-cid')).to be_nil
             expect(Models::Vm.find(agent_id: 'agent-222', cid: 'new-vm-cid')).not_to be_nil

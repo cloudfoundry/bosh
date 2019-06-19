@@ -3,7 +3,7 @@ module Bosh::Director
     class MissingVM < Base
 
       register_as :missing_vm
-      auto_resolution :recreate_vm_skip_post_start
+      auto_resolution :recreate_vm_without_wait
 
       def initialize(instance_id, data)
         super
@@ -15,9 +15,9 @@ module Bosh::Director
         action { }
       end
 
-      resolution :recreate_vm_skip_post_start do
+      resolution :recreate_vm_without_wait do
         plan { 'Recreate VM without waiting for processes to start' }
-        action { recreate_vm_skip_post_start(@instance) }
+        action { recreate_vm_without_wait(@instance) }
       end
 
       resolution :recreate_vm do
