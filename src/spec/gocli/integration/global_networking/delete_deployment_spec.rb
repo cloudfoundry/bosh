@@ -39,6 +39,7 @@ describe 'deleting deployment', type: :integration do
       'process_state' => '',
       'az' => '',
       'ips' => '',
+      'deployment' => 'simple',
     )
     expect(bosh_runner.run('releases')).to include('1 releases')
 
