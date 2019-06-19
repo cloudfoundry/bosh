@@ -7,9 +7,9 @@ describe 'cli: deployment process', type: :integration do
   it 'displays instances in a deployment' do
     cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
     cloud_config_hash['azs'] = [
-      {'name' => 'zone-1', 'cloud_properties' => {}},
-      {'name' => 'zone-2', 'cloud_properties' => {}},
-      {'name' => 'zone-3', 'cloud_properties' => {}},
+      { 'name' => 'zone-1', 'cloud_properties' => {} },
+      { 'name' => 'zone-2', 'cloud_properties' => {} },
+      { 'name' => 'zone-3', 'cloud_properties' => {} },
     ]
     cloud_config_hash['compilation']['az'] = 'zone-1'
     cloud_config_hash['networks'].first['subnets'] = [
@@ -39,7 +39,7 @@ describe 'cli: deployment process', type: :integration do
         'reserved' => [],
         'cloud_properties' => {},
         'az' => 'zone-3',
-      }
+      },
     ]
 
     manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
@@ -50,47 +50,239 @@ describe 'cli: deployment process', type: :integration do
 
     output = scrub_random_ids(table(output))
     expect(output).to contain_exactly(
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-1', 'ips' => '192.168.1.2', 'deployment' => 'simple', 'state' => 'started', 'vm_cid' => /\d+/, 'vm_type' => 'a', 'disk_cids' => '', 'agent_id' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'index' => '0', 'bootstrap' => 'true', 'ignore' => 'false'},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-2', 'ips' => '192.168.2.2', 'deployment' => 'simple', 'state' => 'started', 'vm_cid' => /\d+/, 'vm_type' => 'a', 'disk_cids' => '', 'agent_id' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'index' => '1', 'bootstrap' => 'false', 'ignore' => 'false'},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-3', 'ips' => '192.168.3.2', 'deployment' => 'simple', 'state' => 'started', 'vm_cid' => /\d+/, 'vm_type' => 'a', 'disk_cids' => '', 'agent_id' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'index' => '2', 'bootstrap' => 'false', 'ignore' => 'false'},
+      {
+        'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'process_state' => 'running',
+        'az' => 'zone-1',
+        'ips' => '192.168.1.2',
+        'deployment' => 'simple',
+        'state' => 'started',
+        'vm_cid' => /\d+/,
+        'vm_type' => 'a',
+        'disk_cids' => '',
+        'agent_id' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'index' => '0',
+        'bootstrap' => 'true',
+        'ignore' => 'false',
+      },
+      {
+        'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'process_state' => 'running',
+        'az' => 'zone-2',
+        'ips' => '192.168.2.2',
+        'deployment' => 'simple',
+        'state' => 'started',
+        'vm_cid' => /\d+/,
+        'vm_type' => 'a',
+        'disk_cids' => '',
+        'agent_id' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'index' => '1',
+        'bootstrap' => 'false',
+        'ignore' => 'false',
+      },
+      {
+        'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'process_state' => 'running',
+        'az' => 'zone-3',
+        'ips' => '192.168.3.2',
+        'deployment' => 'simple',
+        'state' => 'started',
+        'vm_cid' => /\d+/,
+        'vm_type' => 'a',
+        'disk_cids' => '',
+        'agent_id' => 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'index' => '2',
+        'bootstrap' => 'false',
+        'ignore' => 'false',
+      },
     )
 
     output = bosh_runner.run('instances --dns', json: true, deployment_name: 'simple')
     expect(scrub_random_ids(table(output))).to contain_exactly(
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-1', 'ips' => '192.168.1.2', 'deployment' => 'simple', 'dns_a_records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n0.foobar.a.simple.bosh"},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-2', 'ips' => '192.168.2.2', 'deployment' => 'simple', 'dns_a_records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n1.foobar.a.simple.bosh"},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'az' => 'zone-3', 'ips' => '192.168.3.2', 'deployment' => 'simple', 'dns_a_records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n2.foobar.a.simple.bosh"},
+      {
+        'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'process_state' => 'running',
+        'az' => 'zone-1',
+        'ips' => '192.168.1.2',
+        'deployment' => 'simple',
+        'dns_a_records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n0.foobar.a.simple.bosh",
+      },
+      {
+        'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'process_state' => 'running',
+        'az' => 'zone-2',
+        'ips' => '192.168.2.2',
+        'deployment' => 'simple',
+        'dns_a_records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n1.foobar.a.simple.bosh",
+      },
+      {
+        'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'process_state' => 'running',
+        'az' => 'zone-3',
+        'ips' => '192.168.3.2',
+        'deployment' => 'simple',
+        'dns_a_records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n2.foobar.a.simple.bosh",
+      },
     )
 
     output = bosh_runner.run('instances --ps', json: true, deployment_name: 'simple')
     expect(scrub_random_ids(table(output))).to contain_exactly(
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => '', 'process_state' => 'running', 'az' => 'zone-1', 'ips' => '192.168.1.2', 'deployment' => 'simple'},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => 'process-1', 'process_state' => 'running', 'az' => '', 'ips' => '', 'deployment' => ''},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => 'process-2', 'process_state' => 'running', 'az' => '', 'ips' => '', 'deployment' => ''},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => 'process-3', 'process_state' => 'failing', 'az' => '', 'ips' => '', 'deployment' => ''},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => '', 'process_state' => 'running', 'az' => 'zone-2', 'ips' => '192.168.2.2', 'deployment' => 'simple'},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => 'process-1', 'process_state' => 'running', 'az' => '', 'ips' => '', 'deployment' => ''},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => 'process-2', 'process_state' => 'running', 'az' => '', 'ips' => '', 'deployment' => ''},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => 'process-3', 'process_state' => 'failing', 'az' => '', 'ips' => '', 'deployment' => ''},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => '', 'process_state' => 'running', 'az' => 'zone-3', 'ips' => '192.168.3.2', 'deployment' => 'simple'},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => 'process-1', 'process_state' => 'running', 'az' => '', 'ips' => '', 'deployment' => ''},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => 'process-2', 'process_state' => 'running', 'az' => '', 'ips' => '', 'deployment' => ''},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => 'process-3', 'process_state' => 'failing', 'az' => '', 'ips' => '', 'deployment' => ''},
+      {
+        'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'process' => '',
+        'process_state' => 'running',
+        'az' => 'zone-1',
+        'ips' => '192.168.1.2',
+        'deployment' => 'simple',
+      },
+      {
+        'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'process' => 'process-1',
+        'process_state' => 'running',
+        'az' => '',
+        'ips' => '',
+        'deployment' => '',
+      },
+      {
+        'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'process' => 'process-2',
+        'process_state' => 'running',
+        'az' => '',
+        'ips' => '',
+        'deployment' => '',
+      },
+      {
+        'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'process' => 'process-3',
+        'process_state' => 'failing',
+        'az' => '',
+        'ips' => '',
+        'deployment' => '',
+      },
+      {
+        'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'process' => '',
+        'process_state' => 'running',
+        'az' => 'zone-2',
+        'ips' => '192.168.2.2',
+        'deployment' => 'simple',
+      },
+      {
+        'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'process' => 'process-1',
+        'process_state' => 'running',
+        'az' => '',
+        'ips' => '',
+        'deployment' => '',
+      },
+      {
+        'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'process' => 'process-2',
+        'process_state' => 'running',
+        'az' => '',
+        'ips' => '',
+        'deployment' => '',
+      },
+      {
+        'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'process' => 'process-3',
+        'process_state' => 'failing',
+        'az' => '',
+        'ips' => '',
+        'deployment' => '',
+      },
+      {
+        'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'process' => '',
+        'process_state' => 'running',
+        'az' => 'zone-3',
+        'ips' => '192.168.3.2',
+        'deployment' => 'simple',
+      },
+      {
+        'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'process' => 'process-1',
+        'process_state' => 'running',
+        'az' => '',
+        'ips' => '',
+        'deployment' => '',
+      },
+      {
+        'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'process' => 'process-2',
+        'process_state' => 'running',
+        'az' => '',
+        'ips' => '',
+        'deployment' => '',
+      },
+      {
+        'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'process' => 'process-3',
+        'process_state' => 'failing',
+        'az' => '',
+        'ips' => '',
+        'deployment' => '',
+      },
     )
 
     output = bosh_runner.run('instances --ps --failing', json: true, deployment_name: 'simple')
     expect(scrub_random_ids(table(output))).to contain_exactly(
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => '', 'process_state' => 'running', 'az' => 'zone-1', 'ips' => '192.168.1.2', 'deployment' => 'simple'},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => 'process-3', 'process_state' => 'failing', 'az' => '', 'ips' => '', 'deployment' => ''},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => '', 'process_state' => 'running', 'az' => 'zone-2', 'ips' => '192.168.2.2', 'deployment' => 'simple'},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => 'process-3', 'process_state' => 'failing', 'az' => '', 'ips' => '', 'deployment' => ''},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => '', 'process_state' => 'running', 'az' => 'zone-3', 'ips' => '192.168.3.2', 'deployment' => 'simple'},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process' => 'process-3', 'process_state' => 'failing', 'az' => '', 'ips' => '', 'deployment' => ''},
+      {
+        'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'process' => '',
+        'process_state' => 'running',
+        'az' => 'zone-1',
+        'ips' => '192.168.1.2',
+        'deployment' => 'simple',
+      },
+      {
+        'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'process' => 'process-3',
+        'process_state' => 'failing',
+        'az' => '',
+        'ips' => '',
+        'deployment' => '',
+      },
+      {
+        'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'process' => '',
+        'process_state' => 'running',
+        'az' => 'zone-2',
+        'ips' => '192.168.2.2',
+        'deployment' => 'simple',
+      },
+      {
+        'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'process' => 'process-3',
+        'process_state' => 'failing',
+        'az' => '',
+        'ips' => '',
+        'deployment' => '',
+      },
+      {
+        'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'process' => '',
+        'process_state' => 'running',
+        'az' => 'zone-3',
+        'ips' => '192.168.3.2',
+        'deployment' => 'simple',
+      },
+      {
+        'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        'process' => 'process-3',
+        'process_state' => 'failing',
+        'az' => '',
+        'ips' => '',
+        'deployment' => '',
+      },
     )
   end
 
   it 'should return instances --vitals' do
-    deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+    deploy_from_scratch(
+      manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups,
+      cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config,
+    )
     vitals = director.instances_ps_vitals[0]
 
     print vitals
@@ -112,15 +304,15 @@ describe 'cli: deployment process', type: :integration do
     expect(vitals[:persistent_disk_usage]).to eq('')
   end
 
-  it "retrieves instances from deployments in parallel" do
+  it 'retrieves instances from deployments in parallel' do
     manifest1 = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
     manifest1['name'] = 'simple1'
-    manifest1['instance_groups'] = [Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar1', :instances => 2})]
+    manifest1['instance_groups'] = [Bosh::Spec::NewDeployments.simple_instance_group(name: 'foobar1', instances: 2)]
     deploy_from_scratch(manifest_hash: manifest1)
 
     manifest2 = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
     manifest2['name'] = 'simple2'
-    manifest2['instance_groups'] = [Bosh::Spec::NewDeployments.simple_instance_group({:name => 'foobar2', :instances => 4})]
+    manifest2['instance_groups'] = [Bosh::Spec::NewDeployments.simple_instance_group(name: 'foobar2', instances: 4)]
     deploy_from_scratch(manifest_hash: manifest2)
 
     output = bosh_runner.run('instances --parallel 5')
