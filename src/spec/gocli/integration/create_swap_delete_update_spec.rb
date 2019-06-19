@@ -104,6 +104,7 @@ describe 'deploy with create-swap-delete', type: :integration do
         'az' => 'z1',
         'instance' => %r|foobar/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}|,
         'ips' => /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/,
+        'deployment' => 'simple',
         'process_state' => 'running',
       )
 
