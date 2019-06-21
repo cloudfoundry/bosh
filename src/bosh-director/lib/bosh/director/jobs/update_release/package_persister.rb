@@ -15,9 +15,24 @@ module Bosh::Director
             release_model:
           )
             logger = Config.logger
-            created_package_refs = create_packages(logger, release_model, release_version_model, fix, compiled_release, new_packages, release_dir)
+            created_package_refs = create_packages(
+              logger,
+              release_model,
+              release_version_model,
+              fix,
+              compiled_release,
+              new_packages,
+              release_dir,
+            )
 
-            existing_package_refs = use_existing_packages(logger, compiled_release, release_version_model, fix, existing_packages, release_dir)
+            existing_package_refs = use_existing_packages(
+              logger,
+              compiled_release,
+              release_version_model,
+              fix,
+              existing_packages,
+              release_dir,
+            )
 
             if compiled_release
               registered_package_refs = registered_packages.map do |pkg, pkg_meta|
@@ -72,6 +87,71 @@ module Bosh::Director
 
           private
 
+          def save_package_source_blob(logger, package, fix, package_meta, release_dir)
+            name          = package_meta['name']
+            version       = package_meta['version']
+            existing_blob = package_meta['blobstore_id']
+            sha1          = package_meta['sha1']
+            desc          = "package '#{name}/#{version}'"
+            package_tgz   = File.join(release_dir, 'packages', "#{name}.tgz")
+
+            package.sha1 = sha1
+
+            return create_or_update_blob(logger, package, package_tgz, desc, existing_blob) unless fix
+
+            unless package.blobstore_id.nil?
+              delete_compiled_packages(logger, package)
+              fix_package(logger, 'package', package, package_tgz)
+
+              return true
+            end
+
+            existing_package_model = Models::Package.where(blobstore_id: existing_blob).first
+            delete_compiled_packages(logger, package)
+            fix_package(logger, 'package', existing_package_model, package_tgz)
+            package.blobstore_id = BlobUtil.copy_blob(existing_package_model.blobstore_id)
+
+            true
+          end
+
+          def create_or_update_blob(logger, package, package_tgz, desc, existing_blob)
+            if package.blobstore_id.nil? && !existing_blob
+              logger.info("Creating #{desc} from provided bits")
+              create_package_from_bits(logger, package, package_tgz, desc)
+
+              return true
+            end
+
+            if existing_blob
+              logger.info("Creating #{desc} from existing blob #{existing_blob}")
+              package.blobstore_id = BlobUtil.copy_blob(existing_blob)
+
+              return true
+            end
+
+            false
+          end
+
+          def create_package_from_bits(logger, package, package_tgz, desc)
+            validate_tgz(logger, package_tgz, desc)
+            package.blobstore_id = BlobUtil.create_blob(package_tgz)
+          end
+
+          def fix_package(logger, desc, package, package_tgz)
+            safe_delete(logger, desc, package)
+            create_package_from_bits(logger, package, package_tgz, desc)
+            logger.info("Re-created package '#{package.name}/#{package.version}' \
+    with blobstore_id '#{package.blobstore_id}'")
+            package.save
+          end
+
+          def safe_delete(logger, desc, package)
+            logger.info("Deleting #{desc} '#{package.name}/#{package.version}'")
+            BlobUtil.delete_blob(package.blobstore_id)
+          rescue Bosh::Blobstore::BlobstoreError => e
+            logger.info("Error deleting #{desc} '#{package.blobstore_id}, #{package.name}/#{package.version}': #{e.inspect}")
+          end
+
           def validate_tgz(logger, tgz, desc)
             result = Bosh::Exec.sh("tar -tzf #{tgz} 2>&1", on_error: :return)
             if result.failed?
@@ -80,74 +160,11 @@ module Bosh::Director
             end
           end
 
-          def save_package_source_blob(logger, package, fix, package_meta, release_dir)
-            name = package_meta['name']
-            version = package_meta['version']
-            existing_blob = package_meta['blobstore_id']
-            sha1 = package_meta['sha1']
-            desc = "package '#{name}/#{version}'"
-            package_tgz = File.join(release_dir, 'packages', "#{name}.tgz")
-
-            if fix
-              package.sha1 = sha1
-
-              unless package.blobstore_id.nil?
-                delete_compiled_packages(logger, package)
-                validate_tgz(logger, package_tgz, desc)
-                fix_package(logger, package, package_tgz)
-                return true
-              end
-
-              if existing_blob
-                pkg = Models::Package.where(blobstore_id: existing_blob).first
-                delete_compiled_packages(logger, package)
-                fix_package(logger, pkg, package_tgz)
-                package.blobstore_id = BlobUtil.copy_blob(pkg.blobstore_id)
-                return true
-              end
-            else
-              return false unless package.blobstore_id.nil?
-
-              package.sha1 = sha1
-
-              if existing_blob
-                logger.info("Creating #{desc} from existing blob #{existing_blob}")
-                package.blobstore_id = BlobUtil.copy_blob(existing_blob)
-                return true
-              end
-            end
-
-            logger.info("Creating #{desc} from provided bits")
-            validate_tgz(logger, package_tgz, desc)
-            package.blobstore_id = BlobUtil.create_blob(package_tgz)
-
-            true
-          end
-
-          def fix_package(logger, package, package_tgz)
-            begin
-              logger.info("Deleting package '#{package.name}/#{package.version}'")
-              BlobUtil.delete_blob(package.blobstore_id)
-            rescue Bosh::Blobstore::BlobstoreError => e
-              logger.info("Error deleting blob '#{package.blobstore_id}, #{package.name}/#{package.version}': #{e.inspect}")
-            end
-            package.blobstore_id = BlobUtil.create_blob(package_tgz)
-            logger.info("Re-created package '#{package.name}/#{package.version}' \
-    with blobstore_id '#{package.blobstore_id}'")
-            package.save
-          end
-
           def delete_compiled_packages(logger, package)
             package.compiled_packages.each do |compiled_pkg|
               logger.info("Deleting compiled package '#{compiled_pkg.name}' for \
     '#{compiled_pkg.stemcell_os}/#{compiled_pkg.stemcell_version}' with blobstore_id '#{compiled_pkg.blobstore_id}'")
-              begin
-                logger.info("Deleting compiled package '#{compiled_pkg.name}'")
-                BlobUtil.delete_blob(compiled_pkg.blobstore_id)
-              rescue Bosh::Blobstore::BlobstoreError => e
-                logger.info("Error deleting compiled package \
-    '#{compiled_pkg.blobstore_id}/#{compiled_pkg.name}' #{e.inspect}")
-              end
+              safe_delete(logger, 'compiled package', compiled_pkg)
               compiled_pkg.destroy
             end
           end
@@ -175,78 +192,108 @@ module Bosh::Director
 
             single_step_stage(logger, "Processing #{packages.size} existing package#{'s' if packages.size > 1}") do
               packages.each do |package, package_meta|
-                package_desc = "#{package.name}/#{package.version}"
-                logger.info("Using existing package '#{package_desc}'")
-                register_package(release_version_model, package)
-
-                if compiled_release
-                  package_refs << {
-                    package: package,
-                    package_meta: package_meta,
-                  }
-                end
-
-                if !compiled_release && (package.blobstore_id.nil? || fix)
-                  save_package_source_blob(logger, package, fix, package_meta, release_dir)
-                  package.save
-                end
+                package_refs << use_existing_package(logger, release_version_model, compiled_release, package, fix, package_meta, release_dir)
               end
             end
 
-            package_refs
+            package_refs.compact
+          end
+
+          def use_existing_package(logger, release_version_model, compiled_release, package, fix, package_meta, release_dir)
+            package_desc = "#{package.name}/#{package.version}"
+            logger.info("Using existing package '#{package_desc}'")
+            release_version_model.add_package(package)
+
+            if compiled_release
+              return {
+                package: package,
+                package_meta: package_meta,
+              }
+            end
+
+            save_package_source_blob(logger, package, fix, package_meta, release_dir)
+            package.save
           end
 
           def create_compiled_packages(logger, manifest, release_version_model, fix, all_compiled_packages, release_dir)
             return false if all_compiled_packages.nil?
 
             event_log_stage = Config.event_log.begin_stage('Creating new compiled packages', all_compiled_packages.size)
-            had_effect = false
 
             all_compiled_packages.each do |compiled_package_spec|
-              package = compiled_package_spec[:package]
-              stemcell = Models::CompiledPackage.split_stemcell_os_and_version(compiled_package_spec[:package_meta]['stemcell'])
-              compiled_pkg_tgz = File.join(release_dir, 'compiled_packages', "#{package.name}.tgz")
-
-              stemcell_os = stemcell[:os]
-              stemcell_version = stemcell[:version]
-
-              existing_compiled_packages = find_compiled_packages(package.id, stemcell_os, stemcell_version, dependency_key(release_version_model, package))
-
-              if existing_compiled_packages.empty?
-                package_desc = "#{package.name}/#{package.version} for #{stemcell_os}/#{stemcell_version}"
-                event_log_stage.advance_and_track(package_desc) do
-                  other_compiled_packages = compiled_packages_matching(release_version_model, package, stemcell)
-                  if fix
-                    other_compiled_packages.each do |other_compiled_package|
-                      fix_compiled_package(logger, other_compiled_package, compiled_pkg_tgz)
-                    end
-                  end
-                  package_sha1 = compiled_package_spec[:package_meta]['compiled_package_sha1']
-                  create_compiled_package(logger, release_version_model, manifest, package, package_sha1, stemcell_os, stemcell_version, release_dir, other_compiled_packages.first)
-                  had_effect = true
-                end
-              elsif fix
-                existing_compiled_package = existing_compiled_packages.first
-                fix_compiled_package(logger, existing_compiled_package, compiled_pkg_tgz)
-              end
+              create_compiled_package(logger, compiled_package_spec, release_dir, release_version_model, event_log_stage, fix, manifest)
             end
-
-            had_effect
           end
 
-          def fix_compiled_package(logger, compiled_pkg, compiled_pkg_tgz)
-            begin
-              logger.info("Deleting compiled package '#{compiled_pkg.name}/#{compiled_pkg.version}' for \
-                          '#{compiled_pkg.stemcell_os}/#{compiled_pkg.stemcell_version}' with blobstore_id '#{compiled_pkg.blobstore_id}'")
-              BlobUtil.delete_blob compiled_pkg.blobstore_id
-            rescue Bosh::Blobstore::BlobstoreError => e
-              logger.info("Error deleting compiled package '#{compiled_pkg.name}' \
-    with blobstore_id '#{compiled_pkg.blobstore_id}' #{e.inspect}")
+          def create_compiled_package(logger, compiled_package_spec, release_dir, release_version_model, event_log_stage, fix, manifest)
+            package = compiled_package_spec[:package]
+            stemcell = Models::CompiledPackage.split_stemcell_os_and_version(compiled_package_spec[:package_meta]['stemcell'])
+            compiled_pkg_tgz = File.join(release_dir, 'compiled_packages', "#{package.name}.tgz")
+
+            stemcell_os = stemcell[:os]
+            stemcell_version = stemcell[:version]
+            release_version_model_dependency_key = dependency_key(release_version_model, package, manifest)
+
+            existing_compiled_packages = find_compiled_packages(package.id, stemcell_os, stemcell_version, release_version_model_dependency_key)
+
+            if existing_compiled_packages.empty?
+              use_similar_packages(
+                logger,
+                package,
+                stemcell_os,
+                stemcell_version,
+                event_log_stage,
+                release_version_model,
+                stemcell,
+                fix,
+                compiled_package_spec,
+                manifest,
+                release_dir,
+                compiled_pkg_tgz,
+                release_version_model_dependency_key,
+              )
+            elsif fix
+              fix_package(logger, 'compiled package', existing_compiled_packages.first, compiled_pkg_tgz)
             end
-            compiled_pkg.blobstore_id = BlobUtil.create_blob(compiled_pkg_tgz)
-            logger.info("Re-created compiled package '#{compiled_pkg.name}/#{compiled_pkg.version}' \
-    with blobstore_id '#{compiled_pkg.blobstore_id}'")
-            compiled_pkg.save
+          end
+
+          def use_similar_packages(logger, package, stemcell_os, stemcell_version, event_log_stage, release_version_model, stemcell, fix, compiled_package_spec, manifest, release_dir, compiled_pkg_tgz, dependency_key)
+            event_log_stage.advance_and_track("#{package.name}/#{package.version} for #{stemcell_os}/#{stemcell_version}") do
+              fixed_blobstore_id = fix_similar_packages(logger, package, fix, stemcell, dependency_key, compiled_pkg_tgz)
+
+              compiled_package = Models::CompiledPackage.new(
+                sha1: compiled_package_spec[:package_meta]['compiled_package_sha1'],
+                dependency_key: dependency_key,
+                package_id: package.id,
+                stemcell_os: stemcell_os,
+                stemcell_version: stemcell_version,
+                build: Models::CompiledPackage.generate_build_number(package, stemcell_os, stemcell_version),
+              )
+
+              create_or_update_blob(
+                logger,
+                compiled_package,
+                File.join(release_dir, 'compiled_packages', "#{package.name}.tgz"),
+                'compiled package',
+                fixed_blobstore_id,
+              )
+
+              compiled_package.save
+            end
+          end
+
+          def fix_similar_packages(logger, package, fix, stemcell, dependency_key, compiled_pkg_tgz)
+            other_compiled_packages = []
+            packages = Models::Package.where(fingerprint: package.fingerprint).order_by(:id).all
+            packages.each do |pkg|
+              other_packages = find_compiled_packages(pkg.id, stemcell[:os], stemcell[:version], dependency_key).all
+              other_packages.each do |other_compiled_package|
+                fix_package(logger, 'compiled package', other_compiled_package, compiled_pkg_tgz) if fix
+              end
+              other_compiled_packages.concat(other_packages)
+            end
+
+            other_compiled_packages.first&.blobstore_id
           end
 
           def create_packages(logger, release_model, release_version_model, fix, compiled_release, package_metas, release_dir)
@@ -269,7 +316,7 @@ module Bosh::Director
                   package_meta:     package_meta,
                   release_dir:      release_dir,
                 )
-                register_package(release_version_model, package)
+                release_version_model.add_package(package)
               end
 
               next unless compiled_release
@@ -283,16 +330,6 @@ module Bosh::Director
             package_refs
           end
 
-          def compiled_packages_matching(release_version_model, package, stemcell)
-            other_compiled_packages = []
-            dependency_key = dependency_key(release_version_model, package)
-            packages = Models::Package.where(fingerprint: package.fingerprint).order_by(:id).all
-            packages.each do |pkg|
-              other_compiled_packages.concat(find_compiled_packages(pkg.id, stemcell[:os], stemcell[:version], dependency_key).all)
-            end
-            other_compiled_packages
-          end
-
           def find_compiled_packages(pkg_id, stemcell_os, stemcell_version, dependency_key)
             Models::CompiledPackage.where(
               package_id: pkg_id,
@@ -302,42 +339,14 @@ module Bosh::Director
             )
           end
 
-          def create_compiled_package(logger, release_version_model, manifest, package, package_sha1, stemcell_os, stemcell_version, release_dir, other_compiled_package)
-            if other_compiled_package.nil?
-              tgz = File.join(release_dir, 'compiled_packages', "#{package.name}.tgz")
-              validate_tgz(logger, tgz, "#{package.name}.tgz")
-                           blobstore_id = BlobUtil.create_blob(tgz)
-                           sha1 = package_sha1
-            else
-              blobstore_id = BlobUtil.copy_blob(other_compiled_package.blobstore_id)
-              sha1 = other_compiled_package.sha1
-            end
+          def dependency_key(release_version_model, package, manifest)
+            release_version_model_dependency_key = KeyGenerator.new.dependency_key_from_models(package, release_version_model)
 
-            compiled_package = Models::CompiledPackage.new
-            compiled_package.blobstore_id = blobstore_id
-            compiled_package.sha1 = sha1
-            release_version_model_dependency_key = dependency_key(release_version_model, package)
             if release_version_model_dependency_key != CompiledRelease::Manifest.new(manifest).dependency_key(package.name)
               raise ReleasePackageDependencyKeyMismatch, "The uploaded release contains package dependencies in '#{package.name}' that do not match database records."
             end
 
-            compiled_package.dependency_key = release_version_model_dependency_key
-
-            compiled_package.build = Models::CompiledPackage.generate_build_number(package, stemcell_os, stemcell_version)
-            compiled_package.package_id = package.id
-
-            compiled_package.stemcell_os = stemcell_os
-            compiled_package.stemcell_version = stemcell_version
-
-            compiled_package.save
-          end
-
-          def register_package(release_version_model, package)
-            release_version_model.add_package(package)
-          end
-
-          def dependency_key(release_version_model, package)
-            KeyGenerator.new.dependency_key_from_models(package, release_version_model)
+            release_version_model_dependency_key
           end
 
           def begin_stage(logger, stage_name, n_steps)
