@@ -122,7 +122,7 @@ module Bosh::Director
 
       context 'when the instance does not exist' do
         it 'raises an InstanceNotFound error' do
-          job = Jobs::StartInstance.new(deployment.name, 'does-not-exist', {})
+          job = Jobs::StartInstance.new(deployment.name, instance.id + 10000, {})
           expect { job.perform }.to raise_error(InstanceNotFound)
         end
       end
