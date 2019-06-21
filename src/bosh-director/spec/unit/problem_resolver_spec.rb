@@ -78,11 +78,9 @@ module Bosh::Director
 
     describe '#apply_resolutions' do
       context 'when execution succeeds' do
-        let(:max_threads) { 10 }
         let(:max_in_flight) { 5 }
 
         before do
-          allow(Bosh::Director::Config).to receive(:max_threads).and_return(max_threads)
           allow(parallel_update_config).to receive(:max_in_flight).and_return(max_in_flight)
         end
 
@@ -90,15 +88,6 @@ module Bosh::Director
           context 'when only one problem exists per instance group' do
             let(:num_problem_instance_groups) { 1 }
             let(:problems_per_instance_group) { 1 }
-
-            it 'does not create a threadpool for processing the problem' do
-              test_instance_apply_resolutions
-              expect(ThreadPool).not_to have_received(:new)
-            end
-          end
-
-          context 'when max_threads is one' do
-            let(:max_threads) { 1 }
 
             it 'does not create a threadpool for processing the problem' do
               test_instance_apply_resolutions
@@ -116,7 +105,7 @@ module Bosh::Director
             end
           end
 
-          context 'when the number instances with problems is smaller than max_in_flight and max_threads' do
+          context 'when the number instances with problems is smaller than max_in_flight' do
             it 'respects number of instances with problems' do
               test_instance_apply_resolutions
               expect(ThreadPool).to have_received(:new).once.with(max_threads: num_problem_instance_groups)
@@ -126,7 +115,7 @@ module Bosh::Director
             end
           end
 
-          context 'when max_in_flight is smaller than the number of instances with problems and max_threads' do
+          context 'when max_in_flight is smaller than the number of instances with problems' do
             let(:max_in_flight) { 2 }
 
             it 'respects max_in_flight' do
@@ -135,16 +124,6 @@ module Bosh::Director
               expect(ThreadPool).to have_received(:new)
                 .exactly(num_problem_instance_groups).times
                 .with(max_threads: max_in_flight)
-            end
-          end
-
-          context 'when max_threads is smaller than the number of instances with problems and max_in_flight' do
-            let(:max_threads) { 2 }
-            it 'respects max_threads' do
-              test_instance_apply_resolutions
-              expect(ThreadPool).to have_received(:new)
-                .exactly(1 + num_problem_instance_groups).times
-                .with(max_threads: max_threads)
             end
           end
 

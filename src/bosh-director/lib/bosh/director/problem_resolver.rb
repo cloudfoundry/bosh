@@ -84,7 +84,7 @@ module Bosh::Director
 
     def process_partitions(ig_partition_to_ig_names_with_problems, igs_to_problems)
       ig_partition_to_ig_names_with_problems.each do |ig_partition, igs_with_problems|
-        num_threads = ig_partition.first.update.serial? ? 1 : [igs_with_problems.size, Config.max_threads].min
+        num_threads = ig_partition.first.update.serial? ? 1 : igs_with_problems.size
 
         parallel_each(num_threads, igs_with_problems) do |ig_name|
           process_instance_group(ig_name, igs_to_problems[ig_name])
@@ -98,7 +98,7 @@ module Bosh::Director
       end
       max_in_flight = instance_group.update.max_in_flight(problems.size)
 
-      num_threads = [problems.size, max_in_flight, Config.max_threads].min
+      num_threads = [problems.size, max_in_flight].min
       parallel_each(num_threads, problems) do |problem|
         process_problem(problem)
       end
