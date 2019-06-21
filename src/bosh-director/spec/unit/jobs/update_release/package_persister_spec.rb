@@ -145,7 +145,13 @@ module Bosh::Director
             let(:release_dir) { Dir.mktmpdir }
 
             before do
-              Models::Package.make(release: release, name: 'fake-name-1', version: 'fake-version-1', fingerprint: 'fake-fingerprint-1')
+              Models::Package.make(
+                release: release,
+                sha1: 'sha1-1',
+                name: 'fake-name-1',
+                version: 'fake-version-1',
+                fingerprint: 'fake-fingerprint-1',
+              )
             end
 
             it "creates packages that don't already exist" do
