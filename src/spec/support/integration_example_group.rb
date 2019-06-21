@@ -343,7 +343,7 @@ module IntegrationSandboxHelpers
     unless sandbox_started?
       at_exit do
         begin
-          status = $ERROR_INFO ? ($ERROR_INFO.is_a?(::SystemExit) ? $ERROR_INFO.status : 1) : 0
+          status = $! ? ($!.is_a?(::SystemExit) ? $!.status : 1) : 0
           logger.info("\n  Stopping sandboxed environment for BOSH tests...")
           current_sandbox.stop
           cleanup_client_sandbox_dir

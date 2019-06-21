@@ -69,3 +69,6 @@ Style/MultilineBlockChain:
 
 Style/DoubleNegation:
   Enabled: false
+
+Style/SpecialGlobalVars:
+  Enabled: false
