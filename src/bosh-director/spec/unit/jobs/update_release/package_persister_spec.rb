@@ -208,7 +208,7 @@ module Bosh::Director
             .and_return('blob_id')
 
           Jobs::UpdateRelease::PackagePersister.create_package(
-            logger: Logging::Logger.new,
+            logger: Logging::Logger.new('Test-Logger'),
             release_model: release,
             fix: false,
             compiled_release: false,
@@ -239,7 +239,7 @@ module Bosh::Director
           end
 
           Jobs::UpdateRelease::PackagePersister.create_package(
-            logger: Logging::Logger.new,
+            logger: Logging::Logger.new('Test-Logger'),
             release_model: release,
             fix: false,
             compiled_release: false,
@@ -290,7 +290,7 @@ module Bosh::Director
 
           it 'should create simple packages without blobstore_id or sha1' do
             Jobs::UpdateRelease::PackagePersister.create_package(
-              logger: Logging::Logger.new,
+              logger: Logging::Logger.new('Test-Logger'),
               release_model: release,
               fix: false,
               compiled_release: true,

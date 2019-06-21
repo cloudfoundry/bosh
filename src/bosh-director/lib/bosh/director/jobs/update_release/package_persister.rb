@@ -14,7 +14,7 @@ module Bosh::Director
             release_version_model:,
             release_model:
           )
-            logger = Logging::Logger.new
+            logger = Config.logger
             created_package_refs = create_packages(logger, release_model, release_version_model, fix, compiled_release, new_packages, release_dir)
 
             existing_package_refs = use_existing_packages(logger, compiled_release, release_version_model, fix, existing_packages, release_dir)
