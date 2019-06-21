@@ -1,24 +1,18 @@
-require_relative 'jobs/update_deployment'
-
 module Bosh::Director
   class ProblemResolver
     include DeploymentPlan
-    include Jobs
 
     attr_reader :logger
 
     def initialize(deployment)
-      @deployment = deployment
-      @resolved_count = 0
-      @resolution_error_logs = StringIO.new
-      update_deployment = UpdateDeployment.new(
-        @deployment.manifest,
-        @deployment.cloud_configs.map(&:id),
-        @deployment.runtime_configs.map(&:id),
-      )
-      @instance_groups = update_deployment.parse_manifest.instance_groups
       @event_log_stage = nil
       @logger = Config.logger
+      @deployment = deployment
+      deployment_plan = DeploymentPlan::PlannerFactory.create(logger).create_from_model(deployment)
+      @instance_groups = deployment_plan.instance_groups
+
+      @resolved_count = 0
+      @resolution_error_logs = StringIO.new
     end
 
     def begin_stage(stage_name, n_steps)

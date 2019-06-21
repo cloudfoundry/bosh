@@ -9,7 +9,8 @@ module Bosh::Director
     let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
     let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
     let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
-    let(:update_deployment) { double }
+    let(:factory) { double }
+    let(:deployment_plan) { double }
     let(:parallel_problem_resolution) { true }
     let(:parallel_update_config) { instance_double('Bosh::Director::DeploymentPlan::UpdateConfig', serial?: false) }
     let(:num_problem_instance_groups) { 4 }
@@ -28,8 +29,9 @@ module Bosh::Director
     before(:each) do
       @deployment = Models::Deployment.make(name: 'mycloud')
 
-      allow(Bosh::Director::Jobs::UpdateDeployment).to receive(:new).and_return(update_deployment)
-      allow(update_deployment).to receive_message_chain(:parse_manifest, :instance_groups).and_return(igs)
+      allow(DeploymentPlan::PlannerFactory).to receive(:create).and_return(factory)
+      allow(factory).to receive(:create_from_model).with(@deployment).and_return(deployment_plan)
+      allow(deployment_plan).to receive(:instance_groups).and_return(igs)
 
       allow(Bosh::Director::Config).to receive(:current_job).and_return(job)
       allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
@@ -190,7 +192,7 @@ module Bosh::Director
             expect(cloud).to receive(:detach_disk).exactly(1).times
             allow(AgentClient).to receive(:with_agent_id).and_return(agent)
 
-            allow(update_deployment).to receive_message_chain(:parse_manifest, :instance_groups).and_return(disk_igs)
+            allow(deployment_plan).to receive(:instance_groups).and_return(disk_igs)
             allow(Models::Instance).to receive(:make).and_return(
               Models::Instance.make(job: 'disk-ig-1', deployment_id: @deployment.id),
               Models::Instance.make(job: 'disk-ig-1', deployment_id: @deployment.id),
