@@ -48,7 +48,14 @@ module Bosh::Director
           end
         end
 
-        raise AgentJobNotRunning if current_state['job_state'] != 'running'
+        failing_jobs = Array(current_state['processes']).map do |process|
+          process['name'] if process['state'] != 'running'
+        end.compact
+
+        error_message = "'#{instance}' is not running after update."
+        error_message += " Review logs for failed jobs: #{failing_jobs.join(', ')}" unless failing_jobs.empty?
+
+        raise AgentJobNotRunning, error_message if current_state['job_state'] != 'running'
       end
 
       # Returns an array of wait times distributed
