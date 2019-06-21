@@ -28,7 +28,6 @@ templates:
   post-start.erb: bin/post-start
   pre-start.erb: bin/pre-start
   ps_utils.sh: bin/ps_utils.sh
-  restore-db: bin/restore-db
   scheduler: bin/scheduler
   stemcell-copy.sh: bin/stemcell-copy
   sudoers: config/sudoers
