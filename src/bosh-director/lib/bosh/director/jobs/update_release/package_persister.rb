@@ -95,10 +95,9 @@ module Bosh::Director
             desc          = "package '#{name}/#{version}'"
             package_tgz   = File.join(release_dir, 'packages', "#{name}.tgz")
 
+            return create_or_update_blob(logger, sha1, package, package_tgz, desc, existing_blob) unless fix
+
             package.sha1 = sha1
-
-            return create_or_update_blob(logger, package, package_tgz, desc, existing_blob) unless fix
-
             unless package.blobstore_id.nil?
               delete_compiled_packages(logger, package)
               fix_package(logger, 'package', package, package_tgz)
@@ -114,8 +113,9 @@ module Bosh::Director
             true
           end
 
-          def create_or_update_blob(logger, package, package_tgz, desc, existing_blob)
+          def create_or_update_blob(logger, sha1, package, package_tgz, desc, existing_blob)
             if package.blobstore_id.nil? && !existing_blob
+              package.sha1 = sha1
               logger.info("Creating #{desc} from provided bits")
               create_package_from_bits(logger, package, package_tgz, desc)
 
@@ -123,6 +123,7 @@ module Bosh::Director
             end
 
             if existing_blob
+              package.sha1 = sha1
               logger.info("Creating #{desc} from existing blob #{existing_blob}")
               package.blobstore_id = BlobUtil.copy_blob(existing_blob)
 
@@ -272,6 +273,7 @@ module Bosh::Director
 
               create_or_update_blob(
                 logger,
+                compiled_package.sha1,
                 compiled_package,
                 File.join(release_dir, 'compiled_packages', "#{package.name}.tgz"),
                 'compiled package',
