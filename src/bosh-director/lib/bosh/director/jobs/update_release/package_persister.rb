@@ -95,8 +95,6 @@ module Bosh::Director
             desc          = "package '#{name}/#{version}'"
             package_tgz   = File.join(release_dir, 'packages', "#{name}.tgz")
 
-            validate_tgz(logger, package_tgz, desc) if fix || package.blobstore_id.nil? && !existing_blob
-
             return create_or_update_blob(logger, sha1, package, package_tgz, desc, existing_blob) unless fix
 
             package.sha1 = sha1
@@ -136,6 +134,7 @@ module Bosh::Director
           end
 
           def create_package_from_bits(logger, package, package_tgz, desc)
+            validate_tgz(logger, package_tgz, desc)
             package.blobstore_id = BlobUtil.create_blob(package_tgz)
           end
 
@@ -255,8 +254,6 @@ module Bosh::Director
                 release_version_model_dependency_key,
               )
             elsif fix
-              validate_tgz(logger, compiled_pkg_tgz, 'compiled package') unless existing_compiled_packages.first.nil?
-
               fix_package(logger, 'compiled package', existing_compiled_packages.first, compiled_pkg_tgz)
             end
           end
