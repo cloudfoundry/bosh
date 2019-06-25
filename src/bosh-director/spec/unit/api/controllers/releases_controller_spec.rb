@@ -200,6 +200,10 @@ module Bosh::Director
 
           it 'authenticated access redirect to the created task' do
             expected_sha2_param = nil
+            expected_options = {
+              jobs: nil,
+              strip: nil,
+            }
             expected_params = [
               nil,
               'release-name-value',
@@ -207,7 +211,7 @@ module Bosh::Director
               'bosh-stemcell-os-value',
               'bosh-stemcell-version-value',
               expected_sha2_param,
-              jobs: nil,
+              expected_options,
             ]
             expect(Jobs::DBJob).to receive(:new)
               .with(Jobs::ExportRelease, kind_of(Numeric), expected_params)
@@ -230,6 +234,10 @@ module Bosh::Director
           before { authorize 'admin', 'admin' }
 
           it 'authenticated access redirect to the created task' do
+            expected_options = {
+              jobs: nil,
+              strip: nil,
+            }
             expected_sha2_param = 'true'
             expected_params = [
               nil,
@@ -238,7 +246,7 @@ module Bosh::Director
               'bosh-stemcell-os-value',
               'bosh-stemcell-version-value',
               expected_sha2_param,
-              jobs: nil,
+              expected_options,
             ]
             expect(Jobs::DBJob).to receive(:new)
               .with(Jobs::ExportRelease, kind_of(Numeric), expected_params)
@@ -300,8 +308,42 @@ module Bosh::Director
                 { 'name' => 'foo' },
                 { 'name' => 'bar' },
               ],
+              strip: nil,
             }
 
+            expected_params = [
+              nil,
+              params[:release_name],
+              params[:release_version],
+              params[:stemcell_os],
+              params[:stemcell_version],
+              nil,
+              expected_options,
+            ]
+            expect(Jobs::DBJob).to receive(:new)
+              .with(Jobs::ExportRelease, kind_of(Numeric), expected_params)
+              .and_return(Jobs::DBJob.new(Jobs::ExportRelease, 1, expected_params))
+            perform
+          end
+        end
+
+        context 'when the strip option is specified' do
+          let(:params) do
+            {
+              release_name: 'release-name-value',
+              release_version: 'release-version-value',
+              stemcell_os:    'bosh-stemcell-os-value',
+              stemcell_version:    'bosh-stemcell-version-value',
+              strip: true,
+            }
+          end
+
+          before { authorize 'admin', 'admin' }
+          it 'creates an export-release task with the correct options' do
+            expected_options = {
+              jobs: nil,
+              strip: true,
+            }
             expected_params = [
               nil,
               params[:release_name],

@@ -14,8 +14,9 @@ module Bosh::Director
     let(:package3) { Models::Package.make(name: 'pkg-3', version: '3', release: release) }
     let(:package4) { Models::Package.make(name: 'pkg-4', version: '4', release: release) }
     let(:templates) { [Models::Template.make(package_names_json: JSON.generate([package1.name]))] }
+    let(:strip_compile_dependencies) { false }
 
-    subject(:package_group) { CompiledPackageGroup.new(release_version, stemcell, templates) }
+    subject(:package_group) { CompiledPackageGroup.new(release_version, stemcell, templates, strip_compile_dependencies) }
 
     describe '#compiled_packages' do
       let!(:compiled_package1) do
@@ -59,6 +60,14 @@ module Bosh::Director
         package_group.compiled_packages
         package_group.compiled_packages
         expect(Models::CompiledPackage).to have_received(:[]).exactly(3).times
+      end
+
+      context 'when strip_compile_dependencies is set to true' do
+        let(:strip_compile_dependencies) { true }
+
+        it 'does not include packages that are not runtime dependencies' do
+          expect(package_group.compiled_packages).to eq([compiled_package1])
+        end
       end
     end
 

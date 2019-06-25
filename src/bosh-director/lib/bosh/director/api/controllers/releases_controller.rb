@@ -48,9 +48,11 @@ module Bosh::Director
         stemcell_version = body_params['stemcell_version']
         sha2 = body_params['sha2']
         jobs = body_params['jobs']
+        strip = body_params['strip']
 
         task = @release_manager.export_release(
-            current_user, deployment_name, release_name, release_version, stemcell_os, stemcell_version, sha2, jobs)
+          current_user, deployment_name, release_name, release_version, stemcell_os, stemcell_version, sha2, jobs, strip
+        )
 
         redirect "/tasks/#{task.id}"
       end

@@ -25,16 +25,17 @@ module Bosh::Director
         @sha2 = sha2
         @multi_digest = BoshDigest::MultiDigest.new(logger)
         @jobs = options.fetch('jobs', [])
+        @strip_compile_dependencies = options.fetch('strip', false)
       end
 
       # @return [void]
       def perform
         logger.info("Exporting release: #{@release_name}/#{@release_version} for #{@stemcell_os}/#{@stemcell_version}")
 
-        deployment_plan_stemcell = Bosh::Director::DeploymentPlan::Stemcell.parse({
-          "os" => @stemcell_os,
-          "version" => @stemcell_version
-        })
+        deployment_plan_stemcell = Bosh::Director::DeploymentPlan::Stemcell.parse(
+          'os' => @stemcell_os,
+          'version' => @stemcell_version,
+        )
 
         deployment_manager = Bosh::Director::Api::DeploymentManager.new
         targeted_deployment = deployment_manager.find_by_name(@deployment_name)
@@ -97,7 +98,7 @@ module Bosh::Director
         blobstore_client = Bosh::Director::App.instance.blobstores.blobstore
 
         templates = release_version_model.templates.select { |template| is_template_to_be_exported?(template) }
-        compiled_packages_group = CompiledPackageGroup.new(release_version_model, stemcell, templates)
+        compiled_packages_group = CompiledPackageGroup.new(release_version_model, stemcell, templates, @strip_compile_dependencies)
         compiled_release_downloader = CompiledReleaseDownloader.new(compiled_packages_group, templates, blobstore_client)
 
         download_dir = compiled_release_downloader.download
@@ -118,9 +119,9 @@ module Bosh::Director
         tarball_hexdigest = @multi_digest.create([algorithm], output_path)
 
         Bosh::Director::Models::Blob.new(
-            blobstore_id: oid,
-            sha1: tarball_hexdigest,
-            type: 'exported-release',
+          blobstore_id: oid,
+          sha1: tarball_hexdigest,
+          type: 'exported-release',
         ).save
 
         {

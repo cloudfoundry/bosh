@@ -2,10 +2,11 @@ module Bosh::Director
   class CompiledPackageGroup
     attr_reader :release_version
 
-    def initialize(release_version, stemcell, jobs)
+    def initialize(release_version, stemcell, jobs, strip_compile_dependencies)
       @release_version = release_version
       @stemcell = stemcell
       @package_names = jobs.map(&:package_names).flatten.uniq
+      @strip_compile_dependencies = strip_compile_dependencies
     end
 
     def compiled_packages
@@ -15,7 +16,7 @@ module Bosh::Director
             @package_names.include? package.name
           end
 
-          packages_to_compile = resolve_dependencies(packages_to_compile)
+          packages_to_compile = resolve_dependencies(packages_to_compile) unless @strip_compile_dependencies
 
           packages_to_compile.map do |package|
             package_dependency_key = KeyGenerator.new.dependency_key_from_models(package, @release_version)

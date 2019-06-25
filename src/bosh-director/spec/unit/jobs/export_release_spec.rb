@@ -11,7 +11,7 @@ module Bosh::Director
 
     let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
     let(:task_result) { Bosh::Director::TaskDBWriter.new(:result_output, task.id) }
-    let(:package_compile_step) { instance_double(DeploymentPlan::Stages::PackageCompileStage)}
+    let(:package_compile_step) { instance_double(DeploymentPlan::Stages::PackageCompileStage) }
 
     let(:planner_model) { instance_double(Bosh::Director::Models::Deployment) }
     let(:assembler) { instance_double(DeploymentPlan::Assembler, bind_models: nil) }
@@ -37,14 +37,16 @@ module Bosh::Director
       allow(DeploymentPlan::Assembler).to receive(:create).and_return(assembler)
     end
 
-    subject(:job) { described_class.new(deployment_manifest['name'], release_name, manifest_release_version, 'ubuntu', '1', sha2, options) }
+    subject(:job) do
+      described_class.new(deployment_manifest['name'], release_name, manifest_release_version, 'ubuntu', '1', sha2, options)
+    end
 
     def create_stemcell
       Bosh::Director::Models::Stemcell.create(
-          name: 'ubuntu-stemcell',
-          version: '1',
-          operating_system: 'ubuntu',
-          cid: 'cloud-id-a',
+        name: 'ubuntu-stemcell',
+        version: '1',
+        operating_system: 'ubuntu',
+        cid: 'cloud-id-a',
       )
     end
 
@@ -54,9 +56,9 @@ module Bosh::Director
 
     it 'raises an error when the targeted deployment is not found' do
       create_stemcell
-      expect {
+      expect do
         job.perform
-      }.to raise_error(Bosh::Director::DeploymentNotFound)
+      end.to raise_error(Bosh::Director::DeploymentNotFound)
     end
 
     context 'with a valid deployment targeted' do
@@ -79,9 +81,9 @@ module Bosh::Director
 
       it 'raises an error when the requested release does not exist' do
         create_stemcell
-        expect {
+        expect do
           job.perform
-        }.to raise_error(Bosh::Director::ReleaseNotFound)
+        end.to raise_error(Bosh::Director::ReleaseNotFound)
       end
 
       context 'when the requested release exists but version does not match' do
