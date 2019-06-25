@@ -15,19 +15,17 @@ module Bosh::Director
         @logger.debug('Verified VM state')
 
         state.delete('release')
-        if state.include?('job')
-          state['job'].delete('release')
-        end
+        state['job'].delete('release') if state.include?('job')
         state
       end
 
       def verify_state(instance, state)
-        unless state.kind_of?(Hash)
-          @logger.error("Invalid state for '#{instance.vm_cid}': #{state.pretty_inspect}")
-          raise AgentInvalidStateFormat,
-            "VM '#{instance.vm_cid}' returns invalid state: " +
+        return if state.is_a?(Hash)
+
+        @logger.error("Invalid state for '#{instance.vm_cid}': #{state.pretty_inspect}")
+        raise AgentInvalidStateFormat,
+              "VM '#{instance.vm_cid}' returns invalid state: " \
               "expected Hash, got #{state.class}"
-        end
       end
     end
   end

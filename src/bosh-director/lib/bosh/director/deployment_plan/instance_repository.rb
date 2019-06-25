@@ -11,7 +11,9 @@ module Bosh::Director::DeploymentPlan
       instance_group = desired_instance.instance_group
 
       # if state was not specified in manifest, use saved state
-      job_state = instance_group.state_for_instance(existing_instance_model) || existing_instance_model.state
+      job_state = desired_instance.state ||
+                  instance_group.state_for_instance(existing_instance_model) ||
+                  existing_instance_model.state
       @logger.debug(
         "Job instance states: #{instance_group.instance_states}, " \
         "found: #{instance_group.state_for_instance(existing_instance_model)}, state: #{job_state}",

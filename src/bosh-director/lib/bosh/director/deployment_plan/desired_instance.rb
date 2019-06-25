@@ -1,13 +1,13 @@
 module Bosh
   module Director
     module DeploymentPlan
-      class DesiredInstance < Struct.new(:instance_group, :deployment, :az, :index)
+      class DesiredInstance < Struct.new(:instance_group, :deployment, :az, :index, :state)
         def inspect
-          "<DesiredInstance az=#{self.az ? self.az.name : nil} index=#{self.index}>"
+          "<DesiredInstance az=#{az ? az.name : nil} index=#{index}>"
         end
 
         def availability_zone
-          self.az.name unless self.az.nil?
+          az&.name
         end
       end
     end

@@ -22,8 +22,6 @@ module Bosh::Director
           raise InstanceNotFound if instance_model.nil?
           raise InstanceNotFound if instance_model.deployment.name != @deployment_name
 
-          return if instance_model.state == 'started'
-
           deployment_plan = DeploymentPlan::PlannerFactory.create(@logger)
             .create_from_model(instance_model.deployment)
           deployment_plan.releases.each(&:bind_model)
@@ -32,6 +30,8 @@ module Bosh::Director
           instance_group.jobs.each(&:bind_models)
 
           instance_plan = construct_instance_plan(instance_model, deployment_plan, instance_group)
+
+          return unless instance_plan.state_changed?
 
           event_log = Config.event_log
           event_log_stage = event_log.begin_stage("Starting instance #{instance_model.job}")
@@ -55,13 +55,21 @@ module Bosh::Director
       end
 
       def construct_instance_plan(instance_model, deployment_plan, instance_group)
-        desired_instance = DeploymentPlan::DesiredInstance.new(instance_group, deployment_plan, instance_model.index)
+        desired_instance = DeploymentPlan::DesiredInstance.new(
+          instance_group,
+          deployment_plan,
+          nil,
+          instance_model.index,
+          'started',
+        )
         variables_interpolator = ConfigServer::VariablesInterpolator.new
+
+        existing_instance_state = DeploymentPlan::AgentStateMigrator.new(@logger).get_state(instance_model)
 
         instance_repository = DeploymentPlan::InstanceRepository.new(@logger, variables_interpolator)
         instance = instance_repository.fetch_existing(
           instance_model,
-          instance_model.state,
+          existing_instance_state,
           desired_instance,
         )
 

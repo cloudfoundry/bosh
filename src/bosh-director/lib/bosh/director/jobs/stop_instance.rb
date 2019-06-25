@@ -69,13 +69,19 @@ module Bosh::Director
       end
 
       def construct_instance_plan(instance_model, deployment_plan, instance_group, options)
-        desired_instance = DeploymentPlan::DesiredInstance.new(instance_group, deployment_plan) # index?
+        desired_instance = DeploymentPlan::DesiredInstance.new(
+          instance_group,
+          deployment_plan,
+          nil,
+          instance_model.index,
+          'stopped',
+        )
         variables_interpolator = ConfigServer::VariablesInterpolator.new
 
         instance_repository = DeploymentPlan::InstanceRepository.new(@logger, variables_interpolator)
         instance = instance_repository.fetch_existing(
           instance_model,
-          instance_model.state,
+          {},
           desired_instance,
         )
 

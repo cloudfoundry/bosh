@@ -35,7 +35,7 @@ module Bosh::Director
       )
     end
 
-    describe 'DJ job class expectations' do
+    describe 'DelayedJob job class expectations' do
       let(:job_type) { :start_instance }
       let(:queue) { :normal }
       it_behaves_like 'a DJ job'
@@ -78,6 +78,7 @@ module Bosh::Director
       allow(event_log_stage).to receive(:advance_and_track).and_yield
 
       allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
+      allow(agent_client).to receive(:get_state).and_return({ 'job_state' => 'stopped' }, { 'job_state' => 'running' })
     end
 
     describe 'perform' do
@@ -109,14 +110,32 @@ module Bosh::Director
       context 'when the instance is already started' do
         let(:instance) { Models::Instance.make(deployment: deployment, job: 'foobar', state: 'started') }
 
-        it 'does nothing' do
-          job = Jobs::StartInstance.new(deployment.name, instance.id, {})
-          job.perform
+        context 'and the agent reports the state as running' do
+          before do
+            allow(agent_client).to receive(:get_state).and_return('job_state' => 'running')
+          end
 
-          expect(agent_client).to_not have_received(:run_script).with('pre-start', anything)
-          expect(agent_client).to_not have_received(:start)
-          expect(agent_client).to_not have_received(:run_script).with('post-start', {})
-          expect(instance.reload.state).to eq 'started'
+          it 'does nothing' do
+            job = Jobs::StartInstance.new(deployment.name, instance.id, {})
+            job.perform
+
+            expect(agent_client).to_not have_received(:run_script).with('pre-start', anything)
+            expect(agent_client).to_not have_received(:start)
+            expect(agent_client).to_not have_received(:run_script).with('post-start', {})
+            expect(instance.reload.state).to eq 'started'
+          end
+        end
+
+        context 'and the agent reports the state as not running' do
+          it 'should start the instance' do
+            job = Jobs::StartInstance.new(deployment.name, instance.id, {})
+            job.perform
+
+            expect(agent_client).to have_received(:run_script).with('pre-start', {})
+            expect(agent_client).to have_received(:start)
+            expect(agent_client).to have_received(:run_script).with('post-start', {})
+            expect(instance.reload.state).to eq 'started'
+          end
         end
       end
 
