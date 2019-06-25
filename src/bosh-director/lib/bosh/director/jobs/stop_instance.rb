@@ -76,9 +76,7 @@ module Bosh::Director
         instance = instance_repository.fetch_existing(
           instance_model,
           instance_model.state,
-          instance_group,
-          instance_model.index,
-          deployment_plan,
+          desired_instance,
         )
 
         network_plans = instance.existing_network_reservations.map do |reservation|

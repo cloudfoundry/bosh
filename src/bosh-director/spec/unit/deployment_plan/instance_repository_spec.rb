@@ -3,7 +3,8 @@ require 'spec_helper'
 describe Bosh::Director::DeploymentPlan::InstanceRepository do
   subject(:instance_repository) { BD::DeploymentPlan::InstanceRepository.new(logger, variables_interpolator) }
   let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
-  let(:plan) do
+
+  let(:deployment_plan) do
     network = BD::DeploymentPlan::DynamicNetwork.new('name-7', [], logger)
     ip_repo = BD::DeploymentPlan::DatabaseIpRepo.new(logger)
     ip_provider = BD::DeploymentPlan::IpProvider.new(ip_repo, { 'name-7' => network }, logger)
@@ -16,10 +17,12 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
                     model: model)
   end
 
-  let(:job) do
-    job = BD::DeploymentPlan::InstanceGroup.new(logger)
-    job.name = 'job-name'
-    job
+  let(:desired_instance) { BD::DeploymentPlan::DesiredInstance.new(instance_group, deployment_plan, nil, 0) }
+
+  let(:instance_group) do
+    instance_group = BD::DeploymentPlan::InstanceGroup.new(logger)
+    instance_group.name = 'job-name'
+    instance_group
   end
 
   before do
@@ -36,7 +39,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
     end
 
     it 'returns an DeploymentPlan::Instance with a bound Models::Instance' do
-      instance = instance_repository.fetch_existing(existing_instance, {}, job, nil, plan)
+      instance = instance_repository.fetch_existing(existing_instance, {}, desired_instance)
 
       expect(instance.model).to eq(existing_instance)
       expect(instance.uuid).to eq(existing_instance.uuid)
@@ -44,15 +47,15 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
     end
 
     it 'returns an instance with correct current state' do
-      instance = instance_repository.fetch_existing(existing_instance, { 'job_state' => 'unresponsive' }, job, nil, plan)
+      instance = instance_repository.fetch_existing(existing_instance, { 'job_state' => 'unresponsive' }, desired_instance)
       expect(instance.model).to eq(existing_instance)
       expect(instance.current_job_state).to eq('unresponsive')
     end
 
-    context 'when job has instance state' do
+    context 'when instance_group has instance state' do
       it 'returns a DeploymentPlan::Instance with the state of the DesiredInstance' do
-        job.instance_states[existing_instance.uuid] = 'job-state'
-        instance = instance_repository.fetch_existing(existing_instance, {}, job, nil, plan)
+        instance_group.instance_states[existing_instance.uuid] = 'job-state'
+        instance = instance_repository.fetch_existing(existing_instance, {}, desired_instance)
 
         expect(instance.state).to eq('job-state')
         expect(instance.uuid).to eq(existing_instance.uuid)
@@ -66,7 +69,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
         end
 
         it 'is using reservation from database' do
-          instance = instance_repository.fetch_existing(existing_instance, {}, job, nil, plan)
+          instance = instance_repository.fetch_existing(existing_instance, {}, desired_instance)
           expect(instance.existing_network_reservations.map(&:ip)).to eq([123])
         end
       end
@@ -103,7 +106,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
       end
 
       it 'returns an instance with a bound Models::Instance' do
-        instance = instance_repository.fetch_obsolete_existing(existing_instance, {}, plan)
+        instance = instance_repository.fetch_obsolete_existing(existing_instance, {}, deployment_plan)
 
         expect(instance.model).to eq(existing_instance)
         expect(instance.uuid).to eq(existing_instance.uuid)
@@ -118,14 +121,18 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
     end
 
     it 'returns an instance with correct current state' do
-      instance = instance_repository.fetch_obsolete_existing(existing_instance, { 'job_state' => 'unresponsive' }, plan)
+      instance = instance_repository.fetch_obsolete_existing(
+        existing_instance,
+        { 'job_state' => 'unresponsive' },
+        deployment_plan,
+      )
       expect(instance.model).to eq(existing_instance)
       expect(instance.current_job_state).to eq('unresponsive')
     end
 
     context 'when existing instance does NOT have a VM' do
       it 'Models::Instance should not have a stemcell' do
-        instance = instance_repository.fetch_obsolete_existing(existing_instance, {}, plan)
+        instance = instance_repository.fetch_obsolete_existing(existing_instance, {}, deployment_plan)
 
         expect(instance.stemcell).to be_nil
       end
@@ -136,7 +143,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
         {}
       end
       it 'returns an instance with no spec' do
-        instance = instance_repository.fetch_obsolete_existing(existing_instance, {}, plan)
+        instance = instance_repository.fetch_obsolete_existing(existing_instance, {}, deployment_plan)
         expect(instance.model).to eq(existing_instance)
         expect(instance.uuid).to eq(existing_instance.uuid)
         expect(instance.state).to eq(existing_instance.state)
@@ -155,7 +162,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
         end
 
         it 'is using reservation from database' do
-          instance = instance_repository.fetch_obsolete_existing(existing_instance, {}, plan)
+          instance = instance_repository.fetch_obsolete_existing(existing_instance, {}, deployment_plan)
           expect(instance.existing_network_reservations.map(&:ip)).to eq([123])
         end
       end
@@ -165,16 +172,16 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
   describe '#create' do
     it 'should persist an instance with attributes from the desired_instance' do
       az = BD::DeploymentPlan::AvailabilityZone.new('az-name', {})
-      desired_instance = BD::DeploymentPlan::DesiredInstance.new(job, plan, az)
+      desired_instance = BD::DeploymentPlan::DesiredInstance.new(instance_group, deployment_plan, az)
 
       instance_repository.create(desired_instance, 1)
 
       persisted_instance = BD::Models::Instance.find(uuid: 'uuid-1')
-      expect(persisted_instance.deployment_id).to eq(plan.model.id)
-      expect(persisted_instance.job).to eq(job.name)
+      expect(persisted_instance.deployment_id).to eq(deployment_plan.model.id)
+      expect(persisted_instance.job).to eq(instance_group.name)
       expect(persisted_instance.index).to eq(1)
       expect(persisted_instance.state).to eq('started')
-      expect(persisted_instance.compilation).to eq(job.compilation?)
+      expect(persisted_instance.compilation).to eq(instance_group.compilation?)
       expect(persisted_instance.uuid).to eq('uuid-1')
     end
   end

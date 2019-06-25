@@ -57,7 +57,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     instance_group.availability_zones << az
     instance_group
   end
-  let(:desired_instance) { BD::DeploymentPlan::DesiredInstance.new(instance_group, deployment) }
+  let(:desired_instance) { BD::DeploymentPlan::DesiredInstance.new(instance_group, deployment, nil, 0) }
   let(:tracer_instance) do
     make_instance
   end
@@ -95,9 +95,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       allow(instance_repo).to receive(:fetch_existing).with(
         existing_instance_model,
         nil,
-        instance_group,
-        0,
-        deployment,
+        desired_instance,
       ).and_return(tracer_instance)
 
       instance_plans = instance_planner.plan_instance_group_instances(
@@ -138,9 +136,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       allow(instance_repo).to receive(:fetch_existing).with(
         existing_instance_model,
         nil,
-        instance_group,
-        0,
-        deployment,
+        desired_instance,
       ).and_return(tracer_instance)
       expect(tracer_instance).to receive(:update_description)
 
@@ -185,14 +181,16 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
         variable_set: variable_set_model,
       )
 
+      other_desired_instance = BD::DeploymentPlan::DesiredInstance.new(
+        instance_group,
+        deployment,
+        az,
+        out_of_typical_range_index,
+      )
+
       desired_instances = [
         desired_instance,
-        BD::DeploymentPlan::DesiredInstance.new(
-          instance_group,
-          deployment,
-          az,
-          out_of_typical_range_index,
-        ),
+        other_desired_instance,
       ]
 
       undesired_existing_instance_model = BD::Models::Instance.make(
@@ -205,9 +203,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       allow(instance_repo).to receive(:fetch_existing).with(
         desired_existing_instance_model,
         nil,
-        instance_group,
-        out_of_typical_range_index,
-        deployment,
+        other_desired_instance,
       ) do
         make_instance(out_of_typical_range_index)
       end
@@ -292,7 +288,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       it 'creates instance plans for new instances with no az' do
         existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0)
 
-        allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model, nil, instance_group, 0, deployment) { tracer_instance }
+        allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model, nil, desired_instance) { tracer_instance }
 
         instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_resources_cache)
 
@@ -421,9 +417,15 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
           )
 
           existing_tracer_instance = make_instance_with_existing_model(existing_instance_model)
-          allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model, nil, instance_group, 0, deployment) { existing_tracer_instance }
+          allow(instance_repo).to receive(:fetch_existing)
+            .with(existing_instance_model, nil, desired_instance) { existing_tracer_instance }
 
-          instance_plans = instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_resources_cache)
+          instance_plans = instance_planner.plan_instance_group_instances(
+            instance_group,
+            [desired_instance],
+            [existing_instance_model],
+            vm_resources_cache,
+          )
 
           expect(instance_plans.count).to eq(1)
           existing_instance_plan = instance_plans.first
@@ -455,7 +457,8 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
           another_desired_instance = BD::DeploymentPlan::DesiredInstance.new(instance_group, deployment, az, 1)
 
           existing_tracer_instance = make_instance_with_existing_model(existing_instance_model)
-          allow(instance_repo).to receive(:fetch_existing).with(another_existing_instance_model, nil, instance_group, another_desired_instance.index, deployment) { existing_tracer_instance }
+          allow(instance_repo).to receive(:fetch_existing)
+            .with(another_existing_instance_model, nil, another_desired_instance) { existing_tracer_instance }
           allow(instance_repo).to receive(:create).with(desired_instance, 2) { make_instance(2) }
 
           instance_plans = instance_planner.plan_instance_group_instances(instance_group, [another_desired_instance, desired_instance], [existing_instance_model, another_existing_instance_model], vm_resources_cache)
@@ -493,9 +496,9 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
           desired_instance2 = BD::DeploymentPlan::DesiredInstance.new(instance_group, deployment, az, 1)
 
           allow(instance_repo).to receive(:fetch_existing)
-            .with(existing_instance_model1, nil, instance_group, desired_instance1.index, deployment) { make_instance(0) }
+            .with(existing_instance_model1, nil, desired_instance1) { make_instance(0) }
           allow(instance_repo).to receive(:fetch_existing)
-            .with(existing_instance_model2, nil, instance_group, desired_instance2.index, deployment) { make_instance(1) }
+            .with(existing_instance_model2, nil, desired_instance2) { make_instance(1) }
 
           instance_plans = instance_planner.plan_instance_group_instances(
             instance_group,

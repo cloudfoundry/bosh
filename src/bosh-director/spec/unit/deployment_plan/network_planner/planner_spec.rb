@@ -8,11 +8,11 @@ module Bosh::Director::DeploymentPlan
     let(:instance_plan) { InstancePlan.new(existing_instance: nil, desired_instance: desired_instance, instance: instance, variables_interpolator: variables_interpolator) }
     let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
     let(:deployment) { instance_double(Planner, model: Bosh::Director::Models::Deployment.make) }
-    let(:desired_instance) { DesiredInstance.new(job, deployment) }
+    let(:desired_instance) { DesiredInstance.new(job, deployment, nil, 0) }
     let(:instance_model) { Bosh::Director::Models::Instance.make }
     let(:job) { InstanceGroup.new(logger) }
     let(:instance_repository) { InstanceRepository.new(logger, variables_interpolator) }
-    let(:instance) { instance_repository.fetch_existing(instance_model, {}, job, desired_instance.index, deployment) }
+    let(:instance) { instance_repository.fetch_existing(instance_model, {}, desired_instance) }
     let(:deployment_subnets) do
       [
         ManualNetworkSubnet.new(

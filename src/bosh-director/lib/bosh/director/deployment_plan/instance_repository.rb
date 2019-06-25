@@ -5,8 +5,11 @@ module Bosh::Director::DeploymentPlan
       @variables_interpolator = variables_interpolator
     end
 
-    def fetch_existing(existing_instance_model, existing_instance_state, instance_group, index, deployment)
+    def fetch_existing(existing_instance_model, existing_instance_state, desired_instance)
       @logger.debug("Fetching existing instance for: #{existing_instance_model.inspect}")
+
+      instance_group = desired_instance.instance_group
+
       # if state was not specified in manifest, use saved state
       job_state = instance_group.state_for_instance(existing_instance_model) || existing_instance_model.state
       @logger.debug(
@@ -17,9 +20,9 @@ module Bosh::Director::DeploymentPlan
       availability_zone = AvailabilityZone.new(existing_instance_model.availability_zone, {})
       instance = Instance.create_from_instance_group(
         instance_group,
-        index,
+        desired_instance.index,
         job_state,
-        deployment.model,
+        desired_instance.deployment.model,
         existing_instance_state,
         availability_zone,
         @logger,
@@ -29,7 +32,7 @@ module Bosh::Director::DeploymentPlan
 
       existing_network_reservations = InstanceNetworkReservations.create_from_db(
         existing_instance_model,
-        deployment,
+        desired_instance.deployment,
         @logger,
       )
       instance.bind_existing_reservations(existing_network_reservations)
