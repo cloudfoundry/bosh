@@ -352,6 +352,28 @@ module Bosh::Director
             end
           end
 
+          context 'with the "canaries" param' do
+            it 'passes the parameter' do
+              expect_any_instance_of(DeploymentManager)
+                .to receive(:create_deployment)
+                .with(anything, anything, anything, anything, anything, hash_including('canaries' => '1'), anything)
+                .and_return(OpenStruct.new(id: 1))
+              post '/?canaries=1', spec_asset('test_conf.yaml'), 'CONTENT_TYPE' => 'text/yaml'
+              expect(last_response).to be_redirect
+            end
+          end
+
+          context 'with the "max-in-flight" param' do
+            it 'passes the parameter' do
+              expect_any_instance_of(DeploymentManager)
+                .to receive(:create_deployment)
+                .with(anything, anything, anything, anything, anything, hash_including('max_in_flight' => '1'), anything)
+                .and_return(OpenStruct.new(id: 1))
+              post '/?max_in_flight=1', spec_asset('test_conf.yaml'), 'CONTENT_TYPE' => 'text/yaml'
+              expect(last_response).to be_redirect
+            end
+          end
+
           context 'with the "recreate_persistent_disks" param' do
             it 'passes the parameter' do
               expect_any_instance_of(DeploymentManager)
