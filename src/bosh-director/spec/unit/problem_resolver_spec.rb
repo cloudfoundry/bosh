@@ -68,10 +68,8 @@ module Bosh::Director
       end
 
       resolver = make_resolver(@deployment)
-      problem_handler = ProblemHandlers::MissingVM.new(1, nil)
-      allow(ProblemHandlers::Base).to receive(:create_from_model).and_return(problem_handler)
+      allow_any_instance_of(ProblemHandlers::MissingVM).to receive(:apply_resolution).with('recreate_vm')
 
-      expect(problem_handler).to receive(:recreate_vm).exactly(problem_resolutions.size).times
       expect(resolver.apply_resolutions(problem_resolutions)).to eq([problem_resolutions.size, nil])
       expect(Models::DeploymentProblem.filter(state: 'open').count).to eq(0)
     end
@@ -164,7 +162,7 @@ module Bosh::Director
         context 'when instance group contains disk problems' do
           let(:agent) { double('agent') }
 
-          it 'can resolve persistent disk problems' do
+          it 'can resolve persistent disk problems', truncation_before_test: true do
             disks = []
 
             expect(agent).to receive(:list_disk).and_return([])
