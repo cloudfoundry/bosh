@@ -257,4 +257,19 @@ describe 'compiled releases', type: :integration do
       expect(current_sandbox.cpi.invocations_for_method('create_vm').size).to eq(create_call_count + 1)
     end
   end
+
+  context 'when exporting stripped release' do
+    before do
+      bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+      upload_cloud_config
+    end
+
+    it 'does not contain any dependencies for compiled packages' do
+        bosh_runner.run("export-release ")
+    end
+
+    it 'can be uploaded to the director' do
+
+    end
+  end
 end

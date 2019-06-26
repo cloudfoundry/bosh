@@ -151,8 +151,10 @@ module Bosh::Director
           @release_version_model.save
         end
 
-        single_step_stage('Resolving package dependencies') do
-          resolve_package_dependencies(manifest_packages)
+        unless @compiled_release
+          single_step_stage('Resolving package dependencies') do
+            resolve_package_dependencies(manifest_packages)
+          end
         end
 
         process_packages(release_dir)
