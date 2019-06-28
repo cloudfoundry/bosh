@@ -162,7 +162,7 @@ module Bosh::Director
         context 'when instance group contains disk problems' do
           let(:agent) { double('agent') }
 
-          it 'can resolve persistent disk problems' do
+          it 'can resolve persistent disk problems', truncation_before_test: true do
             disks = []
 
             expect(agent).to receive(:list_disk).and_return([])
