@@ -63,18 +63,6 @@ module Bosh::Director
         lock_variable_set
       end
 
-      def parse_manifest
-        deployment_manifest = Manifest.load_from_hash(manifest_hash, manifest_text, cloud_config_models, runtime_config_models)
-        planner_factory = DeploymentPlan::PlannerFactory.create(logger)
-
-        @deployment_plan = planner_factory.create_from_manifest(
-          deployment_manifest,
-          cloud_config_models,
-          runtime_config_models,
-          @options,
-        )
-      end
-
       private
 
       def deploy(context)
@@ -390,6 +378,18 @@ module Bosh::Director
 
       def notifier
         @notifier ||= DeploymentPlan::Notifier.new(deployment_name, Config.nats_rpc, logger)
+      end
+
+      def parse_manifest
+        deployment_manifest = Manifest.load_from_hash(manifest_hash, manifest_text, cloud_config_models, runtime_config_models)
+        planner_factory = DeploymentPlan::PlannerFactory.create(logger)
+
+        @deployment_plan = planner_factory.create_from_manifest(
+          deployment_manifest,
+          cloud_config_models,
+          runtime_config_models,
+          @options,
+        )
       end
 
       def links_manager
