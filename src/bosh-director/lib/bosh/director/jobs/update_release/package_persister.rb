@@ -140,14 +140,14 @@ module Bosh::Director
           end
 
           def fix_package(logger, desc, package, package_tgz, sha1)
-            safe_delete(logger, desc, package)
+            delete_package_blob(logger, desc, package)
             create_package_from_bits(logger, package, package_tgz, sha1, desc)
             logger.info("Re-created package '#{package.name}/#{package.version}' \
     with blobstore_id '#{package.blobstore_id}'")
             package.save
           end
 
-          def safe_delete(logger, desc, package)
+          def delete_package_blob(logger, desc, package)
             logger.info("Deleting #{desc} '#{package.name}/#{package.version}'")
             BlobUtil.delete_blob(package.blobstore_id)
           rescue Bosh::Blobstore::BlobstoreError => e
@@ -166,7 +166,7 @@ module Bosh::Director
             package.compiled_packages.each do |compiled_pkg|
               logger.info("Deleting compiled package '#{compiled_pkg.name}' for \
     '#{compiled_pkg.stemcell_os}/#{compiled_pkg.stemcell_version}' with blobstore_id '#{compiled_pkg.blobstore_id}'")
-              safe_delete(logger, 'compiled package', compiled_pkg)
+              delete_package_blob(logger, 'compiled package', compiled_pkg)
               compiled_pkg.destroy
             end
           end
