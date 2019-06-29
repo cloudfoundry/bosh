@@ -31,6 +31,10 @@ module Bosh::Director::Models
       disk_collection
     end
 
+    def active_persistent_disk_cids
+      active_persistent_disks.collection.map(&:model).map(&:disk_cid).compact
+    end
+
     # @todo[multi-disks] drop this method+calls since it's assuming a single persistent disk
     def managed_persistent_disk_cid
       disk = managed_persistent_disk
@@ -44,11 +48,8 @@ module Bosh::Director::Models
 
     def stale_rendered_templates_archives
       stale_archives = rendered_templates_archives_dataset
-      if latest = latest_rendered_templates_archive
-        stale_archives.exclude(id: latest.id)
-      else
-        stale_archives
-      end
+      latest = latest_rendered_templates_archive
+      latest ? stale_archives.exclude(id: latest.id) : stale_archives
     end
 
     def cloud_properties_hash

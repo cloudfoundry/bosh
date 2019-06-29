@@ -5,6 +5,38 @@ module Bosh::Director::DeploymentPlan
       @variables_interpolator = variables_interpolator
     end
 
+    def build_instance_from_model(instance_model, existing_state, desired_state)
+      @logger.debug("Building instance from instance model: #{instance_model.inspect}")
+
+      stemcell = Stemcell.parse(instance_model.spec['stemcell'])
+      stemcell.bind_model(instance_model.deployment)
+
+      availability_zone = AvailabilityZone.new(
+        instance_model.availability_zone,
+        instance_model.cloud_properties_hash,
+      )
+
+      instance_spec = instance_model.spec.merge(existing_state)
+
+      instance = Instance.new(
+        instance_model.job,
+        instance_model.index,
+        desired_state,
+        instance_model.cloud_properties_hash,
+        stemcell,
+        Env.new(instance_model.vm_env),
+        false,
+        instance_model.deployment,
+        instance_spec,
+        availability_zone,
+        @logger,
+        @variables_interpolator,
+      )
+      instance.bind_existing_instance_model(instance_model)
+
+      instance
+    end
+
     def fetch_existing(existing_instance_model, existing_instance_state, desired_instance)
       @logger.debug("Fetching existing instance for: #{existing_instance_model.inspect}")
 

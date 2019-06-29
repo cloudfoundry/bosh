@@ -78,17 +78,11 @@ module Bosh::Director
         instance_report.vm = instance_model.active_vm
       end
 
-      def active_persistent_disk_cids
-        instance_model.active_persistent_disks.collection
-                      .map(&:model)
-                      .map(&:disk_cid).compact
-      end
-
       def create_vm
         @vm_creator.create_for_instance_plan(
           instance_plan,
           @ip_provider,
-          active_persistent_disk_cids,
+          instance_model.active_persistent_disk_cids,
           instance_plan.tags,
         )
       end

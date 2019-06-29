@@ -1,15 +1,16 @@
 require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::InstanceRepository do
-  subject(:instance_repository) { BD::DeploymentPlan::InstanceRepository.new(logger, variables_interpolator) }
+  let(:logger) { Logging::Logger.new('log') }
+  subject(:instance_repository) { Bosh::Director::DeploymentPlan::InstanceRepository.new(logger, variables_interpolator) }
   let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
   let(:deployment_plan) do
-    network = BD::DeploymentPlan::DynamicNetwork.new('name-7', [], logger)
-    ip_repo = BD::DeploymentPlan::DatabaseIpRepo.new(logger)
-    ip_provider = BD::DeploymentPlan::IpProvider.new(ip_repo, { 'name-7' => network }, logger)
-    model = BD::Models::Deployment.make
-    BD::Models::VariableSet.create(deployment: model)
+    network = Bosh::Director::DeploymentPlan::DynamicNetwork.new('name-7', [], logger)
+    ip_repo = Bosh::Director::DeploymentPlan::DatabaseIpRepo.new(logger)
+    ip_provider = Bosh::Director::DeploymentPlan::IpProvider.new(ip_repo, { 'name-7' => network }, logger)
+    model = Bosh::Director::Models::Deployment.make
+    Bosh::Director::Models::VariableSet.create(deployment: model)
     instance_double('Bosh::Director::DeploymentPlan::Planner',
                     network: network,
                     networks: [network],
@@ -17,10 +18,10 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
                     model: model)
   end
 
-  let(:desired_instance) { BD::DeploymentPlan::DesiredInstance.new(instance_group, deployment_plan, nil, 0) }
+  let(:desired_instance) { Bosh::Director::DeploymentPlan::DesiredInstance.new(instance_group, deployment_plan, nil, 0) }
 
   let(:instance_group) do
-    instance_group = BD::DeploymentPlan::InstanceGroup.new(logger)
+    instance_group = Bosh::Director::DeploymentPlan::InstanceGroup.new(logger)
     instance_group.name = 'job-name'
     instance_group
   end
@@ -65,7 +66,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
     describe 'binding existing reservations' do
       context 'when instance has reservations in db' do
         before do
-          existing_instance.add_ip_address(BD::Models::IpAddress.make(address_str: '123'))
+          existing_instance.add_ip_address(Bosh::Director::Models::IpAddress.make(address_str: '123'))
         end
 
         it 'is using reservation from database' do
@@ -76,13 +77,38 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
     end
   end
 
+  describe '#build_instance_from_model' do
+    let(:stemcell) { Bosh::Director::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302') }
+    let(:existing_instance) { BD::Models::Instance.make(state: 'started') }
+
+    let(:instance_spec) do
+      {
+        'stemcell' => {
+          'name' => stemcell.name,
+          'version' => stemcell.version,
+        },
+        'env' => { 'key1' => 'value1' },
+      }
+    end
+
+    it 'returns the instance last persisted in the database' do
+      allow(existing_instance).to receive(:spec).and_return(instance_spec)
+      instance = instance_repository.build_instance_from_model(existing_instance, { 'job_state' => 'stopped' }, 'started')
+
+      expect(instance.model).to eq(existing_instance)
+      expect(instance.uuid).to eq(existing_instance.uuid)
+      expect(instance.state).to eq('started')
+      expect(instance.current_job_state).to eq('stopped')
+    end
+  end
+
   describe '#fetch_obsolete_existing' do
     let(:env) do
       {
         'key1' => 'value1',
       }
     end
-    let(:stemcell) { BD::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302') }
+    let(:stemcell) { Bosh::Director::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302') }
     let(:instance_spec) do
       {
         'vm_type' => {
@@ -158,7 +184,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
     context 'binding existing reservations' do
       context 'when instance has reservations in db' do
         before do
-          existing_instance.add_ip_address(BD::Models::IpAddress.make(address_str: '123'))
+          existing_instance.add_ip_address(Bosh::Director::Models::IpAddress.make(address_str: '123'))
         end
 
         it 'is using reservation from database' do
@@ -171,12 +197,12 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
 
   describe '#create' do
     it 'should persist an instance with attributes from the desired_instance' do
-      az = BD::DeploymentPlan::AvailabilityZone.new('az-name', {})
-      desired_instance = BD::DeploymentPlan::DesiredInstance.new(instance_group, deployment_plan, az)
+      az = Bosh::Director::DeploymentPlan::AvailabilityZone.new('az-name', {})
+      desired_instance = Bosh::Director::DeploymentPlan::DesiredInstance.new(instance_group, deployment_plan, az)
 
       instance_repository.create(desired_instance, 1)
 
-      persisted_instance = BD::Models::Instance.find(uuid: 'uuid-1')
+      persisted_instance = Bosh::Director::Models::Instance.find(uuid: 'uuid-1')
       expect(persisted_instance.deployment_id).to eq(deployment_plan.model.id)
       expect(persisted_instance.job).to eq(instance_group.name)
       expect(persisted_instance.index).to eq(1)

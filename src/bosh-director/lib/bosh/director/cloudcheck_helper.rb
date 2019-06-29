@@ -145,7 +145,6 @@ module Bosh::Director
       availability_zone = DeploymentPlan::AvailabilityZone.new(
         instance_model.availability_zone,
         instance_model.cloud_properties_hash,
-        nil,
       )
 
       variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new
@@ -165,7 +164,7 @@ module Bosh::Director
       )
       instance_from_model.bind_existing_instance_model(instance_model)
 
-      DeploymentPlan::ResurrectionInstancePlan.new(
+      DeploymentPlan::InstancePlanFromDB.new(
         existing_instance: instance_model,
         instance: instance_from_model,
         desired_instance: DeploymentPlan::DesiredInstance.new,

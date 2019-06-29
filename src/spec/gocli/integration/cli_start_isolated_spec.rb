@@ -93,6 +93,37 @@ describe 'start command', type: :integration do
       output = deploy_simple_manifest(manifest_hash: manifest_hash)
       expect(output).not_to include('foobar')
     end
+
+    context 'after a hard stop' do
+      before do
+        isolated_stop(instance_group: 'foobar', index: 0, params: { hard: true })
+      end
+
+      it 'creates the missing vm and starts the instance' do
+        expect do
+          output = isolated_start(instance_group: 'foobar', index: 0)
+          expect(output).to match(/Starting instance foobar: foobar.* \(0\)/)
+        end.to change { vm_states }
+          .from(
+            'another-job/0' => 'running',
+            'foobar/1' => 'running',
+            'foobar/2' => 'running',
+          )
+          .to(
+            'another-job/0' => 'running',
+            'foobar/0' => 'running',
+            'foobar/1' => 'running',
+            'foobar/2' => 'running',
+          )
+      end
+
+      it 'does not update the instance on subsequent deploys' do
+        isolated_start(instance_group: 'foobar', index: 0)
+
+        output = deploy_simple_manifest(manifest_hash: manifest_hash)
+        expect(output).not_to include('foobar')
+      end
+    end
   end
 
   context 'after a failed deploy' do
@@ -140,8 +171,15 @@ describe 'start command', type: :integration do
         deploy(manifest_hash: late_fail_manifest, failure_expected: true)
       end
 
-      it 'only starts the indexed job' do
+      it 'only starts the specified soft stopped instance' do
         isolated_stop(instance_group: 'foobar', index: 0)
+        output = isolated_start(instance_group: 'foobar', index: 0)
+        expect(output).not_to include('another-job')
+        expect(output).to include('foobar')
+      end
+
+      it 'only starts the specified hard stopped instance' do
+        isolated_stop(instance_group: 'foobar', index: 0, params: { hard: true })
         output = isolated_start(instance_group: 'foobar', index: 0)
         expect(output).not_to include('another-job')
         expect(output).to include('foobar')

@@ -4,11 +4,8 @@ module Bosh::Director
   module DeploymentPlan
     describe InstanceUpdater::RecreateHandler do
       describe '#perform' do
-        let(:cid) { 'bobcid' }
-        let(:cids) { [cid] }
+        let(:cids) { ['bobcid'] }
         let(:ip_address) { Sham.ip }
-        let(:disk_model) { double(Models::PersistentDisk, managed?: true, disk_cid: cid) }
-        let(:disk) { double(PersistentDiskCollection::ModelPersistentDisk, model: disk_model) }
         let(:active_vm) do
           double(
             Models::Vm,
@@ -21,14 +18,13 @@ module Bosh::Director
         let(:inactive_vm) { double(Models::Vm, id: 2) }
 
         let(:vms) { [active_vm, inactive_vm] }
-        let(:disk_collection) { double(PersistentDiskCollection, collection: [disk]) }
         let(:instance_model) do
-          double(
+          instance_double(
             Models::Instance,
             most_recent_inactive_vm: inactive_vm,
             active_vm: active_vm,
             vms: vms,
-            active_persistent_disks: disk_collection,
+            active_persistent_disk_cids: cids,
           )
         end
 

@@ -478,7 +478,7 @@ module Bosh
         end
       end
 
-      class ResurrectionInstancePlan < InstancePlan
+      class InstancePlanFromDB < InstancePlan
         def network_settings_hash
           @existing_instance.spec_p('networks')
         end
