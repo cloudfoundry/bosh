@@ -620,31 +620,12 @@ module Bosh::Director::Links
     end
 
     def are_equal(content1, content2)
-      if content1.is_a?(Hash)
-        return false unless content1.keys.count.equal?(content2.keys.count)
-        content1.each_key do |key|
-          return false unless content2.has_key?(key) #only checking for key, not value
-          if content1[key].is_a?(Enumerable) && content1[key].class == content2[key].class
-            return false unless are_equal(content1[key], content2[key])
-          else
-            return false unless content1[key].eql?(content2[key])
-          end
-        end
-      end
+      content1.all? do |key, value|
+        next value.sort == content2[key].sort if key == 'networks'
+        next value.sort_by { |i| i['id'] } == content2[key].sort_by { |i| i['id'] } if key == 'instances'
 
-      if content1.is_a?(Array)
-        return false unless content2.count.equal?(content1.count)
-        content1.each do |item|
-          return false unless content2.include?(item)
-          if item.is_a?(Enumerable) && item.class == content2.fetch(content2.find_index(item)).class
-            return false unless are_equal(item, content2.fetch(content2.find_index(item)))
-          else
-            return false unless item.eql?(content2.fetch(content2.find_index(item)))
-          end
-        end
+        value == content2[key]
       end
-
-      true
     end
   end
 end

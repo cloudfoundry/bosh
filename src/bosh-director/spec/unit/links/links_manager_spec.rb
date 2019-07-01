@@ -459,7 +459,7 @@ describe Bosh::Director::Links::LinksManager do
           'properties' => {
             'a' => 'default_a',
             'b' => nil,
-            'c' => 'default_c',
+            'c' => ['one', nil, nil],
             'nested' => {
               'one' => 'default_nested.one',
               'two' => 'default_nested.two',
@@ -474,6 +474,14 @@ describe Bosh::Director::Links::LinksManager do
               'bootstrap' => true,
               'az' => nil,
               'address' => '192.168.1.2',
+            },
+            {
+              'name' => 'foobar',
+              'id' => 'ed9c4acf-1a12-4ace-ba86-0bd39ab249cc',
+              'index' => 1,
+              'bootstrap' => false,
+              'az' => nil,
+              'address' => '192.168.1.3',
             },
           ],
         }
@@ -579,10 +587,28 @@ describe Bosh::Director::Links::LinksManager do
             expect(JSON.parse(expected_link_2[:link_content]).sort).to eq(JSON.parse(@expected_link_1[:link_content]).sort)
           end
         end
+
+        context 'when instances are in different order' do
+          before do
+            link_content_1['instances'].reverse!
+          end
+
+          it 'should return existing link' do
+            expected_link_2 = subject.find_or_create_link(
+              name: 'test_link_name',
+              provider_intent: provider_intent,
+              consumer_intent: consumer_intent,
+              link_content: link_content_1.to_json,
+            )
+
+            expect(expected_link_2[:id]).to eq(@expected_link_1[:id])
+            expect(JSON.parse(expected_link_2[:link_content]).sort).to eq(JSON.parse(@expected_link_1[:link_content]).sort)
+          end
+        end
       end
 
       context 'when content does not match' do
-        context 'when new network is added' do
+        context 'when a new network is added' do
           before do
             link_content_1['networks'] = %w[a b c]
           end
@@ -619,24 +645,44 @@ describe Bosh::Director::Links::LinksManager do
         end
 
         context 'when properties change' do
-          before do
-            link_content_1['properties']['nested'] = {
-              'two' => 'default_nested.two.changed',
-              'one' => 'default_nested.one.changed',
-              'three' => 'new.default_nested.three',
-            }
+          context 'when the properties are a nested hash' do
+            before do
+              link_content_1['properties']['nested'] = {
+                'two' => 'default_nested.two.changed',
+                'one' => 'default_nested.one.changed',
+                'three' => 'new.default_nested.three',
+              }
+            end
+
+            it 'should return new link' do
+              expected_link_2 = subject.find_or_create_link(
+                name: 'test_link_name',
+                provider_intent: provider_intent,
+                consumer_intent: consumer_intent,
+                link_content: link_content_1.to_json,
+              )
+
+              expect(expected_link_2[:id]).to_not eq(@expected_link_1[:id])
+              expect(JSON.parse(expected_link_2[:link_content]).sort).to eq(link_content_1.sort)
+            end
           end
 
-          it 'should return new link' do
-            expected_link_2 = subject.find_or_create_link(
-              name: 'test_link_name',
-              provider_intent: provider_intent,
-              consumer_intent: consumer_intent,
-              link_content: link_content_1.to_json,
-            )
+          context 'when the properties are an array' do
+            before do
+              link_content_1['properties']['c'] = ['one', 'two', nil]
+            end
 
-            expect(expected_link_2[:id]).to_not eq(@expected_link_1[:id])
-            expect(JSON.parse(expected_link_2[:link_content]).sort).to eq(link_content_1.sort)
+            it 'should return new link' do
+              expected_link_2 = subject.find_or_create_link(
+                name: 'test_link_name',
+                provider_intent: provider_intent,
+                consumer_intent: consumer_intent,
+                link_content: link_content_1.to_json,
+              )
+
+              expect(expected_link_2[:id]).to_not eq(@expected_link_1[:id])
+              expect(JSON.parse(expected_link_2[:link_content]).sort).to eq(link_content_1.sort)
+            end
           end
         end
       end
