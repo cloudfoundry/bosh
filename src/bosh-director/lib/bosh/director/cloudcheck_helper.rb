@@ -135,34 +135,9 @@ module Bosh::Director
     private
 
     def create_instance_plan(instance_model)
-      stemcell = DeploymentPlan::Stemcell.parse(instance_model.spec['stemcell'])
-      stemcell.add_stemcell_models
-      stemcell.deployment_model = instance_model.deployment
-      # FIXME: cpi is not passed here (otherwise, we would need to parse the
-      # CPI using the cloud config & cloud manifest parser) it is not a
-      # problem, since all interactions with cpi go over cloud factory (which
-      # uses only az name) but still, it is ugly and dangerous...
-      availability_zone = DeploymentPlan::AvailabilityZone.new(
-        instance_model.availability_zone,
-        instance_model.cloud_properties_hash,
-      )
-
       variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new
-      instance_from_model = DeploymentPlan::Instance.new(
-        instance_model.job,
-        instance_model.index,
-        instance_model.state,
-        instance_model.cloud_properties_hash,
-        stemcell,
-        DeploymentPlan::Env.new(instance_model.vm_env),
-        false,
-        instance_model.deployment,
-        instance_model.spec,
-        availability_zone,
-        @logger,
-        variables_interpolator,
-      )
-      instance_from_model.bind_existing_instance_model(instance_model)
+      instance_repo = DeploymentPlan::InstanceRepository.new(@logger, variables_interpolator)
+      instance_from_model = instance_repo.build_instance_from_model(instance_model, {}, instance_model.state)
 
       DeploymentPlan::InstancePlanFromDB.new(
         existing_instance: instance_model,
@@ -170,7 +145,7 @@ module Bosh::Director
         desired_instance: DeploymentPlan::DesiredInstance.new,
         recreate_deployment: true,
         tags: instance_from_model.deployment_model.tags,
-        variables_interpolator: variables_interpolator
+        variables_interpolator: variables_interpolator,
       )
     end
 
