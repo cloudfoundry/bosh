@@ -221,11 +221,6 @@ module SpecHelper
     end
 
     def reset_database(example)
-      if example.metadata[:truncation_before_test]
-        @director_db_helper.truncate_db
-        @dns_db_helper.truncate_db
-      end
-
       if example.metadata[:truncation] && ENV.fetch('DB', 'sqlite') != 'sqlite'
         example.run
       else

@@ -162,8 +162,9 @@ module Bosh::Director
         context 'when instance group contains disk problems' do
           let(:agent) { double('agent') }
 
-          it 'can resolve persistent disk problems', truncation_before_test: true do
+          it 'can resolve persistent disk problems' do
             disks = []
+            problems = []
 
             expect(agent).to receive(:list_disk).and_return([])
             expect(cloud).to receive(:detach_disk).exactly(1).times
@@ -178,7 +179,8 @@ module Bosh::Director
             2.times do
               disk = Models::PersistentDisk.make(active: false)
               disks << disk
-              inactive_disk(disk.id)
+              problem = inactive_disk(disk.id)
+              problems << problem
             end
 
             resolver = make_resolver(@deployment)
@@ -188,8 +190,8 @@ module Bosh::Director
             ).twice.and_call_original
             expect(
               resolver.apply_resolutions(
-                '1' => 'delete_disk',
-                '2' => 'ignore',
+                problems[0].id.to_s => 'delete_disk',
+                problems[1].id.to_s => 'ignore',
               ),
             ).to eq([2, nil])
             expect(Models::PersistentDisk.find(id: disks[0].id)).to be_nil
