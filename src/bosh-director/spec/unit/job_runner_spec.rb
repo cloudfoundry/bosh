@@ -15,6 +15,7 @@ module Bosh::Director
 
     let(:tasks_dir) { Dir.mktmpdir }
     before { allow(Config).to receive(:base_dir).and_return(tasks_dir) }
+    before { allow(Config).to receive(:task_checkpoint_interval).and_return(30) }
     after { FileUtils.rm_rf(tasks_dir) }
 
     let(:task_dir) { File.join(tasks_dir, 'tasks', task.id.to_s) }

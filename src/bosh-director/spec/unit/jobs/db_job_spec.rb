@@ -210,6 +210,7 @@ module Bosh::Director
           expect(message).to match(em_thread_exception_message)
         end
 
+        Thread.report_on_exception = false
         expect {
           Bosh::Director::ForkedProcess.run do
             EM.schedule do
@@ -218,6 +219,7 @@ module Bosh::Director
             raise MyError, em_thread_exception_message
           end
         }.to raise_error MyError, em_thread_exception_message
+        Thread.report_on_exception = true
       end
     end
   end

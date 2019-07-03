@@ -7,6 +7,7 @@ module Bosh::Director
     before { allow(Config).to receive(:base_dir).and_return(tasks_dir) }
     before { allow(Config).to receive(:cloud_options).and_return({}) }
     before { allow(Config).to receive(:runtime).and_return('instance' => 'name/id', 'ip' => '127.0.127.0') }
+    before { allow(Config).to receive(:task_checkpoint_interval).and_return(30) }
 
     describe 'described_class.job_type' do
       it 'should complain that the method is not implemented' do
