@@ -49,7 +49,7 @@ shared:
       outputs:
       - name: bosh-src
       params:
-        RUBY_VERSION: 2.4.5
+        RUBY_VERSION: 2.6.3
       run:
         path: /bin/bash
         args:
@@ -326,7 +326,7 @@ jobs:
           run:
             path: bosh-src/ci/tasks/test-integration-gocli.sh
           params:
-            RUBY_VERSION: 2.4.5
+            RUBY_VERSION: 2.6.3
             DB:           mysql
             DB_TLS:       true
 
@@ -352,7 +352,7 @@ jobs:
       tags: ["bosh-integration-6"]
       params:
         BOSH_SRC_PATH: bosh-src/src
-        RUBY_VERSION: 2.4.5
+        RUBY_VERSION: 2.6.3
 
   - name: candidate-release
     plan:
