@@ -316,13 +316,6 @@ module Bosh::Director
       end
 
       # Property management
-      get '/:deployment/properties' do
-        properties = @property_manager.get_properties(deployment).map do |property|
-          { 'name' => property.name, 'value' => property.value }
-        end
-        json_encode(properties)
-      end
-
       get '/:deployment/properties/:property' do
         property = @property_manager.get_property(deployment, params[:property])
         json_encode('value' => property.value)

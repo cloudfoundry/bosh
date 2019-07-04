@@ -2470,16 +2470,6 @@ module Bosh::Director
             end
           end
 
-          context 'GET /:deployment/properties' do
-            it 'allows access to owned deployment' do
-              expect(get('/owned_deployment/properties').status).to eq(200)
-            end
-
-            it 'denies access to other deployment' do
-              expect(get('/other_deployment/properties').status).to eq(401)
-            end
-          end
-
           context 'GET /:deployment/properties/:property' do
             before { Models::DeploymentProperty.make(deployment: owned_deployment, name: 'prop', value: 'value') }
             it 'allows access to owned deployment' do
