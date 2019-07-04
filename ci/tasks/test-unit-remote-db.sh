@@ -13,6 +13,8 @@ print_git_state
 
 export PATH=/usr/local/ruby/bin:/usr/local/go/bin:$PATH
 export GOPATH=$(pwd)/go
+
+gem install -f bundler
 bundle update --bundler
 bundle install --local
 

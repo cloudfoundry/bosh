@@ -110,6 +110,7 @@ cp -r bosh-agent $agent_path
 pushd bosh-src/src
   print_git_state
 
+  gem install -f bundler
   bundle update --bundler
   bundle install --local
 

@@ -65,6 +65,7 @@ shared:
             source /etc/profile.d/chruby.sh
             chruby $RUBY_VERSION
 
+            gem install -f bundler
             bundle update --bundler
             bundle install --local
             bundle exec rake spec:integration:install_dependencies
