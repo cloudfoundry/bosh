@@ -3,27 +3,6 @@ require_relative '../spec_helper'
 describe 'start command', type: :integration do
   with_reset_sandbox_before_each
 
-  let(:manifest_hash) do
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
-    manifest_hash['instance_groups'] << {
-      'name' => 'another-job',
-      'jobs' => [
-        {
-          'name' => 'foobar',
-          'release' => 'bosh-release',
-          'properties' => {
-            'test_property' => 'first_deploy',
-          },
-        },
-      ],
-      'vm_type' => 'a',
-      'instances' => 1,
-      'networks' => [{ 'name' => 'a' }],
-      'stemcell' => 'default',
-    }
-    manifest_hash
-  end
-
   def vm_states
     director.instances.each_with_object({}) do |instance, result|
       unless instance.last_known_state.empty?
@@ -34,7 +13,7 @@ describe 'start command', type: :integration do
 
   context 'after a successful deploy' do
     before do
-      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+      deploy_from_scratch
     end
 
     context 'with an index' do
@@ -46,13 +25,11 @@ describe 'start command', type: :integration do
           expect(output).to match(/Starting instance foobar: foobar.* \(0\)/)
         end.to change { vm_states }
           .from(
-            'another-job/0' => 'running',
             'foobar/0' => 'stopped',
             'foobar/1' => 'running',
             'foobar/2' => 'running',
           )
           .to(
-            'another-job/0' => 'running',
             'foobar/0' => 'running',
             'foobar/1' => 'running',
             'foobar/2' => 'running',
@@ -72,13 +49,11 @@ describe 'start command', type: :integration do
           expect(output).to match %r{Starting instance foobar: foobar/#{instance_uuid} \(\d\)}
         end.to change { vm_states }
           .from(
-            'another-job/0' => 'running',
             'foobar/0' => 'running',
             'foobar/1' => 'stopped',
             'foobar/2' => 'running',
           )
           .to(
-            'another-job/0' => 'running',
             'foobar/0' => 'running',
             'foobar/1' => 'running',
             'foobar/2' => 'running',
@@ -90,7 +65,7 @@ describe 'start command', type: :integration do
       isolated_stop(instance_group: 'foobar', index: 0)
       isolated_start(instance_group: 'foobar', index: 0)
 
-      output = deploy_simple_manifest(manifest_hash: manifest_hash)
+      output = deploy_simple_manifest
       expect(output).not_to include('foobar')
     end
 
@@ -105,12 +80,10 @@ describe 'start command', type: :integration do
           expect(output).to match(/Starting instance foobar: foobar.* \(0\)/)
         end.to change { vm_states }
           .from(
-            'another-job/0' => 'running',
             'foobar/1' => 'running',
             'foobar/2' => 'running',
           )
           .to(
-            'another-job/0' => 'running',
             'foobar/0' => 'running',
             'foobar/1' => 'running',
             'foobar/2' => 'running',
@@ -120,7 +93,7 @@ describe 'start command', type: :integration do
       it 'does not update the instance on subsequent deploys' do
         isolated_start(instance_group: 'foobar', index: 0)
 
-        output = deploy_simple_manifest(manifest_hash: manifest_hash)
+        output = deploy_simple_manifest
         expect(output).not_to include('foobar')
       end
     end
@@ -128,61 +101,113 @@ describe 'start command', type: :integration do
 
   context 'after a failed deploy' do
     context 'when there are unrelated instances that are not converged' do
-      let(:late_fail_manifest) do
-        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
-        manifest_hash['instance_groups'] << {
-          'name' => 'another-job',
-          'jobs' => [
-            {
-              'name' => 'foobar',
-              'release' => 'bosh-release',
-              'properties' => {
-                'test_property' => 'second_deploy',
-              },
-            },
-          ],
-          'vm_type' => 'a',
-          'instances' => 1,
-          'networks' => [{ 'name' => 'a' }],
-          'stemcell' => 'default',
-        }
-        manifest_hash['instance_groups'] << {
-          'name' => 'the-broken-job',
-          'jobs' => [
-            {
-              'name' => 'job_with_post_start_script',
-              'release' => 'bosh-release',
-              'properties' => {
-                'exit_code' => 1,
-              },
-            },
-          ],
-          'vm_type' => 'a',
-          'instances' => 1,
-          'networks' => [{ 'name' => 'a' }],
-          'stemcell' => 'default',
-        }
-
-        manifest_hash
-      end
-
       before do
-        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
-        deploy(manifest_hash: late_fail_manifest, failure_expected: true)
+        prepare_for_deploy
+        jobs = [
+          {
+            'name' => 'job_with_bad_template',
+            'release' => 'bosh-release',
+            'properties' => {
+              'gargamel' => {
+                'color' => 'original_value',
+              },
+            },
+          },
+        ]
+        instance_group = Bosh::Spec::NewDeployments.simple_instance_group(name: 'bad-instance-group', jobs: jobs)
+        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+        manifest_hash['instance_groups'] << instance_group
+        deploy(manifest_hash: manifest_hash)
+
+        manifest_hash['instance_groups'].last['jobs'].first['properties'] = {
+          'fail_instance_index' => 0,
+          'fail_on_job_start' => true,
+          'gargamel' => {
+            'color' => 'updated_value',
+          },
+        }
+
+        deploy(manifest_hash: manifest_hash, failure_expected: true)
       end
 
-      it 'only starts the specified soft stopped instance' do
+      it 'starting only touches the specified instance' do
         isolated_stop(instance_group: 'foobar', index: 0)
         output = isolated_start(instance_group: 'foobar', index: 0)
-        expect(output).not_to include('another-job')
-        expect(output).to include('foobar')
+        expect(output).to match(/Starting instance foobar: foobar.* \(0\)/)
+        expect(output).to_not match(/Starting instance bad-instance-group: bad-instance-group.* \(0\)/)
       end
 
       it 'only starts the specified hard stopped instance' do
         isolated_stop(instance_group: 'foobar', index: 0, params: { hard: true })
         output = isolated_start(instance_group: 'foobar', index: 0)
-        expect(output).not_to include('another-job')
-        expect(output).to include('foobar')
+        expect(output).to match(/Starting instance foobar: foobar.* \(0\)/)
+        expect(output).to_not match(/Starting instance bad-instance-group: bad-instance-group.* \(0\)/)
+      end
+    end
+
+    context 'when only some instances have updated' do
+      let(:successful_manifest) do
+        jobs = [
+          {
+            'name' => 'job_with_bad_template',
+            'release' => 'bosh-release',
+            'properties' => {
+              'gargamel' => {
+                'color' => 'original_value',
+              },
+            },
+          },
+        ]
+        Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(jobs: jobs)
+      end
+
+      it 'starting does not change job templates already deployed on the instance' do
+        prepare_for_deploy
+        deploy(manifest_hash: successful_manifest)
+
+        # workaround to get correct update order
+        instances = director.instances.sort_by(&:id)
+        bootstrap = instances.select(&:bootstrap).first
+        instances.reject!(&:bootstrap)
+        instances.unshift(bootstrap)
+
+        first_instance = instances[0]
+        middle_instance = instances[1]
+        last_instance = instances[2]
+
+        jobs = [
+          {
+            'name' => 'job_with_bad_template',
+            'release' => 'bosh-release',
+            'properties' => {
+              'fail_instance_index' => middle_instance.index,
+              'fail_on_job_start' => true,
+              'gargamel' => {
+                'color' => 'updated_value',
+              },
+            },
+          },
+        ]
+        failing_manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(jobs: jobs)
+        deploy(manifest_hash: failing_manifest, failure_expected: true)
+
+        isolated_stop(instance_group: 'foobar', index: first_instance.index)
+        isolated_start(instance_group: 'foobar', index: first_instance.index)
+
+        config_file = first_instance.read_job_template('job_with_bad_template', 'config/config.yml')
+        expect(config_file).to include('updated_value')
+
+        isolated_stop(instance_group: 'foobar', index: middle_instance.index)
+        expect { isolated_start(instance_group: 'foobar', index: middle_instance.index) }.to raise_error
+
+        config_file = middle_instance.read_job_template('job_with_bad_template', 'config/config.yml')
+        expect(config_file).to include('updated_value')
+
+        isolated_stop(instance_group: 'foobar', index: last_instance.index)
+        isolated_start(instance_group: 'foobar', index: last_instance.index)
+
+        config_file = last_instance.read_job_template('job_with_bad_template', 'config/config.yml')
+        expect(config_file).to include('original_value')
       end
     end
   end

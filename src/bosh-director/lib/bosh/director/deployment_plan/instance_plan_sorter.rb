@@ -54,8 +54,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     def sorted_instance_plans_in_special_az(az, instance_plans)
-      all_instance_plans_for_az = instance_plans
-                                    .select do |instance_plan|
+      all_instance_plans_for_az = instance_plans.select do |instance_plan|
         instance_plan.instance.availability_zone_name == az
       end
       sorted_instances_for_az = sort_in_az(all_instance_plans_for_az)
