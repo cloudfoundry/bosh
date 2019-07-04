@@ -11,9 +11,10 @@ module Bosh
         end
 
         root_package_hash = {'name' => package.name, 'version' => package.version, 'dependencies' => package.dependency_set}
+
         package_hashes = PackageDependenciesManager.new(release_version).transitive_dependencies(package)
 
-        (root_package_hash['dependencies'] || []).sort.map do |dependency_name|
+        root_package_hash['dependencies'].sort.map do |dependency_name|
           arrayify(find_package_hash(dependency_name), package_hashes.dup)
         end.to_json
       end

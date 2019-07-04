@@ -8,7 +8,7 @@ module Bosh::Director::Models
     def dependency_set
       json = dependency_set_json
 
-      ::Set.new(json ? JSON.parse(json) : nil)
+      ::Set.new(json ? JSON.parse(json) : [])
     end
 
     def dependency_set=(deps)
