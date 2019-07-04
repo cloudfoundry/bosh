@@ -12,5 +12,6 @@ chruby $RUBY_VERSION
 cd bosh-src/src
 print_git_state
 
+bundle update --bundler
 bundle install --local
 bundle exec "$COMMAND"
