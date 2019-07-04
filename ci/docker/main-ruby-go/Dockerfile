@@ -21,6 +21,7 @@ RUN apt-get install -y \
 	xvfb \
 	jq \
 	realpath \
+	libpq-dev \
 	&& apt-get clean
 
 # Nokogiri dependencies
