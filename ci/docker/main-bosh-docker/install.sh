@@ -12,9 +12,18 @@ apt-get install -y --no-install-recommends \
   git \
   iproute2 \
   openssh-client \
-  ruby \
   software-properties-common \
   libpq-dev
+
+# ruby-install dependencies
+apt-get install -y \
+  wget \
+  build-essential \
+  libyaml-dev \
+  libgdbm-dev \
+  libreadline-dev \
+  libncurses5-dev \
+  libffi-dev
 
 curl -fsSL https://apt.dockerproject.org/gpg | apt-key add -
 apt-key fingerprint | grep 'Key fingerprint = 5811 8E89 F3A9 1289 7C07  0ADB F762 2157 2C52 609D'

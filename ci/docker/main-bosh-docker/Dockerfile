@@ -3,6 +3,9 @@ FROM ubuntu:xenial
 ADD install.sh /tmp/install.sh
 RUN /tmp/install.sh && rm /tmp/install.sh
 
+ADD install-ruby.sh /tmp/install-ruby.sh
+RUN /tmp/install-ruby.sh && rm /tmp/install-ruby.sh
+
 COPY --from=golang:1 /usr/local/go /usr/local/go
 ENV GOROOT=/usr/local/go PATH=/usr/local/go/bin:$PATH
 
