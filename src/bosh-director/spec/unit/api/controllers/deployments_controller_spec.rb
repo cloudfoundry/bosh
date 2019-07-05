@@ -1692,43 +1692,6 @@ module Bosh::Director
           end
         end
 
-        describe 'property management' do
-
-          it 'REST API for creating, updating, getting and deleting ' +
-                 'deployment properties' do
-
-            deployment = Models::Deployment.make(:name => 'mycloud')
-
-            get '/mycloud/properties/foo'
-            expect(last_response.status).to eq(404)
-
-            get '/othercloud/properties/foo'
-            expect(last_response.status).to eq(404)
-
-            post '/mycloud/properties', JSON.generate('name' => 'foo', 'value' => 'bar'), { 'CONTENT_TYPE' => 'application/json' }
-            expect(last_response.status).to eq(204)
-
-            get '/mycloud/properties/foo'
-            expect(last_response.status).to eq(200)
-            expect(JSON.parse(last_response.body)['value']).to eq('bar')
-
-            get '/othercloud/properties/foo'
-            expect(last_response.status).to eq(404)
-
-            put '/mycloud/properties/foo', JSON.generate('value' => 'baz'), { 'CONTENT_TYPE' => 'application/json' }
-            expect(last_response.status).to eq(204)
-
-            get '/mycloud/properties/foo'
-            expect(JSON.parse(last_response.body)['value']).to eq('baz')
-
-            delete '/mycloud/properties/foo'
-            expect(last_response.status).to eq(204)
-
-            get '/mycloud/properties/foo'
-            expect(last_response.status).to eq(404)
-          end
-        end
-
         describe 'problem management' do
           let!(:deployment) { Models::Deployment.make(:name => 'mycloud') }
           let(:job_class) do
@@ -2467,49 +2430,6 @@ module Bosh::Director
 
             it 'denies access to other deployment' do
               expect(post('/other_deployment/ssh', '{}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(401)
-            end
-          end
-
-          context 'GET /:deployment/properties/:property' do
-            before { Models::DeploymentProperty.make(deployment: owned_deployment, name: 'prop', value: 'value') }
-            it 'allows access to owned deployment' do
-              expect(get('/owned_deployment/properties/prop').status).to eq(200)
-            end
-
-            it 'denies access to other deployment' do
-              expect(get('/other_deployment/properties/prop').status).to eq(401)
-            end
-          end
-
-          context 'POST /:deployment/properties' do
-            it 'allows access to owned deployment' do
-              expect(post('/owned_deployment/properties', '{"name": "prop", "value": "bingo"}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(204)
-            end
-
-            it 'denies access to other deployment' do
-              expect(post('/other_deployment/properties', '{"name": "prop", "value": "bingo"}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(401)
-            end
-          end
-
-          context 'PUT /:deployment/properties/:property' do
-            before { Models::DeploymentProperty.make(deployment: owned_deployment, name: 'prop', value: 'value') }
-            it 'allows access to owned deployment' do
-              expect(put('/owned_deployment/properties/prop', '{"value": "bingo"}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(204)
-            end
-
-            it 'denies access to other deployment' do
-              expect(put('/other_deployment/properties/prop', '{"value": "bingo"}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(401)
-            end
-          end
-
-          context 'DELETE /:deployment/properties/:property' do
-            before { Models::DeploymentProperty.make(deployment: owned_deployment, name: 'prop', value: 'value') }
-            it 'allows access to owned deployment' do
-              expect(delete('/owned_deployment/properties/prop').status).to eq(204)
-            end
-
-            it 'denies access to other deployment' do
-              expect(delete('/other_deployment/properties/prop').status).to eq(401)
             end
           end
 

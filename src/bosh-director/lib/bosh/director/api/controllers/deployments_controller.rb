@@ -315,29 +315,6 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      # Property management
-      get '/:deployment/properties/:property' do
-        property = @property_manager.get_property(deployment, params[:property])
-        json_encode('value' => property.value)
-      end
-
-      post '/:deployment/properties', consumes: [:json] do
-        payload = json_decode(request.body.read)
-        @property_manager.create_property(deployment, payload['name'], payload['value'])
-        status(204)
-      end
-
-      put '/:deployment/properties/:property', consumes: [:json] do
-        payload = json_decode(request.body.read)
-        @property_manager.update_property(deployment, params[:property], payload['value'])
-        status(204)
-      end
-
-      delete '/:deployment/properties/:property' do
-        @property_manager.delete_property(deployment, params[:property])
-        status(204)
-      end
-
       get '/:deployment/variables' do
         result = deployment.variables.map do |variable|
           {
