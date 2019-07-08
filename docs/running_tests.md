@@ -47,10 +47,10 @@ bosh/src$ CONCOURSE_TARGET=bosh bundle exec rake fly:unit
 
 ### Integration Tests
 
-Integration tests describe communication between BOSH components focusing on the CLI, the Director and the Agent. They are located in the `src/spec/integration` directory. To prepare your workstation see [workstation setup docs](workstation_setup.md). Make sure you use the correct java version when running the test, and setup `JAVA_HOME` correctly in case your default system's java installation is not of version 8. Run the integration tests with the `spec:integration_gocli` rake task:
+Integration tests describe communication between BOSH components focusing on the CLI, the Director and the Agent. They are located in the `src/spec/integration` directory. To prepare your workstation see [workstation setup docs](workstation_setup.md). Make sure you use the correct java version when running the test, and setup `JAVA_HOME` correctly in case your default system's java installation is not of version 8. Run the integration tests with the `spec:integration` rake task:
 
 ```
-bosh/src$ bundle exec rake spec:integration_gocli
+bosh/src$ bundle exec rake spec:integration
 ```
 
 In order to run the integration tests in parallel:
@@ -62,13 +62,13 @@ export NUM_PROCESSES=<n>
 You can run individual tests by invoking `rspec` directly after setting up the sandbox with `rake spec:integration:install_dependencies` and `rake  spec:integration:download_bosh_agent`. More information about the integration test set up can  be found in the [workstation setup docs](workstation_setup.md).
 
 ```
-bosh/src$ bundle exec rspec spec/gocli/integration/cli_env_spec.rb
+bosh/src$ bundle exec rspec spec/integration/cli_env_spec.rb
 ```
 
 Run tests against a specific database by setting the `DB` environment variable.
 
 ```
-bosh/src$ DB=mysql bundle exec rspec spec/gocli/integration/cli_env_spec.rb
+bosh/src$ DB=mysql bundle exec rspec spec/integration/cli_env_spec.rb
 ```
 
 The integration test are run in a sandbox, detailed logs can be found in folder like `src/tmp/integration-tests-workspace/pid-<pid>/sandbox/boshdir/tasks/<n>/debug`.
@@ -131,7 +131,7 @@ bosh/src$ CONCOURSE_TARGET=bosh bundle exec rake fly:integration[$HOME/go/src/gi
 To focus on a given spec file you can use the environment variable `SPEC_PATH`
 
 ```
-bosh/src$ SPEC_PATH=./spec/gocli/integration/cancel_tasks_spec.rb CONCOURSE_TARGET=bosh bundle exec rake fly:integration
+bosh/src$ SPEC_PATH=./spec/integration/cancel_tasks_spec.rb CONCOURSE_TARGET=bosh bundle exec rake fly:integration
 ```
 
 ### Acceptance Tests (BATs)

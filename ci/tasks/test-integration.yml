@@ -17,7 +17,7 @@ outputs:
 - name: parallel-runtime-log
 
 run:
-  path: bosh-src/ci/tasks/test-integration-gocli.sh
+  path: bosh-src/ci/tasks/test-integration.sh
 
 params:
   RUBY_VERSION:            2.6.3

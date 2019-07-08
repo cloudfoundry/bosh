@@ -250,7 +250,7 @@ jobs:
 
       - task: tests
         privileged: true
-        file: bosh-src/ci/tasks/test-integration-gocli.yml
+        file: bosh-src/ci/tasks/test-integration.yml
         tags: ["bosh-integration-1"]
         params:
           DB:           postgresql
@@ -280,7 +280,7 @@ jobs:
 
       - task: tests
         privileged: true
-        file: bosh-src/ci/tasks/test-integration-gocli.yml
+        file: bosh-src/ci/tasks/test-integration.yml
         tags: ["bosh-integration-2"]
         params:
           DB:           postgresql
@@ -326,7 +326,7 @@ jobs:
           outputs:
           - name: parallel-runtime-log
           run:
-            path: bosh-src/ci/tasks/test-integration-gocli.sh
+            path: bosh-src/ci/tasks/test-integration.sh
           params:
             RUBY_VERSION: 2.6.3
             DB:           mysql

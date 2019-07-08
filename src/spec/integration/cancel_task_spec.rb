@@ -1,5 +1,5 @@
-require_relative '../spec_helper'
-require_relative '../../support/blocking_deploy_helper'
+require 'spec_helper'
+require_relative '../support/blocking_deploy_helper'
 
 describe 'cancel task', type: :integration do
   include Bosh::Spec::BlockingDeployHelper

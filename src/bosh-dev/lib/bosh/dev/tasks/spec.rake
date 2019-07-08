@@ -16,14 +16,9 @@ require 'fileutils'
 
 namespace :spec do
   namespace :integration do
-    desc 'Run BOSH gocli integration tests against a local sandbox'
-    task gocli: :install_dependencies do
-      run_integration_specs(spec_path: 'spec/gocli/integration')
-    end
-
     desc 'Run health monitor integration tests against a local sandbox'
     task health_monitor: :install_dependencies do
-      run_integration_specs(spec_path: 'spec/gocli/integration', tags: 'hm')
+      run_integration_specs(spec_path: 'spec/integration', tags: 'hm')
     end
 
     desc 'Install BOSH integration test dependencies (currently Nginx, UAA, and Config Server)'
@@ -108,12 +103,15 @@ namespace :spec do
     end
 
     def compile_dependencies
-      puts "If this fails you may want to run rake spec:integration:download_bosh_agent"
+      puts 'If this fails you may want to run rake spec:integration:download_bosh_agent'
       sh('go/src/github.com/cloudfoundry/bosh-agent/bin/build')
     end
   end
 
-  task integration_gocli: %w[spec:integration:gocli]
+  desc 'Run all integration tests against a local sandbox'
+  task integration: %w[spec:integration:install_dependencies] do
+    run_integration_specs(spec_path: 'spec/integration')
+  end
 
   desc 'Run all release unit tests (ERB templates)'
   task :release_unit do
@@ -150,7 +148,7 @@ namespace :spec do
       end
 
       namespace build.sub(/^bosh[_-]/, '').intern do
-      desc "Run parallel unit tests for the #{build} component"
+        desc "Run parallel unit tests for the #{build} component"
         task :parallel do
           trap('INT') { exit }
           runner.unit_exec(build, parallel: true)
@@ -173,5 +171,5 @@ namespace :spec do
   task unit: %w[spec:release_unit spec:unit:ruby spec:template_test_unit]
 end
 
-desc 'Run unit and gocli integration specs'
-task spec: %w[spec:unit spec:integration:gocli]
+desc 'Run unit and integration specs'
+task spec: %w[spec:unit spec:integration]

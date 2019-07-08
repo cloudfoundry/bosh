@@ -115,7 +115,7 @@ pushd bosh-src/src
   bundle install --local
 
   set +e
-  bundle exec rake --trace spec:integration_gocli
+  bundle exec rake --trace spec:integration
 
   bundle_exit_code=$?
 
