@@ -16,7 +16,7 @@ packages:
   - registry
   - libpq
   - mysql
-  - ruby-2.6.3-r0.14.0
+  - ruby-2.6.3-r0.17.0
 
 properties:
   registry.port:
