@@ -20,13 +20,10 @@ module Bosh::Director
         expect(snapshot_manager).to receive(:create_deployment_snapshot_task).with('scheduler', deployments[0]).and_return(task1)
         expect(snapshot_manager).to receive(:create_deployment_snapshot_task).with('scheduler', deployments[1]).and_return(task2)
 
-        subject.perform
-      end
+        result = subject.perform
 
-      it 'returns a message containing the snapshot task ids' do
-        allow(snapshot_manager).to receive(:create_deployment_snapshot_task).with('scheduler', deployments[0]).and_return(task1)
-        allow(snapshot_manager).to receive(:create_deployment_snapshot_task).with('scheduler', deployments[1]).and_return(task2)
-        expect(subject.perform).to include('43, 44')
+        expect(result).to include('43')
+        expect(result).to include('44')
       end
     end
   end
