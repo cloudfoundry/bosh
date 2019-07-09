@@ -38,14 +38,14 @@ nginx/pcre-8.42.tar.gz:
   size: 2081413
   object_id: 3dbd4a85-2982-425c-4ba7-eaa6a3aaba97
   sha: ee505270446f4c4bf52ac1a371335fdbb14465cb
-postgres/postgresql-9.4.19.tar.gz:
-  size: 23423050
-  object_id: c717e25f-9d2d-4655-4b93-304d792e0a63
-  sha: 36b61fd76e6de87f7c4b9b7e63daa6bba2dda1ae
-postgres/postgresql-10.6.tar.gz:
-  size: 26902911
-  object_id: f4837fff-c593-43eb-4704-56d489d3582c
-  sha: 3c10c2ba99ffe72758c868f252e459926cea8452
+postgres/postgresql-9.4.23.tar.gz:
+  size: 21943235
+  object_id: 94e77351-2ede-4657-46ae-8208e2aee252
+  sha: sha256:82e29128463bfb1961c4119d9da893baaa437620a29bc53ce08bf735b5810ea4
+postgres/postgresql-10.9.tar.gz:
+  size: 24819405
+  object_id: 5666c4e4-dee6-46bd-6bb9-318814141601
+  sha: sha256:2ea73181df1431b79bd85e3a14ff86e459fcffe343a74f71f093055c969e694a
 powerdns/pdns-static_3.3.1-1_amd64.deb:
   size: 9353694
   object_id: 6e861aa6-2e83-4027-a1e8-0ebec995c274
