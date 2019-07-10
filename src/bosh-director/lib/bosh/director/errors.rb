@@ -369,6 +369,9 @@ module Bosh::Director
   LinkInvalidAzsError = err(810008, BAD_REQUEST)
   LinkProviderNotSharedError = err(810009, FORBIDDEN)
 
+  # Lifecycle Management
+  InstanceGroupInvalidLifecycleError = err(90000, UNPROCESSABLE_ENTITY)
+
   # Managed Networks
   SubnetNotFoundInDB = err(91000)
 end

@@ -11,6 +11,17 @@ describe 'start command', type: :integration do
     end
   end
 
+  context 'when attempting to start an errand instance' do
+    before do
+      deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.manifest_with_errand)
+    end
+
+    it 'fails gracefully with a useful message' do
+      output = isolated_start(deployment: 'errand', instance_group: 'fake-errand-name', index: 0, failure_expected: true)
+      expect(output).to include('Start can not be run on instances of type errand. Try the bosh run-errand command.')
+    end
+  end
+
   context 'after a successful deploy' do
     before do
       deploy_from_scratch

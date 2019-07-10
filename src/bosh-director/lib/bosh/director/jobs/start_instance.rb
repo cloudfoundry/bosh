@@ -27,6 +27,11 @@ module Bosh::Director
           deployment_plan.releases.each(&:bind_model)
 
           instance_group = deployment_plan.instance_groups.find { |ig| ig.name == instance_model.job }
+          if instance_group.errand?
+            raise InstanceGroupInvalidLifecycleError,
+                  'Start can not be run on instances of type errand. Try the bosh run-errand command.'
+          end
+
           instance_group.jobs.each(&:bind_models)
 
           instance_plan = construct_instance_plan(instance_model, deployment_plan, instance_group)
