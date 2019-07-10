@@ -63,14 +63,13 @@ module Bosh::Director
         templates_persister.persist(instance_plan)
         cleaner = RenderedJobTemplatesCleaner.new(instance_model, blobstore_client, @logger)
 
+        instance_plan.instance.update_state # set instance model to started as soon as we begin the start process
         instance_model.update(update_completed: false)
         InstanceUpdater::StateApplier.new(instance_plan, agent, cleaner, @logger, {}).apply(
           instance_plan.desired_instance.instance_group.update,
           true,
         )
         instance_model.update(update_completed: true)
-
-        instance_model.update(state: 'started')
       end
 
       def create_vm(instance_plan, deployment_plan, instance_model)

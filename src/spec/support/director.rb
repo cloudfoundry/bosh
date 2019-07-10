@@ -36,6 +36,7 @@ module Bosh::Spec
           File.join(@agents_base_dir, "agent-base-dir-#{instance_data[:agent_id]}"),
           @director_nats_config,
           @logger,
+          instance_data[:state],
         )
       end
     end

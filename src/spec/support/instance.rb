@@ -1,6 +1,7 @@
 module Bosh::Spec
   class Instance
-    attr_reader :last_known_state, :vm_cid, :agent_id, :resurrection, :ips, :availability_zone, :id, :instance_group_name, :index, :ignore, :bootstrap, :disk_cids
+    attr_reader :last_known_state, :vm_cid, :agent_id, :resurrection, :ips, :availability_zone, :id,
+                :instance_group_name, :index, :ignore, :bootstrap, :disk_cids, :vm_state
 
     def initialize(
       waiter,
@@ -18,7 +19,8 @@ module Bosh::Spec
       disk_cids,
       agent_base_dir,
       nats_config,
-      logger
+      logger,
+      state
     )
       @waiter = waiter
       @last_known_state = job_state
@@ -36,6 +38,7 @@ module Bosh::Spec
       @agent_base_dir = agent_base_dir
       @nats_config = nats_config
       @logger = logger
+      @vm_state = state
     end
 
     def read_job_template(template_name, template_path)
@@ -89,7 +92,8 @@ module Bosh::Spec
     def unblock_package
       package_dir = package_path('blocking_package')
       @waiter.wait(300) do
-        raise('Must find package dir') unless File.exists?(package_dir)
+        raise('Must find package dir') unless File.exist?(package_dir)
+
         FileUtils.touch(File.join(package_dir, 'unblock_packaging'))
       end
     end
@@ -103,7 +107,8 @@ module Bosh::Spec
       @logger.debug("Unblocking package at #{job_dir_path}")
 
       @waiter.wait(15) do
-        raise('Must find errand dir') unless File.exists?(job_dir_path)
+        raise('Must find errand dir') unless File.exist?(job_dir_path)
+
         FileUtils.touch(File.join(job_dir_path, 'unblock_errand'))
       end
     end

@@ -137,21 +137,6 @@ module Bosh::Director
         expect(instance_model.reload.update_completed).to eq(true)
       end
 
-      context 'when applying state fails' do
-        before do
-          allow(state_applier).to receive(:apply).and_raise
-        end
-
-        it 'does not update the database' do
-          job = Jobs::StartInstance.new(deployment.name, instance_model.id, {})
-          expect { job.perform }.to raise_error
-
-          expect(state_applier).to have_received(:apply)
-          expect(instance_model.reload.update_completed).to eq(false)
-          expect(instance_model.reload.state).to eq('stopped')
-        end
-      end
-
       context 'when the instance is already started' do
         let(:instance_model) do
           Models::Instance.make(deployment: deployment, job: 'foobar', state: 'started', spec_json: instance_spec.to_json)
