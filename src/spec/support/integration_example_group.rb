@@ -148,12 +148,13 @@ module IntegrationExampleGroup
     instance_group:,
     index: nil,
     id: nil,
-    params: {}
+    params: {},
+    failure_expected: false
   )
     url = "/deployments/#{deployment}/instance_groups/#{instance_group}/#{id || index}/actions/start?#{params.to_query}"
     curl_output = bosh_runner.run("curl -X POST #{url}", json: true)
     task_id = JSON.parse(parse_blocks(curl_output)[0])['id']
-    bosh_runner.run("task #{task_id}")
+    bosh_runner.run("task #{task_id}", failure_expected: failure_expected)
   end
 
   def orphaned_disks
