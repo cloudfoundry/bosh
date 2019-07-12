@@ -2,6 +2,8 @@ require 'spec_helper'
 
 module Bosh::Director
   describe CloudcheckHelper do
+    include IpUtil
+
     class TestProblemHandler < ProblemHandlers::Base
       register_as :test_problem_handler
 
@@ -29,14 +31,19 @@ module Bosh::Director
       )
       instance
     end
+
+    let!(:ip_address) { Models::IpAddress.make(instance: instance, address_str: ip_to_i('192.1.3.4').to_s) }
     let!(:vm) { Models::Vm.make(instance: instance, active: true) }
+
     let(:spec) do
       { 'apply' => 'spec', 'env' => { 'vm_env' => 'json' } }
     end
+
     let(:deployment_model) do
       manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
       Models::Deployment.make(name: manifest['name'], manifest: YAML.dump(manifest))
     end
+
     let(:test_problem_handler) { ProblemHandlers::Base.create_by_type(:test_problem_handler, instance.uuid, {}) }
     let(:dns_encoder) { LocalDnsEncoderManager.create_dns_encoder(false) }
     let(:vm_deleter) { Bosh::Director::VmDeleter.new(logger, false, false) }
@@ -56,6 +63,7 @@ module Bosh::Director
     let(:update_job) { instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager) }
     let(:powerdns_manager) { instance_double(PowerDnsManager) }
     let(:rendered_templates_persister) { instance_double(RenderedTemplatesPersister) }
+
     let(:planner) do
       instance_double(
         Bosh::Director::DeploymentPlan::Planner,
@@ -63,25 +71,39 @@ module Bosh::Director
         use_link_dns_names?: false,
         ip_provider: ip_provider,
         link_provider_intents: [],
+        networks: [network],
       )
     end
-    let(:ip_provider) { double(:ip_provider) }
+    let(:network) { instance_double(Bosh::Director::DeploymentPlan::Network, name: ip_address.network_name) }
+
+    let(:ip_provider) { instance_double(Bosh::Director::DeploymentPlan::IpProvider) }
     let(:planner_factory) { instance_double(Bosh::Director::DeploymentPlan::PlannerFactory) }
     let!(:local_dns_blob) { Models::LocalDnsBlob.make }
 
     before do
       allow(AgentClient).to receive(:with_agent_id).with(instance.agent_id, instance.name, anything).and_return(agent_client)
       allow(AgentClient).to receive(:with_agent_id).with(instance.agent_id, instance.name).and_return(agent_client)
+
       allow(agent_client).to receive(:sync_dns) do |_, _, _, &blk|
         blk.call('value' => 'synced')
       end.and_return(0)
+
       allow(Bosh::Director::Core::Templates::TemplateBlobCache).to receive(:new).and_return(template_cache)
+
       allow(VmDeleter).to receive(:new).and_return(vm_deleter)
       allow(VmCreator).to receive(:new).and_return(vm_creator)
+
       allow(Config).to receive(:current_job).and_return(update_job)
+
       allow(RenderedTemplatesPersister).to receive(:new).and_return(rendered_templates_persister)
+
       allow(Bosh::Director::DeploymentPlan::PlannerFactory).to receive(:create).with(logger).and_return(planner_factory)
+
       allow(planner_factory).to receive(:create_from_model).with(instance.deployment).and_return(planner)
+      allow(planner).to receive(:network).with(network.name).and_return(network)
+
+      allow(ip_provider).to receive(:reserve_existing_ips)
+
       fake_app
     end
 
@@ -215,6 +237,7 @@ module Bosh::Director
             },
           }
         end
+
         before do
           BD::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
           instance.update(spec: spec)
@@ -238,6 +261,9 @@ module Bosh::Director
               expect(disks).to eq([])
               expect(tags).to eq({})
               expect(use_existing).to eq(true)
+              expect(instance_plan.network_plans.count).to eq(1)
+              expect(instance_plan.network_plans.first.existing?).to eq(true)
+              expect(instance_plan.network_plans.first.reservation.ip).to eq(ip_to_i('192.1.3.4'))
             end
 
             expect(rendered_templates_persister).to receive(:persist)

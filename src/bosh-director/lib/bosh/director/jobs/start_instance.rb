@@ -120,6 +120,7 @@ module Bosh::Director
           instance_model,
           existing_instance_state,
           desired_instance.state,
+          desired_instance.deployment,
         )
 
         DeploymentPlan::InstancePlanFromDB.new(

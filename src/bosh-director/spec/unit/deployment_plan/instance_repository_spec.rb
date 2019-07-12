@@ -1,21 +1,26 @@
 require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::InstanceRepository do
+  include Bosh::Director::IpUtil
+
   let(:logger) { Logging::Logger.new('log') }
   subject(:instance_repository) { Bosh::Director::DeploymentPlan::InstanceRepository.new(logger, variables_interpolator) }
   let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
+  let(:network) { Bosh::Director::DeploymentPlan::DynamicNetwork.new('name-7', [], logger) }
+
   let(:deployment_plan) do
-    network = Bosh::Director::DeploymentPlan::DynamicNetwork.new('name-7', [], logger)
     ip_repo = Bosh::Director::DeploymentPlan::DatabaseIpRepo.new(logger)
     ip_provider = Bosh::Director::DeploymentPlan::IpProvider.new(ip_repo, { 'name-7' => network }, logger)
     model = Bosh::Director::Models::Deployment.make
     Bosh::Director::Models::VariableSet.create(deployment: model)
-    instance_double('Bosh::Director::DeploymentPlan::Planner',
-                    network: network,
-                    networks: [network],
-                    ip_provider: ip_provider,
-                    model: model)
+    instance_double(
+      'Bosh::Director::DeploymentPlan::Planner',
+      network: network,
+      networks: [network],
+      ip_provider: ip_provider,
+      model: model,
+    )
   end
 
   let(:desired_instance) { Bosh::Director::DeploymentPlan::DesiredInstance.new(instance_group, deployment_plan, nil, 0) }
@@ -88,17 +93,30 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
           'version' => stemcell.version,
         },
         'env' => { 'key1' => 'value1' },
+        'networks' => {
+          'name-7' => {
+            'ip' => '192.168.50.6',
+            'type' => 'dynamic',
+          },
+        },
       }
     end
 
     it 'returns the instance last persisted in the database' do
       allow(existing_instance).to receive(:spec).and_return(instance_spec)
-      instance = instance_repository.build_instance_from_model(existing_instance, { 'job_state' => 'stopped' }, 'started')
+      instance = instance_repository.build_instance_from_model(
+        existing_instance,
+        { 'job_state' => 'stopped' },
+        'started',
+        deployment_plan,
+      )
 
       expect(instance.model).to eq(existing_instance)
       expect(instance.uuid).to eq(existing_instance.uuid)
       expect(instance.state).to eq('started')
       expect(instance.current_job_state).to eq('stopped')
+      expect(instance.existing_network_reservations.count).to eq(1)
+      expect(instance.existing_network_reservations.first.ip).to eq(ip_to_i('192.168.50.6'))
     end
   end
 

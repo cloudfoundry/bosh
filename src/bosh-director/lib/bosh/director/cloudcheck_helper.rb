@@ -63,7 +63,7 @@ module Bosh::Director
       planner = factory.create_from_model(deployment_model)
       dns_encoder = LocalDnsEncoderManager.create_dns_encoder(planner.use_short_dns_addresses?, planner.use_link_dns_names?)
 
-      instance_plan_to_create = create_instance_plan(instance_model)
+      instance_plan_to_create = create_instance_plan(instance_model, planner)
 
       Bosh::Director::Core::Templates::TemplateBlobCache.with_fresh_cache do |template_cache|
         vm_creator(template_cache, dns_encoder, planner.link_provider_intents)
@@ -134,10 +134,10 @@ module Bosh::Director
 
     private
 
-    def create_instance_plan(instance_model)
+    def create_instance_plan(instance_model, deployment_plan)
       variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new
       instance_repo = DeploymentPlan::InstanceRepository.new(@logger, variables_interpolator)
-      instance_from_model = instance_repo.build_instance_from_model(instance_model, {}, instance_model.state)
+      instance_from_model = instance_repo.build_instance_from_model(instance_model, {}, instance_model.state, deployment_plan)
 
       DeploymentPlan::InstancePlanFromDB.new(
         existing_instance: instance_model,

@@ -5,7 +5,7 @@ module Bosh::Director::DeploymentPlan
       @variables_interpolator = variables_interpolator
     end
 
-    def build_instance_from_model(instance_model, existing_state, desired_state)
+    def build_instance_from_model(instance_model, existing_state, desired_state, deployment_plan)
       @logger.debug("Building instance from instance model: #{instance_model.inspect}")
 
       stemcell = Stemcell.parse(instance_model.spec['stemcell'])
@@ -33,6 +33,13 @@ module Bosh::Director::DeploymentPlan
         @variables_interpolator,
       )
       instance.bind_existing_instance_model(instance_model)
+
+      existing_network_reservations = InstanceNetworkReservations.create_from_db(
+        instance_model,
+        deployment_plan,
+        @logger,
+      )
+      instance.bind_existing_reservations(existing_network_reservations)
 
       instance
     end

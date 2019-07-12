@@ -479,6 +479,12 @@ module Bosh
       end
 
       class InstancePlanFromDB < InstancePlan
+        def network_plans
+          @instance.existing_network_reservations.map do |reservation|
+            DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation, existing: true)
+          end
+        end
+
         def network_settings_hash
           @existing_instance.spec_p('networks')
         end
