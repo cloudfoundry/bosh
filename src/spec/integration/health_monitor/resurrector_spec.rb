@@ -84,8 +84,10 @@ describe 'resurrector', type: :integration, hm: true do
     ig1_instances = instances.select { |i| i.instance_group_name == 'ig_1' }
     ig2_instances = instances.select { |i| i.instance_group_name == 'ig_2' }
 
+    bosh_runner.run('update-resurrection off')
     ig2_instances.each(&:kill_agent)
     ig1_instances.each(&:kill_agent)
+    bosh_runner.run('update-resurrection on')
 
     ig2_instances.each { |i| director.wait_for_vm('ig_2', i.index, 300) }
     ig1_instances.each { |i| director.wait_for_vm('ig_1', i.index, 300) }
@@ -114,9 +116,12 @@ describe 'resurrector', type: :integration, hm: true do
     upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
     deploy_simple_manifest(manifest_hash: deployment_hash)
 
+    bosh_runner.run('update-resurrection off')
     instances = director.instances
     ig1_instances = instances.select { |i| i.instance_group_name == 'ig_1' }
     ig1_instances.each(&:kill_agent)
+    bosh_runner.run('update-resurrection on')
+
     ig1_instances.each { |i| director.wait_for_vm('ig_1', i.index, 300) }
 
     director.wait_for_resurrection_to_finish
