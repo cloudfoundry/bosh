@@ -15,7 +15,7 @@ module Bosh::Director
             release_model:
           )
             logger = Config.logger
-            created_package_refs = create_packages(
+            created_compiled_package_refs = create_packages(
               logger,
               release_model,
               release_version_model,
@@ -25,7 +25,7 @@ module Bosh::Director
               release_dir,
             )
 
-            existing_package_refs = use_existing_packages(
+            existing_compiled_package_refs = use_existing_packages(
               logger,
               compiled_release,
               release_version_model,
@@ -35,14 +35,14 @@ module Bosh::Director
             )
 
             if compiled_release
-              registered_package_refs = registered_packages.map do |pkg, pkg_meta|
+              registered_compiled_package_refs = registered_packages.map do |pkg, pkg_meta|
                 {
                   package: pkg,
                   package_meta: pkg_meta,
                 }
               end
 
-              all_package_refs = Array(created_package_refs) | Array(existing_package_refs) | registered_package_refs
+              all_package_refs = created_compiled_package_refs | existing_compiled_package_refs | registered_compiled_package_refs
               create_compiled_packages(logger, manifest, release_version_model, fix, all_package_refs, release_dir)
               return
             end
@@ -50,6 +50,7 @@ module Bosh::Director
             backfill_source_for_packages(logger, fix, registered_packages, release_dir)
           end
 
+          # Note: This is public for testing purposes.
           # Creates package in DB according to given metadata
           # @param [Logging::Logger] logger a logger that responds to info
           # @param [Boolean] fix whether this package is being uploaded with --fix
@@ -57,14 +58,7 @@ module Bosh::Director
           # @param [Hash] package_meta Package metadata
           # @param [String] release_dir local path to the unpacked release
           # @return [void]
-          def create_package(
-            logger:,
-            release_model:,
-            fix:,
-            compiled_release:,
-            package_meta:,
-            release_dir:
-          )
+          def create_package(logger:, release_model:, fix:, compiled_release:, package_meta:, release_dir:)
             name = package_meta['name']
             version = package_meta['version']
 
@@ -87,6 +81,40 @@ module Bosh::Director
 
           private
 
+          def create_packages(logger, release_model, release_version_model, fix, compiled_release, package_metas, release_dir)
+            return [] if package_metas.empty?
+
+            package_refs = []
+
+            event_log_stage = Config.event_log.begin_stage('Creating new packages', package_metas.size)
+
+            package_metas.each do |package_meta|
+              package_desc = "#{package_meta['name']}/#{package_meta['version']}"
+              package = nil
+              event_log_stage.advance_and_track(package_desc) do
+                logger.info("Creating new package '#{package_desc}'")
+                package = create_package(
+                  logger:           logger,
+                  release_model:    release_model,
+                  fix:              fix,
+                  compiled_release: compiled_release,
+                  package_meta:     package_meta,
+                  release_dir:      release_dir,
+                )
+                release_version_model.add_package(package)
+              end
+
+              next unless compiled_release
+
+              package_refs << {
+                package: package,
+                package_meta: package_meta,
+              }
+            end
+
+            package_refs
+          end
+
           def save_package_source_blob(logger, package, fix, package_meta, release_dir)
             name          = package_meta['name']
             version       = package_meta['version']
@@ -95,32 +123,33 @@ module Bosh::Director
             desc          = "package '#{name}/#{version}'"
             package_tgz   = File.join(release_dir, 'packages', "#{name}.tgz")
 
-            return create_or_update_blob(logger, sha1, package, package_tgz, desc, existing_blob) unless fix
+            return create_or_fix_package(logger, sha1, package, package_tgz, desc, existing_blob) if fix
 
+            create_or_update_blob(logger, sha1, package, package_tgz, desc, existing_blob)
+          end
+
+          def create_or_fix_package(logger, sha1, package, package_tgz, desc, existing_blob)
             package.sha1 = sha1
             unless package.blobstore_id.nil?
               delete_compiled_packages(logger, package)
               fix_package(logger, 'package', package, package_tgz, sha1)
-
               return true
             end
 
-            existing_package_model = Models::Package.where(blobstore_id: existing_blob).first
-            delete_compiled_packages(logger, package)
-            fix_package(logger, 'package', existing_package_model, package_tgz, sha1)
-            package.blobstore_id = BlobUtil.copy_blob(existing_package_model.blobstore_id)
+            if existing_blob
+              existing_package_model = Models::Package.where(blobstore_id: existing_blob).first
+              delete_compiled_packages(logger, package)
+              fix_package(logger, 'package', existing_package_model, package_tgz, sha1)
+              package.blobstore_id = BlobUtil.copy_blob(existing_package_model.blobstore_id)
+              return true
+            end
 
+            create_package_from_bits(logger, package, package_tgz, sha1, desc)
             true
           end
 
           def create_or_update_blob(logger, sha1, package, package_tgz, desc, existing_blob)
-            if package.blobstore_id.nil? && !existing_blob
-              package.sha1 = sha1
-              logger.info("Creating #{desc} from provided bits")
-              create_package_from_bits(logger, package, package_tgz, sha1, desc)
-
-              return true
-            end
+            return false unless package.blobstore_id.nil?
 
             if existing_blob
               package.sha1 = sha1
@@ -130,7 +159,9 @@ module Bosh::Director
               return true
             end
 
-            false
+            logger.info("Creating #{desc} from provided bits")
+            create_package_from_bits(logger, package, package_tgz, sha1, desc)
+            true
           end
 
           def create_package_from_bits(logger, package, package_tgz, sha1, desc)
@@ -143,7 +174,7 @@ module Bosh::Director
             delete_package_blob(logger, desc, package)
             create_package_from_bits(logger, package, package_tgz, sha1, desc)
             logger.info("Re-created package '#{package.name}/#{package.version}' \
-    with blobstore_id '#{package.blobstore_id}'")
+                        with blobstore_id '#{package.blobstore_id}'")
             package.save
           end
 
@@ -165,26 +196,12 @@ module Bosh::Director
           def delete_compiled_packages(logger, package)
             package.compiled_packages.each do |compiled_pkg|
               logger.info("Deleting compiled package '#{compiled_pkg.name}' for \
-    '#{compiled_pkg.stemcell_os}/#{compiled_pkg.stemcell_version}' with blobstore_id '#{compiled_pkg.blobstore_id}'")
+                          '#{compiled_pkg.stemcell_os}/#{compiled_pkg.stemcell_version}' \
+                          with blobstore_id '#{compiled_pkg.blobstore_id}'")
+
               delete_package_blob(logger, 'compiled package', compiled_pkg)
               compiled_pkg.destroy
             end
-          end
-
-          def backfill_source_for_packages(logger, fix, packages, release_dir)
-            return false if packages.empty?
-
-            had_effect = false
-            single_step_stage(logger, "Processing #{packages.size} existing package#{'s' if packages.size > 1}") do
-              packages.each do |package, package_meta|
-                package_desc = "#{package.name}/#{package.version}"
-                logger.info("Adding source for package '#{package_desc}'")
-                had_effect |= save_package_source_blob(logger, package, fix, package_meta, release_dir)
-                package.save
-              end
-            end
-
-            had_effect
           end
 
           def use_existing_packages(logger, compiled_release, release_version_model, fix, packages, release_dir)
@@ -194,11 +211,12 @@ module Bosh::Director
 
             single_step_stage(logger, "Processing #{packages.size} existing package#{'s' if packages.size > 1}") do
               packages.each do |package, package_meta|
-                package_refs << use_existing_package(logger, release_version_model, compiled_release, package, fix, package_meta, release_dir)
+                use_existing_package(logger, release_version_model, compiled_release, package, fix, package_meta, release_dir)
+                package_refs << { package: package, package_meta: package_meta } if compiled_release
               end
             end
 
-            package_refs.compact
+            package_refs
           end
 
           def use_existing_package(logger, release_version_model, compiled_release, package, fix, package_meta, release_dir)
@@ -206,12 +224,7 @@ module Bosh::Director
             logger.info("Using existing package '#{package_desc}'")
             release_version_model.add_package(package)
 
-            if compiled_release
-              return {
-                package: package,
-                package_meta: package_meta,
-              }
-            end
+            return if compiled_release
 
             save_package_source_blob(logger, package, fix, package_meta, release_dir)
             package.save
@@ -301,38 +314,17 @@ module Bosh::Director
             other_compiled_packages.first
           end
 
-          def create_packages(logger, release_model, release_version_model, fix, compiled_release, package_metas, release_dir)
-            return [] if package_metas.empty?
+          def backfill_source_for_packages(logger, fix, packages, release_dir)
+            return false if packages.empty?
 
-            package_refs = []
-
-            event_log_stage = Config.event_log.begin_stage('Creating new packages', package_metas.size)
-
-            package_metas.each do |package_meta|
-              package_desc = "#{package_meta['name']}/#{package_meta['version']}"
-              package = nil
-              event_log_stage.advance_and_track(package_desc) do
-                logger.info("Creating new package '#{package_desc}'")
-                package = create_package(
-                  logger:           logger,
-                  release_model:    release_model,
-                  fix:              fix,
-                  compiled_release: compiled_release,
-                  package_meta:     package_meta,
-                  release_dir:      release_dir,
-                )
-                release_version_model.add_package(package)
+            single_step_stage(logger, "Processing #{packages.size} existing package#{'s' if packages.size > 1}") do
+              packages.each do |package, package_meta|
+                package_desc = "#{package.name}/#{package.version}"
+                logger.info("Adding source for package '#{package_desc}'")
+                save_package_source_blob(logger, package, fix, package_meta, release_dir)
+                package.save
               end
-
-              next unless compiled_release
-
-              package_refs << {
-                package: package,
-                package_meta: package_meta,
-              }
             end
-
-            package_refs
           end
 
           def find_compiled_packages(pkg_id, stemcell_os, stemcell_version, dependency_key)
