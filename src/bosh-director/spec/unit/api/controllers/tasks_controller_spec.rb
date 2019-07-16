@@ -35,8 +35,7 @@ module Bosh::Director
         expect(last_response.headers['Date']).not_to be_nil
       end
 
-      it 'allows Basic HTTP Auth with admin/admin credentials for ' \
-         "test purposes (even though user doesn't exist)" do
+      it "allows Basic HTTP Auth with admin/admin credentials for test purposes (even though user doesn't exist)" do
         basic_authorize 'admin', 'admin'
         get '/'
         expect(last_response.status).to eq(200)
@@ -138,8 +137,11 @@ module Bosh::Director
                   delete_release
                   delete_snapshot
                   delete_stemcell
+                  restart_instance
                   run_errand
                   snapshot_deployment
+                  start_instance
+                  stop_instance
                   update_deployment
                   update_release
                   update_stemcell
