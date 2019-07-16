@@ -37,6 +37,7 @@ module Bosh::Director::DeploymentPlan
       validate_consumes_field(spec)
       validate_duplicate_names(spec)
       validate_options(spec)
+      validate_update_mode(spec)
     end
 
     def validate_elements_are_hashes(spec)
@@ -106,6 +107,15 @@ module Bosh::Director::DeploymentPlan
 
         if options && !options.is_a?(Hash)
           raise Bosh::Director::VariablesInvalidFormat, "options of variable with name '#{variable['name']}' is not a Hash"
+        end
+      end
+    end
+
+    def validate_update_mode(spec)
+      spec.each do |variable|
+        if !variable['update_mode'].nil? && !variable['update_mode'].is_a?(String)
+          raise Bosh::Director::VariablesInvalidFormat,
+                "Update mode for variable '#{variable['name']}' must be a String, but was '#{variable['update_mode']}'"
         end
       end
     end

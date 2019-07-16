@@ -2,6 +2,10 @@ require 'bosh/director/config_server/config_server_helper'
 
 module Bosh::Director::ConfigServer
   class ConfigServerClient
+    GENERATION_MODE_OVERWRITE = 'overwrite'.freeze
+    GENERATION_MODE_CONVERGE = 'converge'.freeze
+    GENERATION_MODE_NO_OVERWRITE = 'no-overwrite'.freeze
+
     def initialize(http_client, director_name, logger)
       @config_server_http_client = http_client
       @director_name = director_name
@@ -122,13 +126,16 @@ module Bosh::Director::ConfigServer
           end
         end
 
+        generation_mode = variable['update_mode']
+        generation_mode ||= converge_variables ? GENERATION_MODE_CONVERGE : GENERATION_MODE_NO_OVERWRITE
+
         generate_value_and_record_event(
           constructed_name,
           variable['type'],
           deployment_name,
           current_variable_set,
           variable['options'],
-          converge_variables,
+          generation_mode,
         )
       end
     end
@@ -370,16 +377,15 @@ module Bosh::Director::ConfigServer
       variable_set.add_variable(variable_name: name_root, variable_id: variable_id)
     end
 
-    def generate_value(name, type, variable_set, options, converge_variable)
+    def generate_value(name, type, variable_set, options, generation_mode)
       parameters = options.nil? ? {} : options
 
       request_body = {
         'name' => name,
         'type' => type,
-        'parameters' => parameters
+        'parameters' => parameters,
+        'mode' => generation_mode,
       }
-
-      request_body['mode'] = 'converge' if converge_variable
 
       unless variable_set.writable
         raise Bosh::Director::ConfigServerGenerationError, "Variable '#{get_name_root(name)}' cannot be generated. Variable generation allowed only during deploy action"
@@ -430,25 +436,23 @@ module Bosh::Director::ConfigServer
         })
     end
 
-    def generate_value_and_record_event(variable_name, variable_type, deployment_name, variable_set, options, converge_variable)
-      begin
-        result = generate_value(variable_name, variable_type, variable_set, options, converge_variable)
-        add_event(
-          :action => 'create',
-          :deployment_name => deployment_name,
-          :object_name => variable_name,
-          :context => {'name' => result['name'], 'id' => result['id']}
-        )
-        result
-      rescue Exception => e
-        add_event(
-          :action => 'create',
-          :deployment_name => deployment_name,
-          :object_name => variable_name,
-          :error => e
-        )
-        raise e
-      end
+    def generate_value_and_record_event(variable_name, variable_type, deployment_name, variable_set, options, generation_mode)
+      result = generate_value(variable_name, variable_type, variable_set, options, generation_mode)
+      add_event(
+        action: 'create',
+        deployment_name: deployment_name,
+        object_name: variable_name,
+        context: { 'name' => result['name'], 'id' => result['id'] },
+      )
+      result
+    rescue Exception => e
+      add_event(
+        action: 'create',
+        deployment_name: deployment_name,
+        object_name: variable_name,
+        error: e,
+      )
+      raise e
     end
 
     def get_by_id(id, name_root)

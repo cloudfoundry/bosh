@@ -1364,9 +1364,10 @@ module Bosh::Director::ConfigServer
         context 'when ALL variable names syntax are correct' do
           let(:variables_spec) do
             [
-              {'name' => 'placeholder_a', 'type' => 'password'},
-              {'name' => 'placeholder_b', 'type' => 'certificate', 'options' => {'common_name' => 'bosh.io', 'alternative_names' => ['a.bosh.io', 'b.bosh.io']}},
-              {'name' => '/placeholder_c', 'type' => 'gold', 'options' => {'need' => 'luck'}}
+              { 'name' => 'placeholder_a', 'type' => 'password' },
+              { 'name' => 'placeholder_b', 'type' => 'certificate', 'options' => { 'common_name' => 'bosh.io', 'alternative_names' => ['a.bosh.io', 'b.bosh.io'] } },
+              { 'name' => '/placeholder_c', 'type' => 'gold', 'options' => { 'need' => 'luck' } },
+              { 'name' => 'cred-with-update-mode', 'type' => 'aqua', 'update_mode' => 'overwrite' },
             ]
           end
 
@@ -1414,6 +1415,19 @@ module Bosh::Director::ConfigServer
                 }.to_json)
             )
 
+            expect(http_client).to receive(:post).with(
+              'name' => prepend_namespace('cred-with-update-mode'),
+              'type' => 'aqua',
+              'parameters' => {},
+              'mode' => 'overwrite',
+            ).ordered.and_return(
+              generate_success_response(
+                {
+                  "id": 'some_id4',
+                }.to_json,
+              ),
+            )
+
             client.generate_values(variables_obj, deployment_name)
           end
 
@@ -1445,6 +1459,13 @@ module Bosh::Director::ConfigServer
             success_response_3 = SampleSuccessResponse.new
             success_response_3.body = {'id'=>3, 'name'=>'/placeholder_c', 'value'=>'value_3'}.to_json
 
+            success_response_4 = SampleSuccessResponse.new
+            success_response_4.body = {
+              'id' => 4,
+              'name' => '/smurf_director_name/deployment_name/cred-with-update-mode',
+              'value' => 'value_4',
+            }.to_json
+
             expect(http_client).to receive(:post).with(
               {
                 'name' => prepend_namespace('placeholder_a'),
@@ -1469,39 +1490,56 @@ module Bosh::Director::ConfigServer
               }
             ).ordered.and_return(success_response_3)
 
-            expect {
+            expect(http_client).to receive(:post).with(
+              'name' => prepend_namespace('cred-with-update-mode'),
+              'type' => 'aqua',
+              'parameters' => {},
+              'mode' => 'overwrite',
+            ).ordered.and_return(success_response_4)
+
+            expect do
               client.generate_values(variables_obj, deployment_name)
-            }.to change { Bosh::Director::Models::Event.count }.from(0).to(3)
+            end.to change { Bosh::Director::Models::Event.count }.from(0).to(4)
 
-            event_1 = Bosh::Director::Models::Event.first
-            expect(event_1.user).to eq('user')
-            expect(event_1.action).to eq('create')
-            expect(event_1.object_type).to eq('variable')
-            expect(event_1.object_name).to eq('/smurf_director_name/deployment_name/placeholder_a')
-            expect(event_1.task).to eq("#{task_id}")
-            expect(event_1.deployment).to eq(deployment_name)
-            expect(event_1.instance).to eq(nil)
-            expect(event_1.context).to eq({'id'=>1,'name'=>'/smurf_director_name/deployment_name/placeholder_a'})
+            event1 = Bosh::Director::Models::Event.order(:id).first
+            expect(event1.user).to eq('user')
+            expect(event1.action).to eq('create')
+            expect(event1.object_type).to eq('variable')
+            expect(event1.object_name).to eq('/smurf_director_name/deployment_name/placeholder_a')
+            expect(event1.task).to eq(task_id.to_s)
+            expect(event1.deployment).to eq(deployment_name)
+            expect(event1.instance).to eq(nil)
+            expect(event1.context).to eq('id' => 1, 'name' => '/smurf_director_name/deployment_name/placeholder_a')
 
-            event_2 = Bosh::Director::Models::Event.order(:id)[2]
-            expect(event_2.user).to eq('user')
-            expect(event_2.action).to eq('create')
-            expect(event_2.object_type).to eq('variable')
-            expect(event_2.object_name).to eq('/smurf_director_name/deployment_name/placeholder_b')
-            expect(event_2.task).to eq("#{task_id}")
-            expect(event_2.deployment).to eq(deployment_name)
-            expect(event_2.instance).to eq(nil)
-            expect(event_2.context).to eq({'id'=>2,'name'=>'/smurf_director_name/deployment_name/placeholder_b'})
+            event2 = Bosh::Director::Models::Event.order(:id).all[1]
+            expect(event2.user).to eq('user')
+            expect(event2.action).to eq('create')
+            expect(event2.object_type).to eq('variable')
+            expect(event2.object_name).to eq('/smurf_director_name/deployment_name/placeholder_b')
+            expect(event2.task).to eq(task_id.to_s)
+            expect(event2.deployment).to eq(deployment_name)
+            expect(event2.instance).to eq(nil)
+            expect(event2.context).to eq('id' => 2, 'name' => '/smurf_director_name/deployment_name/placeholder_b')
 
-            event_3 = Bosh::Director::Models::Event.order(:id)[3]
-            expect(event_3.user).to eq('user')
-            expect(event_3.action).to eq('create')
-            expect(event_3.object_type).to eq('variable')
-            expect(event_3.object_name).to eq('/placeholder_c')
-            expect(event_3.task).to eq("#{task_id}")
-            expect(event_3.deployment).to eq(deployment_name)
-            expect(event_3.instance).to eq(nil)
-            expect(event_3.context).to eq({'id'=>3,'name'=>'/placeholder_c'})
+            event3 = Bosh::Director::Models::Event.order(:id).all[2]
+            expect(event3.user).to eq('user')
+            expect(event3.action).to eq('create')
+            expect(event3.object_type).to eq('variable')
+            expect(event3.object_name).to eq('/placeholder_c')
+            expect(event3.task).to eq(task_id.to_s)
+            expect(event3.deployment).to eq(deployment_name)
+            expect(event3.instance).to eq(nil)
+            expect(event3.context).to eq('id' => 3, 'name' => '/placeholder_c')
+
+            event4 = Bosh::Director::Models::Event.order(:id).all[3]
+            expect(event4.user).to eq('user')
+            expect(event4.action).to eq('create')
+            expect(event4.object_type).to eq('variable')
+            expect(event4.object_name).to eq('/smurf_director_name/deployment_name/cred-with-update-mode')
+            expect(event4.task).to eq(task_id.to_s)
+            expect(event4.deployment).to eq(deployment_name)
+            expect(event4.instance).to eq(nil)
+            expect(event4.context).to eq('id' => 4, 'name' => '/smurf_director_name/deployment_name/cred-with-update-mode')
           end
 
           context 'when variable options contains a CA key' do
@@ -1968,22 +2006,49 @@ module Bosh::Director::ConfigServer
 
           context 'when converge_variables is true' do
             let(:variables_spec) do
-              [{'name' => 'placeholder_b', 'type' => 'certificate', 'options' => {'ca' => '/my_ca', 'common_name' => 'bosh.io', 'alternative_names' => ['a.bosh.io', 'b.bosh.io']}},]
+              [
+                {
+                  'name' => 'placeholder_a',
+                  'type' => 'password',
+                  'update_mode' => 'overwrite',
+                },
+                {
+                  'name' => 'placeholder_b',
+                  'type' => 'certificate',
+                  'options' => {
+                    'ca' => '/my_ca',
+                    'common_name' => 'bosh.io',
+                    'alternative_names' => ['a.bosh.io', 'b.bosh.io'],
+                  },
+                },
+              ]
             end
 
             it 'should set the mode to converge' do
               expect(http_client).to receive(:post).with(
-                {
-                  'name' => prepend_namespace('placeholder_b'),
-                  'type' => 'certificate',
-                  'parameters' => {'ca' => ('/my_ca'), 'common_name' => 'bosh.io', 'alternative_names' => %w(a.bosh.io b.bosh.io)},
-                  'mode' => 'converge'
-                }
+                'name' => prepend_namespace('placeholder_a'),
+                'type' => 'password',
+                'parameters' => {},
+                'mode' => 'overwrite',
               ).ordered.and_return(
                 generate_success_response(
                   {
-                    "id": "some_id2",
-                  }.to_json))
+                    "id": 'some_id1',
+                  }.to_json,
+                ),
+              )
+              expect(http_client).to receive(:post).with(
+                'name' => prepend_namespace('placeholder_b'),
+                'type' => 'certificate',
+                'parameters' => { 'ca' => '/my_ca', 'common_name' => 'bosh.io', 'alternative_names' => %w[a.bosh.io b.bosh.io] },
+                'mode' => 'converge',
+              ).ordered.and_return(
+                generate_success_response(
+                  {
+                    "id": 'some_id2',
+                  }.to_json,
+                ),
+              )
               client.generate_values(variables_obj, deployment_name, true)
             end
           end

@@ -16,10 +16,11 @@ module Bosh::Director
 
       it 'parses the variables' do
         variables_spec = [
-          {'name' => 'smurf', 'type' => 'certificate'},
-          {'name' => 'gargamel', 'type' => 'password'},
-          {'name' => 'cat', 'type' => 'luck'},
-          {'name' => 'kitten', 'type' => 'gold', 'consumes' => { 'tree' => {} } },
+          { 'name' => 'smurf', 'type' => 'certificate' },
+          { 'name' => 'gargamel', 'type' => 'password' },
+          { 'name' => 'cat', 'type' => 'luck' },
+          { 'name' => 'kitten', 'type' => 'gold', 'consumes' => { 'tree' => {} } },
+          { 'name' => 'dog', 'type' => 'canine', 'update_mode' => 'overwrite' },
         ]
 
         variables_spec.each do |spec|
@@ -27,10 +28,11 @@ module Bosh::Director
         end
         variables_obj = variables_parser.parse(variables_spec)
 
-        expect(variables_obj.spec.count).to eq(4)
-        expect(variables_obj.get_variable('cat')).to eq({'name' => 'cat', 'type' => 'luck'})
-        expect(variables_obj.get_variable('gargamel')).to eq({'name' => 'gargamel', 'type' => 'password'})
-        expect(variables_obj.get_variable('kitten')).to eq({'name' => 'kitten', 'type' => 'gold', 'consumes' => { 'tree' => {} }})
+        expect(variables_obj.spec.count).to eq(5)
+        expect(variables_obj.get_variable('cat')).to eq('name' => 'cat', 'type' => 'luck')
+        expect(variables_obj.get_variable('gargamel')).to eq('name' => 'gargamel', 'type' => 'password')
+        expect(variables_obj.get_variable('kitten')).to eq('name' => 'kitten', 'type' => 'gold', 'consumes' => { 'tree' => {} })
+        expect(variables_obj.get_variable('dog')).to eq('name' => 'dog', 'type' => 'canine', 'update_mode' => 'overwrite')
       end
 
       context 'when variables_spec passed is nil' do
@@ -87,6 +89,18 @@ module Bosh::Director
           expect {
             variables_parser.parse(variables_spec)
           }.to raise_error(VariablesInvalidFormat, /Type for variable 'smurf' must be a String, but was '42'/)
+        end
+      end
+
+      context 'when the update_mode is NOT a string' do
+        it 'throws an error' do
+          variables_spec = [
+            { 'name' => 'smurf', 'type' => 'blue-creature', 'update_mode' => 42 },
+          ]
+
+          expect do
+            variables_parser.parse(variables_spec)
+          end.to raise_error(VariablesInvalidFormat, /Update mode for variable 'smurf' must be a String, but was '42'/)
         end
       end
 
