@@ -213,6 +213,50 @@ describe 'variable generation with config server', type: :integration do
           end
         end
 
+        context 'and the variable update_mode has been specified to overwrite' do
+          let(:variables) do
+            [
+              {
+                'name' => 'var_a',
+                'type' => 'password',
+              },
+              {
+                'name' => 'var_b',
+                'type' => 'password',
+                'update_mode' => 'converge',
+              },
+            ]
+          end
+
+          it 'always regenerates the credential' do
+            deploy_from_scratch(
+              no_login: true,
+              manifest_hash: manifest_hash,
+              cloud_config_hash: cloud_config,
+              include_credentials: false,
+              env: client_env,
+            )
+
+            var_a1 = config_server_helper.get_value(prepend_namespace('var_a'))
+            var_b1 = config_server_helper.get_value(prepend_namespace('var_b'))
+
+            variables[1]['options'] = { 'length' => 30 }
+            manifest_hash['variables'] = variables
+            deploy_from_scratch(
+              no_login: true,
+              manifest_hash: manifest_hash,
+              cloud_config_hash: cloud_config,
+              include_credentials: false,
+              env: client_env,
+            )
+
+            var_a2 = config_server_helper.get_value(prepend_namespace('var_a'))
+            expect(var_a2).to eq(var_a1)
+            var_b2 = config_server_helper.get_value(prepend_namespace('var_b'))
+            expect(var_b2).to_not eq(var_b1)
+          end
+        end
+
         it 'does NOT re-generate it' do
           config_server_helper.put_value(prepend_namespace('var_a'), 'password_a')
 

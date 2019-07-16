@@ -1357,6 +1357,7 @@ module Bosh::Director::ConfigServer
               { 'name' => 'placeholder_a', 'type' => 'password' },
               { 'name' => 'placeholder_b', 'type' => 'certificate', 'options' => { 'common_name' => 'bosh.io', 'alternative_names' => ['a.bosh.io', 'b.bosh.io'] } },
               { 'name' => '/placeholder_c', 'type' => 'gold', 'options' => { 'need' => 'luck' } },
+              { 'name' => 'cred-with-update-mode', 'type' => 'aqua', 'update_mode' => 'overwrite' },
             ]
           end
 
@@ -1404,6 +1405,19 @@ module Bosh::Director::ConfigServer
               ),
             )
 
+            expect(http_client).to receive(:post).with(
+              'name' => prepend_namespace('cred-with-update-mode'),
+              'type' => 'aqua',
+              'parameters' => {},
+              'mode' => 'overwrite',
+            ).ordered.and_return(
+              generate_success_response(
+                {
+                  "id": 'some_id4',
+                }.to_json,
+              ),
+            )
+
             client.generate_values(variables_obj, deployment_name)
           end
 
@@ -1447,6 +1461,13 @@ module Bosh::Director::ConfigServer
               'value' => 'value_3',
             }.to_json
 
+            success_response_4 = SampleSuccessResponse.new
+            success_response_4.body = {
+              'id' => 4,
+              'name' => '/smurf_director_name/deployment_name/cred-with-update-mode',
+              'value' => 'value_4',
+            }.to_json
+
             expect(http_client).to receive(:post).with(
               'name' => prepend_namespace('placeholder_a'),
               'type' => 'password',
@@ -1468,9 +1489,16 @@ module Bosh::Director::ConfigServer
               'mode' => 'no-overwrite',
             ).ordered.and_return(success_response_3)
 
+            expect(http_client).to receive(:post).with(
+              'name' => prepend_namespace('cred-with-update-mode'),
+              'type' => 'aqua',
+              'parameters' => {},
+              'mode' => 'overwrite',
+            ).ordered.and_return(success_response_4)
+
             expect do
               client.generate_values(variables_obj, deployment_name)
-            end.to change { Bosh::Director::Models::Event.count }.from(0).to(3)
+            end.to change { Bosh::Director::Models::Event.count }.from(0).to(4)
 
             event1 = Bosh::Director::Models::Event.order(:id).first
             expect(event1.user).to eq('user')
@@ -1501,6 +1529,16 @@ module Bosh::Director::ConfigServer
             expect(event3.deployment).to eq(deployment_name)
             expect(event3.instance).to eq(nil)
             expect(event3.context).to eq('id' => 3, 'name' => '/placeholder_c')
+
+            event4 = Bosh::Director::Models::Event.order(:id).all[3]
+            expect(event4.user).to eq('user')
+            expect(event4.action).to eq('create')
+            expect(event4.object_type).to eq('variable')
+            expect(event4.object_name).to eq('/smurf_director_name/deployment_name/cred-with-update-mode')
+            expect(event4.task).to eq(task_id.to_s)
+            expect(event4.deployment).to eq(deployment_name)
+            expect(event4.instance).to eq(nil)
+            expect(event4.context).to eq('id' => 4, 'name' => '/smurf_director_name/deployment_name/cred-with-update-mode')
           end
 
           context 'when variable options contains a CA key' do
@@ -1982,6 +2020,11 @@ module Bosh::Director::ConfigServer
             let(:variables_spec) do
               [
                 {
+                  'name' => 'placeholder_a',
+                  'type' => 'password',
+                  'update_mode' => 'overwrite',
+                },
+                {
                   'name' => 'placeholder_b',
                   'type' => 'certificate',
                   'options' => {
@@ -1994,6 +2037,18 @@ module Bosh::Director::ConfigServer
             end
 
             it 'should set the mode to converge' do
+              expect(http_client).to receive(:post).with(
+                'name' => prepend_namespace('placeholder_a'),
+                'type' => 'password',
+                'parameters' => {},
+                'mode' => 'overwrite',
+              ).ordered.and_return(
+                generate_success_response(
+                  {
+                    "id": 'some_id1',
+                  }.to_json,
+                ),
+              )
               expect(http_client).to receive(:post).with(
                 'name' => prepend_namespace('placeholder_b'),
                 'type' => 'certificate',

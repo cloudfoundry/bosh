@@ -98,6 +98,9 @@ module Bosh::Director::ConfigServer
           variable = generate_links(variable, deployment_model, use_link_dns_names)
         end
 
+        generation_mode = variable['update_mode']
+        generation_mode ||= converge_variables ? GENERATION_MODE_CONVERGE : GENERATION_MODE_NO_OVERWRITE
+
         constructed_name = ConfigServerHelper.add_prefix_if_not_absolute(variable['name'], @director_name, deployment_name)
         generate_value_and_record_event(
           constructed_name,
@@ -105,7 +108,7 @@ module Bosh::Director::ConfigServer
           deployment_name,
           deployment_model.current_variable_set,
           variable['options'],
-          converge_variables,
+          generation_mode,
         )
 
         variable
@@ -392,13 +395,12 @@ module Bosh::Director::ConfigServer
       variable_set.add_variable(variable_name: name_root, variable_id: variable_id)
     end
 
-    def generate_and_save_value(name, type, variable_set, options, converge_variable)
+    def generate_and_save_value(name, type, variable_set, options, generation_mode)
       unless variable_set.writable
         raise Bosh::Director::ConfigServerGenerationError,
               "Variable '#{get_name_root(name)}' cannot be generated. Variable generation allowed only during deploy action"
       end
 
-      generation_mode = converge_variable ? GENERATION_MODE_CONVERGE : GENERATION_MODE_NO_OVERWRITE
       generated_variable = generate_value(name, type, options, generation_mode)
 
       raise Bosh::Director::ConfigServerGenerationError, "Failed to version generated variable '#{name}'. Expected Config Server response to have key 'id'" unless generated_variable.key?('id')
@@ -456,8 +458,8 @@ module Bosh::Director::ConfigServer
       )
     end
 
-    def generate_value_and_record_event(variable_name, variable_type, deployment_name, variable_set, options, converge_variable)
-      result = generate_and_save_value(variable_name, variable_type, variable_set, options, converge_variable)
+    def generate_value_and_record_event(variable_name, variable_type, deployment_name, variable_set, options, generation_mode)
+      result = generate_and_save_value(variable_name, variable_type, variable_set, options, generation_mode)
       add_event(
         action: 'create',
         deployment_name: deployment_name,
