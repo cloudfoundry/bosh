@@ -18,38 +18,45 @@ module Bosh::Director
 
       def perform
         with_deployment_lock(@deployment_name) do
-          instance_model = Models::Instance.find(id: @instance_id)
-          raise InstanceNotFound if instance_model.nil?
-          raise InstanceNotFound if instance_model.deployment.name != @deployment_name
+          perform_without_lock
+        end
+      end
 
-          deployment_plan = DeploymentPlan::PlannerFactory.create(@logger)
-            .create_from_model(instance_model.deployment)
-          deployment_plan.releases.each(&:bind_model)
+      def perform_without_lock
+        # perform_without_lock is necessary for restart and recreate so we can reuse code without multiple locks
+        # extracting to another class would probably be better
 
-          instance_group = deployment_plan.instance_groups.find { |ig| ig.name == instance_model.job }
-          if instance_group.errand?
-            raise InstanceGroupInvalidLifecycleError,
-                  'Start can not be run on instances of type errand. Try the bosh run-errand command.'
-          end
+        instance_model = Models::Instance.find(id: @instance_id)
+        raise InstanceNotFound if instance_model.nil?
+        raise InstanceNotFound if instance_model.deployment.name != @deployment_name
 
-          instance_group.jobs.each(&:bind_models)
+        deployment_plan = DeploymentPlan::PlannerFactory.create(@logger)
+          .create_from_model(instance_model.deployment)
+        deployment_plan.releases.each(&:bind_model)
 
-          instance_plan = construct_instance_plan(instance_model, deployment_plan, instance_group)
+        instance_group = deployment_plan.instance_groups.find { |ig| ig.name == instance_model.job }
+        if instance_group.errand?
+          raise InstanceGroupInvalidLifecycleError,
+                'Start can not be run on instances of type errand. Try the bosh run-errand command.'
+        end
 
-          event_log = Config.event_log
-          if instance_model.vm_cid.nil?
-            event_log_stage = event_log.begin_stage("Creating VM for instance #{instance_model.job}")
-            event_log_stage.advance_and_track(instance_plan.instance.model.to_s) do
-              create_vm(instance_plan, deployment_plan, instance_model)
-            end
-          end
+        instance_group.jobs.each(&:bind_models)
 
-          return unless instance_plan.state_changed?
+        instance_plan = construct_instance_plan(instance_model, deployment_plan, instance_group)
 
-          event_log_stage = event_log.begin_stage("Starting instance #{instance_model.job}")
+        event_log = Config.event_log
+        if instance_model.vm_cid.nil?
+          event_log_stage = event_log.begin_stage("Creating VM for instance #{instance_model.job}")
           event_log_stage.advance_and_track(instance_plan.instance.model.to_s) do
-            start(instance_plan, instance_model)
+            create_vm(instance_plan, deployment_plan, instance_model)
           end
+        end
+
+        return unless instance_plan.state_changed?
+
+        event_log_stage = event_log.begin_stage("Starting instance #{instance_model.job}")
+        event_log_stage.advance_and_track(instance_plan.instance.model.to_s) do
+          start(instance_plan, instance_model)
         end
       end
 
