@@ -172,6 +172,26 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
+      post '/:deployment/instance_groups/:instance_group/:index_or_id/actions/recreate' do
+        validate_instance_index_or_id(params[:index_or_id])
+
+        instance = @instance_manager.find_by_name(deployment, params[:instance_group], params[:index_or_id])
+        options = {
+          skip_drain: params['skip_drain'] == 'true',
+          hard: true,
+        }
+
+        task = JobQueue.new.enqueue(
+          current_user,
+          Jobs::RestartInstance,
+          'recreate instance',
+          [deployment.name, instance.id, options],
+          deployment,
+          @current_context_id,
+        )
+        redirect "/tasks/#{task.id}"
+      end
+
       # GET /deployments/foo/jobs/dea/2/logs
       get '/:deployment/jobs/:job/:index_or_id/logs' do
         job = params[:job] == '*' ? nil : params[:job]

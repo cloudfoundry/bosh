@@ -1,6 +1,6 @@
 require_relative '../spec_helper'
 
-describe 'restart command', type: :integration do
+describe 'recreate command', type: :integration do
   with_reset_sandbox_before_each
 
   def instance_states
@@ -16,10 +16,20 @@ describe 'restart command', type: :integration do
       deploy_from_scratch(Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups)
     end
 
-    it 'restarts the specified instance' do
-      output = isolated_restart(instance_group: 'foobar', index: 0)
+    it 'recreates the specified instance' do
+      initial_instances = director.instances
+      instance_to_be_recreated = director.find_instance(initial_instances, 'foobar', '0')
+
+      output = isolated_recreate(instance_group: 'foobar', index: 0)
       expect(output).to match(/Stopping instance foobar: foobar.* \(0\)/)
       expect(output).to match(/Starting instance foobar: foobar.* \(0\)/)
+
+      instances_after_instance_recreate = director.instances
+      instance_was_recreated = director.find_instance(instances_after_instance_recreate, 'foobar', '0')
+      expect(instance_to_be_recreated.vm_cid).not_to eq(instance_was_recreated.vm_cid)
+
+      expect((initial_instances - [instance_to_be_recreated]).map(&:vm_cid))
+        .to match_array((instances_after_instance_recreate - [instance_was_recreated]).map(&:vm_cid))
 
       expect(instance_states).to eq(
         'foobar/0' => 'running',
@@ -35,7 +45,7 @@ describe 'restart command', type: :integration do
 
       it 'creates the missing vm and starts the instance' do
         expect do
-          output = isolated_restart(instance_group: 'foobar', index: 0)
+          output = isolated_recreate(instance_group: 'foobar', index: 0)
           expect(output).to match(/Starting instance foobar: foobar.* \(0\)/)
         end.to change { instance_states }
           .from(
@@ -47,13 +57,6 @@ describe 'restart command', type: :integration do
             'foobar/1' => 'running',
             'foobar/2' => 'running',
           )
-      end
-
-      it 'does not update the instance on subsequent deploys' do
-        isolated_restart(instance_group: 'foobar', index: 0)
-
-        output = deploy_simple_manifest
-        expect(output).not_to include('foobar')
       end
     end
   end
@@ -89,16 +92,9 @@ describe 'restart command', type: :integration do
         deploy(manifest_hash: manifest_hash, failure_expected: true)
       end
 
-      it 'restarting only touches the specified instance' do
+      it 'recreating only touches the specified instance' do
         isolated_stop(instance_group: 'foobar', index: 0)
-        output = isolated_restart(instance_group: 'foobar', index: 0)
-        expect(output).to match(/instance foobar: foobar.* \(0\)/)
-        expect(output).to_not match(/instance bad-instance-group: bad-instance-group.* \(0\)/)
-      end
-
-      it 'only restarts the specified hard stopped instance' do
-        isolated_stop(instance_group: 'foobar', index: 0, params: { hard: true })
-        output = isolated_restart(instance_group: 'foobar', index: 0)
+        output = isolated_recreate(instance_group: 'foobar', index: 0)
         expect(output).to match(/instance foobar: foobar.* \(0\)/)
         expect(output).to_not match(/instance bad-instance-group: bad-instance-group.* \(0\)/)
       end
