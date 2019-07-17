@@ -30,6 +30,7 @@ module Bosh::Director
                       rendered_templates_archive: nil,
                       configuration_hash: nil)
     end
+    let(:event_manager) { Bosh::Director::Api::EventManager.new(true) }
 
     let!(:spec) do
       {
@@ -67,6 +68,9 @@ module Bosh::Director
       allow(Config).to receive(:event_log).and_call_original
       allow(Config.event_log).to receive(:begin_stage).and_return(event_log_stage)
       allow(event_log_stage).to receive(:advance_and_track).and_yield
+      allow(Config).to receive_message_chain(:current_job, :event_manager).and_return(event_manager)
+      allow(Config).to receive_message_chain(:current_job, :username).and_return('user')
+      allow(Config).to receive_message_chain(:current_job, :task_id).and_return('5')
 
       allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
       allow(agent_client).to receive(:get_state).and_return({ 'job_state' => 'running' }, { 'job_state' => 'stopped' })
@@ -137,7 +141,9 @@ module Bosh::Director
         expect(Config.event_log).to receive(:begin_stage).with('Deleting VM').and_return(event_log_stage)
         expect(event_log_stage).to receive(:advance_and_track).with('test-vm-cid').and_yield
         job = Jobs::StopInstance.new(deployment.name, instance.id, 'hard' => true)
-        job.perform
+
+        expect { job.perform }.to change { Bosh::Director::Models::Event.count }.from(0).to(2)
+        expect(Bosh::Director::Models::Event.first.action).to eq 'stop'
       end
 
       context 'when detaching the VM fails in a hard stop' do
@@ -172,6 +178,7 @@ module Bosh::Director
           expect(agent_client).to_not have_received(:stop)
           expect(agent_client).to_not have_received(:run_script).with('post-stop', {})
           expect(instance.reload.state).to eq 'stopped'
+          expect(event_manager).to_not receive(:create_event)
         end
       end
 
@@ -189,8 +196,8 @@ module Bosh::Director
           expect(unmount_instance_disk_step).to_not have_received(:perform)
           expect(detach_instance_disk_step).to_not have_received(:perform)
           expect(delete_vm_step).to_not have_received(:perform)
-
           expect(instance.reload.state).to eq 'detached'
+          expect(event_manager).to_not receive(:create_event)
         end
       end
 
@@ -221,7 +228,6 @@ module Bosh::Director
           expect(agent_client).to_not have_received(:run_script).with('post-stop', {})
           expect(unmount_instance_disk_step).to_not have_received(:perform)
           expect(detach_instance_disk_step).to_not have_received(:perform)
-
           expect(delete_vm_step).to have_received(:perform)
           expect(instance.reload.state).to eq 'detached'
         end

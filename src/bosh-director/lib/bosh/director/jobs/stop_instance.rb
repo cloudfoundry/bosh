@@ -72,11 +72,17 @@ module Bosh::Director
       def stop(instance_plan, instance_model)
         intent = @options['hard'] ? :delete_vm : :keep_vm
         target_state = @options['hard'] ? 'detached' : 'stopped'
+        parent_event = add_stop_event(instance_model.name)
+
         Stopper.stop(intent: intent, instance_plan: instance_plan, target_state: target_state, logger: @logger)
 
         Api::SnapshotManager.take_snapshot(instance_model, clean: true)
         @logger.debug("Setting instance #{@instance_id} state to stopped")
         instance_model.update(state: 'stopped')
+      rescue StandardError => e
+        raise e
+      ensure
+        add_stop_event(instance_model.name, parent_event, e) if parent_event
       end
 
       def construct_instance_plan(instance_model, deployment_plan, instance_group, options)
@@ -115,6 +121,21 @@ module Bosh::Director
           tags: instance.deployment_model.tags,
           link_provider_intents: deployment_plan.link_provider_intents,
         )
+      end
+
+      def add_stop_event(instance_name, parent_id = nil, error = nil)
+        event = Config.current_job.event_manager.create_event(
+          parent_id:   parent_id,
+          user:        Config.current_job.username,
+          action:      'stop',
+          object_type: 'instance',
+          object_name: instance_name,
+          task:        Config.current_job.task_id,
+          deployment:  @deployment_name,
+          instance:    instance_name,
+          error:       error,
+        )
+        event.id
       end
     end
   end
