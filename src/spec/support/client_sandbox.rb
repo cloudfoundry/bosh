@@ -22,6 +22,10 @@ class ClientSandbox
       File.join(base_dir, 'links_release')
     end
 
+    def linked_db_release_dir
+      File.join(base_dir, 'linked_db_release')
+    end
+
     def multidisks_release_dir
       File.join(base_dir, 'multidisks_release')
     end

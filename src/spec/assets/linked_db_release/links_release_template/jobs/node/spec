@@ -1,0 +1,16 @@
+---
+name: node
+templates:
+  config.yml.erb: config.yml
+
+packages: []
+
+provides:
+- {name: node1, type: node1}
+- {name: node2, type: node2}
+
+consumes:
+- {name: node1, type: node1}
+- {name: node2, type: node2}
+
+properties: {}

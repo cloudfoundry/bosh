@@ -1,0 +1,39 @@
+---
+name: http_proxy_with_requires
+
+description: This job runs an HTTP proxy and uses a link to find its backend.
+
+templates:
+  ctl.sh: bin/ctl
+  config.yml.erb: config/config.yml
+  props.json: config/props.json
+  pre-start.erb: bin/pre-start
+
+consumes:
+- name: proxied_http_endpoint
+  type: http_endpoint
+- name: logs_http_endpoint
+  type: http_endpoint2
+  optional: true
+
+properties:
+  http_proxy_with_requires.listen_port:
+    description: "Listen port"
+    default: 8080
+
+  http_proxy_with_requires.require_logs_in_template:
+    description: "Require logs in template"
+    default: false
+
+  someProp:
+     default:
+
+  http_proxy_with_requires.fail_instance_index:
+    description: 'Fail for instance #. Failure type must be set for failure'
+    default: -1
+  http_proxy_with_requires.fail_on_template_rendering:
+    description: "Fail for instance <fail_instance_index> during template rendering"
+    default: false
+  http_proxy_with_requires.fail_on_job_start:
+    description: "Fail for instance <fail_instance_index> on job start"
+    default: false

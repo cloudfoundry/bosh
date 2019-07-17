@@ -1,0 +1,13 @@
+---
+name: database_with_two_provided_link_of_same_type
+templates: {}
+packages: []
+
+provides:
+- {name: db1, type: db}
+- {name: db2, type: db}
+
+properties:
+  test:
+    description: "test property"
+    default: "default test property"

@@ -1,0 +1,25 @@
+---
+name: http_server_with_provides
+
+description: This job runs an HTTP server and with a provides link directive.
+
+templates:
+  ctl.sh: bin/ctl
+
+provides:
+- name: http_endpoint
+  type: http_endpoint
+  properties:
+  - listen_port
+  - name_space.prop_a
+  - name_space.fibonacci
+
+properties:
+  listen_port:
+    description: "Port to listen on"
+    default: 8080
+  name_space.prop_a:
+    description: "a name spaced property"
+    default: "default"
+  name_space.fibonacci:
+    description: "has no default value"

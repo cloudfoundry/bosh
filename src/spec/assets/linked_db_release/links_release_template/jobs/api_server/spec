@@ -1,0 +1,13 @@
+---
+name: api_server
+templates:
+  config.yml.erb: config.yml
+
+packages:
+    - pkg_3_depends_on_2
+
+consumes:
+  - {name: db, type: db}
+  - { name: backup_db, type: db }
+
+properties: {}

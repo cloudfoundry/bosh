@@ -70,6 +70,12 @@ module IntegrationExampleGroup
     bosh_runner.run_in_dir('upload-release', ClientSandbox.test_release_dir, options)
   end
 
+  def create_and_upload_linked_db_release
+    FileUtils.cp_r(LINKED_DB_RELEASE_TEMPLATE, ClientSandbox.linked_db_release_dir, preserve: true)
+    bosh_runner.run_in_dir('create-release --force', ClientSandbox.linked_db_release_dir)
+    bosh_runner.run_in_dir('upload-release', ClientSandbox.linked_db_release_dir)
+  end
+
   def update_release
     Dir.chdir(ClientSandbox.test_release_dir) do
       File.open(File.join('src', 'foo'), 'w') { |f| f.write(SecureRandom.uuid) }

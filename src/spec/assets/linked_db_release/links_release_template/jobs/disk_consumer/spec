@@ -1,0 +1,12 @@
+---
+name: disk_consumer
+templates: {}
+packages: []
+
+consumes:
+  - name: disk_provider
+    type: disk
+  - name: backup_disk_provider
+    type: disk
+
+properties: {}

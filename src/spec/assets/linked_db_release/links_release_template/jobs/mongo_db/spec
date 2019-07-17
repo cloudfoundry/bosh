@@ -1,0 +1,14 @@
+---
+name: mongo_db
+templates: {}
+packages:
+    - pkg_1
+provides:
+- name: read_only_db
+  type: db
+  properties:
+  - foo
+
+properties:
+  foo:
+    default: mongo_foo_db

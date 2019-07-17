@@ -1,0 +1,14 @@
+---
+property_listen_port: <%= p("http_proxy_with_requires.listen_port") %>
+links:
+  address:
+    <%= link('proxied_http_endpoint').instances[0].address %>
+  properties:
+    listen_port:
+      <%= link("proxied_http_endpoint").p("listen_port") %>
+    name_space:
+      prop_a:
+        <%= link("proxied_http_endpoint").p("name_space.prop_a") %>
+    <% link('proxied_http_endpoint').if_p('name_space.fibonacci') do |fibonacci| %>
+    fibonacci: <%= fibonacci %>
+    <% end %>

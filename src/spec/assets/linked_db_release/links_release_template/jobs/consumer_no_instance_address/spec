@@ -1,0 +1,10 @@
+---
+name: consumer_no_instance_address
+templates:
+    config_without_address.yml.erb: config_without_address.yml
+
+consumes:
+  - name: provider
+    type: provider
+
+properties: {}

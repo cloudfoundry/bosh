@@ -1,0 +1,15 @@
+---
+instances:
+  node1_ips:
+<% link('node1').instances.each do |instance| %>
+    - <%= instance.address %>
+<% end %>
+  node2_ips:
+<% link('node2').instances.each do |instance| %>
+    - <%= instance.address %>
+<% end %>
+  node1_bootstrap_address:
+    <%= link('node1').instances.find(&:bootstrap).address %>
+  node2_bootstrap_address:
+    <%= link('node2').instances.find(&:bootstrap).address %>
+node1_dns: <%= link('node1').address %>

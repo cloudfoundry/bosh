@@ -1,0 +1,11 @@
+---
+name: errand_with_links
+templates:
+    config.yml.erb: config.yml
+    run.erb: bin/run
+
+consumes:
+    - { name: db, type: db }
+    - { name: backup_db, type: db }
+
+properties: {}

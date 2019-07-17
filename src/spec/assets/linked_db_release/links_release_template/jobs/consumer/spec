@@ -1,0 +1,10 @@
+---
+name: consumer
+templates:
+    config.yml.erb: config.yml
+
+consumes:
+  - name: provider
+    type: provider
+
+properties: {}

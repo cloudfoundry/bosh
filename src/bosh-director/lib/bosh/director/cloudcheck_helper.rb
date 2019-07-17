@@ -146,6 +146,7 @@ module Bosh::Director
         recreate_deployment: true,
         tags: instance_from_model.deployment_model.tags,
         variables_interpolator: variables_interpolator,
+        link_provider_intents: deployment_plan.link_provider_intents,
       )
     end
 

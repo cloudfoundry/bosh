@@ -49,15 +49,34 @@ describe 'cli: cloudcheck', type: :integration do
   context 'with dns enabled' do
     with_reset_sandbox_before_each
 
-    let(:num_instances) { 3 }
+    let(:num_instances) { 3 } # sum of all instances in :manifest
 
     before do
       bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_with_api_version.tgz')}")
       upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
-      create_and_upload_test_release
+      create_and_upload_linked_db_release
 
-      manifest['instance_groups'][0]['persistent_disk'] = 100
-      manifest['instance_groups'][0]['instances'] = num_instances
+      manifest['instance_groups'][0] = Bosh::Spec::NewDeployments.simple_instance_group(
+        name: 'foobar',
+        jobs: [
+          {
+            'name' => 'backup_database',
+            'release' => 'linked-db-release',
+            'provides' => { 'backup_db' => { 'as' => 'link_alias' } },
+          },
+          {
+            'name' => 'database',
+            'release' => 'linked-db-release',
+            'provides' => { 'db' => { 'as' => 'db2' } },
+          },
+        ],
+        instances: num_instances,
+        persistent_disk: 100,
+      )
+      manifest['releases'][0] = {
+        'name' => 'linked-db-release',
+        'version' => 'latest',
+      }
 
       deploy(manifest_hash: manifest)
 
@@ -87,10 +106,25 @@ describe 'cli: cloudcheck', type: :integration do
         expect(runner.run('cloud-check --report', deployment_name: 'simple')).to match(regexp('0 problems'))
       end
 
+      it 'recreates with identical config' do
+        recreate_vm_without_waiting_for_process = 3
+        bosh_run_cck_with_resolution(num_instances, recreate_vm_without_waiting_for_process)
+        output = deploy(manifest_hash: manifest)
+        expect(output).to_not match(regexp('Updating instance'))
+      end
+
       it 'recreates unresponsive VMs and wait for processes to start' do
-        recreate_vm_and_wait_for_processs = 4
-        bosh_run_cck_with_resolution(3, recreate_vm_and_wait_for_processs)
+        recreate_vm_and_wait_for_process = 4
+        bosh_run_cck_with_resolution(num_instances, recreate_vm_and_wait_for_process)
         expect(runner.run('cloud-check --report', deployment_name: 'simple')).to match(regexp('0 problems'))
+      end
+
+      it 'recreates with identical config and waits' do
+        recreate_vm_and_wait_for_process = 4
+        cloudcheck_response = scrub_text_random_ids(bosh_run_cck_with_resolution(num_instances, recreate_vm_and_wait_for_process))
+        expect(cloudcheck_response).to match(regexp('3 unresponsive'))
+        output = deploy(manifest_hash: manifest)
+        expect(output).to_not match(regexp('Updating instance'))
       end
 
       it 'deletes unresponsive VMs' do
@@ -104,7 +138,7 @@ describe 'cli: cloudcheck', type: :integration do
 
       it 'deletes VM reference' do
         delete_vm_reference = 6
-        bosh_run_cck_with_resolution(3, delete_vm_reference)
+        bosh_run_cck_with_resolution(num_instances, delete_vm_reference)
         output = scrub_randoms(runner.run('cloud-check --report', deployment_name: 'simple', failure_expected: true))
         expect(output).to include("4  missing_vm  VM for 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (x)' missing.")
         expect(output).to include("5  missing_vm  VM for 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (x)' missing.")
