@@ -97,10 +97,11 @@ describe 'resurrector', type: :integration, hm: true do
       username: 'hm',
       description: 'scan and fix',
       state: 'done',
-    ).order(:id).first
+      event_output: /Applying problem resolutions/,
+    ).first
 
-    expect(resurrection_task.any?).to be_truthy
-    expect(resurrection_task[:event_output]).to match(/.*ig_1.*ig_1.*ig_1.*ig_1.*ig_2.*ig_2.*ig_2.*ig_2.*/m)
+    resurrection_order = /.*ig_1.*ig_1.*ig_1.*ig_1.*ig_2.*ig_2.*ig_2.*ig_2.*/m
+    expect(resurrection_task[:event_output]).to match(resurrection_order)
   end
 
   it "respects 'max_in_flight' property" do
@@ -125,13 +126,17 @@ describe 'resurrector', type: :integration, hm: true do
     ig1_instances.each { |i| director.wait_for_vm('ig_1', i.index, 300) }
 
     director.wait_for_resurrection_to_finish
+    apply_resurrection_pattern = /Applying problem resolutions/
     resurrection_task = director.tasks.filter(
       username: 'hm',
       description: 'scan and fix',
       state: 'done',
-    ).order(:id).first
+      event_output: apply_resurrection_pattern,
+    ).first
 
-    expect(resurrection_task.any?).to be_truthy
-    expect(resurrection_task[:event_output]).to match(/Applying.*started.*\n.*Applying.*started.*\n.*Applying.*finished/m)
+    resurrection_steps = resurrection_task[:event_output].split("\n").grep(apply_resurrection_pattern)
+    expect(resurrection_steps[0]).to include('started')
+    expect(resurrection_steps[1]).to include('started')
+    expect(resurrection_steps[2]).to include('finished')
   end
 end
