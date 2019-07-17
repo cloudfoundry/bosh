@@ -17,23 +17,28 @@ module Bosh::Director
       @handled_response = false
     end
 
-    # Returns a lazily connected NATS client
     def nats
+      init_nats if @nats.nil?
       begin
-        @nats ||= connect
+        unless @nats.connected?
+          @lock.synchronize do
+            @nats.connect(@nats_options) unless @nats.connected?
+          end
+        end
+      rescue Errno::ECONNREFUSED
+        @logger.error("NATS connection refused")
       rescue Exception => e
         raise "An error has occurred while connecting to NATS: #{e}"
       end
+      @nats
     end
 
     # Publishes a payload (encoded as JSON) without expecting a response
     def send_message(client, payload)
       message = JSON.generate(payload)
       @logger.debug("SENT: #{client} #{message}")
-
-      EM.schedule do
-        nats.publish(client, message)
-      end
+      nats
+      @nats.publish(client, message) if @nats.connected?
     end
 
     # Sends a request (encoded as JSON) and listens for the response
@@ -49,16 +54,10 @@ module Bosh::Director
 
       @logger.debug("SENT: #{subject_name} #{sanitized_log_message}") unless options['logging'] == false
 
-      EM.schedule do
-        subscribe_inbox
-        if @handled_response
-          nats.publish(subject_name, request_body)
-        else
-          nats.flush do
-            nats.publish(subject_name, request_body)
-          end
-        end
-      end
+      subscribe_inbox
+      nats
+      @nats.publish(subject_name, request_body) if @nats.connected?
+
       request_id
     end
 
@@ -73,41 +72,37 @@ module Bosh::Director
 
     private
 
-    def connect
-      # double-check locking to reduce synchronization
-      if @nats.nil?
-        @lock.synchronize do
-          if @nats.nil?
-            NATS.on_error do |e|
-              password = @nats_uri[/nats:\/\/.*:(.*)@/, 1]
-              redacted_message = password.nil? ? "NATS client error: #{e}" : "NATS client error: #{e}".gsub(password, '*******')
-              @logger.error(redacted_message)
-            end
-            options = {
-              # The NATS client library has a built-in reconnection logic.
-              # This logic only works when a cluster of servers is provided, by passing
-              # a list of them (it will not retry a server if it receives an error from it, for
-              # example a timeout). We are getting around the issue by passing the same URI
-              # multiple times so the library will retry the connection. This way we are
-              # adding retry logic to the director NATS connections by relying on the built-in
-              # library logic.
-              :uris => Array.new(MAX_RECONNECT_ATTEMPTS, @nats_uri),
-              :max_reconnect_attempts => MAX_RECONNECT_ATTEMPTS,
-              :reconnect_time_wait => 2,
-              :reconnect => true,
-              :ssl => true,
-              :tls => {
-                :private_key_file => @nats_client_private_key_path,
-                :cert_chain_file  => @nats_client_certificate_path,
-                :verify_peer => true,
-                :ca_file => @nats_server_ca_path
-              }
-            }
-            @nats = NATS.connect(options)
+    def init_nats
+      @lock.synchronize do
+        if @nats.nil?
+          @nats = NATS::IO::Client.new
+
+          tls_context = OpenSSL::SSL::SSLContext.new
+          tls_context.ssl_version = :TLSv1_2
+          tls_context.verify_mode = OpenSSL::SSL::VERIFY_PEER
+
+          tls_context.key = OpenSSL::PKey::RSA.new(File.open(@nats_client_private_key_path))
+          tls_context.cert = OpenSSL::X509::Certificate.new(File.open(@nats_client_certificate_path))
+          tls_context.ca_file = @nats_server_ca_path
+
+          @nats_options = {
+            servers: Array.new(MAX_RECONNECT_ATTEMPTS, @nats_uri),
+            dont_randomize_servers: true,
+            max_reconnect_attempts: MAX_RECONNECT_ATTEMPTS,
+            reconnect_time_wait: 2,
+            reconnect: true,
+            tls: {
+              context: tls_context,
+            },
+          }
+
+          @nats.on_error do |e|
+            password = @nats_uri[%r{nats://.*:(.*)@}, 1]
+            redacted_message = password.nil? ? "NATS client error: #{e}" : "NATS client error: #{e}".gsub(password, '*******')
+            @logger.error(redacted_message)
           end
         end
       end
-      @nats
     end
 
     # subscribe to an inbox, if not already subscribed
@@ -123,7 +118,7 @@ module Bosh::Director
               handle_response(message, subject)
             end
           end
-        end
+        end if client.connected?
       end
     end
 
@@ -151,6 +146,5 @@ module Bosh::Director
         JSON.generate(request)
       end
     end
-
   end
 end

@@ -36,8 +36,9 @@ PATH
       httpclient (~> 2.8.3)
       logging (~> 2.2.2)
       membrane (~> 1.1.0)
-      nats (~> 0.9.2)
+      nats-pure (~> 0.6.2)
       netaddr (~> 1.5.0)
+      openssl
       prometheus-client (~> 1.0.0)
       puma (~> 3.10)
       rack-test (~> 0.6.2)
@@ -62,7 +63,8 @@ PATH
       eventmachine (~> 1.2.0)
       httpclient (~> 2.8.3)
       logging (~> 2.2.2)
-      nats (~> 0.9.2)
+      nats-pure (~> 0.6.2)
+      openssl
       riemann-client (~> 0.2.6)
       sinatra (~> 2.0.2)
       thin (~> 1.7.0)
@@ -1068,6 +1070,7 @@ GEM
     httpclient (2.8.3)
     i18n (1.8.2)
       concurrent-ruby (~> 1.0)
+    ipaddr (1.2.2)
     ipaddress (0.8.3)
     jaro_winkler (1.5.4)
     jmespath (1.4.0)
@@ -1090,11 +1093,12 @@ GEM
     mustermann (1.1.1)
       ruby2_keywords (~> 0.0.1)
     mysql2 (0.5.3)
-    nats (0.9.2)
-      eventmachine (~> 1.2, >= 1.2)
+    nats-pure (0.6.2)
     net-ssh (5.2.0)
     netaddr (1.5.1)
     netrc (0.11.0)
+    openssl (2.1.2)
+      ipaddr
     parallel (1.19.1)
     parallel_tests (2.31.0)
       parallel
@@ -1232,8 +1236,9 @@ DEPENDENCIES
   minitar
   mono_logger
   mysql2
-  nats (~> 0.9.2)
+  nats-pure (~> 0.6.2)
   net-ssh
+  openssl
   parallel_tests (~> 2.0)
   pg
   pry-byebug

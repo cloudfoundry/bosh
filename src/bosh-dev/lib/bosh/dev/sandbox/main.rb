@@ -383,15 +383,23 @@ module Bosh::Dev::Sandbox
     end
 
     def director_nats_config
+      tls_context = OpenSSL::SSL::SSLContext.new
+      tls_context.ssl_version = :TLSv1_2
+      tls_context.verify_mode = OpenSSL::SSL::VERIFY_PEER
+
+      tls_context.key = OpenSSL::PKey::RSA.new(File.open(nats_certificate_paths['clients']['test_client']['private_key_path']))
+      tls_context.cert = OpenSSL::X509::Certificate.new(File.open(nats_certificate_paths['clients']['test_client']['certificate_path']))
+      tls_context.ca_file = nats_certificate_paths['ca_path']
+
       {
-        uri: "nats://localhost:#{nats_port}",
-        ssl: true,
-        tls: {
-          :private_key_file => nats_certificate_paths['clients']['test_client']['private_key_path'],
-          :cert_chain_file  => nats_certificate_paths['clients']['test_client']['certificate_path'],
-          :verify_peer => true,
-          :ca_file => nats_certificate_paths['ca_path'],
-        }
+          servers: Array.new(1, "nats://localhost:#{nats_port}"),
+          dont_randomize_servers: true,
+          max_reconnect_attempts: 4,
+          reconnect_time_wait: 2,
+          reconnect: true,
+          tls: {
+              context: tls_context,
+          },
       }
     end
 
@@ -456,10 +464,8 @@ module Bosh::Dev::Sandbox
 
       load_db_and_populate_blobstore(@test_initial_state) unless @test_initial_state.nil?
 
-      unless @nats_process.running?
-        @nats_process.stop
-        start_nats
-      end
+      stop_nats if @nats_process.running?
+      start_nats
 
       @config_server_service.restart(@with_config_server_trusted_certs) if @config_server_enabled
 
