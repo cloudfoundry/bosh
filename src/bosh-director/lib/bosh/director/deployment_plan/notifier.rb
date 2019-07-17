@@ -44,6 +44,36 @@ module Bosh::Director
         @nats_rpc.send_message('hm.director.alert', payload)
       end
 
+      def send_begin_instance_event(instance_name, action)
+        payload = {
+          'id' => SecureRandom.uuid,
+          'severity' => Severity::WARNING,
+          'source' => 'director',
+          'title' => "director - begin '#{action}' instance '#{instance_name}'",
+          'summary' => "Finish action '#{action}' for instance '#{instance_name}' \
+                       against Director '#{Bosh::Director::Config.uuid}'",
+          'created_at' => Time.now.to_i,
+          'deployment' => @name.to_s,
+        }
+        @logger.info("sending instance '#{action}' begin event for instance #{instance_name}")
+        @nats_rpc.send_message('hm.director.alert', payload)
+      end
+
+      def send_end_instance_event(instance_name, action)
+        payload = {
+          'id' => SecureRandom.uuid,
+          'severity' => Severity::WARNING,
+          'source' => 'director',
+          'title' => "director - finish '#{action}' instance '#{instance_name}'",
+          'summary' => "Finish action '#{action}' for instance '#{instance_name}' \
+                       against Director '#{Bosh::Director::Config.uuid}'",
+          'created_at' => Time.now.to_i,
+          'deployment' => @name.to_s,
+        }
+        @logger.info("sending instance '#{action}' end event for instance #{instance_name}")
+        @nats_rpc.send_message('hm.director.alert', payload)
+      end
+
       def send_error_event(exception)
         payload = {
           'id' => SecureRandom.uuid,

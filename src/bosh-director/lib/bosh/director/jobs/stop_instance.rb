@@ -73,6 +73,7 @@ module Bosh::Director
         intent = @options['hard'] ? :delete_vm : :keep_vm
         target_state = @options['hard'] ? 'detached' : 'stopped'
         parent_event = add_stop_event(instance_model.name)
+        notify_stop_begin(instance_model.name)
 
         Stopper.stop(intent: intent, instance_plan: instance_plan, target_state: target_state, logger: @logger)
 
@@ -83,6 +84,7 @@ module Bosh::Director
         raise e
       ensure
         add_stop_event(instance_model.name, parent_event, e) if parent_event
+        notify_stop_end(instance_model.name)
       end
 
       def construct_instance_plan(instance_model, deployment_plan, instance_group, options)
@@ -121,6 +123,18 @@ module Bosh::Director
           tags: instance.deployment_model.tags,
           link_provider_intents: deployment_plan.link_provider_intents,
         )
+      end
+
+      def notifier
+        @notifier ||= DeploymentPlan::Notifier.new(@deployment_name, Config.nats_rpc, @logger)
+      end
+
+      def notify_stop_begin(instance_name)
+        notifier.send_begin_instance_event(instance_name, 'stop')
+      end
+
+      def notify_stop_end(instance_name)
+        notifier.send_end_instance_event(instance_name, 'stop')
       end
 
       def add_stop_event(instance_name, parent_id = nil, error = nil)

@@ -31,6 +31,7 @@ module Bosh::Director
                       configuration_hash: nil)
     end
     let(:event_manager) { Bosh::Director::Api::EventManager.new(true) }
+    let(:notifier) { instance_double(DeploymentPlan::Notifier) }
 
     let!(:spec) do
       {
@@ -71,13 +72,16 @@ module Bosh::Director
       allow(Config).to receive_message_chain(:current_job, :event_manager).and_return(event_manager)
       allow(Config).to receive_message_chain(:current_job, :username).and_return('user')
       allow(Config).to receive_message_chain(:current_job, :task_id).and_return('5')
-
+      allow(Config).to receive(:nats_rpc).and_return(nil)
+      allow(DeploymentPlan::Notifier).to receive(:new).and_return(notifier)
       allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
       allow(agent_client).to receive(:get_state).and_return({ 'job_state' => 'running' }, { 'job_state' => 'stopped' })
       allow(Api::SnapshotManager).to receive(:take_snapshot)
       allow(DeploymentPlan::Steps::UnmountInstanceDisksStep).to receive(:new).and_return(unmount_instance_disk_step)
       allow(DeploymentPlan::Steps::DetachInstanceDisksStep).to receive(:new).and_return(detach_instance_disk_step)
       allow(DeploymentPlan::Steps::DeleteVmStep).to receive(:new).and_return(delete_vm_step)
+      allow(notifier).to receive(:send_begin_instance_event)
+      allow(notifier).to receive(:send_end_instance_event)
     end
 
     describe 'perform' do
@@ -141,6 +145,9 @@ module Bosh::Director
         expect(Config.event_log).to receive(:begin_stage).with('Deleting VM').and_return(event_log_stage)
         expect(event_log_stage).to receive(:advance_and_track).with('test-vm-cid').and_yield
         job = Jobs::StopInstance.new(deployment.name, instance.id, 'hard' => true)
+
+        expect(notifier).to receive(:send_begin_instance_event).with('foobar/test-uuid', 'stop')
+        expect(notifier).to receive(:send_end_instance_event).with('foobar/test-uuid', 'stop')
 
         expect { job.perform }.to change { Bosh::Director::Models::Event.count }.from(0).to(2)
         expect(Bosh::Director::Models::Event.first.action).to eq 'stop'
