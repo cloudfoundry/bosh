@@ -12,7 +12,6 @@ module Bosh::Director
 
     let(:manifest) { Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups }
     let(:deployment) { Models::Deployment.make(name: 'simple', manifest: YAML.dump(manifest)) }
-    let(:instance) { Models::Instance.make(deployment: deployment, job: 'foobar', uuid: 'test-uuid', index: '1') }
     let(:vm_model) { Models::Vm.make(instance: instance, active: true, cid: 'test-vm-cid') }
     let(:task) { Models::Task.make(id: 42) }
     let(:task_writer) { TaskDBWriter.new(:event_output, task.id) }
@@ -20,9 +19,11 @@ module Bosh::Director
     let(:cloud_config) { Models::Config.make(:cloud_with_manifest_v2) }
     let(:variables_interpolator) { ConfigServer::VariablesInterpolator.new }
     let(:unmount_instance_disk_step) { instance_double(DeploymentPlan::Steps::UnmountInstanceDisksStep, perform: nil) }
+    let(:detach_instance_disk_step) { instance_double(DeploymentPlan::Steps::DetachInstanceDisksStep, perform: nil) }
     let(:delete_vm_step) { instance_double(DeploymentPlan::Steps::DeleteVmStep, perform: nil) }
     let(:event_log_stage) { instance_double('Bosh::Director::EventLog::Stage') }
     let(:agent_client) { instance_double(AgentClient, run_script: nil, drain: 0, stop: nil) }
+    let!(:stemcell) { Bosh::Director::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302') }
     let(:deployment_plan_instance) do
       instance_double(DeploymentPlan::Instance,
                       template_hashes: nil,
@@ -30,18 +31,28 @@ module Bosh::Director
                       configuration_hash: nil)
     end
 
-    let(:spec) do
+    let!(:spec) do
       {
         'vm_type' => {
           'name' => 'vm-type-name',
           'cloud_properties' => {},
         },
         'stemcell' => {
-          'name' => 'stemcell-name',
-          'version' => '2.0.6',
+          'name' => stemcell.name,
+          'version' => stemcell.version,
         },
         'networks' => {},
       }
+    end
+
+    let!(:instance) do
+      Models::Instance.make(
+        deployment: deployment,
+        job: 'foobar',
+        uuid: 'test-uuid',
+        index: '1',
+        spec_json: spec.to_json,
+      )
     end
 
     before do
@@ -58,12 +69,11 @@ module Bosh::Director
       allow(event_log_stage).to receive(:advance_and_track).and_yield
 
       allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
+      allow(agent_client).to receive(:get_state).and_return({ 'job_state' => 'running' }, { 'job_state' => 'stopped' })
       allow(Api::SnapshotManager).to receive(:take_snapshot)
       allow(DeploymentPlan::Steps::UnmountInstanceDisksStep).to receive(:new).and_return(unmount_instance_disk_step)
+      allow(DeploymentPlan::Steps::DetachInstanceDisksStep).to receive(:new).and_return(detach_instance_disk_step)
       allow(DeploymentPlan::Steps::DeleteVmStep).to receive(:new).and_return(delete_vm_step)
-
-      instance_spec = DeploymentPlan::InstanceSpec.new(spec, deployment_plan_instance, variables_interpolator)
-      allow(DeploymentPlan::InstanceSpec).to receive(:create_from_instance_plan).and_return(instance_spec)
     end
 
     describe 'perform' do
@@ -103,6 +113,7 @@ module Bosh::Director
         expect(agent_client).to have_received(:stop)
         expect(agent_client).to have_received(:run_script).with('post-stop', {})
         expect(unmount_instance_disk_step).to have_received(:perform)
+        expect(detach_instance_disk_step).to have_received(:perform)
         expect(delete_vm_step).to have_received(:perform)
         expect(instance.reload.state).to eq 'detached'
       end
@@ -143,7 +154,7 @@ module Bosh::Director
       end
 
       context 'when the instance is already soft stopped' do
-        let(:instance) { Models::Instance.make(deployment: deployment, job: 'foobar', state: 'stopped') }
+        let(:instance) { Models::Instance.make(deployment: deployment, job: 'foobar', state: 'stopped', spec_json: spec.to_json) }
 
         it 'detaches the vm if --hard is specified' do
           job = Jobs::StopInstance.new(deployment.name, instance.id, 'hard' => true)
@@ -176,6 +187,7 @@ module Bosh::Director
           expect(agent_client).to_not have_received(:stop)
           expect(agent_client).to_not have_received(:run_script).with('post-stop', {})
           expect(unmount_instance_disk_step).to_not have_received(:perform)
+          expect(detach_instance_disk_step).to_not have_received(:perform)
           expect(delete_vm_step).to_not have_received(:perform)
 
           expect(instance.reload.state).to eq 'detached'
@@ -191,6 +203,38 @@ module Bosh::Director
           expect(agent_client).to have_received(:stop)
           expect(agent_client).to have_received(:run_script).with('post-stop', {})
           expect(instance.reload.state).to eq 'stopped'
+        end
+      end
+
+      context 'when the agent is unresponsive' do
+        before do
+          allow(agent_client).to receive(:get_state).and_raise(Bosh::Director::RpcTimeout)
+        end
+
+        it 'ignores any unresponsive agent state if ignore-unresponsive-agent is set to true' do
+          job = Jobs::StopInstance.new(deployment.name, instance.id, 'ignore_unresponsive_agent' => true, 'hard' => true)
+          expect { job.perform }.to_not raise_error
+
+          expect(agent_client).to_not have_received(:run_script).with('pre-stop', anything)
+          expect(agent_client).to_not have_received(:drain)
+          expect(agent_client).to_not have_received(:stop)
+          expect(agent_client).to_not have_received(:run_script).with('post-stop', {})
+          expect(unmount_instance_disk_step).to_not have_received(:perform)
+          expect(detach_instance_disk_step).to_not have_received(:perform)
+
+          expect(delete_vm_step).to have_received(:perform)
+          expect(instance.reload.state).to eq 'detached'
+        end
+
+        it 'raises an error' do
+          job = Jobs::StopInstance.new(deployment.name, instance.id, 'ignore_unresponsive_agent' => false)
+          expect { job.perform }.to raise_error
+
+          expect(agent_client).to_not have_received(:run_script).with('pre-stop', anything)
+          expect(agent_client).to_not have_received(:drain)
+          expect(agent_client).to_not have_received(:stop)
+          expect(agent_client).to_not have_received(:run_script).with('post-stop', {})
+          expect(instance.reload.state).to eq 'started'
         end
       end
     end

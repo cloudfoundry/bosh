@@ -179,6 +179,7 @@ module Bosh::Director
         options = {
           skip_drain: params['skip_drain'] == 'true',
           hard: true,
+          ignore_unresponsive_agent: params['ignore_unresponsive_agent'] == 'true',
         }
 
         task = JobQueue.new.enqueue(

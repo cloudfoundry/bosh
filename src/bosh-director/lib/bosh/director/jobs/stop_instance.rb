@@ -50,16 +50,20 @@ module Bosh::Director
         if @options['hard']
           event_log_stage = event_log.begin_stage('Deleting VM')
           event_log_stage.advance_and_track(instance_model.vm_cid) do
-            detach_instance(instance_model)
+            detach_instance(instance_model, instance_plan)
           end
         end
       end
 
       private
 
-      def detach_instance(instance_model)
+      def detach_instance(instance_model, instance_plan)
         instance_report = DeploymentPlan::Stages::Report.new.tap { |r| r.vm = instance_model.active_vm }
-        DeploymentPlan::Steps::UnmountInstanceDisksStep.new(instance_model).perform(instance_report)
+        unless instance_plan.unresponsive_agent?
+          DeploymentPlan::Steps::UnmountInstanceDisksStep.new(instance_model).perform(instance_report)
+          DeploymentPlan::Steps::DetachInstanceDisksStep.new(instance_model).perform(instance_report)
+        end
+
         DeploymentPlan::Steps::DeleteVmStep.new(true, false, Config.enable_virtual_delete_vms).perform(instance_report)
         @logger.debug("Setting instance #{@instance_id} state to detached")
         instance_model.update(state: 'detached')
@@ -83,26 +87,33 @@ module Bosh::Director
           instance_model.index,
           'stopped',
         )
+
+        begin
+          existing_instance_state = DeploymentPlan::AgentStateMigrator.new(@logger).get_state(instance_model)
+        rescue Bosh::Director::RpcTimeout, Bosh::Director::RpcRemoteException => e
+          raise e, "#{instance_model.name}: #{e.message}" unless @options['ignore_unresponsive_agent']
+
+          existing_instance_state = { 'job_state' => 'unresponsive' }
+        end
+
         variables_interpolator = ConfigServer::VariablesInterpolator.new
 
         instance_repository = DeploymentPlan::InstanceRepository.new(@logger, variables_interpolator)
-        instance = instance_repository.fetch_existing(
+        instance = instance_repository.build_instance_from_model(
           instance_model,
-          {},
-          desired_instance,
+          existing_instance_state,
+          desired_instance.state,
+          desired_instance.deployment,
         )
 
-        network_plans = instance.existing_network_reservations.map do |reservation|
-          DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation, existing: true)
-        end
-
-        DeploymentPlan::InstancePlan.new(
+        DeploymentPlan::InstancePlanFromDB.new(
           existing_instance: instance_model,
           desired_instance: desired_instance,
           instance: instance,
           variables_interpolator: variables_interpolator,
-          network_plans: network_plans,
           skip_drain: options['skip_drain'],
+          tags: instance.deployment_model.tags,
+          link_provider_intents: deployment_plan.link_provider_intents,
         )
       end
     end

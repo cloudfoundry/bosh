@@ -59,6 +59,31 @@ describe 'recreate command', type: :integration do
           )
       end
     end
+
+    context 'when the agent is unresponsive' do
+      it 'still recreates successfully with --ignore-unresponsive-agent' do
+        initial_instances = director.instances
+        instance_to_be_recreated = director.find_instance(initial_instances, 'foobar', '0')
+        instance_to_be_recreated.kill_agent
+
+        output = isolated_recreate(instance_group: 'foobar', index: 0, params: { ignore_unresponsive_agent: true })
+        expect(output).to match(/Stopping instance foobar: foobar.* \(0\)/)
+        expect(output).to match(/Starting instance foobar: foobar.* \(0\)/)
+
+        instances_after_instance_recreate = director.instances
+        instance_was_recreated = director.find_instance(instances_after_instance_recreate, 'foobar', '0')
+        expect(instance_to_be_recreated.vm_cid).not_to eq(instance_was_recreated.vm_cid)
+
+        expect((initial_instances - [instance_to_be_recreated]).map(&:vm_cid))
+          .to match_array((instances_after_instance_recreate - [instance_was_recreated]).map(&:vm_cid))
+
+        expect(instance_states).to eq(
+          'foobar/0' => 'running',
+          'foobar/1' => 'running',
+          'foobar/2' => 'running',
+        )
+      end
+    end
   end
 
   context 'after a failed deploy' do
