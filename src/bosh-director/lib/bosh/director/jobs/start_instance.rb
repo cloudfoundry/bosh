@@ -66,6 +66,10 @@ module Bosh::Director
         blobstore_client = App.instance.blobstores.blobstore
         agent = AgentClient.with_agent_id(instance_model.agent_id, instance_model.name)
 
+        notifier = DeploymentPlan::Notifier.new(@deployment_name, Config.nats_rpc, @logger)
+        parent_event = add_event('start', instance_model)
+        notifier.send_begin_instance_event(instance_model.name, 'start')
+
         templates_persister = RenderedTemplatesPersister.new(blobstore_client, @logger)
         templates_persister.persist(instance_plan)
         cleaner = RenderedJobTemplatesCleaner.new(instance_model, blobstore_client, @logger)
@@ -77,6 +81,11 @@ module Bosh::Director
           true,
         )
         instance_model.update(update_completed: true)
+      rescue StandardError => e
+        raise e
+      ensure
+        add_event('start', instance_model, parent_event, e) if parent_event
+        notifier.send_end_instance_event(instance_model.name, 'start')
       end
 
       def create_vm(instance_plan, deployment_plan, instance_model)
@@ -137,6 +146,24 @@ module Bosh::Director
           tags: instance.deployment_model.tags,
           link_provider_intents: deployment_plan.link_provider_intents,
         )
+      end
+
+      def add_event(action, instance_model, parent_id = nil, error = nil)
+        instance_name = instance_model.name
+        deployment_name = instance_model.deployment.name
+
+        event = Config.current_job.event_manager.create_event(
+          parent_id:   parent_id,
+          user:        Config.current_job.username,
+          action:      action,
+          object_type: 'instance',
+          object_name: instance_name,
+          task:        Config.current_job.task_id,
+          deployment:  deployment_name,
+          instance:    instance_name,
+          error:       error,
+        )
+        event.id
       end
     end
   end

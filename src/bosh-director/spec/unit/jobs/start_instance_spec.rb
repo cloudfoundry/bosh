@@ -20,6 +20,8 @@ module Bosh::Director
     let(:local_dns_manager) { instance_double(LocalDnsManager, update_dns_record_for_instance: nil) }
     let(:state_applier) { instance_double(InstanceUpdater::StateApplier, apply: nil) }
     let!(:stemcell) { Bosh::Director::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302') }
+    let(:notifier) { instance_double(DeploymentPlan::Notifier) }
+    let(:event_manager) { Bosh::Director::Api::EventManager.new(true) }
 
     let!(:instance_spec) do
       {
@@ -96,6 +98,11 @@ module Bosh::Director
       allow(Config.event_log).to receive(:begin_stage).and_return(event_log_stage)
       allow(event_log_stage).to receive(:advance_and_track).and_yield
 
+      allow(Config).to receive(:nats_rpc).and_return(nil)
+      allow(Config).to receive_message_chain(:current_job, :event_manager).and_return(event_manager)
+      allow(Config).to receive_message_chain(:current_job, :username).and_return('user')
+      allow(Config).to receive_message_chain(:current_job, :task_id).and_return('5')
+
       allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
       allow(agent_client).to receive(:get_state).and_return({ 'job_state' => 'stopped' }, { 'job_state' => 'running' })
 
@@ -103,6 +110,10 @@ module Bosh::Director
       allow(RenderedTemplatesPersister).to receive(:new).and_return(template_persister)
       allow(LocalDnsManager).to receive(:new).and_return(local_dns_manager)
       allow(InstanceUpdater::StateApplier).to receive(:new).and_return(state_applier)
+
+      allow(DeploymentPlan::Notifier).to receive(:new).and_return(notifier)
+      allow(notifier).to receive(:send_begin_instance_event)
+      allow(notifier).to receive(:send_end_instance_event)
     end
 
     describe 'perform' do
@@ -137,6 +148,19 @@ module Bosh::Director
         expect(instance_model.reload.update_completed).to eq(true)
       end
 
+      it 'logs stopping and detaching' do
+        expect(Config.event_log).to receive(:begin_stage).with('Starting instance foobar').and_return(event_log_stage)
+        expect(event_log_stage).to receive(:advance_and_track).with('foobar/test-uuid (1)').and_yield
+
+        job = Jobs::StartInstance.new(deployment.name, instance_model.id)
+
+        expect(notifier).to receive(:send_begin_instance_event).with('foobar/test-uuid', 'start')
+        expect(notifier).to receive(:send_end_instance_event).with('foobar/test-uuid', 'start')
+
+        expect { job.perform }.to change { Bosh::Director::Models::Event.count }.from(0).to(2)
+        expect(Bosh::Director::Models::Event.first.action).to eq 'start'
+      end
+
       context 'when the instance is already started' do
         let(:instance_model) do
           Models::Instance.make(deployment: deployment, job: 'foobar', state: 'started', spec_json: instance_spec.to_json)
@@ -153,6 +177,7 @@ module Bosh::Director
 
             expect(state_applier).to_not have_received(:apply)
             expect(instance_model.reload.state).to eq 'started'
+            expect(event_manager).to_not receive(:create_event)
           end
         end
 

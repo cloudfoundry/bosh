@@ -72,8 +72,9 @@ module Bosh::Director
       def stop(instance_plan, instance_model)
         intent = @options['hard'] ? :delete_vm : :keep_vm
         target_state = @options['hard'] ? 'detached' : 'stopped'
-        parent_event = add_stop_event(instance_model.name)
-        notify_stop_begin(instance_model.name)
+        notifier = DeploymentPlan::Notifier.new(@deployment_name, Config.nats_rpc, @logger)
+        parent_event = add_event('stop', instance_model)
+        notifier.send_begin_instance_event(instance_model.name, 'stop')
 
         Stopper.stop(intent: intent, instance_plan: instance_plan, target_state: target_state, logger: @logger)
 
@@ -83,8 +84,8 @@ module Bosh::Director
       rescue StandardError => e
         raise e
       ensure
-        add_stop_event(instance_model.name, parent_event, e) if parent_event
-        notify_stop_end(instance_model.name)
+        add_event('stop', instance_model, parent_event, e) if parent_event
+        notifier.send_end_instance_event(instance_model.name, 'stop')
       end
 
       def construct_instance_plan(instance_model, deployment_plan, instance_group, options)
@@ -125,27 +126,18 @@ module Bosh::Director
         )
       end
 
-      def notifier
-        @notifier ||= DeploymentPlan::Notifier.new(@deployment_name, Config.nats_rpc, @logger)
-      end
+      def add_event(action, instance_model, parent_id = nil, error = nil)
+        instance_name = instance_model.name
+        deployment_name = instance_model.deployment.name
 
-      def notify_stop_begin(instance_name)
-        notifier.send_begin_instance_event(instance_name, 'stop')
-      end
-
-      def notify_stop_end(instance_name)
-        notifier.send_end_instance_event(instance_name, 'stop')
-      end
-
-      def add_stop_event(instance_name, parent_id = nil, error = nil)
         event = Config.current_job.event_manager.create_event(
           parent_id:   parent_id,
           user:        Config.current_job.username,
-          action:      'stop',
+          action:      action,
           object_type: 'instance',
           object_name: instance_name,
           task:        Config.current_job.task_id,
-          deployment:  @deployment_name,
+          deployment:  deployment_name,
           instance:    instance_name,
           error:       error,
         )
