@@ -39,7 +39,7 @@ cat > integration-config.json <<EOF
   "timeout_in_minutes": 30,
   "stemcell_src": "${STEMCELL_PATH}",
   "include_deployment_testcase": true,
-  "include_truncate_db_blobstore_testcase": false
+  "include_truncate_db_blobstore_testcase": true
 }
 EOF
 
