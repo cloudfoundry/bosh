@@ -53,13 +53,13 @@ module Bosh::Director
 
       describe '.create_from_instance_model' do
         it 'can create an instance plan from the instance model' do
-          instance_plan_from_db = InstancePlanFromDB.create_from_instance_model(
+          instance_plan = InstancePlanFromDB.create_from_instance_model(
             instance_model,
             deployment_plan,
             'started',
             logger,
           )
-          expect(instance_plan_from_db.instance_model).to eq(instance_model)
+          expect(instance_plan.instance_model).to eq(instance_model)
         end
       end
     end
