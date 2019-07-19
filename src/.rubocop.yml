@@ -4,7 +4,7 @@ AllCops:
   - tmp/**/*
 
 # Layout
-Layout/IndentHash:
+Layout/IndentFirstHashElement:
   EnforcedStyle: consistent
 
 Layout/MultilineMethodCallIndentation:
