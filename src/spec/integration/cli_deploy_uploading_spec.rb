@@ -85,7 +85,6 @@ describe 'cli: deploy uploading', type: :integration do
       let(:release2_path) { spec_asset('compiled_releases/test_release/releases/test_release/test_release-2-pkg2-updated.tgz') }
 
       it 'does not upload the same release twice' do
-        pending('cli2: #130928119 cli2 should not upload release if already on director')
         deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::NewDeployments.local_release_manifest('file://' + release_path, 1))
 
         output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal')
@@ -101,7 +100,6 @@ describe 'cli: deploy uploading', type: :integration do
       end
 
       it 'ignores the tarball if the director has the same name and version' do
-        pending('cli2: #130928119 cli2 should not upload release if already on director')
         deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::NewDeployments.local_release_manifest('file://' + release2_path, 1))
 
         bosh_runner.run("upload-release #{release_path}")
