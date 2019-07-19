@@ -90,44 +90,6 @@ module Bosh::Director
         notifier.send_end_instance_event(instance_model.name, 'stop')
       end
 
-      def construct_instance_plan(instance_model, deployment_plan, instance_group, options)
-        desired_instance = DeploymentPlan::DesiredInstance.new(
-          instance_group,
-          deployment_plan,
-          nil,
-          instance_model.index,
-          'stopped',
-        )
-
-        begin
-          existing_instance_state = DeploymentPlan::AgentStateMigrator.new(@logger).get_state(instance_model)
-        rescue Bosh::Director::RpcTimeout, Bosh::Director::RpcRemoteException => e
-          raise e, "#{instance_model.name}: #{e.message}" unless @options['ignore_unresponsive_agent']
-
-          existing_instance_state = { 'job_state' => 'unresponsive' }
-        end
-
-        variables_interpolator = ConfigServer::VariablesInterpolator.new
-
-        instance_repository = DeploymentPlan::InstanceRepository.new(@logger, variables_interpolator)
-        instance = instance_repository.build_instance_from_model(
-          instance_model,
-          existing_instance_state,
-          desired_instance.state,
-          desired_instance.deployment,
-        )
-
-        DeploymentPlan::InstancePlanFromDB.new(
-          existing_instance: instance_model,
-          desired_instance: desired_instance,
-          instance: instance,
-          variables_interpolator: variables_interpolator,
-          skip_drain: options['skip_drain'],
-          tags: instance.deployment_model.tags,
-          link_provider_intents: deployment_plan.link_provider_intents,
-        )
-      end
-
       def add_event(action, instance_model, parent_id = nil, error = nil)
         instance_name = instance_model.name
         deployment_name = instance_model.deployment.name
