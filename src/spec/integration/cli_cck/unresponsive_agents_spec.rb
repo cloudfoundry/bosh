@@ -54,19 +54,19 @@ describe 'cli: cloudcheck', type: :integration do
     before do
       bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_with_api_version.tgz')}")
       upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
-      create_and_upload_linked_db_release
+      create_and_upload_links_release
 
       manifest['instance_groups'][0] = Bosh::Spec::NewDeployments.simple_instance_group(
         name: 'foobar',
         jobs: [
           {
             'name' => 'backup_database',
-            'release' => 'linked-db-release',
+            'release' => 'bosh-release',
             'provides' => { 'backup_db' => { 'as' => 'link_alias' } },
           },
           {
             'name' => 'database',
-            'release' => 'linked-db-release',
+            'release' => 'bosh-release',
             'provides' => { 'db' => { 'as' => 'db2' } },
           },
         ],
@@ -74,7 +74,7 @@ describe 'cli: cloudcheck', type: :integration do
         persistent_disk: 100,
       )
       manifest['releases'][0] = {
-        'name' => 'linked-db-release',
+        'name' => 'bosh-release',
         'version' => 'latest',
       }
 

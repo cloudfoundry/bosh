@@ -1,5 +1,0 @@
----
-name: pkg_1
-dependencies: []
-files:
-  - pkg_1/**
