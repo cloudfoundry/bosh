@@ -14,21 +14,21 @@ module Bosh::Director
       end
 
       it 'should return the processed agent state' do
-        state = {'state' => 'baz'}
+        state = { 'state' => 'baz' }
 
         expect(client).to receive(:get_state).and_return(state)
         expect(agent_state_migrator).to receive(:verify_state).with(instance_model, state)
-        expect(agent_state_migrator.get_state(instance_model)).to eq(state)
+        expect(agent_state_migrator.get_state(instance_model, false)).to eq(state)
       end
 
       context 'when the returned state contains top level "release" key' do
         it 'prunes the legacy "release" data to avoid unnecessary update' do
-          legacy_state = {'release' => 'cf', 'other' => 'data', 'job' => {}}
-          final_state = {'other' => 'data', 'job' => {}}
+          legacy_state = { 'release' => 'cf', 'other' => 'data', 'job' => {} }
+          final_state = { 'other' => 'data', 'job' => {} }
           allow(client).to receive(:get_state).and_return(legacy_state)
 
           allow(agent_state_migrator).to receive(:verify_state).with(instance_model, legacy_state)
-          expect(agent_state_migrator.get_state(instance_model)).to eq(final_state)
+          expect(agent_state_migrator.get_state(instance_model, false)).to eq(final_state)
         end
 
         context 'and the returned state contains a job level release' do
@@ -50,7 +50,7 @@ module Bosh::Director
             allow(client).to receive(:get_state).and_return(legacy_state)
             allow(agent_state_migrator).to receive(:verify_state).with(instance_model, legacy_state)
 
-            expect(agent_state_migrator.get_state(instance_model)).to eq(final_state)
+            expect(agent_state_migrator.get_state(instance_model, false)).to eq(final_state)
           end
         end
 
@@ -72,7 +72,7 @@ module Bosh::Director
             allow(client).to receive(:get_state).and_return(legacy_state)
             allow(agent_state_migrator).to receive(:verify_state).with(instance_model, legacy_state)
 
-            expect(agent_state_migrator.get_state(instance_model)).to eq(final_state)
+            expect(agent_state_migrator.get_state(instance_model, false)).to eq(final_state)
           end
         end
       end
@@ -96,7 +96,7 @@ module Bosh::Director
             allow(client).to receive(:get_state).and_return(legacy_state)
             allow(agent_state_migrator).to receive(:verify_state).with(instance_model, legacy_state)
 
-            expect(agent_state_migrator.get_state(instance_model)).to eq(final_state)
+            expect(agent_state_migrator.get_state(instance_model, false)).to eq(final_state)
           end
         end
 
@@ -118,38 +118,54 @@ module Bosh::Director
             allow(client).to receive(:get_state).and_return(legacy_state)
             allow(agent_state_migrator).to receive(:verify_state).with(instance_model, legacy_state)
 
-            expect(agent_state_migrator.get_state(instance_model)).to eq(final_state)
+            expect(agent_state_migrator.get_state(instance_model, false)).to eq(final_state)
           end
+        end
+      end
+
+      context 'when unable to connect to agent' do
+        before do
+          allow(client).to receive(:get_state).and_raise(RpcTimeout.new)
+        end
+
+        it 'raises the connection error if ignore_unresponsive_agent is false' do
+          expect do
+            agent_state_migrator.get_state(instance_model, false)
+          end.to raise_error(RpcTimeout)
+        end
+
+        it 'returns unresponsive job_state if ignore_unresponsive_agent is true' do
+          unresponsive_state = { 'job_state' => 'unresponsive' }
+          expect(agent_state_migrator.get_state(instance_model, true)).to eq(unresponsive_state)
         end
       end
     end
 
     describe '#verify_state' do
       before do
-        @deployment = Models::Deployment.make(:name => 'foo')
+        @deployment = Models::Deployment.make(name: 'foo')
       end
 
       it 'should do nothing when VM is ok' do
-        agent_state_migrator.verify_state(instance_model, {'deployment' => 'foo'})
+        agent_state_migrator.verify_state(instance_model, 'deployment' => 'foo')
       end
 
       it 'should do nothing when instance is ok' do
-        instance = Models::Instance.make(:deployment => @deployment, :job => 'bar', :index => 11)
+        instance = Models::Instance.make(deployment: @deployment, job: 'bar', index: 11)
         instance.add_vm(vm_model)
         instance.active_vm = vm_model
-        agent_state_migrator.verify_state(instance_model, {
-            'deployment' => 'foo',
-            'job' => {
-              'name' => 'bar'
-            },
-            'index' => 11
-          })
+        agent_state_migrator.verify_state(instance_model,
+                                          'deployment' => 'foo',
+                                          'job' => {
+                                            'name' => 'bar',
+                                          },
+                                          'index' => 11)
       end
 
       it 'should make sure the state is a Hash' do
-        expect {
+        expect do
           agent_state_migrator.verify_state(instance_model, 'state')
-        }.to raise_error(AgentInvalidStateFormat, /expected Hash/)
+        end.to raise_error(AgentInvalidStateFormat, /expected Hash/)
       end
     end
   end
