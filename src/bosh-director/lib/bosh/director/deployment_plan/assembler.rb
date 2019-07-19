@@ -129,13 +129,8 @@ module Bosh::Director
           pool.process do
             with_thread_name("binding agent state for (#{existing_instance}") do
               # getting current state to obtain IP of dynamic networks
-              begin
-                state = DeploymentPlan::AgentStateMigrator.new(@logger).get_state(existing_instance)
-              rescue Bosh::Director::RpcTimeout, Bosh::Director::RpcRemoteException => e
-                raise e, "#{existing_instance.name}: #{e.message}" unless fix
+              state = DeploymentPlan::AgentStateMigrator.new(@logger).get_state(existing_instance, fix)
 
-                state = { 'job_state' => 'unresponsive' }
-              end
               lock.synchronize do
                 current_states_by_existing_instance.merge!(existing_instance => state)
               end

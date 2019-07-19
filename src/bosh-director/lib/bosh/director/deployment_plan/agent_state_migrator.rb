@@ -5,10 +5,18 @@ module Bosh::Director
         @logger = logger
       end
 
-      def get_state(instance)
+      def get_state(instance, ignore_unresponsive_agent)
         @logger.debug("Requesting current VM state for: #{instance.agent_id}")
         agent = AgentClient.with_agent_id(instance.agent_id, instance.name)
-        state = agent.get_state { Config.job_cancelled? }
+
+        begin
+          state = agent.get_state { Config.job_cancelled? }
+        rescue Bosh::Director::RpcTimeout, Bosh::Director::RpcRemoteException => e
+          raise e, "#{instance.name}: #{e.message}" unless ignore_unresponsive_agent
+
+          @logger.debug("Unresponsive agent requesting VM state for: #{instance.agent_id}")
+          return { 'job_state' => 'unresponsive' }
+        end
 
         @logger.debug("Received VM state: #{state.pretty_inspect}")
         verify_state(instance, state)

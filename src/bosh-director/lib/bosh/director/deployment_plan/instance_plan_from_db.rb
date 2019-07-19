@@ -17,12 +17,9 @@ module Bosh
           )
           state_migrator = DeploymentPlan::AgentStateMigrator.new(logger)
 
-          begin
-            existing_instance_state = instance_model.vm_cid ? state_migrator.get_state(instance_model) : {}
-          rescue Bosh::Director::RpcTimeout, Bosh::Director::RpcRemoteException => e
-            raise e, "#{instance_model.name}: #{e.message}" unless options['ignore_unresponsive_agent']
-
-            existing_instance_state = { 'job_state' => 'unresponsive' }
+          existing_instance_state = {}
+          if instance_model.vm_cid
+            existing_instance_state = state_migrator.get_state(instance_model, options['ignore_unresponsive_agent'])
           end
 
           variables_interpolator = ConfigServer::VariablesInterpolator.new

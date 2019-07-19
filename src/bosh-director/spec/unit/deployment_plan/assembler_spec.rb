@@ -77,7 +77,7 @@ module Bosh::Director
         it 'only binds the provided instances' do
           agent_state_migrator = instance_double(DeploymentPlan::AgentStateMigrator)
           allow(DeploymentPlan::AgentStateMigrator).to receive(:new).and_return(agent_state_migrator)
-          expect(agent_state_migrator).to receive(:get_state).with(instance_model_to_override)
+          expect(agent_state_migrator).to receive(:get_state).with(instance_model_to_override, false)
 
           assembler.bind_models(instances: [instance_model_to_override])
         end
@@ -545,43 +545,22 @@ module Bosh::Director
         assembler.bind_models
       end
 
-      context 'when agent get_state raises an error' do
-        [RpcTimeout, RpcRemoteException].each do |error|
-          context "and the error is an #{error}" do
-            let(:instance_model_to_override) { instance_double(Models::Instance, name: 'TestInstance/TestUUID', uuid: 'TestUUID', job: 'override', vm_cid: 'cid', ignore: false) }
+      it 'passes fix into the state_migrator' do
+        allow(deployment_plan).to receive(:deployment_wide_options).and_return(fix: true)
+        instance_model_to_override = instance_double(
+          Models::Instance,
+          name: 'TestInstance/TestUUID',
+          uuid: 'TestUUID',
+          job: 'override',
+          vm_cid: 'cid',
+          ignore: false,
+        )
 
-            context 'when fix is specified' do
+        agent_state_migrator = instance_double(DeploymentPlan::AgentStateMigrator)
+        allow(DeploymentPlan::AgentStateMigrator).to receive(:new).and_return(agent_state_migrator)
+        expect(agent_state_migrator).to receive(:get_state).with(instance_model_to_override, true)
 
-              before do
-                allow(deployment_plan).to receive(:deployment_wide_options).and_return(fix: true)
-              end
-
-              it 'handles it' do
-                agent_state_migrator = instance_double(DeploymentPlan::AgentStateMigrator)
-                allow(DeploymentPlan::AgentStateMigrator).to receive(:new).and_return(agent_state_migrator)
-                expect(agent_state_migrator).to receive(:get_state).and_raise(error)
-
-                expect {
-                  assembler.bind_models(instances: [instance_model_to_override])
-                }.not_to raise_error
-
-              end
-            end
-
-            context 'when fix is not specified' do
-              it 'enhances error message' do
-                agent_state_migrator = instance_double(DeploymentPlan::AgentStateMigrator)
-                allow(DeploymentPlan::AgentStateMigrator).to receive(:new).and_return(agent_state_migrator)
-                expect(agent_state_migrator).to receive(:get_state).and_raise(error, 'initial error')
-
-
-                expect {
-                  assembler.bind_models(instances: [instance_model_to_override])
-                }.to raise_error error, "#{instance_model_to_override.name}: initial error"
-              end
-            end
-          end
-        end
+        assembler.bind_models(instances: [instance_model_to_override])
       end
     end
 
