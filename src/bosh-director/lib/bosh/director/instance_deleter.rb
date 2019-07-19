@@ -26,7 +26,7 @@ module Bosh::Director
         end
 
         async = !instance_plan.unresponsive_agent?
-        vm_deleter.delete_for_instance(instance_model, true, async)
+        VmDeleter.new(@logger, @force, @virtual_delete_vm).delete_for_instance(instance_model, true, async)
 
         unless instance_model.compilation
           error_ignorer.with_force_check do
@@ -89,11 +89,6 @@ module Bosh::Director
     # FIXME: why do we hate dependency injection?
     def error_ignorer
       @error_ignorer ||= ErrorIgnorer.new(@force, @logger)
-    end
-
-    # FIXME: why do we hate dependency injection?
-    def vm_deleter
-      @vm_deleter ||= VmDeleter.new(@logger, @force, @virtual_delete_vm)
     end
   end
 end
