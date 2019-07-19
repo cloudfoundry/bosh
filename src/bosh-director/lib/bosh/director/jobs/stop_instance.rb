@@ -34,12 +34,14 @@ module Bosh::Director
 
         deployment_plan = DeploymentPlan::PlannerFactory.create(@logger)
           .create_from_model(instance_model.deployment)
-        deployment_plan.releases.each(&:bind_model)
 
-        instance_group = deployment_plan.instance_groups.find { |ig| ig.name == instance_model.job }
-        instance_group.jobs.each(&:bind_models)
-
-        instance_plan = construct_instance_plan(instance_model, deployment_plan, instance_group, @options)
+        instance_plan = DeploymentPlan::InstancePlanFromDB.create_from_instance_model(
+          instance_model,
+          deployment_plan,
+          'stopped',
+          @logger,
+          @options,
+        )
 
         event_log = Config.event_log
         event_log_stage = event_log.begin_stage("Stopping instance #{instance_model.job}")

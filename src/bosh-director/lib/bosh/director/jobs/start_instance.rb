@@ -32,7 +32,6 @@ module Bosh::Director
 
         deployment_plan = DeploymentPlan::PlannerFactory.create(@logger)
           .create_from_model(instance_model.deployment)
-        deployment_plan.releases.each(&:bind_model)
 
         instance_group = deployment_plan.instance_groups.find { |ig| ig.name == instance_model.job }
         if instance_group.errand?
@@ -40,9 +39,12 @@ module Bosh::Director
                 'Start can not be run on instances of type errand. Try the bosh run-errand command.'
         end
 
-        instance_group.jobs.each(&:bind_models)
-
-        instance_plan = construct_instance_plan(instance_model, deployment_plan, instance_group)
+        instance_plan = DeploymentPlan::InstancePlanFromDB.create_from_instance_model(
+          instance_model,
+          deployment_plan,
+          'started',
+          @logger,
+        )
 
         event_log = Config.event_log
         if instance_model.vm_cid.nil?
@@ -114,38 +116,6 @@ module Bosh::Director
 
         local_dns_manager = LocalDnsManager.create(Config.root_domain, @logger)
         local_dns_manager.update_dns_record_for_instance(instance_plan)
-      end
-
-      def construct_instance_plan(instance_model, deployment_plan, instance_group)
-        desired_instance = DeploymentPlan::DesiredInstance.new(
-          instance_group,
-          deployment_plan,
-          nil,
-          instance_model.index,
-          'started',
-        )
-
-        state_migrator = DeploymentPlan::AgentStateMigrator.new(@logger)
-        existing_instance_state = instance_model.vm_cid ? state_migrator.get_state(instance_model) : {}
-
-        variables_interpolator = ConfigServer::VariablesInterpolator.new
-
-        instance_repository = DeploymentPlan::InstanceRepository.new(@logger, variables_interpolator)
-        instance = instance_repository.build_instance_from_model(
-          instance_model,
-          existing_instance_state,
-          desired_instance.state,
-          desired_instance.deployment,
-        )
-
-        DeploymentPlan::InstancePlanFromDB.new(
-          existing_instance: instance_model,
-          desired_instance: desired_instance,
-          instance: instance,
-          variables_interpolator: variables_interpolator,
-          tags: instance.deployment_model.tags,
-          link_provider_intents: deployment_plan.link_provider_intents,
-        )
       end
 
       def add_event(action, instance_model, parent_id = nil, error = nil)

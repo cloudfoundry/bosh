@@ -477,40 +477,6 @@ module Bosh
           spec.select { |k, _| %w[name templates].include?(k) }
         end
       end
-
-      class InstancePlanFromDB < InstancePlan
-        def network_plans
-          @instance.existing_network_reservations.map do |reservation|
-            DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation, existing: true)
-          end
-        end
-
-        def network_settings_hash
-          @existing_instance.spec_p('networks')
-        end
-
-        def spec
-          InstanceSpec.create_from_database(@existing_instance.spec, @instance, @variables_interpolator)
-        end
-
-        def needs_disk?
-          @existing_instance.managed_persistent_disk_cid
-        end
-
-        def templates
-          @existing_instance.templates.map do |template_model|
-            model_release_version = @instance.model.deployment.release_versions.find do |release_version|
-              release_version.templates.map(&:id).include? template_model.id
-            end
-            release_spec = { 'name' => model_release_version.release.name, 'version' => model_release_version.version }
-            job_release_version = ReleaseVersion.parse(@instance.model.deployment, release_spec)
-            job_release_version.bind_model
-            template = Job.new(job_release_version, template_model.name)
-            template.bind_existing_model(template_model)
-            template
-          end
-        end
-      end
     end
   end
 end
