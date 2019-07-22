@@ -127,23 +127,6 @@ describe 'cli: deploy uploading', type: :integration do
       expect(output).to match /stat \/goobers: no such file or directory/
       expect(output).not_to match /Succeeded/
     end
-
-    context 'the release has already been uploaded before' do
-      it 'does not raise an error when the file is missing' do
-        deployment_manifest = yaml_file(
-          'deployment_manifest',
-          Bosh::Spec::NewDeployments.local_release_manifest('file://' + release_path, 1),
-        )
-        bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal')
-
-        deployment_manifest = yaml_file(
-          'deployment_manifest',
-          Bosh::Spec::NewDeployments.local_release_manifest('file:///goobers', 1),
-        )
-        output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal')
-        expect(output).to match(%r{Release 'test_release\/1' already exists})
-      end
-    end
   end
 
   context 'with a local release directory' do
