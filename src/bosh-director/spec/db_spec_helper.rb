@@ -51,7 +51,7 @@ module DBSpecHelper
       @db_helper.create_db
 
       Sequel.default_timezone = :utc
-      @db = Sequel.connect(@db_helper.connection_string, {:max_connections => 32, :pool_timeout => 10})
+      @db = Sequel.connect(@db_helper.connection_string, max_connections: 32, pool_timeout: 10, timeout: 10)
     end
 
     def disconnect_database
