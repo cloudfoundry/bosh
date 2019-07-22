@@ -55,7 +55,7 @@ module SpecHelper
 
       Sequel.extension :migration
 
-      @db = Sequel.sqlite(:database => nil, :max_connections => 32, :pool_timeout => 10)
+      @db = Sequel.sqlite(database: nil, max_connections: 32, pool_timeout: 10, timeout: 5000)
       @db.loggers << @logger
       Bosh::Registry.db = @db
 
