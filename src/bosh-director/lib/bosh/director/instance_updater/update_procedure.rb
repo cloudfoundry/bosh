@@ -109,6 +109,7 @@ module Bosh::Director
         @logger.info("Detaching instance #{instance}")
         instance_model = instance_plan.new? ? instance_plan.instance.model : instance_plan.existing_instance
         DeploymentPlan::Steps::UnmountInstanceDisksStep.new(instance_model).perform(instance_report)
+        DeploymentPlan::Steps::DetachInstanceDisksStep.new(instance_model).perform(instance_report)
         DeploymentPlan::Steps::DeleteVmStep.new(true, false, Config.enable_virtual_delete_vms).perform(instance_report)
       end
 

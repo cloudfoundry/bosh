@@ -26,40 +26,40 @@ module Bosh::Director
       let(:agent_id) { Sham.uuid }
       let(:already_detached?) { false }
       let(:blobstore) { nil }
-      let(:delete_vm_step) { double(Steps::DeleteVmStep, perform: nil) }
-      let(:desired_instance) { double(DesiredInstance, instance_group: instance_group) }
-      let(:disk_manager) { double(DiskManager, update_persistent_disk: nil) }
+      let(:delete_vm_step) { instance_double(Steps::DeleteVmStep, perform: nil) }
+      let(:desired_instance) { instance_double(DesiredInstance, instance_group: instance_group) }
+      let(:disk_manager) { instance_double(DiskManager, update_persistent_disk: nil) }
       let(:dns_changed?) { false }
       let(:dns_record_info) { nil }
-      let(:dns_state_updater) { double(DirectorDnsStateUpdater, update_dns_for_instance: nil) }
-      let(:instance_group) { double(InstanceGroup, update: nil) }
+      let(:dns_state_updater) { instance_double(DirectorDnsStateUpdater, update_dns_for_instance: nil) }
+      let(:instance_group) { instance_double(InstanceGroup, update: nil) }
       let(:instance_model_state) { 'not-stopped' }
       let(:instance_name) { 'bob' }
       let(:instance_new?) { false }
       let(:instance_plan_changes) { [] }
-      let(:instance_report) { double(Stages::Report, :vm= => nil) }
+      let(:instance_report) { instance_double(Stages::Report, :vm= => nil) }
       let(:instance_state) { 'definitely-not-stopped' }
       let(:instance_vms) { [] }
       let(:ip_provider) { nil }
-      let(:links_manager) { double(Links::LinksManager, bind_links_to_instance: nil) }
-      let(:logger) { double(Logging::Logger, debug: nil, info: nil) }
+      let(:links_manager) { instance_double(Links::LinksManager, bind_links_to_instance: nil) }
       let(:needs_recreate) { nil }
       let(:needs_shutting_down?) { false }
-      let(:network_settings) { double(NetworkSettings, dns_record_info: nil) }
+      let(:network_settings) { instance_double(NetworkSettings, dns_record_info: nil) }
       let(:options) { { canary: 'polly' } }
-      let(:prepare_instance_step) { double(Steps::PrepareInstanceStep, name: 'bob', perform: nil) }
-      let(:recreate_handler) { double(InstanceUpdater::RecreateHandler, perform: nil) }
+      let(:prepare_instance_step) { instance_double(Steps::PrepareInstanceStep, perform: nil) }
+      let(:recreate_handler) { instance_double(InstanceUpdater::RecreateHandler, perform: nil) }
       let(:should_create_swap_delete?) { false }
-      let(:state_applier) { double(InstanceUpdater::StateApplier, apply: nil) }
-      let(:unmount_instance_disk_step) { double(Steps::UnmountInstanceDisksStep, perform: nil) }
+      let(:state_applier) { instance_double(InstanceUpdater::StateApplier, apply: nil) }
+      let(:unmount_instance_disk_step) { instance_double(Steps::UnmountInstanceDisksStep, perform: nil) }
+      let(:detach_instance_disk_step) { instance_double(Steps::DetachInstanceDisksStep, perform: nil) }
       let(:vm_creator) { nil }
 
       let(:rendered_templates_persistor) do
-        double(RenderedTemplatesPersister, persist: nil)
+        instance_double(RenderedTemplatesPersister, persist: nil)
       end
 
       let(:instance_plan) do
-        double(
+        instance_double(
           InstancePlan,
           changes: instance_plan_changes,
           new?: instance_new?,
@@ -77,7 +77,7 @@ module Bosh::Director
       end
 
       let(:instance_model) do
-        double(
+        instance_double(
           Models::Instance,
           state: instance_model_state,
           active_vm: active_vm,
@@ -88,14 +88,13 @@ module Bosh::Director
       end
 
       let(:instance) do
-        double(
+        instance_double(
           DeploymentPlan::Instance,
           update_variable_set: nil,
           state: instance_state,
           deployment_model: nil,
           model: instance_model,
           update_instance_settings: nil,
-          update_instance: nil,
           update_state: nil,
         )
       end
@@ -104,6 +103,7 @@ module Bosh::Director
         allow(InstanceUpdater::RecreateHandler).to receive(:new).and_return(recreate_handler)
         allow(Steps::PrepareInstanceStep).to receive(:new).and_return(prepare_instance_step)
         allow(Steps::UnmountInstanceDisksStep).to receive(:new).and_return(unmount_instance_disk_step)
+        allow(Steps::DetachInstanceDisksStep).to receive(:new).and_return(detach_instance_disk_step)
         allow(Steps::DeleteVmStep).to receive(:new).and_return(delete_vm_step)
         allow(Api::SnapshotManager).to receive(:take_snapshot)
         allow(InstanceUpdater::StateApplier).to receive(:new).and_return(state_applier)
@@ -341,8 +341,9 @@ module Bosh::Director
                 let(:instance_state) { 'absolutely-positively-not-stopped' }
 
                 it 'does not perform any steps' do
-                  expect(Steps::UnmountInstanceDisksStep).to_not receive(:new)
-                  expect(Steps::DeleteVmStep).to_not have_received(:new)
+                  expect(unmount_instance_disk_step).to_not have_received(:perform)
+                  expect(detach_instance_disk_step).to_not have_received(:perform)
+                  expect(delete_vm_step).to_not have_received(:perform)
                 end
               end
 
@@ -350,8 +351,9 @@ module Bosh::Director
                 let(:instance_state) { 'detached' }
 
                 it 'does the steps' do
-                  expect(Steps::UnmountInstanceDisksStep).to have_received(:new)
-                  expect(Steps::DeleteVmStep).to have_received(:new)
+                  expect(unmount_instance_disk_step).to have_received(:perform)
+                  expect(detach_instance_disk_step).to have_received(:perform)
+                  expect(delete_vm_step).to have_received(:perform)
                 end
               end
             end
