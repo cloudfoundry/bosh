@@ -415,6 +415,8 @@ module Bosh::Director
         options['recreate_persistent_disks'] = true if params['recreate_persistent_disks'] == 'true'
         options['skip_drain'] = params['skip_drain'] if params['skip_drain']
         options['fix'] = true if params['fix'] == 'true'
+        options['canaries'] = params[:canaries] if params['canaries']
+        options['max_in_flight'] = params[:max_in_flight] if params['max_in_flight']
         options['scopes'] = token_scopes
 
         # since authorizer does not look at manifest payload for deployment name
