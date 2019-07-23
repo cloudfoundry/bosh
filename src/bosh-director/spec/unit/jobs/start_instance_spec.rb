@@ -120,10 +120,11 @@ module Bosh::Director
       it 'should start the instance' do
         job = Jobs::StartInstance.new(deployment.name, instance_model.id, {})
         expect(instance_model.state).to eq 'stopped'
-        job.perform
+        result_msg = job.perform
 
         expect(state_applier).to have_received(:apply)
         expect(instance_model.reload.state).to eq 'started'
+        expect(result_msg).to eq 'foobar/test-uuid'
       end
 
       it 'obtains a deployment lock' do

@@ -55,6 +55,8 @@ module Bosh::Director
             detach_instance(instance_model, instance_plan)
           end
         end
+
+        instance_plan.instance.model.name
       end
 
       private

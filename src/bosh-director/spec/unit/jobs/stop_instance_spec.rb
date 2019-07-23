@@ -89,7 +89,7 @@ module Bosh::Director
         job = Jobs::StopInstance.new(deployment.name, instance.id, {})
         expect(instance.state).to eq 'started'
 
-        job.perform
+        result_msg = job.perform
 
         pre_stop_env = { 'env' => {
           'BOSH_VM_NEXT_STATE' => 'keep',
@@ -102,6 +102,7 @@ module Bosh::Director
         expect(agent_client).to have_received(:stop)
         expect(agent_client).to have_received(:run_script).with('post-stop', {})
         expect(instance.reload.state).to eq 'stopped'
+        expect(result_msg).to eq 'foobar/test-uuid'
       end
 
       it 'should stop the instance and detach the VM when --hard is specified' do

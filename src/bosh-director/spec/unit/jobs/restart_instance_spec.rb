@@ -7,8 +7,8 @@ module Bosh::Director
     let(:manifest) { Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups }
     let(:deployment) { Models::Deployment.make(name: 'simple', manifest: YAML.dump(manifest)) }
 
-    let(:stop_instance_job) { instance_double(Jobs::StopInstance, perform_without_lock: nil) }
-    let(:start_instance_job) { instance_double(Jobs::StartInstance, perform_without_lock: nil) }
+    let(:stop_instance_job) { instance_double(Jobs::StopInstance, perform_without_lock: instance_model.name) }
+    let(:start_instance_job) { instance_double(Jobs::StartInstance, perform_without_lock: instance_model.name) }
 
     let(:instance_model) do
       Models::Instance.make(
@@ -36,12 +36,13 @@ module Bosh::Director
     describe 'perform' do
       it 'should restart the instance' do
         job = Jobs::RestartInstance.new(deployment.name, instance_model.id, {})
-        job.perform
+        result_msg = job.perform
 
         expect(Jobs::StopInstance).to have_received(:new).with(deployment.name, instance_model.id, {})
         expect(stop_instance_job).to have_received(:perform_without_lock)
         expect(Jobs::StartInstance).to have_received(:new).with(deployment.name, instance_model.id, {})
         expect(start_instance_job).to have_received(:perform_without_lock)
+        expect(result_msg).to eq 'foobar/test-uuid'
       end
 
       it 'respects skip_drain option' do

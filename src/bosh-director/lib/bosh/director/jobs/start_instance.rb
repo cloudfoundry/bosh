@@ -60,6 +60,8 @@ module Bosh::Director
         event_log_stage.advance_and_track(instance_plan.instance.model.to_s) do
           start(instance_plan, instance_model)
         end
+
+        instance_plan.instance.model.name
       end
 
       private
@@ -123,15 +125,15 @@ module Bosh::Director
         deployment_name = instance_model.deployment.name
 
         event = Config.current_job.event_manager.create_event(
-          parent_id:   parent_id,
-          user:        Config.current_job.username,
-          action:      action,
+          parent_id: parent_id,
+          user: Config.current_job.username,
+          action: action,
           object_type: 'instance',
           object_name: instance_name,
-          task:        Config.current_job.task_id,
-          deployment:  deployment_name,
-          instance:    instance_name,
-          error:       error,
+          task: Config.current_job.task_id,
+          deployment: deployment_name,
+          instance: instance_name,
+          error: error,
         )
         event.id
       end
