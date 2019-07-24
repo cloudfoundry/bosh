@@ -29,8 +29,12 @@ module Bosh::Director
         instance_model = Models::Instance.find(id: @instance_id)
         raise InstanceNotFound if instance_model.nil?
 
-        return if instance_model.stopped? && !@options['hard'] # stopped already, and we didn't pass in hard to change it
-        return if instance_model.detached? # implies stopped
+        result_msg = instance_model.name
+
+        if (instance_model.stopped? && !@options['hard']) || instance_model.detached?
+          # stopped already, and we didn't pass in hard to remove the vm or it's detached (stopped)
+          return result_msg + ' already stopped'
+        end
 
         deployment_plan = DeploymentPlan::PlannerFactory.create(@logger)
           .create_from_model(instance_model.deployment)
@@ -55,8 +59,7 @@ module Bosh::Director
             detach_instance(instance_model, instance_plan)
           end
         end
-
-        instance_plan.instance.model.name
+        result_msg
       end
 
       private

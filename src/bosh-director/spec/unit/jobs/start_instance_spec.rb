@@ -164,7 +164,13 @@ module Bosh::Director
 
       context 'when the instance is already started' do
         let(:instance_model) do
-          Models::Instance.make(deployment: deployment, job: 'foobar', state: 'started', spec_json: instance_spec.to_json)
+          Models::Instance.make(
+            deployment: deployment,
+            job: 'foobar',
+            uuid: 'test-uuid',
+            state: 'started',
+            spec_json: instance_spec.to_json,
+          )
         end
 
         context 'and the agent reports the state as running' do
@@ -174,11 +180,12 @@ module Bosh::Director
 
           it 'does nothing' do
             job = Jobs::StartInstance.new(deployment.name, instance_model.id, {})
-            job.perform
+            result_msg = job.perform
 
             expect(state_applier).to_not have_received(:apply)
             expect(instance_model.reload.state).to eq 'started'
             expect(event_manager).to_not receive(:create_event)
+            expect(result_msg).to eq 'foobar/test-uuid already started'
           end
         end
 

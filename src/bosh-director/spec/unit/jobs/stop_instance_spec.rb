@@ -168,7 +168,15 @@ module Bosh::Director
       end
 
       context 'when the instance is already soft stopped' do
-        let(:instance) { Models::Instance.make(deployment: deployment, job: 'foobar', state: 'stopped', spec_json: spec.to_json) }
+        let(:instance) do
+          Models::Instance.make(
+            deployment: deployment,
+            uuid: 'test-uuid',
+            job: 'foobar',
+            state: 'stopped',
+            spec_json: spec.to_json,
+          )
+        end
 
         it 'detaches the vm if --hard is specified' do
           job = Jobs::StopInstance.new(deployment.name, instance.id, 'hard' => true)
@@ -179,7 +187,7 @@ module Bosh::Director
 
         it 'does nothing' do
           job = Jobs::StopInstance.new(deployment.name, instance.id, 'hard' => false)
-          job.perform
+          result_msg = job.perform
 
           expect(agent_client).to_not have_received(:run_script).with('pre-stop', anything)
           expect(agent_client).to_not have_received(:drain).with('shutdown', anything)
@@ -187,15 +195,16 @@ module Bosh::Director
           expect(agent_client).to_not have_received(:run_script).with('post-stop', {})
           expect(instance.reload.state).to eq 'stopped'
           expect(event_manager).to_not receive(:create_event)
+          expect(result_msg).to eq 'foobar/test-uuid already stopped'
         end
       end
 
       context 'when the instance is already hard stopped' do
-        let(:instance) { Models::Instance.make(deployment: deployment, job: 'foobar', state: 'detached') }
+        let(:instance) { Models::Instance.make(deployment: deployment, uuid: 'test-uuid', job: 'foobar', state: 'detached') }
 
         it 'does nothing' do
           job = Jobs::StopInstance.new(deployment.name, instance.id, 'hard' => true)
-          job.perform
+          result_msg = job.perform
 
           expect(agent_client).to_not have_received(:run_script).with('pre-stop', anything)
           expect(agent_client).to_not have_received(:drain).with('shutdown', anything)
@@ -206,6 +215,7 @@ module Bosh::Director
           expect(delete_vm_step).to_not have_received(:perform)
           expect(instance.reload.state).to eq 'detached'
           expect(event_manager).to_not receive(:create_event)
+          expect(result_msg).to eq 'foobar/test-uuid already stopped'
         end
       end
 

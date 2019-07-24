@@ -46,6 +46,9 @@ module Bosh::Director
           @logger,
         )
 
+        result_msg = instance_plan.instance.model.name
+        return result_msg + ' already started' unless instance_plan.state_changed?
+
         event_log = Config.event_log
         if instance_model.vm_cid.nil?
           event_log_stage = event_log.begin_stage("Creating VM for instance #{instance_model.job}")
@@ -54,14 +57,12 @@ module Bosh::Director
           end
         end
 
-        return unless instance_plan.state_changed?
-
         event_log_stage = event_log.begin_stage("Starting instance #{instance_model.job}")
         event_log_stage.advance_and_track(instance_plan.instance.model.to_s) do
           start(instance_plan, instance_model)
         end
 
-        instance_plan.instance.model.name
+        result_msg
       end
 
       private
