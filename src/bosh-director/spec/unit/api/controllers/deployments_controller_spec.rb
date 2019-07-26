@@ -452,12 +452,12 @@ module Bosh::Director
             let(:job_queue) { instance_double('Bosh::Director::JobQueue', enqueue: task) }
             before { allow(JobQueue).to receive(:new).and_return(job_queue) }
 
-            it 'enqueues a StopInstance task' do
+            it 'enqueues a UpdateInstance task' do
               expect(job_queue).to receive(:enqueue).with(
                 'admin',
-                Jobs::StopInstance,
+                Jobs::UpdateInstance,
                 'stop instance',
-                ['test-deployment', instance.id, { hard: false, skip_drain: false }],
+                ['test-deployment', instance.id, 'stop', { hard: false, skip_drain: false }],
                 deployment,
                 '',
               ).and_return(task)
@@ -472,12 +472,12 @@ module Bosh::Director
             let(:job_queue) { instance_double('Bosh::Director::JobQueue', enqueue: task) }
             before { allow(JobQueue).to receive(:new).and_return(job_queue) }
 
-            it 'enqueues a StopInstance task with the correct options' do
+            it 'enqueues a UpdateInstance task with the correct options' do
               expect(job_queue).to receive(:enqueue).with(
                 'admin',
-                Jobs::StopInstance,
+                Jobs::UpdateInstance,
                 'stop instance',
-                ['test-deployment', instance.id, { hard: true, skip_drain: true }],
+                ['test-deployment', instance.id, 'stop', { hard: true, skip_drain: true }],
                 deployment,
                 '',
               ).and_return(task)

@@ -153,7 +153,7 @@ module Bosh::Director
                 Bosh::Director::Jobs.constants.each_with_object([]) do |const, memo|
                   klass = Bosh::Director::Jobs.const_get(const)
                   memo << klass if klass.ancestors.include?(Bosh::Director::Jobs::BaseJob)
-                end - [Bosh::Director::Jobs::BaseJob]
+                end - [Bosh::Director::Jobs::BaseJob, Bosh::Director::Jobs::UpdateInstance]
               ).map(&:job_type).map do |job_type|
                   Models::Task.make(type: job_type)
                 end

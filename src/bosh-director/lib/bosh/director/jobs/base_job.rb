@@ -45,7 +45,7 @@ module Bosh::Director
         end
       end
 
-      def begin_stage(stage_name, n_steps)
+      def begin_stage(stage_name, n_steps = nil)
         @event_log_stage = Config.event_log.begin_stage(stage_name, n_steps)
         logger.info(stage_name)
       end

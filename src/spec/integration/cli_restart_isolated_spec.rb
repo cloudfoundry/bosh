@@ -18,8 +18,8 @@ describe 'restart command', type: :integration do
 
     it 'restarts the specified instance' do
       output = isolated_restart(instance_group: 'foobar', index: 0)
-      expect(output).to match(/Stopping instance foobar: foobar.* \(0\)/)
-      expect(output).to match(/Starting instance foobar: foobar.* \(0\)/)
+      expect(output).to match(/Updating instance foobar.* \(0\): Stopping instance/)
+      expect(output).to match(/Updating instance foobar.* \(0\): Starting instance/)
 
       expect(instance_states).to eq(
         'foobar/0' => 'running',
@@ -36,7 +36,8 @@ describe 'restart command', type: :integration do
       it 'creates the missing vm and starts the instance' do
         expect do
           output = isolated_restart(instance_group: 'foobar', index: 0)
-          expect(output).to match(/Starting instance foobar: foobar.* \(0\)/)
+          expect(output).to match(/Updating instance foobar.* \(0\): Creating VM/)
+          expect(output).to match(/Updating instance foobar.* \(0\): Starting instance/)
         end.to change { instance_states }
           .from(
             'foobar/1' => 'running',
@@ -53,7 +54,7 @@ describe 'restart command', type: :integration do
         isolated_restart(instance_group: 'foobar', index: 0)
 
         output = deploy_simple_manifest
-        expect(output).not_to include('foobar')
+        expect(output).to_not match(/Updating instance foobar.* \(0\)/)
       end
     end
   end
@@ -92,15 +93,15 @@ describe 'restart command', type: :integration do
       it 'restarting only touches the specified instance' do
         isolated_stop(instance_group: 'foobar', index: 0)
         output = isolated_restart(instance_group: 'foobar', index: 0)
-        expect(output).to match(/instance foobar: foobar.* \(0\)/)
-        expect(output).to_not match(/instance bad-instance-group: bad-instance-group.* \(0\)/)
+        expect(output).to match(/Updating instance foobar.* \(0\)/)
+        expect(output).to_not match(/Updating instance bad-instance-group.* \(0\)/)
       end
 
       it 'only restarts the specified hard stopped instance' do
         isolated_stop(instance_group: 'foobar', index: 0, params: { hard: true })
         output = isolated_restart(instance_group: 'foobar', index: 0)
-        expect(output).to match(/instance foobar: foobar.* \(0\)/)
-        expect(output).to_not match(/instance bad-instance-group: bad-instance-group.* \(0\)/)
+        expect(output).to match(/Updating instance foobar.* \(0\)/)
+        expect(output).to_not match(/Updating instance bad-instance-group.* \(0\)/)
       end
     end
   end

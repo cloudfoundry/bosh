@@ -41,7 +41,7 @@ describe 'stop command', type: :integration do
       it 'stops the indexed job' do
         expect do
           output = isolated_stop(instance_group: 'foobar', index: 0)
-          expect(output).to match(/Stopping instance foobar: foobar.* \(0\)/)
+          expect(output).to match(/Updating instance foobar.* \(0\): Stopping instance/)
         end.to change { vm_states }
           .from(
             'another-job/0' => 'running',
@@ -61,7 +61,7 @@ describe 'stop command', type: :integration do
 
         expect do
           output = isolated_stop(instance_group: 'foobar', id: instance_uuid)
-          expect(output).to match %r{Stopping instance foobar: foobar/#{instance_uuid} \(\d\)}
+          expect(output).to match %r{Updating instance foobar/#{instance_uuid} \(\d\): Stopping instance}
         end.to change { vm_states }
           .from(
             'another-job/0' => 'running',
@@ -99,8 +99,8 @@ describe 'stop command', type: :integration do
       it 'deletes the VM(s)' do
         expect do
           output = isolated_stop(instance_group: 'foobar', index: 0, params: { hard: true })
-          expect(output).to match %r{Stopping instance foobar: foobar/.* \(0\)}
-          expect(output).to match 'Deleting VM: '
+          expect(output).to match(/Updating instance foobar.* \(0\): Stopping instance/)
+          expect(output).to match(/Updating instance foobar.* \(0\): Deleting VM/)
         end.to change { director.vms.count }.by(-1)
         expect do
           deploy(manifest_hash: manifest_hash)
@@ -156,8 +156,8 @@ describe 'stop command', type: :integration do
 
       it 'only stops the indexed job' do
         output = isolated_stop(instance_group: 'foobar', index: 0)
-        expect(output).not_to include('another-job')
-        expect(output).to include('foobar')
+        expect(output).to_not match(/Updating instance another-job.* \(0\): Stopping instance/)
+        expect(output).to match(/Updating instance foobar.* \(0\): Stopping instance/)
       end
     end
   end

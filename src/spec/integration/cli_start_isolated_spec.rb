@@ -44,7 +44,7 @@ describe 'start command', type: :integration do
 
         expect do
           output = isolated_start(instance_group: 'foobar', index: 0)
-          expect(output).to match(/Starting instance foobar: foobar.* \(0\)/)
+          expect(output).to match(/Updating instance foobar.* \(0\): Starting instance/)
         end.to change { job_states }
           .from(
             'foobar/0' => 'stopped',
@@ -68,7 +68,7 @@ describe 'start command', type: :integration do
 
         expect do
           output = isolated_start(instance_group: 'foobar', id: instance_uuid)
-          expect(output).to match %r{Starting instance foobar: foobar/#{instance_uuid} \(\d\)}
+          expect(output).to match(/Updating instance foobar.* \(1\): Starting instance/)
         end.to change { job_states }
           .from(
             'foobar/0' => 'running',
@@ -99,7 +99,8 @@ describe 'start command', type: :integration do
       it 'creates the missing vm and starts the instance' do
         expect do
           output = isolated_start(instance_group: 'foobar', index: 0)
-          expect(output).to match(/Starting instance foobar: foobar.* \(0\)/)
+          expect(output).to match(/Updating instance foobar.* \(0\): Creating VM/)
+          expect(output).to match(/Updating instance foobar.* \(0\): Starting instance/)
         end.to change { job_states }
           .from(
             'foobar/1' => 'running',
@@ -155,15 +156,15 @@ describe 'start command', type: :integration do
       it 'starting only touches the specified instance' do
         isolated_stop(instance_group: 'foobar', index: 0)
         output = isolated_start(instance_group: 'foobar', index: 0)
-        expect(output).to match(/Starting instance foobar: foobar.* \(0\)/)
-        expect(output).to_not match(/Starting instance bad-instance-group: bad-instance-group.* \(0\)/)
+        expect(output).to match(/Updating instance foobar.* \(0\): Starting instance/)
+        expect(output).to_not match(/Updating instance bad-instance-group.* \(0\): Starting instance/)
       end
 
       it 'only starts the specified hard stopped instance' do
         isolated_stop(instance_group: 'foobar', index: 0, params: { hard: true })
         output = isolated_start(instance_group: 'foobar', index: 0)
-        expect(output).to match(/Starting instance foobar: foobar.* \(0\)/)
-        expect(output).to_not match(/Starting instance bad-instance-group: bad-instance-group.* \(0\)/)
+        expect(output).to match(/Updating instance foobar.* \(0\): Starting instance/)
+        expect(output).to_not match(/Updating instance bad-instance-group.* \(0\): Starting instance/)
       end
     end
 

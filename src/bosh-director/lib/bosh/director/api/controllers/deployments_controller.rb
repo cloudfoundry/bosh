@@ -128,9 +128,9 @@ module Bosh::Director
 
         task = JobQueue.new.enqueue(
           current_user,
-          Jobs::StopInstance,
+          Jobs::UpdateInstance,
           'stop instance',
-          [deployment.name, instance.id, options],
+          [deployment.name, instance.id, 'stop', options],
           deployment,
           @current_context_id,
         )
@@ -144,9 +144,9 @@ module Bosh::Director
 
         task = JobQueue.new.enqueue(
           current_user,
-          Jobs::StartInstance,
+          Jobs::UpdateInstance,
           'start instance',
-          [deployment.name, instance.id, {}],
+          [deployment.name, instance.id, 'start', {}],
           deployment,
           @current_context_id,
         )
@@ -163,9 +163,9 @@ module Bosh::Director
 
         task = JobQueue.new.enqueue(
           current_user,
-          Jobs::RestartInstance,
+          Jobs::UpdateInstance,
           'restart instance',
-          [deployment.name, instance.id, options],
+          [deployment.name, instance.id, 'restart', options],
           deployment,
           @current_context_id,
         )
@@ -184,9 +184,9 @@ module Bosh::Director
 
         task = JobQueue.new.enqueue(
           current_user,
-          Jobs::RestartInstance,
+          Jobs::UpdateInstance,
           'recreate instance',
-          [deployment.name, instance.id, options],
+          [deployment.name, instance.id, 'restart', options],
           deployment,
           @current_context_id,
         )
