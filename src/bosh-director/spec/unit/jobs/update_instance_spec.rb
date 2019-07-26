@@ -449,11 +449,21 @@ module Bosh::Director
         expect(end_event.parent_id).to eq(begin_event.id)
       end
 
+      it 'creates a restart notification' do
+        job = Jobs::UpdateInstance.new(deployment.name, instance_model.id, 'restart', {})
+        expect(notifier).to receive(:send_begin_instance_event).with('foobar/test-uuid', 'restart')
+        expect(notifier).to receive(:send_end_instance_event).with('foobar/test-uuid', 'restart')
+        expect(notifier).to_not receive(:send_begin_instance_event).with('foobar/test-uuid', 'start')
+        expect(notifier).to_not receive(:send_end_instance_event).with('foobar/test-uuid', 'start')
+        expect(notifier).to_not receive(:send_begin_instance_event).with('foobar/test-uuid', 'stop')
+        expect(notifier).to_not receive(:send_end_instance_event).with('foobar/test-uuid', 'stop')
+        job.perform
+      end
+
       context 'when the option hard is set to true' do
         it 'recreates the instance' do
           job = Jobs::UpdateInstance.new(deployment.name, instance_model.id, 'restart', 'hard' => true)
           result_msg = job.perform
-
           expect(Stopper).to have_received(:stop).with(
             intent: :delete_vm,
             instance_plan: anything,
@@ -479,6 +489,17 @@ module Bosh::Director
           end_event = Models::Event.last
           expect(end_event.action).to eq('recreate')
           expect(end_event.parent_id).to eq(begin_event.id)
+        end
+
+        it 'creates a recreate notification' do
+          job = Jobs::UpdateInstance.new(deployment.name, instance_model.id, 'restart', 'hard' => true)
+          expect(notifier).to receive(:send_begin_instance_event).with('foobar/test-uuid', 'recreate')
+          expect(notifier).to receive(:send_end_instance_event).with('foobar/test-uuid', 'recreate')
+          expect(notifier).to_not receive(:send_begin_instance_event).with('foobar/test-uuid', 'start')
+          expect(notifier).to_not receive(:send_end_instance_event).with('foobar/test-uuid', 'start')
+          expect(notifier).to_not receive(:send_begin_instance_event).with('foobar/test-uuid', 'stop')
+          expect(notifier).to_not receive(:send_end_instance_event).with('foobar/test-uuid', 'stop')
+          job.perform
         end
       end
 

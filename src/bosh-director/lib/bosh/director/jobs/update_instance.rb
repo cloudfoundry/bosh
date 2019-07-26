@@ -25,13 +25,22 @@ module Bosh::Director
 
           begin_stage("Updating instance #{instance_model}")
 
-          case @action
-          when 'stop'
-            stop_instance(instance_model)
-          when 'start'
-            start_instance(instance_model)
-          when 'restart'
-            restart_instance(instance_model)
+          hm_label = label
+          notifier = DeploymentPlan::Notifier.new(@deployment_name, Config.nats_rpc, @logger)
+          notifier.send_begin_instance_event(instance_model.name, hm_label)
+          begin
+            case @action
+            when 'stop'
+              stop_instance(instance_model)
+            when 'start'
+              start_instance(instance_model)
+            when 'restart'
+              restart_instance(instance_model, hm_label)
+            end
+          rescue StandardError => e
+            raise e
+          ensure
+            notifier.send_end_instance_event(instance_model.name, hm_label)
           end
 
           instance_model.name
@@ -39,6 +48,19 @@ module Bosh::Director
       end
 
       private
+
+      def label
+        case @action
+        when 'stop'
+          label = @action
+        when 'start'
+          label = @action
+        when 'restart'
+          label = @options['hard'] ? 'recreate' : 'restart'
+        end
+
+        label
+      end
 
       def stop_instance(instance_model)
         return if instance_model.stopped? && !@options['hard'] # stopped already, and we didn't pass in hard to change it
@@ -96,18 +118,15 @@ module Bosh::Director
         end
       end
 
-      def restart_instance(instance_model)
-        label = @options['hard'] ? 'recreate' : 'restart'
-        begin
-          parent_event_id = add_event(label, instance_model)
+      def restart_instance(instance_model, label)
+        parent_event_id = add_event(label, instance_model)
 
-          stop_instance(instance_model)
-          start_instance(instance_model)
-        rescue StandardError => e
-          raise e
-        ensure
-          add_event(label, instance_model, parent_event_id, e)
-        end
+        stop_instance(instance_model)
+        start_instance(instance_model)
+      rescue StandardError => e
+        raise e
+      ensure
+        add_event(label, instance_model, parent_event_id, e)
       end
 
       def detach_instance(instance_model, instance_plan)
@@ -125,9 +144,7 @@ module Bosh::Director
       def stop(instance_model, instance_plan)
         intent = @options['hard'] ? :delete_vm : :keep_vm
         target_state = @options['hard'] ? 'detached' : 'stopped'
-        notifier = DeploymentPlan::Notifier.new(@deployment_name, Config.nats_rpc, @logger)
         parent_event = add_event('stop', instance_model)
-        notifier.send_begin_instance_event(instance_model.name, 'stop')
 
         Stopper.stop(intent: intent, instance_plan: instance_plan, target_state: target_state, logger: @logger)
 
@@ -138,16 +155,13 @@ module Bosh::Director
         raise e
       ensure
         add_event('stop', instance_model, parent_event, e) if parent_event
-        notifier.send_end_instance_event(instance_model.name, 'stop')
       end
 
       def start(instance_plan, instance_model)
         blobstore_client = App.instance.blobstores.blobstore
         agent = AgentClient.with_agent_id(instance_model.agent_id, instance_model.name)
 
-        notifier = DeploymentPlan::Notifier.new(@deployment_name, Config.nats_rpc, @logger)
         parent_event = add_event('start', instance_model)
-        notifier.send_begin_instance_event(instance_model.name, 'start')
 
         templates_persister = RenderedTemplatesPersister.new(blobstore_client, @logger)
         templates_persister.persist(instance_plan)
@@ -164,7 +178,6 @@ module Bosh::Director
         raise e
       ensure
         add_event('start', instance_model, parent_event, e) if parent_event
-        notifier.send_end_instance_event(instance_model.name, 'start')
       end
 
       def create_vm(instance_plan, deployment_plan, instance_model)
