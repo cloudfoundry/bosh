@@ -89,7 +89,7 @@ module Bosh::Director
 
         not_found do
           status(404)
-          "Endpoint '#{request.path}' not found. Please consider upgrading your director"
+          "Endpoint '#{request.path}' not found."
         end
 
         error do

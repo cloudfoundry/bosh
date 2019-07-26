@@ -92,7 +92,7 @@ module Bosh
               it 'skips authorization for invalid routes' do
                 get '/invalid_route'
                 expect(last_response.status).to eq(404)
-                expect(last_response.body).to eq("Endpoint '/invalid_route' not found. Please consider upgrading your director")
+                expect(last_response.body).to eq("Endpoint '/invalid_route' not found.")
               end
             end
           end
