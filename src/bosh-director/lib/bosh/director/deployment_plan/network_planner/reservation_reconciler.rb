@@ -126,7 +126,7 @@ module Bosh::Director::DeploymentPlan
                                  existing_reservation.network.find_az_names_for_ip(existing_reservation.ip).to_a.compact
                                end
 
-        @logger.debug("Existing reservation belongs to azs: #{existing_ip_az_names}, desired az is #{desired_az}")
+        @logger.debug("Existing reservation belongs to azs: #{existing_ip_az_names}, desired az is #{desired_az.inspect}")
 
         return false if existing_ip_az_names.empty? && desired_az.nil?
         return true if desired_az.nil?
