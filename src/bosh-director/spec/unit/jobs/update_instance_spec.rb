@@ -440,11 +440,12 @@ module Bosh::Director
           job.perform
         end.to change { Models::Event.count }.by(6)
 
-        begin_event = Models::Event.first
+        events = Models::Event.order(:id)
+        begin_event = events.first
         expect(begin_event.action).to eq('restart')
         expect(begin_event.parent_id).to be_nil
 
-        end_event = Models::Event.last
+        end_event = events.last
         expect(end_event.action).to eq('restart')
         expect(end_event.parent_id).to eq(begin_event.id)
       end
@@ -482,11 +483,12 @@ module Bosh::Director
             job.perform
           end.to change { Models::Event.count }.by(6)
 
-          begin_event = Models::Event.first
+          events = Models::Event.order(:id)
+          begin_event = events.first
           expect(begin_event.action).to eq('recreate')
           expect(begin_event.parent_id).to be_nil
 
-          end_event = Models::Event.last
+          end_event = events.last
           expect(end_event.action).to eq('recreate')
           expect(end_event.parent_id).to eq(begin_event.id)
         end
