@@ -21,8 +21,8 @@ describe 'recreate command', type: :integration do
       instance_to_be_recreated = director.find_instance(initial_instances, 'foobar', '0')
 
       output = isolated_recreate(instance_group: 'foobar', index: 0)
-      expect(output).to match(/Stopping instance foobar: foobar.* \(0\)/)
-      expect(output).to match(/Starting instance foobar: foobar.* \(0\)/)
+      expect(output).to match(%r{Updating instance foobar/.+ \(0\): Stopping instance})
+      expect(output).to match(%r{Updating instance foobar/.+ \(0\): Starting instance})
 
       instances_after_instance_recreate = director.instances
       instance_was_recreated = director.find_instance(instances_after_instance_recreate, 'foobar', '0')
@@ -46,7 +46,7 @@ describe 'recreate command', type: :integration do
       it 'creates the missing vm and starts the instance' do
         expect do
           output = isolated_recreate(instance_group: 'foobar', index: 0)
-          expect(output).to match(/Starting instance foobar: foobar.* \(0\)/)
+          expect(output).to match(%r{Updating instance foobar/.+ \(0\): Starting instance})
         end.to change { instance_states }
           .from(
             'foobar/1' => 'running',
@@ -67,8 +67,8 @@ describe 'recreate command', type: :integration do
         instance_to_be_recreated.kill_agent
 
         output = isolated_recreate(instance_group: 'foobar', index: 0, params: { ignore_unresponsive_agent: true })
-        expect(output).to match(/Stopping instance foobar: foobar.* \(0\)/)
-        expect(output).to match(/Starting instance foobar: foobar.* \(0\)/)
+        expect(output).to match(%r{Updating instance foobar/.+ \(0\): Stopping instance})
+        expect(output).to match(%r{Updating instance foobar/.+ \(0\): Starting instance})
 
         instances_after_instance_recreate = director.instances
         instance_was_recreated = director.find_instance(instances_after_instance_recreate, 'foobar', '0')
@@ -120,8 +120,8 @@ describe 'recreate command', type: :integration do
       it 'recreating only touches the specified instance' do
         isolated_stop(instance_group: 'foobar', index: 0)
         output = isolated_recreate(instance_group: 'foobar', index: 0)
-        expect(output).to match(/instance foobar: foobar.* \(0\)/)
-        expect(output).to_not match(/instance bad-instance-group: bad-instance-group.* \(0\)/)
+        expect(output).to match(/Updating instance foobar/)
+        expect(output).to_not match(/Updating instance bad-instance-group/)
       end
     end
   end
