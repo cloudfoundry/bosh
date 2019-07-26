@@ -126,14 +126,6 @@ module Bosh::Director
         job.perform
       end
 
-      it 'logs starting' do
-        expect(Config.event_log).to receive(:begin_stage)
-          .with("Updating instance #{instance_model}", nil).and_return(event_log_stage)
-        expect(event_log_stage).to receive(:advance_and_track).with('Starting instance').and_yield(nil)
-        job = Jobs::UpdateInstance.new(deployment.name, instance_model.id, 'start', {})
-        job.perform
-      end
-
       it 'should send job templates and apply state to the VM' do
         job = Jobs::UpdateInstance.new(deployment.name, instance_model.id, 'start', {})
         job.perform
@@ -143,7 +135,7 @@ module Bosh::Director
         expect(instance_model.reload.update_completed).to eq(true)
       end
 
-      it 'logs stopping and detaching' do
+      it 'logs starting' do
         expect(Config.event_log).to receive(:begin_stage)
           .with("Updating instance #{instance_model}", nil).and_return(event_log_stage)
         expect(event_log_stage).to receive(:advance_and_track).with('Starting instance').and_yield(nil)
