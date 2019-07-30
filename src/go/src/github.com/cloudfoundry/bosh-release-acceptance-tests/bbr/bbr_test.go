@@ -216,7 +216,7 @@ var _ = Describe("Bosh Backup and Restore BBR", func() {
 				)
 				Eventually(session, time.Minute).Should(gexec.Exit(0))
 
-				Expect(session.Out.Contents()).To(MatchRegexp("syslog_storer/[a-z0-9-]+[ \t]+running"))
+				Expect(session.Out.Contents()).To(MatchRegexp("syslog_storer/[a-z0-9-]+[ \t]+-"))
 				Expect(session.Out.Contents()).To(MatchRegexp("syslog_forwarder/[a-z0-9-]+[ \t]+running"))
 			})
 		})
