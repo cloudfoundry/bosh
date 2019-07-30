@@ -23,19 +23,28 @@ module Bosh::Director
           raise InstanceNotFound if instance_model.nil?
           raise InstanceNotFound if instance_model.deployment.name != @deployment_name
 
-          begin_stage("Updating instance #{instance_model}")
+          deployment_plan = DeploymentPlan::PlannerFactory.create(@logger)
+            .create_from_model(instance_model.deployment)
 
           hm_label = label
+          instance_group = deployment_plan.instance_groups.find { |ig| ig.name == instance_model.job }
+          if instance_group.errand?
+            raise InstanceGroupInvalidLifecycleError,
+                  "Isolated #{label} can not be run on instances of type errand. Try the bosh run-errand command."
+          end
+
+          begin_stage("Updating instance #{instance_model}")
+
           notifier = DeploymentPlan::Notifier.new(@deployment_name, Config.nats_rpc, @logger)
           notifier.send_begin_instance_event(instance_model.name, hm_label)
           begin
             case @action
             when 'stop'
-              stop_instance(instance_model)
+              stop_instance(instance_model, deployment_plan)
             when 'start'
-              start_instance(instance_model)
+              start_instance(instance_model, deployment_plan)
             when 'restart'
-              restart_instance(instance_model, hm_label)
+              restart_instance(instance_model, hm_label, deployment_plan)
             end
           rescue StandardError => e
             raise e
@@ -62,12 +71,9 @@ module Bosh::Director
         label
       end
 
-      def stop_instance(instance_model)
+      def stop_instance(instance_model, deployment_plan)
         return if instance_model.stopped? && !@options['hard'] # stopped already, and we didn't pass in hard to change it
         return if instance_model.detached? # implies stopped
-
-        deployment_plan = DeploymentPlan::PlannerFactory.create(@logger)
-          .create_from_model(instance_model.deployment)
 
         instance_plan = DeploymentPlan::InstancePlanFromDB.create_from_instance_model(
           instance_model,
@@ -88,16 +94,7 @@ module Bosh::Director
         end
       end
 
-      def start_instance(instance_model)
-        deployment_plan = DeploymentPlan::PlannerFactory.create(@logger)
-          .create_from_model(instance_model.deployment)
-
-        instance_group = deployment_plan.instance_groups.find { |ig| ig.name == instance_model.job }
-        if instance_group.errand?
-          raise InstanceGroupInvalidLifecycleError,
-                'Start can not be run on instances of type errand. Try the bosh run-errand command.'
-        end
-
+      def start_instance(instance_model, deployment_plan)
         instance_plan = DeploymentPlan::InstancePlanFromDB.create_from_instance_model(
           instance_model,
           deployment_plan,
@@ -118,11 +115,11 @@ module Bosh::Director
         end
       end
 
-      def restart_instance(instance_model, label)
+      def restart_instance(instance_model, label, deployment_plan)
         parent_event_id = add_event(label, instance_model)
 
-        stop_instance(instance_model)
-        start_instance(instance_model)
+        stop_instance(instance_model, deployment_plan)
+        start_instance(instance_model, deployment_plan)
       rescue StandardError => e
         raise e
       ensure

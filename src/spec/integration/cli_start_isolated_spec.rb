@@ -29,7 +29,7 @@ describe 'start command', type: :integration do
         index: 0,
         params: { failure_expected: true },
       )
-      expect(output).to include('Start can not be run on instances of type errand. Try the bosh run-errand command.')
+      expect(output).to include('Isolated start can not be run on instances of type errand. Try the bosh run-errand command.')
     end
   end
 

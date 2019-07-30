@@ -32,6 +32,22 @@ describe 'stop command', type: :integration do
     end
   end
 
+  context 'when attempting to stop an errand instance' do
+    before do
+      deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.manifest_with_errand)
+    end
+
+    it 'fails gracefully with a useful message' do
+      output = isolated_stop(
+        deployment: 'errand',
+        instance_group: 'fake-errand-name',
+        index: 0,
+        params: { failure_expected: true },
+      )
+      expect(output).to include('Isolated stop can not be run on instances of type errand. Try the bosh run-errand command.')
+    end
+  end
+
   context 'after a successful deploy' do
     before do
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)

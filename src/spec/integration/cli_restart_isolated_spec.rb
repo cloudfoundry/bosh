@@ -11,6 +11,22 @@ describe 'restart command', type: :integration do
     end
   end
 
+  context 'when attempting to restart an errand instance' do
+    before do
+      deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.manifest_with_errand)
+    end
+
+    it 'fails gracefully with a useful message' do
+      output = isolated_restart(
+        deployment: 'errand',
+        instance_group: 'fake-errand-name',
+        index: 0,
+        params: { failure_expected: true },
+      )
+      expect(output).to include('Isolated restart can not be run on instances of type errand. Try the bosh run-errand command.')
+    end
+  end
+
   context 'after a successful deploy' do
     before do
       deploy_from_scratch(Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups)
