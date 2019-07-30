@@ -1380,7 +1380,8 @@ module Bosh::Director::ConfigServer
               {
                 'name' => prepend_namespace('placeholder_a'),
                 'type' => 'password',
-                'parameters' => {}
+                'parameters' => {},
+                'mode' => 'no-overwrite',
               }
             ).ordered.and_return(
               generate_success_response(
@@ -1393,7 +1394,8 @@ module Bosh::Director::ConfigServer
               {
                 'name' => prepend_namespace('placeholder_b'),
                 'type' => 'certificate',
-                'parameters' => {'common_name' => 'bosh.io', 'alternative_names' => %w(a.bosh.io b.bosh.io)}
+                'parameters' => { 'common_name' => 'bosh.io', 'alternative_names' => %w[a.bosh.io b.bosh.io] },
+                'mode' => 'no-overwrite',
               }
             ).ordered.and_return(
               generate_success_response(
@@ -1406,7 +1408,8 @@ module Bosh::Director::ConfigServer
               {
                 'name' => '/placeholder_c',
                 'type' => 'gold',
-                'parameters' => {'need' => 'luck'}
+                'parameters' => { 'need' => 'luck' },
+                'mode' => 'no-overwrite',
               }
             ).ordered.and_return(
               generate_success_response(
@@ -1470,7 +1473,8 @@ module Bosh::Director::ConfigServer
               {
                 'name' => prepend_namespace('placeholder_a'),
                 'type' => 'password',
-                'parameters' => {}
+                'parameters' => {},
+                'mode' => 'no-overwrite',
               }
             ).ordered.and_return(success_response_1)
 
@@ -1478,7 +1482,8 @@ module Bosh::Director::ConfigServer
               {
                 'name' => prepend_namespace('placeholder_b'),
                 'type' => 'certificate',
-                'parameters' => {'common_name' => 'bosh.io', 'alternative_names' => %w(a.bosh.io b.bosh.io)}
+                'parameters' => { 'common_name' => 'bosh.io', 'alternative_names' => %w[a.bosh.io b.bosh.io] },
+                'mode' => 'no-overwrite',
               }
             ).ordered.and_return(success_response_2)
 
@@ -1486,7 +1491,8 @@ module Bosh::Director::ConfigServer
               {
                 'name' => '/placeholder_c',
                 'type' => 'gold',
-                'parameters' => { 'need' => 'luck' }
+                'parameters' => { 'need' => 'luck' },
+                'mode' => 'no-overwrite',
               }
             ).ordered.and_return(success_response_3)
 
@@ -1624,6 +1630,7 @@ module Bosh::Director::ConfigServer
                       'name' => prepend_namespace('placeholder_b'),
                       'type' => 'certificate',
                       'parameters' => { 'ca' => prepend_namespace('my_ca'), 'common_name' => 'bosh.io', 'alternative_names' => %w(a.bosh.io b.bosh.io q-s0.ig1.net-a.deployment-name.bosh) },
+                      'mode' => 'no-overwrite',
                     }
                   ).ordered.and_return(
                     generate_success_response(
@@ -1664,6 +1671,7 @@ module Bosh::Director::ConfigServer
                         'common_name' => 'bosh.io',
                         'alternative_names' => %w[a.bosh.io b.bosh.io *.ig1.net-a.deployment-name.bosh],
                       },
+                      'mode' => 'no-overwrite',
                     ).ordered.and_return(
                       generate_success_response(
                         {
@@ -1721,6 +1729,7 @@ module Bosh::Director::ConfigServer
                         'common_name' => 'q-s0.ig1.net-a.deployment-name.bosh',
                         'alternative_names' => %w[*.ig1.net-a.deployment-name.bosh],
                       },
+                      'mode' => 'no-overwrite',
                     ).ordered.and_return(
                       generate_success_response(
                         {
@@ -1761,6 +1770,7 @@ module Bosh::Director::ConfigServer
                           'common_name' => '*.ig1.net-a.deployment-name.bosh',
                           'alternative_names' => %w[a.bosh.io b.bosh.io q-s0.ig1.net-a.deployment-name.bosh],
                         },
+                        'mode' => 'no-overwrite',
                       ).ordered.and_return(
                         generate_success_response(
                           {
@@ -1819,6 +1829,7 @@ module Bosh::Director::ConfigServer
                           'common_name' => 'bosh.io',
                           'alternative_names' => %w[*.ig1.net-a.deployment-name.bosh],
                         },
+                        'mode' => 'no-overwrite',
                       ).ordered.and_return(
                         generate_success_response(
                           {
@@ -1847,15 +1858,14 @@ module Bosh::Director::ConfigServer
 
               it 'namespaces the ca reference for a variable with type certificate' do
                 expect(http_client).to receive(:post).with(
-                    {
-                        'name' => prepend_namespace('placeholder_b'),
-                        'type' => 'certificate',
-                        'parameters' => {
-                          'ca' => prepend_namespace('my_ca'),
-                          'common_name' => 'bosh.io',
-                          'alternative_names' => %w[a.bosh.io b.bosh.io],
-                        },
-                    }
+                  'name' => prepend_namespace('placeholder_b'),
+                  'type' => 'certificate',
+                  'parameters' => {
+                    'ca' => prepend_namespace('my_ca'),
+                    'common_name' => 'bosh.io',
+                    'alternative_names' => %w[a.bosh.io b.bosh.io],
+                  },
+                  'mode' => 'no-overwrite',
                 ).ordered.and_return(
                   generate_success_response(
                     {
@@ -1882,16 +1892,21 @@ module Bosh::Director::ConfigServer
 
               it 'namespaces the ca reference for a variable with type certificate' do
                 expect(http_client).to receive(:post).with(
-                    {
-                        'name' => prepend_namespace('placeholder_b'),
-                        'type' => 'certificate',
-                        'parameters' => {'ca' => ('/my_ca'), 'common_name' => 'bosh.io', 'alternative_names' => %w(a.bosh.io b.bosh.io)}
-                    }
+                  'name' => prepend_namespace('placeholder_b'),
+                  'type' => 'certificate',
+                  'parameters' => {
+                    'ca' => '/my_ca',
+                    'common_name' => 'bosh.io',
+                    'alternative_names' => %w[a.bosh.io b.bosh.io],
+                  },
+                  'mode' => 'no-overwrite',
                 ).ordered.and_return(
-                    generate_success_response(
-                        {
-                            "id": "some_id2",
-                        }.to_json))
+                  generate_success_response(
+                    {
+                      'id': 'some_id2',
+                    }.to_json,
+                  ),
+                )
 
                 client.generate_values(variables_obj, deployment_name)
               end
@@ -1911,16 +1926,17 @@ module Bosh::Director::ConfigServer
 
               it 'it passes options through to config server without modification' do
                 expect(http_client).to receive(:post).with(
-                    {
-                        'name' => prepend_namespace('placeholder_a'),
-                        'type' => 'something-else',
-                        'parameters' => {'ca' => 'some_ca_value'}
-                    }
+                  'name' => prepend_namespace('placeholder_a'),
+                  'type' => 'something-else',
+                  'parameters' => { 'ca' => 'some_ca_value' },
+                  'mode' => 'no-overwrite',
                 ).ordered.and_return(
-                    generate_success_response(
-                        {
-                            "id": "some_id1",
-                        }.to_json))
+                  generate_success_response(
+                    {
+                      'id': 'some_id1',
+                    }.to_json,
+                  ),
+                )
 
                 client.generate_values(variables_obj, deployment_name)
               end
@@ -1933,7 +1949,8 @@ module Bosh::Director::ConfigServer
                 {
                   'name' => prepend_namespace('placeholder_a'),
                   'type' => 'password',
-                  'parameters' => {}
+                  'parameters' => {},
+                  'mode' => 'no-overwrite',
                 }
               ).ordered.and_return(SampleForbiddenResponse.new)
             end
