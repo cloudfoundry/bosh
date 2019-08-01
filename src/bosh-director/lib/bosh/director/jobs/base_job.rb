@@ -35,14 +35,13 @@ module Bosh::Director
       # @return [Boolean] Has task been cancelled?
       def task_cancelled?
         return false if task_id.nil?
+
         task = task_manager.find_task(task_id)
         task && (task.state == 'cancelling' || task.state == 'timeout' || task.state == 'cancelled')
       end
 
       def task_checkpoint
-        if task_cancelled?
-          raise TaskCancelled, "Task #{task_id} cancelled"
-        end
+        raise TaskCancelled, "Task #{task_id} cancelled" if task_cancelled?
       end
 
       def begin_stage(stage_name, n_steps = nil)

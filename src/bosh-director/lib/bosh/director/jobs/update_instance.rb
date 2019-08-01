@@ -127,6 +127,8 @@ module Bosh::Director
       end
 
       def detach_instance(instance_model, instance_plan)
+        task_checkpoint
+
         instance_report = DeploymentPlan::Stages::Report.new.tap { |r| r.vm = instance_model.active_vm }
         unless instance_plan.unresponsive_agent?
           DeploymentPlan::Steps::UnmountInstanceDisksStep.new(instance_model).perform(instance_report)
@@ -139,6 +141,8 @@ module Bosh::Director
       end
 
       def stop(instance_model, instance_plan)
+        task_checkpoint
+
         intent = @options['hard'] ? :delete_vm : :keep_vm
         target_state = @options['hard'] ? 'detached' : 'stopped'
         parent_event = add_event('stop', instance_model)
@@ -155,6 +159,8 @@ module Bosh::Director
       end
 
       def start(instance_plan, instance_model)
+        task_checkpoint
+
         blobstore_client = App.instance.blobstores.blobstore
         agent = AgentClient.with_agent_id(instance_model.agent_id, instance_model.name)
 
@@ -178,6 +184,8 @@ module Bosh::Director
       end
 
       def create_vm(instance_plan, deployment_plan, instance_model)
+        task_checkpoint
+
         agent_broadcaster = AgentBroadcaster.new
         dns_encoder = LocalDnsEncoderManager.create_dns_encoder(
           deployment_plan.use_short_dns_addresses?,

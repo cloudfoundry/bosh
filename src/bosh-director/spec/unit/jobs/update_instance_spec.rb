@@ -149,6 +149,48 @@ module Bosh::Director
         expect(Bosh::Director::Models::Event.first.action).to eq 'start'
       end
 
+      context 'cancelling the task' do
+        before do
+          instance_model.active_vm.destroy
+        end
+
+        context 'before creating the vm' do
+          before do
+            task.update(state: 'cancelled')
+          end
+
+          it 'does not try to create the vm and raises and error' do
+            job = Jobs::UpdateInstance.new(deployment.name, instance_model.id, 'start', {})
+            job.task_id = task.id
+
+            expect do
+              job.perform
+            end.to raise_error(Bosh::Director::TaskCancelled)
+            expect(vm_creator).to_not have_received(:create_for_instance_plan)
+          end
+        end
+
+        context 'before starting the instance but after creating the vm' do
+          before do
+            allow(vm_creator).to receive(:create_for_instance_plan) do
+              task.update(state: 'cancelled')
+            end
+          end
+
+          it 'does not try to start the instance and raises and error' do
+            job = Jobs::UpdateInstance.new(deployment.name, instance_model.id, 'start', {})
+            job.task_id = task.id
+
+            expect do
+              job.perform
+            end.to raise_error(Bosh::Director::TaskCancelled)
+
+            expect(vm_creator).to have_received(:create_for_instance_plan)
+            expect(state_applier).to_not have_received(:apply)
+          end
+        end
+      end
+
       context 'when the instance is already started' do
         before do
           instance_model.update(state: 'started')
@@ -301,6 +343,44 @@ module Bosh::Director
 
         expect { job.perform }.to change { Bosh::Director::Models::Event.count }.from(0).to(2)
         expect(Bosh::Director::Models::Event.first.action).to eq 'stop'
+      end
+
+      context 'cancelling the task' do
+        context 'before stopping the instance' do
+          before do
+            task.update(state: 'cancelled')
+          end
+
+          it 'does not try to stop the instance and raises and error' do
+            job = Jobs::UpdateInstance.new(deployment.name, instance_model.id, 'stop', {})
+            job.task_id = task.id
+
+            expect do
+              job.perform
+            end.to raise_error(Bosh::Director::TaskCancelled)
+            expect(Stopper).to_not have_received(:stop)
+          end
+        end
+
+        context 'before deleting the vm but after stopping the instance' do
+          before do
+            allow(Stopper).to receive(:stop) do
+              task.update(state: 'cancelled')
+            end
+          end
+
+          it 'does not try to delete the vm and raises and error' do
+            job = Jobs::UpdateInstance.new(deployment.name, instance_model.id, 'stop', 'hard' => true)
+            job.task_id = task.id
+
+            expect do
+              job.perform
+            end.to raise_error(Bosh::Director::TaskCancelled)
+
+            expect(Stopper).to have_received(:stop)
+            expect(delete_vm_step).to_not have_received(:perform)
+          end
+        end
       end
 
       context 'when detaching the VM fails in a hard stop' do
@@ -461,16 +541,110 @@ module Bosh::Director
         job.perform
       end
 
+      context 'cancelling the task' do
+        context 'before stopping the instance' do
+          before do
+            task.update(state: 'cancelled')
+          end
+
+          it 'does not try to stop the instance and raises and error' do
+            job = Jobs::UpdateInstance.new(deployment.name, instance_model.id, 'restart', 'hard' => true)
+            job.task_id = task.id
+
+            expect do
+              job.perform
+            end.to raise_error(Bosh::Director::TaskCancelled)
+            expect(Stopper).to_not have_received(:stop)
+          end
+        end
+
+        context 'before deleting the vm but after stopping the instance' do
+          before do
+            allow(Stopper).to receive(:stop) do
+              task.update(state: 'cancelled')
+            end
+          end
+
+          it 'does not try to delete the vm and raises and error' do
+            job = Jobs::UpdateInstance.new(deployment.name, instance_model.id, 'restart', 'hard' => true)
+            job.task_id = task.id
+
+            expect do
+              job.perform
+            end.to raise_error(Bosh::Director::TaskCancelled)
+
+            expect(Stopper).to have_received(:stop)
+            expect(delete_vm_step).to_not have_received(:perform)
+          end
+        end
+
+        context 'before creating the vm and after stopping and deleting the instance' do
+          before do
+            allow(delete_vm_step).to receive(:perform) do
+              task.update(state: 'cancelled')
+            end
+          end
+
+          it 'does not try to create the vm and raises and error' do
+            job = Jobs::UpdateInstance.new(deployment.name, instance_model.id, 'restart', 'hard' => true)
+            job.task_id = task.id
+
+            expect do
+              job.perform
+            end.to raise_error(Bosh::Director::TaskCancelled)
+
+            expect(Stopper).to have_received(:stop)
+            expect(delete_vm_step).to have_received(:perform)
+            expect(vm_creator).to_not have_received(:create_for_instance_plan)
+          end
+        end
+
+        context 'before starting the instance but after creating the vm' do
+          before do
+            allow(delete_vm_step).to receive(:perform) do
+              instance_model.active_vm.destroy
+            end
+
+            allow(vm_creator).to receive(:create_for_instance_plan) do
+              task.update(state: 'cancelled')
+            end
+          end
+
+          it 'does not try to start the instance and raises and error' do
+            job = Jobs::UpdateInstance.new(deployment.name, instance_model.id, 'restart', 'hard' => true)
+            job.task_id = task.id
+
+            expect do
+              job.perform
+            end.to raise_error(Bosh::Director::TaskCancelled)
+
+            expect(Stopper).to have_received(:stop)
+            expect(delete_vm_step).to have_received(:perform)
+            expect(vm_creator).to have_received(:create_for_instance_plan)
+            expect(state_applier).to_not have_received(:apply)
+          end
+        end
+      end
+
       context 'when the option hard is set to true' do
+        before do
+          allow(delete_vm_step).to receive(:perform) do
+            instance_model.active_vm.destroy
+          end
+        end
+
         it 'recreates the instance' do
           job = Jobs::UpdateInstance.new(deployment.name, instance_model.id, 'restart', 'hard' => true)
           result_msg = job.perform
+
           expect(Stopper).to have_received(:stop).with(
             intent: :delete_vm,
             instance_plan: anything,
             target_state: 'detached',
             logger: logger,
           ).ordered
+          expect(delete_vm_step).to have_received(:perform).ordered
+          expect(vm_creator).to have_received(:create_for_instance_plan).ordered
           expect(state_applier).to have_received(:apply).ordered
 
           expect(instance_model.reload.state).to eq 'started'
