@@ -55,7 +55,7 @@ module Bosh::Director
           'id' => task.id,
           'state' => task.state,
           'description' => task.description,
-          'timestamp' => task.timestamp.to_i,
+          'timestamp' => adjust_task_finish_time(task),
           'started_at' => task.started_at ? task.started_at.to_i : nil,
           'result' => task.result,
           'user' => task.username || 'admin',
@@ -86,6 +86,16 @@ module Bosh::Director
           end
         end
         FileUtils.rm(src)
+      end
+
+      private
+
+      # adjust_task_finish_time will return nil for the `timestamp` field, if the task is still queued or processing
+      # This way, the CLI can better translate that we don't have a finish time yet
+      def adjust_task_finish_time(task)
+        return nil if %w[queued processing].include?(task.state)
+
+        task.timestamp.to_i
       end
     end
   end

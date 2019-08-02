@@ -240,6 +240,33 @@ module Bosh::Director
           expect(cancellable_task.state).to eq('cancelling')
         end
       end
+
+      describe '#task_to_hash' do
+        let!(:finished_task) do
+          Models::Task.make(
+            type: :update_deployment,
+            state: :timeout,
+            started_at: Time.now,
+            timestamp: Time.now,
+          )
+        end
+        let!(:unfinished_task) do
+          Models::Task.make(
+            type: :update_deployment,
+            state: :processing,
+            started_at: Time.now,
+            timestamp: Time.now,
+          )
+        end
+
+        it 'nils out the timestamp for tasks that are not finished' do
+          expect(manager.task_to_hash(unfinished_task)['timestamp']).to be_nil
+        end
+
+        it 'shows the persisted timestamp for tasks that are finished' do
+          expect(manager.task_to_hash(finished_task)['timestamp']).not_to be_nil
+        end
+      end
     end
   end
 end
