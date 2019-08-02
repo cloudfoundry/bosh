@@ -103,6 +103,51 @@ module Bosh::Director
       it_behaves_like 'a DJ job'
     end
 
+    describe 'validation' do
+      context 'when the instance is ignored' do
+        let(:instance_model) do
+          Models::Instance.make(
+            deployment: deployment,
+            job: 'foobar',
+            uuid: 'test-uuid',
+            index: '1',
+            state: 'stopped',
+            ignore: true,
+          )
+        end
+
+        it 'raises an error' do
+          job = Jobs::UpdateInstance.new(deployment.name, instance_model.id, 'start', {})
+          expect { job.perform }.to raise_error(DeploymentIgnoredInstancesModification)
+        end
+      end
+
+      context 'when the instance does not exist' do
+        it 'raises an InstanceNotFound error' do
+          job = Jobs::UpdateInstance.new(deployment.name, instance_model.id + 10000, 'start', {})
+          expect { job.perform }.to raise_error(InstanceNotFound)
+        end
+      end
+
+      context 'when the instance does not belong to the deployment' do
+        let(:instance_model) do
+          Models::Instance.make(
+            deployment: deployment,
+            job: 'foobar',
+            uuid: 'test-uuid',
+            index: '1',
+            state: 'stopped',
+          )
+        end
+        let(:other_deployment) { Models::Deployment.make(name: 'other', manifest: YAML.dump(manifest)) }
+
+        it 'raises an InstanceNotFound error' do
+          job = Jobs::UpdateInstance.new(other_deployment.name, instance_model.id, 'start', {})
+          expect { job.perform }.to raise_error(InstanceNotFound)
+        end
+      end
+    end
+
     describe 'start' do
       let(:instance_state) { 'stopped' }
 
@@ -250,31 +295,6 @@ module Bosh::Director
 
           expect(local_dns_manager).to have_received(:update_dns_record_for_instance)
             .with(an_instance_of(DeploymentPlan::InstancePlanFromDB))
-        end
-      end
-
-      context 'when the instance does not exist' do
-        it 'raises an InstanceNotFound error' do
-          job = Jobs::UpdateInstance.new(deployment.name, instance_model.id + 10000, 'start', {})
-          expect { job.perform }.to raise_error(InstanceNotFound)
-        end
-      end
-
-      context 'when the instance does not belong to the deployment' do
-        let(:instance_model) do
-          Models::Instance.make(
-            deployment: deployment,
-            job: 'foobar',
-            uuid: 'test-uuid',
-            index: '1',
-            state: 'stopped',
-          )
-        end
-        let(:other_deployment) { Models::Deployment.make(name: 'other', manifest: YAML.dump(manifest)) }
-
-        it 'raises an InstanceNotFound error' do
-          job = Jobs::UpdateInstance.new(other_deployment.name, instance_model.id, 'start', {})
-          expect { job.perform }.to raise_error(InstanceNotFound)
         end
       end
     end

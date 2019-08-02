@@ -33,6 +33,12 @@ module Bosh::Director
                   "Isolated #{label} can not be run on instances of type errand. Try the bosh run-errand command."
           end
 
+          if instance_model.ignore
+            raise DeploymentIgnoredInstancesModification,
+                  "You are trying to change the state of the ignored instance '#{instance_model.name}'." \
+                  'This operation is not allowed. You need to unignore it first.'
+          end
+
           begin_stage("Updating instance #{instance_model}")
 
           notifier = DeploymentPlan::Notifier.new(@deployment_name, Config.nats_rpc, @logger)
