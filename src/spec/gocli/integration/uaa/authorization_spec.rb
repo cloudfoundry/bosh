@@ -54,8 +54,26 @@ describe 'User authorization with UAA', type: :integration do
     output = table(bosh_runner.run('tasks --recent', json: true, environment_name: current_sandbox.director_url, env: client_env , include_credentials: false))
 
     expect(output).to contain_exactly(
-      {'id'=> '4',   'state'=> 'done',  'started_at'=>/.*/,   'last_activity_at'=>/.*/,  'user'=> 'production_team',  'deployment'=> 'simple',  'description'=> 'delete deployment simple',  'result'=> '/deployments/simple'},
-      {'id'=> '3',  'state'=> 'done',  'started_at'=>/.*/,  'last_activity_at'=>/.*/,  'user'=> 'production_team',  'deployment'=> 'simple',  'description'=> 'create deployment',  'result'=> '/deployments/simple'}
+      {
+        'id' => '4',
+        'state' => 'done',
+        'started_at' => /.*/,
+        'finished_at' => /.*/,
+        'user' => 'production_team',
+        'deployment' => 'simple',
+        'description' => 'delete deployment simple',
+        'result' => '/deployments/simple',
+      },
+      {
+        'id' => '3',
+        'state' => 'done',
+        'started_at' => /.*/,
+        'finished_at' => /.*/,
+        'user' => 'production_team',
+        'deployment' => 'simple',
+        'description' => 'create deployment',
+        'result' => '/deployments/simple',
+      },
     )
   end
 end
