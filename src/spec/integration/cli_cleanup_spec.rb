@@ -105,6 +105,23 @@ describe 'cli: cleanup', type: :integration do
       expect(output).to eq([])
     end
 
+    context 'when there is a runtime config uploaded' do
+      it 'does not remove the releases specified in the runtime config' do
+        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+        cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, runtime_config_hash: {
+          'releases' => [{ 'name' => 'bosh-release', 'version' => '0+dev.1' }],
+        })
+
+        bosh_runner.run('delete-deployment', deployment_name: 'simple')
+
+        bosh_runner.run(clean_command)
+        releases_output = table(bosh_runner.run('releases', json: true))
+        release_versions = releases_output.map { |r| r['version'] }
+        expect(release_versions).to include('0+dev.1')
+      end
+    end
+
     context 'when there are compiled releases in the blobstore' do
       include_examples 'removing an exported release'
     end

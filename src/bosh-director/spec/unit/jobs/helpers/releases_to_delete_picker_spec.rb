@@ -3,57 +3,102 @@ require 'spec_helper'
 module Bosh::Director
   describe Jobs::Helpers::ReleasesToDeletePicker do
     subject(:releases_to_delete_picker) { Jobs::Helpers::ReleasesToDeletePicker.new(Api::ReleaseManager.new) }
-    let(:release_1) { Models::Release.make(name: 'release-1') }
-    let(:release_2) { Models::Release.make(name: 'release-2') }
+    let(:release1) { Models::Release.make(name: 'release-1') }
+    let(:release2) { Models::Release.make(name: 'release-2') }
 
     describe '#pick' do
       before do
-        deployment_1 = Models::Deployment.make(name: 'first')
-        deployment_2 = Models::Deployment.make(name: 'second')
+        deployment1 = Models::Deployment.make(name: 'first')
+        deployment2 = Models::Deployment.make(name: 'second')
 
-        release_version_with_deployment_1 = Models::ReleaseVersion.make(version: 1, release: release_1)
-        release_version_with_deployment_1.add_deployment(deployment_1)
+        release_version_with_deployment1 = Models::ReleaseVersion.make(version: 1, release: release1)
+        release_version_with_deployment1.add_deployment(deployment1)
 
-        release_version_with_deployment_2 = Models::ReleaseVersion.make(version: 2, release: release_2)
-        release_version_with_deployment_2.add_deployment(deployment_2)
+        release_version_with_deployment2 = Models::ReleaseVersion.make(version: 2, release: release2)
+        release_version_with_deployment2.add_deployment(deployment2)
 
-        Models::ReleaseVersion.make(version: 5, release: release_2)
+        Models::ReleaseVersion.make(version: 5, release: release2)
       end
 
       context 'when removing all releases' do
         it 'picks unused releases' do
-          expect(releases_to_delete_picker.pick(0)).to match_array([
-                {'name' => 'release-2', 'versions' => ['5']}
-              ])
+          expect(releases_to_delete_picker.pick(0)).to match_array(
+            [
+              { 'name' => 'release-2', 'versions' => ['5'] },
+            ],
+          )
         end
       end
 
       context 'when removing all except the latest two releases' do
         before do
-          Models::ReleaseVersion.make(version: 10, release: release_1)
-          Models::ReleaseVersion.make(version: 9, release: release_1)
-          Models::ReleaseVersion.make(version: 10, release: release_2)
-          Models::ReleaseVersion.make(version: 9, release: release_2)
+          Models::ReleaseVersion.make(version: 10, release: release1)
+          Models::ReleaseVersion.make(version: 9, release: release1)
+          Models::ReleaseVersion.make(version: 10, release: release2)
+          Models::ReleaseVersion.make(version: 9, release: release2)
         end
 
         it 'leaves out the latest two versions of each release' do
-          expect(releases_to_delete_picker.pick(2)).to match_array([
-                {'name' => 'release-2', 'versions' => ['5']}
-              ])
+          expect(releases_to_delete_picker.pick(2)).to match_array(
+            [
+              { 'name' => 'release-2', 'versions' => ['5'] },
+            ],
+          )
         end
       end
 
       context 'when removing multiple versions' do
         before do
-          Models::ReleaseVersion.make(version: 10, release: release_1)
-          Models::ReleaseVersion.make(version: 9, release: release_1)
-          Models::ReleaseVersion.make(version: 8, release: release_1)
+          Models::ReleaseVersion.make(version: 10, release: release1)
+          Models::ReleaseVersion.make(version: 9, release: release1)
+          Models::ReleaseVersion.make(version: 8, release: release1)
         end
 
         it 'leaves out the latest two versions of each release' do
-          expect(releases_to_delete_picker.pick(1)).to match_array([
-                {'name' => 'release-1', 'versions' => ['8', '9']}
-              ])
+          expect(releases_to_delete_picker.pick(1)).to match_array(
+            [
+              { 'name' => 'release-1', 'versions' => %w[8 9] },
+            ],
+          )
+        end
+      end
+
+      context 'when releases are present in a runtime config' do
+        let(:runtime_parser) { instance_double(RuntimeConfig::RuntimeManifestParser) }
+        let(:runtime_config_release) { RuntimeConfig::Release.new(release1.name, 10, {}) }
+        let(:runtime_config) { RuntimeConfig::ParsedRuntimeConfig.new([runtime_config_release], [], []) }
+
+        before do
+          Models::ReleaseVersion.make(version: 10, release: release1)
+          Models::ReleaseVersion.make(version: 9, release: release1)
+          Models::ReleaseVersion.make(version: 8, release: release1)
+          Models::Config.make(type: 'runtime', name: 'jim')
+
+          allow(RuntimeConfig::RuntimeManifestParser).to receive(:new).and_return(runtime_parser)
+          allow(runtime_parser).to receive(:parse).and_return(runtime_config)
+        end
+
+        it 'does not delete the release version' do
+          expect(releases_to_delete_picker.pick(0)).to match_array(
+            [
+              { 'name' => 'release-1', 'versions' => %w[8 9] },
+              { 'name' => 'release-2', 'versions' => %w[5] },
+            ],
+          )
+        end
+
+        context 'when the release specified in the runtime config does not exist' do
+          let(:runtime_config_release) { RuntimeConfig::Release.new('bogus-town', 100, {}) }
+          let(:runtime_config) { RuntimeConfig::ParsedRuntimeConfig.new([runtime_config_release], [], []) }
+
+          it 'does not delete the release version' do
+            expect(releases_to_delete_picker.pick(0)).to match_array(
+              [
+                { 'name' => 'release-1', 'versions' => %w[8 9 10] },
+                { 'name' => 'release-2', 'versions' => %w[5] },
+              ],
+            )
+          end
         end
       end
     end
