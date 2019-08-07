@@ -3,9 +3,9 @@ groups:
   - name: bosh
     jobs:
       - gate
-      - unit-2.4
-      - unit-2.4-mysql
-      - unit-2.4-postgres
+      - unit
+      - unit-mysql
+      - unit-postgres
       - integration-db-tls-postgres
       - integration-db-tls-postgres-hotswap
       - integration-db-tls-mysql
@@ -117,17 +117,17 @@ jobs:
       - integration-db-tls-mysql
       - integration-db-tls-postgres
       - integration-db-tls-postgres-hotswap
-      - unit-2.4
-      - unit-2.4-mysql
-      - unit-2.4-postgres
+      - unit
+      - unit-mysql
+      - unit-postgres
     plan:
     - get: bosh-src
       trigger: true
 
-  - name: unit-2.4
+  - name: unit
     public: true
     serial: true
-    serial_groups: [unit-2.4]
+    serial_groups: [unit]
     build_logs_to_retain: 250
     plan:
       - get: bosh-src
@@ -140,10 +140,10 @@ jobs:
         params:
           DB: sqlite
 
-  - name: unit-2.4-mysql
+  - name: unit-mysql
     public: true
     serial: true
-    serial_groups: [unit-2.4-mysql]
+    serial_groups: [unit-mysql]
     build_logs_to_retain: 250
     plan:
       - in_parallel:
@@ -176,9 +176,9 @@ jobs:
           params:
             DB: mysql
 
-  - name: unit-2.4-postgres
+  - name: unit-postgres
     public: true
-    serial_groups: [unit-2.4-postgres]
+    serial_groups: [unit-postgres]
     serial: true
     build_logs_to_retain: 250
     plan:
@@ -361,9 +361,9 @@ jobs:
     - get: bosh-src
       trigger: true
       passed:
-      - unit-2.4
-      - unit-2.4-mysql
-      - unit-2.4-postgres
+      - unit
+      - unit-mysql
+      - unit-postgres
       - blobstore-performance
       - integration-db-tls-mysql
       - integration-db-tls-postgres
