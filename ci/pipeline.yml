@@ -251,7 +251,7 @@ jobs:
       - task: tests
         privileged: true
         file: bosh-src/ci/tasks/test-integration.yml
-        tags: ["bosh-integration-1"]
+        tags: ["bosh-integration"]
         params:
           DB:           postgresql
           DB_TLS:       true
@@ -281,7 +281,7 @@ jobs:
       - task: tests
         privileged: true
         file: bosh-src/ci/tasks/test-integration.yml
-        tags: ["bosh-integration-2"]
+        tags: ["bosh-integration"]
         params:
           DB:           postgresql
           DEFAULT_UPDATE_VM_STRATEGY: create-swap-delete
@@ -312,7 +312,7 @@ jobs:
 
       - task: tests
         privileged: true
-        tags: ["bosh-integration-3"]
+        tags: ["bosh-integration"]
         config:
           platform: linux
           image_resource:
@@ -351,7 +351,7 @@ jobs:
     - task: test
       privileged: true
       file: bosh-fuzz-tests/ci/tasks/test.yml
-      tags: ["bosh-integration-6"]
+      tags: ["bosh-integration"]
       params:
         BOSH_SRC_PATH: bosh-src/src
         RUBY_VERSION: 2.6.3
