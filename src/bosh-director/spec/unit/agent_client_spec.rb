@@ -669,18 +669,7 @@ module Bosh::Director
         end
 
         it 'should raise an exception if task was cancelled' do
-          testjob_class = Class.new(Jobs::BaseJob) do
-            define_method :perform do
-              'foo'
-            end
-          end
-          task_id = 1
-          tasks_dir = Dir.mktmpdir
-          allow(Config).to receive(:runtime).and_return('instance' => 'name/id', 'ip' => '127.0.127.0')
-          allow(Config).to receive(:base_dir).and_return(tasks_dir)
-          allow(Config).to receive(:cloud_options).and_return({})
-          Models::Task.make(id: task_id, state: 'cancelling')
-          testjob_class.perform(task_id, 'workername1')
+          allow(Config).to receive(:job_cancelled?).and_raise(TaskCancelled)
           expect { client.wait_until_ready }.to raise_error(Bosh::Director::TaskCancelled)
         end
       end
