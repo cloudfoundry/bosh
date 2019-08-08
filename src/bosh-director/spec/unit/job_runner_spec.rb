@@ -36,8 +36,11 @@ module Bosh::Director
 
     it 'performs the requested job with provided args' do
       runner = make_runner(sample_job_class, 42)
+      allow(runner).to receive(:run_checkpointing)
+
       runner.run
       task.reload
+      expect(runner).to have_received(:run_checkpointing)
       expect(task.state).to eq('done')
       expect(task.result).to eq('foo')
     end
@@ -87,6 +90,7 @@ module Bosh::Director
 
     it 'logs the worker name and process information' do
       runner = make_runner(sample_job_class, 42)
+      allow(runner).to receive(:run_checkpointing)
 
       logger = Logging::Repository.instance.fetch('DirectorJobRunner')
       allow(logger).to receive(:info)
@@ -127,7 +131,10 @@ module Bosh::Director
         end
       end
 
-      make_runner(job, 42).run
+      runner = make_runner(job, 42)
+      allow(runner).to receive(:run_checkpointing)
+
+      runner.run
       task.reload
       expect(task.state).to eq('cancelled')
     end
@@ -137,7 +144,10 @@ module Bosh::Director
         define_method(:perform) { |*_args| raise 'Oops' }
       end
 
-      make_runner(job, 42).run
+      runner = make_runner(job, 42)
+      allow(runner).to receive(:run_checkpointing)
+
+      runner.run
       task.reload
       expect(task.state).to eq('error')
       expect(task.result).to eq('Oops')

@@ -1,9 +1,8 @@
 module Bosh::Director
   module Jobs
     class BaseJob
-
       def self.job_type
-        raise NotImplementedError.new('Subclasses must return a symbol representing type')
+        raise NotImplementedError, 'Subclasses must return a symbol representing type'
       end
 
       def self.perform(task_id, worker_name, *args)
