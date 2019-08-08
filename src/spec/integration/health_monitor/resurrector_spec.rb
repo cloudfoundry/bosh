@@ -11,7 +11,7 @@ describe 'resurrector', type: :integration, hm: true do
   let(:cloud_config_hash) do
     cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
 
-    cloud_config_hash['networks'].first['subnets'].first['static'] =  ['192.168.1.10', '192.168.1.11']
+    cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.10', '192.168.1.11']
     cloud_config_hash
   end
 
@@ -100,43 +100,7 @@ describe 'resurrector', type: :integration, hm: true do
       event_output: /Applying problem resolutions/,
     ).first
 
-    resurrection_order = /.*ig_1.*ig_1.*ig_1.*ig_1.*ig_2.*ig_2.*ig_2.*ig_2.*/m
-    expect(resurrection_task[:event_output]).to match(resurrection_order)
-  end
-
-  it "respects 'max_in_flight' property" do
-    current_sandbox.reconfigure_health_monitor
-
-    deployment_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
-    deployment_hash['update']['serial'] = false
-    deployment_hash['update']['max_in_flight'] = 2
-
-    deployment_hash['instance_groups'][0]['instances'] = 3
-    deployment_hash['instance_groups'][0]['name'] = 'ig_1'
-
-    upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
-    deploy_simple_manifest(manifest_hash: deployment_hash)
-
-    bosh_runner.run('update-resurrection off')
-    instances = director.instances
-    ig1_instances = instances.select { |i| i.instance_group_name == 'ig_1' }
-    ig1_instances.each(&:kill_agent)
-    bosh_runner.run('update-resurrection on')
-
-    ig1_instances.each { |i| director.wait_for_vm('ig_1', i.index, 300) }
-
-    director.wait_for_resurrection_to_finish
-    apply_resurrection_pattern = /Applying problem resolutions/
-    resurrection_task = director.tasks.filter(
-      username: 'hm',
-      description: 'scan and fix',
-      state: 'done',
-      event_output: apply_resurrection_pattern,
-    ).first
-
-    resurrection_steps = resurrection_task[:event_output].split("\n").grep(apply_resurrection_pattern)
-    expect(resurrection_steps[0]).to include('started')
-    expect(resurrection_steps[1]).to include('started')
-    expect(resurrection_steps[2]).to include('finished')
+    resurrection_order = /.*ig_2.*ig_1.*/m
+    expect(resurrection_task[:event_output]).to_not match(resurrection_order)
   end
 end
