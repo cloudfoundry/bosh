@@ -52,7 +52,7 @@ module Bosh::Director
       def find_version(release, version)
         dataset = release.versions_dataset
 
-        release_version = dataset.filter(:version => version).first
+        release_version = dataset.filter(version: version.to_s).first
         if release_version.nil?
           begin
             new_formatted_version = Bosh::Common::Version::ReleaseVersion.parse(version)
