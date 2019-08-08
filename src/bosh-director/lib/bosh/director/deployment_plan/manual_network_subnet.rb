@@ -119,10 +119,14 @@ module Bosh::Director
         range == subnet.range ||
           range.contains?(subnet.range) ||
           subnet.range.contains?(range)
+      rescue NetAddr::VersionError
+        false
       end
 
       def is_reservable?(ip)
         range.contains?(ip) && !restricted_ips.include?(ip.to_i)
+      rescue NetAddr::VersionError
+        false
       end
 
       def self.parse_properties_from_database(network_name, subnet_name)
