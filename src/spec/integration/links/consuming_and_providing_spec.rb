@@ -10,7 +10,7 @@ describe 'consuming and providing', type: :integration do
   end
 
   let(:cloud_config) do
-    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config_hash['azs'] = [{ 'name' => 'z1' }]
     cloud_config_hash['networks'].first['subnets'].first['static'] = [
       '192.168.1.10',
@@ -39,7 +39,7 @@ describe 'consuming and providing', type: :integration do
   context 'when the job consumes only links provided in job specs' do
     context 'when the co-located job has implicit links' do
       let(:provider_instance_group) do
-        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        spec = Bosh::Spec::Deployments.simple_instance_group(
           name: 'provider_instance_group',
           jobs: [
             {
@@ -75,7 +75,7 @@ describe 'consuming and providing', type: :integration do
 
     context 'when the co-located job has explicit links' do
       let(:provider_instance_group) do
-        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        spec = Bosh::Spec::Deployments.simple_instance_group(
           name: 'provider_instance_group',
           jobs: [
             {
@@ -112,7 +112,7 @@ describe 'consuming and providing', type: :integration do
 
     context 'when the co-located job uses links from adjacent jobs' do
       let(:provider_instance_group) do
-        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        spec = Bosh::Spec::Deployments.simple_instance_group(
           name: 'provider_instance_group',
           jobs: [
             {
@@ -157,7 +157,7 @@ describe 'consuming and providing', type: :integration do
         manifest
       end
       let(:instance_group) do
-        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        spec = Bosh::Spec::Deployments.simple_instance_group(
           name: 'instance_group',
           jobs: [
             {
@@ -200,7 +200,7 @@ describe 'consuming and providing', type: :integration do
         manifest
       end
       let(:instance_group) do
-        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        spec = Bosh::Spec::Deployments.simple_instance_group(
           name: 'instance_group',
           jobs: [
             {
@@ -219,7 +219,7 @@ describe 'consuming and providing', type: :integration do
       end
 
       let(:db_instance_group) do
-        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        spec = Bosh::Spec::Deployments.simple_instance_group(
           name: 'provider_instance_group',
           job_name: 'provider',
           instances: 1,
@@ -229,7 +229,7 @@ describe 'consuming and providing', type: :integration do
       end
 
       let(:db_instance_group2) do
-        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        spec = Bosh::Spec::Deployments.simple_instance_group(
           name: 'provider_instance_group2',
           job_name: 'provider',
           instances: 1,
@@ -262,7 +262,7 @@ describe 'consuming and providing', type: :integration do
         manifest
       end
       let(:instance_group) do
-        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        spec = Bosh::Spec::Deployments.simple_instance_group(
           name: 'instance_group',
           jobs: [
             { 'name' => 'database', 'release' => 'bosh-release' },
@@ -294,7 +294,7 @@ describe 'consuming and providing', type: :integration do
 
   context 'when the job consumes multiple links of the same type' do
     let(:provider_instance_group) do
-      spec = Bosh::Spec::NewDeployments.simple_instance_group(
+      spec = Bosh::Spec::Deployments.simple_instance_group(
         name: 'provider_instance_group',
         jobs: [
           {
@@ -321,7 +321,7 @@ describe 'consuming and providing', type: :integration do
     end
 
     let(:consumer_instance_group) do
-      spec = Bosh::Spec::NewDeployments.simple_instance_group(
+      spec = Bosh::Spec::Deployments.simple_instance_group(
         name: 'consumer_instance_group',
         jobs: [
           {
@@ -356,7 +356,7 @@ describe 'consuming and providing', type: :integration do
   end
 
   context 'when consumer and provider has different types' do
-    let(:cloud_config) { Bosh::Spec::NewDeployments.simple_cloud_config }
+    let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config }
 
     let(:provider_alias) { 'provider_login' }
     let(:provides_definition) do
@@ -384,7 +384,7 @@ describe 'consuming and providing', type: :integration do
     end
 
     def get_provider_instance_group(provides_definition)
-      instance_group_spec = Bosh::Spec::NewDeployments.simple_instance_group(
+      instance_group_spec = Bosh::Spec::Deployments.simple_instance_group(
         name: 'provider_ig',
         jobs: [
           {
@@ -399,7 +399,7 @@ describe 'consuming and providing', type: :integration do
     end
 
     let(:consumer_instance_group) do
-      instance_group_spec = Bosh::Spec::NewDeployments.simple_instance_group(
+      instance_group_spec = Bosh::Spec::Deployments.simple_instance_group(
         name: 'consumer_ig',
         jobs: [
           {
@@ -424,7 +424,7 @@ describe 'consuming and providing', type: :integration do
 
     context 'but the alias is same' do
       let(:manifest) do
-        manifest = Bosh::Spec::NewDeployments.minimal_manifest
+        manifest = Bosh::Spec::Deployments.minimal_manifest
         manifest['releases'] = releases
         manifest['instance_groups'] = [get_provider_instance_group(provides_definition), consumer_instance_group]
         manifest
@@ -442,7 +442,7 @@ describe 'consuming and providing', type: :integration do
 
       context 'and the link is shared from another deployment' do
         let(:provider_manifest) do
-          manifest = Bosh::Spec::NewDeployments.minimal_manifest
+          manifest = Bosh::Spec::Deployments.minimal_manifest
           manifest['name'] = 'provider_deployment'
           manifest['releases'] = releases
           manifest['instance_groups'] = [get_provider_instance_group(provides_definition)]
@@ -450,7 +450,7 @@ describe 'consuming and providing', type: :integration do
         end
 
         let(:consumer_manifest) do
-          manifest = Bosh::Spec::NewDeployments.minimal_manifest
+          manifest = Bosh::Spec::Deployments.minimal_manifest
           manifest['name'] = 'consumer_deployment'
           manifest['releases'] = releases
           manifest['instance_groups'] = [consumer_instance_group]
@@ -498,7 +498,7 @@ describe 'consuming and providing', type: :integration do
         { 'as' => 'link_db_alias' }
       end
       let(:provider_instance_group_1) do
-        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        spec = Bosh::Spec::Deployments.simple_instance_group(
           name: 'provider_instance_group_1',
           jobs: [{
                    'name' => 'database',
@@ -523,7 +523,7 @@ describe 'consuming and providing', type: :integration do
       end
 
       let(:provider_instance_group_2) do
-        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        spec = Bosh::Spec::Deployments.simple_instance_group(
           name: 'provider_instance_group_2',
           jobs: [{
                    'name' => 'database',
@@ -548,7 +548,7 @@ describe 'consuming and providing', type: :integration do
       end
 
       let(:consumer_instance_group) do
-        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        spec = Bosh::Spec::Deployments.simple_instance_group(
           name: 'consumer_instance_group',
           jobs: [
             {

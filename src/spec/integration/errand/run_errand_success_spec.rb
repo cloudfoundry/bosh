@@ -2,7 +2,7 @@ require_relative '../../spec_helper'
 
 #Errand failure/success were split up so that they can be run on different rspec:parallel threads
 describe 'run-errand success', type: :integration, with_tmp_dir: true do
-  let(:manifest_hash) { Bosh::Spec::NewDeployments.manifest_with_errand }
+  let(:manifest_hash) { Bosh::Spec::Deployments.manifest_with_errand }
   let(:deployment_name) { manifest_hash['name'] }
 
   context 'while errand is running' do
@@ -18,7 +18,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
     end
 
     it 'creates a deployment lock' do
-      deploy_from_scratch(manifest_hash: manifest_hash_errand, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+      deploy_from_scratch(manifest_hash: manifest_hash_errand, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
 
       output = bosh_runner.run('run-errand fake-errand-name', deployment_name: deployment_name, no_track: true)
       task_id = Bosh::Spec::OutputParser.new(output).task_id('*')
@@ -38,7 +38,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
   context 'when multiple errands exist in the deployment manifest' do
     with_reset_sandbox_before_each
 
-    let(:manifest_hash) { Bosh::Spec::NewDeployments.manifest_with_errand }
+    let(:manifest_hash) { Bosh::Spec::Deployments.manifest_with_errand }
 
     let(:errand_requiring_2_instances) do
       {
@@ -65,7 +65,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
 
     context 'with a fixed size resource pool size' do
       let(:cloud_config_hash) do
-        cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
         cloud_config_hash['vm_types'].find { |type| type['name'] == 'a' }['size'] = 3
         cloud_config_hash
       end
@@ -103,7 +103,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
 
     context 'with a dynamically sized resource pool size' do
       let(:cloud_config_hash) do
-        cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
         cloud_config_hash['vm_types'].find { |type| type['name'] == 'a' }.delete('size')
         cloud_config_hash
       end
@@ -143,7 +143,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
     with_reset_sandbox_before_each
 
     before do
-      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
       bosh_runner.run('run-errand fake-errand-name', return_exit_code: true, deployment_name: deployment_name)
     end
 
@@ -197,7 +197,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
         # When the errand is run, a network update will be required.
         # The network update will fail, by default dummy CPI will
         # raise NotSupported, like the aws cpi.
-        manifest_hash = Bosh::Spec::NewDeployments.manifest_with_errand
+        manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
 
         # get rid of the non-errand job, it's not important
         manifest_hash['instance_groups'].delete(manifest_hash['instance_groups'].find { |i| i['name'] == 'foobar' })
@@ -209,7 +209,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
       end
 
       let(:cloud_config_hash) do
-        cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
         # set the errand job to have a static ip to trigger the network update
         # at errand run time.
         network_a = cloud_config_hash['networks'].find { |i| i['name'] == 'a' }
@@ -239,20 +239,20 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
 
     context 'when the number of dynamic IPs is equal to the total number of vms' do
       let(:manifest_hash) do
-        Bosh::Spec::NewDeployments.manifest_with_release.merge({
+        Bosh::Spec::Deployments.manifest_with_release.merge(
           'instance_groups' => [{
             'name' => 'fake-errand-name',
             'jobs' => [{
               'release' => 'bosh-release',
-              'name' => 'errand_without_package'
+              'name' => 'errand_without_package',
             }],
             'vm_type' => 'fake-vm-type',
             'instances' => 1,
             'lifecycle' => 'errand',
-            'networks' => [{'name' => 'fake-network'}],
+            'networks' => [{ 'name' => 'fake-network' }],
             'stemcell' => 'default',
-          }]
-        })
+          }],
+        )
       end
 
       let(:cloud_config_hash) do
@@ -307,11 +307,18 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
     with_tmp_dir_before_all
 
     it 'returns 0 as exit code from the cli and indicates that errand ran successfully' do
-      deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.manifest_with_errand, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+      deploy_from_scratch(
+        manifest_hash: Bosh::Spec::Deployments.manifest_with_errand,
+        cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
+      )
       expect_errands('fake-errand-name')
 
-      @output, @exit_code = bosh_runner.run('run-errand fake-errand-name',
-        {return_exit_code: true, json: true, deployment_name: 'errand'})
+      @output, @exit_code = bosh_runner.run(
+        'run-errand fake-errand-name',
+        return_exit_code: true,
+        json: true,
+        deployment_name: 'errand',
+      )
 
       output = scrub_random_ids(table(@output))
 
@@ -332,7 +339,10 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
     context 'when downloading logs' do
       context 'regular errand' do
         before(:all) do
-          deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.manifest_with_errand, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+          deploy_from_scratch(
+            manifest_hash: Bosh::Spec::Deployments.manifest_with_errand,
+            cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
+          )
           expect_errands('fake-errand-name')
 
           @output, @exit_code = bosh_runner.run("run-errand fake-errand-name --download-logs --logs-dir #{@tmp_dir}",
@@ -358,7 +368,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
 
       context 'utf8 errand output' do
         before do
-          manifest = Bosh::Spec::NewDeployments.manifest_with_errand
+          manifest = Bosh::Spec::Deployments.manifest_with_errand
           manifest['instance_groups'] = [{
             'name' => 'fake-errand-name',
             'jobs' => [
@@ -374,7 +384,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
             'stemcell' => 'default'
           }]
 
-          deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+          deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
           expect_errands('fake-errand-name')
 
           @output, @exit_code = bosh_runner.run("run-errand fake-errand-name --download-logs --logs-dir #{@tmp_dir}",
@@ -396,11 +406,11 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
     let(:manifest_hash) do
       large_property = 64.times.inject('') { |p| p << 'a'*1024 } # generates 64Kb string
       manifest = {'large_property' => large_property}
-      manifest.merge(Bosh::Spec::NewDeployments.manifest_with_errand)
+      manifest.merge(Bosh::Spec::Deployments.manifest_with_errand)
     end
 
     it 'deploys successfully' do
-      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
 
       _, exit_code = bosh_runner.run('run-errand fake-errand-name', {return_exit_code: true, deployment_name: deployment_name})
       expect(exit_code).to eq(0)
@@ -420,7 +430,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
     end
 
     let(:manifest_with_errand) do
-      errand = Bosh::Spec::NewDeployments.manifest_with_errand
+      errand = Bosh::Spec::Deployments.manifest_with_errand
       errand['instance_groups'][1]['jobs'] << {
         'release' => 'bosh-release',
         'name' => 'foobar_without_packages',
@@ -429,9 +439,11 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
     end
 
     it 'does not stop jobs after the errand has run' do
-      deploy_from_scratch(manifest_hash: manifest_with_errand,
+      deploy_from_scratch(
+        manifest_hash: manifest_with_errand,
         runtime_config_hash: runtime_config_hash,
-        cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+        cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
+      )
       _, exit_code = bosh_runner.run("run-errand --keep-alive fake-errand-name --download-logs --logs-dir #{@tmp_dir}", {return_exit_code: true, deployment_name: deployment_name})
       expect(exit_code).to eq(0)
 
@@ -453,7 +465,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
 
   context 'errand name != first job' do
     let(:manifest_hash) do
-      manifest_hash = Bosh::Spec::NewDeployments.manifest_with_errand_on_service_instance
+      manifest_hash = Bosh::Spec::Deployments.manifest_with_errand_on_service_instance
       manifest_hash['instance_groups'][0]['jobs'].unshift(
         {'release' => 'bosh-release', 'name' => 'foobar'}
       )
@@ -463,7 +475,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
     with_reset_sandbox_before_each
 
     it 'should run the requested bin/run on the first instance' do
-      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
 
       output, exit_code = bosh_runner.run('run-errand errand1', return_exit_code: true, deployment_name: deployment_name)
       expect(output).to include('fake-errand-stdout')
@@ -471,7 +483,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
     end
 
     it 'does not mark the instance as new' do
-      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
 
       _, exit_code = bosh_runner.run('run-errand errand1', return_exit_code: true, deployment_name: deployment_name)
       expect(exit_code).to equal(0)
@@ -486,49 +498,51 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
     with_reset_sandbox_before_each
 
     let(:manifest_hash) do
-      Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups.merge({'instance_groups' => [
-        {
-          'name' => 'service-with-errand',
-          'jobs' => [{
-            'release' => 'bosh-release',
-            'name' => 'errand1',
-            'properties' => {
-              'errand1' => {
-                'exit_code' => 0,
-                'stdout' => 'service-errand-stdout',
-                'stderr' => 'service-errand-stderr',
-                'run_package_file' => true,
+      Bosh::Spec::Deployments.simple_manifest_with_instance_groups.merge(
+        'instance_groups' => [
+          {
+            'name' => 'service-with-errand',
+            'jobs' => [{
+              'release' => 'bosh-release',
+              'name' => 'errand1',
+              'properties' => {
+                'errand1' => {
+                  'exit_code' => 0,
+                  'stdout' => 'service-errand-stdout',
+                  'stderr' => 'service-errand-stderr',
+                  'run_package_file' => true,
+                },
               },
-            },
 
-          }],
-          'lifecycle' => 'service',
-          'vm_type' => 'a',
-          'stemcell' => 'default',
-          'instances' => 2,
-          'networks' => [{'name' => 'a'}],
-        },
-        {
-          'name' => 'errand-with-same-errand-and-multiple-instances',
-          'jobs' => [{
-            'release' => 'bosh-release',
-            'name' => 'errand1',
-            'properties' => {
-              'errand1' => {
-                'exit_code' => 0,
-                'stdout' => 'service-errand-stdout',
-                'stderr' => 'service-errand-stderr',
-                'run_package_file' => true,
+            }],
+            'lifecycle' => 'service',
+            'vm_type' => 'a',
+            'stemcell' => 'default',
+            'instances' => 2,
+            'networks' => [{ 'name' => 'a' }],
+          },
+          {
+            'name' => 'errand-with-same-errand-and-multiple-instances',
+            'jobs' => [{
+              'release' => 'bosh-release',
+              'name' => 'errand1',
+              'properties' => {
+                'errand1' => {
+                  'exit_code' => 0,
+                  'stdout' => 'service-errand-stdout',
+                  'stderr' => 'service-errand-stderr',
+                  'run_package_file' => true,
+                },
               },
-            },
-          }],
-          'lifecycle' => 'errand',
-          'vm_type' => 'a',
-          'stemcell' => 'default',
-          'instances' => 2,
-          'networks' => [{'name' => 'a'}],
-        }
-      ]})
+            }],
+            'lifecycle' => 'errand',
+            'vm_type' => 'a',
+            'stemcell' => 'default',
+            'instances' => 2,
+            'networks' => [{ 'name' => 'a' }],
+          },
+        ],
+      )
     end
 
     context 'running with /first' do

@@ -34,7 +34,7 @@ module Bosh::Director
         if prior_az_name.nil?
           Models::Config.make(:cloud_with_manifest_v2)
         else
-          raw_manifest = Bosh::Spec::NewDeployments.simple_cloud_config.merge(
+          raw_manifest = Bosh::Spec::Deployments.simple_cloud_config.merge(
             'azs' => [
               {
                 'name' => prior_az_name,

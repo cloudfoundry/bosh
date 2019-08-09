@@ -21,7 +21,7 @@ describe 'teams', type: :integration do
     upload_stemcell(director_client_env)
     upload_cloud_config(director_client_env)
 
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
 
     # deploy Deployment1
     manifest_hash['name'] = 'dep1'

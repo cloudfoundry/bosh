@@ -10,7 +10,7 @@ describe 'aliased links', type: :integration do
   end
 
   let(:cloud_config) do
-    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config_hash['azs'] = [{ 'name' => 'z1' }]
     cloud_config_hash['networks'].first['subnets'].first['static'] = [
       '192.168.1.10',
@@ -30,7 +30,7 @@ describe 'aliased links', type: :integration do
   end
 
   let(:api_instance_group_spec) do
-    spec = Bosh::Spec::NewDeployments.simple_instance_group(
+    spec = Bosh::Spec::Deployments.simple_instance_group(
       name: 'my_api',
       jobs: [{ 'name' => 'api_server', 'release' => 'bosh-release', 'consumes' => links }],
       instances: 1,
@@ -40,7 +40,7 @@ describe 'aliased links', type: :integration do
   end
 
   let(:aliased_instance_group_spec) do
-    spec = Bosh::Spec::NewDeployments.simple_instance_group(
+    spec = Bosh::Spec::Deployments.simple_instance_group(
       name: 'aliased_postgres',
       jobs: [
         'name' => 'backup_database',
@@ -62,7 +62,7 @@ describe 'aliased links', type: :integration do
 
   context 'properties with aliased links' do
     let(:db3_instance_group) do
-      spec = Bosh::Spec::NewDeployments.simple_instance_group(
+      spec = Bosh::Spec::Deployments.simple_instance_group(
         name: 'db3',
         jobs: [
           {
@@ -89,7 +89,7 @@ describe 'aliased links', type: :integration do
     end
 
     let(:other2_instance_group) do
-      spec = Bosh::Spec::NewDeployments.simple_instance_group(
+      spec = Bosh::Spec::Deployments.simple_instance_group(
         name: 'other2',
         jobs: [
           {
@@ -114,7 +114,7 @@ describe 'aliased links', type: :integration do
     end
 
     let(:new_instance_group) do
-      job_spec = Bosh::Spec::NewDeployments.simple_instance_group(
+      job_spec = Bosh::Spec::Deployments.simple_instance_group(
         name: 'new_job',
         jobs: [
           {
@@ -204,7 +204,7 @@ describe 'aliased links', type: :integration do
       end
 
       let(:provider_instance_group) do
-        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        spec = Bosh::Spec::Deployments.simple_instance_group(
           name: 'provider_instance_group',
           jobs: [
             {
@@ -241,7 +241,7 @@ describe 'aliased links', type: :integration do
       end
 
       let(:consumer_instance_group) do
-        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        spec = Bosh::Spec::Deployments.simple_instance_group(
           name: 'consumer_instance_group',
           jobs: [
             {
@@ -285,7 +285,7 @@ describe 'aliased links', type: :integration do
       end
 
       let(:provider1_http) do
-        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        spec = Bosh::Spec::Deployments.simple_instance_group(
           name: 'provider1_http_instance_group',
           jobs: [{
             'name' => 'http_server_with_provides',
@@ -305,7 +305,7 @@ describe 'aliased links', type: :integration do
       end
 
       let(:provider2_http) do
-        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        spec = Bosh::Spec::Deployments.simple_instance_group(
           name: 'provider2_http_instance_group',
           jobs: [{
             'name' => 'http_server_with_provides',
@@ -325,7 +325,7 @@ describe 'aliased links', type: :integration do
       end
 
       let(:consumer_instance_group) do
-        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        spec = Bosh::Spec::Deployments.simple_instance_group(
           name: 'consumer_instance_group',
           jobs: [
             {
@@ -369,7 +369,7 @@ describe 'aliased links', type: :integration do
       end
 
       let(:provider_1_db) do
-        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        spec = Bosh::Spec::Deployments.simple_instance_group(
           name: 'provider_1_db',
           jobs: [{
             'name' => 'backup_database',
@@ -386,7 +386,7 @@ describe 'aliased links', type: :integration do
       end
 
       let(:provider_2_db) do
-        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        spec = Bosh::Spec::Deployments.simple_instance_group(
           name: 'provider_2_db',
           jobs: [{
             'name' => 'backup_database',
@@ -403,7 +403,7 @@ describe 'aliased links', type: :integration do
       end
 
       let(:consumer_instance_group) do
-        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        spec = Bosh::Spec::Deployments.simple_instance_group(
           name: 'consumer_instance_group',
           jobs: [
             {

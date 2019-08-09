@@ -36,7 +36,7 @@ describe 'using director with config server and deployments having links', type:
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger) }
 
   let(:cloud_config) do
-    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config_hash['azs'] = [{ 'name' => 'z1' }]
     cloud_config_hash['networks'].first['subnets'].first['static'] = [
       '192.168.1.10',
@@ -57,7 +57,7 @@ describe 'using director with config server and deployments having links', type:
 
   let(:provider_job_name) { 'http_server_with_provides' }
   let(:my_instance_group) do
-    instance_group_spec = Bosh::Spec::NewDeployments.simple_instance_group(
+    instance_group_spec = Bosh::Spec::Deployments.simple_instance_group(
       name: 'my_instance_group',
       jobs: [
         {
@@ -133,7 +133,7 @@ describe 'using director with config server and deployments having links', type:
 
     context "when the consumer's job render fails on a subsequent deploy" do
       let(:consumer_instance_group) do
-        Bosh::Spec::NewDeployments.simple_instance_group(
+        Bosh::Spec::Deployments.simple_instance_group(
           name: 'consumer_instance_group',
           jobs: [
             {
@@ -147,7 +147,7 @@ describe 'using director with config server and deployments having links', type:
       end
 
       let(:provider_instance_group) do
-        Bosh::Spec::NewDeployments.simple_instance_group(
+        Bosh::Spec::Deployments.simple_instance_group(
           name: 'provider_instance_group',
           jobs: [
             {
@@ -214,7 +214,7 @@ describe 'using director with config server and deployments having links', type:
 
     context 'when manual links are involved' do
       let(:instance_group_with_manual_consumes_link) do
-        instance_group_spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        instance_group_spec = Bosh::Spec::Deployments.simple_instance_group(
           name: 'property_job',
           jobs: [{
             'name' => 'consumer',
@@ -302,7 +302,7 @@ describe 'using director with config server and deployments having links', type:
     end
 
     let(:provider_deployment_instance_group_spec) do
-      instance_group_spec = Bosh::Spec::NewDeployments.simple_instance_group(
+      instance_group_spec = Bosh::Spec::Deployments.simple_instance_group(
         name: 'provider_deployment_node',
         jobs: [
           {
@@ -337,7 +337,7 @@ describe 'using director with config server and deployments having links', type:
     end
 
     let(:consumer_deployment_instance_group_spec) do
-      instance_group_spec = Bosh::Spec::NewDeployments.simple_instance_group(
+      instance_group_spec = Bosh::Spec::Deployments.simple_instance_group(
         name: 'consumer_deployment_node',
         jobs: [
           {
@@ -518,7 +518,7 @@ describe 'using director with config server and deployments having links', type:
       end
 
       let(:consumer_deployment_instance_group_spec) do
-        instance_group_spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        instance_group_spec = Bosh::Spec::Deployments.simple_instance_group(
           name: 'consumer_deployment_node',
           jobs: [
             {
@@ -648,7 +648,7 @@ describe 'using director with config server and deployments having links', type:
 
     context 'given a successful provider deployment with ' do
       let(:provider_deployment_instance_group_spec) do
-        instance_group_spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        instance_group_spec = Bosh::Spec::Deployments.simple_instance_group(
           name: 'provider_deployment_node',
           jobs: [
             {
@@ -674,7 +674,7 @@ describe 'using director with config server and deployments having links', type:
       end
 
       let(:consumer_deployment_instance_group_spec) do
-        instance_group_spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        instance_group_spec = Bosh::Spec::Deployments.simple_instance_group(
           name: 'consumer_deployment_node',
           jobs: [
             {
@@ -725,7 +725,7 @@ describe 'using director with config server and deployments having links', type:
     end
 
     let(:consumer_instance_group) do
-      spec = Bosh::Spec::NewDeployments.simple_instance_group(
+      spec = Bosh::Spec::Deployments.simple_instance_group(
         name: 'consumer_instance_group',
         jobs: [
           { 'name' => 'consumer', 'release' => 'bosh-release' },
@@ -737,7 +737,7 @@ describe 'using director with config server and deployments having links', type:
     end
 
     let(:provider_instance_group) do
-      spec = Bosh::Spec::NewDeployments.simple_instance_group(
+      spec = Bosh::Spec::Deployments.simple_instance_group(
         name: 'provider_instance_group',
         jobs: [
           {
@@ -772,7 +772,7 @@ describe 'using director with config server and deployments having links', type:
 
     context 'when consumer in different deployment (cross-deployment link)' do
       let(:consumer_instance_group) do
-        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        spec = Bosh::Spec::Deployments.simple_instance_group(
           name: 'consumer_instance_group',
           jobs: [
             {
@@ -820,7 +820,7 @@ describe 'using director with config server and deployments having links', type:
 
     context 'when variables are specified using an absolute path' do
       let(:consumer_instance_group) do
-        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        spec = Bosh::Spec::Deployments.simple_instance_group(
           name: 'consumer_instance_group',
           jobs: [
             {
@@ -838,7 +838,7 @@ describe 'using director with config server and deployments having links', type:
       end
 
       let(:provider_instance_group) do
-        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        spec = Bosh::Spec::Deployments.simple_instance_group(
           name: 'provider_instance_group',
           jobs: [
             {
@@ -906,7 +906,7 @@ describe 'using director with config server and deployments having links', type:
 
       context 'when consumer is not using provider link instance address' do
         let(:consumer_instance_group) do
-          spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          spec = Bosh::Spec::Deployments.simple_instance_group(
             name: 'consumer_instance_group',
             jobs: [
               { 'name' => 'consumer_no_instance_address', 'release' => 'bosh-release' },

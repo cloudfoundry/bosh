@@ -12,7 +12,7 @@ describe 'global networking', type: :integration do
   context 'when compilation pool configuration contains az information' do
 
     let(:cloud_config_hash) do
-      cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
       cloud_config_hash['azs'] = [{
           'name' => 'z2',
           'cloud_properties' => {
@@ -146,7 +146,7 @@ describe 'global networking', type: :integration do
 
   context 'when vm_type is specified for compilation' do
     let(:cloud_config_hash) do
-      cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
       cloud_config_hash['vm_types'] = [{
           'name' => 'foo-compilation',
           'cloud_properties' => {

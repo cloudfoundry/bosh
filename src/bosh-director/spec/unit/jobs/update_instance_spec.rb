@@ -11,7 +11,7 @@ module Bosh::Director
     let(:deployment) { Models::Deployment.make(name: 'simple', manifest: YAML.dump(manifest)) }
     let(:instance_state) { 'started' }
     let(:local_dns_manager) { instance_double(LocalDnsManager, update_dns_record_for_instance: nil) }
-    let(:manifest) { Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups }
+    let(:manifest) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
     let(:stemcell) { Bosh::Director::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302') }
     let(:variables_interpolator) { ConfigServer::VariablesInterpolator.new }
 

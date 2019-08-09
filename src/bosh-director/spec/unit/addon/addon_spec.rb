@@ -42,7 +42,7 @@ module Bosh::Director
       let(:deployment_name) { 'dep1' }
 
       let(:manifest_hash) do
-        manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+        manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
         manifest_hash['name'] = deployment_name
         manifest_hash
       end
@@ -73,7 +73,7 @@ module Bosh::Director
         let(:instance_group) do
           instance_group_parser = DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger)
           jobs = [{ 'name' => 'dummy', 'release' => 'dummy' }]
-          instance_group_parser.parse(Bosh::Spec::NewDeployments.simple_instance_group(jobs: jobs, azs: ['z1']), {})
+          instance_group_parser.parse(Bosh::Spec::Deployments.simple_instance_group(jobs: jobs, azs: ['z1']), {})
         end
         let(:release_model) { Bosh::Director::Models::Release.make(name: 'dummy') }
         let(:release_version_model) { Bosh::Director::Models::ReleaseVersion.make(version: '0.2-dev', release: release_model) }
@@ -148,7 +148,7 @@ module Bosh::Director
           stemcell = DeploymentPlan::Stemcell.parse(manifest_hash['stemcells'].first)
           deployment.add_stemcell(stemcell)
           deployment.cloud_planner = DeploymentPlan::CloudManifestParser.new(logger).parse(
-            Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs,
+            Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs,
           )
 
           deployment.add_instance_group(instance_group)
@@ -233,7 +233,7 @@ module Bosh::Director
               instance_group_parser = DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger)
               jobs = [{ 'name' => 'dummy_with_properties', 'release' => 'dummy' }]
               instance_group = instance_group_parser.parse(
-                Bosh::Spec::NewDeployments.simple_instance_group(
+                Bosh::Spec::Deployments.simple_instance_group(
                   name: 'excluded_ig',
                   jobs: jobs,
                   azs: ['z1'],
@@ -572,15 +572,15 @@ module Bosh::Director
               stemcell = DeploymentPlan::Stemcell.parse(manifest_hash['stemcells'].first)
               deployment.add_stemcell(stemcell)
               deployment.cloud_planner = DeploymentPlan::CloudManifestParser.new(logger).parse(
-                Bosh::Spec::NewDeployments.simple_cloud_config,
+                Bosh::Spec::Deployments.simple_cloud_config,
               )
               instance_group1 = instance_group_parser.parse(
-                Bosh::Spec::NewDeployments.simple_instance_group(jobs: [{ 'name' => 'dummy', 'release' => 'dummy' }]),
+                Bosh::Spec::Deployments.simple_instance_group(jobs: [{ 'name' => 'dummy', 'release' => 'dummy' }]),
                 {},
               )
               deployment.add_instance_group(instance_group1)
               instance_group2 = instance_group_parser.parse(
-                Bosh::Spec::NewDeployments.simple_instance_group(
+                Bosh::Spec::Deployments.simple_instance_group(
                   jobs: [{ 'name' => 'dummy_with_properties', 'release' => 'dummy' }], name: 'foobar1',
                 ),
                 {},
@@ -609,11 +609,11 @@ module Bosh::Director
               stemcell = DeploymentPlan::Stemcell.parse(manifest_hash['stemcells'].first)
               deployment.add_stemcell(stemcell)
               deployment.cloud_planner = DeploymentPlan::CloudManifestParser.new(logger).parse(
-                Bosh::Spec::NewDeployments.simple_cloud_config_with_multiple_azs,
+                Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs,
               )
               jobs = [{ 'name' => 'dummy', 'release' => 'dummy' }]
               instance_group = instance_group_parser.parse(
-                Bosh::Spec::NewDeployments.simple_instance_group(jobs: jobs, azs: ['z1']),
+                Bosh::Spec::Deployments.simple_instance_group(jobs: jobs, azs: ['z1']),
                 {},
               )
               deployment.add_instance_group(instance_group)

@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe 'cli: cloudcheck', type: :integration do
-  let(:manifest) { Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups }
+  let(:manifest) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
   let(:director_name) { current_sandbox.director_name }
   let(:deployment_name) { manifest['name'] }
   let(:runner) { bosh_runner_in_work_dir(ClientSandbox.test_release_dir) }
@@ -28,7 +28,7 @@ describe 'cli: cloudcheck', type: :integration do
       manifest['instance_groups'].first['properties'] = { 'test_property' => '((test_property))' }
       deploy_from_scratch(
         manifest_hash: manifest,
-        cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config,
+        cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
         include_credentials: false,
         env: client_env,
       )

@@ -18,10 +18,10 @@ describe 'basic functionality', type: :integration do
       bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
 
       upload_stemcell
-      upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
 
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
-      manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group(
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'] << Bosh::Spec::Deployments.simple_instance_group(
         name: 'foobar_without_packages',
         job_name: 'foobar_without_packages',
       )
@@ -54,10 +54,10 @@ describe 'basic functionality', type: :integration do
       bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
 
       upload_stemcell
-      upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
 
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
-      manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group(
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'] << Bosh::Spec::Deployments.simple_instance_group(
         name: 'foobar_without_packages',
         job_name: 'foobar_without_packages',
       )
@@ -90,9 +90,9 @@ describe 'basic functionality', type: :integration do
       bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
 
       upload_stemcell
-      upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
 
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
 
       # deploy Deployment1
       manifest_hash['name'] = 'dep1'
@@ -129,12 +129,12 @@ describe 'basic functionality', type: :integration do
       bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
 
       upload_stemcell
-      upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
 
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'] = []
-      manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group(name: 'ig-1')
-      manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group(name: 'ig-2')
+      manifest_hash['instance_groups'] << Bosh::Spec::Deployments.simple_instance_group(name: 'ig-1')
+      manifest_hash['instance_groups'] << Bosh::Spec::Deployments.simple_instance_group(name: 'ig-2')
 
       # deploy Deployment1
       manifest_hash['name'] = 'dep1'
@@ -165,11 +165,11 @@ describe 'basic functionality', type: :integration do
       bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
 
       upload_stemcell
-      upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
 
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
-      manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group(name: 'ig-1')
-      manifest_hash['instance_groups'] << Bosh::Spec::NewDeployments.simple_instance_group(name: 'ig-2')
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'] << Bosh::Spec::Deployments.simple_instance_group(name: 'ig-1')
+      manifest_hash['instance_groups'] << Bosh::Spec::Deployments.simple_instance_group(name: 'ig-2')
 
       # deploy Deployment1
       manifest_hash['name'] = 'dep1'
@@ -198,7 +198,7 @@ describe 'basic functionality', type: :integration do
       upload_stemcell # name: ubuntu-stemcell, os: toronto-os
       upload_stemcell_2 # name: centos-stemcell, os: toronto-centos
 
-      manifest_hash = Bosh::Spec::NewDeployments.stemcell_os_specific_addon_manifest
+      manifest_hash = Bosh::Spec::Deployments.stemcell_os_specific_addon_manifest
       manifest_hash['stemcells'] = [
         {
           'alias' => 'toronto',
@@ -212,7 +212,7 @@ describe 'basic functionality', type: :integration do
         },
       ]
 
-      cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
       cloud_config_hash['vm_types'] = [
         { 'name' => 'a', 'cloud_properties' => {} },
         { 'name' => 'b', 'cloud_properties' => {} },
@@ -241,17 +241,17 @@ describe 'basic functionality', type: :integration do
 
       upload_stemcell
 
-      cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
       cloud_config_hash['networks'] = [
-        { 'name' => 'a', 'subnets' => [Bosh::Spec::NewDeployments.subnet] },
-        { 'name' => 'b', 'subnets' => [Bosh::Spec::NewDeployments.subnet] },
+        { 'name' => 'a', 'subnets' => [Bosh::Spec::Deployments.subnet] },
+        { 'name' => 'b', 'subnets' => [Bosh::Spec::Deployments.subnet] },
       ]
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
-      manifest_hash = Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell
+      manifest_hash = Bosh::Spec::Deployments.test_release_manifest_with_stemcell
       manifest_hash['instance_groups'] = [
-        Bosh::Spec::NewDeployments.simple_instance_group(network_name: 'a', name: 'has-addon-vm', instances: 1),
-        Bosh::Spec::NewDeployments.simple_instance_group(network_name: 'b', name: 'no-addon-vm', instances: 1),
+        Bosh::Spec::Deployments.simple_instance_group(network_name: 'a', name: 'has-addon-vm', instances: 1),
+        Bosh::Spec::Deployments.simple_instance_group(network_name: 'b', name: 'no-addon-vm', instances: 1),
       ]
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
@@ -272,8 +272,8 @@ describe 'basic functionality', type: :integration do
 
       bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
 
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
-      manifest_hash['instance_groups'][1] = Bosh::Spec::NewDeployments.simple_errand_instance_group.merge(
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'][1] = Bosh::Spec::Deployments.simple_errand_instance_group.merge(
         'name' => 'errand',
       )
 
@@ -293,13 +293,13 @@ describe 'basic functionality', type: :integration do
 
   context 'in deployent manifests' do
     it 'allows addon to be added and ensures that addon job properties are properly assigned' do
-      manifest_hash = Bosh::Spec::NewDeployments.manifest_with_addons
+      manifest_hash = Bosh::Spec::Deployments.manifest_with_addons
 
       bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
       bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
 
       upload_stemcell
-      upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
       foobar_instance = director.instance('foobar', '0')
@@ -312,9 +312,9 @@ describe 'basic functionality', type: :integration do
     end
 
     it 'allows to apply exclude rules' do
-      manifest_hash = Bosh::Spec::NewDeployments.manifest_with_addons
+      manifest_hash = Bosh::Spec::Deployments.manifest_with_addons
       manifest_hash['addons'][0]['exclude'] = { 'jobs' => [{ 'name' => 'foobar_without_packages', 'release' => 'bosh-release' }] }
-      manifest_hash['instance_groups'][1] = Bosh::Spec::NewDeployments.simple_instance_group(
+      manifest_hash['instance_groups'][1] = Bosh::Spec::Deployments.simple_instance_group(
         name: 'foobar_without_packages',
         jobs: [{ 'name' => 'foobar_without_packages', 'release' => 'bosh-release' }],
         instances: 1,
@@ -325,7 +325,7 @@ describe 'basic functionality', type: :integration do
 
       upload_stemcell
 
-      upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
       foobar_instance = director.instance('foobar', '0')
@@ -348,7 +348,7 @@ describe 'basic functionality', type: :integration do
       runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
       expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
-      manifest_hash = Bosh::Spec::NewDeployments.complex_manifest_with_addon
+      manifest_hash = Bosh::Spec::Deployments.complex_manifest_with_addon
 
       bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
       bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
@@ -356,7 +356,7 @@ describe 'basic functionality', type: :integration do
       upload_stemcell # name: ubuntu-stemcell, os: toronto-os
       upload_stemcell_2 # name: centos-stemcell, os: toronto-centos
 
-      cloud_config_hash = Bosh::Spec::NewDeployments.simple_os_specific_cloud_config
+      cloud_config_hash = Bosh::Spec::Deployments.simple_os_specific_cloud_config
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
@@ -398,7 +398,7 @@ describe 'basic functionality', type: :integration do
     end
 
     it 'does not cause updates if job ordering within instance group changes' do
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
       runtime_config['addons'] = [

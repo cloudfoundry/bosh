@@ -7,8 +7,8 @@ describe 'cli: variables', type: :integration do
   let(:director_name) { current_sandbox.director_name }
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger) }
   let(:manifest_hash) do
-    Bosh::Spec::NewDeployments.manifest_with_release.merge(
-      'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
+    Bosh::Spec::Deployments.manifest_with_release.merge(
+      'instance_groups' => [Bosh::Spec::Deployments.instance_group_with_many_jobs(
         name: '((ig_placeholder))',
         jobs: [
           { 'name' => 'job_with_property_types',
@@ -19,7 +19,7 @@ describe 'cli: variables', type: :integration do
       )],
     )
   end
-  let(:cloud_config) { Bosh::Spec::NewDeployments.simple_cloud_config }
+  let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config }
   let(:client_env) do
     { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => current_sandbox.certificate_path.to_s }
   end
@@ -145,10 +145,10 @@ describe 'cli: variables', type: :integration do
 
   context 'when dealing with multiple deploys' do
     let(:manifest_hash) do
-      Bosh::Spec::NewDeployments.manifest_with_release.merge(
+      Bosh::Spec::Deployments.manifest_with_release.merge(
         'releases' => [{ 'name' => 'bosh-release', 'version' => '0.1-dev' }],
         'instance_groups' => [
-          Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
+          Bosh::Spec::Deployments.instance_group_with_many_jobs(
             name: 'ig1',
             jobs: [
               {
@@ -163,7 +163,7 @@ describe 'cli: variables', type: :integration do
             ],
             instances: 1,
           ),
-          Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
+          Bosh::Spec::Deployments.instance_group_with_many_jobs(
             name: 'ig2',
             jobs: [
               {
@@ -330,10 +330,10 @@ describe 'cli: variables', type: :integration do
 
     context 'when you have failed deploys' do
       let(:manifest_hash) do
-        Bosh::Spec::NewDeployments.manifest_with_release.merge(
+        Bosh::Spec::Deployments.manifest_with_release.merge(
           'releases' => [{ 'name' => 'bosh-release', 'version' => '0.1-dev' }],
           'instance_groups' => [
-            Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
+            Bosh::Spec::Deployments.instance_group_with_many_jobs(
               name: 'ig1',
               jobs: [
                 {
@@ -350,7 +350,7 @@ describe 'cli: variables', type: :integration do
               ],
               instances: 1,
             ),
-            Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
+            Bosh::Spec::Deployments.instance_group_with_many_jobs(
               name: 'ig2',
               jobs: [
                 {

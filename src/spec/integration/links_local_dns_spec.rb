@@ -8,7 +8,7 @@ describe 'Links with local_dns enabled', type: :integration do
   end
 
   let(:cloud_config) do
-    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config_hash['azs'] = [{ 'name' => 'z1' }]
     cloud_config_hash['networks'].first['subnets'].first['az'] = 'z1'
     cloud_config_hash['compilation']['az'] = 'z1'
@@ -30,7 +30,7 @@ describe 'Links with local_dns enabled', type: :integration do
   end
 
   let(:api_instance_group_spec) do
-    spec = Bosh::Spec::NewDeployments.simple_instance_group(
+    spec = Bosh::Spec::Deployments.simple_instance_group(
       name: 'my_api',
       jobs: [{
         'name' => 'api_server',
@@ -47,7 +47,7 @@ describe 'Links with local_dns enabled', type: :integration do
   end
 
   let(:mysql_instance_group_spec) do
-    spec = Bosh::Spec::NewDeployments.simple_instance_group(
+    spec = Bosh::Spec::Deployments.simple_instance_group(
       name: 'mysql',
       jobs: [{ 'name' => 'database', 'release' => 'bosh-release' }],
       instances: 1,
@@ -61,7 +61,7 @@ describe 'Links with local_dns enabled', type: :integration do
   let(:provider_network_name) { 'manual-network' }
 
   let(:manifest) do
-    manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
     manifest['instance_groups'] = [api_instance_group_spec, mysql_instance_group_spec]
     manifest
   end
@@ -157,7 +157,7 @@ describe 'Links with local_dns enabled', type: :integration do
 
         context 'using link.address helper' do
           let(:job_link_overrided_spec) do
-            instance_group_spec = Bosh::Spec::NewDeployments.simple_instance_group(
+            instance_group_spec = Bosh::Spec::Deployments.simple_instance_group(
               name: 'my_api',
               jobs: [
                 {
@@ -267,7 +267,7 @@ describe 'Links with local_dns enabled', type: :integration do
 
       context 'when having cross deployment links' do
         let(:mysql_instance_group_spec) do
-          spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          spec = Bosh::Spec::Deployments.simple_instance_group(
             name: 'mysql',
             jobs: [
               {
@@ -290,7 +290,7 @@ describe 'Links with local_dns enabled', type: :integration do
         end
 
         let(:api_instance_group_spec) do
-          spec = Bosh::Spec::NewDeployments.simple_instance_group(
+          spec = Bosh::Spec::Deployments.simple_instance_group(
             name: 'my_api',
             jobs: [
               {
@@ -550,7 +550,7 @@ describe 'Links with local_dns enabled', type: :integration do
 
     context 'when having cross deployment links' do
       let(:mysql_instance_group_spec) do
-        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        spec = Bosh::Spec::Deployments.simple_instance_group(
           name: 'mysql',
           jobs: [
             {
@@ -573,7 +573,7 @@ describe 'Links with local_dns enabled', type: :integration do
       end
 
       let(:api_instance_group_spec) do
-        spec = Bosh::Spec::NewDeployments.simple_instance_group(
+        spec = Bosh::Spec::Deployments.simple_instance_group(
           name: 'my_api',
           jobs: [
             {

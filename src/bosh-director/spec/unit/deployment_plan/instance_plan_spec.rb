@@ -132,14 +132,14 @@ module Bosh::Director::DeploymentPlan
     let(:existing_instance) { instance_model }
 
     let(:instance_group_spec) do
-      instance_group = Bosh::Spec::NewDeployments.simple_instance_group
+      instance_group = Bosh::Spec::Deployments.simple_instance_group
       instance_group['env'] = { 'bosh' => { 'password' => 'foobar' } }
       instance_group
     end
 
-    let(:network_spec) { Bosh::Spec::NewDeployments.simple_cloud_config['networks'].first }
-    let(:cloud_config_manifest) { Bosh::Spec::NewDeployments.simple_cloud_config }
-    let(:deployment_manifest) { Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups }
+    let(:network_spec) { Bosh::Spec::Deployments.simple_cloud_config['networks'].first }
+    let(:cloud_config_manifest) { Bosh::Spec::Deployments.simple_cloud_config }
+    let(:deployment_manifest) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
     let(:deployment_model) do
       cloud_config = BD::Models::Config.make(:cloud, content: YAML.dump(cloud_config_manifest))
       deployment = BD::Models::Deployment.make(
@@ -631,7 +631,7 @@ module Bosh::Director::DeploymentPlan
 
       context 'when the env has changed' do
         let(:instance_group_spec) do
-          instance_group = Bosh::Spec::NewDeployments.simple_instance_group
+          instance_group = Bosh::Spec::Deployments.simple_instance_group
           instance_group['env'] = { 'key' => 'changed-value' }
           instance_group
         end
@@ -980,7 +980,7 @@ module Bosh::Director::DeploymentPlan
 
       context 'when the env has changed' do
         let(:instance_group_spec) do
-          instance_group = Bosh::Spec::NewDeployments.simple_instance_group
+          instance_group = Bosh::Spec::Deployments.simple_instance_group
           instance_group['env'] = { 'key' => 'changed-value' }
           instance_group
         end
@@ -1125,7 +1125,7 @@ module Bosh::Director::DeploymentPlan
 
       context 'when the env has changed' do
         let(:instance_group_spec) do
-          instance_group = Bosh::Spec::NewDeployments.simple_instance_group
+          instance_group = Bosh::Spec::Deployments.simple_instance_group
           instance_group['env'] = { 'key' => 'changed-value' }
           instance_group
         end
@@ -1327,7 +1327,7 @@ module Bosh::Director::DeploymentPlan
 
     describe '#persistent_disk_changed?' do
       let(:cloud_config_manifest) do
-        cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
+        cloud_config = Bosh::Spec::Deployments.simple_cloud_config
         cloud_config['disk_types'] = [{
           'name' => 'disk_a',
           'disk_size' => 24,
@@ -1357,7 +1357,7 @@ module Bosh::Director::DeploymentPlan
 
       context 'when there is a change' do
         let(:instance_group_spec) do
-          instance_group_spec = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups['instance_groups'].first
+          instance_group_spec = Bosh::Spec::Deployments.simple_manifest_with_instance_groups['instance_groups'].first
           instance_group_spec['persistent_disk_type'] = 'disk_a'
           instance_group_spec
         end
@@ -1559,7 +1559,7 @@ module Bosh::Director::DeploymentPlan
           let(:job2_template) { Bosh::Director::Models::Template.make(name: 'job2') }
 
           let(:deployment_manifest) do
-            Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(
+            Bosh::Spec::Deployments.simple_manifest_with_instance_groups(
               jobs: [
                 { 'name' => 'job1', 'release' => 'bosh-release' },
                 { 'name' => 'job2', 'release' => 'bosh-release' },
@@ -1568,7 +1568,7 @@ module Bosh::Director::DeploymentPlan
           end
 
           let(:instance_group_spec) do
-            Bosh::Spec::NewDeployments.simple_instance_group(
+            Bosh::Spec::Deployments.simple_instance_group(
               jobs: [
                 { 'name' => 'job1', 'release' => 'bosh-release' },
                 { 'name' => 'job2', 'release' => 'bosh-release' },

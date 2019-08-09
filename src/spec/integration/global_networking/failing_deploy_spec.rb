@@ -62,7 +62,7 @@ describe 'failing deploy', type: :integration do
     )
     deploy_from_scratch(
       manifest_hash: first_manifest_hash,
-      cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config,
+      cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
       failure_expected: true,
     )
 
@@ -100,7 +100,7 @@ describe 'failing deploy', type: :integration do
     )
     deploy_from_scratch(
       manifest_hash: manifest_hash,
-      cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config,
+      cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
       failure_expected: true,
     )
 
@@ -137,7 +137,7 @@ describe 'failing deploy', type: :integration do
     )
     deploy_from_scratch(
       manifest_hash: manifest_hash,
-      cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config,
+      cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
       failure_expected: true,
     )
 
@@ -150,7 +150,7 @@ describe 'failing deploy', type: :integration do
     current_sandbox.cpi.commands.allow_create_vm_to_succeed
 
     manifest_hash['instance_groups'] = [
-      Bosh::Spec::NewDeployments.simple_instance_group(name: 'second-instance-group', instances: 1),
+      Bosh::Spec::Deployments.simple_instance_group(name: 'second-instance-group', instances: 1),
     ]
     deploy_simple_manifest(manifest_hash: manifest_hash)
     # IPs are not released within single deployment
@@ -160,7 +160,7 @@ describe 'failing deploy', type: :integration do
 
   context 'create-swap-delete' do
     let(:manifest) do
-      manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(instances: 2)
+      manifest = Bosh::Spec::Deployments.simple_manifest_with_instance_groups(instances: 2)
       manifest['instance_groups'][0]['persistent_disk'] = 660
       manifest['update'] = manifest['update'].merge('vm_strategy' => 'create-swap-delete')
       manifest
@@ -180,7 +180,7 @@ describe 'failing deploy', type: :integration do
 
       context 'manual network' do
         let(:cloud_config) do
-          cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
+          cloud_config = Bosh::Spec::Deployments.simple_cloud_config
           cloud_config['networks'][0]['type'] = 'manual'
           cloud_config
         end
@@ -200,7 +200,7 @@ describe 'failing deploy', type: :integration do
 
           context 'starting with multiple networks' do
             let(:cloud_config) do
-              cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
+              cloud_config = Bosh::Spec::Deployments.simple_cloud_config
               cloud_config['networks'] = networks_spec
               cloud_config
             end
@@ -225,7 +225,7 @@ describe 'failing deploy', type: :integration do
               ]
             end
             let(:manifest) do
-              manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(instances: 2)
+              manifest = Bosh::Spec::Deployments.simple_manifest_with_instance_groups(instances: 2)
               manifest['instance_groups'][0]['persistent_disk'] = 660
               manifest['instance_groups'][0]['networks'] = [
                 { 'name' => 'a', 'default' => %w[dns gateway] },
@@ -253,7 +253,7 @@ describe 'failing deploy', type: :integration do
 
       context 'dynamic network' do
         let(:cloud_config) do
-          cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
+          cloud_config = Bosh::Spec::Deployments.simple_cloud_config
           cloud_config['networks'][0]['type'] = 'dynamic'
           cloud_config
         end

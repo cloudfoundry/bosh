@@ -49,8 +49,8 @@ describe 'Logging into a director with UAA authentication', type: :integration d
         env: client_env,
         include_credentials: false,
         return_exit_code: true,
-        manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups,
-        cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config
+        manifest_hash: Bosh::Spec::Deployments.simple_manifest_with_instance_groups,
+        cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
        )
       expect(exit_code).to eq(0)
     end
@@ -128,8 +128,8 @@ CERT
           env: client_env,
           include_credentials: false,
           failure_expected: true,
-          manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups,
-          cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config
+          manifest_hash: Bosh::Spec::Deployments.simple_manifest_with_instance_groups,
+          cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
         )
         expect(output).to include("one of the scopes: bosh.admin, bosh.deadbeef.admin")
 
@@ -144,8 +144,8 @@ CERT
           no_login: true,
           include_credentials: false,
           env: client_env,
-          manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups,
-          cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config
+          manifest_hash: Bosh::Spec::Deployments.simple_manifest_with_instance_groups,
+          cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
         )
 
         client_env = {'BOSH_CLIENT' => 'read-access', 'BOSH_CLIENT_SECRET' => 'secret'}
@@ -190,7 +190,10 @@ CERT
       it 'can not access the resource for which the user does not have permission, even though the team membership grants some level of access to the controller' do
         pending("#132016911 bosh cli should not report success when user does not have correct permissions")
         client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
-        deploy_from_scratch(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config, environment_name: current_sandbox.director_url, no_login: true, env: client_env, include_credentials: false)
+        deploy_from_scratch(
+          cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
+          environment_name: current_sandbox.director_url, no_login: true, env: client_env, include_credentials: false
+        )
 
         client_env = {'BOSH_CLIENT' => 'dev_team', 'BOSH_CLIENT_SECRET' => 'secret'}
         output = bosh_runner.run('delete-deployment', environment_name: current_sandbox.director_url, deployment_name: 'simple', include_credentials: false, env: client_env, failure_expected: true)
@@ -208,8 +211,8 @@ CERT
           no_login: true,
           include_credentials: false,
           env: client_env,
-          manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups,
-          cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config
+          manifest_hash: Bosh::Spec::Deployments.simple_manifest_with_instance_groups,
+          cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
         )
 
         original_instance = director.instance('foobar', '0', deployment_name: 'simple', environment_name: current_sandbox.director_url, env: client_env, include_credentials: false)

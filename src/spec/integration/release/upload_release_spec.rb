@@ -511,10 +511,10 @@ describe 'upload release', type: :integration do
 
         bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
 
-        cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::NewDeployments.simple_cloud_config)
+        cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
         bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
 
-        deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups)
+        deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.simple_manifest_with_instance_groups)
 
         bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
 

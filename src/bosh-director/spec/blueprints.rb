@@ -208,13 +208,13 @@ module Bosh::Director::Models
   Config.blueprint(:cloud_with_manifest) do
     type { 'cloud' }
     name { 'default' }
-    content { YAML.dump(Bosh::Spec::NewDeployments.simple_cloud_config) }
+    content { YAML.dump(Bosh::Spec::Deployments.simple_cloud_config) }
   end
 
   Config.blueprint(:cloud_with_manifest_v2) do
     type { 'cloud' }
     name { 'default' }
-    content { YAML.dump(Bosh::Spec::NewDeployments.simple_cloud_config) }
+    content { YAML.dump(Bosh::Spec::Deployments.simple_cloud_config) }
   end
 
   Config.blueprint(:runtime) do
@@ -230,7 +230,7 @@ module Bosh::Director::Models
   Config.blueprint(:cpi_with_manifest) do
     type { 'cpi' }
     name { 'default' }
-    content { YAML.dump(Bosh::Spec::NewDeployments.multi_cpi_config) }
+    content { YAML.dump(Bosh::Spec::Deployments.multi_cpi_config) }
   end
 
   DeploymentProperty.blueprint do

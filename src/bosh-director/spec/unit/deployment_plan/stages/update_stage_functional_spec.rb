@@ -14,7 +14,7 @@ module Bosh::Director::DeploymentPlan::Stages
 
     let(:base_job) { Bosh::Director::Jobs::BaseJob.new }
     let(:assembler) { Assembler.new(deployment_plan, nil, nil, variables_interpolator) }
-    let(:cloud_config) { Bosh::Spec::NewDeployments.simple_cloud_config }
+    let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config }
     let(:runtime_configs) { [] }
 
     let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
@@ -26,9 +26,9 @@ module Bosh::Director::DeploymentPlan::Stages
       Bosh::Director::DeploymentPlan::Assembler.create(deployment_plan, variables_interpolator).bind_models
       deployment_plan
     end
-    let(:static_ip) { Bosh::Spec::NewDeployments.subnet['static'].first }
+    let(:static_ip) { Bosh::Spec::Deployments.subnet['static'].first }
     let(:deployment_manifest) do
-      Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups(instances: 1, static_ips: static_ip)
+      Bosh::Spec::Deployments.simple_manifest_with_instance_groups(instances: 1, static_ips: static_ip)
     end
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpiResponseWrapper) }
 
@@ -42,7 +42,7 @@ module Bosh::Director::DeploymentPlan::Stages
       release_version = Bosh::Director::Models::ReleaseVersion.make(version: '0.1-dev')
       release.add_version(release_version)
       template = Bosh::Director::Models::Template.make(
-        name: Bosh::Spec::NewDeployments.simple_instance_group['jobs'].first['name'],
+        name: Bosh::Spec::Deployments.simple_instance_group['jobs'].first['name'],
       )
       release_version.add_template(template)
 
@@ -105,7 +105,7 @@ module Bosh::Director::DeploymentPlan::Stages
                 anything,
                 stemcell.cid,
                 anything,
-                { Bosh::Spec::NewDeployments.network['name'] => hash_including('ip' => static_ip) },
+                { Bosh::Spec::Deployments.network['name'] => hash_including('ip' => static_ip) },
                 anything,
                 anything,
               )

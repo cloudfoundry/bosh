@@ -142,7 +142,7 @@ describe 'global networking', type: :integration do
 
       cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy')
-      manifest_hash['instance_groups'] = [Bosh::Spec::NewDeployments.simple_instance_group(
+      manifest_hash['instance_groups'] = [Bosh::Spec::Deployments.simple_instance_group(
         name: 'first-instance-group',
         instances: 1,
         job_name: 'foobar_without_packages',
@@ -155,7 +155,7 @@ describe 'global networking', type: :integration do
       expect_running_vms_with_names_and_count({ 'first-instance-group' => 1 }, { deployment_name: 'my-deploy' })
 
       manifest_hash['instance_groups'] = [
-        Bosh::Spec::NewDeployments.simple_instance_group(name: 'second-instance-group', instances: 1),
+        Bosh::Spec::Deployments.simple_instance_group(name: 'second-instance-group', instances: 1),
       ]
       output = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true)
       expect(output).to include('no more available')
@@ -271,7 +271,7 @@ describe 'global networking', type: :integration do
         end
 
         let(:instance_group_with_two_networks) do
-          instance_group_spec = Bosh::Spec::NewDeployments.simple_instance_group(instances: 1)
+          instance_group_spec = Bosh::Spec::Deployments.simple_instance_group(instances: 1)
           instance_group_spec['networks'] = [
             { 'name' => 'first', 'default' => %w[dns gateway] },
             { 'name' => 'second' },
@@ -283,12 +283,12 @@ describe 'global networking', type: :integration do
           first_subnet = Bosh::Spec::NetworkingManifest.make_subnet(available_ips: 2, range: '192.168.1.0/24') # 1 for compilation
           second_subnet = Bosh::Spec::NetworkingManifest.make_subnet(available_ips: 1, range: '10.10.0.0/24')
 
-          cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+          cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
           cloud_config_hash['networks'] = make_network_spec(first_subnet, second_subnet)
           cloud_config_hash['compilation']['network'] = 'first'
           upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
-          manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+          manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
           manifest_hash['instance_groups'] = [instance_group_with_two_networks]
           deploy_simple_manifest(manifest_hash: manifest_hash)
 

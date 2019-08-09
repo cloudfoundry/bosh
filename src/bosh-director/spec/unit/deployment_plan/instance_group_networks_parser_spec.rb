@@ -6,7 +6,7 @@ module Bosh::Director::DeploymentPlan
 
     let(:instance_group_networks_parser) { InstanceGroupNetworksParser.new(Network::REQUIRED_DEFAULTS, Network::OPTIONAL_DEFAULTS) }
     let(:instance_group_spec) do
-      instance_group = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups['instance_groups'].first
+      instance_group = Bosh::Spec::Deployments.simple_manifest_with_instance_groups['instance_groups'].first
       instance_group_network = instance_group['networks'].first
       instance_group_network['static_ips'] = ['192.168.1.1', '192.168.1.2']
       instance_group
@@ -25,7 +25,7 @@ module Bosh::Director::DeploymentPlan
 
     context 'when instance group spec is missing network information' do
       let(:instance_group_spec) do
-        instance_group = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups['instance_groups'].first
+        instance_group = Bosh::Spec::Deployments.simple_manifest_with_instance_groups['instance_groups'].first
         instance_group['networks'] = []
         instance_group
       end
@@ -40,7 +40,7 @@ module Bosh::Director::DeploymentPlan
     context 'when instance group network spec references dynamic network with static IPs' do
       let(:dynamic_network) { BD::DeploymentPlan::DynamicNetwork.new('a', [], logger) }
       let(:instance_group_spec) do
-        instance_group = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups['instance_groups'].first
+        instance_group = Bosh::Spec::Deployments.simple_manifest_with_instance_groups['instance_groups'].first
         instance_group['networks'] = [{
           'name' => 'a',
           'static_ips' => ['10.0.0.2'],
@@ -57,7 +57,7 @@ module Bosh::Director::DeploymentPlan
 
     context 'when instance group uses the same static IP more than once' do
       let(:instance_group_spec) do
-        instance_group = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups['instance_groups'].first
+        instance_group = Bosh::Spec::Deployments.simple_manifest_with_instance_groups['instance_groups'].first
         instance_group_network = instance_group['networks'].first
         instance_group_network['static_ips'] = ['192.168.1.2', '192.168.1.2']
         instance_group

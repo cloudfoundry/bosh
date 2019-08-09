@@ -4,8 +4,8 @@ describe 'using director with config server', type: :integration do
   with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa')
 
   let(:manifest_hash) do
-    Bosh::Spec::NewDeployments.test_release_manifest_with_stemcell.merge(
-      'instance_groups' => [Bosh::Spec::NewDeployments.instance_group_with_many_jobs(
+    Bosh::Spec::Deployments.test_release_manifest_with_stemcell.merge(
+      'instance_groups' => [Bosh::Spec::Deployments.instance_group_with_many_jobs(
         name: 'our_instance_group',
         jobs: [
           {
@@ -24,7 +24,7 @@ describe 'using director with config server', type: :integration do
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger)}
   let(:deployment_name) { manifest_hash['name'] }
   let(:director_name) { current_sandbox.director_name }
-  let(:cloud_config)  { Bosh::Spec::NewDeployments.simple_cloud_config }
+  let(:cloud_config)  { Bosh::Spec::Deployments.simple_cloud_config }
   let(:job_properties) do
     {
       'gargamel' => {
@@ -71,7 +71,7 @@ describe 'using director with config server', type: :integration do
 
           output, exit_code = deploy_from_scratch(
             manifest_hash: manifest_hash,
-            cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config,
+            cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
             failure_expected: true,
             return_exit_code: true,
             no_login: true,
@@ -233,7 +233,7 @@ describe 'using director with config server', type: :integration do
           end
 
           it 'does variable substitution on the initial creation' do
-            manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+            manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
             manifest_hash['instance_groups'].first['instances'] = 1
             deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
 

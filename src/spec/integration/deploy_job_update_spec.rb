@@ -2,8 +2,8 @@ require_relative '../spec_helper'
 
 describe 'deploy job update', type: :integration do
   with_reset_sandbox_before_each
-  let(:cloud_config_hash) { Bosh::Spec::NewDeployments.simple_cloud_config }
-  let(:manifest_hash) { Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups }
+  let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
+  let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
 
   it 'updates a job with multiple instances in parallel and obeys max_in_flight' do
     manifest_hash['update']['canaries'] = 0
@@ -82,15 +82,15 @@ describe 'deploy job update', type: :integration do
   end
 
   it 'stops deployment when a job update fails' do
-    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
 
     director.instance('foobar', '0').fail_job
 
-    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config_hash['vm_types'][0]['size'] = 2
     upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
     manifest_hash['update']['canary_watch_time'] = 0
     manifest_hash['instance_groups'][0]['instances'] = 2
 

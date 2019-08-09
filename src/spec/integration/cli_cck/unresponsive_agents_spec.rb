@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe 'cli: cloudcheck', type: :integration do
-  let(:manifest) { Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups }
+  let(:manifest) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
   let(:director_name) { current_sandbox.director_name }
   let(:deployment_name) { manifest['name'] }
   let(:runner) { bosh_runner_in_work_dir(ClientSandbox.test_release_dir) }
@@ -17,7 +17,7 @@ describe 'cli: cloudcheck', type: :integration do
       manifest['instance_groups'][0]['persistent_disk'] = 100
       manifest['tags'] = { 'deployment-tag' => 'deployment-value' }
       upload_runtime_config(runtime_config_hash: { 'tags' => { 'runtime-tag' => 'runtime-value' } })
-      deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+      deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
 
       expect(runner.run('cloud-check --report', deployment_name: 'simple')).to match(regexp('0 problems'))
     end
@@ -53,10 +53,10 @@ describe 'cli: cloudcheck', type: :integration do
 
     before do
       bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_with_api_version.tgz')}")
-      upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
       create_and_upload_links_release
 
-      manifest['instance_groups'][0] = Bosh::Spec::NewDeployments.simple_instance_group(
+      manifest['instance_groups'][0] = Bosh::Spec::Deployments.simple_instance_group(
         name: 'foobar',
         jobs: [
           {

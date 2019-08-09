@@ -50,19 +50,19 @@ describe 'global networking', type: :integration do
     end
 
     let(:cloud_config_hash) do
-      cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
       cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.10', '192.168.1.11']
       cloud_config_hash
     end
 
     let(:simple_manifest) do
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'].first['instances'] = 1
       manifest_hash
     end
 
     let(:second_deployment_manifest) do
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'].first['instances'] = 1
       manifest_hash['name'] = 'second_deployment'
       manifest_hash
@@ -270,12 +270,12 @@ describe 'global networking', type: :integration do
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy')
 
       manifest_hash['instance_groups'] = [
-        Bosh::Spec::NewDeployments.simple_instance_group(
+        Bosh::Spec::Deployments.simple_instance_group(
           name: 'first-instance-group',
           static_ips: ['192.168.1.10'],
           instances: 1,
         ),
-        Bosh::Spec::NewDeployments.simple_instance_group(
+        Bosh::Spec::Deployments.simple_instance_group(
           name: 'second-instance-group',
           static_ips: ['192.168.1.11'],
           instances: 1,
@@ -284,12 +284,12 @@ describe 'global networking', type: :integration do
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
       manifest_hash['instance_groups'] = [
-        Bosh::Spec::NewDeployments.simple_instance_group(
+        Bosh::Spec::Deployments.simple_instance_group(
           name: 'first-instance-group',
           static_ips: ['192.168.1.11'],
           instances: 1,
         ),
-        Bosh::Spec::NewDeployments.simple_instance_group(
+        Bosh::Spec::Deployments.simple_instance_group(
           name: 'second-instance-group',
           static_ips: ['192.168.1.10'],
           instances: 1,
@@ -311,7 +311,7 @@ describe 'global networking', type: :integration do
       failing_deployment_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 1)
       other_deployment_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-other-deploy', instances: 1)
       failing_deployment_manifest_hash['instance_groups'] = [
-        Bosh::Spec::NewDeployments.simple_instance_group(
+        Bosh::Spec::Deployments.simple_instance_group(
           name: 'first-instance-group',
           static_ips: ['192.168.1.10'],
           instances: 1,
@@ -319,7 +319,7 @@ describe 'global networking', type: :integration do
       ]
 
       other_deployment_manifest_hash['instance_groups'] = [
-        Bosh::Spec::NewDeployments.simple_instance_group(
+        Bosh::Spec::Deployments.simple_instance_group(
           name: 'first-instance-group',
           static_ips: ['192.168.1.10'],
           instances: 1,

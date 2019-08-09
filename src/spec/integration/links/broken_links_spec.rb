@@ -10,7 +10,7 @@ describe 'broken links', type: :integration do
   end
 
   let(:cloud_config) do
-    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config_hash['azs'] = [{ 'name' => 'z1' }]
     cloud_config_hash['networks'].first['subnets'].first['static'] = [
       '192.168.1.10',
@@ -43,7 +43,7 @@ describe 'broken links', type: :integration do
   end
 
   let(:first_node_instance_group_spec) do
-    Bosh::Spec::NewDeployments.simple_instance_group(
+    Bosh::Spec::Deployments.simple_instance_group(
       name: 'first_node',
       jobs: [
         'name' => 'node',
@@ -65,7 +65,7 @@ describe 'broken links', type: :integration do
   end
 
   let(:second_node_instance_group_spec) do
-    Bosh::Spec::NewDeployments.simple_instance_group(
+    Bosh::Spec::Deployments.simple_instance_group(
       name: 'second_node',
       jobs: [
         'name' => 'node',
@@ -99,7 +99,7 @@ describe 'broken links', type: :integration do
     end
 
     let(:first_provider_instance) do
-      Bosh::Spec::NewDeployments.simple_instance_group(
+      Bosh::Spec::Deployments.simple_instance_group(
         name: 'first_provider',
         jobs: [{ 'name' => 'provider', 'release' => 'bosh-release', 'provides' => provide_links }],
         instances: 1,
@@ -109,7 +109,7 @@ describe 'broken links', type: :integration do
     end
 
     let(:second_provider_instance) do
-      Bosh::Spec::NewDeployments.simple_instance_group(
+      Bosh::Spec::Deployments.simple_instance_group(
         name: 'second_provider',
         jobs: [{ 'name' => 'provider', 'release' => 'bosh-release', 'provides' => provide_links }],
         instances: 1,
@@ -125,7 +125,7 @@ describe 'broken links', type: :integration do
     end
 
     let(:first_consumer_instance) do
-      Bosh::Spec::NewDeployments.simple_instance_group(
+      Bosh::Spec::Deployments.simple_instance_group(
         name: 'first_consumer',
         jobs: [{ 'name' => 'consumer', 'release' => 'bosh-release', 'consumes' => consume_links }],
         instances: 1,
@@ -135,7 +135,7 @@ describe 'broken links', type: :integration do
     end
 
     let(:second_consumer_instance) do
-      Bosh::Spec::NewDeployments.simple_instance_group(
+      Bosh::Spec::Deployments.simple_instance_group(
         name: 'second_consumer',
         jobs: [{ 'name' => 'consumer', 'release' => 'bosh-release' }],
         instances: 1,
@@ -176,7 +176,7 @@ OUTPUT
     end
 
     let(:first_node_instance_group_spec) do
-      Bosh::Spec::NewDeployments.simple_instance_group(
+      Bosh::Spec::Deployments.simple_instance_group(
         name: 'first_node',
         jobs: [
           'name' => 'node',
@@ -198,7 +198,7 @@ OUTPUT
     end
 
     let(:second_node_instance_group_spec) do
-      Bosh::Spec::NewDeployments.simple_instance_group(
+      Bosh::Spec::Deployments.simple_instance_group(
         name: 'second_node',
         jobs: [
           'name' => 'node',

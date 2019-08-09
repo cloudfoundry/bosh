@@ -4,7 +4,7 @@ module Bosh
   module Director
     describe DeploymentPlan::ManifestValidator do
       let(:manifest_validator) { DeploymentPlan::ManifestValidator.new }
-      let(:manifest_hash) { Bosh::Spec::NewDeployments.minimal_manifest }
+      let(:manifest_hash) { Bosh::Spec::Deployments.minimal_manifest }
 
       describe '#validate_manifest' do
         it 'raises error when disk_types is present' do

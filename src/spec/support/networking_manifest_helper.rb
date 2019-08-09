@@ -6,8 +6,8 @@ module Bosh::Spec
       job_opts[:static_ips] = opts[:static_ips] if opts[:static_ips]
 
       job_opts[:jobs] = [{ 'name' => opts[:job], 'release' => opts.fetch(:job_release, 'bosh-release') }] if opts[:job]
-      manifest = opts.fetch(:manifest, Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups)
-      manifest['instance_groups'] = [Bosh::Spec::NewDeployments.simple_instance_group(job_opts)]
+      manifest = opts.fetch(:manifest, Bosh::Spec::Deployments.simple_manifest_with_instance_groups)
+      manifest['instance_groups'] = [Bosh::Spec::Deployments.simple_instance_group(job_opts)]
 
       manifest['name'] = opts.fetch(:name, 'simple')
 
@@ -15,7 +15,7 @@ module Bosh::Spec
     end
 
     def self.cloud_config(opts)
-      cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
+      cloud_config = Bosh::Spec::Deployments.simple_cloud_config
       cloud_config['networks'].first['subnets'] = [make_subnet(opts)]
       cloud_config
     end
@@ -46,7 +46,7 @@ module Bosh::Spec
     def self.errand_manifest(opts)
       manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: opts.fetch(:name, 'errand'))
       manifest['instance_groups'] = [
-        Bosh::Spec::NewDeployments.simple_errand_instance_group.merge(
+        Bosh::Spec::Deployments.simple_errand_instance_group.merge(
           'instances' => opts.fetch(:instances),
           'name' => 'errand_job'
         )

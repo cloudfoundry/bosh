@@ -9,7 +9,7 @@ describe 'vm state', type: :integration do
     it 'removes vm but keeps its disk' do
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
       manifest_hash['instance_groups'].first['persistent_disk'] = 3000
-      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
 
       instances = director.instances.select { |instance|
         !instance.vm_cid.empty?
@@ -34,7 +34,7 @@ describe 'vm state', type: :integration do
 
     it 'keeps IP reservation' do
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
-      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
       deployed_vms = director.vms
       expect(deployed_vms.size).to eq(1)
       expect(deployed_vms.first.ips).to eq(['192.168.1.2'])
@@ -56,7 +56,7 @@ describe 'vm state', type: :integration do
 
     it 'releases previously reserved IP when state changed with new static IP' do
       first_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
-      deploy_from_scratch(manifest_hash: first_manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+      deploy_from_scratch(manifest_hash: first_manifest_hash, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
       expect(director.vms.map(&:ips)).to eq([['192.168.1.2']])
 
       expect(bosh_runner.run('stop foobar/0 --hard', deployment_name: deployment_name)).to match %r{Updating instance foobar}
@@ -85,7 +85,7 @@ describe 'vm state', type: :integration do
 
   context 'instances have gaps in indexes' do
     let(:cloud_config_hash) do
-      cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
       cloud_config_hash['azs'] = [{'name' => 'my-az'}, {'name' => 'my-az2'}]
       cloud_config_hash['networks'].first['subnets'] = [
         {
@@ -108,7 +108,7 @@ describe 'vm state', type: :integration do
     end
 
     it 'it keeps instances with left static IP and deletes instances with removed IPs' do
-      simple_manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      simple_manifest = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
       simple_manifest['instance_groups'].first['instances'] = 3
       simple_manifest['instance_groups'].first['networks'].first['static_ips'] = ['192.168.1.51', '192.168.2.51', '192.168.2.52']
 
@@ -179,8 +179,8 @@ describe 'vm state', type: :integration do
 
   describe 'recreate' do
     it 'does not update deployment on recreate' do
-      manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
-      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
 
       bosh_runner.run('recreate foobar/1', deployment_name: deployment_name)
 
@@ -190,7 +190,10 @@ describe 'vm state', type: :integration do
   end
 
   it 'changes a single instance group instance state when referenced by id' do
-    deploy_from_scratch(manifest_hash: Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups, cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+    deploy_from_scratch(
+      manifest_hash: Bosh::Spec::Deployments.simple_manifest_with_instance_groups,
+      cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
+    )
     expect(director.instances.map(&:last_known_state).uniq).to match_array(['running'])
     bosh_runner.run('stop', deployment_name: deployment_name)
     expect(director.instances.map(&:last_known_state).uniq).to match_array(['stopped'])

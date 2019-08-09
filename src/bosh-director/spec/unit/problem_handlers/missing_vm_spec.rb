@@ -12,7 +12,7 @@ module Bosh::Director
       )
     end
     let(:planner_factory) { instance_double(Bosh::Director::DeploymentPlan::PlannerFactory) }
-    let(:manifest) { Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups }
+    let(:manifest) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
     let(:deployment_model) { Models::Deployment.make(name: manifest['name'], manifest: YAML.dump(manifest)) }
     let!(:local_dns_blob) { Models::LocalDnsBlob.make }
 

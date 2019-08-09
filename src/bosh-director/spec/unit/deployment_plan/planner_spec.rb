@@ -31,7 +31,7 @@ module Bosh::Director
         YAML.dump minimal_manifest
       end
 
-      let(:minimal_manifest) { Bosh::Spec::NewDeployments.minimal_manifest }
+      let(:minimal_manifest) { Bosh::Spec::Deployments.minimal_manifest }
 
       describe 'with invalid options' do
         it 'raises an error if name are not given' do

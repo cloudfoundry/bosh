@@ -26,8 +26,8 @@ describe 'using director with config server', type: :integration do
         'instances' => 1,
         'networks' => networks,
         'properties' => {},
-        'vm_type' => 'medium',
-        'persistent_disk_type' => 'large',
+        'vm_type' => 'small',
+        'persistent_disk_type' => 'small',
         'azs' => ['z1'],
         'stemcell' => 'default',
       }],
@@ -113,10 +113,14 @@ describe 'using director with config server', type: :integration do
         deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
 
         create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
-        expect(create_vm_invocations.last.inputs['cloud_properties']).to eq('availability_zone' => 'us-east-1a', 'ephemeral_disk' => { 'size' => '3000', 'type' => 'gp2' }, 'instance_type' => 'm3.medium')
+        expect(create_vm_invocations.last.inputs['cloud_properties']).to eq(
+          'availability_zone' => 'us-east-1a',
+          'ephemeral_disk' => { 'size' => '3000', 'type' => 'gp2' },
+          'instance_type' => 't2.micro',
+        )
 
         create_disk_invocations = current_sandbox.cpi.invocations_for_method('create_disk')
-        expect(create_disk_invocations.last.inputs['size']).to eq(50_000)
+        expect(create_disk_invocations.last.inputs['size']).to eq(3000)
         expect(create_disk_invocations.last.inputs['cloud_properties']).to eq('type' => 'gp2')
       end
 
@@ -128,7 +132,10 @@ describe 'using director with config server', type: :integration do
         context 'variable values were changed' do
           before do
             config_server_helper.put_value('/z1_cloud_properties', 'availability_zone' => 'us-mid-west')
-            config_server_helper.put_value('/disk_types_placeholder', [{ 'name' => 'large', 'disk_size' => 100_000, 'cloud_properties' => { 'type' => 'gp1' } }])
+            config_server_helper.put_value(
+              '/disk_types_placeholder',
+              [{ 'name' => 'small', 'disk_size' => 2000, 'cloud_properties' => { 'type' => 'gp1' } }],
+            )
           end
 
           context 'deployment has unresponsive agents' do
@@ -144,7 +151,11 @@ describe 'using director with config server', type: :integration do
 
               invocations = current_sandbox.cpi.invocations.drop(pre_kill_invocations_size)
               create_vm_invocation = invocations.select { |invocation| invocation.method_name == 'create_vm' }.last
-              expect(create_vm_invocation.inputs['cloud_properties']).to eq('availability_zone' => 'us-east-1a', 'ephemeral_disk' => { 'size' => '3000', 'type' => 'gp2' }, 'instance_type' => 'm3.medium')
+              expect(create_vm_invocation.inputs['cloud_properties']).to eq(
+                'availability_zone' => 'us-east-1a',
+                'ephemeral_disk' => { 'size' => '3000', 'type' => 'gp2' },
+                'instance_type' => 't2.micro',
+              )
             end
           end
 
@@ -158,7 +169,11 @@ describe 'using director with config server', type: :integration do
             invocations = current_sandbox.cpi.invocations.drop(pre_start_invocations_size)
 
             create_vm_invocation = invocations.select { |invocation| invocation.method_name == 'create_vm' }.last
-            expect(create_vm_invocation.inputs['cloud_properties']).to eq('availability_zone' => 'us-east-1a', 'ephemeral_disk' => { 'size' => '3000', 'type' => 'gp2' }, 'instance_type' => 'm3.medium')
+            expect(create_vm_invocation.inputs['cloud_properties']).to eq(
+              'availability_zone' => 'us-east-1a',
+              'ephemeral_disk' => { 'size' => '3000', 'type' => 'gp2' },
+              'instance_type' => 't2.micro',
+            )
           end
 
           it 'should use the new variable values on redeploy' do
@@ -167,11 +182,15 @@ describe 'using director with config server', type: :integration do
             invocations = current_sandbox.cpi.invocations.drop(pre_second_deploy_invocations_size)
 
             create_vm_invocation = invocations.select { |invocation| invocation.method_name == 'create_vm' }.last
-            expect(create_vm_invocation.inputs['cloud_properties']).to eq('availability_zone' => 'us-mid-west', 'ephemeral_disk' => { 'size' => '3000', 'type' => 'gp2' }, 'instance_type' => 'm3.medium')
+            expect(create_vm_invocation.inputs['cloud_properties']).to eq(
+              'availability_zone' => 'us-mid-west',
+              'ephemeral_disk' => { 'size' => '3000', 'type' => 'gp2' },
+              'instance_type' => 't2.micro',
+            )
 
             create_disk_invocation = invocations.select { |invocation| invocation.method_name == 'create_disk' }.last
             expect(create_disk_invocation.inputs['cloud_properties']).to eq('type' => 'gp1')
-            expect(create_disk_invocation.inputs['size']).to eq(100_000)
+            expect(create_disk_invocation.inputs['size']).to eq(2000)
           end
         end
 
@@ -194,7 +213,11 @@ describe 'using director with config server', type: :integration do
             invocations = current_sandbox.cpi.invocations.drop(pre_second_deploy_invocations_size)
 
             create_vm_invocation = invocations.select { |invocation| invocation.method_name == 'create_vm' }.last
-            expect(create_vm_invocation.inputs['cloud_properties']).to eq('availability_zone' => 'us-east-1a', 'ephemeral_disk' => { 'size' => '2000', 'type' => 'gp1' }, 'instance_type' => 'm3.medium')
+            expect(create_vm_invocation.inputs['cloud_properties']).to eq(
+              'availability_zone' => 'us-east-1a',
+              'ephemeral_disk' => { 'size' => '2000', 'type' => 'gp1' },
+              'instance_type' => 't2.micro',
+            )
           end
         end
 
@@ -254,39 +277,6 @@ describe 'using director with config server', type: :integration do
   context 'cloud config contains cloud properties only placeholders' do
     let(:cloud_config) { Bosh::Spec::Deployments.cloud_config_with_cloud_properties_placeholders }
 
-    let(:manifest_hash) do
-      {
-        'name' => 'simple',
-        'releases' => [{ 'name' => 'bosh-release', 'version' => '0.1-dev' }],
-        'update' => {
-          'canaries' => 2,
-          'canary_watch_time' => 4000,
-          'max_in_flight' => 1,
-          'update_watch_time' => 20,
-        },
-        'instance_groups' => [{
-          'name' => 'our_instance_group',
-          'jobs' => [{
-            'name' => 'job_1_with_many_properties',
-            'release' => 'bosh-release',
-            'properties' => {
-              'gargamel' => {
-                'color' => 'pitch black',
-              },
-            },
-          }],
-          'instances' => 1,
-          'networks' => [{ 'name' => 'private' }],
-          'properties' => {},
-          'vm_type' => 'small',
-          'persistent_disk_type' => 'small',
-          'azs' => ['z1'],
-          'stemcell' => 'default',
-        }],
-        'stemcells' => [{ 'alias' => 'default', 'os' => 'toronto-os', 'version' => '1' }],
-      }
-    end
-
     before do
       config_server_helper.put_value('/never-log-me', 'super-secret')
     end
@@ -315,7 +305,7 @@ describe 'using director with config server', type: :integration do
           recreate_vm = 3
           cck_output = bosh_run_cck_with_resolution(1, recreate_vm, client_env)
 
-          expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(cck_output).task_id, ['super-secret'], log_options)
+          expect_logs_not_to_contain('simple', Bosh::Spec::OutputParser.new(cck_output).task_id, ['super-secret'], log_options)
         end
       end
     end

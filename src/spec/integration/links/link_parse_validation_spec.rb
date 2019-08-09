@@ -10,7 +10,7 @@ describe 'Links', type: :integration do
   end
 
   let(:cloud_config) do
-    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config_hash['azs'] = [{ 'name' => 'z1' }]
     cloud_config_hash['networks'].first['subnets'].first['static'] = [
       '192.168.1.10',
@@ -38,7 +38,7 @@ describe 'Links', type: :integration do
 
   context 'when consumer is specified in the manifest but not in the release' do
     let(:instance_group) do
-      spec = Bosh::Spec::NewDeployments.simple_instance_group(
+      spec = Bosh::Spec::Deployments.simple_instance_group(
         name: 'my_instance_group',
         jobs: [
           {
@@ -78,7 +78,7 @@ describe 'Links', type: :integration do
 
   context 'when consumer is specified in the manifest but release does not define any consumers' do
     let(:instance_group) do
-      spec = Bosh::Spec::NewDeployments.simple_instance_group(
+      spec = Bosh::Spec::Deployments.simple_instance_group(
         name: 'my_instance_group',
         jobs: [
           {
@@ -118,7 +118,7 @@ describe 'Links', type: :integration do
 
   context 'when provider is specified in the manifest but not in the release' do
     let(:instance_group) do
-      spec = Bosh::Spec::NewDeployments.simple_instance_group(
+      spec = Bosh::Spec::Deployments.simple_instance_group(
         name: 'my_instance_group',
         jobs: [
           {
@@ -158,7 +158,7 @@ describe 'Links', type: :integration do
 
   context 'when provider is specified in the manifest but release does not define any providers' do
     let(:instance_group) do
-      spec = Bosh::Spec::NewDeployments.simple_instance_group(
+      spec = Bosh::Spec::Deployments.simple_instance_group(
         name: 'my_instance_group',
         jobs: [
           {

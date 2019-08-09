@@ -10,7 +10,7 @@ describe 'checking link properties', type: :integration do
   end
 
   let(:cloud_config) do
-    cloud_config_hash = Bosh::Spec::NewDeployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
     cloud_config_hash['azs'] = [{ 'name' => 'z1' }]
     cloud_config_hash['networks'].first['subnets'].first['static'] = [
       '192.168.1.10',
@@ -30,7 +30,7 @@ describe 'checking link properties', type: :integration do
   end
 
   let(:instance_group_with_nil_properties) do
-    spec = Bosh::Spec::NewDeployments.simple_instance_group(
+    spec = Bosh::Spec::Deployments.simple_instance_group(
       name: 'property_job',
       jobs: [
         {
@@ -58,7 +58,7 @@ describe 'checking link properties', type: :integration do
   end
 
   let(:instance_group_with_manual_consumes_link) do
-    spec = Bosh::Spec::NewDeployments.simple_instance_group(
+    spec = Bosh::Spec::Deployments.simple_instance_group(
       name: 'property_job',
       jobs: [
         {
@@ -86,7 +86,7 @@ describe 'checking link properties', type: :integration do
   end
 
   let(:instance_group_with_link_properties_not_defined_in_release_properties) do
-    spec = Bosh::Spec::NewDeployments.simple_instance_group(
+    spec = Bosh::Spec::Deployments.simple_instance_group(
       name: 'jobby',
       jobs: [{ 'name' => 'provider', 'properties' => { 'doesntExist' => 'someValue' }, 'release' => 'bosh-release' }],
       instances: 1,

@@ -8,10 +8,10 @@ describe 'vm delete', type: :integration do
 
   before do
     bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_with_api_version.tgz')}")
-    upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
+    upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
     create_and_upload_test_release
 
-    manifest_hash = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['instances'] = 1
     deploy(manifest_hash: manifest_hash)
   end

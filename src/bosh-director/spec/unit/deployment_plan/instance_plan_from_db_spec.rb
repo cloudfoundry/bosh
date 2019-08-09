@@ -27,9 +27,9 @@ module Bosh::Director
         }
       end
       let(:variable_set_model) { Models::VariableSet.make(deployment: deployment_model) }
-      let(:cloud_config_manifest) { Bosh::Spec::NewDeployments.simple_cloud_config }
+      let(:cloud_config_manifest) { Bosh::Spec::Deployments.simple_cloud_config }
 
-      let(:deployment_manifest) { Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups }
+      let(:deployment_manifest) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
       let(:deployment_model) do
         cloud_config = BD::Models::Config.make(:cloud, content: YAML.dump(cloud_config_manifest))
         deployment = BD::Models::Deployment.make(

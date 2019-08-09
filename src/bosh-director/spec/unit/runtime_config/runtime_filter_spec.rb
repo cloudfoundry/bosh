@@ -7,14 +7,14 @@ module Bosh::Director
     let(:deployment_model) { Models::Deployment.make(name: deployment_name) }
     let(:deployment_plan) do
       planner_attributes = { name: deployment_name, properties: {} }
-      cloud_config = Bosh::Spec::NewDeployments.simple_cloud_config
-      manifest = Bosh::Spec::NewDeployments.simple_manifest_with_instance_groups
+      cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+      manifest = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
       planner = DeploymentPlan::Planner.new(
         planner_attributes,
         manifest,
         YAML.dump(manifest),
         [Models::Config.make(:cloud, content: YAML.dump(cloud_config))],
-        Bosh::Spec::NewDeployments.simple_runtime_config,
+        Bosh::Spec::Deployments.simple_runtime_config,
         deployment_model,
       )
       release1 = Models::Release.make(name: '1')
@@ -40,7 +40,7 @@ module Bosh::Director
     end
 
     let(:instance_group1) do
-      group1_spec = Bosh::Spec::NewDeployments.simple_instance_group(
+      group1_spec = Bosh::Spec::Deployments.simple_instance_group(
         name: 'group1',
         jobs: [{ 'name' => 'job1', 'release' => '1' }],
       )
@@ -48,7 +48,7 @@ module Bosh::Director
     end
 
     let(:instance_group2) do
-      group2_spec = Bosh::Spec::NewDeployments.simple_instance_group(
+      group2_spec = Bosh::Spec::Deployments.simple_instance_group(
         name: 'group2',
         jobs: [{ 'name' => 'job1', 'release' => '1' }, { 'name' => 'job2', 'release' => '2' }],
       )

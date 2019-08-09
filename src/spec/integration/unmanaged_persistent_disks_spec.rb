@@ -20,7 +20,7 @@ describe 'multiple persistent disks', type: :integration do
   end
 
   let(:cloud_config_hash) do
-    hash = Bosh::Spec::NewDeployments.simple_cloud_config
+    hash = Bosh::Spec::Deployments.simple_cloud_config
     hash['disk_types'] = [
       {
         'name' => 'low-performance-disk-type',
@@ -298,7 +298,7 @@ describe 'multiple persistent disks', type: :integration do
     end
 
     let(:cloud_config_hash) do
-      hash = Bosh::Spec::NewDeployments.simple_cloud_config
+      hash = Bosh::Spec::Deployments.simple_cloud_config
       hash['disk_types'] = [
         {
           'name' => 'low-performance-disk-type',
