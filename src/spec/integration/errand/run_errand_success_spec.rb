@@ -367,6 +367,11 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
       end
 
       context 'utf8 errand output' do
+        let(:encoded_emoji1) { '\u{1F600}' }
+        let(:encoded_emoji2) do
+          '\u{26A0}\u{FE0F}\u{FE0F}\u{FE0F} \u{1F6A8}\u{FE0F}\u{FE0F} \u{26A0}\u{FE0F} \u{1F6A8}\u{FE0F}\u{FE0F}'
+        end
+
         before do
           manifest = Bosh::Spec::Deployments.manifest_with_errand
           manifest['instance_groups'] = [{
@@ -394,7 +399,8 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
         it 'shows output' do
           # until #147467271, we can't confidently know if the mysql database server can properly handle utf8.
           # since that is scheduled soon, avoid crazy hacks to have separate tests here
-          expect(@output).to match(/errand is (<bosh-non-ascii-char>|\u{1F600})/)
+          expect(@output).to match(/errand is (<bosh-non-ascii-char>|#{encoded_emoji1})/)
+          expect(@output).to match(/(<bosh-non-ascii-char>|#{encoded_emoji2})/)
         end
       end
     end
