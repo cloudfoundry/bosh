@@ -565,6 +565,69 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
     end
   end
 
+  context 'when running an errand across multiple instances' do
+    with_reset_sandbox_before_each
+
+    let(:manifest_hash) do
+      errand_instance_spec = {
+        'name' => 'errand-with-same-errand-and-multiple-instances',
+        'jobs' => [
+          {
+            'release' => 'bosh-release',
+            'name' => 'errand1',
+            'properties' => {
+              'errand1' => {
+                'exit_code' => 0,
+                'stdout' => 'service-errand-stdout',
+                'stderr' => 'service-errand-stderr',
+                'run_package_file' => true,
+              },
+            },
+          },
+          {
+            'release' => 'bosh-release',
+            'name' => 'emoji-errand',
+            'properties' => {
+              'errand1' => {
+                'exit_code' => 0,
+                'stdout' => 'service-errand-stdout',
+                'stderr' => 'service-errand-stderr',
+                'run_package_file' => true,
+              },
+            },
+          },
+        ],
+        'lifecycle' => 'errand',
+        'vm_type' => 'a',
+        'stemcell' => 'default',
+        'instances' => 1,
+        'networks' => [{ 'name' => 'a' }],
+      }
+
+      manifest = Bosh::Spec::Deployments.manifest_with_errand_on_service_instance
+      manifest['instance_groups'] << errand_instance_spec
+      manifest['instance_groups'].first['instances'] = 4
+
+      manifest
+    end
+
+    before do
+      deploy_from_scratch(manifest_hash: manifest_hash)
+    end
+
+    it 'warns if errand is present across multiple instances' do
+      output, exit_code = bosh_runner.run('run-errand errand1', return_exit_code: true, deployment_name: deployment_name)
+      expect(output).to include('Executing errand on multiple instances in parallel')
+      expect(exit_code).to eq(0)
+    end
+
+    it 'does not warn if errand is in a single instance' do
+      output, exit_code = bosh_runner.run('run-errand emoji-errand', return_exit_code: true, deployment_name: deployment_name)
+      expect(output).not_to include('Executing errand on multiple instances in parallel')
+      expect(exit_code).to eq(0)
+    end
+  end
+
   def expect_errands(*expected_errands)
     output, _ = bosh_runner.run('errands', deployment_name: 'errand')
     expected_errands.each do |errand|

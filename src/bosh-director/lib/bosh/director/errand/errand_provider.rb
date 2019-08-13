@@ -32,6 +32,17 @@ module Bosh::Director
         errand_is_job_name = true
         errand_instance_groups = find_instance_groups_by_errand_job_name(errand_name, deployment_planner)
 
+        # select all instance groups that have the errand, and sum the total of instances across the instance groups
+        errand_instance_count =
+          errand_instance_groups
+            .select { |instance_group| instance_group.jobs.select { |job| job.name == errand_name } }
+            .inject(0) { |total, instance_group_with_errand| total + instance_group_with_errand.instances.count }
+
+        if errand_instance_count > 1
+          Config.event_log.warn('Executing errand on multiple instances in parallel. ' \
+            'Use the `--instance` flag to run the errand on a single instance.')
+        end
+
         if errand_instance_groups.empty?
           errand_is_job_name = false
           errand_instance_groups = [must_errand_instance_group(deployment_planner, errand_name, deployment_name)]
