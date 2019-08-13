@@ -248,21 +248,7 @@ module Bosh::Director
         # Manifest can contain global and per-instance_group properties section
         instance_group_properties = safe_property(@instance_group_spec, 'properties', class: Hash, optional: true, default: {})
 
-        merged_properties = @deployment.properties.recursive_merge(instance_group_properties)
-
-        mappings = safe_property(@instance_group_spec, 'property_mappings', class: Hash, default: {})
-
-        mappings.each_pair do |to, from|
-          resolved = lookup_property(merged_properties, from)
-
-          if resolved.nil?
-            raise InstanceGroupInvalidPropertyMapping,
-                  "Cannot satisfy property mapping '#{to}: #{from}', as '#{from}' is not in deployment properties"
-          end
-
-          merged_properties[to] = resolved
-        end
-        merged_properties
+        @deployment.properties.recursive_merge(instance_group_properties)
       end
 
       def parse_vm_type

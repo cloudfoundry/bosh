@@ -397,54 +397,6 @@ module Bosh::Director
 
                 parsed_instance_group
               end
-
-              context 'property mapping' do
-                let(:props) do
-                  {
-                    'ccdb' => {
-                      'user' => 'admin',
-                      'password' => '12321',
-                      'unused' => 'yada yada',
-                    },
-                    'dea' => {
-                      'max_memory' => 2048,
-                    },
-                  }
-                end
-
-                let(:mapped_props) do
-                  {
-                    'ccdb' => {
-                      'user' => 'admin',
-                      'password' => '12321',
-                      'unused' => 'yada yada',
-                    },
-                    'dea' => {
-                      'max_memory' => 2048,
-                    },
-                    'db' => {
-                      'user' => 'admin',
-                      'password' => '12321',
-                      'unused' => 'yada yada',
-                    },
-                    'mem' => 2048,
-                  }
-                end
-
-                it 'supports it' do
-                  instance_group_spec['properties'] = props
-                  instance_group_spec['property_mappings'] = { 'db' => 'ccdb', 'mem' => 'dea.max_memory' }
-
-                  job = make_job('job-name', 'fake-job-release')
-                  allow(job_rel_ver).to receive(:get_or_create_template)
-                    .with('job-name')
-                    .and_return(job)
-                  expect(job).to receive(:add_properties)
-                    .with(mapped_props, 'instance-group-name')
-
-                  parsed_instance_group
-                end
-              end
             end
 
             context 'link parsing' do
@@ -925,45 +877,6 @@ module Bosh::Director
               expect(instance_group.vm_extensions.size).to eq(1)
               expect(instance_group.vm_extensions.first.name).to eq('vm_extension_1')
               expect(instance_group.vm_extensions.first.cloud_properties).to eq('property' => 'value')
-            end
-          end
-        end
-
-        describe 'properties key' do
-          context 'properties mapping' do
-            it 'complains about unsatisfiable property mappings' do
-              props = { 'foo' => 'bar' }
-
-              instance_group_spec['properties'] = props
-              instance_group_spec['property_mappings'] = { 'db' => 'ccdb' }
-
-              allow(deployment_plan).to receive(:properties).and_return(props)
-
-              expect do
-                parsed_instance_group
-              end.to raise_error(
-                InstanceGroupInvalidPropertyMapping,
-              )
-            end
-
-            it 'maps properties correctly' do
-              props = {
-                'ccdb' => {
-                  'user' => 'admin',
-                  'password' => '12321',
-                  'unused' => 'yada yada',
-                },
-                'dea' => {
-                  'max_memory' => 2048,
-                },
-              }
-
-              instance_group_spec['properties'] = props
-              instance_group_spec['property_mappings'] = { 'db' => 'ccdb', 'mem' => 'dea.max_memory' }
-
-              allow(deployment_plan).to receive(:properties).and_return(props)
-
-              parsed_instance_group
             end
           end
         end
