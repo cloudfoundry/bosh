@@ -127,40 +127,23 @@ module Bosh::Director
             @instance_group.name,
           )
 
-          # migrated_from true? or false?
-          # get migrated_from_name = migrated_name : @instance_group.name
+          # Don't recalculate links on actions that aren't a deploy
           if is_deploy_action
-            if migrated_from.to_a.empty?
-              @links_parser.parse_providers_from_job(
-                job_spec,
-                @deployment.model,
-                current_template_model,
-                job_properties: job_properties,
-                instance_group_name: @instance_group.name,
-              )
-              @links_parser.parse_consumers_from_job(
-                job_spec,
-                @deployment.model,
-                current_template_model,
-                instance_group_name: @instance_group.name,
-              )
-            else
-              @links_parser.parse_migrated_from_providers_from_job(
-                job_spec,
-                @deployment.model,
-                current_template_model,
-                job_properties: job_properties,
-                instance_group_name: @instance_group.name,
-                migrated_from: migrated_from,
-              )
-              @links_parser.parse_migrated_from_consumers_from_job(
-                job_spec,
-                @deployment.model,
-                current_template_model,
-                instance_group_name: @instance_group.name,
-                migrated_from: migrated_from,
-              )
-            end
+            @links_parser.parse_providers_from_job(
+              job_spec,
+              @deployment.model,
+              current_template_model,
+              job_properties: job_properties,
+              instance_group_name: @instance_group.name,
+              migrated_from: migrated_from,
+            )
+            @links_parser.parse_consumers_from_job(
+              job_spec,
+              @deployment.model,
+              current_template_model,
+              instance_group_name: @instance_group.name,
+              migrated_from: migrated_from,
+            )
           end
           @instance_group.jobs << job
         end

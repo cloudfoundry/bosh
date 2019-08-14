@@ -8,37 +8,10 @@ module Bosh::Director::Links
         @link_helper = LinkHelpers.new
       end
 
-      def parse_migrated_from_consumers_from_job(
-        manifest_job_spec, deployment_model, current_release_template_model, instance_group_details = {}
-      )
-        instance_group_name = instance_group_details.fetch(:instance_group_name, nil)
-        migrated_from = instance_group_details.fetch(:migrated_from, [])
-        migrated_from.each do |migration_block|
-          old_instance_group_name = migration_block['name']
-          job_name = safe_property(manifest_job_spec, 'name', class: String)
-
-          consumers = Bosh::Director::Models::Links::LinkConsumer.find(
-            deployment: deployment_model,
-            instance_group: old_instance_group_name,
-            name: job_name,
-            type: 'job',
-          )
-
-          instance_group_name = migration_block['name'] unless consumers.nil?
-        end
-
-        parse_consumers_from_job(
-          manifest_job_spec,
-          deployment_model,
-          current_release_template_model,
-          instance_group_name: instance_group_name,
-        )
-      end
-
       def parse_consumers_from_job(
         manifest_job_spec, deployment_model, current_release_template_model, instance_group_details = {}
       )
-        instance_group_name = instance_group_details.fetch(:instance_group_name, nil)
+        instance_group_name = get_instance_group_name(deployment_model, manifest_job_spec, instance_group_details)
         @links_manager = Bosh::Director::Links::LinksManager.new(deployment_model.links_serial_id)
 
         consumes_links = Bosh::Common::DeepCopy.copy(safe_property(manifest_job_spec, 'consumes',
@@ -70,6 +43,25 @@ module Bosh::Director::Links
       end
 
       private
+
+      def get_instance_group_name(deployment_model, manifest_job_spec, manifest_details)
+        migrated_from = manifest_details.fetch(:migrated_from, [])
+
+        migrated_from_instange_group = migrated_from.find do |migration_block|
+          job_name = safe_property(manifest_job_spec, 'name', class: String)
+
+          true if Bosh::Director::Models::Links::LinkConsumer.find(
+            deployment: deployment_model,
+            instance_group: migration_block['name'],
+            name: job_name,
+            type: 'job',
+          )
+        end
+
+        return migrated_from_instange_group['name'] if migrated_from_instange_group
+
+        manifest_details.fetch(:instance_group_name, nil)
+      end
 
       def process_release_template_consumes(
         consumes_links, current_release_template_model, deployment_model, instance_group_name, job_name

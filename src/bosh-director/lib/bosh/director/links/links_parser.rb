@@ -9,14 +9,6 @@ module Bosh::Director::Links
       @link_consumers_parser = LinkConsumersParser.new
     end
 
-    def parse_migrated_from_providers_from_job(
-      manifest_job_spec, deployment_model, current_template_model, manifest_details = {}
-    )
-      @link_providers_parser.parse_migrated_from_providers_from_job(
-        manifest_job_spec, deployment_model, current_template_model, manifest_details
-      )
-    end
-
     def parse_providers_from_job(manifest_job_spec, deployment_model, current_release_template_model, manifest_details = {})
       @link_providers_parser.parse_providers_from_job(
         manifest_job_spec, deployment_model, current_release_template_model, manifest_details
@@ -26,14 +18,6 @@ module Bosh::Director::Links
     def parse_provider_from_disk(disk_spec, deployment_model, instance_group_name)
       @link_providers_parser.parse_provider_from_disk(
         disk_spec, deployment_model, instance_group_name
-      )
-    end
-
-    def parse_migrated_from_consumers_from_job(
-      manifest_job_spec, deployment_model, current_release_template_model, instance_group_details = {}
-    )
-      @link_consumers_parser.parse_migrated_from_consumers_from_job(
-        manifest_job_spec, deployment_model, current_release_template_model, instance_group_details
       )
     end
 

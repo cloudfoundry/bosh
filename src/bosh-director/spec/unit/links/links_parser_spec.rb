@@ -166,12 +166,6 @@ describe Bosh::Director::Links::LinksParser do
           name: 'release1_job_name_1',
           type: 'job',
         ).and_return(provider_1)
-        expect(Bosh::Director::Models::Links::LinkProvider).to receive(:find).with(
-          deployment: deployment_model,
-          instance_group: 'old_ig2',
-          name: 'release1_job_name_1',
-          type: 'job',
-        ).and_return(nil)
         expect(links_manager).to receive(:find_or_create_provider)
           .with(deployment_model: deployment_model, instance_group_name: 'old_ig1', name: 'release1_job_name_1', type: 'job')
           .and_return(provider_1)
@@ -179,7 +173,7 @@ describe Bosh::Director::Links::LinksParser do
           .with(link_provider: provider_1, link_original_name: 'chocolate', link_type: 'flavour')
           .and_return(provider_1_intent)
 
-        subject.parse_migrated_from_providers_from_job(
+        subject.parse_providers_from_job(
           job_spec,
           deployment_model,
           template,
@@ -229,7 +223,7 @@ describe Bosh::Director::Links::LinksParser do
           .with(link_provider: provider, link_original_name: 'link_1_name', link_type: 'link_1_type')
           .and_return(provider_intent)
 
-        subject.parse_migrated_from_providers_from_job(
+        subject.parse_providers_from_job(
           job_spec,
           deployment_plan.model,
           template,
@@ -335,12 +329,6 @@ describe Bosh::Director::Links::LinksParser do
           name: 'foobar',
           type: 'job',
         ).and_return(consumer)
-        expect(Bosh::Director::Models::Links::LinkConsumer).to receive(:find).with(
-          deployment: deployment_model,
-          instance_group: 'old_ig2',
-          name: 'foobar',
-          type: 'job',
-        ).and_return(nil)
         expect(links_manager).to receive(:find_or_create_consumer)
           .with(deployment_model: deployment_model, instance_group_name: 'old_ig1', name: 'foobar', type: 'job')
           .and_return(consumer)
@@ -351,7 +339,7 @@ describe Bosh::Director::Links::LinksParser do
                 new_intent_metadata: { 'explicit_link' => true })
           .and_return(consumer_intent)
 
-        subject.parse_migrated_from_consumers_from_job(
+        subject.parse_consumers_from_job(
           job_spec,
           deployment_model,
           template,
@@ -405,7 +393,7 @@ describe Bosh::Director::Links::LinksParser do
           new_intent_metadata: { 'explicit_link' => true },
         ).and_return(consumer_intent)
 
-        subject.parse_migrated_from_consumers_from_job(
+        subject.parse_consumers_from_job(
           job_spec,
           deployment_plan.model,
           template,

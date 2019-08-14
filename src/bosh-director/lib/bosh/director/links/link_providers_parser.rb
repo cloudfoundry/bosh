@@ -8,38 +8,10 @@ module Bosh::Director::Links
         @link_helper = LinkHelpers.new
       end
 
-      def parse_migrated_from_providers_from_job(
-        manifest_job_spec, deployment_model, current_template_model, manifest_details = {}
-      )
-        job_properties = manifest_details.fetch(:job_properties, {})
-        instance_group_name = manifest_details.fetch(:instance_group_name, nil)
-        migrated_from = manifest_details.fetch(:migrated_from, [])
-
-        migrated_from.each do |migration_block|
-          job_name = safe_property(manifest_job_spec, 'name', class: String)
-
-          providers = Bosh::Director::Models::Links::LinkProvider.find(
-            deployment: deployment_model,
-            instance_group: migration_block['name'],
-            name: job_name,
-            type: 'job',
-          )
-
-          instance_group_name = migration_block['name'] unless providers.nil?
-        end
-
-        parse_providers_from_job(
-          manifest_job_spec,
-          deployment_model,
-          current_template_model,
-          job_properties: job_properties,
-          instance_group_name: instance_group_name,
-        )
-      end
-
       def parse_providers_from_job(manifest_job_spec, deployment_model, current_release_template_model, manifest_details = {})
         job_properties = manifest_details.fetch(:job_properties, {})
-        instance_group_name = manifest_details.fetch(:instance_group_name, nil)
+        instance_group_name = get_instance_group_name(deployment_model, manifest_job_spec, manifest_details)
+
         @links_manager = Bosh::Director::Links::LinksManager.new(deployment_model.links_serial_id)
 
         manifest_provides_links = Bosh::Common::DeepCopy.copy(safe_property(manifest_job_spec, 'provides',
@@ -48,8 +20,13 @@ module Bosh::Director::Links
                                                                               class: Array, optional: true, default: []))
         job_name = safe_property(manifest_job_spec, 'name', class: String)
 
-        @link_helper.validate_custom_providers(custom_manifest_providers, current_release_template_model.provides, job_name,
-                                               instance_group_name, current_release_template_model.release.name)
+        @link_helper.validate_custom_providers(
+          custom_manifest_providers,
+          current_release_template_model.provides,
+          job_name,
+          instance_group_name,
+          current_release_template_model.release.name,
+        )
 
         errors = []
 
@@ -98,6 +75,25 @@ module Bosh::Director::Links
       end
 
       private
+
+      def get_instance_group_name(deployment_model, manifest_job_spec, manifest_details)
+        migrated_from = manifest_details.fetch(:migrated_from, [])
+
+        migrated_from_instange_group = migrated_from.find do |migration_block|
+          job_name = safe_property(manifest_job_spec, 'name', class: String)
+
+          true if Bosh::Director::Models::Links::LinkProvider.find(
+            deployment: deployment_model,
+            instance_group: migration_block['name'],
+            name: job_name,
+            type: 'job',
+          )
+        end
+
+        return migrated_from_instange_group['name'] if migrated_from_instange_group
+
+        manifest_details.fetch(:instance_group_name, nil)
+      end
 
       def create_disk_provider_intent(deployment_model, disk_name, provider)
         provider_intent = @links_manager.find_or_create_provider_intent(
