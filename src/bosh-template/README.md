@@ -8,6 +8,8 @@ Renders BOSH templates
 gem install bosh-template
 
 bosh-template <template.erb> --context '{ "...": ... }'
+
+run-template <job_name> <manifest_filename> <template_name>
 ```
 
 ## Unit-testing your release ERB templates

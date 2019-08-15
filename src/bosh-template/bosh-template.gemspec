@@ -18,7 +18,7 @@ Gem::Specification.new do |spec|
   spec.test_files   = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_path = 'lib'
   spec.bindir       = 'bin'
-  spec.executables << 'bosh-template'
+  spec.executables << ['bosh-template', 'run-template']
 
   spec.add_dependency 'semi_semantic', '~>1.2.0'
 end
