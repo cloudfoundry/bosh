@@ -6,9 +6,15 @@ chruby ruby
 set -e
 
 function cp_artifacts {
-  rm -f director-state/*
+  rm -rf director-state/.bosh
   mv $HOME/.bosh director-state/
   cp director.yml director-creds.yml director-state.json director-state/
+}
+
+function restore_state {
+  rm -rf $HOME/.bosh
+  cp -R director-state/.bosh $HOME
+  cp director-state/director-* .
 }
 
 state_path() { bosh-cli int director.yml --path="$1" ; }
@@ -30,8 +36,7 @@ chmod +x /usr/local/bin/bosh-cli
 
 if [[ -e director-state/director-state.json ]]; then
   echo "Using existing director-state for upgrade"
-  cp -R director-state/.bosh $HOME
-  cp director-state/director-* .
+  restore_state
 fi
 
 bosh-cli interpolate bosh-deployment/bosh.yml \

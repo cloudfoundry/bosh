@@ -16,6 +16,7 @@ groups:
       - bats-ubuntu-xenial-aws
       - brats-ubuntu-xenial
       - bosh-disaster-recovery-acceptance-tests
+      - upgrade-wip
       - blobstore-performance
       - upload-compiled-staging-tarball
       - deploy-acceptance-env
@@ -630,6 +631,72 @@ jobs:
         file: bosh-src/ci/tasks/test-bdrats.yml
         privileged: true
 
+  - name: upgrade-wip
+    plan:
+    - do:
+      - in_parallel:
+        - get: bosh-src
+        - get: stemcell
+          resource: warden-ubuntu-xenial
+        - get: bosh-deployment
+        - get: bosh-cli
+        - get: bosh-release
+          resource: bosh-compiled-candidate-xenial
+          passed: [compile-bosh-dev-release-xenial]
+        - get: last-released-bosh-release
+      - put: terraform
+        params:
+          terraform_source: bosh-src/ci/bats/iaas/aws/terraform
+          delete_on_failure: true
+          env_name: upgrade-ubuntu-xenial-aws-((branch_name))
+    - do:
+      - task: deploy-previous-version
+        file: bosh-src/ci/bats/tasks/deploy-director.yml
+        input_mapping:
+          environment: terraform
+          bosh-release: last-released-bosh-release
+        params:
+          BAT_INFRASTRUCTURE: aws
+          AWS_ACCESS_KEY_ID:     ((aws_access_key__primary))
+          AWS_SECRET_ACCESS_KEY: ((aws_secret_key__primary))
+          AWS_DEFAULT_REGION:    ((aws_region__primary))
+          AWS_SSH_PRIVATE_KEY:   ((aws_ssh_private_key))
+          DEPLOY_ARGS: |
+            -o bosh-deployment/external-ip-with-registry-not-recommended.yml
+      - task: deploy-current-version
+        file: bosh-src/ci/bats/tasks/deploy-director.yml
+        input_mapping:
+          environment: terraform
+        params:
+          BAT_INFRASTRUCTURE: aws
+          AWS_ACCESS_KEY_ID:     ((aws_access_key__primary))
+          AWS_SECRET_ACCESS_KEY: ((aws_secret_key__primary))
+          AWS_DEFAULT_REGION:    ((aws_region__primary))
+          AWS_SSH_PRIVATE_KEY:   ((aws_ssh_private_key))
+          DEPLOY_ARGS: |
+            -o bosh-deployment/external-ip-with-registry-not-recommended.yml
+      ensure:
+        do:
+        - task: teardown
+          file: bosh-src/ci/bats/tasks/destroy-director.yml
+        ensure:
+          do:
+          - task: ensure-terminated
+            file: bosh-src/ci/bats/iaas/aws/ensure-terminated.yml
+            input_mapping:
+              environment: terraform
+            params:
+              AWS_ACCESS_KEY_ID:     ((aws_access_key__primary))
+              AWS_SECRET_ACCESS_KEY: ((aws_secret_key__primary))
+              AWS_DEFAULT_REGION:    ((aws_region__primary))
+          - put: terraform
+            params:
+              terraform_source: bosh-src/ci/bats/iaas/aws/terraform
+              env_name: upgrade-ubuntu-xenial-aws-((branch_name))
+              action: destroy
+            get_params:
+              action: destroy
+
   - name: deploy-acceptance-env
     serial: true
     plan:
@@ -1023,3 +1090,9 @@ resources:
         secret_key: ((aws_secret_key__primary))
         region:     ((aws_region__primary))
         ssh_public_key: ((aws_ssh_public_key))
+
+  - name: last-released-bosh-release
+    type: bosh-io-release
+    source:
+      repository: cloudfoundry/bosh
+      tarball: true
