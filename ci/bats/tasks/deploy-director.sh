@@ -6,6 +6,7 @@ chruby ruby
 set -e
 
 function cp_artifacts {
+  rm -f director-state/*
   mv $HOME/.bosh director-state/
   cp director.yml director-creds.yml director-state.json director-state/
 }
@@ -19,6 +20,7 @@ chmod +x /usr/local/bin/bosh-cli
 
 if [[ -e director-state/director-state.json ]]; then
   echo "Using existing director-state for upgrade"
+  cp -R director-state/.bosh $HOME
   cp director-state/director-* .
 fi
 
@@ -41,3 +43,6 @@ bosh-cli create-env \
   --state director-state.json \
   --vars-store director-creds.yml \
   director.yml
+
+IP=$(cat environment/metadata | jq .DirectorStaticIP)
+bosh-cli -e $IP --ca-cert <(bosh-cli int director-creds.yml --path /director_ssl/ca) env
