@@ -17,6 +17,11 @@ trap cp_artifacts EXIT
 mv bosh-cli/alpha-bosh-cli-* /usr/local/bin/bosh-cli
 chmod +x /usr/local/bin/bosh-cli
 
+if [[ -e director-state/director-state.json ]]; then
+  echo "Using existing director-state for upgrade"
+  cp director-state/director-* .
+fi
+
 bosh-cli interpolate bosh-deployment/bosh.yml \
   -o bosh-deployment/$BAT_INFRASTRUCTURE/cpi.yml \
   -o bosh-deployment/misc/powerdns.yml \

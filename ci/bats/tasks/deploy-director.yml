@@ -13,6 +13,8 @@ inputs:
 - name: bosh-deployment
 - name: bosh-release
 - name: stemcell
+- name: director-state
+  optional: true # chain tasks for upgrades
 
 params:
   DEPLOY_ARGS: ""
