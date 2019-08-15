@@ -39,7 +39,6 @@ module Bosh::Monitor
       @intervals.analyze_agents ||= 60
       @intervals.analyze_instances ||= 60
       @intervals.agent_timeout ||= 60
-      @intervals.vm_start_timeout ||= 600 # director's agent_wait_timeout
       @intervals.rogue_agent_alert ||= 120
       @intervals.resurrection_config ||= 60
 

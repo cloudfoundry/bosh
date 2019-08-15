@@ -1,9 +1,7 @@
-require 'date'
-
 module Bosh::Monitor
   class Instance
 
-    attr_reader :id, :agent_id, :job, :index, :cid, :expects_vm, :vm_created_at
+    attr_reader :id, :agent_id, :job, :index, :cid, :expects_vm
     attr_accessor :deployment
 
     def initialize(instance_data)
@@ -14,7 +12,6 @@ module Bosh::Monitor
       @index = instance_data['index']
       @cid = instance_data['cid']
       @expects_vm = instance_data['expects_vm']
-      @vm_created_at = DateTime.parse(instance_data['vm_created_at']) unless instance_data['vm_created_at'].nil?
     end
 
     def self.create(instance_data)

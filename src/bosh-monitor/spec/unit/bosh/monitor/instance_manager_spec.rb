@@ -18,18 +18,18 @@ module Bhm
         # Just use 2 loggers to test multiple agents without having to care
         # about stubbing delivery operations and providing well formed configs
         Bhm.plugins = [{ 'name' => 'logger' }, { 'name' => 'logger' }]
-        Bhm.intervals = OpenStruct.new(agent_timeout: 10, rogue_agent_alert: 30, vm_start_timeout: 60)
+        Bhm.intervals = OpenStruct.new(agent_timeout: 10, rogue_agent_alert: 10)
       end
 
       describe '#process_event' do
         context 'shutdown' do
           it 'shutdowns agent' do
-            instance1 = { 'id' => 'iuuid1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator' }
-            instance2 = { 'id' => 'iuuid2', 'agent_id' => '008', 'index' => '0', 'job' => 'nats' }
-            instance3 = { 'id' => 'iuuid3', 'agent_id' => '009', 'index' => '28', 'job' => 'mysql_node' }
+            instance_1 = Bhm::Instance.create('id' => 'iuuid1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator')
+            instance_2 = Bhm::Instance.create('id' => 'iuuid2', 'agent_id' => '008', 'index' => '0', 'job' => 'nats')
+            instance_3 = Bhm::Instance.create('id' => 'iuuid3', 'agent_id' => '009', 'index' => '28', 'job' => 'mysql_node')
 
             manager.sync_deployments([{ 'name' => 'mycloud' }])
-            manager.sync_deployment_state({ 'name' => 'mycloud' }, [instance1, instance2, instance3])
+            manager.sync_agents('mycloud', [instance_1, instance_2, instance_3])
 
             expect(manager.agents_count).to eq(3)
             expect(manager.analyze_agents).to eq(3)
@@ -115,8 +115,7 @@ module Bhm
         context 'bad alert' do
           it 'does not increment alerts_processed' do
             expect(event_processor).to receive(:process).at_least(:once).and_raise(Bosh::Monitor::InvalidEvent)
-            alert = JSON.dump('id' => '778', 'severity' => -2, 'title' => nil, 'summary' => 'zbb',
-                              'created_at' => Time.now.utc.to_i)
+            alert = JSON.dump('id' => '778', 'severity' => -2, 'title' => nil, 'summary' => 'zbb', 'created_at' => Time.now.utc.to_i)
 
             expect do
               manager.process_event(:alert, 'hm.agent.alert.007', alert)
@@ -127,8 +126,7 @@ module Bhm
 
         context 'good alert' do
           it 'increments alerts_processed' do
-            good_alert = JSON.dump('id' => '778', 'severity' => 2, 'title' => 'zb', 'summary' => 'zbb',
-                                   'created_at' => Time.now.utc.to_i)
+            good_alert = JSON.dump('id' => '778', 'severity' => 2, 'title' => 'zb', 'summary' => 'zbb', 'created_at' => Time.now.utc.to_i)
 
             expect do
               manager.process_event(:alert, 'hm.agent.alert.007', good_alert)
@@ -196,89 +194,16 @@ module Bhm
           expect(manager.instances_count).to eq(2)
           expect(manager.agents_count).to eq(2)
         end
-
-        context 'vm detaches' do
-          it 'removes agent' do
-            instances = [{ 'id' => '007', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator', 'expects_vm' => true }]
-            manager.sync_deployments([{ 'name' => 'mycloud' }])
-            manager.sync_deployment_state({ 'name' => 'mycloud' }, instances)
-
-            ts = Time.now
-            allow(Time).to receive(:now).and_return(ts + Bhm.intervals.agent_timeout + 10)
-            instances = [{ 'id' => '007', 'agent_id' => nil, 'index' => '0', 'job' => 'mutator', 'expects_vm' => false }]
-            manager.sync_deployment_state({ 'name' => 'mycloud' }, instances)
-
-            expect(manager.instances_count).to eq(1)
-            expect(manager.agents_count).to eq(0)
-            agents = manager.get_agents_for_deployment('mycloud')
-            expect(agents.key?('007')).to eq(false)
-            instances = manager.get_instances_for_deployment('mycloud')
-            expect(instances[0].id).to eq('007')
-            expect(instances[0].agent_id).to be_nil
-
-            expect(event_processor).to_not receive(:process)
-            manager.analyze_agents
-          end
-        end
-
-        context 'vm attaches' do
-          it 'adds agent' do
-            instances = [{ 'id' => '007', 'agent_id' => nil, 'index' => '0', 'job' => 'mutator', 'expects_vm' => false }]
-            manager.sync_deployments([{ 'name' => 'mycloud' }])
-            manager.sync_deployment_state({ 'name' => 'mycloud' }, instances)
-
-            ts = Time.now
-            allow(Time).to receive(:now).and_return(ts + Bhm.intervals.agent_timeout + 10)
-            instances = [{ 'id' => '007', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator', 'expects_vm' => true }]
-            manager.sync_deployment_state({ 'name' => 'mycloud' }, instances)
-
-            expect(manager.instances_count).to eq(1)
-            expect(manager.agents_count).to eq(1)
-            agents = manager.get_agents_for_deployment('mycloud')
-            expect(agents.key?('007')).to eq(true)
-            instances = manager.get_instances_for_deployment('mycloud')
-            expect(instances[0].id).to eq('007')
-            expect(instances[0].agent_id).to eq('007')
-
-            expect(event_processor).to_not receive(:process)
-            manager.analyze_agents
-          end
-        end
-
-        context 'vm reattaches' do
-          it 'updates agent' do
-            instances = [{ 'id' => '007', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator', 'expects_vm' => true }]
-            manager.sync_deployments([{ 'name' => 'mycloud' }])
-            manager.sync_deployment_state({ 'name' => 'mycloud' }, instances)
-
-            ts = Time.now
-            allow(Time).to receive(:now).and_return(ts + Bhm.intervals.agent_timeout + 10)
-            instances = [{ 'id' => '007', 'agent_id' => '008', 'index' => '0', 'job' => 'mutator', 'expects_vm' => true }]
-            manager.sync_deployment_state({ 'name' => 'mycloud' }, instances)
-
-            expect(manager.instances_count).to eq(1)
-            expect(manager.agents_count).to eq(1)
-            agents = manager.get_agents_for_deployment('mycloud')
-            expect(agents.key?('008')).to eq(true)
-            expect(agents.key?('007')).to eq(false)
-            instances = manager.get_instances_for_deployment('mycloud')
-            expect(instances[0].id).to eq('007')
-            expect(instances[0].agent_id).to eq('008')
-
-            expect(event_processor).to_not receive(:process)
-            manager.analyze_agents
-          end
-        end
       end
 
       describe '#get_agents_for_deployment' do
         it 'can provide agent information for a deployment' do
-          instance1 = { 'id' => 'iuuid1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator' }
-          instance2 = { 'id' => 'iuuid2', 'agent_id' => '008', 'index' => '0', 'job' => 'nats' }
-          instance3 = { 'id' => 'iuuid3', 'agent_id' => '009', 'index' => '28', 'job' => 'mysql_node' }
+          instance_1 = Bhm::Instance.create('id' => 'iuuid1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator')
+          instance_2 = Bhm::Instance.create('id' => 'iuuid2', 'agent_id' => '008', 'index' => '0', 'job' => 'nats')
+          instance_3 = Bhm::Instance.create('id' => 'iuuid3', 'agent_id' => '009', 'index' => '28', 'job' => 'mysql_node')
 
           manager.sync_deployments([{ 'name' => 'mycloud' }])
-          manager.sync_deployment_state({ 'name' => 'mycloud' }, [instance1, instance2, instance3])
+          manager.sync_agents('mycloud', [instance_1, instance_2, instance_3])
 
           agents = manager.get_agents_for_deployment('mycloud')
           expect(agents.size).to eq(3)
@@ -296,12 +221,12 @@ module Bhm
 
       describe '#get_deleted_agents_for_deployment' do
         it 'can provide agent information for a deployment' do
-          instance1 = { 'id' => 'iuuid1',  'index' => '0', 'job' => 'mutator', 'expects_vm' => true }
-          instance2 = { 'id' => 'iuuid2',  'index' => '0', 'job' => 'nats', 'expects_vm' => true }
-          instance3 = { 'id' => 'iuuid3',  'index' => '28', 'job' => 'mysql_node', 'expects_vm' => true }
+          instance_1 = Bhm::Instance.create('id' => 'iuuid1',  'index' => '0', 'job' => 'mutator', 'expects_vm' => true)
+          instance_2 = Bhm::Instance.create('id' => 'iuuid2',  'index' => '0', 'job' => 'nats', 'expects_vm' => true)
+          instance_3 = Bhm::Instance.create('id' => 'iuuid3',  'index' => '28', 'job' => 'mysql_node', 'expects_vm' => true)
 
           manager.sync_deployments([{ 'name' => 'mycloud' }])
-          manager.sync_deployment_state({ 'name' => 'mycloud' }, [instance1, instance2, instance3])
+          manager.sync_agents('mycloud', [instance_1, instance_2, instance_3])
 
           agents = manager.get_deleted_agents_for_deployment('mycloud')
           expect(agents.size).to eq(3)
@@ -323,9 +248,7 @@ module Bhm
         end
 
         it 'returns deployment instances' do
-          manager.sync_deployments([{ 'name' => 'mycloud' }])
-          manager.sync_deployment_state({ 'name' => 'mycloud' }, [{ 'id' => 'iuuid', 'job' => 'zb', 'index' => '0',
-                                                                    'expects_vm' => true }])
+          manager.sync_instances('mycloud', [{ 'id' => 'iuuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true }])
 
           expect(manager.get_instances_for_deployment('mycloud').size).to eq(1)
           manager.get_instances_for_deployment('mycloud').each do |instance|
@@ -339,46 +262,26 @@ module Bhm
       end
 
       describe '#analyze_agents' do
-        let(:instance1) do
-          {
-            'id' => 'instance-uuid-1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator',
-            'vm_created_at' => '2018-08-07T22:47:39'
-          }
-        end
-        let(:instance2) do
-          {
-            'id' => 'instance-uuid-2', 'agent_id' => '008', 'index' => '1', 'job' => 'mutator',
-            'vm_created_at' => '2018-08-07T22:47:39'
-          }
-        end
-        let(:instance3) do
-          {
-            'id' => 'instance-uuid-3', 'agent_id' => '009', 'index' => '2', 'job' => 'mutator2',
-            'vm_created_at' => '2018-08-07T22:47:39'
-          }
-        end
+        let(:instance_1) { Bhm::Instance.create('id' => 'instance-uuid-1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator') }
+        let(:instance_2) { Bhm::Instance.create('id' => 'instance-uuid-2', 'agent_id' => '008', 'index' => '1', 'job' => 'mutator') }
+        let(:instance_3) { Bhm::Instance.create('id' => 'instance-uuid-3', 'agent_id' => '009', 'index' => '2', 'job' => 'mutator2') }
 
         before do
           manager.sync_deployments([{ 'name' => 'mycloud' }])
         end
 
         it 'can analyze agent' do
-          manager.sync_deployment_state({ 'name' => 'mycloud' }, [instance1])
+          manager.sync_agents('mycloud', [instance_1])
 
           expect(manager.analyze_agents).to eq(1)
         end
 
         context('when multiple agents time out in different deployments') do
-          let(:instance4) do
-            {
-              'id' => 'instance-uuid-4', 'agent_id' => '010', 'index' => '3', 'job' => 'mutator2',
-              'vm_created_at' => '2018-08-07T22:47:39'
-            }
-          end
+          let(:instance_4) { Bhm::Instance.create('id' => 'instance-uuid-4', 'agent_id' => '010', 'index' => '3', 'job' => 'mutator2') }
           before do
             manager.sync_deployments([{ 'name' => 'mycloud' }, { 'name' => 'mycloud-2' }])
-            manager.sync_deployment_state({ 'name' => 'mycloud' }, [instance1, instance2, instance3])
-            manager.sync_deployment_state({ 'name' => 'mycloud-2' }, [instance4])
+            manager.sync_agents('mycloud', [instance_1, instance_2, instance_3])
+            manager.sync_agents('mycloud-2', [instance_4])
             ts = Time.now
             allow(Time).to receive(:now).and_return(ts + Bhm.intervals.agent_timeout + 10)
           end
@@ -401,7 +304,7 @@ module Bhm
               title: 'mycloud has instances with timed out agents',
               created_at: anything,
               deployment: 'mycloud',
-              jobs_to_instance_ids: { 'mutator' => %w[instance-uuid-1 instance-uuid-2],
+              jobs_to_instance_ids: { 'mutator' => ['instance-uuid-1', 'instance-uuid-2'],
                                       'mutator2' => ['instance-uuid-3'] },
             )
             expect(event_processor).to receive(:process).with(
@@ -419,7 +322,7 @@ module Bhm
         end
 
         it 'alerts on a timed out agent' do
-          manager.sync_deployment_state({ 'name' => 'mycloud' }, [instance1])
+          manager.sync_agents('mycloud', [instance_1])
           ts = Time.now
           allow(Time).to receive(:now).and_return(ts + Bhm.intervals.agent_timeout + 10)
 
@@ -435,72 +338,16 @@ module Bhm
             instance_id: 'instance-uuid-1',
           )
 
-          expect(event_processor).to receive(:process).with(
-            :alert,
-            severity: 2,
-            category: 'deployment_health',
-            source: 'mycloud',
-            title: 'mycloud has instances with timed out agents',
-            created_at: anything,
-            deployment: 'mycloud',
-            jobs_to_instance_ids: { 'mutator' => ['instance-uuid-1'] },
-          )
-
           manager.analyze_agents
-        end
-
-        it 'does not alert on a new VM' do
-          instancenew = {
-            'id' => 'instance-uuid-1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator',
-            'vm_created_at' => Time.now.utc.iso8601.to_s
-          }
-          manager.sync_deployment_state({ 'name' => 'mycloud' }, [instancenew])
-          ts = Time.now
-          allow(Time).to receive(:now).and_return(ts + Bhm.intervals.agent_timeout + 10)
-
-          expect(event_processor).not_to receive(:process)
-
-          manager.analyze_agents
-        end
-
-        it 'does not alert on timed-out recent rogue agent' do
-          # agents are in @rogue_agents if an instance couldn't be found when event received
-          alert654 = JSON.dump('id' => '654', 'severity' => 2, 'title' => 'zb', 'summary' => 'zbb',
-                               'created_at' => Time.now.utc.to_i)
-          manager.sync_deployment_state({ 'name' => 'mycloud' }, [])
-          manager.process_event(:heartbeat, 'hm.agent.alert.654', alert654)
-          ts = Time.now
-          allow(Time).to receive(:now).and_return(ts + Bhm.intervals.agent_timeout + 1)
-
-          expect(event_processor).not_to receive(:process)
-
-          manager.analyze_agents
-          expect(manager.agents_count).to eq(1)
-        end
-
-        it 'does not alert on timed-out stale rogue agent' do
-          # agent.rogue is true if rogue_agent_alert has elapsed and agent.deployment is nil
-          alert654 = JSON.dump('id' => '654', 'severity' => 2, 'title' => 'zb', 'summary' => 'zbb',
-                               'created_at' => Time.now.utc.to_i)
-          manager.sync_deployment_state({ 'name' => 'mycloud' }, [])
-          manager.process_event(:heartbeat, 'hm.agent.alert.654', alert654)
-          ts = Time.now
-          allow(Time).to receive(:now).and_return(ts + Bhm.intervals.rogue_agent_alert + 1)
-
-          expect(event_processor).not_to receive(:process)
-
-          manager.analyze_agents
-          expect(manager.agents_count).to eq(0)
         end
 
         it 'can analyze all agents' do
           expect(manager.analyze_agents).to eq(0)
 
-          manager.sync_deployment_state({ 'name' => 'mycloud' }, [instance1, instance2, instance3])
+          manager.sync_agents('mycloud', [instance_1, instance_2, instance_3])
           expect(manager.analyze_agents).to eq(3)
 
-          alert = JSON.dump('id' => '778', 'severity' => 2, 'title' => 'zb', 'summary' => 'zbb',
-                            'created_at' => Time.now.utc.to_i)
+          alert = JSON.dump('id' => '778', 'severity' => 2, 'title' => 'zb', 'summary' => 'zbb', 'created_at' => Time.now.utc.to_i)
 
           # Alert for already managed agent
           manager.process_event(:alert, 'hm.agent.alert.007', alert)
@@ -533,20 +380,14 @@ module Bhm
       end
 
       it 'can analyze instance with vm' do
-        instance = {
-          'id' => 'instance-uuid', 'agent_id' => '007', 'index' => '0', 'cid' => 'cuuid', 'job' => 'mutator',
-          'expects_vm' => true
-        }
+        instance = { 'id' => 'instance-uuid', 'agent_id' => '007', 'index' => '0', 'cid' => 'cuuid', 'job' => 'mutator', 'expects_vm' => true }
 
         expect(manager.alert_needed?(Bhm::Instance.create(instance))).to be(false)
       end
 
       context 'when the instances expects a VM, and does not have one' do
         it 'sends an alert' do
-          instance = {
-            'id' => 'instance-uuid', 'agent_id' => '007', 'index' => '0', 'cid' => nil, 'job' => 'mutator',
-            'expects_vm' => true
-          }
+          instance = { 'id' => 'instance-uuid', 'agent_id' => '007', 'index' => '0', 'cid' => nil, 'job' => 'mutator', 'expects_vm' => true }
 
           expect(manager.alert_needed?(Bhm::Instance.create(instance))).to be(true)
         end
@@ -554,18 +395,8 @@ module Bhm
     end
 
     describe '#analyze_instances' do
-      let(:instance1) do
-        {
-          'id' => 'instance-uuid-1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator', 'expects_vm' => true,
-          'vm_created_at' => '2018-08-07T22:47:39'
-        }
-      end
-      let(:instance2) do
-        {
-          'id' => 'instance-uuid-2', 'agent_id' => '008', 'index' => '1', 'job' => 'mutator', 'expects_vm' => true,
-          'vm_created_at' => '2018-08-07T22:47:39'
-        }
-      end
+      let(:instance_1) { { 'id' => 'instance-uuid-1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator', 'expects_vm' => true } }
+      let(:instance_2) { { 'id' => 'instance-uuid-2', 'agent_id' => '008', 'index' => '1', 'job' => 'mutator', 'expects_vm' => true } }
 
       before do
         manager.sync_deployments([{ 'name' => 'my_deployment' }])
@@ -578,12 +409,12 @@ module Bhm
 
       context 'instances with vms' do
         before do
-          instance1['cid'] = 'cuuid'
-          instance2['cid'] = 'cuuid'
+          instance_1['cid'] = 'cuuid'
+          instance_2['cid'] = 'cuuid'
         end
 
         it 'can analyze all instances' do
-          manager.sync_deployment_state({ 'name' => 'my_deployment' }, [instance1, instance2])
+          manager.sync_instances('my_deployment', [instance_1, instance_2])
           expect(event_processor).to_not receive(:process)
 
           expect(manager.analyze_instances).to eq(2)
@@ -591,7 +422,7 @@ module Bhm
       end
 
       it 'alerts on an instance without VM' do
-        manager.sync_deployment_state({ 'name' => 'my_deployment' }, [instance1])
+        manager.sync_instances('my_deployment', [instance_1])
         expect(event_processor).to receive(:process).with(
           :alert,
           severity: 2,
@@ -604,37 +435,17 @@ module Bhm
           instance_id: 'instance-uuid-1',
         )
 
-        expect(event_processor).to receive(:process).with(
-          :alert,
-          severity: 2,
-          category: 'deployment_health',
-          source: 'my_deployment',
-          title: 'my_deployment has instances which do not have VMs',
-          created_at: anything,
-          deployment: 'my_deployment',
-          jobs_to_instance_ids: { 'mutator' => ['instance-uuid-1'] },
-        )
-
         expect(manager.analyze_instances).to eq(1)
       end
 
       context('when instances have no vm in different deployments') do
-        let(:instance3) do
-          {
-            'id' => 'instance-uuid-3', 'agent_id' => '009', 'index' => '2', 'job' => 'mutator2', 'expects_vm' => true,
-            'vm_created_at' => '2018-08-07T22:47:39'
-          }
-        end
-        let(:instance4) do
-          {
-            'id' => 'instance-uuid-4', 'agent_id' => '010', 'index' => '3', 'job' => 'mutator2', 'expects_vm' => true,
-            'vm_created_at' => '2018-08-07T22:47:39'
-          }
-        end
+        let(:instance_3) { { 'id' => 'instance-uuid-3', 'agent_id' => '009', 'index' => '2', 'job' => 'mutator2', 'expects_vm' => true } }
+        let(:instance_4) { { 'id' => 'instance-uuid-4', 'agent_id' => '010', 'index' => '3', 'job' => 'mutator2', 'expects_vm' => true } }
+
         before do
           manager.sync_deployments([{ 'name' => 'mycloud' }, { 'name' => 'mycloud-2' }])
-          manager.sync_deployment_state({ 'name' => 'mycloud' }, [instance1, instance2, instance3])
-          manager.sync_deployment_state({ 'name' => 'mycloud-2' }, [instance4])
+          manager.sync_instances('mycloud', [instance_1, instance_2, instance_3])
+          manager.sync_instances('mycloud-2', [instance_4])
         end
 
         it 'sends an alert for each instance with missing vm' do
@@ -647,7 +458,6 @@ module Bhm
         end
 
         it 'sends an aggregated alert per deployment' do
-          expect(event_processor).to receive(:process)
           expect(event_processor).to receive(:process).with(
             :alert,
             severity: 2,
@@ -656,7 +466,7 @@ module Bhm
             title: 'mycloud has instances which do not have VMs',
             created_at: anything,
             deployment: 'mycloud',
-            jobs_to_instance_ids: { 'mutator' => %w[instance-uuid-1 instance-uuid-2],
+            jobs_to_instance_ids: { 'mutator' => ['instance-uuid-1', 'instance-uuid-2'],
                                     'mutator2' => ['instance-uuid-3'] },
           )
           expect(event_processor).to receive(:process).with(

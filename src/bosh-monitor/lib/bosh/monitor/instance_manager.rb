@@ -13,7 +13,6 @@ module Bosh::Monitor
       @deployment_name_to_deployments = {}
 
       @logger = Bhm.logger
-      @intervals = Bhm.intervals
       @heartbeats_received = 0
       @alerts_received = 0
       @alerts_processed = 0
@@ -78,6 +77,19 @@ module Bosh::Monitor
       sync_agents(deployment_name, get_instances_for_deployment(deployment_name))
     end
 
+    def sync_instances(deployment_name, instances_data)
+      deployment = @deployment_name_to_deployments[deployment_name]
+      active_instance_ids = sync_active_instances(deployment, instances_data)
+      remove_inactive_instances(active_instance_ids, deployment)
+    end
+
+    def sync_agents(deployment_name, instances)
+      deployment = @deployment_name_to_deployments[deployment_name]
+      active_agent_ids = sync_active_agents(deployment, instances)
+      remove_inactive_agents(active_agent_ids, deployment)
+      update_rogue_agents(active_agent_ids)
+    end
+
     def get_instances_for_deployment(deployment_name)
       @deployment_name_to_deployments[deployment_name].instances
     end
@@ -101,7 +113,7 @@ module Bosh::Monitor
         return
       end
 
-      if agent.timed_out? && !@rogue_agents.key?(agent.id)
+      if agent.timed_out?
         @processor.process(:alert,
                            severity: 2,
                            category: Events::Alert::CATEGORY_VM_HEALTH,
@@ -303,12 +315,8 @@ module Bosh::Monitor
       @deployment_name_to_deployments.values.each do |deployment|
         jobs_to_instances = Hash.new { |hash, job| hash[job] = [] }
         deployment.agents.each do |agent|
-          instance = deployment.instance(agent.instance_id)
-          vm_created_at = instance.vm_created_at # created_at is nil if recreating VM, wait for VM to boot
-          if !vm_created_at.nil? && ((DateTime.now - vm_created_at) * 24 * 60 * 60).to_i > @intervals.vm_start_timeout
-            analyze_agent(agent)
-            jobs_to_instances[agent.job] << agent.instance_id if agent.timed_out?
-          end
+          analyze_agent(agent)
+          jobs_to_instances[agent.job] << agent.instance_id if agent.timed_out? && !agent.rogue?
           count += 1
         end
         alert_aggregated_instances_if_needed(
@@ -399,19 +407,6 @@ module Bosh::Monitor
       deployment_model = @deployment_name_to_deployments[deployment_name]
       deployment_model.update_teams(deployment['teams'])
       @deployment_name_to_deployments[deployment_name] = deployment_model
-    end
-
-    def sync_instances(deployment_name, instances_data)
-      deployment = @deployment_name_to_deployments[deployment_name]
-      active_instance_ids = sync_active_instances(deployment, instances_data)
-      remove_inactive_instances(active_instance_ids, deployment)
-    end
-
-    def sync_agents(deployment_name, instances)
-      deployment = @deployment_name_to_deployments[deployment_name]
-      active_agent_ids = sync_active_agents(deployment, instances)
-      remove_inactive_agents(active_agent_ids, deployment)
-      update_rogue_agents(active_agent_ids)
     end
   end
 end
