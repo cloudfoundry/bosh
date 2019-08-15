@@ -94,8 +94,7 @@ module Bosh::Director
         # Value: list of templates models of release version.
         release_versions_templates_models_hash = {}
 
-        # TODO: Refactor this block into private functions
-        jobs.each do |job_spec|
+        @instance_group.jobs = jobs.map do |job_spec|
           job_name = safe_property(job_spec, 'name', class: String)
           release_name = safe_property(job_spec, 'release', class: String)
 
@@ -113,8 +112,7 @@ module Bosh::Director
 
           job = release.get_or_create_template(job_name)
 
-          # TODO: Make it a real typed exception
-          raise "Job '#{job_name}' not found in Template table" if current_template_model.nil?
+          raise ReleaseMissingJob, "Job '#{job_name}' not found in release '#{release.name}'" if current_template_model.nil?
 
           job_properties = if job_spec.key?('properties')
                              safe_property(job_spec, 'properties', class: Hash, optional: true, default: {})
@@ -145,7 +143,7 @@ module Bosh::Director
               migrated_from: migrated_from,
             )
           end
-          @instance_group.jobs << job
+          job
         end
       end
 

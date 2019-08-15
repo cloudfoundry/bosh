@@ -189,6 +189,7 @@ module Bosh::Director
   JobBothInstanceGroupAndJob = err(140020)
   JobInstanceIgnored = err(140021)
   InstanceGroupBadVmConfiguration = err(140022)
+  ReleaseMissingJob = err(140029)
 
   V1DeprecatedJob = err(140023)
   V1DeprecatedTemplate = err(140024)
