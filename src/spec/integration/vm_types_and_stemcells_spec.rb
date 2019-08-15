@@ -31,7 +31,6 @@ describe 'vm_types and stemcells', type: :integration do
       'stemcell' => 'default',
       'instances' => 1,
       'networks' => [{ 'name' => 'a' }],
-      'properties' => {},
       'env' => env_hash,
     }]
     manifest_hash
@@ -107,7 +106,6 @@ describe 'vm_types and stemcells', type: :integration do
         'stemcell' => 'default',
         'instances' => 3,
         'networks' => [{ 'name' => 'a' }],
-        'properties' => {},
       }]
 
       deploy_simple_manifest(manifest_hash: manifest_hash)
@@ -129,7 +127,6 @@ describe 'vm_types and stemcells', type: :integration do
           'stemcell' => 'default',
           'instances' => 1,
           'networks' => [{ 'name' => 'a' }],
-          'properties' => {},
         }]
         m
       end
@@ -143,7 +140,6 @@ describe 'vm_types and stemcells', type: :integration do
           'stemcell' => 'centos',
           'instances' => 1,
           'networks' => [{ 'name' => 'a' }],
-          'properties' => {},
         }]
         m['stemcells'] = [
           {
@@ -241,7 +237,6 @@ describe 'vm_types and stemcells', type: :integration do
       'stemcell' => 'default',
       'instances' => 3,
       'networks' => [{ 'name' => 'a' }],
-      'properties' => {},
     }]
 
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
@@ -326,7 +321,6 @@ describe 'vm_types and stemcells', type: :integration do
           'stemcell' => 'default',
           'instances' => 1,
           'networks' => [{ 'name' => 'a' }],
-          'properties' => {},
           'env' => env_hash,
         }]
         manifest_hash

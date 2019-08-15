@@ -30,7 +30,6 @@ module Bosh::Director
         end
 
         parse_stemcells
-        parse_properties
         parse_releases
         parse_update(parse_options)
         parse_variables
@@ -52,11 +51,6 @@ module Bosh::Director
 
           @deployment.add_stemcell(Stemcell.parse(stemcell_hash))
         end
-      end
-
-      def parse_properties
-        @deployment.properties = safe_property(@deployment_manifest, 'properties',
-                                               class: Hash, default: {})
       end
 
       def parse_addons

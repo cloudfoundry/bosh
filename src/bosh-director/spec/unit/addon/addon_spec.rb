@@ -3,18 +3,23 @@ require 'spec_helper'
 module Bosh::Director
   module Addon
     describe Addon, truncation: true do
-      subject(:addon) { Addon.new(addon_name, jobs, properties, includes, excludes) }
+      subject(:addon) { Addon.new(addon_name, jobs, includes, excludes) }
       let(:addon_name) { 'addon-name' }
       let(:jobs) do
         [
-          { 'name' => 'dummy_with_properties',
+          {
+            'name' => 'dummy_with_properties',
             'release' => 'dummy',
             'provides_links' => [],
-            'consumes_links' => [] },
-          { 'name' => 'dummy_with_package',
+            'consumes_links' => [],
+            'properties' => properties,
+          },
+          {
+            'name' => 'dummy_with_package',
             'release' => 'dummy',
             'provides_links' => [],
-            'consumes_links' => [] },
+            'consumes_links' => [],
+          },
         ]
       end
       let(:properties) do
@@ -49,7 +54,7 @@ module Bosh::Director
 
       let(:deployment) do
         planner = DeploymentPlan::Planner.new(
-          { name: deployment_name, properties: {} },
+          deployment_name,
           manifest_hash,
           YAML.dump(manifest_hash),
           cloud_configs,
@@ -211,7 +216,7 @@ module Bosh::Director
               jobs[1],
               deployment_model,
               dummy_with_packages_template,
-              job_properties: properties,
+              job_properties: nil,
               instance_group_name: 'foobar',
             )
             expect(links_parser).to receive(:parse_consumers_from_job).with(
@@ -282,31 +287,6 @@ module Bosh::Director
             end
           end
 
-          context 'none of the addon jobs have job level properties' do
-            context 'when the addon has properties' do
-              it 'adds addon properties to addon job' do
-                addon.add_to_deployment(deployment)
-
-                expect(instance_group.jobs[1].properties).to eq('foobar' => properties)
-                expect(instance_group.jobs[2].properties).to eq('foobar' => properties)
-              end
-            end
-
-            context 'when the addon has no addon level properties' do
-              let(:properties) do
-                {}
-              end
-
-              it 'adds empty properties to addon job to avoid override by instance group or manifest level properties' do
-                added_jobs = []
-                expect(instance_group).to(receive(:add_job)) { |job| added_jobs << job }.twice
-                addon.add_to_deployment(deployment)
-
-                expect(added_jobs[0].properties).to eq('foobar' => {})
-                expect(added_jobs[1].properties).to eq('foobar' => {})
-              end
-            end
-          end
 
           context 'when the addon jobs have job level properties' do
             let(:jobs) do
@@ -319,7 +299,7 @@ module Bosh::Director
               ]
             end
 
-            it 'does not overwrite jobs properties with addon properties' do
+            it 'sets jobs properties with addon properties' do
               expect(instance_group).to(receive(:add_job)) do |added_job|
                 expect(added_job.properties).to eq('foobar' => { 'job' => 'properties' })
               end
@@ -357,15 +337,14 @@ module Bosh::Director
       end
 
       describe '#parse' do
-        context 'when name, jobs, include, and properties' do
+        context 'when name, jobs, include' do
           let(:include_hash) do
-            { 'jobs' => [], 'properties' => [] }
+            { 'jobs' => [] }
           end
           let(:addon_hash) do
             {
               'name' => 'addon-name',
               'jobs' => jobs,
-              'properties' => properties,
               'include' => include_hash,
             }
           end
@@ -377,11 +356,10 @@ module Bosh::Director
             expect(addon.name).to eq('addon-name')
             expect(addon.jobs.count).to eq(2)
             expect(addon.jobs.map { |job| job['name'] }).to eq(%w[dummy_with_properties dummy_with_package])
-            expect(addon.properties).to eq(properties)
           end
         end
 
-        context 'when jobs, properties and include are empty' do
+        context 'when jobs and include are empty' do
           let(:addon_hash) do
             { 'name' => 'addon-name' }
           end
@@ -390,20 +368,6 @@ module Bosh::Director
             addon = Addon.parse(addon_hash)
             expect(addon.name).to eq('addon-name')
             expect(addon.jobs.count).to eq(0)
-            expect(addon.properties).to be_nil
-          end
-        end
-
-        context 'when jobs, properties and include are empty' do
-          let(:addon_hash) do
-            { 'name' => 'addon-name' }
-          end
-
-          it 'returns addon' do
-            addon = Addon.parse(addon_hash)
-            expect(addon.name).to eq('addon-name')
-            expect(addon.jobs.count).to eq(0)
-            expect(addon.properties).to be_nil
           end
         end
 
@@ -415,6 +379,21 @@ module Bosh::Director
           it 'errors' do
             error_string = "Required property 'name' was not specified in object ({\"jobs\"=>[\"addon-name\"]})"
             expect { Addon.parse(addon_hash) }.to raise_error(ValidationMissingField, error_string)
+          end
+        end
+
+        context 'when properties are provided at addon level' do
+          let(:addon_hash) do
+            {
+              'name' => 'addon-name',
+              'properties' => properties,
+            }
+          end
+
+          it 'errors' do
+            error_string =  "Addon 'addon-name' specifies 'properties' which is not supported. 'properties' are only "\
+                "allowed in the 'jobs' array"
+            expect { Addon.parse(addon_hash) }.to raise_error(V1DeprecatedAddOnProperties, error_string)
           end
         end
       end

@@ -209,16 +209,26 @@ describe 'drain', type: :integration do
             name: 'colocated',
             jobs: [
               { 'name' => 'job_1_with_pre_start_script', 'release' => 'bosh-release' },
-              { 'name' => 'foobar', 'release' => 'bosh-release' },
-              { 'name' => 'has_drain_script', 'release' => 'bosh-release' },
+              {
+                'name' => 'foobar',
+                'release' => 'bosh-release',
+                'properties' => {
+                  'test_property' => 'multi-drain',
+                  'drain_type' => 'static',
+                },
+              },
+              {
+                'name' => 'has_drain_script',
+                'release' => 'bosh-release',
+                'properties' => {
+                  'test_property' => 'multi-drain',
+                  'drain_type' => 'static',
+                },
+              },
             ],
             instances: 1,
           ),
         ],
-        'properties' => {
-          'test_property' => 'multi-drain',
-          'drain_type' => 'static',
-        },
       )
     end
 

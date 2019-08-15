@@ -15,7 +15,6 @@ describe 'dry run', type: :integration do
           'networks' => [{
             'name' => 'a',
           }],
-          'properties' => {},
           'stemcell' => 'default',
         },
       ]

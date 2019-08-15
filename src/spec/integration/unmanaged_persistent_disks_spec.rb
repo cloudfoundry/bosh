@@ -75,7 +75,6 @@ describe 'multiple persistent disks', type: :integration do
       'stemcell' => 'default',
       'instances' => 1,
       'networks' => [{'name' => 'a'}],
-      'properties' => {},
       'persistent_disks' => [low_iops_persistent_disk, high_iops_persistent_disk]
     }
   end

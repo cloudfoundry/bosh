@@ -64,6 +64,7 @@ describe 'using director with config server and deployments having variables', t
         {
           'name' => 'http_proxy_with_requires',
           'release' => 'bosh-release',
+          'properties' => { 'listen_port' => 9999 },
         },
       ],
       instances: 1,
@@ -74,7 +75,6 @@ describe 'using director with config server and deployments having variables', t
   let(:manifest) do
     manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
     manifest['instance_groups'] = [my_instance_group]
-    manifest['properties'] = { 'listen_port' => 9999 }
     manifest
   end
   let(:deployment_name) { manifest['name'] }

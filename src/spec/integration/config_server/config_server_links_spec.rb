@@ -68,6 +68,7 @@ describe 'using director with config server and deployments having links', type:
         {
           'name' => 'http_proxy_with_requires',
           'release' => 'bosh-release',
+          'properties' => { 'listen_port' => 9999 },
         },
       ],
       instances: 1,
@@ -78,7 +79,6 @@ describe 'using director with config server and deployments having links', type:
   let(:manifest) do
     manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
     manifest['instance_groups'] = [my_instance_group]
-    manifest['properties'] = { 'listen_port' => 9999 }
     manifest
   end
   let(:deployment_name) { manifest['name'] }
@@ -162,9 +162,11 @@ describe 'using director with config server and deployments having links', type:
 
         config_server_helper.put_value(prepend_namespace('fibonacci_placeholder'), 'Pisa')
 
-        consumer_instance_group['properties'][ 'http_proxy_with_requires'] = {
-          'fail_instance_index' => 0,
-          'fail_on_job_start' => true,
+        consumer_instance_group['jobs'][0]['properties'] = {
+          'http_proxy_with_requires' => {
+            'fail_instance_index' => 0,
+            'fail_on_job_start' => true,
+          },
         }
 
         _, exit_code = deploy_simple_manifest(manifest_hash: manifest, include_credentials: false, env: client_env,

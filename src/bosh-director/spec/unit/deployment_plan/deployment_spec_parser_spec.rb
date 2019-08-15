@@ -3,7 +3,17 @@ require 'spec_helper'
 module Bosh::Director
   describe DeploymentPlan::DeploymentSpecParser do
     subject(:parser) { described_class.new(deployment, event_log, logger) }
-    let(:deployment) { DeploymentPlan::Planner.new(planner_attributes, manifest_hash, YAML.dump(manifest_hash), cloud_config, runtime_configs, deployment_model, planner_options) }
+    let(:deployment) do
+      DeploymentPlan::Planner.new(
+        manifest_hash['name'],
+        manifest_hash,
+        YAML.dump(manifest_hash),
+        cloud_config,
+        runtime_configs,
+        deployment_model,
+        planner_options,
+      )
+    end
     let(:planner_options) do
       {}
     end
@@ -24,12 +34,6 @@ module Bosh::Director
           'networks' => [{ 'name' => 'network-name' }],
           'compilation' => {},
           'update' => {},
-        }
-      end
-      let(:planner_attributes) do
-        {
-          name: manifest_hash['name'],
-          properties: manifest_hash['properties'] || {},
         }
       end
 
@@ -146,18 +150,6 @@ module Bosh::Director
           it 'should add stemcells to deployment plan' do
             expect(parsed_deployment.stemcells.count).to eq(2)
           end
-        end
-      end
-
-      describe 'properties key' do
-        it 'parses basic properties' do
-          manifest_hash['properties'] = { 'foo' => 'bar' }
-          expect(parsed_deployment.properties).to eq('foo' => 'bar')
-        end
-
-        it 'allows to not include properties key' do
-          manifest_hash.delete('properties')
-          expect(parsed_deployment.properties).to eq({})
         end
       end
 

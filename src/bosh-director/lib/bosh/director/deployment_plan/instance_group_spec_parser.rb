@@ -26,12 +26,9 @@ module Bosh::Director
         parse_name
         parse_lifecycle
 
-        validate_jobs
+        validate_instance_group
 
-        # TODO: evaluate this step, and at least avoid the reassignation #what
-        merged_global_and_instance_group_properties = extract_global_and_instance_group_properties
-
-        parse_jobs(merged_global_and_instance_group_properties, options['is_deploy_action'])
+        parse_jobs(options['is_deploy_action'])
 
         check_job_uniqueness
         parse_disks
@@ -83,7 +80,7 @@ module Bosh::Director
         @instance_group.lifecycle = lifecycle
       end
 
-      def parse_jobs(merged_global_and_instance_group_properties, is_deploy_action)
+      def parse_jobs(is_deploy_action)
         jobs = safe_property(@instance_group_spec, 'jobs', class: Array)
 
         migrated_from = safe_property(@instance_group_spec, 'migrated_from', class: Array, optional: true, default: [])
@@ -114,16 +111,8 @@ module Bosh::Director
 
           raise ReleaseMissingJob, "Job '#{job_name}' not found in release '#{release.name}'" if current_template_model.nil?
 
-          job_properties = if job_spec.key?('properties')
-                             safe_property(job_spec, 'properties', class: Hash, optional: true, default: {})
-                           else
-                             merged_global_and_instance_group_properties
-                           end
-
-          job.add_properties(
-            job_properties,
-            @instance_group.name,
-          )
+          job_properties = safe_property(job_spec, 'properties', class: Hash, optional: true, default: {})
+          job.add_properties(job_properties, @instance_group.name)
 
           # Don't recalculate links on actions that aren't a deploy
           if is_deploy_action
@@ -223,13 +212,6 @@ module Bosh::Director
         end
 
         @instance_group.persistent_disk_collection = persistent_disk_collection
-      end
-
-      def extract_global_and_instance_group_properties
-        # Manifest can contain global and per-instance_group properties section
-        instance_group_properties = safe_property(@instance_group_spec, 'properties', class: Hash, optional: true, default: {})
-
-        @deployment.properties.recursive_merge(instance_group_properties)
       end
 
       def parse_vm_type
@@ -339,10 +321,17 @@ module Bosh::Director
         end
       end
 
-      def validate_jobs
+      def validate_instance_group
         template_property = safe_property(@instance_group_spec, 'template', optional: true)
         templates_property = safe_property(@instance_group_spec, 'templates', optional: true)
         jobs_property = safe_property(@instance_group_spec, 'jobs', optional: true)
+        instance_group_properties = safe_property(@instance_group_spec, 'properties', class: Hash, optional: true)
+
+        if instance_group_properties
+          raise V1DeprecatedInstanceGroupProperties,
+                "Instance group '#{@instance_group.name}' specifies 'properties' which is not supported. 'properties' are only "\
+                "allowed in the 'jobs' array"
+        end
 
         if template_property || templates_property
           raise V1DeprecatedTemplate,

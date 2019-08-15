@@ -25,7 +25,6 @@ describe 'using director with config server', type: :integration do
         }],
         'instances' => 1,
         'networks' => networks,
-        'properties' => {},
         'vm_type' => 'small',
         'persistent_disk_type' => 'small',
         'azs' => ['z1'],

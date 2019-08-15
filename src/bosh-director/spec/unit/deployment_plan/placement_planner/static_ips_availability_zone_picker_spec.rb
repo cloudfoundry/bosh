@@ -104,7 +104,6 @@ module Bosh::Director::DeploymentPlan
             'stemcell' => 'default',
             'instances' => desired_instance_count,
             'networks' => job_networks,
-            'properties' => {},
             'azs' => job_availability_zones,
           },
         ],

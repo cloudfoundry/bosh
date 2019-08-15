@@ -92,7 +92,7 @@ module Bosh
             planner
             expected_deployment_manifest_log = <<~LOGMESSAGE
               Deployment manifest:
-              {"name"=>"simple", "releases"=>[{"name"=>"bosh-release", "version"=>"0.1-dev"}], "stemcells"=>[{"name"=>"ubuntu-stemcell", "version"=>"1", "alias"=>"default"}], "update"=>{"canaries"=>2, "canary_watch_time"=>4000, "max_in_flight"=>1, "update_watch_time"=>20}, "instance_groups"=>[{"name"=>"foobar", "stemcell"=>"default", "vm_type"=>"a", "instances"=>3, "networks"=>[{"name"=>"a"}], "properties"=>{}, "jobs"=>[{"name"=>"foobar", "release"=>"bosh-release", "properties"=>{}}]}]}
+              {"name"=>"simple", "releases"=>[{"name"=>"bosh-release", "version"=>"0.1-dev"}], "stemcells"=>[{"name"=>"ubuntu-stemcell", "version"=>"1", "alias"=>"default"}], "update"=>{"canaries"=>2, "canary_watch_time"=>4000, "max_in_flight"=>1, "update_watch_time"=>20}, "instance_groups"=>[{"name"=>"foobar", "stemcell"=>"default", "vm_type"=>"a", "instances"=>3, "networks"=>[{"name"=>"a"}], "jobs"=>[{"name"=>"foobar", "release"=>"bosh-release", "properties"=>{}}]}]}
             LOGMESSAGE
             expected_cloud_manifest_log = <<~LOGMESSAGE
               Cloud config manifest:
@@ -111,9 +111,7 @@ module Bosh
 
           context 'Planner.new' do
             let(:deployment_model) { Models::Deployment.make(name: 'simple') }
-            let(:expected_attrs) do
-              { name: 'simple', properties: {} }
-            end
+            let(:expected_deployment_name) { 'simple' }
             let(:expected_plan_options) do
               {
                 'is_deploy_action' => false,
@@ -136,7 +134,7 @@ module Bosh
 
             it 'calls planner new with appropriate arguments' do
               expect(Planner).to receive(:new).with(
-                expected_attrs,
+                expected_deployment_name,
                 manifest_hash,
                 YAML.dump(manifest_hash),
                 cloud_configs,
@@ -179,22 +177,6 @@ module Bosh
                 allow(runtime_config_consolidator).to receive(:tags).and_return('tag_key' => 'dryer')
 
                 expect(planner.tags).to eq('tag_key' => 'sears')
-              end
-            end
-
-            describe 'properties' do
-              it 'comes from the deployment_manifest' do
-                expected = {
-                  'foo' => 1,
-                  'bar' => { 'baz' => 2 },
-                }
-                manifest_hash['properties'] = expected
-                expect(planner.properties).to eq(expected)
-              end
-
-              it 'has a sensible default' do
-                manifest_hash.delete('properties')
-                expect(planner.properties).to eq({})
               end
             end
 

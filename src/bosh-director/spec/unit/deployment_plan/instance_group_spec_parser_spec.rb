@@ -17,7 +17,6 @@ module Bosh::Director
         instance_double(
           Planner,
           model: deployment_model,
-          properties: {},
           update: UpdateConfig.new(
             'canaries' => 2,
             'max_in_flight' => 4,
@@ -159,8 +158,6 @@ module Bosh::Director
         end
 
         describe 'jobs key' do
-          # before { instance_group_spec.delete('jobs') }
-
           context 'when value is an array of hashes' do
             context 'when a job does not specify a release' do
               before do
@@ -207,7 +204,6 @@ module Bosh::Director
             context 'when multiple hashes have the same name' do
               before do
                 instance_group_spec['jobs'] << { 'name' => 'job-name', 'release' => 'fake-release' }
-
               end
 
               it 'raises an error because job dirs on a VM will become ambiguous' do
@@ -248,7 +244,6 @@ module Bosh::Director
                   { 'name' => 'job-name1', 'release' => 'release1' },
                   { 'name' => 'job-name2', 'release' => 'release2' },
                 ]
-
               end
 
               it 'uses the correct release for each job' do
@@ -344,56 +339,6 @@ module Bosh::Director
                   .and_return(job)
                 expect(job).to receive(:add_properties)
                   .with({ 'property_1' => 'property_1_value', 'property_2' => { 'life' => 'life_value' } }, 'instance-group-name')
-
-                parsed_instance_group
-              end
-            end
-
-            context 'when properties are not provided in the job hash' do
-              let(:job_rel_ver) do
-                instance_double(
-                  ReleaseVersion,
-                  name: 'fake-release-version',
-                  version: '1',
-                  template: nil,
-                )
-              end
-
-              let (:props) do
-                {
-                  'smurf' => 'lazy',
-                  'cat' => {
-                    'color' => 'black',
-                  },
-                }
-              end
-
-              before do
-                instance_group_spec['jobs'] = [
-                  {
-                    'name' => 'job-name',
-                    'release' => 'fake-job-release',
-                  },
-                ]
-
-                instance_group_spec['properties'] = props
-
-                release_model = Models::Release.make(name: 'fake-release-version')
-                release_version_model = Models::ReleaseVersion.make(version: '1', release: release_model)
-                release_version_model.add_template(Models::Template.make(name: 'job-name', release: release_model))
-              end
-
-              it 'assigns merged global & instance group properties to the intended job' do
-                allow(deployment_plan).to receive(:release)
-                  .with('fake-job-release')
-                  .and_return(job_rel_ver)
-
-                job = make_job('fake-template-name', nil)
-                allow(job_rel_ver).to receive(:get_or_create_template)
-                  .with('job-name')
-                  .and_return(job)
-                expect(job).to receive(:add_properties)
-                  .with(props, 'instance-group-name')
 
                 parsed_instance_group
               end
@@ -513,6 +458,20 @@ module Bosh::Director
               expect { parsed_instance_group }.to raise_error(
                 ValidationMissingField,
                 "Instance group 'instance-group-name' does not specify jobs key",
+              )
+            end
+          end
+
+          context 'when properties are listed at the top level' do
+            before do
+              instance_group_spec['properties'] = { 'deprecated' => 'property' }
+            end
+
+            it 'raises a deprecation error' do
+              expect { parsed_instance_group }.to raise_error(
+                V1DeprecatedInstanceGroupProperties,
+                "Instance group 'instance-group-name' specifies 'properties' which is not supported. 'properties' are only "\
+                "allowed in the 'jobs' array",
               )
             end
           end

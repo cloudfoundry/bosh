@@ -7,9 +7,8 @@ describe 'post start script', type: :integration do
     Bosh::Spec::Deployments.test_release_manifest_with_stemcell.merge(
       'instance_groups' => [Bosh::Spec::Deployments.simple_instance_group(
         name: 'job_with_templates_having_post_start_scripts',
-        jobs: [{ 'name' => 'job_with_post_start_script', 'release' => 'bosh-release' }],
+        jobs: [{ 'name' => 'job_with_post_start_script', 'release' => 'bosh-release', 'properties' => { exit_code: exit_code } }],
         instances: 1,
-        properties: { exit_code: exit_code },
       )],
     )
   end
@@ -35,9 +34,8 @@ describe 'post start script', type: :integration do
         'instance_groups' => [
           Bosh::Spec::Deployments.simple_instance_group(
             name: 'job_with_templates_having_post_start_scripts',
-            jobs: [{ 'name' => 'job_with_post_start_script', 'release' => 'bosh-release' }],
+            jobs: [{ 'name' => 'job_with_post_start_script', 'release' => 'bosh-release', 'properties' => { 'exit_code' => 1 } }],
             instances: 1,
-            properties: { 'exit_code' => 1 },
           ),
         ],
       )

@@ -295,7 +295,6 @@ module Bosh::Spec
         'vm_type' => opts.fetch(:vm_type, 'a'),
         'instances' => opts.fetch(:instances, 3),
         'networks' => [{ 'name' => opts.fetch(:network_name, 'a') }],
-        'properties' => {},
         'jobs' => opts.fetch(
           :jobs, [{
             'name' => opts.fetch(:job_name, 'foobar'),
@@ -310,7 +309,6 @@ module Bosh::Spec
       instance_group_hash['persistent_disk_type'] = opts[:persistent_disk_type] if opts[:persistent_disk_type]
       instance_group_hash['networks'].first['static_ips'] = opts[:static_ips] if opts.key?(:static_ips)
       instance_group_hash['azs'] = opts[:azs] if opts.key?(:azs)
-      instance_group_hash['properties'] = opts[:properties] if opts.key?(:properties)
 
       if opts.key?(:vm_resources)
         instance_group_hash.delete('vm_type')
@@ -339,7 +337,6 @@ module Bosh::Spec
         'vm_type' => 'a',
         'instances' => options.fetch(:instances, 3),
         'networks' => [{ 'name' => 'a' }],
-        'properties' => options.fetch(:properties, {}),
         'stemcell' => options.fetch(:stemcell, 'default'),
       }
     end
@@ -569,11 +566,18 @@ module Bosh::Spec
           'networks' => [{ 'name' => 'a' }],
           'stemcell' => 'default',
         }],
-        'addons' => [{
-          'name' => 'addon1',
-          'jobs' => [{ 'name' => 'dummy_with_properties', 'release' => 'dummy2' }],
-          'properties' => { 'dummy_with_properties' => { 'echo_value' => 'prop_value' } },
-        }],
+        'addons' => [
+          {
+            'name' => 'addon1',
+            'jobs' => [
+              {
+                'name' => 'dummy_with_properties',
+                'release' => 'dummy2',
+                'properties' => { 'dummy_with_properties' => { 'echo_value' => 'prop_value' } },
+              },
+            ],
+          },
+        ],
       )
     end
 
@@ -699,8 +703,18 @@ module Bosh::Spec
         'addons' => [
           {
             'name' => 'addon1',
-            'jobs' => [{ 'name' => 'dummy_with_properties', 'release' => 'dummy2' }, { 'name' => 'dummy_with_package', 'release' => 'dummy2' }],
-            'properties' => { 'dummy_with_properties' => { 'echo_value' => 'addon_prop_value' } },
+            'jobs' => [
+              {
+                'name' => 'dummy_with_properties',
+                'release' => 'dummy2',
+                'properties' => { 'dummy_with_properties' => { 'echo_value' => 'addon_prop_value' } },
+              },
+              {
+                'name' => 'dummy_with_package',
+                'release' => 'dummy2',
+              },
+            ],
+
           },
         ],
       }
@@ -711,8 +725,13 @@ module Bosh::Spec
         'addons' => [
           {
             'name' => 'addon1',
-            'jobs' => [{ 'name' => 'dummy_with_properties', 'release' => 'dummy2' }],
-            'properties' => { 'dummy_with_properties' => { 'echo_value' => 'prop_value' } },
+            'jobs' => [
+              {
+                'name' => 'dummy_with_properties',
+                'release' => 'dummy2',
+                'properties' => { 'dummy_with_properties' => { 'echo_value' => 'prop_value' } },
+              },
+            ],
             'include' => {
               'deployments' => ['dep1'],
               'jobs' => [
@@ -729,8 +748,13 @@ module Bosh::Spec
         'addons' => [
           {
             'name' => 'addon1',
-            'jobs' => [{ 'name' => 'dummy_with_properties', 'release' => 'dummy2' }],
-            'properties' => { 'dummy_with_properties' => { 'echo_value' => 'prop_value' } },
+            'jobs' => [
+              {
+                'name' => 'dummy_with_properties',
+                'release' => 'dummy2',
+                'properties' => { 'dummy_with_properties' => { 'echo_value' => 'prop_value' } },
+              },
+            ],
             'exclude' => {
               'deployments' => ['dep1'],
               'jobs' => [
@@ -785,8 +809,13 @@ module Bosh::Spec
         'addons' => [
           {
             'name' => 'addon1',
-            'jobs' => [{ 'name' => 'dummy_with_properties', 'release' => '((/release_name))' }],
-            'properties' => { 'dummy_with_properties' => { 'echo_value' => '((/addon_prop))' } },
+            'jobs' => [
+              {
+                'name' => 'dummy_with_properties',
+                'release' => '((/release_name))',
+                'properties' => { 'dummy_with_properties' => { 'echo_value' => '((/addon_prop))' } },
+              },
+            ],
           },
         ],
       )

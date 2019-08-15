@@ -12,7 +12,6 @@ describe 'tags', type: :integration do
       'stemcell' => 'default',
       'instances' => 1,
       'networks' => [{ 'name' => 'a' }],
-      'properties' => {},
     }, {
       'name' => 'goobar',
       'jobs' => ['name' => 'errand_without_package', 'release' => 'bosh-release'],
@@ -20,7 +19,6 @@ describe 'tags', type: :integration do
       'stemcell' => 'default',
       'instances' => 1,
       'networks' => [{ 'name' => 'a' }],
-      'properties' => {},
       'lifecycle' => 'errand',
     }]
     manifest_hash['tags'] = {

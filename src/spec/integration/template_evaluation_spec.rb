@@ -14,7 +14,6 @@ describe 'template', type: :integration do
         'networks' => [{
           'name' => 'a',
         }],
-        'properties' => {},
         'stemcell' => 'default',
       },
     ]
@@ -36,7 +35,6 @@ describe 'template', type: :integration do
         'networks' => [{
           'name' => 'a',
         }],
-        'properties' => {},
         'stemcell' => 'default',
       },
     ]
@@ -80,7 +78,6 @@ describe 'template', type: :integration do
         'vm_type' => 'a',
         'instances' => 1,
         'networks' => [{ 'name' => 'a' }],
-        'properties' => {},
         'stemcell' => 'default',
       },
     ]

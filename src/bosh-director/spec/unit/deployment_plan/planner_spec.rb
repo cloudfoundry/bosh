@@ -5,7 +5,7 @@ module Bosh::Director
     describe Planner do
       subject(:planner) do
         described_class.new(
-          planner_attributes,
+          deployment_name,
           minimal_manifest,
           YAML.dump(minimal_manifest),
           cloud_configs,
@@ -22,9 +22,7 @@ module Bosh::Director
       let(:cloud_configs) { [] }
       let(:runtime_config_consolidator) { instance_double(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator) }
       let(:manifest_text) { generate_manifest_text }
-      let(:planner_attributes) do
-        { name: 'mycloud', properties: {} }
-      end
+      let(:deployment_name) { 'mycloud' }
       let(:deployment_model) { Models::Deployment.make }
 
       def generate_manifest_text
@@ -33,18 +31,7 @@ module Bosh::Director
 
       let(:minimal_manifest) { Bosh::Spec::Deployments.minimal_manifest }
 
-      describe 'with invalid options' do
-        it 'raises an error if name are not given' do
-          planner_attributes.delete(:name)
-
-          expect do
-            planner
-          end.to raise_error KeyError
-        end
-      end
-
       its(:model) { deployment_model }
-
       describe 'with valid options' do
         let(:stemcell_model) { Bosh::Director::Models::Stemcell.create(name: 'default', version: '1', cid: 'abc') }
         let(:vm_type) { VmType.new('name' => 'vm_type') }
@@ -68,7 +55,7 @@ module Bosh::Director
 
         it 'manifest should be immutable' do
           subject = Planner.new(
-            planner_attributes,
+            deployment_name,
             minimal_manifest,
             YAML.dump(minimal_manifest),
             cloud_configs,
@@ -84,7 +71,7 @@ module Bosh::Director
           expect(planner.recreate).to be_falsey
 
           plan = described_class.new(
-            planner_attributes,
+            deployment_name,
             manifest_text,
             YAML.dump(manifest_text),
             cloud_configs,
@@ -100,7 +87,7 @@ module Bosh::Director
           expect(planner.recreate_persistent_disks?).to be_falsey
 
           plan = described_class.new(
-            planner_attributes,
+            deployment_name,
             manifest_text,
             YAML.dump(manifest_text),
             cloud_configs,
@@ -116,7 +103,7 @@ module Bosh::Director
           expect(planner.is_deploy?).to be_falsey
 
           plan = described_class.new(
-            planner_attributes,
+            deployment_name,
             manifest_text,
             YAML.dump(manifest_text),
             cloud_configs,

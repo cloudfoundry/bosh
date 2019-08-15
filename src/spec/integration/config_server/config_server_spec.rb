@@ -228,7 +228,6 @@ describe 'using director with config server', type: :integration do
               'stemcell' => 'default',
               'instances' => 1,
               'networks' => [{ 'name' => 'a' }],
-              'properties' => {},
             }]
             manifest_hash
           end
@@ -236,7 +235,11 @@ describe 'using director with config server', type: :integration do
           it 'replaces the variables in the manifest' do
             config_server_helper.put_value(prepend_namespace('my_placeholder'), 'text' => 'cats are angry')
 
-            manifest_hash['instance_groups'][0]['properties'] = { 'gargamel' => { 'color' => '((my_placeholder.text))' } }
+            manifest_hash['instance_groups'][0]['jobs'][0]['properties'] = {
+              'gargamel' => {
+                'color' => '((my_placeholder.text))',
+              },
+            }
             deploy_from_scratch(
               no_login: true,
               manifest_hash: manifest_hash,
@@ -262,7 +265,7 @@ describe 'using director with config server', type: :integration do
             config_server_helper.put_value(prepend_namespace('my_placeholder_2'), 'cat' => { 'color' => { 'value' => 'black' } })
             config_server_helper.put_value(prepend_namespace('my_placeholder_3'), 'cat' => { 'color' => { 'value' => 'white' } })
 
-            manifest_hash['instance_groups'][0]['properties'] = {
+            manifest_hash['instance_groups'][0]['jobs'][0]['properties'] = {
               'smurfs' => {
                 'color' => 'I am a ((my_placeholder_2.cat.color.value)) cat. My kitten is ((my_placeholder_3.cat.color.value))',
               },
@@ -295,7 +298,7 @@ describe 'using director with config server', type: :integration do
           it 'errors if all parts of nested variable is not found' do
             config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cat' => { 'color' => { 'value' => 'orange' } })
 
-            manifest_hash['instance_groups'][0]['properties'] = {
+            manifest_hash['instance_groups'][0]['jobs'][0]['properties'] = {
               'gargamel' => {
                 'color' => '((my_placeholder.cat.dog.color.value))',
               },

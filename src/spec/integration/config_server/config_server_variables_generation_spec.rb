@@ -402,19 +402,21 @@ describe 'variable generation with config server', type: :integration do
 
           context 'when addon properties reference the variables' do
             before do
-              manifest_hash['addons'] = [{
-               'name' => 'addon1',
-               'jobs' => [
-                 {
-                   'name' => 'job_2_with_many_properties',
-                   'release' => 'bosh-release',
-                 },
-               ],
-               'properties' => {
-                   'gargamel' => {'color' => '((var_c))'},
-                   'smurfs' => {'color' => '((/var_d))'}
-               },
-              }]
+              manifest_hash['addons'] = [
+                {
+                  'name' => 'addon1',
+                  'jobs' => [
+                    {
+                      'name' => 'job_2_with_many_properties',
+                      'release' => 'bosh-release',
+                      'properties' => {
+                        'gargamel' => { 'color' => '((var_c))' },
+                        'smurfs' => { 'color' => '((/var_d))' },
+                      },
+                    },
+                  ],
+                },
+              ]
             end
 
             it_behaves_like 'a deployment manifest that has addons section with variables'

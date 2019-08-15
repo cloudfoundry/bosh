@@ -10,13 +10,5 @@ describe 'cli: manifest', type: :integration do
     manifest_output = bosh_runner.run('manifest', deployment_name: 'simple')
 
     expect(manifest_output).to match(File.open(spec_asset("manifests/manifest_with_yaml_boolean_values.yml")).read)
-
-    #check that yaml 'boolean' values keep as "n" and "y"
-    expect(manifest_output).to match(<<-OUT)
-  properties:
-    quote:
-      "n": "yes"
-      "y": "no"
-    OUT
   end
 end

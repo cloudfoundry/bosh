@@ -56,15 +56,10 @@ module Bosh
           manifest_hash = manifest.manifest_hash
           @logger.debug("Deployment manifest:\n#{manifest_hash}")
           @logger.debug("Cloud config manifest:\n#{cloud_manifest}")
-          name = manifest_hash['name']
+          name = manifest_hash.fetch('name')
 
           deployment_model = @deployment_repo.find_or_create_by_name(name, options)
           deployment_model.add_variable_set(created_at: Time.now, writable: true) if deployment_model.variable_sets.empty?
-
-          attrs = {
-            name: name,
-            properties: manifest_hash.fetch('properties', {}),
-          }
 
           plan_options = {
             'is_deploy_action' => !!options['deploy'],
@@ -81,8 +76,8 @@ module Bosh
           @logger.info('Creating deployment plan')
           @logger.info("Deployment plan options: #{plan_options}")
 
-          deployment = Planner.new(attrs,
-                                   manifest.manifest_hash,
+          deployment = Planner.new(name,
+                                   manifest_hash,
                                    manifest.manifest_text,
                                    cloud_config_consolidator.cloud_configs,
                                    runtime_config_consolidator.runtime_configs,

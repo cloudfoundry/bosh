@@ -64,7 +64,7 @@ describe 'using director with config server', type: :integration do
   context 'when config server certificates are trusted' do
     context 'when runtime manifest has placeholders' do
       context 'when config server does not have all names' do
-        let(:runtime_config) { Bosh::Spec::Deployments.runtime_config_with_addon_placeholders }
+        let(:runtime_config) { Bosh::Spec::Deployments.runtime_config_with_job_placeholders }
 
         it 'will throw a valid error for the runtime config on deploy' do
           upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)

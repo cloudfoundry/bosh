@@ -17,7 +17,7 @@ describe 'encoding', type: :integration do
   let(:manifest_hash) do
     manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['name'] = 'fake-name1'
-    manifest_hash['instance_groups'].first['properties'] = utf8_fixture
+    manifest_hash['instance_groups'][0]['jobs'][0]['properties'] = utf8_fixture
     manifest_hash
   end
 
@@ -30,7 +30,7 @@ describe 'encoding', type: :integration do
 
     let(:runtime_config_hash) do
       runtime_config_hash = Bosh::Spec::Deployments.runtime_config_with_addon
-      runtime_config_hash['addons'].first['properties'] = utf8_fixture
+      runtime_config_hash['addons'][0]['jobs'][0]['properties'] = utf8_fixture
       runtime_config_hash
     end
 

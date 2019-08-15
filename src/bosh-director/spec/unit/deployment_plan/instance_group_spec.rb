@@ -41,7 +41,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       'env' => { 'key' => 'value' },
       'instances' => 1,
       'networks' => [{ 'name' => 'fake-network-name' }],
-      'properties' => {},
     }
   end
 
@@ -147,25 +146,12 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         'env' => { 'key' => 'value' },
         'instances' => 1,
         'networks' => [{ 'name' => 'fake-network-name' }],
-        'properties' => props,
         'jobs' => [],
         'update' => update,
       }
     end
 
-    let(:props) do
-      {
-        'cc_url' => 'www.cc.com',
-        'deep_property' => {
-          'unneeded' => 'abc',
-          'dont_override' => 'def',
-        },
-        'dea_max_memory' => 1024,
-      }
-    end
-
     before do
-      allow(plan).to receive(:properties).and_return(props)
       allow(plan).to receive(:release).with('appcloud').and_return(release1)
     end
 
@@ -261,8 +247,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     before do
       allow(plan).to receive(:networks).and_return([network, network2])
-
-      allow(plan).to receive(:properties).and_return({})
       allow(plan).to receive(:release).with('appcloud').and_return(release1)
       allow(release1_foo_job).to receive(:properties).and_return(foo_properties)
       allow(release1_bar_job).to receive(:properties).and_return(bar_properties)
@@ -292,7 +276,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
   describe '#validate_package_names_do_not_collide!' do
     before do
-      allow(plan).to receive(:properties).and_return({})
       allow(plan).to receive(:release).with('release1').and_return(release1)
     end
 
@@ -609,7 +592,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
       allow(plan).to receive(:releases).with(no_args).and_return([release1])
       allow(plan).to receive(:release).with('release1').and_return(release1)
-      allow(plan).to receive(:properties).with(no_args).and_return({})
     end
 
     context "when a job has 'logs'" do
@@ -823,13 +805,11 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         'vm_type' => 'dea',
         'stemcell' => 'dea',
         'networks' => [{ 'name' => 'fake-network-name' }],
-        'properties' => {},
         'jobs' => [],
       }
     end
 
     it 'should sort instance plans on adding them' do
-      allow(plan).to receive(:properties).and_return({})
       allow(plan).to receive(:release).with('appcloud').and_return(release1)
       expect(SecureRandom).to receive(:uuid).and_return('y-uuid-1', 'b-uuid-2', 'c-uuid-3')
 
@@ -907,13 +887,11 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         'vm_type' => 'dea',
         'stemcell' => 'dea',
         'networks' => [{ 'name' => 'fake-network-name' }],
-        'properties' => {},
         'jobs' => [],
       }
     end
 
     it 'should NOT return instance plans for ignored and detached instances' do
-      allow(plan).to receive(:properties).and_return({})
       allow(plan).to receive(:release).with('appcloud').and_return(release1)
       expect(SecureRandom).to receive(:uuid).and_return('y-uuid-1', 'b-uuid-2')
 
@@ -994,7 +972,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         'vm_type' => 'dea',
         'stemcell' => 'dea',
         'networks' => [{ 'name' => 'fake-network-name' }],
-        'properties' => {},
         'jobs' => [],
       }
     end
@@ -1006,7 +983,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     let(:instance_plan2) { instance_double(BD::DeploymentPlan::InstancePlan) }
 
     before do
-      allow(plan).to receive(:properties).and_return({})
       allow(plan).to receive(:release).with('appcloud').and_return(release1)
 
       allow(instance1).to receive(:desired_variable_set).and_return(variable_set1)
@@ -1031,7 +1007,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         'vm_type' => 'dea',
         'stemcell' => 'dea',
         'networks' => [{ 'name' => 'fake-network-name' }],
-        'properties' => {},
         'jobs' => [],
       }
     end
@@ -1054,7 +1029,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     let(:instance_plan_4) { instance_double(BD::DeploymentPlan::InstancePlan) }
 
     before do
-      allow(plan).to receive(:properties).and_return({})
       allow(plan).to receive(:release).with('appcloud').and_return(release1)
 
       allow(instance_model_1).to receive(:variable_set).and_return(variable_set_model_1)

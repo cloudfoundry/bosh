@@ -26,7 +26,6 @@ describe 'using director with config server disabled', type: :integration do
         }],
         'instances' => 1,
         'networks' => [{ 'name' => 'default' }],
-        'properties' => {},
         'vm_type' => 'default',
         'persistent_disk_type' => 'default',
         'azs' => ['z1'],

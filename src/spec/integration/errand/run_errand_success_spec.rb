@@ -9,7 +9,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
     with_reset_sandbox_before_each
 
     let(:manifest_hash_errand) do
-      manifest_hash['properties'] = {
+      manifest_hash['instance_groups'][1]['jobs'][0]['properties'] = {
         'errand1' => {
           'blocking_errand' => true,
         },

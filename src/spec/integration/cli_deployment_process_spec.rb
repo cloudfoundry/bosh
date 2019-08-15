@@ -89,16 +89,16 @@ describe 'cli: deployment process', type: :integration do
               {
                 'name' => 'foobar_without_packages',
                 'release' => 'bosh-release',
+                'properties' => {
+                  'foobar' => { 'foo' => "baaar\nbaz" },
+                  'array_property' => %w[value1 value2],
+                  'hash_array_property' => [{ 'a' => 'b' }, { 'b' => 'c' }, { 'yy' => 'z' }],
+                  'name_range_hash_array_property' => [{ 'name' => 'old_name' }, { 'range' => 'old_range' }],
+                  'old_property' => 'delete_me',
+                },
               },
             ],
           )
-          old_spec['properties'] = {
-            'foobar' => { 'foo' => "baaar\nbaz" },
-            'array_property' => ['value1', 'value2'],
-            'hash_array_property' => [{ 'a' => 'b' }, { 'b' => 'c' }, { 'yy' => 'z' }],
-            'name_range_hash_array_property' => [{ 'name' => 'old_name' }, { 'range' => 'old_range' }],
-            'old_property' => 'delete_me',
-          }
 
           old_manifest['instance_groups'] = [old_spec]
           old_manifest
@@ -113,18 +113,19 @@ describe 'cli: deployment process', type: :integration do
               {
                 'name' => 'foobar_without_packages',
                 'release' => 'bosh-release',
+                'properties' => {
+                  'foobar' => { 'foo' => "bar\nbaz" },
+                  'array_property' => %w[valuee1 value2 value3],
+                  'hash_array_property' => [{ 'a' => 'b' }, { 'b' => 'd' }, { 'e' => 'f' }],
+                  'name_range_hash_array_property' => [{ 'name' => 'new_name' }, { 'range' => 'new_range' }],
+                  'new_property' => 'add_me',
+                  'multi-line' => '---this property---
+spans multiple
+lines',
+                },
               },
             ],
           )
-          spec['properties'] = {
-            'foobar' => {'foo' => "bar\nbaz"},
-            'array_property' => ['valuee1', 'value2', 'value3'],
-            'hash_array_property' => [{'a' => 'b'}, {'b' => 'd'}, {'e' => 'f'}],
-            'name_range_hash_array_property' => [{'name' => 'new_name'}, {'range' => 'new_range'}],
-            'new_property' => 'add_me',
-            'multi-line' => '---this property---
-spans multiple
-lines'}
 
           new_manifest['instance_groups'] = [spec]
           new_manifest['releases'].first['version'] = 'latest'
@@ -146,30 +147,29 @@ lines'}
   - name: a
     cloud_properties:
 +     my-property: foo
+')
 
-  instance_groups:
-  - name: instanceGroup1
-    properties:
-      array_property:
-+     - "<redacted>"
-+     - "<redacted>"
--     - "<redacted>"
-      foobar:
--       foo: "<redacted>"
-+       foo: "<redacted>"
-      hash_array_property:
-+     - b: "<redacted>"
-+     - e: "<redacted>"
--     - b: "<redacted>"
--     - yy: "<redacted>"
-      name_range_hash_array_property:
-+     - name: "<redacted>"
-+     - range: "<redacted>"
--     - name: "<redacted>"
--     - range: "<redacted>"
--     old_property: "<redacted>"
-+     multi-line: "<redacted>"
-+     new_property: "<redacted>"
+          expect(output).to include('
+        array_property:
++       - "<redacted>"
++       - "<redacted>"
+-       - "<redacted>"
+        foobar:
+-         foo: "<redacted>"
++         foo: "<redacted>"
+        hash_array_property:
++       - b: "<redacted>"
++       - e: "<redacted>"
+-       - b: "<redacted>"
+-       - yy: "<redacted>"
+        name_range_hash_array_property:
++       - name: "<redacted>"
++       - range: "<redacted>"
+-       - name: "<redacted>"
+-       - range: "<redacted>"
+-       old_property: "<redacted>"
++       multi-line: "<redacted>"
++       new_property: "<redacted>"
 ')
         end
 
@@ -197,11 +197,11 @@ lines'}
           upload_cloud_config(cloud_config_hash: new_cloud_config)
 
           runner.send_keys 'yes'
-          expect(runner).to have_output "Succeeded"
+          expect(runner).to have_output 'Succeeded'
         end
 
         output = deploy_simple_manifest(manifest_hash: Bosh::Spec::Deployments.simple_manifest_with_instance_groups)
-        expect(output).to include(<<-DIFF
+        expect(output).to include(<<-DIFF,
   vm_types:
   - name: a
     cloud_properties:

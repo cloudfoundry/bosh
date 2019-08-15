@@ -5,9 +5,9 @@ describe 'when the deployment manifest file is large', type: :integration do
 
   let(:deployment_manifest) do
     minimal_manifest = Bosh::Common::DeepCopy.copy(Bosh::Spec::Deployments.minimal_manifest)
-    minimal_manifest['properties'] = {}
+    minimal_manifest['foobar'] = {}
     (0..100_000).each do |i|
-      minimal_manifest['properties']["property#{i}"] = "value#{i}"
+      minimal_manifest['foobar']["property#{i}"] = "value#{i}"
     end
 
     yaml_file('minimal', minimal_manifest)

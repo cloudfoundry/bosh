@@ -1,7 +1,7 @@
 require 'spec_helper'
 require 'fileutils'
 
-describe 'when a release job modifies a global property in the ERB script', type: :integration do
+describe 'when a release job modifies a property in the ERB script', type: :integration do
   with_reset_sandbox_before_each
 
   include Bosh::Spec::CreateReleaseOutputParsers
@@ -9,13 +9,16 @@ describe 'when a release job modifies a global property in the ERB script', type
   let(:deployment_manifest) do
     minimal_manifest = Bosh::Common::DeepCopy.copy(Bosh::Spec::Deployments.manifest_with_release)
 
-    minimal_manifest['properties'] = { 'some_namespace' => { 'test_property' => 'initial value' } }
     minimal_manifest['instance_groups'] = [
       {
         'name' => 'test_group',
         'instances' => 1,
         'jobs' => [
-          { 'name' => 'job_that_modifies_properties', 'release' => 'bosh-release' },
+          {
+            'name' => 'job_that_modifies_properties',
+            'release' => 'bosh-release',
+            'properties' => { 'some_namespace' => { 'test_property' => 'initial value' } },
+          },
         ],
         'networks' => [{ 'name' => 'a' }],
         'vm_type' => 'a',

@@ -8,10 +8,9 @@ module Bosh::Director
 
       attr_reader :name
 
-      def initialize(name, job_hashes, addon_level_properties, addon_include, addon_exclude)
+      def initialize(name, job_hashes, addon_include, addon_exclude)
         @name = name
         @addon_job_hashes = job_hashes
-        @addon_level_properties = addon_level_properties
         @addon_include = addon_include
         @addon_exclude = addon_exclude
         @links_parser = Bosh::Director::Links::LinksParser.new
@@ -21,22 +20,17 @@ module Bosh::Director
         @addon_job_hashes
       end
 
-      def properties
-        @addon_level_properties
-      end
-
       def self.parse(addon_hash, addon_level = RUNTIME_LEVEL)
         name = safe_property(addon_hash, 'name', class: String)
         addon_job_hashes = safe_property(addon_hash, 'jobs', class: Array, default: [])
-        parsed_addon_jobs = []
-        addon_job_hashes.each do |addon_job_hash|
-          parsed_addon_jobs << parse_and_validate_job(addon_job_hash)
+        parsed_addon_jobs = addon_job_hashes.map do |addon_job_hash|
+          parse_and_validate_job(addon_job_hash)
         end
-        addon_level_properties = safe_property(addon_hash, 'properties', class: Hash, optional: true)
         addon_include = Filter.parse(safe_property(addon_hash, 'include', class: Hash, optional: true), :include, addon_level)
         addon_exclude = Filter.parse(safe_property(addon_hash, 'exclude', class: Hash, optional: true), :exclude, addon_level)
+        validate_no_addon_properties(addon_hash, name)
 
-        new(name, parsed_addon_jobs, addon_level_properties, addon_include, addon_exclude)
+        new(name, parsed_addon_jobs, addon_include, addon_exclude)
       end
 
       def applies?(deployment_name, deployment_teams, deployment_instance_group)
@@ -64,11 +58,20 @@ module Bosh::Director
           'release' => safe_property(addon_job, 'release', class: String),
           'provides' => safe_property(addon_job, 'provides', class: Hash, default: {}),
           'consumes' => safe_property(addon_job, 'consumes', class: Hash, default: {}),
-          'properties' => safe_property(addon_job, 'properties', class: Hash, optional: true),
+          'properties' => safe_property(addon_job, 'properties', class: Hash, optional: true, default: {}),
         }
       end
 
-      private_class_method :parse_and_validate_job
+      def self.validate_no_addon_properties(addon_hash, name)
+        addon_level_properties = safe_property(addon_hash, 'properties', class: Hash, optional: true)
+        if addon_level_properties
+          raise V1DeprecatedAddOnProperties,
+                "Addon '#{name}' specifies 'properties' which is not supported. 'properties' are only "\
+                "allowed in the 'jobs' array"
+        end
+      end
+
+      private_class_method :parse_and_validate_job, :validate_no_addon_properties
 
       private
 
@@ -83,11 +86,7 @@ module Bosh::Director
           eligible_instance_groups.each do |instance_group|
             instance_group_name = instance_group.name
 
-            job_properties = if addon_job_hash['properties']
-                               addon_job_hash['properties']
-                             else
-                               @addon_level_properties
-                             end
+            job_properties = addon_job_hash['properties']
 
             addon_job_object.add_properties(job_properties, instance_group_name)
 

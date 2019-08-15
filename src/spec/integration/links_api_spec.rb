@@ -28,7 +28,6 @@ describe 'links api', type: :integration do
       'stemcell' => 'default',
       'instances' => 1,
       'networks' => [{ 'name' => 'a' }],
-      'properties' => {},
       'persistent_disks' => persistent_disks,
     }
   end
@@ -542,7 +541,6 @@ describe 'links api', type: :integration do
             'stemcell' => 'default',
             'instances' => 1,
             'networks' => [{ 'name' => 'a' }],
-            'properties' => {},
           }
         end
 
@@ -1078,7 +1076,7 @@ describe 'links api', type: :integration do
                     'two' => 'another-updated-nested-property',
                   },
                 }
-                manifest_hash['instance_groups'][0]['properties'] = updated_properties
+                manifest_hash['instance_groups'][0]['jobs'][0]['properties'] = updated_properties
                 # re-deploy with provider content changes
                 deploy_simple_manifest(manifest_hash: manifest_hash)
               end

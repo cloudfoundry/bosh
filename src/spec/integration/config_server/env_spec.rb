@@ -72,12 +72,17 @@ describe 'env values in instance groups and resource pools', type: :integration 
       manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'] = [{
         'name' => 'foobar',
-        'jobs' => ['name' => 'job_1_with_many_properties', 'release' => 'bosh-release'],
+        'jobs' => [
+          {
+            'name' => 'job_1_with_many_properties',
+            'release' => 'bosh-release',
+            'properties' => { 'gargamel' => { 'color' => 'black' } },
+          },
+        ],
         'vm_type' => 'a',
         'stemcell' => 'default',
         'instances' => 1,
         'networks' => [{ 'name' => 'a' }],
-        'properties' => { 'gargamel' => { 'color' => 'black' } },
         'env' => env_hash,
       }]
       manifest_hash

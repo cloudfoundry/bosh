@@ -2,14 +2,14 @@ instance_groups:
 - instances: 1
   jobs:
   - name: foobar
+    properties:
+      quote:
+        "n": "yes"
+        "y": "no"
     release: bosh-release
   name: foobar
   networks:
   - name: a
-  properties:
-    quote:
-      "n": "yes"
-      "y": "no"
   stemcell: default
   vm_type: a
 name: simple

@@ -20,8 +20,6 @@ module Bosh::Director
       # @return [Models::Deployment] Deployment DB model
       attr_reader :model
 
-      attr_accessor :properties
-
       # @return [Bosh::Director::DeploymentPlan::UpdateConfig]
       #   Default job update configuration
       attr_accessor :update
@@ -72,15 +70,14 @@ module Bosh::Director
 
       attr_reader :links_manager
 
-      def initialize(attrs,
+      def initialize(deployment_name,
                      uninterpolated_manifest_hash,
                      raw_manifest_text,
                      cloud_configs,
                      runtime_configs,
                      deployment_model,
                      options = {})
-        @name = attrs.fetch(:name)
-        @properties = attrs.fetch(:properties)
+        @name = deployment_name
         @releases = {}
 
         @uninterpolated_manifest_hash = Bosh::Common::DeepCopy.copy(uninterpolated_manifest_hash)

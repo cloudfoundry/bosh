@@ -24,18 +24,18 @@ describe 'local template properties', type: :integration do
             {
               'name' => 'job_2_with_many_properties',
               'release' => 'bosh-release',
+              'properties' => {
+                'snoopy' => 'happy',
+                'smurfs' => {
+                  'color' => 'yellow',
+                },
+                'gargamel' => {
+                  'color' => 'blue',
+                },
+              },
             },
           ],
           instances: 1,
-          properties: {
-            'snoopy' => 'happy',
-            'smurfs' => {
-              'color' => 'yellow',
-            },
-            'gargamel' => {
-              'color' => 'blue',
-            },
-          },
         ),
       ],
     )
@@ -83,18 +83,18 @@ describe 'local template properties', type: :integration do
             {
               'name' => 'job_2_with_many_properties',
               'release' => 'bosh-release',
+              'properties' => {
+                'snoopy' => 'happy',
+                'smurfs' => {
+                  'color' => 'yellow',
+                },
+                'gargamel' => {
+                  'color' => 'blue',
+                },
+              },
             },
           ],
           instances: 1,
-          properties: {
-            'snoopy' => 'happy',
-            'smurfs' => {
-              'color' => 'yellow',
-            },
-            'gargamel' => {
-              'color' => 'blue',
-            },
-          },
         ),
       ],
     )
@@ -128,18 +128,18 @@ describe 'local template properties', type: :integration do
               {
                 'name' => 'job_2_with_many_properties',
                 'release' => 'bosh-release',
+                'properties' => {
+                  'snoopy' => 'happy',
+                  'smurfs' => {
+                    'color' => 'yellow',
+                  },
+                  'gargamel' => {
+                    'color' => 'black',
+                  },
+                },
               },
             ],
             instances: 1,
-            properties: {
-              'snoopy' => 'happy',
-              'smurfs' => {
-                'color' => 'yellow',
-              },
-              'gargamel' => {
-                'color' => 'black',
-              },
-            },
           ),
         ],
       )
@@ -155,67 +155,6 @@ describe 'local template properties', type: :integration do
             - Unable to render templates for job 'job_1_with_many_properties'. Errors are:
               - Error filling in template 'properties_displayer.yml.erb' (line 4: Can't find property '["gargamel.color"]')
       OUTPUT
-    end
-  end
-
-  context 'when multiple templates has local properties' do
-    let(:manifest) do
-      Bosh::Spec::Deployments.manifest_with_release.merge(
-        'instance_groups' => [
-          Bosh::Spec::Deployments.instance_group_with_many_jobs(
-            name: 'job_with_templates_having_properties',
-            jobs: [
-              {
-                'name' => 'job_1_with_many_properties',
-                'release' => 'bosh-release',
-                'properties' => {
-                  'smurfs' => {
-                    'color' => 'pink',
-                  },
-                  'gargamel' => {
-                    'color' => 'orange',
-                  },
-                },
-              },
-              {
-                'name' => 'job_2_with_many_properties',
-                'release' => 'bosh-release',
-                'properties' => {
-                  'smurfs' => {
-                    'color' => 'brown',
-                  },
-                  'gargamel' => {
-                    'color' => 'purple',
-                  },
-                },
-              },
-            ],
-            instances: 1,
-            properties: {
-              'snoopy' => 'happy',
-              'smurfs' => {
-                'color' => 'yellow',
-              },
-              'gargamel' => {
-                'color' => 'black',
-              },
-            },
-          ),
-        ],
-      )
-    end
-
-    it 'should not cross reference them' do
-      deploy(manifest_hash: manifest)
-      target_instance = director.instance('job_with_templates_having_properties', '0')
-      template1 = YAML.load(target_instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
-      template2 = YAML.load(target_instance.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
-
-      expect(template1['properties_list']['smurfs_color']).to eq('pink')
-      expect(template1['properties_list']['gargamel_color']).to eq('orange')
-
-      expect(template2['properties_list']['smurfs_color']).to eq('brown')
-      expect(template2['properties_list']['gargamel_color']).to eq('purple')
     end
   end
 
@@ -271,18 +210,18 @@ describe 'local template properties', type: :integration do
               {
                 'name' => 'job_2_with_many_properties',
                 'release' => 'bosh-release',
+                'properties' => {
+                  'snoopy' => 'happy',
+                  'smurfs' => {
+                    'color' => 'brown',
+                  },
+                  'gargamel' => {
+                    'color' => 'grey',
+                  },
+                },
               },
             ],
             instances: 1,
-            properties: {
-              'snoopy' => 'happy',
-              'smurfs' => {
-                'color' => 'brown',
-              },
-              'gargamel' => {
-                'color' => 'grey',
-              },
-            },
           ),
         ],
       )
@@ -311,7 +250,7 @@ describe 'local template properties', type: :integration do
     end
 
     it 'should only complain about non-property satisfied template when missing properties' do
-      manifest['instance_groups'][1]['properties'] = {}
+      manifest['instance_groups'][1]['jobs'][1]['properties'] = {}
 
       output, exit_code = deploy(manifest_hash: manifest, return_exit_code: true, failure_expected: true)
 

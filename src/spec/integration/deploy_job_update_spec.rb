@@ -8,7 +8,7 @@ describe 'deploy job update', type: :integration do
   it 'updates a job with multiple instances in parallel and obeys max_in_flight' do
     manifest_hash['update']['canaries'] = 0
     manifest_hash['update']['max_in_flight'] = 2
-    manifest_hash['properties'] = { 'test_property' => 2 }
+    manifest_hash['instance_groups'][0]['jobs'][0]['properties'] = { 'test_property' => 2 }
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
 
     task_id = bosh_runner.get_most_recent_task_id
