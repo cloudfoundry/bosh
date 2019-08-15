@@ -15,7 +15,10 @@ function get_bosh_environment {
 mv bosh-cli/alpha-bosh-cli-* /usr/local/bin/bosh-cli
 chmod +x /usr/local/bin/bosh-cli
 
-bosh-cli -e $(get_bosh_environment) --ca-cert <(bosh-cli int director-state/director-creds.yml --path /director_ssl/ca) env
+export BOSH_ENVIRONMENT=$(get_bosh_environment)
+export BOSH_CLIENT=admin
+export BOSH_CLIENT_SECRET=$(bosh-cli int director-state/director-creds.yml --path /admin_password)
+export BOSH_CA_CERT=$(bosh-cli int director-state/director-creds.yml --path /director_ssl/ca)
 
 bosh-cli upload-stemcell stemcell/*.tgz -n
 bosh-cli -d zookeeper --recreate deploy zookeeper-release/manifests/zookeeper.yml -n
