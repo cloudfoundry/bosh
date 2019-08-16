@@ -14,4 +14,4 @@ inputs:
 - name: zookeeper-release
 
 run:
-  path: bosh-src/ci/tasks/smoke-deployment.sh
+  path: bosh-src/ci/tasks/deploy-zookeeper.sh

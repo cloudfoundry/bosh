@@ -632,18 +632,20 @@ jobs:
         privileged: true
 
   - name: upgrade-wip
+    serial: true
     plan:
     - do:
       - in_parallel:
         - get: bosh-src
         - get: stemcell
-          resource: warden-ubuntu-xenial
+          resource: aws-xen-hvm-ubuntu-xenial
         - get: bosh-deployment
         - get: bosh-cli
         - get: bosh-release
           resource: bosh-compiled-candidate-xenial
           passed: [compile-bosh-dev-release-xenial]
         - get: last-released-bosh-release
+        - get: zookeeper-release
       - put: terraform
         params:
           terraform_source: bosh-src/ci/bats/iaas/aws/terraform
@@ -663,7 +665,9 @@ jobs:
           AWS_SSH_PRIVATE_KEY:   ((aws_ssh_private_key))
           DEPLOY_ARGS: |
             -o bosh-deployment/external-ip-with-registry-not-recommended.yml
-      - task: deploy-current-version
+      - task: deploy-zookeeper
+        file: bosh-src/ci/tasks/deploy-zookeeper.yml
+      - task: upgrade-to-current-version
         file: bosh-src/ci/bats/tasks/deploy-director.yml
         input_mapping:
           environment: terraform
@@ -675,6 +679,8 @@ jobs:
           AWS_SSH_PRIVATE_KEY:   ((aws_ssh_private_key))
           DEPLOY_ARGS: |
             -o bosh-deployment/external-ip-with-registry-not-recommended.yml
+      - task: recreate-zookeeper
+        file: bosh-src/ci/tasks/deploy-zookeeper.yml
       ensure:
         do:
         - task: teardown
