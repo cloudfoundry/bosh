@@ -75,6 +75,7 @@ module Bosh::Monitor
       sync_teams(deployment)
       sync_instances(deployment_name, instances_data)
       sync_agents(deployment_name, get_instances_for_deployment(deployment_name))
+      sync_locked(deployment)
     end
 
     def sync_instances(deployment_name, instances_data)
@@ -142,6 +143,11 @@ module Bosh::Monitor
       count = 0
 
       @deployment_name_to_deployments.values.each do |deployment|
+        if deployment.locked?
+          @logger.info("Skipping analyzing instances for locked deployment #{deployment.name}")
+          next
+        end
+
         jobs_to_instances = Hash.new { |hash, job| hash[job] = [] }
         deployment.instances.each do |instance|
           if alert_needed?(instance)
@@ -313,6 +319,11 @@ module Bosh::Monitor
     def analyze_deployment_agents
       count = 0
       @deployment_name_to_deployments.values.each do |deployment|
+        if deployment.locked?
+          @logger.info("Skipping analyzing agents for locked deployment #{deployment.name}")
+          next
+        end
+
         jobs_to_instances = Hash.new { |hash, job| hash[job] = [] }
         deployment.agents.each do |agent|
           analyze_agent(agent)
@@ -406,6 +417,13 @@ module Bosh::Monitor
       deployment_name = deployment['name']
       deployment_model = @deployment_name_to_deployments[deployment_name]
       deployment_model.update_teams(deployment['teams'])
+      @deployment_name_to_deployments[deployment_name] = deployment_model
+    end
+
+    def sync_locked(deployment)
+      deployment_name = deployment['name']
+      deployment_model = @deployment_name_to_deployments[deployment_name]
+      deployment_model.locked = deployment['locked']
       @deployment_name_to_deployments[deployment_name] = deployment_model
     end
   end

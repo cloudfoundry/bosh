@@ -5,11 +5,13 @@ module Bosh::Monitor
     attr_reader :agent_id_to_agent
     attr_reader :instance_id_to_agent
     attr_reader :teams
+    attr_writer :locked
 
     def initialize(deployment_data)
       @logger = Bhm.logger
       @name = deployment_data['name']
       @teams = deployment_data['teams']
+      @locked = deployment_data['locked']
       @instance_id_to_instance = {}
       @agent_id_to_agent = {}
       @instance_id_to_agent = {}
@@ -113,6 +115,10 @@ module Bosh::Monitor
 
     def update_teams(new_teams)
       @teams = new_teams
+    end
+
+    def locked?
+      @locked
     end
   end
 end

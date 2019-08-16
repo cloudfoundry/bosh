@@ -1,16 +1,15 @@
 module Bosh::Director
   module LockHelper
     def with_deployment_lock(deployment, opts = {})
-      if deployment.respond_to?(:name)
-        name = deployment.name
-      elsif deployment.kind_of?(String)
-        name = deployment
-      else
-        raise ArgumentError, "invalid deployment: #{deployment}"
-      end
+      name = name_for_deployment(deployment)
       timeout = opts[:timeout] || 10
       Config.logger.info("Acquiring deployment lock on #{name}")
       Lock.new("lock:deployment:#{name}", {:timeout => timeout, :deployment_name => name }).lock { yield }
+    end
+
+    def deployment_locked?(deployment)
+      deployment_name = name_for_deployment(deployment)
+      Models::Lock.where { (name =~ "lock:deployment:#{deployment_name}") & (expired_at > Time.now) }.count.positive?
     end
 
     def with_network_lock(name, opts = {})
@@ -52,6 +51,20 @@ module Bosh::Director
                              "#{package_id} #{stemcell_id}")
       Lock.new("lock:compile:#{package_id}:#{stemcell_id}",
                { :timeout => timeout, :deployment_name => deployment_name } ).lock { yield }
+    end
+
+    private
+
+    def name_for_deployment(deployment)
+      if deployment.respond_to?(:name)
+        name = deployment.name
+      elsif deployment.is_a?(String)
+        name = deployment
+      else
+        raise ArgumentError, "invalid deployment: #{deployment}"
+      end
+
+      name
     end
   end
 

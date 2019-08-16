@@ -278,6 +278,7 @@ module Bhm
 
         context('when multiple agents time out in different deployments') do
           let(:instance_4) { Bhm::Instance.create('id' => 'instance-uuid-4', 'agent_id' => '010', 'index' => '3', 'job' => 'mutator2') }
+
           before do
             manager.sync_deployments([{ 'name' => 'mycloud' }, { 'name' => 'mycloud-2' }])
             manager.sync_agents('mycloud', [instance_1, instance_2, instance_3])
@@ -318,6 +319,17 @@ module Bhm
               jobs_to_instance_ids: { 'mutator2' => ['instance-uuid-4'] },
             )
             manager.analyze_agents
+          end
+        end
+
+        context 'when the deployment is locked' do
+          before do
+            manager.sync_deployment_state({ 'name' => 'mycloud', 'locked' => true }, [instance_1])
+            manager.sync_agents('mycloud', [instance_1])
+          end
+
+          it 'does not analyze agents for that deployment' do
+            expect(manager.analyze_agents).to eq(0)
           end
         end
 
@@ -418,6 +430,21 @@ module Bhm
           expect(event_processor).to_not receive(:process)
 
           expect(manager.analyze_instances).to eq(2)
+        end
+      end
+
+      context 'when the deployment is locked' do
+        before do
+          instance_1['cid'] = 'cuuid'
+          instance_2['cid'] = 'cuuid'
+        end
+
+        it 'can analyze all instances' do
+          manager.sync_deployment_state({ 'name' => 'my_deployment', 'locked' => true }, [instance_1])
+          manager.sync_instances('my_deployment', [instance_1, instance_2])
+          expect(event_processor).to_not receive(:process)
+
+          expect(manager.analyze_instances).to eq(0)
         end
       end
 

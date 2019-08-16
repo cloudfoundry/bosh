@@ -46,6 +46,71 @@ module Bosh::Director
       end
     end
 
+    describe :deployment_locked? do
+      let(:expired_at) { Time.now + 1000000 }
+
+      context 'with a deployment model or plan' do
+        let(:name) { 'example' }
+        let(:deployment) { double(:deployment, name: name) }
+
+        context 'and the deployment is currently locked' do
+          before do
+            Models::Lock.create(name: "lock:deployment:#{name}", uid: 'who-cares', expired_at: expired_at)
+          end
+
+          it 'returns true' do
+            expect(@test_instance.deployment_locked?(deployment)).to eq(true)
+          end
+
+          context 'when the lock is expired' do
+            let(:expired_at) { Time.now - 1000 }
+
+            it 'returns false' do
+              expect(@test_instance.deployment_locked?(deployment)).to eq(false)
+            end
+          end
+        end
+
+        context 'and the deployment is currently unlocked' do
+          it 'returns false' do
+            expect(@test_instance.deployment_locked?(deployment)).to eq(false)
+          end
+        end
+      end
+
+      context 'with a deployment name' do
+        let(:name) { 'example' }
+
+        context 'and the deployment is currently locked' do
+          before do
+            Models::Lock.create(name: "lock:deployment:#{name}", uid: 'who-cares', expired_at: expired_at)
+          end
+
+          it 'returns true' do
+            expect(@test_instance.deployment_locked?(name)).to eq(true)
+          end
+
+          context 'when the lock is expired' do
+            let(:expired_at) { Time.now - 1000 }
+
+            it 'returns false' do
+              expect(@test_instance.deployment_locked?(name)).to eq(false)
+            end
+          end
+        end
+
+        context 'and the deployment is currently unlocked' do
+          it 'returns false' do
+            expect(@test_instance.deployment_locked?(name)).to eq(false)
+          end
+        end
+      end
+
+      it 'should fail for other types' do
+        expect { @test_instance.deployment_locked?(nil) }.to raise_error(ArgumentError)
+      end
+    end
+
     describe :with_release_lock do
       it 'creates a lock for the given name' do
         lock = double(:lock)

@@ -991,6 +991,8 @@ module Bosh::Director
                 deployment.teams = [good_team, bad_team]
                 deployment.cloud_configs = [old_cloud_config]
               end
+
+              Models::Lock.create(name: 'lock:deployment:deployment-2', uid: 'who-cares', expired_at: Time.now + 100000)
             end
 
             it 'lists in name order' do
@@ -1012,6 +1014,7 @@ module Bosh::Director
                     ],
                     'cloud_config' => 'outdated',
                     'teams' => %w[dabest daworst],
+                    'locked' => false,
                   },
                   {
                     'name' => 'deployment-2',
@@ -1025,6 +1028,7 @@ module Bosh::Director
                     ],
                     'cloud_config' => 'latest',
                     'teams' => ['dabest'],
+                    'locked' => true,
                   },
                   {
                     'name' => 'deployment-3',
@@ -1032,6 +1036,7 @@ module Bosh::Director
                     'stemcells' => [],
                     'cloud_config' => 'none',
                     'teams' => ['daworst'],
+                    'locked' => false,
                   },
                 ],
               )
@@ -1055,6 +1060,7 @@ module Bosh::Director
                       { 'name' => 'stemcell-2', 'version' => '1' },
                     ],
                     'teams' => %w[dabest daworst],
+                    'locked' => false,
                   },
                   {
                     'name' => 'deployment-2',
@@ -1067,19 +1073,21 @@ module Bosh::Director
                       { 'name' => 'stemcell-1', 'version' => '2' },
                     ],
                     'teams' => ['dabest'],
+                    'locked' => true,
                   },
                   {
                     'name' => 'deployment-3',
                     'releases' => [],
                     'stemcells' => [],
                     'teams' => ['daworst'],
+                    'locked' => false,
                   },
                 ],
               )
             end
 
             it 'lists without configs,stemcells and releases if specified' do
-              get '/?exclude_configs=true&exclude_stemcells=true&exclude_releases=true', {}, {}
+              get '/?exclude_configs=true&exclude_stemcells=true&exclude_releases=true&exclude_lock=true', {}, {}
               expect(last_response.status).to eq(200)
 
               body = JSON.parse(last_response.body)
@@ -1161,7 +1169,6 @@ module Bosh::Director
 
             before { basic_authorize 'dev-team-member', 'dev-team-member' }
 
-            #TODO(tv, cd) fixup this it description
             it 'returns the deployments that the user has access to with correct cloud-config status' do
               get '/', {}, {}
               expect(last_response.status).to eq(200)
@@ -1174,6 +1181,7 @@ module Bosh::Director
                   'stemcells' => [],
                   'cloud_config' => 'latest',
                   'teams' => ['dev'],
+                  'locked' => false,
                 },
               ])
             end

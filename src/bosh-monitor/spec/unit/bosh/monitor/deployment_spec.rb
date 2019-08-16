@@ -197,4 +197,24 @@ describe Bhm::Deployment do
       expect(deployment.teams).to eq(['anotherteam'])
     end
   end
+
+  describe 'locked?' do
+    it 'returns true if locked' do
+      deployment = Bhm::Deployment.create(
+        'name' => 'deployment-name',
+        'locked' => true,
+      )
+
+      expect(deployment.locked?).to eq(true)
+    end
+
+    it 'returns false if not locked' do
+      deployment = Bhm::Deployment.create(
+        'name' => 'deployment-name',
+        'locked' => false,
+      )
+
+      expect(deployment.locked?).to eq(false)
+    end
+  end
 end

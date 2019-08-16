@@ -5,6 +5,8 @@ module Bosh::Director
     class DeploymentsController < BaseController
       register Bosh::Director::Api::Extensions::DeploymentsSecurity
 
+      include Bosh::Director::LockHelper
+
       def initialize(config)
         super(config)
         @deployment_manager = Api::DeploymentManager.new
@@ -290,6 +292,7 @@ module Bosh::Director
           exclude_configs: params[:exclude_configs] == 'true',
           exclude_releases: params[:exclude_releases] == 'true',
           exclude_stemcells: params[:exclude_stemcells] == 'true',
+          exclude_lock: params[:exclude_lock] == 'true',
         }
         all_deployments = @deployment_manager.all_by_name_asc_without(excludes)
 
@@ -304,6 +307,7 @@ module Bosh::Director
           response['cloud_config'] = used_cloud_config_state(deployment) unless excludes[:exclude_configs]
           response['stemcells'] = stemcells_state(deployment) unless excludes[:exclude_stemcells]
           response['releases'] = releases_state(deployment) unless excludes[:exclude_releases]
+          response['locked'] = deployment_locked?(deployment) unless excludes[:exclude_lock]
           response
         end
 
