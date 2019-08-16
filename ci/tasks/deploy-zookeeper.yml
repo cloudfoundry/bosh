@@ -12,6 +12,7 @@ inputs:
 - name: bosh-cli
 - name: stemcell
 - name: zookeeper-release
+- name: bosh-deployment
 
 run:
   path: bosh-src/ci/tasks/deploy-zookeeper.sh
