@@ -1,6 +1,5 @@
 module Bosh::Monitor
   class Instance
-
     attr_reader :id, :agent_id, :job, :index, :cid, :expects_vm
     attr_accessor :deployment
 
@@ -15,7 +14,7 @@ module Bosh::Monitor
     end
 
     def self.create(instance_data)
-      unless instance_data.kind_of?(Hash)
+      unless instance_data.is_a?(Hash)
         Bhm.logger.error("Invalid format for Instance data: expected Hash, got #{instance_data.class}: #{instance_data}")
         return nil
       end
@@ -29,24 +28,23 @@ module Bosh::Monitor
     end
 
     def name
-
       if @job
         identifier = "#{@job}(#{@id})"
-        attributes = create_optional_attributes([:agent_id, :index])
+        attributes = create_optional_attributes(%i[agent_id index])
         attributes += create_mandatory_attributes([:cid])
       else
         identifier = "instance #{@id}"
-        attributes = create_optional_attributes([:agent_id, :job, :index, :cid, :expects_vm])
+        attributes = create_optional_attributes(%i[agent_id job index cid expects_vm])
       end
 
       "#{@deployment}: #{identifier} [#{attributes.join(', ')}]"
     end
 
     def expects_vm?
-      !! @expects_vm
+      !!@expects_vm
     end
 
-    def has_vm?
+    def vm?
       @cid != nil
     end
 

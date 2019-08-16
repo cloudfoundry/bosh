@@ -2,7 +2,7 @@ module Bosh::Monitor
   module Plugins
     class Logger < Base
       def run
-        logger.info("Logging delivery agent is running...")
+        logger.info('Logging delivery agent is running...')
       end
 
       def validate_options

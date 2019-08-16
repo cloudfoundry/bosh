@@ -29,11 +29,9 @@ module Bosh::Monitor
           YAML.safe_load(resurrection_config['content'])['rules']
         end.flatten || []
         resurrection_rule_hashes.each do |resurrection_rule_hash|
-          begin
-            new_parsed_rules << ResurrectionRule.parse(resurrection_rule_hash)
-          rescue StandardError => e
-            @logger.error("Failed to parse resurrection config rule #{resurrection_rule_hash.inspect}: #{e.inspect}")
-          end
+          new_parsed_rules << ResurrectionRule.parse(resurrection_rule_hash)
+        rescue StandardError => e
+          @logger.error("Failed to parse resurrection config rule #{resurrection_rule_hash.inspect}: #{e.inspect}")
         end
         @parsed_rules = new_parsed_rules
         @resurrection_config_sha = resurrection_config_sha

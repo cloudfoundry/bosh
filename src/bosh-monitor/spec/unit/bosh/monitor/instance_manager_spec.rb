@@ -305,7 +305,7 @@ module Bhm
               title: 'mycloud has instances with timed out agents',
               created_at: anything,
               deployment: 'mycloud',
-              jobs_to_instance_ids: { 'mutator' => ['instance-uuid-1', 'instance-uuid-2'],
+              jobs_to_instance_ids: { 'mutator' => %w[instance-uuid-1 instance-uuid-2],
                                       'mutator2' => ['instance-uuid-3'] },
             )
             expect(event_processor).to receive(:process).with(
@@ -493,7 +493,7 @@ module Bhm
             title: 'mycloud has instances which do not have VMs',
             created_at: anything,
             deployment: 'mycloud',
-            jobs_to_instance_ids: { 'mutator' => ['instance-uuid-1', 'instance-uuid-2'],
+            jobs_to_instance_ids: { 'mutator' => %w[instance-uuid-1 instance-uuid-2],
                                     'mutator2' => ['instance-uuid-3'] },
           )
           expect(event_processor).to receive(:process).with(

@@ -6,7 +6,6 @@ require 'irb/completion'
 
 module Bosh
   module Monitor
-
     class Console
       include YamlHelper
 
@@ -14,11 +13,11 @@ module Bosh
         new.start(context)
       end
 
-      def start(context)
+      def start(_context)
         config_file = nil
 
         opts = OptionParser.new do |opt|
-          opt.on("-c", "--config [ARG]", "configuration file") { |c| config_file = c }
+          opt.on('-c', '--config [ARG]', 'configuration file') { |c| config_file = c }
         end
 
         opts.parse!(ARGV)
@@ -33,19 +32,17 @@ module Bosh
 
         begin
           require 'ruby-debug'
-          puts "=> Debugger enabled"
+          puts '=> Debugger enabled'
         rescue LoadError
-          puts "=> ruby-debug not found, debugger disabled"
+          puts '=> ruby-debug not found, debugger disabled'
         end
 
-        puts "=> Welcome to BOSH Health Monitor console"
+        puts '=> Welcome to BOSH Health Monitor console'
 
         IRB.start
       end
-
     end
   end
 end
 
 Bhm::Console.start(self)
-

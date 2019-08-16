@@ -12,9 +12,7 @@ module Bosh::Monitor
           @logger.debug("RECEIVED: #{subject} #{message}")
           alert = JSON.parse(message)
 
-          if valid_payload?(alert)
-            @event_processor.process(:alert, alert)
-          end
+          @event_processor.process(:alert, alert) if valid_payload?(alert)
         end
       end
     end
@@ -22,7 +20,7 @@ module Bosh::Monitor
     private
 
     def valid_payload?(payload)
-      missing_keys = %w(id severity title summary created_at) - payload.keys
+      missing_keys = %w[id severity title summary created_at] - payload.keys
       valid = missing_keys.empty?
 
       unless valid

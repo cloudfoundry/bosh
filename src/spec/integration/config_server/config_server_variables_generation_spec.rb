@@ -46,7 +46,7 @@ describe 'variable generation with config server', type: :integration do
 
   context 'when variables are defined in manifest' do
     context 'when variables syntax is valid' do
-      let (:variables) do
+      let(:variables) do
         [
           {
             'name' => 'var_a',
@@ -80,7 +80,7 @@ describe 'variable generation with config server', type: :integration do
       end
 
       context 'when a certificate needs to be generated' do
-        let (:variables) do
+        let(:variables) do
           [
             {
               'name' => 'var_c',
@@ -127,7 +127,7 @@ describe 'variable generation with config server', type: :integration do
         end
 
         context "when the root CA reference doesn't exist" do
-          let (:variables) do
+          let(:variables) do
             [
               {
                   'name' => 'var_d',
@@ -358,7 +358,7 @@ describe 'variable generation with config server', type: :integration do
         end
 
         context 'when an addon section references a variable to be generated' do
-          let (:variables) do
+          let(:variables) do
             [
                 {
                     'name' => 'var_a',

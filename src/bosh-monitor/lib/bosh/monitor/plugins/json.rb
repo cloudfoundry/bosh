@@ -1,9 +1,5 @@
-require 'thread'
-
 module Bosh::Monitor::Plugins
-
   class Json < Base
-
     def initialize(options = {})
       super(options)
       @process_manager = options.fetch('process_manager', Bosh::Monitor::Plugins::ProcessManager.new(glob: '/var/vcap/jobs/*/bin/bosh-monitor/*', logger: logger))
@@ -19,7 +15,6 @@ module Bosh::Monitor::Plugins
   end
 
   class ProcessManager
-
     def initialize(options)
       @bin_glob = options.fetch(:glob)
       @logger = options.fetch(:logger)
@@ -32,7 +27,7 @@ module Bosh::Monitor::Plugins
 
     def start
       unless EM.reactor_running?
-        @logger.error("JSON Plugin can only be started when event loop is running")
+        @logger.error('JSON Plugin can only be started when event loop is running')
         return false
       end
 
@@ -92,11 +87,11 @@ module Bosh::Monitor::Plugins
       @data = []
     end
 
-    def self.open cmd
+    def self.open(cmd)
       EventMachine.popen(cmd, DeferrableChildProcess)
     end
 
-    def receive_data data
+    def receive_data(data)
       @data << data
     end
 
@@ -109,5 +104,4 @@ module Bosh::Monitor::Plugins
       end
     end
   end
-
 end

@@ -1,5 +1,4 @@
 module Bosh::Monitor
-
   class Error < StandardError
     def self.code(code = nil)
       define_method(:code) { code }

@@ -14,12 +14,12 @@ describe 'Bhm::Director' do
         'password' => 'admin',
         'client_id' => 'hm',
         'client_secret' => 'secret',
-        'ca_cert' => 'fake-ca-cert'
+        'ca_cert' => 'fake-ca-cert',
       }, double(:logger)
     )
   end
 
-  let(:deployments) { [{ 'name' => 'a'}, { 'name' => 'b'}] }
+  let(:deployments) { [{ 'name' => 'a' }, { 'name' => 'b' }] }
   let(:resurrection_config) { [{ 'content' => '--- {}', 'id' => '1', 'type' => 'resurrection', 'name' => 'some-name' }] }
 
   context 'when director is running in non-UAA mode' do
@@ -34,7 +34,7 @@ describe 'Bhm::Director' do
         .to_return(body: json_dump(deployments), status: 200)
 
       with_fiber do
-        expect(director.get_deployments).to eq(deployments)
+        expect(director.deployments).to eq(deployments)
       end
     end
 
@@ -69,9 +69,13 @@ describe 'Bhm::Director' do
         .to_return(body: 'foo', status: 500)
 
       with_fiber do
-        expect {
-          director.get_deployments
-        }.to raise_error(Bhm::DirectorError, 'Cannot get deployments from director at http://localhost:8080/director/deployments?exclude_configs=true&exclude_releases=true&exclude_stemcells=true: 500 foo')
+        expect do
+          director.deployments
+        end.to raise_error(
+          Bhm::DirectorError,
+          'Cannot get deployments from director at ' \
+          'http://localhost:8080/director/deployments?exclude_configs=true&exclude_releases=true&exclude_stemcells=true: 500 foo',
+        )
       end
     end
 
@@ -91,14 +95,14 @@ describe 'Bhm::Director' do
       token_issuer = instance_double(CF::UAA::TokenIssuer)
 
       allow(File).to receive(:exist?).with('fake-ca-cert').and_return(true)
-      allow(File).to receive(:read).with('fake-ca-cert').and_return("test")
+      allow(File).to receive(:read).with('fake-ca-cert').and_return('test')
 
       allow(CF::UAA::TokenIssuer).to receive(:new).with(
-          'http://localhost:8080/uaa',
-          'hm',
-          'secret',
-          { ssl_ca_file: 'fake-ca-cert' }
-        ).and_return(token_issuer)
+        'http://localhost:8080/uaa',
+        'hm',
+        'secret',
+        ssl_ca_file: 'fake-ca-cert',
+      ).and_return(token_issuer)
       token = uaa_token_info('fake-token-id')
       allow(token_issuer).to receive(:client_credentials_grant).and_return(token)
 
@@ -106,22 +110,22 @@ describe 'Bhm::Director' do
         'user_authentication' => {
           'type' => 'uaa',
           'options' => {
-            'url' => 'http://localhost:8080/uaa'
-          }
-        }
+            'url' => 'http://localhost:8080/uaa',
+          },
+        },
       }
 
-      stub_request(:get, 'http://localhost:8080/director/info').
-        to_return(:body => json_dump(uaa_status), :status => 200)
+      stub_request(:get, 'http://localhost:8080/director/info')
+        .to_return(body: json_dump(uaa_status), status: 200)
 
-      stub_request(:get, 'http://localhost:8080/director/deployments?exclude_configs=true&exclude_releases=true&exclude_stemcells=true').
-        with(:headers => {'Authorization' => token.auth_header}).
-        to_return(:body => json_dump(deployments), :status => 200)
+      stub_request(:get, 'http://localhost:8080/director/deployments?exclude_configs=true&exclude_releases=true&exclude_stemcells=true')
+        .with(headers: { 'Authorization' => token.auth_header })
+        .to_return(body: json_dump(deployments), status: 200)
     end
 
     it 'can fetch deployments from BOSH director' do
       with_fiber do
-        expect(director.get_deployments).to eq(deployments)
+        expect(director.deployments).to eq(deployments)
       end
     end
   end

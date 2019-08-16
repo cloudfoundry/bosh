@@ -29,12 +29,12 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
 
     it 'sends a post request' do
       expect(EM::HttpRequest).to receive(:new).with('some-uri').and_return(http_request)
-    
+
       expect(http_request).to receive(:send).with(:post, 'some-request').and_return(http_response)
       expect(http_response).to receive(:callback)
       expect(http_response).to receive(:errback)
       expect(logger).not_to receive(:error)
-      
+
       send_http_post_request('some-uri', 'some-request')
     end
   end
@@ -53,7 +53,6 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
       send_http_get_request('some-uri')
     end
   end
-
 
   describe '#send_http_post_sync_request' do
     let(:request) do

@@ -5,13 +5,11 @@ class FakeDatadogClient
     @emit_points_called || false
   end
 
-  def emit_points(metric, points, options={})
+  def emit_points(_metric, _points, _options = {})
     @emit_points_called = true
   end
 
-  def last_event
-    @last_event
-  end
+  attr_reader :last_event
 
   def emit_event(event)
     @last_event = event

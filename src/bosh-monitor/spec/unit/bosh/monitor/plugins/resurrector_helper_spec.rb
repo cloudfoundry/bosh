@@ -8,7 +8,7 @@ module Bosh::Monitor::Plugins::ResurrectorHelper
     end
     let(:agents) { build_agents(10) }
     let(:alerts) { 0 }
-    let(:deployment) { 'deployment'}
+    let(:deployment) { 'deployment' }
 
     describe '#state_for' do
       before do
@@ -92,12 +92,14 @@ module Bosh::Monitor::Plugins::ResurrectorHelper
 
       def build_agents(count)
         {}.tap do |result|
-          count.times { |i| result["00#{i}"]= Bhm::Agent.new("00#{i}", deployment: 'deployment', job: "00#{i}", instance_id: "uuid#{i.to_s}") }
+          count.times do |i|
+            result["00#{i}"] = Bhm::Agent.new("00#{i}", deployment: 'deployment', job: "00#{i}", instance_id: "uuid#{i}")
+          end
         end
       end
 
-      def build_key(i)
-        Bhm::Plugins::ResurrectorHelper::JobInstanceKey.new('deployment', "00#{i}", "uuid#{i.to_s}")
+      def build_key(num)
+        Bhm::Plugins::ResurrectorHelper::JobInstanceKey.new('deployment', "00#{num}", "uuid#{num}")
       end
     end
   end

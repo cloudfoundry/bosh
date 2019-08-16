@@ -1,6 +1,5 @@
 module Bosh::Monitor
   class TcpConnection < EventMachine::Connection
-
     BACKOFF_CEILING = 9
     MAX_RETRIES = 35
 
@@ -30,21 +29,15 @@ module Bosh::Monitor
     end
 
     def unbind
-      if @connected
-        @logger.warn("#{@logger_name}-connection-lost")
-      end
+      @logger.warn("#{@logger_name}-connection-lost") if @connected
       @connected = false
 
       retry_in = 2**[retries, BACKOFF_CEILING].min - 1
       increment_retries
 
-      if retries > MAX_RETRIES
-        raise "#{logger_name}-failed-to-reconnect after #{MAX_RETRIES} retries"
-      end
+      raise "#{logger_name}-failed-to-reconnect after #{MAX_RETRIES} retries" if retries > MAX_RETRIES
 
-      if retries > 1
-        @logger.info("#{logger_name}-failed-to-reconnect, will try again in #{retry_in} seconds...")
-      end
+      @logger.info("#{logger_name}-failed-to-reconnect, will try again in #{retry_in} seconds...") if retries > 1
 
       EM.add_timer(retry_in) { retry_reconnect }
     end
@@ -57,6 +50,5 @@ module Bosh::Monitor
     def receive_data(data)
       @logger.info("#{logger_name} << #{data.chomp}")
     end
-
   end
 end

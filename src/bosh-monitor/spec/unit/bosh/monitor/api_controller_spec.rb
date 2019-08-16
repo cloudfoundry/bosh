@@ -8,11 +8,11 @@ describe Bosh::Monitor::ApiController do
     Bosh::Monitor::ApiController.new
   end
 
-  let(:config) { class_double(Bosh::Monitor)  }
-  before { stub_const("Bhm", config) }
-  before { allow(EM).to receive(:add_periodic_timer) { } }
+  let(:config) { class_double(Bosh::Monitor) }
+  before { stub_const('Bhm', config) }
+  before { allow(EM).to receive(:add_periodic_timer) {} }
 
-  describe "/healthz" do
+  describe '/healthz' do
     let(:periodic_timers) { [] }
     let(:defers) { [] }
     now = 0

@@ -1,7 +1,5 @@
 module Bosh::Monitor
-
   class << self
-
     attr_accessor :logger
     attr_accessor :director
     attr_accessor :intervals
@@ -42,27 +40,17 @@ module Bosh::Monitor
       @intervals.rogue_agent_alert ||= 120
       @intervals.resurrection_config ||= 60
 
-      if config['http'].is_a?(Hash)
-        @http_port = config['http']['port']
-      end
+      @http_port = config['http']['port'] if config['http'].is_a?(Hash)
 
-      if config['event_mbus']
-        @event_mbus = OpenStruct.new(config['event_mbus'])
-      end
+      @event_mbus = OpenStruct.new(config['event_mbus']) if config['event_mbus']
 
-      if config['loglevel'].is_a?(String)
-        @logger.level = config['loglevel'].to_sym
-      end
+      @logger.level = config['loglevel'].to_sym if config['loglevel'].is_a?(String)
 
-      if config['plugins'].is_a?(Enumerable)
-        @plugins = config['plugins']
-      end
+      @plugins = config['plugins'] if config['plugins'].is_a?(Enumerable)
     end
 
     def validate_config(config)
-      unless config.is_a?(Hash)
-        raise ConfigError, "Invalid config format, Hash expected, #{config.class} given"
-      end
+      raise ConfigError, "Invalid config format, Hash expected, #{config.class} given" unless config.is_a?(Hash)
     end
   end
 end

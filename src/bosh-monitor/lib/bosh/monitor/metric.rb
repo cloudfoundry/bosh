@@ -1,6 +1,5 @@
 module Bosh::Monitor
   class Metric
-
     attr_accessor :name
     attr_accessor :value
     attr_accessor :timestamp
@@ -15,10 +14,10 @@ module Bosh::Monitor
 
     def to_hash
       {
-          :name => @name,
-          :value => @value.to_s,
-          :timestamp => @timestamp.to_i,
-          :tags => @tags
+        name: @name,
+        value: @value.to_s,
+        timestamp: @timestamp.to_i,
+        tags: @tags,
       }
     end
   end

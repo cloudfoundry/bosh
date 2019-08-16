@@ -5,22 +5,22 @@ describe Bhm::Plugins::Tsdb do
 
   let(:options) do
     {
-      "host" => "fake-host",
-      "port" => 4242
+      'host' => 'fake-host',
+      'port' => 4242,
     }
   end
 
-  let(:connection) { instance_double("Bosh::Monitor::TsdbConnection") }
-  before { allow(EM).to receive(:connect).with("fake-host", 4242, Bhm::TsdbConnection, "fake-host", 4242).and_return(connection) }
+  let(:connection) { instance_double('Bosh::Monitor::TsdbConnection') }
+  before { allow(EM).to receive(:connect).with('fake-host', 4242, Bhm::TsdbConnection, 'fake-host', 4242).and_return(connection) }
 
-  it "validates options" do
+  it 'validates options' do
     valid_options = {
-      "host" => "zb512",
-      "port"  => "http://nowhere.com:3128"
+      'host' => 'zb512',
+      'port' => 'http://nowhere.com:3128',
     }
 
     invalid_options = {
-      "host" => "localhost"
+      'host' => 'localhost',
     }
 
     expect(Bhm::Plugins::Tsdb.new(valid_options).validate_options).to be(true)
@@ -31,7 +31,7 @@ describe Bhm::Plugins::Tsdb do
     expect(plugin.run).to be(false)
   end
 
-  it "does not send metrics for alerts" do
+  it 'does not send metrics for alerts' do
     alert = make_alert(timestamp: Time.now.to_i)
 
     EM.run do
@@ -45,14 +45,15 @@ describe Bhm::Plugins::Tsdb do
     end
   end
 
-  it "does not send empty tags to TSDB" do
-    heartbeat = make_heartbeat({:timestamp => Time.now.to_i, :instance_id => ""})
+  it 'does not send empty tags to TSDB' do
+    heartbeat = make_heartbeat(timestamp: Time.now.to_i, instance_id: '')
 
     EM.run do
       plugin.run
 
       heartbeat.metrics.each do |metric|
-        expect(connection).to receive(:send_metric).with(metric.name, metric.timestamp, metric.value, hash_excluding("instance_id"))
+        expect(connection).to receive(:send_metric)
+          .with(metric.name, metric.timestamp, metric.value, hash_excluding('instance_id'))
       end
 
       plugin.process(heartbeat)
@@ -61,14 +62,14 @@ describe Bhm::Plugins::Tsdb do
     end
   end
 
-  it "sends heartbeat metrics to TSDB" do
+  it 'sends heartbeat metrics to TSDB' do
     heartbeat = make_heartbeat(timestamp: Time.now.to_i)
 
     EM.run do
       plugin.run
 
       heartbeat.metrics.each do |metric|
-        expected_tags = metric.tags.merge({deployment: "oleg-cloud"})
+        expected_tags = metric.tags.merge(deployment: 'oleg-cloud')
 
         expect(connection).to receive(:send_metric).with(metric.name, metric.timestamp, metric.value, expected_tags)
       end

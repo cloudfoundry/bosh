@@ -1,7 +1,6 @@
 module Bosh::Monitor
   module Events
     class Heartbeat < Base
-
       attr_reader :agent_id, :deployment, :job, :index, :metrics, :instance_id, :teams
 
       def initialize(attributes = {})
@@ -10,7 +9,11 @@ module Bosh::Monitor
         @metrics = []
 
         @id = @attributes['id']
-        @timestamp = Time.at(@attributes['timestamp']) rescue @attributes['timestamp']
+        @timestamp = begin
+                       Time.at(@attributes['timestamp'])
+                     rescue StandardError
+                       @attributes['timestamp']
+                     end
 
         @deployment = @attributes['deployment']
         @agent_id = @attributes['agent_id']
@@ -42,9 +45,7 @@ module Bosh::Monitor
         add_error('id is missing') if @id.nil?
         add_error('timestamp is missing') if @timestamp.nil?
 
-        if @timestamp && !@timestamp.kind_of?(Time)
-          add_error('timestamp is invalid')
-        end
+        add_error('timestamp is invalid') if @timestamp && !@timestamp.is_a?(Time)
       end
 
       def add_metric(name, value)
@@ -54,46 +55,44 @@ module Bosh::Monitor
       def short_description
         description = "Heartbeat from #{@job}/#{@instance_id} (agent_id=#{@agent_id}"
 
-        if @index && !@index.empty?
-          description = description + " index=#{@index}"
-        end
+        description += " index=#{@index}" if @index && !@index.empty?
 
         description + ") @ #{@timestamp.utc}"
       end
 
       def to_s
-        self.short_description
+        short_description
       end
 
       def to_hash
         {
-          :kind => 'heartbeat',
-          :id => @id,
-          :timestamp => @timestamp.to_i,
-          :deployment => @deployment,
-          :agent_id => @agent_id,
-          :job => @job,
-          :index => @index,
-          :instance_id => @instance_id,
-          :job_state => @job_state,
-          :vitals => @vitals,
-          :teams => @teams,
-          :metrics => @metrics.map(&:to_hash),
+          kind: 'heartbeat',
+          id: @id,
+          timestamp: @timestamp.to_i,
+          deployment: @deployment,
+          agent_id: @agent_id,
+          job: @job,
+          index: @index,
+          instance_id: @instance_id,
+          job_state: @job_state,
+          vitals: @vitals,
+          teams: @teams,
+          metrics: @metrics.map(&:to_hash),
         }
       end
 
-      def to_json
-        JSON.dump(self.to_hash)
+      def to_json(*_args)
+        JSON.dump(to_hash)
       end
 
       def to_plain_text
-        self.short_description
+        short_description
       end
 
       private
 
       def populate_metrics
-        add_metric('system.load.1m', @load[0]) if @load.kind_of?(Array)
+        add_metric('system.load.1m', @load[0]) if @load.is_a?(Array)
         add_metric('system.cpu.user', @cpu['user'])
         add_metric('system.cpu.sys', @cpu['sys'])
         add_metric('system.cpu.wait', @cpu['wait'])
@@ -109,7 +108,6 @@ module Bosh::Monitor
         add_metric('system.disk.persistent.inode_percent', @persistent_disk['inode_percent'])
         add_metric('system.healthy', @job_state == 'running' ? 1 : 0)
       end
-
     end
   end
 end

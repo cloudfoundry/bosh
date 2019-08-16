@@ -28,9 +28,9 @@ shared_examples :auth_provider_shared_tests do
     it 'logs an error' do
       expect(logger).to receive(:error).with(/failed/)
 
-      expect {
+      expect do
         auth_provider.auth_header
-      }.to_not raise_error
+      end.to_not raise_error
     end
   end
 end
@@ -44,7 +44,7 @@ describe Bosh::Monitor::AuthProvider do
       'user' => 'fake-user',
       'password' => 'secret-password',
       'client_id' => 'fake-client',
-      'client_secret' => 'fake-client-secret'
+      'client_secret' => 'fake-client-secret',
     }
   end
   let(:logger) { double(:logger) }
@@ -64,10 +64,10 @@ describe Bosh::Monitor::AuthProvider do
         config['ca_cert'] = 'fake-ca-cert-path'
 
         allow(File).to receive(:exist?).with('fake-ca-cert-path').and_return(true)
-        allow(File).to receive(:read).with('fake-ca-cert-path').and_return("test")
+        allow(File).to receive(:read).with('fake-ca-cert-path').and_return('test')
 
         allow(CF::UAA::TokenIssuer).to receive(:new).with(
-           'uaa-url', 'fake-client', 'fake-client-secret', { :ssl_ca_file => 'fake-ca-cert-path' }
+          'uaa-url', 'fake-client', 'fake-client-secret', ssl_ca_file: 'fake-ca-cert-path'
         ).and_return(token_issuer)
         allow(token_issuer).to receive(:client_credentials_grant).and_return(first_token, second_token)
       end
@@ -82,7 +82,7 @@ describe Bosh::Monitor::AuthProvider do
         allow(OpenSSL::X509::Store).to receive(:new).and_return(cert_store)
         allow(cert_store).to receive(:set_default_paths)
         allow(CF::UAA::TokenIssuer).to receive(:new).with(
-           'uaa-url', 'fake-client', 'fake-client-secret', { :ssl_cert_store => cert_store }
+          'uaa-url', 'fake-client', 'fake-client-secret', ssl_cert_store: cert_store
         ).and_return(token_issuer)
         allow(token_issuer).to receive(:client_credentials_grant).and_return(first_token, second_token)
       end
@@ -97,7 +97,7 @@ describe Bosh::Monitor::AuthProvider do
     end
 
     it 'returns username and password' do
-      expect(auth_provider.auth_header).to eq(['fake-user', 'secret-password'])
+      expect(auth_provider.auth_header).to eq(%w[fake-user secret-password])
     end
   end
 end

@@ -19,7 +19,7 @@ module Bosh::Monitor
     end
 
     def run
-      @logger.info("HealthMonitor starting...")
+      @logger.info('HealthMonitor starting...')
       EM.kqueue if EM.kqueue?
       EM.epoll if EM.epoll?
 
@@ -38,8 +38,8 @@ module Bosh::Monitor
     end
 
     def stop
-      @logger.info("HealthMonitor shutting down...")
-      @http_server.stop! if @http_server
+      @logger.info('HealthMonitor shutting down...')
+      @http_server&.stop!
     end
 
     def setup_timers
@@ -56,10 +56,10 @@ module Bosh::Monitor
     end
 
     def log_stats
-      n_deployments = pluralize(@instance_manager.deployments_count, "deployment")
-      n_agents = pluralize(@instance_manager.agents_count, "agent")
+      n_deployments = pluralize(@instance_manager.deployments_count, 'deployment')
+      n_agents = pluralize(@instance_manager.agents_count, 'agent')
       @logger.info("Managing #{n_deployments}, #{n_agents}")
-      @logger.info("Agent heartbeats received = %s" % [ @instance_manager.heartbeats_received ])
+      @logger.info(format('Agent heartbeats received = %<heartbeats>s', heartbeats: @instance_manager.heartbeats_received))
     end
 
     def update_resurrection_config
@@ -70,25 +70,25 @@ module Bosh::Monitor
     def connect_to_mbus
       NATS.on_error do |e|
         unless @shutting_down
-          redacted_message = @mbus.password.nil? ? "NATS client error: #{e}" : "NATS client error: #{e}".gsub(@mbus.password, '*******')
-          if e.kind_of?(NATS::ConnectError)
-            handle_em_error(redacted_message)
+          redacted_msg = @mbus.password.nil? ? "NATS client error: #{e}" : "NATS client error: #{e}".gsub(@mbus.password, '*****')
+          if e.is_a?(NATS::ConnectError)
+            handle_em_error(redacted_msg)
           else
-            log_exception(redacted_message)
+            log_exception(redacted_msg)
           end
         end
       end
 
       nats_client_options = {
-        :uri       => @mbus.endpoint,
-        :autostart => false,
-        :max_reconnect_attempts => -1,
-        :tls => {
-          :ca_file => @mbus.server_ca_path,
-          :private_key_file => @mbus.client_private_key_path,
-          :cert_chain_file  => @mbus.client_certificate_path
+        uri: @mbus.endpoint,
+        autostart: false,
+        max_reconnect_attempts: -1,
+        tls: {
+          ca_file: @mbus.server_ca_path,
+          private_key_file: @mbus.client_private_key_path,
+          cert_chain_file: @mbus.client_certificate_path,
         },
-        :ssl => true
+        ssl: true,
       }
 
       Bhm.nats = NATS.connect(nats_client_options) do
@@ -98,9 +98,9 @@ module Bosh::Monitor
 
     def start_http_server
       @logger.info("HTTP server is starting on port #{Bhm.http_port}...")
-      @http_server = Thin::Server.new("127.0.0.1", Bhm.http_port, :signals => false) do
+      @http_server = Thin::Server.new('127.0.0.1', Bhm.http_port, signals: false) do
         Thin::Logging.silent = true
-        map "/" do
+        map '/' do
           run Bhm::ApiController.new
         end
       end
@@ -108,7 +108,7 @@ module Bosh::Monitor
     end
 
     def poll_director
-      @logger.debug("Getting deployments from director...")
+      @logger.debug('Getting deployments from director...')
       Fiber.new { fetch_deployments }.resume
     end
 
@@ -136,38 +136,37 @@ module Bosh::Monitor
     # These things can be pretty painful for HM as we might think it runs fine
     # when it actually just swallows some exception and effectively does nothing.
     # We might revisit that later
-    def handle_em_error(e)
+    def handle_em_error(err)
       @shutting_down = true
-      log_exception(e, :fatal)
+      log_exception(err, :fatal)
       stop
     end
 
-    def log_exception(e, level = :error)
+    def log_exception(err, level = :error)
       level = :error unless level == :fatal
-      @logger.send(level, e.to_s)
-      if e.respond_to?(:backtrace) && e.backtrace.respond_to?(:join)
-        @logger.send(level, e.backtrace.join("\n"))
-      end
+      @logger.send(level, err.to_s)
+      @logger.send(level, err.backtrace.join("\n")) if err.respond_to?(:backtrace) && err.backtrace.respond_to?(:join)
     end
 
     def alert_director_error(message)
-      Bhm.event_processor.process(:alert, {
+      Bhm.event_processor.process(
+        :alert,
         id: SecureRandom.uuid,
         severity: 3,
         title: 'Health monitor failed to connect to director',
         summary: message,
         created_at: Time.now.to_i,
-        source: 'hm'
-      })
+        source: 'hm',
+      )
     end
 
     def fetch_deployments
-      deployments = @director.get_deployments
+      deployments = @director.deployments
 
       @instance_manager.sync_deployments(deployments)
 
       deployments.each do |deployment|
-        deployment_name = deployment["name"]
+        deployment_name = deployment['name']
 
         @logger.info("Found deployment '#{deployment_name}'")
 
@@ -175,7 +174,6 @@ module Bosh::Monitor
         instances_data = @director.get_deployment_instances(deployment_name)
         @instance_manager.sync_deployment_state(deployment, instances_data)
       end
-
     rescue Bhm::DirectorError => e
       log_exception(e)
       alert_director_error(e.message)

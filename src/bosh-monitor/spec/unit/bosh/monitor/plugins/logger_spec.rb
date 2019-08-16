@@ -1,7 +1,6 @@
 require 'spec_helper'
 
 describe Bhm::Plugins::Logger do
-
   let(:plugin) { Bhm::Plugins::Logger.new(options) }
   let(:heartbeat) { Bhm::Events::Base.create!(:heartbeat, heartbeat_payload) }
   let(:alert) { Bhm::Events::Base.create!(:alert, alert_payload) }
@@ -18,8 +17,8 @@ describe Bhm::Plugins::Logger do
     end
 
     it 'writes events to log' do
-      expect(logger).to receive(:info).with("[HEARTBEAT] #{heartbeat.to_s}")
-      expect(logger).to receive(:info).with("[ALERT] #{alert.to_s}")
+      expect(logger).to receive(:info).with("[HEARTBEAT] #{heartbeat}")
+      expect(logger).to receive(:info).with("[ALERT] #{alert}")
 
       plugin.process(heartbeat)
       plugin.process(alert)
@@ -63,4 +62,3 @@ describe Bhm::Plugins::Logger do
     end
   end
 end
-

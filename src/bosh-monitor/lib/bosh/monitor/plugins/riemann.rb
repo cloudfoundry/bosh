@@ -5,55 +5,51 @@ module Bosh::Monitor
     class Riemann < Base
       def run
         unless EM.reactor_running?
-          logger.error("Riemann plugin can only be started when event loop is running")
+          logger.error('Riemann plugin can only be started when event loop is running')
           return false
         end
 
-        logger.info("Riemann delivery agent is running...")
-        return true
+        logger.info('Riemann delivery agent is running...')
+        true
       end
 
       def validate_options
-       !!(options.kind_of?(Hash) && options["host"] && options["port"])
+        !!(options.is_a?(Hash) && options['host'] && options['port'])
       end
 
       def client
-        @client ||= ::Riemann::Client.new host: options["host"], port: options["port"]
-        return @client
+        @client ||= ::Riemann::Client.new host: options['host'], port: options['port']
+        @client
       end
 
       def process(event)
         case event
         when Bosh::Monitor::Events::Heartbeat
-          if event.instance_id
-            process_heartbeat(event)
-          end
+          process_heartbeat(event) if event.instance_id
         when Bosh::Monitor::Events::Alert
           process_alert(event)
         end
       end
 
       def process_heartbeat(event)
-        payload = event.to_hash.merge({service: "bosh.hm"})
+        payload = event.to_hash.merge(service: 'bosh.hm')
         payload.delete :vitals
         event.metrics.each do |metric|
-          begin
-            client << payload.merge({
-              name: metric.name,
-              metric: metric.value,
-            })
-          rescue => e
-            logger.error("Error sending riemann event: #{e}")
-          end
+          client << payload.merge(
+            name: metric.name,
+            metric: metric.value,
+          )
+        rescue StandardError => e
+          logger.error("Error sending riemann event: #{e}")
         end
       end
 
       def process_alert(event)
-        client << event.to_hash.merge({
-          service: "bosh.hm",
+        client << event.to_hash.merge(
+          service: 'bosh.hm',
           state: event.severity.to_s,
-        })
-      rescue => e
+        )
+      rescue StandardError => e
         logger.error("Error sending riemann event: #{e}")
       end
     end

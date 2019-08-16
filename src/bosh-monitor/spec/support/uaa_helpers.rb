@@ -5,7 +5,7 @@ module Support
         'jti' => token_id,
         'sub' => 'test',
         'authorities' => ['bosh.admin'],
-        'scope' =>['bosh.admin'],
+        'scope' => ['bosh.admin'],
         'client_id' => 'fake-client',
         'cid' => 'test',
         'azp' => 'test',
@@ -13,9 +13,9 @@ module Support
         'iat' => 1433288433,
         'exp' => expiration_time,
         'iss' => 'https://fake-url/oauth/token',
-        'aud' =>['test']
+        'aud' => ['test'],
       }
-      access_token = CF::UAA::TokenCoder.encode(token_data, {verify: false, skey: ''})
+      access_token = CF::UAA::TokenCoder.encode(token_data, verify: false, skey: '')
 
       CF::UAA::TokenInfo.new(
         token_type: 'bearer',

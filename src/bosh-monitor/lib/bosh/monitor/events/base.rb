@@ -10,16 +10,13 @@ module Bosh::Monitor
 
       def self.create!(kind, attributes = {})
         event = create(kind, attributes)
-        if !event.valid?
-          raise InvalidEvent, event.error_message
-        end
+        raise InvalidEvent, event.error_message unless event.valid?
+
         event
       end
 
       def self.create(kind, attributes = {})
-        if !attributes.kind_of?(Hash)
-          raise InvalidEvent, "Cannot create event from #{attributes.class}"
-        end
+        raise InvalidEvent, "Cannot create event from #{attributes.class}" unless attributes.is_a?(Hash)
 
         case kind.to_s
         when 'heartbeat'
@@ -60,7 +57,7 @@ module Bosh::Monitor
         @errors.to_a.join(', ')
       end
 
-      [:validate, :to_plain_text, :to_hash, :to_json, :metrics].each do |method|
+      %i[validate to_plain_text to_hash to_json metrics].each do |method|
         define_method(method) do
           raise FatalError, "'#{method}' is not implemented by #{self.class}"
         end

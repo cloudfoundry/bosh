@@ -1,6 +1,5 @@
 module Bosh::Monitor
   class Deployment
-
     attr_reader :name
     attr_reader :agent_id_to_agent
     attr_reader :instance_id_to_agent
@@ -18,7 +17,7 @@ module Bosh::Monitor
     end
 
     def self.create(deployment_data)
-      unless deployment_data.kind_of?(Hash)
+      unless deployment_data.is_a?(Hash)
         Bhm.logger.error("Invalid format for Deployment data: expected Hash, got #{deployment_data.class}: #{deployment_data}")
         return nil
       end
@@ -32,9 +31,7 @@ module Bosh::Monitor
     end
 
     def add_instance(instance)
-      unless instance
-        return false
-      end
+      return false unless instance
 
       instance.deployment = name
       @logger.debug("Discovered new instance #{instance.id}") if @instance_id_to_instance[instance.id].nil?
@@ -69,9 +66,9 @@ module Bosh::Monitor
 
       if agent_id.nil?
         @logger.warn("No agent id for instance #{instance.job}/#{instance.id} in deployment #{name}")
-        #count agents for instances with deleted vm, which expect to have vm
-        if instance.expects_vm? && !instance.has_vm?
-          agent = Agent.new("agent_with_no_vm", deployment: name)
+        # count agents for instances with deleted vm, which expect to have vm
+        if instance.expects_vm? && !instance.vm?
+          agent = Agent.new('agent_with_no_vm', deployment: name)
           @instance_id_to_agent[instance.id] = agent
           agent.update_instance(instance)
         end
@@ -79,9 +76,7 @@ module Bosh::Monitor
       end
 
       # Idle VMs, we don't care about them, but we still want to track them
-      if instance.job.nil?
-        @logger.debug("VM with no job found: #{agent_id}")
-      end
+      @logger.debug("VM with no job found: #{agent_id}") if instance.job.nil?
 
       agent = @agent_id_to_agent[agent_id]
 

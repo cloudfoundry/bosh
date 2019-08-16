@@ -3,10 +3,10 @@ require 'dogapi'
 module Bosh::Monitor
   module Plugins
     class DataDog < Base
-      NORMAL_PRIORITY = [:alert, :critical, :error]
+      NORMAL_PRIORITY = %i[alert critical error].freeze
 
       def validate_options
-        !!(options.kind_of?(Hash) && options['api_key'] && options['application_key'])
+        !!(options.is_a?(Hash) && options['api_key'] && options['application_key'])
       end
 
       def run
@@ -19,6 +19,7 @@ module Bosh::Monitor
 
       def dog_client
         return @dog_client if @dog_client
+
         client = Dogapi::Client.new(@api_key, @application_key)
         @dog_client = @pagerduty_service_name ? PagingDatadogClient.new(@pagerduty_service_name, client) : client
       end
@@ -29,14 +30,10 @@ module Bosh::Monitor
 
       def process(event)
         case event
-          when Bosh::Monitor::Events::Heartbeat
-            if event.instance_id
-              EM.defer { process_heartbeat(event) }
-            end
-          when Bosh::Monitor::Events::Alert
-            EM.defer { process_alert(event) }
-          else
-            #ignore
+        when Bosh::Monitor::Events::Heartbeat
+          EM.defer { process_heartbeat(event) } if event.instance_id
+        when Bosh::Monitor::Events::Alert
+          EM.defer { process_alert(event) }
         end
       end
 
@@ -56,14 +53,12 @@ module Bosh::Monitor
 
         dog_client.batch_metrics do
           heartbeat.metrics.each do |metric|
-            begin
-              point = [Time.at(metric.timestamp), metric.value]
-              dog_client.emit_points("bosh.healthmonitor.#{metric.name}", [point], tags: tags)
-            rescue Timeout::Error => e
-              logger.warn('Could not emit points to Datadog, request timed out.')
-            rescue => e
-              logger.info("Could not emit points to Datadog: #{e.inspect}")
-            end
+            point = [Time.at(metric.timestamp), metric.value]
+            dog_client.emit_points("bosh.healthmonitor.#{metric.name}", [point], tags: tags)
+          rescue Timeout::Error
+            logger.warn('Could not emit points to Datadog, request timed out.')
+          rescue StandardError => e
+            logger.info("Could not emit points to Datadog: #{e.inspect}")
           end
         end
       end
@@ -73,17 +68,16 @@ module Bosh::Monitor
         # DataDog only supports "low" and "normal" priority
         begin
           dog_client.emit_event(
-            Dogapi::Event.new(data[:summary], {
-              msg_title: data[:title],
-              date_happened: data[:created_at],
-              tags: tags_for(data),
-              priority: priority_for(alert),
-              alert_type: severity_for(alert)
-            })
+            Dogapi::Event.new(data[:summary],
+                              msg_title: data[:title],
+                              date_happened: data[:created_at],
+                              tags: tags_for(data),
+                              priority: priority_for(alert),
+                              alert_type: severity_for(alert)),
           )
         rescue Timeout::Error => e
           logger.warn('Could not emit event to Datadog, request timed out.')
-        rescue => e
+        rescue StandardError => e
           logger.warn("Could not emit event to Datadog: #{e.inspect}")
         end
       end

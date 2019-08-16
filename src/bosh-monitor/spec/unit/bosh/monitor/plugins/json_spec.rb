@@ -3,7 +3,7 @@ require 'spec_helper'
 describe Bhm::Plugins::Json do
   let(:process_manager) { instance_double(Bosh::Monitor::Plugins::ProcessManager) }
 
-  subject(:plugin) { Bhm::Plugins::Json.new({'process_manager' => process_manager}) }
+  subject(:plugin) { Bhm::Plugins::Json.new('process_manager' => process_manager) }
 
   it 'send events to the process manager' do
     expect(process_manager).to receive(:start)
@@ -18,12 +18,12 @@ end
 
 describe Bhm::Plugins::ProcessManager do
   subject(:process_manager) do
-    Bhm::Plugins::ProcessManager.new({
+    Bhm::Plugins::ProcessManager.new(
       glob: '/*/json-plugin/*',
       logger: double('logger').as_null_object,
       check_interval: 0.2,
-      restart_wait: 0.1
-    })
+      restart_wait: 0.1,
+    )
   end
 
   it "doesn't start if event loop isn't running" do
@@ -73,16 +73,13 @@ describe Bhm::Plugins::ProcessManager do
         end
 
         EM.add_periodic_timer(0.5) do
-          if process_manager.instance_variable_get(:@processes).size == 1
-            EM.stop
-          end
+          EM.stop if process_manager.instance_variable_get(:@processes).size == 1
         end
       end
     ensure
       raise 'timeout canceling the event machine' unless succeeded
     end
   end
-
 
   it 'sends events to all managed processes as JSON' do
     alert = make_alert(timestamp: Time.now.to_i)
@@ -106,5 +103,4 @@ describe Bhm::Plugins::ProcessManager do
       EM.stop
     end
   end
-
 end

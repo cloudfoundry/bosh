@@ -31,8 +31,6 @@ module Bosh::Monitor
     end
   end
 
-  private
-
   class UAAToken
     EXPIRATION_DEADLINE_IN_SECONDS = 60
 
@@ -57,9 +55,7 @@ module Bosh::Monitor
     end
 
     def auth_header
-      if @uaa_token && !expires_soon?
-        return @uaa_token.auth_header
-      end
+      return @uaa_token.auth_header if @uaa_token && !expires_soon?
 
       fetch
 
@@ -71,12 +67,12 @@ module Bosh::Monitor
     def expires_soon?
       expiration = @token_data[:exp] || @token_data['exp']
       (Time.at(expiration).to_i - Time.now.to_i) < EXPIRATION_DEADLINE_IN_SECONDS
-    end 
+    end
 
     def fetch
       @uaa_token = @uaa_token_issuer.client_credentials_grant
       @token_data = decode
-    rescue => e
+    rescue StandardError => e
       @logger.error("Failed to obtain token from UAA: #{e.inspect}")
     end
 
@@ -84,8 +80,9 @@ module Bosh::Monitor
       access_token = @uaa_token.info['access_token'] || @uaa_token.info[:access_token]
       CF::UAA::TokenCoder.decode(
         access_token,
-        {verify: false},
-        nil, nil)
+        { verify: false },
+        nil, nil
+      )
     end
   end
 end

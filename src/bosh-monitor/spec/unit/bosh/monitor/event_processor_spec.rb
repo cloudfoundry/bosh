@@ -3,14 +3,14 @@ require 'spec_helper'
 describe Bhm::EventProcessor do
   before do
     email_options = {
-        'recipients' => ['dude@example.com'],
-        'smtp' => {
-            'from' => 'hm@example.com',
-            'host' => 'smtp.example.com',
-            'port' => 587,
-            'domain' => 'example.com'
+      'recipients' => ['dude@example.com'],
+      'smtp' => {
+        'from' => 'hm@example.com',
+        'host' => 'smtp.example.com',
+        'port' => 587,
+        'domain' => 'example.com',
       },
-        'interval' => 0.1
+      'interval' => 0.1,
     }
 
     Bhm.logger = logger
@@ -21,8 +21,8 @@ describe Bhm::EventProcessor do
   end
 
   it 'registers plugin handlers for different event kinds' do
-    @processor.add_plugin(@logger_plugin, ['alert', 'heartbeat'])
-    @processor.add_plugin(@email_plugin, ['heartbeat', 'foobar'])
+    @processor.add_plugin(@logger_plugin, %w[alert heartbeat])
+    @processor.add_plugin(@email_plugin, %w[heartbeat foobar])
 
     expect(@logger_plugin).to receive(:process) { |alert|
       expect(alert).to be_instance_of Bhm::Events::Alert
@@ -56,19 +56,19 @@ describe Bhm::EventProcessor do
       expect(heartbeat.id).to eq(2)
     }.once
 
-    @processor.process(:alert, alert_payload(:id => 1))
-    @processor.process(:alert, alert_payload(:id => 2))
-    @processor.process(:alert, alert_payload(:id => 2))
+    @processor.process(:alert, alert_payload(id: 1))
+    @processor.process(:alert, alert_payload(id: 2))
+    @processor.process(:alert, alert_payload(id: 2))
 
-    @processor.process(:heartbeat, heartbeat_payload(:id => 1))
-    @processor.process(:heartbeat, heartbeat_payload(:id => 2))
-    @processor.process(:heartbeat, heartbeat_payload(:id => 2))
+    @processor.process(:heartbeat, heartbeat_payload(id: 1))
+    @processor.process(:heartbeat, heartbeat_payload(id: 2))
+    @processor.process(:heartbeat, heartbeat_payload(id: 2))
 
     expect(@processor.events_count).to eq(4)
   end
 
   it 'logs and swallows plugin exceptions' do
-    @processor.add_plugin(@logger_plugin, ['alert', 'heartbeat'])
+    @processor.add_plugin(@logger_plugin, %w[alert heartbeat])
 
     expect(@logger_plugin).to receive(:process) { |alert|
       expect(alert).to be_instance_of Bhm::Events::Alert
@@ -91,18 +91,17 @@ describe Bhm::EventProcessor do
 
     ts = Time.now
 
-    @processor.process(:alert, alert_payload(:id => 1))
-    @processor.process(:alert, alert_payload(:id => 2))
-    @processor.process(:alert, alert_payload(:id => 2))
+    @processor.process(:alert, alert_payload(id: 1))
+    @processor.process(:alert, alert_payload(id: 2))
+    @processor.process(:alert, alert_payload(id: 2))
     expect(@processor.events_count).to eq(2)
 
     allow(Time).to receive(:now).and_return(ts + 6)
     @processor.prune_events(5)
 
     expect(@processor.events_count).to eq(0)
-    @processor.process(:alert, alert_payload(:id => 1))
-    @processor.process(:alert, alert_payload(:id => 2))
+    @processor.process(:alert, alert_payload(id: 1))
+    @processor.process(:alert, alert_payload(id: 2))
     expect(@processor.events_count).to eq(2)
   end
-
 end

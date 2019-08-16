@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec/shared/spec_helper', __FILE__)
+require File.expand_path('../../spec/shared/spec_helper', __dir__)
 
 require 'tempfile'
 require 'bosh/monitor'
@@ -18,74 +18,72 @@ def default_config
   {
     'logfile' => STDOUT,
     'loglevel' => 'off',
-    'director' => {}
+    'director' => {},
   }
 end
 
 def alert_payload(attrs = {})
   {
-    :id => 'foo',
-    :severity => 2,
-    :title => 'Alert',
-    :created_at => Time.now
+    id: 'foo',
+    severity: 2,
+    title: 'Alert',
+    created_at: Time.now,
   }.merge(attrs)
 end
 
 def heartbeat_payload(attrs = {})
   {
-    :id => 'foo',
-    :timestamp => Time.now
+    id: 'foo',
+    timestamp: Time.now,
   }.merge(attrs)
 end
 
 def make_alert(attrs = {})
   defaults = {
-      'id' => 1,
-      'severity' => 2,
-      'title' => 'Test Alert',
-      'summary' => 'Everything is down',
-      'source' => 'mysql_node/instance_id_abc',
-      'deployment' => 'deployment',
-      'job' => 'job',
-      'instance_id' => 'instance_id',
-      'created_at' => Time.now.to_i
+    'id' => 1,
+    'severity' => 2,
+    'title' => 'Test Alert',
+    'summary' => 'Everything is down',
+    'source' => 'mysql_node/instance_id_abc',
+    'deployment' => 'deployment',
+    'job' => 'job',
+    'instance_id' => 'instance_id',
+    'created_at' => Time.now.to_i,
   }
   Bhm::Events::Alert.new(defaults.merge(attrs))
 end
 
 def make_heartbeat(attrs = {})
   defaults = {
-      :id => 1,
-      :timestamp => Time.now.to_i,
-      :deployment => 'oleg-cloud',
-      :agent_id => 'deadbeef',
-      :instance_id => 'instance_id_abc',
-      :job => 'mysql_node',
-      :index => 0,
-      :job_state => 'running',
-      :vitals => {
-          'load' => [0.2, 0.3, 0.6],
-          'cpu' => {'user' => 22.3, 'sys' => 23.4, 'wait' => 33.22 },
-          'mem' => {'percent' => 32.2, 'kb' => 512031 },
-          'swap' => {'percent' => 32.6, 'kb' => 231312 },
-          'disk' => {
-              'system' => {'percent' => 74, 'inode_percent' =>  68},
-              'ephemeral' => {'percent' => 33, 'inode_percent' =>  74 },
-              'persistent' => {'percent' => 97, 'inode_percent' =>  10 },
-          }
+    id: 1,
+    timestamp: Time.now.to_i,
+    deployment: 'oleg-cloud',
+    agent_id: 'deadbeef',
+    instance_id: 'instance_id_abc',
+    job: 'mysql_node',
+    index: 0,
+    job_state: 'running',
+    vitals: {
+      'load' => [0.2, 0.3, 0.6],
+      'cpu' => { 'user' => 22.3, 'sys' => 23.4, 'wait' => 33.22 },
+      'mem' => { 'percent' => 32.2, 'kb' => 512031 },
+      'swap' => { 'percent' => 32.6, 'kb' => 231312 },
+      'disk' => {
+        'system' => { 'percent' => 74, 'inode_percent' => 68 },
+        'ephemeral' => { 'percent' => 33, 'inode_percent' => 74 },
+        'persistent' => { 'percent' => 97, 'inode_percent' => 10 },
       },
-      :teams => ['ateam', 'bteam']
+    },
+    teams: %w[ateam bteam],
   }
   Bhm::Events::Heartbeat.new(defaults.merge(attrs))
 end
 
 def find_free_tcp_port
-  begin
-    server = TCPServer.new('127.0.0.1', 0)
-    server.addr[1]
-  ensure
-    server.close
-  end
+  server = TCPServer.new('127.0.0.1', 0)
+  server.addr[1]
+ensure
+  server.close
 end
 
 RSpec.configure do |c|
@@ -94,7 +92,7 @@ RSpec.configure do |c|
   # Could not use after hook because the tests can start EM in an around block
   # which causes EM.reactor_running? to always return true.
   c.around do |example|
-    Bhm::config = default_config
+    Bhm.config = default_config
 
     example.call
     if EM.reactor_running?
@@ -102,7 +100,8 @@ RSpec.configure do |c|
 
       max_tries = 50
       while max_tries > 0
-        break if !EM.reactor_running?
+        break unless EM.reactor_running?
+
         max_tries -= 1
         sleep(0.1)
       end

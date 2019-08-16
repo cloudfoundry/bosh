@@ -9,7 +9,7 @@ begin
   require 'fiber'
 rescue LoadError
   unless defined? Fiber
-    $stderr.puts 'FATAL: HealthMonitor requires Ruby implementation that supports fibers'
+    warn 'FATAL: HealthMonitor requires Ruby implementation that supports fibers'
     exit 1
   end
 end
@@ -54,7 +54,6 @@ require 'bosh/monitor/api_controller'
 require 'bosh/monitor/protocols/tcp_connection'
 require 'bosh/monitor/protocols/tsdb_connection'
 require 'bosh/monitor/protocols/graphite_connection'
-
 
 # Events
 require 'bosh/monitor/events/base'

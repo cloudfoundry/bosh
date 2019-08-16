@@ -1,6 +1,5 @@
 module Bosh::Monitor::Plugins
   module ResurrectorHelper
-
     # Hashable tuple of the identifying properties of a job
     class JobInstanceKey
       attr_accessor :deployment, :job, :id
@@ -17,8 +16,8 @@ module Bosh::Monitor::Plugins
 
       def eql?(other)
         other.deployment == deployment &&
-            other.job == job &&
-            other.id == id
+          other.job == job &&
+          other.id == id
       end
 
       def to_s
@@ -29,7 +28,7 @@ module Bosh::Monitor::Plugins
     # Service which tracks alerts and decides whether or not the cluster is melting down.
     # When the cluster is melting down, the resurrector backs off on fixing instances.
     class AlertTracker
-      UNHEALTHY = [:critical]
+      UNHEALTHY = [:critical].freeze
 
       # Below this number of down agents we don't consider a meltdown occurring
       attr_accessor :minimum_down_jobs
@@ -42,7 +41,7 @@ module Bosh::Monitor::Plugins
       # between 0 and 1.
       attr_accessor :percent_threshold
 
-      def initialize(args={})
+      def initialize(args = {})
         @instance_manager  = Bhm.instance_manager
         @unhealthy_agents  = {}
         @minimum_down_jobs = args.fetch('minimum_down_jobs', 5)
@@ -51,21 +50,18 @@ module Bosh::Monitor::Plugins
       end
 
       def record(agent_key, alert)
-        if UNHEALTHY.include?(alert.severity)
-          @unhealthy_agents[agent_key] = alert.created_at
-        end
+        @unhealthy_agents[agent_key] = alert.created_at if UNHEALTHY.include?(alert.severity)
       end
 
       def state_for(deployment)
-        #do not forget about instances with deleted vm, which expect to have vm
+        # do not forget about instances with deleted vm, which expect to have vm
         agents = @instance_manager.get_agents_for_deployment(deployment).values +
                  @instance_manager.get_deleted_agents_for_deployment(deployment).values
         unhealthy_count = unhealthy_count(agents)
 
-        DeploymentState.new(deployment, agents.count, unhealthy_count, {
-          count_threshold: minimum_down_jobs,
-          percent_threshold: percent_threshold
-        })
+        DeploymentState.new(deployment, agents.count, unhealthy_count,
+                            count_threshold: minimum_down_jobs,
+                            percent_threshold: percent_threshold)
       end
 
       private
@@ -76,11 +72,11 @@ module Bosh::Monitor::Plugins
         agents.each do |agent|
           key = JobInstanceKey.new(agent.deployment, agent.job, agent.instance_id)
 
-          if time = @unhealthy_agents.fetch(key, false)
-            t1 = time.to_i
-            t2 = (Time.now - time_threshold).to_i
-            count += 1 if (t1 >= t2)
-          end
+          next unless (time = @unhealthy_agents.fetch(key, false))
+
+          t1 = time.to_i
+          t2 = (Time.now - time_threshold).to_i
+          count += 1 if t1 >= t2
         end
 
         count
@@ -88,9 +84,9 @@ module Bosh::Monitor::Plugins
     end
 
     class DeploymentState
-      STATE_NORMAL = 'normal'
-      STATE_MANAGED = 'managed'
-      STATE_MELTDOWN = 'meltdown'
+      STATE_NORMAL = 'normal'.freeze
+      STATE_MANAGED = 'managed'.freeze
+      STATE_MELTDOWN = 'meltdown'.freeze
 
       def initialize(deployment, agent_count, unhealthy_count, thresholds)
         @deployment = deployment
@@ -120,9 +116,7 @@ module Bosh::Monitor::Plugins
 
       def state
         if @unhealthy_count > 0
-          if @unhealthy_count >= @count_threshold && unhealthy_percent >= @percent_threshold
-            return STATE_MELTDOWN
-          end
+          return STATE_MELTDOWN if @unhealthy_count >= @count_threshold && unhealthy_percent >= @percent_threshold
 
           return STATE_MANAGED
         end

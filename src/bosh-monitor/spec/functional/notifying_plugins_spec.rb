@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'timecop'
 
 class FakeNATS
-  def initialize(verbose=false)
+  def initialize(verbose = false)
     @subscribers = []
     @verbose = verbose
   end
@@ -56,7 +56,7 @@ describe 'notifying plugins' do
         EM.add_periodic_timer(0.1) do
           alert = get_alert
           called = true
-          EM.stop if alert && alert.attributes.match(payload)
+          EM.stop if alert&.attributes&.match(payload)
         end
       end
 
@@ -82,7 +82,7 @@ describe 'notifying plugins' do
         'title' => 'Health monitor failed to connect to director',
         'summary' => /Cannot get status from director/,
         'created_at' => Time.now.to_i,
-        'source' => 'hm'
+        'source' => 'hm',
       }
 
       called = false
@@ -96,7 +96,7 @@ describe 'notifying plugins' do
         EM.add_periodic_timer(0.1) do
           alert = get_alert
           called = true
-          EM.stop if alert && alert.attributes.match(alert_json)
+          EM.stop if alert&.attributes&.match(alert_json)
         end
       end
 
@@ -111,11 +111,12 @@ describe 'notifying plugins' do
     allow(NATS).to receive(:connect).and_return(@nats)
   end
 
-  def wait_for_plugins(tries=60)
+  def wait_for_plugins(tries = 60)
     while tries > 0
       tries -= 1
       # wait for alert plugin to load
       return if Bosh::Monitor.event_processor && Bosh::Monitor.event_processor.plugins[:alert]
+
       sleep 0.2
     end
     raise 'Failed to configure event_processor in time'

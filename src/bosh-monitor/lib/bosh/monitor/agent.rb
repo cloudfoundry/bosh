@@ -1,18 +1,17 @@
 module Bosh::Monitor
   class Agent
-
     attr_reader   :id
     attr_reader   :discovered_at
     attr_accessor :updated_at
 
-    ATTRIBUTES = [ :deployment, :job, :index, :instance_id, :cid ]
+    ATTRIBUTES = %i[deployment job index instance_id cid].freeze
 
     ATTRIBUTES.each do |attribute|
       attr_accessor attribute
     end
 
-    def initialize(id, opts={})
-      raise ArgumentError, "Agent must have an id" if id.nil?
+    def initialize(id, opts = {})
+      raise ArgumentError, 'Agent must have an id' if id.nil?
 
       @id            = id
       @discovered_at = Time.now
@@ -31,19 +30,16 @@ module Bosh::Monitor
       if @deployment && @job && @instance_id
         name = "#{@deployment}: #{@job}(#{@instance_id}) [id=#{@id}, "
 
-        if @index
-          name = name + "index=#{@index}, "
-        end
+        name += "index=#{@index}, " if @index
 
         name + "cid=#{@cid}]"
       else
-        state = ATTRIBUTES.inject([]) do |acc, attribute|
+        state = ATTRIBUTES.each_with_object([]) do |attribute, acc|
           value = send(attribute)
           acc << "#{attribute}=#{value}" if value
-          acc
         end
 
-        "agent #{@id} [#{state.join(", ")}]"
+        "agent #{@id} [#{state.join(', ')}]"
       end
     end
 
@@ -56,10 +52,10 @@ module Bosh::Monitor
     end
 
     def update_instance(instance)
-        @job = instance.job
-        @index = instance.index
-        @cid = instance.cid
-        @instance_id = instance.id
+      @job = instance.job
+      @index = instance.index
+      @cid = instance.cid
+      @instance_id = instance.id
     end
   end
 end

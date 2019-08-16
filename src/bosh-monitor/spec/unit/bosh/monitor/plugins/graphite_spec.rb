@@ -5,34 +5,38 @@ describe Bhm::Plugins::Graphite do
 
   let(:options) do
     {
-      "host" => "fake-graphite-host",
-      "port" => 2003
+      'host' => 'fake-graphite-host',
+      'port' => 2003,
     }
   end
 
-  describe "validates options" do
-    context "when we specify both host abd port" do
-      it "is valid" do
+  describe 'validates options' do
+    context 'when we specify both host abd port' do
+      it 'is valid' do
         expect(plugin.validate_options).to be(true)
       end
     end
 
-    context "when we omit port or host" do
+    context 'when we omit port or host' do
       let(:options) do
         {
-          "host" => "localhost"
+          'host' => 'localhost',
         }
       end
 
-      it "is not valid" do
+      it 'is not valid' do
         expect(plugin.validate_options).to be(false)
       end
     end
   end
 
-  describe "process metrics" do
-    let(:connection) { instance_double("Bosh::Monitor::GraphiteConnection") }
-    before { allow(EM).to receive(:connect).with("fake-graphite-host", 2003, Bhm::GraphiteConnection, "fake-graphite-host", 2003).and_return(connection) }
+  describe 'process metrics' do
+    let(:connection) { instance_double('Bosh::Monitor::GraphiteConnection') }
+    before do
+      allow(EM).to receive(:connect)
+        .with('fake-graphite-host', 2003, Bhm::GraphiteConnection, 'fake-graphite-host', 2003)
+        .and_return(connection)
+    end
 
     context "when event loop isn't running" do
       it "doesn't start" do
@@ -40,10 +44,10 @@ describe Bhm::Plugins::Graphite do
       end
     end
 
-    context "when event is of type Alert" do
+    context 'when event is of type Alert' do
       let(:event) { make_alert(timestamp: Time.now.to_i) }
 
-      it "does not send metrics" do
+      it 'does not send metrics' do
         EM.run do
           plugin.run
           expect(connection).to_not receive(:send_metric)
@@ -55,8 +59,8 @@ describe Bhm::Plugins::Graphite do
       end
     end
 
-    context "when event is of type Heartbeat" do
-      it "sends metrics to Graphite" do
+    context 'when event is of type Heartbeat' do
+      it 'sends metrics to Graphite' do
         event = make_heartbeat(timestamp: Time.now.to_i)
         EM.run do
           plugin.run
@@ -72,7 +76,7 @@ describe Bhm::Plugins::Graphite do
         end
       end
 
-      it "skips sending metrics if instance_id is missing" do
+      it 'skips sending metrics if instance_id is missing' do
         event = make_heartbeat(timestamp: Time.now.to_i, instance_id: nil)
         EM.run do
           plugin.run

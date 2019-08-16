@@ -99,7 +99,7 @@ module Bosh::Monitor
       @logger.info('Analyzing agents...')
       started = Time.now
       count = analyze_deployment_agents + analyze_rogue_agents
-      @logger.info(format('Analyzed %s, took %s seconds', pluralize(count, 'agent'), Time.now - started))
+      @logger.info("Analyzed #{pluralize(count, 'agent')}, took #{Time.now - started} seconds")
       count
     end
 
@@ -163,7 +163,7 @@ module Bosh::Monitor
         )
       end
 
-      @logger.info(format('Analyzed %s, took %s seconds', pluralize(count, 'instance'), Time.now - started))
+      @logger.info("Analyzed #{pluralize(count, 'instance')}, took #{Time.now - started} seconds")
       count
     end
 
@@ -180,7 +180,7 @@ module Bosh::Monitor
     end
 
     def alert_needed?(instance)
-      instance.expects_vm? && !instance.has_vm?
+      instance.expects_vm? && !instance.vm?
     end
 
     def process_event(kind, subject, payload = {})
@@ -252,7 +252,7 @@ module Bosh::Monitor
       begin
         class_name = name.to_s.split('_').map(&:capitalize).join
         plugin_class = Bosh::Monitor::Plugins.const_get(class_name)
-      rescue NameError => e
+      rescue NameError
         raise PluginError, "Cannot find '#{name}' plugin"
       end
 

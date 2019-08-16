@@ -17,8 +17,8 @@ describe Bosh::Monitor do
     end
 
     before do
-      [:logger, :director, :intervals, :mbus, :event_mbus, :instance_manager, :event_processor,
-       :http_port, :plugins, :nats].each do |accessor|
+      %i[logger director intervals mbus event_mbus instance_manager event_processor
+         http_port plugins nats].each do |accessor|
         Bosh::Monitor.send("#{accessor}=", nil)
       end
       Bosh::Monitor.config = valid_config
@@ -66,7 +66,6 @@ describe Bosh::Monitor do
         it 'should set a default for em_threadpool_size' do
           expect(Bosh::Monitor.em_threadpool_size).to eq(20)
         end
-
       end
 
       context 'with http config' do
@@ -104,22 +103,22 @@ describe Bosh::Monitor do
 
       context 'with loglevel' do
         it 'should set logger level' do
-          expect(Bosh::Monitor.logger.level).to eq Logging::level_num(:debug)
+          expect(Bosh::Monitor.logger.level).to eq Logging.level_num(:debug)
         end
       end
 
       context 'with plugins' do
         it 'should set plugins' do
-          expect(Bosh::Monitor.plugins).to eq %w(plugin1 plugin2)
+          expect(Bosh::Monitor.plugins).to eq %w[plugin1 plugin2]
         end
       end
     end
 
     context 'with an invalid configuration' do
       it 'should raise a ConfigError' do
-        expect {
+        expect do
           Bosh::Monitor.config = 'not valid'
-        }.to raise_error(Bosh::Monitor::ConfigError, 'Invalid config format, Hash expected, String given')
+        end.to raise_error(Bosh::Monitor::ConfigError, 'Invalid config format, Hash expected, String given')
       end
     end
   end

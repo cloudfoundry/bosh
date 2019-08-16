@@ -6,13 +6,13 @@ class PagingDatadogClient
     @datadog_client = datadog_client
   end
 
-  def emit_points(metric, points, options={})
+  def emit_points(metric, points, options = {})
     @datadog_client.emit_points(metric, points, options)
   end
 
   def emit_event(event)
     event_hash = event.to_hash
-    new_message = if event.priority == "normal"
+    new_message = if event.priority == 'normal'
                     "#{event.msg_text} @#{@datadog_recipient}"
                   else
                     event.msg_text

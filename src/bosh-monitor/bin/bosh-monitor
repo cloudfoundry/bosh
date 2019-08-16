@@ -1,12 +1,12 @@
 #!/usr/bin/env ruby
 
-require "bosh/monitor"
-require "optparse"
+require 'bosh/monitor'
+require 'optparse'
 
 config_file = nil
 
 opts = OptionParser.new do |opts|
-  opts.on("-c", "--config FILE", "configuration file") do |opt|
+  opts.on('-c', '--config FILE', 'configuration file') do |opt|
     config_file = opt
   end
 end
@@ -20,14 +20,12 @@ end
 
 runner = Bosh::Monitor::Runner.new(config_file)
 
-Signal.trap("INT") do
+Signal.trap('INT') do
   runner.stop
 end
 
-Signal.trap("EXIT") do
-  Bhm.logger.info("HealthMonitor exiting!")
+Signal.trap('EXIT') do
+  Bhm.logger.info('HealthMonitor exiting!')
 end
 
 runner.run
-
-

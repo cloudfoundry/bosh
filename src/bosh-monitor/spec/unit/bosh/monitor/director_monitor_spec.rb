@@ -49,7 +49,7 @@ describe Bosh::Monitor::DirectorMonitor do
       end
 
       context 'if we have an invalid payload' do
-        %w(id severity title summary created_at).each do |key|
+        %w[id severity title summary created_at].each do |key|
           it "logs an error if the #{key} field is missing" do
             payload.delete(key)
             expect(logger).to receive(:error).with("Invalid payload from director: the key '#{key}' was missing. #{payload.inspect}")
