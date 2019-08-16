@@ -18,16 +18,6 @@ function restore_state {
   cp director-state/director-* .
 }
 
-state_path() { bosh-cli int director.yml --path="$1" ; }
-
-function get_bosh_environment {
-  if [[ -z $(state_path /instance_groups/name=bosh/networks/name=public/static_ips/0 2>/dev/null) ]]; then
-    state_path /instance_groups/name=bosh/networks/name=default/static_ips/0 2>/dev/null
-  else
-    state_path /instance_groups/name=bosh/networks/name=public/static_ips/0 2>/dev/null
-  fi
-}
-
 trap cp_artifacts EXIT
 
 : ${BAT_INFRASTRUCTURE:?}
@@ -60,4 +50,4 @@ bosh-cli create-env \
   --vars-store director-creds.yml \
   director.yml
 
-bosh-cli -e $(get_bosh_environment) --ca-cert <(bosh-cli int director-creds.yml --path /director_ssl/ca) env
+cat bosh-release/version
