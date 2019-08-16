@@ -8,7 +8,7 @@ module Bosh::Monitor
 
     def initialize(event_processor)
       # hash of agent_id to agent for all rogue agents
-      @rogue_agents = {}
+      @unmanaged_agents = {}
       # hash of deployment_name to deployment for all managed deployments
       @deployment_name_to_deployments = {}
 
@@ -53,7 +53,7 @@ module Bosh::Monitor
     end
 
     def agents_count
-      agents = Set.new(@rogue_agents.keys)
+      agents = Set.new(@unmanaged_agents.keys)
       agents.merge(all_managed_agent_ids)
       agents.size + all_managed_deleted_agents.size
     end
@@ -88,7 +88,7 @@ module Bosh::Monitor
       deployment = @deployment_name_to_deployments[deployment_name]
       active_agent_ids = sync_active_agents(deployment, instances)
       remove_inactive_agents(active_agent_ids, deployment)
-      update_rogue_agents(active_agent_ids)
+      update_unmanaged_agents(active_agent_ids)
     end
 
     def get_instances_for_deployment(deployment_name)
@@ -98,7 +98,7 @@ module Bosh::Monitor
     def analyze_agents
       @logger.info('Analyzing agents...')
       started = Time.now
-      count = analyze_deployment_agents + analyze_rogue_agents
+      count = analyze_deployment_agents + analyze_unmanaged_agents
       @logger.info("Analyzed #{pluralize(count, 'agent')}, took #{Time.now - started} seconds")
       count
     end
@@ -188,9 +188,9 @@ module Bosh::Monitor
       agent_id = subject.split('.', 4).last
       agent = find_managed_agent_by_id(agent_id)
 
-      if agent.nil? && @rogue_agents[agent_id]
+      if agent.nil? && @unmanaged_agents[agent_id]
         @logger.warn("Received #{kind} from unmanaged agent: #{agent_id}")
-        agent = @rogue_agents[agent_id]
+        agent = @unmanaged_agents[agent_id]
       elsif agent.nil?
         # There might be more than a single shutdown event,
         # we are only interested in processing it if agent
@@ -199,7 +199,7 @@ module Bosh::Monitor
 
         @logger.warn("Received #{kind} from unmanaged agent: #{agent_id}")
         agent = Agent.new(agent_id)
-        @rogue_agents[agent_id] = agent
+        @unmanaged_agents[agent_id] = agent
       else
         @logger.debug("Received #{kind} from #{agent_id}: #{payload}")
       end
@@ -261,13 +261,13 @@ module Bosh::Monitor
 
     def remove_agent(agent_id)
       @logger.info("Removing agent #{agent_id} from all deployments...")
-      @rogue_agents.delete(agent_id)
+      @unmanaged_agents.delete(agent_id)
       @deployment_name_to_deployments.values.each { |deployment| deployment.remove_agent(agent_id) }
     end
 
     def remove_deployment(name)
       deployment = @deployment_name_to_deployments[name]
-      deployment.agent_ids.each { |agent_id| @rogue_agents.delete(agent_id) }
+      deployment.agent_ids.each { |agent_id| @unmanaged_agents.delete(agent_id) }
       @deployment_name_to_deployments.delete(name)
     end
 
@@ -306,11 +306,11 @@ module Bosh::Monitor
       @heartbeats_received += 1
     end
 
-    def analyze_rogue_agents
+    def analyze_unmanaged_agents
       count = 0
-      @rogue_agents.keys.each do |agent_id|
+      @unmanaged_agents.keys.each do |agent_id|
         @logger.warn("Agent #{agent_id} is not a part of any deployment")
-        analyze_agent(@rogue_agents[agent_id])
+        analyze_agent(@unmanaged_agents[agent_id])
         count += 1
       end
       count
@@ -359,6 +359,7 @@ module Bosh::Monitor
       @deployment_name_to_deployments.values.each do |deployment|
         return deployment.agent(agent_id) if deployment.agent(agent_id)
       end
+
       nil
     end
 
@@ -409,8 +410,8 @@ module Bosh::Monitor
       active_agent_ids
     end
 
-    def update_rogue_agents(deployment_agents)
-      deployment_agents.each { |agent_id| @rogue_agents.delete(agent_id) }
+    def update_unmanaged_agents(deployment_agents)
+      deployment_agents.each { |agent_id| @unmanaged_agents.delete(agent_id) }
     end
 
     def sync_teams(deployment)
