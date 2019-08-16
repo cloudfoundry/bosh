@@ -21,4 +21,4 @@ export BOSH_CLIENT_SECRET=$(bosh-cli int director-state/director-creds.yml --pat
 export BOSH_CA_CERT=$(bosh-cli int director-state/director-creds.yml --path /director_ssl/ca)
 
 bosh-cli upload-stemcell stemcell/*.tgz -n
-bosh-cli -d zookeeper deploy --recreate deploy zookeeper-release/manifests/zookeeper.yml -n
+bosh-cli -d zookeeper deploy --recreate zookeeper-release/manifests/zookeeper.yml -n
