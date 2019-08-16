@@ -16,6 +16,9 @@ inputs:
 - name: director-state
   optional: true # chain tasks for upgrades
 
+caches:
+- path: cache-dot-bosh-dir
+
 params:
   DEPLOY_ARGS: ""
   BAT_INFRASTRUCTURE: ""

@@ -6,8 +6,9 @@ chruby ruby
 set -e
 
 function cp_artifacts {
-  rm -rf director-state/.bosh
-  mv $HOME/.bosh director-state/
+  rm -rf director-state/.bosh cache-dot-bosh-dir/.bosh
+  cp -R $HOME/.bosh director-state/
+  cp -R $HOME/.bosh cache-dot-bosh-dir/
   cp director.yml director-creds.yml director-state.json director-state/
 }
 
