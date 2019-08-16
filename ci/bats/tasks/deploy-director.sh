@@ -14,7 +14,13 @@ function cp_artifacts {
 
 function restore_state {
   rm -rf $HOME/.bosh
-  cp -R director-state/.bosh $HOME
+  if [[ -e director-state/director-state.json ]]; then
+    # restore state from a previous deploy
+    cp -R director-state/.bosh $HOME
+  else
+    # concourse task cache if we don't have recent state
+    cp -R cache-dot-bosh-dir/.bosh $HOME
+  fi
   cp director-state/director-* .
 }
 
