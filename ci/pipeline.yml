@@ -16,7 +16,7 @@ groups:
       - bats-ubuntu-xenial-aws
       - brats-ubuntu-xenial
       - bosh-disaster-recovery-acceptance-tests
-      - upgrade-wip
+      - upgrade
       - blobstore-performance
       - upload-compiled-staging-tarball
       - deploy-acceptance-env
@@ -631,18 +631,20 @@ jobs:
         file: bosh-src/ci/tasks/test-bdrats.yml
         privileged: true
 
-  - name: upgrade-wip
+  - name: upgrade
     serial: true
     plan:
     - do:
       - in_parallel:
         - get: bosh-src
+          passed: [compile-bosh-dev-release-xenial]
         - get: stemcell
           resource: aws-xen-hvm-ubuntu-xenial
         - get: bosh-deployment
         - get: bosh-cli
         - get: bosh-release
           resource: bosh-compiled-candidate-xenial
+          trigger: true
           passed: [compile-bosh-dev-release-xenial]
         - get: last-released-bosh-release
         - get: zookeeper-release
