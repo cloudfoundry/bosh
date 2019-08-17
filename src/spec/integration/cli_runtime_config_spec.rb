@@ -81,32 +81,6 @@ describe 'cli runtime config', type: :integration do
     expect(YAML.safe_load(bosh_runner.run('runtime-config --name=named_rc_2', tty: false), [Symbol], [], true)).to eq(named_rc_2)
   end
 
-  it 'gives nice errors for common problems when uploading', no_reset: true do
-    pending 'QUESTION Discuss correct behavior with Dmitriy on non-logged-in users and files that are not present'
-
-    # not logged in
-    expect(bosh_runner.run("update-runtime-config #{__FILE__}", failure_expected: true)).to include('Please log in first')
-
-    bosh_runner.run('log-in', client: 'test', client_secret: 'test')
-
-    # no file
-    expect(bosh_runner.run('update-runtime-config /some/nonsense/file', failure_expected: true)).to include("Cannot find file '/some/nonsense/file'")
-
-    # file not yaml
-    Dir.mktmpdir do |tmpdir|
-      runtime_config_filename = File.join(tmpdir, 'runtime_config.yml')
-      File.write(runtime_config_filename, "---\n}}}i'm not really yaml, hah!")
-      expect(bosh_runner.run("update-runtime-config #{runtime_config_filename}", failure_expected: true)).to include('Incorrect YAML structure')
-    end
-
-    # empty runtime config file
-    Dir.mktmpdir do |tmpdir|
-      empty_runtime_config_filename = File.join(tmpdir, 'empty_runtime_config.yml')
-      File.write(empty_runtime_config_filename, '')
-      expect(bosh_runner.run("update-cloud-config #{empty_runtime_config_filename}", failure_expected: true)).to include('Error 440001: Manifest should not be empty')
-    end
-  end
-
   it "gives an error when release version is 'latest'" do
     runtime_config = Bosh::Spec::Deployments.simple_runtime_config('bosh-release', 'latest')
     upload_runtime_config(runtime_config_hash: runtime_config)

@@ -271,8 +271,6 @@ describe 'start command', type: :integration do
 
         isolated_start(instance_group: 'bad-instance-group', index: 0, params: { failure_expected: true })
 
-        # job state currently says 'running', but '-' or 'stopped' or 'failed_to_start' would be better
-        # pending https://www.pivotaltracker.com/story/show/165722970
         expect(job_states).to eq('bad-instance-group/0' => 'running')
         expect(vm_states).to eq('bad-instance-group/0' => 'started')
       end

@@ -1,11 +1,6 @@
 require 'spec_helper'
 
 describe 'global networking', type: :integration do
-  before do
-    # pending doesn't work in before, but keeping it here so it's greppable
-    # pending('cli2: #125442231: switch bosh vms to be per deployment like instances cmd')
-  end
-
   with_reset_sandbox_before_each
 
   def deploy_with_ip(manifest, ip, options = {})

@@ -120,17 +120,6 @@ describe 'using director with config server and deployments having links', type:
       expect(template['links']['properties']['fibonacci']).to eq('recursion is the best')
     end
 
-    it 'does not log interpolated properties in deploy output and debug logs' do
-      skip('#130127863')
-
-      config_server_helper.put_value(prepend_namespace('fibonacci_placeholder'), 'fibonacci_value')
-      deploy_output = deploy_simple_manifest(manifest_hash: manifest, include_credentials: false,  env: client_env)
-      debug_output = bosh_runner.run('task last --debug', no_login: true, include_credentials: false, env: client_env)
-
-      expect(deploy_output).to_not include('fibonacci_value')
-      expect(debug_output).to_not include('fibonacci_value')
-    end
-
     context "when the consumer's job render fails on a subsequent deploy" do
       let(:consumer_instance_group) do
         Bosh::Spec::Deployments.simple_instance_group(
@@ -274,21 +263,6 @@ describe 'using director with config server and deployments having links', type:
         expect(template['a']).to eq('a_value')
         expect(template['b']).to eq('b_value')
         expect(template['c']).to eq('c_value')
-      end
-
-      it 'does not log interpolated properties in deploy output and debug logs' do
-        skip('#130127863')
-
-        deploy_output = deploy_simple_manifest(manifest_hash: manifest, include_credentials: false,  env: client_env)
-        debug_output = bosh_runner.run('task last --debug', no_login: true, include_credentials: false, env: client_env)
-
-        expect(deploy_output).to_not include('a_value')
-        expect(deploy_output).to_not include('b_value')
-        expect(deploy_output).to_not include('c_value')
-
-        expect(debug_output).to_not include('a_value')
-        expect(debug_output).to_not include('b_value')
-        expect(debug_output).to_not include('c_value')
       end
     end
   end

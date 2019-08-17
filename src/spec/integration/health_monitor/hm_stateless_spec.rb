@@ -69,48 +69,6 @@ describe 'health_monitor: 1', type: :integration, hm: true do
     end
   end
 
-  # ~8m
-  it 'does not resurrect stateless nodes when paused' do
-    pending('cli2: #130336999: cli should allow setting resurrection per vm')
-    deploy_from_scratch
-
-    bosh_runner.run('vm resurrection off', deployment_name: 'simple')
-    bosh_runner.run('vm resurrection foobar/1 on', deployment_name: 'simple')
-
-    director.instance('foobar', '0', deployment_name: 'simple').kill_agent
-    director.instance('foobar', '1', deployment_name: 'simple').kill_agent
-
-    expect(director.wait_for_vm('foobar', '0', 150, deployment_name: 'simple')).to be_nil
-    expect(director.wait_for_vm('foobar', '1', 10, deployment_name: 'simple')).to be_nil
-  end
-
-  # ~4m
-  it 'only resurrects stateless nodes that are configured to be resurrected' do
-    skip 'The interaction of a resurrected node and a non-resurrected node are important but broken. See #69728124'
-
-    deployment_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
-    deployment_hash['jobs'][0]['instances'] = 2
-    deploy_from_scratch(manifest_hash: deployment_hash, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
-
-    bosh_runner.run('vm resurrection foobar/1 off', deployment_name: 'simple')
-
-    original_0_instance = director.instance('foobar', '0', deployment_name: 'simple')
-    original_1_instance = director.instance('foobar', '1', deployment_name: 'simple')
-
-    # Kill VMs as close as possible
-    original_0_instance.kill_agent
-    original_1_instance.kill_agent
-
-    new_0_instance = director.wait_for_vm('foobar', '0', 150, deployment_name: 'simple')
-    expect(new_0_instance.vm_cid).to_not eq(original_0_instance.vm_cid)
-
-    # Since at this point 0th VM is back up, assume that
-    # if 1st VM would be resurrected it would've already happened
-    # (i.e do not wait for long time)
-    new_1_instance = director.wait_for_vm('foobar', '1', 10, deployment_name: 'simple')
-    expect(new_1_instance).to be_nil
-  end
-
   # ~3m
   it 'resurrects vms that were down before resurrector started' do
     # Turn resurrector off

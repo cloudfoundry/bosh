@@ -115,28 +115,6 @@ CERT
     end
 
     context 'when user has read access' do
-      it 'can only access read resources' do
-        pending("cli2: #130953231 uploading a release fails with bad file descriptor when uaa credentials are wrong")
-        client_env = {'BOSH_CLIENT' => 'read-access', 'BOSH_CLIENT_SECRET' => 'secret'}
-
-        _, exit_code = create_and_upload_test_release(environment_name: current_sandbox.director_url, env: client_env, include_credentials: false, force: true)
-        expect(exit_code).to_not eq(0)
-
-        output = deploy_from_scratch(
-          environment_name: current_sandbox.director_url,
-          no_login: true,
-          env: client_env,
-          include_credentials: false,
-          failure_expected: true,
-          manifest_hash: Bosh::Spec::Deployments.simple_manifest_with_instance_groups,
-          cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
-        )
-        expect(output).to include("one of the scopes: bosh.admin, bosh.deadbeef.admin")
-
-        output = bosh_runner.run('deployments', include_credentials: false, env: client_env, failure_expected: true)
-        expect(output).to match /0 deployments/
-      end
-
       it 'can see list of vms' do
         client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
         deploy_from_scratch(
@@ -151,53 +129,6 @@ CERT
         client_env = {'BOSH_CLIENT' => 'read-access', 'BOSH_CLIENT_SECRET' => 'secret'}
         instances = director.instances(deployment_name: 'simple', environment_name: current_sandbox.director_url, include_credentials: false, env: client_env)
         expect(instances.size).to eq(3)
-      end
-
-      it 'can only access task default logs' do
-        pending("#130127863 bosh task should show latest regardless of finished or unfinished state")
-        admin_client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
-        create_and_upload_test_release(env: admin_client_env, include_credentials: false)
-
-        read_client_env = {'BOSH_CLIENT' => 'read-access', 'BOSH_CLIENT_SECRET' => 'secret'}
-        output = bosh_runner.run('task --raw', environment_name: current_sandbox.director_url, include_credentials: false, env: read_client_env)
-        expect(output).to match /release has been created/
-
-        output = bosh_runner.run('task --debug', environment_name: current_sandbox.director_url, env: read_client_env, include_credentials: false, failure_expected: true)
-        expect(output).to include('Require one of the scopes:')
-
-        output = bosh_runner.run('task --cpi', environment_name: current_sandbox.director_url, env: read_client_env, include_credentials: false, failure_expected: true)
-        expect(output).to include('Require one of the scopes:')
-
-        output = bosh_runner.run('task --debug', environment_name: current_sandbox.director_url, env: admin_client_env, include_credentials: false)
-        expect(output).to match /DEBUG/
-
-        output = bosh_runner.run('task --cpi', environment_name: current_sandbox.director_url, env: admin_client_env, include_credentials: false)
-        expect(output).to match /Task \d* done/
-      end
-    end
-
-    context 'when user does not have access' do
-      it 'can only access status endpoint' do
-        client_env = {'BOSH_CLIENT' => 'no-access', 'BOSH_CLIENT_SECRET' => 'secret'}
-        output = bosh_runner.run('env', environment_name: current_sandbox.director_url, env: client_env, include_credentials: false)
-        expect(output).to match /User.*no-access/
-
-        # AuthError because verification is happening on director side
-        output = bosh_runner.run('vms', environment_name: current_sandbox.director_url, env: client_env, failure_expected: true, include_credentials: false)
-        expect(output).to include('Require one of the scopes:')
-      end
-
-      it 'can not access the resource for which the user does not have permission, even though the team membership grants some level of access to the controller' do
-        pending("#132016911 bosh cli should not report success when user does not have correct permissions")
-        client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
-        deploy_from_scratch(
-          cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
-          environment_name: current_sandbox.director_url, no_login: true, env: client_env, include_credentials: false
-        )
-
-        client_env = {'BOSH_CLIENT' => 'dev_team', 'BOSH_CLIENT_SECRET' => 'secret'}
-        output = bosh_runner.run('delete-deployment', environment_name: current_sandbox.director_url, deployment_name: 'simple', include_credentials: false, env: client_env, failure_expected: true)
-        expect(output).to include('Require one of the scopes:')
       end
     end
 

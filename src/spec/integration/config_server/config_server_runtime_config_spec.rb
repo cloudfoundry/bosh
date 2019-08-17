@@ -247,22 +247,6 @@ describe 'using director with config server', type: :integration do
               end
             }
           end
-
-          it 'retains the tags with variable substitution on recreate' do
-            skip("#139724667")
-
-            manifest_hash['jobs'].first['instances'] = 1
-            current_sandbox.cpi.kill_agents
-            current_sandbox.cpi.invocations.drop(current_sandbox.cpi.invocations.size)
-
-            recreate_vm_without_waiting_for_process = 3
-            bosh_run_cck_with_resolution(1, recreate_vm_without_waiting_for_process, client_env)
-
-            set_vm_metadata_invocation = current_sandbox.cpi.invocations.select { |invocation| invocation.method_name == 'set_vm_metadata' }.last
-            inputs = set_vm_metadata_invocation.inputs
-            expect(inputs['metadata']['tag_mode']).to eq('ha')
-            expect(inputs['metadata']['tag_value']).to eq('deprecated')
-          end
         end
       end
 

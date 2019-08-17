@@ -96,43 +96,6 @@ describe 'cli: deploy uploading', type: :integration do
       expect(bosh_runner.run('cloud-check --report', deployment_name: 'minimal')).to match(/0 problems/)
     end
 
-    context 'when name and version are specified' do
-      let(:release2_path) { spec_asset('compiled_releases/test_release/releases/test_release/test_release-2-pkg2-updated.tgz') }
-
-      it 'does not upload the same release twice' do
-        pending('cli2: #130928119 cli2 should not upload release if already on director')
-        deployment_manifest = yaml_file(
-          'deployment_manifest',
-          Bosh::Spec::Deployments.local_release_manifest('file://' + release_path, 1),
-        )
-
-        output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal')
-        expect(output).to match /Using deployment 'minimal'/
-        expect(output).to match /Release has been created: test_release\/1/
-        expect(output).to match /Succeeded/
-        expect(bosh_runner.run('cloud-check --report', deployment_name: 'minimal')).to match(/0 problems/)
-
-        output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal')
-        expect(output).to match /Release 'test_release\/1' already exists/
-        expect(output).to match /Succeeded/
-        expect(bosh_runner.run('cloud-check --report', deployment_name: 'minimal')).to match(/0 problems/)
-      end
-
-      it 'ignores the tarball if the director has the same name and version' do
-        pending('cli2: #130928119 cli2 should not upload release if already on director')
-        deployment_manifest = yaml_file(
-          'deployment_manifest',
-          Bosh::Spec::Deployments.local_release_manifest('file://' + release2_path, 1),
-        )
-
-        bosh_runner.run("upload-release #{release_path}")
-
-        output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal')
-        expect(output).to match /Release 'test_release\/1' already exists/
-        expect(bosh_runner.run('cloud-check --report', deployment_name: 'minimal')).to match(/0 problems/)
-      end
-    end
-
     it 'fails to deploy when the url is invalid' do
       deployment_manifest = yaml_file(
         'deployment_manifest',
