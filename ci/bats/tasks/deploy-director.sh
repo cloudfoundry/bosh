@@ -9,7 +9,7 @@ function cp_artifacts {
   rm -rf director-state/.bosh cache-dot-bosh-dir/.bosh
   cp -R $HOME/.bosh director-state/
   cp -R $HOME/.bosh cache-dot-bosh-dir/
-  cp director.yml director-creds.yml director-state.json director-state/
+  cp director.yml director-creds.yml director-state.json director-vars.json director-state/
 }
 
 function restore_state {
@@ -36,6 +36,8 @@ if [[ -e director-state/director-state.json ]]; then
   restore_state
 fi
 
+bosh-src/ci/bats/iaas/$BAT_INFRASTRUCTURE/director-vars > director-vars.json
+
 bosh-cli interpolate bosh-deployment/bosh.yml \
   -o bosh-deployment/$BAT_INFRASTRUCTURE/cpi.yml \
   -o bosh-deployment/misc/powerdns.yml \
@@ -47,7 +49,7 @@ bosh-cli interpolate bosh-deployment/bosh.yml \
   -v dns_recursor_ip=8.8.8.8 \
   -v director_name=bats-director \
   -v local_bosh_release=$(realpath bosh-release/*.tgz) \
-  --vars-file <( bosh-src/ci/bats/iaas/$BAT_INFRASTRUCTURE/director-vars ) \
+  --vars-file director-vars.json \
   $DEPLOY_ARGS \
   > director.yml
 

@@ -24,7 +24,7 @@ export BOSH_NON_INTERACTIVE=true
 
 CPI=$(bosh-cli env --json | jq -r ".Tables[].Rows[].cpi" | cut -d'_' -f1)
 bosh-cli update-cloud-config bosh-deployment/$CPI/cloud-config.yml \
-  --vars-file <( bosh-src/ci/bats/iaas/$CPI/director-vars )
+  --vars-file director-state/director-vars.json
 
 bosh-cli upload-stemcell stemcell/*.tgz
 bosh-cli -d zookeeper deploy --recreate zookeeper-release/manifests/zookeeper.yml
