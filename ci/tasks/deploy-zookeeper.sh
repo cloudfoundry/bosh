@@ -28,3 +28,4 @@ bosh-cli update-cloud-config bosh-deployment/$CPI/cloud-config.yml \
 
 bosh-cli upload-stemcell stemcell/*.tgz
 bosh-cli -d zookeeper deploy --recreate zookeeper-release/manifests/zookeeper.yml
+bosh-cli -d zookeeper run-errand smoke-tests
