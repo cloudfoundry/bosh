@@ -37,7 +37,7 @@ http {
   client_max_body_size <%= p('director.max_upload_size') %>;
 
   upstream director {
-    server localhost:<%= p('director.backend_port') %>;
+    server 127.0.0.1:<%= p('director.backend_port') %>;
   }
 
   server {
