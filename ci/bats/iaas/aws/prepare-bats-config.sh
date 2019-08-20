@@ -22,7 +22,7 @@ export BAT_DNS_HOST="$( state_path /instance_groups/name=bosh/networks/name=publ
 export BAT_INFRASTRUCTURE=aws
 export BAT_NETWORKING=manual
 
-export BAT_RSPEC_FLAGS="--tag ~multiple_manual_networks --tag ~root_partition"
+export BAT_RSPEC_FLAGS="--tag ~multiple_manual_networks --tag ~root_partition --tag ~reboot"
 EOF
 
 cat > interpolate.yml <<EOF
@@ -47,6 +47,7 @@ properties:
       gateway: ((PublicGateway))
       subnet: ((PublicSubnetID))
       security_groups: ((SecurityGroupID))
+    persistent_disk: 1024
 EOF
 
 "$bosh_cli" interpolate \
