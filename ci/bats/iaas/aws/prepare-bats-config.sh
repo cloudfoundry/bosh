@@ -35,7 +35,7 @@ properties:
     stemcell:
       name: ((STEMCELL_NAME))
       version: latest
-    instances: 1
+    instances: 2
     availability_zone: ((AvailabilityZone))
     networks:
     - name: default
