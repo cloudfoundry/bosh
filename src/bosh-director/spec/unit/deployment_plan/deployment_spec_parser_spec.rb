@@ -520,22 +520,34 @@ module Bosh::Director
       describe 'addons' do
         context 'when addon spec is valid' do
           it 'parses provided addons' do
-            addon_spec = [
-              {
-                'name' => 'addon1',
-                'jobs' => [{ 'name' => 'dummy_with_properties', 'release' => 'dummy2' }, { 'name' => 'dummy_with_package', 'release' => 'dummy2' }],
-                'properties' => { 'dummy_with_properties' => { 'echo_value' => 'addon_prop_value' } },
-              },
-            ]
-            manifest_hash.merge!('releases' => [{ 'name' => 'dummy2', 'version' => '2' }])['addons'] = addon_spec
+            manifest_hash.merge!(Bosh::Spec::Deployments.runtime_config_with_addon)
 
             result_obj = parsed_deployment.addons
 
             expect(result_obj.count).to eq(1)
             expect(result_obj.first.name).to eq('addon1')
-            expect(result_obj.first.jobs).to eq([{ 'name' => 'dummy_with_properties', 'release' => 'dummy2', 'provides' => {}, 'consumes' => {}, 'properties' => nil },
-                                                 { 'name' => 'dummy_with_package', 'release' => 'dummy2', 'provides' => {}, 'consumes' => {}, 'properties' => nil }])
-            expect(result_obj.first.properties).to eq('dummy_with_properties' => { 'echo_value' => 'addon_prop_value' })
+            expect(result_obj.first.jobs).to eq(
+              [
+                {
+                  'name' => 'dummy_with_properties',
+                  'release' => 'dummy2',
+                  'provides' => {},
+                  'consumes' => {},
+                  'properties' => {
+                    'dummy_with_properties' => {
+                      'echo_value' => 'addon_prop_value',
+                    },
+                  },
+                },
+                {
+                  'name' => 'dummy_with_package',
+                  'release' => 'dummy2',
+                  'provides' => {},
+                  'consumes' => {},
+                  'properties' => {},
+                },
+              ],
+            )
           end
 
           it 'allows to not include addons' do

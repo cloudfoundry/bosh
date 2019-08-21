@@ -53,9 +53,28 @@ module Bosh::Director
           expect(result.addons.count).to eq(1)
           addon = result.addons.first
           expect(addon.name).to eq('addon1')
-          expect(addon.jobs).to eq([{'name' => 'dummy_with_properties', 'release' => 'dummy2', 'provides' => {}, 'consumes' => {}, 'properties' => nil},
-            {'name' => 'dummy_with_package', 'release' => 'dummy2', 'provides' => {}, 'consumes' => {}, 'properties' => nil}])
-          expect(addon.properties).to eq({'dummy_with_properties' => {'echo_value' => 'addon_prop_value'}})
+          expect(addon.jobs).to eq(
+            [
+              {
+                'name' => 'dummy_with_properties',
+                'release' => 'dummy2',
+                'provides' => {},
+                'consumes' => {},
+                'properties' => {
+                  'dummy_with_properties' => {
+                    'echo_value' => 'addon_prop_value',
+                  },
+                },
+              },
+              {
+                'name' => 'dummy_with_package',
+                'release' => 'dummy2',
+                'provides' => {},
+                'consumes' => {},
+                'properties' => {},
+              },
+            ],
+          )
         end
       end
 
@@ -66,11 +85,10 @@ module Bosh::Director
           let(:runtime_manifest) do
             runtime_manifest = Bosh::Spec::Deployments.runtime_config_with_addon
             runtime_manifest['addons'].first.merge!(
-                {
-                  'include' => {
-                    'deployments' => ['dep1']
-                  }
-                })
+              'include' => {
+                'deployments' => ['dep1'],
+              },
+            )
             runtime_manifest
           end
 
@@ -95,11 +113,10 @@ module Bosh::Director
           let(:runtime_manifest) do
             runtime_manifest = Bosh::Spec::Deployments.runtime_config_with_addon
             runtime_manifest['addons'].first.merge!(
-                {
-                  'exclude' => {
-                    'deployments' => ['dep1']
-                  }
-                })
+              'exclude' => {
+                'deployments' => ['dep1'],
+              },
+            )
             runtime_manifest
           end
 
@@ -122,11 +139,10 @@ module Bosh::Director
             let(:runtime_manifest) do
               runtime_manifest = Bosh::Spec::Deployments.runtime_config_with_addon
               runtime_manifest['addons'].first.merge!(
-                  {
-                    'exclude' => {
-                      'jobs' => [{'name' => 'foobar'}]
-                    }
-                  })
+                'exclude' => {
+                  'jobs' => [{ 'name' => 'foobar' }],
+                },
+              )
               runtime_manifest
             end
             it 'throws an error' do
@@ -138,11 +154,10 @@ module Bosh::Director
             let(:runtime_manifest) do
               runtime_manifest = Bosh::Spec::Deployments.runtime_config_with_addon
               runtime_manifest['addons'].first.merge!(
-                  {
-                    'exclude' => {
-                      'jobs' => [{'release' => 'foobar'}]
-                    }
-                  })
+                'exclude' => {
+                  'jobs' => [{ 'release' => 'foobar' }],
+                },
+              )
               runtime_manifest
             end
             it 'throws an error' do
@@ -155,7 +170,12 @@ module Bosh::Director
           let(:runtime_manifest) do
             runtime_manifest = Bosh::Spec::Deployments.runtime_config_with_addon
 
-            variables_spec = [{'name' => 'var_a', 'type' => 'a'}, {'name' => 'var_b', 'type' => 'b', 'options' => {'x' => 2}}]
+            variables_spec = [
+              { 'name' => 'var_a', 'type' => 'a' },
+              'name' => 'var_b',
+              'type' => 'b',
+              'options' => { 'x' => 2 },
+            ]
             runtime_manifest.merge!('variables' => variables_spec)
 
             runtime_manifest
@@ -166,8 +186,8 @@ module Bosh::Director
             variables = result.variables
             expect(variables.spec.length).to eq(2)
 
-            expect(variables.get_variable('var_a')).to eq({'name' => 'var_a', 'type' => 'a'})
-            expect(variables.get_variable('var_b')).to eq({'name' => 'var_b', 'type' => 'b', 'options' => {'x' => 2}})
+            expect(variables.get_variable('var_a')).to eq('name' => 'var_a', 'type' => 'a')
+            expect(variables.get_variable('var_b')).to eq('name' => 'var_b', 'type' => 'b', 'options' => { 'x' => 2 })
           end
         end
       end

@@ -10,10 +10,20 @@ module Bosh::Director
             {
               'name' => 'addon1',
               'jobs' => [
-                { 'name' => 'dummy_with_properties', 'release' => 'dummy2' },
-                { 'name' => 'dummy_with_package', 'release' => 'dummy2' },
+                {
+                  'name' => 'dummy_with_properties',
+                  'release' => 'dummy2',
+                  'properties' => {
+                    'dummy_with_properties' => {
+                      'echo_value' => 'addon_prop_value',
+                    },
+                  },
+                },
+                {
+                  'name' => 'dummy_with_package',
+                  'release' => 'dummy2',
+                },
               ],
-              'properties' => { 'dummy_with_properties' => { 'echo_value' => 'addon_prop_value' } },
             },
           ],
         }
@@ -22,7 +32,7 @@ module Bosh::Director
       let(:release_hash) do
         {
           'name' => 'dummy2',
-          'version' => '0.2-dev'
+          'version' => '0.2-dev',
         }
       end
 
@@ -30,8 +40,11 @@ module Bosh::Director
         context 'when no release in release section' do
           let(:releases) { [] }
           it 'returns an error' do
-            expect { parser.parse() }.to raise_error(Bosh::Director::AddonReleaseNotListedInReleases,
-              "Manifest specifies job 'dummy_with_properties' which is defined in 'dummy2', but 'dummy2' is not listed in the runtime releases section.")
+            expect { parser.parse }.to raise_error(
+              Bosh::Director::AddonReleaseNotListedInReleases,
+              "Manifest specifies job 'dummy_with_properties' which is defined in 'dummy2'," \
+              " but 'dummy2' is not listed in the runtime releases section.",
+            )
           end
         end
 
@@ -43,14 +56,33 @@ module Bosh::Director
             .with(jobs: [], instance_groups: [], deployment_names: [], stemcells: [],
                   networks: [], teams: [], availability_zones: [], lifecycle_type: '', filter_type: :exclude)
 
-          result = parser.parse()
+          result = parser.parse
 
           expect(result.count).to eq(1)
           addon = result.first
           expect(addon.name).to eq('addon1')
-          expect(addon.jobs).to eq([{'name' => 'dummy_with_properties', 'release' => 'dummy2', 'provides' => {}, 'consumes' => {}, 'properties' => nil},
-            {'name' => 'dummy_with_package', 'release' => 'dummy2', 'provides' => {}, 'consumes' => {}, 'properties' => nil}])
-          expect(addon.properties).to eq({'dummy_with_properties' => {'echo_value' => 'addon_prop_value'}})
+          expect(addon.jobs).to eq(
+            [
+              {
+                'name' => 'dummy_with_properties',
+                'release' => 'dummy2',
+                'provides' => {},
+                'consumes' => {},
+                'properties' => {
+                  'dummy_with_properties' => {
+                    'echo_value' => 'addon_prop_value',
+                  },
+                },
+              },
+              {
+                'name' => 'dummy_with_package',
+                'release' => 'dummy2',
+                'provides' => {},
+                'consumes' => {},
+                'properties' => {},
+              },
+            ],
+          )
         end
       end
     end
