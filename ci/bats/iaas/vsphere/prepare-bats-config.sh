@@ -30,7 +30,7 @@ cat > interpolate.yml <<EOF
 cpi: vsphere
 properties:
   pool_size: 1
-  instances: 2
+  instances: 1
   second_static_ip: ((network1.staticIP-2))
   stemcell:
     name: ((STEMCELL_NAME))
