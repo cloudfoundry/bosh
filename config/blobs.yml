@@ -2,14 +2,14 @@ bosh-gcscli/bosh-gcscli-0.0.3-linux-amd64:
   size: 12777526
   object_id: e561b18d-0d52-4579-7bd5-9823bdbe7aba
   sha: a6ca3153856b40c1af6d79da8f11efdde0899b7d
-davcli/davcli-0.0.33-linux-amd64:
-  size: 7650033
-  object_id: 332c86ac-1f03-47a1-6b70-27b981c80734
-  sha: sha256:16869bcdced5bb8221293ded97b9294f2639c5442b1b4ceb844c4e04d6a1f98b
-gnatsd/gnatsd-1.3.0-bosh.2-linux-amd64:
-  size: 10471093
-  object_id: cbc9d252-ca0c-4120-6f36-1a6e856b1f03
-  sha: add5c727ae5853d41f5eb1d880bfbb26245588aa
+davcli/davcli-0.0.37-linux-amd64:
+  size: 8587116
+  object_id: 67caf9d2-42e1-4959-6ee8-735054a005b5
+  sha: sha256:22100f45945f4701bbd997e423dc8cb52d46acc59d72eacf49fb904399bdbb69
+gnatsd/gnatsd-1.3.0-bosh.7-linux-amd64:
+  size: 11572841
+  object_id: c6aecf2b-18ec-4a5a-466e-2a57f84aa154
+  sha: sha256:be85b21f0af87f5013916a4c398f142572084fc206fff904482b0a31ca28ccdd
 mysql/mariadb-connector-c-3.0.3-src.tar.gz:
   size: 666928
   object_id: 0d20e9e3-1a7d-4872-6ea3-28246c579ca8
@@ -22,10 +22,10 @@ nginx/headers-more-nginx-module-0.30.tar.gz:
   size: 27793
   object_id: ee5b4828-67f9-42f7-a0fb-23b4d4c9805f
   sha: a188a399f3e365a0831585a9d7aa0e6ed1a75f0d
-nginx/nginx-1.14.2.tar.gz:
-  size: 1015384
-  object_id: 2f92c66b-3d1b-46e7-7433-21c31ce9f328
-  sha: sha256:002d9f6154e331886a2dd4e6065863c9c1cf8291ae97a1255308572c02be9797
+nginx/nginx-1.17.3.tar.gz:
+  size: 1034586
+  object_id: 0e953ffd-6dce-4f29-5c2e-052fd1dccc79
+  sha: sha256:3b84fe1c2cf9ca22fde370e486a9ab16b6427df1b6ea62cdb61978c9f34d0f3c
 nginx/nginx-upload-module-2.3.0.tar.gz:
   size: 40139
   object_id: 598d93c6-90b8-4472-5308-5235bb476a45
@@ -46,11 +46,11 @@ powerdns/pdns-static_3.3.1-1_amd64.deb:
   size: 9353694
   object_id: 6e861aa6-2e83-4027-a1e8-0ebec995c274
   sha: 22bb46aa0b3e7671e0ee9aa30ed95c38841106ab
-s3cli/s3cli-0.0.80-linux-amd64:
-  size: 12102238
-  object_id: 45ee9a15-fef2-4dfb-417b-934de60a795c
-  sha: sha256:811dfe3f0dfc6b51d12aa3910069c6c90a15354e9823243a75c5f3762b4a9e3a
-verify-multidigest/verify-multidigest-0.0.121-linux-amd64:
-  size: 4077590
-  object_id: 60542f17-db12-474d-66ae-36af797de24d
-  sha: sha256:5429b7d760a5083467f049ae9f32582da871e6e2cebf0931aee6372f4305bc29
+s3cli/s3cli-0.0.83-linux-amd64:
+  size: 14932355
+  object_id: 23b2fadf-6a53-42c8-43fd-b89d748b34c7
+  sha: sha256:d4f817b9519e17c76374ae23c905ec3aa1b2b5d9f079ab6a6a7d22656bda1c4f
+verify-multidigest/verify-multidigest-0.0.149-linux-amd64:
+  size: 4309050
+  object_id: e0e618a9-22ba-4046-754f-932473440fb5
+  sha: sha256:65e3bdf60c5b3eb82bf8c851a55a3c2459d1f41cb435136b9db7894379ce6369

@@ -15,11 +15,11 @@ pushd nginx-upload-module-2.3.0
 popd
 
 echo "Extracting nginx..."
-tar xzf nginx/nginx-1.14.2.tar.gz
+tar xzf nginx/nginx-1.17.3.tar.gz
 
 echo "Building nginx..."
 
-pushd nginx-1.14.2
+pushd nginx-1.17.3
   ./configure \
     --with-cc-opt="${CPPFLAGS:-}" \
     --with-ld-opt="${LDFLAGS:-}" \
