@@ -160,7 +160,24 @@ module Bosh::Director::DeploymentPlan
     before do
       fake_app
       fake_locks
-      prepare_deploy(deployment_manifest)
+
+      release_model = Bosh::Director::Models::Release.make(name: deployment_manifest['releases'].first['name'])
+      version = Bosh::Director::Models::ReleaseVersion.make(version: deployment_manifest['releases'].first['version'])
+      release_model.add_version(version)
+
+      deployment_manifest['instance_groups'].first['jobs'].each do |job|
+        template_model = Bosh::Director::Models::Template.make(name: job['name'])
+        version.add_template(template_model)
+      end
+
+      Bosh::Director::Models::Stemcell.make(
+        name: deployment_manifest['stemcells'].first['name'],
+        version: deployment_manifest['stemcells'].first['version'],
+      )
+
+      Bosh::Director::Config.current_job = Bosh::Director::Jobs::BaseJob.new
+      Bosh::Director::Config.current_job.task_id = 'fake-task-id'
+
       instance.bind_existing_instance_model(instance_model)
       instance_group.add_instance_plans([instance_plan])
     end

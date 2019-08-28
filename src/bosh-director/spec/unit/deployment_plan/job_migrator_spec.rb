@@ -86,7 +86,16 @@ module Bosh::Director
       Models::VariableSet.make(deployment: deployment_model)
 
       fake_locks
-      prepare_deploy(deployment_manifest)
+
+      release_model = Bosh::Director::Models::Release.make(name: deployment_manifest['releases'].first['name'])
+      version = Bosh::Director::Models::ReleaseVersion.make(version: deployment_manifest['releases'].first['version'])
+      release_model.add_version(version)
+
+      template_model = Bosh::Director::Models::Template.make(
+        name: deployment_manifest['instance_groups'].first['jobs'][0]['name'],
+      )
+      version.add_template(template_model)
+
       allow(logger).to receive(:debug)
     end
 

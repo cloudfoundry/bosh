@@ -95,10 +95,11 @@ module Bosh::Director
     describe 'Resolutions:' do
       let(:fake_cloud) { instance_double('Bosh::Clouds::ExternalCpi') }
       let(:fake_new_agent) { double('Bosh::Director::AgentClient') }
+      let!(:stemcell) { Models::Stemcell.make(name: 'ubuntu-stemcell', version: 1) }
 
       before do
         allow(Config).to receive(:uuid).and_return('woof-uuid')
-        allow(Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
+        allow(Config).to receive(:cloud_options).and_return('provider' => { 'path' => '/path/to/default/cpi' })
         allow(fake_cloud).to receive(:info)
         allow(fake_cloud).to receive(:set_vm_metadata)
         allow(fake_cloud).to receive(:request_cpi_api_version=)
@@ -115,13 +116,14 @@ module Bosh::Director
 
       def fake_job_context
         handler.job = instance_double('Bosh::Director::Jobs::BaseJob')
+
+        Bosh::Director::Config.current_job = Bosh::Director::Jobs::BaseJob.new
         Bosh::Director::Config.current_job.task_id = 42
         Bosh::Director::Config.name = 'fake-director-name'
       end
 
       def expect_vm_to_be_created
         Bosh::Director::Models::Task.make(id: 42, username: 'user')
-        prepare_deploy(manifest)
 
         allow(SecureRandom).to receive_messages(uuid: 'agent-222')
         allow(AgentClient).to receive(:with_agent_id).and_return(fake_new_agent)
@@ -144,7 +146,7 @@ module Bosh::Director
           .to receive(:create_vm)
           .with(
             'agent-222',
-            Bosh::Director::Models::Stemcell.all.first.cid,
+            stemcell.cid,
             { 'foo' => 'bar' },
             anything,
             [],
