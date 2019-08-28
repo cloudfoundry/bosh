@@ -7,11 +7,7 @@ module Bosh::Director::DeploymentPlan
     describe '#sort' do
       let(:desired_instance) { DesiredInstance.new(instance_group) }
       let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
-      let(:instance_group) do
-        instance_group = InstanceGroup.new(logger)
-        instance_group.name = 'job_name'
-        instance_group
-      end
+      let(:instance_group) { InstanceGroup.make(name: 'job_name') }
       let(:deployment_model) { BD::Models::Deployment.make(name: 'my-deployment') }
       let(:bootstrap_az) { AvailabilityZone.new('bootstrap_name', {}) }
       let(:bootstrap_instance) do

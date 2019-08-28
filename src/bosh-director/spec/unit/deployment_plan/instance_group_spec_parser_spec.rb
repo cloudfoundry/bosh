@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   module DeploymentPlan
     describe InstanceGroupSpecParser do
-      subject(:parser) { described_class.new(deployment_plan, event_log, logger) }
+      subject(:parser) { described_class.new(deployment_plan, instance_group_spec, event_log, logger) }
       let(:template) do
         Models::Template.make(name: 'job-name')
       end
@@ -76,7 +76,7 @@ module Bosh::Director
         let(:parse_options) do
           { 'is_deploy_action' => true }
         end
-        let(:parsed_instance_group) { parser.parse(instance_group_spec, parse_options) }
+        let(:parsed_instance_group) { parser.parse(parse_options) }
         let(:disk_type) { instance_double(DiskType) }
         let(:fake_manager) do
           instance_double(Api::ReleaseManager).tap do |mock|
@@ -127,6 +127,7 @@ module Bosh::Director
           it 'parses name' do
             instance_group = parsed_instance_group
             expect(instance_group.name).to eq('instance-group-name')
+            expect(instance_group.canonical_name).to eq('instance-group-name')
           end
         end
 

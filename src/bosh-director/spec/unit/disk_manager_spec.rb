@@ -21,13 +21,20 @@ module Bosh::Director
     end
 
     let(:job_persistent_disk_size) { 1024 }
-    let(:instance_group) do
-      instance_group = DeploymentPlan::InstanceGroup.new(logger)
-      instance_group.name = 'job-name'
-      instance_group.persistent_disk_collection = DeploymentPlan::PersistentDiskCollection.new(logger)
-      instance_group.persistent_disk_collection.add_by_disk_type(disk_type)
-      instance_group
+
+    let(:disk_collection) do
+      collection = DeploymentPlan::PersistentDiskCollection.new(logger)
+      collection.add_by_disk_type(disk_type)
+      collection
     end
+
+    let(:instance_group) do
+      DeploymentPlan::InstanceGroup.make(
+        name: 'job-name',
+        persistent_disk_collection: disk_collection,
+      )
+    end
+
     let(:disk_type) { DeploymentPlan::DiskType.new('disk-name', job_persistent_disk_size, cloud_properties) }
     let(:deployment_model) { Models::Deployment.make(name: 'dep1') }
     let(:instance) { DeploymentPlan::Instance.create_from_instance_group(instance_group, 1, 'started', deployment_model, {}, nil, logger, variables_interpolator) }
@@ -187,12 +194,10 @@ module Bosh::Director
           end
 
           context 'when the new disk is unmanaged' do
-            let(:instance_group) do
-              instance_group = DeploymentPlan::InstanceGroup.new(logger)
-              instance_group.name = 'job-name'
-              instance_group.persistent_disk_collection = DeploymentPlan::PersistentDiskCollection.new(logger)
-              instance_group.persistent_disk_collection.add_by_disk_name_and_type('unmanaged-disk-name', disk_type)
-              instance_group
+            let(:disk_collection) do
+              collection = DeploymentPlan::PersistentDiskCollection.new(logger)
+              collection.add_by_disk_name_and_type('unmanaged-disk-name', disk_type)
+              collection
             end
 
             context 'when the old disk is unmanaged' do
@@ -544,12 +549,7 @@ module Bosh::Director
         end
 
         context 'when we no longer need disk' do
-          let(:instance_group) do
-            instance_group = DeploymentPlan::InstanceGroup.new(logger)
-            instance_group.name = 'job-name'
-            instance_group.persistent_disk_collection = DeploymentPlan::PersistentDiskCollection.new(logger)
-            instance_group
-          end
+          let(:disk_collection) { DeploymentPlan::PersistentDiskCollection.new(logger) }
 
           it 'orphans disk' do
             expect(Models::PersistentDisk.all.size).to eq(1)
@@ -673,12 +673,7 @@ module Bosh::Director
       end
 
       context 'when instance desired job does not have disk' do
-        let(:instance_group) do
-          instance_group = DeploymentPlan::InstanceGroup.new(logger)
-          instance_group.name = 'job-name'
-          instance_group.persistent_disk_collection = DeploymentPlan::PersistentDiskCollection.new(logger)
-          instance_group
-        end
+        let(:disk_collection) { DeploymentPlan::PersistentDiskCollection.new(logger) }
 
         it 'does not attach current instance disk' do
           expect(cloud).to_not receive(:attach_disk)

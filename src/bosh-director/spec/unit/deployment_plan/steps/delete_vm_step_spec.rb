@@ -26,38 +26,8 @@ module Bosh
           describe '#perform' do
             let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
             let(:cloud_factory) { instance_double(CloudFactory) }
-            let(:vm_type) do
-              DeploymentPlan::VmType.new('name' => 'fake-vm-type', 'cloud_properties' => { 'ram' => '2gb' })
-            end
-            let(:env) { DeploymentPlan::Env.new({}) }
             let(:job) { instance_double(BD::Jobs::BaseJob) }
-            let(:stemcell_model) { Models::Stemcell.make(cid: 'stemcell-id', name: 'fake-stemcell', version: '123') }
-            let(:stemcell) do
-              stemcell_model
-              stemcell = DeploymentPlan::Stemcell.parse('name' => 'fake-stemcell', 'version' => '123')
-              stemcell.add_stemcell_models
-              stemcell
-            end
-            let(:instance_group) do
-              template_model = BD::Models::Template.make
-              job = BD::DeploymentPlan::Job.new(nil, 'fake-job-name')
-              job.bind_existing_model(template_model)
-
-              instance_group = BD::DeploymentPlan::InstanceGroup.new(logger)
-              instance_group.name = 'fake-job'
-              instance_group.vm_type = vm_type
-              instance_group.stemcell = stemcell
-              instance_group.env = env
-              instance_group.jobs << job
-              instance_group.default_network = { 'gateway' => 'name' }
-              instance_group.update = BD::DeploymentPlan::UpdateConfig.new(
-                'canaries' => 1,
-                'max_in_flight' => 1,
-                'canary_watch_time' => '1000-2000',
-                'update_watch_time' => '1000-2000',
-              )
-              instance_group
-            end
+            let(:instance_group) { BD::DeploymentPlan::InstanceGroup.make }
             let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
             let(:instance) do
               instance = DeploymentPlan::Instance.create_from_instance_group(

@@ -14,16 +14,18 @@ module Bosh::Director
       let(:manifest_content) { YAML.dump ManifestHelper.default_legacy_manifest }
       let(:cloud_config_id) { nil }
       let(:runtime_config_ids) { [] }
-      let(:options) do
-        {}
+      let(:options) { {} }
+      let(:networks) { nil }
+
+      let(:deployment_instance_group) do
+        DeploymentPlan::InstanceGroup.make(networks: networks)
       end
-      let(:deployment_instance_group) { DeploymentPlan::InstanceGroup.new(logger) }
-      let(:task) { Models::Task.make(:id => 42, :username => 'user') }
+
       let(:errand_instance_group) do
-        ig = DeploymentPlan::InstanceGroup.new(logger)
-        ig.name = 'some-errand-instance-group'
-        ig
+        DeploymentPlan::InstanceGroup.make(name: 'some-errand-instance-group')
       end
+
+      let(:task) { Models::Task.make(id: 42, username: 'user') }
       let(:availability_zones) { [zone_1, zone_2] }
       let(:zone_1) { DeploymentPlan::AvailabilityZone.new('zone_1', {}) }
       let(:zone_2) { DeploymentPlan::AvailabilityZone.new('zone_2', {}) }
@@ -35,7 +37,7 @@ module Bosh::Director
           allow(double).to receive(:get_links_for_instance_group).and_return(resolved_links)
         end
       end
-      let(:deployment_name) { 'deployment-name'}
+      let(:deployment_name) { 'deployment-name' }
 
       before do
         App.new(config)
@@ -51,7 +53,7 @@ module Bosh::Director
         end
         let(:notifier) { instance_double(DeploymentPlan::Notifier) }
         let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
-        let(:variables_interpolator) { instance_double(ConfigServer::VariablesInterpolator) }
+        let(:variables_interpolator) { instance_double(ConfigServer::VariablesInterpolator, interpolate_with_versioning: nil) }
         let(:planner_factory) do
           instance_double(
             DeploymentPlan::PlannerFactory,
@@ -197,11 +199,7 @@ module Bosh::Director
                 end
               end
 
-              let(:deployment_instance_group) do
-                dig = DeploymentPlan::InstanceGroup.new(logger)
-                allow(dig).to receive(:networks).and_return instance_group_networks
-                dig
-              end
+              let(:networks) { instance_group_networks }
 
               let(:instance_group_networks) do
                 [

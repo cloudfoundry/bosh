@@ -26,8 +26,13 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       model: deployment,
       name: deployment.name,
       ip_provider: fake_ip_provider,
-      releases: {},
+      release: release1,
       use_tmpfs_config: false,
+      networks: [network],
+      vm_type: vm_type,
+      stemcell: stemcell,
+      links_manager: links_manager,
+      update: nil,
     )
   end
 
@@ -35,7 +40,12 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     {
       'name' => 'foobar',
       'release' => release1.name,
-      'template' => release1_bar_job.name,
+      'jobs' => [
+        {
+          'name' => release1_foo_job.name,
+          'release' => release1.name,
+        },
+      ],
       'vm_type' => 'dea',
       'stemcell' => 'dea',
       'env' => { 'key' => 'value' },
@@ -100,18 +110,11 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   let(:release1_version2_model) { Bosh::Director::Models::ReleaseVersion.make(version: '2', release: release1_model) }
   let(:update_config) { double(Bosh::Director::DeploymentPlan::UpdateConfig) }
   let(:links_serial_id) { 7 }
-  subject { described_class.new(logger) }
 
   let(:links_manager) { Bosh::Director::Links::LinksManager.new(links_serial_id, logger, event_log) }
 
   before do
     allow(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new).and_return update_config
-
-    allow(plan).to receive(:networks).and_return([network])
-    allow(plan).to receive(:vm_type).with('dea').and_return vm_type
-    allow(plan).to receive(:stemcell).with('dea').and_return stemcell
-    allow(plan).to receive(:update)
-    allow(plan).to receive(:links_manager).and_return(links_manager)
 
     allow(release1).to receive(:get_or_create_template).with('foo').and_return(release1_foo_job)
     allow(release1).to receive(:get_or_create_template).with('bar').and_return(release1_bar_job)
@@ -132,8 +135,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     release1_version_model.add_package(release1_package1_model)
     release1_version2_model.add_package(release1_package1_model2)
-
-    subject.update = update_config
   end
 
   describe '#parse' do
@@ -451,14 +452,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   end
 
   describe '#validate_exported_from_matches_stemcell!' do
-    let(:instance_group) do
-      r = Bosh::Director::DeploymentPlan::InstanceGroup.new(logger)
-      r.name = 'foobar'
-      r.stemcell = stemcell
-      r.add_job(release1_bar_job)
-      r
-    end
-
     context 'when jobs have no exported_from' do
       it 'does not raise an error' do
         expect do
@@ -645,8 +638,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   end
 
   describe '#bind_unallocated_vms' do
-    subject(:instance_group) { described_class.new(logger) }
-
     it 'allocates a VM to all non obsolete instances if they are not already bound to a VM' do
       az = BD::DeploymentPlan::AvailabilityZone.new('az', {})
       instance0 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', deployment, {}, az, logger, variables_interpolator)
@@ -671,8 +662,6 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   end
 
   describe '#bind_instances' do
-    subject(:instance_group) { described_class.new(logger) }
-
     it 'makes sure theres a model and binds instance networks' do
       az = BD::DeploymentPlan::AvailabilityZone.new('az', {})
       instance0 = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', deployment, {}, az, logger, variables_interpolator)
@@ -727,25 +716,36 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
   describe '#service?' do
     context "when lifecycle profile is 'service'" do
-      before { subject.lifecycle = 'service' }
-      its(:service?) { should be(true) }
+      before { spec['lifecycle'] = 'service' }
+      it 'returns true if it is a service' do
+        expect(instance_group.service?).to eq(true)
+      end
     end
 
-    context 'when lifecycle profile is not service' do
-      before { subject.lifecycle = 'other' }
-      its(:service?) { should be(false) }
+    context 'when lifecycle profile is not valid' do
+      before { spec['lifecycle'] = 'other' }
+      it 'returns an error' do
+        expect { instance_group }.to raise_error(
+          Bosh::Director::JobInvalidLifecycle,
+          "Invalid lifecycle 'other' for 'foobar', valid lifecycle profiles are: service, errand",
+        )
+      end
     end
   end
 
   describe '#errand?' do
     context "when lifecycle profile is 'errand'" do
-      before { subject.lifecycle = 'errand' }
-      its(:errand?) { should be(true) }
+      before { spec['lifecycle'] = 'errand' }
+      it 'returns true if it is an errand' do
+        expect(instance_group.errand?).to eq(true)
+      end
     end
 
     context 'when lifecycle profile is not errand' do
-      before { subject.lifecycle = 'other' }
-      its(:errand?) { should be(false) }
+      before { spec['lifecycle'] = 'service' }
+      it 'returns false if it is not an errand' do
+        expect(instance_group.errand?).to eq(false)
+      end
     end
   end
 
@@ -755,7 +755,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         allow(update_config).to receive(:vm_strategy).and_return 'create-swap-delete'
       end
 
-      it { should be_create_swap_delete }
+      it 'returns true' do
+        expect(instance_group.create_swap_delete?).to eq true
+      end
     end
 
     context 'when vm_strategy is not create-swap-delete' do
@@ -763,7 +765,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         allow(update_config).to receive(:vm_strategy).and_return 'something-else'
       end
 
-      it { should_not be_create_swap_delete }
+      it 'returns false' do
+        expect(instance_group.create_swap_delete?).to eq false
+      end
     end
   end
 
@@ -771,19 +775,36 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     context 'when vm_strategy is create-swap-delete' do
       before do
         allow(update_config).to receive(:vm_strategy).and_return 'create-swap-delete'
-        subject.networks = [job_network]
       end
 
       context 'when instance_group does not have static ips' do
-        let(:job_network) { Bosh::Director::DeploymentPlan::JobNetwork.make(static_ips: nil) }
+        before do
+          spec['networks'] = [
+            {
+              'name' => network.name,
+              'static_ips' => nil,
+            },
+          ]
+        end
 
-        it { should be_should_create_swap_delete }
+        it 'returns true' do
+          expect(instance_group.should_create_swap_delete?).to eq true
+        end
       end
 
       context 'when instance_group has static ips' do
-        let(:job_network) { Bosh::Director::DeploymentPlan::JobNetwork.make(static_ips: ['1.1.1.1']) }
+        before do
+          spec['networks'] = [
+            {
+              'name' => network.name,
+              'static_ips' => ['1.1.1.1'],
+            },
+          ]
+        end
 
-        it { should_not be_should_create_swap_delete }
+        it 'returns false' do
+          expect(instance_group.should_create_swap_delete?).to eq false
+        end
       end
     end
 
@@ -792,7 +813,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         allow(update_config).to receive(:vm_strategy).and_return 'something-else'
       end
 
-      it { should_not be_should_create_swap_delete }
+      it 'returns false' do
+        expect(instance_group.should_create_swap_delete?).to eq false
+      end
     end
   end
 
@@ -942,22 +965,26 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   end
 
   describe '#add_job' do
+    before do
+      spec['jobs'] = []
+    end
+
     context 'when job does not exist in instance group' do
       it 'adds job' do
-        subject.add_job(release1_foo_job_model)
-        expect(subject.jobs.count).to eq(1)
+        instance_group.add_job(release1_foo_job_model)
+        expect(instance_group.jobs.count).to eq(1)
 
-        expect(subject.jobs.first.name).to eq('foo')
-        expect(subject.jobs.first.release.name).to eq('release1')
+        expect(instance_group.jobs.first.name).to eq('foo')
+        expect(instance_group.jobs.first.release.name).to eq('release1')
       end
     end
 
     context 'when job does exists in instance group' do
       it 'throws an exception' do
-        subject.add_job(release1_foo_job_model)
-        expect { subject.add_job(release1_foo_job_model) }.to raise_error(
+        instance_group.add_job(release1_foo_job_model)
+        expect { instance_group.add_job(release1_foo_job_model) }.to raise_error(
           "Colocated job '#{release1_foo_job_model.name}' is already added "\
-          "to the instance group '#{subject.name}'.",
+          "to the instance group '#{instance_group.name}'.",
         )
       end
     end
@@ -1063,21 +1090,21 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
   describe '#default_network_name' do
     before do
-      subject.default_network['gateway'] = 'gateway-default-network'
-      subject.default_network['dns'] = 'dns-default-network'
+      instance_group.default_network['gateway'] = 'gateway-default-network'
+      instance_group.default_network['dns'] = 'dns-default-network'
     end
 
     it 'returns the gateway network name' do
-      expect(subject.default_network_name).to eq('gateway-default-network')
+      expect(instance_group.default_network_name).to eq('gateway-default-network')
     end
 
     context 'when addressable is specified' do
       before do
-        subject.default_network['addressable'] = 'something'
+        instance_group.default_network['addressable'] = 'something'
       end
 
       it 'returns the addressable network' do
-        expect(subject.default_network_name).to eq('something')
+        expect(instance_group.default_network_name).to eq('something')
       end
     end
   end
@@ -1095,7 +1122,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     context 'when the plan has a created instance and needs shutting down' do
       it 'selects the instance plan' do
-        expect(subject.unignored_instance_plans_needing_duplicate_vm).to eq([instance_plan])
+        expect(instance_group.unignored_instance_plans_needing_duplicate_vm).to eq([instance_plan])
       end
     end
 
@@ -1105,7 +1132,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       end
 
       it 'should filter detached instance plans' do
-        expect(subject.unignored_instance_plans_needing_duplicate_vm).to be_empty
+        expect(instance_group.unignored_instance_plans_needing_duplicate_vm).to be_empty
       end
     end
 
@@ -1115,7 +1142,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       end
 
       it 'should not be considered for hot swap' do
-        expect(subject.unignored_instance_plans_needing_duplicate_vm).to be_empty
+        expect(instance_group.unignored_instance_plans_needing_duplicate_vm).to be_empty
       end
     end
 
@@ -1125,7 +1152,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       end
 
       it 'should not be considered for hot swap' do
-        expect(subject.unignored_instance_plans_needing_duplicate_vm).to be_empty
+        expect(instance_group.unignored_instance_plans_needing_duplicate_vm).to be_empty
       end
     end
 
@@ -1135,7 +1162,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       end
 
       it 'should not be considered for hot swap' do
-        expect(subject.unignored_instance_plans_needing_duplicate_vm).to be_empty
+        expect(instance_group.unignored_instance_plans_needing_duplicate_vm).to be_empty
       end
     end
   end
@@ -1147,32 +1174,34 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     let(:new_compiled_package) { Bosh::Director::Models::CompiledPackage.make(package: release1_package1_model) }
 
     before(:each) do
+      spec['jobs'] = []
+
       allow(registered_release_job_model).to receive(:package_names).and_return(['same-name'])
       allow(release1).to receive(:get_template_model_by_name).with('foo').and_return registered_release_job_model
       allow(release1).to receive(:get_package_model_by_name).with('same-name').and_return release1_package1_model
       deployment_plan_job.bind_models
-      subject.add_job(deployment_plan_job)
+      instance_group.add_job(deployment_plan_job)
     end
 
     context 'when the fingerprint is the same' do
       it 'adds the package to the instance groups packages by name' do
-        subject.use_compiled_package(compiled_package)
-        expect(subject.packages[compiled_package.name].model).to equal(compiled_package)
+        instance_group.use_compiled_package(compiled_package)
+        expect(instance_group.packages[compiled_package.name].model).to equal(compiled_package)
       end
 
       context 'when the package is already registered' do
         before do
-          subject.use_compiled_package(compiled_package)
+          instance_group.use_compiled_package(compiled_package)
         end
 
         it 'replaces the package if the package id is greater than the registered package, but not if the package ID is less' do
-          subject.use_compiled_package(new_compiled_package)
-          expect(subject.package_spec).to eq(
+          instance_group.use_compiled_package(new_compiled_package)
+          expect(instance_group.package_spec).to eq(
             'same-name' => BD::DeploymentPlan::CompiledPackage.new(new_compiled_package).spec,
           )
 
-          subject.use_compiled_package(compiled_package)
-          expect(subject.package_spec).to eq(
+          instance_group.use_compiled_package(compiled_package)
+          expect(instance_group.package_spec).to eq(
             'same-name' => BD::DeploymentPlan::CompiledPackage.new(new_compiled_package).spec,
           )
         end
@@ -1184,12 +1213,12 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         let(:compiled_package_model) { Bosh::Director::Models::CompiledPackage.make(package: compile_time_package) }
 
         before do
-          subject.use_compiled_package(compiled_package)
+          instance_group.use_compiled_package(compiled_package)
         end
 
         it 'does not override the existing package' do
-          subject.use_compiled_package(compiled_package_model)
-          expect(subject.package_spec).to eq(
+          instance_group.use_compiled_package(compiled_package_model)
+          expect(instance_group.package_spec).to eq(
             'same-name' => BD::DeploymentPlan::CompiledPackage.new(compiled_package).spec,
           )
         end

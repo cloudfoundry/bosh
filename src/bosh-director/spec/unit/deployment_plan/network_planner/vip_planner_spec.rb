@@ -10,19 +10,11 @@ module Bosh::Director
     let(:deployment_model) { Models::Deployment.make(name: 'my-deployment') }
     let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
-    let(:instance_plans) do
-      [instance_plan]
-    end
+    let(:instance_plans) { [instance_plan] }
 
-    let(:instance_plan) do
-      make_instance_plan
-    end
+    let(:instance_plan) { make_instance_plan }
 
-    let(:instance_group) do
-      instance_group = DeploymentPlan::InstanceGroup.new(logger)
-      instance_group.name = 'fake-job'
-      instance_group
-    end
+    let(:instance_group) { DeploymentPlan::InstanceGroup.make }
 
     def make_instance_plan
       instance_model = Models::Instance.make

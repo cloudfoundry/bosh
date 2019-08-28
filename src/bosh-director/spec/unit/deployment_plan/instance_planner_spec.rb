@@ -19,14 +19,14 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
   end
 
   let(:index_assigner) { BD::DeploymentPlan::PlacementPlanner::IndexAssigner.new(deployment_model) }
-  let(:options) do
-    {}
-  end
+  let(:options) { {} }
   let(:skip_drain_decider) { BD::DeploymentPlan::AlwaysSkipDrain.new }
   let(:logger) { instance_double(Logger, debug: nil, info: nil) }
   let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
   let(:instance_repo) { BD::DeploymentPlan::InstanceRepository.new(logger, variables_interpolator) }
   let(:networks) { [] }
+  let(:instance_states) { {} }
+  let(:availability_zones) { [az] }
 
   let(:deployment) do
     instance_double(
@@ -51,16 +51,17 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       'some-cloud-property' => 'foo',
     )
   end
+
   let(:instance_group) do
-    instance_group = BD::DeploymentPlan::InstanceGroup.new(logger)
-    instance_group.name = 'foo-instance_group'
-    instance_group.availability_zones << az
-    instance_group
+    BD::DeploymentPlan::InstanceGroup.make(
+      name: 'foo-instance_group',
+      availability_zones: availability_zones,
+      instance_states: instance_states,
+    )
   end
+
   let(:desired_instance) { BD::DeploymentPlan::DesiredInstance.new(instance_group, deployment, nil, 0) }
-  let(:tracer_instance) do
-    make_instance
-  end
+  let(:tracer_instance) { make_instance }
   let(:vm_resources_cache) { instance_double(BD::DeploymentPlan::VmResourcesCache) }
 
   before do
@@ -68,7 +69,16 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
   end
 
   def make_instance(idx = 0)
-    instance = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, idx, 'started', deployment_model, {}, az, logger, variables_interpolator)
+    instance = BD::DeploymentPlan::Instance.create_from_instance_group(
+      instance_group,
+      idx,
+      'started',
+      deployment_model,
+      {},
+      az,
+      logger,
+      variables_interpolator,
+    )
     instance.bind_new_instance_model
     instance
   end
@@ -269,9 +279,10 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     end
 
     context 'when there are ignored instances' do
+      let(:instance_states) { { '0' => 'stopped' } }
+
       it 'fails if specifically changing the state of ignored vms' do
         existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, ignore: true)
-        instance_group.instance_states = { '0' => 'stopped' }
         expect do
           instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_resources_cache)
         end.to raise_error(
@@ -283,7 +294,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     end
 
     context 'when instance_group has no az' do
-      before { instance_group.availability_zones = [] }
+      let(:availability_zones) { [] }
 
       it 'creates instance plans for new instances with no az' do
         existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0)
@@ -374,11 +385,12 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
     context 'when vm requirements are given' do
       let(:instance_group) do
-        instance_group = BD::DeploymentPlan::InstanceGroup.new(logger)
-        instance_group.name = 'foo-instance_group'
-        instance_group.vm_resources = BD::DeploymentPlan::VmResources.new('cpu' => 4, 'ram' => 2048, 'ephemeral_disk_size' => 100)
-        instance_group.availability_zones << az
-        instance_group
+        vm_resources = BD::DeploymentPlan::VmResources.new('cpu' => 4, 'ram' => 2048, 'ephemeral_disk_size' => 100)
+        BD::DeploymentPlan::InstanceGroup.make(
+          name: 'foo-instance_group',
+          vm_resources: vm_resources,
+          availability_zones: availability_zones,
+        )
       end
 
       it 'updates the cloud properties with the vm requirements retrieved via the CPI' do
@@ -611,16 +623,17 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
   describe 'orphan_unreusable_vms' do
     let(:instance_group) do
-      instance_group = BD::DeploymentPlan::InstanceGroup.new(logger)
-      instance_group.name = 'foo-instance_group'
-      instance_group.availability_zones << az
-      instance_group.stemcell = FactoryBot.build(:stemcell)
-      instance_group.env = BD::DeploymentPlan::Env.new('env' => 'env-val')
-      instance_group.vm_type = BD::DeploymentPlan::VmType.new(
+      vm_type = BD::DeploymentPlan::VmType.new(
         'name' => 'a',
         'cloud_properties' => uninterpolated_cloud_properties_hash,
       )
-      instance_group
+
+      BD::DeploymentPlan::InstanceGroup.make(
+        name: 'foo-instance_group',
+        availability_zones: availability_zones,
+        env: BD::DeploymentPlan::Env.new('env' => 'env-val'),
+        vm_type: vm_type,
+      )
     end
 
     let(:uninterpolated_cloud_properties_hash) do

@@ -132,9 +132,7 @@ module Bosh::Director::DeploymentPlan
     let(:existing_instance) { instance_model }
 
     let(:instance_group_spec) do
-      instance_group = Bosh::Spec::Deployments.simple_instance_group
-      instance_group['env'] = { 'bosh' => { 'password' => 'foobar' } }
-      instance_group
+      Bosh::Spec::Deployments.simple_instance_group(env: { 'bosh' => { 'password' => 'foobar' } })
     end
 
     let(:network_spec) { Bosh::Spec::Deployments.simple_cloud_config['networks'].first }
@@ -631,9 +629,7 @@ module Bosh::Director::DeploymentPlan
 
       context 'when the env has changed' do
         let(:instance_group_spec) do
-          instance_group = Bosh::Spec::Deployments.simple_instance_group
-          instance_group['env'] = { 'key' => 'changed-value' }
-          instance_group
+          Bosh::Spec::Deployments.simple_instance_group(env: { 'key' => 'changed-value' })
         end
 
         before do
@@ -667,16 +663,18 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#vm_matches_plan?' do
-      let(:instance_group) do
-        instance_group = BD::DeploymentPlan::InstanceGroup.new(logger)
-        instance_group.name = 'foo-instance_group'
-        instance_group.availability_zones << availability_zone
-        instance_group.env = BD::DeploymentPlan::Env.new('env' => 'env-val')
-        instance_group.vm_type = BD::DeploymentPlan::VmType.new(
-          'name' => 'a',
-          'cloud_properties' => uninterpolated_cloud_properties_hash,
+      let(:instance_group_spec) do
+        Bosh::Spec::Deployments.simple_instance_group(
+          name: 'foo-instance-group',
+          env: { 'env' => 'env-val' },
+          vm_type: 'a',
         )
-        instance_group
+      end
+
+      let(:cloud_config_manifest) do
+        cc = Bosh::Spec::Deployments.simple_cloud_config
+        cc['vm_types'][0] = { 'name' => 'a', 'cloud_properties' => uninterpolated_cloud_properties_hash }
+        cc
       end
 
       let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
@@ -980,9 +978,7 @@ module Bosh::Director::DeploymentPlan
 
       context 'when the env has changed' do
         let(:instance_group_spec) do
-          instance_group = Bosh::Spec::Deployments.simple_instance_group
-          instance_group['env'] = { 'key' => 'changed-value' }
-          instance_group
+          Bosh::Spec::Deployments.simple_instance_group(env: { 'key' => 'changed-value' })
         end
 
         before do
@@ -1125,9 +1121,7 @@ module Bosh::Director::DeploymentPlan
 
       context 'when the env has changed' do
         let(:instance_group_spec) do
-          instance_group = Bosh::Spec::Deployments.simple_instance_group
-          instance_group['env'] = { 'key' => 'changed-value' }
-          instance_group
+          Bosh::Spec::Deployments.simple_instance_group(env: { 'key' => 'changed-value' })
         end
 
         before do
@@ -1357,9 +1351,7 @@ module Bosh::Director::DeploymentPlan
 
       context 'when there is a change' do
         let(:instance_group_spec) do
-          instance_group_spec = Bosh::Spec::Deployments.simple_manifest_with_instance_groups['instance_groups'].first
-          instance_group_spec['persistent_disk_type'] = 'disk_a'
-          instance_group_spec
+          Bosh::Spec::Deployments.simple_instance_group(persistent_disk_type: 'disk_a')
         end
 
         before do
@@ -1604,9 +1596,10 @@ module Bosh::Director::DeploymentPlan
 
         context 'that does not match the job spec' do
           before do
-            instance_group.jobs = [job]
+            allow(instance_group).to receive(:jobs).and_return([job])
             allow(instance).to receive(:current_job_spec).and_return({})
           end
+
           let(:job) do
             instance_double('Bosh::Director::DeploymentPlan::Job',
                             name: state['job']['name'],

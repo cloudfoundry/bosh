@@ -34,7 +34,6 @@ module Bosh::Director
 
     describe '#bind_models' do
       let(:instance_model) { Models::Instance.make(job: 'old-name') }
-      let(:instance_group) { instance_double(DeploymentPlan::InstanceGroup) }
 
       before do
         allow(deployment_plan).to receive(:instance_models).and_return([instance_model])
@@ -223,30 +222,29 @@ module Bosh::Director
 
       context 'when there are desired instance_groups' do
         def make_instance_group(name, template_name)
-          instance_group = DeploymentPlan::InstanceGroup.new(logger)
-          instance_group.name = name
-          instance_group.deployment_name = 'simple'
           template_model = Models::Template.make(name: template_name)
           release_version = instance_double(DeploymentPlan::ReleaseVersion, exported_from: [])
           allow(release_version).to receive(:get_template_model_by_name).and_return(template_model)
           job = DeploymentPlan::Job.new(release_version, template_name)
           job.bind_models
-          instance_group.jobs = [job]
+
+          instance_group = DeploymentPlan::InstanceGroup.make(
+            name: name,
+            jobs: [job],
+            networks: [instance_group_network],
+          )
           allow(instance_group).to receive(:validate_package_names_do_not_collide!)
+
           instance_group
         end
 
         let(:instance_group_1) { make_instance_group('ig-1', 'fake-instance-group-1') }
         let(:instance_group_2) { make_instance_group('ig-2', 'fake-instance-group-2') }
 
-        let(:instance_group_network) { DeploymentPlan::JobNetwork.make }
+        let(:instance_group_network) { DeploymentPlan::JobNetwork.make(name: 'my-network-name') }
 
         before do
-          allow(instance_group_network).to receive(:name).and_return('my-network-name')
           allow(instance_group_network).to receive(:vip?).and_return(false)
-          allow(instance_group_network).to receive(:static_ips)
-          allow(instance_group_1).to receive(:networks).and_return([instance_group_network])
-          allow(instance_group_2).to receive(:networks).and_return([instance_group_network])
 
           allow(deployment_plan).to receive(:instance_groups).and_return([instance_group_1, instance_group_2])
           allow(deployment_plan).to receive(:vm_resources_cache)

@@ -82,26 +82,12 @@ module Bosh
           end
 
           let(:instance_group) do
-            template_model = BD::Models::Template.make
-            job = BD::DeploymentPlan::Job.new(nil, 'fake-job-name')
-            job.bind_existing_model(template_model)
-
-            instance_group = BD::DeploymentPlan::InstanceGroup.new(logger)
-            instance_group.name = 'fake-job'
-            instance_group.vm_type = vm_type
-            instance_group.stemcell = stemcell
-            instance_group.env = env
-            instance_group.jobs << job
-            instance_group.default_network = { 'gateway' => 'name' }
-            instance_group.update = BD::DeploymentPlan::UpdateConfig.new(
-              'canaries' => 1,
-              'max_in_flight' => 1,
-              'canary_watch_time' => '1000-2000',
-              'update_watch_time' => '1000-2000',
+            BD::DeploymentPlan::InstanceGroup.make(
+              vm_type: vm_type,
+              env: env,
+              default_network: { 'gateway' => 'name' },
+              stemcell: stemcell,
             )
-            instance_group.persistent_disk_collection = DeploymentPlan::PersistentDiskCollection.new(logger)
-            instance_group.persistent_disk_collection.add_by_disk_size(1024)
-            instance_group
           end
 
           let(:expected_groups) do

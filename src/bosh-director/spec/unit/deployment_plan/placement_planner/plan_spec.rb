@@ -23,16 +23,19 @@ module Bosh::Director::DeploymentPlan
       plan.create_instance_plans(desired, existing, job_networks, availability_zones, 'jobname')
     end
     let(:availability_zones) { [zone_1, zone_2] }
-    let(:zone_1) {AvailabilityZone.new('zone_1', {})}
-    let(:zone_2) {AvailabilityZone.new('zone_2', {})}
-    let(:zone_3) {AvailabilityZone.new('zone_3', {})}
-    let(:job) do
-      job = InstanceGroup.new(logger)
-      job.name = 'db'
-      job
-    end
+    let(:zone_1) { AvailabilityZone.new('zone_1', {}) }
+    let(:zone_2) { AvailabilityZone.new('zone_2', {}) }
+    let(:zone_3) { AvailabilityZone.new('zone_3', {}) }
 
-    let(:desired) { [DesiredInstance.new(job, deployment), DesiredInstance.new(job, deployment), DesiredInstance.new(job, deployment)] }
+    let(:instance_group) { InstanceGroup.make }
+
+    let(:desired) do
+      [
+        DesiredInstance.new(instance_group, deployment),
+        DesiredInstance.new(instance_group, deployment),
+        DesiredInstance.new(instance_group, deployment),
+      ]
+    end
     let(:existing) do
       [
         existing_instance_with_az(2, zone_1.name),
@@ -41,7 +44,7 @@ module Bosh::Director::DeploymentPlan
       ]
     end
     let(:deployment) { instance_double(Planner, model: deployment_model, skip_drain: SkipDrain.new(true)) }
-    let(:deployment_model) {  Bosh::Director::Models::Deployment.make }
+    let(:deployment_model) { Bosh::Director::Models::Deployment.make }
 
     let(:deployment_network) { ManualNetwork.new('network_A', deployment_subnets, nil) }
     let(:deployment_subnets) do
@@ -93,7 +96,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     context 'when job networks include static IPs' do
-      let(:job_static_ips) {['192.168.1.10', '192.168.1.11', '10.10.1.10']}
+      let(:job_static_ips) { ['192.168.1.10', '192.168.1.11', '10.10.1.10'] }
 
       it 'places the instances in azs there static IPs are in order of their indexes' do
         expect(instance_plans.select(&:new?).map(&:desired_instance).map(&:az)).to eq([zone_1])
@@ -125,7 +128,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     def desired_instance(zone = nil)
-      DesiredInstance.new(job, 'started', nil, zone)
+      DesiredInstance.new(instance_group, 'started', nil, zone)
     end
   end
 end

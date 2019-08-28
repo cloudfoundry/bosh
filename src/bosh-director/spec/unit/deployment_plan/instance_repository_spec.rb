@@ -26,9 +26,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
   let(:desired_instance) { Bosh::Director::DeploymentPlan::DesiredInstance.new(instance_group, deployment_plan, nil, 0) }
 
   let(:instance_group) do
-    instance_group = Bosh::Director::DeploymentPlan::InstanceGroup.new(logger)
-    instance_group.name = 'job-name'
-    instance_group
+    Bosh::Director::DeploymentPlan::InstanceGroup.make(name: 'job-name')
   end
 
   before do

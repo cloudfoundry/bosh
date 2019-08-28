@@ -45,6 +45,19 @@ module Bosh::Director
       let!(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
 
       let(:deployment_name) { 'dep1' }
+      let(:instance_group) do
+        DeploymentPlan::InstanceGroup.parse(
+          deployment,
+          instance_group_spec,
+          Config.event_log,
+          logger,
+        )
+      end
+
+      let(:instance_group_spec) do
+        jobs = [{ 'name' => 'dummy', 'release' => 'dummy' }]
+        Bosh::Spec::Deployments.simple_instance_group(jobs: jobs, azs: ['z1'])
+      end
 
       let(:manifest_hash) do
         manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
@@ -75,11 +88,7 @@ module Bosh::Director
         let(:include_spec) do
           { 'deployments' => [deployment_name] }
         end
-        let(:instance_group) do
-          instance_group_parser = DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger)
-          jobs = [{ 'name' => 'dummy', 'release' => 'dummy' }]
-          instance_group_parser.parse(Bosh::Spec::Deployments.simple_instance_group(jobs: jobs, azs: ['z1']), {})
-        end
+
         let(:release_model) { Bosh::Director::Models::Release.make(name: 'dummy') }
         let(:release_version_model) { Bosh::Director::Models::ReleaseVersion.make(version: '0.2-dev', release: release_model) }
 
@@ -234,18 +243,13 @@ module Bosh::Director
               { 'jobs' => [{ 'name' => 'dummy_with_properties', 'release' => 'dummy' }] }
             end
 
-            before do
-              instance_group_parser = DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger)
+            let(:instance_group_spec) do
               jobs = [{ 'name' => 'dummy_with_properties', 'release' => 'dummy' }]
-              instance_group = instance_group_parser.parse(
-                Bosh::Spec::Deployments.simple_instance_group(
-                  name: 'excluded_ig',
-                  jobs: jobs,
-                  azs: ['z1'],
-                ),
-                {}
+              Bosh::Spec::Deployments.simple_instance_group(
+                name: 'excluded_ig',
+                jobs: jobs,
+                azs: ['z1'],
               )
-              deployment.add_instance_group(instance_group)
             end
 
             it 'should not parse providers and consumers for excluded instance group' do
@@ -532,11 +536,25 @@ module Bosh::Director
             let(:exclude_spec) do
               { 'jobs' => [{ 'name' => 'dummy', 'release' => 'dummy' }] }
             end
-            let(:instance_group_parser) { DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger) }
             let(:release_model) { Bosh::Director::Models::Release.make(name: 'dummy') }
             let(:release_version_model) do
               Bosh::Director::Models::ReleaseVersion.make(
                 version: '0.2-dev', release: release_model,
+              )
+            end
+            let(:instance_group2_spec) do
+              Bosh::Spec::Deployments.simple_instance_group(
+                name: 'foobar1',
+                jobs: [{ 'name' => 'dummy_with_properties', 'release' => 'dummy' }],
+                azs: ['z2'],
+              )
+            end
+            let(:instance_group2) do
+              DeploymentPlan::InstanceGroup.parse(
+                deployment,
+                instance_group2_spec,
+                Config.event_log,
+                logger,
               )
             end
 
@@ -551,19 +569,10 @@ module Bosh::Director
               stemcell = DeploymentPlan::Stemcell.parse(manifest_hash['stemcells'].first)
               deployment.add_stemcell(stemcell)
               deployment.cloud_planner = DeploymentPlan::CloudManifestParser.new(logger).parse(
-                Bosh::Spec::Deployments.simple_cloud_config,
+                Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs,
               )
-              instance_group1 = instance_group_parser.parse(
-                Bosh::Spec::Deployments.simple_instance_group(jobs: [{ 'name' => 'dummy', 'release' => 'dummy' }]),
-                {},
-              )
-              deployment.add_instance_group(instance_group1)
-              instance_group2 = instance_group_parser.parse(
-                Bosh::Spec::Deployments.simple_instance_group(
-                  jobs: [{ 'name' => 'dummy_with_properties', 'release' => 'dummy' }], name: 'foobar1',
-                ),
-                {},
-              )
+
+              deployment.add_instance_group(instance_group)
               deployment.add_instance_group(instance_group2)
             end
 
@@ -574,12 +583,14 @@ module Bosh::Director
           end
 
           context 'when the addon has availability zones' do
-            let(:instance_group_parser) { DeploymentPlan::InstanceGroupSpecParser.new(deployment, Config.event_log, logger) }
             let(:release_model) { Bosh::Director::Models::Release.make(name: 'dummy') }
             let(:release_version_model) do
               Bosh::Director::Models::ReleaseVersion.make(version: '0.2-dev', release: release_model)
             end
-
+            let(:instance_group_spec) do
+              jobs = [{ 'name' => 'dummy', 'release' => 'dummy' }]
+              Bosh::Spec::Deployments.simple_instance_group(jobs: jobs, azs: ['z1'])
+            end
             before do
               release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'dummy', release: release_model))
 
@@ -589,11 +600,6 @@ module Bosh::Director
               deployment.add_stemcell(stemcell)
               deployment.cloud_planner = DeploymentPlan::CloudManifestParser.new(logger).parse(
                 Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs,
-              )
-              jobs = [{ 'name' => 'dummy', 'release' => 'dummy' }]
-              instance_group = instance_group_parser.parse(
-                Bosh::Spec::Deployments.simple_instance_group(jobs: jobs, azs: ['z1']),
-                {},
               )
               deployment.add_instance_group(instance_group)
             end

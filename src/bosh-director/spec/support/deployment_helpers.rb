@@ -5,15 +5,10 @@ module Support
     def prepare_deploy(deployment_manifest)
       fake_job
 
-      if deployment_manifest.has_key?('resource_pools')
-        Bosh::Director::Models::Stemcell.make(
-          name: deployment_manifest['resource_pools'].first['stemcell']['name'],
-          version: deployment_manifest['resource_pools'].first['stemcell']['version']
-        )
-      elsif deployment_manifest.has_key?('stemcells')
+      if deployment_manifest.key?('stemcells')
         Bosh::Director::Models::Stemcell.make(
           name: deployment_manifest['stemcells'].first['name'],
-          version: deployment_manifest['stemcells'].first['version']
+          version: deployment_manifest['stemcells'].first['version'],
         )
       end
 
@@ -23,16 +18,12 @@ module Support
       version = Bosh::Director::Models::ReleaseVersion.make(version: deployment_manifest['releases'].first['version'])
       release_model.add_version(version)
 
-      if deployment_manifest.has_key?('jobs')
-        template_model = Bosh::Director::Models::Template.make(name: deployment_manifest['jobs'].first['templates'].first['name'])
-        version.add_template(template_model)
-      elsif deployment_manifest.has_key?('instance_groups')
-        deployment_manifest['instance_groups'].first['jobs'].each do |job|
-          template_model = Bosh::Director::Models::Template.make(name: job['name'])
-          version.add_template(template_model)
-        end
-      end
+      return unless deployment_manifest.key?('instance_groups')
 
+      deployment_manifest['instance_groups'].first['jobs'].each do |job|
+        template_model = Bosh::Director::Models::Template.make(name: job['name'])
+        version.add_template(template_model)
+      end
     end
 
     def fake_job

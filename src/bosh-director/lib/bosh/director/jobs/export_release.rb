@@ -132,17 +132,18 @@ module Bosh::Director
       end
 
       def create_compilation_instance_group(release_version_model, release, deployment_plan_stemcell)
-        instance_group = DeploymentPlan::InstanceGroup.new(logger)
-
-        instance_group.name = 'dummy-job-for-compilation'
-        instance_group.stemcell = deployment_plan_stemcell
-        release_version_model.templates.map do |template|
-          if is_template_to_be_exported?(template)
-            instance_group.jobs << release.get_or_create_template(template.name)
-          end
+        jobs = release_version_model.templates.select do |template|
+          is_template_to_be_exported?(template)
+        end.map do |template|
+          release.get_or_create_template(template.name)
         end
 
-        instance_group
+        DeploymentPlan::InstanceGroup.new(
+          name: 'dummy-job-for-compilation',
+          logger: logger,
+          stemcell: deployment_plan_stemcell,
+          jobs: jobs,
+        )
       end
     end
   end

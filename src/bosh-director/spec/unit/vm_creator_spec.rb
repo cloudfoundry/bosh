@@ -33,16 +33,14 @@ module Bosh
         )
       end
 
-      let(:tags) do
-        { 'mytag' => 'foobar' }
-      end
+      let(:tags) { { 'mytag' => 'foobar' } }
 
       let(:instance_group) do
-        instance_group = BD::DeploymentPlan::InstanceGroup.new(logger)
-
-        instance_group.persistent_disk_collection = DeploymentPlan::PersistentDiskCollection.new(logger)
-        instance_group.persistent_disk_collection.add_by_disk_size(1024)
-        instance_group
+        disk = DeploymentPlan::PersistentDiskCollection.new(logger)
+        disk.add_by_disk_size(1024)
+        BD::DeploymentPlan::InstanceGroup.make(
+          persistent_disk_collection: disk,
+        )
       end
 
       let(:instance_model) do

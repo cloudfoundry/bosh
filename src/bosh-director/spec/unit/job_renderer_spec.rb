@@ -3,9 +3,9 @@ require 'spec_helper'
 module Bosh::Director
   describe JobRenderer do
     let(:instance_group) do
-      instance_group = DeploymentPlan::InstanceGroup.new(logger)
-      instance_group.name = 'test-instance-group'
-      instance_group
+      DeploymentPlan::InstanceGroup.make(
+        name: 'test-instance-group',
+      )
     end
     let(:blobstore_client) { instance_double(Bosh::Blobstore::BaseClient) }
     let(:blobstore_files) { [] }

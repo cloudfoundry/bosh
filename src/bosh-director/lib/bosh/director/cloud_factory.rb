@@ -74,7 +74,7 @@ module Bosh::Director
         Config.cloud_options['provider']['path'],
         @director_uuid,
         @logger,
-        stemcell_api_version: stemcell_api_version
+        stemcell_api_version: stemcell_api_version,
       )
     end
 

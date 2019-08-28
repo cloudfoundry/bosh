@@ -9,8 +9,6 @@ module Bosh::Director::DeploymentPlan
     end
     let(:index) { 0 }
     let(:state) { 'started' }
-    let(:ip_repo) { DatabaseIpRepo.new(logger) }
-    let(:ip_provider) { IpProvider.new(ip_repo, {}, logger) }
     let(:variables_interpolator) { Bosh::Director::ConfigServer::VariablesInterpolator.new }
     let(:deployment_variable_set) { Bosh::Director::Models::VariableSet.make(deployment: deployment) }
 
@@ -23,24 +21,14 @@ module Bosh::Director::DeploymentPlan
 
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
     let(:instance_group) do
-      instance_double(
-        'Bosh::Director::DeploymentPlan::InstanceGroup',
+      InstanceGroup.make(
+        name: 'fake_job',
         vm_type: vm_type,
-        stemcell: stemcell,
-        env: env,
-        name: 'fake-job',
-        persistent_disk_collection: PersistentDiskCollection.new(logger),
-        compilation?: false,
-        errand?: false,
-        vm_strategy: UpdateConfig::VM_STRATEGY_CREATE_SWAP_DELETE,
         vm_extensions: vm_extensions,
       )
     end
     let(:vm_type) { VmType.new('name' => 'fake-vm-type') }
     let(:vm_extensions) { [] }
-    let(:stemcell) { make_stemcell(name: 'fake-stemcell-name', version: '1.0') }
-    let(:env) { Env.new('key' => 'value') }
-    let(:net) { instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
     let(:az) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', 'a' => 'b') }
 
     let(:instance_model) do
@@ -55,12 +43,6 @@ module Bosh::Director::DeploymentPlan
     let(:desired_instance) { DesiredInstance.new(job, current_state, plan, az, 1) }
 
     describe '#bind_existing_instance_model' do
-      let(:instance_group) { InstanceGroup.new(logger) }
-
-      let(:network) do
-        instance_double('Bosh::Director::DeploymentPlan::Network', name: 'fake-network', reserve: nil)
-      end
-
       let(:instance_model) { Bosh::Director::Models::Instance.make(bootstrap: true) }
 
       before do
@@ -129,8 +111,6 @@ module Bosh::Director::DeploymentPlan
     end
 
     context 'applying state' do
-      let(:instance_group) { InstanceGroup.new(logger) }
-
       let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
 
       before do
@@ -260,7 +240,6 @@ module Bosh::Director::DeploymentPlan
               { 'abcd' => 'p1', 'baz' => 'p2', 'a' => 'p3' }
             end
 
-            let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
             let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
             let(:previous_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
 

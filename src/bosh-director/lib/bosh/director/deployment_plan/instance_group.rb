@@ -17,35 +17,35 @@ module Bosh::Director
       VALID_STATES = %w[started stopped detached recreate restart].freeze
 
       # @return [String] Instance group name
-      attr_accessor :name
+      attr_reader :name
 
       # @return [String] Lifecycle profile
-      attr_accessor :lifecycle
+      attr_reader :lifecycle
 
       # @return [String] Instance group canonical name (mostly for DNS)
-      attr_accessor :canonical_name
+      attr_reader :canonical_name
 
-      attr_accessor :persistent_disk_collection
+      attr_reader :persistent_disk_collection
 
       # @return [DeploymentPlan::Stemcell]
-      attr_accessor :stemcell
+      attr_reader :stemcell
 
       # @return [DeploymentPlan::VmType]
-      attr_accessor :vm_type
+      attr_reader :vm_type
 
       # @return [DeploymentPlan::VmResources]
-      attr_accessor :vm_resources
+      attr_reader :vm_resources
 
       # @return [DeploymentPlan::VmExtension]
-      attr_accessor :vm_extensions
+      attr_reader :vm_extensions
 
       # @return [DeploymentPlan::Env]
-      attr_accessor :env
+      attr_reader :env
 
-      attr_accessor :default_network
+      attr_reader :default_network
 
       # @return [Array<DeploymentPlan::Job>] Jobs included on the instance group
-      attr_accessor :jobs
+      attr_reader :jobs
 
       # @return [Hash] Instance group properties
       attr_accessor :properties
@@ -54,7 +54,7 @@ module Bosh::Director
       attr_accessor :packages
 
       # @return [DeploymentPlan::UpdateConfig] Instance group update settings
-      attr_accessor :update
+      attr_reader :update
 
       # @return [Array<DeploymentPlan::Instance>] All instances
       attr_accessor :instances
@@ -64,51 +64,76 @@ module Bosh::Director
       attr_accessor :unneeded_instances
 
       # @return [String] Expected instance group state
-      attr_accessor :state
+      attr_reader :state
 
       # @return [Hash<Integer, String>] Individual instance expected states
-      attr_accessor :instance_states
+      attr_reader :instance_states
 
       # @return [String] deployment name the instance group belongs to
-      attr_accessor :deployment_name
+      attr_reader :deployment_name
 
-      attr_accessor :availability_zones
+      attr_reader :availability_zones
 
-      attr_accessor :networks
+      attr_reader :networks
 
-      attr_accessor :migrated_from
+      attr_reader :migrated_from
 
       attr_accessor :desired_instances
 
       attr_accessor :did_change
 
       def self.parse(plan, instance_group_spec, event_log, logger, parse_options = {})
-        parser = InstanceGroupSpecParser.new(plan, event_log, logger)
-        parser.parse(instance_group_spec, parse_options)
+        parser = InstanceGroupSpecParser.new(plan, instance_group_spec, event_log, logger)
+        parser.parse(parse_options)
       end
 
-      def initialize(logger)
+      def initialize(
+        name:,
+        stemcell:,
+        logger:,
+        canonical_name: nil,
+        lifecycle: nil,
+        jobs: [],
+        persistent_disk_collection: nil,
+        env: nil,
+        vm_type: nil,
+        vm_resources: nil,
+        vm_extensions: nil,
+        update: nil,
+        networks: [],
+        default_network: {},
+        availability_zones: [],
+        migrated_from: [],
+        state: nil,
+        instance_states: {},
+        deployment_name: nil
+      )
+        @name = name
+        @canonical_name = canonical_name
+        @lifecycle = lifecycle
+        @jobs = jobs
+        @persistent_disk_collection = persistent_disk_collection
+        @env = env
+        @stemcell = stemcell
+        @vm_type = vm_type
+        @vm_resources = vm_resources
+        @vm_extensions = vm_extensions
+        @update = update
+        @networks = networks
+        @default_network = default_network
+        @availability_zones = availability_zones
+        @migrated_from = migrated_from
+        @state = state
+        @instance_states = instance_states
+        @deployment_name = deployment_name
         @logger = logger
 
-        @jobs = []
-        @properties = nil # Actual instance group properties
-
-        @instances = []
         @desired_instances = []
+        @properties = nil # Actual instance group properties
         @unneeded_instances = []
-        @instance_states = {}
-        @default_network = {}
-
         @packages = {}
-        @migrated_from = []
-        @availability_zones = []
-
         @instance_plans = []
-
         @did_change = false
-        @persistent_disk_collection = PersistentDiskCollection.new(@logger)
-
-        @deployment_name = nil
       end
 
       def self.legacy_spec?(instance_group_spec)
@@ -371,6 +396,10 @@ module Bosh::Director
         availability_zones.any? do |availability_zone|
           availability_zone.name == az_name
         end
+      end
+
+      def create_desired_instances(count, deployment)
+        @desired_instances = count.times.map { DesiredInstance.new(self, deployment) }
       end
 
       private
