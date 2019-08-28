@@ -1,13 +1,13 @@
 module Bosh::Director
   class InstanceGroupUpdater
     def initialize(
-          ip_provider:,
-          instance_group:,
-          disk_manager:,
-          template_blob_cache:,
-          dns_encoder:,
-          link_provider_intents:
-        )
+      ip_provider:,
+      instance_group:,
+      disk_manager:,
+      template_blob_cache:,
+      dns_encoder:,
+      link_provider_intents:
+    )
       @ip_provider = ip_provider
       @instance_group = instance_group
       @template_blob_cache = template_blob_cache
@@ -23,7 +23,7 @@ module Bosh::Director
       @logger.info('Deleting no longer needed instances')
       delete_unneeded_instances
 
-      instance_plans = @instance_group.needed_instance_plans.select do | instance_plan |
+      instance_plans = @instance_group.needed_instance_plans.select do |instance_plan|
         if instance_plan.should_be_ignored?
           false
         elsif @instance_group.lifecycle == 'errand'
@@ -58,22 +58,22 @@ module Bosh::Director
       end
 
       @logger.info("Found #{instance_plans.size} instances to update")
-      event_log_stage = @event_log.begin_stage('Updating instance', instance_plans.size, [ @instance_group.name ])
+      event_log_stage = @event_log.begin_stage('Updating instance', instance_plans.size, [@instance_group.name])
 
       ordered_azs = []
-      instance_plans.each do | instance_plan |
+      instance_plans.each do |instance_plan|
         unless ordered_azs.include?(instance_plan.instance.availability_zone)
           ordered_azs.push(instance_plan.instance.availability_zone)
         end
       end
 
-      instance_plans_by_az = instance_plans.group_by{ |instance_plan| instance_plan.instance.availability_zone }
+      instance_plans_by_az = instance_plans.group_by { |instance_plan| instance_plan.instance.availability_zone }
       canaries_done = false
 
-      ordered_azs.each do | az |
+      ordered_azs.each do |az|
         az_instance_plans = instance_plans_by_az[az]
         @logger.info("Starting to update az '#{az}'")
-        ThreadPool.new(:max_threads => @instance_group.update.max_in_flight(az_instance_plans.size)).wrap do |pool|
+        ThreadPool.new(max_threads: @instance_group.update.max_in_flight(az_instance_plans.size)).wrap do |pool|
           unless canaries_done
             num_canaries = [@instance_group.update.canaries(az_instance_plans.size), az_instance_plans.size].min
             @logger.info("Starting canary update num_canaries=#{num_canaries}")
@@ -131,13 +131,11 @@ module Bosh::Director
     def update_canary_instance(instance_plan, event_log_stage)
       event_log_stage.advance_and_track("#{instance_plan.instance.model} (canary)") do
         with_thread_name("canary_update(#{instance_plan.instance.model})") do
-          begin
-            InstanceUpdater.new_instance_updater(@ip_provider, @template_blob_cache, @dns_encoder, @link_provider_intents)
-                           .update(instance_plan, canary: true)
-          rescue Exception => e
-            @logger.error("Error updating canary instance: #{e.inspect}\n#{e.backtrace.join("\n")}")
-            raise
-          end
+          InstanceUpdater.new_instance_updater(@ip_provider, @template_blob_cache, @dns_encoder, @link_provider_intents)
+            .update(instance_plan, canary: true)
+        rescue Exception => e
+          @logger.error("Error updating canary instance: #{e.inspect}\n#{e.backtrace.join("\n")}")
+          raise
         end
       end
     end
@@ -149,15 +147,13 @@ module Bosh::Director
     end
 
     def update_instance(instance_plan, event_log_stage)
-      event_log_stage.advance_and_track("#{instance_plan.instance.model}") do
+      event_log_stage.advance_and_track(instance_plan.instance.model.to_s) do
         with_thread_name("instance_update(#{instance_plan.instance.model})") do
-          begin
-            InstanceUpdater.new_instance_updater(@ip_provider, @template_blob_cache, @dns_encoder, @link_provider_intents)
-                           .update(instance_plan)
-          rescue Exception => e
-            @logger.error("Error updating instance: #{e.inspect}\n#{e.backtrace.join("\n")}")
-            raise
-          end
+          InstanceUpdater.new_instance_updater(@ip_provider, @template_blob_cache, @dns_encoder, @link_provider_intents)
+            .update(instance_plan)
+        rescue Exception => e
+          @logger.error("Error updating instance: #{e.inspect}\n#{e.backtrace.join("\n")}")
+          raise
         end
       end
     end
