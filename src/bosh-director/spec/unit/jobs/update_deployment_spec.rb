@@ -11,7 +11,7 @@ module Bosh::Director
 
       let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
       let(:directory) { Support::FileHelpers::DeploymentDirectory.new }
-      let(:manifest_content) { YAML.dump ManifestHelper.default_legacy_manifest }
+      let(:manifest_content) { YAML.dump(Bosh::Spec::Deployments.simple_manifest_with_instance_groups) }
       let(:cloud_config_id) { nil }
       let(:runtime_config_ids) { [] }
       let(:options) { {} }
@@ -37,7 +37,7 @@ module Bosh::Director
           allow(double).to receive(:get_links_for_instance_group).and_return(resolved_links)
         end
       end
-      let(:deployment_name) { 'deployment-name' }
+      let(:deployment_name) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups['name'] }
 
       before do
         App.new(config)
@@ -64,7 +64,7 @@ module Bosh::Director
         let(:planner) do
           instance_double(
             DeploymentPlan::Planner,
-            name: 'deployment-name',
+            name: deployment_name,
             instance_groups: [deployment_instance_group],
             instance_groups_starting_on_deploy: [deployment_instance_group],
             errand_instance_groups: [errand_instance_group],
@@ -135,7 +135,7 @@ module Bosh::Director
               allow(client_factory).to receive(:create_client).and_return(config_server_client)
               allow(config_server_client).to receive(:generate_values)
 
-              allow(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
+              allow(Models::Deployment).to receive(:find).with(name: deployment_name).and_return(deployment_model)
               allow(Time).to receive(:now).and_return(fixed_time)
               allow(deployment_model).to receive(:add_variable_set)
               allow(links_manager).to receive(:remove_unused_links)
@@ -372,7 +372,7 @@ module Bosh::Director
 
             before do
               allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(manifest)
-              expect(Models::Deployment).to_not receive(:find).with({name: 'deployment-name'})
+              expect(Models::Deployment).to_not receive(:find).with(name: deployment_name)
             end
 
             it 'should bind the models with correct options in the assembler' do
@@ -438,7 +438,7 @@ module Bosh::Director
               .with(logger, anything, template_blob_cache, anything, planner.link_provider_intents)
             allow(planner).to receive(:instance_models).and_return([])
             allow(planner).to receive(:instance_groups).and_return([deployment_instance_group])
-            allow(Models::Deployment).to receive(:[]).with(name: 'deployment-name').and_return(deployment_model)
+            allow(Models::Deployment).to receive(:[]).with(name: deployment_name).and_return(deployment_model)
             allow(deployment_model).to receive(:current_variable_set).and_return(variable_set_1)
             allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(manifest)
           end
@@ -524,7 +524,7 @@ module Bosh::Director
 
           context 'when there is no cloud_config' do
             it 'passes nil where cloud_config would be passed' do
-              expect(job.perform).to eq('/deployments/deployment-name')
+              expect(job.perform).to eq('/deployments/simple')
 
               expect(Manifest).to have_received(:load_from_hash)
                 .with(anything, anything, Array, anything)
@@ -536,10 +536,9 @@ module Bosh::Director
           context 'when a cloud_config is passed in' do
             let(:cloud_config)     { Models::Config.make(:cloud) }
             let(:cloud_config_id)  { cloud_config.id }
-            let(:manifest_content) { YAML.dump ManifestHelper.default_deployment_manifest }
 
             it 'uses the cloud config' do
-              expect(job.perform).to eq('/deployments/deployment-name')
+              expect(job.perform).to eq('/deployments/simple')
 
               expect(Manifest).to have_received(:load_from_hash)
                 .with(anything, anything, [cloud_config], anything)
@@ -557,7 +556,7 @@ module Bosh::Director
             end
 
             it 'uses the runtime config' do
-              expect(job.perform).to eq('/deployments/deployment-name')
+              expect(job.perform).to eq('/deployments/simple')
 
               expect(Manifest).to have_received(:load_from_hash)
                 .with(anything, anything, anything, [runtime_config])
@@ -567,7 +566,7 @@ module Bosh::Director
           end
 
           it 'performs an update' do
-            expect(job.perform).to eq('/deployments/deployment-name')
+            expect(job.perform).to eq('/deployments/simple')
           end
 
           context 'when the deployment makes changes to existing vms' do
@@ -611,8 +610,8 @@ module Bosh::Director
             event_1 = Models::Event.first
             expect(event_1.user).to eq(task.username)
             expect(event_1.object_type).to eq('deployment')
-            expect(event_1.deployment).to eq('deployment-name')
-            expect(event_1.object_name).to eq('deployment-name')
+            expect(event_1.deployment).to eq(deployment_name)
+            expect(event_1.object_name).to eq(deployment_name)
             expect(event_1.task).to eq("#{task.id}")
             expect(event_1.timestamp).to eq(Time.now)
 
@@ -620,8 +619,8 @@ module Bosh::Director
             expect(event_2.parent_id).to eq(event_1.id)
             expect(event_2.user).to eq(task.username)
             expect(event_2.object_type).to eq('deployment')
-            expect(event_2.deployment).to eq('deployment-name')
-            expect(event_2.object_name).to eq('deployment-name')
+            expect(event_2.deployment).to eq(deployment_name)
+            expect(event_2.object_name).to eq(deployment_name)
             expect(event_2.task).to eq("#{task.id}")
             expect(event_2.timestamp).to eq(Time.now)
           end
@@ -678,7 +677,7 @@ module Bosh::Director
               { 'deploy' => true }
             end
             before do
-              allow(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
+              allow(Models::Deployment).to receive(:find).with(name: deployment_name).and_return(deployment_model)
               allow(variable_set_1).to receive(:update).with(:deployed_successfully => true)
               allow(links_manager).to receive(:remove_unused_links)
             end
@@ -746,8 +745,8 @@ Unable to render instance groups for deployment. Errors are:
               { 'deploy' => true }
             end
             it 'should mark variable_set.writable to false' do
-              allow(Models::Deployment).to receive(:find).with({name: 'deployment-name'}).and_return(deployment_model)
-              allow(Models::Deployment).to receive(:[]).with(name: 'deployment-name').and_return(deployment_model)
+              allow(Models::Deployment).to receive(:find).with(name: deployment_name).and_return(deployment_model)
+              allow(Models::Deployment).to receive(:[]).with(name: deployment_name).and_return(deployment_model)
 
               allow(deployment_model).to receive(:current_variable_set).and_return(variable_set_1)
               expect(variable_set_1).to receive(:update).with({:writable => false})
@@ -831,7 +830,7 @@ Unable to render instance groups for deployment. Errors are:
             expect(notifier).not_to receive(:send_start_event)
             expect(notifier).not_to receive(:send_end_event)
 
-            expect(job.perform).to eq('/deployments/deployment-name')
+            expect(job.perform).to eq('/deployments/simple')
           end
 
           context 'when it fails the dry-run' do
