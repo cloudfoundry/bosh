@@ -17,6 +17,7 @@ describe 'director templates' do
           'user' => 'fake-director',
           'password' => 'fake-director-password',
         },
+        'secret' => 'i am afraid of the dark',
         'tls' => {
           'cert' => {
             'ca' => 'fake-ca',

@@ -68,6 +68,30 @@ server {
     }
   }
 
+  location ~* ^/signed/(?<object_id>.+)$ {
+    if ( $request_method !~ ^(GET|PUT)$ ) {
+      return 405;
+    }
+
+    # Variable to be passed are secure token, timestamp, expiration date
+    secure_link_hmac $arg_st,$arg_ts,$arg_e;
+
+    # Secret key
+    secure_link_hmac_secret hmac_secret;
+
+    # Message to be verified
+    secure_link_hmac_message $request_method$object_id$arg_ts$arg_e;
+
+    # Cryptographic hash function to be used
+    secure_link_hmac_algorithm sha256;
+
+    if ($secure_link_hmac != "1") {
+      return 404;
+    }
+
+    rewrite ^/signed/(.*)$ /$object_id;
+  }
+
   
   location /stats {
     # Config for basic metrics module: ngx_http_stub_status_module
@@ -143,6 +167,30 @@ server {
     }
   }
 
+  location ~* ^/signed/(?<object_id>.+)$ {
+    if ( $request_method !~ ^(GET|PUT)$ ) {
+      return 405;
+    }
+
+    # Variable to be passed are secure token, timestamp, expiration date
+    secure_link_hmac $arg_st,$arg_ts,$arg_e;
+
+    # Secret key
+    secure_link_hmac_secret hmac_secret;
+
+    # Message to be verified
+    secure_link_hmac_message $request_method$object_id$arg_ts$arg_e;
+
+    # Cryptographic hash function to be used
+    secure_link_hmac_algorithm sha256;
+
+    if ($secure_link_hmac != "1") {
+      return 404;
+    }
+
+    rewrite ^/signed/(.*)$ /$object_id;
+  }
+
   
 
   location @handler {
@@ -205,6 +253,30 @@ server {
       auth_basic "Blobstore Write";
       auth_basic_user_file write_users;
     }
+  }
+
+  location ~* ^/signed/(?<object_id>.+)$ {
+    if ( $request_method !~ ^(GET|PUT)$ ) {
+      return 405;
+    }
+
+    # Variable to be passed are secure token, timestamp, expiration date
+    secure_link_hmac $arg_st,$arg_ts,$arg_e;
+
+    # Secret key
+    secure_link_hmac_secret hmac_secret;
+
+    # Message to be verified
+    secure_link_hmac_message $request_method$object_id$arg_ts$arg_e;
+
+    # Cryptographic hash function to be used
+    secure_link_hmac_algorithm sha256;
+
+    if ($secure_link_hmac != "1") {
+      return 404;
+    }
+
+    rewrite ^/signed/(.*)$ /$object_id;
   }
 
   
@@ -273,6 +345,30 @@ server {
     }
   }
 
+  location ~* ^/signed/(?<object_id>.+)$ {
+    if ( $request_method !~ ^(GET|PUT)$ ) {
+      return 405;
+    }
+
+    # Variable to be passed are secure token, timestamp, expiration date
+    secure_link_hmac $arg_st,$arg_ts,$arg_e;
+
+    # Secret key
+    secure_link_hmac_secret hmac_secret;
+
+    # Message to be verified
+    secure_link_hmac_message $request_method$object_id$arg_ts$arg_e;
+
+    # Cryptographic hash function to be used
+    secure_link_hmac_algorithm sha256;
+
+    if ($secure_link_hmac != "1") {
+      return 404;
+    }
+
+    rewrite ^/signed/(.*)$ /$object_id;
+  }
+
   
 
   location @handler {
@@ -337,6 +433,30 @@ server {
       auth_basic "Blobstore Write";
       auth_basic_user_file write_users;
     }
+  }
+
+  location ~* ^/signed/(?<object_id>.+)$ {
+    if ( $request_method !~ ^(GET|PUT)$ ) {
+      return 405;
+    }
+
+    # Variable to be passed are secure token, timestamp, expiration date
+    secure_link_hmac $arg_st,$arg_ts,$arg_e;
+
+    # Secret key
+    secure_link_hmac_secret hmac_secret;
+
+    # Message to be verified
+    secure_link_hmac_message $request_method$object_id$arg_ts$arg_e;
+
+    # Cryptographic hash function to be used
+    secure_link_hmac_algorithm sha256;
+
+    if ($secure_link_hmac != "1") {
+      return 404;
+    }
+
+    rewrite ^/signed/(.*)$ /$object_id;
   }
 
   
