@@ -5,15 +5,15 @@ module Bosh::Blobstore
     subject { described_class.new(options) }
     let(:options) do
       {
-        :endpoint => 'https://localhost',
-        :user => 'john',
-        :password => 'smith',
-        :davcli_path => davcli_path,
-        :tls => {
-          :cert => {
-            :ca => 'FAKE_CA_PEM'
-          }
-        }
+        endpoint: 'https://localhost',
+        user: 'john',
+        password: 'smith',
+        davcli_path: davcli_path,
+        tls: {
+          cert: {
+            ca: 'FAKE_CA_PEM',
+          },
+        },
       }
     end
     let!(:base_dir) { Dir.mktmpdir }
@@ -28,10 +28,11 @@ module Bosh::Blobstore
       allow(Dir).to receive(:tmpdir).and_return(base_dir)
       allow(SecureRandom).to receive_messages(uuid: 'FAKE_UUID')
       allow(Open3).to receive(:capture3)
-      allow(Kernel).to receive(:system).with("/var/vcap/packages/davcli/bin/davcli", "-v", {:out => "/dev/null", :err => "/dev/null"}).and_return(true)
+      allow(Kernel).to receive(:system)
+        .with('/var/vcap/packages/davcli/bin/davcli', '-v', out: '/dev/null', err: '/dev/null').and_return(true)
     end
 
-    let(:file_path) { File.join(base_dir, "temp-path-FAKE_UUID") }
+    let(:file_path) { File.join(base_dir, 'temp-path-FAKE_UUID') }
 
     after { FileUtils.rm_rf(base_dir) }
 
@@ -42,23 +43,25 @@ module Bosh::Blobstore
     describe 'options' do
       let(:expected_options) do
         {
-          :endpoint => 'https://localhost',
-          :user => 'john',
-          :password => 'smith',
-          :tls => {
-            :cert => {
-             :ca => 'FAKE_CA_PEM'
-            }
-          }
+          endpoint: 'https://localhost',
+          user: 'john',
+          password: 'smith',
+          secret: nil,
+          tls: {
+            cert: {
+              ca: 'FAKE_CA_PEM',
+            },
+          },
         }
       end
-      let (:stored_config_file) { File.new(expected_config_file).readlines }
+      let(:stored_config_file) { File.new(expected_config_file).readlines }
 
       context 'when there is no davcli' do
         it 'raises an error' do
-          allow(Kernel).to receive(:system).with("#{davcli_path}", "-v", {:out => "/dev/null", :err => "/dev/null"}).and_return(false)
+          allow(Kernel).to receive(:system).with(davcli_path.to_s, '-v', out: '/dev/null', err: '/dev/null').and_return(false)
           expect { described_class.new(options) }.to raise_error(
-            Bosh::Blobstore::BlobstoreError, 'Cannot find davcli executable. Please specify davcli_path parameter')
+            Bosh::Blobstore::BlobstoreError, 'Cannot find davcli executable. Please specify davcli_path parameter'
+          )
         end
       end
 
@@ -67,17 +70,17 @@ module Bosh::Blobstore
 
         it 'should set default values to config file' do
           expect(File.exist?(expected_config_file)).to eq(true)
-          expect(JSON.parse(stored_config_file[0], {:symbolize_names => true})).to eq(expected_options)
+          expect(JSON.parse(stored_config_file[0], symbolize_names: true)).to eq(expected_options)
         end
 
         it 'should write the config file with reduced group and world permissions' do
-          expect(File.stat(expected_config_file).mode).to eq(0100600)
+          expect(File.stat(expected_config_file).mode).to eq(0o100600)
         end
       end
 
       context 'when davcli_config_path option is provided' do
-        let (:davcli_config_path) { File.join(base_dir, 'tmp') }
-        let((:config_file_options)) { options.merge ({davcli_config_path: davcli_config_path}) }
+        let(:davcli_config_path) { File.join(base_dir, 'tmp') }
+        let(:config_file_options) { options.merge(davcli_config_path: davcli_config_path) }
 
         it 'creates config file with provided path' do
           described_class.new(config_file_options)
@@ -88,9 +91,9 @@ module Bosh::Blobstore
 
     describe '#get' do
       it 'should have correct parameters' do
-        expect(Open3).to receive(:capture3).
-          with("#{davcli_path}", "-c", "#{expected_config_file}", "get", "#{object_id}","#{file_path}").
-          and_return([nil, nil, success_exit_status])
+        expect(Open3).to receive(:capture3)
+          .with(davcli_path.to_s, '-c', expected_config_file.to_s, 'get', object_id.to_s, file_path.to_s)
+          .and_return([nil, nil, success_exit_status])
 
         subject.get(object_id)
       end
@@ -98,13 +101,15 @@ module Bosh::Blobstore
       it 'should show an error from davcli' do
         allow(Open3).to receive(:capture3).and_return([nil, 'error', failure_exit_status])
         expect { subject.get(object_id) }.to raise_error(
-          BlobstoreError, /Failed to download blob/)
+          BlobstoreError, /Failed to download blob/
+        )
       end
 
       it 'should raise a NotFound error when the key does not exist' do
         allow(Open3).to receive(:capture3).and_return(['404 Not Found', nil, failure_exit_status])
         expect { subject.get(object_id) }.to raise_error(
-          NotFound, "Blobstore object '#{object_id}' not found")
+          NotFound, "Blobstore object '#{object_id}' not found"
+        )
       end
     end
 
@@ -123,54 +128,59 @@ module Bosh::Blobstore
       it 'should have correct parameters' do
         allow(Open3).to receive(:capture3).and_return([nil, nil, success_exit_status])
         file = File.open(Tempfile.new('file'))
-        expect(Open3).to receive(:capture3).with("#{davcli_path}", "-c", "#{expected_config_file}", "put", "#{file.path}", "FAKE_UUID")
+        expect(Open3).to receive(:capture3)
+          .with(davcli_path.to_s, '-c', expected_config_file.to_s, 'put', file.path.to_s, 'FAKE_UUID')
         subject.create(file)
       end
 
       it 'should show an error ' do
         allow(Open3).to receive(:capture3).and_return([nil, nil, failure_exit_status])
         expect { subject.create(object_id) }.to raise_error(
-          BlobstoreError, /Failed to upload blob/)
+          BlobstoreError, /Failed to upload blob/
+        )
       end
 
       it 'should show an error from davcli' do
         allow(Open3).to receive(:capture3).and_return([nil, 'error', failure_exit_status])
         expect { subject.create(object_id) }.to raise_error(
-          BlobstoreError, /error: 'error'/)
+          BlobstoreError, /error: 'error'/
+        )
       end
     end
 
     describe '#delete' do
       it 'should delete an object' do
         allow(Open3).to receive(:capture3).and_return([nil, nil, success_exit_status])
-        expect(Open3).to receive(:capture3).with("#{davcli_path}", "-c", "#{expected_config_file}", "delete", "#{object_id}")
+        expect(Open3).to receive(:capture3).with(davcli_path.to_s, '-c', expected_config_file.to_s, 'delete', object_id.to_s)
         subject.delete(object_id)
       end
 
       it 'should show an error from davcli' do
         allow(Open3).to receive(:capture3).and_return([nil, 'error', failure_exit_status])
         expect { subject.delete(object_id) }.to raise_error(
-          BlobstoreError, /error: 'error'/)
+          BlobstoreError, /error: 'error'/
+        )
       end
     end
 
     describe '#exists?' do
       it 'should return true if davcli reported so' do
         allow(Open3).to receive(:capture3).and_return([nil, nil, success_exit_status])
-        expect(Open3).to receive(:capture3).with("#{davcli_path}", "-c", "#{expected_config_file}", "exists", "#{object_id}")
+        expect(Open3).to receive(:capture3).with(davcli_path.to_s, '-c', expected_config_file.to_s, 'exists', object_id.to_s)
         expect(subject.exists?(object_id)).to eq(true)
       end
 
       it 'should return false if davcli reported so' do
         allow(Open3).to receive(:capture3).and_return([nil, nil, not_existed_exit_status])
-        expect(Open3).to receive(:capture3).with("#{davcli_path}", "-c", "#{expected_config_file}", "exists", "#{object_id}")
+        expect(Open3).to receive(:capture3).with(davcli_path.to_s, '-c', expected_config_file.to_s, 'exists', object_id.to_s)
         expect(subject.exists?(object_id)).to eq(false)
       end
 
       it 'should show an error from davcli' do
         allow(Open3).to receive(:capture3).and_return([nil, 'error', failure_exit_status])
         expect { subject.create(object_id) }.to raise_error(
-          BlobstoreError, /error: 'error'/)
+          BlobstoreError, /error: 'error'/
+        )
       end
     end
   end
