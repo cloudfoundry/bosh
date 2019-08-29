@@ -16,11 +16,11 @@ class DBMigrator
   end
 
   def current?
-    @migrator.call(@database, @options).is_current?
+    @migrator.call(@database, @options)&.is_current?
   end
 
   def migrate
-    @migrator.call(@database, @options).run
+    @migrator.call(@database, @options)&.run
   end
 
   def finished?
