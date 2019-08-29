@@ -5,19 +5,22 @@ class DBMigrator
 
   def initialize(database, type, options = {}, retry_interval = 0.5)
     @migrator = case type
-                when :cpi then cpi_migrator(database, options)
-                when :director then director_migrator(database, options)
-                when :dns then dns_migrator(database, options)
+                when :cpi then method(:cpi_migrator)
+                when :director then method(:director_migrator)
+                when :dns then method(:dns_migrator)
                 end
+
+    @database = database
+    @options = options
     @retry_interval = retry_interval
   end
 
   def current?
-    @migrator&.is_current?
+    @migrator.call(@database, @options).is_current?
   end
 
   def migrate
-    @migrator&.run
+    @migrator.call(@database, @options).run
   end
 
   def finished?
