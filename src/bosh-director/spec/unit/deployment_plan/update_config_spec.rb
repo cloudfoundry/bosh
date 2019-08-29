@@ -307,6 +307,27 @@ module Bosh::Director
           end
         end
       end
+
+      context 'initial_deploy_az_update_strategy' do
+        it 'should return the value specified in the spec' do
+          spec = {
+            'canaries' => 2,
+            'max_in_flight' => 4,
+            'canary_watch_time' => 60_000,
+            'update_watch_time' => 30_000,
+          }
+          expect(DeploymentPlan::UpdateConfig.new(spec).update_azs_in_parallel_on_initial_deploy?).to eq(false)
+
+          spec['initial_deploy_az_update_strategy'] = 'parallel'
+          expect(DeploymentPlan::UpdateConfig.new(spec).update_azs_in_parallel_on_initial_deploy?).to eq(true)
+
+          spec['initial_deploy_az_update_strategy'] = 'serial'
+          expect(DeploymentPlan::UpdateConfig.new(spec).update_azs_in_parallel_on_initial_deploy?).to eq(false)
+
+          spec['initial_deploy_az_update_strategy'] = 'nonsense'
+          expect { DeploymentPlan::UpdateConfig.new(spec) }.to raise_error
+        end
+      end
     end
 
     describe '#parse_watch_times' do

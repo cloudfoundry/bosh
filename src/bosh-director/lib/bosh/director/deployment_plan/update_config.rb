@@ -3,7 +3,11 @@ module Bosh::Director
     class UpdateConfig
       VM_STRATEGY_CREATE_SWAP_DELETE = 'create-swap-delete'.freeze
       VM_STRATEGY_DELETE_CREATE = 'delete-create'.freeze
-      ALLOWED_VM_STRATEGY = [VM_STRATEGY_CREATE_SWAP_DELETE, VM_STRATEGY_DELETE_CREATE].freeze
+      ALLOWED_VM_STRATEGIES = [VM_STRATEGY_CREATE_SWAP_DELETE, VM_STRATEGY_DELETE_CREATE].freeze
+
+      PARALLEL_AZ_UPDATE_STRATEGY = 'parallel'.freeze
+      SERIAL_AZ_UPDATE_STRATEGY = 'serial'.freeze
+      ALLOWED_AZ_UPDATE_STRATEGIES = [PARALLEL_AZ_UPDATE_STRATEGY, SERIAL_AZ_UPDATE_STRATEGY].freeze
 
       include ValidationHelper
 
@@ -55,16 +59,32 @@ module Bosh::Director
         )
 
         unless @vm_strategy.nil?
-          unless UpdateConfig::ALLOWED_VM_STRATEGY.include?(@vm_strategy)
+          unless ALLOWED_VM_STRATEGIES.include?(@vm_strategy)
             raise ValidationInvalidValue,
-                  "Invalid vm_strategy '#{vm_strategy}', valid strategies are: #{UpdateConfig::ALLOWED_VM_STRATEGY.join(', ')}"
+                  "Invalid vm_strategy '#{vm_strategy}', valid strategies are: #{ALLOWED_VM_STRATEGIES.join(', ')}"
           end
         end
 
-        @serial = safe_property(update_config, 'serial',
-                                class: :boolean,
-                                optional: true,
-                                default: default_update_config ? default_update_config.serial? : true)
+        @serial = safe_property(
+          update_config,
+          'serial',
+          class: :boolean,
+          optional: true,
+          default: default_update_config ? default_update_config.serial? : true,
+        )
+
+        @initial_deploy_az_update_strategy = safe_property(
+          update_config,
+          'initial_deploy_az_update_strategy',
+          class: String,
+          optional: true,
+          default: SERIAL_AZ_UPDATE_STRATEGY,
+        )
+
+        unless ALLOWED_AZ_UPDATE_STRATEGIES.include?(@initial_deploy_az_update_strategy)
+          raise ValidationInvalidValue, "Invalid initial_deploy_az_update_strategy '#{@initial_deploy_az_update_strategy}', " \
+                "valid strategies are: '#{ALLOWED_AZ_UPDATE_STRATEGIES.join(', ')}'"
+        end
 
         if optional
           @canaries_before_calculation ||= default_update_config.canaries_before_calculation
@@ -121,6 +141,10 @@ module Bosh::Director
 
       def serial?
         !!@serial
+      end
+
+      def update_azs_in_parallel_on_initial_deploy?
+        @initial_deploy_az_update_strategy == PARALLEL_AZ_UPDATE_STRATEGY
       end
 
       private

@@ -60,6 +60,37 @@ module Bosh::Director
       @logger.info("Found #{instance_plans.size} instances to update")
       event_log_stage = @event_log.begin_stage('Updating instance', instance_plans.size, [@instance_group.name])
 
+      if update_azs_in_parallel?
+        update_instance_group(instance_plans, false, event_log_stage)
+      else
+        update_instance_group_by_az(instance_plans, event_log_stage)
+      end
+    end
+
+    def update_instance_group(instance_plans, canaries_updated, event_log_stage)
+      @logger.info("Starting to update instance group '#{@instance_group.name}'")
+
+      ThreadPool.new(max_threads: @instance_group.update.max_in_flight(instance_plans.size)).wrap do |pool|
+        unless canaries_updated
+          num_canaries = [@instance_group.update.canaries(instance_plans.size), instance_plans.size].min
+          @logger.info("Starting canary update num_canaries=#{num_canaries}")
+          update_canaries(pool, instance_plans, num_canaries, event_log_stage)
+
+          @logger.info('Waiting for canaries to update')
+          pool.wait
+          canaries_updated = true
+          @logger.info('Finished canary update')
+        end
+
+        @logger.info('Continuing the rest of the update')
+        update_instances(pool, instance_plans, event_log_stage)
+        @logger.info('Finished the rest of the update')
+      end
+
+      @logger.info("Finished updating instance group '#{@instance_group.name}'")
+    end
+
+    def update_instance_group_by_az(instance_plans, event_log_stage)
       ordered_azs = []
       instance_plans.each do |instance_plan|
         unless ordered_azs.include?(instance_plan.instance.availability_zone)
@@ -68,34 +99,29 @@ module Bosh::Director
       end
 
       instance_plans_by_az = instance_plans.group_by { |instance_plan| instance_plan.instance.availability_zone }
-      canaries_done = false
 
+      canaries_updated = false
       ordered_azs.each do |az|
         az_instance_plans = instance_plans_by_az[az]
+
         @logger.info("Starting to update az '#{az}'")
-        ThreadPool.new(max_threads: @instance_group.update.max_in_flight(az_instance_plans.size)).wrap do |pool|
-          unless canaries_done
-            num_canaries = [@instance_group.update.canaries(az_instance_plans.size), az_instance_plans.size].min
-            @logger.info("Starting canary update num_canaries=#{num_canaries}")
-            update_canaries(pool, az_instance_plans, num_canaries, event_log_stage)
-
-            @logger.info('Waiting for canaries to update')
-            pool.wait
-
-            @logger.info('Finished canary update')
-
-            canaries_done = true
-          end
-
-          @logger.info('Continuing the rest of the update')
-          update_instances(pool, az_instance_plans, event_log_stage)
-          @logger.info('Finished the rest of the update')
-        end
+        update_instance_group(az_instance_plans, canaries_updated, event_log_stage)
         @logger.info("Finished updating az '#{az}'")
+
+        canaries_updated = true
       end
     end
 
     private
+
+    def update_azs_in_parallel?
+      @instance_group.update.update_azs_in_parallel_on_initial_deploy? && initial_deploy?
+    end
+
+    def initial_deploy?
+      deployment_model = Bosh::Director::Models::Deployment.find(name: @instance_group.deployment_name)
+      deployment_model.manifest.nil?
+    end
 
     def delete_unneeded_instances
       unneeded_instance_plans = @instance_group.obsolete_instance_plans
