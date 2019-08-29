@@ -29,7 +29,8 @@ describe 'director.yml.erb' do
           'cert' => {
             'ca' => '-----BEGIN CERTIFICATE-----'
           }
-        }
+        },
+        'secret' => 'signingsecret',
       },
       'nats' => {
         'address' => '10.10.0.7',
