@@ -6,3 +6,4 @@ files:
 - nginx/pcre-8.43.tar.gz
 - nginx/nginx-upload-module-2.3.0.tar.gz
 - patches/nginx-upload-module.patch
+- nginx/ngx_http_hmac_secure_link_module-0.3.tar.gz

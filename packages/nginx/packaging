@@ -14,6 +14,9 @@ pushd nginx-upload-module-2.3.0
   patch -p1 < ../patches/nginx-upload-module.patch
 popd
 
+echo "Extracting ngx_http_hmac_secure_link module..."
+tar xzf nginx/ngx_http_hmac_secure_link_module-0.3.tar.gz
+
 echo "Extracting nginx..."
 tar xzf nginx/nginx-1.17.3.tar.gz
 
@@ -30,7 +33,8 @@ pushd nginx-1.17.3
     --with-http_ssl_module \
     --with-http_dav_module \
     --add-module=../nginx-upload-module-2.3.0 \
-    --with-http_stub_status_module
+    --with-http_stub_status_module \
+    --add-module=../ngx_http_hmac_secure_link_module-0.3
 
   make
   make install

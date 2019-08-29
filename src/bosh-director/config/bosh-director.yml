@@ -15,6 +15,7 @@ blobstore:
     endpoint: http://127.0.0.1:9999
     user: admin
     password: admin
+    secret: 56aa5b1144e2ac784b30f156d24a873c
 cloud:
   plugin: vsphere
   properties:

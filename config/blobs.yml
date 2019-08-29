@@ -2,14 +2,14 @@ bosh-gcscli/bosh-gcscli-0.0.3-linux-amd64:
   size: 12777526
   object_id: e561b18d-0d52-4579-7bd5-9823bdbe7aba
   sha: a6ca3153856b40c1af6d79da8f11efdde0899b7d
-davcli/davcli-0.0.37-linux-amd64:
-  size: 8587116
-  object_id: 67caf9d2-42e1-4959-6ee8-735054a005b5
-  sha: sha256:22100f45945f4701bbd997e423dc8cb52d46acc59d72eacf49fb904399bdbb69
 gnatsd/gnatsd-1.3.0-bosh.7-linux-amd64:
   size: 11572841
   object_id: c6aecf2b-18ec-4a5a-466e-2a57f84aa154
   sha: sha256:be85b21f0af87f5013916a4c398f142572084fc206fff904482b0a31ca28ccdd
+davcli/davcli-0.0.39-linux-amd64:
+  size: 8587371
+  object_id: 760dffca-e9ad-45b8-723d-14ecd8e4aaad
+  sha: sha256:dd92c38795bd7890eb1b3f9529476a08216c107864021680d1294589d780ae1f
 mysql/mariadb-connector-c-3.0.3-src.tar.gz:
   size: 666928
   object_id: 0d20e9e3-1a7d-4872-6ea3-28246c579ca8
@@ -30,6 +30,10 @@ nginx/nginx-upload-module-2.3.0.tar.gz:
   size: 40139
   object_id: 598d93c6-90b8-4472-5308-5235bb476a45
   sha: sha256:c86e318addb9c88d70fdbd58ff1f6ef6f404a93070f6db8017a1f880c97946c4
+nginx/ngx_http_hmac_secure_link_module-0.3.tar.gz:
+  size: 5452
+  object_id: 9901c036-d3dd-4167-4fc0-41be17deef02
+  sha: sha256:0d4a69f39b513a3427f5fb41a7503844e703395ca04517d0a55400e4a3150927
 nginx/pcre-8.43.tar.gz:
   size: 2085854
   object_id: 09de2178-6d0a-44ff-77bd-931848e6ee89

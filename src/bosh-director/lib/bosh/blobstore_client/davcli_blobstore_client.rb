@@ -15,6 +15,7 @@ module Bosh::Blobstore
         user: @options[:user],
         password: @options[:password],
         endpoint: @options[:endpoint],
+        secret: @options[:secret],
         tls: @options[:tls]
       }
       @davcli_config_path = @options.fetch(:davcli_config_path, nil)

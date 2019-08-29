@@ -390,6 +390,8 @@ properties:
     description: Password agent uses to connect to blobstore used by simple blobstore plugin
   blobstore.tls.cert.ca:
     description: CA Cert for TLS communcation with blobstore
+  blobstore.secret:
+    description: Secret used for HMAC signature for pre-signed urls
 
   # Blobstore destination for backups
   director.backup_destination:

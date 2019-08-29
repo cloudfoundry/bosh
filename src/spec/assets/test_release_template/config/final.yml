@@ -4,3 +4,4 @@ blobstore:
   provider: local
   options:
     blobstore_path: changed_in_integration_example_group
+    secret: 56aa5b1144e2ac784b30f156d24a873c
