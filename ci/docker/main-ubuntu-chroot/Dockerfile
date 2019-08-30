@@ -1,4 +1,4 @@
-FROM bosh/main-ruby-go
+FROM bosh/main-ruby-go:trusty
 
 RUN apt-get update && apt-get install -y debootstrap
 RUN mkdir -p /tmp/ubuntu-chroot
