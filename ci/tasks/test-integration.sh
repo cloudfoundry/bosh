@@ -46,7 +46,7 @@ require_secure_transport=ON
 max_allowed_packet=6M' >> /etc/mysql/my.cnf
     fi
 
-    sudo service mysql start
+    service mysql start
     sleep 5
     ;;
   postgresql)
