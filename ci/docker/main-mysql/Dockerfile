@@ -19,4 +19,4 @@ RUN echo 'mysql-community-server	mysql-community-server/remove-data-dir	boolean	
 
 RUN apt-get update
 
-RUN sudo apt-get install -y  mysql-server$DB_VERSION
+RUN apt-get install -y mysql-server$DB_VERSION
