@@ -15,6 +15,10 @@ module Bosh::Director
       object
     end
 
+    def redact_basic_auth(url)
+      redact_basic_auth!(url.dup)
+    end
+
     private
 
     def redact_known_key_properties!(object)
@@ -56,15 +60,19 @@ module Bosh::Director
       releases.each_index{ |i|
         release_url_value = releases[i]['url']
         next if release_url_value.nil?
-        begin
-          release_uri = URI.parse(release_url_value)
-
-          release_url_value.sub!(release_uri.user, REDACT_STRING) if release_uri.user
-          release_url_value.sub!(release_uri.password, REDACT_STRING) if release_uri.password
-        rescue URI::Error
-          # ignore bad urls
-        end
+        redact_basic_auth!(release_url_value)
       }
+    end
+
+    def redact_basic_auth!(url)
+      begin
+        release_uri = URI.parse(url)
+        url.sub!(release_uri.user, REDACT_STRING) if release_uri.user
+        url.sub!(release_uri.password, REDACT_STRING) if release_uri.password
+      rescue URI::Error
+        # ignore bad urls
+      end
+      url
     end
 
     def hash?(obj)

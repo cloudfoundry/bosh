@@ -118,15 +118,22 @@ describe Bosh::Director::DownloadHelper do
 
       context 'when the redirect has no location header' do
         let(:http_302) { Net::HTTPFound.new('1.1', '302', 'Found') }
+        let(:redirect_url) { 'http://user:password@redirector.example.com/redirect/to/file' }
+        let(:redirect_url_redacted) { 'http://<redacted>:<redacted>@redirector.example.com/redirect/to/file' }
+        let(:redirect_location) { 'http://user:password@example.com/file.tgz' }
 
         it 'should raise an error if no location is specified in a 302' do
           allow(Net::HTTP::Get).to receive(:new).with(URI.parse(redirect_url)).and_return(redirect_request)
           allow(Net::HTTP).to receive(:start).with('redirector.example.com', 80, :ENV, use_ssl: false).and_yield(http)
+          expect(redirect_request).to receive(:basic_auth).with('user', 'password')
           expect(http).to receive(:request).with(redirect_request).and_yield(http_302)
 
           expect do
             download_remote_file('resource', redirect_url, local_file)
-          end.to raise_error(Bosh::Director::ResourceError, "No location header for redirect found at '#{redirect_url}'.")
+          end.to raise_error(
+            Bosh::Director::ResourceError,
+            "No location header for redirect found at '#{redirect_url_redacted}'.",
+          )
         end
       end
 
@@ -140,30 +147,44 @@ describe Bosh::Director::DownloadHelper do
       end
     end
 
-    it 'should return a ResourceNotFound exception if remote server returns a NotFound error' do
-      expect(Net::HTTP).to receive(:start).with('example.com', 80, :ENV, use_ssl: false).and_yield(http)
-      expect(http).to receive(:request).and_yield(http_404)
+    context 'when remote server returns an error' do
+      let(:remote_file) { 'http://user:password@example.com/file.tgz' }
+      let(:remote_file_redacted) { 'http://<redacted>:<redacted>@example.com/file.tgz' }
 
-      expect do
-        download_remote_file('resource', remote_file, local_file)
-      end.to raise_error(Bosh::Director::ResourceNotFound, "No resource found at '#{remote_file}'.")
-    end
+      it 'should return a ResourceNotFound exception and redact basic auth' do
+        expect(Net::HTTP).to receive(:start).with('example.com', 80, :ENV, use_ssl: false).and_yield(http)
+        expect(http).to receive(:request).and_yield(http_404)
+        expect_logs_redacted
 
-    it 'should return a ResourceError exception if remote server returns an error code' do
-      allow(Net::HTTP).to receive(:start).and_yield(http)
-      expect(http).to receive(:request).and_yield(http_500)
+        expect do
+          download_remote_file('resource', remote_file, local_file)
+        end.to raise_error(Bosh::Director::ResourceNotFound, "No resource found at '#{remote_file_redacted}'.")
+      end
 
-      expect do
-        download_remote_file('resource', remote_file, local_file)
-      end.to raise_error(Bosh::Director::ResourceError, 'Downloading remote resource failed. Check task debug log for details.')
-    end
+      it 'should return a ResourceError exception if remote server returns an error code' do
+        allow(Net::HTTP).to receive(:start).and_yield(http)
+        expect(http).to receive(:request).and_yield(http_500)
+        expect_logs_redacted
 
-    it 'should return a ResourceError exception if there is a connection error' do
-      allow(Net::HTTP).to receive(:start).and_raise(Timeout::Error)
+        expect do
+          download_remote_file('resource', remote_file, local_file)
+        end.to raise_error(Bosh::Director::ResourceError, 'Downloading remote resource failed. Check task debug log for details.')
+      end
 
-      expect do
-        download_remote_file('resource', remote_file, local_file)
-      end.to raise_error(Bosh::Director::ResourceError, 'Downloading remote resource failed. Check task debug log for details.')
+      it 'should return a ResourceError exception if there is a connection error' do
+        allow(Net::HTTP).to receive(:start).and_raise(Timeout::Error)
+        expect_logs_redacted
+
+        expect do
+          download_remote_file('resource', remote_file, local_file)
+        end.to raise_error(Bosh::Director::ResourceError, 'Downloading remote resource failed. Check task debug log for details.')
+      end
+
+      def expect_logs_redacted
+        @logger = double
+        expect(@logger).to receive(:info).with(/#{remote_file_redacted}/)
+        expect(@logger).to receive(:error).with(/#{remote_file_redacted}/)
+      end
     end
   end
 end

@@ -11,7 +11,8 @@ module Bosh::Director
     # @raise [Bosh::Director::ResourceNotFound] If remote file is not found
     # @raise [Bosh::Director::ResourceError] If there's a network problem
     def download_remote_file(resource, remote_file, local_file, num_redirects = 0)
-      @logger.info("Downloading remote #{resource} from #{remote_file}") if @logger
+      remote_file_redacted = Bosh::Director::Redactor.new.redact_basic_auth(remote_file)
+      @logger&.info("Downloading remote #{resource} from #{remote_file_redacted}")
       uri = URI.parse(remote_file)
       req = Net::HTTP::Get.new(uri)
 
@@ -31,26 +32,27 @@ module Bosh::Director
               end
 
             when Net::HTTPFound, Net::HTTPMovedPermanently
-              raise ResourceError, "Too many redirects at '#{remote_file}'." if num_redirects >= 9
+              raise ResourceError, "Too many redirects at '#{remote_file_redacted}'." if num_redirects >= 9
+
               location = response.header['location']
-              raise ResourceError, "No location header for redirect found at '#{remote_file}'." if location.nil?
+              raise ResourceError, "No location header for redirect found at '#{remote_file_redacted}'." if location.nil?
 
               location = URI.join(uri, location).to_s
               download_remote_file(resource, location, local_file, num_redirects + 1)
 
             when Net::HTTPNotFound
-              @logger.error("Downloading remote #{resource} from #{remote_file} failed: #{response.message}") if @logger
-              raise ResourceNotFound, "No #{resource} found at '#{remote_file}'."
+              @logger&.error("Downloading remote #{resource} from #{remote_file_redacted} failed: #{response.message}")
+              raise ResourceNotFound, "No #{resource} found at '#{remote_file_redacted}'."
 
             else
-              @logger.error("Downloading remote #{resource} from #{remote_file} failed: #{response.message}") if @logger
+              @logger&.error("Downloading remote #{resource} from #{remote_file_redacted} failed: #{response.message}")
               raise ResourceError, "Downloading remote #{resource} failed. Check task debug log for details."
           end
         end
       end
     rescue URI::Error, SocketError, ::Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, Errno::ECONNREFUSED, EOFError,
            Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Net::ProtocolError => e
-      @logger.error("Downloading remote #{resource} from #{remote_file} failed: #{e.inspect}") if @logger
+      @logger&.error("Downloading remote #{resource} from #{remote_file_redacted} failed: #{e.inspect}")
       raise ResourceError, "Downloading remote #{resource} failed. Check task debug log for details."
     end
   end
