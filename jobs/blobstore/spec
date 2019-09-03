@@ -13,7 +13,6 @@ templates:
   server_tls_cert.pem.erb: config/server_tls_cert.pem
   server_tls_private_key.pem.erb: config/server_tls_private_key.pem
   pre-start: bin/pre-start
-  hmac_secret.erb: config/hmac_secret
 
 packages:
 - nginx
