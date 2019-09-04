@@ -20,6 +20,7 @@ RUN apt-get install -y \
 	jq \
 	realpath \
 	libpq-dev \
+	rsyslog \
 	&& apt-get clean
 
 # Nokogiri dependencies
