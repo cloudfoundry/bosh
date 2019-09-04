@@ -35,7 +35,6 @@ case "$DB" in
       export PATH=/usr/lib/postgresql/$DB_VERSION/bin:$PATH
       export PGDATA=/tmp/postgres/data
       export PGLOGS=/tmp/log/postgres
-      mkdir -p $PGDATA
       mkdir -p $PGLOGS
       initdb -U postgres -D $PGDATA
 
@@ -45,7 +44,8 @@ case "$DB" in
         echo "max_wal_size=300MB" >> $PGDATA/postgresql.conf
       fi
 
-      pg_ctl start -w -l $PGLOGS/server.log -o "-N 400"
+      pg_lsclusters
+      pg_ctlcluster $DB_VERSION main start
     '
     ;;
   sqlite)

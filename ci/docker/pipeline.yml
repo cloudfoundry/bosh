@@ -149,7 +149,7 @@ jobs:
         params:
           build: "bosh-src/ci/docker/main-mysql"
           build_args:
-            DB_VERSION: ""
+            DB_VERSION: "-5.7"
         get_params:
           skip_download: true
 
