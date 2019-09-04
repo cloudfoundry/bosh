@@ -27,7 +27,7 @@ describe 'blobstore.conf.erb' do
               'nginx' => {
                 'enable_metrics_endpoint' => true
               },
-              'secret' => 'mysecret',
+              'secret' => 'hmac_secret',
             }
           }
         }
@@ -54,7 +54,7 @@ server {
   ssl_certificate /var/vcap/jobs/blobstore/config/server_tls_cert.pem;
   ssl_certificate_key /var/vcap/jobs/blobstore/config/server_tls_private_key.pem;
 
-  location / {
+  location ~* ^/(?<object_id>[a-fA-F0-9][a-fA-F0-9]\\/.+) {
     root /var/vcap/store/blobstore/store/;
 
     dav_methods DELETE PUT;
@@ -69,8 +69,16 @@ server {
     }
   }
 
+  location /internal {
+    internal;
+    alias /var/vcap/store/blobstore/store/;
+
+    dav_methods DELETE PUT;
+    create_full_put_path on;
+  }
+
   location ~* ^/signed/(?<object_id>.+)$ {
-    if ( $request_method !~ ^(GET|PUT)$ ) {
+    if ( $request_method !~ ^(GET|PUT|HEAD)$ ) {
       return 405;
     }
 
@@ -87,10 +95,10 @@ server {
     secure_link_hmac_algorithm sha256;
 
     if ($secure_link_hmac != "1") {
-      return 404;
+      return 403;
     }
 
-    rewrite ^/signed/(.*)$ /$object_id;
+    rewrite ^/signed/(.*)$ /internal/$object_id;
   }
 
   
@@ -127,7 +135,7 @@ server {
               'nginx' => {
                 'enable_metrics_endpoint' => false
               },
-              'secret' => 'mysecret',
+              'secret' => 'hmac_secret',
             }
           }
         }
@@ -154,7 +162,7 @@ server {
   ssl_certificate /var/vcap/jobs/blobstore/config/server_tls_cert.pem;
   ssl_certificate_key /var/vcap/jobs/blobstore/config/server_tls_private_key.pem;
 
-  location / {
+  location ~* ^/(?<object_id>[a-fA-F0-9][a-fA-F0-9]\\/.+) {
     root /var/vcap/store/blobstore/store/;
 
     dav_methods DELETE PUT;
@@ -169,8 +177,16 @@ server {
     }
   }
 
+  location /internal {
+    internal;
+    alias /var/vcap/store/blobstore/store/;
+
+    dav_methods DELETE PUT;
+    create_full_put_path on;
+  }
+
   location ~* ^/signed/(?<object_id>.+)$ {
-    if ( $request_method !~ ^(GET|PUT)$ ) {
+    if ( $request_method !~ ^(GET|PUT|HEAD)$ ) {
       return 405;
     }
 
@@ -187,10 +203,10 @@ server {
     secure_link_hmac_algorithm sha256;
 
     if ($secure_link_hmac != "1") {
-      return 404;
+      return 403;
     }
 
-    rewrite ^/signed/(.*)$ /$object_id;
+    rewrite ^/signed/(.*)$ /internal/$object_id;
   }
 
   
@@ -218,7 +234,7 @@ server {
               'nginx' => {
                 'enable_metrics_endpoint' => false
               },
-              'secret' => 'mysecret',
+              'secret' => 'hmac_secret',
             }
           }
         }
@@ -243,7 +259,7 @@ server {
   ssl_certificate /var/vcap/jobs/blobstore/config/server_tls_cert.pem;
   ssl_certificate_key /var/vcap/jobs/blobstore/config/server_tls_private_key.pem;
 
-  location / {
+  location ~* ^/(?<object_id>[a-fA-F0-9][a-fA-F0-9]\\/.+) {
     root /var/vcap/store/blobstore/store/;
 
     dav_methods DELETE PUT;
@@ -258,8 +274,16 @@ server {
     }
   }
 
+  location /internal {
+    internal;
+    alias /var/vcap/store/blobstore/store/;
+
+    dav_methods DELETE PUT;
+    create_full_put_path on;
+  }
+
   location ~* ^/signed/(?<object_id>.+)$ {
-    if ( $request_method !~ ^(GET|PUT)$ ) {
+    if ( $request_method !~ ^(GET|PUT|HEAD)$ ) {
       return 405;
     }
 
@@ -276,10 +300,10 @@ server {
     secure_link_hmac_algorithm sha256;
 
     if ($secure_link_hmac != "1") {
-      return 404;
+      return 403;
     }
 
-    rewrite ^/signed/(.*)$ /$object_id;
+    rewrite ^/signed/(.*)$ /internal/$object_id;
   }
 
   
@@ -307,7 +331,7 @@ server {
               'nginx' => {
                 'enable_metrics_endpoint' => false
               },
-              'secret' => 'mysecret',
+              'secret' => 'hmac_secret',
             }
           }
         }
@@ -334,7 +358,7 @@ server {
   ssl_certificate /var/vcap/jobs/blobstore/config/server_tls_cert.pem;
   ssl_certificate_key /var/vcap/jobs/blobstore/config/server_tls_private_key.pem;
 
-  location / {
+  location ~* ^/(?<object_id>[a-fA-F0-9][a-fA-F0-9]\\/.+) {
     root /var/vcap/store/blobstore/store/;
 
     dav_methods DELETE PUT;
@@ -349,8 +373,16 @@ server {
     }
   }
 
+  location /internal {
+    internal;
+    alias /var/vcap/store/blobstore/store/;
+
+    dav_methods DELETE PUT;
+    create_full_put_path on;
+  }
+
   location ~* ^/signed/(?<object_id>.+)$ {
-    if ( $request_method !~ ^(GET|PUT)$ ) {
+    if ( $request_method !~ ^(GET|PUT|HEAD)$ ) {
       return 405;
     }
 
@@ -367,10 +399,10 @@ server {
     secure_link_hmac_algorithm sha256;
 
     if ($secure_link_hmac != "1") {
-      return 404;
+      return 403;
     }
 
-    rewrite ^/signed/(.*)$ /$object_id;
+    rewrite ^/signed/(.*)$ /internal/$object_id;
   }
 
   
@@ -398,7 +430,7 @@ server {
               'nginx' => {
                 'enable_metrics_endpoint' => false
               },
-              'secret' => 'mysecret',
+              'secret' => 'hmac_secret',
             }
           }
         }
@@ -425,7 +457,7 @@ server {
   ssl_certificate /var/vcap/jobs/blobstore/config/server_tls_cert.pem;
   ssl_certificate_key /var/vcap/jobs/blobstore/config/server_tls_private_key.pem;
 
-  location / {
+  location ~* ^/(?<object_id>[a-fA-F0-9][a-fA-F0-9]\\/.+) {
     root /var/vcap/store/blobstore/store/;
 
     dav_methods DELETE PUT;
@@ -440,8 +472,16 @@ server {
     }
   }
 
+  location /internal {
+    internal;
+    alias /var/vcap/store/blobstore/store/;
+
+    dav_methods DELETE PUT;
+    create_full_put_path on;
+  }
+
   location ~* ^/signed/(?<object_id>.+)$ {
-    if ( $request_method !~ ^(GET|PUT)$ ) {
+    if ( $request_method !~ ^(GET|PUT|HEAD)$ ) {
       return 405;
     }
 
@@ -458,10 +498,10 @@ server {
     secure_link_hmac_algorithm sha256;
 
     if ($secure_link_hmac != "1") {
-      return 404;
+      return 403;
     }
 
-    rewrite ^/signed/(.*)$ /$object_id;
+    rewrite ^/signed/(.*)$ /internal/$object_id;
   }
 
   
