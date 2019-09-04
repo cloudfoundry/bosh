@@ -26,7 +26,8 @@ describe 'blobstore.conf.erb' do
               'allow_http' => true,
               'nginx' => {
                 'enable_metrics_endpoint' => true
-              }
+              },
+              'secret' => 'mysecret',
             }
           }
         }
@@ -125,7 +126,8 @@ server {
               'allow_http' => true,
               'nginx' => {
                 'enable_metrics_endpoint' => false
-              }
+              },
+              'secret' => 'mysecret',
             }
           }
         }
@@ -215,7 +217,8 @@ server {
               'allow_http' => false,
               'nginx' => {
                 'enable_metrics_endpoint' => false
-              }
+              },
+              'secret' => 'mysecret',
             }
           }
         }
@@ -303,7 +306,8 @@ server {
               'allow_http' => true,
               'nginx' => {
                 'enable_metrics_endpoint' => false
-              }
+              },
+              'secret' => 'mysecret',
             }
           }
         }
@@ -393,7 +397,8 @@ server {
               'allow_http' => true,
               'nginx' => {
                 'enable_metrics_endpoint' => false
-              }
+              },
+              'secret' => 'mysecret',
             }
           }
         }
