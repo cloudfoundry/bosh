@@ -55,7 +55,7 @@ http {
     proxy_set_header    X-BOSH-UPLOAD-REQUEST-TIME $request_time;
     proxy_set_header    X-Sendfile-Type            X-Accel-Redirect;
     proxy_set_header    X-Accel-Mapping            /=/x_accel_files/;
-    proxy_set_header    Host                       $host;
+    proxy_set_header    Host                       $http_host;
     proxy_set_header    X-Real-IP                  $remote_addr;
     proxy_set_header    X-Forwarded-For            $proxy_add_x_forwarded_for;
     proxy_set_header    X-Forwarded-Proto          $scheme;
