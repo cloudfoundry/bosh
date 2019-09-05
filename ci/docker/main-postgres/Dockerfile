@@ -10,3 +10,6 @@ RUN apt-get install -y \
 	postgresql-$DB_VERSION \
 	postgresql-client-$DB_VERSION \
 	&& apt-get clean
+
+ADD trust_pg_hba.conf /tmp/pg_hba.conf
+RUN cp /tmp/pg_hba.conf /etc/postgresql/$DB_VERSION/main/pg_hba.conf
