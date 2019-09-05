@@ -21,6 +21,7 @@ RUN apt-get install -y \
 	realpath \
 	libpq-dev \
 	rsyslog \
+	libcurl4-openssl-dev \
 	&& apt-get clean
 
 # Nokogiri dependencies
