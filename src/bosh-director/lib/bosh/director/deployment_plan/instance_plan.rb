@@ -362,10 +362,6 @@ module Bosh
             recreation_requested?
         end
 
-        def find_existing_reservation_for_network(network)
-          @instance.existing_network_reservations.find_for_network(network)
-        end
-
         def desired_az_name
           @desired_instance.az ? @desired_instance.az.name : nil
         end
