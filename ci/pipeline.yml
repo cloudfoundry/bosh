@@ -306,7 +306,6 @@ jobs:
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
-        - get: bosh-main-mysql-5.7
         - get: integration-tests-parallel-runtime
 
       - <<: *install-dependencies
