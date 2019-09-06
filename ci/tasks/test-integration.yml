@@ -27,3 +27,4 @@ params:
   SHA2_MODE:               ~
   DB_TLS:                  false
   DEFAULT_UPDATE_VM_STRATEGY: "delete-create"
+  NUM_PROCESSES:
