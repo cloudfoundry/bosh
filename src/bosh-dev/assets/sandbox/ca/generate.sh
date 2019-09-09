@@ -14,14 +14,14 @@ function createSigningRequest () { name=$1
 }
 
 function createCertWithCA () { name=$1
-  echo "Generating #{organizationName} cert signed by CA..."
+  echo "Generating $name cert signed by CA..."
   createSigningRequest $name
   openssl x509 -req -in ${name}.csr -CA rootCA.pem -CAkey rootCA.key -CAcreateserial -out ${name}.crt -days 99999
   cleanup $name
 }
 
 function createSelfSignedCert () { name=$1
-  echo "Generating self-signed #{organizationName} cert..."
+  echo "Generating self-signed $name cert..."
   createSigningRequest $name
   openssl x509 -req -in ${name}.csr -signkey ${name}.key -out ${name}.crt -days 99999
   cleanup $name
@@ -29,7 +29,7 @@ function createSelfSignedCert () { name=$1
 
 echo "Generating CA..."
 openssl genrsa -out rootCA.key 1024
-yes "" | openssl req -x509 -new -nodes -key rootCA.key -days 99999 -out rootCA.pem
+openssl req -x509 -new -nodes -key rootCA.key -days 99999 -out rootCA.pem -subj '/C=US/O=Pivotal'
 
 createCertWithCA server
 createSelfSignedCert serverWithWrongCA

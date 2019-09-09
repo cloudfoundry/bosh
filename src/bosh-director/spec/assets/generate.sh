@@ -13,7 +13,8 @@ EOL
 
   echo "Generating CA..."
   openssl genrsa -out rootCA.key 1024
-  yes "" | openssl req -x509 -new -nodes -key rootCA.key -days 99999 -out rootCA.pem
+  openssl req -x509 -new -nodes -key rootCA.key -days 99999 -out rootCA.pem \
+    -subj "/C=US/O=BOSH"
 
   echo "Generating private key..."
   openssl genrsa -out ${name}.key 2048
