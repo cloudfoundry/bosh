@@ -7,7 +7,7 @@ variables:
   type: certificate
   options:
     ca: default_ca
-    common_name: 127.0.0.1
+    common_name: localhost
     alternative_names:
     - 127.0.0.1
     - 0.0.0.0
@@ -20,7 +20,7 @@ variables:
   type: certificate
   options:
     ca: default_ca
-    common_name: 127.0.0.1
+    common_name: localhost
     alternative_names:
     - 127.0.0.1
     - 0.0.0.0
