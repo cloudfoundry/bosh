@@ -1039,7 +1039,7 @@ resources:
   - name: cpi-release
     type: bosh-io-release
     source:
-      repository: cloudfoundry-incubator/bosh-vsphere-cpi-release
+      repository: cloudfoundry/bosh-vsphere-cpi-release
 
   - name: bosh-agent
     type: git
