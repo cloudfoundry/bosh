@@ -29,7 +29,11 @@ describe Bosh::Director::NatsRpc do
   end
 
   subject(:nats_rpc) do
-    Bosh::Director::NatsRpc.new(nats_url, nats_server_ca_path, nats_client_private_key_path, nats_client_certificate_path)
+    Bosh::Director::NatsRpc.new(false,
+                                nats_url,
+                                nats_server_ca_path,
+                                nats_client_private_key_path,
+                                nats_client_certificate_path)
   end
 
   before do
@@ -38,16 +42,14 @@ describe Bosh::Director::NatsRpc do
     allow(Bosh::Director::Config).to receive(:process_uuid).and_return(123)
     allow(EM).to receive(:schedule).and_yield
     allow(nats_rpc).to receive(:generate_request_id).and_return('req1')
-    allow(nats).to receive(:flush) do |&blk|
-      blk.call
-    end
+    allow(nats).to receive(:flush).and_yield
   end
 
   describe '#nats' do
     it 'returns a NATs client and registers an error handler' do
       expect(NATS).to receive(:connect).with(nats_options).and_return(nats)
       expect(NATS).to receive(:on_error)
-      expect(nats_rpc.nats).to eq(nats)
+      expect(nats_rpc.nats).to be_instance_of(Bosh::Director::NatsClient)
     end
 
     context 'when an error occurs while connecting' do
@@ -67,9 +69,9 @@ describe Bosh::Director::NatsRpc do
 
       before do
         allow(NATS).to receive(:connect).with(nats_options).and_return(nats)
-        allow(NATS).to receive(:on_error) do |&clbk|
-          clbk.call('Some error for nats://nats:some_nats_password@127.0.0.1:4222. Another error for nats://nats:some_nats_password@127.0.0.1:4222.')
-        end
+        allow(NATS).to receive(:on_error)
+          .and_yield('Some error for nats://nats:some_nats_password@127.0.0.1:4222. '\
+                     'Another error for nats://nats:some_nats_password@127.0.0.1:4222.')
       end
 
       it 'does NOT log the NATS password' do
@@ -97,9 +99,7 @@ describe Bosh::Director::NatsRpc do
           'reply_to' => 'director.123.client_id_567.req1',
         )
       end
-      expect(nats).to receive(:flush) do |&blk|
-        blk.call
-      end
+      expect(nats).to receive(:flush).and_yield
 
       request_id = nats_rpc.send_request('test_client', 'client_id_567', { 'method' => 'a', 'arguments' => [5] }, options)
       expect(request_id).to eql('req1')
@@ -149,9 +149,7 @@ describe Bosh::Director::NatsRpc do
         subscribe_callback.call('', nil, 'director.123.client_id_567.req1')
       end
 
-      expect(nats).to receive(:flush).once do |&blk|
-        blk.call
-      end
+      expect(nats).to receive(:flush).once.and_yield
 
       nats_rpc.send_request('test_client', 'client_id_567', { 'method' => 'a', 'arguments' => [5] }, options)
       nats_rpc.send_request('test_client', 'client_id_567', { 'method' => 'a', 'arguments' => [5] }, options)

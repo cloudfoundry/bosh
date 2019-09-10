@@ -497,7 +497,8 @@ describe Bosh::Director::Config do
 
     it 'initializes a new nats rpc client with the appropriate params' do
       expect(Bosh::Director::NatsRpc).to receive(:new)
-        .with(test_config['mbus'],
+        .with(test_config['use_nats_pure'],
+              test_config['mbus'],
               test_config['nats']['server_ca_path'],
               test_config['nats']['client_private_key_path'],
               test_config['nats']['client_certificate_path'])
@@ -652,6 +653,37 @@ describe Bosh::Director::Config do
         it 'resolves to false' do
           described_class.configure(test_config)
           expect(described_class.parallel_problem_resolution).to be_falsey
+        end
+      end
+    end
+  end
+
+  describe 'use_nats_pure' do
+    context 'when not set' do
+      before { test_config.delete('use_nats_pure') }
+
+      it 'resolves to false' do
+        described_class.configure(test_config)
+        expect(described_class.use_nats_pure).to be_falsey
+      end
+    end
+
+    context 'when explicitly set' do
+      context 'when set to true' do
+        before { test_config['use_nats_pure'] = true }
+
+        it 'resolves to true' do
+          described_class.configure(test_config)
+          expect(described_class.use_nats_pure).to be_truthy
+        end
+      end
+
+      context 'when set to false' do
+        before { test_config['use_nats_pure'] = false }
+
+        it 'resolves to false' do
+          described_class.configure(test_config)
+          expect(described_class.use_nats_pure).to be_falsey
         end
       end
     end

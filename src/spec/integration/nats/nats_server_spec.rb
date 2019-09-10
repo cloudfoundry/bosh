@@ -52,4 +52,18 @@ describe 'nats server', type: :integration do
       expect(output).to include('Succeeded')
     end
   end
+
+  context 'with nats.pure' do
+    with_reset_sandbox_before_each(use_nats_pure: true)
+
+    it 'should deploy successfully' do
+      output, exit_code = deploy_from_scratch(
+        manifest_hash: Bosh::Spec::Deployments.simple_manifest_with_instance_groups,
+        return_exit_code: true,
+      )
+
+      expect(exit_code).to eq(0)
+      expect(output).to include('Succeeded')
+    end
+  end
 end

@@ -228,6 +228,7 @@ module Bosh::Dev::Sandbox
         users_in_manifest: @users_in_manifest,
         verify_multidigest_path: verify_multidigest_path,
         preferred_cpi_api_version: @dummy_cpi_api_version,
+        use_nats_pure: @use_nats_pure,
       }
 
       DirectorConfig.new(attributes, @port_provider)
@@ -349,6 +350,7 @@ module Bosh::Dev::Sandbox
       @dummy_cpi_api_version = options.fetch(:dummy_cpi_api_version, 1)
       @nats_url = "nats://localhost:#{nats_port}"
       @cpi.options['nats'] = @nats_url
+      @use_nats_pure = options.fetch(:use_nats_pure, false)
 
       setup_database(@db_config, old_tls_enabled_value)
     end

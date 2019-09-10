@@ -178,6 +178,9 @@ properties:
   director.parallel_problem_resolution:
     description: When true, problems (e.g. resurrection, disk reattaching) are resolved in parallel
     default: true
+  director.use_nats_pure:
+    description: When true, will use nats-pure.rb client instead of nats.rb (with EM)
+    default: false
 
   director.cpi.preferred_api_version:
     description: The preferred api version to use when communicating with the CPI. If specified greater than the max supported version it will only communicate via the highest available api version.

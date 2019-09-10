@@ -39,7 +39,8 @@ module Bosh::Dev::Sandbox
                 :user_authentication,
                 :users_in_manifest,
                 :verify_multidigest_path,
-                :preferred_cpi_api_version
+                :preferred_cpi_api_version,
+                :use_nats_pure
 
     def initialize(attrs, port_provider)
       @director_name = 'TestDirector'
@@ -96,6 +97,7 @@ module Bosh::Dev::Sandbox
       @agent_wait_timeout = attrs.fetch(:agent_wait_timeout, 600)
       @preferred_cpi_api_version = attrs.fetch(:preferred_cpi_api_version)
       @keep_unreachable_vms = attrs.fetch(:keep_unreachable_vms, false)
+      @use_nats_pure = attrs.fetch(:use_nats_pure, false)
     end
 
     def render(template_path)

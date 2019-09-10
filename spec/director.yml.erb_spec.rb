@@ -566,6 +566,26 @@ describe 'director.yml.erb' do
         end
       end
     end
+
+    describe 'use_nats_pure property' do
+      before do
+        merged_manifest_properties['director']['cpi_job'] = 'test-cpi'
+      end
+
+      context 'when use_nats_pure not specified' do
+        it 'should be the default value' do
+          expect(parsed_yaml['use_nats_pure']).to eq(false)
+        end
+      end
+      context 'when use_nats_pure specified' do
+        before do
+          merged_manifest_properties['director']['use_nats_pure'] = true
+        end
+        it 'should be the specified value' do
+          expect(parsed_yaml['use_nats_pure']).to eq(true)
+        end
+      end
+    end
   end
 
   describe Bosh::Template::Test do
