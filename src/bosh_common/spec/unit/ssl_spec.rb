@@ -101,7 +101,7 @@ describe Bosh::Ssl::Certificate do
 
         server_certificate.load_or_create
 
-        expect(server_certificate.key).to eq(key_contents_before)
+        expect(server_certificate.key).to eq(OpenSSL::PKey::RSA.new(key_contents_before).to_pem)
         expect(server_certificate.certificate).to eq(certificate_contents_before)
       end
 
