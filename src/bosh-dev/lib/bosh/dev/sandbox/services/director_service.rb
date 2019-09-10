@@ -31,7 +31,7 @@ module Bosh::Dev::Sandbox
 
       @connector = HTTPEndpointConnector.new(
         'director',
-        'localhost',
+        '127.0.0.1',
         options[:director_port],
         '/info',
         '"uuid"',

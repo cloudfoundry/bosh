@@ -32,7 +32,7 @@ module Bosh::Dev::Sandbox
       @logger = logger
       @log_location = "#{base_log_path}.config-server.out"
       @config_server_config_file= File.join(INSTALL_DIR, "config-server-config#{test_env_number}.json")
-      @config_server_socket_connector = SocketConnector.new('config-server', 'localhost', @port, @log_location, logger)
+      @config_server_socket_connector = SocketConnector.new('config-server', '127.0.0.1', @port, @log_location, logger)
 
       @config_server_process = Bosh::Dev::Sandbox::Service.new(
         [executable_path, @config_server_config_file],

@@ -544,7 +544,7 @@ module Bosh::Dev::Sandbox
         @logger
       )
 
-      @nats_socket_connector = SocketConnector.new('nats', 'localhost', nats_port, @nats_log_path, @logger)
+      @nats_socket_connector = SocketConnector.new('nats', '127.0.0.1', nats_port, @nats_log_path, @logger)
     end
 
     def get_nats_server_ca_path
