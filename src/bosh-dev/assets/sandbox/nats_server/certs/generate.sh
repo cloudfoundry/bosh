@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #HOSTNAME="$(hostname)"
-HOSTNAME="127.0.0.1"
+HOSTNAME="localhost"
 CREDS_FILE='./creds.yml'
 TEMPLATE_FILE='./manifest.yml'
 

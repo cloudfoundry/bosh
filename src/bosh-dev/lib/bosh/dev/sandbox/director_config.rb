@@ -68,10 +68,10 @@ module Bosh::Dev::Sandbox
       @cloud_storage_dir = attrs.fetch(:cloud_storage_dir)
 
       @user_authentication = attrs.fetch(:user_authentication)
-      @uaa_url = "https://127.0.0.1:#{port_provider.get_port(:nginx)}/uaa"
+      @uaa_url = "https://localhost:#{port_provider.get_port(:nginx)}/uaa"
 
       @config_server_enabled = attrs.fetch(:config_server_enabled)
-      @config_server_url = "https://127.0.0.1:#{port_provider.get_port(:config_server_port)}"
+      @config_server_url = "https://localhost:#{port_provider.get_port(:config_server_port)}"
       @config_server_cert_path = Bosh::Dev::Sandbox::ConfigServerService::ROOT_CERT
 
       @config_server_uaa_url = @uaa_url

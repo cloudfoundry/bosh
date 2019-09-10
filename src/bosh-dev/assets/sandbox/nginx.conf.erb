@@ -14,11 +14,11 @@ http {
   server_names_hash_bucket_size  64;
 
   upstream director {
-    server 127.0.0.1:<%= director_ruby_port %>;
+    server localhost:<%= director_ruby_port %>;
   }
 
   upstream uaa {
-    server 127.0.0.1:<%= uaa_port %>;
+    server localhost:<%= uaa_port %>;
   }
 
   server {

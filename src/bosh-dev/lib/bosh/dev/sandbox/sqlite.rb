@@ -11,7 +11,7 @@ module Bosh::Dev::Sandbox
       @runner = runner
       @username = nil
       @password = nil
-      @host = '127.0.0.1'
+      @host = 'localhost'
       @port = nil
       @adapter = 'sqlite'
     end

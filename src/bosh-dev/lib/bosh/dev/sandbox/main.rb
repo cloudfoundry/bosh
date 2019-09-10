@@ -308,7 +308,7 @@ module Bosh::Dev::Sandbox
     end
 
     def director_url
-      @director_url ||= "https://127.0.0.1:#{director_port}"
+      @director_url ||= "https://localhost:#{director_port}"
     end
 
     def director_port
@@ -347,7 +347,7 @@ module Bosh::Dev::Sandbox
       old_tls_enabled_value = @db_config[:tls_enabled]
       @db_config[:tls_enabled] = options.fetch(:tls_enabled, ENV['DB_TLS'] == 'true')
       @dummy_cpi_api_version = options.fetch(:dummy_cpi_api_version, 1)
-      @nats_url = "nats://127.0.0.1:#{nats_port}"
+      @nats_url = "nats://localhost:#{nats_port}"
       @cpi.options['nats'] = @nats_url
 
       setup_database(@db_config, old_tls_enabled_value)
@@ -384,7 +384,7 @@ module Bosh::Dev::Sandbox
 
     def director_nats_config
       {
-        uri: "nats://127.0.0.1:#{nats_port}",
+        uri: "nats://localhost:#{nats_port}",
         ssl: true,
         tls: {
           :private_key_file => nats_certificate_paths['clients']['test_client']['private_key_path'],
@@ -544,7 +544,7 @@ module Bosh::Dev::Sandbox
         @logger
       )
 
-      @nats_socket_connector = SocketConnector.new('nats', '127.0.0.1', nats_port, @nats_log_path, @logger)
+      @nats_socket_connector = SocketConnector.new('nats', 'localhost', nats_port, @nats_log_path, @logger)
     end
 
     def get_nats_server_ca_path

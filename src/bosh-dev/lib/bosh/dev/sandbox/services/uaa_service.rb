@@ -27,7 +27,7 @@ module Bosh::Dev::Sandbox
       @build_mutex = Mutex.new
       @log_location = "#{base_log_path}.uaa.out"
 
-      @connector = HTTPEndpointConnector.new('uaa', '127.0.0.1', @port, '/uaa/login', 'Reset password', @log_location, logger)
+      @connector = HTTPEndpointConnector.new('uaa', 'localhost', @port, '/uaa/login', 'Reset password', @log_location, logger)
 
       @uaa_webapps_path = File.join(sandbox_root, 'uaa.webapps')
       unless File.exist? @uaa_webapps_path
