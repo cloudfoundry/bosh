@@ -9,6 +9,10 @@ variables:
     ca: default_ca
     common_name: 127.0.0.1
     alternative_names:
+    - 127.0.0.1
+    - 0.0.0.0
+    - localhost
+    - 0:0:0:0:0:0:0:0
     - ((hostname))
     extended_key_usage:
       - server_auth
@@ -18,6 +22,10 @@ variables:
     ca: default_ca
     common_name: 127.0.0.1
     alternative_names:
+    - 127.0.0.1
+    - 0.0.0.0
+    - localhost
+    - 0:0:0:0:0:0:0:0
     - ((hostname))
     extended_key_usage:
       - client_auth
