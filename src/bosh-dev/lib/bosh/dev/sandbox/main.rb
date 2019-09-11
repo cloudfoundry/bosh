@@ -68,8 +68,13 @@ module Bosh::Dev::Sandbox
       db_opts = {
         type: ENV['DB'] || 'postgresql',
         tls_enabled: ENV['DB_TLS'] == 'true',
-      }
-      db_opts[:password] = ENV['DB_PASSWORD'] if ENV['DB_PASSWORD']
+        password: ENV['DB_PASSWORD'],
+        username: ENV['DB_USERNAME'],
+        host: ENV['DB_HOST'] || '127.0.0.1',
+        port: ENV['DB_PORT'],
+        name: ENV['DB_NAME'] || SecureRandom.uuid.gsub('-', ''),
+        ca_path: File.join(SANDBOX_ASSETS_DIR, 'database', 'rootCA.pem'),
+      }.compact
 
       new(
         db_opts,
@@ -107,9 +112,7 @@ module Bosh::Dev::Sandbox
       @config_server_service = ConfigServerService.new(@port_provider, base_log_path, @logger, test_env_number)
       @nginx_service = NginxService.new(sandbox_root, director_port, director_ruby_port, @uaa_service.port, @logger)
 
-      @db_config = {
-        ca_path: File.join(SANDBOX_ASSETS_DIR, 'database', 'rootCA.pem')
-      }.merge(db_opts)
+      @db_config = db_opts
 
       setup_database(@db_config, nil)
 
@@ -513,11 +516,11 @@ module Bosh::Dev::Sandbox
     def setup_database(db_config, old_tls_enabled_value)
       if !@database || (db_config[:tls_enabled] != old_tls_enabled_value)
         if db_config[:type] == 'mysql'
-          @database = Mysql.new(@name, Bosh::Core::Shell.new, @logger, db_config)
+          @database = Mysql.new(Bosh::Core::Shell.new, @logger, db_config)
         else
           postgres_options = db_config.dup
 
-          @database = Postgresql.new(@name, Bosh::Core::Shell.new, @logger, postgres_options)
+          @database = Postgresql.new(Bosh::Core::Shell.new, @logger, postgres_options)
         end
       end
     end

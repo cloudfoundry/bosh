@@ -7,7 +7,8 @@ module Bosh::Dev::Sandbox
     attr_reader :db_name, :username, :password, :adapter, :port, :host, :ca_path, :tls_enabled
 
     def initialize(db_name, runner, logger, options = {})
-      @db_name = db_name
+      @db_name = options.fetch(:name, 'bosh_db')
+
       @logger = logger
       @runner = runner
       @adapter = 'postgres'
