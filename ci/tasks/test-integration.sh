@@ -74,13 +74,17 @@ max_allowed_packet=6M' >> /etc/mysql/my.cnf
 
     if [ "$DB_TLS" = true ]; then
       echo "....... DB TLS enabled ......."
+      cp bosh-src/src/bosh-dev/assets/sandbox/database/database_server/private_key $PGDATA/server.key
+      cp bosh-src/src/bosh-dev/assets/sandbox/database/database_server/certificate.pem $PGDATA/server.crt
+      chown postgres $PGDATA/server.key
+      chown postgres $PGDATA/server.crt
       su postgres -c '
         export PGDATA=/tmp/postgres/data
-        cp bosh-src/src/bosh-dev/assets/sandbox/database/database_server/private_key $PGDATA/server.key
-        cp bosh-src/src/bosh-dev/assets/sandbox/database/database_server/certificate.pem $PGDATA/server.crt
-
         echo "ssl = on" >> $PGDATA/postgresql.conf
         echo "hostssl all all 127.0.0.1/32 password" > $PGDATA/pg_hba.conf
+        echo "hostssl all all 0.0.0.0/32 password" >> $PGDATA/pg_hba.conf
+        echo "hostssl all all ::1/128 password" >> $PGDATA/pg_hba.conf
+        echo "hostssl all all localhost password" >> $PGDATA/pg_hba.conf
 
         chmod 600 $PGDATA/server.*
       '

@@ -15,7 +15,8 @@ RSpec.configure do |config|
 
   config.after do |example|
     if example.exception
-      puts "An exception occurred running #{example}"
+      puts "An exception occurred running #{example.class.name}:"
+      puts example.exception.inspect.to_s
       puts "\nTest directory: #{tmp_dir}"
       puts "\nSandbox directory: #{Bosh::Dev::Sandbox::Workspace.dir}"
     else

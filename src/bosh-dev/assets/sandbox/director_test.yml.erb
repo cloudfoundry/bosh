@@ -27,7 +27,7 @@ db: &bosh_db
   database: <%= database.db_name %>
   # Settings are set to defaults since DbBackup
   # currently does not support export without them
-  host: localhost
+  host: 127.0.0.1
   port: <%= database.port %>
   user: <%= database.username %>
   password: <%= database.password %>

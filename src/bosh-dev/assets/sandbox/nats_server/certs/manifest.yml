@@ -10,9 +10,8 @@ variables:
     common_name: default.nats.bosh-internal
     alternative_names:
     - 127.0.0.1
-    - 0.0.0.0
     - localhost
-    - 0:0:0:0:0:0:0:0
+    - 0:0:0:0:0:0:0:1
     - ((hostname))
     extended_key_usage:
       - server_auth
@@ -23,9 +22,8 @@ variables:
     common_name: default.director.bosh-internal
     alternative_names:
     - 127.0.0.1
-    - 0.0.0.0
     - localhost
-    - 0:0:0:0:0:0:0:0
+    - 0:0:0:0:0:0:0:1
     - ((hostname))
     extended_key_usage:
       - client_auth
@@ -36,9 +34,8 @@ variables:
     common_name: default.hm.bosh-internal
     alternative_names:
     - 127.0.0.1
-    - 0.0.0.0
     - localhost
-    - 0:0:0:0:0:0:0:0
+    - 0:0:0:0:0:0:0:1
     - ((hostname))
     extended_key_usage:
       - client_auth
@@ -49,9 +46,8 @@ variables:
     common_name: default.integration.test.bosh-internal
     alternative_names:
     - 127.0.0.1
-    - 0.0.0.0
     - localhost
-    - 0:0:0:0:0:0:0:0
+    - 0:0:0:0:0:0:0:1
     - ((hostname))
     extended_key_usage:
     - client_auth

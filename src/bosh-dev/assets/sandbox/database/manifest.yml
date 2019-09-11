@@ -7,25 +7,17 @@ variables:
   type: certificate
   options:
     ca: default_ca
-    common_name: localhost
+    common_name: 127.0.0.1
     alternative_names:
     - 127.0.0.1
-    - 0.0.0.0
-    - localhost
-    - 0:0:0:0:0:0:0:0
-    - ((hostname))
     extended_key_usage:
       - server_auth
 - name: database_client
   type: certificate
   options:
     ca: default_ca
-    common_name: localhost
+    common_name: 127.0.0.1
     alternative_names:
     - 127.0.0.1
-    - 0.0.0.0
-    - localhost
-    - 0:0:0:0:0:0:0:0
-    - ((hostname))
     extended_key_usage:
       - client_auth
