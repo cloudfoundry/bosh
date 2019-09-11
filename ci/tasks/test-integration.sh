@@ -97,7 +97,7 @@ max_allowed_packet=6M' >> /etc/mysql/my.cnf
     exit 1
 esac
 
-mv ./bosh-cli/*bosh-cli-*-linux-amd64 /usr/local/bin/bosh
+cp ./bosh-cli/*bosh-cli-*-linux-amd64 /usr/local/bin/bosh
 chmod +x /usr/local/bin/bosh
 
 source /etc/profile.d/chruby.sh
@@ -120,7 +120,7 @@ pushd bosh-src/src
   bundle_exit_code=$?
 
   if [[ "$DB" = "mysql" && "$DB_TLS" = true ]]; then
-    sudo service mysql stop
+    service mysql stop
   fi
 popd
 
