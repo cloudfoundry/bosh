@@ -91,7 +91,7 @@ module SpecHelper
     def init_database
       @db_name = SecureRandom.uuid.delete('-')
       connection_string = ENV['DB_URI']
-      db_options = {}
+      db_options = {name: "#{@db_name}_director"}
 
       if !connection_string
         db_options.merge!({
@@ -115,23 +115,22 @@ module SpecHelper
         db_options[:port] ||= 5432
 
         @director_db_helper = Bosh::Dev::Sandbox::Postgresql.new(
-          "#{@db_name}_director",
           Bosh::Core::Shell.new,
           @init_logger,
           db_options,
         )
-        @dns_db_helper = Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_dns", Bosh::Core::Shell.new, @init_logger, db_options)
+
+        @dns_db_helper = Bosh::Dev::Sandbox::Postgresql.new(Bosh::Core::Shell.new, @init_logger, db_options.merge!(name: "#{@db_name}_dns"))
       when 'mysql'
         require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/mysql', File.dirname(__FILE__))
         db_options[:port] = 3306
 
         @director_db_helper = Bosh::Dev::Sandbox::Mysql.new(
-          "#{@db_name}_director",
           Bosh::Core::Shell.new,
           @init_logger,
           db_options,
         )
-        @dns_db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_dns", Bosh::Core::Shell.new, @init_logger, db_options)
+        @dns_db_helper = Bosh::Dev::Sandbox::Mysql.new( Bosh::Core::Shell.new, @init_logger, db_options.merge!(name: "#{@db_name}_dns"))
       when 'sqlite'
         require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/sqlite', File.dirname(__FILE__))
         @director_db_helper = Bosh::Dev::Sandbox::Sqlite.new(File.join(@temp_dir, "#{@db_name}_director.sqlite"), @init_logger)
