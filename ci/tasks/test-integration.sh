@@ -14,7 +14,7 @@ check_param DB
 echo "Starting $DB..."
 case "$DB" in
   mysql)
-    export DB_PASSWORD="${DB_PASSWORD:-password}"
+    export DB_PASSWORD="password"
     mv /var/lib/mysql /var/lib/mysql-src
     mkdir /var/lib/mysql
     mount -t tmpfs -o size=512M tmpfs /var/lib/mysql

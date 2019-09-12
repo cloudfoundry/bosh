@@ -330,10 +330,7 @@ jobs:
           params:
             RUBY_VERSION: 2.6.3
             DB:           mysql
-            DB_HOST: ((integration-gcp-mysql-external-db-host))
-            DB_USERNAME: ((integration-gcp-mysql-external-db-username))
-            DB_PASSWORD: ((integration-gcp-mysql-external-db-password))
-            DB_TLS:       false
+            DB_TLS:       true
 
       - put: integration-tests-parallel-runtime
         params:
