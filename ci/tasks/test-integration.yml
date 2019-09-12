@@ -22,11 +22,11 @@ run:
 params:
   RUBY_VERSION:            2.6.3
   DB:                      replace-me
-  DB_HOST:
-  DB_PASSWORD:
-  DB_USERNAME:
-  DB_PORT:
-  DB_NAME:
+  DB_HOST:                 ~
+  DB_PASSWORD:             ~
+  DB_USERNAME:             ~
+  DB_PORT:                 ~
+  DB_NAME:                 ~
   LOG_LEVEL:               ERROR
   SPEC_PATH:               ~
   SHA2_MODE:               ~
