@@ -574,6 +574,9 @@ jobs:
         trigger: true
         passed: [compile-bosh-dev-release-xenial]
       - get: bosh-disaster-recovery-acceptance-tests
+      - get: bbr-cli-binary
+        params:
+          globs: ["bbr*-linux-amd64"]
     - do:
       - task: test-bdrats
         file: bosh-src/ci/tasks/test-bdrats.yml
@@ -872,6 +875,13 @@ resources:
     source:
       uri: https://github.com/cloudfoundry-incubator/bosh-disaster-recovery-acceptance-tests.git
       branch: master
+
+  - name: bbr-cli-binary
+    type: github-release
+    source:
+      owner: cloudfoundry-incubator
+      repository: bosh-backup-and-restore
+      access_token: ((github_token))
 
   - name: integration-tests-parallel-runtime
     type: s3

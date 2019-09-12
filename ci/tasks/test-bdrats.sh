@@ -8,10 +8,8 @@ src_dir="${script_dir}/../../.."
 export BOSH_RELEASE_PATH="${PWD}/bosh-release/$(basename bosh-release/*.tgz)"
 
 mkdir -p bbr-binary
-export BBR_VERSION=1.2.2
-curl -L -o bbr-binary/bbr https://s3.amazonaws.com/bosh-dependencies/bbr-$BBR_VERSION
-export BBR_SHA256=829160a61a44629a2626b578668777074c7badd75a9b5dab536defdbdd84b17a
 export BBR_BINARY_PATH="${PWD}/bbr-binary/bbr"
+cp bbr-cli-binary/bbr-*-linux-amd64 $BBR_BINARY_PATH
 chmod +x "${BBR_BINARY_PATH}"
 
 ${src_dir}/bosh-src/ci/docker/main-bosh-docker/start-bosh.sh \

@@ -12,6 +12,7 @@ inputs:
 - name: bosh-release
 - name: bosh-disaster-recovery-acceptance-tests
   path: gopath/src/github.com/cloudfoundry-incubator/bosh-disaster-recovery-acceptance-tests
+- name: bbr-cli-binary
 
 run:
   path: bosh-src/ci/tasks/test-bdrats.sh
