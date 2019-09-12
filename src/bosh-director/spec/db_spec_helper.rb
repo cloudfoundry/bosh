@@ -28,7 +28,6 @@ module DBSpecHelper
         username: ENV['DB_USER'],
         password: ENV['DB_PASSWORD'],
         host: ENV['DB_HOST'] || '127.0.0.1',
-        name: "#{@db_name}_director",
       }.compact
 
       case ENV.fetch('DB', 'sqlite')
@@ -36,12 +35,12 @@ module DBSpecHelper
           require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/postgresql', File.dirname(__FILE__))
           db_options[:port] = 5432
 
-          @db_helper = Bosh::Dev::Sandbox::Postgresql.new(Bosh::Core::Shell.new, init_logger, db_options)
+          @db_helper = Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_director", Bosh::Core::Shell.new, init_logger, db_options)
         when 'mysql'
           require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/mysql', File.dirname(__FILE__))
           db_options[:port] = 3306
 
-          @db_helper = Bosh::Dev::Sandbox::Mysql.new(Bosh::Core::Shell.new, init_logger, db_options)
+          @db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_dns", Bosh::Core::Shell.new, init_logger, db_options)
         when 'sqlite'
           require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/sqlite', File.dirname(__FILE__))
           @db_helper = Bosh::Dev::Sandbox::Sqlite.new(File.join(@temp_dir, "#{@db_name}_director.sqlite"), init_logger)

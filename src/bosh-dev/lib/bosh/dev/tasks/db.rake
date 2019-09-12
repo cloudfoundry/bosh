@@ -14,7 +14,7 @@ namespace :db do
 
     require 'bosh/dev/sandbox/postgresql'
     @logger = Logging.logger(STDOUT)
-    @database = Bosh::Dev::Sandbox::Postgresql.new(, Bosh::Core::Shell.new, @logger, {name: director_config['db']['database']})
+    @database = Bosh::Dev::Sandbox::Postgresql.new(director_config['db']['database'], Bosh::Core::Shell.new, @logger)
     @database.drop_db
     @database.create_db
 
@@ -43,7 +43,7 @@ namespace :db do
 
     require 'bosh/dev/sandbox/postgresql'
     @logger = Logging.logger(STDOUT)
-    @database = Bosh::Dev::Sandbox::Postgresql.new(Bosh::Core::Shell.new, @logger, {name: director_config['db']['database']})
+    @database = Bosh::Dev::Sandbox::Postgresql.new(director_config['db']['database'], Bosh::Core::Shell.new, @logger)
     @database.drop_db
     @database.create_db
 
