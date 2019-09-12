@@ -39,7 +39,7 @@ describe 'encoding', type: :integration do
       yaml_file('cpi.yml', cpi_hash)
     end
 
-    it 'supports UTF-8 in deployment configuration changes, cloud configuration changes and runtime config changes' do
+    xit 'supports UTF-8 in deployment configuration changes, cloud configuration changes and runtime config changes' do
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
 
       cloud_config_hash['vm_types'][0]['properties'] = utf8_fixture
