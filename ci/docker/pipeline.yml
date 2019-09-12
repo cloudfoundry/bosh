@@ -143,8 +143,6 @@ jobs:
     plan:
       - get: bosh-src
         trigger: true
-        passed:
-          - "build-main-base"
       - put: main-mysql-5.7
         params:
           build: "bosh-src/ci/docker/main-mysql"

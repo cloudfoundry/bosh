@@ -34,45 +34,6 @@ groups:
     - export-final-release
 
 shared:
-  - &install-dependencies
-    task: install-dependencies
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: bosh/main
-      inputs:
-      - name: bosh-src
-        path: uninstalled-bosh-src
-      - name: bosh-cli
-      - name: bosh-agent
-      outputs:
-      - name: bosh-src
-      params:
-        RUBY_VERSION: 2.6.3
-      run:
-        path: /bin/bash
-        args:
-        - -cex
-        - |
-          mv ./bosh-cli/*bosh-cli-*-linux-amd64 /usr/local/bin/bosh
-          chmod +x /usr/local/bin/bosh
-          source uninstalled-bosh-src/ci/tasks/utils.sh
-          agent_path=uninstalled-bosh-src/src/go/src/github.com/cloudfoundry/
-          mkdir -p $agent_path
-          cp -r bosh-agent $agent_path
-          pushd uninstalled-bosh-src/src
-            source /etc/profile.d/chruby.sh
-            chruby $RUBY_VERSION
-
-            gem install -f bundler
-            bundle update --bundler
-            bundle install --local
-            bundle exec rake spec:integration:install_dependencies
-          popd
-          rsync -a uninstalled-bosh-src/ bosh-src/
-
   - &deploy-director
     task: deploy-director
     tags: [vsphere-v6.5]
@@ -246,9 +207,6 @@ jobs:
           trigger: true
         - get: bosh-agent
         - get: integration-tests-parallel-runtime
-
-      - <<: *install-dependencies
-
       - task: tests
         privileged: true
         file: bosh-src/ci/tasks/test-integration.yml
@@ -256,7 +214,6 @@ jobs:
         params:
           DB:           postgresql
           DB_TLS:       true
-
       - put: integration-tests-parallel-runtime
         params:
           file: parallel-runtime-log/parallel_runtime_rspec.log
@@ -276,9 +233,6 @@ jobs:
           trigger: true
         - get: bosh-agent
         - get: integration-tests-parallel-runtime
-
-      - <<: *install-dependencies
-
       - task: tests
         privileged: true
         file: bosh-src/ci/tasks/test-integration.yml
@@ -307,9 +261,6 @@ jobs:
           trigger: true
         - get: bosh-agent
         - get: integration-tests-parallel-runtime
-
-      - <<: *install-dependencies
-
       - task: tests
         privileged: true
         tags: ["bosh-integration"]
@@ -328,10 +279,8 @@ jobs:
           run:
             path: bosh-src/ci/tasks/test-integration.sh
           params:
-            RUBY_VERSION: 2.6.3
             DB:           mysql
             DB_TLS:       true
-
       - put: integration-tests-parallel-runtime
         params:
           file: parallel-runtime-log/parallel_runtime_rspec.log
