@@ -1,4 +1,5 @@
 require 'bosh/director/core/templates'
+require 'digest/sha1'
 
 module Bosh::Director::Core::Templates
   class RenderedJobTemplate
