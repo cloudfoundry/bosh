@@ -19,7 +19,7 @@ module Bosh::Dev::Sandbox
         remaining_attempts -= 1
         Timeout.timeout(2) { TCPSocket.new(@host, @port).close }
         @logger.info("Connected to #{@service_name} on #{@host}:#{@port} (logs at #{@log_location}*)")
-      rescue Timeout::Error, Errno::ECONNREFUSED, Errno::EHOSTUNREACH, Errno::ETIMEDOUT => e
+      rescue Timeout::Error, Errno::ECONNREFUSED, Errno::EHOSTUNREACH, Errno::EADDRNOTAVAIL, Errno::ETIMEDOUT => e
         if remaining_attempts == 0
           @logger.error("Failed to connect to #{@service_name}: #{e.inspect} host=#{@host} port=#{@port}")
           raise

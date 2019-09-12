@@ -27,7 +27,7 @@ module Bosh::Dev::Sandbox
           raise MissingContent.new("Expected to find '#{@expected_content}' in '#{result}'")
         end
         @logger.info("Connected to #{@service_name} at http://#{@host}:#{@port}#{@endpoint} (logs at #{@log_location}*)")
-      rescue Timeout::Error, Errno::ECONNREFUSED, Errno::EHOSTUNREACH, Errno::ETIMEDOUT, MissingContent => e
+      rescue Timeout::Error, Errno::ECONNREFUSED, Errno::EHOSTUNREACH, Errno::EADDRNOTAVAIL, Errno::ETIMEDOUT, MissingContent => e
         if remaining_attempts == 0
           @logger.error("Failed to connect to #{@service_name}: #{e.inspect} host=#{@host} port=#{@port}")
           raise
