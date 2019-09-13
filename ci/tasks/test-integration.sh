@@ -119,7 +119,7 @@ pushd bosh-src/src
   bundle install --local
 
   set +e
-  bundle exec rake --trace spec:integration
+  LC_ALL=C.UTF-8 bundle exec rake --trace spec:integration
 
   bundle_exit_code=$?
 
