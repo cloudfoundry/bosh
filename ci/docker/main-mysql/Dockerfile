@@ -1,5 +1,12 @@
 FROM ubuntu:16.04
 
+RUN apt-get clean && apt-get update && apt-get install -y locales
+
+ENV LANG en_US.UTF-8
+ENV LC_ALL en_US.UTF-8
+RUN locale-gen en_US.UTF-8
+
+
 # Install Dependencies
 RUN echo 'mysql-server mysql-server/root_password password password' | debconf-set-selections
 RUN echo 'mysql-server mysql-server/root_password_again password password' | debconf-set-selections
