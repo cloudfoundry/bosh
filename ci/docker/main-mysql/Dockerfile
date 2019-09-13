@@ -7,11 +7,9 @@ RUN apt-get update && apt-get -yq install \
     wget build-essential libmysqlclient-dev libpq-dev libsqlite3-dev git mysql-server
 
 # Install Ruby
-RUN wget -O ruby-install-0.7.0.tar.gz https://github.com/postmodern/ruby-install/archive/v0.7.0.tar.gz && \
-    tar -xzvf ruby-install-0.7.0.tar.gz && \
-    cd ruby-install-0.7.0/ && \
-    make install
-RUN ruby-install ruby-2.6.3
+ADD install-ruby.sh /tmp/install-ruby.sh
+RUN chmod a+x /tmp/install-ruby.sh
+RUN cd /tmp && ./install-ruby.sh && rm install-ruby.sh
 ENV PATH /opt/rubies/ruby-2.6.3/bin:/opt/rubies/ruby-2.4.5/bin:$PATH
 
 # Java to start UAA
