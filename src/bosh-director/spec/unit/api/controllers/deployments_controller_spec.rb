@@ -1393,6 +1393,60 @@ module Bosh::Director
                 )
               end
             end
+
+            it 'returns vip and network_spec ip addresses for a vm' do
+              vip = '1.2.3.4'
+              network_spec_ip = '4.3.2.1'
+
+              instance_params = {
+                'availability_zone' => 'az0',
+                'deployment_id' => deployment.id,
+                'index' => 0,
+                'job' => 'job',
+                'state' => 'started',
+                'uuid' => 'instance-id',
+                'variable_set_id' => Models::VariableSet.create(deployment: deployment).id,
+              }
+
+              instance = Models::Instance.create(instance_params)
+
+              vm_params = {
+                'agent_id' => 'agent-id',
+                'cid' => 'cid',
+                'created_at' => time,
+                'instance_id' => instance.id,
+                'network_spec' => { 'network1' => { 'ip' => network_spec_ip } },
+              }
+
+              vm = Models::Vm.create(vm_params)
+              instance.active_vm = vm
+
+              ip_addresses_params = {
+                'address_str' => ip_to_i(vip).to_s,
+                'instance_id' => instance.id,
+                'task_id' => '1',
+                'vm_id' => vm.id,
+              }
+              Models::IpAddress.create(ip_addresses_params)
+
+              get '/test_deployment/vms'
+
+              expect(last_response.status).to eq(200)
+              body = JSON.parse(last_response.body)
+              expect(body.size).to eq(1)
+
+              expect(body.first).to eq(
+                'active' => true,
+                'agent_id' => 'agent-id',
+                'az' => 'az0',
+                'cid' => 'cid',
+                'id' => 'instance-id',
+                'index' => 0,
+                'ips' => [vip, network_spec_ip],
+                'job' => 'job',
+                'vm_created_at' => time.utc.iso8601,
+              )
+            end
           end
         end
 
