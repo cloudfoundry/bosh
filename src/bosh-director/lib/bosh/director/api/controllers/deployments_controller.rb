@@ -605,27 +605,10 @@ module Bosh::Director
           'index' => instance.index,
           'id' => instance.uuid,
           'az' => instance.availability_zone,
-          'ips' => ips(vm),
+          'ips' => vm&.ips || [],
           'vm_created_at' => vm&.created_at&.utc&.iso8601,
         }
       end
-
-      def ips(vm)
-        manual_or_vip_ips(vm).concat(dynamic_ips(vm)).uniq
-      end
-
-      def manual_or_vip_ips(vm)
-        return [] if vm.nil?
-
-        vm.ip_addresses.map { |ip| NetAddr::CIDR.create(ip.address).ip }
-      end
-
-      def dynamic_ips(vm)
-        return [] if vm.nil?
-
-        vm.network_spec.map { |_, network| network['ip'] }
-      end
-
     end
   end
 end

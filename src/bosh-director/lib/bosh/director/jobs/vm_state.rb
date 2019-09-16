@@ -64,7 +64,7 @@ module Bosh::Director
           cloud_properties: instance.cloud_properties_hash,
           disk_cid: instance.managed_persistent_disk_cid,
           disk_cids: instance.active_persistent_disks.collection.map { |d| d.model.disk_cid },
-          ips: ips(vm),
+          ips: vm&.ips || [],
           dns: dns_records,
           agent_id: vm&.agent_id,
           job_name: instance.job,
@@ -79,22 +79,6 @@ module Bosh::Director
           bootstrap: instance.bootstrap,
           ignore: instance.ignore,
         }
-      end
-
-      def ips(vm)
-        manual_or_vip_ips(vm).concat(dynamic_ips(vm)).uniq
-      end
-
-      def manual_or_vip_ips(vm)
-        return [] if vm.nil?
-
-        vm.ip_addresses.map { |ip| NetAddr::CIDR.create(ip.address).ip }
-      end
-
-      def dynamic_ips(vm)
-        return [] if vm.nil?
-
-        vm.network_spec.map { |_, network| network['ip'] }
       end
 
       def vm_details(vm)

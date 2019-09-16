@@ -17,5 +17,17 @@ module Bosh::Director::Models
       spec ||= {}
       self.network_spec_json = JSON.dump(spec)
     end
+
+    def ips
+      manual_or_vip_ips.concat(dynamic_ips).uniq
+    end
+
+    def manual_or_vip_ips
+      ip_addresses.map { |ip| NetAddr::CIDR.create(ip.address).ip }
+    end
+
+    def dynamic_ips
+      network_spec.map { |_, network| network['ip'] }
+    end
   end
 end
