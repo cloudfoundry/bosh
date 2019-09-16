@@ -3,7 +3,7 @@ module Bosh::Director
     def initialize(logger)
       @logger = logger
       @vm_deleter = VmDeleter.new(logger)
-      @db_ip_repo = DeploymentPlan::DatabaseIpRepo.new(logger)
+      @db_ip_repo = DeploymentPlan::IpRepo.new(logger)
     end
 
     def delete_all(lock_timeout = 5)
@@ -39,7 +39,7 @@ module Bosh::Director
 
     def destroy_vm(vm)
       vm.ip_addresses.each do |ip_addr|
-        @db_ip_repo.delete(ip_addr.address, nil)
+        @db_ip_repo.delete(ip_addr.address)
       end
       vm.destroy
     end

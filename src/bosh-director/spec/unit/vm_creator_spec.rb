@@ -216,7 +216,7 @@ module Bosh
       end
 
       describe '#create_for_instance_plans' do
-        let(:ip_repo) { DeploymentPlan::DatabaseIpRepo.new(logger) }
+        let(:ip_repo) { DeploymentPlan::IpRepo.new(logger) }
         let(:ip_provider) { DeploymentPlan::IpProvider.new(ip_repo, networks, logger) }
 
         it 'creates vms for the given instance plans' do

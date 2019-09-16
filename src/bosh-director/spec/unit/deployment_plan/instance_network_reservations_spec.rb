@@ -42,7 +42,7 @@ module Bosh::Director
     let(:instance_model) { Models::Instance.make(deployment: deployment_model) }
     let!(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
     let(:ip_provider) do
-      DeploymentPlan::IpProvider.new(DeploymentPlan::DatabaseIpRepo.new(logger), { 'fake-network' => network }, logger)
+      DeploymentPlan::IpProvider.new(DeploymentPlan::IpRepo.new(logger), { 'fake-network' => network }, logger)
     end
     before do
       allow(deployment).to receive(:ip_provider).and_return(ip_provider)

@@ -1,8 +1,8 @@
 require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
-  describe DatabaseIpRepo do
-    let(:ip_repo) { DatabaseIpRepo.new(logger) }
+  describe IpRepo do
+    let(:ip_repo) { IpRepo.new(logger) }
     let(:instance_model) { Bosh::Director::Models::Instance.make }
     let(:network_spec) do
       {
@@ -387,7 +387,7 @@ module Bosh::Director::DeploymentPlan
 
       it 'deletes IP address' do
         expect {
-          ip_repo.delete('fdab:d85c:118d:8a46::5', 'does not matter')
+          ip_repo.delete('fdab:d85c:118d:8a46::5')
         }.to change {
             Bosh::Director::Models::IpAddress.all.size
           }.by(-1)

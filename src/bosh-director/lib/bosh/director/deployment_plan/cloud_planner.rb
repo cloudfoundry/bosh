@@ -14,7 +14,7 @@ module Bosh::Director
       end
 
       def ip_provider
-        @ip_provider ||= IpProvider.new(DatabaseIpRepo.new(@logger), @networks, @logger)
+        @ip_provider ||= IpProvider.new(IpRepo.new(@logger), @networks, @logger)
       end
 
       def availability_zone(name)

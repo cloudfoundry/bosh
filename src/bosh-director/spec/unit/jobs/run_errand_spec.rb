@@ -97,7 +97,7 @@ module Bosh::Director
         end
 
         let(:planner) do
-          ip_repo = DeploymentPlan::DatabaseIpRepo.new(logger)
+          ip_repo = DeploymentPlan::IpRepo.new(logger)
           ip_provider = DeploymentPlan::IpProvider.new(ip_repo, {}, logger)
 
           instance_double(
@@ -181,7 +181,7 @@ module Bosh::Director
           let(:assembler) { instance_double(DeploymentPlan::Assembler, bind_models: nil) }
 
           let(:planner) do
-            ip_repo = DeploymentPlan::DatabaseIpRepo.new(logger)
+            ip_repo = DeploymentPlan::IpRepo.new(logger)
             ip_provider = DeploymentPlan::IpProvider.new(ip_repo, {}, logger)
 
             instance_double(

@@ -1,5 +1,5 @@
 module Bosh::Director::DeploymentPlan
-  class DatabaseIpRepo
+  class IpRepo
     include Bosh::Director::IpUtil
     class IpFoundInDatabaseAndCanBeRetried < StandardError; end
     class NoMoreIPsAvailableAndStopRetrying < StandardError; end
@@ -8,7 +8,7 @@ module Bosh::Director::DeploymentPlan
       @logger = Bosh::Director::TaggedLogger.new(logger, 'network-configuration')
     end
 
-    def delete(ip, _)
+    def delete(ip)
       cidr_ip = CIDRIP.new(ip)
 
       ip_address = Bosh::Director::Models::IpAddress.first(address_str: cidr_ip.to_i.to_s)
@@ -34,7 +34,6 @@ module Bosh::Director::DeploymentPlan
       )
 
       reservation.resolve_type(reservation_type)
-      reservation.mark_reserved
       @logger.debug("Reserved ip '#{cidr_ip}' for #{reservation.network.name} as #{reservation_type}")
     end
 

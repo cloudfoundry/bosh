@@ -9,7 +9,7 @@ module Bosh::Director
     let(:dns_encoder) { instance_double(DnsEncoder) }
     let(:instance_model) { Models::Instance.make }
     let(:ip_provider) { DeploymentPlan::IpProvider.new(ip_repo, [], logger) }
-    let(:ip_repo) { DeploymentPlan::DatabaseIpRepo.new(logger) }
+    let(:ip_repo) { DeploymentPlan::IpRepo.new(logger) }
     let(:template_blob_cache) { instance_double(Core::Templates::TemplateBlobCache) }
     let(:instance_plan_changed) { false }
     let(:needs_shutting_down) { false }

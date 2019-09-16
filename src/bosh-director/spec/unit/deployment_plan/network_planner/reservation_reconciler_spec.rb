@@ -453,6 +453,8 @@ module Bosh::Director::DeploymentPlan
             allow(logger).to receive(:debug)
 
             expect(logger).to receive(:debug)
+              .with('Existing reservation belongs to azs: ["zone_1"], desired az is nil')
+            expect(logger).to receive(:debug)
               .with(/Can't reuse reservation .*, existing reservation az does not match desired az ''/)
             network_planner.reconcile(existing_reservations)
           end

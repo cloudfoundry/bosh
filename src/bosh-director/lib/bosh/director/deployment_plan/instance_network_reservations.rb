@@ -16,7 +16,6 @@ module Bosh::Director
                                     deployment,
                                     ip_address.network_name,
                                     ip_address.address,
-                                    ip_address.type,
                                     'not-dynamic')
         end
 
@@ -24,7 +23,7 @@ module Bosh::Director
           # Dynamic network reservations are not saved in DB, recreating from instance spec
           instance_model.spec.fetch('networks', []).each do |network_name, network_config|
             next unless network_config['type'] == 'dynamic'
-            reservations.add_existing(instance_model, deployment, network_name, network_config['ip'], '', network_config['type'])
+            reservations.add_existing(instance_model, deployment, network_name, network_config['ip'], network_config['type'])
           end
         end
 
@@ -54,9 +53,8 @@ module Bosh::Director
         @reservations.delete(reservation)
       end
 
-      def add_existing(instance_model, deployment, network_name, ip, ip_type, existing_network_type)
-        network = find_network(deployment, ip, network_name)
-        @logger.debug("Registering existing reservation with #{ip_type} IP '#{format_ip(ip)}' for instance '#{instance_model}' on network '#{network.name}'")
+      def add_existing(instance_model, deployment, network_name, ip, existing_network_type)
+        network = find_network(deployment, ip, network_name, instance_model)
         reservation = ExistingNetworkReservation.new(instance_model, network, ip, existing_network_type)
         deployment.ip_provider.reserve_existing_ips(reservation)
         @reservations << reservation
@@ -64,7 +62,7 @@ module Bosh::Director
 
       private
 
-      def find_network(deployment, cidr_ip, network_name)
+      def find_network(deployment, cidr_ip, network_name, instance_model)
         networks = deployment.networks.dup
 
         network_match_on_name = deployment.network(network_name)
@@ -73,13 +71,21 @@ module Bosh::Director
           networks.unshift(networks.find { |network| network.name == network_name }).compact!
 
           networks.reject { |n| n.is_a? DynamicNetwork }.each do |network|
-            subnet = network.subnets.find { |snet| snet.is_reservable?(cidr_ip) }
-            return network if subnet
+            ip_in_subnet = network.subnets.find { |snet| snet.is_reservable?(cidr_ip) }
+            next unless ip_in_subnet
+
+            @logger.debug("Registering existing reservation with IP '#{format_ip(cidr_ip)}' for instance '#{instance_model}'"\
+              "on network '#{network.name}'")
+            return network
           end
         elsif network_match_on_name # dynamic and static vip
+          @logger.debug("Registering existing reservation with IP '#{format_ip(cidr_ip)}' for instance '#{instance_model}'"\
+            "on network '#{network_name}'")
           return network_match_on_name
         end
 
+        @logger.debug("Failed to find network #{network_name} or a network with valid subnets for #{format_ip(cidr_ip)},"\
+          'reservation will be marked as obsolete')
         Network.new(network_name, nil)
       end
 

@@ -10,7 +10,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
   let(:network) { Bosh::Director::DeploymentPlan::DynamicNetwork.new('name-7', [], logger) }
 
   let(:deployment_plan) do
-    ip_repo = Bosh::Director::DeploymentPlan::DatabaseIpRepo.new(logger)
+    ip_repo = Bosh::Director::DeploymentPlan::IpRepo.new(logger)
     ip_provider = Bosh::Director::DeploymentPlan::IpProvider.new(ip_repo, { 'name-7' => network }, logger)
     model = Bosh::Director::Models::Deployment.make
     Bosh::Director::Models::VariableSet.create(deployment: model)

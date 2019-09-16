@@ -545,7 +545,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe 'with a database-backed repo' do
-      let(:ip_repo) { DatabaseIpRepo.new(logger) }
+      let(:ip_repo) { IpRepo.new(logger) }
       let(:ip_provider) { IpProvider.new(ip_repo, networks, logger) }
 
       it_should_behave_like 'an ip provider with any repo'

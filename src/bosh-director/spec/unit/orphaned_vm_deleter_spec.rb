@@ -43,7 +43,7 @@ module Bosh
           )
         end
         let(:vm_deleter) { instance_double(Bosh::Director::VmDeleter, delete_vm_by_cid: true) }
-        let(:db_ip_repo) { Bosh::Director::DeploymentPlan::DatabaseIpRepo.new(fake_logger) }
+        let(:db_ip_repo) { Bosh::Director::DeploymentPlan::IpRepo.new(fake_logger) }
         let(:fake_logger) { instance_double(Logger, debug: true) }
         let(:task) { Models::Task.make(id: 42, username: 'foo') }
         let(:event_manager) { Api::EventManager.new(true) }
@@ -60,7 +60,7 @@ module Bosh
           allow(Config).to receive(:current_job).and_return(cleanup_job)
 
           allow(Bosh::Director::VmDeleter).to receive(:new).and_return(vm_deleter)
-          allow(Bosh::Director::DeploymentPlan::DatabaseIpRepo).to receive(:new).and_return(db_ip_repo)
+          allow(Bosh::Director::DeploymentPlan::IpRepo).to receive(:new).and_return(db_ip_repo)
         end
 
         it 'deletes the orphaned vms by cid' do

@@ -46,7 +46,7 @@ module Bosh::Director
       let(:range) { NetAddr::CIDR.create('192.168.1.1/24') }
       let(:manual_network_subnet) { ManualNetworkSubnet.new('name-7', range, nil, nil, nil, nil, nil, [], []) }
       let(:network) { BD::DeploymentPlan::ManualNetwork.new('name-7', [manual_network_subnet], logger) }
-      let(:ip_repo) { BD::DeploymentPlan::DatabaseIpRepo.new(logger) }
+      let(:ip_repo) { BD::DeploymentPlan::IpRepo.new(logger) }
       let(:deployment_plan) do
         instance_double(
           Planner,
