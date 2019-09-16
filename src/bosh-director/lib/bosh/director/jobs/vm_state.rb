@@ -82,15 +82,19 @@ module Bosh::Director
       end
 
       def ips(vm)
-        # For manual and vip networks
-        ip_addresses = vm&.ip_addresses || {}
-        result = ip_addresses.map {|ip| NetAddr::CIDR.create(ip.address).ip }
+        manual_or_vip_ips(vm).concat(dynamic_ips(vm)).uniq
+      end
 
-        # For dynamic networks
-        if result.empty? && vm && !vm.network_spec.empty?
-          result = vm&.network_spec&.map {|_, network| network['ip']}
-        end
-        result
+      def manual_or_vip_ips(vm)
+        return [] if vm.nil?
+
+        vm.ip_addresses.map { |ip| NetAddr::CIDR.create(ip.address).ip }
+      end
+
+      def dynamic_ips(vm)
+        return [] if vm.nil?
+
+        vm.network_spec.map { |_, network| network['ip'] }
       end
 
       def vm_details(vm)
