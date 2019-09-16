@@ -8,15 +8,6 @@ module Bosh::Director
       @instance_model = instance_model
       @network = network
       @ip = nil
-      @reserved = false
-    end
-
-    def reserved?
-      @reserved
-    end
-
-    def mark_reserved
-      @reserved = true
     end
 
     def static?
@@ -35,12 +26,13 @@ module Bosh::Director
   end
 
   class ExistingNetworkReservation < NetworkReservation
-    attr_reader :network_type
+    attr_reader :network_type, :obsolete
 
     def initialize(instance_model, network, ip, network_type)
       super(instance_model, network)
       @ip = ip_to_i(ip) if ip
       @network_type = network_type
+      @obsolete = network.instance_of? Bosh::Director::DeploymentPlan::Network
     end
 
     def resolve_type(type)
@@ -52,7 +44,7 @@ module Bosh::Director
     end
 
     def to_s
-      "{ip=#{formatted_ip}, network=#{@network.name}, instance=#{@instance_model}, reserved=#{reserved?}, type=#{type}}"
+      "{ip=#{formatted_ip}, network=#{@network.name}, instance=#{@instance_model}, type=#{type}}"
     end
   end
 

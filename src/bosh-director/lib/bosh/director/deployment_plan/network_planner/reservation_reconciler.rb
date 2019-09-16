@@ -13,7 +13,7 @@ module Bosh::Director::DeploymentPlan
         reconciled_reservations = []
 
         existing_reservations.each do |existing_reservation|
-          next unless existing_reservation.reserved?
+          next if existing_reservation.obsolete
           next unless able_to_match_az(existing_reservation, @instance_plan.desired_instance.az)
 
           desired_reservation = desired_reservations.find do |reservation|

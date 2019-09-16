@@ -63,7 +63,6 @@ module Bosh::Director::DeploymentPlan
       def dynamic_reservation_with_ip(ip)
         reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network_without_static_pool)
         reservation.resolve_ip(ip)
-        reservation.mark_reserved
         ip_repo.add(reservation)
 
         reservation

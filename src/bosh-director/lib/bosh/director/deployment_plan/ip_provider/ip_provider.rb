@@ -73,7 +73,6 @@ module Bosh::Director
               @logger.debug("Reserving dynamic IP '#{format_ip(ip)}' for manual network '#{reservation.network.name}'")
               reservation.resolve_ip(ip)
               reservation.resolve_type(:dynamic)
-              reservation.mark_reserved
               return
             end
           end
@@ -106,11 +105,9 @@ module Bosh::Director
         subnet_az_names = subnet.availability_zone_names.to_a.join(', ')
         if subnet.static_ips.include?(reservation.ip.to_i)
           reservation.resolve_type(:static)
-          reservation.mark_reserved
           @logger.debug("Found subnet with azs '#{subnet_az_names}' for #{format_ip(reservation.ip)}. Reserved as static network reservation.")
         else
           reservation.resolve_type(:dynamic)
-          reservation.mark_reserved
           @logger.debug("Found subnet with azs '#{subnet_az_names}' for #{format_ip(reservation.ip)}. Reserved as dynamic network reservation.")
         end
       end
@@ -143,13 +140,10 @@ module Bosh::Director
           @ip_repo.add(reservation)
           reservation.resolve_type(:static)
         end
-
-        reservation.mark_reserved
       end
 
       def reserve_dynamic(reservation)
         reservation.resolve_type(:dynamic)
-        reservation.mark_reserved
       end
 
       def filter_subnet_by_instance_az(reservation)

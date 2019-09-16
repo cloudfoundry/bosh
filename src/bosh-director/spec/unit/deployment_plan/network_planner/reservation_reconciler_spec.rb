@@ -51,7 +51,6 @@ module Bosh::Director::DeploymentPlan
       let(:should_create_swap_delete?) { false }
 
       before do
-        existing_reservations.each(&:mark_reserved)
         allow(instance_plan).to receive(:should_create_swap_delete?).and_return(should_create_swap_delete?)
       end
 
