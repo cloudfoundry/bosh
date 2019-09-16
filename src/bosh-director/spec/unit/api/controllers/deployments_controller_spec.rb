@@ -1415,7 +1415,10 @@ module Bosh::Director
                 'cid' => 'cid',
                 'created_at' => time,
                 'instance_id' => instance.id,
-                'network_spec' => { 'network1' => { 'ip' => network_spec_ip } },
+                'network_spec' => {
+                  'network1' => { 'ip' => network_spec_ip },
+                  'network2' => { 'ip' => vip },
+                },
               }
 
               vm = Models::Vm.create(vm_params)

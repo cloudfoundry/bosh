@@ -611,7 +611,7 @@ module Bosh::Director
       end
 
       def ips(vm)
-        manual_or_vip_ips(vm) + dynamic_ips(vm)
+        manual_or_vip_ips(vm).concat(dynamic_ips(vm)).uniq
       end
 
       def manual_or_vip_ips(vm)
