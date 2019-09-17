@@ -21,6 +21,7 @@ module Bosh::Director
       attr_reader :max_in_flight_before_calculation
 
       attr_reader :vm_strategy
+      attr_reader :initial_deploy_az_update_strategy
 
       # @param [Hash] update_config Raw instance group or deployment update config from deployment manifest
       # @param [optional, Hash] deployment_update_config Only provided when parsing instance_group level update block
@@ -79,7 +80,7 @@ module Bosh::Director
           'initial_deploy_az_update_strategy',
           class: String,
           optional: true,
-          default: SERIAL_AZ_UPDATE_STRATEGY,
+          default: deployment_update_config ? deployment_update_config.initial_deploy_az_update_strategy : SERIAL_AZ_UPDATE_STRATEGY,
         )
 
         unless ALLOWED_AZ_UPDATE_STRATEGIES.include?(@initial_deploy_az_update_strategy)
@@ -108,6 +109,7 @@ module Bosh::Director
           'update_watch_time' => "#{@min_update_watch_time}-#{@max_update_watch_time}",
           'serial' => serial?,
           'vm_strategy' => @vm_strategy,
+          'initial_deploy_az_update_strategy' => @initial_deploy_az_update_strategy,
         }
       end
 

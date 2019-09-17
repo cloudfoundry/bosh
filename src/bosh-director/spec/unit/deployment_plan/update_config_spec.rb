@@ -327,6 +327,27 @@ module Bosh::Director
           spec['initial_deploy_az_update_strategy'] = 'nonsense'
           expect { DeploymentPlan::UpdateConfig.new(spec) }.to raise_error
         end
+
+        it 'should inherit from the deployment-level update block when the instance group does not provide a value' do
+          deployment_spec = {
+            'canaries' => 2,
+            'max_in_flight' => 4,
+            'canary_watch_time' => 60_000,
+            'update_watch_time' => 30_000,
+            'initial_deploy_az_update_strategy' => 'parallel',
+          }
+          deployment_config = DeploymentPlan::UpdateConfig.new(deployment_spec)
+
+          instance_group_spec = {
+            'canaries' => 2,
+            'max_in_flight' => 4,
+            'canary_watch_time' => 60_000,
+            'update_watch_time' => 30_000,
+          }
+          update_config = DeploymentPlan::UpdateConfig.new(instance_group_spec, deployment_config)
+
+          expect(update_config.update_azs_in_parallel_on_initial_deploy?).to eq(true)
+        end
       end
     end
 
@@ -374,6 +395,7 @@ module Bosh::Director
           'canary_watch_time' => '60000-60000',
           'update_watch_time' => '30000-30000',
           'serial' => true,
+          'initial_deploy_az_update_strategy' => 'serial',
         )
       end
     end
