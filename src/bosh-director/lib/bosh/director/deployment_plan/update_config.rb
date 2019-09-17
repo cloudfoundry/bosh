@@ -22,10 +22,10 @@ module Bosh::Director
 
       attr_reader :vm_strategy
 
-      # @param [Hash] update_config Raw update config from deployment manifest
-      # @param [optional, Hash] default_update_config Default update config
-      def initialize(update_config, default_update_config = nil)
-        optional = !default_update_config.nil?
+      # @param [Hash] update_config Raw instance group or deployment update config from deployment manifest
+      # @param [optional, Hash] deployment_update_config Only provided when parsing instance_group level update block
+      def initialize(update_config, deployment_update_config = nil)
+        optional = !deployment_update_config.nil?
 
         @canaries_before_calculation = safe_property(update_config, 'canaries',
                                                      class: String, optional: optional)
@@ -50,12 +50,13 @@ module Bosh::Director
             parse_watch_times(update_watch_times)
         end
 
+        default_vm_strategy = Config.default_update_vm_strategy || VM_STRATEGY_DELETE_CREATE
         @vm_strategy = safe_property(
           update_config,
           'vm_strategy',
           class: String,
           optional: true,
-          default: default_update_config ? default_update_config.vm_strategy : Config.default_update_vm_strategy,
+          default: deployment_update_config ? deployment_update_config.vm_strategy : default_vm_strategy,
         )
 
         unless @vm_strategy.nil?
@@ -70,7 +71,7 @@ module Bosh::Director
           'serial',
           class: :boolean,
           optional: true,
-          default: default_update_config ? default_update_config.serial? : true,
+          default: deployment_update_config ? deployment_update_config.serial? : true,
         )
 
         @initial_deploy_az_update_strategy = safe_property(
@@ -87,15 +88,15 @@ module Bosh::Director
         end
 
         if optional
-          @canaries_before_calculation ||= default_update_config.canaries_before_calculation
+          @canaries_before_calculation ||= deployment_update_config.canaries_before_calculation
 
-          @min_canary_watch_time ||= default_update_config.min_canary_watch_time
-          @max_canary_watch_time ||= default_update_config.max_canary_watch_time
+          @min_canary_watch_time ||= deployment_update_config.min_canary_watch_time
+          @max_canary_watch_time ||= deployment_update_config.max_canary_watch_time
 
-          @min_update_watch_time ||= default_update_config.min_update_watch_time
-          @max_update_watch_time ||= default_update_config.max_update_watch_time
+          @min_update_watch_time ||= deployment_update_config.min_update_watch_time
+          @max_update_watch_time ||= deployment_update_config.max_update_watch_time
 
-          @max_in_flight_before_calculation ||= default_update_config.max_in_flight_before_calculation
+          @max_in_flight_before_calculation ||= deployment_update_config.max_in_flight_before_calculation
         end
       end
 
@@ -106,7 +107,7 @@ module Bosh::Director
           'canary_watch_time' => "#{@min_canary_watch_time}-#{@max_canary_watch_time}",
           'update_watch_time' => "#{@min_update_watch_time}-#{@max_update_watch_time}",
           'serial' => serial?,
-          'vm_strategy' => @vm_strategy.nil? ? VM_STRATEGY_DELETE_CREATE : @vm_strategy,
+          'vm_strategy' => @vm_strategy,
         }
       end
 

@@ -376,27 +376,6 @@ module Bosh::Director
           'serial' => true,
         )
       end
-
-      context 'when vm_strategy is nil' do
-        it 'should set vm_strategy to delete-create vm_strategy' do
-          config = DeploymentPlan::UpdateConfig.new(
-            'canaries' => 2,
-            'max_in_flight' => 4,
-            'canary_watch_time' => 60_000,
-            'update_watch_time' => 30_000,
-          )
-
-          config_hash = config.to_hash
-          expect(config_hash).to eq(
-            'vm_strategy' => 'delete-create',
-            'canaries' => '2',
-            'max_in_flight' => '4',
-            'canary_watch_time' => '60000-60000',
-            'update_watch_time' => '30000-30000',
-            'serial' => true,
-          )
-        end
-      end
     end
 
     context 'when max_in_flight or canaries have wrong format' do
