@@ -21,8 +21,6 @@ module Bosh::Director
       end
 
       def reserve(reservation)
-        # We should not be calling reserve on reservations that have already been reserved
-        return if reservation.reserved?
 
         if reservation.network.is_a?(DynamicNetwork)
           reserve_dynamic(reservation)
