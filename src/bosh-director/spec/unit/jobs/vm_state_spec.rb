@@ -121,6 +121,50 @@ module Bosh::Director
         end
       end
 
+      context 'when there are manual ip addresses and networks' do
+        before do
+          Models::IpAddress.make(
+            instance_id: instance.id,
+            vm_id: vm.id,
+            address_str: NetAddr::CIDR.create('1.1.1.1').to_i.to_s,
+            task_id: '12345',
+          )
+          Models::IpAddress.make(
+            instance_id: instance.id,
+            vm_id: vm.id,
+            address_str: NetAddr::CIDR.create('2.2.2.2').to_i.to_s,
+            task_id: '12345',
+          )
+
+          vm.network_spec = {
+            'a' => { 'ip' => '3.3.3.3' },
+            'b' => { 'ip' => '4.4.4.4' },
+          }
+          vm.save
+
+          instance.spec = {
+            'networks' => {
+              'a' => { 'ip' => '1.1.1.1' },
+              'b' => { 'ip' => '2.2.2.2' },
+            },
+          }
+          instance.save
+        end
+
+        it 'returns the static and dynamic ip addresses' do
+          allow(agent).to receive(:get_state).with('full').and_raise(Bosh::Director::RpcTimeout)
+
+          job.perform
+
+          status = JSON.parse(Models::Task.first(id: task.id).result_output)
+
+          expect(status['ips']).to eq([
+            '1.1.1.1', '2.2.2.2', # Static
+            '3.3.3.3', '4.4.4.4', # Dynamic
+          ])
+        end
+      end
+
       it 'parses agent info into vm_state WITH vitals' do
         Models::IpAddress.make(
           instance_id: instance.id,
