@@ -22,8 +22,10 @@ module Bosh::Director::Models
       manual_or_vip_ips.concat(dynamic_ips).uniq
     end
 
+    private
+
     def manual_or_vip_ips
-      ip_addresses.map { |ip| NetAddr::CIDR.create(ip.address).ip }
+      ip_addresses.map(&:formatted_ip)
     end
 
     def dynamic_ips

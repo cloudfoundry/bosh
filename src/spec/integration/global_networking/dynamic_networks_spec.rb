@@ -48,4 +48,56 @@ describe 'dynamic networks', type: :integration do
     new_instances = director.instances
     expect(new_instances.size).to eq(1)
   end
+
+  context 'with a dynamic and manual network defined on an instance' do
+    let(:cloud_config_hash) do
+      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config_hash['networks'] = [
+        {
+          'name' => 'a',
+          'type' => 'dynamic',
+        },
+        {
+          'name' => 'b',
+          'type' => 'manual',
+          'subnets' => [{
+            'range' => '192.168.1.0/24',
+            'gateway' => '192.168.1.1',
+            'dns' => ['192.168.1.1', '192.168.1.2'],
+            'reserved' => [],
+            'cloud_properties' => {},
+          }],
+        },
+      ]
+      cloud_config_hash
+    end
+
+    let(:manifest) do
+      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+
+      instance_group = manifest_hash['instance_groups'].first
+      instance_group['networks'] = [
+        {
+          'name' => 'a',
+          'default' => %w[dns gateway],
+        },
+        {
+          'name' => 'b',
+        },
+      ]
+      instance_group['instances'] = 1
+      manifest_hash
+    end
+
+    it 'returns both ips' do
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+      deploy_simple_manifest(manifest_hash: manifest)
+
+      original_instances = director.instances
+      expect(original_instances.size).to eq(1)
+      original_ips = original_instances.first.ips
+      expect(original_ips.size).to eq(2)
+      expect(original_ips).to include('192.168.1.2')
+    end
+  end
 end

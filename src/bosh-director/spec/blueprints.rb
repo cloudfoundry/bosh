@@ -109,6 +109,7 @@ module Bosh::Director::Models
 
   IpAddress.blueprint do
     address_str { NetAddr::CIDR.create(Sham.ip).to_i.to_s }
+    vm { nil }
     instance
     static { false }
     network_name { Sham.name }
