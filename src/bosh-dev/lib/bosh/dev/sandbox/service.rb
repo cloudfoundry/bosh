@@ -27,15 +27,15 @@ module Bosh::Dev::Sandbox
         @logger.info("Already started #{@description} with PID #{@pid}")
       else
         Dir.chdir(@cmd_options.fetch(:working_dir, Dir.pwd)) do
-          raise "Cannot find #{@description} in the $PATH" unless system("which #{@cmd_array.first} > /dev/null")
+          unless system("which #{@cmd_array.first} > /dev/null")
+            raise "Cannot find #{@description} in the $PATH"
+          end
 
-          @pid = Process.spawn(env, *@cmd_array,
-                               out: stdout || :close,
-                               err: stderr || :close,
-                               in: :close)
-          Process.detach(@pid) # avoid zombie processes that pass running? checks
-
-          raise "Error starting process for #{description}" unless running?
+          @pid = Process.spawn(env, *@cmd_array, {
+              out: stdout || :close,
+              err: stderr || :close,
+              in: :close,
+            })
 
           @logger.info("Started process for #{@description} with PID #{@pid}, log-id: #{@log_id}")
         end
@@ -91,15 +91,8 @@ module Bosh::Dev::Sandbox
     end
 
     def pid_running?(pid)
-      raise Errno::ESRCH if pid.nil? || pid.zero?
-
-      Process.kill(0, pid)
-      @logger.info("Process #{description} with PID=#{pid} is running")
+      pid && Process.kill(0, pid)
     rescue Errno::ESRCH # No such process
-      @logger.info("Process #{description} with PID=#{pid} not running")
-      false
-    rescue Errno::ECHILD # Child process terminated
-      @logger.info("Process #{description} with PID=#{pid} not running")
       false
     rescue Errno::EPERM # Owned by some other user/process
       @logger.info("Process other than #{@description} is running with PID=#{pid} so this service is not running.")
