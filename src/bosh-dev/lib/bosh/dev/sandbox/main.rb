@@ -105,7 +105,7 @@ module Bosh::Dev::Sandbox
 
       @uaa_service = UaaService.new(@port_provider, sandbox_root, base_log_path, @logger)
       @config_server_service = ConfigServerService.new(@port_provider, base_log_path, @logger, test_env_number)
-      @nginx_service = NginxService.new(sandbox_root, director_port, director_ruby_port, @uaa_service.port, @logger)
+      @nginx_service = NginxService.new(sandbox_root, director_port, director_ruby_port, @uaa_service.port, base_log_path, @logger)
 
       @db_config = {
         ca_path: File.join(SANDBOX_ASSETS_DIR, 'database', 'rootCA.pem')

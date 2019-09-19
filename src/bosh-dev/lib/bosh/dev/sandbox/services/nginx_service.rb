@@ -5,12 +5,14 @@ module Bosh::Dev::Sandbox
     NGINX_CONF_TEMPLATE = File.join(ASSETS_DIR, 'nginx.conf.erb')
     NGINX_CERT_DIR = File.join(ASSETS_DIR, 'ca', 'certs')
 
-    def initialize(sandbox_root, port, director_ruby_port, uaa_port, logger)
+    def initialize(sandbox_root, port, director_ruby_port, uaa_port, base_log_path, logger)
       @logger = logger
       nginx = Nginx.new
       config_path = File.join(sandbox_root, 'nginx.conf')
-      @process = Service.new(%W[#{nginx.executable_path} -c #{config_path} -p #{sandbox_root}], {}, logger)
-      @socket_connector = SocketConnector.new('director_nginx', 'localhost', port, 'unknown', logger)
+      log_path = "#{base_log_path}.nginx.out"
+      @process = Service.new(%W[#{nginx.executable_path} -c #{config_path} -p #{sandbox_root}],
+                             { output: log_path }, logger)
+      @socket_connector = SocketConnector.new('director_nginx', 'localhost', port, log_path, logger)
 
       default_attrs = {
         ssl_cert_path: File.join(NGINX_CERT_DIR, 'server.crt'),
