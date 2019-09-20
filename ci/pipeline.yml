@@ -53,23 +53,14 @@ jobs:
   - in_parallel:
     - get: bosh-src
       trigger: true
-    - get: bosh-main-mysql-5.6
     - get: bosh-main-mysql-5.7
-  - in_parallel:
-    - file: bosh-src/ci/tasks/test-unit.yml
-      image: bosh-main-mysql-5.6
-      params:
-        DB: mysql
-      privileged: true
-      task: test-mysql-5.6
-      timeout: 2h
-    - file: bosh-src/ci/tasks/test-unit.yml
-      image: bosh-main-mysql-5.7
-      params:
-        DB: mysql
-      privileged: true
-      task: test-mysql-5.7
-      timeout: 2h
+  - file: bosh-src/ci/tasks/test-unit.yml
+    image: bosh-main-mysql-5.7
+    params:
+      DB: mysql
+    privileged: true
+    task: test-mysql-5.7
+    timeout: 2h
   public: true
   serial: true
 - build_logs_to_retain: 250
@@ -797,10 +788,6 @@ resources:
     token: ((tracker_api_token))
     tracker_url: https://www.pivotaltracker.com
   type: tracker
-- name: bosh-main-mysql-5.6
-  source:
-    repository: bosh/main-mysql-5.6
-  type: docker-image
 - name: bosh-main-mysql-5.7
   source:
     repository: bosh/main-mysql-5.7
