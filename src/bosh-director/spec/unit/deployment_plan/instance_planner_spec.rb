@@ -650,13 +650,9 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
     let(:existing_instance_models) { [existing_instance_model] }
 
-    let(:instance_plans) do
-      [instance_plan]
-    end
-
-    let(:instance_plan) do
-      instance_double(Bosh::Director::DeploymentPlan::InstancePlan)
-    end
+    let(:instance_plans) { [instance_plan, obsolete_instance_plan] }
+    let(:instance_plan) { instance_double(Bosh::Director::DeploymentPlan::InstancePlan, obsolete?: false) }
+    let(:obsolete_instance_plan) { instance_double(Bosh::Director::DeploymentPlan::InstancePlan, obsolete?: true) }
 
     let(:agent) { instance_double(Bosh::Director::AgentClient) }
 
@@ -696,7 +692,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     end
 
     it 'short circuits when detecting a matching instance plan for each vm' do
-      instance_plan2 = instance_double(Bosh::Director::DeploymentPlan::InstancePlan)
+      instance_plan2 = instance_double(Bosh::Director::DeploymentPlan::InstancePlan, obsolete?: false)
       unusable_vm = BD::Models::Vm.make(
         instance: existing_instance_model,
         active: false,

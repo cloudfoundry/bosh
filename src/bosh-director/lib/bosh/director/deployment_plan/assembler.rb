@@ -74,7 +74,10 @@ module Bosh::Director
           existing_instances,
           @deployment_plan.vm_resources_cache,
         )
-        instance_planner.orphan_unreusable_vms(instance_plans, existing_instances)
+        instance_planner.orphan_unreusable_vms(
+          instance_plans,
+          existing_instances,
+        )
         instance_planner.reconcile_network_plans(instance_plans)
         desired_instance_group.add_instance_plans(instance_plans)
 
@@ -83,7 +86,10 @@ module Bosh::Director
         end
       end
 
-      instance_plans_for_obsolete_instance_groups = instance_planner.plan_obsolete_instance_groups(desired_instance_groups, @deployment_plan.existing_instances)
+      instance_plans_for_obsolete_instance_groups = instance_planner.plan_obsolete_instance_groups(
+        desired_instance_groups,
+        @deployment_plan.existing_instances,
+      )
       @deployment_plan.mark_instance_plans_for_deletion(instance_plans_for_obsolete_instance_groups)
 
       bind_jobs

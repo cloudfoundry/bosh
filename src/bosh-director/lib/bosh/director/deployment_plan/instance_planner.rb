@@ -48,7 +48,8 @@ module Bosh
           end
         end
 
-        def orphan_unreusable_vms(desired_instance_plans, existing_instance_models)
+        def orphan_unreusable_vms(instance_plans, existing_instance_models)
+          desired_instance_plans = instance_plans.reject(&:obsolete?)
           existing_instance_models.each do |instance_model|
             orphaned = false
 
