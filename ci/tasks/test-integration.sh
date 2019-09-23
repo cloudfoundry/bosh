@@ -104,8 +104,8 @@ esac
 cp ./bosh-cli/*bosh-cli-*-linux-amd64 /usr/local/bin/bosh
 chmod +x /usr/local/bin/bosh
 
-# source /etc/profile.d/chruby.sh
-# chruby $RUBY_VERSION
+source /etc/profile.d/chruby.sh
+chruby $RUBY_VERSION
 
 agent_path=bosh-src/src/go/src/github.com/cloudfoundry/
 mkdir -p $agent_path
