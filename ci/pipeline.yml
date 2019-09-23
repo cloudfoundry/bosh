@@ -112,31 +112,14 @@ jobs:
         - get: bosh-src
           passed: [gate]
           trigger: true
-        - get: bosh-main-mysql-5.5
-        - get: bosh-main-mysql-5.6
         - get: bosh-main-mysql-5.7
-      - in_parallel:
-        - task: test-mysql-5.5
-          timeout: 2h
-          privileged: true
-          file: bosh-src/ci/tasks/test-unit.yml
-          image: bosh-main-mysql-5.5
-          params:
-            DB: mysql
-        - task: test-mysql-5.6
-          timeout: 2h
-          privileged: true
-          file: bosh-src/ci/tasks/test-unit.yml
-          image: bosh-main-mysql-5.6
-          params:
-            DB: mysql
-        - task: test-mysql-5.7
-          timeout: 2h
-          privileged: true
-          file: bosh-src/ci/tasks/test-unit.yml
-          image: bosh-main-mysql-5.7
-          params:
-            DB: mysql
+      - task: test-mysql-5.7
+        timeout: 2h
+        privileged: true
+        file: bosh-src/ci/tasks/test-unit.yml
+        image: bosh-main-mysql-5.7
+        params:
+          DB: mysql
 
   - name: unit-postgres
     public: true
@@ -149,7 +132,6 @@ jobs:
           passed: [gate]
           trigger: true
         - get: bosh-main-postgres-9.4
-        - get: bosh-main-postgres-9.6
         - get: bosh-main-postgres-10
       - in_parallel:
         - task: test-postgres-9.4
@@ -160,14 +142,6 @@ jobs:
           params:
             DB: postgresql
             DB_VERSION: 9.4
-        - task: test-postgres-9.6
-          timeout: 2h
-          privileged: true
-          file: bosh-src/ci/tasks/test-unit.yml
-          image: bosh-main-postgres-9.6
-          params:
-            DB: postgresql
-            DB_VERSION: 9.6
         - task: test-postgres-10
           timeout: 2h
           privileged: true
@@ -1013,16 +987,6 @@ resources:
       project_id: ((tracker_project_id))
       tracker_url: https://www.pivotaltracker.com
 
-  - name: bosh-main-mysql-5.5
-    type: docker-image
-    source:
-      repository: bosh/main-mysql-5.5
-
-  - name: bosh-main-mysql-5.6
-    type: docker-image
-    source:
-      repository: bosh/main-mysql-5.6
-
   - name: bosh-main-mysql-5.7
     type: docker-image
     source:
@@ -1032,11 +996,6 @@ resources:
     type: docker-image
     source:
       repository: bosh/main-postgres-9.4
-
-  - name: bosh-main-postgres-9.6
-    type: docker-image
-    source:
-      repository: bosh/main-postgres-9.6
 
   - name: bosh-main-postgres-10
     type: docker-image
