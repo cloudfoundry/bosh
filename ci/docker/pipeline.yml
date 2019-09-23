@@ -16,31 +16,10 @@ groups:
   - build-main-base
   - build-main
   - build-main-mysql-5.7
-  - build-main-mysql-5.6
-  - build-main-mysql-5.5
   - build-main-postgres-10
-  - build-main-postgres-9.6
-  - build-main-postgres-9.5
   - build-main-postgres-9.4
-  - build-main-postgres-9.3
 
 jobs:
-  - name: build-main-postgres-9.3
-    public: true
-    serial: true
-    plan:
-      - get: bosh-src
-        trigger: true
-        passed:
-          - "build-main-base"
-      - put: main-postgres-9.3
-        params:
-          build: "bosh-src/ci/docker/main-postgres"
-          build_args:
-            DB_VERSION: "9.3"
-        get_params:
-          skip_download: true
-
   - name: build-main-postgres-9.4
     public: true
     serial: true
@@ -57,38 +36,6 @@ jobs:
         get_params:
           skip_download: true
 
-  - name: build-main-postgres-9.5
-    public: true
-    serial: true
-    plan:
-      - get: bosh-src
-        trigger: true
-        passed:
-          - "build-main-base"
-      - put: main-postgres-9.5
-        params:
-          build: "bosh-src/ci/docker/main-postgres"
-          build_args:
-            DB_VERSION: "9.5"
-        get_params:
-          skip_download: true
-
-  - name: build-main-postgres-9.6
-    public: true
-    serial: true
-    plan:
-      - get: bosh-src
-        trigger: true
-        passed:
-          - "build-main-base"
-      - put: main-postgres-9.6
-        params:
-          build: "bosh-src/ci/docker/main-postgres"
-          build_args:
-            DB_VERSION: "9.6"
-        get_params:
-          skip_download: true
-
   - name: build-main-postgres-10
     public: true
     serial: true
@@ -102,38 +49,6 @@ jobs:
           build: "bosh-src/ci/docker/main-postgres"
           build_args:
             DB_VERSION: "10"
-        get_params:
-          skip_download: true
-
-  - name: build-main-mysql-5.5
-    public: true
-    serial: true
-    plan:
-      - get: bosh-src
-        trigger: true
-        passed:
-          - "build-main-base"
-      - put: main-mysql-5.5
-        params:
-          build: "bosh-src/ci/docker/main-mysql"
-          build_args:
-            DB_VERSION: "-5.5"
-        get_params:
-          skip_download: true
-
-  - name: build-main-mysql-5.6
-    public: true
-    serial: true
-    plan:
-      - get: bosh-src
-        trigger: true
-        passed:
-          - "build-main-base"
-      - put: main-mysql-5.6
-        params:
-          build: "bosh-src/ci/docker/main-mysql"
-          build_args:
-            DB_VERSION: "-5.6"
         get_params:
           skip_download: true
 
@@ -242,8 +157,6 @@ jobs:
           build: "bosh-linux-stemcell-builder/ci/docker/os-image-stemcell-builder"
         get_params:
           skip_download: true
-
-
 
   - name: build-main-base
     public: true
@@ -435,14 +348,6 @@ resources:
       bucket: ((bosh_cli_aws_s3_alpha_release_bucket))
       region_name: ((bosh_cli_aws_s3_release_bucket_region))
 
-  - name: main-postgres-9.3
-    type: docker-image
-    source:
-      repository: bosh/main-postgres-9.3
-      email: ((dockerhub_email))
-      username: ((dockerhub_username))
-      password: ((dockerhub_password))
-
   - name: main-postgres-9.4
     type: docker-image
     source:
@@ -451,42 +356,10 @@ resources:
       username: ((dockerhub_username))
       password: ((dockerhub_password))
 
-  - name: main-postgres-9.5
-    type: docker-image
-    source:
-      repository: bosh/main-postgres-9.5
-      email: ((dockerhub_email))
-      username: ((dockerhub_username))
-      password: ((dockerhub_password))
-
-  - name: main-postgres-9.6
-    type: docker-image
-    source:
-      repository: bosh/main-postgres-9.6
-      email: ((dockerhub_email))
-      username: ((dockerhub_username))
-      password: ((dockerhub_password))
-
   - name: main-postgres-10
     type: docker-image
     source:
       repository: bosh/main-postgres-10
-      email: ((dockerhub_email))
-      username: ((dockerhub_username))
-      password: ((dockerhub_password))
-
-  - name: main-mysql-5.5
-    type: docker-image
-    source:
-      repository: bosh/main-mysql-5.5
-      email: ((dockerhub_email))
-      username: ((dockerhub_username))
-      password: ((dockerhub_password))
-
-  - name: main-mysql-5.6
-    type: docker-image
-    source:
-      repository: bosh/main-mysql-5.6
       email: ((dockerhub_email))
       username: ((dockerhub_username))
       password: ((dockerhub_password))
