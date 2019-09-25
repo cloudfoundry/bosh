@@ -14,10 +14,10 @@ module Bosh::Dev::Sandbox
 
     def install
       sync_release_blobs
-      if blob_has_changed
+      if !File.file?(File.join(@install_dir, 'sbin', 'nginx')) || blob_has_changed || platform_has_changed
         compile
       else
-        puts 'Skipping compiling nginx because shasums have not changed'
+        puts 'Skipping compiling nginx because shasums and platform have not changed'
       end
     end
 
@@ -34,6 +34,11 @@ module Bosh::Dev::Sandbox
       sandbox_copy_shasum = shasum(working_dir_nginx_path)
 
       blobs_shasum.sort != sandbox_copy_shasum.sort
+    end
+
+    def platform_has_changed
+      output = @runner.run("cat #{@install_dir}/platform || true")
+      output != RUBY_PLATFORM
     end
 
     def shasum(directory)
@@ -60,13 +65,11 @@ module Bosh::Dev::Sandbox
         ENV['LDFLAGS'] = '-L/usr/local/opt/openssl/lib'
         ENV['CPPFLAGS'] = '-I/usr/local/opt/openssl/include'
       end
+      @runner.run("echo '#{RUBY_PLATFORM}' > #{@install_dir}/platform")
 
       # Make sure packaging script has its own blob copies so that blobs/ directory is not affected
       nginx_blobs_path = File.join(RELEASE_ROOT, 'blobs', 'nginx')
       @runner.run("cp -R #{nginx_blobs_path} #{File.join(@working_dir)}")
-
-      patches_path = File.join(RELEASE_ROOT, 'src', 'patches')
-      @runner.run("cp -R #{patches_path} #{File.join(@working_dir)}")
 
       Dir.chdir(@working_dir) do
         packaging_script_path = File.join(RELEASE_ROOT, 'packages', 'nginx', 'packaging')

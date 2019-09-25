@@ -9,11 +9,6 @@ tar xzf nginx/headers-more-nginx-module-0.30.tar.gz
 echo "Extracting nginx_upload module..."
 tar xzf nginx/nginx-upload-module-2.3.0.tar.gz
 
-echo "Patching nginx upload module"
-pushd nginx-upload-module-2.3.0
-  patch -p1 < ../patches/nginx-upload-module.patch
-popd
-
 echo "Extracting ngx_http_hmac_secure_link module..."
 tar xzf nginx/ngx_http_hmac_secure_link_module-0.3.tar.gz
 
