@@ -26,8 +26,6 @@ jobs:
     plan:
       - get: bosh-src
         trigger: true
-        passed:
-          - "build-main-base"
       - put: main-postgres-9.4
         params:
           build: "bosh-src/ci/docker/main-postgres"
@@ -42,8 +40,6 @@ jobs:
     plan:
       - get: bosh-src
         trigger: true
-        passed:
-          - "build-main-base"
       - put: main-postgres-10
         params:
           build: "bosh-src/ci/docker/main-postgres"
