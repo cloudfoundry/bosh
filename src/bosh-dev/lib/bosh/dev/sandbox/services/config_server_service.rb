@@ -4,11 +4,7 @@ module Bosh::Dev::Sandbox
   class ConfigServerService
     attr_reader :port
 
-    S3_BUCKET_BASE_URL = 'https://s3.amazonaws.com/config-server-releases'
-
-    CONFIG_SERVER_VERSION = '0.1.1'.freeze
-    DARWIN_CONFIG_SERVER_SHA256 = '422f4d709ff98da2c9bd1df014a29eafdde8e1ddf9bf22a1d8dd92fc3f8668a2'.freeze
-    LINUX_CONFIG_SERVER_SHA256 = '2ab9aeb71fe5284c7641a41b015318df99f5c7d056f3bc88ba2a39252f75e161'.freeze
+    CONFIG_SERVER_VERSION = '0.1.19'.freeze
 
     LOCAL_CONFIG_SERVER_FILE_NAME = "bosh-config-server-executable"
 
@@ -75,19 +71,13 @@ module Bosh::Dev::Sandbox
     private
 
     def self.download(version)
-      if RUBY_PLATFORM =~ /darwin/
-        platform = 'darwin'
-        sha256 = DARWIN_CONFIG_SERVER_SHA256
-      else
-        platform = 'linux'
-        sha256 = LINUX_CONFIG_SERVER_SHA256
-      end
+      platform = RUBY_PLATFORM =~ /darwin/ ? 'darwin' : 'linux'
 
       file_name_to_download = "config-server-#{version}-#{platform}-amd64"
 
       retryable.retryer do
         destination_path = File.join(INSTALL_DIR, file_name_to_download)
-        `#{File.dirname(__FILE__)}/install_binary.sh #{file_name_to_download} #{destination_path} #{sha256} config-server-releases`
+        `#{File.dirname(__FILE__)}/install_binary.sh #{file_name_to_download} #{destination_path} '' config-server-releases`
         $? == 0
       end
 
