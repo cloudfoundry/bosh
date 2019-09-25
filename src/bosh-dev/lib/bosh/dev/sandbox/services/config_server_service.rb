@@ -4,8 +4,6 @@ module Bosh::Dev::Sandbox
   class ConfigServerService
     attr_reader :port
 
-    CONFIG_SERVER_VERSION = '0.1.19'.freeze
-
     LOCAL_CONFIG_SERVER_FILE_NAME = "bosh-config-server-executable"
 
     REPO_ROOT = File.expand_path('../../../../../../', File.dirname(__FILE__))
@@ -41,7 +39,7 @@ module Bosh::Dev::Sandbox
 
     def self.install
       FileUtils.mkdir_p(INSTALL_DIR)
-      downloaded_file_name = download(CONFIG_SERVER_VERSION)
+      downloaded_file_name = download
       executable_file_path = File.join(INSTALL_DIR, LOCAL_CONFIG_SERVER_FILE_NAME)
       FileUtils.copy(File.join(INSTALL_DIR, downloaded_file_name), executable_file_path)
       File.chmod(0777, executable_file_path)
@@ -70,10 +68,10 @@ module Bosh::Dev::Sandbox
 
     private
 
-    def self.download(version)
+    def self.download
       platform = RUBY_PLATFORM =~ /darwin/ ? 'darwin' : 'linux'
 
-      file_name_to_download = "config-server-#{version}-#{platform}-amd64"
+      file_name_to_download = "config-server-#{latest_version}-#{platform}-amd64"
 
       retryable.retryer do
         destination_path = File.join(INSTALL_DIR, file_name_to_download)
@@ -88,7 +86,13 @@ module Bosh::Dev::Sandbox
       Bosh::Retryable.new({tries: 6})
     end
 
-    def self.read_current_version
+    def self.latest_version
+      config_server_version_url = 'https://s3.amazonaws.com/config-server-releases/current-version'
+      retryable.retryer do
+        `curl --output #{File.join(INSTALL_DIR, 'current-version')} -L #{config_server_version_url}`
+        $? == 0
+      end
+
       file = File.open(File.join(INSTALL_DIR, 'current-version'), 'r')
       version = file.read
       file.close
