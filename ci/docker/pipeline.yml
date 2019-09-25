@@ -9,8 +9,6 @@ groups:
   - build-main-bats-aws
   - build-main-ruby-go
   - build-main-ubuntu-chroot
-  - build-bosh-load-tests-garden
-  - build-bosh-load-tests
   - build-bosh-garden
   - build-bosh-docker
   - build-main-base
@@ -207,36 +205,6 @@ jobs:
       - put: main-bosh-garden
         params:
           build: docker-build-context
-        get_params:
-          skip_download: true
-
-  - name: build-bosh-load-tests
-    public: true
-    serial: true
-    plan:
-      - aggregate:
-        - get: bosh-src
-          trigger: true
-          passed:
-            - "build-bosh-docker"
-      - put: bosh-load-tests
-        params:
-          build: "bosh-src/ci/docker/bosh-load-tests"
-        get_params:
-          skip_download: true
-
-  - name: build-bosh-load-tests-garden
-    public: true
-    serial: true
-    plan:
-      - aggregate:
-        - get: bosh-src
-          trigger: true
-          passed:
-            - "build-bosh-garden"
-      - put: bosh-load-tests-garden
-        params:
-          build: "bosh-src/ci/docker/bosh-load-tests-garden"
         get_params:
           skip_download: true
 
@@ -438,22 +406,6 @@ resources:
     type: docker-image
     source:
       repository: bosh/main-bosh-garden
-      email: ((dockerhub_email))
-      username: ((dockerhub_username))
-      password: ((dockerhub_password))
-
-  - name: bosh-load-tests
-    type: docker-image
-    source:
-      repository: bosh/bosh-load-tests
-      email: ((dockerhub_email))
-      username: ((dockerhub_username))
-      password: ((dockerhub_password))
-
-  - name: bosh-load-tests-garden
-    type: docker-image
-    source:
-      repository: bosh/bosh-load-tests-garden
       email: ((dockerhub_email))
       username: ((dockerhub_username))
       password: ((dockerhub_password))
