@@ -89,7 +89,7 @@ module Bosh::Dev::Sandbox
     def self.latest_version
       config_server_version_url = 'https://s3.amazonaws.com/config-server-releases/current-version'
       retryable.retryer do
-        `curl --output #{File.join(INSTALL_DIR, 'current-version')} -L #{config_server_version_url}`
+        `wget -O #{File.join(INSTALL_DIR, 'current-version')} #{config_server_version_url}`
         $? == 0
       end
 
