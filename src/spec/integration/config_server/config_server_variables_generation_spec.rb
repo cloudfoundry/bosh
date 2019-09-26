@@ -175,7 +175,7 @@ describe 'variable generation with config server', type: :integration do
 
               var_a1 = config_server_helper.get_value(prepend_namespace('var_a'))
 
-              variables[0]['options'] = { 'gargamel' => 'sleeping' }
+              variables[0]['options'] = { 'length' => 24 }
               manifest_hash['variables'] = variables
               deploy_from_scratch(
                 no_login: true,
