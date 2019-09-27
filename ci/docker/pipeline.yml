@@ -11,7 +11,6 @@ groups:
   - build-main-ubuntu-chroot
   - build-bosh-garden
   - build-bosh-docker
-  - build-main-base
   - build-main
   - build-main-mysql-5.7
   - build-main-postgres-10
@@ -67,7 +66,7 @@ jobs:
       - get: bosh-src
         trigger: true
         passed:
-          - "build-main-base"
+          - "build-main-ruby-go"
       - put: main-image
         params:
           build: "bosh-src/ci/docker/main"
@@ -149,20 +148,6 @@ jobs:
       - put: os-image-stemcell-builder
         params:
           build: "bosh-linux-stemcell-builder/ci/docker/os-image-stemcell-builder"
-        get_params:
-          skip_download: true
-
-  - name: build-main-base
-    public: true
-    serial: true
-    plan:
-      - get: bosh-src
-        trigger: true
-        passed:
-          - "build-main-ruby-go"
-      - put: main-base
-        params:
-          build: "bosh-src/ci/docker/main-base"
         get_params:
           skip_download: true
 
@@ -340,14 +325,6 @@ resources:
     type: docker-image
     source:
       repository: bosh/main
-      email: ((dockerhub_email))
-      username: ((dockerhub_username))
-      password: ((dockerhub_password))
-
-  - name: main-base
-    type: docker-image
-    source:
-      repository: bosh/main-base
       email: ((dockerhub_email))
       username: ((dockerhub_username))
       password: ((dockerhub_password))
