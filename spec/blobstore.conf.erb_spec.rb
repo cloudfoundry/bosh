@@ -27,7 +27,7 @@ describe 'blobstore.conf.erb' do
               'nginx' => {
                 'enable_metrics_endpoint' => true
               },
-              'secret' => 'hmac_secret',
+              'enable_signed_urls' => false,
             }
           }
         }
@@ -77,29 +77,7 @@ server {
     create_full_put_path on;
   }
 
-  location ~* ^/signed/(?<object_id>.+)$ {
-    if ( $request_method !~ ^(GET|PUT|HEAD)$ ) {
-      return 405;
-    }
 
-    # Variable to be passed are secure token, timestamp, expiration date
-    secure_link_hmac $arg_st,$arg_ts,$arg_e;
-
-    # Secret key
-    secure_link_hmac_secret hmac_secret;
-
-    # Message to be verified
-    secure_link_hmac_message $request_method$object_id$arg_ts$arg_e;
-
-    # Cryptographic hash function to be used
-    secure_link_hmac_algorithm sha256;
-
-    if ($secure_link_hmac != "1") {
-      return 403;
-    }
-
-    rewrite ^/signed/(.*)$ /internal/$object_id;
-  }
 
   
   location /stats {
@@ -135,7 +113,7 @@ server {
               'nginx' => {
                 'enable_metrics_endpoint' => false
               },
-              'secret' => 'hmac_secret',
+              'enable_signed_urls' => false,
             }
           }
         }
@@ -185,29 +163,7 @@ server {
     create_full_put_path on;
   }
 
-  location ~* ^/signed/(?<object_id>.+)$ {
-    if ( $request_method !~ ^(GET|PUT|HEAD)$ ) {
-      return 405;
-    }
 
-    # Variable to be passed are secure token, timestamp, expiration date
-    secure_link_hmac $arg_st,$arg_ts,$arg_e;
-
-    # Secret key
-    secure_link_hmac_secret hmac_secret;
-
-    # Message to be verified
-    secure_link_hmac_message $request_method$object_id$arg_ts$arg_e;
-
-    # Cryptographic hash function to be used
-    secure_link_hmac_algorithm sha256;
-
-    if ($secure_link_hmac != "1") {
-      return 403;
-    }
-
-    rewrite ^/signed/(.*)$ /internal/$object_id;
-  }
 
   
 
@@ -234,7 +190,7 @@ server {
               'nginx' => {
                 'enable_metrics_endpoint' => false
               },
-              'secret' => 'hmac_secret',
+              'enable_signed_urls' => false,
             }
           }
         }
@@ -282,29 +238,7 @@ server {
     create_full_put_path on;
   }
 
-  location ~* ^/signed/(?<object_id>.+)$ {
-    if ( $request_method !~ ^(GET|PUT|HEAD)$ ) {
-      return 405;
-    }
 
-    # Variable to be passed are secure token, timestamp, expiration date
-    secure_link_hmac $arg_st,$arg_ts,$arg_e;
-
-    # Secret key
-    secure_link_hmac_secret hmac_secret;
-
-    # Message to be verified
-    secure_link_hmac_message $request_method$object_id$arg_ts$arg_e;
-
-    # Cryptographic hash function to be used
-    secure_link_hmac_algorithm sha256;
-
-    if ($secure_link_hmac != "1") {
-      return 403;
-    }
-
-    rewrite ^/signed/(.*)$ /internal/$object_id;
-  }
 
   
 
@@ -331,7 +265,7 @@ server {
               'nginx' => {
                 'enable_metrics_endpoint' => false
               },
-              'secret' => 'hmac_secret',
+              'enable_signed_urls' => false,
             }
           }
         }
@@ -381,29 +315,7 @@ server {
     create_full_put_path on;
   }
 
-  location ~* ^/signed/(?<object_id>.+)$ {
-    if ( $request_method !~ ^(GET|PUT|HEAD)$ ) {
-      return 405;
-    }
 
-    # Variable to be passed are secure token, timestamp, expiration date
-    secure_link_hmac $arg_st,$arg_ts,$arg_e;
-
-    # Secret key
-    secure_link_hmac_secret hmac_secret;
-
-    # Message to be verified
-    secure_link_hmac_message $request_method$object_id$arg_ts$arg_e;
-
-    # Cryptographic hash function to be used
-    secure_link_hmac_algorithm sha256;
-
-    if ($secure_link_hmac != "1") {
-      return 403;
-    }
-
-    rewrite ^/signed/(.*)$ /internal/$object_id;
-  }
 
   
 
@@ -430,7 +342,7 @@ server {
               'nginx' => {
                 'enable_metrics_endpoint' => false
               },
-              'secret' => 'hmac_secret',
+              'enable_signed_urls' => false,
             }
           }
         }
@@ -480,29 +392,7 @@ server {
     create_full_put_path on;
   }
 
-  location ~* ^/signed/(?<object_id>.+)$ {
-    if ( $request_method !~ ^(GET|PUT|HEAD)$ ) {
-      return 405;
-    }
 
-    # Variable to be passed are secure token, timestamp, expiration date
-    secure_link_hmac $arg_st,$arg_ts,$arg_e;
-
-    # Secret key
-    secure_link_hmac_secret hmac_secret;
-
-    # Message to be verified
-    secure_link_hmac_message $request_method$object_id$arg_ts$arg_e;
-
-    # Cryptographic hash function to be used
-    secure_link_hmac_algorithm sha256;
-
-    if ($secure_link_hmac != "1") {
-      return 403;
-    }
-
-    rewrite ^/signed/(.*)$ /internal/$object_id;
-  }
 
   
 
@@ -512,6 +402,98 @@ server {
 }
         HEREDOC
       end
+    end
+  end
+
+  context 'enable_signed_urls is false' do
+    let(:file_name) { '../jobs/blobstore/templates/blobstore.conf.erb' }
+    let(:properties) do
+      {
+        'properties' => {
+          'blobstore' => {
+            'ipv6_listen' => true,
+            'port' => 25550,
+            'max_upload_size' => 300,
+            'allow_http' => true,
+            'nginx' => {
+              'enable_metrics_endpoint' => false
+            },
+            'enable_signed_urls' => false,
+          },
+        },
+      }
+    end
+
+    let(:template) { File.read(File.join(File.dirname(__FILE__), file_name)) }
+
+    let(:rendered_template) do
+      binding = Bosh::Template::EvaluationContext.new(properties, nil).get_binding
+      ERB.new(template).result(binding)
+    end
+
+    it 'does not enable signed urls' do
+      expect(rendered_template).not_to include('location ~* ^/signed')
+      expect(rendered_template).not_to include('hmac')
+    end
+  end
+
+  context 'enable_signed_urls is true' do
+    let(:file_name) { '../jobs/blobstore/templates/blobstore.conf.erb' }
+    let(:properties) do
+      {
+        'properties' => {
+          'blobstore' => {
+            'ipv6_listen' => true,
+            'port' => 25550,
+            'max_upload_size' => 300,
+            'allow_http' => true,
+            'nginx' => {
+              'enable_metrics_endpoint' => false,
+            },
+            'enable_signed_urls' => true,
+            'secret' => 'shhhhh',
+          },
+        },
+      }
+    end
+
+    let(:template) { File.read(File.join(File.dirname(__FILE__), file_name)) }
+
+    let(:rendered_template) do
+      binding = Bosh::Template::EvaluationContext.new(properties, nil).get_binding
+      ERB.new(template).result(binding)
+    end
+
+    let(:expected_content) do
+  <<~HEREDOC
+location ~* ^/signed/(?<object_id>.+)$ {
+    if ( $request_method !~ ^(GET|PUT|HEAD)$ ) {
+      return 405;
+    }
+
+    # Variable to be passed are secure token, timestamp, expiration date
+    secure_link_hmac $arg_st,$arg_ts,$arg_e;
+
+    # Secret key
+    secure_link_hmac_secret shhhhh;
+
+    # Message to be verified
+    secure_link_hmac_message $request_method$object_id$arg_ts$arg_e;
+
+    # Cryptographic hash function to be used
+    secure_link_hmac_algorithm sha256;
+
+    if ($secure_link_hmac != \"1\") {
+      return 403;
+    }
+
+    rewrite ^/signed/(.*)$ /internal/$object_id;
+  }
+  HEREDOC
+    end
+
+    it 'configures hmac signing' do
+      expect(rendered_template).to include(expected_content)
     end
   end
 end

@@ -62,5 +62,8 @@ properties:
     description: Enable bbr backup and restore operations
     default: true
 
+  blobstore.enable_signed_urls:
+    description: Enable blobstore to pre-sign urls so that clients do not require blobstore credentials
+    default: false
   blobstore.secret:
     description: Secret used to sign the HMAC pre-signed URLs

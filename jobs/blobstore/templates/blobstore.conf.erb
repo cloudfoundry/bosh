@@ -41,6 +41,7 @@ server {
     create_full_put_path on;
   }
 
+<% if p('blobstore.enable_signed_urls') %>
   location ~* ^/signed/(?<object_id>.+)$ {
     if ( $request_method !~ ^(GET|PUT|HEAD)$ ) {
       return 405;
@@ -64,6 +65,7 @@ server {
 
     rewrite ^/signed/(.*)$ /internal/$object_id;
   }
+<% end %>
 
   <% if p('blobstore.nginx.enable_metrics_endpoint') %>
   location /stats {
