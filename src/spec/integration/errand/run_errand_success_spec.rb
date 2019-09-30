@@ -1,6 +1,6 @@
 require_relative '../../spec_helper'
 
-#Errand failure/success were split up so that they can be run on different rspec:parallel threads
+# Errand failure/success were split up so that they can be run on different rspec:parallel threads
 describe 'run-errand success', type: :integration, with_tmp_dir: true do
   let(:manifest_hash) { Bosh::Spec::Deployments.manifest_with_errand }
   let(:deployment_name) { manifest_hash['name'] }
@@ -25,9 +25,11 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
       expect(director.wait_for_vm('fake-errand-name', '0', 150, deployment_name: deployment_name)).to_not be_nil
 
       output = JSON.parse(bosh_runner.run_until_succeeds('locks --json'))
-      expect(output['Tables'][0]['Rows']).to include({'type' => 'deployment', 'resource' => 'errand', 'expires_at' => anything, 'task_id' => /^[\d]*$/})
+      expect(output['Tables'][0]['Rows'])
+        .to include('type' => 'deployment', 'resource' => 'errand', 'expires_at' => anything, 'task_id' => /^[\d]*$/)
 
-      errand_instance = director.instances(deployment_name: deployment_name).find { |instance| instance.instance_group_name == 'fake-errand-name' && instance.index == '0' }
+      errand_instance = director.instances(deployment_name: deployment_name)
+        .find { |instance| instance.instance_group_name == 'fake-errand-name' && instance.index == '0' }
       expect(errand_instance).to_not be_nil
 
       errand_instance.unblock_errand('errand1')
@@ -58,7 +60,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
         'lifecycle' => 'errand',
         'vm_type' => 'a',
         'instances' => 2,
-        'networks' => [{'name' => 'a'}],
+        'networks' => [{ 'name' => 'a' }],
         'stemcell' => 'default',
       }
     end
@@ -74,30 +76,46 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
         manifest_with_second_errand = manifest_hash
         manifest_with_second_errand['instance_groups'] << errand_requiring_2_instances
         deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_with_second_errand)
-        expect_running_vms_with_names_and_count({'foobar' => 1}, {deployment_name: deployment_name})
+        expect_running_vms_with_names_and_count({ 'foobar' => 1 }, { deployment_name: deployment_name })
         expect_errands('fake-errand-name', 'second-errand-name')
 
         # with keep alive, does not delete/create errand vms (always exactly 1 fake-errand-name/0)
-        output, exit_code = bosh_runner.run('run-errand fake-errand-name --keep-alive', return_exit_code: true, deployment_name: deployment_name)
+        output, exit_code = bosh_runner.run(
+          'run-errand fake-errand-name --keep-alive',
+          return_exit_code: true,
+          deployment_name: deployment_name,
+        )
         expect(output).to include('fake-errand-stdout')
         expect(exit_code).to eq(0)
-        expect_running_vms_with_names_and_count({'foobar' => 1, 'fake-errand-name' => 1}, {deployment_name: deployment_name})
+        expect_running_vms_with_names_and_count({ 'foobar' => 1, 'fake-errand-name' => 1 }, { deployment_name: deployment_name })
 
-        output, exit_code = bosh_runner.run('run-errand fake-errand-name --keep-alive', return_exit_code: true, deployment_name: deployment_name)
+        output, exit_code = bosh_runner.run(
+          'run-errand fake-errand-name --keep-alive',
+          return_exit_code: true,
+          deployment_name: deployment_name,
+        )
         expect(output).to include('fake-errand-stdout')
         expect(exit_code).to eq(0)
-        expect_running_vms_with_names_and_count({'foobar' => 1, 'fake-errand-name' => 1}, {deployment_name: deployment_name})
+        expect_running_vms_with_names_and_count({ 'foobar' => 1, 'fake-errand-name' => 1 }, { deployment_name: deployment_name })
 
         # without keep alive, deletes vm (no fake-errand-name/0)
-        output, exit_code = bosh_runner.run('run-errand fake-errand-name', return_exit_code: true, deployment_name: deployment_name)
+        output, exit_code = bosh_runner.run(
+          'run-errand fake-errand-name',
+          return_exit_code: true,
+          deployment_name: deployment_name,
+        )
         expect(output).to include('fake-errand-stdout')
         expect(exit_code).to eq(0)
-        expect_running_vms_with_names_and_count({'foobar' => 1}, {deployment_name: deployment_name})
+        expect_running_vms_with_names_and_count({ 'foobar' => 1 }, { deployment_name: deployment_name })
 
-        output, exit_code = bosh_runner.run('run-errand second-errand-name', return_exit_code: true, deployment_name: deployment_name)
+        output, exit_code = bosh_runner.run(
+          'run-errand second-errand-name',
+          return_exit_code: true,
+          deployment_name: deployment_name,
+        )
         expect(output).to include('second-errand-stdout')
         expect(exit_code).to eq(0)
-        expect_running_vms_with_names_and_count({'foobar' => 1}, {deployment_name: deployment_name})
+        expect_running_vms_with_names_and_count({ 'foobar' => 1 }, { deployment_name: deployment_name })
       end
     end
 
@@ -112,29 +130,45 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
         manifest_with_second_errand = manifest_hash
         manifest_with_second_errand['instance_groups'] << errand_requiring_2_instances
         deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_with_second_errand)
-        expect_running_vms_with_names_and_count({'foobar' => 1}, {deployment_name: deployment_name})
+        expect_running_vms_with_names_and_count({ 'foobar' => 1 }, { deployment_name: deployment_name })
 
         expect_errands('fake-errand-name', 'second-errand-name')
 
-        output, exit_code = bosh_runner.run('run-errand fake-errand-name --keep-alive', return_exit_code: true, deployment_name: deployment_name)
+        output, exit_code = bosh_runner.run(
+          'run-errand fake-errand-name --keep-alive',
+          return_exit_code: true,
+          deployment_name: deployment_name,
+        )
         expect(output).to include('fake-errand-stdout')
         expect(exit_code).to eq(0)
-        expect_running_vms_with_names_and_count({'foobar' => 1, 'fake-errand-name' => 1}, {deployment_name: deployment_name})
+        expect_running_vms_with_names_and_count({ 'foobar' => 1, 'fake-errand-name' => 1 }, { deployment_name: deployment_name })
 
-        output, exit_code = bosh_runner.run('run-errand fake-errand-name --keep-alive', return_exit_code: true, deployment_name: deployment_name)
+        output, exit_code = bosh_runner.run(
+          'run-errand fake-errand-name --keep-alive',
+          return_exit_code: true,
+          deployment_name: deployment_name,
+        )
         expect(output).to include('fake-errand-stdout')
         expect(exit_code).to eq(0)
-        expect_running_vms_with_names_and_count({'foobar' => 1, 'fake-errand-name' => 1}, {deployment_name: deployment_name})
+        expect_running_vms_with_names_and_count({ 'foobar' => 1, 'fake-errand-name' => 1 }, { deployment_name: deployment_name })
 
-        output, exit_code = bosh_runner.run('run-errand fake-errand-name', return_exit_code: true, deployment_name: deployment_name)
+        output, exit_code = bosh_runner.run(
+          'run-errand fake-errand-name',
+          return_exit_code: true,
+          deployment_name: deployment_name,
+        )
         expect(output).to include('fake-errand-stdout')
         expect(exit_code).to eq(0)
-        expect_running_vms_with_names_and_count({'foobar' => 1}, {deployment_name: deployment_name})
+        expect_running_vms_with_names_and_count({ 'foobar' => 1 }, { deployment_name: deployment_name })
 
-        output, exit_code = bosh_runner.run('run-errand second-errand-name', return_exit_code: true, deployment_name: deployment_name)
+        output, exit_code = bosh_runner.run(
+          'run-errand second-errand-name',
+          return_exit_code: true,
+          deployment_name: deployment_name,
+        )
         expect(output).to include('second-errand-stdout')
         expect(exit_code).to eq(0)
-        expect_running_vms_with_names_and_count({'foobar' => 1}, {deployment_name: deployment_name})
+        expect_running_vms_with_names_and_count({ 'foobar' => 1 }, { deployment_name: deployment_name })
       end
     end
   end
@@ -149,7 +183,11 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
 
     context 'when the errand configuration has not changed' do
       it 'does not re-run the errand' do
-        output, exit_code = bosh_runner.run('run-errand fake-errand-name --when-changed', return_exit_code: true, deployment_name: deployment_name)
+        output, exit_code = bosh_runner.run(
+          'run-errand fake-errand-name --when-changed',
+          return_exit_code: true,
+          deployment_name: deployment_name,
+        )
         expect(exit_code).to eq(0)
         errand_task_id = bosh_runner.get_most_recent_task_id
         task_result = bosh_runner.run("task #{errand_task_id} --result", deployment_name: deployment_name)
@@ -160,18 +198,23 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
 
     context 'when the errand configuration has changed' do
       it 'reruns the errand' do
-        manifest_hash['instance_groups'].find { |instance_group| instance_group['name'] == 'fake-errand-name' }['jobs'].first['properties'] = {
+        instance_group = manifest_hash['instance_groups'].find { |ig| ig['name'] == 'fake-errand-name' }['jobs'].first
+        instance_group['properties'] = {
           'errand1' => {
             'exit_code' => 0,
             'stdout' => "new-stdout\nadditional-stdout",
             'stderr' => 'new-stderr',
             'run_package_file' => true,
-          }
+          },
         }
 
         deploy_simple_manifest(manifest_hash: manifest_hash)
 
-        output, exit_code = bosh_runner.run('run-errand fake-errand-name --when-changed', return_exit_code: true, deployment_name: deployment_name)
+        output, exit_code = bosh_runner.run(
+          'run-errand fake-errand-name --when-changed',
+          return_exit_code: true,
+          deployment_name: deployment_name,
+        )
         expect(exit_code).to eq(0)
         expect(output).to match('Creating missing vms') # output should indicate errand runs
         errand_task_id = bosh_runner.get_most_recent_task_id
@@ -216,7 +259,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
         network_a_subnet = network_a['subnets'].first
         network_a_subnet['reserved'] = [
           '192.168.1.2 - 192.168.1.10',
-          '192.168.1.14 - 192.168.1.254'
+          '192.168.1.14 - 192.168.1.254',
         ]
         network_a_subnet['static'] = [static_ip]
 
@@ -272,11 +315,11 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
                   'dns' => ['192.168.1.1', '192.168.1.2'],
                   'reserved' =>
                     ['192.168.1.2 - 192.168.1.12',
-                      '192.168.1.14 - 192.168.1.254'],
-                  'cloud_properties' => {}
-                }
-              ]
-            }
+                     '192.168.1.14 - 192.168.1.254'],
+                  'cloud_properties' => {},
+                },
+              ],
+            },
           ],
           'vm_types' => [
             {
@@ -288,8 +331,8 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
                 'name' => 'ubuntu-stemcell',
                 'version' => '1',
               },
-            }
-          ]
+            },
+          ],
         }
       end
 
@@ -313,26 +356,26 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
       )
       expect_errands('fake-errand-name')
 
-      @output, @exit_code = bosh_runner.run(
+      errand_output, exit_code = bosh_runner.run(
         'run-errand fake-errand-name',
         return_exit_code: true,
         json: true,
         deployment_name: 'errand',
       )
+      expect(exit_code).to eq(0)
 
-      output = scrub_random_ids(table(@output))
+      output = scrub_random_ids(table(errand_output))
 
       expect(output[0]['instance']).to match('fake-errand-name/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx')
       expect(output[0]['stdout']).to match('fake-errand-stdout')
       expect(output[0]['stderr']).to match('fake-errand-stderr')
       expect(output[0]['exit_code']).to match('0')
 
-      expect(@exit_code).to eq(0)
       output = bosh_runner.run('events --object-type errand', deployment_name: 'errand', json: true)
       events = scrub_event_time(scrub_random_cids(scrub_random_ids(table(output))))
       expect(events).to contain_exactly(
-        {'id' => /[0-9]{1,3} <- [0-9]{1,3}/, 'time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'user' => 'test', 'action' => 'run', 'object_type' => 'errand', 'task_id' => /[0-9]{1,3}/, 'object_name' => 'fake-errand-name', 'deployment' => 'errand', 'instance' => 'fake-errand-name/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)', 'context' => 'exit_code: 0', 'error' => ''},
-        {'id' => /[0-9]{1,3}/, 'time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'user' => 'test', 'action' => 'run', 'object_type' => 'errand', 'task_id' => /[0-9]{1,3}/, 'object_name' => 'fake-errand-name', 'deployment' => 'errand', 'instance' => 'fake-errand-name/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)', 'context' => '', 'error' => ''},
+        { 'id' => /[0-9]{1,3} <- [0-9]{1,3}/, 'time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'user' => 'test', 'action' => 'run', 'object_type' => 'errand', 'task_id' => /[0-9]{1,3}/, 'object_name' => 'fake-errand-name', 'deployment' => 'errand', 'instance' => 'fake-errand-name/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)', 'context' => 'exit_code: 0', 'error' => '' },
+        { 'id' => /[0-9]{1,3}/, 'time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'user' => 'test', 'action' => 'run', 'object_type' => 'errand', 'task_id' => /[0-9]{1,3}/, 'object_name' => 'fake-errand-name', 'deployment' => 'errand', 'instance' => 'fake-errand-name/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (0)', 'context' => '', 'error' => '' },
       )
     end
 
@@ -344,22 +387,34 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
             cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
           )
           expect_errands('fake-errand-name')
-
-          @output, @exit_code = bosh_runner.run("run-errand fake-errand-name --download-logs --logs-dir #{@tmp_dir}",
-            {return_exit_code: true, json: true, deployment_name: 'errand'})
         end
 
         it 'shows bin/run stdout and stderr' do
-          expect(@output).to include('fake-errand-stdout')
-          expect(@output).to include('fake-errand-stderr')
+          output = bosh_runner.run(
+            "run-errand fake-errand-name --download-logs --logs-dir #{@tmp_dir}",
+            json: true,
+            deployment_name: 'errand',
+          )
+          expect(output).to include('fake-errand-stdout')
+          expect(output).to include('fake-errand-stderr')
         end
 
         it 'shows output generated by package script which proves dependent packages are included' do
-          expect(@output).to include('stdout-from-errand1-package')
+          output = bosh_runner.run(
+            "run-errand fake-errand-name --download-logs --logs-dir #{@tmp_dir}",
+            json: true,
+            deployment_name: 'errand',
+          )
+          expect(output).to include('stdout-from-errand1-package')
         end
 
         it 'downloads errand logs and shows downloaded location' do
-          expect(@output =~ /Downloading resource .* to '(.*fake-errand-name[0-9-]*\.tgz)'/).to_not(be_nil, @output)
+          output = bosh_runner.run(
+            "run-errand fake-errand-name --download-logs --logs-dir #{@tmp_dir}",
+            json: true,
+            deployment_name: 'errand',
+          )
+          expect(output =~ /Downloading resource .* to '(.*fake-errand-name[0-9-]*\.tgz)'/).to_not(be_nil, output)
           logs_file = Bosh::Spec::TarFileInspector.new($1)
           expect(logs_file.file_names).to match_array(%w(./errand1/stdout.log ./custom.log))
           expect(logs_file.smallest_file_size).to be > 0
@@ -372,35 +427,33 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
           '\u{26A0}\u{FE0F}\u{FE0F}\u{FE0F} \u{1F6A8}\u{FE0F}\u{FE0F} \u{26A0}\u{FE0F} \u{1F6A8}\u{FE0F}\u{FE0F}'
         end
 
-        before do
+        it 'shows output' do
           manifest = Bosh::Spec::Deployments.manifest_with_errand
           manifest['instance_groups'] = [{
             'name' => 'fake-errand-name',
             'jobs' => [
               {
                 'release' => 'bosh-release',
-                'name' => 'emoji-errand'
-              }
+                'name' => 'emoji-errand',
+              },
             ],
             'lifecycle' => 'errand',
             'vm_type' => 'a',
             'instances' => 1,
-            'networks' => [{'name' => 'a'}],
-            'stemcell' => 'default'
+            'networks' => [{ 'name' => 'a' }],
+            'stemcell' => 'default',
           }]
 
           deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
           expect_errands('fake-errand-name')
 
-          @output, @exit_code = bosh_runner.run("run-errand fake-errand-name --download-logs --logs-dir #{@tmp_dir}",
-            {return_exit_code: true, json: false, deployment_name: 'errand'})
-        end
-
-        it 'shows output' do
-          # until #147467271, we can't confidently know if the mysql database server can properly handle utf8.
-          # since that is scheduled soon, avoid crazy hacks to have separate tests here
-          expect(@output).to match(/errand is (<bosh-non-ascii-char>|#{encoded_emoji1})/)
-          expect(@output).to match(/(<bosh-non-ascii-char>|#{encoded_emoji2})/)
+          output = bosh_runner.run(
+            "run-errand fake-errand-name --download-logs --logs-dir #{@tmp_dir}",
+            json: false,
+            deployment_name: 'errand',
+          )
+          expect(output).to match(/errand is (<bosh-non-ascii-char>|#{encoded_emoji1})/)
+          expect(output).to match(/(<bosh-non-ascii-char>|#{encoded_emoji2})/)
         end
       end
     end
@@ -410,15 +463,15 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
     with_reset_sandbox_before_each
 
     let(:manifest_hash) do
-      large_property = 64.times.inject('') { |p| p << 'a'*1024 } # generates 64Kb string
-      manifest = {'large_property' => large_property}
+      large_property = 64.times.inject('') { |p| p << 'a' * 1024 } # generates 64Kb string
+      manifest = { 'large_property' => large_property }
       manifest.merge(Bosh::Spec::Deployments.manifest_with_errand)
     end
 
     it 'deploys successfully' do
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
 
-      _, exit_code = bosh_runner.run('run-errand fake-errand-name', {return_exit_code: true, deployment_name: deployment_name})
+      _, exit_code = bosh_runner.run('run-errand fake-errand-name', return_exit_code: true, deployment_name: deployment_name)
       expect(exit_code).to eq(0)
     end
   end
@@ -450,7 +503,11 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
         runtime_config_hash: runtime_config_hash,
         cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
       )
-      _, exit_code = bosh_runner.run("run-errand --keep-alive fake-errand-name --download-logs --logs-dir #{@tmp_dir}", {return_exit_code: true, deployment_name: deployment_name})
+      _, exit_code = bosh_runner.run(
+        "run-errand --keep-alive fake-errand-name --download-logs --logs-dir #{@tmp_dir}",
+        return_exit_code: true,
+        deployment_name: deployment_name,
+      )
       expect(exit_code).to eq(0)
 
       instance = director.instance('fake-errand-name', '0', deployment_name: deployment_name)
@@ -473,7 +530,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
     let(:manifest_hash) do
       manifest_hash = Bosh::Spec::Deployments.manifest_with_errand_on_service_instance
       manifest_hash['instance_groups'][0]['jobs'].unshift(
-        {'release' => 'bosh-release', 'name' => 'foobar'}
+        'release' => 'bosh-release', 'name' => 'foobar',
       )
       manifest_hash
     end
@@ -554,10 +611,14 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
     context 'running with /first' do
       it 'runs the errand on the first instance (ordered by uuid)' do
         deploy_from_scratch(manifest_hash: manifest_hash)
-        first = director.instances.select{ |i| i.instance_group_name == 'service-with-errand' }.map(&:id).sort.first
+        first = director.instances.select { |i| i.instance_group_name == 'service-with-errand' }.map(&:id).min
 
         # with keep alive, does not delete/create errand vms (always exactly 1 fake-errand-name/0)
-        output, exit_code = bosh_runner.run('run-errand errand1 --instance service-with-errand/first', return_exit_code: true, deployment_name: deployment_name)
+        output, exit_code = bosh_runner.run(
+          'run-errand errand1 --instance service-with-errand/first',
+          return_exit_code: true,
+          deployment_name: deployment_name,
+        )
         expect(output).to include('service-errand-stdout')
         expect(output).to include("Instance   service-with-errand/#{first}")
         expect(exit_code).to eq(0)
@@ -629,7 +690,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
   end
 
   def expect_errands(*expected_errands)
-    output, _ = bosh_runner.run('errands', deployment_name: 'errand')
+    output = bosh_runner.run('errands', deployment_name: 'errand')
     expected_errands.each do |errand|
       expect(output).to include(errand)
     end
