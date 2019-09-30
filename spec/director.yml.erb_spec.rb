@@ -30,7 +30,7 @@ describe 'director.yml.erb' do
             'ca' => '-----BEGIN CERTIFICATE-----'
           }
         },
-        'secret' => 'signingsecret',
+        'enable_signed_urls' => false,
       },
       'nats' => {
         'address' => '10.10.0.7',

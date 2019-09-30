@@ -236,13 +236,14 @@ else
     'endpoint' => "https://#{p('blobstore.address')}:#{p('blobstore.port')}",
     'user' => p('blobstore.director.user'),
     'password' => p('blobstore.director.password'),
-    'secret' => p('blobstore.secret'),
     'tls' => {
         'cert' => {
             'ca' => p('blobstore.tls.cert.ca')
         }
     }
   }
+
+  blobstore_options['secret'] = p('blobstore.secret') if p('blobstore.enable_signed_urls')
 end
 
 params['blobstore'] = {
