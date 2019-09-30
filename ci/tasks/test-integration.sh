@@ -81,6 +81,7 @@ max_allowed_packet=6M' >> /etc/mysql/my.cnf
       su postgres -c '
         export PGDATA=/tmp/postgres/data
         echo "ssl = on" >> $PGDATA/postgresql.conf
+        echo "client_encoding = 'UTF8'" >> $PGDATA/postgresql.conf
         echo "hostssl all all 127.0.0.1/32 password" > $PGDATA/pg_hba.conf
         echo "hostssl all all 0.0.0.0/32 password" >> $PGDATA/pg_hba.conf
         echo "hostssl all all ::1/128 password" >> $PGDATA/pg_hba.conf
@@ -93,6 +94,7 @@ max_allowed_packet=6M' >> /etc/mysql/my.cnf
     su postgres -c '
       export PATH=$( echo /usr/lib/postgresql/*/bin ):$PATH
       export PGLOGS=/tmp/log/postgres
+      export PGCLIENTENCODING=UTF8
       pg_ctl start -l $PGLOGS/server.log -o "-N 400"
     '
     ;;
