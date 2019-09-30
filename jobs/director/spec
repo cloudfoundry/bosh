@@ -391,7 +391,7 @@ properties:
   blobstore.tls.cert.ca:
     description: CA Cert for TLS communcation with blobstore
   blobstore.enable_signed_urls:
-    description: Use pre-signed urls with blobstore so that deployed VMs do not require blobstore credentials
+    description: Use pre-signed urls for blobstore so that deployed VMs do not require blobstore credentials
     default: false
   blobstore.secret:
     description: Secret used for HMAC signature for pre-signed urls
