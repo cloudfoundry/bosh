@@ -22,6 +22,7 @@ FAKE_ERRAND_RELEASE_TEMPLATE = File.join(ASSETS_DIR, 'fake_errand_release_templa
 BOSH_WORK_TEMPLATE = File.join(ASSETS_DIR, 'bosh_work_dir')
 
 STDOUT.sync = true
+Encoding.default_external = 'UTF-8'
 
 module Bosh
   module Spec; end
