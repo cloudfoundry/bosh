@@ -157,7 +157,7 @@ module Bosh::Director
             expect do
               subject.run instance
             end.to change { Models::Event.count }.from(0).to(2)
-            parent_event = Models::Event.first
+            parent_event = Models::Event.order_by(:id).first
             expect(parent_event.parent_id).to eq(nil)
             expect(parent_event.user).to eq('some-name')
             expect(parent_event.action).to eq('run')
@@ -169,7 +169,7 @@ module Bosh::Director
             expect(parent_event.error).to eq(nil)
             expect(parent_event.context).to eq({})
 
-            result_event = Models::Event.last
+            result_event = Models::Event.order_by(:id).last
             expect(result_event.parent_id).to eq(parent_event.id)
             expect(result_event.user).to eq('some-name')
             expect(result_event.action).to eq('run')
@@ -179,7 +179,7 @@ module Bosh::Director
             expect(result_event.deployment).to eq('fake-dep-name')
             expect(result_event.instance).to eq('fake-job-name/fake-id (0)')
             expect(result_event.error).to eq(nil)
-            expect(result_event.context).to eq({'exit_code' => 0})
+            expect(result_event.context).to eq('exit_code' => 0)
           end
 
           it 'will always record a terminal event even if there is an error' do
