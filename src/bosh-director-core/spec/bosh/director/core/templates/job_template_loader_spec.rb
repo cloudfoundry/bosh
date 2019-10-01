@@ -1,5 +1,3 @@
-# encoding: UTF-8
-# encoding is needed for correctly comparing expected ERB below
 require 'spec_helper'
 require 'bosh/director/core/templates/job_template_loader'
 require 'archive/tar/minitar'
@@ -7,9 +5,6 @@ require 'stringio'
 require 'yaml'
 require 'zlib'
 require 'tempfile'
-
-# prevent using ASCII on ppc64le platform
-Encoding.default_external = "UTF-8"
 
 def gzip(string)
   result = StringIO.new

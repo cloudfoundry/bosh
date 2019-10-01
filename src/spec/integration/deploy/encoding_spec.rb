@@ -40,7 +40,6 @@ describe 'encoding', type: :integration do
     end
 
     it 'supports UTF-8 in deployment configuration changes, cloud configuration changes and runtime config changes' do
-      Encoding.default_external = 'UTF-8'
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
 
       cloud_config_hash['vm_types'][0]['properties'] = utf8_fixture
