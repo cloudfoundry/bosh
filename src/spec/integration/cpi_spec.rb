@@ -358,24 +358,24 @@ describe 'CPI calls', type: :integration do
         second_deploy_invocations = current_sandbox.cpi.invocations.drop(first_deploy_invocations.size)
 
         expect(second_deploy_invocations[1].method_name).to eq('create_vm')
-        expect(second_deploy_invocations[1].inputs).to match({
-                                                               'agent_id' => String,
-                                                               'stemcell_id' => String,
-                                                               'cloud_properties' => {},
-                                                               'networks' => {
-                                                                 'a' => {
-                                                                   'type' => 'manual',
-                                                                   'ip' => String,
-                                                                   'netmask' => '255.255.255.0',
-                                                                   'cloud_properties' => {},
-                                                                   'default' => ['dns', 'gateway'],
-                                                                   'dns' => ['192.168.1.1', '192.168.1.2'],
-                                                                   'gateway' => '192.168.1.1',
-                                                                 }
-                                                               },
-                                                               'disk_cids' => [],
-                                                               'env' => anything
-                                                             })
+        expect(second_deploy_invocations[1].inputs).to match(
+          'agent_id' => String,
+          'stemcell_id' => String,
+          'cloud_properties' => {},
+          'networks' => {
+            'a' => {
+              'type' => 'manual',
+              'ip' => String,
+              'netmask' => '255.255.255.0',
+              'cloud_properties' => {},
+              'default' => ['dns', 'gateway'],
+              'dns' => ['192.168.1.1', '192.168.1.2'],
+              'gateway' => '192.168.1.1',
+            },
+          },
+          'disk_cids' => [],
+          'env' => anything,
+        )
         expect(second_deploy_invocations[1].context).to match(context_with_api_version)
 
         expect(second_deploy_invocations[3].method_name).to eq('set_vm_metadata')
@@ -388,24 +388,24 @@ describe 'CPI calls', type: :integration do
         expect(second_deploy_invocations[7].context).to match(context_with_api_version)
 
         expect(second_deploy_invocations[9].method_name).to eq('create_vm')
-        expect(second_deploy_invocations[9].inputs).to match({
-                                                               'agent_id' => String,
-                                                               'stemcell_id' => String,
-                                                               'cloud_properties' => {},
-                                                               'networks' => {
-                                                                 'a' => {
-                                                                   'type' => 'manual',
-                                                                   'ip' => String,
-                                                                   'netmask' => '255.255.255.0',
-                                                                   'cloud_properties' => {},
-                                                                   'default' => ['dns', 'gateway'],
-                                                                   'dns' => ['192.168.1.1', '192.168.1.2'],
-                                                                   'gateway' => '192.168.1.1',
-                                                                 }
-                                                               },
-                                                               'disk_cids' => [],
-                                                               'env' => anything
-                                                             })
+        expect(second_deploy_invocations[9].inputs).to match(
+          'agent_id' => String,
+          'stemcell_id' => String,
+          'cloud_properties' => {},
+          'networks' => {
+            'a' => {
+              'type' => 'manual',
+              'ip' => String,
+              'netmask' => '255.255.255.0',
+              'cloud_properties' => {},
+              'default' => ['dns', 'gateway'],
+              'dns' => ['192.168.1.1', '192.168.1.2'],
+              'gateway' => '192.168.1.1',
+            },
+          },
+          'disk_cids' => [],
+          'env' => anything,
+        )
         expect(second_deploy_invocations[9].context).to match(context_with_api_version)
 
         expect(second_deploy_invocations[11].method_name).to eq('set_vm_metadata')
@@ -422,42 +422,47 @@ describe 'CPI calls', type: :integration do
 
         expect(second_deploy_invocations[19].method_name).to eq('detach_disk')
         expect(second_deploy_invocations[19].context).to match(context_with_api_version)
-        expect(second_deploy_invocations[19].inputs).to match({
-                                                               'vm_cid' => vm_cid, 'disk_id' => disk_cid
-                                                             })
+        expect(second_deploy_invocations[19].inputs).to match(
+          'vm_cid' => vm_cid,
+          'disk_id' => disk_cid,
+        )
 
         expect(second_deploy_invocations[21].method_name).to eq('delete_vm')
-        expect(second_deploy_invocations[21].inputs).to match({
-                                                                'vm_cid' => vm_cid
-                                                              })
+        expect(second_deploy_invocations[21].inputs).to match(
+          'vm_cid' => vm_cid,
+        )
         expect(second_deploy_invocations[21].context).to match(context_with_api_version)
 
         expect(second_deploy_invocations[23].method_name).to eq('create_vm')
-        expect(second_deploy_invocations[23].inputs).to match({
-                                                                'agent_id' => String,
-                                                                'stemcell_id' => String,
-                                                                'cloud_properties' => {},
-                                                                'networks' => {
-                                                                  'a' => {
-                                                                    'type' => 'manual',
-                                                                    'ip' => '192.168.1.11',
-                                                                    'netmask' => '255.255.255.0',
-                                                                    'cloud_properties' => {},
-                                                                    'default' => ['dns', 'gateway'],
-                                                                    'dns' => ['192.168.1.1', '192.168.1.2'],
-                                                                    'gateway' => '192.168.1.1',
-                                                                  }
-                                                                },
-                                                                'disk_cids' => [disk_cid],
-                                                                'env' => {
-                                                                  'bosh' => {
-                                                                    'mbus' => expected_mbus,
-                                                                    'dummy_agent_key_merged' => 'This key must be sent to agent', # merged from the director yaml configuration (agent.env.bosh key)
-                                                                    'group' => expected_group,
-                                                                    'groups' => expected_groups
-                                                                  }
-                                                                }
-                                                              })
+        expect(second_deploy_invocations[23].inputs).to match(
+          'agent_id' => String,
+          'stemcell_id' => String,
+          'cloud_properties' => {},
+          'networks' => {
+            'a' => {
+              'type' => 'manual',
+              'ip' => '192.168.1.11',
+              'netmask' => '255.255.255.0',
+              'cloud_properties' => {},
+              'default' => ['dns', 'gateway'],
+              'dns' => ['192.168.1.1', '192.168.1.2'],
+              'gateway' => '192.168.1.1',
+            },
+          },
+          'disk_cids' => [disk_cid],
+          'env' => {
+            'bosh' => {
+              'mbus' => expected_mbus,
+              'dummy_agent_key_merged' => 'This key must be sent to agent', # merged from the director yaml configuration (agent.env.bosh key)
+              'group' => expected_group,
+              'groups' => expected_groups,
+              'tags' => {
+                'tag1' => 'value1',
+                'tag2' => 'value2',
+              },
+            },
+          },
+        )
         expect(second_deploy_invocations[23].context).to match(context_with_api_version)
 
         expect(second_deploy_invocations[25].method_name).to eq('set_vm_metadata')
@@ -468,10 +473,10 @@ describe 'CPI calls', type: :integration do
         new_vm_cid = second_deploy_invocations[25].inputs['vm_cid']
 
         expect(second_deploy_invocations[27].method_name).to eq('attach_disk')
-        expect(second_deploy_invocations[27].inputs).to match({
-                                                                'vm_cid' => new_vm_cid,
-                                                                'disk_id' => disk_cid
-                                                              })
+        expect(second_deploy_invocations[27].inputs).to match(
+          'vm_cid' => new_vm_cid,
+          'disk_id' => disk_cid,
+        )
         expect(second_deploy_invocations[27].context).to match(context_with_api_version)
 
         expect(second_deploy_invocations[29].method_name).to eq('set_disk_metadata')
@@ -501,16 +506,16 @@ describe 'CPI calls', type: :integration do
         expect(first_deploy_invocations[0].inputs).to be_nil
 
         expect(first_deploy_invocations[2].method_name).to eq('create_stemcell')
-        expect(first_deploy_invocations[2].inputs).to match({
+        expect(first_deploy_invocations[2].inputs).to match(
           'image_path' => String,
           'cloud_properties' => {
             'property1' => 'test',
-            'property2' => 'test'
-          }
-        })
+            'property2' => 'test',
+          },
+        )
 
         expect(first_deploy_invocations[4].method_name).to eq('create_vm')
-        expect(first_deploy_invocations[4].inputs).to match({
+        expect(first_deploy_invocations[4].inputs).to match(
           'agent_id' => String,
           'stemcell_id' => String,
           'cloud_properties' => {},
@@ -523,7 +528,7 @@ describe 'CPI calls', type: :integration do
               'default' => ['dns', 'gateway'],
               'dns' => ['192.168.1.1', '192.168.1.2'],
               'gateway' => '192.168.1.1',
-            }
+            },
           },
           'disk_cids' => [],
           'env' => {
@@ -532,12 +537,12 @@ describe 'CPI calls', type: :integration do
               'dummy_agent_key_merged' => 'This key must be sent to agent', # merged from the director yaml configuration (agent.env.bosh key)
               'group' => expected_group,
               'groups' => expected_groups,
-            }
-          }
-        })
+            },
+          },
+        )
 
         expect(first_deploy_invocations[6].method_name).to eq('set_vm_metadata')
-        expect(first_deploy_invocations[6].inputs).to match({
+        expect(first_deploy_invocations[6].inputs).to match(
           'vm_cid' => String,
           'metadata' => {
             'director' => 'TestDirector',
@@ -548,8 +553,8 @@ describe 'CPI calls', type: :integration do
             'index' => '0',
             'id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
             'name' => /first-job\/[0-9a-f]{8}-[0-9a-f-]{27}/
-          }
-        })
+          },
+        )
         expect_name(first_deploy_invocations[6])
         vm_cid = first_deploy_invocations[6].inputs['vm_cid']
 
@@ -772,9 +777,13 @@ describe 'CPI calls', type: :integration do
               'mbus' => expected_mbus,
               'dummy_agent_key_merged' => 'This key must be sent to agent', # merged from the director yaml configuration (agent.env.bosh key)
               'group' => expected_group,
-              'groups' => expected_groups
-            }
-          }
+              'groups' => expected_groups,
+              'tags' => {
+                'tag1' => 'value1',
+                'tag2' => 'value2',
+              },
+            },
+          },
         })
 
         expect(second_deploy_invocations[25].method_name).to eq('set_vm_metadata')
@@ -815,8 +824,8 @@ describe 'CPI calls', type: :integration do
             'instance_index' => '0',
             'instance_id' => /[0-9a-f]{8}-[0-9a-f-]{27}/,
             'tag1' => 'value1',
-            'tag2' => 'value2'
-          }
+            'tag2' => 'value2',
+          },
         })
       end
     end
