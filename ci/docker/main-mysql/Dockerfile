@@ -4,7 +4,11 @@ FROM ubuntu:16.04
 RUN echo 'mysql-server mysql-server/root_password password password' | debconf-set-selections
 RUN echo 'mysql-server mysql-server/root_password_again password password' | debconf-set-selections
 RUN apt-get update && apt-get -yq install \
-    wget build-essential libmysqlclient-dev libpq-dev libsqlite3-dev git mysql-server
+    wget build-essential libmysqlclient-dev libpq-dev libsqlite3-dev git mysql-server locales
+
+ENV LANG en_US.UTF-8
+ENV LC_ALL en_US.UTF-8
+RUN locale-gen en_US.UTF-8
 
 # Install Ruby
 ADD install-ruby.sh /tmp/install-ruby.sh

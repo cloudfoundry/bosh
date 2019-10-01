@@ -4,7 +4,11 @@ ARG DB_VERSION
 
 # To build all gems and install ruby
 RUN apt update && apt -yq install \
-    wget build-essential libmysqlclient-dev libpq-dev libsqlite3-dev git
+    wget build-essential libmysqlclient-dev libpq-dev libsqlite3-dev git locales
+
+ENV LANG en_US.UTF-8
+ENV LC_ALL en_US.UTF-8
+RUN locale-gen en_US.UTF-8
 
 RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" > /etc/apt/sources.list.d/pgdg.list && \
     wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
