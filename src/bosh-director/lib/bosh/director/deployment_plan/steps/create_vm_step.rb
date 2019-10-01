@@ -97,6 +97,8 @@ module Bosh::Director
           env['bosh'] ||= {}
           env['bosh'] = Config.agent_env.merge(env['bosh'])
 
+          env['bosh']['tags'] = @tags unless @tags.empty?
+
           if Config.nats_server_ca
             env['bosh'] ||= {}
             env['bosh']['mbus'] ||= {}

@@ -125,6 +125,7 @@ module Bosh::Director
         'bosh' => {
           'group' => 'fake-director-name-mycloud-compilation-deadbeef',
           'groups' => expected_groups,
+          'tags' => tags,
         },
       }
     end
@@ -398,6 +399,7 @@ module Bosh::Director
                     'mycloud-compilation-deadbeef',
                     'fake-director-name-mycloud-compilation-deadbeef',
                   ],
+                  'tags' => tags,
                 },
             )
             expect(ipp).to eq(ip_provider)

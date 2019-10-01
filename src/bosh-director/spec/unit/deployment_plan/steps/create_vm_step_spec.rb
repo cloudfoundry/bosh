@@ -30,7 +30,7 @@ module Bosh
           let(:delete_vm_step) { instance_double(DeleteVmStep) }
           let(:expected_group) { 'fake-director-name-deployment-name-fake-job' }
           let(:vm_model) { Models::Vm.make(cid: 'new-vm-cid', instance: instance_model, cpi: 'cpi1') }
-          let(:tags) { { 'mytag' => 'foobar' } }
+          let(:tags) { {} }
           let(:availability_zone) { BD::DeploymentPlan::AvailabilityZone.new('az-1', {}) }
           let(:cloud_properties) { { 'ram' => '2gb' } }
           let(:network_cloud_properties) { { 'bandwidth' => '5mbps' } }
@@ -179,13 +179,13 @@ module Bosh
             allow(cloud_factory).to receive(:get).with('cpi1', nil).and_return(cloud_wrapper)
             allow(cloud_factory).to receive(:get).with('cpi1').and_return(cloud_wrapper)
             allow(Models::Vm).to receive(:create).and_return(vm_model)
-            allow(cloud_wrapper).to receive(:create_vm).and_return(['', {}, {}])
             allow(cloud_wrapper).to receive(:info)
             allow(cloud).to receive(:set_vm_metadata)
             allow(DeleteVmStep).to receive(:new).and_return(delete_vm_step)
           end
 
           it 'sets vm on given report' do
+            allow(cloud_wrapper).to receive(:create_vm).and_return(['', {}, {}])
             subject.perform(report)
 
             expect(report.vm).to eq(vm_model)
@@ -256,6 +256,63 @@ module Bosh
             expect(Models::Vm).to receive(:create).with(hash_including(cid: 'new-vm-cid', instance: instance_model, stemcell_api_version: nil))
 
             subject.perform(report)
+          end
+
+          context 'when there are tags' do
+            let(:tags) { { 'mytag' => 'foobar' } }
+
+            it 'includes tags in create_vm' do
+              expect(cloud_wrapper).to receive(:create_vm).with(
+                kind_of(String),
+                'stemcell-id', { 'ram' => '2gb' },
+                network_settings,
+                disks,
+                'bosh' => {
+                  'group' => expected_group,
+                  'groups' => expected_groups,
+                  'tags' => tags,
+                }
+              ).and_return(create_vm_response)
+              expect(agent_client).to receive(:wait_until_ready)
+              expect(Models::Vm).to receive(:create)
+                .with(hash_including(cid: 'new-vm-cid', instance: instance_model, stemcell_api_version: nil))
+
+              subject.perform(report)
+            end
+
+            it 'sets vm metadata' do
+              expect(cloud_wrapper).to receive(:create_vm).with(
+                kind_of(String),
+                'stemcell-id',
+                kind_of(Hash),
+                network_settings,
+                disks,
+                'bosh' => {
+                  'group' => expected_group,
+                  'groups' => expected_groups,
+                  'tags' => tags,
+                },
+              ).and_return(create_vm_response)
+
+              Timecop.freeze do
+                expect(cloud_wrapper).to receive(:set_vm_metadata) do |vm_cid, metadata|
+                  expect(vm_cid).to eq('new-vm-cid')
+                  expect(metadata).to match(
+                    'deployment' => 'deployment_name',
+                    'created_at' => Time.new.getutc.strftime('%Y-%m-%dT%H:%M:%SZ'),
+                    'job' => 'fake-job',
+                    'instance_group' => 'fake-job',
+                    'index' => '5',
+                    'director' => 'fake-director-name',
+                    'id' => instance_model.uuid,
+                    'name' => "fake-job/#{instance_model.uuid}",
+                    'mytag' => 'foobar',
+                  )
+                end
+
+                subject.perform(report)
+              end
+            end
           end
 
           it 'should record events' do
@@ -357,38 +414,6 @@ module Bosh
             expect(agent_broadcaster).not_to have_received(:delete_arp_entries).with(vm_model.cid, ['192.168.1.3'])
           end
 
-          it 'sets vm metadata' do
-            expect(cloud_wrapper).to receive(:create_vm).with(
-              kind_of(String),
-              'stemcell-id',
-              kind_of(Hash),
-              network_settings,
-              disks,
-              'bosh' => {
-                'group' => expected_group,
-                'groups' => expected_groups,
-              },
-            ).and_return(create_vm_response)
-
-            Timecop.freeze do
-              expect(cloud_wrapper).to receive(:set_vm_metadata) do |vm_cid, metadata|
-                expect(vm_cid).to eq('new-vm-cid')
-                expect(metadata).to match(
-                  'deployment' => 'deployment_name',
-                  'created_at' => Time.new.getutc.strftime('%Y-%m-%dT%H:%M:%SZ'),
-                  'job' => 'fake-job',
-                  'instance_group' => 'fake-job',
-                  'index' => '5',
-                  'director' => 'fake-director-name',
-                  'id' => instance_model.uuid,
-                  'name' => "fake-job/#{instance_model.uuid}",
-                  'mytag' => 'foobar',
-                )
-              end
-
-              subject.perform(report)
-            end
-          end
 
           context 'when there is a vm creation error' do
             let(:create_vm_response) { ['fake-vm-cid', {}, {}] }
