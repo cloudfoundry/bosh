@@ -99,8 +99,8 @@ module Bosh::Director
 
       def parse_jobs(name, is_deploy_action)
         jobs = safe_property(@instance_group_spec, 'jobs', class: Array)
-
-        migrated_from = safe_property(@instance_group_spec, 'migrated_from', class: Array, optional: true, default: [])
+        instance_group_properties = safe_property(@instance_group_spec, 'properties', class: Hash, default: {})
+        migrated_from = safe_property(@instance_group_spec, 'migrated_from', class: Array, default: [])
 
         release_manager = Api::ReleaseManager.new
 
@@ -128,7 +128,7 @@ module Bosh::Director
 
           raise ReleaseMissingJob, "Job '#{job_name}' not found in release '#{release.name}'" if current_template_model.nil?
 
-          job_properties = safe_property(job_spec, 'properties', class: Hash, optional: true, default: {})
+          job_properties = safe_property(job_spec, 'properties', class: Hash, default: instance_group_properties)
           job.add_properties(job_properties, name)
 
           # Don't recalculate links on actions that aren't a deploy
@@ -353,13 +353,6 @@ module Bosh::Director
         template_property = safe_property(@instance_group_spec, 'template', optional: true)
         templates_property = safe_property(@instance_group_spec, 'templates', optional: true)
         jobs_property = safe_property(@instance_group_spec, 'jobs', optional: true)
-        instance_group_properties = safe_property(@instance_group_spec, 'properties', class: Hash, optional: true)
-
-        if instance_group_properties
-          raise V1DeprecatedInstanceGroupProperties,
-                "Instance group '#{name}' specifies 'properties' which is not supported. 'properties' are only "\
-                "allowed in the 'jobs' array"
-        end
 
         if template_property || templates_property
           raise V1DeprecatedTemplate,

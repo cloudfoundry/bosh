@@ -345,6 +345,76 @@ module Bosh::Director
               end
             end
 
+            context 'when properties are not provided in the job hash' do
+              let(:job_rel_ver) do
+                instance_double(
+                  ReleaseVersion,
+                  name: 'fake-release',
+                  version: '1',
+                  template: nil,
+                )
+              end
+
+              before do
+                instance_group_spec['jobs'] = [
+                  {
+                    'name' => 'job-name',
+                    'release' => 'fake-release',
+                  },
+                ]
+
+                release_model = Models::Release.make(name: 'fake-release1')
+                release_version_model = Models::ReleaseVersion.make(version: '1', release: release_model)
+                release_version_model.add_template(Models::Template.make(name: 'job-name', release: release_model))
+              end
+
+              context 'and there are instance group level properties' do
+                before do
+                  instance_group_spec['properties'] = {
+                    'property_1' => 'property_1_value',
+                    'property_2' => {
+                      'life' => 'life_value',
+                    },
+                  }
+                end
+
+                it 'defaults to the instance group properties' do
+                  allow(deployment_plan).to receive(:release)
+                    .with('fake-release')
+                    .and_return(job_rel_ver)
+
+                  job = make_job('job-name', nil)
+                  allow(job_rel_ver).to receive(:get_or_create_template)
+                    .with('job-name')
+                    .and_return(job)
+                  expect(job).to receive(:add_properties)
+                    .with(
+                      { 'property_1' => 'property_1_value', 'property_2' => { 'life' => 'life_value' } },
+                      'instance-group-name',
+                    )
+
+                  parsed_instance_group
+                end
+              end
+
+              context 'and there are not instance group level properties' do
+                it 'defaults to an empty hash' do
+                  allow(deployment_plan).to receive(:release)
+                    .with('fake-release')
+                    .and_return(job_rel_ver)
+
+                  job = make_job('job-name', nil)
+                  allow(job_rel_ver).to receive(:get_or_create_template)
+                    .with('job-name')
+                    .and_return(job)
+                  expect(job).to receive(:add_properties)
+                    .with({}, 'instance-group-name')
+
+                  parsed_instance_group
+                end
+              end
+            end
+
             context 'link parsing' do
               let(:rel_ver) { instance_double(ReleaseVersion, name: 'fake-release', version: '1') }
               let(:job) { make_job('job-name', nil) }
@@ -459,20 +529,6 @@ module Bosh::Director
               expect { parsed_instance_group }.to raise_error(
                 ValidationMissingField,
                 "Instance group 'instance-group-name' does not specify jobs key",
-              )
-            end
-          end
-
-          context 'when properties are listed at the top level' do
-            before do
-              instance_group_spec['properties'] = { 'deprecated' => 'property' }
-            end
-
-            it 'raises a deprecation error' do
-              expect { parsed_instance_group }.to raise_error(
-                V1DeprecatedInstanceGroupProperties,
-                "Instance group 'instance-group-name' specifies 'properties' which is not supported. 'properties' are only "\
-                "allowed in the 'jobs' array",
               )
             end
           end
