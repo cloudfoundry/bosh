@@ -256,6 +256,17 @@ describe 'director.yml.erb' do
             expect(parsed_yaml['backup_destination']['options']['davcli_config_path']).to eq('/var/vcap/data/director/tmp')
             expect(parsed_yaml['backup_destination']['options']['davcli_path']).to eq('/var/vcap/packages/davcli/bin/davcli')
           end
+
+          context 'when using signed urls with the blobstore' do
+            before do
+              merged_manifest_properties['blobstore']['enable_signed_urls'] = true
+              merged_manifest_properties['blobstore']['secret'] = 'hmac'
+            end
+
+            it 'should configure the blobstore secret' do
+              expect(parsed_yaml['blobstore']['options']['secret']).to eq('hmac')
+            end
+          end
         end
       end
 
