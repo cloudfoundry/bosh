@@ -78,7 +78,6 @@
               endpoint: http://((internal_ip)):25250
               user: agent
               password: ((blobstore_agent_password))
-              secret: ((blobstore_secret))
 
 - type: replace
   path: /instance_groups/name=bosh/properties/director/cpi_job?
