@@ -166,7 +166,7 @@ module Bosh::Clouds
       redacted_arguments = arguments.clone
       env = redacted_arguments[5]
       env = redactAllBut(['bosh'], env)
-      env['bosh'] = redactAllBut(['group', 'groups'], env['bosh'])
+      env['bosh'] = redactAllBut(['group', 'groups', 'tags'], env['bosh'])
       redacted_arguments[5] = env
       redacted_arguments
     end

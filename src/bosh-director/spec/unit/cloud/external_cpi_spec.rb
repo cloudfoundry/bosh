@@ -113,6 +113,7 @@ describe Bosh::Clouds::ExternalCpi do
             'bosh' => {
               'group' => 'my-group',
               'groups' => ['my-first-group'],
+              'tags' => { 'tag' => 'tagvalue' },
               'password' => '<redacted>'
             },
             'other' => '<redacted>'
@@ -407,6 +408,7 @@ describe Bosh::Clouds::ExternalCpi do
           'bosh' => {
             'group' => 'my-group',
             'groups' => ['my-first-group'],
+            'tags' => { 'tag' => 'tagvalue' },
             'password' => 'my-secret-password'
           },
           'other' => 'value'
@@ -428,6 +430,7 @@ describe Bosh::Clouds::ExternalCpi do
           'bosh' => {
             'group' => 'my-group',
             'groups' => ['my-first-group'],
+            'tags' => { 'tag' => 'tagvalue' },
             'password' => 'my-secret-password'
           },
           'other' => 'value'
@@ -449,6 +452,7 @@ describe Bosh::Clouds::ExternalCpi do
           'bosh' => {
             'group' => 'my-group',
             'groups' => ['my-first-group'],
+            'tags' => { 'tag' => 'tagvalue' },
             'password' => 'my-secret-password'
           },
           'other' => 'value'
@@ -490,6 +494,7 @@ describe Bosh::Clouds::ExternalCpi do
           'bosh' => {
             'group' => 'my-group',
             'groups' => ['my-first-group'],
+            'tags' => { 'tag' => 'tagvalue' },
             'password' => 'my-secret-password'
           },
           'other' => 'value'
@@ -533,6 +538,7 @@ describe Bosh::Clouds::ExternalCpi do
           'bosh' => {
             'group' => 'my-group',
             'groups' => ['my-first-group'],
+            'tags' => { 'tag' => 'tagvalue' },
             'password' => 'my-secret-password'
           },
           'other' => 'value'
