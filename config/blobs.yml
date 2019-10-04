@@ -6,10 +6,10 @@ davcli/davcli-0.0.41-linux-amd64:
   size: 8595966
   object_id: 76cdbca6-03f2-4a7b-6f11-90e11366fe19
   sha: sha256:2707e21d5c0805f3a606144256ed61d3cc136cb7706565a99c4fb030add302e8
-gnatsd/gnatsd-1.3.0-bosh.7-linux-amd64:
-  size: 11572841
-  object_id: c6aecf2b-18ec-4a5a-466e-2a57f84aa154
-  sha: sha256:be85b21f0af87f5013916a4c398f142572084fc206fff904482b0a31ca28ccdd
+gnatsd/gnatsd-1.3.0-bosh.10-linux-amd64:
+  size: 11642415
+  object_id: 3ee87236-4c36-4477-7bb1-840056c62dde
+  sha: sha256:e5362a7c88ed92d4f4263b1b725e901fe29da220c3548e37570793776b5f6d51
 mysql/mariadb-connector-c-3.0.3-src.tar.gz:
   size: 666928
   object_id: 0d20e9e3-1a7d-4872-6ea3-28246c579ca8
@@ -54,7 +54,7 @@ s3cli/s3cli-0.0.83-linux-amd64:
   size: 14932355
   object_id: 23b2fadf-6a53-42c8-43fd-b89d748b34c7
   sha: sha256:d4f817b9519e17c76374ae23c905ec3aa1b2b5d9f079ab6a6a7d22656bda1c4f
-verify-multidigest/verify-multidigest-0.0.149-linux-amd64:
-  size: 4309050
-  object_id: e0e618a9-22ba-4046-754f-932473440fb5
-  sha: sha256:65e3bdf60c5b3eb82bf8c851a55a3c2459d1f41cb435136b9db7894379ce6369
+verify-multidigest/verify-multidigest-0.0.156-linux-amd64:
+  size: 4321727
+  object_id: b690a1d1-eda4-484a-5ef4-19c478e0ccb4
+  sha: sha256:f72a33761540d010c136d020038e764d04ddc9a1ee71ffd2367304f18ba550d3

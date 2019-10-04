@@ -3,14 +3,14 @@ require_relative './artifact'
 
 module Bosh::Dev
   class GnatsdManager
-    VERSION = '1.3.0-bosh.2'.freeze
-    DARWIN_SHA256 = 'd1ea29e83a26635cf2301b771c47ed30c332056a66931cec8f7091d7dd163401'.freeze
-    LINUX_SHA256 = '528ebd92d5909535763e7c9439f9564403fd663c0f64e869d568187bb6823ea0'.freeze
-    BUCKET_NAME = 'bosh-gnatsd'
+    VERSION = '1.3.0-bosh.10'.freeze
+    DARWIN_SHA256 = 'fac87b6b9b46830551f32f22930a61e2162edf025304f0f2ce7282b4350003f7'.freeze
+    LINUX_SHA256 = 'e5362a7c88ed92d4f4263b1b725e901fe29da220c3548e37570793776b5f6d51'.freeze
+    BUCKET_NAME = 'bosh-gnatsd'.freeze
 
     REPO_ROOT = File.expand_path('../../../../', File.dirname(__FILE__))
     INSTALL_DIR = File.join('tmp', 'gnatsd')
-    EXECUTABLE_NAME = 'gnatsd'
+    EXECUTABLE_NAME = 'gnatsd'.freeze
 
     INFO = Artifact::Info.new('gnatsd', VERSION, DARWIN_SHA256, LINUX_SHA256, BUCKET_NAME)
     INSTALLER = Artifact::Installer.new(INFO, INSTALL_DIR, 'gnatsd')

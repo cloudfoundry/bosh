@@ -4,4 +4,4 @@ name: gonats
 dependencies: []
 
 files:
-- gnatsd/gnatsd-1.3.0-bosh.7-linux-amd64
+- gnatsd/gnatsd-1.3.0-bosh.10-linux-amd64
