@@ -995,6 +995,133 @@ module Bosh::Director
               Models::Lock.create(name: 'lock:deployment:deployment-2', uid: 'who-cares', expired_at: Time.now + 100000)
             end
 
+            context 'with cloud configs' do
+              it 'excludes non-cloud configs' do
+                old_runtime = Models::Config.make(:runtime, name: 'runtime-config', raw_manifest: {})
+                Models::Config.make(:runtime, name: 'runtime-config', raw_manifest: {})
+                Models::Deployment.create(
+                  name: 'deployment-4',
+                ).tap do |deployment|
+                  deployment.runtime_configs = [old_runtime]
+                end
+
+                get '/', {}, {}
+                expect(last_response.status).to eq(200)
+                body = JSON.parse(last_response.body)
+
+                expect(body).to eq(
+                  [
+                    {
+                      'name' => 'deployment-1',
+                      'releases' => [
+                        { 'name' => 'release-1', 'version' => '1' },
+                        { 'name' => 'release-1', 'version' => '2' },
+                      ],
+                      'stemcells' => [
+                        { 'name' => 'stemcell-1', 'version' => '1' },
+                        { 'name' => 'stemcell-2', 'version' => '1' },
+                      ],
+                      'cloud_config' => 'outdated',
+                      'teams' => %w[dabest daworst],
+                      'locked' => false,
+                    },
+                    {
+                      'name' => 'deployment-2',
+                      'releases' => [
+                        { 'name' => 'release-1', 'version' => '1' },
+                        { 'name' => 'release-2', 'version' => '1' },
+                      ],
+                      'stemcells' => [
+                        { 'name' => 'stemcell-1', 'version' => '1' },
+                        { 'name' => 'stemcell-1', 'version' => '2' },
+                      ],
+                      'cloud_config' => 'latest',
+                      'teams' => ['dabest'],
+                      'locked' => true,
+                    },
+                    {
+                      'name' => 'deployment-3',
+                      'releases' => [],
+                      'stemcells' => [],
+                      'cloud_config' => 'none',
+                      'teams' => ['daworst'],
+                      'locked' => false,
+                    },
+                    {
+                      'name' => 'deployment-4',
+                      'releases' => [],
+                      'stemcells' => [],
+                      'cloud_config' => 'none',
+                      'teams' => [],
+                      'locked' => false,
+                    },
+                  ],
+                )
+              end
+
+              it 'mark cloud-config outdated if it references a deleted config' do
+                deleted_cloud_config = Models::Config.make(:cloud, raw_manifest: {}, deleted: true)
+                Models::Deployment.create(
+                  name: 'deployment-4',
+                ).tap do |deployment|
+                  deployment.cloud_configs = [deleted_cloud_config]
+                end
+
+                get '/', {}, {}
+                expect(last_response.status).to eq(200)
+                body = JSON.parse(last_response.body)
+
+                expect(body).to eq(
+                  [
+                    {
+                      'name' => 'deployment-1',
+                      'releases' => [
+                        { 'name' => 'release-1', 'version' => '1' },
+                        { 'name' => 'release-1', 'version' => '2' },
+                      ],
+                      'stemcells' => [
+                        { 'name' => 'stemcell-1', 'version' => '1' },
+                        { 'name' => 'stemcell-2', 'version' => '1' },
+                      ],
+                      'cloud_config' => 'outdated',
+                      'teams' => %w[dabest daworst],
+                      'locked' => false,
+                    },
+                    {
+                      'name' => 'deployment-2',
+                      'releases' => [
+                        { 'name' => 'release-1', 'version' => '1' },
+                        { 'name' => 'release-2', 'version' => '1' },
+                      ],
+                      'stemcells' => [
+                        { 'name' => 'stemcell-1', 'version' => '1' },
+                        { 'name' => 'stemcell-1', 'version' => '2' },
+                      ],
+                      'cloud_config' => 'outdated',
+                      'teams' => ['dabest'],
+                      'locked' => true,
+                    },
+                    {
+                      'name' => 'deployment-3',
+                      'releases' => [],
+                      'stemcells' => [],
+                      'cloud_config' => 'none',
+                      'teams' => ['daworst'],
+                      'locked' => false,
+                    },
+                    {
+                      'name' => 'deployment-4',
+                      'releases' => [],
+                      'stemcells' => [],
+                      'cloud_config' => 'outdated',
+                      'teams' => [],
+                      'locked' => false,
+                    },
+                  ],
+                )
+              end
+            end
+
             it 'lists in name order' do
               get '/', {}, {}
               expect(last_response.status).to eq(200)

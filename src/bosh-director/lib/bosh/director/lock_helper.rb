@@ -12,6 +12,10 @@ module Bosh::Director
       Models::Lock.where { (name =~ "lock:deployment:#{deployment_name}") & (expired_at > Time.now) }.count.positive?
     end
 
+    def locked_deployments
+      Models::Lock.where { Sequel.like(:name, 'lock:deployment:%') & (expired_at > Time.now) }.all
+    end
+
     def with_network_lock(name, opts = {})
       timeout = opts[:timeout] || 10
       Config.logger.info("Acquiring network lock on #{name}")

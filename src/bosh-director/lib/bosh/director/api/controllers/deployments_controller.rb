@@ -265,28 +265,6 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      def used_cloud_config_state(deployment)
-        latest_cloud_configs = Models::Config.latest_set_for_teams('cloud', *deployment.teams).map(&:id).sort
-        if deployment.cloud_configs.empty?
-          'none'
-        elsif deployment.cloud_configs.map(&:id).sort == latest_cloud_configs
-          'latest'
-        else
-          'outdated'
-        end
-      end
-
-      def stemcells_state(deployment)
-        deployment.stemcells.map { |sc| { 'name' => sc.name, 'version' => sc.version } }
-      end
-
-      def releases_state(deployment)
-        sorted_releases = deployment.release_versions.sort do |a, b|
-          [a.release.name, a.version] <=> [b.release.name, b.version]
-        end
-        sorted_releases.map { |rv| { 'name' => rv.release.name, 'version' => rv.version.to_s } }
-      end
-
       get '/', authorization: :list_deployments do
         excludes = {
           exclude_configs: params[:exclude_configs] == 'true',
@@ -299,15 +277,19 @@ module Bosh::Director
         my_deployments = all_deployments.select do |deployment|
           @permission_authorizer.is_granted?(deployment, :read, token_scopes)
         end
+
+        cloud_configs = Models::Config.where(type: 'cloud').all unless excludes[:exclude_configs]
+        locked = locked_deployments unless excludes[:exclude_lock]
+
         deployments = my_deployments.map do |deployment|
           response = {
             'name' => deployment.name,
             'teams' => deployment.teams.map(&:name),
           }
-          response['cloud_config'] = used_cloud_config_state(deployment) unless excludes[:exclude_configs]
+          response['cloud_config'] = used_cloud_config_state(deployment, cloud_configs) unless excludes[:exclude_configs]
           response['stemcells'] = stemcells_state(deployment) unless excludes[:exclude_stemcells]
           response['releases'] = releases_state(deployment) unless excludes[:exclude_releases]
-          response['locked'] = deployment_locked?(deployment) unless excludes[:exclude_lock]
+          response['locked'] = locked.any? { |l| l.name == "lock:deployment:#{deployment.name}" } unless excludes[:exclude_lock]
           response
         end
 
@@ -554,6 +536,39 @@ module Bosh::Director
       private
 
       attr_accessor :deployment
+
+      def used_cloud_config_state(deployment, cloud_configs)
+        configs_by_team = cloud_configs.select do |c|
+          c.team_id.nil? || deployment.teams.map(&:id).include?(c.team_id)
+        end
+
+        grouped_by_name = configs_by_team.group_by(&:name)
+
+        latest_configs = grouped_by_name.map do |_, c|
+          latest = c.max_by(&:id)
+          latest
+        end
+
+        existing_ids = latest_configs.reject(&:deleted).map(&:id).sort
+        if deployment.cloud_configs.empty?
+          'none'
+        elsif deployment.cloud_configs.map(&:id).sort == existing_ids
+          'latest'
+        else
+          'outdated'
+        end
+      end
+
+      def stemcells_state(deployment)
+        deployment.stemcells.map { |sc| { 'name' => sc.name, 'version' => sc.version } }
+      end
+
+      def releases_state(deployment)
+        sorted_releases = deployment.release_versions.sort do |a, b|
+          [a.release.name, a.version] <=> [b.release.name, b.version]
+        end
+        sorted_releases.map { |rv| { 'name' => rv.release.name, 'version' => rv.version.to_s } }
+      end
 
       def load_deployment_plan
         planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(Config.logger)

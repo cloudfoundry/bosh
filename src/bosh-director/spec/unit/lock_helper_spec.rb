@@ -46,6 +46,19 @@ module Bosh::Director
       end
     end
 
+    describe :locked_deployments do
+      let(:expired) { Time.now - 1000000 }
+      let(:not_expired) { Time.now + 1000000 }
+
+      context 'with some deployments locked' do
+        it 'returns non-expired deployment locks' do
+          Models::Lock.create(name: 'lock:deployment:example1', uid: 'who-cares1', expired_at: expired)
+          locked = Models::Lock.create(name: 'lock:deployment:example2', uid: 'who-cares2', expired_at: not_expired)
+          expect(@test_instance.locked_deployments).to eq([locked])
+        end
+      end
+    end
+
     describe :deployment_locked? do
       let(:expired_at) { Time.now + 1000000 }
 
