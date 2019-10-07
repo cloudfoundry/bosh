@@ -87,6 +87,10 @@ module Bosh::Director
       send_message(:fetch_logs, *args)
     end
 
+    def fetch_logs_with_signed_url(*args)
+      send_message(:fetch_logs_with_signed_url, *args)
+    end
+
     def migrate_disk(*args)
       send_message(:migrate_disk, *args)
     end

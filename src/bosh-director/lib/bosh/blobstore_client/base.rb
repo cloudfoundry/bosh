@@ -106,6 +106,15 @@ module Bosh
         end
       end
 
+      def sign(oid, verb='get')
+        duration = '24h'
+        sign_url(oid, verb, duration)
+      end
+
+      def signing_enabled?
+        @options[:enable_signed_urls]
+      end
+
       protected
 
       # @return [String] the id
@@ -125,6 +134,11 @@ module Bosh
       end
 
       def object_exists?(oid)
+        # needs to be implemented in each subclass
+        not_supported
+      end
+
+      def sign_url(oid, verb, duration)
         # needs to be implemented in each subclass
         not_supported
       end

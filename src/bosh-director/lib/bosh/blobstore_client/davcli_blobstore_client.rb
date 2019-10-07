@@ -74,6 +74,17 @@ module Bosh::Blobstore
       raise BlobstoreError, "Failed to delete blob, code #{status.exitstatus}, output: '#{out}', error: '#{err}'" unless status.success?
     end
 
+    def sign_url(object_id, verb, duration)
+      begin
+        out, err, status = Open3.capture3("#{@davcli_path}", '-c', "#{@config_file_path}", 'sign', "#{object_id}", "#{verb}", "#{duration}")
+      rescue Exception => e
+        raise BlobstoreError, e.inspect
+      end
+      raise BlobstoreError, "Failed to sign url, code #{status.exitstatus}, output: '#{out}', error: '#{err}'" unless status.success?
+
+      out
+    end
+
     def store_in_webdav(content_path, server_path)
       begin
         out, err, status = Open3.capture3("#{@davcli_path}", '-c', "#{@config_file_path}", 'put', "#{content_path}", "#{server_path}")
