@@ -169,5 +169,28 @@ module Bosh::Blobstore
             BlobstoreError, /error: 'error'/)
       end
     end
+
+    describe '#sign_url' do
+      it 'should return the signed url' do
+        expect(Open3).to receive(:capture3)
+          .with(
+            '/var/vcap/packages/bosh-gcscli/bin/bosh-gcscli',
+            '-c',
+            expected_config_file.to_s,
+            'sign',
+            object_id.to_s,
+            'get',
+            '24h',
+          ).and_return(['https://signed-url', nil, success_exit_status])
+        expect(subject.sign(object_id, 'get')).to eq('https://signed-url')
+      end
+
+      it 'should show an error from gcscli' do
+        allow(Open3).to receive(:capture3).and_return([nil, 'error', failure_exit_status])
+        expect { subject.sign(object_id, 'get') }.to raise_error(
+          BlobstoreError, /error: 'error'/
+        )
+      end
+    end
   end
 end

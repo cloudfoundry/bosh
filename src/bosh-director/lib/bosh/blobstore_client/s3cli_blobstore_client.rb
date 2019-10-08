@@ -7,7 +7,6 @@ require 'json'
 
 module Bosh::Blobstore
   class S3cliBlobstoreClient < BaseClient
-
     # Blobstore client for S3, using s3cli Go version
     # @param [Hash] options S3connection options
     # @option options [Symbol] bucket_name
@@ -24,8 +23,8 @@ module Bosh::Blobstore
       super(options)
 
       @s3cli_path = @options.fetch(:s3cli_path)
-      unless Kernel.system("#{@s3cli_path}", "--v", out: "/dev/null", err: "/dev/null")
-        raise BlobstoreError, "Cannot find s3cli executable. Please specify s3cli_path parameter"
+      unless Kernel.system(@s3cli_path.to_s, '--v', out: '/dev/null', err: '/dev/null')
+        raise BlobstoreError, 'Cannot find s3cli executable. Please specify s3cli_path parameter'
       end
 
       @s3cli_options = {
@@ -34,20 +33,20 @@ module Bosh::Blobstore
         host: @options[:host],
         port: @options[:port],
         region: @options[:region],
-        ssl_verify_peer:  @options.fetch(:ssl_verify_peer, true),
+        ssl_verify_peer: @options.fetch(:ssl_verify_peer, true),
         credentials_source: @options.fetch(:credentials_source, 'none'),
         access_key_id: @options[:access_key_id],
         secret_access_key: @options[:secret_access_key],
         signature_version: @options[:signature_version],
         server_side_encryption: @options[:server_side_encryption],
-        sse_kms_key_id: @options[:sse_kms_key_id]
+        sse_kms_key_id: @options[:sse_kms_key_id],
       }
 
-      @s3cli_options.reject! {|k,v| v.nil?}
+      @s3cli_options.reject! { |_k, v| v.nil? }
 
       if  @options[:access_key_id].nil? &&
           @options[:secret_access_key].nil?
-            @options[:credentials_source] = 'none'
+        @options[:credentials_source] = 'none'
       end
 
       @config_file = write_config_file(@options.fetch(:s3cli_config_path, nil))
@@ -70,23 +69,21 @@ module Bosh::Blobstore
     # @param [File] file file to store the retrived object in
     def get_file(object_id, file)
       begin
-        out, err, status = Open3.capture3("#{@s3cli_path}", "-c", "#{@config_file}", "get", "#{object_id}", "#{file.path}")
+        out, err, status = Open3.capture3(@s3cli_path.to_s, '-c', @config_file.to_s, 'get', object_id.to_s, file.path.to_s)
       rescue Exception => e
         raise BlobstoreError, e.inspect
       end
-      if !status.success?
-        if err =~ /NoSuchKey/
-          raise NotFound, "Blobstore object '#{object_id}' not found"
-        end
-        raise BlobstoreError, "Failed to download S3 object, code #{status.exitstatus}, output: '#{out}', error: '#{err}'"
-      end
-    end
+      return if status.success?
 
+      raise NotFound, "Blobstore object '#{object_id}' not found" if err =~ /NoSuchKey/
+
+      raise BlobstoreError, "Failed to download S3 object, code #{status.exitstatus}, output: '#{out}', error: '#{err}'"
+    end
 
     # @param [String] object_id object id to delete
     def delete_object(object_id)
       begin
-        out, err, status = Open3.capture3("#{@s3cli_path}", "-c", "#{@config_file}", "delete", "#{object_id}")
+        out, err, status = Open3.capture3(@s3cli_path.to_s, '-c', @config_file.to_s, 'delete', object_id.to_s)
       rescue Exception => e
         raise BlobstoreError, e.inspect
       end
@@ -95,17 +92,33 @@ module Bosh::Blobstore
 
     def object_exists?(object_id)
       begin
-        out, err, status = Open3.capture3("#{@s3cli_path}", "-c", "#{@config_file}", "exists", "#{object_id}")
-        if status.exitstatus == 0
-          return true
-        end
-        if status.exitstatus == 3
-          return false
-        end
+        out, err, status = Open3.capture3(@s3cli_path.to_s, '-c', @config_file.to_s, 'exists', object_id.to_s)
+        return true if status.exitstatus.zero?
+        return false if status.exitstatus == 3
       rescue Exception => e
         raise BlobstoreError, e.inspect
       end
       raise BlobstoreError, "Failed to check existence of S3 object, code #{status.exitstatus}, output: '#{out}', error: '#{err}'" unless status.success?
+    end
+
+    def sign_url(object_id, verb, duration)
+      begin
+        out, err, status = Open3.capture3(
+          @s3cli_path.to_s,
+          '-c',
+          @config_file.to_s,
+          'sign',
+          object_id.to_s,
+          verb.to_s,
+          duration.to_s,
+        )
+      rescue Exception => e
+        raise BlobstoreError, e.inspect
+      end
+
+      return out if status.success?
+
+      raise BlobstoreError, "Failed to sign url, code #{status.exitstatus}, output: '#{out}', error: '#{err}'"
     end
 
     # @param [String] path path to file which will be stored in S3
@@ -113,7 +126,7 @@ module Bosh::Blobstore
     # @return [void]
     def store_in_s3(path, oid)
       begin
-        out, err, status = Open3.capture3("#{@s3cli_path}", "-c", "#{@config_file}", "put", "#{path}", "#{oid}")
+        out, err, status = Open3.capture3(@s3cli_path.to_s, '-c', @config_file.to_s, 'put', path.to_s, oid.to_s)
       rescue Exception => e
         raise BlobstoreError, e.inspect
       end
@@ -121,17 +134,17 @@ module Bosh::Blobstore
     end
 
     def full_oid_path(object_id)
-       @options[:folder] ?  @options[:folder] + '/' + object_id : object_id
+      @options[:folder] ? @options[:folder] + '/' + object_id : object_id
     end
 
     def write_config_file(config_file_dir = nil)
-      config_file_dir = Dir::tmpdir unless config_file_dir
-      Dir.mkdir(config_file_dir) unless File.exists?(config_file_dir)
+      config_file_dir ||= Dir.tmpdir
+      Dir.mkdir(config_file_dir) unless File.exist?(config_file_dir)
       random_name = "s3_blobstore_config-#{SecureRandom.uuid}"
       config_file = File.join(config_file_dir, random_name)
       config_data = JSON.dump(@s3cli_options)
 
-      File.open(config_file, 'w', 0600) { |file| file.write(config_data) }
+      File.open(config_file, 'w', 0o600) { |file| file.write(config_data) }
       config_file
     end
   end
