@@ -19,7 +19,7 @@ module Bosh::Director
         describe 'get /' do
           context 'when global resurrection is on' do
             before do
-              Models::DirectorAttribute.create(name: 'resurrection_paused', value: false)
+              Models::DirectorAttribute.create(name: 'resurrection_paused', value: 'false')
             end
 
             it 'says the resurrection is on' do
@@ -31,7 +31,7 @@ module Bosh::Director
 
           context 'when global resurrection is off' do
             before do
-              Models::DirectorAttribute.create(name: 'resurrection_paused', value: true)
+              Models::DirectorAttribute.create(name: 'resurrection_paused', value: 'true')
             end
 
             it 'says the resurrection is off' do
