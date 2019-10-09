@@ -34,8 +34,7 @@ module Bosh::Director
       instances.each do |instance|
         pending.add(instance)
         agent_id = agent_id_for_instance(instance)
-        instance_to_request_id[instance] = agent_client(agent_id, instance.name)
-                                           .sync_dns(blobstore_id, sha1, version) do |response|
+        instance_to_request_id[instance] = perform_sync(agent_id, instance, blobstore_id, sha1, version) do |response|
           valid_response = (response['value'] == VALID_SYNC_DNS_RESPONSE)
 
           if valid_response
@@ -122,6 +121,23 @@ module Bosh::Director
     def agent_id_for_instance(instance)
       cached_vm = instance.vms.find(&:active)
       cached_vm.nil? ? nil : cached_vm.agent_id
+    end
+
+    def perform_sync(agent_id, instance, blobstore_id, digest, version, &blk)
+      if can_use_signed_urls(instance)
+        signed_url = blobstore_client.sign(blobstore_id)
+        agent_client(agent_id, instance.name).sync_dns_with_signed_url(signed_url, digest, version, &blk)
+      else
+        agent_client(agent_id, instance.name).sync_dns(blobstore_id, digest, version, &blk)
+      end
+    end
+
+    def can_use_signed_urls(instance)
+      blobstore_client.signing_enabled? && instance.active_vm.stemcell_api_version >= 3
+    end
+
+    def blobstore_client
+      @blobstore_client ||= App.instance.blobstores.blobstore
     end
   end
 

@@ -136,6 +136,10 @@ module Bosh::Director
       send_nats_request_quietly(:sync_dns, args, &blk)
     end
 
+    def sync_dns_with_signed_url(*args, &blk)
+      send_nats_request_quietly(:sync_dns_with_signed_url, args, &blk)
+    end
+
     def cancel_sync_dns(request_id)
       @nats_rpc.cancel_request(request_id)
     end

@@ -115,6 +115,10 @@ module Bosh
         @options[:enable_signed_urls]
       end
 
+      def generate_object_id
+        SecureRandom.uuid
+      end
+
       protected
 
       # @return [String] the id
@@ -141,10 +145,6 @@ module Bosh
       def sign_url(oid, verb, duration)
         # needs to be implemented in each subclass
         not_supported
-      end
-
-      def generate_object_id
-        SecureRandom.uuid
       end
 
       def temp_path

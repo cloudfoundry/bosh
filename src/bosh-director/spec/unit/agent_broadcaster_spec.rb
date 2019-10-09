@@ -8,7 +8,14 @@ module Bosh::Director
     let(:ip_addresses) { ['10.0.0.1'] }
     let(:instance1) do
       instance = Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, index: 1, job: 'fake-job-1')
-      Bosh::Director::Models::Vm.make(id: 1, agent_id: 'agent-1', cid: 'id-1', instance_id: instance.id, active: true)
+      Bosh::Director::Models::Vm.make(
+        id: 1,
+        agent_id: 'agent-1',
+        cid: 'id-1',
+        instance_id: instance.id,
+        active: true,
+        stemcell_api_version: 3,
+      )
       instance
     end
     let(:instance2) do
@@ -19,6 +26,12 @@ module Bosh::Director
     let(:agent) { instance_double(AgentClient, wait_until_ready: nil, delete_arp_entries: nil) }
     let(:agent2) { instance_double(AgentClient, wait_until_ready: nil, delete_arp_entries: nil) }
     let(:agent_broadcast) { AgentBroadcaster.new(0.1) }
+    let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
+
+    before do
+      allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
+      allow(blobstore).to receive(:signing_enabled?).and_return(false)
+    end
 
     describe '#filter_instances' do
       it 'excludes the VM being created' do
@@ -269,6 +282,25 @@ module Bosh::Director
           allow(AgentClient).to receive(:with_agent_id) do
             allow(agent).to receive(:sync_dns) do |&blk|
               blk.call('value' => 'synced')
+            end
+            agent
+          end
+
+          agent_broadcast.sync_dns([instance1], 'fake-blob-id', 'fake-sha1', 1)
+        end
+      end
+
+      context 'when blobstore and instance are capable of using signed urls' do
+        before do
+          allow(blobstore).to receive(:signing_enabled?).and_return(true)
+        end
+
+        it 'signs the existing blobstore id' do
+          expect(blobstore).to receive(:sign).with('fake-blob-id').and_return('signed')
+          expect(AgentClient).to receive(:with_agent_id).with(instance1.agent_id, instance1.name) do
+            expect(agent).to receive(:sync_dns_with_signed_url).with('signed', 'fake-sha1', anything) do |&blk|
+              blk.call('value' => 'synced')
+              Timecop.freeze(end_time)
             end
             agent
           end
