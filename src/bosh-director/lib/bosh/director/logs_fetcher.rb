@@ -48,7 +48,7 @@ module Bosh::Director
     private
 
     def can_use_signed_url(instance)
-      @blobstore.signing_enabled? && instance.active_vm.stemcell_api_version >= 3
+      @blobstore.signing_enabled? && (instance.active_vm.stemcell_api_version || 1) >= 3
     end
   end
 end

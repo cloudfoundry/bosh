@@ -85,6 +85,10 @@ module Bosh::Blobstore
       out
     end
 
+    def credential_properties_list
+      %w[user password secret]
+    end
+
     def store_in_webdav(content_path, server_path)
       begin
         out, err, status = Open3.capture3("#{@davcli_path}", '-c', "#{@config_file_path}", 'put', "#{content_path}", "#{server_path}")

@@ -119,6 +119,10 @@ module Bosh
         SecureRandom.uuid
       end
 
+      def credential_properties
+        credential_properties_list
+      end
+
       protected
 
       # @return [String] the id
@@ -143,6 +147,11 @@ module Bosh
       end
 
       def sign_url(oid, verb, duration)
+        # needs to be implemented in each subclass
+        not_supported
+      end
+
+      def credential_properties_list
         # needs to be implemented in each subclass
         not_supported
       end

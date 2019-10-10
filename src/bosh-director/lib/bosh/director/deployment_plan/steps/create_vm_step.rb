@@ -13,6 +13,7 @@ module Bosh::Director
           @logger = Config.logger
           @vm_deleter = VmDeleter.new(@logger, false, Config.enable_virtual_delete_vms)
           @variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new
+          @blobstore = App.instance.blobstores.blobstore
         end
 
         def perform(report)
@@ -31,7 +32,7 @@ module Bosh::Director
             @disks,
             instance.env,
             cpi_factory,
-            stemcell_model.api_version
+            stemcell_model.api_version,
           )
 
           begin
@@ -92,10 +93,16 @@ module Bosh::Director
 
           cpi = cloud_factory.get_name_for_az(instance_model.availability_zone)
 
-          vm_options = {instance: instance_model, agent_id: agent_id, cpi: cpi}
+          vm_options = { instance: instance_model, agent_id: agent_id, cpi: cpi }
 
           env['bosh'] ||= {}
           env['bosh'] = Config.agent_env.merge(env['bosh'])
+
+          if use_signed_url(stemcell_api_version)
+            env['bosh'] = env['bosh'].reject do |k, _|
+              @blobstore.credential_properties.include?(k)
+            end
+          end
 
           env['bosh']['tags'] = @tags unless @tags.empty?
 
@@ -174,6 +181,10 @@ module Bosh::Director
             }
           )
           event.id
+        end
+
+        def use_signed_url(stemcell_api_version)
+          @blobstore.signing_enabled? && (stemcell_api_version || 1) >= 3
         end
       end
     end

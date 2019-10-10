@@ -121,6 +121,10 @@ module Bosh::Blobstore
       raise BlobstoreError, "Failed to sign url, code #{status.exitstatus}, output: '#{out}', error: '#{err}'"
     end
 
+    def credential_properties_list
+      %w[access_key_id secret_access_key sse_kms_key_id credentials_source]
+    end
+
     # @param [String] path path to file which will be stored in S3
     # @param [String] oid object id
     # @return [void]

@@ -39,6 +39,7 @@ module Bosh::Director
     let(:task_id) { 42 }
     let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
     let(:trusted_certs) { "Trust me. I know what I'm doing." }
+    let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
     let(:vm_creator) do
       VmCreator.new(Config.logger, template_blob_cache, dns_encoder, agent_broadcaster, deployment_plan.link_provider_intents)
     end
@@ -168,6 +169,8 @@ module Bosh::Director
       allow(deployment_model).to receive(:current_variable_set).and_return(Models::VariableSet.make)
       allow(MetadataUpdater).to receive(:new).and_return(metadata_updater)
       allow(metadata_updater).to receive(:update_vm_metadata)
+      allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
+      allow(blobstore).to receive(:signing_enabled?).and_return(false)
     end
 
     shared_examples_for 'a compilation vm pool' do

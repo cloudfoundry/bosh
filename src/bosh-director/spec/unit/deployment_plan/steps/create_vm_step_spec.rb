@@ -17,7 +17,6 @@ module Bosh
           let(:cloud_wrapper) { Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud, cpi_api_version) }
           let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
           let(:vm_type) { DeploymentPlan::VmType.new('name' => 'fake-vm-type', 'cloud_properties' => cloud_properties) }
-          let(:stemcell_model) { Models::Stemcell.make(cid: 'stemcell-id', name: 'fake-stemcell', version: '123') }
           let(:event_manager) { Api::EventManager.new(true) }
           let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
           let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
@@ -35,6 +34,12 @@ module Bosh
           let(:cloud_properties) { { 'ram' => '2gb' } }
           let(:network_cloud_properties) { { 'bandwidth' => '5mbps' } }
           let(:variable_set) { Bosh::Director::Models::VariableSet.make(deployment: deployment) }
+          let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
+          let(:stemcell_api_version) { nil }
+
+          let(:stemcell_model) do
+            Models::Stemcell.make(cid: 'stemcell-id', name: 'fake-stemcell', version: '123', api_version: stemcell_api_version)
+          end
 
           let(:network_settings) do
             BD::DeploymentPlan::NetworkSettings.new(
@@ -182,6 +187,8 @@ module Bosh
             allow(cloud_wrapper).to receive(:info)
             allow(cloud).to receive(:set_vm_metadata)
             allow(DeleteVmStep).to receive(:new).and_return(delete_vm_step)
+            allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
+            allow(blobstore).to receive(:signing_enabled?).and_return(false)
           end
 
           it 'sets vm on given report' do
@@ -315,6 +322,69 @@ module Bosh
             end
           end
 
+          context 'when the blobstore is configured to use signed urls' do
+            let(:agent_env_hash) do
+              {
+                'my-key' => 'foo',
+                'my-key-id' => 'bar',
+              }
+            end
+            before do
+              allow(blobstore).to receive(:signing_enabled?).and_return(true)
+              allow(blobstore).to receive(:credential_properties).and_return(%w[my-key my-key-id])
+              allow(Config).to receive(:agent_env).and_return(agent_env_hash)
+              allow(cloud_factory).to receive(:get).with('cpi1', stemcell_api_version).and_return(cloud_wrapper)
+            end
+
+            context 'and the agent is able to use signed urls' do
+              let(:stemcell_api_version) { 3 }
+
+              it 'does not send blobstore credentials to the agent' do
+                expect(cloud_wrapper).to receive(:create_vm).with(
+                  kind_of(String),
+                  'stemcell-id', { 'ram' => '2gb' },
+                  network_settings,
+                  disks,
+                  'bosh' => {
+                    'group' => expected_group,
+                    'groups' => expected_groups,
+                  }
+                ).and_return(create_vm_response)
+
+                expect(agent_client).to receive(:wait_until_ready)
+                expect(Models::Vm).to receive(:create)
+                  .with(hash_including(cid: 'new-vm-cid', instance: instance_model, stemcell_api_version: 3))
+
+                subject.perform(report)
+              end
+            end
+
+            context 'and the agent is unable to use signed urls' do
+              let(:stemcell_api_version) { 2 }
+
+              it 'still sends blobstore credentials to the agent' do
+                expect(cloud_wrapper).to receive(:create_vm).with(
+                  kind_of(String),
+                  'stemcell-id', { 'ram' => '2gb' },
+                  network_settings,
+                  disks,
+                  'bosh' => {
+                    'group' => expected_group,
+                    'groups' => expected_groups,
+                    'my-key' => 'foo',
+                    'my-key-id' => 'bar',
+                  }
+                ).and_return(create_vm_response)
+
+                expect(agent_client).to receive(:wait_until_ready)
+                expect(Models::Vm).to receive(:create)
+                  .with(hash_including(cid: 'new-vm-cid', instance: instance_model, stemcell_api_version: 2))
+
+                subject.perform(report)
+              end
+            end
+          end
+
           it 'should record events' do
             expect(cloud_wrapper).to receive(:create_vm).with(
               kind_of(String),
@@ -413,7 +483,6 @@ module Bosh
             subject.perform(report)
             expect(agent_broadcaster).not_to have_received(:delete_arp_entries).with(vm_model.cid, ['192.168.1.3'])
           end
-
 
           context 'when there is a vm creation error' do
             let(:create_vm_response) { ['fake-vm-cid', {}, {}] }

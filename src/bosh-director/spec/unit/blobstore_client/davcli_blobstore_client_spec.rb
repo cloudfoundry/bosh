@@ -198,6 +198,9 @@ module Bosh::Blobstore
         )
       end
 
+      it 'provides properties to remove for agent settings' do
+        expect(subject.credential_properties).to eq(%w[user password secret])
+      end
     end
   end
 end

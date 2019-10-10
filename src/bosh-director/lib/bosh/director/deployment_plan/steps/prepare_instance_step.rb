@@ -29,7 +29,7 @@ module Bosh::Director
             stemcell_api_version = vm.stemcell_api_version
           end
 
-          add_signed_urls(spec) if @blobstore.signing_enabled? && stemcell_api_version >= 3
+          add_signed_urls(spec) if @blobstore.signing_enabled? && (stemcell_api_version || 1) >= 3
 
           AgentClient.with_agent_id(agent_id, name).prepare(spec)
         end

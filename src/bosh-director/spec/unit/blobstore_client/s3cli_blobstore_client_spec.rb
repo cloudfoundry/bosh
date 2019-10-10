@@ -193,6 +193,10 @@ module Bosh::Blobstore
           BlobstoreError, /error: 'error'/
         )
       end
+
+      it 'provides properties to remove for agent settings' do
+        expect(subject.credential_properties).to eq(%w[access_key_id secret_access_key sse_kms_key_id credentials_source])
+      end
     end
   end
 end
