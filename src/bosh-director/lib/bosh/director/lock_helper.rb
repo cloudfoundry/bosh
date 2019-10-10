@@ -34,7 +34,7 @@ module Bosh::Director
     end
 
     def with_release_locks(release_names, opts = {})
-      timeout = opts[:timeout] || 10
+      timeout = opts[:timeout] || 5 * 60 # 5 min
       locks = release_names.sort.map do |release_name|
         Config.logger.info("Acquiring release lock: #{release_name}")
         Lock.new("lock:release:#{release_name}", :timeout => timeout)
