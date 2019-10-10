@@ -44,11 +44,11 @@ module Bosh::Director
 
       return blobstore_id, sha_digest
     end
-  end
 
-  private
+    private
 
-  def can_use_signed_url(instance)
-    @blobstore.signing_enabled? && instance.active_vm.stemcell_api_version >= 3
+    def can_use_signed_url(instance)
+      @blobstore.signing_enabled? && instance.active_vm.stemcell_api_version >= 3
+    end
   end
 end

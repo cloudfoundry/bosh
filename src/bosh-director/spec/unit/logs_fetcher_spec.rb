@@ -85,6 +85,7 @@ module Bosh::Director
 
           context 'when the agent api is >= 3' do
             before do
+              allow(blobstore).to receive(:generate_object_id).and_return(blobstore_id)
               allow(blobstore).to receive(:sign).with(blobstore_id, 'put').and_return(signed_url)
               allow(SecureRandom).to receive(:uuid).and_return(blobstore_id)
               allow(mock_instance_model).to receive_message_chain(:active_vm, :stemcell_api_version).and_return(3)

@@ -6,6 +6,7 @@ module Bosh::Director
       attr_reader :os
       attr_reader :name
       attr_reader :version
+      attr_reader :api_version
       attr_reader :models
       attr_writer :deployment_model
 
@@ -60,6 +61,7 @@ module Bosh::Director
         @name = model.name
         @os = model.operating_system
         @version = model.version
+        @api_version = model.api_version
       end
 
       def add_deployment_to_models(deployment_model)

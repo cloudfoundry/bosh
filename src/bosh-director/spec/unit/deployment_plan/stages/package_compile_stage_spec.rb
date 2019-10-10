@@ -128,6 +128,8 @@ module Bosh::Director
 
     let(:compiled_package_finder) { DeploymentPlan::CompiledPackageFinder.new(logger) }
 
+    let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
+
     before do
       Bosh::Director::Models::VariableSet.make(deployment: deployment)
 
@@ -152,6 +154,8 @@ module Bosh::Director
       # to allow set_vm_metadata on the fake cloud before the wrapper changes, why do we need to now?
       allow(cloud).to receive(:set_vm_metadata)
       allow(Bosh::Clouds::ExternalCpi).to receive(:new).and_return(cloud)
+      allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
+      allow(blobstore).to receive(:signing_enabled?).and_return(false)
       @all_packages = []
     end
 
@@ -185,8 +189,8 @@ module Bosh::Director
       )
       @release_model = Bosh::Director::Models::Release.make(name: @release.name)
       @release_model.add_version(release_version_model)
-      @stemcell_a = make_stemcell(operating_system: 'chrome-os', version: '3146.1')
-      @stemcell_b = make_stemcell(operating_system: 'chrome-os', version: '3146.2')
+      @stemcell_a = make_stemcell(operating_system: 'chrome-os', version: '3146.1', api_version: 3)
+      @stemcell_b = make_stemcell(operating_system: 'chrome-os', version: '3146.2', api_version: 3)
 
       @p_common = make_package('common')
       @p_syslog = make_package('p_syslog')
@@ -257,6 +261,23 @@ module Bosh::Director
         'result' => {
           'sha1' => "compiled #{package.id}",
           'blobstore_id' => "blob #{package.id}",
+        },
+      }
+    end
+
+    def compile_package_with_url_stub(args)
+      request = args[0]
+      dot = request['version'].rindex('.')
+      version = request['version'][0..dot - 1]
+
+      package = Models::Package.find(name: request['name'], version: version)
+      expect(request['package_get_signed_url']).to eq("#{package.blobstore_id}-url")
+      expect(request['upload_signed_url']).to eq('putcompiled_id-url')
+      expect(request['digest']).to eq(package.sha1)
+
+      {
+        'result' => {
+          'sha1' => "compiled #{package.id}",
         },
       }
     end
@@ -335,6 +356,65 @@ module Bosh::Director
 
         @package_set_b.each do |package|
           expect(compiler).to receive(:with_compile_lock).with(package.id, "#{@stemcell_b.os}/#{@stemcell_b.version}", deployment.name).and_yield
+        end
+
+        expect(@j_dea).to receive(:use_compiled_package).exactly(6).times
+        expect(@j_router).to receive(:use_compiled_package).exactly(5).times
+
+        expect(instance_deleter).to receive(:delete_instance_plan).exactly(11).times
+
+        compiler.perform
+        expect(compiler.compilations_performed).to eq(11)
+
+        @package_set_a.each do |package|
+          expect(package.compiled_packages.size).to be >= 1
+        end
+
+        @package_set_b.each do |package|
+          expect(package.compiled_packages.size).to be >= 1
+        end
+      end
+    end
+
+    context 'when url signing is enabled' do
+      let(:instance_groups_to_compile) { [@j_dea, @j_router] }
+
+      before do
+        allow(blobstore).to receive(:signing_enabled?).and_return(true)
+        allow(blobstore).to receive(:generate_object_id).and_return('compiled_id')
+        allow(blobstore).to receive(:sign) do |oid, verb|
+          "#{verb}#{oid}-url"
+        end
+      end
+
+      it 'compiles all packages' do
+        prepare_samples
+
+        metadata_updater = instance_double('Bosh::Director::MetadataUpdater', update_vm_metadata: nil)
+
+        allow(Bosh::Director::MetadataUpdater).to receive_messages(build: metadata_updater)
+        expect(metadata_updater).to receive(:update_vm_metadata).with(anything, anything, compiling: 'common')
+        expect(metadata_updater).to receive(:update_vm_metadata)
+          .with(anything, anything, hash_including(:compiling)).exactly(10).times
+
+        expect(vm_creator).to receive(:create_for_instance_plan).exactly(11).times
+
+        agent_client = instance_double('Bosh::Director::AgentClient')
+        allow(BD::AgentClient).to receive(:with_agent_id).and_return(agent_client)
+        expect(agent_client).to receive(:compile_package_with_signed_url).exactly(11).times do |*args|
+          compile_package_with_url_stub(args)
+        end
+
+        @package_set_a.each do |package|
+          expect(compiler).to receive(:with_compile_lock)
+            .with(package.id, "#{@stemcell_a.os}/#{@stemcell_a.version}", deployment.name)
+            .and_yield
+        end
+
+        @package_set_b.each do |package|
+          expect(compiler).to receive(:with_compile_lock)
+            .with(package.id, "#{@stemcell_b.os}/#{@stemcell_b.version}", deployment.name)
+            .and_yield
         end
 
         expect(@j_dea).to receive(:use_compiled_package).exactly(6).times

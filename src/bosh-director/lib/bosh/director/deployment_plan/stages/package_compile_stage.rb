@@ -96,15 +96,35 @@ module Bosh::Director
               build = Models::CompiledPackage.generate_build_number(package, stemcell.os, stemcell.version)
               task_result = nil
 
+              version = "#{package.version}.#{build}"
               prepare_vm(stemcell, package) do |instance|
-                agent_task =
-                  instance.agent_client.compile_package(
-                    package.blobstore_id,
-                    package.sha1,
-                    package.name,
-                    "#{package.version}.#{build}",
-                    requirement.dependency_spec,
-                  ) { Config.job_cancelled? }
+                blobstore = App.instance.blobstores.blobstore
+                if blobstore.signing_enabled? && stemcell.api_version >= 3
+                  compiled_package_blobstore_id = blobstore.generate_object_id
+                  package_get_signed_url = blobstore.sign(package.blobstore_id)
+                  upload_signed_url = blobstore.sign(compiled_package_blobstore_id, 'put')
+
+                  request = {
+                    'package_get_signed_url' => package_get_signed_url,
+                    'upload_signed_url' => upload_signed_url,
+                    'digest' => package.sha1,
+                    'name' => package.name,
+                    'version' => version,
+                    'deps' => requirement.dependency_spec,
+                  }
+
+                  agent_task = instance.agent_client.compile_package_with_signed_url(request) { Config.job_cancelled? }
+                  agent_task['result']['blobstore_id'] = compiled_package_blobstore_id
+                else
+                  agent_task =
+                    instance.agent_client.compile_package(
+                      package.blobstore_id,
+                      package.sha1,
+                      package.name,
+                      version,
+                      requirement.dependency_spec,
+                    ) { Config.job_cancelled? }
+                end
 
                 task_result = agent_task['result']
               end

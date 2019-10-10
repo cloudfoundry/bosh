@@ -79,6 +79,10 @@ module Bosh::Director
       send_message(:compile_package, *args, &blk)
     end
 
+    def compile_package_with_signed_url(*args, &blk)
+      send_message(:compile_package_with_signed_url, *args, &blk)
+    end
+
     def drain(*args)
       send_cancellable_message(:drain, *args)
     end

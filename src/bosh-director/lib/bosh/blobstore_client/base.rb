@@ -106,7 +106,7 @@ module Bosh
         end
       end
 
-      def sign(oid, verb='get')
+      def sign(oid, verb = 'get')
         duration = '24h'
         sign_url(oid, verb, duration)
       end
