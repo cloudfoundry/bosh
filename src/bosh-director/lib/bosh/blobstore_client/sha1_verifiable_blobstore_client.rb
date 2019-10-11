@@ -29,7 +29,7 @@ module Bosh
         result_file
       end
 
-      def_delegators :@client, :create, :delete, :exists?
+      def_delegators :@client, :create, :delete, :exists?, :sign, :signing_enabled?
 
       private
 

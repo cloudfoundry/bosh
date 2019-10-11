@@ -99,7 +99,7 @@ module Bosh::Director
               version = "#{package.version}.#{build}"
               prepare_vm(stemcell, package) do |instance|
                 blobstore = App.instance.blobstores.blobstore
-                if blobstore.signing_enabled? && stemcell.api_version >= 3
+                if blobstore.signing_enabled? && stemcell.api_version && stemcell.api_version >= 3
                   compiled_package_blobstore_id = blobstore.generate_object_id
                   package_get_signed_url = blobstore.sign(package.blobstore_id)
                   upload_signed_url = blobstore.sign(compiled_package_blobstore_id, 'put')

@@ -100,7 +100,7 @@ module Bosh
         begin
           object_exists?(oid)
         rescue Exception => e
-            raise e
+          raise e
         ensure
           logger.debug("checking existence of '#{oid}' (took #{Time.now - start_time})")
         end
@@ -112,7 +112,7 @@ module Bosh
       end
 
       def signing_enabled?
-        @options[:enable_signed_urls]
+        @options.fetch(:enable_signed_urls, false)
       end
 
       def generate_object_id

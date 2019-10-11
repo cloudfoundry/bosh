@@ -23,7 +23,7 @@ module Bosh
         last_result
       end
 
-      def_delegators :@client, :create, :delete, :exists?
+      def_delegators :@client, :create, :delete, :exists?, :sign, :signing_enabled?
     end
   end
 end

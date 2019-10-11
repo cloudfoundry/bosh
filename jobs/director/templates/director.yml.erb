@@ -190,7 +190,8 @@ if p('blobstore.provider') == 's3'
     'credentials_source' => p('blobstore.credentials_source', 'static'),
     'access_key_id' => p('blobstore.access_key_id', nil),
     'secret_access_key' => p('blobstore.secret_access_key', nil),
-    'region' => p('blobstore.s3_region', nil)
+    'region' => p('blobstore.s3_region', nil),
+    'enable_signed_urls' => p('blobstore.enable_signed_urls')
   }
 
   if_p('blobstore.use_ssl') do |use_ssl|
@@ -225,6 +226,7 @@ elsif p('blobstore.provider') == 'gcs'
     'bucket_name' => p('blobstore.bucket_name'),
     'credentials_source' => p('blobstore.credentials_source', 'static'),
     'json_key' => p('blobstore.json_key', nil),
+    'enable_signed_urls' => p('blobstore.enable_signed_urls')
   }
 
   if_p('blobstore.storage_class') do |storage_class|
@@ -243,7 +245,8 @@ else
         'cert' => {
             'ca' => p('blobstore.tls.cert.ca')
         }
-    }
+    },
+    'enable_signed_urls' => p('blobstore.enable_signed_urls')
   }
 
   blobstore_options['secret'] = p('blobstore.secret') if p('blobstore.enable_signed_urls')
