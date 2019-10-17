@@ -1,7 +1,7 @@
 module Bosh
   module Director
     module DeploymentPlan
-      class DesiredInstance < Struct.new(:instance_group, :deployment, :az, :index, :state)
+      class DesiredInstance < Struct.new(:instance_group, :deployment, :az, :index)
         def inspect
           "<DesiredInstance az=#{az ? az.name : nil} index=#{index}>"
         end

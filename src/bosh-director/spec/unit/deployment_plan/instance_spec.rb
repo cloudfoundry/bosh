@@ -40,7 +40,6 @@ module Bosh::Director::DeploymentPlan
     let(:current_state) do
       { 'current' => 'state' }
     end
-    let(:desired_instance) { DesiredInstance.new(job, current_state, plan, az, 1) }
 
     describe '#bind_existing_instance_model' do
       let(:instance_model) { Bosh::Director::Models::Instance.make(bootstrap: true) }

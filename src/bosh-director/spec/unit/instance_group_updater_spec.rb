@@ -76,7 +76,7 @@ module Bosh::Director
         let(:needed_instance_plans) do
           instance_plan = DeploymentPlan::InstancePlan.new(
             instance: needed_instance,
-            desired_instance: DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
+            desired_instance: DeploymentPlan::DesiredInstance.new,
             existing_instance: nil,
             variables_interpolator: variables_interpolator,
           )
@@ -147,7 +147,7 @@ module Bosh::Director
           [
             DeploymentPlan::InstancePlan.new(
               instance: needed_instance,
-              desired_instance: DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
+              desired_instance: DeploymentPlan::DesiredInstance.new,
               existing_instance: nil,
               variables_interpolator: variables_interpolator,
             ).tap do |instance_plan|
@@ -195,7 +195,7 @@ module Bosh::Director
         let(:needed_instance_plans) do
           instance_plan = DeploymentPlan::InstancePlan.new(
             instance: needed_instance,
-            desired_instance: DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
+            desired_instance: DeploymentPlan::DesiredInstance.new,
             existing_instance: nil,
             variables_interpolator: variables_interpolator,
           )
@@ -236,7 +236,7 @@ module Bosh::Director
         let(:canary_plan) do
           plan = DeploymentPlan::InstancePlan.new(
             instance: canary,
-            desired_instance: DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
+            desired_instance: DeploymentPlan::DesiredInstance.new,
             existing_instance: nil,
             variables_interpolator: variables_interpolator,
           )
@@ -248,7 +248,7 @@ module Bosh::Director
         let(:changed_instance_plan) do
           plan = DeploymentPlan::InstancePlan.new(
             instance: changed_instance,
-            desired_instance: DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
+            desired_instance: DeploymentPlan::DesiredInstance.new,
             existing_instance: Models::Instance.make,
             variables_interpolator: variables_interpolator,
           )
@@ -260,7 +260,7 @@ module Bosh::Director
         let(:unchanged_instance_plan) do
           plan = DeploymentPlan::InstancePlan.new(
             instance: unchanged_instance,
-            desired_instance: DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
+            desired_instance: DeploymentPlan::DesiredInstance.new,
             existing_instance: Models::Instance.make,
             variables_interpolator: variables_interpolator,
           )
@@ -388,7 +388,7 @@ module Bosh::Director
         let(:canary_plan) do
           plan = DeploymentPlan::InstancePlan.new(
             instance: canary,
-            desired_instance: DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
+            desired_instance: DeploymentPlan::DesiredInstance.new,
             existing_instance: nil,
             variables_interpolator: variables_interpolator,
           )
@@ -400,7 +400,7 @@ module Bosh::Director
         let(:changed_instance_plan_1) do
           plan = DeploymentPlan::InstancePlan.new(
             instance: changed_instance_1,
-            desired_instance: DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
+            desired_instance: DeploymentPlan::DesiredInstance.new,
             existing_instance: Models::Instance.make,
             variables_interpolator: variables_interpolator,
           )
@@ -412,7 +412,7 @@ module Bosh::Director
         let(:changed_instance_plan_2) do
           plan = DeploymentPlan::InstancePlan.new(
             instance: changed_instance_2,
-            desired_instance: DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
+            desired_instance: DeploymentPlan::DesiredInstance.new,
             existing_instance: Models::Instance.make,
             variables_interpolator: variables_interpolator,
           )
@@ -424,7 +424,7 @@ module Bosh::Director
         let(:changed_instance_plan_3) do
           plan = DeploymentPlan::InstancePlan.new(
             instance: changed_instance_3,
-            desired_instance: DeploymentPlan::DesiredInstance.new(nil, 'started', nil),
+            desired_instance: DeploymentPlan::DesiredInstance.new,
             existing_instance: Models::Instance.make,
             variables_interpolator: variables_interpolator,
           )

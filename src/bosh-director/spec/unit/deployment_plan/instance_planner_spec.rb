@@ -60,7 +60,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     )
   end
 
-  let(:desired_instance) { BD::DeploymentPlan::DesiredInstance.new(instance_group, deployment, nil, 0) }
+  let(:desired_instance) { BD::DeploymentPlan::DesiredInstance.new(instance_group, deployment) }
   let(:tracer_instance) { make_instance }
   let(:vm_resources_cache) { instance_double(BD::DeploymentPlan::VmResourcesCache) }
 
@@ -306,12 +306,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
         expect(instance_plans.count).to eq(1)
         existing_instance_plan = instance_plans.first
 
-        expected_desired_instance = BD::DeploymentPlan::DesiredInstance.new(
-          instance_group,
-          deployment,
-          nil,
-          0,
-        )
+        expected_desired_instance = BD::DeploymentPlan::DesiredInstance.new(instance_group, deployment)
         expect(existing_instance_plan.new?).to eq(false)
         expect(existing_instance_plan.obsolete?).to eq(false)
 
@@ -529,7 +524,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       context 'when there are no bootstrap instances' do
         it 'assigns the instance with the lowest index as bootstrap instance' do
           existing_instances = []
-          another_desired_instance = BD::DeploymentPlan::DesiredInstance.new(instance_group, nil, deployment)
+          another_desired_instance = BD::DeploymentPlan::DesiredInstance.new(instance_group)
 
           allow(instance_repo).to receive(:create).with(desired_instance, 0) { tracer_instance }
 

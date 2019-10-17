@@ -115,7 +115,7 @@ module Bosh
           end
 
           let(:instance_plan) do
-            desired_instance = BD::DeploymentPlan::DesiredInstance.new(instance_group, {}, nil)
+            desired_instance = BD::DeploymentPlan::DesiredInstance.new(instance_group)
             network_plan = BD::DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)
             BD::DeploymentPlan::InstancePlan.new(
               existing_instance: instance_model,

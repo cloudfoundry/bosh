@@ -4,9 +4,18 @@ module Bosh::Director::DeploymentPlan
   describe PlacementPlanner::StaticIpsAvailabilityZonePicker do
     include Bosh::Director::IpUtil
 
-    subject(:zone_picker) { PlacementPlanner::StaticIpsAvailabilityZonePicker.new(instance_plan_factory, network_planner, job.networks, 'fake-job', availability_zones, logger) }
+    subject(:zone_picker) do
+      PlacementPlanner::StaticIpsAvailabilityZonePicker.new(
+        instance_plan_factory,
+        network_planner,
+        instance_group.networks,
+        'fake-instance-group',
+        availability_zones,
+        logger,
+      )
+    end
 
-    let(:availability_zones) { job.availability_zones }
+    let(:availability_zones) { instance_group.availability_zones }
     let(:cloud_configs) { [Bosh::Director::Models::Config.make(:cloud, content: YAML.dump(cloud_config_hash))] }
     let!(:deployment_model) { Bosh::Director::Models::Deployment.make(manifest: YAML.dump(manifest_hash), name: manifest_hash['name']) }
     let(:deployment_repo) { DeploymentRepo.new }
@@ -38,9 +47,9 @@ module Bosh::Director::DeploymentPlan
     let(:planner_factory) { PlannerFactory.new(manifest_validator, deployment_repo, logger) }
     let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new }
     let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, YAML.dump(manifest_hash), cloud_config_hash, nil) }
-    let(:job) { planner.instance_groups.first }
-    let(:job_availability_zones) { %w[zone1 zone2] }
-    let(:job_networks) { [{ 'name' => 'a', 'static_ips' => static_ips }] }
+    let(:instance_group) { planner.instance_groups.first }
+    let(:instance_group_availability_zones) { %w[zone1 zone2] }
+    let(:instance_group_networks) { [{ 'name' => 'a', 'static_ips' => static_ips }] }
 
     let(:new_instance_plans) { instance_plans.select(&:new?) }
     let(:existing_instance_plans) { instance_plans.reject(&:new?).reject(&:obsolete?) }
@@ -98,13 +107,13 @@ module Bosh::Director::DeploymentPlan
         'stemcells' => [{ 'name' => 'ubuntu-stemcell', 'version' => '1', 'alias' => 'default' }],
         'instance_groups' => [
           {
-            'name' => 'fake-job',
+            'name' => 'fake-instance-group',
             'jobs' => [{ 'name' => 'foobar', 'release' => 'bosh-release' }],
             'vm_type' => 'tiny',
             'stemcell' => 'default',
             'instances' => desired_instance_count,
-            'networks' => job_networks,
-            'azs' => job_availability_zones,
+            'networks' => instance_group_networks,
+            'azs' => instance_group_availability_zones,
           },
         ],
       }
@@ -125,7 +134,7 @@ module Bosh::Director::DeploymentPlan
         let(:existing_instances) { [] }
         let(:static_ips) { ['192.168.1.10 - 192.168.1.12'] }
 
-        context 'when the subnets and the jobs do not specify availability zones' do
+        context 'when the subnets and the instance_groups do not specify availability zones' do
           let(:networks_spec) do
             [
               { 'name' => 'a',
@@ -150,9 +159,7 @@ module Bosh::Director::DeploymentPlan
           end
         end
 
-        context 'when the job specifies a single network with all static IPs from a single AZ' do
-          let(:static_ips) { ['192.168.1.10 - 192.168.1.12'] }
-
+        context 'when the instance group specifies a single network with all static IPs from a single AZ' do
           it 'assigns instances to the AZ' do
             expect(new_instance_plans.size).to eq(3)
             expect(existing_instance_plans).to eq([])
@@ -164,16 +171,20 @@ module Bosh::Director::DeploymentPlan
           end
         end
 
-        context 'when a job specifies a static ip that belongs to no subnet' do
+        context 'when an instance group specifies a static ip that belongs to no subnet' do
           let(:static_ips) { ['192.168.3.5'] }
           let(:desired_instance_count) { 1 }
 
           it 'raises an exception' do
-            expect { instance_plans }.to raise_error(Bosh::Director::InstanceGroupNetworkInstanceIpMismatch, "Instance group 'fake-job' with network 'a' declares static ip '192.168.3.5', which belongs to no subnet")
+            expect { instance_plans }.to raise_error(
+              Bosh::Director::InstanceGroupNetworkInstanceIpMismatch,
+              "Instance group 'fake-instance-group' with network 'a' " \
+              "declares static ip '192.168.3.5', which belongs to no subnet",
+            )
           end
         end
 
-        context 'when the job specifies a single network with static IPs from different AZs' do
+        context 'when the instance group specifies a single network with static IPs from different AZs' do
           let(:static_ips) { ['192.168.1.10', '192.168.1.11', '192.168.2.10'] }
 
           it 'assigns instances to the AZs' do
@@ -187,8 +198,8 @@ module Bosh::Director::DeploymentPlan
           end
         end
 
-        context 'when job specifies a single network with static IP spanning multiple AZs' do
-          let(:job_availability_zones) { ['zone1'] }
+        context 'when instance group specifies a single network with static IP spanning multiple AZs' do
+          let(:instance_group_availability_zones) { ['zone1'] }
           let(:networks_spec) do
             [
               { 'name' => 'a',
@@ -202,7 +213,7 @@ module Bosh::Director::DeploymentPlan
 
           let(:static_ips) { ['192.168.1.10', '192.168.1.11', '192.168.1.12'] }
 
-          it 'picks az that is specified on a job and static IP belongs to' do
+          it 'picks az that is specified on a instance group and static IP belongs to' do
             expect(new_instance_plans.size).to eq(3)
             expect(existing_instance_plans).to eq([])
             expect(obsolete_instance_plans).to eq([])
@@ -213,9 +224,9 @@ module Bosh::Director::DeploymentPlan
           end
         end
 
-        context 'when the job specifies multiple networks with static IPs from the same AZ' do
+        context 'when the instance group specifies multiple networks with static IPs from the same AZ' do
           let(:desired_instance_count) { 2 }
-          let(:job_networks) do
+          let(:instance_group_networks) do
             [
               { 'name' => 'a', 'static_ips' => ['192.168.1.10', '192.168.1.11'], 'default' => %w[dns gateway] },
               { 'name' => 'b', 'static_ips' => ['10.10.1.10', '10.10.1.11'] },
@@ -239,9 +250,9 @@ module Bosh::Director::DeploymentPlan
           end
         end
 
-        context 'when the job specifies multiple networks with static IPs from different non-overlapping AZs' do
+        context 'when the instance group specifies multiple networks with static IPs from different non-overlapping AZs' do
           let(:desired_instance_count) { 2 }
-          let(:job_networks) do
+          let(:instance_group_networks) do
             [
               { 'name' => 'a', 'static_ips' => ['192.168.1.10', '192.168.2.10'], 'default' => %w[dns gateway] },
               { 'name' => 'b', 'static_ips' => ['10.10.1.10', '10.10.2.10'] },
@@ -265,9 +276,9 @@ module Bosh::Director::DeploymentPlan
           end
         end
 
-        context 'when job specifies multiple networks with static IPs from different overlapping AZs' do
+        context 'when instance group specifies multiple networks with static IPs from different overlapping AZs' do
           let(:desired_instance_count) { 4 }
-          let(:job_networks) do
+          let(:instance_group_networks) do
             [
               { 'name' => 'a', 'static_ips' => ['192.168.1.10-192.168.1.12', '192.168.2.10'], 'default' => %w[dns gateway] },
               { 'name' => 'b', 'static_ips' => ['10.10.1.10 - 10.10.1.11', '10.10.2.10-10.10.2.11'] },
@@ -275,7 +286,7 @@ module Bosh::Director::DeploymentPlan
               { 'name' => 'd', 'static_ips' => ['64.8.1.10', '64.8.2.10', '64.8.3.10-64.8.3.11'] },
             ]
           end
-          let(:job_availability_zones) { %w[z1 z2 z3 z4] }
+          let(:instance_group_availability_zones) { %w[z1 z2 z3 z4] }
           let(:networks_spec) do
             [
               { 'name' => 'a',
@@ -325,9 +336,9 @@ module Bosh::Director::DeploymentPlan
           end
         end
 
-        context 'when job static IP counts for each AZ in networks do not match' do
+        context 'when instance_group static IP counts for each AZ in networks do not match' do
           let(:desired_instance_count) { 2 }
-          let(:job_networks) do
+          let(:instance_group_networks) do
             [
               { 'name' => 'a', 'static_ips' => ['192.168.1.10', '192.168.2.10'], 'default' => %w[dns gateway] },
               { 'name' => 'b', 'static_ips' => ['10.10.1.10', '10.10.1.11'] },
@@ -337,7 +348,7 @@ module Bosh::Director::DeploymentPlan
           it 'raises an error' do
             expect { instance_plans }.to raise_error(
               Bosh::Director::InstanceGroupNetworkInstanceIpMismatch,
-              "Failed to evenly distribute static IPs between zones for instance group 'fake-job'",
+              "Failed to evenly distribute static IPs between zones for instance group 'fake-instance-group'",
             )
           end
         end
@@ -375,7 +386,7 @@ module Bosh::Director::DeploymentPlan
                 existing_instance_with_az_and_ips('zone2', ['192.168.2.10']),
               ]
             end
-            let(:job_availability_zones) { ['zone1'] }
+            let(:instance_group_availability_zones) { ['zone1'] }
 
             before do
               cloud_config_hash['networks'].first['subnets'][1]['azs'] = ['zone1']
@@ -386,12 +397,13 @@ module Bosh::Director::DeploymentPlan
                 new_instance_plans
               end.to raise_error(
                 Bosh::Director::NetworkReservationError,
-                "Existing instance 'fake-job/#{existing_instances[1].index}' is using IP '192.168.2.10' in availability zone 'zone2'",
+                "Existing instance 'fake-instance-group/#{existing_instances[1].index}' " \
+                "is using IP '192.168.2.10' in availability zone 'zone2'",
               )
             end
           end
 
-          context 'when existing instance static IP is no longer in the list of job static ips' do
+          context 'when existing instance static IP is no longer in the list of instance_group static ips' do
             let(:desired_instance_count) { 2 }
             let(:static_ips) { ['192.168.1.14', '192.168.2.14'] }
             let(:existing_instances) do
@@ -400,7 +412,7 @@ module Bosh::Director::DeploymentPlan
                 existing_instance_with_az_and_ips('zone2', ['192.168.2.10']),
               ]
             end
-            let(:job_availability_zones) { %w[zone1 zone2] }
+            let(:instance_group_availability_zones) { %w[zone1 zone2] }
 
             context 'when AZ is the same' do
               it 'picks new IP for instance that is not used by other instances' do
@@ -423,8 +435,11 @@ module Bosh::Director::DeploymentPlan
                   end
                   expect do
                     instance_plans
-                  end.to raise_error Bosh::Director::DeploymentIgnoredInstancesModification, "In instance group 'fake-job', an attempt was made to remove a static ip " \
-                                                                                             'that is used by an ignored instance. This operation is not allowed.'
+                  end.to raise_error(
+                    Bosh::Director::DeploymentIgnoredInstancesModification,
+                    "In instance group 'fake-instance-group', an attempt was made to remove a static ip " \
+                    'that is used by an ignored instance. This operation is not allowed.',
+                  )
                 end
               end
             end
@@ -451,8 +466,11 @@ module Bosh::Director::DeploymentPlan
                 end
                 expect do
                   instance_plans
-                end.to raise_error Bosh::Director::DeploymentIgnoredInstancesModification, "In instance group 'fake-job', an attempt was made to remove a static ip " \
-                                                                                           'that is used by an ignored instance. This operation is not allowed.'
+                end.to raise_error(
+                  Bosh::Director::DeploymentIgnoredInstancesModification,
+                  "In instance group 'fake-instance-group', an attempt was made to remove a static ip " \
+                  'that is used by an ignored instance. This operation is not allowed.',
+                )
               end
             end
           end
@@ -481,7 +499,7 @@ module Bosh::Director::DeploymentPlan
 
             context 'when AZ to which instance belongs is removed' do
               let(:new_subnet_azs) { ['zone2'] }
-              let(:job_availability_zones) { ['zone2'] }
+              let(:instance_group_availability_zones) { ['zone2'] }
               before { cloud_config_hash['compilation']['az'] = 'zone2' }
 
               it 'raises an error' do
@@ -489,7 +507,8 @@ module Bosh::Director::DeploymentPlan
                   new_instance_plans
                 end.to raise_error(
                   Bosh::Director::NetworkReservationError,
-                  "Existing instance 'fake-job/#{existing_instances[0].index}' is using IP '192.168.1.10' in availability zone 'zone1'",
+                  "Existing instance 'fake-instance-group/#{existing_instances[0].index}' " \
+                  "is using IP '192.168.1.10' in availability zone 'zone1'",
                 )
               end
             end
@@ -533,15 +552,18 @@ module Bosh::Director::DeploymentPlan
               end
               expect do
                 instance_plans
-              end.to raise_error Bosh::Director::DeploymentIgnoredInstancesModification,
-                                 "In instance group 'fake-job', an attempt was made to remove a static ip that is used by an ignored instance. This operation is not allowed."
+              end.to raise_error(
+                Bosh::Director::DeploymentIgnoredInstancesModification,
+                "In instance group 'fake-instance-group', an attempt was made to remove a static ip " \
+                'that is used by an ignored instance. This operation is not allowed.',
+              )
             end
           end
         end
 
         context 'with multiple networks' do
           let(:desired_instance_count) { 4 }
-          let(:job_networks) do
+          let(:instance_group_networks) do
             [
               { 'name' => 'a', 'static_ips' => a_static_ips, 'default' => %w[dns gateway] },
               { 'name' => 'b', 'static_ips' => b_static_ips },
@@ -589,7 +611,7 @@ module Bosh::Director::DeploymentPlan
               end
             end
 
-            context 'when some existing instances have IPs that are different from job static IPs' do
+            context 'when some existing instances have IPs that are different from the instance group static IPs' do
               let(:existing_instances) do
                 [
                   existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '10.10.1.10']),
@@ -718,7 +740,7 @@ module Bosh::Director::DeploymentPlan
               end
             end
 
-            context 'when job does not specify azs' do
+            context 'when instance_group does not specify azs' do
               let(:networks_spec) do
                 [
                   { 'name' => 'a',
@@ -768,7 +790,8 @@ module Bosh::Director::DeploymentPlan
                     new_instance_plans
                   end.to raise_error(
                     Bosh::Director::NetworkReservationError,
-                    "Existing instance 'fake-job/#{existing_instances[0].index}' is using IP '192.168.1.10' in availability zone 'zone1'",
+                    "Existing instance 'fake-instance-group/#{existing_instances[0].index}' " \
+                    "is using IP '192.168.1.10' in availability zone 'zone1'",
                   )
                 end
               end
@@ -817,7 +840,7 @@ module Bosh::Director::DeploymentPlan
 
           context 'when some networks do not have static ips' do
             let(:desired_instance_count) { 2 }
-            let(:job_networks) do
+            let(:instance_group_networks) do
               [
                 { 'name' => 'a', 'static_ips' => a_static_ips, 'default' => %w[dns gateway] },
                 { 'name' => 'b' },
@@ -849,7 +872,7 @@ module Bosh::Director::DeploymentPlan
           context 'when networks are added or removed' do
             context 'when there are ignored instances' do
               let(:desired_instance_count) { 2 }
-              let(:job_networks) do
+              let(:instance_group_networks) do
                 [
                   { 'name' => 'a', 'static_ips' => a_static_ips, 'default' => %w[dns gateway] },
                   { 'name' => 'b' },
@@ -870,8 +893,11 @@ module Bosh::Director::DeploymentPlan
 
                 expect do
                   instance_plans
-                end.to raise_error Bosh::Director::DeploymentIgnoredInstancesModification,
-                                   "In instance group 'fake-job', which contains ignored vms, an attempt was made to modify the networks. This operation is not allowed."
+                end.to raise_error(
+                  Bosh::Director::DeploymentIgnoredInstancesModification,
+                  "In instance group 'fake-instance-group', which contains ignored vms, " \
+                  'an attempt was made to modify the networks. This operation is not allowed.',
+                )
               end
             end
           end
@@ -879,7 +905,7 @@ module Bosh::Director::DeploymentPlan
 
         context 'when network name was changed' do
           let(:desired_instance_count) { 2 }
-          let(:job_networks) { [{ 'name' => 'a', 'static_ips' => static_ips }] }
+          let(:instance_group_networks) { [{ 'name' => 'a', 'static_ips' => static_ips }] }
           let(:static_ips) { ['192.168.1.10', '192.168.2.10'] }
           let(:existing_instances) do
             [
@@ -905,20 +931,23 @@ module Bosh::Director::DeploymentPlan
 
             expect do
               instance_plans
-            end.to raise_error Bosh::Director::DeploymentIgnoredInstancesModification,
-                               "In instance group 'fake-job', which contains ignored vms, an attempt was made to modify the networks. This operation is not allowed."
+            end.to raise_error(
+              Bosh::Director::DeploymentIgnoredInstancesModification,
+              "In instance group 'fake-instance-group', which contains ignored vms, " \
+              'an attempt was made to modify the networks. This operation is not allowed.',
+            )
           end
         end
       end
     end
 
     def new_desired_instance
-      DesiredInstance.new(job, planner)
+      DesiredInstance.new(instance_group, planner)
     end
 
     def existing_instance_with_az_and_ips(az, ips, network_name = 'a')
       instance = Bosh::Director::Models::Instance.make(
-        availability_zone: az, deployment: deployment_model, job: job.name,
+        availability_zone: az, deployment: deployment_model, job: instance_group.name,
       )
       ips.each do |ip|
         instance.add_ip_address(

@@ -128,7 +128,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     def desired_instance(zone = nil)
-      DesiredInstance.new(instance_group, 'started', nil, zone)
+      DesiredInstance.new(instance_group, nil, zone, nil)
     end
   end
 end

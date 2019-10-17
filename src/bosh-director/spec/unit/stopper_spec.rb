@@ -13,9 +13,9 @@ module Bosh::Director
     let(:deployment_model) { instance_double(Bosh::Director::Models::Deployment, name: 'fake-deployment') }
     let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
     let(:current_job_state) { 'running' }
-    let(:desired_instance) { DeploymentPlan::DesiredInstance.new(job) }
+    let(:desired_instance) { DeploymentPlan::DesiredInstance.new(instance_group) }
 
-    let(:job) do
+    let(:instance_group) do
       instance_double(
         DeploymentPlan::InstanceGroup,
         name: 'fake-job-name',
@@ -26,7 +26,7 @@ module Bosh::Director
     let(:instance) do
       instance_double(
         DeploymentPlan::Instance,
-        instance_group_name: job.name,
+        instance_group_name: instance_group.name,
         model: instance_model,
         availability_zone: DeploymentPlan::AvailabilityZone.new('az', {}),
         index: 0,

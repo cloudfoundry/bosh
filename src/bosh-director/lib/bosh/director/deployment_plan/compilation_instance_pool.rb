@@ -88,7 +88,7 @@ module Bosh::Director
                 instance: instance_memo.instance,
                 desired_instance: DeploymentPlan::DesiredInstance.new,
                 network_plans: [],
-                variables_interpolator: @variables_interpolator
+                variables_interpolator: @variables_interpolator,
               )
               destroy_instance(instance_plan)
             end
@@ -192,7 +192,7 @@ module Bosh::Director
 
         compilation_network = @deployment_plan.network(@deployment_plan.compilation.network_name)
         reservation = DesiredNetworkReservation.new_dynamic(instance.model, compilation_network)
-        desired_instance = DeploymentPlan::DesiredInstance.new(compile_instance_group, nil)
+        desired_instance = DeploymentPlan::DesiredInstance.new(compile_instance_group)
         instance_plan = DeploymentPlan::InstancePlan.new(
           existing_instance: instance.model,
           instance: instance,

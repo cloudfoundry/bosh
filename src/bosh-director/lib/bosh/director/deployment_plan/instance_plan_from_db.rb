@@ -13,7 +13,6 @@ module Bosh
             deployment_plan,
             nil,
             instance_model.index,
-            desired_state,
           )
           state_migrator = DeploymentPlan::AgentStateMigrator.new(logger)
 
@@ -28,7 +27,7 @@ module Bosh
           instance = instance_repository.build_instance_from_model(
             instance_model,
             existing_instance_state,
-            desired_instance.state,
+            desired_state,
             desired_instance.deployment,
           )
 
