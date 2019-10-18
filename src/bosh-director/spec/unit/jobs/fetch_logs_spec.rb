@@ -13,7 +13,7 @@ module Bosh::Director
     before {
       allow(Config).to receive(:event_log).and_return(event_log)
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
-      allow(blobstore).to receive(:signing_enabled?).and_return(false)
+      allow(blobstore).to receive(:can_sign_urls?).and_return(false)
     }
 
     describe 'DJ job class expectations' do

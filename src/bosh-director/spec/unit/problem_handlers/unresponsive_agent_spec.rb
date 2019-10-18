@@ -192,6 +192,7 @@ module Bosh::Director
           allow(SecureRandom).to receive_messages(uuid: 'agent-222')
           fake_app
           allow(App.instance.blobstores.blobstore).to receive(:create).and_return('fake-blobstore-id')
+          allow(App.instance.blobstores.blobstore).to receive(:can_sign_urls?).and_return(false)
 
           allow(fake_new_agent).to receive(:sync_dns) do |_,_,_,&blk|
             blk.call({'value' => 'synced'})

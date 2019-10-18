@@ -155,7 +155,7 @@ module Bosh::Director
       allow(cloud).to receive(:set_vm_metadata)
       allow(Bosh::Clouds::ExternalCpi).to receive(:new).and_return(cloud)
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
-      allow(blobstore).to receive(:signing_enabled?).and_return(false)
+      allow(blobstore).to receive(:can_sign_urls?).and_return(false)
       @all_packages = []
     end
 
@@ -380,7 +380,7 @@ module Bosh::Director
       let(:instance_groups_to_compile) { [@j_dea, @j_router] }
 
       before do
-        allow(blobstore).to receive(:signing_enabled?).and_return(true)
+        allow(blobstore).to receive(:can_sign_urls?).and_return(true)
         allow(blobstore).to receive(:generate_object_id).and_return('compiled_id')
         allow(blobstore).to receive(:sign) do |oid, verb|
           "#{verb}#{oid}-url"

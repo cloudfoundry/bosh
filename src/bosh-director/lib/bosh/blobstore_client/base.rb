@@ -115,6 +115,11 @@ module Bosh
         @options.fetch(:enable_signed_urls, false)
       end
 
+      def can_sign_urls?(stemcell_api_version)
+        stemcell_api_version ||= 1
+        signing_enabled? && stemcell_api_version >= 3
+      end
+
       def generate_object_id
         SecureRandom.uuid
       end

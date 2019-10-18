@@ -98,12 +98,7 @@ module Bosh::Director
           env['bosh'] ||= {}
           env['bosh'] = Config.agent_env.merge(env['bosh'])
 
-          if use_signed_url(stemcell_api_version)
-            env['bosh'] = env['bosh'].reject do |k, _|
-              @blobstore.credential_properties.include?(k)
-            end
-          end
-
+          remove_blobstore_credentials(env) if @blobstore.can_sign_urls?(stemcell_api_version)
           env['bosh']['tags'] = @tags unless @tags.empty?
 
           if Config.nats_server_ca
@@ -183,8 +178,12 @@ module Bosh::Director
           event.id
         end
 
-        def use_signed_url(stemcell_api_version)
-          @blobstore.signing_enabled? && (stemcell_api_version || 1) >= 3
+        def remove_blobstore_credentials(env)
+          env['bosh']['blobstores'] = env['bosh']['blobstores'].each do |blobstore|
+            blobstore['options'].reject! do |k, _|
+              @blobstore.credential_properties.include?(k)
+            end
+          end
         end
       end
     end

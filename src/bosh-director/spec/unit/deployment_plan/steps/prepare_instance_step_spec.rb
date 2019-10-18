@@ -12,29 +12,29 @@ module Bosh::Director
         let(:apply_spec) do
           {
             'test' => 'apply-me',
-            'packages' => [{ 'blobstore_id' => 'blob1' }],
+            'packages' => { 'pkg' => { 'blobstore_id' => 'blob1' } },
             'rendered_templates_archive' => { 'blobstore_id' => 'blob2' },
           }
         end
         let(:jobless_apply_spec) do
           {
             'test' => 'unemployed',
-            'packages' => [{ 'blobstore_id' => 'blob3' }],
+            'packages' => { 'pkg' => { 'blobstore_id' => 'blob3' } },
             'rendered_templates_archive' => { 'blobstore_id' => 'blob4' },
           }
         end
         let(:signed_apply_spec) do
           {
             'test' => 'apply-me',
-            'packages' => [{ 'blobstore_id' => 'blob1', 'signed_url' => 'http://sig1' }],
-            'rendered_templates_archive' => { 'blobstore_id' => 'blob2', 'signed_url' => 'http://sig2' },
+            'packages' => { 'pkg' => { 'blobstore_id' => 'blob1', 'signed_url' => 'http://sig1' } },
+            'rendered_templates_archive' => { 'blobstore_id' => 'blob2' },
           }
         end
         let(:signed_jobless_apply_spec) do
           {
             'test' => 'unemployed',
-            'packages' => [{ 'blobstore_id' => 'blob3', 'signed_url' => 'http://sig3' }],
-            'rendered_templates_archive' => { 'blobstore_id' => 'blob4', 'signed_url' => 'http://sig4' },
+            'packages' => { 'pkg' => { 'blobstore_id' => 'blob3', 'signed_url' => 'http://sig3' } },
+            'rendered_templates_archive' => { 'blobstore_id' => 'blob4' },
           }
         end
         let(:spec) { instance_double(InstanceSpec, as_apply_spec: apply_spec, as_jobless_apply_spec: jobless_apply_spec) }
@@ -49,7 +49,7 @@ module Bosh::Director
         describe '#perform' do
           context 'with url signing disabled' do
             before do
-              allow(blobstore).to receive(:signing_enabled?).and_return(false)
+              allow(blobstore).to receive(:can_sign_urls?).and_return(false)
             end
 
             context 'with an instance plan referring to an instance with both new and old vms' do
@@ -70,7 +70,7 @@ module Bosh::Director
                 it 'sends the full spec to the active vms agent' do
                   expect(active_agent).to receive(:prepare).with(
                     'test' => 'apply-me',
-                    'packages' => [{ 'blobstore_id' => 'blob1' }],
+                    'packages' => { 'pkg' => { 'blobstore_id' => 'blob1' } },
                     'rendered_templates_archive' => { 'blobstore_id' => 'blob2' },
                   )
 
@@ -84,7 +84,7 @@ module Bosh::Director
                 it 'sends the jobless spec to the other vms agent' do
                   expect(lazy_agent).to receive(:prepare).with(
                     'test' => 'unemployed',
-                    'packages' => [{ 'blobstore_id' => 'blob3' }],
+                    'packages' => { 'pkg' => { 'blobstore_id' => 'blob3' } },
                     'rendered_templates_archive' => { 'blobstore_id' => 'blob4' },
                   )
 
@@ -108,7 +108,7 @@ module Bosh::Director
                 it 'sends the full spec to the active vms agent' do
                   expect(old_agent).to receive(:prepare).with(
                     'test' => 'apply-me',
-                    'packages' => [{ 'blobstore_id' => 'blob1' }],
+                    'packages' => { 'pkg' => { 'blobstore_id' => 'blob1' } },
                     'rendered_templates_archive' => { 'blobstore_id' => 'blob2' },
                   )
 
@@ -147,7 +147,7 @@ module Bosh::Director
                 it 'sends the jobless spec to the other vms agent' do
                   expect(new_agent).to receive(:prepare).with(
                     'test' => 'unemployed',
-                    'packages' => [{ 'blobstore_id' => 'blob3' }],
+                    'packages' => { 'pkg' => { 'blobstore_id' => 'blob3' } },
                     'rendered_templates_archive' => { 'blobstore_id' => 'blob4' },
                   )
 
@@ -159,11 +159,10 @@ module Bosh::Director
 
           context 'with url signing enabled' do
             before do
-              allow(blobstore).to receive(:signing_enabled?).and_return(true)
+              allow(blobstore).to receive(:can_sign_urls?).and_return(true)
               allow(blobstore).to receive(:sign).with('blob1', 'get').and_return('http://sig1')
               allow(blobstore).to receive(:sign).with('blob2', 'get').and_return('http://sig2')
               allow(blobstore).to receive(:sign).with('blob3', 'get').and_return('http://sig3')
-              allow(blobstore).to receive(:sign).with('blob4', 'get').and_return('http://sig4')
             end
 
             context 'with an instance plan referring to an instance with both new and old vms' do

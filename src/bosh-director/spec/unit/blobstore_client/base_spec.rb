@@ -2,7 +2,8 @@ require 'spec_helper'
 require 'tempfile'
 
 describe Bosh::Blobstore::BaseClient do
-  subject { described_class.new({}) }
+  let(:options) { {} }
+  subject { described_class.new(options) }
 
   it_implements_base_client_interface
 
@@ -84,6 +85,27 @@ describe Bosh::Blobstore::BaseClient do
       subject.define_singleton_method(:object_exists?) {|id| raise Exception.new 'fake-exception'}
       expect { subject.exists?('id') }.to raise_error(
         Exception, 'fake-exception')
+    end
+  end
+
+  describe 'signed urls' do
+    let(:options) { { 'enable_signed_urls' => true } }
+
+    it 'can be enabled' do
+      expect(subject.signing_enabled?).to eq(true)
+    end
+
+    it 'can determine ability to use signed urls based on stemcell api version' do
+      expect(subject.can_sign_urls?(2)).to eq(false)
+      expect(subject.can_sign_urls?(3)).to eq(true)
+    end
+
+    it 'assumes default stemcell api version when absent' do
+      expect(subject.can_sign_urls?(nil)).to eq(false)
+    end
+
+    it 'can generate an object it' do
+      expect(subject.generate_object_id).to_not be_nil
     end
   end
 

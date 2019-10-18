@@ -48,6 +48,7 @@ module Bosh::Director
           @release_manager = release_manager
           @package_validator = package_validator
           @compiled_package_finder = compiled_package_finder
+          @blobstore = App.instance.blobstores.blobstore
         end
 
         def perform
@@ -98,11 +99,10 @@ module Bosh::Director
 
               version = "#{package.version}.#{build}"
               prepare_vm(stemcell, package) do |instance|
-                blobstore = App.instance.blobstores.blobstore
-                if blobstore.signing_enabled? && stemcell.api_version && stemcell.api_version >= 3
-                  compiled_package_blobstore_id = blobstore.generate_object_id
-                  package_get_signed_url = blobstore.sign(package.blobstore_id)
-                  upload_signed_url = blobstore.sign(compiled_package_blobstore_id, 'put')
+                if @blobstore.can_sign_urls?(stemcell.api_version)
+                  compiled_package_blobstore_id = @blobstore.generate_object_id
+                  package_get_signed_url = @blobstore.sign(package.blobstore_id)
+                  upload_signed_url = @blobstore.sign(compiled_package_blobstore_id, 'put')
 
                   request = {
                     'package_get_signed_url' => package_get_signed_url,
@@ -110,11 +110,12 @@ module Bosh::Director
                     'digest' => package.sha1,
                     'name' => package.name,
                     'version' => version,
-                    'deps' => requirement.dependency_spec,
+                    'deps' => add_signed_urls(requirement.dependency_spec),
                   }
 
                   agent_task = instance.agent_client.compile_package_with_signed_url(request) { Config.job_cancelled? }
-                  agent_task['result']['blobstore_id'] = compiled_package_blobstore_id
+                  task_result = agent_task['result']
+                  task_result['blobstore_id'] = compiled_package_blobstore_id
                 else
                   agent_task =
                     instance.agent_client.compile_package(
@@ -124,9 +125,8 @@ module Bosh::Director
                       version,
                       requirement.dependency_spec,
                     ) { Config.job_cancelled? }
+                  task_result = agent_task['result']
                 end
-
-                task_result = agent_task['result']
               end
 
               compiled_package = Models::CompiledPackage.create do |p|
@@ -283,6 +283,12 @@ module Bosh::Director
               @logger.info("Finished compiling #{requirement_desc}")
               enqueue_unblocked_requirements(requirement)
             end
+          end
+        end
+
+        def add_signed_urls(dependency_spec)
+          dependency_spec.each do |_, spec|
+            spec['package_get_signed_url'] = @blobstore.sign(spec['blobstore_id'])
           end
         end
       end

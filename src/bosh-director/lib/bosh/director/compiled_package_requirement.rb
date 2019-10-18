@@ -124,7 +124,6 @@ module Bosh::Director
           'blobstore_id' => compiled_package.blobstore_id,
         }
       end
-
       spec
     end
   end

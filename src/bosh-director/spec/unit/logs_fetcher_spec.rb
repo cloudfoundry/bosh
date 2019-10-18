@@ -24,7 +24,8 @@ module Bosh::Director
 
     before do
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
-      allow(blobstore).to receive(:signing_enabled?).and_return(false)
+      allow(blobstore).to receive(:can_sign_urls?).and_return(false)
+      allow(mock_instance_model).to receive_message_chain(:active_vm, :stemcell_api_version)
     end
 
     describe '#fetch' do
@@ -75,20 +76,19 @@ module Bosh::Director
           end
         end
 
-        context 'when signed urls are enabled' do
+        context 'when signed urls are available' do
           let(:signed_url) { 'https://signed-url.com' }
           let(:blobstore_id) { 'blobstore_id'}
 
           before do
-            allow(blobstore).to receive(:signing_enabled?).and_return(true)
+            allow(blobstore).to receive(:generate_object_id).and_return(blobstore_id)
+            allow(blobstore).to receive(:sign).with(blobstore_id, 'put').and_return(signed_url)
+            allow(SecureRandom).to receive(:uuid).and_return(blobstore_id)
           end
 
-          context 'when the agent api is >= 3' do
+          context 'and are enabled' do
             before do
-              allow(blobstore).to receive(:generate_object_id).and_return(blobstore_id)
-              allow(blobstore).to receive(:sign).with(blobstore_id, 'put').and_return(signed_url)
-              allow(SecureRandom).to receive(:uuid).and_return(blobstore_id)
-              allow(mock_instance_model).to receive_message_chain(:active_vm, :stemcell_api_version).and_return(3)
+              allow(blobstore).to receive(:can_sign_urls?).and_return(true)
             end
 
             it 'generates a blobstore id, signs the url and fetches logs with the signed url' do
@@ -117,9 +117,9 @@ module Bosh::Director
             end
           end
 
-          context 'when the agent api is < 3' do
+          context 'and are not enabled' do
             before do
-              allow(mock_instance_model).to receive_message_chain(:active_vm, :stemcell_api_version).and_return(2)
+              allow(blobstore).to receive(:can_sign_urls?).and_return(false)
             end
 
             it 'falls back to fetching logs without signed url' do
@@ -133,7 +133,6 @@ module Bosh::Director
             end
           end
         end
-
 
         context 'when the agent does not find the logs' do
           it 'raises an error' do

@@ -7,6 +7,8 @@ module BaseSharedExamples
       get:     [[:req, :id], [:opt, :file], [:opt, :options]],
       delete:  [[:req, :oid]],
       exists?: [[:req, :oid]],
+      sign: [[:req, :oid], [:opt, :verb]],
+      credential_properties: [],
     }
 
     expected_interface.each do |method, expected_params|
@@ -55,6 +57,22 @@ module BaseSharedExamples
         oid, result = 'fake-oid', 'fake-result'
         expect(wrapped_client).to receive(:exists?).with(oid).and_return(result)
         expect(subject.exists?(oid)).to eq(result)
+      end
+    end
+
+    describe '#sign' do
+      it "calls wrapped_client's sign" do
+        oid, result = 'fake-oid', 'signed-url'
+        expect(wrapped_client).to receive(:sign).and_return(result)
+        expect(subject.sign(oid, 'get')).to eq(result)
+      end
+    end
+
+    describe '#credential_properties' do
+      it "calls wrapped_client's credential_properties" do
+        result = %w[user password]
+        expect(wrapped_client).to receive(:credential_properties).and_return(result)
+        expect(subject.credential_properties).to eq(result)
       end
     end
   end

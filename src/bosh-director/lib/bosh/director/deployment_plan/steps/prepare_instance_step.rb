@@ -29,17 +29,16 @@ module Bosh::Director
             stemcell_api_version = vm.stemcell_api_version
           end
 
-          add_signed_urls(spec) if @blobstore.signing_enabled? && (stemcell_api_version || 1) >= 3
+          spec = add_signed_urls(spec) if @blobstore.can_sign_urls?(stemcell_api_version)
 
           AgentClient.with_agent_id(agent_id, name).prepare(spec)
         end
 
         def add_signed_urls(spec)
-          spec['packages'].each do |package|
+          spec['packages'].each do |_, package|
             package['signed_url'] = @blobstore.sign(package['blobstore_id'], 'get')
           end
-          archive = spec['rendered_templates_archive']
-          archive['signed_url'] = @blobstore.sign(archive['blobstore_id'], 'get') unless archive.nil?
+          spec
         end
       end
     end

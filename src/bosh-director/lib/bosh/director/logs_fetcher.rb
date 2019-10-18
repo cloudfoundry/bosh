@@ -24,7 +24,7 @@ module Bosh::Director
 
       stage = Config.event_log.begin_stage("Fetching logs for #{instance.job}/#{instance.uuid} (#{instance.index})", 1)
       stage.advance_and_track('Finding and packing log files') do
-        if can_use_signed_url(instance)
+        if @blobstore.can_sign_urls?(instance.active_vm.stemcell_api_version)
           blobstore_id = @blobstore.generate_object_id
           signed_url = @blobstore.sign(blobstore_id, 'put')
           fetch_logs_result = agent.fetch_logs_with_signed_url(signed_url: signed_url, log_type: log_type, filters: filters)
@@ -43,12 +43,6 @@ module Bosh::Director
       @log_bundles_cleaner.register_blobstore_id(blobstore_id) if persist_blobstore_id
 
       return blobstore_id, sha_digest
-    end
-
-    private
-
-    def can_use_signed_url(instance)
-      @blobstore.signing_enabled? && (instance.active_vm.stemcell_api_version || 1) >= 3
     end
   end
 end
