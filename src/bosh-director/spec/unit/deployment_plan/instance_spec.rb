@@ -17,6 +17,8 @@ module Bosh::Director::DeploymentPlan
       Bosh::Director::Config.current_job.task_id = 'fake-task-id'
       allow(SecureRandom).to receive(:uuid).and_return('uuid-1')
       allow(Bosh::Director::Config).to receive(:dns).and_return('domain_name' => 'test_domain')
+      allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
+      allow(blobstore).to receive(:can_sign_urls?).and_return(false)
     end
 
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
@@ -40,6 +42,7 @@ module Bosh::Director::DeploymentPlan
     let(:current_state) do
       { 'current' => 'state' }
     end
+    let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
 
     describe '#bind_existing_instance_model' do
       let(:instance_model) { Bosh::Director::Models::Instance.make(bootstrap: true) }
@@ -119,6 +122,8 @@ module Bosh::Director::DeploymentPlan
       end
 
       describe 'apply_vm_state' do
+        let(:packages) { { 'pkg' => { 'version' => '0', 'blobstore_id' => 'bsid' } } }
+        let(:apply_packages) { { 'pkg' => { 'version' => '0', 'blobstore_id' => 'bsid' } } }
         let(:full_spec) do
           {
             'deployment' => 'fake-deployment',
@@ -127,7 +132,7 @@ module Bosh::Director::DeploymentPlan
             'env' => {},
             'id' => 'uuid-1',
             'networks' => { 'fake-network' => { 'fake-network-settings' => {} } },
-            'packages' => {},
+            'packages' => packages,
             'configuration_hash' => 'fake-desired-configuration-hash',
             'dns_domain_name' => 'test-domain',
             'persistent_disk' => 0,
@@ -141,7 +146,7 @@ module Bosh::Director::DeploymentPlan
             'index' => 0,
             'id' => 'uuid-1',
             'networks' => { 'fake-network' => { 'fake-network-settings' => {} } },
-            'packages' => {},
+            'packages' => apply_packages,
             'configuration_hash' => 'fake-desired-configuration-hash',
             'dns_domain_name' => 'test-domain',
             'persistent_disk' => 0,
@@ -153,6 +158,21 @@ module Bosh::Director::DeploymentPlan
           expect(agent_client).to receive(:apply).with(apply_spec).ordered
           instance.apply_vm_state(instance_spec)
           expect(instance_model.spec).to eq(full_spec)
+        end
+
+        context 'when signed urls are enabled' do
+          let(:apply_packages) { { 'pkg' => { 'version' => '0', 'blobstore_id' => 'bsid', 'signed_url' => 'fake-signed-url' } } }
+
+          before do
+            allow(blobstore).to receive(:can_sign_urls?).and_return(true)
+            allow(blobstore).to receive(:sign).and_return('fake-signed-url')
+          end
+
+          it 'generates signed urls for packages' do
+            expect(blobstore).to receive(:sign)
+            expect(agent_client).to receive(:apply).with(apply_spec).ordered
+            instance.apply_vm_state(instance_spec)
+          end
         end
       end
 
