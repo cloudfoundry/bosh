@@ -108,7 +108,7 @@ module Bosh::Blobstore
     end
 
     def credential_properties_list
-      %w[json_key encryption_key credentials_source]
+      %w[json_key credentials_source]
     end
 
     # @param [String] path path to file which will be stored in GCS

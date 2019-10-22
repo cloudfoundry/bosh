@@ -171,6 +171,7 @@ module Bosh::Director
       allow(metadata_updater).to receive(:update_vm_metadata)
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
       allow(blobstore).to receive(:can_sign_urls?).and_return(false)
+      allow(blobstore).to receive(:validate!)
     end
 
     shared_examples_for 'a compilation vm pool' do

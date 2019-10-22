@@ -156,6 +156,7 @@ module Bosh::Director
       allow(Bosh::Clouds::ExternalCpi).to receive(:new).and_return(cloud)
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
       allow(blobstore).to receive(:can_sign_urls?).and_return(false)
+      allow(blobstore).to receive(:validate!)
       @all_packages = []
     end
 

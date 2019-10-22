@@ -195,7 +195,7 @@ module Bosh::Blobstore
       end
 
       it 'provides properties to remove for agent settings' do
-        expect(subject.credential_properties).to eq(%w[access_key_id secret_access_key sse_kms_key_id credentials_source])
+        expect(subject.credential_properties).to eq(%w[access_key_id secret_access_key credentials_source])
       end
     end
   end

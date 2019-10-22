@@ -162,7 +162,7 @@ module Bosh::Director
         apply_spec = spec.as_apply_spec
 
         blobstore = App.instance.blobstores.blobstore
-        if blobstore.can_sign_urls?(@stemcell.api_version)
+        if blobstore.can_sign_urls?(@stemcell.api_version) && !!apply_spec['packages']
           apply_spec['packages'].each do |_, package|
             package['signed_url'] = blobstore.sign(package['blobstore_id'], 'get')
           end

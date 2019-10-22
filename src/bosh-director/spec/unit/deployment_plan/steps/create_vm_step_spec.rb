@@ -189,6 +189,7 @@ module Bosh
             allow(DeleteVmStep).to receive(:new).and_return(delete_vm_step)
             allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
             allow(blobstore).to receive(:can_sign_urls?).and_return(false)
+            allow(blobstore).to receive(:validate!)
           end
 
           it 'sets vm on given report' do
@@ -339,6 +340,12 @@ module Bosh
               allow(blobstore).to receive(:credential_properties).and_return(%w[my-key my-key-id])
               allow(Config).to receive(:agent_env).and_return(agent_env_hash)
               allow(cloud_factory).to receive(:get).with('cpi1', stemcell_api_version).and_return(cloud_wrapper)
+            end
+
+            it 'validates blobstore configuration' do
+              expect(blobstore).to receive(:validate!).with(agent_env_hash['blobstores'].first['options'], anything)
+              allow(cloud_wrapper).to receive(:create_vm).and_return(create_vm_response)
+              subject.perform(report)
             end
 
             it 'does not send blobstore credentials to the agent' do

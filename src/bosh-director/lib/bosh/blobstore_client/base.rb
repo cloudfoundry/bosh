@@ -120,6 +120,19 @@ module Bosh
         signing_enabled? && stemcell_api_version >= 3
       end
 
+      def validate!(agent_blobstore_options, stemcell_api_version)
+        return if can_sign_urls?(stemcell_api_version)
+
+        has_all_required_creds = (credential_properties - agent_blobstore_options.keys).empty?
+
+        return if has_all_required_creds
+
+        raise(
+          Director::BadConfig,
+          "Inconsistent blobstore configuration: #{credential_properties_list.inspect} are required",
+        )
+      end
+
       def generate_object_id
         SecureRandom.uuid
       end

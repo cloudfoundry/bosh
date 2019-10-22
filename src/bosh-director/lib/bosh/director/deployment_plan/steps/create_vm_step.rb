@@ -98,6 +98,7 @@ module Bosh::Director
           env['bosh'] ||= {}
           env['bosh'] = Config.agent_env.merge(env['bosh'])
 
+          @blobstore.validate!(env['bosh'].fetch('blobstores', [{}]).first.fetch('options', {}), stemcell_api_version)
           remove_blobstore_credentials(env) if @blobstore.can_sign_urls?(stemcell_api_version)
           env['bosh']['tags'] = @tags unless @tags.empty?
 
@@ -179,8 +180,8 @@ module Bosh::Director
         end
 
         def remove_blobstore_credentials(env)
-          env['bosh']['blobstores'] = env['bosh']['blobstores'].each do |blobstore|
-            blobstore['options'].reject! do |k, _|
+          env['bosh'].fetch('blobstores', [{}]).each do |blobstore|
+            blobstore.fetch('options', {}).reject! do |k, _|
               @blobstore.credential_properties.include?(k)
             end
           end

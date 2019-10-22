@@ -30,7 +30,7 @@ module Bosh::Director
 
     before do
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
-      allow(blobstore).to receive(:signing_enabled?).and_return(false)
+      allow(blobstore).to receive(:can_sign_urls?).and_return(false)
     end
 
     describe '#filter_instances' do
@@ -292,13 +292,17 @@ module Bosh::Director
 
       context 'when blobstore and instance are capable of using signed urls' do
         before do
-          allow(blobstore).to receive(:signing_enabled?).and_return(true)
+          allow(blobstore).to receive(:can_sign_urls?).and_return(true)
         end
 
         it 'signs the existing blobstore id' do
           expect(blobstore).to receive(:sign).with('fake-blob-id').and_return('signed')
           expect(AgentClient).to receive(:with_agent_id).with(instance1.agent_id, instance1.name) do
-            expect(agent).to receive(:sync_dns_with_signed_url).with('signed', 'fake-sha1', anything) do |&blk|
+            expect(agent).to receive(:sync_dns_with_signed_url).with(
+              'signed_url' => 'signed',
+              'multi_digest' => 'fake-sha1',
+              'version' => anything,
+            ) do |&blk|
               blk.call('value' => 'synced')
               Timecop.freeze(end_time)
             end

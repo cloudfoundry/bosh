@@ -122,7 +122,7 @@ module Bosh::Blobstore
     end
 
     def credential_properties_list
-      %w[access_key_id secret_access_key sse_kms_key_id credentials_source]
+      %w[access_key_id secret_access_key credentials_source]
     end
 
     # @param [String] path path to file which will be stored in S3

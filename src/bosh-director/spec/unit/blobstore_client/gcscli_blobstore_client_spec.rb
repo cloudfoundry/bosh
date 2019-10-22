@@ -193,7 +193,7 @@ module Bosh::Blobstore
       end
 
       it 'provides properties to remove for agent settings' do
-        expect(subject.credential_properties).to eq(%w[json_key encryption_key credentials_source])
+        expect(subject.credential_properties).to eq(%w[json_key credentials_source])
       end
     end
   end

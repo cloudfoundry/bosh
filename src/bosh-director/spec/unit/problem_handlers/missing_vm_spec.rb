@@ -112,7 +112,6 @@ module Bosh::Director
         allow(fake_new_agent).to receive(:sync_dns) do |_, _, _, &blk|
           blk.call('value' => 'synced')
         end.and_return(0)
-        allow(Config).to receive(:agent_env).and_return('blobstores' => {})
       end
 
       def fake_job_context
@@ -152,7 +151,7 @@ module Bosh::Director
             anything,
             [],
             'key1' => 'value1',
-            'bosh' => { 'group' => String, 'groups' => anything, 'blobstores' => {} },
+            'bosh' => { 'group' => String, 'groups' => anything },
           )
           .and_return('new-vm-cid')
 

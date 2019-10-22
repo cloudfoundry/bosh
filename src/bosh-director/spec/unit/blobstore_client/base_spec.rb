@@ -2,8 +2,18 @@ require 'spec_helper'
 require 'tempfile'
 
 describe Bosh::Blobstore::BaseClient do
+  class TestBaseClient < Bosh::Blobstore::BaseClient
+    def initialize(opts)
+      super(opts)
+    end
+
+    def credential_properties_list
+      %w[key anotherkey]
+    end
+  end
+
   let(:options) { {} }
-  subject { described_class.new(options) }
+  subject { TestBaseClient.new(options) }
 
   it_implements_base_client_interface
 
@@ -89,23 +99,61 @@ describe Bosh::Blobstore::BaseClient do
   end
 
   describe 'signed urls' do
-    let(:options) { { 'enable_signed_urls' => true } }
+    context 'when enabled' do
+      let(:options) { { 'enable_signed_urls' => true } }
 
-    it 'can be enabled' do
-      expect(subject.signing_enabled?).to eq(true)
+      it 'can be enabled' do
+        expect(subject.signing_enabled?).to eq(true)
+      end
+
+      it 'can determine ability to use signed urls based on stemcell api version' do
+        expect(subject.can_sign_urls?(2)).to eq(false)
+        expect(subject.can_sign_urls?(3)).to eq(true)
+      end
+
+      it 'assumes default stemcell api version when absent' do
+        expect(subject.can_sign_urls?(nil)).to eq(false)
+      end
+
+      it 'can generate an object it' do
+        expect(subject.generate_object_id).to_not be_nil
+      end
+
+      context 'agent is not capable of using signed urls' do
+        let(:stemcell_api_version) { 2 }
+
+        it 'raises an error if validation for an agent env without credentials fails' do
+          expect { subject.validate!({}, stemcell_api_version) }.to raise_error(Bosh::Director::BadConfig)
+        end
+
+        it 'raises an error if only partial credentials are available' do
+          expect { subject.validate!({ 'anotherkey' => 'value' }, stemcell_api_version) }
+            .to raise_error(Bosh::Director::BadConfig)
+        end
+
+        it 'validates successfully with all credentials' do
+          subject.validate!({ 'anotherkey' => 'value', 'key' => 'derp' }, stemcell_api_version)
+          subject.validate!({ 'anotherkey' => 'value', 'key' => 'derp', 'extra' => 'value' }, stemcell_api_version)
+        end
+      end
+
+      context 'agent is capable of using signed urls' do
+        let(:stemcell_api_version) { 3 }
+
+        it 'validates successfully regardless of credentials provided' do
+          subject.validate!({ 'anotherkey' => 'value', 'key' => 'derp' }, stemcell_api_version)
+          subject.validate!({ 'anotherkey' => 'value', 'key' => 'derp', 'extra' => 'value' }, stemcell_api_version)
+          subject.validate!({}, stemcell_api_version)
+        end
+      end
     end
 
-    it 'can determine ability to use signed urls based on stemcell api version' do
-      expect(subject.can_sign_urls?(2)).to eq(false)
-      expect(subject.can_sign_urls?(3)).to eq(true)
-    end
+    context 'when disabled' do
+      let(:options) { { 'enable_signed_urls' => true } }
 
-    it 'assumes default stemcell api version when absent' do
-      expect(subject.can_sign_urls?(nil)).to eq(false)
-    end
-
-    it 'can generate an object it' do
-      expect(subject.generate_object_id).to_not be_nil
+      it 'validates successfully when signed URLs are disabled' do
+        subject.validate!({ 'key' => 'value', 'anotherkey' => 'value' }, 3)
+      end
     end
   end
 
