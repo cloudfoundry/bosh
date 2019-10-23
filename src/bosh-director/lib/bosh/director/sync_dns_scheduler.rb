@@ -32,6 +32,9 @@ module Bosh::Director
 
       @thread[:name] = self.class.to_s
       @thread.join
+    rescue StandardError => e
+      @config.sync_dns_scheduler_logger.error("Sync DNS SyncDnsScheduler exited unexpectedly: #{e.inspect} #{e.backtrace}")
+      raise
     end
 
     def stop!

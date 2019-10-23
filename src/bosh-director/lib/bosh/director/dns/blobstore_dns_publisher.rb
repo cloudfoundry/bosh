@@ -61,7 +61,7 @@ module Bosh::Director
       Config.db.transaction(isolation: :committed, retry_on: [Sequel::SerializationFailure]) do
         latest_records_version = records_version
         latest_aliases_version = aliases_version
-        current_blob = Models::LocalDnsBlob.order(:version).last
+        current_blob = Models::LocalDnsBlob.where(Sequel.~(version: nil)).order(:version).last
       end
 
       return current_blob if current_blob &&

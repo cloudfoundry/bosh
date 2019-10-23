@@ -4,7 +4,7 @@ module Bosh::Director::Models
 
     def self.latest
       Bosh::Director::Config.db.transaction(:isolation => :committed, :retry_on => [Sequel::SerializationFailure]) do
-        LocalDnsBlob.order(:version).last
+        LocalDnsBlob.where(Sequel.~(version: nil)).order(:version).last
       end
     end
   end
