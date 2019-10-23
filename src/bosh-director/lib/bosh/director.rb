@@ -265,6 +265,7 @@ require 'bosh/director/api/controllers/deployed_variables_controller'
 require 'bosh/director/api/route_configuration'
 
 require 'bosh/director/step_executor'
+require 'bosh/director/metrics_collector'
 
 require 'common/common'
 

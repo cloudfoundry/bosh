@@ -529,6 +529,14 @@ module Bosh::Director
       logger
     end
 
+    def metrics_server_logger
+      logger = Logging::Logger.new('MetricsServer')
+      logging_config = hash.fetch('logging', {})
+      logger.add_appenders(Logging.appenders.stdout('MetricsServerIO', layout: ThreadFormatter.layout))
+      logger.level = Logging.levelify(logging_config.fetch('level', 'debug'))
+      logger
+    end
+
     def db
       Config.configure_db(hash['db'])
     end
@@ -568,6 +576,11 @@ module Bosh::Director
 
     def record_events
       hash.fetch('record_events', false)
+    end
+
+    def metrics_server_port
+      opts = hash.fetch('metrics_server', {})
+      opts.fetch('port', 9091)
     end
 
     private

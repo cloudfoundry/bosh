@@ -30,8 +30,13 @@ sync_dns_config = {
   "ephemeral_disk" => true,
 }
 
+metrics_server_config = {
+  "name" => "metrics_server",
+  "executable" => "/var/vcap/jobs/director/bin/metrics-server",
+}
+
 config = {
-  "processes" => [director_config, nginx_config, scheduler_config, sync_dns_config],
+  "processes" => [director_config, nginx_config, scheduler_config, sync_dns_config, metrics_server_config],
 }
 
 YAML.dump(config)

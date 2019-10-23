@@ -11,13 +11,21 @@ check process worker_<%= index %>
   stop program "/var/vcap/jobs/director/bin/worker_ctl stop <%= index %>"
   group vcap
   depends on director
-<% end%>
+<% end %>
 
 check process director_scheduler
   with pidfile /var/vcap/sys/run/bpm/director/scheduler.pid
   start program "/var/vcap/jobs/bpm/bin/bpm start director -p scheduler"
   stop program "/var/vcap/jobs/bpm/bin/bpm stop director -p scheduler"
   group vcap
+
+<% if p('director.metrics_server.enabled') %>
+check process metrics_server
+  with pidfile /var/vcap/sys/run/bpm/director/metrics_server.pid
+  start program "/var/vcap/jobs/bpm/bin/bpm start director -p metrics_server"
+  stop program "/var/vcap/jobs/bpm/bin/bpm stop director -p metrics_server"
+  group vcap
+<% end %>
 
 <% if_p('director.local_dns.enabled') do |enabled| %>
   <% if enabled %>
@@ -26,7 +34,8 @@ check process director_sync_dns
   start program "/var/vcap/jobs/bpm/bin/bpm start director -p sync_dns"
   stop program "/var/vcap/jobs/bpm/bin/bpm stop director -p sync_dns"
   group vcap
-<%end%><%end%>
+  <% end %>
+<% end %>
 
 check process director_nginx
   with pidfile /var/vcap/sys/run/bpm/director/nginx.pid

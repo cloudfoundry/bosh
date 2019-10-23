@@ -18,6 +18,7 @@ templates:
   director: bin/director
   drain: bin/drain
   env.erb: env
+  metrics-server: bin/metrics-server
   mime.types: config/mime.types
   nats_client_ca_certificate.pem.erb: config/nats_client_ca_certificate.pem
   nats_client_ca_private_key.erb: config/nats_client_ca_private_key
@@ -239,6 +240,14 @@ properties:
   director.default_ssh_options.gateway_user:
     description: 'Default user to use with bosh ssh command'
     default: vcap
+
+  # Metrics
+  director.metrics_server.enabled:
+    description: 'Enables the metrics server on the director'
+    default: false
+  director.metrics_server.port:
+    description: 'Enables the metrics server on the director'
+    default: 9091
 
   # NATs
   nats.address:

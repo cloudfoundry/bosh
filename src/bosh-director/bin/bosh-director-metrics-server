@@ -1,0 +1,43 @@
+#!/usr/bin/env ruby
+
+require 'bosh/director/config'
+require 'bosh/director/metrics_collector'
+require 'optparse'
+require 'prometheus/middleware/collector'
+require 'prometheus/middleware/exporter'
+require 'thin'
+
+config_file = ::File.expand_path('../../config/bosh-director.yml', __FILE__)
+
+opts = OptionParser.new do |op|
+  op.on('-c', '--config [ARG]', 'Configuration File') do |opt|
+    config_file = opt
+  end
+end
+
+opts.parse!(ARGV.dup)
+
+config = Bosh::Director::Config.load_file(config_file)
+config.db
+
+metrics_collector = Bosh::Director::MetricsCollector.new(config)
+
+metrics_collector.prep
+metrics_collector.start
+
+thin_server = Thin::Server.new('127.0.0.1', config.metrics_server_port, signals: false) do
+  use Rack::CommonLogger
+  use Prometheus::Middleware::Collector
+  use Prometheus::Middleware::Exporter
+
+  run ->(_) { [200, { 'Content-Type' => 'text/html' }, ['OK']] }
+end
+
+%w(TERM INT QUIT).each do |signal|
+  trap(signal) do
+    thin_server.stop!
+    metrics_collector.stop
+  end
+end
+
+thin_server.start!

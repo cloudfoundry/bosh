@@ -1,0 +1,6 @@
+#!/bin/bash
+
+source /var/vcap/jobs/director/env
+
+exec /var/vcap/packages/director/bin/bosh-director-metrics-server \
+  -c /var/vcap/jobs/director/config/director.yml
