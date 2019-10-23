@@ -52,6 +52,10 @@ module Bosh::Blobstore
       @config_file = write_config_file(@options.fetch(:s3cli_config_path, nil))
     end
 
+    def redacted_credential_properties_list
+      %w[access_key_id secret_access_key credentials_source]
+    end
+
     protected
 
     # @param [File] file file to store in S3
@@ -121,8 +125,8 @@ module Bosh::Blobstore
       raise BlobstoreError, "Failed to sign url, code #{status.exitstatus}, output: '#{out}', error: '#{err}'"
     end
 
-    def credential_properties_list
-      %w[access_key_id secret_access_key credentials_source]
+    def required_credential_properties_list
+      %w[access_key_id secret_access_key]
     end
 
     # @param [String] path path to file which will be stored in S3

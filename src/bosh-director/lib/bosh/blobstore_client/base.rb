@@ -123,13 +123,13 @@ module Bosh
       def validate!(agent_blobstore_options, stemcell_api_version)
         return if can_sign_urls?(stemcell_api_version)
 
-        has_all_required_creds = (credential_properties - agent_blobstore_options.keys).empty?
+        has_all_required_creds = (required_credential_properties_list - agent_blobstore_options.keys).empty?
 
         return if has_all_required_creds
 
         raise(
           Director::BadConfig,
-          "Inconsistent blobstore configuration: #{credential_properties_list.inspect} are required",
+          "Inconsistent blobstore configuration: #{required_credential_properties_list.inspect} are required",
         )
       end
 
@@ -137,8 +137,9 @@ module Bosh
         SecureRandom.uuid
       end
 
-      def credential_properties
-        credential_properties_list
+      def redacted_credential_properties_list
+        # needs to be implemented in each subclass
+        not_supported
       end
 
       protected
@@ -169,7 +170,7 @@ module Bosh
         not_supported
       end
 
-      def credential_properties_list
+      def required_credential_properties_list
         # needs to be implemented in each subclass
         not_supported
       end

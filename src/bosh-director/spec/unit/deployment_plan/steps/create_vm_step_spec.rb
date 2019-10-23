@@ -337,7 +337,7 @@ module Bosh
             end
             before do
               allow(blobstore).to receive(:can_sign_urls?).and_return(true)
-              allow(blobstore).to receive(:credential_properties).and_return(%w[my-key my-key-id])
+              allow(blobstore).to receive(:redacted_credential_properties_list).and_return(%w[my-key my-key-id])
               allow(Config).to receive(:agent_env).and_return(agent_env_hash)
               allow(cloud_factory).to receive(:get).with('cpi1', stemcell_api_version).and_return(cloud_wrapper)
             end

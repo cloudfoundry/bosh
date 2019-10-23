@@ -22,6 +22,10 @@ module Bosh::Blobstore
       @config_file_path = write_config_file(@davcli_config_path)
     end
 
+    def redacted_credential_properties_list
+      %w[user password secret]
+    end
+
     protected
 
     def get_file(id, file)
@@ -85,8 +89,8 @@ module Bosh::Blobstore
       out
     end
 
-    def credential_properties_list
-      %w[user password secret]
+    def required_credential_properties_list
+      %w[user password]
     end
 
     def store_in_webdav(content_path, server_path)

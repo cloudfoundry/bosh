@@ -8,7 +8,7 @@ module BaseSharedExamples
       delete:  [[:req, :oid]],
       exists?: [[:req, :oid]],
       sign: [[:req, :oid], [:opt, :verb]],
-      credential_properties: [],
+      redacted_credential_properties_list: [],
     }
 
     expected_interface.each do |method, expected_params|
@@ -68,11 +68,11 @@ module BaseSharedExamples
       end
     end
 
-    describe '#credential_properties' do
-      it "calls wrapped_client's credential_properties" do
+    describe '#redacted_credential_properties_list' do
+      it "calls wrapped_client's redacted_credential_properties_list" do
         result = %w[user password]
-        expect(wrapped_client).to receive(:credential_properties).and_return(result)
-        expect(subject.credential_properties).to eq(result)
+        expect(wrapped_client).to receive(:redacted_credential_properties_list).and_return(result)
+        expect(subject.redacted_credential_properties_list).to eq(result)
       end
     end
   end

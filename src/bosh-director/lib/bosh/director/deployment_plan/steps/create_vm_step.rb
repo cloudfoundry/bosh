@@ -182,7 +182,7 @@ module Bosh::Director
         def remove_blobstore_credentials(env)
           env['bosh'].fetch('blobstores', [{}]).each do |blobstore|
             blobstore.fetch('options', {}).reject! do |k, _|
-              @blobstore.credential_properties.include?(k)
+              @blobstore.redacted_credential_properties_list.include?(k)
             end
           end
         end

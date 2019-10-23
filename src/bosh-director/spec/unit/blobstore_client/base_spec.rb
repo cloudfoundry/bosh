@@ -7,8 +7,12 @@ describe Bosh::Blobstore::BaseClient do
       super(opts)
     end
 
-    def credential_properties_list
+    def required_credential_properties_list
       %w[key anotherkey]
+    end
+
+    def redacted_credential_properties_list
+      %w[key]
     end
   end
 
@@ -104,6 +108,10 @@ describe Bosh::Blobstore::BaseClient do
 
       it 'can be enabled' do
         expect(subject.signing_enabled?).to eq(true)
+      end
+
+      it 'can respond to redacted_credential_properties_list' do
+        expect(subject.redacted_credential_properties_list).to eq(%w[key])
       end
 
       it 'can determine ability to use signed urls based on stemcell api version' do

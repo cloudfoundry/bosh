@@ -30,7 +30,9 @@ module Bosh
       end
 
       def_delegators :@client, :create, :delete, :exists?, :sign,
-                     :signing_enabled?, :credential_properties, :can_sign_urls?
+                     :signing_enabled?, :credential_properties,
+                     :required_credential_properties_list, :redacted_credential_properties_list,
+                     :can_sign_urls?
 
       private
 
