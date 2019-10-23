@@ -5,19 +5,25 @@ require 'prometheus/client'
 module Bosh
   module Director
     class MetricsCollector
-      attr_reader :resurrection_enabled
-
       def initialize(config)
         @config = config
         @logger = config.metrics_server_logger
 
-        @registry = Prometheus::Client.registry
-        @resurrection_enabled = Prometheus::Client::Gauge.new(
+        @resurrection_enabled = Prometheus::Client.registry.gauge(
           :resurrection_enabled,
           docstring: 'Is resurrection enabled? 0 for disabled, 1 for enabled',
         )
 
-        @registry.register(@resurrection_enabled)
+        @queued_tasks = Prometheus::Client.registry.gauge(
+          :queued_tasks,
+          docstring: 'Number of currently enqued tasks',
+        )
+
+        @processing_tasks = Prometheus::Client.registry.gauge(
+          :processing_tasks,
+          docstring: 'Number of currently enqued tasks',
+        )
+
         @scheduler = Rufus::Scheduler.new
       end
 
@@ -67,6 +73,8 @@ module Bosh
         @logger.info('populating metrics')
 
         @resurrection_enabled.set(Api::ResurrectorManager.new.pause_for_all? ? 0 : 1)
+        @queued_tasks.set(Models::Task.where(state: 'queued').count)
+        @processing_tasks.set(Models::Task.where(state: 'processing').count)
 
         @logger.info('populated metrics')
       end

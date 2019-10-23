@@ -3,35 +3,57 @@ require 'spec_helper'
 module Bosh
   module Director
     describe MetricsCollector do
-      let(:metrics_collector) { MetricsCollector.new({}) }
+      let(:scheduler) { double(Rufus::Scheduler) }
+      let(:metrics_collector) { MetricsCollector.new(Config.load_hash(SpecHelper.spec_get_director_config)) }
       let(:resurrector_manager) { instance_double(Api::ResurrectorManager) }
 
       before do
-        Timecop.freeze(Time.now)
-
+        allow(Rufus::Scheduler).to receive(:new).and_return(scheduler)
         allow(Api::ResurrectorManager).to receive(:new).and_return(resurrector_manager)
         allow(resurrector_manager).to receive(:pause_for_all?).and_return(false, true, false)
       end
 
       after do
-        Timecop.return
+        Prometheus::Client.registry.unregister(:resurrection_enabled)
+        Prometheus::Client.registry.unregister(:queued_tasks)
+        Prometheus::Client.registry.unregister(:processing_tasks)
       end
 
       describe 'start' do
-        it 'populates the metrics every 30 seconds' do
-          metrics_collector.start
+        describe 'resurrection_enabled' do
+          it 'populates the metrics every 30 seconds' do
+            allow(scheduler).to receive(:every).with('30s') do |&blk|
+              expect(Prometheus::Client.registry.get(:resurrection_enabled).get).to eq(1)
+              blk.call
+            end
 
-          expect(metrics_collector.resurrection_enabled.get).to eq(1)
+            metrics_collector.start
 
-          Timecop.travel(Time.now + 31)
-          sleep 1
+            expect(scheduler).to have_received(:every)
+            expect(Prometheus::Client.registry.get(:resurrection_enabled).get).to eq(0)
+          end
+        end
 
-          expect(metrics_collector.resurrection_enabled.get).to eq(0)
+        describe 'queued_tasks' do
+          let!(:task1) { Models::Task.make(state: 'queued') }
+          let!(:task2) { Models::Task.make(state: 'queued') }
+          let!(:task3) { Models::Task.make(state: 'processing') }
 
-          Timecop.travel(Time.now + 61)
-          sleep 1
+          it 'populates the metrics every 30 seconds' do
+            allow(scheduler).to receive(:every).with('30s') do |&blk|
+              expect(Prometheus::Client.registry.get(:queued_tasks).get).to eq(2)
+              expect(Prometheus::Client.registry.get(:processing_tasks).get).to eq(1)
+              task2.update(state: 'processing')
 
-          expect(metrics_collector.resurrection_enabled.get).to eq(1)
+              blk.call
+            end
+
+            metrics_collector.start
+
+            expect(scheduler).to have_received(:every)
+            expect(Prometheus::Client.registry.get(:queued_tasks).get).to eq(1)
+            expect(Prometheus::Client.registry.get(:processing_tasks).get).to eq(2)
+          end
         end
       end
     end
