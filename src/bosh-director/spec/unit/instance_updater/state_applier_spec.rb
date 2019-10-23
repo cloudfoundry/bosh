@@ -88,6 +88,11 @@ module Bosh::Director
       instance_plan.network_plans << DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)
       instance.bind_existing_instance_model(instance_model)
 
+      config = Config.load_hash(SpecHelper.spec_get_director_config)
+      identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)
+      allow(config).to receive(:identity_provider).and_return(identity_provider)
+      App.new(config)
+
       allow(AgentClient).to receive(:with_agent_id).with(instance_model.agent_id, instance_model.name).and_return(agent_client)
       allow(agent_client).to receive(:apply)
       allow(rendered_job_templates_cleaner).to receive(:clean)
