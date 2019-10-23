@@ -97,6 +97,9 @@ describe 'director.yml.erb' do
         'user_management' => { 'provider' => 'local' },
         'trusted_certs' => "test_trusted_certs\nvalue",
         'cpi_api_test_max_version' => 2,
+        'metrics_server' => {
+          'port' => 9091,
+        },
       }
     }
   end
