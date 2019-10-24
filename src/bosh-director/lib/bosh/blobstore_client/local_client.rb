@@ -43,6 +43,10 @@ module Bosh::Blobstore
       File.exist?(object_file_path(oid))
     end
 
+    def required_credential_properties_list
+      []
+    end
+
     private
 
     def object_file_path(oid)

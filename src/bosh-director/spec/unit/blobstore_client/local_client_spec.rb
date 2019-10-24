@@ -109,6 +109,14 @@ module Bosh::Blobstore
           expect { LocalClient.new(@options).delete('missing') }.to_not raise_error
         end
       end
+
+      describe 'validation' do
+        it 'has no required credential properties' do
+          agent_env = {}
+          stemcell_api_version = 3
+          subject.validate!(agent_env, stemcell_api_version)
+        end
+      end
     end
   end
 end
