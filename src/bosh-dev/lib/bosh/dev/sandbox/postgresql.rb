@@ -30,7 +30,7 @@ module Bosh::Dev::Sandbox
       @logger.info("Creating postgres database #{db_name}")
       @runner.run(
         "echo #{Shellwords.escape(%(CREATE DATABASE "#{db_name}";))} | " \
-        "psql #{connection_string.gsub(%r{/#{@db_name}$}, 'postgres')} > /dev/null",
+        "psql #{connection_string.gsub(/#{@db_name}$/, 'postgres')} > /dev/null",
       )
     end
 
