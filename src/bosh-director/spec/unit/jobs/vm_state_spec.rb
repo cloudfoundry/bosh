@@ -296,7 +296,6 @@ module Bosh::Director
         status = JSON.parse(Models::Task.first(id: task.id).result_output)
         expect(status['vm_cid']).to eq('fake-vm-cid')
         expect(status['active']).to eq(true)
-        expect(status['disk_cid']).to eq('fake-disk-cid')
         expect(status['disk_cids']).to contain_exactly('fake-disk-cid', 'fake-disk-cid2')
       end
 
