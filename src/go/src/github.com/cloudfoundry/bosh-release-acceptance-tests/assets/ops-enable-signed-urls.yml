@@ -1,0 +1,14 @@
+---
+- type: replace
+  path: /instance_groups/name=bosh/properties/blobstore/enable_signed_urls?
+  value: true
+
+- type: replace
+  path: /instance_groups/name=bosh/properties/blobstore/secret?
+  value: ((blobstore_secret))
+
+- type: replace
+  path: /variables/-
+  value:
+    name: blobstore_secret
+    type: password

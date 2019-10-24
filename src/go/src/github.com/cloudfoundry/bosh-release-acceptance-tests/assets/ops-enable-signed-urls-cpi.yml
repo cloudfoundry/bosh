@@ -1,0 +1,7 @@
+---
+- type: remove
+  path: /instance_groups/name=bosh/jobs/name=docker_cpi/properties/docker_cpi/agent/blobstore/options/user
+
+- type: remove
+  path: /instance_groups/name=bosh/jobs/name=docker_cpi/properties/docker_cpi/agent/blobstore/options/password
+

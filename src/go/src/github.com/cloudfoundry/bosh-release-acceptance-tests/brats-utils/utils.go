@@ -377,6 +377,10 @@ func Bosh(args ...string) *gexec.Session {
 	return ExecCommand(boshBinaryPath, args...)
 }
 
+func BoshQuiet(args ...string) *gexec.Session {
+	return ExecCommandQuiet(boshBinaryPath, args...)
+}
+
 func UploadStemcell(stemcellURL string) {
 	session := Bosh("-n", "upload-stemcell", stemcellURL)
 	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))

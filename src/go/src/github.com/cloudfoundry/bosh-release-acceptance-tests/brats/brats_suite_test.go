@@ -1,18 +1,16 @@
 package brats_test
 
 import (
+	"fmt"
 	"strings"
+	"time"
 
 	bratsutils "github.com/cloudfoundry/bosh-release-acceptance-tests/brats-utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	"fmt"
-	"testing"
-
-	"time"
-
 	"github.com/onsi/gomega/gexec"
+
+	"testing"
 )
 
 const BLOBSTORE_ACCESS_LOG = "/var/vcap/sys/log/blobstore/blobstore_access.log"
