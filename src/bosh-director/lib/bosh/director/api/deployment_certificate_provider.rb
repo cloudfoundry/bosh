@@ -31,7 +31,7 @@ module Bosh::Director::Api
     private
 
     def days_left(cert)
-      ((cert.not_after - Time.now) / 60 / 60 / 24).floor
+      ((cert.not_after.utc - Time.now.utc) / 60 / 60 / 24).floor
     end
 
     def expiry(cert)

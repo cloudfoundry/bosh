@@ -29,7 +29,7 @@ module Bosh::Director::Api
     end
 
     context 'when there are certificate variables' do
-      let(:expire_time) { Time.now + 10.days }
+      let(:expire_time) { Time.now.utc + 10.days }
       let(:mock_x509) { instance_double(OpenSSL::X509::Certificate) }
 
       before(:each) do
