@@ -2,5 +2,5 @@
 
 pushd "$(dirname $0)/../src"
   bundle install
-  bundle exec rake spec:unit
+  bundle exec rake spec:unit:parallel
 popd

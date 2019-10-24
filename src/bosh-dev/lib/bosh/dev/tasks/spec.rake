@@ -128,18 +128,6 @@ namespace :spec do
   namespace :unit do
     runner = Bosh::Dev::TestRunner.new
 
-    desc 'Run all unit tests for ruby components'
-    task :ruby do
-      trap('INT') { exit }
-      runner.ruby
-    end
-
-    desc 'Run all unit tests for ruby components in parallel'
-    task :ruby_parallel do
-      trap('INT') { exit }
-      runner.ruby(parallel: true)
-    end
-
     runner.unit_builds.each do |build|
       desc "Run unit tests for the #{build} component"
       task build.sub(/^bosh[_-]/, '').intern do
@@ -164,11 +152,11 @@ namespace :spec do
     end
 
     desc 'Run all unit tests in parallel'
-    task parallel: %w[spec:release_unit spec:unit:ruby_parallel spec:template_test_unit]
+    task parallel: %w[spec:release_unit spec:template_test_unit spec:unit:core:parallel spec:unit:dev:parallel spec:unit:director-core:parallel spec:unit:director:parallel spec:unit:monitor:parallel spec:unit:registry:parallel spec:unit:template:parallel spec:unit:common:parallel]
   end
 
   desc 'Run all unit tests'
-  task unit: %w[spec:release_unit spec:unit:ruby spec:template_test_unit]
+  task unit: %w[spec:release_unit spec:template_test_unit spec:unit:core spec:unit:dev spec:unit:director-core spec:unit:director spec:unit:monitor spec:unit:registry spec:unit:template spec:unit:common]
 end
 
 desc 'Run unit and integration specs'

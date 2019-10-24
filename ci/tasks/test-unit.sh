@@ -67,4 +67,4 @@ export GOPATH=$(pwd)/go
 gem install -f bundler
 bundle update --bundler
 bundle install --local
-bundle exec rake --trace spec:unit
+bundle exec rake --trace spec:unit:parallel
