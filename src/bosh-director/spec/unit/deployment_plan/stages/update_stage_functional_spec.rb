@@ -79,6 +79,8 @@ module Bosh::Director::DeploymentPlan::Stages
       allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
       allow(blobstore).to receive(:get)
       allow(Bosh::Director::JobRenderer).to receive(:render_job_instances_with_cache)
+      allow(blobstore).to receive(:can_sign_urls?).and_return(false)
+      allow(blobstore).to receive(:validate!)
     end
 
     context 'the director database contains an instance with a static ip but no vm assigned (due to deploy failure)' do
