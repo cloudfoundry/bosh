@@ -187,7 +187,6 @@ var _ = Describe("Blobstore", func() {
 		It("Does not strip blobstore credentials from VMs when only the CPI config changes", func() {
 			bratsutils.StartInnerBosh(
 				fmt.Sprintf("-o %s", bratsutils.AssetPath("ops-enable-signed-urls.yml")),
-				fmt.Sprintf("-o %s", bratsutils.AssetPath("ops-remove-agent-blobstore-credentials.yml")),
 			)
 			bratsutils.UploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
 			bratsutils.UploadStemcell(candidateWardenLinuxStemcellPath)
