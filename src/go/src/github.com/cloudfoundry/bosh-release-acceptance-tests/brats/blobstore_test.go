@@ -101,7 +101,7 @@ var _ = Describe("Blobstore", func() {
 				c.Env.AgentEnv.BlobstoresConfig[0].Options.User
 		}
 
-		It("Uses signed URLs with a stemcell that supports it", func() {
+		XIt("Uses signed URLs with a stemcell that supports it", func() {
 			bratsutils.StartInnerBosh(
 				fmt.Sprintf("-o %s", bratsutils.AssetPath("ops-enable-signed-urls.yml")),
 				fmt.Sprintf("-o %s", bratsutils.AssetPath("ops-enable-signed-urls-cpi.yml")),
@@ -184,7 +184,7 @@ var _ = Describe("Blobstore", func() {
 
 		// This test is documenting existing non-ideal behavior; if it were easy to change
 		// this then it would not be a problem.
-		It("Does not strip blobstore credentials from VMs when only the CPI config changes", func() {
+		XIt("Does not strip blobstore credentials from VMs when only the CPI config changes", func() {
 			bratsutils.StartInnerBosh(
 				fmt.Sprintf("-o %s", bratsutils.AssetPath("ops-enable-signed-urls.yml")),
 			)
