@@ -20,7 +20,7 @@ case "$DB" in
   mysql)
     mv /var/lib/mysql /var/lib/mysql-src
     mkdir /var/lib/mysql
-    mount -t tmpfs -o size=1G tmpfs /var/lib/mysql
+    mount -t tmpfs -o size=512M tmpfs /var/lib/mysql
     mv /var/lib/mysql-src/* /var/lib/mysql/
 
     service mysql start
