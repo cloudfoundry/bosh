@@ -124,7 +124,7 @@ module Bosh::Director
     end
 
     def perform_sync(agent_id, instance, blobstore_id, digest, version, &blk)
-      if blobstore_client.can_sign_urls?(instance.active_vm.stemcell_api_version)
+      if instance.active_vm && blobstore_client.can_sign_urls?(instance.active_vm.stemcell_api_version)
         signed_url = blobstore_client.sign(blobstore_id)
         request = {
           'signed_url' => signed_url,
