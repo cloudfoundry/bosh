@@ -41,10 +41,9 @@ http {
   }
 
   server {
-    listen <%= p('director.port') %>;
+    listen <%= p('director.port') %> ssl;
     <% if p('director.ipv6_listen') %>listen [::]:<%= p('director.port') %>;<% end %>
 
-    ssl                 on;
     ssl_certificate     /var/vcap/jobs/director/config/ssl/director.pem;
     ssl_certificate_key /var/vcap/jobs/director/config/ssl/director.key;
     ssl_session_timeout <%= p('director.timeout') %>;
