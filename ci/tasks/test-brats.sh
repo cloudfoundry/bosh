@@ -5,7 +5,12 @@ set -eu
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 src_dir="${script_dir}/../../.."
 
-"${src_dir}/bosh-src/ci/docker/main-bosh-docker/start-bosh.sh"
+set +e
+source /tmp/local-bosh/director/env
+set -e
+if ! bosh env; then
+  "${src_dir}/bosh-src/ci/docker/main-bosh-docker/start-bosh.sh"
+fi
 
 source /tmp/local-bosh/director/env
 
