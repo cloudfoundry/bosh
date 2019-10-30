@@ -8,9 +8,10 @@ module Bosh::Director
 
       attr_reader :name
 
-      def initialize(name, job_hashes, addon_include, addon_exclude)
+      def initialize(name, job_hashes, addon_include, addon_exclude, addon_level_properties)
         @name = name
         @addon_job_hashes = job_hashes
+        @addon_level_properties = addon_level_properties
         @addon_include = addon_include
         @addon_exclude = addon_exclude
         @links_parser = Bosh::Director::Links::LinksParser.new
@@ -28,9 +29,9 @@ module Bosh::Director
         end
         addon_include = Filter.parse(safe_property(addon_hash, 'include', class: Hash, optional: true), :include, addon_level)
         addon_exclude = Filter.parse(safe_property(addon_hash, 'exclude', class: Hash, optional: true), :exclude, addon_level)
-        validate_no_addon_properties(addon_hash, name)
+        addon_level_properties = safe_property(addon_hash, 'properties', class: Hash, default: {})
 
-        new(name, parsed_addon_jobs, addon_include, addon_exclude)
+        new(name, parsed_addon_jobs, addon_include, addon_exclude, addon_level_properties)
       end
 
       def applies?(deployment_name, deployment_teams, deployment_instance_group)
@@ -62,16 +63,7 @@ module Bosh::Director
         }
       end
 
-      def self.validate_no_addon_properties(addon_hash, name)
-        addon_level_properties = safe_property(addon_hash, 'properties', class: Hash, optional: true)
-        if addon_level_properties
-          raise V1DeprecatedAddOnProperties,
-                "Addon '#{name}' specifies 'properties' which is not supported. 'properties' are only "\
-                "allowed in the 'jobs' array"
-        end
-      end
-
-      private_class_method :parse_and_validate_job, :validate_no_addon_properties
+      private_class_method :parse_and_validate_job
 
       private
 
@@ -86,7 +78,7 @@ module Bosh::Director
           eligible_instance_groups.each do |instance_group|
             instance_group_name = instance_group.name
 
-            job_properties = addon_job_hash['properties']
+            job_properties = addon_job_hash['properties'] || @addon_level_properties
 
             addon_job_object.add_properties(job_properties, instance_group_name)
 

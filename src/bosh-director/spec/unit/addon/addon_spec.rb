@@ -3,8 +3,9 @@ require 'spec_helper'
 module Bosh::Director
   module Addon
     describe Addon, truncation: true do
-      subject(:addon) { Addon.new(addon_name, jobs, includes, excludes) }
+      subject(:addon) { Addon.new(addon_name, jobs, includes, excludes, addon_properties) }
       let(:addon_name) { 'addon-name' }
+
       let(:jobs) do
         [
           {
@@ -22,6 +23,9 @@ module Bosh::Director
           },
         ]
       end
+
+      let(:addon_properties) { {} }
+
       let(:properties) do
         { 'echo_value' => 'addon_prop_value' }
       end
@@ -225,7 +229,7 @@ module Bosh::Director
               jobs[1],
               deployment_model,
               dummy_with_packages_template,
-              job_properties: nil,
+              job_properties: {},
               instance_group_name: 'foobar',
             )
             expect(links_parser).to receive(:parse_consumers_from_job).with(
@@ -291,23 +295,38 @@ module Bosh::Director
             end
           end
 
+          context 'when the addon has top level properties' do
+            let(:addon_properties) { { 'addon' => 'properties' } }
+            let(:job_properties) { nil }
 
-          context 'when the addon jobs have job level properties' do
             let(:jobs) do
-              [
-                { 'name' => 'dummy_with_properties',
-                  'release' => 'dummy',
-                  'provides_links' => [],
-                  'consumes_links' => [],
-                  'properties' => { 'job' => 'properties' } },
-              ]
+              [{
+                'name' => 'dummy_with_properties',
+                'release' => 'dummy',
+                'provides_links' => [],
+                'consumes_links' => [],
+                'properties' => job_properties,
+              }]
             end
 
-            it 'sets jobs properties with addon properties' do
-              expect(instance_group).to(receive(:add_job)) do |added_job|
-                expect(added_job.properties).to eq('foobar' => { 'job' => 'properties' })
+            context 'and the addon has job level properties' do
+              let(:job_properties) { { 'job' => 'properties' } }
+              it 'uses the job level properties' do
+                expect(instance_group).to(receive(:add_job)) do |added_job|
+                  expect(added_job.properties).to eq('foobar' => { 'job' => 'properties' })
+                end
+                addon.add_to_deployment(deployment)
               end
-              addon.add_to_deployment(deployment)
+            end
+
+            context 'and the addon does not have job level properties' do
+              it 'sets the job properties with the top level properties' do
+                expect(instance_group).to(receive(:add_job)) do |added_job|
+                  expect(added_job.properties).to eq('foobar' => { 'addon' => 'properties' })
+                end
+
+                addon.add_to_deployment(deployment)
+              end
             end
           end
         end
@@ -341,10 +360,49 @@ module Bosh::Director
       end
 
       describe '#parse' do
+        context 'properties' do
+          context 'when top level properties are not provided' do
+            let(:addon_hash) { { 'name' => 'addon-name' } }
+
+            it 'defaults to an empty hash' do
+              allow(Addon).to receive(:new)
+
+              Addon.parse(addon_hash)
+
+              expect(Addon).to have_received(:new).with(
+                'addon-name',
+                [],
+                an_instance_of(Filter),
+                an_instance_of(Filter),
+                {}
+              )
+            end
+          end
+
+          context 'when top level properties are provided' do
+            let(:addon_hash) { { 'name' => 'addon-name', 'properties' => { 'property1' => 'value1' } } }
+
+            it 'passes them through to the addon' do
+              allow(Addon).to receive(:new)
+
+              Addon.parse(addon_hash)
+
+              expect(Addon).to have_received(:new).with(
+                'addon-name',
+                [],
+                an_instance_of(Filter),
+                an_instance_of(Filter),
+                'property1' => 'value1',
+              )
+            end
+          end
+        end
+
         context 'when name, jobs, include' do
           let(:include_hash) do
             { 'jobs' => [] }
           end
+
           let(:addon_hash) do
             {
               'name' => 'addon-name',
@@ -383,21 +441,6 @@ module Bosh::Director
           it 'errors' do
             error_string = "Required property 'name' was not specified in object ({\"jobs\"=>[\"addon-name\"]})"
             expect { Addon.parse(addon_hash) }.to raise_error(ValidationMissingField, error_string)
-          end
-        end
-
-        context 'when properties are provided at addon level' do
-          let(:addon_hash) do
-            {
-              'name' => 'addon-name',
-              'properties' => properties,
-            }
-          end
-
-          it 'errors' do
-            error_string =  "Addon 'addon-name' specifies 'properties' which is not supported. 'properties' are only "\
-                "allowed in the 'jobs' array"
-            expect { Addon.parse(addon_hash) }.to raise_error(V1DeprecatedAddOnProperties, error_string)
           end
         end
       end
