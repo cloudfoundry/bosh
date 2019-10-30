@@ -27,12 +27,6 @@ module Bosh
             raise Bosh::Director::V1DeprecatedResourcePools,
                   'resource_pools is no longer supported. You must now define resources in a cloud-config'
           end
-
-          if manifest.key?('properties')
-            raise Bosh::Director::V1DeprecatedGlobalProperties,
-                  "'properties' are no longer supported as a deployment level key. "\
-                  "'properties' are only allowed in the 'jobs' array"
-          end
         end
 
         private
