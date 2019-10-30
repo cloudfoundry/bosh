@@ -8,7 +8,7 @@ module Bosh
         let(:deployment_repo) { DeploymentRepo.new }
         let(:deployment_name) { 'simple' }
         let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
-        let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new }
+        let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new(logger) }
         let(:cloud_configs) { [Models::Config.make(:cloud, content: YAML.dump(cloud_config_hash))] }
         let(:runtime_config_models) { [instance_double(Bosh::Director::Models::Config)] }
         let(:runtime_config_consolidator) { instance_double(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator) }

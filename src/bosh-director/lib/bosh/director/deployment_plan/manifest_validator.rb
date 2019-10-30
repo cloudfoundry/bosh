@@ -2,6 +2,10 @@ module Bosh
   module Director
     module DeploymentPlan
       class ManifestValidator
+        def initialize(logger)
+          @logger = logger
+        end
+
         def validate(manifest)
           raise_if_has_key(manifest, 'vm_types')
           raise_if_has_key(manifest, 'azs')
@@ -27,6 +31,8 @@ module Bosh
             raise Bosh::Director::V1DeprecatedResourcePools,
                   'resource_pools is no longer supported. You must now define resources in a cloud-config'
           end
+
+          @logger.warn_deprecated("Global 'properties' are deprecated. Please use properties defined at the job level.") if manifest.key('properties')
         end
 
         private
