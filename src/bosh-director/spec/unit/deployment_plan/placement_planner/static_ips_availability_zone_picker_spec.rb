@@ -45,7 +45,7 @@ module Bosh::Director::DeploymentPlan
       planner
     end
     let(:planner_factory) { PlannerFactory.new(manifest_validator, deployment_repo, logger) }
-    let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new(logger) }
+    let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new }
     let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, YAML.dump(manifest_hash), cloud_config_hash, nil) }
     let(:instance_group) { planner.instance_groups.first }
     let(:instance_group_availability_zones) { %w[zone1 zone2] }

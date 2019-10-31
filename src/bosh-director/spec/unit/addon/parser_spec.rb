@@ -79,7 +79,7 @@ module Bosh::Director
                 'release' => 'dummy2',
                 'provides' => {},
                 'consumes' => {},
-                'properties' => {},
+                'properties' => nil,
               },
             ],
           )
@@ -88,4 +88,3 @@ module Bosh::Director
     end
   end
 end
-

@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh
   module Director
     describe DeploymentPlan::ManifestValidator do
-      let(:manifest_validator) { DeploymentPlan::ManifestValidator.new(logger) }
+      let(:manifest_validator) { DeploymentPlan::ManifestValidator.new }
       let(:manifest_hash) { Bosh::Spec::Deployments.minimal_manifest }
 
       describe '#validate_manifest' do

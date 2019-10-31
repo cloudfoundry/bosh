@@ -544,7 +544,7 @@ module Bosh::Director
                   'release' => 'dummy2',
                   'provides' => {},
                   'consumes' => {},
-                  'properties' => {},
+                  'properties' => nil,
                 },
               ],
             )

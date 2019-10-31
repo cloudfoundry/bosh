@@ -18,7 +18,7 @@ module Bosh
         include ValidationHelper
 
         def self.create(logger)
-          manifest_validator = Bosh::Director::DeploymentPlan::ManifestValidator.new(logger)
+          manifest_validator = Bosh::Director::DeploymentPlan::ManifestValidator.new
           deployment_repo = Bosh::Director::DeploymentPlan::DeploymentRepo.new
 
           new(

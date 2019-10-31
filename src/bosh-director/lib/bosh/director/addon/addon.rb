@@ -29,6 +29,8 @@ module Bosh::Director
         end
         addon_include = Filter.parse(safe_property(addon_hash, 'include', class: Hash, optional: true), :include, addon_level)
         addon_exclude = Filter.parse(safe_property(addon_hash, 'exclude', class: Hash, optional: true), :exclude, addon_level)
+
+        Config.event_log.warn_deprecated("Top level 'properties' in addons are deprecated. Please define 'properties' at the job level.") if addon_hash.key?('properties')
         addon_level_properties = safe_property(addon_hash, 'properties', class: Hash, default: {})
 
         new(name, parsed_addon_jobs, addon_include, addon_exclude, addon_level_properties)
@@ -59,7 +61,7 @@ module Bosh::Director
           'release' => safe_property(addon_job, 'release', class: String),
           'provides' => safe_property(addon_job, 'provides', class: Hash, default: {}),
           'consumes' => safe_property(addon_job, 'consumes', class: Hash, default: {}),
-          'properties' => safe_property(addon_job, 'properties', class: Hash, optional: true, default: {}),
+          'properties' => safe_property(addon_job, 'properties', class: Hash, optional: true),
         }
       end
 
