@@ -101,9 +101,9 @@ var _ = Describe("Blobstore", func() {
 				c.Env.AgentEnv.BlobstoresConfig[0].Options.User
 		}
 
-		XIt("Uses signed URLs with a stemcell that supports it", func() {
+		It("Uses signed URLs with a stemcell that supports it", func() {
 			bratsutils.StartInnerBosh(
-				fmt.Sprintf("-o %s", bratsutils.AssetPath("ops-enable-signed-urls.yml")),
+				fmt.Sprintf("-o %s", bratsutils.BoshDeploymentAssetPath("enable-signed-urls.yml")),
 				fmt.Sprintf("-o %s", bratsutils.AssetPath("ops-enable-signed-urls-cpi.yml")),
 			)
 			bratsutils.UploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
@@ -143,7 +143,7 @@ var _ = Describe("Blobstore", func() {
 
 		It("falls back to agent credentials on a stemcell that does not support signed URLs", func() {
 			bratsutils.StartInnerBosh(
-				fmt.Sprintf("-o %s", bratsutils.AssetPath("ops-enable-signed-urls.yml")),
+				fmt.Sprintf("-o %s", bratsutils.BoshDeploymentAssetPath("enable-signed-urls.yml")),
 			)
 			bratsutils.UploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
 
@@ -182,11 +182,15 @@ var _ = Describe("Blobstore", func() {
 			Expect(records).To(MatchRegexp("syslog-forwarder")) // presence of anything is shows it has been updated
 		})
 
-		// This test is documenting existing non-ideal behavior; if it were easy to change
-		// this then it would not be a problem.
-		XIt("Does not strip blobstore credentials from VMs when only the CPI config changes", func() {
+		// This test is documenting existing non-ideal behavior: if there is a CPI change, this does not
+		//  trigger jobs to be recreated. With signed urls, we must update the CPI job and remove blobstore
+		//  creds. Operators then must recreate VMs for the new CPI configuration to take into effect. A
+		//  normal "bosh deploy" will not converge to the new CPI configuration
+		// Contrasted with removing the blobstore creds from the agent env. A normal "bosh deploy" will
+		//  cause bosh-director to converge to the new agent env configuration.
+		It("Does not strip blobstore credentials from VMs when only the CPI config changes", func() {
 			bratsutils.StartInnerBosh(
-				fmt.Sprintf("-o %s", bratsutils.AssetPath("ops-enable-signed-urls.yml")),
+				fmt.Sprintf("-o %s", bratsutils.BoshDeploymentAssetPath("enable-signed-urls.yml")),
 			)
 			bratsutils.UploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
 			bratsutils.UploadStemcell(candidateWardenLinuxStemcellPath)
@@ -199,7 +203,7 @@ var _ = Describe("Blobstore", func() {
 			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 
 			bratsutils.StartInnerBosh(
-				fmt.Sprintf("-o %s", bratsutils.AssetPath("ops-enable-signed-urls.yml")),
+				fmt.Sprintf("-o %s", bratsutils.BoshDeploymentAssetPath("enable-signed-urls.yml")),
 				fmt.Sprintf("-o %s", bratsutils.AssetPath("ops-enable-signed-urls-cpi.yml")),
 			)
 			session = bratsutils.Bosh("-n", "deploy", bratsutils.AssetPath("syslog-manifest.yml"),
