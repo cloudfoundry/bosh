@@ -213,66 +213,6 @@ describe 'director.yml.erb' do
         end
       end
 
-      context 'backup destination' do
-        before do
-          merged_manifest_properties['director'].merge!('backup_destination' => {
-            'some_backup_url' => 'http://foo.bar.com',
-            'how_much_to_back_up' => {
-              'all_the_things' => true
-            }
-          })
-        end
-
-        it 'dumps the director.backup_destination at the top level' do
-          expect(parsed_yaml['backup_destination']).to eq({
-            'some_backup_url' => 'http://foo.bar.com',
-            'how_much_to_back_up' => {
-              'all_the_things' => true
-            }
-          })
-        end
-
-        context 'when using s3 blobstore' do
-          before do
-            merged_manifest_properties['director']['backup_destination'] = {
-              'provider' => 's3'
-            }
-          end
-
-          it 'should configure the paths' do
-            expect(parsed_yaml['backup_destination']['provider']).to eq('s3cli')
-            expect(parsed_yaml['backup_destination']['options']['s3cli_config_path']).to eq('/var/vcap/data/director/tmp')
-            expect(parsed_yaml['backup_destination']['options']['s3cli_path']).to eq('/var/vcap/packages/s3cli/bin/s3cli')
-          end
-        end
-
-        context 'when using dav blobstore' do
-          before do
-            merged_manifest_properties['director']['backup_destination'] = {
-              'provider' => 'dav'
-            }
-          end
-
-          it 'should configure the paths' do
-            expect(parsed_yaml['backup_destination']['provider']).to eq('davcli')
-
-            expect(parsed_yaml['backup_destination']['options']['davcli_config_path']).to eq('/var/vcap/data/director/tmp')
-            expect(parsed_yaml['backup_destination']['options']['davcli_path']).to eq('/var/vcap/packages/davcli/bin/davcli')
-          end
-
-          context 'when using signed urls with the blobstore' do
-            before do
-              merged_manifest_properties['blobstore']['enable_signed_urls'] = true
-              merged_manifest_properties['blobstore']['secret'] = 'hmac'
-            end
-
-            it 'should configure the blobstore secret' do
-              expect(parsed_yaml['blobstore']['options']['secret']).to eq('hmac')
-            end
-          end
-        end
-      end
-
       context 'events configuration' do
         context 'when enabled' do
           before do
