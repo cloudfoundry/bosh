@@ -125,8 +125,6 @@ properties:
   director.self_snapshot_schedule:
     description: RufusScheduler cron formatted schedule for self snapshots
     default: '0 0 6 * * * UTC'
-  director.backup_schedule:
-    description: RufusScheduler cron formatted schedule for backups
   director.auto_fix_stateful_nodes:
     description: Enable/Disable auto resolution for stateful nodes for scan_and_fix (true|false)
     default: true
@@ -405,17 +403,6 @@ properties:
   blobstore.secret:
     description: Secret used for HMAC signature for pre-signed urls
 
-  # Blobstore destination for backups
-  director.backup_destination:
-    description: Configuration of the blobstore used by director for backups (dav|simple|s3)
-    example:
-      provider: s3
-      options:
-        bucket_name: some-bucket-name
-        credentials_source: static # or env_or_profile
-        access_key_id: AKIAA1B2C3D4...
-        secret_access_key: a1b2c3d4...
-        region: eu-central-1 #us-east-1 by default
   director.ignore_missing_gateway:
     description: Allow gateway to be omitted from subnet configuration. Boshlite vms(containers) do not require gateway.
     default: false

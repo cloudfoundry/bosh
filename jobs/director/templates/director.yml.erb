@@ -111,13 +111,6 @@ if_p('director.self_snapshot_schedule') do |self_snapshot_schedule|
   }
 end
 
-if_p('director.backup_schedule') do |backup_schedule|
-  params['scheduled_jobs'] << {
-    'command' => 'ScheduledBackup',
-    'schedule' =>  backup_schedule
-  }
-end
-
 params['scheduled_jobs'] << {
   'command' => 'ScheduledOrphanedVMCleanup',
   'schedule' => p('director.vms.cleanup_schedule')
@@ -155,7 +148,7 @@ if_p('director.debug.keep_unreachable_vms') do |keep_unreachable_vms|
 end
 
 if_p('director.enable_virtual_delete_vms') do |enable_virtual_delete_vms|
-	params['enable_virtual_delete_vms'] = enable_virtual_delete_vms
+  params['enable_virtual_delete_vms'] = enable_virtual_delete_vms
 end
 
 params['scan_and_fix'] = {
@@ -398,35 +391,6 @@ if_p('compiled_package_cache.options.blobstore_path') do |blobstore_path|
       'blobstore_path' => blobstore_path
   }
 }
-end
-
-if_p('director.backup_destination') do |backup_destination|
-  params['backup_destination'] = backup_destination
-
-  if backup_destination['provider'] == "s3"
-     params['backup_destination']['provider'] = 's3cli'
-     params['backup_destination']['options'] = params['backup_destination'].fetch('options', {}).merge!({
-       's3cli_config_path' => "/var/vcap/data/director/tmp",
-       's3cli_path' => "/var/vcap/packages/s3cli/bin/s3cli"
-     })
-  end
-
-  if backup_destination['provider'] == "gcs"
-     params['backup_destination']['provider'] = 'gcscli'
-     params['backup_destination']['options'] = params['backup_destination'].fetch('options', {}).merge!({
-       'gcscli_config_path' => "/var/vcap/data/director/tmp",
-       'gcscli_path' => "/var/vcap/packages/bosh-gcscli/bin/bosh-gcscli"
-     })
-  end
-
-  if backup_destination['provider']  == "dav"
-     params['backup_destination']['provider'] = 'davcli'
-     params['backup_destination']['options'] = params['backup_destination'].fetch('options', {}).merge!({
-       'davcli_config_path' => "/var/vcap/data/director/tmp",
-       'davcli_path' => "/var/vcap/packages/davcli/bin/davcli"
-     })
-  end
-
 end
 
 if_p('director.default_ssh_options.gateway_host',

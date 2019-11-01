@@ -554,10 +554,6 @@ module Bosh::Director
       hash.fetch('blobstore')
     end
 
-    def backup_blobstore_config
-      hash['backup_destination']
-    end
-
     def log_access_events
       hash['log_access_events']
     end
