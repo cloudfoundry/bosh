@@ -442,12 +442,6 @@ properties:
   compiled_package_cache.options.sse_kms_key_id:
     description: AWS KMS key ID to use for object encryption. All GET and PUT requests for an object protected by AWS KMS will fail if not made via SSL or using SigV4.
 
-  ntp:
-    description: List of ntp server IPs. pool.ntp.org attempts to return IPs closest to your location, but you can still specify if needed.
-    default:
-      - 0.pool.ntp.org
-      - 1.pool.ntp.org
-
   director.trusted_certs:
     description: Cerfiticates that VMs created by this director should trust in addition to those packaged with the stemcell (PEM encoded; zero or more certs allowed)
     default: ''
