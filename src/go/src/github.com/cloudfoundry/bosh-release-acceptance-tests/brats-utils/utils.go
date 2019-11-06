@@ -1,9 +1,12 @@
 package bratsutils
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -121,6 +124,43 @@ func LoadExternalDBConfig(DBaaS string, mutualTLSEnabled bool, tmpCertDir string
 	}
 
 	return &config
+}
+
+func MetricsServerHTTPClient() *http.Client {
+	cmd := exec.Command("bosh", "int", filepath.Join(innerBoshPath, "creds.yml"), "--path", "/metrics_server_client_tls/ca")
+	caCertificateData, err := cmd.Output()
+	Expect(err).NotTo(HaveOccurred())
+
+	caCertPool := x509.NewCertPool()
+	if ok := caCertPool.AppendCertsFromPEM(caCertificateData); !ok {
+		Fail("Failed to load CA certificate for metrics server")
+	}
+
+	cmd = exec.Command("bosh", "int", filepath.Join(innerBoshPath, "creds.yml"), "--path", "/metrics_server_client_tls/certificate")
+	certificateData, err := cmd.Output()
+	Expect(err).NotTo(HaveOccurred())
+
+	cmd = exec.Command("bosh", "int", filepath.Join(innerBoshPath, "creds.yml"), "--path", "/metrics_server_client_tls/private_key")
+	privateKeyData, err := cmd.Output()
+	Expect(err).NotTo(HaveOccurred())
+
+	certificate, err := tls.X509KeyPair([]byte(certificateData), []byte(privateKeyData))
+	Expect(err).NotTo(HaveOccurred())
+
+	tlsConfig := &tls.Config{
+		MinVersion:               tls.VersionTLS12,
+		PreferServerCipherSuites: true,
+		RootCAs:                  caCertPool,
+		Certificates:             []tls.Certificate{certificate},
+		CipherSuites: []uint16{
+			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+		},
+	}
+
+	httpTransport := &http.Transport{TLSClientConfig: tlsConfig}
+
+	return &http.Client{Transport: httpTransport}
 }
 
 func DeleteDB(dbConfig *ExternalDBConfig) {

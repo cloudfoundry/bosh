@@ -108,6 +108,32 @@ http {
     }
   }
 
+
+<% if p('director.metrics_server.enabled') %>
+  upstream metrics_server {
+    server 127.0.0.1:<%= p('director.metrics_server.backend_port') %>;
+  }
+
+  server {
+    listen <%= p('director.metrics_server.port') %> ssl;
+
+    ssl_certificate     /var/vcap/jobs/director/config/metrics_server/certificate.pem;
+    ssl_certificate_key /var/vcap/jobs/director/config/metrics_server/private_key.key;
+    ssl_session_timeout <%= p('director.timeout') %>;
+    <% if p('director.nginx.ssl_prefer_server_ciphers') %>ssl_prefer_server_ciphers On;<% end %>
+    ssl_protocols <%= p('director.nginx.ssl_protocols') %>;
+    ssl_ciphers <%= p('director.nginx.ssl_ciphers') %>;
+
+    # turn on mutual TLS
+    ssl_client_certificate /var/vcap/jobs/director/config/metrics_server/ca.pem;
+    ssl_verify_client on;
+
+    location / {
+      proxy_pass http://metrics_server;
+    }
+  }
+<% end %>
+
   gzip                 on;
   gzip_min_length      1250;
   gzip_buffers         16 8k;

@@ -1,0 +1,46 @@
+- path: /instance_groups/name=bosh/properties/director/metrics_server?/enabled?
+  type: replace
+  value: true
+- path: /instance_groups/name=bosh/properties/director/metrics_server?/tls?/ca?
+  type: replace
+  value: ((metrics_server_tls.ca))
+- path: /instance_groups/name=bosh/properties/director/metrics_server?/tls?/certificate?
+  type: replace
+  value: ((metrics_server_tls.certificate))
+- path: /instance_groups/name=bosh/properties/director/metrics_server?/tls?/private_key?
+  type: replace
+  value: ((metrics_server_tls.private_key))
+
+# metrics_server ca
+- path: /variables/-
+  type: replace
+  value:
+    name: metrics_server_ca
+    type: certificate
+    options:
+      common_name: bosh-metrics-server
+      is_ca: true
+
+# metrics_server server certs
+- path: /variables/-
+  type: replace
+  value:
+    name: metrics_server_tls
+    type: certificate
+    options:
+      alternative_names:
+      - ((internal_ip)) # external ip?
+      ca: metrics_server_ca
+      extended_key_usage:
+      - server_auth
+
+# metrics_server client certs
+- path: /variables/-
+  type: replace
+  value:
+    name: metrics_server_client_tls
+    type: certificate
+    options:
+      ca: metrics_server_ca
+      extended_key_usage:
+      - client_auth

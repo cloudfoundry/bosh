@@ -576,7 +576,7 @@ module Bosh::Director
 
     def metrics_server_port
       opts = hash.fetch('metrics_server', {})
-      opts.fetch('port', 9091)
+      opts.fetch('backend_port', 9092)
     end
 
     private

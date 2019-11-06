@@ -19,6 +19,9 @@ templates:
   drain: bin/drain
   env.erb: env
   metrics-server: bin/metrics-server
+  metrics_server_ca.pem.erb: config/metrics_server/ca.pem
+  metrics_server_certificate.pem.erb: config/metrics_server/certificate.pem
+  metrics_server_private_key.key.erb: config/metrics_server/private_key.key
   mime.types: config/mime.types
   nats_client_ca_certificate.pem.erb: config/nats_client_ca_certificate.pem
   nats_client_ca_private_key.erb: config/nats_client_ca_private_key
@@ -244,8 +247,17 @@ properties:
     description: 'Enables the metrics server on the director'
     default: false
   director.metrics_server.port:
-    description: 'Enables the metrics server on the director'
+    description: 'Port for nginx to listen for metrics server'
     default: 9091
+  director.metrics_server.backend_port:
+    description: 'Internal port for metrics server to listen to'
+    default: 9092
+  director.metrics_server.tls.ca:
+    description: CA certificate for mutual TLS connections to an external metrics server
+  director.metrics_server.tls.certificate:
+    description: Client certificate for mutual TLS connections to an external metrics server
+  director.metrics_server.tls.private_key:
+    description: Client private key for mutual TLS connections to an external metrics server
 
   # NATs
   nats.address:
