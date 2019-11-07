@@ -374,7 +374,7 @@ func CreateAndUploadBOSHRelease() {
 
 	session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 	Expect(err).ToNot(HaveOccurred())
-	Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
+	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 }
 
 func StopInnerBosh() {
