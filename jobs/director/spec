@@ -46,6 +46,9 @@ templates:
 packages:
 - director
 - nginx
+- libpq
+- postgres-9.4
+- mysql
 - ruby-2.6.3-r0.17.0
 - s3cli
 - davcli
