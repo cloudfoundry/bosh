@@ -33,6 +33,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       stemcell: stemcell,
       links_manager: links_manager,
       update: nil,
+      properties: {},
     )
   end
 

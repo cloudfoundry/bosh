@@ -18,13 +18,13 @@ module Bosh::Director
       private
 
       def parse_releases(runtime_manifest)
-        safe_property(runtime_manifest, 'releases', :class => Array).inject([]) do |releases, release_hash|
+        safe_property(runtime_manifest, 'releases', class: Array).inject([]) do |releases, release_hash|
           releases << RuntimeConfig::Release.parse(release_hash)
         end
       end
 
       def parse_addons(runtime_config_releases, runtime_manifest)
-        Addon::Parser.new(runtime_config_releases,runtime_manifest).parse
+        Addon::Parser.new(runtime_config_releases, runtime_manifest).parse
       end
 
       def parse_variables(runtime_manifest)

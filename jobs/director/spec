@@ -19,6 +19,9 @@ templates:
   drain: bin/drain
   env.erb: env
   metrics-server: bin/metrics-server
+  metrics_server_ca.pem.erb: config/metrics_server/ca.pem
+  metrics_server_certificate.pem.erb: config/metrics_server/certificate.pem
+  metrics_server_private_key.key.erb: config/metrics_server/private_key.key
   mime.types: config/mime.types
   nats_client_ca_certificate.pem.erb: config/nats_client_ca_certificate.pem
   nats_client_ca_private_key.erb: config/nats_client_ca_private_key
@@ -43,9 +46,6 @@ templates:
 packages:
 - director
 - nginx
-- libpq
-- postgres-9.4
-- mysql
 - ruby-2.6.3-r0.17.0
 - s3cli
 - davcli
@@ -125,8 +125,6 @@ properties:
   director.self_snapshot_schedule:
     description: RufusScheduler cron formatted schedule for self snapshots
     default: '0 0 6 * * * UTC'
-  director.backup_schedule:
-    description: RufusScheduler cron formatted schedule for backups
   director.auto_fix_stateful_nodes:
     description: Enable/Disable auto resolution for stateful nodes for scan_and_fix (true|false)
     default: true
@@ -246,8 +244,17 @@ properties:
     description: 'Enables the metrics server on the director'
     default: false
   director.metrics_server.port:
-    description: 'Enables the metrics server on the director'
+    description: 'Port for nginx to listen for metrics server'
     default: 9091
+  director.metrics_server.backend_port:
+    description: 'Internal port for metrics server to listen to'
+    default: 9092
+  director.metrics_server.tls.ca:
+    description: CA certificate for mutual TLS connections to an external metrics server
+  director.metrics_server.tls.certificate:
+    description: Client certificate for mutual TLS connections to an external metrics server
+  director.metrics_server.tls.private_key:
+    description: Client private key for mutual TLS connections to an external metrics server
 
   # NATs
   nats.address:
@@ -405,17 +412,6 @@ properties:
   blobstore.secret:
     description: Secret used for HMAC signature for pre-signed urls
 
-  # Blobstore destination for backups
-  director.backup_destination:
-    description: Configuration of the blobstore used by director for backups (dav|simple|s3)
-    example:
-      provider: s3
-      options:
-        bucket_name: some-bucket-name
-        credentials_source: static # or env_or_profile
-        access_key_id: AKIAA1B2C3D4...
-        secret_access_key: a1b2c3d4...
-        region: eu-central-1 #us-east-1 by default
   director.ignore_missing_gateway:
     description: Allow gateway to be omitted from subnet configuration. Boshlite vms(containers) do not require gateway.
     default: false
@@ -454,12 +450,6 @@ properties:
     description: Server-side encryption algorithm used when storing blobs in S3 (Optional - "AES256"|"aws:kms")
   compiled_package_cache.options.sse_kms_key_id:
     description: AWS KMS key ID to use for object encryption. All GET and PUT requests for an object protected by AWS KMS will fail if not made via SSL or using SigV4.
-
-  ntp:
-    description: List of ntp server IPs. pool.ntp.org attempts to return IPs closest to your location, but you can still specify if needed.
-    default:
-      - 0.pool.ntp.org
-      - 1.pool.ntp.org
 
   director.trusted_certs:
     description: Cerfiticates that VMs created by this director should trust in addition to those packaged with the stemcell (PEM encoded; zero or more certs allowed)

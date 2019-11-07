@@ -31,8 +31,7 @@ module Bosh
           logger.add_appenders(
             Logging.appenders.io(
               'PlannerFactorySpecs IO',
-              logger_io,
-              layout: Logging.layouts.pattern(pattern: '%m\n'),
+              logger_io, layout: Logging.layouts.pattern(pattern: '%m\n')
             ),
           )
           logger
@@ -126,7 +125,10 @@ module Bosh
               }
             end
 
+            let(:expected_properties) { { 'property_one' => 'value_one' } }
+
             before do
+              manifest_hash['properties'] = expected_properties
               allow(deployment_repo)
                 .to receive(:find_or_create_by_name).with(deployment_name, plan_options).and_return(deployment_model)
               allow(runtime_config_consolidator).to receive(:runtime_configs).and_return(runtime_config_models)
@@ -141,6 +143,7 @@ module Bosh
                 runtime_config_models,
                 deployment_model,
                 expected_plan_options,
+                expected_properties,
               ).and_call_original
 
               planner

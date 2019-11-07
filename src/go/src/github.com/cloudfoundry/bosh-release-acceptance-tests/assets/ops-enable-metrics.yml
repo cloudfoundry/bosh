@@ -12,7 +12,3 @@
 - type: replace
   path: /instance_groups/name=bosh/properties/nats/enable_metrics_endpoint?
   value: true
-
-- type: replace
-  path: /instance_groups/name=bosh/properties/director/metrics_server?/enabled
-  value: true

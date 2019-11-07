@@ -28,6 +28,7 @@ module Bosh::Director
           networks: [network],
           releases: fake_releases,
           use_tmpfs_config: nil,
+          properties: {},
         )
       end
       let(:deployment_model) { Models::Deployment.make }
@@ -392,6 +393,44 @@ module Bosh::Director
                       { 'property_1' => 'property_1_value', 'property_2' => { 'life' => 'life_value' } },
                       'instance-group-name',
                     )
+
+                  parsed_instance_group
+                end
+              end
+
+              context 'and there are global properties on the deployment plan' do
+                before do
+                  instance_group_spec['properties'] = {
+                    'property_1' => 'property_1_value',
+                    'property_2' => {
+                      'life' => 'life_value',
+                    },
+                  }
+                end
+
+                it 'merges the global properties with the instance group properties' do
+                  allow(deployment_plan).to receive(:release)
+                    .with('fake-release')
+                    .and_return(job_rel_ver)
+
+                  allow(deployment_plan).to receive(:properties).and_return(
+                    'property_1' => 'ignored',
+                    'property_3' => 'new_value',
+                  )
+
+                  job = make_job('job-name', nil)
+                  allow(job_rel_ver).to receive(:get_or_create_template)
+                    .with('job-name')
+                    .and_return(job)
+
+                  expect(job).to receive(:add_properties).with(
+                    {
+                      'property_1' => 'property_1_value',
+                      'property_2' => { 'life' => 'life_value' },
+                      'property_3' => 'new_value',
+                    },
+                    'instance-group-name',
+                  )
 
                   parsed_instance_group
                 end

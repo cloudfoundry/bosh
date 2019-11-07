@@ -86,16 +86,6 @@ module Bosh
             'resource_pools is no longer supported. You must now define resources in a cloud-config',
           )
         end
-
-        it 'raises a deprecation error when properties is present as a manifest key' do
-          manifest_hash['properties'] = ['foo']
-          expect do
-            manifest_validator.validate(manifest_hash)
-          end.to raise_error(
-            Bosh::Director::V1DeprecatedGlobalProperties,
-            "'properties' are no longer supported as a deployment level key. 'properties' are only allowed in the 'jobs' array",
-          )
-        end
       end
     end
   end

@@ -175,7 +175,6 @@ require 'bosh/director/problem_handlers/missing_vm'
 
 require 'bosh/director/jobs/base_job'
 require 'bosh/director/jobs/backup'
-require 'bosh/director/jobs/scheduled_backup'
 require 'bosh/director/jobs/scheduled_orphaned_disk_cleanup'
 require 'bosh/director/jobs/scheduled_orphaned_network_cleanup'
 require 'bosh/director/jobs/scheduled_orphaned_vm_cleanup'

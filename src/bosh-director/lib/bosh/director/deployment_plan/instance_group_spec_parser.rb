@@ -99,7 +99,7 @@ module Bosh::Director
 
       def parse_jobs(name, is_deploy_action)
         jobs = safe_property(@instance_group_spec, 'jobs', class: Array)
-        instance_group_properties = safe_property(@instance_group_spec, 'properties', class: Hash, default: {})
+        instance_group_properties = extract_global_and_instance_group_properties
         migrated_from = safe_property(@instance_group_spec, 'migrated_from', class: Array, default: [])
 
         release_manager = Api::ReleaseManager.new
@@ -151,6 +151,12 @@ module Bosh::Director
           end
           job
         end
+      end
+
+      def extract_global_and_instance_group_properties
+        # Manifest can contain global and per-instance_group properties section
+        instance_group_properties = safe_property(@instance_group_spec, 'properties', class: Hash, optional: true, default: {})
+        @deployment.properties.recursive_merge(instance_group_properties)
       end
 
       def check_job_uniqueness(name, jobs)

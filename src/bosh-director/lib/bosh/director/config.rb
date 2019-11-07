@@ -554,10 +554,6 @@ module Bosh::Director
       hash.fetch('blobstore')
     end
 
-    def backup_blobstore_config
-      hash['backup_destination']
-    end
-
     def log_access_events
       hash['log_access_events']
     end
@@ -580,7 +576,7 @@ module Bosh::Director
 
     def metrics_server_port
       opts = hash.fetch('metrics_server', {})
-      opts.fetch('port', 9091)
+      opts.fetch('backend_port', 9092)
     end
 
     private

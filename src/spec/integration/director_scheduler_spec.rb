@@ -44,19 +44,6 @@ describe 'director_scheduler', type: :integration do
     end
   end
 
-  describe 'scheduled backups' do
-    before { current_sandbox.scheduler_process.start }
-    after { current_sandbox.scheduler_process.stop }
-
-    it 'backs up BOSH artifacts' do
-      waiter.wait(300) { expect(backups).to_not be_empty }
-    end
-
-    def backups
-      Dir[File.join(current_sandbox.sandbox_root, 'backup_destination', '*')]
-    end
-  end
-
   describe 'orphaned VMs cleanup' do
     before { current_sandbox.scheduler_process.start }
     after { current_sandbox.scheduler_process.stop }

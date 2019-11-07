@@ -1,6 +1,8 @@
 package brats_test
 
 import (
+	"fmt"
+	"io/ioutil"
 	"time"
 
 	bratsutils "github.com/cloudfoundry/bosh-release-acceptance-tests/brats-utils"
@@ -13,6 +15,7 @@ var _ = Describe("nginx with ngx_http_stub_status_module compiled", func() {
 	BeforeEach(func() {
 		bratsutils.StartInnerBosh(
 			"-o", bratsutils.AssetPath("ops-enable-metrics.yml"),
+			"-o", bratsutils.AssetPath("enable-metrics-server.yml"),
 		)
 	})
 
@@ -31,9 +34,14 @@ var _ = Describe("nginx with ngx_http_stub_status_module compiled", func() {
 		Eventually(session, time.Minute).Should(gexec.Exit(0))
 		Expect(string(session.Out.Contents())).To(ContainSubstring("HTTP/1.1 200 OK"))
 
-		session = bratsutils.OuterBosh("-d", bratsutils.InnerBoshDirectorName(), "ssh", "bosh", "-c", "curl -v http://localhost:9091/metrics")
-		Eventually(session, time.Minute).Should(gexec.Exit(0))
-		Expect(string(session.Out.Contents())).To(ContainSubstring("processing_tasks"))
-		Expect(string(session.Out.Contents())).To(ContainSubstring("queued_tasks"))
+		metricsClient := bratsutils.MetricsServerHTTPClient()
+		resp, err := metricsClient.Get(fmt.Sprintf("https://%s:9091/metrics", bratsutils.InnerDirectorIP()))
+		Expect(err).NotTo(HaveOccurred())
+		defer resp.Body.Close()
+
+		contents, err := ioutil.ReadAll(resp.Body)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(string(contents)).To(ContainSubstring("processing_tasks"))
+		Expect(string(contents)).To(ContainSubstring("queued_tasks"))
 	})
 })

@@ -13,13 +13,14 @@ module Bosh::Director
       @logger.info("deleting arp entries for the following ip addresses: #{ip_addresses}")
       instances = filter_instances(vm_cid_to_exclude)
       instances.each do |instance|
-        agent_client(agent_id_for_instance(instance), instance.name).delete_arp_entries(ips: ip_addresses)
+        agent_client(info_for_instance(instance).agent_id, instance.name).delete_arp_entries(ips: ip_addresses)
       end
     end
 
     def sync_dns(instances, blobstore_id, sha1, version)
-      agent_ids = instances.map { |instance| agent_id_for_instance(instance) }
-      @logger.info("agent_broadcaster: sync_dns: sending to #{instances.length} agents #{agent_ids}")
+      instance_agent_scv = instances.map { |instance| [instance, info_for_instance(instance)] }.to_h
+      agent_ids = instance_agent_scv.map { |_, ias| ias.agent_id }
+      @logger.info("agent_broadcaster: sync_dns: sending to #{agent_ids.length} agents #{agent_ids}")
 
       lock = Mutex.new
 
@@ -33,8 +34,9 @@ module Bosh::Director
 
       instances.each do |instance|
         pending.add(instance)
-        agent_id = agent_id_for_instance(instance)
-        instance_to_request_id[instance] = perform_sync(agent_id, instance, blobstore_id, sha1, version) do |response|
+        agent_id = instance_agent_scv[instance].agent_id
+        stemcell_api_version = instance_agent_scv[instance].stemcell_api_version
+        instance_to_request_id[instance] = perform_sync(agent_id, stemcell_api_version, instance.name, blobstore_id, sha1, version) do |response|
           valid_response = (response['value'] == VALID_SYNC_DNS_RESPONSE)
 
           if valid_response
@@ -81,7 +83,7 @@ module Bosh::Director
 
         unresponsive_agents = []
         pending_clone.each do |instance|
-          agent_id = agent_id_for_instance(instance)
+          agent_id = instance_agent_scv[instance].agent_id
           agent_client = agent_client(agent_id, instance.name)
           agent_client.cancel_sync_dns(instance_to_request_id[instance])
 
@@ -118,22 +120,24 @@ module Bosh::Director
       AgentClient.with_agent_id(instance_agent_id, instance_name)
     end
 
-    def agent_id_for_instance(instance)
+    def info_for_instance(instance)
       cached_vm = instance.vms.find(&:active)
-      cached_vm.nil? ? nil : cached_vm.agent_id
+      agent_id = cached_vm.nil? ? nil : cached_vm.agent_id
+      stemcell_api_version = cached_vm.nil? ? 1 : cached_vm.stemcell_api_version
+      OpenStruct.new('agent_id' => agent_id, 'stemcell_api_version' => stemcell_api_version)
     end
 
-    def perform_sync(agent_id, instance, blobstore_id, digest, version, &blk)
-      if blobstore_client.can_sign_urls?(instance.active_vm.stemcell_api_version)
+    def perform_sync(agent_id, sc_version, instance_name, blobstore_id, digest, version, &blk)
+      if blobstore_client.can_sign_urls?(sc_version)
         signed_url = blobstore_client.sign(blobstore_id)
         request = {
           'signed_url' => signed_url,
           'multi_digest' => digest,
           'version' => version,
         }
-        agent_client(agent_id, instance.name).sync_dns_with_signed_url(request, &blk)
+        agent_client(agent_id, instance_name).sync_dns_with_signed_url(request, &blk)
       else
-        agent_client(agent_id, instance.name).sync_dns(blobstore_id, digest, version, &blk)
+        agent_client(agent_id, instance_name).sync_dns(blobstore_id, digest, version, &blk)
       end
     end
 
