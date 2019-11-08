@@ -12,6 +12,11 @@ export BBR_BINARY_PATH="${PWD}/bbr-binary/bbr"
 cp bbr-cli-binary/bbr-*-linux-amd64 $BBR_BINARY_PATH
 chmod +x "${BBR_BINARY_PATH}"
 
+export OVERRIDDEN_BOSH_DEPLOYMENT="${src_dir}/bosh-deployment"
+if [[ -e ${OVERRIDDEN_BOSH_DEPLOYMENT}/bosh.yml ]];then
+  export BOSH_DEPLOYMENT_PATH=${OVERRIDDEN_BOSH_DEPLOYMENT}
+fi
+
 ${src_dir}/bosh-src/ci/docker/main-bosh-docker/start-bosh.sh \
   -o bbr.yml \
   -o uaa.yml \
