@@ -437,6 +437,7 @@ jobs:
         resource: bosh-compiled-candidate-xenial
         trigger: true
         passed: [compile-bosh-dev-release-xenial]
+      - get: bosh-deployment
     - do:
       - put: brats-terraform
         attempts: 2
