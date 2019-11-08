@@ -549,6 +549,7 @@ jobs:
         trigger: true
         passed: [compile-bosh-dev-release-xenial]
       - get: bosh-disaster-recovery-acceptance-tests
+      - get: bosh-deployment
       - get: bbr-cli-binary
         params:
           globs: ["bbr*-linux-amd64"]
