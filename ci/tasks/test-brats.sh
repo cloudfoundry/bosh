@@ -27,7 +27,12 @@ DNS_RELEASE_PATH="$(realpath "$(find "${PWD}"/bosh-dns-release -maxdepth 1 -path
 export DNS_RELEASE_PATH
 CANDIDATE_STEMCELL_TARBALL_PATH="$(realpath "${src_dir}"/stemcell/*.tgz)"
 export CANDIDATE_STEMCELL_TARBALL_PATH
-export BOSH_DEPLOYMENT_PATH="/usr/local/bosh-deployment"
+export OVERRIDDEN_BOSH_DEPLOYMENT=$(realpath "$(dirname $0)/../../../bosh-deployment")
+if [[ -e ${OVERRIDDEN_BOSH_DEPLOYMENT}/bosh.yml ]];then
+  export BOSH_DEPLOYMENT_PATH=${OVERRIDDEN_BOSH_DEPLOYMENT}
+else
+  export BOSH_DEPLOYMENT_PATH="/usr/local/bosh-deployment"
+fi
 export BOSH_DNS_ADDON_OPS_FILE_PATH="${BOSH_DEPLOYMENT_PATH}/experimental/dns-addon-with-api-certificates.yml"
 
 export OUTER_BOSH_ENV_PATH="/tmp/local-bosh/director/env"
