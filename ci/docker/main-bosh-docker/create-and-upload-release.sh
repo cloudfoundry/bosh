@@ -9,7 +9,8 @@ src_dir="${script_dir}/../../../"
 
 pushd "${bosh_path}" > /dev/null
   if [[ ! -e $(find . -maxdepth 1 -name "*.tgz") ]]; then
-    bosh create-release --tarball release.tgz
+    bosh reset-release
+    bosh create-release --force --tarball release.tgz
   fi
 
   bosh_release_path="$(realpath "$(find . -maxdepth 1 -name "*.tgz")")"
@@ -20,7 +21,8 @@ bosh upload-release ${bosh_release_path} --name=bosh
 
 pushd "${src_dir}/src/go/src/github.com/cloudfoundry/bosh-release-acceptance-tests/assets/linked-templates-release" > /dev/null
   if [[ ! -e $(find . -maxdepth 1 -name "*.tgz") ]]; then
-    bosh create-release --tarball release.tgz
+    bosh reset-release
+    bosh create-release --force --tarball release.tgz
   fi
 popd > /dev/null
 
