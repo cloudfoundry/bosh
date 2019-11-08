@@ -11,7 +11,7 @@ export BOSH_RELEASE="${HOME}/workspace/bosh/src/spec/assets/dummy-release.tgz"
 export BOSH_DIRECTOR_RELEASE_PATH=/tmp/bosh-release
 export DNS_RELEASE_PATH=/tmp/bosh-dns-release/release.tgz
 export CANDIDATE_STEMCELL_TARBALL_PATH=/tmp/candidate-warden-ubuntu-stemcell/bosh-stemcell-3586.16-warden-boshlite-ubuntu-trusty-go_agent.tgz
-export BOSH_DNS_ADDON_OPS_FILE_PATH="${HOME}/workspace/bosh-deployment/experimental/dns-addon-with-api-certificates.yml"
+export BOSH_DNS_ADDON_OPS_FILE_PATH="${HOME}/workspace/bosh-deployment/misc/dns-addon.yml"
 
 export BOSH_BINARY_PATH=$(which bosh)
 export BBR_BINARY_PATH=$(which bbr)

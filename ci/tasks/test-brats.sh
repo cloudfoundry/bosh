@@ -33,7 +33,7 @@ if [[ -e ${OVERRIDDEN_BOSH_DEPLOYMENT}/bosh.yml ]];then
 else
   export BOSH_DEPLOYMENT_PATH="/usr/local/bosh-deployment"
 fi
-export BOSH_DNS_ADDON_OPS_FILE_PATH="${BOSH_DEPLOYMENT_PATH}/experimental/dns-addon-with-api-certificates.yml"
+export BOSH_DNS_ADDON_OPS_FILE_PATH="${BOSH_DEPLOYMENT_PATH}/misc/dns-addon.yml"
 
 export OUTER_BOSH_ENV_PATH="/tmp/local-bosh/director/env"
 
