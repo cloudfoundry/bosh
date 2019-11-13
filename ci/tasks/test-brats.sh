@@ -5,6 +5,13 @@ set -eu
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 src_dir="${script_dir}/../../.."
 
+export OVERRIDDEN_BOSH_DEPLOYMENT=$(realpath "$(dirname $0)/../../../bosh-deployment")
+if [[ -e ${OVERRIDDEN_BOSH_DEPLOYMENT}/bosh.yml ]];then
+  export BOSH_DEPLOYMENT_PATH=${OVERRIDDEN_BOSH_DEPLOYMENT}
+else
+  export BOSH_DEPLOYMENT_PATH="/usr/local/bosh-deployment"
+fi
+
 set +e
 source /tmp/local-bosh/director/env
 set -e
@@ -27,12 +34,6 @@ DNS_RELEASE_PATH="$(realpath "$(find "${PWD}"/bosh-dns-release -maxdepth 1 -path
 export DNS_RELEASE_PATH
 CANDIDATE_STEMCELL_TARBALL_PATH="$(realpath "${src_dir}"/stemcell/*.tgz)"
 export CANDIDATE_STEMCELL_TARBALL_PATH
-export OVERRIDDEN_BOSH_DEPLOYMENT=$(realpath "$(dirname $0)/../../../bosh-deployment")
-if [[ -e ${OVERRIDDEN_BOSH_DEPLOYMENT}/bosh.yml ]];then
-  export BOSH_DEPLOYMENT_PATH=${OVERRIDDEN_BOSH_DEPLOYMENT}
-else
-  export BOSH_DEPLOYMENT_PATH="/usr/local/bosh-deployment"
-fi
 export BOSH_DNS_ADDON_OPS_FILE_PATH="${BOSH_DEPLOYMENT_PATH}/misc/dns-addon.yml"
 
 export OUTER_BOSH_ENV_PATH="/tmp/local-bosh/director/env"
