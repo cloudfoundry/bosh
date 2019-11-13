@@ -19,7 +19,6 @@ module Bosh::Blobstore
           s3cli_path:        '/var/vcap/packages/s3cli/bin/s3cli'
       }
     end
-    
     let(:expected_config_file) { File.join(base_dir, 's3_blobstore_config-FAKE_UUID') }
     let(:success_exit_status) { instance_double('Process::Status', exitstatus: 0, success?: true) }
     let(:not_existed_exit_status) { instance_double('Process::Status', exitstatus: 3, success?: true) }
@@ -94,7 +93,6 @@ module Bosh::Blobstore
               Bosh::Director::BadConfig,
               'Inconsistent blobstore configuration: ["access_key_id", "secret_access_key"] are required'
             )
-          
         end
       end
 
