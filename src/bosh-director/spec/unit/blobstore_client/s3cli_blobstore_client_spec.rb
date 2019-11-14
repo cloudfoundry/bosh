@@ -19,7 +19,6 @@ module Bosh::Blobstore
           s3cli_path:        '/var/vcap/packages/s3cli/bin/s3cli'
       }
     end
-
     let(:expected_config_file) { File.join(base_dir, 's3_blobstore_config-FAKE_UUID') }
     let(:success_exit_status) { instance_double('Process::Status', exitstatus: 0, success?: true) }
     let(:not_existed_exit_status) { instance_double('Process::Status', exitstatus: 3, success?: true) }
@@ -67,6 +66,33 @@ module Bosh::Blobstore
 
         it 'should set `none` as credentials_source' do
           expect(JSON.parse(stored_config_file[0])["credentials_source"]).to eq("none")
+        end
+      end
+
+      context 'when using env_or_profile' do
+        let(:env_options) do
+          options.merge(
+            {
+              credentials_source: 'env_or_profile'
+            }
+          ).reject{|k, v| [:access_key_id, :secret_access_key].include? k}
+        end
+        it 'should allow access_key_id and secret_access_key to be unset' do
+          expect(described_class.new(env_options).validate!(env_options, 4)).to be_nil
+        end
+      end
+
+      context 'when not using env_or_profile' do
+        let(:bad_options) do
+          options.reject{|k, v| [:access_key_id, :secret_access_key].include? k}
+        end
+        it 'should require access_key_id and secret_access_key to be set' do
+          expect {
+            described_class.new(bad_options).validate!(bad_options, 4)
+          }.to raise_error(
+              Bosh::Director::BadConfig,
+              'Inconsistent blobstore configuration: ["access_key_id", "secret_access_key"] are required'
+            )
         end
       end
 

@@ -126,7 +126,8 @@ module Bosh::Blobstore
     end
 
     def required_credential_properties_list
-      %w[access_key_id secret_access_key]
+      return [] if @s3cli_options[:credentials_source] == 'env_or_profile'
+      %w[access_key_id secret_access_key] 
     end
 
     # @param [String] path path to file which will be stored in S3
