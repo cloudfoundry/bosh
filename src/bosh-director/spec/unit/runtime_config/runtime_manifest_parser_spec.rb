@@ -191,6 +191,16 @@ module Bosh::Director
           end
         end
       end
+
+      context 'when the runtime manifest does not have a releases section' do
+        let(:runtime_manifest) { { 'tags' => ['a'] } }
+
+        it 'does not fail' do
+          result = subject.parse(runtime_manifest)
+          releases = result.releases
+          expect(releases.count).to eq(0)
+        end
+      end
     end
   end
 end

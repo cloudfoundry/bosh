@@ -18,8 +18,8 @@ module Bosh::Director
       private
 
       def parse_releases(runtime_manifest)
-        safe_property(runtime_manifest, 'releases', class: Array).inject([]) do |releases, release_hash|
-          releases << RuntimeConfig::Release.parse(release_hash)
+        safe_property(runtime_manifest, 'releases', class: Array, default: []).map do |release_hash|
+          RuntimeConfig::Release.parse(release_hash)
         end
       end
 
