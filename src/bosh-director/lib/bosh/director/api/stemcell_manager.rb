@@ -32,6 +32,7 @@ module Bosh::Director
             'cpi' => stemcell.cpi,
             'deployments' => stemcell.deployments.map { |d| { name: d.name } },
             'api_version' => stemcell.api_version,
+            'id' => stemcell.id,
           }
         end
       end

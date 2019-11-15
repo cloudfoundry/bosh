@@ -35,6 +35,7 @@ Sham.define do
     "#{octet}.#{octet}.#{octet}.in-addr.arpa"
   end
   lock_name { |index| "lock-resource-entity#{index}" }
+  id { |index| index }
 end
 
 module Bosh::Director::Models
@@ -73,6 +74,7 @@ module Bosh::Director::Models
 
   Stemcell.blueprint do
     name      { Sham.name }
+    id        { Sham.id }
     version   { Sham.version }
     cid       { Sham.stemcell_cid }
     operating_system { Sham.name }

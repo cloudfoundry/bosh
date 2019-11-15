@@ -52,16 +52,16 @@ module Bosh::Director
       let(:orphaned_vm_deleter) { instance_double(Bosh::Director::OrphanedVMDeleter) }
       subject(:cleanup_artifacts) { Jobs::CleanupArtifacts.new(config) }
 
-      def make_stemcell(name:, version:, operating_system: '')
+      def make_stemcell(name:, version:, operating_system: '', id: 1)
         Models::StemcellUpload.make(name: name, version: version)
-        Models::Stemcell.make(name: name, version: version, operating_system: operating_system)
+        Models::Stemcell.make(name: name, version: version, operating_system: operating_system, id: id)
       end
 
       before do
         fake_locks
 
-        stemcell1 = make_stemcell(name: 'stemcell-a', operating_system: 'gentoo_linux', version: '1')
-        make_stemcell(name: 'stemcell-b', version: '2')
+        stemcell1 = make_stemcell(name: 'stemcell-a', operating_system: 'gentoo_linux', version: '1', id: 1)
+        make_stemcell(name: 'stemcell-b', version: '2', id: 2)
 
         release_version1 = Models::ReleaseVersion.make(version: 1, release: release1)
         Models::ReleaseVersion.make(version: 2, release: release2)
@@ -111,7 +111,7 @@ module Bosh::Director
             expect(blobstore).to have_received(:delete).with('exported_release_id_2')
             expect(result).to eq(
               'Deleted 2 release(s), 2 stemcell(s), 0 extra compiled package(s), 0 orphaned disk(s), 0 orphaned vm(s), ' \
-              "2 exported release(s)\nDeleted 0 dns blob(s) created before #{Time.now}",
+              "2 exported release(s), Deleted 0 dns blob(s) created before #{Time.now}",
             )
             expect(Models::Blob.all).to be_empty
           end
@@ -135,7 +135,7 @@ module Bosh::Director
             result = subject.perform
             expect(result).to eq(
               'Deleted 2 release(s), 2 stemcell(s), 0 extra compiled package(s), 2 orphaned disk(s), 0 orphaned vm(s), ' \
-              "0 exported release(s)\nDeleted 0 dns blob(s) created before #{Time.now}",
+              "0 exported release(s), Deleted 0 dns blob(s) created before #{Time.now}",
             )
 
             expect(Models::OrphanDisk.all).to be_empty
@@ -165,7 +165,7 @@ module Bosh::Director
             result = subject.perform
             expect(result).to eq(
               'Deleted 2 release(s), 2 stemcell(s), 0 extra compiled package(s), 0 orphaned disk(s), 2 orphaned vm(s), ' \
-              "0 exported release(s)\nDeleted 0 dns blob(s) created before #{Time.now}",
+              "0 exported release(s), Deleted 0 dns blob(s) created before #{Time.now}",
             )
 
             expect(Models::OrphanDisk.all).to be_empty
@@ -199,7 +199,7 @@ module Bosh::Director
             expect(compiled_package_deleter).to have_received(:delete).with(orphaned_compiled_package)
             expect(result).to eq(
               'Deleted 2 release(s), 2 stemcell(s), 2 extra compiled package(s), 0 orphaned disk(s), 0 orphaned vm(s), ' \
-              "0 exported release(s)\nDeleted 0 dns blob(s) created before #{Time.now}",
+              "0 exported release(s), Deleted 0 dns blob(s) created before #{Time.now}",
             )
           end
         end
@@ -207,8 +207,8 @@ module Bosh::Director
         context 'when there are more than 2 stemcells and/or releases' do
           context 'and there are no orphaned disks' do
             it 'removes all stemcells and releases' do
-              make_stemcell(name: 'stemcell-a', version: '10')
-              make_stemcell(name: 'stemcell-b', version: '10')
+              make_stemcell(name: 'stemcell-a', version: '10', id: 3)
+              make_stemcell(name: 'stemcell-b', version: '10', id: 4)
 
               Models::ReleaseVersion.make(version: 10, release: release1)
               Models::ReleaseVersion.make(version: 10, release: release2)
@@ -221,7 +221,7 @@ module Bosh::Director
 
               expect(result).to eq(
                 'Deleted 4 release(s), 4 stemcell(s), 0 extra compiled package(s), 0 orphaned disk(s), 0 orphaned vm(s), ' \
-                "0 exported release(s)\nDeleted 0 dns blob(s) created before #{Time.now}",
+                "0 exported release(s), Deleted 0 dns blob(s) created before #{Time.now}",
               )
 
               expect(Models::Stemcell.all).to be_empty
@@ -250,7 +250,7 @@ module Bosh::Director
             expect(locks_acquired).to eq(locks_acquired.uniq)
             expect(result).to eq(
               'Deleted 4 release(s), 2 stemcell(s), 0 extra compiled package(s), 0 orphaned disk(s), 0 orphaned vm(s), ' \
-              "0 exported release(s)\nDeleted 0 dns blob(s) created before #{Time.now}",
+              "0 exported release(s), Deleted 0 dns blob(s) created before #{Time.now}",
             )
           end
         end
@@ -303,7 +303,7 @@ module Bosh::Director
 
           expect(result).to eq(
             'Deleted 0 release(s), 0 stemcell(s), 0 extra compiled package(s), 0 orphaned disk(s), 0 orphaned vm(s), ' \
-            "0 exported release(s)\nDeleted 0 dns blob(s) created before #{Time.now - 3600}",
+            "0 exported release(s), Deleted 0 dns blob(s) created before #{Time.now - 3600}",
           )
           expect(Models::Release.all.count).to eq(2)
           expect(Models::Stemcell.all.count).to eq(2)
@@ -313,10 +313,10 @@ module Bosh::Director
           it 'keeps the 2 latest versions of each stemcell' do
             expect(blobstore).not_to receive(:delete).with('compiled-package-1')
 
-            make_stemcell(name: 'stemcell-a', version: '10')
-            make_stemcell(name: 'stemcell-a', version: '9')
-            make_stemcell(name: 'stemcell-b', version: '10')
-            make_stemcell(name: 'stemcell-b', version: '9')
+            make_stemcell(name: 'stemcell-a', version: '10', id: 3)
+            make_stemcell(name: 'stemcell-a', version: '9', id: 4)
+            make_stemcell(name: 'stemcell-b', version: '10', id: 5)
+            make_stemcell(name: 'stemcell-b', version: '9', id: 6)
 
             expect(event_log).to receive(:begin_stage).with('Deleting stemcells', 2)
             expect(event_log).to receive(:begin_stage).with('Deleting releases', 0)
@@ -326,7 +326,7 @@ module Bosh::Director
 
             expect(result).to eq(
               'Deleted 0 release(s), 2 stemcell(s), 0 extra compiled package(s), 0 orphaned disk(s), 0 orphaned vm(s), ' \
-              "0 exported release(s)\nDeleted 0 dns blob(s) created before #{Time.now - 3600}",
+              "0 exported release(s), Deleted 0 dns blob(s) created before #{Time.now - 3600}",
             )
 
             expect(Models::StemcellUpload.all.count).to eq(4)
@@ -350,7 +350,7 @@ module Bosh::Director
 
             expect(result).to eq(
               'Deleted 2 release(s), 0 stemcell(s), 0 extra compiled package(s), 0 orphaned disk(s), 0 orphaned vm(s), ' \
-              "0 exported release(s)\nDeleted 0 dns blob(s) created before #{Time.now - 3600}",
+              "0 exported release(s), Deleted 0 dns blob(s) created before #{Time.now - 3600}",
             )
 
             expect(Models::Release.all.count).to eq(2)
@@ -363,10 +363,10 @@ module Bosh::Director
             deployment1 = Models::Deployment.make(name: 'first')
             deployment2 = Models::Deployment.make(name: 'second')
 
-            stemcell_with_deployment1 = Models::Stemcell.make(name: 'stemcell-c')
+            stemcell_with_deployment1 = Models::Stemcell.make(name: 'stemcell-c', id: 3)
             stemcell_with_deployment1.add_deployment(deployment1)
 
-            stemcell_with_deployment2 = Models::Stemcell.make(name: 'stemcell-d')
+            stemcell_with_deployment2 = Models::Stemcell.make(name: 'stemcell-d', id: 4)
             stemcell_with_deployment2.add_deployment(deployment2)
 
             release1 = Models::Release.make(name: 'release-c')
@@ -387,7 +387,7 @@ module Bosh::Director
 
             expect(result).to eq(
               'Deleted 0 release(s), 0 stemcell(s), 0 extra compiled package(s), 0 orphaned disk(s), 0 orphaned vm(s), ' \
-              "0 exported release(s)\nDeleted 0 dns blob(s) created before #{Time.now - 3600}",
+              "0 exported release(s), Deleted 0 dns blob(s) created before #{Time.now - 3600}",
             )
 
             expect(Models::Release.all.count).to eq(4)
@@ -411,7 +411,7 @@ module Bosh::Director
 
             expect(result).to eq(
               'Deleted 0 release(s), 0 stemcell(s), 0 extra compiled package(s), 0 orphaned disk(s), 0 orphaned vm(s), ' \
-              "2 exported release(s)\nDeleted 0 dns blob(s) created before #{Time.now - 3600}",
+              "2 exported release(s), Deleted 0 dns blob(s) created before #{Time.now - 3600}",
             )
             expect(Models::Blob.all).to be_empty
           end
@@ -437,7 +437,7 @@ module Bosh::Director
 
             expect(result).to eq(
               'Deleted 0 release(s), 0 stemcell(s), 0 extra compiled package(s), 0 orphaned disk(s), 0 orphaned vm(s), ' \
-              "0 exported release(s)\nDeleted 1 dns blob(s) created before #{Time.now - 3600}",
+              "0 exported release(s), Deleted 1 dns blob(s) created before #{Time.now - 3600}",
             )
             expect(Models::LocalDnsBlob.all).to match_array(recent_dns_blobs)
             expect(Models::Blob.all).to match_array(recent_dns_blobs.map(&:blob))

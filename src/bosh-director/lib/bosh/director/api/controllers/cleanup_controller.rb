@@ -10,6 +10,11 @@ module Bosh::Director
 
         redirect "/tasks/#{task.id}"
       end
+
+      get '/dryrun' do
+        cleanable_artifacts = Bosh::Director::CleanupArtifactManager.new(params[:remove_all] == 'true', logger).show_all
+        JSON.generate(cleanable_artifacts)
+      end
     end
   end
 end
