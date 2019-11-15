@@ -13,6 +13,7 @@ module Bosh::Director
     def start!
       logger.info('starting scheduler')
       add_jobs unless @added_already
+      @scheduler.join
     end
 
     def stop!
