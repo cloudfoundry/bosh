@@ -44,10 +44,7 @@ module Bosh
 
       def stop
         @logger.info('stopping metrics collector')
-
-        # TODO(JM/CH): we should call shutdown once we have updated to a newer
-        # Rufus Scheduler
-        # @scheduler.shutdown
+        @scheduler.shutdown
       end
 
       private

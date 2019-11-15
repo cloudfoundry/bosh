@@ -25,7 +25,7 @@ module Bosh::Director
     let(:job_name) { 'FakeJob' }
     let(:queue) { double('JobQueue') }
     let(:director_name) { 'Test Director' }
-    let(:fake_scheduler) { instance_double('Rufus::Scheduler::PlainScheduler') }
+    let(:fake_scheduler) { instance_double('Rufus::Scheduler') }
     let(:params) do
       [
         'foo',
@@ -35,9 +35,6 @@ module Bosh::Director
     end
 
     before do
-      allow(fake_scheduler).to receive(:start)
-      allow(fake_scheduler).to receive(:join)
-
       allow(Config).to receive(:uuid).and_return(uuid)
       allow(Config).to receive(:name).and_return(director_name)
       allow(Config).to receive(:enable_snapshots).and_return(true)
