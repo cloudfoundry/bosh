@@ -85,6 +85,7 @@ require 'bosh/director/rendered_templates_persister'
 
 require 'bosh/director/audit_logger'
 require 'bosh/director/cycle_helper'
+require 'bosh/director/cleanup_artifact_manager'
 require 'bosh/director/worker'
 require 'bosh/director/password_helper'
 require 'bosh/director/vm_creator'

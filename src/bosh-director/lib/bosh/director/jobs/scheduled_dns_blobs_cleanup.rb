@@ -27,17 +27,27 @@ module Bosh::Director
         @num_blobs_to_keep = params['num_dns_blobs_to_keep']
       end
 
-      def perform
+      def blobs_to_delete
         cutoff_time = Time.now - @max_blob_age
         new_blob_count = Models::LocalDnsBlob.where(Sequel.lit('created_at >= ?', cutoff_time)).count
         old_blobs = Models::LocalDnsBlob.where(Sequel.lit('created_at < ?', cutoff_time)).all
 
+        expired_blobs = []
+        while old_blobs.length + new_blob_count > @num_blobs_to_keep
+          break if old_blobs.empty?
+
+          expired_blobs.push(old_blobs.shift)
+        end
+
+        expired_blobs
+      end
+
+      def perform(blobs = blobs_to_delete)
+        cutoff_time = Time.now - @max_blob_age
+
         num_deleted = 0
 
-        while old_blobs.length + new_blob_count > @num_blobs_to_keep
-          break if old_blobs.length == 0
-
-          blob_to_delete = old_blobs.shift
+        blobs.each do |blob_to_delete|
           App.instance.blobstores.blobstore.delete(blob_to_delete.blob.blobstore_id)
           blob_to_delete.delete
           blob_to_delete.blob.delete

@@ -206,29 +206,32 @@ module Bosh::Director
 
     describe '#find_all_stemcells' do
       before do
-          stemcell_1 = Bosh::Director::Models::Stemcell.create(
-            name: 'fake-stemcell-1',
-            version: 'stemcell_version-1',
-            operating_system: 'stemcell_os-1',
-            cid: 'cloud-id-1',
-          )
-          stemcell_1.add_deployment(Models::Deployment.make(name: 'first'))
-          stemcell_1.add_deployment(Models::Deployment.make(name: 'second'))
-          Bosh::Director::Models::Stemcell.create(
-            name: 'fake-stemcell-3',
-            version: 'stemcell_version-3',
-            operating_system: 'stemcell_os-3',
-            cid: 'cloud-id-3',
-            cpi: 'cpi3'
-          )
-          Bosh::Director::Models::Stemcell.create(
-            name: 'fake-stemcell-2',
-            version: 'stemcell_version-2',
-            operating_system: 'stemcell_os-2',
-            cid: 'cloud-id-2',
-            cpi: 'cpi2',
-            api_version: 2,
-          )
+        stemcell1 = Models::Stemcell.make(
+          name: 'fake-stemcell-1',
+          version: 'stemcell_version-1',
+          operating_system: 'stemcell_os-1',
+          cid: 'cloud-id-1',
+          id: 1,
+        )
+        stemcell1.add_deployment(Models::Deployment.make(name: 'first'))
+        stemcell1.add_deployment(Models::Deployment.make(name: 'second'))
+        Bosh::Director::Models::Stemcell.make(
+          name: 'fake-stemcell-3',
+          version: 'stemcell_version-3',
+          operating_system: 'stemcell_os-3',
+          cid: 'cloud-id-3',
+          cpi: 'cpi3',
+          id: 3,
+        )
+        Bosh::Director::Models::Stemcell.make(
+          name: 'fake-stemcell-2',
+          version: 'stemcell_version-2',
+          operating_system: 'stemcell_os-2',
+          cid: 'cloud-id-2',
+          cpi: 'cpi2',
+          api_version: 2,
+          id: 2,
+        )
       end
       it 'returns a list of all stemcells with the api_version' do
         expect(subject.find_all_stemcells).to eq([
@@ -240,6 +243,7 @@ module Bosh::Director
                 'cpi' => "",
                 'deployments' => [{name: 'first'}, {name: 'second'}],
                 'api_version' => nil,
+                'id' => 1,
               },
               {
                 'name' => 'fake-stemcell-2',
@@ -249,6 +253,7 @@ module Bosh::Director
                 'cpi' => 'cpi2',
                 'deployments' => [],
                 'api_version' => 2,
+                'id' => 2,
               },
               {
                 'name' => 'fake-stemcell-3',
@@ -258,6 +263,7 @@ module Bosh::Director
                 'cpi' => 'cpi3',
                 'deployments' => [],
                 'api_version' => nil,
+                'id' => 3,
               },
               ])
 

@@ -7,6 +7,7 @@ module Bosh::Director
     describe '.pick' do
       before do
         Models::Stemcell.make(operating_system: 'windows', version: '3.1')
+        Models::Stemcell.make(operating_system: 'ubuntu-xenial', version: '97.0', id: 2)
         Models::CompiledPackage.make(stemcell_os: 'windows', stemcell_version: '3.1')
         Models::CompiledPackage.make(stemcell_os: 'windows', stemcell_version: '3.0')
       end
@@ -17,7 +18,12 @@ module Bosh::Director
             stemcell_os: 'windows',
             stemcell_version: '2.1',
           )
-          expect(subject.pick).to contain_exactly(compiled_package_on_old_stemcell)
+          compiled_package_on_stemcell_being_deleted = Models::CompiledPackage.make(
+            stemcell_os: 'ubuntu-xenial',
+            stemcell_version: '97.0',
+          )
+          expect(subject.pick([{ 'operating_system' => 'ubuntu-xenial', 'version' => '97.0', 'id' => 2 }]))
+            .to contain_exactly(compiled_package_on_old_stemcell, compiled_package_on_stemcell_being_deleted)
         end
       end
     end
