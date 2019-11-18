@@ -25,7 +25,7 @@ module Bosh::Director
     let(:job_name) { 'FakeJob' }
     let(:queue) { double('JobQueue') }
     let(:director_name) { 'Test Director' }
-    let(:fake_scheduler) { instance_double('Rufus::Scheduler') }
+    let(:fake_scheduler) { instance_double('Rufus::Scheduler', join: nil) }
     let(:params) do
       [
         'foo',
