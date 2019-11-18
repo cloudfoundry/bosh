@@ -6,13 +6,14 @@ module Bosh::Director
       raise 'scheduled_jobs must be an array' if !scheduled_jobs.nil? && !scheduled_jobs.is_a?(Array)
 
       @scheduled_jobs = scheduled_jobs
-      @scheduler = options.fetch(:scheduler) { Rufus::Scheduler::Scheduler.new }
+      @scheduler = options.fetch(:scheduler) { Rufus::Scheduler.new }
       @queue = options.fetch(:queue) { JobQueue.new }
     end
 
     def start!
       logger.info('starting scheduler')
       add_jobs unless @added_already
+      @scheduler.join
     end
 
     def stop!
