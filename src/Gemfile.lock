@@ -49,7 +49,6 @@ PATH
       sys-filesystem (~> 1.1.0)
       talentbox-delayed_job_sequel (~> 4.3)
       thin
-      tzinfo-data
       unix-crypt (~> 1.3.0)
 
 PATH
@@ -1013,8 +1012,6 @@ GEM
     trollop (2.1.3)
     tzinfo (1.2.4)
       thread_safe (~> 0.1)
-    tzinfo-data (1.2019.3)
-      tzinfo (>= 1.0.0)
     unf (0.1.4)
       unf_ext
     unf_ext (0.0.7.4)
