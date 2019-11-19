@@ -579,6 +579,10 @@ module Bosh::Director
       opts.fetch('backend_port', 9092)
     end
 
+    def metrics_server_enabled
+      hash.fetch('metrics_server', {}).fetch('enabled', false)
+    end
+
     private
 
     attr_reader :hash

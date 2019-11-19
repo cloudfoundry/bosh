@@ -43,6 +43,7 @@ params = {
   'audit_log_path' => '/var/vcap/sys/log/director',
   'parallel_problem_resolution' => p('director.parallel_problem_resolution', true),
   'metrics_server' => {
+    'enabled' => p('director.metrics_server.enabled'),
     'port' => p('director.metrics_server.port'),
   },
 }

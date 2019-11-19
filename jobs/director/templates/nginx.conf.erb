@@ -67,6 +67,10 @@ http {
       alias /;
     }
 
+    location /metrics {
+      internal;
+    }
+
     location / {
       proxy_pass http://director;
 
@@ -130,6 +134,10 @@ http {
 
     location / {
       proxy_pass http://metrics_server;
+    }
+
+    location /director_metrics {
+      proxy_pass http://director/metrics;
     }
   }
 <% end %>

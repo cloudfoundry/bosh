@@ -98,6 +98,7 @@ describe 'director.yml.erb' do
         'trusted_certs' => "test_trusted_certs\nvalue",
         'cpi_api_test_max_version' => 2,
         'metrics_server' => {
+          'enabled' => false,
           'port' => 9091,
         },
       }

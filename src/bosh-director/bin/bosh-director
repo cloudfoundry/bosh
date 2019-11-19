@@ -3,6 +3,10 @@
 require 'bosh/director'
 require 'puma'
 require 'puma/configuration'
+require 'prometheus/middleware/collector'
+require 'prometheus/middleware/exporter'
+require 'prometheus/client'
+require 'prometheus/client/data_stores/direct_file_store'
 
 config_file = nil
 
@@ -23,6 +27,11 @@ route_configuration = Bosh::Director::Api::RouteConfiguration.new(config)
 
 rack_app = Puma::Rack::Builder.app do
   use Rack::CommonLogger
+  if config.metrics_server_enabled
+    Prometheus::Client.config.data_store = Prometheus::Client::DataStores::DirectFileStore.new(dir: '/var/vcap/store/director/metrics')
+    use Prometheus::Middleware::Collector
+    use Prometheus::Middleware::Exporter
+  end
 
   route_configuration.controllers.each do |route, controller|
     map(route) { run controller }
