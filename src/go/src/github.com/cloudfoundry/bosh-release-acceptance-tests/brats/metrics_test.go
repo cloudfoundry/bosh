@@ -44,11 +44,11 @@ var _ = Describe("nginx with ngx_http_stub_status_module compiled", func() {
 		Expect(string(contents)).To(ContainSubstring("processing_tasks"))
 		Expect(string(contents)).To(ContainSubstring("queued_tasks"))
 
-		director_metrics_resp, err := metricsClient.Get(fmt.Sprintf("https://%s:9091/director_metrics", bratsutils.InnerDirectorIP()))
+		api_metrics_resp, err := metricsClient.Get(fmt.Sprintf("https://%s:9091/api_metrics", bratsutils.InnerDirectorIP()))
 		Expect(err).NotTo(HaveOccurred())
-		defer director_metrics_resp.Body.Close()
+		defer api_metrics_resp.Body.Close()
 
-		contents, err = ioutil.ReadAll(director_metrics_resp.Body)
+		contents, err = ioutil.ReadAll(api_metrics_resp.Body)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(string(contents)).To(ContainSubstring("http_server_requests_total"))
 		Expect(string(contents)).To(ContainSubstring("http_server_request_duration_seconds"))
