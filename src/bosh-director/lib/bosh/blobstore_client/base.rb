@@ -115,6 +115,14 @@ module Bosh
         @options.fetch(:enable_signed_urls, false)
       end
 
+      def encryption_key
+        @options.fetch(:encryption_key, nil)
+      end
+
+      def signed_url_encryption_headers
+        encryption_headers
+      end
+
       def can_sign_urls?(stemcell_api_version)
         stemcell_api_version ||= 1
         signing_enabled? && stemcell_api_version >= 3
@@ -171,6 +179,11 @@ module Bosh
       end
 
       def required_credential_properties_list
+        # needs to be implemented in each subclass
+        not_supported
+      end
+
+      def encryption_headers
         # needs to be implemented in each subclass
         not_supported
       end

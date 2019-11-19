@@ -94,15 +94,17 @@ module Bosh::Blobstore
 
     def sign_url(object_id, verb, duration)
       begin
-        out, err, status = Open3.capture3(
-          @gcscli_path.to_s,
-          '-c',
-          @config_file.to_s,
-          'sign',
-          object_id.to_s,
-          verb.to_s,
-          duration.to_s,
-        )
+        if encryption_key
+          out, err, status = Open3.capture3(
+            @gcscli_path.to_s, '-c', @config_file.to_s, 'sign',
+            object_id.to_s, verb.to_s, duration.to_s, 'encrypt'
+          )
+        else
+          out, err, status = Open3.capture3(
+            @gcscli_path.to_s, '-c', @config_file.to_s, 'sign',
+            object_id.to_s, verb.to_s, duration.to_s
+          )
+        end
       rescue Exception => e
         raise BlobstoreError, e.inspect
       end
@@ -113,6 +115,18 @@ module Bosh::Blobstore
 
     def required_credential_properties_list
       %w[json_key]
+    end
+
+    def encryption_headers
+      {
+        'x-goog-encryption-algorithm' => 'AES256',
+        'x-goog-encryption-key' => encryption_key,
+        'x-goog-encryption-key-sha256' => hashed_encryption_key,
+      }
+    end
+
+    def hashed_encryption_key
+      Base64.encode64(Digest::SHA256.digest(Base64.decode64(encryption_key))).strip
     end
 
     # @param [String] path path to file which will be stored in GCS

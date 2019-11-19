@@ -19,6 +19,7 @@ module Bosh::Director::DeploymentPlan
       allow(Bosh::Director::Config).to receive(:dns).and_return('domain_name' => 'test_domain')
       allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
       allow(blobstore).to receive(:can_sign_urls?).and_return(false)
+      allow(blobstore).to receive(:encryption_key)
     end
 
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
@@ -172,6 +173,30 @@ module Bosh::Director::DeploymentPlan
             expect(blobstore).to receive(:sign)
             expect(agent_client).to receive(:apply).with(apply_spec).ordered
             instance.apply_vm_state(instance_spec)
+          end
+
+          context 'and encryption is enabled' do
+            let(:apply_packages) do
+              {
+                'pkg' => {
+                  'version' => '0',
+                  'blobstore_id' => 'bsid',
+                  'signed_url' => 'fake-signed-url',
+                  'blobstore_headers' => { 'header' => 'meow' },
+                },
+              }
+            end
+
+            before do
+              allow(blobstore).to receive(:encryption_key).and_return('key')
+              allow(blobstore).to receive(:signed_url_encryption_headers).and_return('header' => 'meow')
+            end
+
+            it 'adds encryption headers' do
+              expect(blobstore).to receive(:signed_url_encryption_headers)
+              expect(agent_client).to receive(:apply).with(apply_spec).ordered
+              instance.apply_vm_state(instance_spec)
+            end
           end
         end
       end

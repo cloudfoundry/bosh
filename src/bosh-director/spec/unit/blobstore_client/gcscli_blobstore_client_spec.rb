@@ -195,6 +195,24 @@ module Bosh::Blobstore
       it 'provides properties to remove for agent settings' do
         expect(subject.redacted_credential_properties_list).to eq(%w[json_key credentials_source])
       end
+
+      context 'encryption key present' do
+        let(:options) do
+          {
+            bucket_name:    'test',
+            storage_class:  'REGIONAL',
+            gcscli_path:    '/var/vcap/packages/bosh-gcscli/bin/bosh-gcscli',
+            encryption_key: 'z3DJQ+ft7Y//Yh3rnmyP+Xw9IUYw6BcurheJSarz6ks=',
+          }
+        end
+        it 'can build encryption headers with correct hash' do
+          expect(subject.signed_url_encryption_headers).to match(
+                                                                'x-goog-encryption-algorithm' => 'AES256',
+                                                                'x-goog-encryption-key' => 'z3DJQ+ft7Y//Yh3rnmyP+Xw9IUYw6BcurheJSarz6ks=',
+                                                                'x-goog-encryption-key-sha256' => 'gUOk6XciSqMkKgZX2lkeaU/FTlVzUm2DOo8eUMEYHAE='
+                                                            )
+        end
+      end
     end
   end
 end

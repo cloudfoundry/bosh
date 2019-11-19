@@ -293,6 +293,7 @@ module Bosh::Director
       context 'when blobstore and instance are capable of using signed urls' do
         before do
           allow(blobstore).to receive(:can_sign_urls?).and_return(true)
+          allow(blobstore).to receive(:encryption_key)
         end
 
         it 'signs the existing blobstore id' do
@@ -311,6 +312,31 @@ module Bosh::Director
           end
 
           agent_broadcast.sync_dns([instance1], 'fake-blob-id', 'fake-sha1', 1)
+        end
+
+        context 'and encryption is enabled' do
+          before do
+            allow(blobstore).to receive(:encryption_key).and_return('somekey')
+            allow(blobstore).to receive(:signed_url_encryption_headers).and_return('header' => 'value')
+            allow(blobstore).to receive(:sign).with('fake-blob-id').and_return('signed')
+          end
+
+          it 'adds headers to the request' do
+            expect(AgentClient).to receive(:with_agent_id).with(instance1.agent_id, instance1.name) do
+              expect(agent).to receive(:sync_dns_with_signed_url).with(
+                'signed_url' => 'signed',
+                'multi_digest' => 'fake-sha1',
+                'version' => anything,
+                'blobstore_headers' => { 'header' => 'value' },
+              ) do |&blk|
+                blk.call('value' => 'synced')
+                Timecop.freeze(end_time)
+              end
+              agent
+            end
+
+            agent_broadcast.sync_dns([instance1], 'fake-blob-id', 'fake-sha1', 1)
+          end
         end
       end
     end

@@ -26,8 +26,13 @@ module Bosh::Director
       stage.advance_and_track('Finding and packing log files') do
         if @blobstore.can_sign_urls?(instance.active_vm.stemcell_api_version)
           blobstore_id = @blobstore.generate_object_id
-          signed_url = @blobstore.sign(blobstore_id, 'put')
-          fetch_logs_result = agent.fetch_logs_with_signed_url(signed_url: signed_url, log_type: log_type, filters: filters)
+          request = {
+            signed_url: @blobstore.sign(blobstore_id, 'put'),
+            log_type: log_type,
+            filters: filters,
+          }
+          request[:blobstore_headers] = @blobstore.signed_url_encryption_headers if @blobstore.encryption_key
+          fetch_logs_result = agent.fetch_logs_with_signed_url(request)
         else
           fetch_logs_result = agent.fetch_logs(log_type, filters)
           blobstore_id = fetch_logs_result['blobstore_id']
