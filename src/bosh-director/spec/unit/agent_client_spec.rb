@@ -648,9 +648,8 @@ module Bosh::Director
         before do
           vm = instance_double(Models::Vm)
           instance = instance_double(Models::Instance)
-          allow(instance).to receive(:active_vm).and_return(vm)
-          allow(vm).to receive(:cid).and_return('vm-cid')
-          allow(Models::Instance).to receive(:find).and_return(instance)
+          allow(vm).to receive(:id).and_return('vm-cid')
+          allow(Models::Vm).to receive(:find).and_return(vm)
         end
 
         it 'should wait for the agent to be ready' do

@@ -22,6 +22,6 @@ describe 'when compilation vm fails to respond', type: :integration do
     task_debug_logs = bosh_runner.run('task --debug 3', failure_expected: true)
     expect(task_debug_logs).to_not include('Attempt to delete object did not result in a single'\
                                            ' row modification')
-    expect(task_debug_logs).to include('Timed out pinging to')
+    expect(task_debug_logs).to include('Timed out pinging')
   end
 end

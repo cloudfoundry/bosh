@@ -229,7 +229,7 @@ module Bosh::Director
         raise e
       rescue RpcTimeout
         retry if @deadline - Time.now.to_i > 0
-        vm_cid = Models::Instance.find(agent_id: @client_id).active_vm.cid
+        vm_cid = Models::Vm.find(agent_id: @client_id).id
         raise RpcTimeout, "Timed out pinging VM '#{vm_cid}' with agent '#{@client_id}' after #{deadline} seconds"
       rescue RpcRemoteException => e
         retry if e.message =~ /^restarting agent/ && @deadline - Time.now.to_i > 0

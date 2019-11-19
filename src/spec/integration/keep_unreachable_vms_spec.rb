@@ -31,7 +31,7 @@ describe 'keep unreachable vms', type: :integration do
       it 'can successfully deploy after a failure' do
         deploy_simple_manifest(manifest_hash: manifest, failure_expected: true)
         task_logs = bosh_runner.run('task 3', failure_expected: true)
-        expect(task_logs).to include('Timed out pinging to')
+        expect(task_logs).to include('Timed out pinging')
 
         Thread.current[:sandbox].start_nats
         deploy_simple_manifest(manifest_hash: manifest, failure_expected: true)
@@ -46,7 +46,7 @@ describe 'keep unreachable vms', type: :integration do
         manifest['update'] = manifest['update'].merge('vm_strategy' => 'create-swap-delete')
         deploy_simple_manifest(manifest_hash: manifest, failure_expected: true)
         task_logs = bosh_runner.run('task 3', failure_expected: true)
-        expect(task_logs).to include('Timed out pinging to')
+        expect(task_logs).to include('Timed out pinging')
 
         Thread.current[:sandbox].start_nats
         deploy_simple_manifest(manifest_hash: manifest, failure_expected: true)
