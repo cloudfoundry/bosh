@@ -645,6 +645,14 @@ module Bosh::Director
       describe :wait_until_ready do
         let(:client) { AgentClient.new('foo', 'bar', 'foo_instance/1', timeout: 0.1) }
 
+        before do
+          vm = instance_double(Models::Vm)
+          instance = instance_double(Models::Instance)
+          allow(instance).to receive(:active_vm).and_return(vm)
+          allow(vm).to receive(:cid).and_return('vm-cid')
+          allow(Models::Instance).to receive(:find).and_return(instance)
+        end
+
         it 'should wait for the agent to be ready' do
           expect(client).to receive(:ping).and_raise(Bosh::Director::RpcTimeout)
           expect(client).to receive(:ping).and_raise(Bosh::Director::RpcTimeout)
@@ -671,6 +679,12 @@ module Bosh::Director
         it 'should raise an exception if task was cancelled' do
           allow(Config).to receive(:job_cancelled?).and_raise(TaskCancelled)
           expect { client.wait_until_ready }.to raise_error(Bosh::Director::TaskCancelled)
+        end
+
+        it 'should include vm cid in error message to operator' do
+          expect(client).to receive(:ping).and_raise(Bosh::Director::RpcTimeout).at_least(:once)
+
+          expect { client.wait_until_ready(0.1) }.to raise_error(/Timed out pinging VM 'vm-cid' with agent 'bar' after/)
         end
       end
     end

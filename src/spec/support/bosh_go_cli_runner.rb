@@ -86,7 +86,7 @@ module Bosh::Spec
           print_task_debug_logs($1, options)
         end
 
-        if output =~ /Timed out pinging to ([a-z\-\d]+) after \d+ seconds/
+        if output =~ /Timed out pinging VM '[\d\w\-;:]+' with agent '([a-z\-\d]+)' after \d+ seconds/
           print_agent_debug_logs($1)
         end
 
