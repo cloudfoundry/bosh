@@ -40,7 +40,7 @@ def write_tar(configuration_files, manifest, monit, options)
   io
 end
 
-def create_job_tarball(name, monit, configuration_files, options = {})
+def create_job_tarball(name, monit, tmp_file, configuration_files, options = {})
   manifest = {
     'name' => name,
     'templates' => {},
@@ -54,7 +54,6 @@ def create_job_tarball(name, monit, configuration_files, options = {})
   io = write_tar(configuration_files, manifest, monit, options)
   ball = gzip(io.string)
 
-  tmp_file = Tempfile.new('blob')
   File.open(tmp_file.path, 'w') { |f| f.write(ball) }
 
   tmp_file.path
@@ -71,11 +70,17 @@ module Bosh::Director::Core::Templates
       let(:link_provider_intents) { [] }
       let(:dns_encoder) { double('fake dns encoder') }
       let(:release) {double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'fake-release-name', version:'0.1')}
+      let(:tmp_file) { Tempfile.new('blob') }
+
+      after :each do
+        tmp_file.unlink
+      end
 
       it 'returns the jobs template erb objects' do
         tarball_path = create_job_tarball(
           'release-job-name',
           'monit file erb contents',
+          tmp_file,
           { 'test' => {
             'destination' => 'test_dst',
             'contents' => 'test contents' }
@@ -122,7 +127,7 @@ module Bosh::Director::Core::Templates
       end
 
       it 'includes only monit erb object when no other templates exist' do
-        tarball_path = create_job_tarball('release-job-no-templates', 'monit file erb contents', {})
+        tarball_path = create_job_tarball('release-job-no-templates', 'monit file erb contents', tmp_file, {})
 
         job = double(
           'Bosh::Director::DeploymentPlan::Job',
