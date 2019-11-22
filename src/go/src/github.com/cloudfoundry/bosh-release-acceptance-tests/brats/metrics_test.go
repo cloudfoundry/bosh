@@ -15,7 +15,7 @@ var _ = Describe("nginx with ngx_http_stub_status_module compiled", func() {
 	BeforeEach(func() {
 		bratsutils.StartInnerBosh(
 			"-o", bratsutils.AssetPath("ops-enable-metrics.yml"),
-			"-o", bratsutils.BoshDeploymentAssetPath("experimental/enable-metrics.yml")),
+			"-o", bratsutils.BoshDeploymentAssetPath("experimental/enable-metrics.yml"),
 		)
 	})
 
