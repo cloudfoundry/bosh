@@ -648,7 +648,7 @@ module Bosh::Director
         before do
           vm = instance_double(Models::Vm)
           instance = instance_double(Models::Instance)
-          allow(vm).to receive(:id).and_return('vm-cid')
+          allow(vm).to receive(:cid).and_return('vm-cid')
           allow(Models::Vm).to receive(:find).and_return(vm)
         end
 
