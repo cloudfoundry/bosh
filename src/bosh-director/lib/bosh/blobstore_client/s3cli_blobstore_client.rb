@@ -56,6 +56,12 @@ module Bosh::Blobstore
       %w[access_key_id secret_access_key credentials_source]
     end
 
+    def encryption_headers; end
+
+    def encryption?
+      false
+    end
+
     protected
 
     # @param [File] file file to store in S3

@@ -293,7 +293,7 @@ module Bosh::Director
       context 'when blobstore and instance are capable of using signed urls' do
         before do
           allow(blobstore).to receive(:can_sign_urls?).and_return(true)
-          allow(blobstore).to receive(:encryption_key)
+          allow(blobstore).to receive(:encryption?)
         end
 
         it 'signs the existing blobstore id' do
@@ -316,7 +316,7 @@ module Bosh::Director
 
         context 'and encryption is enabled' do
           before do
-            allow(blobstore).to receive(:encryption_key).and_return('somekey')
+            allow(blobstore).to receive(:encryption?).and_return(true)
             allow(blobstore).to receive(:signed_url_encryption_headers).and_return('header' => 'value')
             allow(blobstore).to receive(:sign).with('fake-blob-id').and_return('signed')
           end

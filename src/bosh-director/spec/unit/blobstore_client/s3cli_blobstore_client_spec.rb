@@ -224,5 +224,26 @@ module Bosh::Blobstore
         expect(subject.redacted_credential_properties_list).to eq(%w[access_key_id secret_access_key credentials_source])
       end
     end
+
+    describe 'signed url encryption headers - not implemented' do
+      let(:options) do
+        {
+          bucket_name:            'test',
+          access_key_id:          'KEY',
+          secret_access_key:      'SECRET',
+          s3cli_path:             '/var/vcap/packages/s3cli/bin/s3cli',
+          server_side_encryption: 'aws:kms',
+          sse_kms_key_id:         'somekeything',
+        }
+      end
+
+      it 'should not produce headers based on encryption options' do
+        expect(subject.signed_url_encryption_headers).to be_nil
+      end
+
+      it 'does not support encryption' do
+        expect(subject.encryption?).to eq(false)
+      end
+    end
   end
 end

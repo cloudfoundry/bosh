@@ -407,7 +407,7 @@ module Bosh::Director
       let(:instance_groups_to_compile) { [@j_dea, @j_router] }
 
       before do
-        allow(blobstore).to receive(:encryption_key)
+        allow(blobstore).to receive(:encryption?)
         allow(blobstore).to receive(:can_sign_urls?).and_return(true)
         allow(blobstore).to receive(:generate_object_id).and_return('compiled_id')
         allow(blobstore).to receive(:sign) do |oid, verb|
@@ -465,7 +465,7 @@ module Bosh::Director
       context 'with encrytion' do
         before do
           allow(blobstore).to receive(:signed_url_encryption_headers).and_return('encryption' => true)
-          allow(blobstore).to receive(:encryption_key).and_return('magic')
+          allow(blobstore).to receive(:encryption?).and_return(true)
         end
 
         it 'compiles all packages' do

@@ -115,10 +115,6 @@ module Bosh
         @options.fetch(:enable_signed_urls, false)
       end
 
-      def encryption_key
-        @options.fetch(:encryption_key, nil)
-      end
-
       def signed_url_encryption_headers
         encryption_headers
       end
@@ -146,6 +142,11 @@ module Bosh
       end
 
       def redacted_credential_properties_list
+        # needs to be implemented in each subclass
+        not_supported
+      end
+
+      def encryption?
         # needs to be implemented in each subclass
         not_supported
       end

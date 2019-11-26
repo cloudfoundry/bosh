@@ -112,7 +112,7 @@ module Bosh::Director
                     'version' => version,
                     'deps' => add_signed_urls(requirement.dependency_spec),
                   }
-                  request['blobstore_headers'] = @blobstore.signed_url_encryption_headers if @blobstore.encryption_key
+                  request['blobstore_headers'] = @blobstore.signed_url_encryption_headers if @blobstore.encryption?
 
                   agent_task = instance.agent_client.compile_package_with_signed_url(request) { Config.job_cancelled? }
                   task_result = agent_task['result']
@@ -290,7 +290,7 @@ module Bosh::Director
         def add_signed_urls(dependency_spec)
           dependency_spec.each do |_, spec|
             spec['package_get_signed_url'] = @blobstore.sign(spec['blobstore_id'])
-            spec['blobstore_headers'] = @blobstore.signed_url_encryption_headers if @blobstore.encryption_key
+            spec['blobstore_headers'] = @blobstore.signed_url_encryption_headers if @blobstore.encryption?
           end
         end
       end

@@ -29,7 +29,7 @@ module Bosh::Director
         before do
           allow(InstanceSpec).to receive(:create_from_instance_plan).with(instance_plan).and_return spec
           allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
-          allow(blobstore).to receive(:encryption_key)
+          allow(blobstore).to receive(:encryption?)
         end
 
         shared_examples_for 'perform' do
@@ -182,7 +182,7 @@ module Bosh::Director
               end
 
               before do
-                allow(blobstore).to receive(:encryption_key).and_return('anything')
+                allow(blobstore).to receive(:encryption?).and_return(true)
                 allow(blobstore).to receive(:signed_url_encryption_headers).and_return({})
               end
 

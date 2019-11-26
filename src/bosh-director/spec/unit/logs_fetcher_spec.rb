@@ -82,7 +82,7 @@ module Bosh::Director
 
           before do
             allow(blobstore).to receive(:generate_object_id).and_return(blobstore_id)
-            allow(blobstore).to receive(:encryption_key)
+            allow(blobstore).to receive(:encryption?)
             allow(blobstore).to receive(:sign).with(blobstore_id, 'put').and_return(signed_url)
             allow(SecureRandom).to receive(:uuid).and_return(blobstore_id)
           end
@@ -121,7 +121,7 @@ module Bosh::Director
               let(:encryption_headers) { { 'x-encrypt-header-key' => :value } }
 
               before do
-                allow(blobstore).to receive(:encryption_key).and_return('something')
+                allow(blobstore).to receive(:encryption?).and_return(true)
                 allow(blobstore).to receive(:signed_url_encryption_headers).and_return(encryption_headers)
               end
 
