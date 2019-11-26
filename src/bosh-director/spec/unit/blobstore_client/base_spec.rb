@@ -127,6 +127,10 @@ describe Bosh::Blobstore::BaseClient do
         expect(subject.generate_object_id).to_not be_nil
       end
 
+      it 'does not support encryption by default' do
+        expect(subject.encryption?).to eq(false)
+      end
+
       context 'agent is not capable of using signed urls' do
         let(:stemcell_api_version) { 2 }
 

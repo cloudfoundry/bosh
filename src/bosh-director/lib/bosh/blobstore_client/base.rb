@@ -147,8 +147,7 @@ module Bosh
       end
 
       def encryption?
-        # needs to be implemented in each subclass
-        not_supported
+        false
       end
 
       protected
