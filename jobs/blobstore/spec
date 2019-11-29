@@ -46,7 +46,7 @@ properties:
 
   blobstore.nginx.workers:
     description: Number of nginx workers for blobstore
-    default: 2
+    default: auto
 
   blobstore.nginx.enable_metrics_endpoint:
     description: Expose basic nginx metrics on localhost:<blobstore.port>/stats endpoint. Uses the ngx_http_stub_status_module (see http://nginx.org/en/docs/http/ngx_http_stub_status_module.html).
