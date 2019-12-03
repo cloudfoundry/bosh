@@ -64,7 +64,7 @@ module Bosh::Director
         converge_vm if instance.state != 'detached'
         update_instance
         update_dns_if_changed
-        update_vm_disk_metadata if tag_changes?
+        update_vm_disk_metadata
 
         return if instance.state == 'detached'
 
@@ -120,6 +120,8 @@ module Bosh::Director
       end
 
       def update_vm_disk_metadata
+        return unless tag_changes?
+        return if instance_plan.new? || @needs_recreate
         return if instance.state == 'detached' # disks will get a metadata update when attaching again
 
         @logger.debug("Updating instance #{instance} VM and disk metadata with tags")
