@@ -53,6 +53,7 @@ module Bosh::Director
       let(:unmount_instance_disk_step) { instance_double(Steps::UnmountInstanceDisksStep, perform: nil) }
       let(:detach_instance_disk_step) { instance_double(Steps::DetachInstanceDisksStep, perform: nil) }
       let(:vm_creator) { nil }
+      let(:tags) { {} }
 
       let(:rendered_templates_persistor) do
         instance_double(RenderedTemplatesPersister, persist: nil)
@@ -73,6 +74,7 @@ module Bosh::Director
           release_obsolete_network_plans: nil,
           desired_instance: desired_instance,
           network_settings: network_settings,
+          tags: tags,
         )
       end
 
@@ -144,10 +146,18 @@ module Bosh::Director
           let(:enable_nats_delivered_templates) { false }
           let(:already_detached?) { true }
           let(:update) { 'i-am-an-update' }
+          let(:persistent_disk) { nil }
+          let(:metadata_updater) { nil }
 
           before do
             allow(Config).to receive(:enable_nats_delivered_templates).and_return(enable_nats_delivered_templates)
             allow(Stopper).to receive(:stop)
+
+            cloud_factory = instance_double(CloudFactory)
+            allow(CloudFactory).to receive(:create).and_return(cloud_factory)
+            allow(cloud_factory).to receive(:get).and_return(instance_double(Bosh::Clouds::ExternalCpi))
+            allow(instance_model).to receive(:managed_persistent_disk).and_return(persistent_disk)
+            allow(MetadataUpdater).to receive(:build).and_return(metadata_updater)
 
             update_procedure.perform
           end
@@ -362,9 +372,28 @@ module Bosh::Director
           context 'when the instance state is not detached' do
             let(:active_vm) { Models::Vm.make }
 
-            it 'updates the instance report vm and persistents disks' do
+            it 'updates the instance report vm and persistent disks' do
               expect(instance_report).to have_received(:vm=).with(active_vm)
               expect(disk_manager).to have_received(:update_persistent_disk).with(instance_plan)
+            end
+
+            context 'when tags changed' do
+              let(:tags) { { 'tag' => 'value' } }
+              let(:instance_plan_changes) { [:tags] }
+              let(:metadata_updater) { instance_double(MetadataUpdater, update_vm_metadata: nil, update_disk_metadata: nil) }
+
+              it 'updates tags for VM' do
+                expect(metadata_updater).to have_received(:update_vm_metadata).with(anything, active_vm, tags)
+              end
+
+              context 'and there is a disk' do
+                let(:persistent_disk) { Bosh::Director::Models::PersistentDisk.make }
+
+                it 'updates tags for VM and disk' do
+                  expect(metadata_updater).to have_received(:update_vm_metadata)
+                  expect(metadata_updater).to have_received(:update_disk_metadata).with(anything, persistent_disk, tags)
+                end
+              end
             end
 
             context 'and the instance vm is being recreated' do

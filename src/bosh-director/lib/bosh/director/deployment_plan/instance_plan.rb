@@ -86,6 +86,7 @@ module Bosh
           @changes << :state if state_changed?
           @changes << :dns if dns_changed?
           @changes << :trusted_certs if instance.trusted_certs_changed?
+          @changes << :tags if tags_changed?
           @changes
         end
 
@@ -389,6 +390,15 @@ module Bosh
 
           changed =  current_spec != job_spec
           log_changes(__method__, current_spec, job_spec, @instance) if changed
+          changed
+        end
+
+        def tags_changed?
+          desired_tags = @tags
+          existing_tags = @existing_instance.deployment.tags if @existing_instance
+
+          changed = desired_tags != existing_tags
+          log_changes(__method__, existing_tags, desired_tags, @instance) if changed
           changed
         end
 

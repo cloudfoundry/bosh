@@ -64,6 +64,7 @@ module Bosh::Director
         converge_vm if instance.state != 'detached'
         update_instance
         update_dns_if_changed
+        update_vm_disk_metadata if tag_changes?
 
         return if instance.state == 'detached'
 
@@ -118,6 +119,16 @@ module Bosh::Director
         instance.update_state
       end
 
+      def update_vm_disk_metadata
+        return if instance.state == 'detached' # disks will get a metadata update when attaching again
+
+        @logger.debug("Updating instance #{instance} VM and disk metadata with tags")
+        tags = instance_plan.tags
+        cloud = CloudFactory.create.get(instance.model.active_vm.cpi)
+        MetadataUpdater.build.update_disk_metadata(cloud, instance.model.managed_persistent_disk, tags) if instance.model.managed_persistent_disk
+        MetadataUpdater.build.update_vm_metadata(instance.model, instance.model.active_vm, tags)
+      end
+
       def converge_vm
         recreate = @needs_recreate || (instance_plan.should_create_swap_delete? && instance_plan.instance.model.vms.count > 1)
 
@@ -131,6 +142,10 @@ module Bosh::Director
 
       def dns_change_only?
         instance_plan.changes.include?(:dns) && instance_plan.changes.size == 1
+      end
+
+      def tag_changes?
+        instance_plan.changes.include?(:tags)
       end
 
       def stop
