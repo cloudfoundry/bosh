@@ -71,6 +71,7 @@ shared:
     task: teardown
     tags: [vsphere-v6.5]
     file: bosh-src/ci/bats/tasks/destroy-director.yml
+    attempts: 3
 
 jobs:
   - name: gate
@@ -348,12 +349,10 @@ jobs:
           params:
             STEMCELL_NAME: bosh-vsphere-esxi-ubuntu-xenial-go_agent
         - <<: *run-bats
-        ensure:
-          do:
-            - <<: *teardown
       ensure:
         do:
-        - {put: environment, params: {release: environment}}
+        - <<: *teardown
+        - {put: environment, params: {release: environment}, attempts: 3}
 
   - name: bats-ubuntu-xenial-aws
     serial: true
@@ -404,6 +403,7 @@ jobs:
           do:
           - task: teardown
             file: bosh-src/ci/bats/tasks/destroy-director.yml
+            attempts: 3
           ensure:
             do:
             - task: ensure-terminated
@@ -415,6 +415,7 @@ jobs:
                 AWS_SECRET_ACCESS_KEY: ((aws_secret_key__primary))
                 AWS_DEFAULT_REGION:    ((aws_region__primary))
             - put: terraform
+              attempts: 3
               params:
                 terraform_source: bosh-src/ci/bats/iaas/aws/terraform
                 env_name: bats-ubuntu-xenial-aws-((branch_name))
@@ -514,6 +515,7 @@ jobs:
           input_mapping:
             terraform-output: brats-terraform
         - put: brats-terraform
+          attempts: 3
           get_params: { action: destroy }
           params:
             env_name: brats-ubuntu-xenial-((branch_name))
@@ -614,6 +616,7 @@ jobs:
         do:
         - task: teardown
           file: bosh-src/ci/bats/tasks/destroy-director.yml
+          attempts: 3
         ensure:
           do:
           - task: ensure-terminated
@@ -625,6 +628,7 @@ jobs:
               AWS_SECRET_ACCESS_KEY: ((aws_secret_key__primary))
               AWS_DEFAULT_REGION:    ((aws_region__primary))
           - put: terraform
+            attempts: 3
             params:
               terraform_source: bosh-src/ci/bats/iaas/aws/terraform
               env_name: upgrade-ubuntu-xenial-aws-((branch_name))
