@@ -159,7 +159,7 @@ module Bosh::Director
 
         @current_state = spec.full_spec
 
-        apply_spec = spec.as_apply_spec
+        apply_spec = Bosh::Common::DeepCopy.copy(spec.as_apply_spec)
 
         blobstore = App.instance.blobstores.blobstore
         if blobstore.can_sign_urls?(@stemcell.api_version) && !!apply_spec['packages']
@@ -170,7 +170,6 @@ module Bosh::Director
         end
 
         agent_client.apply(apply_spec)
-
         @model.update(spec: @current_state)
       end
 

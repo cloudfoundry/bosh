@@ -1685,10 +1685,23 @@ module Bosh::Director::DeploymentPlan
       end
 
       describe 'when packages have not changed' do
-        before { allow(instance).to receive(:current_packages).and_return({}) }
+        before do
+          allow(instance).to receive(:current_packages).and_return({ 'old' => {'blobstore_id' => 'id'} })
+          allow(instance_group).to receive(:package_spec).and_return({ 'old' => {'blobstore_id' => 'id'} })
+        end
 
         it 'should return false' do
           expect(instance_plan.packages_changed?).to eq(false)
+        end
+
+        context 'and signed urls are enabled' do
+          before do
+            allow(instance_group).to receive(:package_spec).and_return({ 'old' => {'blobstore_id' => 'id', 'signed_url' => "url" }})
+          end
+
+          it 'should sanitize the spec and return false' do
+            expect(instance_plan.packages_changed?).to eq(false)
+          end
         end
       end
     end

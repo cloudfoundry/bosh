@@ -405,7 +405,7 @@ module Bosh
         def packages_changed?
           instance_group = @desired_instance.instance_group
 
-          changed = instance_group.package_spec != @instance.current_packages
+          changed = comparable_package_spec(instance_group.package_spec) != @instance.current_packages
           log_changes(__method__, @instance.current_packages, instance_group.package_spec, @instance) if changed
           changed
         end
@@ -481,6 +481,16 @@ module Bosh
 
           spec['templates'] = spec['templates'].sort_by { |t| t['name'] } if spec.key?('templates')
           spec.select { |k, _| %w[name templates].include?(k) }
+        end
+
+        def comparable_package_spec(package_spec)
+          package_comparison_keys = %w[blobstore_id sha1 name version]
+
+          comparable_package_spec = Bosh::Common::DeepCopy.copy(package_spec)
+          comparable_package_spec.each do |_name, spec|
+            spec.delete_if { |k, _| !package_comparison_keys.include?(k) }
+          end
+          comparable_package_spec
         end
       end
     end
