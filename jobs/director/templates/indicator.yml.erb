@@ -1,0 +1,23 @@
+---
+apiVersion: indicatorprotocol.io/v1
+kind: IndicatorDocument
+
+metadata:
+  labels:
+    deployment: <%= p("director.name") %>
+  
+spec:
+  product:
+    name: bosh_director
+    version: 270.9.0
+  
+  indicators:
+  - name: queued_tasks
+    promql: min_over_time(queued_tasks[10m])
+    thresholds:
+    - level: warning
+      operator: gt
+      value: <%= p("indicators.queued_tasks_threshold")%>
+    documentation:
+      title: Queued Tasks
+      description: Alerts when the queued task count is over the threshold for 10 minutes. Tasks are queued when all director workers are busy.

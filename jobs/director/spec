@@ -18,6 +18,7 @@ templates:
   director: bin/director
   drain: bin/drain
   env.erb: env
+  indicator.yml.erb: config/indicator.yml
   metrics-server: bin/metrics-server
   metrics_server_ca.pem.erb: config/metrics_server/ca.pem
   metrics_server_certificate.pem.erb: config/metrics_server/certificate.pem
@@ -475,3 +476,9 @@ properties:
     description: User to access the Registry
   registry.password:
     description: Password to access the Registry
+
+  # Indicators
+  # Indicators are meant to be consumed by downstream services, bosh does not send any alerts based on the indicators
+  indicators.queued_tasks_threshold:
+    description: Amount of tasks queued for a certain time before alerts are sent
+    default: 10
