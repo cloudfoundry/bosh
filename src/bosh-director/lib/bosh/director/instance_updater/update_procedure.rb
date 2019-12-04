@@ -42,9 +42,17 @@ module Bosh::Director
         @links_manager.bind_links_to_instance(instance)
         instance.update_variable_set
 
-        if dns_change_only?
-          @logger.debug('Only change is DNS configuration')
-          update_dns_if_changed
+        unless full_update_required?
+          if instance_plan.changes.include?(:tags)
+            @logger.debug('Minimal update: VM and disk tags')
+            update_vm_disk_metadata
+          end
+
+          if instance_plan.changes.include?(:dns)
+            @logger.debug('Minimal update: DNS configuration')
+            update_dns_if_changed
+          end
+
           return
         end
 
@@ -120,7 +128,7 @@ module Bosh::Director
       end
 
       def update_vm_disk_metadata
-        return unless tag_changes?
+        return unless instance_plan.changes.include?(:tags)
         return if instance_plan.new? || @needs_recreate
         return if instance.state == 'detached' # disks will get a metadata update when attaching again
 
@@ -142,12 +150,16 @@ module Bosh::Director
         instance.update_instance_settings unless recreate
       end
 
-      def dns_change_only?
-        instance_plan.changes.include?(:dns) && instance_plan.changes.size == 1
-      end
+      # Full update drains jobs and starts them again
+      def full_update_required?
+        return true if instance_plan.changes.count > 2
 
-      def tag_changes?
-        instance_plan.changes.include?(:tags)
+        # Only DNS and tag changes do not require a full update
+        return false if instance_plan.changes.sort == %i[dns tags]
+
+        return false if instance_plan.changes.first == :dns || instance_plan.changes.first == :tags
+
+        true
       end
 
       def stop

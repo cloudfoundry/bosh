@@ -54,6 +54,8 @@ module Bosh::Director
       let(:detach_instance_disk_step) { instance_double(Steps::DetachInstanceDisksStep, perform: nil) }
       let(:vm_creator) { nil }
       let(:tags) { {} }
+      let(:metadata_updater) { instance_double(MetadataUpdater, update_vm_metadata: nil, update_disk_metadata: nil) }
+      let(:persistent_disk) { nil }
 
       let(:rendered_templates_persistor) do
         instance_double(RenderedTemplatesPersister, persist: nil)
@@ -86,6 +88,7 @@ module Bosh::Director
           agent_id: agent_id,
           name: instance_name,
           vms: instance_vms,
+          managed_persistent_disk: persistent_disk,
         )
       end
 
@@ -110,6 +113,10 @@ module Bosh::Director
         allow(Api::SnapshotManager).to receive(:take_snapshot)
         allow(InstanceUpdater::StateApplier).to receive(:new).and_return(state_applier)
         allow(AgentClient).to receive(:with_agent_id).and_return(agent)
+        cloud_factory = instance_double(CloudFactory)
+        allow(CloudFactory).to receive(:create).and_return(cloud_factory)
+        allow(cloud_factory).to receive(:get).and_return(instance_double(Bosh::Clouds::ExternalCpi))
+        allow(MetadataUpdater).to receive(:build).and_return(metadata_updater)
       end
 
       describe '#perform' do
@@ -142,22 +149,56 @@ module Bosh::Director
           end
         end
 
+        context 'when the only changes are tags' do
+          let(:instance_plan_changes) { [:tags] }
+          let(:tags) { { 'tag' => 'value' } }
+          let(:active_vm) { Models::Vm.make }
+          let(:persistent_disk) { Models::PersistentDisk.make }
+
+          it 'updates VM and disk metadata without doing anything else' do
+            allow(instance_plan).to receive(:already_detached?) { raise 'Should never get here!' }
+
+            update_procedure.perform
+
+            expect(links_manager).to have_received(:bind_links_to_instance).with(instance)
+            expect(instance).to have_received(:update_variable_set)
+            expect(metadata_updater).to have_received(:update_vm_metadata).with(instance_model, active_vm, tags)
+            expect(metadata_updater).to have_received(:update_disk_metadata).with(anything, anything, tags)
+          end
+        end
+
+        context 'when both tags and DNS changed' do
+          let(:instance_plan_changes) { %i[tags dns] }
+          let(:tags) { { 'tag' => 'value' } }
+          let(:dns_changed?) { true }
+          let(:active_vm) { Models::Vm.make }
+          let(:persistent_disk) { Models::PersistentDisk.make }
+
+          it 'updates metadata and DNS without doing anything else' do
+            allow(instance_plan).to receive(:already_detached?) { raise 'Should never get here!' }
+
+            update_procedure.perform
+
+            expect(links_manager).to have_received(:bind_links_to_instance).with(instance)
+            expect(instance).to have_received(:update_variable_set)
+            expect(metadata_updater).to have_received(:update_vm_metadata).with(instance_model, active_vm, tags)
+            expect(metadata_updater).to have_received(:update_disk_metadata).with(anything, anything, tags)
+            expect(dns_state_updater).to have_received(:update_dns_for_instance).with(
+              instance_plan,
+              dns_record_info,
+            )
+          end
+        end
+
         context 'when there are more changes' do
           let(:enable_nats_delivered_templates) { false }
           let(:already_detached?) { true }
           let(:update) { 'i-am-an-update' }
           let(:persistent_disk) { nil }
-          let(:metadata_updater) { nil }
 
           before do
             allow(Config).to receive(:enable_nats_delivered_templates).and_return(enable_nats_delivered_templates)
             allow(Stopper).to receive(:stop)
-
-            cloud_factory = instance_double(CloudFactory)
-            allow(CloudFactory).to receive(:create).and_return(cloud_factory)
-            allow(cloud_factory).to receive(:get).and_return(instance_double(Bosh::Clouds::ExternalCpi))
-            allow(instance_model).to receive(:managed_persistent_disk).and_return(persistent_disk)
-            allow(MetadataUpdater).to receive(:build).and_return(metadata_updater)
 
             update_procedure.perform
           end
@@ -380,7 +421,6 @@ module Bosh::Director
             context 'when tags changed' do
               let(:tags) { { 'tag' => 'value' } }
               let(:instance_plan_changes) { [:tags] }
-              let(:metadata_updater) { instance_double(MetadataUpdater, update_vm_metadata: nil, update_disk_metadata: nil) }
 
               it 'updates tags for VM' do
                 expect(metadata_updater).to have_received(:update_vm_metadata).with(anything, active_vm, tags)
