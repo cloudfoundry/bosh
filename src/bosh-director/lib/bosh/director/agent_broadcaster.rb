@@ -42,7 +42,7 @@ module Bosh::Director
           if valid_response
             updated_rows = Models::AgentDnsVersion.where(agent_id: agent_id).update(dns_version: version)
 
-            if updated_rows == 0
+            if updated_rows.zero?
               begin
                 Models::AgentDnsVersion.create(agent_id: agent_id, dns_version: version)
               rescue Sequel::UniqueConstraintViolation
@@ -93,7 +93,7 @@ module Bosh::Director
 
           unresponsive_agents << agent_id
         end
-        if num_unresponsive > 0
+        if num_unresponsive.positive?
           @logger.warn("agent_broadcaster: sync_dns: no response received for #{num_unresponsive} agent(s): [#{unresponsive_agents.join(', ')}]")
         end
 
