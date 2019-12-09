@@ -28,7 +28,7 @@ instance_groups:
               - job_name: bosh
                 static_configs:
                   - targets:
-                      - 10.0.0.6:9091
+                      - ((internal_ip)):9091
                 scheme: https
                 tls_config:
                   ca_file: /var/vcap/jobs/prometheus2/certs/ca.cert
@@ -41,7 +41,7 @@ instance_groups:
                 metrics_path: '/api_metrics'
                 static_configs:
                   - targets:
-                      - 10.0.0.6:9091
+                      - ((internal_ip)):9091
                 scheme: https
                 tls_config:
                   ca_file: /var/vcap/jobs/prometheus2/certs/ca.cert

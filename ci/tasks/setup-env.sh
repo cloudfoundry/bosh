@@ -36,7 +36,7 @@ main() {
       bosh cr --force --tarball=/tmp/prometheus.tgz
     popd
 
-    bosh -d prometheus deploy --recreate prometheus.yml --var-file=vars/director-vars-store.yml --vars-store=vars/prometheus-vars-store.yml -n
+    bosh -d prometheus deploy --recreate prometheus.yml -l vars/director-vars-store.yml -l vars/director-vars-file.yml --vars-store=vars/prometheus-vars-store.yml -n
   popd
 }
 
