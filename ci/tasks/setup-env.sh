@@ -20,6 +20,7 @@ main() {
 
     # Customize environment
     cp $env_assets/*.{sh,yml} .
+    cp $env_assets/*.tf terraform/
 
     rm -rf bosh-deployment
     ln -s ${build_dir}/bosh-deployment bosh-deployment

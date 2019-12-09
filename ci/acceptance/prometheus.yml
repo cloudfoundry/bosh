@@ -145,10 +145,6 @@ instance_groups:
         release: prometheus
         properties:
           nginx:
-            alertmanager:
-              auth_users:
-                - name: admin
-                  password: ((alertmanager_password))
             prometheus:
               auth_users:
                 - name: admin
@@ -173,7 +169,6 @@ variables:
     options:
       ca: scraper_ca
       common_name: prometheus
-
 
 update:
   canaries: 1
