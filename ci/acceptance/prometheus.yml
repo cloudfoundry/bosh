@@ -1,0 +1,199 @@
+---
+name: prometheus
+
+instance_groups:
+  - name: prometheus2
+    azs:
+      - z1
+    instances: 1
+    vm_type: default
+    persistent_disk: 10_240
+    stemcell: default
+    networks:
+      - name: default
+    jobs:
+      - name: prometheus2
+        release: prometheus
+        properties:
+          prometheus:
+            log_level: debug
+            rule_fils:
+              - /var/vcap/jobs/postgres_alerts/*.alerts.yml
+              - /var/vcap/jobs/prometheus_alerts/*.alerts.yml
+            scrape_configs:
+              - job_name: prometheus
+                static_configs:
+                  - targets:
+                      - localhost:9090
+              - job_name: bosh
+                static_configs:
+                  - targets:
+                      - 10.0.0.6:9091
+                scheme: https
+                tls_config:
+                  ca_file: /var/vcap/jobs/prometheus2/certs/ca.cert
+                  ca_contents: ((metrics_server_client_tls.ca))
+                  cert_file: /var/vcap/jobs/prometheus2/certs/cert.cert
+                  cert_contents: ((metrics_server_client_tls.certificate))
+                  key_file: /var/vcap/jobs/prometheus2/certs/key.cert
+                  key_contents: ((metrics_server_client_tls.private_key))
+              - job_name: bosh_api
+                metrics_path: '/api_metrics'
+                static_configs:
+                  - targets:
+                      - 10.0.0.6:9091
+                scheme: https
+                tls_config:
+                  ca_file: /var/vcap/jobs/prometheus2/certs/ca.cert
+                  ca_contents: ((metrics_server_client_tls.ca))
+                  cert_file: /var/vcap/jobs/prometheus2/certs/cert.cert
+                  cert_contents: ((metrics_server_client_tls.certificate))
+                  key_file: /var/vcap/jobs/prometheus2/certs/key.cert
+                  key_contents: ((metrics_server_client_tls.private_key))
+
+      - name: postgres_alerts
+        release: prometheus
+      - name: prometheus_alerts
+        release: prometheus
+
+  - name: database
+    azs:
+      - z1
+    instances: 1
+    vm_type: default
+    persistent_disk: 10_240
+    stemcell: default
+    networks:
+      - name: default
+    jobs:
+      - name: postgres
+        release: postgres
+        properties:
+          databases:
+            port: 5432
+            databases:
+              - name: grafana
+                citext: true
+            roles:
+              - name: grafana
+                password: ((postgres_grafana_password))
+      - name: postgres_exporter
+        release: prometheus
+        properties:
+          postgres_exporter:
+            datasource_name: postgresql://grafana:((postgres_grafana_password))@127.0.0.1:5432/?sslmode=disable
+
+  - name: grafana
+    azs:
+      - z1
+    instances: 1
+    vm_type: default
+    persistent_disk: 1_024
+    stemcell: default
+    networks:
+      - name: default
+    jobs:
+      - name: grafana
+        release: prometheus
+        properties:
+          grafana:
+            database:
+              type: postgres
+              port: 5432
+              name: grafana
+              user: grafana
+              password: ((postgres_grafana_password))
+            session:
+              provider: postgres
+              provider_port: 5432
+              provider_name: grafana
+              provider_user: grafana
+              provider_password: ((postgres_grafana_password))
+            security:
+              admin_user: admin
+              admin_password: ((grafana_password))
+              secret_key: ((grafana_secret_key))
+            dashboards:
+            prometheus:
+              dashboard_folders:
+                - name: Grafana
+                  files:
+                    - /var/vcap/jobs/grafana_dashboards/*.json
+                - name: PostgreSQL
+                  files:
+                    - /var/vcap/jobs/postgres_dashboards/*.json
+                - name: Prometheus
+                  files:
+                    - /var/vcap/jobs/prometheus_dashboards/*.json
+      - name: grafana_dashboards
+        release: prometheus
+      - name: postgres_dashboards
+        release: prometheus
+      - name: prometheus_dashboards
+        release: prometheus
+
+  - name: nginx
+    azs:
+      - z1
+    instances: 1
+    vm_type: default
+    stemcell: default
+    networks:
+      - name: default
+    jobs:
+      - name: nginx
+        release: prometheus
+        properties:
+          nginx:
+            alertmanager:
+              auth_users:
+                - name: admin
+                  password: ((alertmanager_password))
+            prometheus:
+              auth_users:
+                - name: admin
+                  password: ((prometheus_password))
+
+variables:
+  - name: prometheus_password
+    type: password
+  - name: postgres_grafana_password
+    type: password
+  - name: grafana_password
+    type: password
+  - name: grafana_secret_key
+    type: password
+  - name: scraper_ca
+    type: certificate
+    options:
+      is_ca: true
+      common_name: bosh
+  - name: scraper_cert
+    type: certificate
+    options:
+      ca: scraper_ca
+      common_name: prometheus
+
+
+update:
+  canaries: 1
+  max_in_flight: 32
+  canary_watch_time: 1000-100000
+  update_watch_time: 1000-100000
+  serial: false
+
+stemcells:
+  - alias: default
+    os: ubuntu-xenial
+    version: latest
+
+releases:
+  - name: postgres
+    version: "39"
+    url: https://bosh.io/d/github.com/cloudfoundry/postgres-release?v=39
+    sha1: 8ff395540e77a461322a01c41aa68973c10f1ffb
+  - name: prometheus
+    version: latest
+    url: file:///tmp/prometheus.tgz
+#  url: https://github.com/bosh-prometheus/prometheus-boshrelease/releases/download/v26.1.0/prometheus-26.1.0.tgz
+#  sha1: cc4087422e1f9c3c2e8fd553a1f9f81d9fcb380d

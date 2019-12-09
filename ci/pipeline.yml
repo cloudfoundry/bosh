@@ -643,6 +643,7 @@ jobs:
         - get: bbl-state
           resource: acceptance-env-state
         - get: zookeeper-release
+        - get: prometheus-boshrelease
         - get: bosh-deployment
         - get: stemcell
           resource: google-kvm-ubuntu-xenial
@@ -911,6 +912,13 @@ resources:
     type: git
     source:
       uri: ((bosh_src_url))
+      branch: master
+      private_key: ((github_deployment_key))
+
+  - name: prometheus-boshrelease
+    type: git
+    source:
+      uri: https://github.com/bosh-dep-forks/prometheus-boshrelease
       branch: master
       private_key: ((github_deployment_key))
 

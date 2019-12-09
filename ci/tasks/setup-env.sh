@@ -19,7 +19,7 @@ main() {
     bbl plan > bbl_plan.txt
 
     # Customize environment
-    cp $env_assets/*.sh .
+    cp $env_assets/*.{sh,yml} .
 
     rm -rf bosh-deployment
     ln -s ${build_dir}/bosh-deployment bosh-deployment
@@ -31,6 +31,12 @@ main() {
     set -x
     bosh upload-stemcell ${build_dir}/stemcell/*.tgz -n
     bosh -d zookeeper deploy --recreate ${build_dir}/zookeeper-release/manifests/zookeeper.yml -n
+
+    pushd ${build_dir}/prometheus-boshrelease
+      bosh cr --force --tarball=/tmp/prometheus.tgz
+    popd
+
+    bosh -d prometheus deploy --recreate prometheus.yml --var-file=vars/director-vars-store.yml --vars-store=vars/prometheus-vars-store.yml -n
   popd
 }
 
