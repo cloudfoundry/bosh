@@ -19,7 +19,7 @@ main() {
     bbl plan > bbl_plan.txt
 
     # Customize environment
-    cp $env_assets/*.{sh,yml} .
+    cp $env_assets/*.sh .
 
     rm -rf bosh-deployment
     ln -s ${build_dir}/bosh-deployment bosh-deployment
