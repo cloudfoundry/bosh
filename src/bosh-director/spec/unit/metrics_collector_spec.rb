@@ -26,38 +26,37 @@ module Bosh
       end
 
       after do
-        Prometheus::Client.registry.unregister(:resurrection_enabled)
-        Prometheus::Client.registry.unregister(:queued_tasks)
-        Prometheus::Client.registry.unregister(:processing_tasks)
+        Prometheus::Client.registry.unregister(:bosh_resurrection_enabled)
+        Prometheus::Client.registry.unregister(:bosh_tasks_total)
       end
 
       describe 'start' do
-        describe 'resurrection_enabled' do
+        describe 'bosh_resurrection_enabled' do
           it 'populates the metrics every 30 seconds' do
             metrics_collector.start
             expect(scheduler.interval).to eq('30s')
-            expect(Prometheus::Client.registry.get(:resurrection_enabled).get).to eq(1)
+            expect(Prometheus::Client.registry.get(:bosh_resurrection_enabled).get).to eq(1)
             scheduler.tick
-            expect(Prometheus::Client.registry.get(:resurrection_enabled).get).to eq(0)
+            expect(Prometheus::Client.registry.get(:bosh_resurrection_enabled).get).to eq(0)
           end
         end
 
-        describe 'queued_tasks' do
+        describe 'task metrics' do
           let!(:task1) { Models::Task.make(state: 'queued') }
           let!(:task2) { Models::Task.make(state: 'queued') }
           let!(:task3) { Models::Task.make(state: 'processing') }
 
           it 'populates the metrics every 30 seconds' do
             metrics_collector.start
-
-            expect(Prometheus::Client.registry.get(:queued_tasks).get).to eq(2)
-            expect(Prometheus::Client.registry.get(:processing_tasks).get).to eq(1)
+            metric = Prometheus::Client.registry.get(:bosh_tasks_total)
+            expect(metric.get(labels: { state: 'queued' })).to eq(2)
+            expect(metric.get(labels: { state: 'processing' })).to eq(1)
 
             task2.update(state: 'processing')
             scheduler.tick
 
-            expect(Prometheus::Client.registry.get(:queued_tasks).get).to eq(1)
-            expect(Prometheus::Client.registry.get(:processing_tasks).get).to eq(2)
+            expect(metric.get(labels: { state: 'queued' })).to eq(1)
+            expect(metric.get(labels: { state: 'processing' })).to eq(2)
           end
         end
       end

@@ -10,18 +10,14 @@ module Bosh
         @logger = config.metrics_server_logger
 
         @resurrection_enabled = Prometheus::Client.registry.gauge(
-          :resurrection_enabled,
+          :bosh_resurrection_enabled,
           docstring: 'Is resurrection enabled? 0 for disabled, 1 for enabled',
         )
 
-        @queued_tasks = Prometheus::Client.registry.gauge(
-          :queued_tasks,
-          docstring: 'Number of currently enqued tasks',
-        )
-
-        @processing_tasks = Prometheus::Client.registry.gauge(
-          :processing_tasks,
-          docstring: 'Number of currently enqued tasks',
+        @tasks = Prometheus::Client.registry.gauge(
+          :bosh_tasks_total,
+          labels: [:state],
+          docstring: 'Number of BOSH tasks',
         )
 
         @scheduler = Rufus::Scheduler.new
@@ -70,8 +66,8 @@ module Bosh
         @logger.info('populating metrics')
 
         @resurrection_enabled.set(Api::ResurrectorManager.new.pause_for_all? ? 0 : 1)
-        @queued_tasks.set(Models::Task.where(state: 'queued').count)
-        @processing_tasks.set(Models::Task.where(state: 'processing').count)
+        @tasks.set(Models::Task.where(state: 'queued').count, labels: { state: 'queued' })
+        @tasks.set(Models::Task.where(state: 'processing').count, labels: { state: 'processing' })
 
         @logger.info('populated metrics')
       end
