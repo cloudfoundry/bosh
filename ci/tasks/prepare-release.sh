@@ -20,6 +20,7 @@ pushd $BOSH_SRC
 
   sed -i "s/\['version'\] = ..*/['version'] = '$FULL_VERSION'/" jobs/director/templates/director.yml.erb
   sed -i "s/\['version'\])\.to eq..*/['version']).to eq('$FULL_VERSION')/" spec/director.yml.erb_spec.rb
+  sed -i "s/version: ..*/version: $FULL_VERSION/" jobs/director/templates/indicator.yml.erb
 
   git add -A
   git status
