@@ -78,6 +78,7 @@ module Bosh::Director
           id: instance.uuid,
           bootstrap: instance.bootstrap,
           ignore: instance.ignore,
+          stemcell: { name: vm&.stemcell_name, version: vm&.stemcell_version, api_version: vm&.stemcell_api_version },
         }
       end
 

@@ -92,17 +92,17 @@ describe 'cli: vms', type: :integration do
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
 
     expect(scrub_random_ids(table(bosh_runner.run('vms', json: true, deployment_name: 'simple')))).to contain_exactly(
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'active' => 'true', 'az' => 'zone-1', 'ips' => '192.168.1.2', 'vm_cid' => String, 'vm_type' => 'a'},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'active' => 'true', 'az' => 'zone-2', 'ips' => '192.168.2.2', 'vm_cid' => String, 'vm_type' => 'a'},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'active' => 'true', 'az' => 'zone-3', 'ips' => '192.168.3.2', 'vm_cid' => String, 'vm_type' => 'a'},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'active' => 'true', 'stemcell' => 'ubuntu-stemcell/1', 'az' => 'zone-1', 'ips' => '192.168.1.2', 'vm_cid' => String, 'vm_type' => 'a'},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'active' => 'true', 'stemcell' => 'ubuntu-stemcell/1', 'az' => 'zone-2', 'ips' => '192.168.2.2', 'vm_cid' => String, 'vm_type' => 'a'},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'active' => 'true', 'stemcell' => 'ubuntu-stemcell/1', 'az' => 'zone-3', 'ips' => '192.168.3.2', 'vm_cid' => String, 'vm_type' => 'a'},
     )
 
 
     output = bosh_runner.run('vms --dns', json: true, deployment_name: 'simple')
     expect(scrub_random_ids(table(output))).to contain_exactly(
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'active' => 'true', 'az' => 'zone-1', 'ips' => '192.168.1.2', 'vm_cid' => String, 'vm_type' => 'a', 'dns_a_records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n0.foobar.a.simple.bosh"},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'active' => 'true', 'az' => 'zone-2', 'ips' => '192.168.2.2', 'vm_cid' => String, 'vm_type' => 'a', 'dns_a_records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n1.foobar.a.simple.bosh"},
-      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'active' => 'true', 'az' => 'zone-3', 'ips' => '192.168.3.2', 'vm_cid' => String, 'vm_type' => 'a', 'dns_a_records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n2.foobar.a.simple.bosh"},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'active' => 'true', 'stemcell' => 'ubuntu-stemcell/1', 'az' => 'zone-1', 'ips' => '192.168.1.2', 'vm_cid' => String, 'vm_type' => 'a', 'dns_a_records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n0.foobar.a.simple.bosh"},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'active' => 'true', 'stemcell' => 'ubuntu-stemcell/1', 'az' => 'zone-2', 'ips' => '192.168.2.2', 'vm_cid' => String, 'vm_type' => 'a', 'dns_a_records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n1.foobar.a.simple.bosh"},
+      {'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'process_state' => 'running', 'active' => 'true', 'stemcell' => 'ubuntu-stemcell/1', 'az' => 'zone-3', 'ips' => '192.168.3.2', 'vm_cid' => String, 'vm_type' => 'a', 'dns_a_records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n2.foobar.a.simple.bosh"},
     )
 
     output = bosh_runner.run('vms --vitals', json: true, deployment_name: 'simple')
@@ -128,6 +128,7 @@ describe 'cli: vms', type: :integration do
     expect(first_row).to include('system_disk_usage')
     expect(first_row).to include('ephemeral_disk_usage')
     expect(first_row).to include('persistent_disk_usage')
+    expect(first_row).to include('stemcell')
     expect(output.length).to eq(3)
   end
 
@@ -145,7 +146,7 @@ describe 'cli: vms', type: :integration do
     output = bosh_runner.run('vms --parallel 5')
     expect(output).to include('Succeeded')
     # 2 deployments must not be mixed in the output, but they can be printed in any order
-    expect(output).to match(/Deployment 'simple1'\s*\n\nInstance\s+Process\s+State\s+AZ\s+IPs\s+VM\s+CID\s+VM\s+Type\s+Active\s*\n(foobar1\/\w+-\w+-\w+-\w+-\w+\s+running\s+-\s+\d+.\d+.\d+.\d+\s+\d+\s+a\s+true\s*\n){2}\n2 vms/)
-    expect(output).to match(/Deployment 'simple2'\s*\n\nInstance\s+Process\s+State\s+AZ\s+IPs\s+VM\s+CID\s+VM\s+Type\s+Active\s*\n(foobar2\/\w+-\w+-\w+-\w+-\w+\s+running\s+-\s+\d+.\d+.\d+.\d+\s+\d+\s+a\s+true\s*\n){4}\n4 vms/)
+    expect(output).to match(/Deployment 'simple1'\s*\n\nInstance\s+Process\s+State\s+AZ\s+IPs\s+VM\s+CID\s+VM\s+Type\s+Active\s+Stemcell\s*\n(foobar1\/\w+-\w+-\w+-\w+-\w+\s+running\s+-\s+\d+.\d+.\d+.\d+\s+\d+\s+a\s+true\s+ubuntu-stemcell\/1\s*\n){2}\n2 vms/)
+    expect(output).to match(/Deployment 'simple2'\s*\n\nInstance\s+Process\s+State\s+AZ\s+IPs\s+VM\s+CID\s+VM\s+Type\s+Active\s+Stemcell\s*\n(foobar2\/\w+-\w+-\w+-\w+-\w+\s+running\s+-\s+\d+.\d+.\d+.\d+\s+\d+\s+a\s+true\s+ubuntu-stemcell\/1\s*\n){4}\n4 vms/)
   end
 end
