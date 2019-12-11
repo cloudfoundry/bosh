@@ -185,7 +185,8 @@ if p('blobstore.provider') == 's3'
     'access_key_id' => p('blobstore.access_key_id', nil),
     'secret_access_key' => p('blobstore.secret_access_key', nil),
     'region' => p('blobstore.s3_region', nil),
-    'enable_signed_urls' => p('blobstore.enable_signed_urls')
+    'enable_signed_urls' => p('blobstore.enable_signed_urls'),
+    'host_style' => p('blobstore.s3_host_style', false)
   }
 
   if_p('blobstore.use_ssl') do |use_ssl|

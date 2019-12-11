@@ -31,6 +31,7 @@ module Bosh::Blobstore
         bucket_name: @options[:bucket_name],
         use_ssl: @options.fetch(:use_ssl, true),
         host: @options[:host],
+        host_style: @options.fetch(:host_style, false),
         port: @options[:port],
         region: @options[:region],
         ssl_verify_peer: @options.fetch(:ssl_verify_peer, true),

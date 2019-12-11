@@ -384,6 +384,9 @@ properties:
   blobstore.use_ssl:
     description: Whether the simple blobstore plugin should use SSL to connect to the blobstore server
     default: true
+  blobstore.s3_host_style:
+    description: Whether to use host-style urls instead of path-style urls
+    default: false
   blobstore.s3_port:
     description: Port of blobstore server used by s3 blobstore plugin
     default: 443
