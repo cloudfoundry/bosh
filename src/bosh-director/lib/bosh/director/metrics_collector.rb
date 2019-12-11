@@ -16,7 +16,7 @@ module Bosh
 
         @tasks = Prometheus::Client.registry.gauge(
           :bosh_tasks_total,
-          labels: [:state],
+          labels: %i[state type],
           docstring: 'Number of BOSH tasks',
         )
 
@@ -66,8 +66,15 @@ module Bosh
         @logger.info('populating metrics')
 
         @resurrection_enabled.set(Api::ResurrectorManager.new.pause_for_all? ? 0 : 1)
-        @tasks.set(Models::Task.where(state: 'queued').count, labels: { state: 'queued' })
-        @tasks.set(Models::Task.where(state: 'processing').count, labels: { state: 'processing' })
+
+        Models::Task.group_and_count(:type).distinct.each do |task|
+          @tasks.set(0, labels: { state: 'processing', type: task.type })
+          @tasks.set(0, labels: { state: 'queued', type: task.type })
+        end
+
+        Models::Task.where(state: %w[processing queued]).group_and_count(:type, :state).each do |task|
+          @tasks.set(task.values[:count], labels: { state: task.values[:state], type: task.values[:type] })
+        end
 
         @logger.info('populated metrics')
       end

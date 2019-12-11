@@ -42,21 +42,26 @@ module Bosh
         end
 
         describe 'task metrics' do
-          let!(:task1) { Models::Task.make(state: 'queued') }
-          let!(:task2) { Models::Task.make(state: 'queued') }
-          let!(:task3) { Models::Task.make(state: 'processing') }
+          let!(:task1) { Models::Task.make(state: 'queued', type: 'foobar') }
+          let!(:task2) { Models::Task.make(state: 'queued', type: 'foobaz') }
+          let!(:task3) { Models::Task.make(state: 'processing', type: 'foobar') }
+          let!(:task4) { Models::Task.make(state: 'processing', type: 'foobar') }
+          let!(:task5) { Models::Task.make(state: 'processing', type: 'foobaz') }
 
-          it 'populates the metrics every 30 seconds' do
+          it 'populates metrics for processing tasks by type' do
             metrics_collector.start
             metric = Prometheus::Client.registry.get(:bosh_tasks_total)
-            expect(metric.get(labels: { state: 'queued' })).to eq(2)
-            expect(metric.get(labels: { state: 'processing' })).to eq(1)
+            expect(metric.get(labels: { state: 'queued', type: 'foobar' })).to eq(1)
+            expect(metric.get(labels: { state: 'queued', type: 'foobaz' })).to eq(1)
+            expect(metric.get(labels: { state: 'processing', type: 'foobar' })).to eq(2)
+            expect(metric.get(labels: { state: 'processing', type: 'foobaz' })).to eq(1)
 
             task2.update(state: 'processing')
             scheduler.tick
 
-            expect(metric.get(labels: { state: 'queued' })).to eq(1)
-            expect(metric.get(labels: { state: 'processing' })).to eq(2)
+            metric = Prometheus::Client.registry.get(:bosh_tasks_total)
+            expect(metric.get(labels: { state: 'queued', type: 'foobaz' })).to eq(0)
+            expect(metric.get(labels: { state: 'processing', type: 'foobaz' })).to eq(2)
           end
         end
       end
