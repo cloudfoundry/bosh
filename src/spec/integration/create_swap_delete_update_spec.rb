@@ -68,6 +68,7 @@ describe 'deploy with create-swap-delete', type: :integration do
         'instance' => instance_slug_regex,
         'ips' => /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/,
         'process_state' => /[a-z]{7}/,
+        'stemcell' => /[a-z\-_]+\/[0-9.]+/,
         'vm_cid' => /[0-9]{1,6}/,
         'vm_type' => 'a',
       }
@@ -193,6 +194,7 @@ describe 'deploy with create-swap-delete', type: :integration do
           'instance' => instance_slug_regex,
           'ips' => /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/,
           'process_state' => /[a-z]{7}/,
+          'stemcell' => /[a-z\-_]+\/[0-9.]+/,
           'vm_cid' => /[0-9]{1,6}/,
           'vm_type' => 'a',
         }
@@ -240,6 +242,7 @@ describe 'deploy with create-swap-delete', type: :integration do
           'instance' => instance_slug_regex,
           'ips' => /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/,
           'process_state' => /[a-z]{7}/,
+          'stemcell' => /[a-z\-_]+\/[0-9.]+/,
           'vm_cid' => /[0-9]{1,6}/,
           'vm_type' => 'a',
         }
@@ -354,6 +357,7 @@ describe 'deploy with create-swap-delete', type: :integration do
           'instance' => instance_slug_regex,
           'ips' => /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/,
           'process_state' => /[a-z]{7}/,
+          'stemcell' => /[a-z\-_]+\/[0-9.]+/,
           'vm_cid' => /[0-9]{1,6}/,
           'vm_type' => 'a',
         }
@@ -380,6 +384,7 @@ describe 'deploy with create-swap-delete', type: :integration do
             'instance' => instance_slug_regex,
             'ips' => /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/,
             'process_state' => /[a-z]{7}/,
+            'stemcell' => /[a-z\-_]+\/[0-9.]+/,
             'vm_cid' => /[0-9]{1,6}/,
             'vm_type' => 'a',
           }
