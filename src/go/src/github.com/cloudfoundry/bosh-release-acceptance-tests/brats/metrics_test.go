@@ -41,8 +41,7 @@ var _ = Describe("nginx with ngx_http_stub_status_module compiled", func() {
 
 		contents, err := ioutil.ReadAll(resp.Body)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(string(contents)).To(ContainSubstring("processing_tasks"))
-		Expect(string(contents)).To(ContainSubstring("queued_tasks"))
+		Expect(string(contents)).To(ContainSubstring("bosh_tasks_total"))
 
 		api_metrics_resp, err := metricsClient.Get(fmt.Sprintf("https://%s:9091/api_metrics", bratsutils.InnerDirectorIP()))
 		Expect(err).NotTo(HaveOccurred())
