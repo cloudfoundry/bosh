@@ -194,8 +194,26 @@ describe 'availability zones', type: :integration do
       expect(director.instances.count).to eq(2)
 
       expect(scrub_random_ids(table(bosh_runner.run('vms', json: true, deployment_name: 'simple')))).to contain_exactly(
-        {"active"=>"true", 'instance' => String, 'process_state' => 'running', 'az' => 'my-az', 'ips' => '192.168.1.1', 'vm_cid' => String, 'vm_type' => 'a'},
-        {"active"=>"true", 'instance' => String, 'process_state' => 'running', 'az' => 'my-az2', 'ips' => '192.168.2.1', 'vm_cid' => String, 'vm_type' => 'a'},
+        {
+          "active"=>"true",
+          'instance' => String,
+          'process_state' => 'running',
+          'az' => 'my-az',
+          'ips' => '192.168.1.1',
+          'vm_cid' => String,
+          'vm_type' => 'a',
+          'stemcell' => String,
+        },
+        {
+          "active"=>"true",
+          'instance' => String,
+          'process_state' => 'running',
+          'az' => 'my-az2',
+          'ips' => '192.168.2.1',
+          'vm_cid' => String,
+          'vm_type' => 'a',
+          'stemcell' => String,
+        },
       )
     end
 
