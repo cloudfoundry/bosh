@@ -221,9 +221,6 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
         task_result = bosh_runner.run("task #{errand_task_id} --result", deployment_name: deployment_name)
         expect(task_result).to match('"exit_code":0')
         expect(task_result).to match(/"stdout":"job=fake-errand-name index=0 id=.{36}\\nnew-stdout\\nadditional-stdout/)
-
-        task_debug = bosh_runner.run("task #{errand_task_id} --debug", deployment_name: deployment_name)
-        expect(task_debug).to match('Marking as new vm for instance ')
       end
     end
   end
@@ -543,17 +540,6 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
       output, exit_code = bosh_runner.run('run-errand errand1', return_exit_code: true, deployment_name: deployment_name)
       expect(output).to include('fake-errand-stdout')
       expect(exit_code).to eq(0)
-    end
-
-    it 'does not mark the instance as new' do
-      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
-
-      _, exit_code = bosh_runner.run('run-errand errand1', return_exit_code: true, deployment_name: deployment_name)
-      expect(exit_code).to equal(0)
-
-      errand_task_id = bosh_runner.get_most_recent_task_id
-      task_debug = bosh_runner.run("task #{errand_task_id} --debug", deployment_name: deployment_name)
-      expect(task_debug).not_to match('Marking as new vm for instance ')
     end
   end
 
