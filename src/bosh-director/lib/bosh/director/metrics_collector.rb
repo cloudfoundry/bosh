@@ -20,6 +20,11 @@ module Bosh
           docstring: 'Number of BOSH tasks',
         )
 
+        @networks = Prometheus::Client.registry.gauge(
+          :bosh_networks_free_ips_total,
+          labels: %i[name],
+          docstring: 'Number of available IPs left per network',
+        )
         @scheduler = Rufus::Scheduler.new
       end
 
@@ -76,7 +81,41 @@ module Bosh
           @tasks.set(task.values[:count], labels: { state: task.values[:state], type: task.values[:type] })
         end
 
+        populate_network_metrics
+
         @logger.info('populated metrics')
+      end
+
+      def populate_network_metrics
+        configs = Models::Config.latest_set('cloud')
+        cloud_planners = configs.map do |config|
+          DeploymentPlan::CloudManifestParser.new(@logger).parse(YAML.safe_load(config.content))
+        end
+        networks = cloud_planners.flat_map(&:networks)
+
+        networks.each do |network|
+          @networks.set(number_of_free_ips(network), labels: { name: canonicalize_to_prometheus(network.name) })
+        end
+      end
+
+      def canonicalize_to_prometheus(label)
+        # TODO: fix
+        # we allow so many characters in network names
+        # We even have our own way of "canonicalizing" for things like DNS (see canonicalizer.rb)
+        # prometheus isn't happy with everything, see https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels
+        label
+      end
+
+      def number_of_free_ips(network)
+        total_available = 0
+        total_used = Models::IpAddress.where(network_name: network.name).count
+
+        network.subnets.each do |subnet|
+          total_used += subnet.restricted_ips.size + subnet.static_ips.size
+          total_available += subnet.range.size
+        end
+
+        total_available - total_used
       end
     end
   end
