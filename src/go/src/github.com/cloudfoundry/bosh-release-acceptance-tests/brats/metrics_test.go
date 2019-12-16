@@ -43,7 +43,8 @@ var _ = Describe("nginx with ngx_http_stub_status_module compiled", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(string(contents)).To(ContainSubstring("bosh_resurrection_enabled"))
 		Expect(string(contents)).To(ContainSubstring("bosh_tasks_total"))
-		Expect(string(contents)).To(ContainSubstring("bosh_networks_free_ips_total"))
+		Expect(string(contents)).To(ContainSubstring("bosh_networks_dynamic_ips_total"))
+		Expect(string(contents)).To(ContainSubstring("bosh_networks_dynamic_free_ips_total"))
 
 		api_metrics_resp, err := metricsClient.Get(fmt.Sprintf("https://%s:9091/api_metrics", bratsutils.InnerDirectorIP()))
 		Expect(err).NotTo(HaveOccurred())

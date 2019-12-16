@@ -20,10 +20,15 @@ module Bosh
           docstring: 'Number of BOSH tasks',
         )
 
-        @networks = Prometheus::Client.registry.gauge(
-          :bosh_networks_free_ips_total,
+        @network_available_ips = Prometheus::Client.registry.gauge(
+          :bosh_networks_dynamic_ips_total,
           labels: %i[name],
-          docstring: 'Number of available IPs left per network',
+          docstring: 'Size of network pool for all dynamically allocated IPs',
+        )
+        @network_free_ips = Prometheus::Client.registry.gauge(
+          :bosh_networks_dynamic_free_ips_total,
+          labels: %i[name],
+          docstring: 'Number of dynamical free IPs left per network',
         )
         @scheduler = Rufus::Scheduler.new
       end
@@ -89,7 +94,9 @@ module Bosh
         networks = cloud_planners.flat_map(&:networks)
 
         networks.each do |network|
-          @networks.set(number_of_free_ips(network), labels: { name: canonicalize_to_prometheus(network.name) })
+          total, free = calculate_network_metrics(network)
+          @network_available_ips.set(total, labels: { name: canonicalize_to_prometheus(network.name) })
+          @network_free_ips.set(free, labels: { name: canonicalize_to_prometheus(network.name) })
         end
       end
 
@@ -101,16 +108,21 @@ module Bosh
         label
       end
 
-      def number_of_free_ips(network)
+      def calculate_network_metrics(network)
         total_available = 0
+        total_static = 0
+        total_restricted = 0
         total_used = Models::IpAddress.where(network_name: network.name, static: false).count
 
         network.subnets.each do |subnet|
-          total_used += subnet.restricted_ips.size + subnet.static_ips.size
+          total_static += subnet.static_ips.size
+          total_restricted += subnet.restricted_ips.size
           total_available += subnet.range.size
         end
 
-        total_available - total_used
+        total_available -= total_static
+        total_available -= total_restricted
+        [total_available, total_available - total_used]
       end
     end
   end

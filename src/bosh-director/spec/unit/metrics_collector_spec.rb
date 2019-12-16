@@ -28,7 +28,8 @@ module Bosh
       after do
         Prometheus::Client.registry.unregister(:bosh_resurrection_enabled)
         Prometheus::Client.registry.unregister(:bosh_tasks_total)
-        Prometheus::Client.registry.unregister(:bosh_networks_free_ips_total)
+        Prometheus::Client.registry.unregister(:bosh_networks_dynamic_ips_total)
+        Prometheus::Client.registry.unregister(:bosh_networks_dynamic_free_ips_total)
       end
 
       describe 'start' do
@@ -52,7 +53,7 @@ module Bosh
                   'gateway' => '192.168.1.1',
                   'dns' => ['192.168.1.1', '192.168.1.2'],
                   'static' => ['192.168.1.4'],
-                  'reserved' => [],
+                  'reserved' => ['192.168.1.6-192.168.1.7'],
                   'cloud_properties' => {},
                   'az' => 'az-1',
                 },
@@ -82,10 +83,16 @@ module Bosh
             ))
           end
 
-          it 'accounts for reserved and static IPs' do
+          it 'emits the total number of dynamic IPs in the network' do
             metrics_collector.start
-            metric = Prometheus::Client.registry.get(:bosh_networks_free_ips_total)
-            expect(metric.get(labels: { name: 'my-manual-network' })).to eq(12)
+            metric = Prometheus::Client.registry.get(:bosh_networks_dynamic_ips_total)
+            expect(metric.get(labels: { name: 'my-manual-network' })).to eq(10)
+          end
+
+          it 'emits the number of free dynamic IPs' do
+            metrics_collector.start
+            metric = Prometheus::Client.registry.get(:bosh_networks_dynamic_free_ips_total)
+            expect(metric.get(labels: { name: 'my-manual-network' })).to eq(10)
           end
 
           context 'when there are deployed VMs' do
@@ -107,8 +114,8 @@ module Bosh
 
             it 'accounts for used IPs' do
               metrics_collector.start
-              metric = Prometheus::Client.registry.get(:bosh_networks_free_ips_total)
-              expect(metric.get(labels: { name: 'my-manual-network' })).to eq(11)
+              metric = Prometheus::Client.registry.get(:bosh_networks_dynamic_free_ips_total)
+              expect(metric.get(labels: { name: 'my-manual-network' })).to eq(9)
             end
 
             context 'when deployed VMs are using static ips' do
@@ -124,8 +131,8 @@ module Bosh
 
               it 'does not double count the static ips' do
                 metrics_collector.start
-                metric = Prometheus::Client.registry.get(:bosh_networks_free_ips_total)
-                expect(metric.get(labels: { name: 'my-manual-network' })).to eq(11)
+                metric = Prometheus::Client.registry.get(:bosh_networks_dynamic_free_ips_total)
+                expect(metric.get(labels: { name: 'my-manual-network' })).to eq(9)
               end
             end
           end
