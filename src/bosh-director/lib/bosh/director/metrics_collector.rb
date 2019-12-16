@@ -103,7 +103,7 @@ module Bosh
 
       def number_of_free_ips(network)
         total_available = 0
-        total_used = Models::IpAddress.where(network_name: network.name).count
+        total_used = Models::IpAddress.where(network_name: network.name, static: false).count
 
         network.subnets.each do |subnet|
           total_used += subnet.restricted_ips.size + subnet.static_ips.size

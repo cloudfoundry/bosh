@@ -101,6 +101,7 @@ module Bosh
                 vm_id: vm.id,
                 address_str: NetAddr::CIDR.create('192.168.1.5').to_i.to_s,
                 network_name: network_spec['name'],
+                static: false,
               )
             end
 
@@ -108,6 +109,24 @@ module Bosh
               metrics_collector.start
               metric = Prometheus::Client.registry.get(:bosh_networks_free_ips_total)
               expect(metric.get(labels: { name: 'my-manual-network' })).to eq(11)
+            end
+
+            context 'when deployed VMs are using static ips' do
+              before do
+                Models::IpAddress.make(
+                  instance_id: instance.id,
+                  vm_id: vm.id,
+                  address_str: NetAddr::CIDR.create('192.168.1.4').to_i.to_s,
+                  network_name: network_spec['name'],
+                  static: true,
+                )
+              end
+
+              it 'does not double count the static ips' do
+                metrics_collector.start
+                metric = Prometheus::Client.registry.get(:bosh_networks_free_ips_total)
+                expect(metric.get(labels: { name: 'my-manual-network' })).to eq(11)
+              end
             end
           end
         end
