@@ -79,7 +79,7 @@ module Bosh::Director::Models
           Bosh::Director::Models::Config.new(type: 'expected_type', content: 'fake_content', name: 'default').save,
         ]
 
-        expect(Bosh::Director::Models::Config.find_by_ids(configs.map(&:id))).to eq(configs)
+        expect(Bosh::Director::Models::Config.find_by_ids(configs.map(&:id))).to match_array(configs)
       end
 
       it 'returns empty array when passed nil' do
