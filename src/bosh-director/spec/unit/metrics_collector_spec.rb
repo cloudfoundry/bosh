@@ -4,9 +4,9 @@ module Bosh
   module Director
     describe MetricsCollector do
       class FakeRufusScheduler
-        attr_reader :interval
-        def every(interval, &blk)
-          @interval = interval
+        attr_reader :interval_duration
+        def interval(interval_duration, &blk)
+          @interval_duration = interval_duration
           @blk = blk
         end
 
@@ -36,7 +36,7 @@ module Bosh
         describe 'bosh_resurrection_enabled' do
           it 'populates the metrics every 30 seconds' do
             metrics_collector.start
-            expect(scheduler.interval).to eq('30s')
+            expect(scheduler.interval_duration).to eq('30s')
             expect(Prometheus::Client.registry.get(:bosh_resurrection_enabled).get).to eq(1)
             scheduler.tick
             expect(Prometheus::Client.registry.get(:bosh_resurrection_enabled).get).to eq(0)

@@ -43,7 +43,7 @@ module Bosh
 
         populate_metrics
 
-        @scheduler.every '30s' do
+        @scheduler.interval '30s' do
           populate_metrics
         end
       end
