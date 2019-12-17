@@ -94,6 +94,8 @@ module Bosh
         networks = cloud_planners.flat_map(&:networks)
 
         networks.each do |network|
+          next unless network.manual?
+
           total, free = calculate_network_metrics(network)
           @network_available_ips.set(total, labels: { name: canonicalize_to_prometheus(network.name) })
           @network_free_ips.set(free, labels: { name: canonicalize_to_prometheus(network.name) })

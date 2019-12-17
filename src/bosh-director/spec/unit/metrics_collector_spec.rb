@@ -44,9 +44,10 @@ module Bosh
         end
 
         describe 'network metrics' do
-          let(:network_spec) do
+          let(:manual_network_spec) do
             {
               'name' => 'my-manual-network',
+              'type' => 'manual',
               'subnets' => [
                 {
                   'range' => '192.168.1.0/28',
@@ -60,7 +61,36 @@ module Bosh
               ],
             }
           end
-          let(:older_network_spec) { network_spec.merge('name' => 'older-network') }
+
+          let(:dynamic_network_spec) do
+            {
+              'name' => 'my-dynamic-network',
+              'type' => 'dynamic',
+              'subnets' => [
+                {
+                  'dns' => ['192.168.1.1', '192.168.1.2'],
+                  'cloud_properties' => {},
+                  'az' => 'az-1',
+                },
+              ],
+            }
+          end
+
+          let(:vip_network_spec) do
+            {
+              'name' => 'my-vip-network',
+              'type' => 'vip',
+              'subnets' => [
+                {
+                  'dns' => ['192.168.1.1', '192.168.1.2'],
+                  'cloud_properties' => {},
+                  'az' => 'az-1',
+                },
+              ],
+            }
+          end
+
+          let(:older_network_spec) { manual_network_spec.merge('name' => 'older-network') }
           let(:az) { { 'name' => 'az-1' } }
 
           before do
@@ -70,16 +100,16 @@ module Bosh
               'disk_types' => [],
               'networks' => [older_network_spec],
               'vm_extensions' => [],
-              'compilation' => { 'az' => 'az-1', 'network' => network_spec['name'], 'workers' => 3 },
+              'compilation' => { 'az' => 'az-1', 'network' => manual_network_spec['name'], 'workers' => 3 },
             ))
 
             Models::Config.make(:cloud, name: 'some-cloud-config', content: YAML.dump(
               'azs' => [az],
               'vm_types' => [],
               'disk_types' => [],
-              'networks' => [network_spec],
+              'networks' => [dynamic_network_spec, manual_network_spec, vip_network_spec],
               'vm_extensions' => [],
-              'compilation' => { 'az' => 'az-1', 'network' => network_spec['name'], 'workers' => 3 },
+              'compilation' => { 'az' => 'az-1', 'network' => manual_network_spec['name'], 'workers' => 3 },
             ))
           end
 
@@ -107,7 +137,7 @@ module Bosh
                 instance_id: instance.id,
                 vm_id: vm.id,
                 address_str: NetAddr::CIDR.create('192.168.1.5').to_i.to_s,
-                network_name: network_spec['name'],
+                network_name: manual_network_spec['name'],
                 static: false,
               )
             end
@@ -124,7 +154,7 @@ module Bosh
                   instance_id: instance.id,
                   vm_id: vm.id,
                   address_str: NetAddr::CIDR.create('192.168.1.4').to_i.to_s,
-                  network_name: network_spec['name'],
+                  network_name: manual_network_spec['name'],
                   static: true,
                 )
               end
