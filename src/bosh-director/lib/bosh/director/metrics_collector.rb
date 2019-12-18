@@ -78,13 +78,22 @@ module Bosh
 
         @resurrection_enabled.set(Api::ResurrectorManager.new.pause_for_all? ? 0 : 1)
 
+        metrics = { 'processing' => {}, 'queued' => {} }
         Models::Task.group_and_count(:type).distinct.each do |task|
-          @tasks.set(0, labels: { state: 'processing', type: task.type })
-          @tasks.set(0, labels: { state: 'queued', type: task.type })
+          metrics['processing'][task.type] = 0
+          metrics['queued'][task.type] = 0
         end
 
         Models::Task.where(state: %w[processing queued]).group_and_count(:type, :state).each do |task|
-          @tasks.set(task.values[:count], labels: { state: task.values[:state], type: task.values[:type] })
+          state, type, count = task.values[:state], task.values[:type], task.values[:count]
+
+          metrics[state][type] = count
+        end
+
+        metrics.each do |state, types|
+          types.each do |type, count|
+            @tasks.set(count, labels: { state: state, type: type })
+          end
         end
 
         populate_network_metrics

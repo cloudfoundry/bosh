@@ -52,6 +52,9 @@ Style/FrozenStringLiteralComment:
 Style/NumericLiterals:
   Enabled: false
 
+Style/ParallelAssignment:
+  Enabled: false
+
 Style/TrailingCommaInArrayLiteral:
   Enabled: true
   EnforcedStyleForMultiline: comma
