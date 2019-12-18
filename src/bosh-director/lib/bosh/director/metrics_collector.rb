@@ -1,6 +1,7 @@
 require 'db_migrator'
 require 'rufus-scheduler'
 require 'prometheus/client'
+require 'bosh/director/dns/canonicalizer'
 
 module Bosh
   module Director
@@ -103,11 +104,9 @@ module Bosh
       end
 
       def canonicalize_to_prometheus(label)
-        # TODO: fix
-        # we allow so many characters in network names
-        # We even have our own way of "canonicalizing" for things like DNS (see canonicalizer.rb)
-        # prometheus isn't happy with everything, see https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels
-        label
+        # https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels
+        # prometheus supports underscores and not dashes, but dns is reversed
+        Canonicalizer.canonicalize(label).gsub('-', '_')
       end
 
       def calculate_network_metrics(network)
