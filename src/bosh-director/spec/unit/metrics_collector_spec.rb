@@ -211,6 +211,7 @@ module Bosh
             scheduler.tick
 
             metric = Prometheus::Client.registry.get(:bosh_tasks_total)
+            expect(metric.get(labels: { state: 'queued', type: 'foobaz' })).to eq(0)
             expect(metric.get(labels: { state: 'processing', type: 'foobaz' })).to eq(2)
           end
         end

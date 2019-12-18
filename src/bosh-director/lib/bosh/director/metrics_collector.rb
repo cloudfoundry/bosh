@@ -78,6 +78,11 @@ module Bosh
 
         @resurrection_enabled.set(Api::ResurrectorManager.new.pause_for_all? ? 0 : 1)
 
+        Models::Task.group_and_count(:type).distinct.each do |task|
+          @tasks.set(0, labels: { state: 'processing', type: task.type })
+          @tasks.set(0, labels: { state: 'queued', type: task.type })
+        end
+
         Models::Task.where(state: %w[processing queued]).group_and_count(:type, :state).each do |task|
           @tasks.set(task.values[:count], labels: { state: task.values[:state], type: task.values[:type] })
         end
