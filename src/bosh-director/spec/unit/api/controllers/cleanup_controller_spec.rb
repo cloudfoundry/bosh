@@ -47,11 +47,19 @@ module Bosh::Director
             get('/dryrun?remove_all=true')
 
             expect(last_response.status).to eq(200)
-            expect(JSON.parse(last_response.body)).to eq(
+            expect(JSON.parse(last_response.body)).to match(
               'compiled_packages' => [],
               'dns_blobs' => [],
               'exported_releases' => [],
-              'orphaned_disks' => ['fake-cid-2'],
+              'orphaned_disks' => [{
+                'disk_cid' => 'fake-cid-2',
+                'az' => anything,
+                'size' => anything,
+                'orphaned_at' => String,
+                'deployment_name' => String,
+                'instance_name' => String,
+                'cloud_properties' => {},
+              }],
               'orphaned_vms' => [],
               'releases' => [],
               'stemcells' => [],

@@ -38,11 +38,11 @@ module Bosh::Director
 
     def show_all
       {
-        releases: releases.map { |r| "#{r['name']}/#{r['versions']}" },
-        stemcells: stemcells.map { |r| "#{r['operating_system']}/#{r['version']}" },
-        compiled_packages: compiled_packages.map { |r| "#{r.package.name}[#{r.stemcell_os}/#{r.stemcell_version}]" },
-        orphaned_disks: orphan_disks.map(&:disk_cid),
-        orphaned_vms: orphaned_vms.map { |r| "#{r.instance_name}/#{r.cid}" },
+        releases: releases,
+        stemcells: stemcells,
+        compiled_packages: compiled_packages.map { |r| { package_name: r.package.name, stemcell_os: r.stemcell_os, stemcell_version: r.stemcell_version } },
+        orphaned_disks: orphan_disks_list,
+        orphaned_vms: Models::OrphanedVm.list_all,
         exported_releases: exported_releases.map(&:blobstore_id),
         dns_blobs: dns_blobs.map { |r| r.blob.blobstore_id },
       }
@@ -100,6 +100,12 @@ module Bosh::Director
       return [] unless @remove_all
 
       Models::OrphanDisk.all
+    end
+
+    def orphan_disks_list
+      return [] unless @remove_all
+
+      @orphan_disk_manager.list_orphan_disks
     end
 
     def exported_releases
