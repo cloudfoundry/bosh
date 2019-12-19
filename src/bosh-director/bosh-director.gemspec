@@ -50,7 +50,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'membrane',         '~>1.1.0'
   spec.add_dependency 'nats',             '~>0.9.2'
   spec.add_dependency 'netaddr',          '~>1.5.0'
-  spec.add_dependency 'prometheus-client','~>0.10.0'
+  spec.add_dependency 'prometheus-client','~>1.0.0'
   spec.add_dependency 'puma',             '~>3.10'
   spec.add_dependency 'rack-test',        '~>0.6.2' # needed for console
   spec.add_dependency 'rake',             '~> 10.0'
