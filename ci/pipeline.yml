@@ -39,6 +39,7 @@ groups:
     - build-main-postgres-9.4
     - build-main-postgres-10
     - build-main-mysql-5.7
+    - build-integration
 
 shared:
   - &deploy-director
