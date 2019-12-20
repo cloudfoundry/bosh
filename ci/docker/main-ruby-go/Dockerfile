@@ -15,6 +15,8 @@ RUN apt-get install -y \
 	tar \
 	libssl-dev \
 	libreadline-dev \
+	sqlite3 \
+	libsqlite3-dev \
 	dnsutils \
 	xvfb \
 	jq \
