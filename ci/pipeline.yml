@@ -107,6 +107,7 @@ jobs:
       - task: test
         timeout: 2h
         file: bosh-src/ci/tasks/test-unit.yml
+        image: main-ruby-go
         params:
           DB: sqlite
 
@@ -817,7 +818,7 @@ jobs:
     plan:
       - get: bosh-src
         trigger: true
-      - put: main-postgres-9.4
+      - put: main-postgres-9.4-image
         params:
           build: "bosh-src/ci/dockerfiles/main-postgres"
           build_args:
@@ -831,7 +832,7 @@ jobs:
     plan:
       - get: bosh-src
         trigger: true
-      - put: main-postgres-10
+      - put: main-postgres-10-image
         params:
           build: "bosh-src/ci/dockerfiles/main-postgres"
           build_args:
@@ -845,7 +846,7 @@ jobs:
     plan:
       - get: bosh-src
         trigger: true
-      - put: main-mysql-5.7
+      - put: main-mysql-5.7-image
         params:
           build: "bosh-src/ci/dockerfiles/main-mysql"
         get_params:
@@ -1060,6 +1061,21 @@ resources:
       project_id: ((tracker_project_id))
       tracker_url: https://www.pivotaltracker.com
 
+  - name: bosh-main-mysql-5.7
+    type: docker-image
+    source:
+      repository: bosh/main-mysql-5.7
+
+  - name: bosh-main-postgres-9.4
+    type: docker-image
+    source:
+      repository: bosh/main-postgres-9.4
+
+  - name: bosh-main-postgres-10
+    type: docker-image
+    source:
+      repository: bosh/main-postgres-10
+
   - name: main-ruby-go-image
     type: docker-image
     source:
@@ -1069,7 +1085,7 @@ resources:
       username: ((dockerhub_username))
       password: ((dockerhub_password))
 
-  - name: bosh-main-mysql-5.7
+  - name: main-mysql-5.7-image
     type: docker-image
     source:
       repository: bosh/main-mysql-5.7
@@ -1078,7 +1094,7 @@ resources:
       username: ((dockerhub_username))
       password: ((dockerhub_password))
 
-  - name: bosh-main-postgres-9.4
+  - name: main-postgres-9.4-image
     type: docker-image
     source:
       repository: bosh/main-postgres-9.4
@@ -1087,7 +1103,7 @@ resources:
       username: ((dockerhub_username))
       password: ((dockerhub_password))
 
-  - name: bosh-main-postgres-10
+  - name: main-postgres-10-image
     type: docker-image
     source:
       repository: bosh/main-postgres-10
