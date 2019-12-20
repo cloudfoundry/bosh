@@ -122,12 +122,12 @@ jobs:
         - get: bosh-src
           passed: [gate]
           trigger: true
-        - get: bosh-main-mysql-5.7
+        - get: main-mysql-5.7-image
       - task: test-mysql-5.7
         timeout: 2h
         privileged: true
         file: bosh-src/ci/tasks/test-unit.yml
-        image: bosh-main-mysql-5.7
+        image: main-mysql-5.7-image
         params:
           DB: mysql
 
@@ -141,14 +141,14 @@ jobs:
         - get: bosh-src
           passed: [gate]
           trigger: true
-        - get: bosh-main-postgres-9.4
-        - get: bosh-main-postgres-10
+        - get: main-postgres-9.4-image
+        - get: main-postgres-10-image
       - in_parallel:
         - task: test-postgres-9.4
           timeout: 2h
           privileged: true
           file: bosh-src/ci/tasks/test-unit.yml
-          image: bosh-main-postgres-9.4
+          image: main-postgres-9.4-image
           params:
             DB: postgresql
             DB_VERSION: 9.4
@@ -156,7 +156,7 @@ jobs:
           timeout: 2h
           privileged: true
           file: bosh-src/ci/tasks/test-unit.yml
-          image: bosh-main-postgres-10
+          image: main-postgres-10-image
           params:
             DB: postgresql
             DB_VERSION: 10
@@ -191,9 +191,11 @@ jobs:
           trigger: true
         - get: bosh-agent
         - get: integration-tests-parallel-runtime
+        - get: main-postgres-10-image
       - task: tests
         privileged: true
         file: bosh-src/ci/tasks/test-integration.yml
+        image: main-postgres-10-image
         tags: ["bosh-integration"]
         params:
           DB:           postgresql
@@ -217,9 +219,11 @@ jobs:
           trigger: true
         - get: bosh-agent
         - get: integration-tests-parallel-runtime
+        - get: main-postgres-10-image
       - task: tests
         privileged: true
         file: bosh-src/ci/tasks/test-integration.yml
+        image: main-postgres-10-image
         tags: ["bosh-integration"]
         params:
           DB:           postgresql
@@ -245,26 +249,15 @@ jobs:
           trigger: true
         - get: bosh-agent
         - get: integration-tests-parallel-runtime
+        - get: main-mysql-5.7-image
       - task: tests
         privileged: true
         tags: ["bosh-integration"]
-        config:
-          platform: linux
-          image_resource:
-            type: docker-image
-            source:
-              repository: bosh/main-mysql-5.7
-          inputs:
-          - name: bosh-src
-          - name: bosh-cli
-          - name: bosh-agent
-          outputs:
-          - name: parallel-runtime-log
-          run:
-            path: bosh-src/ci/tasks/test-integration.sh
-          params:
-            DB:           mysql
-            DB_TLS:       true
+        file: bosh-src/ci/tasks/test-integration.yml
+        image: main-mysql-5.7-image
+        params:
+          DB:           mysql
+          DB_TLS:       true
       - put: integration-tests-parallel-runtime
         params:
           file: parallel-runtime-log/parallel_runtime_rspec.log
@@ -819,11 +812,15 @@ jobs:
     plan:
       - get: bosh-src
         trigger: true
+      - get: integration-image
+        trigger: true
+        passed: [build-integration]
       - put: main-postgres-9.4-image
         params:
           build: "bosh-src/ci/dockerfiles/main-postgres"
           build_args:
             DB_VERSION: "9.4"
+            BRANCH: ((branch_name))
         get_params:
           skip_download: true
 
@@ -841,6 +838,7 @@ jobs:
           build: "bosh-src/ci/dockerfiles/main-postgres"
           build_args:
             DB_VERSION: "10"
+            BRANCH: ((branch_name))
         get_params:
           skip_download: true
 
@@ -1083,21 +1081,6 @@ resources:
       token: ((tracker_api_token))
       project_id: ((tracker_project_id))
       tracker_url: https://www.pivotaltracker.com
-
-  - name: bosh-main-mysql-5.7
-    type: docker-image
-    source:
-      repository: bosh/main-mysql-5.7
-
-  - name: bosh-main-postgres-9.4
-    type: docker-image
-    source:
-      repository: bosh/main-postgres-9.4
-
-  - name: bosh-main-postgres-10
-    type: docker-image
-    source:
-      repository: bosh/main-postgres-10
 
   - name: main-ruby-go-image
     type: docker-image
