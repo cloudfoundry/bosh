@@ -33,6 +33,10 @@ groups:
     jobs:
     - export-final-release
 
+  - name: docker
+    jobs:
+    - build-main-ruby-go
+
 shared:
   - &deploy-director
     task: deploy-director
@@ -792,6 +796,18 @@ jobs:
       params:
         file: version/version
 
+  - name: build-main-ruby-go
+      public: true
+      serial: true
+      plan:
+        - get: bosh-src
+          trigger: true
+        - put: main-ruby-go-image
+          params:
+            build: "bosh-src/ci/dockerfiles/main-ruby-go"
+          get_params:
+            skip_download: true
+
 resource_types:
 - name: terraform
   type: docker-image
@@ -1000,6 +1016,15 @@ resources:
       token: ((tracker_api_token))
       project_id: ((tracker_project_id))
       tracker_url: https://www.pivotaltracker.com
+
+  - name: main-ruby-go-image
+    type: docker-image
+    source:
+      repository: bosh/main-ruby-go
+      tag: ((branch_name))
+      email: ((dockerhub_email))
+      username: ((dockerhub_username))
+      password: ((dockerhub_password))
 
   - name: bosh-main-mysql-5.7
     type: docker-image
