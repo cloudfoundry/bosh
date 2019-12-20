@@ -797,16 +797,16 @@ jobs:
         file: version/version
 
   - name: build-main-ruby-go
-      public: true
-      serial: true
-      plan:
-        - get: bosh-src
-          trigger: true
-        - put: main-ruby-go-image
-          params:
-            build: "bosh-src/ci/dockerfiles/main-ruby-go"
-          get_params:
-            skip_download: true
+    public: true
+    serial: true
+    plan:
+      - get: bosh-src
+        trigger: true
+      - put: main-ruby-go-image
+        params:
+          build: "bosh-src/ci/dockerfiles/main-ruby-go"
+        get_params:
+          skip_download: true
 
 resource_types:
 - name: terraform
