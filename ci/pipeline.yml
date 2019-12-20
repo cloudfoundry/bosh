@@ -833,6 +833,9 @@ jobs:
     plan:
       - get: bosh-src
         trigger: true
+      - get: integration-image
+        trigger: true
+        passed: [build-integration]
       - put: main-postgres-10-image
         params:
           build: "bosh-src/ci/dockerfiles/main-postgres"
