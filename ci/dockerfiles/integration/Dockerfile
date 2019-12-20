@@ -1,5 +1,8 @@
 FROM ubuntu:16.04
 
+RUN apt-get update && apt-get -yq install \
+    build-essential locales git wget
+
 # Install Dependencies
 ENV LANG en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
