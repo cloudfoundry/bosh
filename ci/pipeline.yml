@@ -103,11 +103,11 @@ jobs:
       - get: bosh-src
         trigger: true
         passed: [gate]
-
+      - get: main-ruby-go-image
       - task: test
         timeout: 2h
         file: bosh-src/ci/tasks/test-unit.yml
-        image: main-ruby-go
+        image: main-ruby-go-image
         params:
           DB: sqlite
 
@@ -846,9 +846,28 @@ jobs:
     plan:
       - get: bosh-src
         trigger: true
+      - get: integration-image
+        trigger: true
+        passed: [build-integration]
       - put: main-mysql-5.7-image
         params:
           build: "bosh-src/ci/dockerfiles/main-mysql"
+          build_args:
+            BRANCH: ((branch_name))
+        get_params:
+          skip_download: true
+
+  - name: build-integration
+    public: true
+    serial: true
+    plan:
+      - get: bosh-src
+        trigger: true
+      - put: integration-image
+        params:
+          build: "bosh-src/ci/dockerfiles/integration"
+          build_args:
+            BRANCH: ((branch_name))
         get_params:
           skip_download: true
 
@@ -1107,6 +1126,15 @@ resources:
     type: docker-image
     source:
       repository: bosh/main-postgres-10
+      tag: ((branch_name))
+      email: ((dockerhub_email))
+      username: ((dockerhub_username))
+      password: ((dockerhub_password))
+
+  - name: integration-image
+    type: docker-image
+    source:
+      repository: bosh/integration
       tag: ((branch_name))
       email: ((dockerhub_email))
       username: ((dockerhub_username))
