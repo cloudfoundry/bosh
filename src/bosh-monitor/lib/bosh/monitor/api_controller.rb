@@ -4,6 +4,7 @@ module Bosh::Monitor
 
     def initialize
       @heartbeat = Time.now
+      @instance_manager = Bosh::Monitor.instance_manager
 
       EM.add_periodic_timer(1) do
         EM.defer { @heartbeat = Time.now }
@@ -27,6 +28,10 @@ module Bosh::Monitor
       else
         status(200)
       end
+    end
+
+    get '/unresponsive_agents' do
+      JSON.generate(@instance_manager.unresponsive_agents)
     end
   end
 end

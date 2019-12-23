@@ -31,6 +31,12 @@ module Bosh
           labels: %i[name],
           docstring: 'Number of dynamical free IPs left per network',
         )
+
+        @unresponsive_agents = Prometheus::Client.registry.gauge(
+          :bosh_unresponsive_agents,
+          labels: %i[name],
+          docstring: 'Number of unresponsive agents per deployment',
+        )
         @scheduler = Rufus::Scheduler.new
       end
 
@@ -98,7 +104,21 @@ module Bosh
 
         populate_network_metrics
 
+        populate_vm_metrics
+
         @logger.info('populated metrics')
+      end
+
+      def populate_vm_metrics
+        response = Net::HTTP.get_response("127.0.0.1:#{@config.health_monitor_port}", '/unresponsive_agents')
+        return unless response.is_a?(Net::HTTPSuccess)
+
+        unresponsive_agent_counts = JSON.parse(response.body)
+        return unless unresponsive_agent_counts.is_a?(Hash)
+
+        unresponsive_agent_counts.map do |deployment, count|
+          @unresponsive_agents.set(count, labels: { name: deployment })
+        end
       end
 
       def populate_network_metrics

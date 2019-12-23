@@ -261,6 +261,22 @@ module Bhm
         end
       end
 
+      describe '#unresponsive_agents' do
+        it 'can return number of unresponsive agents for each deployment' do
+          instance1 = Bhm::Instance.create('id' => 'iuuid1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator')
+          instance2 = Bhm::Instance.create('id' => 'iuuid2', 'agent_id' => '008', 'index' => '0', 'job' => 'nats')
+          instance3 = Bhm::Instance.create('id' => 'iuuid3', 'agent_id' => '009', 'index' => '28', 'job' => 'mysql_node')
+
+          manager.sync_deployments([{ 'name' => 'mycloud' }])
+          manager.sync_agents('mycloud', [instance1, instance2, instance3])
+
+          expect(manager.unresponsive_agents).to eq('mycloud' => 0)
+          ts = Time.now
+          allow(Time).to receive(:now).and_return(ts + Bhm.intervals.agent_timeout + 10)
+          expect(manager.unresponsive_agents).to eq('mycloud' => 3)
+        end
+      end
+
       describe '#analyze_agents' do
         let(:instance_1) { Bhm::Instance.create('id' => 'instance-uuid-1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator') }
         let(:instance_2) { Bhm::Instance.create('id' => 'instance-uuid-2', 'agent_id' => '008', 'index' => '1', 'job' => 'mutator') }

@@ -23,6 +23,8 @@ module Bosh
         allow(Rufus::Scheduler).to receive(:new).and_return(scheduler)
         allow(Api::ResurrectorManager).to receive(:new).and_return(resurrector_manager)
         allow(resurrector_manager).to receive(:pause_for_all?).and_return(false, true, false)
+        stub_request(:get, /unresponsive_agents/)
+          .to_return(status: 200, body: JSON.dump('flaky_deployment' => 1, 'good_deployment' => 0))
       end
 
       after do
@@ -30,6 +32,7 @@ module Bosh
         Prometheus::Client.registry.unregister(:bosh_tasks_total)
         Prometheus::Client.registry.unregister(:bosh_networks_dynamic_ips_total)
         Prometheus::Client.registry.unregister(:bosh_networks_dynamic_free_ips_total)
+        Prometheus::Client.registry.unregister(:bosh_unresponsive_agents)
       end
 
       describe 'start' do
@@ -188,6 +191,41 @@ module Bosh
                 metric = Prometheus::Client.registry.get(:bosh_networks_dynamic_free_ips_total)
                 expect(metric.get(labels: { name: 'my_manual_network' })).to eq(9)
               end
+            end
+          end
+        end
+
+        describe 'vm metrics' do
+          it 'emits the number of unresponsive agents for each deployment' do
+            metrics_collector.start
+            metric = Prometheus::Client.registry.get(:bosh_unresponsive_agents)
+            expect(metric.get(labels: { name: 'flaky_deployment' })).to eq(1)
+            expect(metric.get(labels: { name: 'good_deployment' })).to eq(0)
+          end
+
+          context 'when the health monitor returns a non 200 response' do
+            before do
+              stub_request(:get, /unresponsive_agents/)
+                .to_return(status: 404)
+            end
+
+            it 'does not emit the vm metrics' do
+              metrics_collector.start
+              metric = Prometheus::Client.registry.get(:bosh_unresponsive_agents)
+              expect(metric.values).to be_empty
+            end
+          end
+
+          context 'when the health monitor returns a non-json response' do
+            before do
+              stub_request(:get, /unresponsive_agents/)
+                .to_return(status: 200, body: JSON.dump('bad response'))
+            end
+
+            it 'does not emit the vm metrics' do
+              metrics_collector.start
+              metric = Prometheus::Client.registry.get(:bosh_unresponsive_agents)
+              expect(metric.values).to be_empty
             end
           end
         end

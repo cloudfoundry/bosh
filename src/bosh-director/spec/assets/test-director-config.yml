@@ -13,6 +13,8 @@ db:
   connection_options:
     max_connections: 32
     pool_timeout: 10
+health_monitor:
+  port: 12345
 verify_multidigest_path: /some/path
 blobstore:
   provider: davcli

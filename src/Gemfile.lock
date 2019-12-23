@@ -58,7 +58,7 @@ PATH
     bosh-monitor (0.0.0)
       cf-uaa-lib (~> 3.2.1)
       dogapi (~> 1.21.0)
-      em-http-request (~> 0.3.0)
+      em-http-request
       eventmachine (~> 1.2.0)
       httpclient (~> 2.8.3)
       logging (~> 2.2.2)
@@ -101,8 +101,8 @@ GEM
       i18n (~> 0.7)
       minitest (~> 5.1)
       tzinfo (~> 1.1)
-    addressable (2.5.2)
-      public_suffix (>= 2.0.2, < 4.0)
+    addressable (2.7.0)
+      public_suffix (>= 2.0.2, < 5.0)
     ast (2.4.0)
     aws-eventstream (1.0.3)
     aws-partitions (1.172.0)
@@ -848,6 +848,7 @@ GEM
       multi_json
     coderay (1.1.2)
     concurrent-ruby (1.0.5)
+    cookiejar (0.3.3)
     crack (0.4.3)
       safe_yaml (~> 1.0.0)
     daemons (1.3.1)
@@ -858,11 +859,14 @@ GEM
       multi_json
     domain_name (0.5.20170404)
       unf (>= 0.0.5, < 1.0.0)
-    em-http-request (0.3.0)
-      addressable (>= 2.0.0)
-      escape_utils
-      eventmachine (>= 0.12.9)
-    escape_utils (1.2.1)
+    em-http-request (1.1.5)
+      addressable (>= 2.3.4)
+      cookiejar (!= 0.3.1)
+      em-socksify (>= 0.3)
+      eventmachine (>= 1.0.3)
+      http_parser.rb (>= 0.6.0)
+    em-socksify (0.3.2)
+      eventmachine (>= 1.0.0.beta.4)
     et-orbi (1.2.2)
       tzinfo
     eventmachine (1.2.7)
@@ -886,9 +890,10 @@ GEM
     fugit (1.3.3)
       et-orbi (~> 1.1, >= 1.1.8)
       raabro (~> 1.1)
-    hashdiff (0.3.6)
+    hashdiff (1.0.0)
     http-cookie (1.0.3)
       domain_name (~> 0.5)
+    http_parser.rb (0.6.0)
     httpclient (2.8.3)
     i18n (0.9.1)
       concurrent-ruby (~> 1.0)
@@ -933,7 +938,7 @@ GEM
     pry-remote (0.1.8)
       pry (~> 0.9)
       slop (~> 3.0)
-    public_suffix (3.0.0)
+    public_suffix (4.0.1)
     puma (3.12.2)
     raabro (1.1.6)
     rack (1.6.11)
@@ -981,7 +986,7 @@ GEM
     ruby-progressbar (1.10.1)
     rufus-scheduler (3.6.0)
       fugit (~> 1.1, >= 1.1.6)
-    safe_yaml (1.0.4)
+    safe_yaml (1.0.5)
     semi_semantic (1.2.0)
     sequel (5.16.0)
     sinatra (1.4.8)
@@ -1010,7 +1015,7 @@ GEM
     thread_safe (0.3.6)
     tilt (2.0.9)
     timecop (0.7.4)
-    trollop (2.1.3)
+    trollop (2.9.10)
     tzinfo (1.2.4)
       thread_safe (~> 0.1)
     tzinfo-data (1.2019.3)
@@ -1020,10 +1025,10 @@ GEM
     unf_ext (0.0.7.4)
     unicode-display_width (1.6.0)
     unix-crypt (1.3.0)
-    webmock (1.24.6)
+    webmock (3.7.6)
       addressable (>= 2.3.6)
       crack (>= 0.3.2)
-      hashdiff
+      hashdiff (>= 0.4.0, < 2.0.0)
 
 PLATFORMS
   ruby
@@ -1069,7 +1074,7 @@ DEPENDENCIES
   talentbox-delayed_job_sequel (~> 4.3)
   timecop (~> 0.7.1)
   unix-crypt
-  webmock (~> 1.0)
+  webmock
 
 RUBY VERSION
    ruby 2.6.3p62

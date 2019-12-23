@@ -30,7 +30,7 @@ describe 'Bhm::Director' do
 
     it 'can fetch deployments from BOSH director' do
       stub_request(:get, 'http://localhost:8080/director/deployments?exclude_configs=true&exclude_releases=true&exclude_stemcells=true')
-        .with(headers: { 'Authorization' => %w[admin admin] })
+        .with(basic_auth: %w[admin admin])
         .to_return(body: json_dump(deployments), status: 200)
 
       with_fiber do
@@ -40,7 +40,7 @@ describe 'Bhm::Director' do
 
     it 'can fetch resurrection config from BOSH director' do
       stub_request(:get, 'http://localhost:8080/director/configs?latest=true&type=resurrection')
-        .with(headers: { 'Authorization' => %w[admin admin] })
+        .with(basic_auth: %w[admin admin])
         .to_return(body: json_dump(resurrection_config), status: 200)
 
       with_fiber do
@@ -50,7 +50,7 @@ describe 'Bhm::Director' do
 
     it 'raises an error if resurrection config cannot be fetched' do
       stub_request(:get, 'http://localhost:8080/director/configs?latest=true&type=resurrection')
-        .with(headers: { 'Authorization' => %w[admin admin] })
+        .with(basic_auth: %w[admin admin])
         .to_return(body: 'foo', status: 500)
 
       with_fiber do
@@ -65,7 +65,7 @@ describe 'Bhm::Director' do
 
     it 'raises an error if deployments cannot be fetched' do
       stub_request(:get, 'http://localhost:8080/director/deployments?exclude_configs=true&exclude_releases=true&exclude_stemcells=true')
-        .with(headers: { 'Authorization' => %w[admin admin] })
+        .with(basic_auth: %w[admin admin])
         .to_return(body: 'foo', status: 500)
 
       with_fiber do
@@ -81,7 +81,7 @@ describe 'Bhm::Director' do
 
     it 'can fetch instances by deployment name from BOSH director' do
       stub_request(:get, 'http://localhost:8080/director/deployments/foo/instances')
-        .with(headers: { 'Authorization' => %w[admin admin] })
+        .with(basic_auth: %w[admin admin])
         .to_return(body: json_dump(deployments), status: 200)
 
       with_fiber do

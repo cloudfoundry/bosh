@@ -32,6 +32,11 @@ describe 'director.yml.erb' do
         },
         'enable_signed_urls' => false,
       },
+      'hm' => {
+        'http' => {
+          'port' => 12345,
+        },
+      },
       'nats' => {
         'address' => '10.10.0.7',
         'port' => 4222

@@ -8,8 +8,6 @@ describe Bosh::Monitor::ApiController do
     Bosh::Monitor::ApiController.new
   end
 
-  let(:config) { class_double(Bosh::Monitor) }
-  before { stub_const('Bhm', config) }
   before { allow(EM).to receive(:add_periodic_timer) {} }
 
   describe '/healthz' do
@@ -64,6 +62,24 @@ describe Bosh::Monitor::ApiController do
         get '/healthz'
         expect(last_response.status).to eq(200)
       end
+    end
+  end
+
+  describe '/unresponsive_agents' do
+    let(:unresponsive_agents) do
+      {
+        'first_deployment' => 2,
+        'second_deployment' => 0,
+      }
+    end
+    before do
+      allow(Bosh::Monitor.instance_manager).to receive(:unresponsive_agents).and_return(unresponsive_agents)
+    end
+
+    it 'renders the unresponsive agents' do
+      get '/unresponsive_agents'
+      expect(last_response.status).to eq(200)
+      expect(last_response.body).to eq(JSON.generate(unresponsive_agents))
     end
   end
 end

@@ -583,6 +583,10 @@ module Bosh::Director
       hash.fetch('metrics_server', {}).fetch('enabled', false)
     end
 
+    def health_monitor_port
+      hash.fetch('health_monitor', {}).fetch('port', 25923)
+    end
+
     private
 
     attr_reader :hash

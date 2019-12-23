@@ -46,7 +46,7 @@ group :development, :test do
   gem 'rack-test'
   gem 'sinatra'
   gem 'sinatra-contrib'
-  gem 'webmock', '~>1.0'
+  gem 'webmock'
 
   gem 'pry-byebug'
   gem 'pry-remote'

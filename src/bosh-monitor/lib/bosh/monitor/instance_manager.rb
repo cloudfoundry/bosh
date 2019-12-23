@@ -95,6 +95,15 @@ module Bosh::Monitor
       @deployment_name_to_deployments[deployment_name].instances
     end
 
+    def unresponsive_agents
+      agents_hash = {}
+      @deployment_name_to_deployments.each do |name, deployment|
+        agents_hash[name] = deployment.agents.count(&:timed_out?)
+      end
+
+      agents_hash
+    end
+
     def analyze_agents
       @logger.info('Analyzing agents...')
       started = Time.now

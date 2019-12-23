@@ -443,6 +443,14 @@ describe Bosh::Director::Config do
     end
   end
 
+  describe '#health_monitor_port' do
+    subject(:config) { Bosh::Director::Config.new(test_config) }
+
+    it 'returns the name specified in the config' do
+      expect(config.health_monitor_port).to eq(12345)
+    end
+  end
+
   describe 'director_stemcell_owner deletagion' do
     let(:director_stemcell_owner) do
       double(

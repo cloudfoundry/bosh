@@ -485,3 +485,7 @@ properties:
   indicators.queued_tasks_threshold:
     description: Amount of tasks queued for a certain time before alerts are sent
     default: 10
+
+  hm.http.port:
+    description: TCP where health monitor is
+    default: 25923

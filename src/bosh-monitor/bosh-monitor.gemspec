@@ -21,7 +21,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'eventmachine',    '~>1.2.0'
   spec.add_dependency 'logging',         '~>2.2.2'
-  spec.add_dependency 'em-http-request', '~>0.3.0'
+  spec.add_dependency 'em-http-request'
   spec.add_dependency 'nats',      '~>0.9.2'
   spec.add_dependency 'thin',      '~>1.7.0'
   spec.add_dependency 'sinatra',   '~>1.4.2'

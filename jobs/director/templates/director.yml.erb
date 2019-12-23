@@ -46,6 +46,9 @@ params = {
     'enabled' => p('director.metrics_server.enabled'),
     'port' => p('director.metrics_server.port'),
   },
+  'health_monitor' => {
+    'port' => p('hm.http.port')
+  },
 }
 
 director_db = {

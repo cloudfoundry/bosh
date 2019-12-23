@@ -11,6 +11,7 @@ require 'tempfile'
 require 'tmpdir'
 require 'zlib'
 require 'timecop'
+require 'webmock/rspec'
 
 require 'archive/tar/minitar'
 require 'machinist/sequel'
