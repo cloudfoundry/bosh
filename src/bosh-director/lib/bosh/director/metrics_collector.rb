@@ -110,7 +110,7 @@ module Bosh
       end
 
       def populate_vm_metrics
-        response = Net::HTTP.get_response("127.0.0.1:#{@config.health_monitor_port}", '/unresponsive_agents')
+        response = Net::HTTP.get_response('127.0.0.1', '/unresponsive_agents', @config.health_monitor_port)
         return unless response.is_a?(Net::HTTPSuccess)
 
         unresponsive_agent_counts = JSON.parse(response.body)

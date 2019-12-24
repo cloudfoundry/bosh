@@ -205,7 +205,7 @@ module Bosh
 
           context 'when the health monitor returns a non 200 response' do
             before do
-              stub_request(:get, /unresponsive_agents/)
+              stub_request(:get, '127.0.0.1:12345/unresponsive_agents')
                 .to_return(status: 404)
             end
 
@@ -218,7 +218,7 @@ module Bosh
 
           context 'when the health monitor returns a non-json response' do
             before do
-              stub_request(:get, /unresponsive_agents/)
+              stub_request(:get, '127.0.0.1:12345/unresponsive_agents')
                 .to_return(status: 200, body: JSON.dump('bad response'))
             end
 
