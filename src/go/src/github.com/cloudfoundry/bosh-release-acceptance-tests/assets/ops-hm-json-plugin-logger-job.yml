@@ -11,9 +11,3 @@
     name: hm-json-plugin
     version: create
     url: file://((hm-json-plugin-release-path))
-
-- type: replace
-  path: /instance_groups/name=bosh/jobs/-
-  value:
-    name: health_monitor
-    release: bosh
