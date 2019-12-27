@@ -2,8 +2,8 @@ require File.expand_path('../../spec/shared/spec_helper', __dir__)
 
 require 'tempfile'
 require 'bosh/monitor'
-require 'support/buffered_logger'
-require 'support/uaa_helpers'
+require_relative 'support/buffered_logger'
+require_relative 'support/uaa_helpers'
 require 'webmock/rspec'
 
 def spec_asset(filename)

@@ -1,4 +1,4 @@
-require 'spec_helper'
+require_relative '../../../../spec_helper'
 
 describe Bhm::Plugins::Logger do
   let(:plugin) { Bhm::Plugins::Logger.new(options) }

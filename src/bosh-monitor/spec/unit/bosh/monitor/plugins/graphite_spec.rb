@@ -1,4 +1,4 @@
-require 'spec_helper'
+require_relative '../../../../spec_helper'
 
 describe Bhm::Plugins::Graphite do
   subject(:plugin) { Bhm::Plugins::Graphite.new(options) }

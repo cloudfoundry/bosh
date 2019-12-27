@@ -1,4 +1,4 @@
-require 'spec_helper'
+require_relative '../../../spec_helper'
 
 describe Bosh::Monitor::DirectorMonitor do
   let(:nats) { instance_double('NATS') }

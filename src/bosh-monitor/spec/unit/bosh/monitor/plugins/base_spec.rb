@@ -1,4 +1,4 @@
-require 'spec_helper'
+require_relative '../../../../spec_helper'
 
 describe Bhm::Plugins::Base do
   it 'has stubs for methods supposed to be overriden by plugins' do

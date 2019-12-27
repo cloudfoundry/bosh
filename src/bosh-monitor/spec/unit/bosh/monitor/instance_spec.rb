@@ -1,4 +1,4 @@
-require 'spec_helper'
+require_relative '../../../spec_helper'
 
 describe Bhm::Instance do
   it 'refuses to create instance with malformed director instance data' do

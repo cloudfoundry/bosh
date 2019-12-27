@@ -1,4 +1,4 @@
-require 'spec_helper'
+require_relative '../../../../spec_helper'
 
 module Bosh::Monitor::Plugins
   describe Resurrector do
