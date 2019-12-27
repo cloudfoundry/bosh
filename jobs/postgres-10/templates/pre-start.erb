@@ -56,7 +56,7 @@ if [[ -f /var/vcap/store/postgres-10/fresh ]] ; then
         echo "waiting for postgres-9.4 to start..."
         sleep 1
         count=$(( count + 1 ))
-        if [ $count -gte 120 ]; then
+        if [ $count -ge 120 ]; then
           echo "timed out waiting for postgres-9.4 to start"
           exit 1
         fi
