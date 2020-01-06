@@ -279,11 +279,13 @@ jobs:
       - integration-db-tls-postgres
       - integration-db-tls-postgres-hotswap
     - get: bosh-cli
+    - get: main-ruby-go-image
     - put: version
       params:
         pre: rc
     - task: make
       file: bosh-src/ci/tasks/make-candidate.yml
+      image: main-ruby-go-image
     - put: bosh-candidate-release-tarballs
       params:
         file: "release/bosh-dev-release.tgz"
@@ -368,6 +370,7 @@ jobs:
           env_name: bats-ubuntu-xenial-aws-((branch_name))
       - do:
         - task: deploy-director
+          image: main-ruby-go-image
           file: bosh-src/ci/bats/tasks/deploy-director.yml
           input_mapping:
             environment: terraform
@@ -398,6 +401,7 @@ jobs:
           ensure:
             do:
             - task: ensure-terminated
+              image: main-ruby-go-image
               file: bosh-src/ci/bats/iaas/aws/ensure-terminated.yml
               input_mapping:
                 environment: terraform
@@ -590,6 +594,7 @@ jobs:
           DEPLOY_ARGS: |
             -o bosh-deployment/external-ip-with-registry-not-recommended.yml
       - task: deploy-zookeeper
+        image: main-ruby-go-image
         file: bosh-src/ci/tasks/deploy-zookeeper.yml
       - task: upgrade-to-current-version
         image: main-ruby-go-image
@@ -605,16 +610,19 @@ jobs:
           DEPLOY_ARGS: |
             -o bosh-deployment/external-ip-with-registry-not-recommended.yml
       - task: recreate-zookeeper
+        image: main-ruby-go-image
         file: bosh-src/ci/tasks/deploy-zookeeper.yml
       ensure:
         do:
         - task: teardown
+          image: main-ruby-go-image
           file: bosh-src/ci/bats/tasks/destroy-director.yml
           image: main-ruby-go-image
           attempts: 3
         ensure:
           do:
           - task: ensure-terminated
+            image: main-ruby-go-image
             file: bosh-src/ci/bats/iaas/aws/ensure-terminated.yml
             input_mapping:
               environment: terraform
@@ -707,9 +715,11 @@ jobs:
           params:
             bump: final
       - task: prepare-release
+        image: main-ruby-go-image
         file: bosh-src/ci/tasks/prepare-release.yml
       - get: bosh-master
       - task: finalize-release
+        image: main-ruby-go-image
         file: bosh-src-latest-with-release-commit/ci/tasks/finalize-bosh-release.yml
         params:
           RELEASE_PRIVATE_YML: ((bosh_release_private_yml))
