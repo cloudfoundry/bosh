@@ -46,6 +46,7 @@ shared:
     task: deploy-director
     tags: [vsphere-v6.5]
     file: bosh-src/ci/bats/tasks/deploy-director.yml
+    image: main-ruby-go-image
     params:
       BAT_INFRASTRUCTURE: vsphere
       BOSH_CLIENT:                          ((stemcell-test-director-username))
@@ -69,16 +70,19 @@ shared:
     task: prepare-bats
     tags: [vsphere-v6.5]
     file: bosh-src/ci/bats/iaas/vsphere/prepare-bats-config.yml
+    image: main-ruby-go-image
 
   - &run-bats
     task: run-bats
     tags: [vsphere-v6.5]
     file: bats/ci/tasks/run-bats.yml
+    image: main-ruby-go-image
 
   - &teardown
     task: teardown
     tags: [vsphere-v6.5]
     file: bosh-src/ci/bats/tasks/destroy-director.yml
+    image: main-ruby-go-image
     attempts: 3
 
 jobs:
@@ -342,6 +346,7 @@ jobs:
         - get: bosh-deployment
         - get: bosh-src
           passed: [compile-bosh-dev-release-xenial]
+        - get: main-ruby-go-image
       - put: environment
         params:
           acquire: true
@@ -375,6 +380,7 @@ jobs:
         - get: bosh-src
           passed: [compile-bosh-dev-release-xenial]
         - get: bosh-deployment
+        - get: main-ruby-go-image
       - put: terraform
         params:
           terraform_source: bosh-src/ci/bats/iaas/aws/terraform
@@ -395,16 +401,19 @@ jobs:
               -o bosh-deployment/external-ip-with-registry-not-recommended.yml
         - task: prepare-bats-config
           file: bosh-src/ci/bats/iaas/aws/prepare-bats-config.yml
+          image: main-ruby-go-image
           input_mapping:
             environment: terraform
           params:
             STEMCELL_NAME: bosh-aws-xen-hvm-ubuntu-xenial-go_agent
         - task: run-bats
           file: bats/ci/tasks/run-bats.yml
+          image: main-ruby-go-image
         ensure:
           do:
           - task: teardown
             file: bosh-src/ci/bats/tasks/destroy-director.yml
+            image: main-ruby-go-image
             attempts: 3
           ensure:
             do:
@@ -579,6 +588,7 @@ jobs:
           passed: [compile-bosh-dev-release-xenial]
         - get: last-released-bosh-release
         - get: zookeeper-release
+        - get: main-ruby-go-image
       - put: terraform
         params:
           terraform_source: bosh-src/ci/bats/iaas/aws/terraform
@@ -586,6 +596,7 @@ jobs:
           env_name: upgrade-ubuntu-xenial-aws-((branch_name))
     - do:
       - task: deploy-previous-version
+        image: main-ruby-go-image
         file: bosh-src/ci/bats/tasks/deploy-director.yml
         input_mapping:
           environment: terraform
@@ -601,6 +612,7 @@ jobs:
       - task: deploy-zookeeper
         file: bosh-src/ci/tasks/deploy-zookeeper.yml
       - task: upgrade-to-current-version
+        image: main-ruby-go-image
         file: bosh-src/ci/bats/tasks/deploy-director.yml
         input_mapping:
           environment: terraform
@@ -618,6 +630,7 @@ jobs:
         do:
         - task: teardown
           file: bosh-src/ci/bats/tasks/destroy-director.yml
+          image: main-ruby-go-image
           attempts: 3
         ensure:
           do:
