@@ -711,6 +711,7 @@ jobs:
         - get: bosh-src-latest
           resource: bosh-src
         - get: bosh-cli
+        - get: main-ruby-go-image
         - get: version
           params:
             bump: final
