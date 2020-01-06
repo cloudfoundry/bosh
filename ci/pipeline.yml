@@ -9,7 +9,6 @@ groups:
       - integration-db-tls-postgres
       - integration-db-tls-postgres-hotswap
       - integration-db-tls-mysql
-      - fuzz-tests
       - candidate-release
       - compile-bosh-dev-release-xenial
       - bats-ubuntu-xenial
@@ -266,25 +265,6 @@ jobs:
         params:
           file: parallel-runtime-log/parallel_runtime_rspec.log
           acl: public-read
-
-  - name: fuzz-tests
-    public: true
-    build_logs_to_retain: 2500
-    plan:
-    - { get: fuzz-interval-trigger, trigger: true }
-    - get: bosh-src
-      trigger: true
-    - { get: bosh-agent }
-    - { get: bosh-fuzz-tests }
-    - { get: bosh-cli }
-
-    - task: test
-      privileged: true
-      file: bosh-fuzz-tests/ci/tasks/test.yml
-      tags: ["bosh-integration"]
-      params:
-        BOSH_SRC_PATH: bosh-src/src
-        RUBY_VERSION: 2.6.3
 
   - name: candidate-release
     plan:
@@ -996,12 +976,6 @@ resources:
       bucket: davcli
       region_name: us-east-1
 
-  - name: bosh-fuzz-tests
-    type: git
-    source:
-      uri: https://github.com/cloudfoundry-incubator/bosh-fuzz-tests.git
-      branch: master
-
   - name: bosh-master
     type: git
     source:
@@ -1015,11 +989,6 @@ resources:
       uri: https://github.com/bosh-dep-forks/prometheus-boshrelease
       branch: master
       private_key: ((github_deployment_key))
-
-  - name: fuzz-interval-trigger
-    type: time
-    source:
-      interval: 1h
 
   - name: bosh-cli
     type: s3
