@@ -39,6 +39,7 @@ groups:
     - build-main-postgres-10
     - build-main-mysql-5.7
     - build-integration
+    - build-docker-cpi
 
 shared:
   - &deploy-director
@@ -877,6 +878,18 @@ jobs:
         get_params:
           skip_download: true
 
+  - name: build-docker-cpi
+    public: true
+    serial: true
+    plan:
+      - get: bosh-src
+        trigger: true
+      - put: docker-cpi-image
+        params:
+          build: "bosh-src/ci/dockerfiles/docker-cpi"
+        get_params:
+          skip_download: true
+
 resource_types:
 - name: terraform
   type: docker-image
@@ -1106,6 +1119,15 @@ resources:
     type: docker-image
     source:
       repository: bosh/main-postgres-10
+      tag: ((branch_name))
+      email: ((dockerhub_email))
+      username: ((dockerhub_username))
+      password: ((dockerhub_password))
+
+  - name: docker-cpi-image
+    type: docker-image
+    source:
+      repository: bosh/docker-cpi
       tag: ((branch_name))
       email: ((dockerhub_email))
       username: ((dockerhub_username))
