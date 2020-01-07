@@ -24,7 +24,10 @@ RUN apt-get install -y \
 	libpq-dev \
 	rsyslog \
 	libcurl4-openssl-dev \
+	python python-pip \
 	&& apt-get clean
+
+RUN pip install awscli
 
 # Nokogiri dependencies
 RUN apt-get install -y libxslt-dev libxml2-dev && apt-get clean
