@@ -16,7 +16,6 @@ groups:
       - brats-ubuntu-xenial
       - bosh-disaster-recovery-acceptance-tests
       - upgrade
-      - blobstore-performance
       - upload-compiled-staging-tarball
       - deploy-acceptance-env
       - delivery
@@ -88,7 +87,6 @@ shared:
 jobs:
   - name: gate
     serial_groups:
-      - blobstore-performance
       - integration-db-tls-mysql
       - integration-db-tls-postgres
       - integration-db-tls-postgres-hotswap
@@ -164,22 +162,6 @@ jobs:
           params:
             DB: postgresql
             DB_VERSION: 10
-
-  - name: blobstore-performance
-    public: true
-    serial: true
-    serial_groups: [blobstore-performance]
-    build_logs_to_retain: 250
-    plan:
-      - get: bosh-src
-        passed: [gate]
-        trigger: true
-      - get: davcli
-        trigger: true
-      - task: test
-        privileged: true
-        file: bosh-src/ci/tasks/test-blobstore-load.yml
-        attempts: 3
 
   - name: integration-db-tls-postgres
     public: true
@@ -275,7 +257,6 @@ jobs:
       - unit
       - unit-mysql
       - unit-postgres
-      - blobstore-performance
       - integration-db-tls-mysql
       - integration-db-tls-postgres
       - integration-db-tls-postgres-hotswap
@@ -1006,13 +987,6 @@ resources:
     source:
       uri: https://github.com/cppforlife/zookeeper-release
       branch: master
-
-  - name: davcli
-    type: s3
-    source:
-      regexp: davcli-(.*)-linux-amd64
-      bucket: davcli
-      region_name: us-east-1
 
   - name: bosh-master
     type: git
