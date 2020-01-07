@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 
-source /etc/profile.d/chruby.sh
-chruby ruby
-
 set -e
 
 function cp_artifacts {
