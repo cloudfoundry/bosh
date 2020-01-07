@@ -882,11 +882,18 @@ jobs:
     public: true
     serial: true
     plan:
-      - get: bosh-src
-        trigger: true
+      - aggregate:
+          - get: bosh-src
+            trigger: true
+          - get: bosh-cli
+            trigger: true
+          - get: bosh-deployment
+            trigger: true
+      - task: copy-dependencies
+        file: bosh-src/ci/tasks/prepare-container-docker-cpi-build-context.yml
       - put: docker-cpi-image
         params:
-          build: "bosh-src/ci/dockerfiles/docker-cpi"
+          build: docker-build-context
         get_params:
           skip_download: true
 
