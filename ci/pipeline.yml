@@ -303,7 +303,9 @@ jobs:
       - get: stemcell
         resource: warden-ubuntu-xenial
         trigger: true
+      - get: docker-cpi-image
     - task: export-release
+      image: docker-cpi-image
       file: bosh-src/ci/tasks/export-release.yml
       privileged: true
     - put: bosh-compiled-candidate-xenial
@@ -435,6 +437,7 @@ jobs:
         trigger: true
         passed: [compile-bosh-dev-release-xenial]
       - get: bosh-deployment
+      - get: docker-cpi-image
     - do:
       - put: brats-terraform
         attempts: 2
@@ -473,6 +476,7 @@ jobs:
         input_mapping:
           terraform-output: brats-terraform
       - task: test-brats
+        image: docker-cpi-image
         file: bosh-src/ci/tasks/test-brats.yml
         input_mapping:
           database-metadata: brats-terraform
@@ -551,8 +555,10 @@ jobs:
       - get: bbr-cli-binary
         params:
           globs: ["bbr*-linux-amd64"]
+      - get: docker-cpi-image
     - do:
       - task: test-bdrats
+        image: docker-cpi-image
         file: bosh-src/ci/tasks/test-bdrats.yml
         privileged: true
 
@@ -618,7 +624,6 @@ jobs:
         - task: teardown
           image: main-ruby-go-image
           file: bosh-src/ci/bats/tasks/destroy-director.yml
-          image: main-ruby-go-image
           attempts: 3
         ensure:
           do:
@@ -753,7 +758,9 @@ jobs:
         trigger: true
       - get: warden-ubuntu-xenial
         trigger: true
+      - get: docker-cpi-image
     - task: export-final-release
+      image: docker-cpi-image
       file: bosh-master/ci/tasks/export-final-release.yml
       privileged: true
       input_mapping:
@@ -882,7 +889,7 @@ jobs:
     public: true
     serial: true
     plan:
-      - aggregate:
+      - in_parallel:
           - get: bosh-src
             trigger: true
           - get: bosh-cli
