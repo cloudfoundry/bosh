@@ -56,9 +56,6 @@ case "$DB" in
     exit 1
 esac
 
-source /etc/profile.d/chruby.sh
-chruby $RUBY_VERSION
-
 cd bosh-src/src
 print_git_state
 

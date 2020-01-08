@@ -12,7 +12,6 @@ RUN locale-gen en_US.UTF-8
 ADD install-ruby.sh /tmp/install-ruby.sh
 RUN chmod a+x /tmp/install-ruby.sh
 RUN cd /tmp && ./install-ruby.sh && rm install-ruby.sh
-ENV PATH /opt/rubies/ruby-2.6.3/bin:$PATH
 
 # Java to start UAA
 ADD install-java.sh /tmp/install-java.sh
