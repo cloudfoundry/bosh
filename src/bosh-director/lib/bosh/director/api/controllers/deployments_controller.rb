@@ -382,9 +382,12 @@ module Bosh::Director
       put '/:deployment/scan_and_fix', consumes: :json do
         jobs_json = json_decode(request.body.read)['jobs']
         payload = convert_job_instance_hash(jobs_json)
-        if deployment_has_instance_to_resurrect?(deployment)
-          start_task { @problem_manager.scan_and_fix(current_user, deployment, payload) }
-        end
+
+        raise DeploymentNotFound, "Deployment #{deployment} not found" if deployment.nil?
+        raise CloudcheckResurrectionPaused, 'Resurrector is paused' if @resurrector_manager.pause_for_all?
+
+        @instance_manager.filter_by(deployment, ignore: false)
+        start_task { @problem_manager.scan_and_fix(current_user, deployment, payload) }
       end
 
       post '/', authorization: :create_deployment, consumes: :yaml do
@@ -580,14 +583,6 @@ module Bosh::Director
           job, indicies = kv
           jobs + indicies.map { |index| [job, index] }
         end
-      end
-
-      def deployment_has_instance_to_resurrect?(deployment)
-        return false if deployment.nil?
-        return false if @resurrector_manager.pause_for_all?
-
-        instances = @instance_manager.filter_by(deployment, ignore: false)
-        instances.any?
       end
 
       def validate_instance_index_or_id(str)

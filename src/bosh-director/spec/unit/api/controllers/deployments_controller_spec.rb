@@ -1941,15 +1941,15 @@ module Bosh::Director
         describe 'resurrection' do
           let!(:deployment) { Models::Deployment.make(:name => 'mycloud') }
 
-          def should_not_enqueue_scan_and_fix
+          def should_not_enqueue_scan_and_fix(expected_status, dep = 'mycloud')
             expect(Bosh::Director::Jobs::DBJob).not_to receive(:new).with(
               Jobs::CloudCheck::ScanAndFix,
               kind_of(Numeric),
-              ['mycloud',
+              [dep,
               [['job', 0]], false])
             expect(Delayed::Job).not_to receive(:enqueue)
-            put '/mycloud/scan_and_fix', JSON.dump('jobs' => {'job' => [0]}), {'CONTENT_TYPE' => 'application/json'}
-            expect(last_response).not_to be_redirect
+            put "/#{dep}/scan_and_fix", JSON.dump('jobs' => { 'job' => [0] }), 'CONTENT_TYPE' => 'application/json'
+            expect(last_response.status).to eq(expected_status)
           end
 
           def should_enqueue_scan_and_fix
@@ -1959,7 +1959,7 @@ module Bosh::Director
               ['mycloud',
               [['job', 0]], false])
             expect(Delayed::Job).to receive(:enqueue)
-            put '/mycloud/scan_and_fix',  JSON.generate('jobs' => {'job' => [0]}), {'CONTENT_TYPE' => 'application/json'}
+            put '/mycloud/scan_and_fix', JSON.generate('jobs' => { 'job' => [0] }), 'CONTENT_TYPE' => 'application/json'
             expect_redirect_to_queued_task(last_response)
           end
 
@@ -1987,7 +1987,7 @@ module Bosh::Director
 
               it 'does not run scan_and_fix task' do
                 Models::Instance.make(deployment: deployment, job: 'job', index: 0)
-                should_not_enqueue_scan_and_fix
+                should_not_enqueue_scan_and_fix(400)
               end
             end
           end
@@ -1995,9 +1995,13 @@ module Bosh::Director
           context 'when there are only ignored vms' do
             it 'does not call the resurrector' do
               Models::Instance.make(deployment: deployment, job: 'job', index: 0, ignore: true)
+              should_not_enqueue_scan_and_fix(404)
+            end
+          end
 
-              put '/mycloud/scan_and_fix', JSON.generate('jobs' => {'job' => [0]}), {'CONTENT_TYPE' => 'application/json'}
-              expect(last_response).not_to be_redirect
+          context 'when the deployment does not exist' do
+            it 'does not call the resurrector' do
+              should_not_enqueue_scan_and_fix(404, 'nonsense')
             end
           end
         end

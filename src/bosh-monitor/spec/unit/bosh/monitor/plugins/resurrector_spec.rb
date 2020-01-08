@@ -203,8 +203,8 @@ module Bosh::Monitor::Plugins
             allow(Time).to receive(:now).and_return(expected_time)
             alert_recreate = {
               severity: 4,
-              title: 'Recreating unresponsive VMs',
-              summary: 'Notifying Director to recreate instances: j2/i3, j2/i4; summary',
+              title: 'Scan unresponsive VMs',
+              summary: 'Notifying Director to scan instances: j2/i3, j2/i4; summary',
               source: 'HM plugin resurrector',
               deployment: 'd',
               created_at: expected_time.to_i,

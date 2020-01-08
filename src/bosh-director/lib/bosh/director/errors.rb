@@ -288,6 +288,7 @@ module Bosh::Director
   CloudcheckTooManySimilarProblems = err(410001)
   CloudcheckResolutionNotProvided = err(410002)
   CloudcheckInvalidResolutionFormat = err(410003)
+  CloudcheckResurrectionPaused = err(410004)
 
   # DNS
   DnsInvalidCanonicalName = err(420001)

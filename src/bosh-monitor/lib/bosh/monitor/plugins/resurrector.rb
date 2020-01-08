@@ -78,8 +78,8 @@ module Bosh::Monitor
             url.path = "/deployments/#{deployment}/scan_and_fix"
             alert(deployment,
                   severity: 4,
-                  title: 'Recreating unresponsive VMs',
-                  summary: 'Notifying Director to recreate instances: '\
+                  title: 'Scan unresponsive VMs',
+                  summary: 'Notifying Director to scan instances: '\
                   "#{pretty_str(jobs_to_instances_resurrection_enabled)}; #{state.summary}")
             send_http_put_request(url.to_s, request)
           end
