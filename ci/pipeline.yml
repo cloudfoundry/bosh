@@ -792,6 +792,7 @@ jobs:
     serial: true
     plan:
       - get: bosh-src
+      - get: bosh-src-dockerfiles
         trigger: true
       - put: main-ruby-go-image
         params:
@@ -804,6 +805,7 @@ jobs:
     serial: true
     plan:
       - get: bosh-src
+      - get: bosh-src-dockerfiles
         trigger: true
       - get: integration-image
         trigger: true
@@ -822,6 +824,7 @@ jobs:
     serial: true
     plan:
       - get: bosh-src
+      - get: bosh-src-dockerfiles
         trigger: true
       - get: integration-image
         trigger: true
@@ -840,6 +843,7 @@ jobs:
     serial: true
     plan:
       - get: bosh-src
+      - get: bosh-src-dockerfiles
         trigger: true
       - get: integration-image
         trigger: true
@@ -857,6 +861,7 @@ jobs:
     serial: true
     plan:
       - get: bosh-src
+      - get: bosh-src-dockerfiles
         trigger: true
       - put: integration-image
         params:
@@ -872,6 +877,7 @@ jobs:
     plan:
       - in_parallel:
           - get: bosh-src
+          - get: bosh-src-dockerfiles
             trigger: true
           - get: bosh-cli
             trigger: true
@@ -903,6 +909,14 @@ resources:
       uri: ((bosh_src_url))
       branch: ((branch_name))
       private_key: ((github_deployment_key))
+
+  - name: bosh-src-dockerfiles
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh.git
+      branch: master
+      paths:
+        - "ci/dockerfiles"
 
   - name: bosh-github-release
     type: github-release
