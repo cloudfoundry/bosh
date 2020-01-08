@@ -5,6 +5,7 @@ image_resource:
   type: docker-image
   source:
     repository: bosh/main-postgres-10
+    tag: master
 
 inputs:
 - name: bosh-src
