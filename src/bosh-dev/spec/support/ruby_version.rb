@@ -4,7 +4,7 @@ module Bosh::Dev
   class RubyVersion
     class << self
       def versions
-        ['2.6.3']
+        ['2.6.5']
       end
 
       def supported?(version)

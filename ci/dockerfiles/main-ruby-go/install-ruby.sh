@@ -27,4 +27,4 @@ install_ruby() {
 
 }
 
-install_ruby 2.6.5 dd638bf42059182c1d04af0d5577131d4ce70b79105231c4cc0a60de77b14f2e
+install_ruby 2.6.5 97ddf1b922f83c1f5c50e75bf54e27bba768d75fea7cda903b886c6745e60f0a
