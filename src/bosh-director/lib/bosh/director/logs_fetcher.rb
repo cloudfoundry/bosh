@@ -47,7 +47,7 @@ module Bosh::Director
 
       @log_bundles_cleaner.register_blobstore_id(blobstore_id) if persist_blobstore_id
 
-      return blobstore_id, sha_digest
+      [blobstore_id, sha_digest]
     end
   end
 end

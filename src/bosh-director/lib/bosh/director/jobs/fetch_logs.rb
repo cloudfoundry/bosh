@@ -11,8 +11,8 @@ module Bosh::Director
 
       def initialize(instance_ids, options = {})
         @instance_ids = instance_ids
-        @log_type = options["type"] || "job"
-        @filters = options["filters"]
+        @log_type = options['type'] || 'job'
+        @filters = options['filters']
         @instance_manager = Api::InstanceManager.new
 
         @blobstore = App.instance.blobstores.blobstore
@@ -23,7 +23,7 @@ module Bosh::Director
       def perform
         if @instance_ids.size == 1
           instance = @instance_manager.find_instance(@instance_ids[0])
-          blobstore_id, _ = @logs_fetcher.fetch(instance, @log_type, @filters, true)
+          blobstore_id, = @logs_fetcher.fetch(instance, @log_type, @filters, true)
           blobstore_id
         else
           begin
@@ -31,18 +31,18 @@ module Bosh::Director
             path = File.join(download_dir, 'logs')
             FileUtils.mkpath(path)
 
-            ThreadPool.new(:max_threads => Config.max_threads).wrap do |pool|
+            ThreadPool.new(max_threads: Config.max_threads).wrap do |pool|
               @instance_ids.each do |instance_id|
                 pool.process do
                   generate_and_download(instance_id, path)
                 end
               end
             end
-            stage = Config.event_log.begin_stage("Fetching group of logs", 1)
+            stage = Config.event_log.begin_stage('Fetching group of logs', 1)
             stage.advance_and_track('Packing log files together') do
               archiver = Core::TarGzipper.new
               output_path = File.join(download_dir, "logs_#{Time.now.to_f}.tgz")
-              archiver.compress(path, %w(.), output_path)
+              archiver.compress(path, %w[.], output_path)
               blobstore_id = File.open(output_path) { |f| @blobstore.create(f) }
               @log_bundles_cleaner.register_blobstore_id(blobstore_id)
               return blobstore_id
@@ -54,9 +54,10 @@ module Bosh::Director
       end
 
       private
+
       def generate_and_download(instance_id, path)
         instance = @instance_manager.find_instance(instance_id)
-        blob_id, _ = @logs_fetcher.fetch(instance, @log_type, @filters, false)
+        blob_id, = @logs_fetcher.fetch(instance, @log_type, @filters, false)
         time = Time.now.strftime('%Y-%m-%d-%H-%M-%S')
         File.open(File.join(path, "#{instance.job}.#{instance.uuid}.#{time}.tgz"), 'w') do |f|
           @blobstore.get(blob_id, f)
