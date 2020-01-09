@@ -31,9 +31,9 @@ module Bosh::Director
         allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
       end
 
-      subject { CleanupArtifactManager.new(remove_all, logger) }
+      subject { CleanupArtifactManager.new(options, logger) }
       context 'when remove_all is specified' do
-        let(:remove_all) { true }
+        let(:options) { { 'remove_all' => true, 'keep_orphaned_disks' => false } }
 
         it 'reports the releases and stemcells it would delete' do
           result = subject.show_all
@@ -62,10 +62,26 @@ module Bosh::Director
           expect(result[:exported_releases]).to eq %w[exported_release_id_1 exported_release_id_2]
           expect(result[:dns_blobs]).to eq %w[dns_blob1]
         end
+
+        context 'and keeping orphaned disks' do
+          let(:options) { { 'remove_all' => true, 'keep_orphaned_disks' => true } }
+
+          it 'omits orphaned disks' do
+            result = subject.show_all
+            expect(result.keys).to eq %i[releases stemcells compiled_packages orphaned_disks orphaned_vms exported_releases dns_blobs]
+            expect(result[:releases].count).to eq 2
+            expect(result[:stemcells].count).to eq 2
+            expect(result[:compiled_packages].count).to eq 1
+            expect(result[:orphaned_disks].count).to eq 0
+            expect(result[:orphaned_vms].length).to eq 1
+            expect(result[:exported_releases].count).to eq 2
+            expect(result[:dns_blobs].count).to eq 1
+          end
+        end
       end
 
       context 'when remove_all is false' do
-        let(:remove_all) { false }
+        let(:options) { { 'remove_all' => false, 'keep_orphaned_disks' => false } }
 
         it 'keeps more items and reports what it would delete' do
           result = subject.show_all

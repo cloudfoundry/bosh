@@ -157,6 +157,37 @@ describe 'cli: cleanup', type: :integration do
         expect(output).to include('Succeeded')
       end
     end
+
+    context 'when opting to keep orphaned disks' do
+      let(:clean_command) { 'clean-up --all --keep-orphaned-disks' }
+
+      it 'removes all artifacts except orphaned disks' do
+        manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+        manifest_hash['name'] = 'deployment-a'
+        manifest_hash['instance_groups'] = [
+          Bosh::Spec::Deployments.simple_instance_group(persistent_disk_type: 'disk_a', instances: 1, name: 'first-job'),
+        ]
+        cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+        disk_type = Bosh::Spec::Deployments.disk_type
+        disk_type['cloud_properties'] = { 'my' => 'property' }
+        cloud_config['disk_types'] = [disk_type]
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
+
+        bosh_runner.run('delete-deployment', deployment_name: 'deployment-a')
+        bosh_runner.run(clean_command)
+
+        clean_task_id = bosh_runner.get_most_recent_task_id
+        cleanup_debug_logs = bosh_runner.run("task #{clean_task_id} --debug")
+        expect(cleanup_debug_logs).to match(/Deleting dns blobs/)
+
+        output = table(bosh_runner.run('releases', failure_expected: true, json: true))
+        expect(output).to eq([])
+        output = table(bosh_runner.run('stemcells', failure_expected: true, json: true))
+        expect(output).to eq([])
+        output = table(bosh_runner.run('disks --orphaned', failure_expected: true, json: true))
+        expect(output).to_not eq([])
+      end
+    end
   end
 
   def upload_new_release_version(touched_file)

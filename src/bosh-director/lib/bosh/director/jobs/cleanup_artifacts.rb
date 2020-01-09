@@ -17,7 +17,7 @@ module Bosh::Director
       end
 
       def perform
-        CleanupArtifactManager.new(@config['remove_all'], logger).delete
+        CleanupArtifactManager.new(@config, logger).delete
       end
     end
   end

@@ -12,7 +12,11 @@ module Bosh::Director
       end
 
       get '/dryrun' do
-        cleanable_artifacts = Bosh::Director::CleanupArtifactManager.new(params[:remove_all] == 'true', logger).show_all
+        options = {
+          'remove_all' => params['remove_all'] == 'true',
+          'keep_orphaned_disks' => params['keep_orphaned_disks'] == 'true',
+        }
+        cleanable_artifacts = Bosh::Director::CleanupArtifactManager.new(options, logger).show_all
         JSON.generate(cleanable_artifacts)
       end
     end

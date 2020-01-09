@@ -2,10 +2,12 @@ module Bosh::Director
   class CleanupArtifactManager
     include LockHelper
 
-    def initialize(remove_all, logger, release_manager: Api::ReleaseManager.new)
+    def initialize(options, logger, release_manager: Api::ReleaseManager.new)
       @logger = logger
       @release_manager = release_manager
-      @remove_all = remove_all
+      @remove_all = options['remove_all']
+      @keep_orphaned_disks = options['keep_orphaned_disks']
+
       dns_blob_age = @remove_all ? 0 : 3600
       dns_blobs_to_keep = if @remove_all && Models::Deployment.count.positive?
                             1
@@ -97,12 +99,14 @@ module Bosh::Director
     end
 
     def orphan_disks
+      return [] if @keep_orphaned_disks
       return [] unless @remove_all
 
       Models::OrphanDisk.all
     end
 
     def orphan_disks_list
+      return [] if @keep_orphaned_disks
       return [] unless @remove_all
 
       @orphan_disk_manager.list_orphan_disks
