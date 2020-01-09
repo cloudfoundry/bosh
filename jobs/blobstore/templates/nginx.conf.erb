@@ -10,7 +10,7 @@ events {
 
 http {
   include      /var/vcap/jobs/blobstore/config/mime.types;
-  default_type text/html;
+  default_type application/octet-stream;
 
   client_body_temp_path /var/vcap/data/blobstore/tmp/client_body;
   proxy_temp_path /var/vcap/data/blobstore/tmp/proxy;
