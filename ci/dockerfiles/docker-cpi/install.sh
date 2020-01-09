@@ -23,7 +23,8 @@ apt-get install -y \
   libgdbm-dev \
   libreadline-dev \
   libncurses5-dev \
-  libffi-dev
+  libffi-dev \
+  bison
 
 curl -fsSL https://apt.dockerproject.org/gpg | apt-key add -
 apt-key fingerprint | grep 'Key fingerprint = 5811 8E89 F3A9 1289 7C07  0ADB F762 2157 2C52 609D'
