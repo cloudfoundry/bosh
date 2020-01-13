@@ -25,7 +25,7 @@ jobs:
         trigger: true
       - put: main-postgres-9.4
         params:
-          build: "bosh-src/ci/docker/main-postgres"
+          build: "bosh-src/ci/old-docker/main-postgres"
           build_args:
             DB_VERSION: "9.4"
         get_params:
@@ -39,7 +39,7 @@ jobs:
         trigger: true
       - put: main-postgres-10
         params:
-          build: "bosh-src/ci/docker/main-postgres"
+          build: "bosh-src/ci/old-docker/main-postgres"
           build_args:
             DB_VERSION: "10"
         get_params:
@@ -53,7 +53,7 @@ jobs:
         trigger: true
       - put: main-mysql-5.7
         params:
-          build: "bosh-src/ci/docker/main-mysql"
+          build: "bosh-src/ci/old-docker/main-mysql"
           build_args:
             DB_VERSION: "-5.7"
         get_params:
@@ -69,7 +69,7 @@ jobs:
           - "build-main-ruby-go"
       - put: main-image
         params:
-          build: "bosh-src/ci/docker/main"
+          build: "bosh-src/ci/old-docker/main"
         get_params:
           skip_download: true
 
@@ -204,7 +204,7 @@ jobs:
             - "build-main-ruby-go"
       - put: main-ubuntu-chroot
         params:
-          build: "bosh-src/ci/docker/main-ubuntu-chroot"
+          build: "bosh-src/ci/old-docker/main-ubuntu-chroot"
         get_params:
           skip_download: true
 
@@ -216,7 +216,7 @@ jobs:
         trigger: true
       - put: main-ruby-go-image
         params:
-          build: "bosh-src/ci/docker/main-ruby-go"
+          build: "bosh-src/ci/old-docker/main-ruby-go"
         get_params:
           skip_download: true
 
@@ -230,7 +230,7 @@ jobs:
           - "build-main-ruby-go"
       - put: main-bats-aws
         params:
-          build: "bosh-src/ci/docker/main-bats-aws"
+          build: "bosh-src/ci/old-docker/main-bats-aws"
         get_params:
           skip_download: true
 
@@ -242,7 +242,7 @@ jobs:
         trigger: true
       - put: bosh-blobstore-client
         params:
-          build: "bosh-src/ci/docker/bosh-blobstore-client"
+          build: "bosh-src/ci/old-docker/bosh-blobstore-client"
         get_params:
           skip_download: true
 
@@ -265,7 +265,7 @@ resources:
       uri: https://github.com/cloudfoundry/bosh.git
       branch: master
       paths:
-        - "ci/docker"
+        - "ci/old-docker"
         - "ci/pipelines/docker-images/tasks"
 
   - name: bosh-linux-stemcell-builder
