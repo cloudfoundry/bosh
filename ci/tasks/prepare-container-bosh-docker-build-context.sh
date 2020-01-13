@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cp -rp bosh-src/ci/docker/main-bosh-${container_engine}/* docker-build-context
+cp -rp bosh-src/ci/old-docker/main-bosh-${container_engine}/* docker-build-context
 
 cp bosh-cli/*bosh* docker-build-context/bosh
 
