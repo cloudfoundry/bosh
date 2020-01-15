@@ -40,7 +40,6 @@ describe Bosh::Director::NatsRpc do
     allow(Bosh::Director::Config).to receive(:logger).and_return(some_logger)
     allow(some_logger).to receive(:debug)
     allow(Bosh::Director::Config).to receive(:process_uuid).and_return(123)
-    allow(EM).to receive(:schedule).and_yield
     allow(nats_rpc).to receive(:generate_request_id).and_return('req1')
   end
 
@@ -214,10 +213,6 @@ describe Bosh::Director::NatsRpc do
   end
 
   describe 'cancel_request' do
-    before do
-      allow(NATS).to receive(:connect).with(nats_options).and_return(nats)
-    end
-
     it 'should not fire after cancel was called' do
       subscribe_callback = nil
       expect(nats).to receive(:subscribe).with('director.123.>') do |&block|
