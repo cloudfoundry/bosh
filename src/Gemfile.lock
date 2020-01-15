@@ -39,6 +39,7 @@ PATH
       nats (~> 0.9.2)
       nats-pure (~> 0.6.2)
       netaddr (~> 1.5.0)
+      openssl (~> 2.1.2)
       prometheus-client (~> 1.0.0)
       puma (~> 3.10)
       rack-test (~> 0.6.2)
@@ -1086,4 +1087,4 @@ RUBY VERSION
    ruby 2.6.5p114
 
 BUNDLED WITH
-   2.1.2
+   2.1.4
