@@ -1058,7 +1058,6 @@ DEPENDENCIES
   minitar
   mono_logger
   mysql2
-  nats (~> 0.9.2)
   nats-pure (~> 0.6.2)
   net-ssh
   openssl

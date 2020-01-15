@@ -3,11 +3,14 @@ module Bosh::Director
 
   class NatsClient
     # TODO: make it initialize
-    def connect(nats_uri, nats_client_private_key_path, nats_client_certificate_path, nats_server_ca_path)
-      options = self.options(nats_uri, nats_client_private_key_path, nats_client_certificate_path, nats_server_ca_path)
+    def initialize(nats_options)
+      @options = nats_options
+    end
+
+    def connect
       @nats = NATS::IO::Client.new
       @nats.on_error(&@error_handler) if @error_handler
-      @nats.connect(options)
+      @nats.connect(@options)
     end
 
     def on_error(&callback)
@@ -35,8 +38,8 @@ module Bosh::Director
       blk.call
     end
 
-    def options(nats_uri, nats_client_private_key_path, nats_client_certificate_path, nats_server_ca_path)
-      tls_context = create_tls_context(nats_client_certificate_path, nats_client_certificate_path, nats_server_ca_path)
+    def self.options(nats_uri, nats_client_private_key_path, nats_client_certificate_path, nats_server_ca_path)
+      tls_context = create_tls_context(nats_client_private_key_path, nats_client_certificate_path, nats_server_ca_path)
       {
         servers: Array.new(MAX_RECONNECT_ATTEMPTS, nats_uri),
         dont_randomize_servers: true,
@@ -48,8 +51,8 @@ module Bosh::Director
         },
       }
     end
-  
-    def create_tls_context(nats_client_private_key_path, nats_client_certificate_path, nats_server_ca_path)
+
+    def self.create_tls_context(nats_client_private_key_path, nats_client_certificate_path, nats_server_ca_path)
       tls_context = OpenSSL::SSL::SSLContext.new
       tls_context.ssl_version = :TLSv1_2
       tls_context.verify_mode = OpenSSL::SSL::VERIFY_PEER

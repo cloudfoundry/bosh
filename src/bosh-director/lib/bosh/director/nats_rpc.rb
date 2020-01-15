@@ -2,13 +2,20 @@ module Bosh::Director
   # Remote procedure call client wrapping NATS
   class NatsRpc
     def initialize(nats_uri, nats_server_ca_path, nats_client_private_key_path, nats_client_certificate_path)
-      @nats = NatsClient.new
-      @nats_uri = nats_uri
-      @nats_server_ca_path = nats_server_ca_path
-      @nats_client_private_key_path = nats_client_private_key_path
-      @nats_client_certificate_path = nats_client_certificate_path
-
       @logger = Config.logger
+      nats_options = NatsClient.options(
+        nats_uri,
+        nats_client_private_key_path,
+        nats_client_certificate_path,
+        nats_server_ca_path,
+      )
+      @nats = NatsClient.new(nats_options)
+      @nats.on_error do |e|
+        password = nats_uri[%r{nats://.*:(.*)@}, 1]
+        redacted_message = password.nil? ? "NATS client error: #{e}" : "NATS client error: #{e}".gsub(password, '*******')
+        @logger.error(redacted_message)
+      end
+
       @lock = Mutex.new
       @inbox_name = "director.#{Config.process_uuid}"
       @requests = {}
@@ -29,7 +36,7 @@ module Bosh::Director
       message = JSON.generate(payload)
       @logger.debug("SENT: #{client} #{message}")
 
-      @nats.schedule do
+      nats.schedule do
         nats.publish(client, message)
       end
     end
@@ -37,7 +44,7 @@ module Bosh::Director
     # Sends a request (encoded as JSON) and listens for the response
     def send_request(subject_name, client_id, request, options, &callback)
       request_id = generate_request_id
-      request["reply_to"] = "#{@inbox_name}.#{client_id}.#{request_id}"
+      request['reply_to'] = "#{@inbox_name}.#{client_id}.#{request_id}"
       @lock.synchronize do
         @requests[request_id] = [callback, options]
       end
@@ -47,7 +54,7 @@ module Bosh::Director
 
       @logger.debug("SENT: #{subject_name} #{sanitized_log_message}") unless options['logging'] == false
 
-      @nats.schedule do
+      nats.schedule do
         subscribe_inbox
         nats.publish(subject_name, request_body)
       end
@@ -70,14 +77,7 @@ module Bosh::Director
       return unless @nats.not_connected?
 
       @lock.synchronize do
-        if @nats.not_connected?
-          @nats.on_error do |e|
-            password = @nats_uri[%r{nats://.*:(.*)@}, 1]
-            redacted_message = password.nil? ? "NATS client error: #{e}" : "NATS client error: #{e}".gsub(password, '*******')
-            @logger.error(redacted_message)
-          end
-          @nats.connect(@nats_uri, @nats_client_private_key_path, @nats_client_certificate_path, @nats_server_ca_path)
-        end
+        @nats.connect if @nats.not_connected?
       end
     end
 
@@ -98,17 +98,15 @@ module Bosh::Director
     end
 
     def handle_response(message, subject)
-      begin
-        request_id = subject.split(".").last
-        callback, options = @lock.synchronize { @requests.delete(request_id) }
-        @logger.debug("RECEIVED: #{subject} #{message}") if (options && options['logging'])
-        if callback
-          message = message.empty? ? nil : JSON.parse(message)
-          callback.call(message)
-        end
-      rescue Exception => e
-        @logger.warn(e.message)
+      request_id = subject.split('.').last
+      callback, options = @lock.synchronize { @requests.delete(request_id) }
+      @logger.debug("RECEIVED: #{subject} #{message}") if options && options['logging']
+      if callback
+        message = message.empty? ? nil : JSON.parse(message)
+        callback.call(message)
       end
+    rescue e
+      @logger.warn(e.message)
     end
 
     def sanitize_log_message(request)
