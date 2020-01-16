@@ -3,13 +3,13 @@ module Bosh::Director
   class NatsRpc
     def initialize(nats_uri, nats_server_ca_path, nats_client_private_key_path, nats_client_certificate_path)
       @logger = Config.logger
-      nats_options = NatsClient.options(
+      @nats_options = NatsClient.options(
         nats_uri,
         nats_client_private_key_path,
         nats_client_certificate_path,
         nats_server_ca_path,
       )
-      @nats = NatsClient.new(nats_options)
+      @nats = NATS::IO::Client.new
       @nats.on_error do |e|
         password = nats_uri[%r{nats://.*:(.*)@}, 1]
         redacted_message = password.nil? ? "NATS client error: #{e}" : "NATS client error: #{e}".gsub(password, '*******')
@@ -24,8 +24,8 @@ module Bosh::Director
     # Returns a lazily connected NATS client
     def nats
       begin
-        connect if @nats.not_connected?
-      rescue Exception => e
+        @nats.connect(@options) unless @nats.connected?
+      rescue e
         raise "An error has occurred while connecting to NATS: #{e}"
       end
       @nats
@@ -36,9 +36,7 @@ module Bosh::Director
       message = JSON.generate(payload)
       @logger.debug("SENT: #{client} #{message}")
 
-      nats.schedule do
-        nats.publish(client, message)
-      end
+      nats.publish(client, message)
     end
 
     # Sends a request (encoded as JSON) and listens for the response
@@ -54,10 +52,8 @@ module Bosh::Director
 
       @logger.debug("SENT: #{subject_name} #{sanitized_log_message}") unless options['logging'] == false
 
-      nats.schedule do
-        subscribe_inbox
-        nats.publish(subject_name, request_body)
-      end
+      subscribe_inbox
+      nats.publish(subject_name, request_body)
       request_id
     end
 

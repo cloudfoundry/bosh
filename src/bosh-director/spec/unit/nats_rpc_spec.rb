@@ -34,25 +34,21 @@ describe Bosh::Director::NatsRpc do
 
   before do
     allow(Bosh::Director::NatsClient).to receive(:options).and_return(nats_options)
-    allow(nats).to receive(:on_error)
+    allow(nats).to receive(:connected?).and_return(false, true)
     allow(nats).to receive(:connect)
+    allow(nats).to receive(:on_error)
     allow(NATS::IO::Client).to receive(:new).and_return(nats)
     allow(Bosh::Director::Config).to receive(:logger).and_return(some_logger)
     allow(some_logger).to receive(:debug)
     allow(Bosh::Director::Config).to receive(:process_uuid).and_return(123)
-    allow(nats_rpc).to receive(:generate_request_id).and_return('req1')
   end
 
   describe '#nats' do
-    it 'returns a NATs client and registers an error handler' do
-      expect(nats).to receive(:connect).with(nats_options).and_return(nats)
-      expect(nats).to receive(:on_error)
-      expect(nats_rpc.nats).to be_instance_of(Bosh::Director::NatsClient)
-    end
-
     context 'when an error occurs while connecting' do
       before do
         allow(nats).to receive(:connect).with(nats_options).and_raise('a NATS error has occurred')
+        allow(nats).to receive(:connected?).and_return(false)
+        allow(nats).to receive(:on_error)
       end
 
       it 'throws the error' do
@@ -73,17 +69,17 @@ describe Bosh::Director::NatsRpc do
       end
 
       it 'does NOT log the NATS password' do
+        nats_rpc.nats
         expect(some_logger).to receive(:error)
           .with('NATS client error: Some error for nats://nats:*******@127.0.0.1:4222. '\
                 'Another error for nats://nats:*******@127.0.0.1:4222.')
-        nats_rpc.nats
       end
     end
   end
 
   describe 'send_request' do
     before do
-      allow(nats).to receive(:connect).with(nats_options).and_return(nats)
+      allow(nats_rpc).to receive(:generate_request_id).and_return('req1')
     end
 
     it 'should publish a message to the client' do
@@ -213,6 +209,10 @@ describe Bosh::Director::NatsRpc do
   end
 
   describe 'cancel_request' do
+    before do
+      allow(nats_rpc).to receive(:generate_request_id).and_return('req1')
+    end
+
     it 'should not fire after cancel was called' do
       subscribe_callback = nil
       expect(nats).to receive(:subscribe).with('director.123.>') do |&block|
