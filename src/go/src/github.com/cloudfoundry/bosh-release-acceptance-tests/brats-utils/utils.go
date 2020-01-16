@@ -380,7 +380,7 @@ func CreateAndUploadBOSHRelease() {
 func StopInnerBosh() {
 	session, err := gexec.Start(
 		exec.Command(
-			"../../../../../../../ci/dockerfiles/docker-cpidestroy-inner-bosh.sh",
+			"../../../../../../../ci/dockerfiles/docker-cpi/destroy-inner-bosh.sh",
 			strconv.Itoa(config.GinkgoConfig.ParallelNode),
 		),
 		GinkgoWriter,
