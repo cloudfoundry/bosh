@@ -20,9 +20,18 @@ spec:
     documentation:
       title: Queued Tasks
       description: Alerts when the queued task count is over the threshold for 10 minutes. Tasks are queued when all director workers are busy.
+      supported_labels:
+        state: "State of the task (e.g. processing, queued...)"
+        type: "Type of the task (e.g. update_deployment, snapshot_deployment...)"
   - name: bosh_resurrection_enabled
     promql: bosh_resurrection_enabled
   - name: bosh_networks_dynamic_ips_total
     promql: bosh_networks_dynamic_ips_total
+    documentation:
+      supported_labels:
+        name: "Name of the network"
   - name: bosh_networks_dynamic_free_ips_total
     promql: bosh_networks_dynamic_free_ips_total
+    documentation:
+      supported_labels:
+        name: "Name of the network"
