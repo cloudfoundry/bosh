@@ -24,8 +24,13 @@ module Bosh::Director
     # Returns a lazily connected NATS client
     def nats
       begin
-        @nats.connect(@options) unless @nats.connected?
-      rescue e
+        # double-check locking to reduce synchronization
+        return @nats if @nats.connected?
+
+        @lock.synchronize do
+          @nats.connect(@nats_options) unless @nats.connected?
+        end
+      rescue StandardError => e
         raise "An error has occurred while connecting to NATS: #{e}"
       end
       @nats
@@ -68,26 +73,17 @@ module Bosh::Director
 
     private
 
-    def connect
-      # double-check locking to reduce synchronization
-      return unless @nats.not_connected?
-
-      @lock.synchronize do
-        @nats.connect if @nats.not_connected?
-      end
-    end
-
     # subscribe to an inbox, if not already subscribed
     def subscribe_inbox
       # double-check locking to reduce synchronization
-      if @subject_id.nil?
-        # nats lazy-load needs to be outside the synchronized block
-        client = nats
-        @lock.synchronize do
-          if @subject_id.nil?
-            @subject_id = client.subscribe("#{@inbox_name}.>") do |message, _, subject|
-              handle_response(message, subject)
-            end
+      return unless @subject_id.nil?
+
+      # nats lazy-load needs to be outside the synchronized block
+      client = nats
+      @lock.synchronize do
+        if @subject_id.nil?
+          @subject_id = client.subscribe("#{@inbox_name}.>") do |message, _, subject|
+            handle_response(message, subject)
           end
         end
       end

@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Bosh::Director::NatsRpc do
   let(:nats) { instance_double(NATS::IO::Client) }
-  let(:nats_url) { 'fake-nats-url' }
+  let(:nats_url) { 'nats_url' }
   let(:nats_server_ca_path) { '/path/to/happiness.pem' }
   let(:nats_client_private_key_path) { '/path/to/success.pem' }
   let(:nats_client_certificate_path) { '/path/to/enlightenment.pem' }
@@ -11,16 +11,6 @@ describe Bosh::Director::NatsRpc do
   let(:nats_options) do
     {
       uris: Array.new(max_reconnect_attempts, nats_url),
-      max_reconnect_attempts: max_reconnect_attempts,
-      reconnect_time_wait: reconnect_time_wait,
-      reconnect: true,
-      ssl: true,
-      tls: {
-        private_key_file: nats_client_private_key_path,
-        cert_chain_file: nats_client_certificate_path,
-        verify_peer: true,
-        ca_file: nats_server_ca_path,
-      },
     }
   end
   let(:some_logger) { instance_double(Logger) }
@@ -35,12 +25,12 @@ describe Bosh::Director::NatsRpc do
   before do
     allow(Bosh::Director::NatsClient).to receive(:options).and_return(nats_options)
     allow(nats).to receive(:connected?).and_return(false, true)
-    allow(nats).to receive(:connect)
-    allow(nats).to receive(:on_error)
     allow(NATS::IO::Client).to receive(:new).and_return(nats)
     allow(Bosh::Director::Config).to receive(:logger).and_return(some_logger)
     allow(some_logger).to receive(:debug)
+    allow(some_logger).to receive(:error)
     allow(Bosh::Director::Config).to receive(:process_uuid).and_return(123)
+    allow(nats).to receive(:on_error)
   end
 
   describe '#nats' do
@@ -48,7 +38,6 @@ describe Bosh::Director::NatsRpc do
       before do
         allow(nats).to receive(:connect).with(nats_options).and_raise('a NATS error has occurred')
         allow(nats).to receive(:connected?).and_return(false)
-        allow(nats).to receive(:on_error)
       end
 
       it 'throws the error' do
@@ -69,10 +58,10 @@ describe Bosh::Director::NatsRpc do
       end
 
       it 'does NOT log the NATS password' do
-        nats_rpc.nats
         expect(some_logger).to receive(:error)
           .with('NATS client error: Some error for nats://nats:*******@127.0.0.1:4222. '\
                 'Another error for nats://nats:*******@127.0.0.1:4222.')
+        nats_rpc.nats
       end
     end
   end
