@@ -1,8 +1,8 @@
 require 'spec_helper'
 
 describe Bosh::Director::NatsRpc do
-  let(:nats) { instance_double('NATS') }
-  let(:nats_url) { 'fake-nats-url' }
+  let(:nats) { instance_double(NATS::IO::Client) }
+  let(:nats_url) { 'nats_url' }
   let(:nats_server_ca_path) { '/path/to/happiness.pem' }
   let(:nats_client_private_key_path) { '/path/to/success.pem' }
   let(:nats_client_certificate_path) { '/path/to/enlightenment.pem' }
@@ -11,16 +11,6 @@ describe Bosh::Director::NatsRpc do
   let(:nats_options) do
     {
       uris: Array.new(max_reconnect_attempts, nats_url),
-      max_reconnect_attempts: max_reconnect_attempts,
-      reconnect_time_wait: reconnect_time_wait,
-      reconnect: true,
-      ssl: true,
-      tls: {
-        private_key_file: nats_client_private_key_path,
-        cert_chain_file: nats_client_certificate_path,
-        verify_peer: true,
-        ca_file: nats_server_ca_path,
-      },
     }
   end
   let(:some_logger) { instance_double(Logger) }
@@ -33,26 +23,21 @@ describe Bosh::Director::NatsRpc do
   end
 
   before do
+    allow(Bosh::Director::NatsClient).to receive(:options).and_return(nats_options)
+    allow(nats).to receive(:connected?).and_return(false, true)
+    allow(NATS::IO::Client).to receive(:new).and_return(nats)
     allow(Bosh::Director::Config).to receive(:logger).and_return(some_logger)
     allow(some_logger).to receive(:debug)
+    allow(some_logger).to receive(:error)
     allow(Bosh::Director::Config).to receive(:process_uuid).and_return(123)
-    allow(EM).to receive(:schedule).and_yield
-    allow(nats_rpc).to receive(:generate_request_id).and_return('req1')
-    allow(nats).to receive(:flush) do |&blk|
-      blk.call
-    end
+    allow(nats).to receive(:on_error)
   end
 
   describe '#nats' do
-    it 'returns a NATs client and registers an error handler' do
-      expect(NATS).to receive(:connect).with(nats_options).and_return(nats)
-      expect(NATS).to receive(:on_error)
-      expect(nats_rpc.nats).to eq(nats)
-    end
-
     context 'when an error occurs while connecting' do
       before do
-        allow(NATS).to receive(:connect).with(nats_options).and_raise('a NATS error has occurred')
+        allow(nats).to receive(:connect).with(nats_options).and_raise('a NATS error has occurred')
+        allow(nats).to receive(:connected?).and_return(false)
       end
 
       it 'throws the error' do
@@ -66,10 +51,10 @@ describe Bosh::Director::NatsRpc do
       let(:nats_url) { 'nats://nats:some_nats_password@127.0.0.1:4222' }
 
       before do
-        allow(NATS).to receive(:connect).with(nats_options).and_return(nats)
-        allow(NATS).to receive(:on_error) do |&clbk|
-          clbk.call('Some error for nats://nats:some_nats_password@127.0.0.1:4222. Another error for nats://nats:some_nats_password@127.0.0.1:4222.')
-        end
+        allow(nats).to receive(:connect).with(nats_options).and_return(nats)
+        allow(nats).to receive(:on_error)
+          .and_yield('Some error for nats://nats:some_nats_password@127.0.0.1:4222. '\
+                     'Another error for nats://nats:some_nats_password@127.0.0.1:4222.')
       end
 
       it 'does NOT log the NATS password' do
@@ -83,7 +68,7 @@ describe Bosh::Director::NatsRpc do
 
   describe 'send_request' do
     before do
-      allow(NATS).to receive(:connect).with(nats_options).and_return(nats)
+      allow(nats_rpc).to receive(:generate_request_id).and_return('req1')
     end
 
     it 'should publish a message to the client' do
@@ -96,9 +81,6 @@ describe Bosh::Director::NatsRpc do
           'arguments' => [5],
           'reply_to' => 'director.123.client_id_567.req1',
         )
-      end
-      expect(nats).to receive(:flush) do |&blk|
-        blk.call
       end
 
       request_id = nats_rpc.send_request('test_client', 'client_id_567', { 'method' => 'a', 'arguments' => [5] }, options)
@@ -137,24 +119,6 @@ describe Bosh::Director::NatsRpc do
         called_times += 1
       end
       expect(called_times).to eql(1)
-    end
-
-    it 'will NOT call flush after receiving the first response' do
-      subscribe_callback = nil
-      expect(nats).to receive(:subscribe).with('director.123.>') do |&block|
-        subscribe_callback = block
-      end
-
-      expect(nats).to receive(:publish).twice do
-        subscribe_callback.call('', nil, 'director.123.client_id_567.req1')
-      end
-
-      expect(nats).to receive(:flush).once do |&blk|
-        blk.call
-      end
-
-      nats_rpc.send_request('test_client', 'client_id_567', { 'method' => 'a', 'arguments' => [5] }, options)
-      nats_rpc.send_request('test_client', 'client_id_567', { 'method' => 'a', 'arguments' => [5] }, options)
     end
 
     context 'logging' do
@@ -235,7 +199,7 @@ describe Bosh::Director::NatsRpc do
 
   describe 'cancel_request' do
     before do
-      allow(NATS).to receive(:connect).with(nats_options).and_return(nats)
+      allow(nats_rpc).to receive(:generate_request_id).and_return('req1')
     end
 
     it 'should not fire after cancel was called' do
