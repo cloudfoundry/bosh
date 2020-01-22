@@ -79,14 +79,6 @@ module SpecHelper
         'assets/nats/nats_ca_private_key.pem',
         File.dirname(__FILE__),
       )
-      config['nats']['client_private_key_path'] = File.expand_path(
-        'assets/nats/one_off_intermediate_certificate_private_key.pem',
-        File.dirname(__FILE__),
-      )
-      config['nats']['client_certificate_path'] = File.expand_path(
-        'assets/nats/one_off_intermediate_certificate.pem',
-        File.dirname(__FILE__),
-      )
       config['db']['adapter'] = @director_db_helper.adapter
       config['db']['host'] = @director_db_helper.host
       config['db']['database'] = @director_db_helper.db_name
