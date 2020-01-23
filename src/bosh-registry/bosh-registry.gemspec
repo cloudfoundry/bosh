@@ -25,5 +25,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'aws-sdk'
   spec.add_dependency 'fog-core',   '~>1.45.0'
   spec.add_dependency 'builder',    '~>3.1.4'
-  spec.add_dependency 'excon',      '~>0.58.0'
+  spec.add_dependency 'excon'
 end

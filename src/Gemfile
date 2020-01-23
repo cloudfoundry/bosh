@@ -37,6 +37,8 @@ group :development, :test do
   gem 'bosh-dev', path: 'bosh-dev'
   gem 'bosh_cpi'
 
+  gem 'bundle-audit'
+
   gem 'rspec', '~> 3.0.0'
   gem 'rspec-instafail'
   gem 'rspec-its'
