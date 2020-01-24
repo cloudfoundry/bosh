@@ -23,8 +23,6 @@ scheduled_jobs:
 db: &bosh_db
   adapter: <%= database.adapter %>
   database: <%= database.db_name %>
-  # Settings are set to defaults since DbBackup
-  # currently does not support export without them
   host: 127.0.0.1
   port: <%= database.port %>
   user: <%= database.username %>
