@@ -32,11 +32,13 @@ main() {
     bosh upload-stemcell ${build_dir}/stemcell/*.tgz -n
     bosh -d zookeeper deploy --recreate ${build_dir}/zookeeper-release/manifests/zookeeper.yml -n
 
-    pushd ${build_dir}/prometheus-boshrelease
-      bosh cr --force --tarball=/tmp/prometheus.tgz
-    popd
-
-    bosh -d prometheus deploy prometheus.yml -l vars/director-vars-store.yml -l vars/director-vars-file.yml --vars-store=vars/prometheus-vars-store.yml -n
+    bosh -d prometheus deploy prometheus.yml \
+      -l vars/director-vars-store.yml \
+      -l vars/director-vars-file.yml \
+      --var="prometheus_release_tgz=${build_dir}/prometheus-boshrelease/release.tgz" \
+      --var="prometheus_release_version=$(cat "${build_dir}/prometheus-boshrelease/version")" \
+      --vars-store=vars/prometheus-vars-store.yml \
+      -n
   popd
 }
 

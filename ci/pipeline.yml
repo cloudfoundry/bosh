@@ -1044,11 +1044,9 @@ resources:
       private_key: ((github_deployment_key))
 
   - name: prometheus-boshrelease
-    type: git
+    type: bosh-io-release
     source:
-      uri: https://github.com/bosh-dep-forks/prometheus-boshrelease
-      branch: master
-      private_key: ((github_deployment_key))
+      repository: cloudfoundry-community/prometheus-boshrelease
 
   - name: bosh-cli
     type: s3
