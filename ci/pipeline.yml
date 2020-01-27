@@ -6,6 +6,7 @@ groups:
       - unit
       - unit-mysql
       - unit-postgres
+      - run-bundle-audit
       - integration-db-tls-postgres
       - integration-db-tls-postgres-hotswap
       - integration-db-tls-mysql
@@ -93,6 +94,7 @@ jobs:
       - unit
       - unit-mysql
       - unit-postgres
+      - run-bundle-audit
     plan:
     - get: bosh-src
       trigger: true
@@ -162,6 +164,37 @@ jobs:
           params:
             DB: postgresql
             DB_VERSION: 10
+
+  - name: run-bundle-audit
+    public: true
+    serial: true
+    serial_groups: [run-bundle-audit]
+    build_logs_to_retain: 250
+    plan:
+      - get: bosh-src
+        trigger: true
+        passed: [gate]
+      - task: test-bundle-audit
+        config:
+          inputs:
+            - name: bosh-src
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              tag: ((branch_name))
+              repository: bosh/main-ruby-go
+          run:
+            path: /bin/sh
+            args:
+              - -exc
+              - |
+                set -eux;
+                cd bosh-src/src;
+                gem install bundler:"$(grep -A 1 'BUNDLED WITH' Gemfile.lock | tail -n 1 | awk '{$1=$1};1')";
+                bundle install;
+                bundler-audit update;
+                bundler-audit check --ignore 'CVE-2019-17383';
 
   - name: integration-db-tls-postgres
     public: true
@@ -260,6 +293,7 @@ jobs:
       - integration-db-tls-mysql
       - integration-db-tls-postgres
       - integration-db-tls-postgres-hotswap
+      - run-bundle-audit
     - get: bosh-cli
     - get: main-ruby-go-image
     - put: version
