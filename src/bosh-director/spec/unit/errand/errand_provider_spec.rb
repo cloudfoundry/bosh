@@ -289,14 +289,14 @@ module Bosh::Director
 
               line_1_json = JSON.parse(lines[1])
               expect(line_1_json['type']).to eq('warning')
-              expect(line_1_json['message']).to eq('Executing errand on multiple instances in parallel. ' \
-                'Use the `--instance` flag to run the errand on a single instance.')
+              expect(line_1_json['message']).to eq("Ambiguous request: the requested errand name 'ambiguous-errand-name' " \
+                'matches both a job name and an errand instance group name. Executing errand on all relevant ' \
+                "instances with job 'ambiguous-errand-name'.")
 
               line_2_json = JSON.parse(lines[2])
               expect(line_2_json['type']).to eq('warning')
-              expect(line_2_json['message']).to eq("Ambiguous request: the requested errand name 'ambiguous-errand-name' " \
-                'matches both a job name and an errand instance group name. Executing errand on all relevant ' \
-                "instances with job 'ambiguous-errand-name'.")
+              expect(line_2_json['message']).to eq('Executing errand on multiple instances in parallel. ' \
+                'Use the `--instance` flag to run the errand on a single instance.')
 
               line_3_json = JSON.parse(lines[3])
               expect(line_3_json['state']).to eq('finished')
