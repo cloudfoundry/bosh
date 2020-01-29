@@ -29,7 +29,7 @@ describe 'cli: stemcell', type: :integration do
       stemcell_filename_not_dummy = spec_asset('valid_stemcell_not_dummy_stemcell_format.tgz')
 
       out = bosh_runner.run("upload-stemcell #{stemcell_filename_not_dummy}", failure_expected: true)
-      expect(out).to match /stemcell_formats of this stemcell are not supported by available cpis/
+      expect(out).to match(/\["not_dummy"\] are not supported by available cpi formats: \["dummy"\]/)
     end
   end
 

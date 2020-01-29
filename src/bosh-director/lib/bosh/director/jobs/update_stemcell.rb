@@ -133,7 +133,9 @@ module Bosh::Director
         end
 
         if stemcell.nil?
-          raise StemcellNotSupported, 'stemcell_formats of this stemcell are not supported by available cpis'
+          all_cpi_formats = cloud_factory.all_names.flat_map { |cpi| cloud_factory.get(cpi).info['stemcell_formats'] }.uniq
+          err_message = 'uploaded stemcell with formats %s are not supported by available cpi formats: %s'
+          raise StemcellNotSupported, format(err_message, @stemcell_formats, all_cpi_formats)
         else
           "/stemcells/#{stemcell.name}/#{stemcell.version}"
         end
