@@ -14,10 +14,6 @@ mysql/mariadb-connector-c-3.0.3-src.tar.gz:
   size: 666928
   object_id: 0d20e9e3-1a7d-4872-6ea3-28246c579ca8
   sha: 62893066d6fcd2d63075ca04a2a389b3ea6009fc
-mysql/server-5.7.10-3-Linux.x86_64.ssl100.tar.gz:
-  size: 4639216
-  object_id: 4d2023eb-9e8e-415d-9247-fc5481270eb1
-  sha: f00c86bfa13b64e54f2a08551c3fe61d8966fd6e
 nginx/headers-more-nginx-module-0.30.tar.gz:
   size: 27793
   object_id: ee5b4828-67f9-42f7-a0fb-23b4d4c9805f
