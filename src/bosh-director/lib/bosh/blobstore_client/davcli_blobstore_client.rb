@@ -109,8 +109,7 @@ module Bosh::Blobstore
     def write_config_file(config_file_dir = nil)
       config_file_dir = Dir.tmpdir unless config_file_dir
       Dir.mkdir(config_file_dir) unless File.exists?(config_file_dir)
-      random_name = "davcli-blobstore-config-#{SecureRandom.uuid}"
-      config_file = File.join(config_file_dir, random_name)
+      config_file = File.join(config_file_dir, 'davcli-blobstore-config')
       config_data = JSON.dump(@davcli_options)
       File.open(config_file, 'w', 0600) { |file| file.write(config_data) }
       config_file

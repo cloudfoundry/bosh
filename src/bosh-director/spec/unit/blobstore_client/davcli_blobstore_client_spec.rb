@@ -21,7 +21,7 @@ module Bosh::Blobstore
     let(:failure_exit_status) { instance_double('Process::Status', exitstatus: 1, success?: false) }
     let(:success_exit_status) { instance_double('Process::Status', exitstatus: 0, success?: true) }
     let(:not_existed_exit_status) { instance_double('Process::Status', exitstatus: 3, success?: true) }
-    let(:expected_config_file) { File.join(base_dir, 'davcli-blobstore-config-FAKE_UUID') }
+    let(:expected_config_file) { File.join(base_dir, 'davcli-blobstore-config') }
     let(:davcli_path) { '/var/vcap/packages/davcli/bin/davcli' }
 
     before do
@@ -84,7 +84,7 @@ module Bosh::Blobstore
 
         it 'creates config file with provided path' do
           described_class.new(config_file_options)
-          expect(File.exist?(File.join(davcli_config_path, 'davcli-blobstore-config-FAKE_UUID'))).to eq(true)
+          expect(File.exist?(File.join(davcli_config_path, 'davcli-blobstore-config'))).to eq(true)
         end
       end
     end

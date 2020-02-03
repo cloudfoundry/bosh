@@ -134,7 +134,7 @@ module Bosh::Blobstore
 
     def required_credential_properties_list
       return [] if @s3cli_options[:credentials_source] == 'env_or_profile'
-      %w[access_key_id secret_access_key] 
+      %w[access_key_id secret_access_key]
     end
 
     # @param [String] path path to file which will be stored in S3
@@ -156,8 +156,7 @@ module Bosh::Blobstore
     def write_config_file(config_file_dir = nil)
       config_file_dir ||= Dir.tmpdir
       Dir.mkdir(config_file_dir) unless File.exist?(config_file_dir)
-      random_name = "s3_blobstore_config-#{SecureRandom.uuid}"
-      config_file = File.join(config_file_dir, random_name)
+      config_file = File.join(config_file_dir, 's3_blobstore_config')
       config_data = JSON.dump(@s3cli_options)
 
       File.open(config_file, 'w', 0o600) { |file| file.write(config_data) }

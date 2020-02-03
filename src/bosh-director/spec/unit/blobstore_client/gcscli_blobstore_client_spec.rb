@@ -7,7 +7,7 @@ module Bosh::Blobstore
     let!(:base_dir) { Dir.mktmpdir }
     before do
       allow(Dir).to receive(:tmpdir).and_return(base_dir)
-      allow(SecureRandom).to receive_messages(uuid: 'FAKE_UUID')
+      allow(SecureRandom).to receive(:uuid).and_return('FAKE_UUID')
       allow(Kernel).to receive(:system).with("/var/vcap/packages/bosh-gcscli/bin/bosh-gcscli", "--v", {:out => "/dev/null", :err => "/dev/null"}).and_return(true)
     end
 
@@ -19,7 +19,7 @@ module Bosh::Blobstore
       }
     end
 
-    let(:expected_config_file) { File.join(base_dir, 'gcs_blobstore_config-FAKE_UUID') }
+    let(:expected_config_file) { File.join(base_dir, 'gcs_blobstore_config') }
     let(:success_exit_status) { instance_double('Process::Status', exitstatus: 0, success?: true) }
     let(:not_existed_exit_status) { instance_double('Process::Status', exitstatus: 3, success?: true) }
     let(:failure_exit_status) { instance_double('Process::Status', exitstatus: 1, success?: false) }
@@ -78,7 +78,7 @@ module Bosh::Blobstore
 
         it 'creates config file with provided path' do
           described_class.new(config_file_options)
-          expect(File.exist?(File.join(gcscli_config_path, 'gcs_blobstore_config-FAKE_UUID'))).to eq(true)
+          expect(File.exist?(File.join(gcscli_config_path, 'gcs_blobstore_config'))).to eq(true)
         end
       end
     end
