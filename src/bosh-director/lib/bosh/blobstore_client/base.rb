@@ -152,6 +152,16 @@ module Bosh
 
       protected
 
+      def write_config_file(config, config_file_dir = nil)
+        config_file_dir ||= Dir.tmpdir
+        Dir.mkdir(config_file_dir) unless File.exist?(config_file_dir)
+
+        config_file = File.join(config_file_dir, 'blobstore-config')
+        config_data = JSON.dump(config)
+        File.open(config_file, 'w', 0o600) { |file| file.write(config_data) }
+        config_file
+      end
+
       # @return [String] the id
       def create_file(id, file)
         # needs to be implemented in each subclass

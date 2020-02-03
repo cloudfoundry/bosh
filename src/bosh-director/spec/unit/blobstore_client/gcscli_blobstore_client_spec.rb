@@ -19,7 +19,7 @@ module Bosh::Blobstore
       }
     end
 
-    let(:expected_config_file) { File.join(base_dir, 'gcs_blobstore_config') }
+    let(:expected_config_file) { File.join(base_dir, 'blobstore-config') }
     let(:success_exit_status) { instance_double('Process::Status', exitstatus: 0, success?: true) }
     let(:not_existed_exit_status) { instance_double('Process::Status', exitstatus: 3, success?: true) }
     let(:failure_exit_status) { instance_double('Process::Status', exitstatus: 1, success?: false) }
@@ -78,7 +78,7 @@ module Bosh::Blobstore
 
         it 'creates config file with provided path' do
           described_class.new(config_file_options)
-          expect(File.exist?(File.join(gcscli_config_path, 'gcs_blobstore_config'))).to eq(true)
+          expect(File.exist?(File.join(gcscli_config_path, 'blobstore-config'))).to eq(true)
         end
       end
     end

@@ -37,7 +37,7 @@ module Bosh::Blobstore
 
       @gcscli_options.reject! { |_k, v| v.nil? }
 
-      @config_file = write_config_file(@options.fetch(:gcscli_config_path, nil))
+      @config_file = write_config_file(@gcscli_options, @options.fetch(:gcscli_config_path, nil))
     end
 
     def redacted_credential_properties_list
@@ -140,16 +140,6 @@ module Bosh::Blobstore
 
     def full_oid_path(object_id)
       @options[:folder] ? @options[:folder] + '/' + object_id : object_id
-    end
-
-    def write_config_file(config_file_dir = nil)
-      config_file_dir ||= Dir.tmpdir
-      Dir.mkdir(config_file_dir) unless File.exist?(config_file_dir)
-      config_file = File.join(config_file_dir, 'gcs_blobstore_config')
-      config_data = JSON.dump(@gcscli_options)
-
-      File.open(config_file, 'w', 0o600) { |file| file.write(config_data) }
-      config_file
     end
   end
 end
