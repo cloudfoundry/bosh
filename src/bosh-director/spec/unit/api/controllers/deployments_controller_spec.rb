@@ -2567,9 +2567,14 @@ module Bosh::Director
           end
 
           context 'PUT /:deployment/instance_groups/:instancegroup/:id/ignore' do
-            it 'allows access to owned deployment' do
+            it 'allows access to owned deployment via instance id' do
               expect(put('/owned_deployment/instance_groups/dea/F0753566-CA8E-4B28-AD63-7DB3903CD98C/ignore', '{}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(200)
             end
+
+            it 'allows access to owned deployment via vm index' do
+              expect(put('/owned_deployment/instance_groups/dea/0/ignore', '{}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(200)
+            end
+
             it 'denies access to other deployment' do
               expect(put('/other_deployment/instance_groups/dea/72652FAA-1A9C-4803-8423-BBC3630E49C6/ignore', '{}', { 'CONTENT_TYPE' => 'application/json' }).status).to eq(401)
             end

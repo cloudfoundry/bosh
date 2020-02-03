@@ -234,9 +234,9 @@ module Bosh::Director
           'consider using https://bosh.io/docs/cli-v2/#ignore.'
       end
 
-      put '/:deployment/instance_groups/:instancegroup/:id/ignore', consumes: :json do
+      put '/:deployment/instance_groups/:instance_group/:index_or_id/ignore', consumes: :json do
         payload = json_decode(request.body.read)
-        @instance_ignore_manager.set_ignore_state_for_instance(deployment, params[:instancegroup], params[:id], payload['ignore'])
+        @instance_ignore_manager.set_ignore_state_for_instance(deployment, params[:instance_group], params[:index_or_id], payload['ignore'])
         status(200)
       end
 
