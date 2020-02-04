@@ -138,6 +138,11 @@ params['scheduled_jobs'] << {
   'params' => [{'max_blob_age' => 3600, 'num_dns_blobs_to_keep' => 10}]
 }
 
+params['scheduled_jobs'] << {
+  'command' => 'ScheduledTasksCleanup',
+  'schedule' => p('director.tasks_cleanup_schedule')
+}
+
 params['record_events'] = p('director.events.record_events')
 if params['record_events']
   params['scheduled_jobs'] << {

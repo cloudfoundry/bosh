@@ -4,8 +4,8 @@ module Bosh::Director::Api
       @max_tasks = max_tasks
     end
 
-    def remove (type)
-      removal_candidates_dataset(type).each do |task|
+    def remove(type, count = 10)
+      removal_candidates_dataset(type, count).each do |task|
         remove_task(task)
       end
     end
@@ -20,13 +20,14 @@ module Bosh::Director::Api
         # both could get the same results from removal_candidates_dataset,
         # but only the first would succeed at deletion; ignore failure of
         # subsequent attempts
+        Bosh::Director::Config.logger.debug("TaskRemover: Sequel::NoExistingObject, attempting to remove #{task}.")
       end
     end
 
     private
-    def removal_candidates_dataset(type)
+    def removal_candidates_dataset(type, count)
       Bosh::Director::Models::Task.filter(Sequel.lit("state NOT IN ('processing', 'queued') and type='#{type}'")).
-        order { Sequel.desc(:id) }.limit(10, @max_tasks)
+        order { Sequel.desc(:id) }.limit(count, @max_tasks)
     end
   end
 end

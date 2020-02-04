@@ -111,6 +111,9 @@ properties:
     description: SSL Certificate for director (PEM encoded)
   director.ssl.key:
     description: SSL private key for director (PEM encoded)
+  director.tasks_cleanup_schedule
+    description: Schedule cleanup of tasks and their log files, keeping `max_tasks`
+    default: '0 0 0 */7 * * UTC'  # once every 7 days at midnight UTC
   director.max_tasks:
     description: Max number of tasks per each type to keep in disk
     default: 2000

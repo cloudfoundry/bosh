@@ -11,9 +11,6 @@ module Bosh::Director
       Delayed::Worker.backend = :sequel
       db_job = Bosh::Director::Jobs::DBJob.new(job_class, task.id, params)
       Delayed::Job.enqueue db_job
-
-      Api::TaskRemover.new(Config.max_tasks).remove(job_class.job_type)
-
       task
     end
 

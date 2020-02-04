@@ -189,7 +189,9 @@ module Bosh::Director::Api
         expect(Dir['/director/tasks/type_1']).to_not be_nil
       end
 
-      it 'does not fail when called multiple times on the same task' do
+      it 'does not fail when called multiple times on the same task, writes a debug log' do
+        expect(Bosh::Director::Config).to receive(:logger)
+          .and_return(double(Logging::Logger, debug: nil))
         expect do
           remover.remove_task(first_task)
           remover.remove_task(first_task)
