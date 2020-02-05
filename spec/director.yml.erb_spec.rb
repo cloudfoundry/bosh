@@ -79,6 +79,7 @@ describe 'director.yml.erb' do
           'max_events' => 10000,
           'cleanup_schedule' => '0 * * * * * UTC'
         },
+        'tasks_cleanup_schedule' => '0 0 */7 * * * UTC',
         'db' => {
           'adapter' => 'mysql2',
           'user' => 'ub45391e00',
