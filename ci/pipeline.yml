@@ -939,6 +939,7 @@ resource_types:
 resources:
   - name: bosh-src
     type: git
+    icon: github-circle
     source:
       uri: ((bosh_src_url))
       branch: ((branch_name))
@@ -946,6 +947,7 @@ resources:
 
   - name: bosh-src-dockerfiles
     type: git
+    icon: github-circle
     source:
       uri: https://github.com/cloudfoundry/bosh.git
       branch: master
@@ -994,6 +996,7 @@ resources:
 
   - name: bosh-disaster-recovery-acceptance-tests
     type: git
+    icon: github-circle
     source:
       uri: https://github.com/cloudfoundry-incubator/bosh-disaster-recovery-acceptance-tests.git
       branch: master
@@ -1025,6 +1028,7 @@ resources:
 
   - name: acceptance-env-state
     type: git
+    icon: github-circle
     source:
       branch: master
       uri: git@github.com:cloudfoundry/bosh-bbl-ci-envs.git
@@ -1032,12 +1036,14 @@ resources:
 
   - name: zookeeper-release
     type: git
+    icon: github-circle
     source:
       uri: https://github.com/cppforlife/zookeeper-release
       branch: master
 
   - name: bosh-master
     type: git
+    icon: github-circle
     source:
       uri: ((bosh_src_url))
       branch: master
@@ -1066,12 +1072,14 @@ resources:
 
   - name: bats
     type: git
+    icon: github-circle
     source:
       uri: https://github.com/cloudfoundry/bosh-acceptance-tests.git
       branch: master
 
   - name: bosh-deployment
     type: git
+    icon: github-circle
     source:
       uri: https://github.com/cloudfoundry/bosh-deployment
       branch: master
@@ -1111,6 +1119,7 @@ resources:
 
   - name: bosh-agent
     type: git
+    icon: github-circle
     source:
       uri: https://github.com/cloudfoundry/bosh-agent
       branch: master
