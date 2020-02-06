@@ -43,9 +43,9 @@ group :development, :test do
 
   gem 'fakefs'
   gem 'parallel_tests', '~> 2.0'
-  gem 'rack-test'
-  gem 'sinatra'
-  gem 'sinatra-contrib'
+  gem 'rack-test', '>= 0.6.3'
+  gem 'sinatra', '>= 2.0.2'
+  gem 'sinatra-contrib', '>= 2.0.2'
   gem 'webmock'
 
   gem 'pry-byebug'
