@@ -250,8 +250,11 @@ properties:
   director.metrics_server.enabled:
     description: 'Enables the metrics server on the director'
     default: false
+  director.metrics_server.listen_on_external_interface:
+    description: 'Exposes the directors metrics server on an external interface. Requires the use of mutual auth TLS'
+    default: true
   director.metrics_server.port:
-    description: 'Port for nginx to listen for metrics server'
+    description: 'External Port for nginx to listen for metrics server'
     default: 9091
   director.metrics_server.backend_port:
     description: 'Internal port for metrics server to listen to'

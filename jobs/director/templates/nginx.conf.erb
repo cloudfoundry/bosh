@@ -113,7 +113,7 @@ http {
   }
 
 
-<% if p('director.metrics_server.enabled') %>
+<% if p('director.metrics_server.enabled') && p('director.metrics_server.listen_on_external_interface') %>
   upstream metrics_server {
     server 127.0.0.1:<%= p('director.metrics_server.backend_port') %>;
   }
