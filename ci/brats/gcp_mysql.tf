@@ -1,9 +1,6 @@
 variable "gcp_mysql_databasename" {
 }
 
-variable "concourse_authorized_network" {
-}
-
 resource "google_sql_database_instance" "mysql-master" {
   database_version = "MYSQL_5_7"
   region           = "us-central1"

@@ -1,9 +1,6 @@
 variable "gcp_postgres_databasename" {
 }
 
-variable "concourse_authorized_network" {
-}
-
 resource "google_sql_database_instance" "postgres-master" {
   database_version = "POSTGRES_9_6"
   region           = "us-central1"

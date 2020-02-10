@@ -3,3 +3,6 @@ provider "google" {
   project = "cf-bosh-core"
   region  = "us-central1"
 }
+
+variable "concourse_authorized_network" {
+}
