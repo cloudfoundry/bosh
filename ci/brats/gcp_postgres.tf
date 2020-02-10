@@ -1,6 +1,9 @@
 variable "gcp_postgres_databasename" {
 }
 
+variable "concourse_authorized_network" {
+}
+
 resource "google_sql_database_instance" "postgres-master" {
   database_version = "POSTGRES_9_6"
   region           = "us-central1"
@@ -13,7 +16,7 @@ resource "google_sql_database_instance" "postgres-master" {
       ipv4_enabled = true
       authorized_networks {
         name  = "concourse"
-        value = "104.196.254.104"
+        value = var.concourse_authorized_network
       }
       authorized_networks {
         name  = "pivotal"
