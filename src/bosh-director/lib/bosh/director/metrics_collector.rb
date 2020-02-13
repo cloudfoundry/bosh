@@ -123,10 +123,20 @@ module Bosh
 
       def populate_network_metrics
         configs = Models::Config.latest_set('cloud')
-        cloud_planners = configs.map do |config|
-          DeploymentPlan::CloudManifestParser.new(@logger).parse(YAML.safe_load(config.content))
+        @network_available_ips.set(0, labels: { name: canonicalize_to_prometheus('no-networks') })
+        @network_free_ips.set(0, labels: { name: canonicalize_to_prometheus('no-networks') })
+        return if configs.empty?
+
+        parser = DeploymentPlan::CloudManifestParser.new(@logger)
+        networks = configs.map do |config|
+          parser.parse(YAML.safe_load(config.content)).networks
+        rescue Bosh::Director::DeploymentNoNetworks
+          # this config may not have networks, another might have some networks
+          []
         end
-        networks = cloud_planners.flat_map(&:networks)
+        networks.flatten!
+
+        return if networks.empty?
 
         networks.each do |network|
           next unless network.manual?

@@ -193,6 +193,45 @@ module Bosh
               end
             end
           end
+
+          context 'there are no networks defined in some cloud-config' do
+            before do
+              Models::Config.make(:cloud, name: 'yacc', content: YAML.dump(
+                'azs' => [az],
+                'vm_types' => [],
+                'disk_types' => [],
+                'vm_extensions' => [],
+                'networks' => [],
+                'compilation' => { 'az' => 'az-1', 'network' => manual_network_spec['name'], 'workers' => 3 },
+              ))
+            end
+
+            it 'can still get metrics without errors' do
+              metrics_collector.start
+              metric = Prometheus::Client.registry.get(:bosh_networks_dynamic_ips_total)
+              expect(metric.get(labels: { name: 'my_manual_network' })).to eq(10)
+            end
+          end
+
+          context 'there are no networks in any cloud-config' do
+            before do
+              Models::Config.all.each(&:delete)
+              Models::Config.make(:cloud, name: 'yacc', content: YAML.dump(
+                'azs' => [az],
+                'vm_types' => [],
+                'disk_types' => [],
+                'vm_extensions' => [],
+                'networks' => [],
+                'compilation' => { 'az' => 'az-1', 'network' => manual_network_spec['name'], 'workers' => 3 },
+              ))
+            end
+
+            it 'emits 0 for the metrics successfully' do
+              metrics_collector.start
+              metric = Prometheus::Client.registry.get(:bosh_networks_dynamic_ips_total)
+              expect(metric.get(labels: { name: 'no_networks' })).to eq(0)
+            end
+          end
         end
 
         describe 'vm metrics' do
