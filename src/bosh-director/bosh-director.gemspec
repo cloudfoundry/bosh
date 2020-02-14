@@ -57,7 +57,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'rufus-scheduler',  '~>3.0'
   spec.add_dependency 'semi_semantic',    '~>1.2.0'
   spec.add_dependency 'sequel',           '~>5.16.0'
-  spec.add_dependency 'sinatra',          '~>1.4.2'
+  spec.add_dependency 'sinatra',          '~>2.0.2'
   spec.add_dependency 'sys-filesystem',   '~>1.1.0'
   spec.add_dependency 'talentbox-delayed_job_sequel', '~>4.3'
   spec.add_dependency 'thin'

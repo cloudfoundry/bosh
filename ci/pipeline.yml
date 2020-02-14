@@ -1195,6 +1195,7 @@ resources:
         secret_access_key: ((aws_secret_key__primary))
         bucket:            ((terraform_bucket))
         bucket_path:       terraform-state
+        region_name: ((terraform_bucket_region))
       vars:
         access_key: ((aws_access_key__primary))
         secret_key: ((aws_secret_key__primary))

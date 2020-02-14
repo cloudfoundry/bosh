@@ -19,7 +19,7 @@ Gem::Specification.new do |spec|
   spec.executables  = %w(bosh-registry bosh-registry-migrate)
 
   spec.add_dependency 'sequel',    '~>5.16.0'
-  spec.add_dependency 'sinatra',   '~>1.4.2'
+  spec.add_dependency 'sinatra',   '~>2.0.2'
   spec.add_dependency 'thin',      '~>1.7.0'
   spec.add_dependency 'fog-openstack', '~>0.1.31'
   spec.add_dependency 'aws-sdk'
