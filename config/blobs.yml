@@ -1,5 +1,6 @@
 bosh-gcscli/bosh-gcscli-0.0.18-linux-amd64:
   size: 15517961
+  object_id: 0c9bed44-68b6-4101-7db9-fad5139906fb
   sha: sha256:7a657f24509b1594764194e9c90f5540d7657aec49f79bf44cb1a04ce15e68ed
 davcli/davcli-0.0.41-linux-amd64:
   size: 8595966
@@ -47,6 +48,7 @@ powerdns/pdns-static_3.3.1-1_amd64.deb:
   sha: 22bb46aa0b3e7671e0ee9aa30ed95c38841106ab
 s3cli/s3cli-0.0.95-linux-amd64:
   size: 15481029
+  object_id: 1ea1d53d-8ff1-4075-5760-2bdce086974d
   sha: sha256:4f280cadec594f8767d7d1398e76c06dadc0f566b5b17ec8f08062629f471221
 verify-multidigest/verify-multidigest-0.0.156-linux-amd64:
   size: 4321727
