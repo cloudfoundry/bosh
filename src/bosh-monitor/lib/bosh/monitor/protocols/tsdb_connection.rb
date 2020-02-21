@@ -1,7 +1,7 @@
 module Bosh::Monitor
   class TsdbConnection < Bosh::Monitor::TcpConnection
-    def initialize(host, port)
-      super('connection.tsdb', host, port)
+    def initialize(host, port, max_retries)
+      super('connection.tsdb', host, port, max_retries)
     end
 
     def send_metric(name, timestamp, value, tags = {})

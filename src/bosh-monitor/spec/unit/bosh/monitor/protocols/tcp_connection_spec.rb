@@ -3,7 +3,7 @@ require_relative '../../../../spec_helper'
 describe Bosh::Monitor::TcpConnection do
   describe 'exponential back off' do
     context 'when the initial connection fails' do
-      let(:tcp_connection) { Bosh::Monitor::TcpConnection.new('signature', 'connection.tcp', '127.0.0.1', 80) }
+      let(:tcp_connection) { Bosh::Monitor::TcpConnection.new('signature', 'connection.tcp', '127.0.0.1', 80, Bhm::TcpConnection::DEFAULT_RETRIES) }
 
       before { Bhm.logger = logger }
 
@@ -38,10 +38,24 @@ describe Bosh::Monitor::TcpConnection do
         allow(EM).to receive(:add_timer)
 
         expect do
-          (Bosh::Monitor::TcpConnection::MAX_RETRIES + 1).times do
+          (Bhm::TcpConnection::DEFAULT_RETRIES + 1).times do
             tcp_connection.unbind
           end
         end.to raise_error(/connection.tcp-failed-to-reconnect after/)
+      end
+
+      context 'when max_retries is infinite' do
+        let(:tcp_connection) { Bosh::Monitor::TcpConnection.new('signature', 'connection.tcp', '127.0.0.1', 80, -1) }
+
+        it 'should try "indefinitely"' do
+          expect(EM).to receive(:add_timer).at_least(Bhm::TcpConnection::DEFAULT_RETRIES + 5).times
+
+          expect do
+            (Bhm::TcpConnection::DEFAULT_RETRIES + 5).times do
+              tcp_connection.unbind
+            end
+          end.to_not raise_error
+        end
       end
     end
   end

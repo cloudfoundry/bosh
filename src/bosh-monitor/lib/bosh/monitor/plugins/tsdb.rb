@@ -2,7 +2,11 @@ module Bosh::Monitor
   module Plugins
     class Tsdb < Base
       def validate_options
-        !!(options.is_a?(Hash) && options['host'] && options['port'])
+        host_port = !!(options.is_a?(Hash) && options['host'] && options['port'])
+        if options.key?('max_retries')
+          return false unless options['max_retries'].is_a?(Numeric) && options['max_retries'] >= -1
+        end
+        host_port
       end
 
       def run
@@ -13,7 +17,8 @@ module Bosh::Monitor
 
         host = options['host']
         port = options['port']
-        @tsdb = EM.connect(host, port, Bhm::TsdbConnection, host, port)
+        retries = options['max_retries'] || Bhm::TcpConnection::DEFAULT_RETRIES
+        @tsdb = EM.connect(host, port, Bhm::TsdbConnection, host, port, retries)
       end
 
       def process(event)

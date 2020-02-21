@@ -7,26 +7,38 @@ describe Bhm::Plugins::Graphite do
     {
       'host' => 'fake-graphite-host',
       'port' => 2003,
+      'max_retries' => 42,
     }
   end
 
   describe 'validates options' do
-    context 'when we specify both host abd port' do
-      it 'is valid' do
-        expect(plugin.validate_options).to be(true)
-      end
-    end
+    invalid_port_options = {
+      'host' => 'localhost',
+    }
 
-    context 'when we omit port or host' do
-      let(:options) do
-        {
-          'host' => 'localhost',
-        }
-      end
+    invalid_max_retries_options = {
+      'host' => 'localhost',
+      'port' => 1337,
+      'max_retries' => -1337,
+    }
 
-      it 'is not valid' do
-        expect(plugin.validate_options).to be(false)
-      end
+    valid_options = {
+      'host' => 'fake-graphite-host',
+      'port' => 2003,
+      'max_retries' => 42,
+    }
+
+    valid_infinite_retries_options = {
+      'host' => 'fake-graphite-host',
+      'port' => 2003,
+      'max_retries' => -1,
+    }
+
+    it 'validates options' do
+      expect(Bhm::Plugins::Graphite.new(invalid_port_options).validate_options).to be_falsey
+      expect(Bhm::Plugins::Graphite.new(invalid_max_retries_options).validate_options).to be_falsey
+      expect(Bhm::Plugins::Graphite.new(valid_options).validate_options).to be_truthy
+      expect(Bhm::Plugins::Graphite.new(valid_infinite_retries_options).validate_options).to be_truthy
     end
   end
 
@@ -34,7 +46,7 @@ describe Bhm::Plugins::Graphite do
     let(:connection) { instance_double('Bosh::Monitor::GraphiteConnection') }
     before do
       allow(EM).to receive(:connect)
-        .with('fake-graphite-host', 2003, Bhm::GraphiteConnection, 'fake-graphite-host', 2003)
+        .with('fake-graphite-host', 2003, Bhm::GraphiteConnection, 'fake-graphite-host', 2003, 42)
         .and_return(connection)
     end
 

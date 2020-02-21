@@ -132,6 +132,9 @@ properties:
     description: Address of TSDB to connect to
   hm.tsdb.port:
     description: Port of TSDB to connect to
+  hm.tsdb.max_retries:
+    description: Max attempts to connect to the TSDB service; use -1 for infinite retries
+    default: 35
 
   # Send events via PagerDuty
   hm.pagerduty_enabled:
@@ -192,6 +195,9 @@ properties:
     description: Graphite port
   hm.graphite.prefix:
     description: Prefix that will be added to all metrics sent to Graphite
+  hm.graphite.max_retries:
+    description: Max attempts to connect to the Graphite service; use -1 for infinite retries
+    default: 35
 
   #Send Heartbeats and Alerts as events to a Consul cluster
   hm.consul_event_forwarder_enabled:

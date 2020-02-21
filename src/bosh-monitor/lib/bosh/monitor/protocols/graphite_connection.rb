@@ -1,7 +1,7 @@
 module Bosh::Monitor
   class GraphiteConnection < Bosh::Monitor::TcpConnection
-    def initialize(host, port)
-      super('connection.graphite', host, port)
+    def initialize(host, port, max_retries)
+      super('connection.graphite', host, port, max_retries)
     end
 
     def send_metric(name, value, timestamp)
