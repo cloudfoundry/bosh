@@ -127,13 +127,8 @@ module Bosh
         @network_free_ips.set(0, labels: { name: canonicalize_to_prometheus('no-networks') })
         return if configs.empty?
 
-        parser = DeploymentPlan::CloudManifestParser.new(@logger)
-        networks = configs.map do |config|
-          parser.parse(YAML.safe_load(config.content)).networks
-        rescue Bosh::Director::DeploymentNoNetworks
-          # this config may not have networks, another might have some networks
-          []
-        end
+        consolidated_configs = Bosh::Director::CloudConfig::CloudConfigsConsolidator.new(configs)
+        networks = DeploymentPlan::CloudManifestParser.new(@logger).parse(consolidated_configs.raw_manifest).networks
         networks.flatten!
 
         return if networks.empty?
