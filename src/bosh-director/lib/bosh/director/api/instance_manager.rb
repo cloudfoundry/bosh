@@ -20,6 +20,10 @@ module Bosh::Director
           InstanceLookup.new.by_uuid(deployment, job, index_or_id)
         end
       end
+      
+      def find_instances_by_job(deployment, job)
+        InstanceLookup.new.by_job(deployment, job)
+      end
 
       def find_instances_by_deployment(deployment)
         InstanceLookup.new.by_deployment(deployment)
