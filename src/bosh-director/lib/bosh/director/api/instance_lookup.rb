@@ -10,7 +10,15 @@ module Bosh::Director
         end
         instance
       end
-
+      
+      def by_job(deployment, job_name)
+        instances = Models::Instance.filter(deployment: deployment, job: job_name)
+        if instances.empty?
+          raise InstanceNotFound, "No instances matched,#{deployment.name}/#{job_name}"
+        end
+        instances
+      end
+      
       def by_attributes(deployment, job_name, job_index)
         # Postgres cannot coerce an empty string to integer, and fails on Models::Instance.find
         job_index = nil if job_index.is_a?(String) && job_index.empty?
