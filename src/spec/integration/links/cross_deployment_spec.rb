@@ -183,7 +183,15 @@ describe 'cross deployment links', type: :integration do
         end
       end
 
-      context 'and the consumer is recreated via resurrector' do
+      context 'and the consumer is recreated via cck' do
+        before do
+          expect { bosh_runner.run('update-resurrection off') }.to_not raise_error
+        end
+
+        after do
+          expect { bosh_runner.run('update-resurrection on') }.to_not raise_error
+        end
+
         it 'should preserve the old link information' do
           director.instance('second_deployment_node', '0', deployment_name: 'second').kill_agent
 
