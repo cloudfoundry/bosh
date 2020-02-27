@@ -189,8 +189,8 @@ describe 'director.yml.erb' do
           }
         end
 
-        it 'does not set the domain_name field appropriately' do
-          expect(parsed_yaml['dns']).to be_nil
+        it 'set the domain_name field appropriately' do
+          expect(parsed_yaml['dns']).to_not be_nil
         end
       end
 
