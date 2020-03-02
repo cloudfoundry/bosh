@@ -141,6 +141,7 @@ describe 'health_monitor.yml.erb' do
               'tsdb' => {
                 'address' => '127.0.0.91',
                 'port' => 4223,
+                'max_retries' => 1,
               },
             })
         end
@@ -153,6 +154,7 @@ describe 'health_monitor.yml.erb' do
           expect(plugin['events']).to be_a(Array)
           expect(plugin['options']['host']).to eq('127.0.0.91')
           expect(plugin['options']['port']).to eq(4223)
+          expect(plugin['options']['max_retries']).to eq(1)
         end
       end
 
@@ -259,6 +261,7 @@ describe 'health_monitor.yml.erb' do
                 'address' => '192.0.2.1',
                 'port' => 12345,
                 'prefix' => 'my-prefix',
+                'max_retries' => 1,
               },
             })
         end
@@ -272,6 +275,7 @@ describe 'health_monitor.yml.erb' do
           expect(plugin['options']['host']).to eq('192.0.2.1')
           expect(plugin['options']['port']).to eq(12345)
           expect(plugin['options']['prefix']).to eq('my-prefix')
+          expect(plugin['options']['max_retries']).to eq(1)
         end
       end
 
