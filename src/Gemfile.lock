@@ -39,9 +39,9 @@ PATH
       nats (~> 0.9.2)
       netaddr (~> 1.5.0)
       prometheus-client (~> 1.0.0)
-      puma (~> 3.10)
+      puma (~> 3.12)
       rack-test (~> 0.6.2)
-      rake (~> 10.0)
+      rake (~> 12.3)
       rufus-scheduler (~> 3.0)
       semi_semantic (~> 1.2.0)
       sequel (~> 5.16.0)
@@ -1037,7 +1037,7 @@ GEM
       http_parser.rb (>= 0.6.0)
     em-socksify (0.3.2)
       eventmachine (>= 1.0.0.beta.4)
-    et-orbi (1.2.2)
+    et-orbi (1.2.3)
       tzinfo
     eventmachine (1.2.7)
     excon (0.72.0)
@@ -1112,7 +1112,7 @@ GEM
       pry (~> 0.9)
       slop (~> 3.0)
     public_suffix (4.0.3)
-    puma (3.12.2)
+    puma (3.12.4)
     raabro (1.1.6)
     rack (2.2.2)
     rack-protection (2.0.8.1)
@@ -1120,7 +1120,7 @@ GEM
     rack-test (0.6.3)
       rack (>= 1.0)
     rainbow (3.0.0)
-    rake (10.5.0)
+    rake (12.3.3)
     rest-client (2.1.0)
       http-accept (>= 1.7.0, < 2.0)
       http-cookie (>= 1.0.2, < 2.0)
@@ -1239,7 +1239,7 @@ DEPENDENCIES
   pry-byebug
   pry-remote
   rack-test (>= 0.6.3)
-  rake (~> 10.0)
+  rake (~> 12.3)
   rest-client
   rspec (~> 3.0.0)
   rspec-instafail

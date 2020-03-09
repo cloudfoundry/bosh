@@ -10,7 +10,7 @@ gem 'bosh-registry', path: 'bosh-registry'
 gem 'bosh-template', path: 'bosh-template'
 gem 'bosh_common', path: 'bosh_common'
 
-gem 'rake', '~>10.0'
+gem 'rake', '~>12.3'
 
 # json version is hardcoded in release director, health_monitor and registry packages
 # when modified needs to be updated there as well

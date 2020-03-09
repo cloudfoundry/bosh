@@ -51,9 +51,9 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'nats',             '~>0.9.2'
   spec.add_dependency 'netaddr',          '~>1.5.0'
   spec.add_dependency 'prometheus-client','~>1.0.0'
-  spec.add_dependency 'puma',             '~>3.10'
+  spec.add_dependency 'puma',             '~>3.12'
   spec.add_dependency 'rack-test',        '~>0.6.2' # needed for console
-  spec.add_dependency 'rake',             '~> 10.0'
+  spec.add_dependency 'rake',             '~> 12.3'
   spec.add_dependency 'rufus-scheduler',  '~>3.0'
   spec.add_dependency 'semi_semantic',    '~>1.2.0'
   spec.add_dependency 'sequel',           '~>5.16.0'
