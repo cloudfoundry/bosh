@@ -105,6 +105,7 @@ if p('hm.tsdb_enabled')
     'options' => {
       'host' => p('hm.tsdb.address'),
       'port' => p('hm.tsdb.port'),
+      'max_retries' => p('hm.tsdb.max_retries'),
     },
   }
 end
@@ -191,6 +192,7 @@ if p('hm.graphite_enabled')
     'options' => {
       'host' => p('hm.graphite.address'),
       'port' => p('hm.graphite.port'),
+      'max_retries' => p('hm.graphite.max_retries'),
     },
   }
 
