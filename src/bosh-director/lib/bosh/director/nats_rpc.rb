@@ -37,8 +37,12 @@ module Bosh::Director
     def send_message(client, payload)
       message = JSON.generate(payload)
       @logger.debug("SENT: #{client} #{message}")
-      nats
-      @nats.publish(client, message) if @nats.connected?
+
+      if nats.connected?
+        @nats.publish(client, message)
+      else
+        @logger.error("SENT failed because nats isn't connected: #{client} #{message}")
+      end
     end
 
     # Sends a request (encoded as JSON) and listens for the response
@@ -54,10 +58,12 @@ module Bosh::Director
 
       @logger.debug("SENT: #{subject_name} #{sanitized_log_message}") unless options['logging'] == false
 
-      subscribe_inbox
-      nats
-      @nats.publish(subject_name, request_body) if @nats.connected?
-
+      if nats.connected?
+        subscribe_inbox
+        @nats.publish(subject_name, request_body)
+      else
+        @logger.error("SENT failed because nats isn't connected: #{subject_name} #{sanitized_log_message}")
+      end
       request_id
     end
 
