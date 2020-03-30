@@ -15,7 +15,7 @@ module Bosh::Director
         'clean up tasks'
       end
 
-      def initialize(_params)
+      def initialize(_param = {})
         @task_remover = Bosh::Director::Api::TaskRemover.new(Config.max_tasks)
       end
 

@@ -11,6 +11,12 @@ module Bosh::Director
       allow(Bosh::Director::Api::TaskRemover).to receive(:new).and_return(task_remover)
     end
 
+    describe '#initialize' do
+      it 'has default values for the arguments' do
+        expect { described_class.new }.to_not raise_error
+      end
+    end
+
     context 'there are task counts beyond max_tasks' do
       let!(:tasks) do
         Models::Task.make(type: 'vms', state: 'done')
