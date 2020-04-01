@@ -79,6 +79,7 @@ module Bosh::Director
           'features' => {
             'local_dns' => {
               'status' => true,
+              'extras' => { 'domain_name' => 'bosh' },
             },
             'power_dns' => {
               'status' => true,
