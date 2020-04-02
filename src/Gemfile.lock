@@ -1074,7 +1074,7 @@ GEM
     ipaddress (0.8.3)
     jaro_winkler (1.5.4)
     jmespath (1.4.0)
-    json (2.1.0)
+    json (2.3.0)
     little-plugger (1.1.4)
     logging (2.2.2)
       little-plugger (~> 1.1)
@@ -1231,7 +1231,7 @@ DEPENDENCIES
   factory_bot
   fakefs
   httpclient
-  json (= 2.1.0)
+  json (= 2.3.0)
   machinist (~> 1.0)
   minitar
   mono_logger

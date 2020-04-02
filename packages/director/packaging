@@ -19,7 +19,7 @@ done
 
 cat > Gemfile <<EOF
 # Explicitly require vendored version to avoid requiring builtin json gem
-gem 'json', '2.1.0'
+gem 'json', '2.3.0'
 
 gem 'bosh-director'
 gem 'mysql2'

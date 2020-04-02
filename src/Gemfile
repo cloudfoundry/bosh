@@ -14,7 +14,7 @@ gem 'rake', '~>12.3'
 
 # json version is hardcoded in release director, health_monitor and registry packages
 # when modified needs to be updated there as well
-gem 'json', '=2.1.0'
+gem 'json', '=2.3.0'
 
 gem 'talentbox-delayed_job_sequel', '~>4.3'
 
