@@ -68,10 +68,31 @@ module Bosh::Monitor
     end
 
     def connect_to_mbus
-      NATS.on_error do |e|
+      Bhm.nats = NATS::IO::Client.new
+
+      tls_context = OpenSSL::SSL::SSLContext.new
+      tls_context.ssl_version = :TLSv1_2
+      tls_context.verify_mode = OpenSSL::SSL::VERIFY_PEER
+
+      tls_context.key = OpenSSL::PKey::RSA.new(File.open(@mbus.client_private_key_path))
+      tls_context.cert = OpenSSL::X509::Certificate.new(File.open(@mbus.client_certificate_path))
+      tls_context.ca_file = @mbus.server_ca_path
+
+      options = {
+        servers: Array.new(1, @mbus.endpoint),
+        dont_randomize_servers: true,
+        max_reconnect_attempts: 4,
+        reconnect_time_wait: 2,
+        reconnect: true,
+        tls: {
+          context: tls_context,
+        },
+      }
+
+      Bhm.nats.on_error do |e|
         unless @shutting_down
           redacted_msg = @mbus.password.nil? ? "NATS client error: #{e}" : "NATS client error: #{e}".gsub(@mbus.password, '*****')
-          if e.is_a?(NATS::ConnectError)
+          if e.is_a?(NATS::IO::ConnectError)
             handle_em_error(redacted_msg)
           else
             log_exception(redacted_msg)
@@ -79,21 +100,8 @@ module Bosh::Monitor
         end
       end
 
-      nats_client_options = {
-        uri: @mbus.endpoint,
-        autostart: false,
-        max_reconnect_attempts: -1,
-        tls: {
-          ca_file: @mbus.server_ca_path,
-          private_key_file: @mbus.client_private_key_path,
-          cert_chain_file: @mbus.client_certificate_path,
-        },
-        ssl: true,
-      }
-
-      Bhm.nats = NATS.connect(nats_client_options) do
-        @logger.info("Connected to NATS at '#{@mbus.endpoint}'")
-      end
+      Bhm.nats.connect(options)
+      @logger.info("Connected to NATS at '#{@mbus.endpoint}'")
     end
 
     def start_http_server

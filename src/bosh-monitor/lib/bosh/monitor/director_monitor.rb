@@ -7,13 +7,11 @@ module Bosh::Monitor
     end
 
     def subscribe
-      EM.schedule do
-        @nats.subscribe('hm.director.alert') do |message, _, subject|
-          @logger.debug("RECEIVED: #{subject} #{message}")
-          alert = JSON.parse(message)
+      @nats.subscribe('hm.director.alert') do |message, _, subject|
+        @logger.debug("RECEIVED: #{subject} #{message}")
+        alert = JSON.parse(message)
 
-          @event_processor.process(:alert, alert) if valid_payload?(alert)
-        end
+        @event_processor.process(:alert, alert) if valid_payload?(alert)
       end
     end
 

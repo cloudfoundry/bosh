@@ -32,6 +32,7 @@ describe 'notifying plugins' do
   before do
     free_port = find_free_tcp_port
     allow(Bhm).to receive(:http_port).and_return(free_port)
+    allow(runner).to receive(:connect_to_mbus)
   end
 
   context 'when alert is received via nats' do
@@ -48,7 +49,7 @@ describe 'notifying plugins' do
       alert = nil
       EM.run do
         nats = FakeNATS.new
-        allow(NATS).to receive(:connect).and_return(nats)
+        allow(Bhm).to receive(:nats).and_return(nats)
         runner.run
         wait_for_plugins
         nats.alert(JSON.dump(payload))
@@ -89,7 +90,7 @@ describe 'notifying plugins' do
       alert = nil
       EM.run do
         nats = FakeNATS.new
-        allow(NATS).to receive(:connect).and_return(nats)
+        allow(Bhm).to receive(:nats).and_return(nats)
         runner.run
         wait_for_plugins
         EM.add_timer(5) { EM.stop }

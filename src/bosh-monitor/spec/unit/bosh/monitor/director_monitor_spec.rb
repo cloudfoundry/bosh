@@ -1,7 +1,7 @@
 require_relative '../../../spec_helper'
 
 describe Bosh::Monitor::DirectorMonitor do
-  let(:nats) { instance_double('NATS') }
+  let(:nats) { instance_double('NATS::IO::Client') }
   let(:event_processor) { instance_double('Bosh::Monitor::EventProcessor') }
   let(:logger) { double('Logging::Logger', error: nil, debug: nil) }
   let(:config) { double('config', nats: nats, event_processor: event_processor, logger: logger) }

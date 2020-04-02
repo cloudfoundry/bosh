@@ -67,26 +67,26 @@ module Bosh::Spec
 
     def fail_job
       @logger.info("Failing job #{@vm_cid}")
-      NATS.start(@nats_config) do
-        msg = JSON.dump(
-          method: 'set_dummy_status',
-          status: 'failing',
-          reply_to: 'integration.tests',
+      nats = NATS::IO::Client.new
+      nats.connect(@nats_config)
+      msg = JSON.dump(
+        method: 'set_dummy_status',
+        status: 'failing',
+        reply_to: 'integration.tests',
         )
-        NATS.publish("agent.#{@agent_id}", msg) { NATS.stop }
-      end
+      nats.publish("agent.#{@agent_id}", msg)
     end
 
     def fail_start_task
       @logger.info("Failing task #{@vm_cid}")
-      NATS.start(@nats_config) do
-        msg = JSON.dump(
-          method: 'set_task_fail',
-          status: 'fail_task',
-          reply_to: 'integration.tests',
-        )
-        NATS.publish("agent.#{@agent_id}", msg) { NATS.stop }
-      end
+      nats = NATS::IO::Client.new
+      nats.connect(@nats_config)
+      msg = JSON.dump(
+        method: 'set_task_fail',
+        status: 'fail_task',
+        reply_to: 'integration.tests',
+      )
+      nats.publish("agent.#{@agent_id}", msg)
     end
 
     def unblock_package

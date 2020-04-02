@@ -122,19 +122,16 @@ module Bosh::Spec
 
     def start_recording_nats
       Thread.new do
-        EventMachine.run do
-          @nats_client = NATS.connect(@director_nats_config) do
-            @nats_client.subscribe('>') do |msg, reply, sub|
-              @nats_recording << [sub, msg]
-            end
-          end
+        @nats_client = NATS::IO::Client.new
+        @nats_client.connect(@director_nats_config)
+        @nats_client.subscribe('>') do |msg, reply, sub|
+          @nats_recording << [sub, msg]
         end
       end
     end
 
     def finish_recording_nats
-      @nats_client.close
-      EventMachine.stop
+      @nats_client.close unless @nats_client.nil?
       @nats_recording
     end
 
