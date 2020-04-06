@@ -23,4 +23,4 @@ RUN \
 COPY local-releases.yml /usr/local/local-releases.yml
 COPY start-bosh.sh /usr/local/bin/start-bosh
 RUN chmod +x /usr/local/bin/start-bosh
-ENTRYPOINT service docker start && /bin/bash
+
