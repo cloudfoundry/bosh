@@ -26,11 +26,11 @@ apt-get install -y \
   libffi-dev
 
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-apt-key fingerprint | grep 'Key fingerprint = 5811 8E89 F3A9 1289 7C07  0ADB F762 2157 2C52 609D'
-add-apt-repository "deb https://download.docker.com/linux/ubuntu $(lsb_release -cs) main
+apt-key fingerprint | grep 'Key fingerprint = 9DC8 5822 9FC7 DD38 854A  E2D8 8D81 803C 0EBF CD88'
+add-apt-repository "deb https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
 
 apt-get update
 
-apt-get install -y --no-install-recommends docker-engine
+apt-get install -y --no-install-recommends docker-ce
 
 rm -rf /var/lib/apt/lists/*

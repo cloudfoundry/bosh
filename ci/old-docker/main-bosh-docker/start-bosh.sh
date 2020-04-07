@@ -85,12 +85,22 @@ function sanitize_cgroups() {
   done
 }
 
+function stop_docker() {
+  service docker stop
+}
+
 function start_docker() {
   generate_certs $1
   mkdir -p /var/log
   mkdir -p /var/run
 
   sanitize_cgroups
+
+  # ensure systemd cgroup is present
+  mkdir -p /sys/fs/cgroup/systemd
+  if ! mountpoint -q /sys/fs/cgroup/systemd ; then
+    mount -t cgroup -o none,name=systemd cgroup /sys/fs/cgroup/systemd
+  fi
 
   # check for /proc/sys being mounted readonly, as systemd does
   if grep '/proc/sys\s\+\w\+\s\+ro,' /proc/mounts >/dev/null; then
@@ -99,21 +109,22 @@ function start_docker() {
 
   local mtu=$(cat /sys/class/net/$(ip route get 8.8.8.8|awk '{ print $5 }')/mtu)
 
-  local server_args="--mtu ${mtu} --host ${DOCKER_HOST} --tlsverify --tlscacert=${certs_dir}/ca.pem --tlscert=${certs_dir}/server-cert.pem --tlskey=${certs_dir}/server-key.pem --data-root /scratch/docker"
-  local registry=""
+  [[ ! -d /etc/docker ]] && mkdir /etc/docker
+  cat <<EOF > /etc/docker/daemon.json
+{
+  "hosts": ["${DOCKER_HOST}"],
+  "tls": true,
+  "tlscert": "${certs_dir}/server-cert.pem",
+  "tlskey": "${certs_dir}/server-key.pem",
+  "tlscacert": "${certs_dir}/ca.pem",
+  "mtu": ${mtu},
+  "data-root": "/scratch/docker",
+  "tlsverify": true
+}
+EOF
 
-  for registry in $1; do
-    server_args="${server_args} --insecure-registry ${registry}"
-  done
-
-  if [ -n "$2" ]; then
-    server_args="${server_args} --registry-mirror=$2"
-  fi
-
-  docker daemon ${server_args} >/tmp/docker.log 2>&1 &
-  echo $! > /tmp/docker.pid
-
-  sleep 1
+  trap stop_docker EXIT
+  service docker start
 
   export DOCKER_TLS_VERIFY=1
   export DOCKER_CERT_PATH=$1
@@ -121,6 +132,7 @@ function start_docker() {
   rc=1
   for i in $(seq 1 100); do
     echo waiting for docker to come up...
+    sleep 1
     set +e
     docker info
     rc=$?
@@ -128,7 +140,6 @@ function start_docker() {
     if [ "$rc" -eq "0" ]; then
         break
     fi
-    sleep 1
   done
 
   if [ "$rc" -ne "0" ]; then
