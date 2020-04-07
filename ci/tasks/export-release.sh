@@ -3,7 +3,7 @@
 main() {
   set -eu
 
-  start-bosh
+  source start-bosh
   source /tmp/local-bosh/director/env
 
   tar -xzf release/*.tgz $( tar -tzf release/*.tgz | grep 'release.MF' )

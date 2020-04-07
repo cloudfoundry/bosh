@@ -9,10 +9,13 @@ Minimal image that contains:
 
 The started Director comes preconfigured with a default [cloud config](https://github.com/cloudfoundry/bosh-deployment/blob/master/docker/cloud-config.yml) and is optimized for Concourse usage.
 
-`start-bosh` will produce artifacts in `/tmp/local-bosh/director` which are necessary to interact with the BOSH Director.
+`. start-bosh` will produce artifacts in `/tmp/local-bosh/director` which are necessary to interact with the BOSH Director.
 - `creds.yml` will contain the vars-store for the bosh deploy
 - `env` will contain the environment variables necessary to target, authenticate, and interact with the bosh director
 - `state.json` contains the state information for the director
+
+It is necessary to run in the current shell so that the docker service can be
+stopped on exit. Otherwise the concourse task may hang.
 
 A simple example usage:
 
@@ -21,7 +24,7 @@ A simple example usage:
 
 set -ex
 
-start-bosh
+. start-bosh
 
 source /tmp/local-bosh/director/env
 
@@ -29,14 +32,14 @@ bosh upload-stemcell ...
 bosh -d cf deploy ...
 ```
 
-`start-bosh` will also allow passing additional command line args into the `create-env` command that will be run. So, to start a customized director, you could use something like:
+`. start-bosh` will also allow passing additional command line args into the `create-env` command that will be run. So, to start a customized director, you could use something like:
 
 ```
 #!/usr/bin/env bash
 
 set -ex
 
-start-bosh -o /usr/local/bosh-deployment/uaa.yml -o /usr/local/bosh-deployment/local-bosh-release.yml -v local_bosh_release=/path/to/bosh.tgz
+. start-bosh -o /usr/local/bosh-deployment/uaa.yml -o /usr/local/bosh-deployment/local-bosh-release.yml -v local_bosh_release=/path/to/bosh.tgz
 
 source /tmp/local-bosh/director/env
 

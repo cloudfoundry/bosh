@@ -4,7 +4,7 @@ set -eu
 
 source bosh-src/ci/tasks/utils.sh
 
-start-bosh
+source start-bosh
 
 export BOSH_DIRECTOR_IP="10.245.0.3"
 export AGENT_PASSWORD=$(bosh int /tmp/local-bosh/director/creds.yml --path /blobstore_agent_password)

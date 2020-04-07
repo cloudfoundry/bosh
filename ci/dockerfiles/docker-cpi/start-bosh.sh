@@ -85,6 +85,10 @@ function sanitize_cgroups() {
   done
 }
 
+function stop_docker() {
+  service docker stop
+}
+
 function start_docker() {
   generate_certs $1
   mkdir -p /var/log
@@ -118,6 +122,8 @@ function start_docker() {
   "tlsverify": true
 }
 EOF
+
+  trap stop_docker EXIT
 
   service docker start
 

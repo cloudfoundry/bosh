@@ -17,7 +17,7 @@ if [[ -e ${OVERRIDDEN_BOSH_DEPLOYMENT}/bosh.yml ]];then
   export BOSH_DEPLOYMENT_PATH=${OVERRIDDEN_BOSH_DEPLOYMENT}
 fi
 
-${src_dir}/bosh-src/ci/dockerfiles/docker-cpi/start-bosh.sh \
+source ${src_dir}/bosh-src/ci/dockerfiles/docker-cpi/start-bosh.sh \
   -o bbr.yml \
   -o uaa.yml \
   -o credhub.yml \

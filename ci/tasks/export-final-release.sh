@@ -2,7 +2,7 @@
 
 set -eu
 
-start-bosh
+source start-bosh
 source /tmp/local-bosh/director/env
 
 RELEASE_VERSION=$( cat version/version )

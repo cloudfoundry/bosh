@@ -16,7 +16,7 @@ set +e
 source /tmp/local-bosh/director/env
 set -e
 if ! bosh env; then
-  "${src_dir}/bosh-src/ci/dockerfiles/docker-cpi/start-bosh.sh"
+  source "${src_dir}/bosh-src/ci/dockerfiles/docker-cpi/start-bosh.sh"
 fi
 
 source /tmp/local-bosh/director/env
