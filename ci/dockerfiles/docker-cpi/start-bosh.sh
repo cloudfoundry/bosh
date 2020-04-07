@@ -92,6 +92,12 @@ function start_docker() {
 
   sanitize_cgroups
 
+  # ensure systemd cgroup is present
+  mkdir -p /sys/fs/cgroup/systemd
+  if ! mountpoint -q /sys/fs/cgroup/systemd ; then
+    mount -t cgroup -o none,name=systemd cgroup /sys/fs/cgroup/systemd
+  fi
+
   # check for /proc/sys being mounted readonly, as systemd does
   if grep '/proc/sys\s\+\w\+\s\+ro,' /proc/mounts >/dev/null; then
     mount -o remount,rw /proc/sys
