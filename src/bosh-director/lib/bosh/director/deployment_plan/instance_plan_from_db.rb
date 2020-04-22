@@ -57,7 +57,7 @@ module Bosh
         end
 
         def needs_disk?
-          @existing_instance.managed_persistent_disk_cid
+          @existing_instance.active_persistent_disks.collection.map { |d| d.model.disk_cid}
         end
 
         def templates

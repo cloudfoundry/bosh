@@ -70,7 +70,7 @@ module Bosh::Director
           .create_for_instance_plan(
             instance_plan_to_create,
             planner.ip_provider,
-            Array(instance_model.managed_persistent_disk_cid),
+            Array(instance_model.active_persistent_disks.collection.map { |d| d.model.disk_cid}),
             instance_plan_to_create.tags,
             true,
           )
