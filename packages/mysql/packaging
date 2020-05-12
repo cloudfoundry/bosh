@@ -1,7 +1,7 @@
 # abort script on any command that exit with a non zero value
 set -e
 
-MARIADB_VERSION='3.0.3'
+MARIADB_VERSION='3.0.10'
 (
   set -e
   tar xzf mysql/mariadb-connector-c-${MARIADB_VERSION}-src.tar.gz
