@@ -1,7 +1,7 @@
 set -e -x
 
 echo "Extracting pcre..."
-tar xzf nginx/pcre-8.43.tar.gz
+tar xzf nginx/pcre-8.44.tar.gz
 
 echo "Extracting headers-more module..."
 tar xzf nginx/headers-more-nginx-module-0.30.tar.gz
@@ -13,17 +13,17 @@ echo "Extracting ngx_http_hmac_secure_link module..."
 tar xzf nginx/ngx_http_hmac_secure_link_module-0.3.tar.gz
 
 echo "Extracting nginx..."
-tar xzf nginx/nginx-1.17.3.tar.gz
+tar xzf nginx/nginx-1.17.10.tar.gz
 
 echo "Building nginx..."
 
-pushd nginx-1.17.3
+pushd nginx-1.17.10
   ./configure \
     --with-cc-opt="${CPPFLAGS:-}" \
     --with-ld-opt="${LDFLAGS:-}" \
     --with-debug \
     --prefix=${BOSH_INSTALL_TARGET} \
-    --with-pcre=../pcre-8.43 \
+    --with-pcre=../pcre-8.44 \
     --add-module=../headers-more-nginx-module-0.30 \
     --with-http_ssl_module \
     --with-http_dav_module \
