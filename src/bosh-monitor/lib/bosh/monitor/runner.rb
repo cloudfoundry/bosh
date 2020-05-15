@@ -40,6 +40,7 @@ module Bosh::Monitor
     def stop
       @logger.info('HealthMonitor shutting down...')
       @http_server&.stop!
+      EM.stop_event_loop
     end
 
     def setup_timers
@@ -130,25 +131,13 @@ module Bosh::Monitor
       @instance_manager.analyze_instances
     end
 
-    private
-
-    # This is somewhat controversial approach: instead of swallowing some exceptions
-    # and letting event loop run further we force our server to stop. The rationale
-    # behind that is to avoid the situation when swallowed exception actually breaks
-    # things:
-    # 1. Periodic timer will get canceled unless we manually reschedule it
-    #    in a rescue clause even if we swallow the exception.
-    # 2. If we want to perform an operation on next tick AND schedule some operation
-    #    to be run periodically AND there is an exception swallowed somewhere during the
-    #    event processing, then on the next tick we don't really process events that follow the buggy one.
-    # These things can be pretty painful for HM as we might think it runs fine
-    # when it actually just swallows some exception and effectively does nothing.
-    # We might revisit that later
     def handle_em_error(err)
       @shutting_down = true
       log_exception(err, :fatal)
       stop
     end
+
+    private
 
     def log_exception(err, level = :error)
       level = :error unless level == :fatal
