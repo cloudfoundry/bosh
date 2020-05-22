@@ -1,32 +1,62 @@
 module Bosh::Director
   class Starter
     class << self
-      def start(
-        instance:,
-        agent_client:,
-        update_config:,
-        is_canary: false,
-        wait_for_running: true,
-        logger: Config.logger
-      )
-        logger.info("Running pre-start for #{instance}")
-        agent_client.run_script('pre-start', {})
-
-        logger.info("Starting instance #{instance}")
-        agent_client.start
+      def start(args = {})
+        instance, agent_client, update_config = parse_required(args)
+        wait_for_running, task, logger, is_canary = parse_optional(args)
+        run_pre_start(instance, agent_client, task, logger)
+        start_jobs(instance, agent_client, task, logger)
 
         return unless update_config && wait_for_running
 
-        min_watch_time = is_canary ? update_config.min_canary_watch_time : update_config.min_update_watch_time
-        max_watch_time = is_canary ? update_config.max_canary_watch_time : update_config.max_update_watch_time
+        min_watch_time, max_watch_time = min_max_watch_time(is_canary,
+                                                            update_config)
 
-        wait_until_running(instance, agent_client, min_watch_time, max_watch_time, logger)
-
-        logger.info("Running post-start for #{instance}")
-        agent_client.run_script('post-start', {})
+        wait_until_running(instance, agent_client, min_watch_time,
+                           max_watch_time, logger)
+        run_post_start(instance, agent_client, task, logger)
       end
 
       private
+
+      def min_max_watch_time(is_canary, update_config)
+        min_watch_time = is_canary ? update_config.min_canary_watch_time : update_config.min_update_watch_time
+        max_watch_time = is_canary ? update_config.max_canary_watch_time : update_config.max_update_watch_time
+        [min_watch_time, max_watch_time]
+      end
+
+      def parse_required(args)
+        instance = args.fetch(:instance)
+        agent_client = args.fetch(:agent_client)
+        update_config = args.fetch(:update_config)
+        [instance, agent_client, update_config]
+      end
+
+      def parse_optional(args)
+        wait_for_running = args.fetch(:wait_for_running, true)
+        task = args.fetch(:task, nil)
+        logger = args.fetch(:logger, Config.logger)
+        is_canary = args.fetch(:is_canary, false)
+        [wait_for_running, task, logger, is_canary]
+      end
+
+      def run_pre_start(instance, agent_client, task, logger)
+        logger.info("Running pre-start for #{instance}")
+        task&.advance(10, status: 'executing pre-start')
+        agent_client.run_script('pre-start', {})
+      end
+
+      def start_jobs(instance, agent_client, task, logger)
+        logger.info("Starting instance #{instance}")
+        task&.advance(20, status: 'starting jobs')
+        agent_client.start
+      end
+
+      def run_post_start(instance, agent_client, task, logger)
+        logger.info("Running post-start for #{instance}")
+        task&.advance(10, status: 'executing post-start')
+        agent_client.run_script('post-start', {})
+      end
 
       def wait_until_running(instance, agent_client, min_watch_time, max_watch_time, logger)
         current_state = {}

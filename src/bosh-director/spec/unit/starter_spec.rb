@@ -4,6 +4,7 @@ require 'bosh/director/starter'
 module Bosh::Director
   describe Starter do
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
+    let(:task) { instance_double('Bosh::Director::EventLog::Task') }
     let(:current_job_state) { 'running' }
     let(:update_watch_time) { '1000-2000' }
 
@@ -54,9 +55,13 @@ module Bosh::Director
 
     describe '#start' do
       before do
+        allow(task).to receive(:advance).with(10, status: 'executing pre-start')
         allow(agent_client).to receive(:run_script).with('pre-start', {})
+        allow(task).to receive(:advance).with(20, status: 'starting jobs')
         allow(agent_client).to receive(:start)
         allow(agent_client).to receive(:get_state).and_return('job_state' => current_job_state)
+        allow(task).to receive(:advance)
+          .with(10, status: 'executing post-start')
         allow(agent_client).to receive(:run_script).with('post-start', {})
       end
 
@@ -65,6 +70,7 @@ module Bosh::Director
           instance: instance,
           agent_client: agent_client,
           update_config: update_config,
+          task: task,
         )
 
         expect(agent_client).to have_received(:run_script).with('pre-start', {}).ordered
@@ -78,6 +84,7 @@ module Bosh::Director
           instance: instance,
           agent_client: agent_client,
           update_config: update_config,
+          task: task,
         )
 
         expect(logger).to have_received(:info).with('Running pre-start for fake-job/uuid-1 (0)').ordered
@@ -93,6 +100,7 @@ module Bosh::Director
             instance: instance,
             agent_client: agent_client,
             update_config: nil,
+            task: task,
           )
 
           expect(agent_client).to have_received(:run_script).with('pre-start', {}).ordered
@@ -109,6 +117,7 @@ module Bosh::Director
             agent_client: agent_client,
             update_config: update_config,
             wait_for_running: false,
+            task: task,
           )
 
           expect(agent_client).to have_received(:run_script).with('pre-start', {}).ordered
@@ -127,6 +136,7 @@ module Bosh::Director
               instance: instance,
               agent_client: agent_client,
               update_config: update_config,
+              task: task,
             )
           end.to raise_exception(Bosh::Director::AgentJobNotRunning)
         end
@@ -134,9 +144,9 @@ module Bosh::Director
 
       context 'when the task is cancelled' do
         it 'should stop execution if task was canceled' do
-          task = Bosh::Director::Models::Task.make(id: 42, state: 'cancelling')
+          t = Bosh::Director::Models::Task.make(id: 42, state: 'cancelling')
           base_job = Jobs::BaseJob.new
-          allow(base_job).to receive(:task_id).and_return(task.id)
+          allow(base_job).to receive(:task_id).and_return(t.id)
           allow(Config).to receive(:current_job).and_return(base_job)
           Config.instance_variable_set(:@current_job, base_job)
 
@@ -145,6 +155,7 @@ module Bosh::Director
               instance: instance,
               agent_client: agent_client,
               update_config: update_config,
+              task: task,
             )
           end.to raise_error Bosh::Director::TaskCancelled, 'Task 42 cancelled'
         end
@@ -160,6 +171,7 @@ module Bosh::Director
             instance: instance,
             agent_client: agent_client,
             update_config: update_config,
+            task: task,
           )
 
           expect(agent_client).to have_received(:run_script).with('pre-start', {}).ordered

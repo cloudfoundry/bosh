@@ -155,10 +155,14 @@ module Bosh::Director
     end
 
     def update_canary_instance(instance_plan, event_log_stage)
-      event_log_stage.advance_and_track("#{instance_plan.instance.model} (canary)") do
+      event_log_stage.advance_and_track(
+        "#{instance_plan.instance.model} (canary)",
+      ) do |task|
         with_thread_name("canary_update(#{instance_plan.instance.model})") do
-          InstanceUpdater.new_instance_updater(@ip_provider, @template_blob_cache, @dns_encoder, @link_provider_intents)
-            .update(instance_plan, canary: true)
+          InstanceUpdater.new_instance_updater(
+            @ip_provider, @template_blob_cache,
+            @dns_encoder, @link_provider_intents, task
+          ).update(instance_plan, canary: true)
         rescue Exception => e
           @logger.error("Error updating canary instance: #{e.inspect}\n#{e.backtrace.join("\n")}")
           raise
@@ -173,10 +177,14 @@ module Bosh::Director
     end
 
     def update_instance(instance_plan, event_log_stage)
-      event_log_stage.advance_and_track(instance_plan.instance.model.to_s) do
+      event_log_stage.advance_and_track(
+        instance_plan.instance.model.to_s,
+      ) do |task|
         with_thread_name("instance_update(#{instance_plan.instance.model})") do
-          InstanceUpdater.new_instance_updater(@ip_provider, @template_blob_cache, @dns_encoder, @link_provider_intents)
-            .update(instance_plan)
+          InstanceUpdater.new_instance_updater(
+            @ip_provider, @template_blob_cache, @dns_encoder,
+            @link_provider_intents, task
+          ).update(instance_plan)
         rescue Exception => e
           @logger.error("Error updating instance: #{e.inspect}\n#{e.backtrace.join("\n")}")
           raise

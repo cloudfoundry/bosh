@@ -26,7 +26,8 @@ module Bosh::Director
 
     before do
       allow(Bosh::Director::InstanceUpdater).to receive(:new_instance_updater)
-        .with(ip_provider, template_blob_cache, dns_encoder, link_provider_intents)
+        .with(ip_provider, template_blob_cache, dns_encoder,
+              link_provider_intents, kind_of(Bosh::Director::EventLog::Task))
         .and_return(canary_updater, changed_updater, unchanged_updater)
 
       Models::Deployment.make(name: 'test-deployment', manifest: manifest)
@@ -441,7 +442,9 @@ module Bosh::Director
 
         before do
           allow(Bosh::Director::InstanceUpdater).to receive(:new_instance_updater)
-            .with(ip_provider, template_blob_cache, dns_encoder, link_provider_intents)
+            .with(ip_provider, template_blob_cache, dns_encoder,
+                  link_provider_intents,
+                  kind_of(Bosh::Director::EventLog::Task))
             .and_return(canary_updater, changed_updater)
         end
 

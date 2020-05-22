@@ -4,19 +4,17 @@ module Bosh::Director
   class InstanceUpdater
     MAX_RECREATE_ATTEMPTS = 3
 
-    def self.new_instance_updater(ip_provider, template_blob_cache, dns_encoder, link_provider_intents)
-      logger = Config.logger
-      agent_broadcaster = AgentBroadcaster.new
-      blobstore_client = App.instance.blobstores.blobstore
+    def self.new_instance_updater(ip_provider, template_blob_cache,
+                                  dns_encoder, link_provider_intents, task)
       new(
-        logger: logger,
-        ip_provider: ip_provider,
-        blobstore: blobstore_client,
         dns_state_updater: DirectorDnsStateUpdater.new,
+        logger: Config.logger, ip_provider: ip_provider,
+        blobstore: App.instance.blobstores.blobstore,
         vm_deleter: VmDeleter.new(false, Config.enable_virtual_delete_vms),
-        vm_creator: VmCreator.new(logger, template_blob_cache, dns_encoder, agent_broadcaster, link_provider_intents),
-        disk_manager: DiskManager.new(logger),
-        rendered_templates_persistor: RenderedTemplatesPersister.new(blobstore_client, logger),
+        vm_creator: vm_creator(dns_encoder, template_blob_cache,
+                               link_provider_intents),
+        disk_manager: disk_manager, task: task,
+        rendered_templates_persistor: rendered_templates_persister
       )
     end
 
@@ -27,7 +25,8 @@ module Bosh::Director
                    vm_deleter:,
                    vm_creator:,
                    disk_manager:,
-                   rendered_templates_persistor:)
+                   rendered_templates_persistor:,
+                   task:)
       @logger = logger
       @blobstore = blobstore
       @dns_state_updater = dns_state_updater
@@ -37,6 +36,7 @@ module Bosh::Director
       @ip_provider = ip_provider
       @rendered_templates_persistor = rendered_templates_persistor
       @current_state = {}
+      @task = task
     end
 
     def update(instance_plan, options = {})
@@ -72,6 +72,23 @@ module Bosh::Director
       false
     end
 
+    private_class_method def self.rendered_templates_persister
+      RenderedTemplatesPersister.new(
+        App.instance.blobstores.blobstore, Config.logger
+      )
+    end
+
+    private_class_method def self.disk_manager
+      DiskManager.new(Config.logger)
+    end
+
+    private_class_method def self.vm_creator(dns_encoder, template_blob_cache,
+                                             link_provider_intents)
+      VmCreator.new(Config.logger, template_blob_cache,
+                    dns_encoder, AgentBroadcaster.new,
+                    link_provider_intents)
+    end
+
     private
 
     def get_update_procedure(instance, instance_plan, options, instance_report)
@@ -89,6 +106,7 @@ module Bosh::Director
         @ip_provider,
         @dns_state_updater,
         @logger,
+        @task,
       )
     end
 

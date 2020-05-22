@@ -8,9 +8,10 @@ module Bosh::Director
       InstanceUpdater::StateApplier.new(instance_plan, agent_client, rendered_job_templates_cleaner, logger, options)
     end
 
+    let(:task) { instance_double('Bosh::Director::EventLog::Task') }
     let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
     let(:options) do
-      {}
+      { task: task }
     end
     let(:instance_plan) do
       DeploymentPlan::InstancePlan.new(
@@ -98,6 +99,8 @@ module Bosh::Director
       allow(rendered_job_templates_cleaner).to receive(:clean)
       allow(state_applier).to receive(:sleep)
       allow(Starter).to receive(:start)
+      allow(task).to receive(:advance).with(10, status: 'installing packages')
+      allow(task).to receive(:advance).with(10, status: 'configuring jobs')
     end
 
     it 'starts the instance' do
@@ -109,6 +112,7 @@ module Bosh::Director
         is_canary: false,
         wait_for_running: true,
         logger: logger,
+        task: task,
       )
     end
 
@@ -127,6 +131,7 @@ module Bosh::Director
         is_canary: false,
         wait_for_running: false,
         logger: logger,
+        task: task,
       )
     end
 
@@ -134,6 +139,17 @@ module Bosh::Director
       expect(agent_client).to receive(:apply).ordered
       expect(rendered_job_templates_cleaner).to receive(:clean).ordered
       state_applier.apply(update_config)
+    end
+
+    context 'when not given a event task logger' do
+      let(:options) do
+        {}
+      end
+
+      it 'does not call advance' do
+        expect(task).to_not receive(:advance)
+        state_applier.apply(update_config)
+      end
     end
   end
 end

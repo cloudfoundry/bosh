@@ -7,6 +7,7 @@ module Bosh::Director
     let(:vm_model) { Models::Vm.make(cid: 'vm-cid', instance_id: instance_model.id) }
     let(:instance_model) { Models::Instance.make(spec: spec) }
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
+    let(:task) { instance_double('Bosh::Director::EventLog::Task') }
     let(:target_state) { 'fake-target-state' }
     let(:options) { {} }
     let(:skip_drain) { false }
@@ -91,9 +92,25 @@ module Bosh::Director
       allow(AgentClient).to receive(:with_agent_id).with(instance_model.agent_id, instance_model.name).and_return(agent_client)
     end
 
+    before do
+      allow(task).to receive(:advance).with(5, status: 'executing pre-stop')
+      allow(task).to receive(:advance).with(5, status: 'executing drain')
+      allow(task).to receive(:advance).with(20, status: 'stopping jobs')
+      allow(task).to receive(:advance).with(10, status: 'executing post-stop')
+    end
+
     describe '#stop' do
       context 'when skip_drain is set to true' do
         let(:skip_drain) { true }
+
+        before do
+          expect(task).to receive(:advance)
+            .with(10, status: 'skipped pre-stop & drain')
+          expect(task).to_not receive(:advance)
+            .with(5, status: 'executing pre-stop')
+          expect(task).to_not receive(:advance)
+            .with(5, status: 'executing drain')
+        end
 
         it 'does not execute pre-stop' do
           expect(agent_client).to_not receive(:run_script).with('pre-stop', {})
@@ -101,7 +118,8 @@ module Bosh::Director
           expect(stopper).to_not receive(:sleep)
           expect(agent_client).to receive(:stop).with(no_args).ordered
           expect(agent_client).to receive(:run_script).with('post-stop', {}).ordered
-          stopper.stop(instance_plan: instance_plan, target_state: target_state)
+          stopper.stop(instance_plan: instance_plan,
+                       target_state: target_state, task: task)
         end
 
         it 'does not drain' do
@@ -109,7 +127,8 @@ module Bosh::Director
           expect(stopper).to_not receive(:sleep)
           expect(agent_client).to receive(:stop).with(no_args).ordered
           expect(agent_client).to receive(:run_script).with('post-stop', {}).ordered
-          stopper.stop(instance_plan: instance_plan, target_state: target_state)
+          stopper.stop(instance_plan: instance_plan,
+                       target_state: target_state, task: task)
         end
       end
 
@@ -122,7 +141,8 @@ module Bosh::Director
           expect(stopper).to_not receive(:sleep)
           expect(agent_client).to_not receive(:stop)
           expect(agent_client).to_not receive(:run_script).with('post-stop', {})
-          stopper.stop(instance_plan: instance_plan, target_state: target_state)
+          stopper.stop(instance_plan: instance_plan,
+                       target_state: target_state, task: task)
         end
       end
 
@@ -130,12 +150,21 @@ module Bosh::Director
         before { instance_model.compilation = true }
 
         it 'does not drain and stop' do
+          expect(task).to_not receive(:advance)
+            .with(5, status: 'executing pre-stop')
+          expect(task).to_not receive(:advance)
+            .with(5, status: 'executing drain')
+          expect(task).to_not receive(:advance)
+            .with(5, status: 'executing pre-stop')
           expect(agent_client).to_not receive(:run_script).with('pre-stop', {})
           expect(agent_client).to_not receive(:drain)
           expect(stopper).to_not receive(:sleep)
           expect(agent_client).to_not receive(:stop)
+          expect(task).to_not receive(:advance)
+            .with(5, status: 'executing pre-stop')
           expect(agent_client).to_not receive(:run_script).with('post-stop', {})
-          stopper.stop(instance_plan: instance_plan, target_state: target_state)
+          stopper.stop(instance_plan: instance_plan,
+                       target_state: target_state, task: task)
         end
       end
 
@@ -148,7 +177,8 @@ module Bosh::Director
           expect(stopper).to_not receive(:sleep)
           expect(agent_client).to_not receive(:stop)
           expect(agent_client).to_not receive(:run_script).with('post-stop', {})
-          stopper.stop(instance_plan: instance_plan, target_state: target_state)
+          stopper.stop(instance_plan: instance_plan,
+                       target_state: target_state, task: task)
         end
       end
 
@@ -162,7 +192,8 @@ module Bosh::Director
             expect(subject).to receive(:sleep).with(1).ordered
             expect(agent_client).to receive(:stop).with(no_args).ordered
             expect(agent_client).to receive(:run_script).with('post-stop', {}).ordered
-            stopper.stop(instance_plan: instance_plan, target_state: target_state)
+            stopper.stop(instance_plan: instance_plan,
+                         target_state: target_state, task: task)
           end
         end
 
@@ -173,7 +204,8 @@ module Bosh::Director
             expect(agent_client).to receive(:drain).with('shutdown', drain_spec).and_return(-2).ordered
             expect(agent_client).to receive(:stop).with(no_args).ordered
             expect(agent_client).to receive(:run_script).with('post-stop', {}).ordered
-            stopper.stop(instance_plan: instance_plan, target_state: target_state)
+            stopper.stop(instance_plan: instance_plan,
+                         target_state: target_state, task: task)
           end
         end
       end
@@ -188,7 +220,8 @@ module Bosh::Director
             expect(subject).to receive(:sleep).with(1).ordered
             expect(agent_client).to receive(:stop).with(no_args).ordered
             expect(agent_client).to receive(:run_script).with('post-stop', {}).ordered
-            stopper.stop(instance_plan: instance_plan, target_state: target_state)
+            stopper.stop(instance_plan: instance_plan,
+                         target_state: target_state, task: task)
           end
         end
 
@@ -201,7 +234,8 @@ module Bosh::Director
             expect(agent_client).to receive(:stop).with(no_args).ordered
 
             expect(agent_client).to receive(:run_script).with('post-stop', {}).ordered
-            stopper.stop(instance_plan: instance_plan, target_state: target_state)
+            stopper.stop(instance_plan: instance_plan,
+                         target_state: target_state, task: task)
           end
 
           it 'waits on the agent' do
@@ -213,7 +247,8 @@ module Bosh::Director
             expect(agent_client).to receive(:drain).with('update', drain_spec).and_return(-2).ordered
             expect(subject).to receive(:sleep).with(2).ordered
             expect(subject).to receive(:sleep).with(1).ordered
-            stopper.stop(instance_plan: instance_plan, target_state: target_state)
+            stopper.stop(instance_plan: instance_plan,
+                         target_state: target_state, task: task)
           end
         end
       end
@@ -228,7 +263,8 @@ module Bosh::Director
           expect(agent_client).to receive(:drain).with('shutdown', drain_spec).and_return(1).ordered
           expect(agent_client).to receive(:stop).ordered
           expect(agent_client).to receive(:run_script).with('post-stop', {}).ordered
-          stopper.stop(instance_plan: instance_plan, target_state: target_state)
+          stopper.stop(instance_plan: instance_plan,
+                       target_state: target_state, task: task)
         end
       end
 
@@ -244,7 +280,8 @@ module Bosh::Director
           expect(agent_client).to receive(:drain).with('shutdown', drain_spec).and_return(1).ordered
           expect(agent_client).to receive(:stop).ordered
           expect(agent_client).to receive(:run_script).with('post-stop', {}).ordered
-          stopper.stop(instance_plan: instance_plan, target_state: target_state)
+          stopper.stop(instance_plan: instance_plan,
+                       target_state: target_state, task: task)
         end
       end
 
@@ -256,7 +293,8 @@ module Bosh::Director
           expect(agent_client).to receive(:drain).with('shutdown', drain_spec).and_return(1).ordered
           expect(agent_client).to receive(:stop).ordered
           expect(agent_client).to receive(:run_script).with('post-stop', {}).ordered
-          stopper.stop(instance_plan: instance_plan, target_state: target_state)
+          stopper.stop(instance_plan: instance_plan,
+                       target_state: target_state, task: task)
         end
       end
 
@@ -268,7 +306,8 @@ module Bosh::Director
           expect(agent_client).to receive(:drain).with('shutdown', drain_spec).and_return(1).ordered
           expect(agent_client).to receive(:stop).ordered
           expect(agent_client).to receive(:run_script).with('post-stop', {}).ordered
-          stopper.stop(instance_plan: instance_plan, target_state: target_state)
+          stopper.stop(instance_plan: instance_plan,
+                       target_state: target_state, task: task)
         end
       end
 
@@ -285,7 +324,8 @@ module Bosh::Director
           expect(agent_client).to receive(:drain).with('update', drain_spec).and_return(1).ordered
           expect(agent_client).to receive(:stop).ordered
           expect(agent_client).to receive(:run_script).with('post-stop', {}).ordered
-          stopper.stop(instance_plan: instance_plan, target_state: target_state)
+          stopper.stop(instance_plan: instance_plan,
+                       target_state: target_state, task: task)
         end
       end
 
@@ -295,6 +335,17 @@ module Bosh::Director
           allow(agent_client).to receive(:run_script)
           allow(agent_client).to receive(:drain).and_return(1)
           allow(agent_client).to receive(:stop)
+
+          expect(task).to_not receive(:advance)
+            .with(10, status: 'skipped pre-stop & drain')
+          expect(task).to receive(:advance)
+            .with(5, status: 'executing pre-stop')
+          expect(task).to receive(:advance)
+            .with(5, status: 'executing drain')
+          expect(task).to receive(:advance)
+            .with(20, status: 'stopping jobs')
+          expect(task).to receive(:advance)
+            .with(10, status: 'executing post-stop')
         end
 
         context 'when `intent` is `delete_vm`' do
@@ -309,7 +360,9 @@ module Bosh::Director
           end
 
           it 'should only set BOSH_VM_NEXT_STATE as delete' do
-            stopper.stop(instance_plan: instance_plan, target_state: target_state, intent: :delete_vm)
+            stopper.stop(instance_plan: instance_plan,
+                         target_state: target_state,
+                         intent: :delete_vm, task: task)
             expect(agent_client).to have_received(:run_script).with('pre-stop', pre_stop_options)
           end
         end
@@ -326,7 +379,9 @@ module Bosh::Director
           end
 
           it 'should set BOSH_INSTANCE_NEXT_STATE_DELETE as delete' do
-            stopper.stop(instance_plan: instance_plan, target_state: target_state, intent: :delete_instance)
+            stopper.stop(instance_plan: instance_plan,
+                         target_state: target_state,
+                         intent: :delete_instance, task: task)
             expect(agent_client).to have_received(:run_script).with('pre-stop', pre_stop_options)
           end
         end
@@ -343,7 +398,9 @@ module Bosh::Director
           end
 
           it 'should only set BOSH_DEPLOYMENT_NEXT_STATE_DELETE as delete' do
-            stopper.stop(instance_plan: instance_plan, target_state: target_state, intent: :delete_deployment)
+            stopper.stop(instance_plan: instance_plan,
+                         target_state: target_state,
+                         intent: :delete_deployment, task: task)
             expect(agent_client).to have_received(:run_script).with('pre-stop', pre_stop_options)
           end
         end
@@ -358,7 +415,8 @@ module Bosh::Director
         end
 
         it 'should keep all pre-stop env variables as false' do
-          stopper.stop(instance_plan: instance_plan, target_state: target_state)
+          stopper.stop(instance_plan: instance_plan,
+                       target_state: target_state, task: task)
           expect(agent_client).to have_received(:run_script).with('pre-stop', pre_stop_options)
         end
       end
