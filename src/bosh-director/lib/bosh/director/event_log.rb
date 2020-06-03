@@ -171,5 +171,9 @@ module Bosh::Director
         @stage.log_entry(task_entry)
       end
     end
+
+    class NullTask
+      def advance(delta, data = {}); end
+    end
   end
 end

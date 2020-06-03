@@ -4,7 +4,7 @@ module Bosh::Director
       def stop(
         instance_plan:,
         target_state:,
-        task: false,
+        task: EventLog::NullTask.new,
         logger: Config.logger,
         intent: :keep_vm
       )
@@ -16,23 +16,23 @@ module Bosh::Director
 
         if instance_plan.skip_drain
           logger.info("Skipping pre-stop and drain for '#{instance_model}'")
-          task&.advance(10, status: 'skipped pre-stop & drain')
+          task.advance(10, status: 'skipped pre-stop & drain')
         else
           logger.info("Running pre-stop for #{instance_model}")
-          task&.advance(5, status: 'executing pre-stop')
+          task.advance(5, status: 'executing pre-stop')
           agent_client.run_script('pre-stop', 'env' => pre_stop_env(intent))
 
           logger.info("Running drain for #{instance_model}")
-          task&.advance(5, status: 'executing drain')
+          task.advance(5, status: 'executing drain')
           perform_drain(instance_plan, target_state, instance_model, agent_client, logger)
         end
 
         logger.info("Stopping instance #{instance_model}")
-        task&.advance(20, status: 'stopping jobs')
+        task.advance(20, status: 'stopping jobs')
         agent_client.stop
 
         logger.info("Running post-stop for #{instance_model}")
-        task&.advance(10, status: 'executing post-stop')
+        task.advance(10, status: 'executing post-stop')
         agent_client.run_script('post-stop', {})
       end
 

@@ -7,13 +7,13 @@ module Bosh::Director
       @rendered_job_templates_cleaner = rendered_job_templates_cleaner
       @logger = logger
       @is_canary = options.fetch(:canary, false)
-      @task = options.fetch(:task, nil)
+      @task = options.fetch(:task, EventLog::NullTask.new)
     end
 
     def apply(update_config, wait_for_running = true)
-      @task&.advance(10, status: 'installing packages')
+      @task.advance(10, status: 'installing packages')
       @instance.apply_vm_state(@instance_plan.spec)
-      @task&.advance(10, status: 'configuring jobs')
+      @task.advance(10, status: 'configuring jobs')
       @instance.update_templates(@instance_plan.templates)
       @rendered_job_templates_cleaner.clean
 

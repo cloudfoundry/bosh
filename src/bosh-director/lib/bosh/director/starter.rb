@@ -34,7 +34,7 @@ module Bosh::Director
 
       def parse_optional(args)
         wait_for_running = args.fetch(:wait_for_running, true)
-        task = args.fetch(:task, nil)
+        task = args.fetch(:task, EventLog::NullTask.new)
         logger = args.fetch(:logger, Config.logger)
         is_canary = args.fetch(:is_canary, false)
         [wait_for_running, task, logger, is_canary]
@@ -42,19 +42,19 @@ module Bosh::Director
 
       def run_pre_start(instance, agent_client, task, logger)
         logger.info("Running pre-start for #{instance}")
-        task&.advance(10, status: 'executing pre-start')
+        task.advance(10, status: 'executing pre-start')
         agent_client.run_script('pre-start', {})
       end
 
       def start_jobs(instance, agent_client, task, logger)
         logger.info("Starting instance #{instance}")
-        task&.advance(20, status: 'starting jobs')
+        task.advance(20, status: 'starting jobs')
         agent_client.start
       end
 
       def run_post_start(instance, agent_client, task, logger)
         logger.info("Running post-start for #{instance}")
-        task&.advance(10, status: 'executing post-start')
+        task.advance(10, status: 'executing post-start')
         agent_client.run_script('post-start', {})
       end
 
