@@ -1,19 +1,25 @@
 module Bosh::Director
   class Starter
     class << self
-      def start(args = {})
-        instance, agent_client, update_config = parse_required(args)
-        wait_for_running, task, logger, is_canary = parse_optional(args)
+      def start(
+            instance:,
+            agent_client:,
+            update_config:,
+            is_canary: false,
+            wait_for_running: true,
+            logger: Config.logger,
+            task: EventLog::NullTask.new
+          )
         run_pre_start(instance, agent_client, task, logger)
         start_jobs(instance, agent_client, task, logger)
 
         return unless update_config && wait_for_running
 
-        min_watch_time, max_watch_time = min_max_watch_time(is_canary,
-                                                            update_config)
+        min_watch_time = is_canary ? update_config.min_canary_watch_time : update_config.min_update_watch_time
+        max_watch_time = is_canary ? update_config.max_canary_watch_time : update_config.max_update_watch_time
 
-        wait_until_running(instance, agent_client, min_watch_time,
-                           max_watch_time, logger)
+        wait_until_running(instance, agent_client, min_watch_time, max_watch_time, logger)
+
         run_post_start(instance, agent_client, task, logger)
       end
 
@@ -23,21 +29,6 @@ module Bosh::Director
         min_watch_time = is_canary ? update_config.min_canary_watch_time : update_config.min_update_watch_time
         max_watch_time = is_canary ? update_config.max_canary_watch_time : update_config.max_update_watch_time
         [min_watch_time, max_watch_time]
-      end
-
-      def parse_required(args)
-        instance = args.fetch(:instance)
-        agent_client = args.fetch(:agent_client)
-        update_config = args.fetch(:update_config)
-        [instance, agent_client, update_config]
-      end
-
-      def parse_optional(args)
-        wait_for_running = args.fetch(:wait_for_running, true)
-        task = args.fetch(:task, EventLog::NullTask.new)
-        logger = args.fetch(:logger, Config.logger)
-        is_canary = args.fetch(:is_canary, false)
-        [wait_for_running, task, logger, is_canary]
       end
 
       def run_pre_start(instance, agent_client, task, logger)

@@ -4,17 +4,20 @@ module Bosh::Director
   class InstanceUpdater
     MAX_RECREATE_ATTEMPTS = 3
 
-    def self.new_instance_updater(ip_provider, template_blob_cache,
-                                  dns_encoder, link_provider_intents, task)
+    def self.new_instance_updater(ip_provider, template_blob_cache, dns_encoder, link_provider_intents, task)
+      logger = Config.logger
+      agent_broadcaster = AgentBroadcaster.new
+      blobstore_client = App.instance.blobstores.blobstore
       new(
+        logger: logger,
+        ip_provider: ip_provider,
+        blobstore: blobstore_client,
         dns_state_updater: DirectorDnsStateUpdater.new,
-        logger: Config.logger, ip_provider: ip_provider,
-        blobstore: App.instance.blobstores.blobstore,
         vm_deleter: VmDeleter.new(false, Config.enable_virtual_delete_vms),
-        vm_creator: vm_creator(dns_encoder, template_blob_cache,
-                               link_provider_intents),
-        disk_manager: disk_manager, task: task,
-        rendered_templates_persistor: rendered_templates_persister
+        vm_creator: VmCreator.new(logger, template_blob_cache, dns_encoder, agent_broadcaster, link_provider_intents),
+        disk_manager: DiskManager.new(logger),
+        rendered_templates_persistor: RenderedTemplatesPersister.new(blobstore_client, logger),
+        task: task,
       )
     end
 
@@ -70,23 +73,6 @@ module Bosh::Director
       end
 
       false
-    end
-
-    private_class_method def self.rendered_templates_persister
-      RenderedTemplatesPersister.new(
-        App.instance.blobstores.blobstore, Config.logger
-      )
-    end
-
-    private_class_method def self.disk_manager
-      DiskManager.new(Config.logger)
-    end
-
-    private_class_method def self.vm_creator(dns_encoder, template_blob_cache,
-                                             link_provider_intents)
-      VmCreator.new(Config.logger, template_blob_cache,
-                    dns_encoder, AgentBroadcaster.new,
-                    link_provider_intents)
     end
 
     private
