@@ -15,7 +15,8 @@ module Bosh::Director
                      links_manager,
                      ip_provider,
                      dns_state_updater,
-                     logger)
+                     logger,
+                     task)
         @instance = instance
         @instance_plan = instance_plan
         @options = options
@@ -31,6 +32,7 @@ module Bosh::Director
         @logger = logger
         @action = calculate_action
         @context = calculate_context
+        @task = task
       end
 
       def to_proc
@@ -88,6 +90,7 @@ module Bosh::Director
           agent,
           RenderedJobTemplatesCleaner.new(instance.model, @blobstore, @logger),
           @logger,
+          task: @task,
           canary: options[:canary],
         )
         state_applier.apply(instance_plan.desired_instance.instance_group.update)
@@ -164,7 +167,8 @@ module Bosh::Director
 
       def stop
         stop_intent = deleting_vm? ? :delete_vm : :keep_vm
-        Stopper.stop(intent: stop_intent, instance_plan: instance_plan, target_state: instance.state, logger: @logger)
+        Stopper.stop(intent: stop_intent, instance_plan: instance_plan,
+                     target_state: instance.state, logger: @logger, task: @task)
       end
 
       def deleting_vm?

@@ -18,6 +18,7 @@ module Bosh::Director
           ip_provider,
           dns_state_updater,
           logger,
+          task,
         )
       end
 
@@ -56,6 +57,7 @@ module Bosh::Director
       let(:tags) { {} }
       let(:metadata_updater) { instance_double(MetadataUpdater, update_vm_metadata: nil, update_disk_metadata: nil) }
       let(:persistent_disk) { nil }
+      let(:task) { instance_double('Bosh::Director::EventLog::Task') }
 
       let(:rendered_templates_persistor) do
         instance_double(RenderedTemplatesPersister, persist: nil)

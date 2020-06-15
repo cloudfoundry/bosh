@@ -4,7 +4,7 @@ module Bosh::Director
   class InstanceUpdater
     MAX_RECREATE_ATTEMPTS = 3
 
-    def self.new_instance_updater(ip_provider, template_blob_cache, dns_encoder, link_provider_intents)
+    def self.new_instance_updater(ip_provider, template_blob_cache, dns_encoder, link_provider_intents, task)
       logger = Config.logger
       agent_broadcaster = AgentBroadcaster.new
       blobstore_client = App.instance.blobstores.blobstore
@@ -17,6 +17,7 @@ module Bosh::Director
         vm_creator: VmCreator.new(logger, template_blob_cache, dns_encoder, agent_broadcaster, link_provider_intents),
         disk_manager: DiskManager.new(logger),
         rendered_templates_persistor: RenderedTemplatesPersister.new(blobstore_client, logger),
+        task: task,
       )
     end
 
@@ -27,7 +28,8 @@ module Bosh::Director
                    vm_deleter:,
                    vm_creator:,
                    disk_manager:,
-                   rendered_templates_persistor:)
+                   rendered_templates_persistor:,
+                   task:)
       @logger = logger
       @blobstore = blobstore
       @dns_state_updater = dns_state_updater
@@ -37,6 +39,7 @@ module Bosh::Director
       @ip_provider = ip_provider
       @rendered_templates_persistor = rendered_templates_persistor
       @current_state = {}
+      @task = task
     end
 
     def update(instance_plan, options = {})
@@ -89,6 +92,7 @@ module Bosh::Director
         @ip_provider,
         @dns_state_updater,
         @logger,
+        @task,
       )
     end
 

@@ -2,18 +2,16 @@ module Bosh::Director
   class Starter
     class << self
       def start(
-        instance:,
-        agent_client:,
-        update_config:,
-        is_canary: false,
-        wait_for_running: true,
-        logger: Config.logger
-      )
-        logger.info("Running pre-start for #{instance}")
-        agent_client.run_script('pre-start', {})
-
-        logger.info("Starting instance #{instance}")
-        agent_client.start
+            instance:,
+            agent_client:,
+            update_config:,
+            is_canary: false,
+            wait_for_running: true,
+            logger: Config.logger,
+            task: EventLog::NullTask.new
+          )
+        run_pre_start(instance, agent_client, task, logger)
+        start_jobs(instance, agent_client, task, logger)
 
         return unless update_config && wait_for_running
 
@@ -22,11 +20,34 @@ module Bosh::Director
 
         wait_until_running(instance, agent_client, min_watch_time, max_watch_time, logger)
 
-        logger.info("Running post-start for #{instance}")
-        agent_client.run_script('post-start', {})
+        run_post_start(instance, agent_client, task, logger)
       end
 
       private
+
+      def min_max_watch_time(is_canary, update_config)
+        min_watch_time = is_canary ? update_config.min_canary_watch_time : update_config.min_update_watch_time
+        max_watch_time = is_canary ? update_config.max_canary_watch_time : update_config.max_update_watch_time
+        [min_watch_time, max_watch_time]
+      end
+
+      def run_pre_start(instance, agent_client, task, logger)
+        logger.info("Running pre-start for #{instance}")
+        task.advance(10, status: 'executing pre-start')
+        agent_client.run_script('pre-start', {})
+      end
+
+      def start_jobs(instance, agent_client, task, logger)
+        logger.info("Starting instance #{instance}")
+        task.advance(20, status: 'starting jobs')
+        agent_client.start
+      end
+
+      def run_post_start(instance, agent_client, task, logger)
+        logger.info("Running post-start for #{instance}")
+        task.advance(10, status: 'executing post-start')
+        agent_client.run_script('post-start', {})
+      end
 
       def wait_until_running(instance, agent_client, min_watch_time, max_watch_time, logger)
         current_state = {}

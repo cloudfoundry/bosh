@@ -15,9 +15,15 @@ module Bosh::Director
     let(:needs_shutting_down) { false }
     let(:event) { Models::Event.make }
     let(:link_provider_intents) { [] }
-    let(:updater) { InstanceUpdater.new_instance_updater(ip_provider, template_blob_cache, dns_encoder, link_provider_intents) }
+    let(:updater) do
+      InstanceUpdater.new_instance_updater(
+        ip_provider, template_blob_cache, dns_encoder,
+        link_provider_intents, task
+      )
+    end
     let(:vm_creator) { instance_double(VmCreator) }
     let(:agent_client) { instance_double(AgentClient) }
+    let(:task) { instance_double('Bosh::Director::EventLog::Task') }
     let(:credentials) do
       { 'user' => 'secret' }
     end

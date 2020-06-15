@@ -124,7 +124,7 @@ module Bosh::Director
             agent_client(instance_model.agent_id, instance_model.name),
             cleaner,
             @logger,
-            {}
+            {},
           ).apply(update_config, wait_for_running)
         end
 
