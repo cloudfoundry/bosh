@@ -10,6 +10,7 @@ services:
         environment:
             - POSTGRES_USER=postgres
             - POSTGRES_DB=bosh
+            - POSTGRES_HOST_AUTH_METHOD=trust
         networks:
           - integration_test
     mysql:
