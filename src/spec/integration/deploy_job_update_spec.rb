@@ -13,6 +13,7 @@ describe 'deploy job update', type: :integration do
 
     task_id = bosh_runner.get_most_recent_task_id
     updating_job_events = events(task_id).select { |e| e['stage'] == 'Updating instance' }
+    updating_job_events.delete_if { |event| event['state'] == 'in_progress'}
     expect(updating_job_events[0]['state']).to eq('started')
     expect(updating_job_events[1]['state']).to eq('started')
     expect(updating_job_events[2]['state']).to eq('finished')
@@ -25,6 +26,7 @@ describe 'deploy job update', type: :integration do
 
     task_id = bosh_runner.get_most_recent_task_id
     updating_job_events = events(task_id).select { |e| e['stage'] == 'Updating instance' }
+    updating_job_events.delete_if { |event| event['state'] == 'in_progress'}
     expect(updating_job_events[0]['state']).to eq('started')
     expect(updating_job_events[0]['task']).to include('(canary)')
     expect(updating_job_events[1]['state']).to eq('finished')
@@ -40,6 +42,7 @@ describe 'deploy job update', type: :integration do
 
     task_id = bosh_runner.get_most_recent_task_id
     deleting_job_events = events(task_id).select { |e| e['stage'] == 'Deleting unneeded instances' }
+    updating_job_events.delete_if { |event| event['state'] == 'in_progress'}
     expect(deleting_job_events[0]['state']).to eq('started')
     expect(deleting_job_events[1]['state']).to eq('finished')
     expect(deleting_job_events[2]['state']).to eq('started')
