@@ -78,3 +78,12 @@ if [[ -f /var/vcap/store/postgres-10/fresh ]] ; then
 
   rm /var/vcap/store/postgres-10/fresh
 fi
+
+# "bpm enforces its own locking around process operations to avoid race conditions"
+# from docs: https://bosh.io/docs/bpm/runtime/
+# so postmaster.pid is stale of it still exists
+# remove it to prevent running into:
+# FATAL:  lock file "postmaster.pid" already exists
+if [[ -f /var/vcap/store/postgres-10/postmaster.pid ]] ; then
+    rm /var/vcap/store/postgres-10/postmaster.pid
+fi
