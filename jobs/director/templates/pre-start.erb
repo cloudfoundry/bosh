@@ -8,7 +8,7 @@ DB_MUTUAL_TLS_PRIVATE_KEY=/var/vcap/jobs/director/config/db/client_private_key.k
 TMPDIR=/var/vcap/data/director/tmp
 
 mkdir -p $STORE_DIR
-find $STORE_DIR \( -not -user vcap -or -not -group vcap \) -execdir chown vcap:vcap {} \+
+chown vcap:vcap $STORE_DIR
 
 chmod -R 0640 $CONFIG_DIR
 find $CONFIG_DIR -type d | xargs -n1 chmod 0750
