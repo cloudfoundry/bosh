@@ -9,6 +9,25 @@ check_param() {
   fi
 }
 
+rotate_bbl_certs() {
+  for vars_store in $@; do
+    local ops=""
+    for cert in $(grep "ca: |" -B1 "${vars_store}" | grep -v "ca: |" | grep ':' | cut -d: -f1); do
+        ops="${ops}"'- {"type":"remove","path":"/'"${cert}"'"}\n'
+    done
+    bosh int "${vars_store}" -o <(echo -e $ops) > "${vars_store}.tmp"
+    mv "${vars_store}.tmp" "${vars_store}"
+    echo "Rotated certs in ${vars_store}"
+  done
+}
+
+rotate_credhub_certs() {
+  for ca in $(credhub find -n _ca | grep -e '_ca$' | cut -d' ' -f3); do
+    credhub regenerate -n "${ca}"
+    credhub bulk-regenerate --signed-by "${ca}"
+  done
+}
+
 commit_bbl_state_dir() {
   local input_dir=${1?'Input git repository absolute path is required.'}
   local bbl_state_dir=${2?'BBL state relative path is required.'}

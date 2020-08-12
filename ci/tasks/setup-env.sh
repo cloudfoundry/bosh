@@ -24,15 +24,20 @@ main() {
     rm -rf bosh-deployment
     ln -s ${build_dir}/bosh-deployment bosh-deployment
 
+    rotate_bbl_certs vars/*store.yml
+
     bbl --debug up
 
     set +x
     eval "$(bbl print-env)"
     set -x
-    bosh upload-stemcell ${build_dir}/stemcell/*.tgz -n
-    bosh -d zookeeper deploy --recreate ${build_dir}/zookeeper-release/manifests/zookeeper.yml -n
 
-    bosh -d prometheus deploy prometheus.yml \
+    rotate_credhub_certs
+
+    bosh upload-stemcell ${build_dir}/stemcell/*.tgz -n
+    bosh -d zookeeper deploy --fix --recreate ${build_dir}/zookeeper-release/manifests/zookeeper.yml -n
+
+    bosh -d prometheus deploy --fix --recreate prometheus.yml \
       -l vars/director-vars-store.yml \
       -l vars/director-vars-file.yml \
       --var="prometheus_release_tgz=${build_dir}/prometheus-boshrelease/release.tgz" \
