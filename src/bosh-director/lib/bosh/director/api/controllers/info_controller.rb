@@ -25,6 +25,7 @@ module Bosh::Director
           'features' => {
             'local_dns' => {
               'status' => Config.local_dns_enabled?,
+              'extras' => { 'domain_name' => Config.root_domain },
             },
             'power_dns' => {
               'status' => @powerdns_manager.dns_enabled?,
