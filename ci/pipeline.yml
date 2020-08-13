@@ -679,7 +679,7 @@ jobs:
           - brats-ubuntu-xenial
           - bosh-disaster-recovery-acceptance-tests
         - get: candidate-release
-          resource: bosh-candidate-release-tarballs
+          resource: bosh-compiled-candidate-xenial
           trigger: true
           passed:
           - bats-ubuntu-xenial
