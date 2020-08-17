@@ -41,50 +41,6 @@ groups:
     - build-integration
     - build-docker-cpi
 
-shared:
-  - &deploy-director
-    task: deploy-director
-    tags: [vsphere-v6.5]
-    file: bosh-src/ci/bats/tasks/deploy-director.yml
-    image: main-ruby-go-image
-    params:
-      BAT_INFRASTRUCTURE: vsphere
-      BOSH_CLIENT:                          ((stemcell-test-director-username))
-      BOSH_CLIENT_SECRET:                   ((stemcell-test-director-password))
-      BOSH_VSPHERE_VCENTER:                 ((vcenter-ip))
-      BOSH_VSPHERE_VCENTER_USER:            ((vcenter-user))
-      BOSH_VSPHERE_VCENTER_PASSWORD:        ((vcenter-password))
-      BOSH_VSPHERE_VERSION:                 ((vsphere-version))
-      BOSH_VSPHERE_VCENTER_DC:              ((vcenter-dc))
-      BOSH_VSPHERE_VCENTER_CLUSTER:         ((vcenter-cluster))
-      BOSH_VSPHERE_VCENTER_DATASTORE:       ((vcenter-datastore))
-      BOSH_VSPHERE_VCENTER_VLAN:            ((vcenter-vlan))
-      BOSH_VSPHERE_VCENTER_VM_FOLDER:       ((vcenter-vm-folder))
-      BOSH_VSPHERE_VCENTER_TEMPLATE_FOLDER: ((vcenter-template-folder))
-      BOSH_VSPHERE_VCENTER_DISK_PATH:       ((vcenter-disk-path))
-      BOSH_VSPHERE_VCENTER_RP:              ((vcenter-rp))
-      DEPLOY_ARGS: |
-        -o bosh-deployment/vsphere/resource-pool.yml
-
-  - &prepare-bats-config
-    task: prepare-bats
-    tags: [vsphere-v6.5]
-    file: bosh-src/ci/bats/iaas/vsphere/prepare-bats-config.yml
-    image: main-ruby-go-image
-
-  - &run-bats
-    task: run-bats
-    tags: [vsphere-v6.5]
-    file: bats/ci/tasks/run-bats.yml
-    image: main-ruby-go-image
-
-  - &teardown
-    task: teardown
-    tags: [vsphere-v6.5]
-    file: bosh-src/ci/bats/tasks/destroy-director.yml
-    image: main-ruby-go-image
-    attempts: 3
-
 jobs:
   - name: gate
     serial_groups:
@@ -351,14 +307,45 @@ jobs:
         params:
           acquire: true
       - do:
-        - <<: *deploy-director
-        - <<: *prepare-bats-config
+        - task: deploy-director
+          tags: [vsphere-v6.5]
+          file: bosh-src/ci/bats/tasks/deploy-director.yml
+          image: main-ruby-go-image
+          params:
+            BAT_INFRASTRUCTURE: vsphere
+            BOSH_CLIENT:                          ((stemcell-test-director-username))
+            BOSH_CLIENT_SECRET:                   ((stemcell-test-director-password))
+            BOSH_VSPHERE_VCENTER:                 ((vcenter-ip))
+            BOSH_VSPHERE_VCENTER_USER:            ((vcenter-user))
+            BOSH_VSPHERE_VCENTER_PASSWORD:        ((vcenter-password))
+            BOSH_VSPHERE_VERSION:                 ((vsphere-version))
+            BOSH_VSPHERE_VCENTER_DC:              ((vcenter-dc))
+            BOSH_VSPHERE_VCENTER_CLUSTER:         ((vcenter-cluster))
+            BOSH_VSPHERE_VCENTER_DATASTORE:       ((vcenter-datastore))
+            BOSH_VSPHERE_VCENTER_VLAN:            ((vcenter-vlan))
+            BOSH_VSPHERE_VCENTER_VM_FOLDER:       ((vcenter-vm-folder))
+            BOSH_VSPHERE_VCENTER_TEMPLATE_FOLDER: ((vcenter-template-folder))
+            BOSH_VSPHERE_VCENTER_DISK_PATH:       ((vcenter-disk-path))
+            BOSH_VSPHERE_VCENTER_RP:              ((vcenter-rp))
+            DEPLOY_ARGS: |
+              -o bosh-deployment/vsphere/resource-pool.yml
+        - task: prepare-bats
+          tags: [vsphere-v6.5]
+          file: bosh-src/ci/bats/iaas/vsphere/prepare-bats-config.yml
+          image: main-ruby-go-image
           params:
             STEMCELL_NAME: bosh-vsphere-esxi-ubuntu-xenial-go_agent
-        - <<: *run-bats
+        - task: run-bats
+          tags: [vsphere-v6.5]
+          file: bats/ci/tasks/run-bats.yml
+          image: main-ruby-go-image
       ensure:
         do:
-        - <<: *teardown
+        - task: teardown
+          tags: [vsphere-v6.5]
+          file: bosh-src/ci/bats/tasks/destroy-director.yml
+          image: main-ruby-go-image
+          attempts: 3
         - {put: environment, params: {release: environment}, attempts: 3}
 
   - name: bats-ubuntu-xenial-aws
