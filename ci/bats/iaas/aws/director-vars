@@ -14,8 +14,8 @@ exec jq '{
   "access_key_id": env.AWS_ACCESS_KEY_ID,
   "secret_access_key": env.AWS_SECRET_ACCESS_KEY,
   "region": env.AWS_DEFAULT_REGION,
-  "internal_dns": "[8.8.8.8, 8.8.4.4]",
-  "internal_ntp": "[time1.google.com, time2.google.com]",
+  "internal_dns": ["8.8.8.8", "8.8.4.4"],
+  "internal_ntp": ["time1.google.com", "time2.google.com"],
   "dns_recursor_ip": "8.8.8.8"
 }' \
   < environment/metadata
