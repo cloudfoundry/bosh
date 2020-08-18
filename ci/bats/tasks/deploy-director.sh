@@ -46,7 +46,6 @@ bosh-cli interpolate bosh-deployment/bosh.yml \
   -o bosh-deployment/experimental/blobstore-https.yml \
   -o bosh-deployment/experimental/bpm.yml \
   -v director_name=bats-director \
-  --vars-file extra-env-vars/*.yml \
   -v local_bosh_release=$(realpath bosh-release/*.tgz) \
   --vars-file director-vars.json \
   $DEPLOY_ARGS \
