@@ -78,6 +78,20 @@ module Bosh::Director
       DeploymentPlan::Steps::UnmountDiskStep.new(disk).perform(step_report)
     end
 
+    def list_disks
+      Models::PersistentDisk.all.map do |disk|
+        {
+          'disk_cid' => disk.disk_cid,
+          'size' => disk.size,
+          'cpi' => disk.cpi,
+          'az' => disk.instance.availability_zone,
+          'deployment_name' => disk.instance.deployment.name,
+          'instance_name' => "#{disk.instance.job}/#{disk.instance.uuid}",
+          'cloud_properties' => disk.cloud_properties,
+        }
+      end
+    end
+
     private
 
     def step_report

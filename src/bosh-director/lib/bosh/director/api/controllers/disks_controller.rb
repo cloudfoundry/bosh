@@ -9,6 +9,12 @@ module Bosh::Director
         json_encode(orphan_json)
       end
 
+      get '/persistent_disks' do
+        content_type(:json)
+        disks_json = DiskManager.new(@logger).list_disks
+        json_encode(disks_json)
+      end
+
       # PUT /disks/disk_cid/attachments?deployment=foo&job=dea&instance_id=17f01a35-bf9c-4949-bcf2-c07a95e4df33
       put '/:disk_cid/attachments' do
         deployment = Api::DeploymentManager.new.find_by_name(params[:deployment])
