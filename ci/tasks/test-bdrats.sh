@@ -9,7 +9,7 @@ export BOSH_RELEASE_PATH="${PWD}/bosh-release/$(basename bosh-release/*.tgz)"
 
 mkdir -p bbr-binary
 export BBR_BINARY_PATH="${PWD}/bbr-binary/bbr"
-cp bbr-cli-binary/bbr-*-linux-amd64 $BBR_BINARY_PATH
+cp bbr-cli-binary/bbr-[0-9]*-linux-amd64 $BBR_BINARY_PATH
 chmod +x "${BBR_BINARY_PATH}"
 
 export OVERRIDDEN_BOSH_DEPLOYMENT="${src_dir}/bosh-deployment"
