@@ -4,7 +4,7 @@ variable "gcp_mysql_databasename" {
 resource "google_sql_database_instance" "mysql-master" {
   database_version = "MYSQL_5_7"
   region           = "us-central1"
-
+  deletion_protection = false
   settings {
     # Second-generation instance tiers are based on the machine
     # type. See argument reference below.
