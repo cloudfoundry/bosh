@@ -2,12 +2,13 @@
 name: health_monitor
 
 templates:
-  health_monitor_ctl.erb: bin/health_monitor_ctl
+  bpm.yml: config/bpm.yml
   health_monitor.yml.erb: config/health_monitor.yml
   uaa.pem.erb: config/uaa.pem
   nats_server_ca.pem.erb: config/nats_server_ca.pem
   nats_client_certificate.pem.erb: config/nats_client_certificate.pem
   nats_client_private_key.erb: config/nats_client_private_key
+  health_monitor: bin/health_monitor
 
 packages:
   - health_monitor

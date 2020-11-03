@@ -1,0 +1,35 @@
+<%=
+health_monitor_config = {
+  "name" => "health_monitor",
+  "executable" => "/var/vcap/jobs/health_monitor/bin/health_monitor",
+  "env" => {
+    "BUNDLE_GEMFILE" => "/var/vcap/packages/health_monitor/Gemfile",
+    "GEM_HOME" => "/var/vcap/packages/health_monitor/gem_home/ruby/2.6.0",
+  },
+  "additional_volumes" => [{
+    "path" => "/var/vcap/data/jobs",
+    "allow_executions" => true,
+  }],
+  "unsafe" => {
+    "unrestricted_volumes" => [{
+      "path" => "/var/vcap/jobs",
+    }]
+  },
+}
+if_p('env.http_proxy') do |http_proxy|
+  health_monitor_config["env"]["HTTP_PROXY"] = http_proxy
+  health_monitor_config["env"]["http_proxy"] = http_proxy
+end
+if_p('env.https_proxy') do |https_proxy|
+  health_monitor_config["env"]["HTTPS_PROXY"] = https_proxy
+  health_monitor_config["env"]["https_proxy"] = https_proxy
+end
+if_p('env.no_proxy') do |no_proxy|
+  health_monitor_config["env"]["NO_PROXY"] = no_proxy
+  health_monitor_config["env"]["no_proxy"] = no_proxy
+end
+config = {
+  "processes" => [health_monitor_config],
+}
+YAML.dump(config)
+%>
