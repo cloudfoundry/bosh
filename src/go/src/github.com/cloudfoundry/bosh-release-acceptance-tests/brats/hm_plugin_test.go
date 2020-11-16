@@ -20,7 +20,7 @@ var _ = Describe("Health Monitor", func() {
 	})
 
 	It("runs JSON plugins", func() {
-		session := bratsutils.OuterBosh("-d", bratsutils.InnerBoshDirectorName(), "ssh", "bosh", "-c", "sudo cat /tmp/log-file")
+		session := bratsutils.OuterBosh("-d", bratsutils.InnerBoshDirectorName(), "ssh", "bosh", "-c", "sudo /var/vcap/packages/bpm/bin/runc --root /var/vcap/sys/run/bpm-runc exec bpm-health_monitor cat /tmp/log-file")
 		Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
 		Expect(string(session.Out.Contents())).To(ContainSubstring("this only logs if health monitor plugins run"))
 	})

@@ -6,13 +6,16 @@ health_monitor_config = {
     "BUNDLE_GEMFILE" => "/var/vcap/packages/health_monitor/Gemfile",
     "GEM_HOME" => "/var/vcap/packages/health_monitor/gem_home/ruby/2.6.0",
   },
-  "additional_volumes" => [{
-    "path" => "/var/vcap/data/jobs",
-    "allow_executions" => true,
-  }],
   "unsafe" => {
-    "unrestricted_volumes" => [{
+    "unrestricted_volumes" => [
+    {
+      # contains the symlinks to the actual jobs under /var/vcap/data/jobs/[name]/[sha]/...
+      # without this we don't know which "version" of a job to use
       "path" => "/var/vcap/jobs",
+    },
+    {
+      "path" => "/var/vcap/data/jobs/*/*/bin/bosh-monitor",
+      "allow_executions" => true,
     }]
   },
 }
