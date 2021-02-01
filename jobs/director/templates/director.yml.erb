@@ -220,7 +220,7 @@ if p('blobstore.provider') == 's3'
   end
 
   if_p('blobstore.s3_signature_version') do |s3_signature_version|
-     blobstore_options['s3_signature_version'] = s3_signature_version
+     blobstore_options['signature_version'] = s3_signature_version
   end
 
   if_p('blobstore.server_side_encryption') do |server_side_encryption|
@@ -364,7 +364,7 @@ if_p('compiled_package_cache.options.bucket_name') do |bucket_name|
     end
 
     if_p('compiled_package_cache.options.s3_signature_version') do |s3_signature_version|
-      options['s3_signature_version'] = s3_signature_version
+      options['signature_version'] = s3_signature_version
     end
 
     if_p('compiled_package_cache.options.server_side_encryption') do |server_side_encryption|
