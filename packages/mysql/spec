@@ -2,3 +2,4 @@
 name: mysql
 files:
 - mysql/mariadb-connector-c-3.1.11-src.tar.gz
+- mysql-customization/mariadb_config-wrapper.sh

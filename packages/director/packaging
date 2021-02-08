@@ -31,7 +31,7 @@ if [ "`uname -m`" == "ppc64le" ]; then
 fi
 
 bundle config build.mysql2 \
-  --with-mysql-config=$mysqlclient_dir/bin/mariadb_config \
+  --with-mysql-config=$mysqlclient_dir/bin/mariadb_config-wrapper.sh
 
 bundle config build.pg \
   --with-pg-lib=$libpq_dir/lib \
