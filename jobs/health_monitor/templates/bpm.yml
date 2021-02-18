@@ -16,6 +16,11 @@ health_monitor_config = {
     {
       "path" => "/var/vcap/data/jobs/*/*/bin/bosh-monitor",
       "allow_executions" => true,
+    },
+    {
+      "path" => "/var/vcap/sys/log",
+      "writable" => true,
+      "mount_only" => true
     }]
   },
 }
