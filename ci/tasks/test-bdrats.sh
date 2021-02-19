@@ -51,7 +51,7 @@ export GOPATH="${PWD}/gopath"
 export PATH="${PATH}:${GOPATH}/bin"
 
 pushd gopath/src/github.com/cloudfoundry-incubator/bosh-disaster-recovery-acceptance-tests
-  go install ./vendor/github.com/onsi/ginkgo/ginkgo
+  go get -u github.com/onsi/ginkgo/ginkgo
 
   ./scripts/_run_acceptance_tests.sh
 popd
