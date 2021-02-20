@@ -14,6 +14,11 @@ USER='<%= p("postgres.user") %>'
 
 sysctl -w "kernel.shmmax=67108864"
 
+if [[ -d /var/vcap/store/postgres-13 ]]; then
+  echo "Intentionally failing because data from a newer postgres job may already exist in /var/vcap/store/postgres-13"
+  exit 1
+fi
+
 if [[ -d /var/vcap/store/postgres ]]; then
   echo "Please use a previous bosh release version (264.x or lower) to migrate data from postgres to postgres-9.4."
   exit 1
@@ -74,6 +79,7 @@ if [[ -f /var/vcap/store/postgres-10/fresh ]] ; then
       --new-datadir=$DATA_DIR"
 
     echo "successfully upgraded from postgres-9.4"
+    rm -rf '/var/vcap/store/postgres-9'
   fi
 
   rm /var/vcap/store/postgres-10/fresh
