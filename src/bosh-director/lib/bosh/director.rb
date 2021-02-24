@@ -266,7 +266,7 @@ require 'bosh/director/api/route_configuration'
 
 require 'bosh/director/step_executor'
 require 'bosh/director/metrics_collector'
-require 'bosh/director/custom_middleware_collector'
+require 'bosh/director/strip_deployments_middleware_collector'
 
 require 'common/common'
 

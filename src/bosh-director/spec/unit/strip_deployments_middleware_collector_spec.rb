@@ -1,8 +1,8 @@
 require 'spec_helper'
 
-describe Bosh::Director::CustomMiddlewareCollector do
+describe Bosh::Director::StripDeploymentsMiddlewareCollector do
   before(:all) do
-    @cmc = Bosh::Director::CustomMiddlewareCollector.new(nil)
+    @cmc = Bosh::Director::StripDeploymentsMiddlewareCollector.new(nil)
   end
 
   describe '#strip_ids_from_path' do
