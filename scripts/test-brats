@@ -19,9 +19,9 @@ export GOPATH=$(pwd)
 export PATH="${GOPATH}/bin":$PATH
 
 cd src/github.com/cloudfoundry/bosh-release-acceptance-tests
-go install ./vendor/github.com/onsi/ginkgo/ginkgo
+
 if [[ -n "${FOCUS_SPEC+x}" ]];then
-  ginkgo -r -v -race -randomizeSuites -randomizeAllSpecs -focus="${FOCUS_SPEC}" -nodes 5 brats
+  go run github.com/onsi/ginkgo/ginkgo -r -v -race -randomizeSuites -randomizeAllSpecs -focus="${FOCUS_SPEC}" -nodes 5 brats
 else
-  ginkgo -r -v -race -randomizeSuites -randomizeAllSpecs
+  go run github.com/onsi/ginkgo/ginkgo -r -v -race -randomizeSuites -randomizeAllSpecs
 fi
