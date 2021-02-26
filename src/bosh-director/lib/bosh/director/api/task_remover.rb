@@ -1,11 +1,13 @@
 module Bosh::Director::Api
   class TaskRemover
+    BATCH_SIZE = 100
+
     def initialize(max_tasks)
       @max_tasks = max_tasks
     end
 
     def remove(type, count = 10)
-      removal_candidates_dataset(type, count).each do |task|
+      removal_candidates_dataset(type, count).clone(cursor: { rows_per_fetch: 1000 }).each do |task|
         remove_task(task)
       end
     end
@@ -25,9 +27,10 @@ module Bosh::Director::Api
     end
 
     private
+
     def removal_candidates_dataset(type, count)
       Bosh::Director::Models::Task.filter(Sequel.lit("state NOT IN ('processing', 'queued') and type='#{type}'")).
-        order { Sequel.desc(:id) }.limit(count, @max_tasks)
+        select(:id, :output).order { Sequel.desc(:id) }.limit(count, @max_tasks)
     end
   end
 end
