@@ -1,13 +1,11 @@
 module Bosh::Director::Api
   class TaskRemover
-    BATCH_SIZE = 100
-
     def initialize(max_tasks)
       @max_tasks = max_tasks
     end
 
     def remove(type, count = 10)
-      removal_candidates_dataset(type, count).clone(cursor: { rows_per_fetch: 1000 }).each do |task|
+      removal_candidates_dataset(type, count).paged_each do |task|
         remove_task(task)
       end
     end
