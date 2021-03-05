@@ -7,10 +7,6 @@ module Bosh::Director
         :scheduled_task_cleanup
       end
 
-      def self.has_work(_)
-        type_counts_to_delete.count.positive?
-      end
-
       def self.schedule_message
         'clean up tasks'
       end
@@ -22,23 +18,16 @@ module Bosh::Director
       def perform
         result = "Deleted tasks and logs for\n"
 
-        ScheduledTasksCleanup.type_counts_to_delete.each do |t|
-          @task_remover.remove(t[:type], t[:count])
-          result << "#{t[:count]} task(s) of type '#{t[:type]}'\n"
+        task_types.each do |type|
+          tasks_removed = @task_remover.remove(type)
+          result << "#{tasks_removed} task(s) of type '#{type}'\n"
         end
 
         result
       end
 
-      def self.type_counts_to_delete
-        max_tasks = Config.max_tasks
-        counts_by_type
-          .map { |t| { type: t[:type], count: [0, t[:count] - max_tasks].max } }
-          .select { |g| (g[:count]).positive? }
-      end
-
-      def self.counts_by_type
-        Bosh::Director::Models::Task.where(state: 'done').group_and_count(:type).all
+      def task_types
+        Bosh::Director::Models::Task.where(state: 'done').group_and_count(:type).map { |grouping| grouping[:type] }.sort
       end
     end
   end

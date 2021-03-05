@@ -4,10 +4,13 @@ module Bosh::Director::Api
       @max_tasks = max_tasks
     end
 
-    def remove(type, count = 10)
-      removal_candidates_dataset(type, count).paged_each do |task|
+    def remove(type)
+      tasks_removed = 0
+      removal_candidates_dataset(type).paged_each(strategy: :filter, stream: false) do |task|
+        tasks_removed += 1
         remove_task(task)
       end
+      tasks_removed
     end
 
     def remove_task(task)
@@ -26,9 +29,14 @@ module Bosh::Director::Api
 
     private
 
-    def removal_candidates_dataset(type, count)
-      Bosh::Director::Models::Task.filter(Sequel.lit("state NOT IN ('processing', 'queued') and type='#{type}'")).
-        select(:id, :output).order { Sequel.desc(:id) }.limit(count, @max_tasks)
+    def removal_candidates_dataset(type)
+      base_filter = Bosh::Director::Models::Task.where(type: type)
+        .exclude(state: %w[processing queued])
+        .select(:id, :output).order { Sequel.desc(:id) }
+
+      starting_id = base_filter.limit(1, @max_tasks).first&.id || 0
+
+      base_filter.where { id <= starting_id }
     end
   end
 end
