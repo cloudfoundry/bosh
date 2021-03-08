@@ -27,7 +27,7 @@ module Bosh::Director
       end
 
       def task_types
-        Bosh::Director::Models::Task.where(state: 'done').group_and_count(:type).map { |grouping| grouping[:type] }.sort
+        Bosh::Director::Models::Task.select(:type).where(state: 'done').group(:type).map { |grouping| grouping[:type] }.sort
       end
     end
   end
