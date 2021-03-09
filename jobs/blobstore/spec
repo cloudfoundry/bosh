@@ -42,7 +42,7 @@ properties:
 
   blobstore.max_upload_size:
     description: Max allowed file size for upload
-    default: 5000m
+    default: 10000m
 
   blobstore.nginx.workers:
     description: Number of nginx workers for blobstore
