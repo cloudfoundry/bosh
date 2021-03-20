@@ -47,4 +47,8 @@ builds:
     version: "3"
     blobstore_id: rest/objects/4e4e78bca21e122004e4e8ec647a54050d308d69fcea
     sha1: a899105a3a5cc0bf513bbcef53d54eb64d8b5951
+  f8e50dca833412c40a2cd30e2d8e5289682f787fc783484d4bc0aa219e2bbac2:
+    version: f8e50dca833412c40a2cd30e2d8e5289682f787fc783484d4bc0aa219e2bbac2
+    blobstore_id: e80d68e9-e4b6-4bea-7925-7002d1bcaa36
+    sha1: sha256:bb05611c1733858e545936db3cb5cbd4d00b00d88cc84aa05f490b184f3414d4
 format-version: "2"
