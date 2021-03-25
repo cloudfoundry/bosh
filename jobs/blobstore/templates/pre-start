@@ -3,3 +3,9 @@
 if [ -e /var/vcap/data/blobstore/backend.sock ]; then
   rm /var/vcap/data/blobstore/backend.sock
 fi
+
+# nginx looks for logs/error.log in prefix (-p) dir
+# symlink to default error location to keep flat log dir
+mkdir -p /var/vcap/data/blobstore/logs
+ln -sf /var/vcap/sys/log/blobstore/error.log \
+   /var/vcap/data/blobstore/logs/error.log

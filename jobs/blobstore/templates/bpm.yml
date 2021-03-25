@@ -3,12 +3,25 @@
 blobstore_config = {
   "name" => "blobstore",
   "executable" => "/var/vcap/packages/nginx/sbin/nginx",
-  "args" => ["-c", "/var/vcap/jobs/blobstore/config/nginx.conf"],
+  "args" => [
+    "-c",
+    "/var/vcap/jobs/blobstore/config/nginx.conf",
+    "-p",
+    "/var/vcap/data/blobstore"
+  ],
+  "limits" => {
+    "open_files" => 8192
+  },
   "persistent_disk" => true,
   "ephemeral_disk" => true,
+  "additional_volumes" => [{
+    "path" => "/var/vcap/sys/run/blobstore",
+    "writable" => true
+  }],
   "hooks" => {
     "pre_start" => "/var/vcap/jobs/blobstore/bin/pre-start",
   }
+
 }
 
 config = {
