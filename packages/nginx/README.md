@@ -6,7 +6,7 @@ The files can be downloaded from the following locations:
 
 | Filename | Download URL |
 | -------- | ------------ |
-| nginx-1.17.10.tar.gz | [nginx.org](http://nginx.org/download/nginx-1.17.10.tar.gz) |
+| nginx-1.19.8.tar.gz | [nginx.org](http://nginx.org/download/nginx-1.19.8.tar.gz) |
 | nginx-upload-module-2.3.0.tar.gz | [github.com/vkholodkov/nginx-upload-module](https://github.com/fdintino/nginx-upload-module/archive/2.3.0.tar.gz)
 | pcre-8.44.tar.gz | [pcre.org](https://ftp.pcre.org/pub/pcre/)
 | headers-more-nginx-module-0.30.tar.gz | [headers-more](https://github.com/openresty/headers-more-nginx-module/releases)

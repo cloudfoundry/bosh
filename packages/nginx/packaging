@@ -13,11 +13,11 @@ echo "Extracting ngx_http_hmac_secure_link module..."
 tar xzf nginx/ngx_http_hmac_secure_link_module-0.3.tar.gz
 
 echo "Extracting nginx..."
-tar xzf nginx/nginx-1.17.10.tar.gz
+tar xzf nginx/nginx-1.19.8.tar.gz
 
 echo "Building nginx..."
 
-pushd nginx-1.17.10
+pushd nginx-1.19.8
   ./configure \
     --with-cc-opt="${CPPFLAGS:-}" \
     --with-ld-opt="${LDFLAGS:-}" \
