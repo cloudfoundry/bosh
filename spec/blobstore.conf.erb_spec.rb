@@ -574,8 +574,8 @@ describe 'ngnix.conf.erb' do
 worker_processes 68;
 daemon off;
 
-error_log /var/vcap/sys/log/blobstore/error.log;
 pid       /var/vcap/data/blobstore/blobstore.pid;
+error_log /var/vcap/sys/log/blobstore/error.log warn;
 
 events {
   worker_connections 8192;
