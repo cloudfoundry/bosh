@@ -6,5 +6,10 @@ exec jq '{
   "network_name": .network1.vCenterVLAN,
   "external_ip": .directorIP,
   "dns_recursor_ip": "8.8.8.8",
+  "vcenter_disks": "BOSH-DIRECTOR-CI-DISKS",
+  "vcenter_templates": "BOSH-DIRECTOR-CI-TEMPLATES",
+  "vcenter_vms": "BOSH-DIRECTOR-CI-VMS",
+  "internal_ntp": .ntp,
+  "internal_dns": .dns
 }' \
   < environment/metadata

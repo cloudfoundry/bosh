@@ -13,8 +13,6 @@ inputs:
 - name: bosh-deployment
 - name: bosh-release
 - name: stemcell
-- name: extra-env-vars
-  optional: true
 - name: director-state
   optional: true # chain tasks for upgrades
 

@@ -20,16 +20,13 @@ groups:
       - deploy-acceptance-env
       - delivery
 
-  - name: PM
+  - name: cut-release
     jobs:
       - bump-major
       - bump-minor
       - bump-patch
       - finalize-release
-
-  - name: export
-    jobs:
-    - export-final-release
+      - export-final-release
 
   - name: docker
     jobs:
@@ -296,8 +293,6 @@ jobs:
         - get: cpi-release
         - get: stemcell
           resource: vsphere-esxi-ubuntu-xenial
-        - get: extra-env-vars
-          resource: nimbus-vcenter-vars
         - get: bosh-cli
         - get: bats
         - get: bosh-deployment
@@ -315,11 +310,18 @@ jobs:
           image: main-ruby-go-image
           params:
             BAT_INFRASTRUCTURE: vsphere
-            BOSH_CLIENT:                          ((stemcell-test-director-username))
-            BOSH_CLIENT_SECRET:                   ((stemcell-test-director-password))
+            BOSH_CLIENT: ((stemcell-test-director-username))
+            BOSH_CLIENT_SECRET: ((stemcell-test-director-password))
+            BOSH_VAR_vcenter_ip: "((nimbus_concourse-testbed-bosh-main_ip))"
+            BOSH_VAR_vcenter_user: "((nimbus_concourse-testbed-bosh-main_user.username))"
+            BOSH_VAR_vcenter_password: "((nimbus_concourse-testbed-bosh-main_user.password))"
+            BOSH_VAR_vcenter_cluster: "((nimbus_concourse-testbed-bosh-main_cluster))"
+            BOSH_VAR_vcenter_dc: "((nimbus_concourse-testbed-bosh-main_dc))"
+            BOSH_VAR_vcenter_ds: "((nimbus_concourse-testbed-bosh-main_ds))"
+            BOSH_VAR_vcenter_rp: "((nimbus_concourse-testbed-bosh-main_rp))"
             DEPLOY_ARGS: |
               -o bosh-deployment/vsphere/resource-pool.yml
-              --vars-file extra-env-vars/nimbus-vcenter-vars.yml
+              --vars-env=BOSH_VAR
         - task: prepare-bats
           tags: [nimbus]
           file: bosh-src/ci/bats/iaas/vsphere/prepare-bats-config.yml
@@ -998,13 +1000,6 @@ resources:
       private_key: ((github_deployment_key__bosh-cpi-environments))
       uri: git@github.com:pivotal-cf-experimental/bats-concourse-pool.git
     type: pool
-
-  - name: nimbus-vcenter-vars
-    type: gcs-resource
-    source:
-      bucket: ((deployments_core_bucket_name))
-      json_key: ((gcp_credentials_json))
-      versioned_file: nimbus-vcenter-vars.yml
 
   - name: vsphere-esxi-ubuntu-xenial
     type: bosh-io-stemcell
