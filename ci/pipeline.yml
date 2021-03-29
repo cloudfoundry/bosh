@@ -380,7 +380,7 @@ jobs:
             gcp_mysql_databasename: ((brats-gcp-mysql-external-db-name))
             gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
             gcp_private_network_name: brats-ubuntu-xenial-((branch_name))
-            concourse_authorized_network: 34.82.9.10
+            concourse_authorized_network: ((concourse_egress_ip))
           env:
             GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
       - task: create-brats-sql-users
@@ -405,7 +405,6 @@ jobs:
         file: bosh-src/ci/tasks/test-brats.yml
         input_mapping:
           database-metadata: brats-terraform
-        tags: ["worker-brats"]
         privileged: true
         params: &brats-dbs-params
           RDS_MYSQL_EXTERNAL_DB_USER: ((brats-rds-mysql-external-db-user))
@@ -457,7 +456,7 @@ jobs:
               gcp_mysql_databasename: ((brats-gcp-mysql-external-db-name))
               gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
               gcp_private_network_name: brats-ubuntu-xenial-((branch_name))
-              concourse_authorized_network: 34.82.9.10
+              concourse_authorized_network: ((concourse_egress_ip))
             env:
               GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
             action: destroy
