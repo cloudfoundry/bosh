@@ -8,7 +8,8 @@ module Bosh::Director
         reservations = new(logger)
         reservations.logger.debug("Creating instance network reservations from database for instance '#{instance_model}'")
 
-        ip_addresses = Array(instance_model.vms_dataset.order_by(:id).last&.ip_addresses).clone
+        orphaned_ip_addresses = Array(instance_model.ip_addresses_dataset.where(vm_id: nil, orphaned_vm_id: nil).all).clone
+        ip_addresses = orphaned_ip_addresses + Array(instance_model.vms_dataset.order_by(:id).last&.ip_addresses).clone
         ip_addresses = instance_model.ip_addresses.clone if ip_addresses.empty?
 
         ip_addresses.each do |ip_address|

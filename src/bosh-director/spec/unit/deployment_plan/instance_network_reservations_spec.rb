@@ -83,6 +83,21 @@ module Bosh::Director
           end
         end
 
+        context 'when there are orphaned IP addresses from a failed deploy' do
+          before do
+            vm1 = BD::Models::Vm.make(instance: instance_model)
+            vm1.add_ip_address(ip_model1)
+
+            # Add orphaned IP - not associated with a VM or orphaned VM
+            instance_model.add_ip_address(ip_model2)
+          end
+
+          it 'creates reservations from the orphaned IP addresses' do
+            reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, logger)
+            expect(reservations.map(&:ip)).to eq([ip2, ip1])
+          end
+        end
+
         context 'when there are no IP addresses on the last VM or no VM' do
           before do
             instance_model.add_ip_address(ip_model1)
