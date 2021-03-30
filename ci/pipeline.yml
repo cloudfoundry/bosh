@@ -167,7 +167,6 @@ jobs:
         privileged: true
         file: bosh-src/ci/tasks/test-integration.yml
         image: main-postgres-10-image
-        tags: ["bosh-integration"]
         params:
           DB:           postgresql
           DB_TLS:       true
@@ -195,7 +194,6 @@ jobs:
         privileged: true
         file: bosh-src/ci/tasks/test-integration.yml
         image: main-postgres-10-image
-        tags: ["bosh-integration"]
         params:
           DB:           postgresql
           DEFAULT_UPDATE_VM_STRATEGY: create-swap-delete
@@ -223,7 +221,6 @@ jobs:
         - get: main-mysql-5.7-image
       - task: tests
         privileged: true
-        tags: ["bosh-integration"]
         file: bosh-src/ci/tasks/test-integration.yml
         image: main-mysql-5.7-image
         params:
