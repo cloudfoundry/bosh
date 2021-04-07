@@ -12,14 +12,10 @@ Cloud Foundry BOSH is an open source tool for release engineering, deployment, l
     - [cf-bosh](https://lists.cloudfoundry.org/pipermail/cf-bosh) for asking BOSH usage and development questions
     - [cf-dev](https://lists.cloudfoundry.org/pipermail/cf-dev) for asking Cloud Foundry questions
 
-* Project mgmt:
-    - [bosh-stories (Pivotal Tracker mirror)](https://github.com/cloudfoundry/bosh-stories)
-    - [bosh-notes (proposals/roadmap)](https://github.com/cloudfoundry/bosh-notes)
-
 * Related repos:
 	- [Documentation source (docs-bosh)](https://github.com/cloudfoundry/docs-bosh)
 	- [CLI v2 (bosh-cli)](https://github.com/cloudfoundry/bosh-cli)
-	- [bosh-deployment](https://github.com/cloudfoundry/bosh-deployment)
+	- [bosh-deployment](https://github.com/cloudfoundry/bosh-deployment) Canonical tested repo of dependencies and opsfiles used to deploy bosh
 	- Stemcells: [bosh-linux-stemcell-builder](https://github.com/cloudfoundry/bosh-linux-stemcell-builder), [bosh-windows-stemcell-builder](https://github.com/cloudfoundry-incubator/bosh-windows-stemcell-builder), [aws-light-stemcell-builder](https://github.com/cloudfoundry-incubator/aws-light-stemcell-builder)
 	- CPIs: [AWS](https://github.com/cloudfoundry-incubator/bosh-aws-cpi-release), [Azure](https://github.com/cloudfoundry-incubator/bosh-azure-cpi-release), [Google](https://github.com/cloudfoundry-incubator/bosh-google-cpi-release), [OpenStack](https://github.com/cloudfoundry-incubator/bosh-openstack-cpi-release), [RackHD](https://github.com/cloudfoundry-incubator/bosh-rackhd-cpi-release), [SoftLayer](https://github.com/cloudfoundry-incubator/bosh-softlayer-cpi-release), [vSphere](https://github.com/cloudfoundry-incubator/bosh-vsphere-cpi-release), [vCloud](https://github.com/cloudfoundry-incubator/bosh-vcloud-cpi-release), [VirtualBox](https://github.com/cppforlife/bosh-virtualbox-cpi-release), [Warden](https://github.com/cppforlife/bosh-warden-cpi-release)
 	- [Agent (bosh-agent)](https://github.com/cloudfoundry/bosh-agent)
