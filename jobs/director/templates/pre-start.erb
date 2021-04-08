@@ -27,17 +27,6 @@ chown -R root:vcap $CONFIG_DIR
 chmod 0600 $DB_MUTUAL_TLS_PRIVATE_KEY
 chown vcap:vcap $DB_MUTUAL_TLS_PRIVATE_KEY
 
-cp /var/vcap/jobs/director/config/sudoers /etc/sudoers.d/director
-chmod 440 /etc/sudoers.d/director
-
-# if we encounter a problem after adding the sudoers file, back it out and abort
-visudo --check
-if [ $? -ne 0 ]; then
-  rm /etc/sudoers.d/director
-  echo "ERROR: could not configure sudoers"
-  exit 1
-fi
-
 (crontab -l | sed /task_logrotate/d; cat /var/vcap/jobs/director/config/task_logrotate.cron) | sed /^$/d | crontab
 
 ln -fs $TMPDIR/proxy /var/vcap/packages/nginx/proxy_temp

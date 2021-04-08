@@ -34,8 +34,6 @@ templates:
   pre-start.erb: bin/pre-start
   ps_utils.sh: bin/ps_utils.sh
   scheduler: bin/scheduler
-  stemcell-copy.sh: bin/stemcell-copy
-  sudoers: config/sudoers
   sync-dns: bin/sync-dns
   task_logrotate.cron: config/task_logrotate.cron
   task_logrotate.sh: bin/task_logrotate
