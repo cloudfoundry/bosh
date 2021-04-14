@@ -31,6 +31,14 @@ add-apt-repository "deb https://download.docker.com/linux/ubuntu $(lsb_release -
 
 apt-get update
 
+# Docker 20.10.6 breaks when ipv6 is not enabled on the host
+# https://github.com/moby/moby/issues/42288
+cat <<EOF > /etc/apt/preferences.d/docker-ce-prefs
+Package: docker-ce
+Pin: version 5:20.10.6~3-0~ubuntu-xenial
+Pin-Priority: 3
+EOF
+
 apt-get install -y --no-install-recommends docker-ce
 
 rm -rf /var/lib/apt/lists/*
