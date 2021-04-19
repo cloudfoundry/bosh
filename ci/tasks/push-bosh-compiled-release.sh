@@ -8,7 +8,7 @@ cat <<EOF > settings.json
     "version": "candidate-version/version",
     "rename_from_file": "metalink-path/file-path",
     "options": {
-      "message": "Update metalink from ${BUILD_TEAM_NAME}/${BUILD_PIPELINE_NAME}/${BUILD_JOB_NAME}/${BUILD_NAME}
+      "message": "Update metalink triggerd by bosh director, export final release job"
     }
   },
   "source": {
