@@ -6,7 +6,10 @@ cat <<EOF > settings.json
   "params": {
     "files": [ "compiled-release/*.tgz" ],
     "version": "candidate-version/version",
-    "rename_from_file": "metalink-path/file-path"
+    "rename_from_file": "metalink-path/file-path",
+    "options": {
+      "message": "Update metalink from ${BUILD_TEAM_NAME}/${BUILD_PIPELINE_NAME}/${BUILD_JOB_NAME}/${BUILD_NAME}
+    }
   },
   "source": {
     "uri": "git+ssh://git@github.com:cloudfoundry/bosh-compiled-releases-index.git",
