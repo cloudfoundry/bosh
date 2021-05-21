@@ -13,7 +13,7 @@ export LD_LIBRARY_PATH="$PACKAGE_DIR/lib:$LD_LIBRARY_PATH"
 
 # wait for database to be running
 for i in $( seq 0 30 ); do
-  if /var/vcap/packages/postgres-10/bin/oid2name -d postgres -q ; then
+  if /var/vcap/packages/postgres-10/bin/oid2name -H ${HOST} -U ${USER} -d postgres -q ; then
     break
   fi
 
