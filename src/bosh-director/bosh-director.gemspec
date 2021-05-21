@@ -52,7 +52,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'openssl'
   spec.add_dependency 'netaddr',          '~>1.5.0'
   spec.add_dependency 'prometheus-client','~>1.0.0'
-  spec.add_dependency 'puma',             '~>3.12'
+  spec.add_dependency 'puma'
   spec.add_dependency 'rack-test',        '~>0.6.2' # needed for console
   spec.add_dependency 'rake',             '~> 12.3'
   spec.add_dependency 'rufus-scheduler',  '~>3.0'
