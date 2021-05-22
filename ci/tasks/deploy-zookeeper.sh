@@ -30,5 +30,5 @@ bosh-cli update-cloud-config bosh-deployment/$CPI/cloud-config.yml \
   --vars-file director-state/director-vars.json
 
 bosh-cli upload-stemcell stemcell/*.tgz
-bosh-cli -d zookeeper deploy --recreate ci_dir/assets/zookeeper-manifest.yml
+bosh-cli -d zookeeper deploy --recreate ${ci_dir}/assets/zookeeper-manifest.yml
 bosh-cli -d zookeeper run-errand smoke-tests

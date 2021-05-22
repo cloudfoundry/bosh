@@ -153,7 +153,7 @@ var _ = Describe("Blobstore", func() {
 			session := bratsutils.Bosh("-n", "deploy", bratsutils.AssetPath("syslog-manifest.yml"),
 				"-d", "syslog-deployment",
 				"-o", bratsutils.AssetPath("specify-stemcell-version.yml"),
-				"-v", fmt.Sprintf("stemcell-os=%s", 'ubuntu-xenial'),
+				"-v", fmt.Sprintf("stemcell-os=%s", "ubuntu-xenial"),
 				"-v", "stemcell-version='456.40'",
 			)
 			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
