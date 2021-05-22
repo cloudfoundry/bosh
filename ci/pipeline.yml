@@ -11,9 +11,9 @@ groups:
       - integration-db-tls-postgres-hotswap
       - integration-db-tls-mysql
       - candidate-release
-      - compile-bosh-dev-release-xenial
-      - bats-ubuntu-xenial
-      - brats-ubuntu-xenial
+      - compile-bosh-dev-release-bionic
+      - bats-ubuntu-bionic
+      - brats-ubuntu-bionic
       - bosh-disaster-recovery-acceptance-tests
       - upgrade
       - upload-compiled-staging-tarball
@@ -255,7 +255,7 @@ jobs:
       params:
         file: "release/bosh-dev-release.tgz"
 
-  - name: compile-bosh-dev-release-xenial
+  - name: compile-bosh-dev-release-bionic
     plan:
     - in_parallel:
       - get: bosh-src
@@ -265,36 +265,36 @@ jobs:
         passed: [candidate-release]
         trigger: true
       - get: stemcell
-        resource: warden-ubuntu-xenial
+        resource: warden-ubuntu-bionic
         trigger: true
       - get: docker-cpi-image
     - task: export-release
       image: docker-cpi-image
       file: bosh-src/ci/tasks/export-release.yml
       privileged: true
-    - put: bosh-compiled-candidate-xenial
+    - put: bosh-compiled-candidate-bionic
       params:
         file: "compiled-release/*.tgz"
 
-  - name: bats-ubuntu-xenial
+  - name: bats-ubuntu-bionic
     serial: true
     plan:
     - do:
       - in_parallel:
         - get: bosh-candidate-release-tarballs
-          passed: [compile-bosh-dev-release-xenial]
+          passed: [compile-bosh-dev-release-bionic]
         - get: bosh-release
-          resource: bosh-compiled-candidate-xenial
+          resource: bosh-compiled-candidate-bionic
           trigger: true
-          passed: [compile-bosh-dev-release-xenial]
+          passed: [compile-bosh-dev-release-bionic]
         - get: cpi-release
         - get: stemcell
-          resource: vsphere-esxi-ubuntu-xenial
+          resource: vsphere-esxi-ubuntu-bionic
         - get: bosh-cli
         - get: bats
         - get: bosh-deployment
         - get: bosh-src
-          passed: [compile-bosh-dev-release-xenial]
+          passed: [compile-bosh-dev-release-bionic]
         - get: main-ruby-go-image
       - put: environment
         resource: nimbus-environment
@@ -324,7 +324,7 @@ jobs:
           file: bosh-src/ci/bats/iaas/vsphere/prepare-bats-config.yml
           image: main-ruby-go-image
           params:
-            STEMCELL_NAME: bosh-vsphere-esxi-ubuntu-xenial-go_agent
+            STEMCELL_NAME: bosh-vsphere-esxi-ubuntu-bionic-go_agent
         - task: run-bats
           tags: [nimbus]
           file: bats/ci/tasks/run-bats.yml
@@ -342,28 +342,28 @@ jobs:
            release: environment
           attempts: 3
 
-  - name: brats-ubuntu-xenial
+  - name: brats-ubuntu-bionic
     serial: true
     plan:
     - in_parallel:
       - get: bosh-src
-        passed: [compile-bosh-dev-release-xenial]
+        passed: [compile-bosh-dev-release-bionic]
       - get: bosh-dns-release
       - get: stemcell
-        resource: warden-ubuntu-xenial
+        resource: warden-ubuntu-bionic
       - get: bosh-candidate-release-tarballs
-        passed: [compile-bosh-dev-release-xenial]
+        passed: [compile-bosh-dev-release-bionic]
       - get: bosh-release
-        resource: bosh-compiled-candidate-xenial
+        resource: bosh-compiled-candidate-bionic
         trigger: true
-        passed: [compile-bosh-dev-release-xenial]
+        passed: [compile-bosh-dev-release-bionic]
       - get: bosh-deployment
       - get: docker-cpi-image
     - do:
       - put: brats-terraform
         attempts: 2
         params:
-          env_name: brats-ubuntu-xenial-((branch_name))
+          env_name: brats-ubuntu-bionic-((branch_name))
           terraform_source: bosh-src/ci/brats
           vars:
             rds_mysql_username: ((brats-rds-mysql-external-db-user))
@@ -376,7 +376,7 @@ jobs:
             aws_secret_access_key: ((bosh-ci-database-terraform-rds-aws-secret-access-key))
             gcp_mysql_databasename: ((brats-gcp-mysql-external-db-name))
             gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
-            gcp_private_network_name: brats-ubuntu-xenial-((branch_name))
+            gcp_private_network_name: brats-ubuntu-bionic-((branch_name))
             concourse_authorized_network: ((concourse_egress_ip))
           env:
             GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
@@ -416,8 +416,8 @@ jobs:
           GCP_POSTGRES_EXTERNAL_DB_USER: ((brats-gcp-postgres-external-db-user))
           GCP_POSTGRES_EXTERNAL_DB_PASSWORD: ((brats-gcp-postgres-external-db-password))
           GCP_POSTGRES_EXTERNAL_DB_NAME: ((brats-gcp-postgres-external-db-name))
-          GCP_PRIVATE_NETWORK_NAME: brats-ubuntu-xenial-((branch_name))
-          STEMCELL_OS: ubuntu-xenial
+          GCP_PRIVATE_NETWORK_NAME: brats-ubuntu-bionic-((branch_name))
+          STEMCELL_OS: ubuntu-bionic
       ensure:
         do:
         - task: cleanup-external-dbs
@@ -439,7 +439,7 @@ jobs:
           attempts: 3
           get_params: { action: destroy }
           params:
-            env_name: brats-ubuntu-xenial-((branch_name))
+            env_name: brats-ubuntu-bionic-((branch_name))
             terraform_source: bosh-src/ci/brats
             vars:
               rds_mysql_username: ((brats-rds-mysql-external-db-user))
@@ -452,7 +452,7 @@ jobs:
               aws_secret_access_key: ((bosh-ci-database-terraform-rds-aws-secret-access-key))
               gcp_mysql_databasename: ((brats-gcp-mysql-external-db-name))
               gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
-              gcp_private_network_name: brats-ubuntu-xenial-((branch_name))
+              gcp_private_network_name: brats-ubuntu-bionic-((branch_name))
               concourse_authorized_network: ((concourse_egress_ip))
             env:
               GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
@@ -462,15 +462,15 @@ jobs:
     plan:
     - in_parallel:
       - get: bosh-src
-        passed: [compile-bosh-dev-release-xenial]
+        passed: [compile-bosh-dev-release-bionic]
       - get: stemcell
-        resource: warden-ubuntu-xenial
+        resource: warden-ubuntu-bionic
       - get: bosh-candidate-release-tarballs
-        passed: [compile-bosh-dev-release-xenial]
+        passed: [compile-bosh-dev-release-bionic]
       - get: bosh-release
-        resource: bosh-compiled-candidate-xenial
+        resource: bosh-compiled-candidate-bionic
         trigger: true
-        passed: [compile-bosh-dev-release-xenial]
+        passed: [compile-bosh-dev-release-bionic]
       - get: bosh-disaster-recovery-acceptance-tests
       - get: bosh-deployment
       - get: bbr-cli-binary
@@ -489,15 +489,15 @@ jobs:
     - do:
       - in_parallel:
         - get: bosh-src
-          passed: [compile-bosh-dev-release-xenial]
+          passed: [compile-bosh-dev-release-bionic]
         - get: stemcell
-          resource: aws-xen-hvm-ubuntu-xenial
+          resource: aws-xen-hvm-ubuntu-bionic
         - get: bosh-deployment
         - get: bosh-cli
         - get: bosh-release
-          resource: bosh-compiled-candidate-xenial
+          resource: bosh-compiled-candidate-bionic
           trigger: true
-          passed: [compile-bosh-dev-release-xenial]
+          passed: [compile-bosh-dev-release-bionic]
         - get: last-released-bosh-release
         - get: zookeeper-release
         - get: main-ruby-go-image
@@ -505,7 +505,7 @@ jobs:
         params:
           terraform_source: bosh-src/ci/bats/iaas/aws/terraform
           delete_on_failure: true
-          env_name: upgrade-ubuntu-xenial-aws-((branch_name))
+          env_name: upgrade-ubuntu-bionic-aws-((branch_name))
     - do:
       - task: deploy-previous-version
         image: main-ruby-go-image
@@ -561,7 +561,7 @@ jobs:
             attempts: 3
             params:
               terraform_source: bosh-src/ci/bats/iaas/aws/terraform
-              env_name: upgrade-ubuntu-xenial-aws-((branch_name))
+              env_name: upgrade-ubuntu-bionic-aws-((branch_name))
               action: destroy
             get_params:
               action: destroy
@@ -576,18 +576,18 @@ jobs:
         - get: prometheus-boshrelease
         - get: bosh-deployment
         - get: stemcell
-          resource: google-kvm-ubuntu-xenial
+          resource: google-kvm-ubuntu-bionic
         - get: bosh-src
           passed:
-          - bats-ubuntu-xenial
-          - brats-ubuntu-xenial
+          - bats-ubuntu-bionic
+          - brats-ubuntu-bionic
           - bosh-disaster-recovery-acceptance-tests
         - get: candidate-release
-          resource: bosh-compiled-candidate-xenial
+          resource: bosh-compiled-candidate-bionic
           trigger: true
           passed:
-          - bats-ubuntu-xenial
-          - brats-ubuntu-xenial
+          - bats-ubuntu-bionic
+          - brats-ubuntu-bionic
           - bosh-disaster-recovery-acceptance-tests
       - task: deploy-env
         file: bosh-src/ci/tasks/setup-env.yml
@@ -604,11 +604,11 @@ jobs:
   - name: upload-compiled-staging-tarball
     plan:
     - get: compiled-release
-      resource: bosh-compiled-candidate-xenial
+      resource: bosh-compiled-candidate-bionic
       trigger: true
       passed:
-      - bats-ubuntu-xenial
-      - brats-ubuntu-xenial
+      - bats-ubuntu-bionic
+      - brats-ubuntu-bionic
       - bosh-disaster-recovery-acceptance-tests
     - put: bosh-compiled-staging-tarballs
       params:
@@ -620,8 +620,8 @@ jobs:
         - get: bosh-src
           trigger: true
           passed:
-          - bats-ubuntu-xenial
-          - brats-ubuntu-xenial
+          - bats-ubuntu-bionic
+          - brats-ubuntu-bionic
           - bosh-disaster-recovery-acceptance-tests
       - put: tracker-output
         params:
@@ -676,7 +676,7 @@ jobs:
       - get: version
         passed: [finalize-release]
         trigger: true
-      - get: warden-ubuntu-xenial
+      - get: warden-ubuntu-bionic
         trigger: true
       - get: docker-cpi-image
     - task: export-final-release
@@ -684,7 +684,7 @@ jobs:
       file: bosh-master/ci/tasks/export-final-release.yml
       privileged: true
       input_mapping:
-        stemcell: warden-ubuntu-xenial
+        stemcell: warden-ubuntu-bionic
         bosh-src: bosh-master
     - task: push-bosh-compiled-releases
       file: bosh-master/ci/tasks/push-bosh-compiled-release.yml
@@ -883,13 +883,13 @@ resources:
       secret_access_key: ((candidate_release_secret_access_key))
       versioned_file: "bosh-dev-release.tgz"
 
-  - name: bosh-compiled-candidate-xenial
+  - name: bosh-compiled-candidate-bionic
     type: s3
     source:
       bucket: "bosh-compiled-candidate-tarballs"
       access_key_id: ((bosh-compiled-releases-aws-access-key-id))
       secret_access_key: ((bosh-compiled-releases-aws-secret-access-key))
-      regexp: "bosh-.*dev\\.(\\d+).*xenial.*.tgz"
+      regexp: "bosh-.*dev\\.(\\d+).*bionic.*.tgz"
 
   - name: bosh-compiled-staging-tarballs
     type: s3
@@ -897,7 +897,7 @@ resources:
       bucket: "bosh-compiled-staging-tarballs"
       access_key_id: ((bosh-compiled-releases-aws-access-key-id))
       secret_access_key: ((bosh-compiled-releases-aws-secret-access-key))
-      regexp: "bosh-.*dev\\.(\\d+).*xenial.*.tgz"
+      regexp: "bosh-.*dev\\.(\\d+).*bionic.*.tgz"
 
   - name: bosh-disaster-recovery-acceptance-tests
     type: git
@@ -997,25 +997,25 @@ resources:
       uri: git@github.com:pivotal-cf-experimental/bats-concourse-pool.git
     type: pool
 
-  - name: vsphere-esxi-ubuntu-xenial
+  - name: vsphere-esxi-ubuntu-bionic
     type: bosh-io-stemcell
     source:
-      name: bosh-vsphere-esxi-ubuntu-xenial-go_agent
+      name: bosh-vsphere-esxi-ubuntu-bionic-go_agent
 
-  - name: google-kvm-ubuntu-xenial
+  - name: google-kvm-ubuntu-bionic
     type: bosh-io-stemcell
     source:
-      name: bosh-google-kvm-ubuntu-xenial-go_agent
+      name: bosh-google-kvm-ubuntu-bionic-go_agent
 
-  - name: aws-xen-hvm-ubuntu-xenial
+  - name: aws-xen-hvm-ubuntu-bionic
     type: bosh-io-stemcell
     source:
-      name: bosh-aws-xen-hvm-ubuntu-xenial-go_agent
+      name: bosh-aws-xen-hvm-ubuntu-bionic-go_agent
 
-  - name: warden-ubuntu-xenial
+  - name: warden-ubuntu-bionic
     type: bosh-io-stemcell
     source:
-      name: bosh-warden-boshlite-ubuntu-xenial-go_agent
+      name: bosh-warden-boshlite-ubuntu-bionic-go_agent
 
   - name: cpi-release
     type: bosh-io-release

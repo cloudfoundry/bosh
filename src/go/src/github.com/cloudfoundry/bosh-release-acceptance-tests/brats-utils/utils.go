@@ -343,10 +343,6 @@ func StartInnerBoshWithExpectation(expectedFailure bool, expectedErrorToMatch st
 	effectiveArgs := []string{strconv.Itoa(config.GinkgoConfig.ParallelNode)}
 	effectiveArgs = append(effectiveArgs, args...)
 
-	if stemcellOS == "ubuntu-xenial" {
-		effectiveArgs = append(effectiveArgs, "-o", AssetPath("inner-bosh-xenial-ops.yml"))
-	}
-
 	cmd := exec.Command(
 		fmt.Sprintf("../../../../../../../ci/dockerfiles/docker-cpi/start-inner-bosh-parallel.sh"),
 		effectiveArgs...,

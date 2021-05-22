@@ -10,17 +10,6 @@
   path: /releases/name=bosh/version?
   value: create
 
-- type: replace
-  path: /stemcells?
-  value:
-  - alias: default
-    os: ubuntu-trusty
-    version: latest
-
-- type: replace
-  path: /instance_groups/name=bosh/stemcell?
-  value: default
-
 - type: remove
   path: /resource_pools
 

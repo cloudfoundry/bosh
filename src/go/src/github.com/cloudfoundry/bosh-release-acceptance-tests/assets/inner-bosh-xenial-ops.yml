@@ -1,6 +1,0 @@
-- type: replace
-  path: /stemcells?
-  value:
-  - alias: default
-    os: ubuntu-xenial
-    version: latest
