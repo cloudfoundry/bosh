@@ -93,8 +93,6 @@ main() {
     --depot "$depot_path" \
     --bind-ip 0.0.0.0 --bind-port 7777 \
     --mtu "$mtu" \
-    --graph=$GARDEN_GRAPH_PATH \
-    --graph-cleanup-threshold-in-megabytes=1024 \
     &
 }
 
