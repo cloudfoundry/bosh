@@ -1031,7 +1031,7 @@ GEM
       multi_json
     domain_name (0.5.20190701)
       unf (>= 0.0.5, < 1.0.0)
-    em-http-request (1.1.5)
+    em-http-request (1.1.7)
       addressable (>= 2.3.4)
       cookiejar (!= 0.3.1)
       em-socksify (>= 0.3)
@@ -1116,7 +1116,7 @@ GEM
     pry-remote (0.1.8)
       pry (~> 0.9)
       slop (~> 3.0)
-    public_suffix (4.0.3)
+    public_suffix (4.0.6)
     puma (5.3.2)
       nio4r (~> 2.0)
     raabro (1.1.6)
