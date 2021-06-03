@@ -45,7 +45,7 @@ PATH
       rake (~> 12.3)
       rufus-scheduler (~> 3.0)
       semi_semantic (~> 1.2.0)
-      sequel (~> 5.16.0)
+      sequel (~> 5.29.0)
       sinatra (~> 2.0.2)
       sys-filesystem (~> 1.1.0)
       talentbox-delayed_job_sequel (~> 4.3)
@@ -78,7 +78,7 @@ PATH
       excon
       fog-core (~> 1.45.0)
       fog-openstack (~> 0.1.31)
-      sequel (~> 5.16.0)
+      sequel (~> 5.29.0)
       sinatra (~> 2.0.2)
       thin (~> 1.7.0)
 
@@ -1165,7 +1165,7 @@ GEM
     rufus-scheduler (3.8.0)
       fugit (~> 1.1, >= 1.1.6)
     semi_semantic (1.2.0)
-    sequel (5.16.0)
+    sequel (5.29.0)
     sinatra (2.0.8.1)
       mustermann (~> 1.0)
       rack (~> 2.0)
