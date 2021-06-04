@@ -1045,8 +1045,8 @@ GEM
       tzinfo
     eventmachine (1.2.7)
     excon (0.72.0)
-    factory_bot (5.1.1)
-      activesupport (>= 4.2.0)
+    factory_bot (6.2.0)
+      activesupport (>= 5.0.0)
     fakefs (1.0.0)
     ffi (1.15.3)
     fog-core (1.45.0)
@@ -1230,7 +1230,7 @@ DEPENDENCIES
   bosh_cpi
   bundle-audit
   eventmachine (~> 1.2)
-  factory_bot
+  factory_bot (~> 6.2)
   fakefs
   httpclient
   json (= 2.3.0)
