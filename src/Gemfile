@@ -50,7 +50,7 @@ group :development, :test do
   gem 'sinatra-contrib', '>= 2.0.2'
   gem 'webmock'
 
-  # gem 'pry-byebug'
+  gem 'pry-byebug'
   gem 'pry-remote'
 
   gem 'rubocop'
