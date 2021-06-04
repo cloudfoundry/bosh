@@ -816,7 +816,7 @@ Unable to render instance groups for deployment. Errors are:
           end
 
           before do
-            allow(JobRenderer).to receive(:render_job_instances_with_cache).with(anything, template_blob_cache, anything)
+            allow(JobRenderer).to receive(:render_job_instances_with_cache).with(anything, anything, template_blob_cache, anything, anything)
             allow(planner).to receive(:instance_models).and_return([])
             allow(planner).to receive(:instance_groups).and_return([deployment_instance_group])
             allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(manifest)
