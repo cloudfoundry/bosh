@@ -78,7 +78,7 @@ module Bosh::Director
 
       @logger.debug("Exporting new DNS records blob with shasum: #{exported[:records].shasum}")
 
-      create_dns_blob(exported)
+      create_dns_blob(**exported)
     end
 
     def create_dns_blob(records:, records_version:, aliases_version:)

@@ -158,11 +158,11 @@ module Bosh::Director
           end
         end
 
-        def prepare_vm(stemcell, package)
+        def prepare_vm(...)
           if @compilation_config.reuse_compilation_vms
-            @compilation_instance_pool.with_reused_vm(stemcell, package, &Proc.new)
+            @compilation_instance_pool.with_reused_vm(...)
           else
-            @compilation_instance_pool.with_single_use_vm(stemcell, package, &Proc.new)
+            @compilation_instance_pool.with_single_use_vm(...)
           end
         end
 

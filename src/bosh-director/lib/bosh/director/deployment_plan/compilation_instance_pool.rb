@@ -48,10 +48,10 @@ module Bosh::Director
         @variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new
       end
 
-      def with_reused_vm(stemcell, package)
+      def with_reused_vm(stemcell, package, &block)
         instance_memo = obtain_instance_memo(stemcell)
         @instance_provider.update_instance_compilation_metadata(instance_memo.instance, package)
-        yield instance_memo.instance
+        block.call instance_memo.instance
         release_instance(instance_memo)
       rescue StandardError => e
         remove_instance(instance_memo)
@@ -65,11 +65,11 @@ module Bosh::Director
         raise e
       end
 
-      def with_single_use_vm(stemcell, package)
+      def with_single_use_vm(stemcell, package, &block)
         keep_failing_vm = false
         instance_memo = InstanceMemo.new(@instance_provider, stemcell)
         @instance_provider.update_instance_compilation_metadata(instance_memo.instance, package)
-        yield instance_memo.instance
+        block.call instance_memo.instance
       rescue StandardError => e
         @logger.info('Keeping single-use compilation VM for debugging')
         keep_failing_vm = Config.keep_unreachable_vms

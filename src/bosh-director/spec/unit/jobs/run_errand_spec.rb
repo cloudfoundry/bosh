@@ -375,7 +375,7 @@ module Bosh::Director
                 context 'when errand is run with when-changed' do
                   before do
                     allow(JobRenderer).to receive(:render_job_instances_with_cache)
-                      .with([instance_plan], template_blob_cache, anything, logger)
+                      .with(logger, [instance_plan], template_blob_cache, anything, anything)
                     allow(deployment_instance_group).to receive(:needed_instance_plans).and_return([instance_plan])
                   end
 
