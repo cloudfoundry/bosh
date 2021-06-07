@@ -87,7 +87,8 @@ module Bosh::Director
           allow(deployment_model).to receive(:cloud_configs).and_return([cloud_config])
           allow(deployment_model).to receive(:runtime_configs).and_return([])
           allow(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator).to receive(:new).with([]).and_return(consolidated_runtime_config)
-          allow(consolidated_runtime_config).to receive(:raw_manifest).with([]).and_return({})
+          args = []
+          allow(consolidated_runtime_config).to receive(:raw_manifest).and_return({})
           allow(consolidated_runtime_config).to receive(:interpolate_manifest_for_deployment).and_return({})
           allow(variables_interpolator).to receive(:interpolate_deployment_manifest).and_return({})
         end
