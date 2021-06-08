@@ -753,7 +753,7 @@ Unable to render instance groups for deployment. Errors are:
 
               expect {
                 job.perform
-              }.to raise_error
+              }.to raise_error %r{'/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'}
             end
           end
 
@@ -835,10 +835,10 @@ Unable to render instance groups for deployment. Errors are:
 
           context 'when it fails the dry-run' do
             it 'should not send an error event to the health monitor' do
-              expect(assembler).to receive(:bind_models).and_raise
+              expect(assembler).to receive(:bind_models).and_raise('error')
               expect(notifier).not_to receive(:send_error_event)
 
-              expect { job.perform }.to raise_error
+              expect { job.perform }.to raise_error('error')
             end
           end
         end

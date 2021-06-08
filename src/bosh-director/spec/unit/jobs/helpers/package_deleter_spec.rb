@@ -61,7 +61,7 @@ module Bosh::Director
             end
 
             it 'should raise' do
-              expect { package_deleter.delete(package, force) }.to raise_error()
+              expect { package_deleter.delete(package, force) }.to raise_error(/negative/)
             end
           end
 
@@ -71,7 +71,7 @@ module Bosh::Director
             end
 
             it 'should raise' do
-              expect { package_deleter.delete(package, force) }.to raise_error()
+              expect { package_deleter.delete(package, force) }.to raise_error(/negative/)
             end
           end
         end

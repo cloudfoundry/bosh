@@ -43,7 +43,8 @@ module Bosh::Director
         let(:stemcells) { {} }
 
         it 'raises an error' do
-          expect { deployment_validator.validate(deployment) }.to raise_error
+          expect { deployment_validator.validate(deployment) }
+            .to raise_error(Bosh::Director::DeploymentInvalidResourceSpecification, /'stemcells' needs to be specified/)
         end
       end
 

@@ -99,7 +99,8 @@ module Bosh::Director
 
             it 'does not register non-existent blobstore id as a log bundle' do
               expect(Models::LogBundle.all).to be_empty
-              expect { fetch_logs.perform }.to raise_error
+              expect { fetch_logs.perform }
+                .to raise_error(Bosh::Director::AgentTaskNoBlobstoreId, /Agent didn't return a blobstore object id for packaged logs/)
               expect(Models::LogBundle.all).to be_empty
             end
           end

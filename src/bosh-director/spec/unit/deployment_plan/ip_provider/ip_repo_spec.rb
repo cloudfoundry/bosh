@@ -490,7 +490,7 @@ module Bosh::Director::DeploymentPlan
           it 'raises the error' do
             expect do
               ip_repo.allocate_vip_ip(reservation, network.subnets.first)
-            end.to raise_error
+            end.to raise_error(Sequel::DatabaseError)
           end
         end
       end

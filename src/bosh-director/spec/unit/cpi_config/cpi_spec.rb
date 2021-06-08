@@ -166,7 +166,7 @@ module Bosh::Director
           it 'raises error when interpolates values' do
             expect do
               cpi
-            end.to raise_error
+            end.to raise_error(RuntimeError, /Interpolation error occurred/)
           end
         end
       end

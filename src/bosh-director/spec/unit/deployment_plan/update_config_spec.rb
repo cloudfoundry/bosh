@@ -325,7 +325,8 @@ module Bosh::Director
           expect(DeploymentPlan::UpdateConfig.new(spec).update_azs_in_parallel_on_initial_deploy?).to eq(false)
 
           spec['initial_deploy_az_update_strategy'] = 'nonsense'
-          expect { DeploymentPlan::UpdateConfig.new(spec) }.to raise_error
+          expect { DeploymentPlan::UpdateConfig.new(spec) }
+            .to raise_error(Bosh::Director::ValidationInvalidValue, /Invalid initial_deploy_az_update_strategy 'nonsense', valid strategies are: 'parallel, serial'/)
         end
 
         it 'should inherit from the deployment-level update block when the instance group does not provide a value' do

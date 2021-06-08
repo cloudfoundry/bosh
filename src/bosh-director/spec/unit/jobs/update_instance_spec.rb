@@ -499,7 +499,7 @@ module Bosh::Director
 
         it 'raises an error' do
           job = Jobs::UpdateInstance.new(deployment.name, instance_model.id, 'stop', 'ignore_unresponsive_agent' => false)
-          expect { job.perform }.to raise_error
+          expect { job.perform }.to raise_error(Bosh::Director::RpcTimeout, /foobar\/test-uuid: Bosh::Director::RpcTimeout/)
 
           expect(Stopper).to_not have_received(:stop)
           expect(instance_model.reload.state).to eq 'started'
@@ -729,14 +729,14 @@ module Bosh::Director
         let(:expected_error) { 'boom' }
 
         before do
-          allow(Stopper).to receive(:stop).and_raise
+          allow(Stopper).to receive(:stop).and_raise(expected_error)
         end
 
         it 'raises the error' do
           job = Jobs::UpdateInstance.new(deployment.name, instance_model.id, 'restart', {})
           expect do
             job.perform
-          end.to raise_error
+          end.to raise_error expected_error
         end
 
         it 'still creates the corresponding restart events' do
@@ -744,7 +744,7 @@ module Bosh::Director
           expect do
             expect do
               job.perform
-            end.to raise_error
+            end.to raise_error expected_error
           end.to change { Models::Event.count }.by(4)
 
           begin_event = Models::Event.first

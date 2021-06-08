@@ -37,7 +37,7 @@ describe Bosh::Director::IpUtil do
     end
 
     it 'should not accept invalid input' do
-      expect { @obj.each_ip('1.2.4') {} }.to raise_error
+      expect { @obj.each_ip('1.2.4') {} }.to raise_error(Bosh::Director::NetworkInvalidIpRangeFormat, /invalid \(IPv4 requires \(4\) octets\)/)
     end
 
     it 'should ignore nil values' do

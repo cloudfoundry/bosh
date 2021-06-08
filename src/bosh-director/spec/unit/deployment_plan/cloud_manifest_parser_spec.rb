@@ -287,7 +287,7 @@ module Bosh::Director
 
               expect do
                 subject.parse(valid_manifest)
-              end.to raise_error
+              end.to raise_error(Bosh::Director::DeploymentInvalidNetworkType, /Invalid network type 'foobar'/)
             end
           end
 

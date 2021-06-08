@@ -21,7 +21,7 @@ module Bosh::Director
       it 'has a non null constraint for deployment_id' do
         expect {
           db[:variable_sets] << {id: 100, created_at: Time.now}
-        }.to raise_error
+        }.to raise_error(/NOT NULL constraint failed: variable_sets.deployment_id/)
       end
 
       it 'has a non null constraint for created_at' do
@@ -31,7 +31,7 @@ module Bosh::Director
 
         expect {
           db[:variable_sets] << {id: 100, deployment_id: 1}
-        }.to raise_error
+        }.to raise_error(/NOT NULL constraint failed: variable_sets.created_at/)
       end
 
       it 'defaults deploy_success to false' do
@@ -80,7 +80,7 @@ module Bosh::Director
 
         expect {
           db[:variables] << {id: 1, variable_name: 'var_1', variable_set_id: 100}
-        }.to raise_error
+        }.to raise_error(/NOT NULL constraint failed: variables.variable_id/)
       end
 
       it 'has a non null constraint for variable_name' do
@@ -90,13 +90,13 @@ module Bosh::Director
 
         expect {
           db[:variables] << {id: 1, variable_id: 'var_id_1', variable_set_id: 100}
-        }.to raise_error
+        }.to raise_error(/NOT NULL constraint failed: variables.variable_name/)
       end
 
       it 'has a non null constraint for variable_set_id' do
         expect {
           db[:variables] << {id: 1, variable_id: 'var_id_1', variable_name: 'var_1'}
-        }.to raise_error
+        }.to raise_error(/NOT NULL constraint failed: variables.variable_set_id/)
       end
 
       it 'cascades on variable_sets deletion' do
@@ -211,7 +211,7 @@ module Bosh::Director
         DBSpecHelper.migrate(migration_file)
         expect {
           db[:instances] << {job: 'job', index: 1, deployment_id: 1, state: 'running'}
-        }.to raise_error
+        }.to raise_error(/NOT NULL constraint failed: instances.variable_set_id/)
       end
 
       it 'has a foreign key association with variable_sets table' do

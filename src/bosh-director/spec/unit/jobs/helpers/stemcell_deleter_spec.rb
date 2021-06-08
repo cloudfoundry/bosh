@@ -20,7 +20,7 @@ module Bosh::Director
 
         expect {
           stemcell_deleter.delete(stemcell)
-        }.to raise_error
+        }.to raise_error(/error/)
       end
 
       it 'should raise error if the deployments still reference this stemcell' do

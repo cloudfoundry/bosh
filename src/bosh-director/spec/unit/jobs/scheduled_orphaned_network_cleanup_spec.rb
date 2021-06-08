@@ -118,7 +118,7 @@ module Bosh::Director
               .to receive(:delete_network)
               .with('nw-2')
 
-            expect { subject.perform }.to raise_error
+            expect { subject.perform }.to raise_error(Bosh::Clouds::CloudError, /Deleted 1 orphaned networks\(s\) older .+ Failed to delete 1 network\(s\)./)
 
             expect(orphan_network_manager).to have_received(:delete_network).with('nw-1')
             expect(orphan_network_manager).to have_received(:delete_network).with('nw-2')

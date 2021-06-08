@@ -14,7 +14,7 @@ module Bosh::Blobstore
     after { FileUtils.rm_rf(@tmp) }
 
     it 'should require blobstore_path option' do
-      expect { LocalClient.new({}) }.to raise_error
+      expect { LocalClient.new({}) }.to raise_error(RuntimeError, /No blobstore path given in options {}/)
     end
 
     it "should create blobstore_path direcory if it doesn't exist'" do

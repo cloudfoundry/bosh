@@ -28,8 +28,6 @@ RSpec.configure do |config|
   config.include Bosh::Director::Test::TaskHelpers
 end
 
-RSpec::Expectations.configuration.on_potential_false_positives = :nothing
-
 module SpecHelper
   class << self
     include BufferedLogger

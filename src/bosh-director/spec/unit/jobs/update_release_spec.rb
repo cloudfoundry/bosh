@@ -1185,7 +1185,7 @@ module Bosh::Director
           { 'name' => 'A', 'dependencies' => ['B'] },
           { 'name' => 'B', 'dependencies' => ['A'] },
         ]
-        expect { @job.resolve_package_dependencies(packages) }.to raise_exception
+        expect { @job.resolve_package_dependencies(packages) }.to raise_error(/Cycle: A=/)
       end
     end
 

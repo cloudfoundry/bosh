@@ -53,7 +53,7 @@ module Bosh::Director
 
     it 'has a not null constraint on the instances id for the vm table' do
       DBSpecHelper.migrate(migration_file)
-      expect { db[:vms] << {} }.to raise_error
+      expect { db[:vms] << {} }.to raise_error(/NOT NULL constraint failed: vms.instance_id/)
     end
 
     it 'defaults the trusted certs sha1 to the sha of an empty string for the vm table' do

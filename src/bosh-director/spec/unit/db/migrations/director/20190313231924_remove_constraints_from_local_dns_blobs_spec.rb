@@ -14,7 +14,7 @@ module Bosh::Director
 
     context 'before migration' do
       it 'should NOT allow empty records in local_dns_blobs' do
-        expect { db[:local_dns_blobs] << {} }.to raise_error
+        expect { db[:local_dns_blobs] << {} }.to raise_error(/NOT NULL constraint failed: local_dns_blobs.blob_id/)
         expect(db[:local_dns_blobs].count).to eq(0)
       end
     end
