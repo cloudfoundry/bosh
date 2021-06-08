@@ -332,7 +332,7 @@ module Bosh::Director
                 context 'when the errand fails to run' do
                   it 'cleans up the vms anyway' do
                     error = Exception.new
-                    allow(instance_group_manager).to receive(:create_missing_vms).with(no_args).ordered
+                    expect(instance_group_manager).to receive(:create_missing_vms).with(no_args).ordered
                     expect(runner).to receive(:run).with(instance).and_raise(error)
                     expect(instance_group_manager).to receive(:delete_vms).with(no_args).ordered
 

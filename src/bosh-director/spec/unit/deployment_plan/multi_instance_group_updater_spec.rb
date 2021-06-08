@@ -110,7 +110,7 @@ describe Bosh::Director::DeploymentPlan::ParallelMultiInstanceGroupUpdater do
 
     context 'when there are 0 jobs' do
       it 'runs nothing' do
-        allow(thread_pool).to receive(:wrap).ordered
+        allow(thread_pool).to receive(:wrap)
         subject.run(base_job, ip_provider, [])
       end
     end

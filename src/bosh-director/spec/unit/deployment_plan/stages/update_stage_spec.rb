@@ -68,7 +68,6 @@ module Bosh::Director
           expect(pre_cleanup).to receive(:perform).ordered
           expect(update_active_vm_cpis).to receive(:perform).ordered
           expect(setup).to receive(:perform).ordered
-          allow(deployment_plan).to receive(:availability_zones).and_return([]).ordered
           expect(download_packages_step).to receive(:perform).ordered
           expect(update_instance_groups).to receive(:perform).ordered
           expect(update_errands).to receive(:perform).ordered

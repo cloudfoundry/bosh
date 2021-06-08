@@ -101,17 +101,17 @@ module Bosh::Director
             dns_encoder,
             planner.link_provider_intents,
           )
-          allow(job).to receive(:with_deployment_lock).and_yield.ordered
+          allow(job).to receive(:with_deployment_lock).and_yield
         end
 
         context 'when variables need to be interpolated from config server' do
           before do
-            allow(compile_stage).to receive(:perform).ordered
-            allow(update_stage).to receive(:perform).ordered
+            allow(compile_stage).to receive(:perform)
+            allow(update_stage).to receive(:perform)
             allow(planner).to receive(:instance_models).and_return([])
             allow(planner).to receive(:instance_groups).and_return([deployment_instance_group])
             allow(notifier).to receive(:send_start_event)
-            allow(notifier).to receive(:send_end_event).ordered
+            allow(notifier).to receive(:send_end_event)
           end
 
           context "when it is a 'deploy' action" do

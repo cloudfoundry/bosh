@@ -112,7 +112,7 @@ module Bosh::Director
             allow(orphan_network_manager)
               .to receive(:delete_network)
               .with('nw-1')
-              .and_raise(Bosh::Clouds::CloudError.new('Bad stuff happened!')).ordered
+              .and_raise(Bosh::Clouds::CloudError.new('Bad stuff happened!'))
 
             allow(orphan_network_manager)
               .to receive(:delete_network)

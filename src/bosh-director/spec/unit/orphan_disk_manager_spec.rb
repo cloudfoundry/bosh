@@ -387,9 +387,9 @@ module Bosh::Director
             before do
               allow(cloud).to receive(:delete_snapshot)
                 .with(orphan_disk_snapshot_1a.snapshot_cid)
-                .and_raise(Bosh::Clouds::CloudError.new('Bad stuff happened!')).ordered
+                .and_raise(Bosh::Clouds::CloudError.new('Bad stuff happened!'))
 
-              allow(cloud).to receive(:delete_snapshot).with(orphan_disk_snapshot_1b.snapshot_cid).ordered
+              allow(cloud).to receive(:delete_snapshot).with(orphan_disk_snapshot_1b.snapshot_cid)
               allow(cloud_factory).to receive(:get).with(orphan_disk_1.cpi).at_least(:once).and_return(cloud)
             end
 

@@ -1947,7 +1947,7 @@ module Bosh::Director::ConfigServer
                 'type' => 'password',
                 'parameters' => {},
                 'mode' => 'no-overwrite',
-              ).ordered.and_return(SampleForbiddenResponse.new)
+              ).and_return(SampleForbiddenResponse.new)
             end
 
             it 'should throw an error, log it, and record event' do
