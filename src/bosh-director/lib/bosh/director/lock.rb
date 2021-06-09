@@ -118,13 +118,17 @@ module Bosh::Director
       lock_expiration = Time.now.to_f + @expiration + 1
       acquired = false
       until acquired
-        begin
-          Models::Lock.create(name: @name, uid: @uid, expired_at: Time.at(lock_expiration), task_id: @task_id.to_s)
-          acquired = true
-        rescue Sequel::DatabaseError
+        if Models::Lock.where(name: @name).count != 0
           affected_locks = Models::Lock.where(name: @name).where { expired_at < Time.now }.update(uid: @uid, expired_at: Time.at(lock_expiration))
           if affected_locks == 1
             acquired = true
+          end
+        else
+          begin
+            Models::Lock.create(name: @name, uid: @uid, expired_at: Time.at(lock_expiration), task_id: @task_id.to_s)
+            acquired = true
+          rescue Sequel::UniqueConstraintViolation
+            acquired = false
           end
         end
 
