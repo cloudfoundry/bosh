@@ -4,7 +4,7 @@ name: director
 dependencies:
 - libpq
 - mysql
-- ruby-2.6.5-r0.29.0
+- ruby-3.0.1-r0.50.0
 
 files:
 - bosh-director/**/*
