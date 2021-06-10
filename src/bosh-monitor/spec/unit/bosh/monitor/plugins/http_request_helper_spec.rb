@@ -43,7 +43,7 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
     it 'sends a get request' do
       expect(logger).to receive(:debug).with('Sending GET request to some-uri')
 
-      ssl_config = instance_double(HTTPClient::SSLConfig)
+      ssl_config = double('HTTPClient::SSLConfig')
 
       httpclient = instance_double(HTTPClient)
       expect(HTTPClient).to receive(:new).and_return(httpclient)
@@ -60,7 +60,7 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
     end
 
     it 'sends a sync post request' do
-      ssl_config = instance_double(HTTPClient::SSLConfig)
+      ssl_config = double('HTTPClient::SSLConfig')
       httpclient = instance_double(HTTPClient)
 
       expect(HTTPClient).to receive(:new).and_return(httpclient)
