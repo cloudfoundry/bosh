@@ -70,12 +70,14 @@ module Bosh::Dev
 
     describe '#ruby' do
       context 'when building fails' do
+        let(:build) { runner.unit_builds.first }
+
         before do
           allow(Kernel).to receive(:system).and_return(false)
         end
 
         it 'raises and error' do
-          expect { runner.ruby }.to raise_error
+          expect { runner.ruby }.to raise_error(/#{build} failed to build unit tests/)
         end
       end
 

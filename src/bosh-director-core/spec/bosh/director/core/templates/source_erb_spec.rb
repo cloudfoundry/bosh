@@ -38,7 +38,7 @@ module Bosh::Director::Core::Templates
 
           expect {
             subject.render(context, logger)
-          }.to raise_error
+          }.to raise_error(include(expected_message))
         end
 
         it 'raises a informative error about the template being evaluated' do
