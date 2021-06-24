@@ -22,6 +22,10 @@ describe 'Bhm::Director' do
   let(:deployments) { [{ 'name' => 'a' }, { 'name' => 'b' }] }
   let(:resurrection_config) { [{ 'content' => '--- {}', 'id' => '1', 'type' => 'resurrection', 'name' => 'some-name' }] }
 
+  before do
+    allow_any_instance_of(EventMachine::WebMockHttpClient).to receive(:uri).and_raise('This method was removed from the non-mocked EventMachine::HttpClient in the version of EventMachine we are using. WebMock has not been updated to reflect this reality.')
+  end
+
   context 'when director is running in non-UAA mode' do
     before do
       stub_request(:get, 'http://localhost:8080/director/info')
@@ -86,6 +90,22 @@ describe 'Bhm::Director' do
 
       with_fiber do
         expect(director.get_deployment_instances('foo')).to eq(deployments)
+      end
+    end
+
+    it 'raises an error if instances by deployment name cannot be fetched' do
+      stub_request(:get, 'http://localhost:8080/director/deployments/foo/instances')
+        .with(basic_auth: %w[admin admin])
+        .to_return(body: 'foo', status: 500)
+
+      with_fiber do
+        expect do
+          expect(director.get_deployment_instances('foo')).to eq(deployments)
+        end.to raise_error(
+          Bhm::DirectorError,
+          'Cannot get deployment \'foo\' from director at ' \
+          'http://localhost:8080/director/deployments/foo/instances: 500 foo',
+        )
       end
     end
   end

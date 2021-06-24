@@ -11,7 +11,7 @@ module Bosh::Monitor
       body   = http.response
       status = http.response_header.status
 
-      raise DirectorError, "Cannot get deployments from director at #{http.uri}: #{status} #{body}" if status != 200
+      raise DirectorError, "Cannot get deployments from director at #{http.req.uri}: #{status} #{body}" if status != 200
 
       parse_json(body, Array)
     end
@@ -22,7 +22,7 @@ module Bosh::Monitor
       body   = http.response
       status = http.response_header.status
 
-      raise DirectorError, "Cannot get resurrection config from director at #{http.uri}: #{status} #{body}" if status != 200
+      raise DirectorError, "Cannot get resurrection config from director at #{http.req.uri}: #{status} #{body}" if status != 200
 
       parse_json(body, Array)
     end
@@ -33,7 +33,7 @@ module Bosh::Monitor
       body   = http.response
       status = http.response_header.status
 
-      raise DirectorError, "Cannot get deployment '#{name}' from director at #{http.uri}: #{status} #{body}" if status != 200
+      raise DirectorError, "Cannot get deployment '#{name}' from director at #{http.req.uri}: #{status} #{body}" if status != 200
 
       parse_json(body, Array)
     end
@@ -84,7 +84,7 @@ module Bosh::Monitor
       body   = http.response
       status = http.response_header.status
 
-      raise DirectorError, "Cannot get status from director at #{http.uri}: #{status} #{body}" if status != 200
+      raise DirectorError, "Cannot get status from director at #{http.req.uri}: #{status} #{body}" if status != 200
 
       parse_json(body, Hash)
     end
