@@ -4,8 +4,7 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-    tag: latest
+    repository: cloudfoundry/cf-deployment-concourse-tasks
 
 inputs:
   - name: bosh-src
