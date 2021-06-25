@@ -27,6 +27,8 @@ module Bosh::Registry
           :openstack_tenant => @openstack_properties['tenant'],
           :openstack_project_name => @openstack_properties['project'],
           :openstack_domain_name => @openstack_properties['domain'],
+          :openstack_user_domain_name => @openstack_properties['user_domain_name'],
+          :openstack_project_domain_name => @openstack_properties['project_domain_name'],
           :openstack_region => @openstack_properties['region'],
           :openstack_endpoint_type => @openstack_properties['endpoint_type'],
           :connection_options => @openstack_properties['connection_options']
@@ -52,7 +54,7 @@ module Bosh::Registry
           end
 
         elsif is_v3? cloud_config['openstack']['auth_url']
-          unless cloud_config['openstack']['domain'] && cloud_config['openstack']['project']
+          unless (cloud_config['openstack']['domain'] && cloud_config['openstack']['project']) || (cloud_config['openstack']['user_domain_name'] && cloud_config['openstack']['project_domain_name'] && cloud_config['openstack']['project'])
             raise ConfigError, 'Invalid OpenStack configuration parameters'
           end
         end
