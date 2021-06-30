@@ -9,7 +9,7 @@ module Bosh::Director
         let(:stemcell_api_version) { 2 }
         let!(:vm) { Models::Vm.make(active: true, instance: instance, stemcell_api_version: stemcell_api_version) }
         let(:instance) { Models::Instance.make }
-        let!(:disk) { Models::PersistentDisk.make(instance: instance, name: '') }
+        let!(:disk) { Models::PersistentDisk.make(instance: instance, name: '', cpi: 'my-cpi') }
         let(:cloud_factory) { instance_double(CloudFactory) }
         let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
         let(:metadata_updater_cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
