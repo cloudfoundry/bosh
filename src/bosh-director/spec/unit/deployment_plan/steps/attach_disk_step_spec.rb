@@ -37,7 +37,7 @@ module Bosh::Director
         end
 
         it 'uses the cpi associated with disk' do
-          expect(cloud_factory).to receive(:get_cpi_config).with(disk&.cpi).once #.to_not raise_error
+          expect(cloud_factory).to receive(:get_cpi_config).with(disk&.cpi).once
           expect(cloud_factory).to_not receive(:get_default_cloud)
 
           step.perform(report)
