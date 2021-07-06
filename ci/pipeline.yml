@@ -31,6 +31,7 @@ groups:
   - name: docker
     jobs:
     - build-main-ruby-go
+    - build-main-ubuntu-chroot
     - build-main-postgres-9.4
     - build-main-postgres-10
     - build-main-mysql-5.7
@@ -739,6 +740,20 @@ jobs:
         get_params:
           skip_download: true
 
+  - name: build-main-ubuntu-chroot
+    public: true
+    serial: true
+    plan:
+      - get: bosh-src
+      - get: bosh-src-dockerfiles
+        trigger: true
+        passed: [build-main-ruby-go]
+      - put: main-ubuntu-chroot-image
+        params:
+          build: "bosh-src/ci/dockerfiles/main-ubuntu-chroot"
+        get_params:
+          skip_download: true
+
   - name: build-main-postgres-9.4
     public: true
     serial: true
@@ -1040,6 +1055,15 @@ resources:
     type: docker-image
     source:
       repository: bosh/main-ruby-go
+      tag: ((branch_name))
+      email: ((dockerhub_email))
+      username: ((dockerhub_username))
+      password: ((dockerhub_password))
+
+  - name: main-ubuntu-chroot-image
+    type: docker-image
+    source:
+      repository: bosh/main-ubuntu-chroot
       tag: ((branch_name))
       email: ((dockerhub_email))
       username: ((dockerhub_username))
