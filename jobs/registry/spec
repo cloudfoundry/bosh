@@ -108,7 +108,11 @@ properties:
   openstack.project:
      description: OpenStack project name (required for Keystone API version 3)
   openstack.domain:
-     description: OpenStack domain (required for Keystone API version 3)
+     description: OpenStack domain (required for Keystone API version 3, unless openstack.user_domain_name and openstack.project_domain_name are used)
+  openstack.user_domain_name:
+     description: OpenStack user domain name (required for Keystone API version 3, unless openstack.domain is used)
+  openstack.project_domain_name:
+     description: OpenStack project domain name (required for Keystone API version 3, unless openstack.domain is used)
   openstack.region:
     description: OpenStack region (optional)
   openstack.endpoint_type:

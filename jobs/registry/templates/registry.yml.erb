@@ -90,6 +90,12 @@
     if_p('openstack.domain') do |domain|
       cloud_params['openstack']['domain'] = domain
     end
+    if_p('openstack.user_domain_name') do |domain|
+      cloud_params['openstack']['user_domain_name'] = domain
+    end
+    if_p('openstack.project_domain_name') do |domain|
+      cloud_params['openstack']['project_domain_name'] = domain
+    end
     if_p('openstack.region') do |region|
       cloud_params['openstack']['region'] = region
     end
