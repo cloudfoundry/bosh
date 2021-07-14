@@ -48,6 +48,8 @@ describe Bosh::Registry::InstanceManager do
         openstack_tenant: nil,
         openstack_project_name: 'foo',
         openstack_domain_name: 'mydomain',
+        openstack_user_domain_name: nil,
+        openstack_project_domain_name: nil,
         openstack_region: '',
         openstack_endpoint_type: nil,
         connection_options: connection_options,
