@@ -54,7 +54,10 @@ module Bosh::Registry
           end
 
         elsif is_v3? cloud_config['openstack']['auth_url']
-          unless (cloud_config['openstack']['domain'] && cloud_config['openstack']['project']) || (cloud_config['openstack']['user_domain_name'] && cloud_config['openstack']['project_domain_name'] && cloud_config['openstack']['project'])
+          unless (cloud_config['openstack']['domain'] && cloud_config['openstack']['project']) || 
+                 (cloud_config['openstack']['user_domain_name'] && 
+                  cloud_config['openstack']['project_domain_name'] && 
+                  cloud_config['openstack']['project'])
             raise ConfigError, 'Invalid OpenStack configuration parameters'
           end
         end
