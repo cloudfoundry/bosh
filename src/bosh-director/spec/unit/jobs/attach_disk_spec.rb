@@ -54,7 +54,9 @@ module Bosh::Director
             instance_id: instance_model.id,
             active: true,
             size: 50,
-            cloud_properties: { "encrypted" => true })
+            cloud_properties: { "encrypted" => true },
+            cpi: 'my-cpi',
+          )
         end
 
         it 'attaches the disk' do
@@ -155,7 +157,9 @@ module Bosh::Director
                 disk_cid: 'original-disk-cid',
                 instance_id: instance_model.id,
                 active: true,
-                size: 50)
+                size: 50,
+                cpi: 'my-cpi',
+            )
           end
 
           let!(:orphan_disk) do
@@ -263,7 +267,9 @@ module Bosh::Director
               disk_cid: 'original-disk-cid',
               instance_id: instance_model.id,
               active: true,
-              size: 50)
+              size: 50,
+              cpi: 'my-cpi',
+          )
         end
 
         let(:agent_client) do

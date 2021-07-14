@@ -9,7 +9,7 @@ module Bosh::Director
         let(:stemcell_api_version) { 2 }
         let!(:vm) { Models::Vm.make(active: true, instance: instance, stemcell_api_version: stemcell_api_version) }
         let(:instance) { Models::Instance.make }
-        let!(:disk) { Models::PersistentDisk.make(instance: instance, name: '') }
+        let!(:disk) { Models::PersistentDisk.make(instance: instance, name: '', cpi: 'my-cpi') }
         let(:cloud_factory) { instance_double(CloudFactory) }
         let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
         let(:metadata_updater_cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
@@ -34,6 +34,24 @@ module Bosh::Director
           expect(cloud).to receive(:attach_disk).with(vm.cid, disk.disk_cid)
 
           step.perform(report)
+        end
+
+        it 'uses the cpi associated with disk' do
+          expect(cloud_factory).to receive(:get_cpi_config).with(disk&.cpi).once
+          expect(cloud_factory).to_not receive(:get_default_cloud)
+
+          step.perform(report)
+        end
+
+        context 'when disk cpi is unset (pre-multi-cpi disks)' do
+          let!(:disk) { Models::PersistentDisk.make(instance: instance, name: '') }
+
+          it 'uses the default cpi' do
+            expect(cloud_factory).to receive(:get_default_cloud).with(stemcell_api_version).once.and_return(cloud)
+            expect(cloud_factory).to_not receive(:get_cpi_config)
+
+            step.perform(report)
+          end
         end
 
         context 'update agent with persistent disk' do
