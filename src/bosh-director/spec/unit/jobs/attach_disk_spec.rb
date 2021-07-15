@@ -46,6 +46,7 @@ module Bosh::Director
       }
 
       context 'when the instance is stopped hard' do
+        let(:vm) { nil }
         let(:instance_state) {'detached'}
 
         let!(:original_disk) do
@@ -255,6 +256,20 @@ module Bosh::Director
             expect(current_snapshot.clean).to eq(orphan_disk_snapshot.clean)
           end
         end
+
+        context 'when a new disk is attached' do
+          let(:attach_disk_job) { Jobs::AttachDisk.new(deployment_name, job_name, instance_id, 'new_disk_cid', disk_properties) }
+
+          before do
+            attach_disk_job.perform
+          end
+
+          it 'has a nil CPI' do
+            disk = Models::PersistentDisk.where(disk_cid:'new_disk_cid').first
+            expect(disk).not_to be_nil
+            expect(disk.cpi).to be_nil
+          end
+        end
       end
 
       context 'when the instance is stopped soft' do
@@ -287,6 +302,8 @@ module Bosh::Director
           allow(Bosh::Director::CloudFactory).to receive(:create).and_return(cloud_factory)
           allow(cloud_factory).to receive(:get).with('').and_return(cloud)
           allow(cloud_factory).to receive(:get).with('', nil).and_return(cloud)
+          allow(cloud_factory).to receive(:get).with('my-cpi').and_return(cloud)
+          allow(cloud_factory).to receive(:get).with('my-cpi', nil).and_return(cloud)
           allow(cloud).to receive(:attach_disk)
           allow(cloud).to receive(:set_disk_metadata)
           allow(agent_client).to receive(:wait_until_ready)

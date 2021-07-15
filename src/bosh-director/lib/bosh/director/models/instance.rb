@@ -139,6 +139,10 @@ module Bosh::Director::Models
       end
     end
 
+    def cpi
+      active_vm&.cpi
+    end
+
     def agent_id
       instance_active_vm = active_vm
       instance_active_vm.nil? ? nil : instance_active_vm.agent_id

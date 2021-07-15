@@ -21,6 +21,10 @@ module Bosh::Director::Models
       name == ''
     end
 
+    def cpi
+      super || instance.cpi
+    end
+
     def to_s
       "#{self.name}/#{self.disk_cid}"
     end

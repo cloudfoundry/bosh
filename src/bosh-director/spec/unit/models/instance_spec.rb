@@ -376,9 +376,16 @@ module Bosh::Director::Models
           cid: 'my-cid',
           trusted_certs_sha1: 'trusted-sha',
           instance_id: subject.id,
+          cpi: 'my-cpi'
         )
         subject.active_vm = vm
         subject.save
+      end
+
+      describe 'cpi' do
+        it 'returns the active_vm cpi' do
+          expect(subject.cpi).to eq('my-cpi')
+        end
       end
 
       describe 'agent_id' do
@@ -407,6 +414,13 @@ module Bosh::Director::Models
     end
 
     context 'without active vm' do
+
+      describe 'cpi' do
+        it 'is nil' do
+          expect(subject.cpi).to be_nil
+        end
+      end
+
       describe 'agent_id' do
         it 'is nil' do
           expect(subject.agent_id).to be_nil

@@ -84,7 +84,7 @@ module Bosh::Director
             active: true,
             size: @size,
             cloud_properties: @cloud_properties,
-            cpi: instance.active_vm.cpi,
+            cpi: instance.active_vm&.cpi,
           )
         end
 

@@ -37,21 +37,10 @@ module Bosh::Director
         end
 
         it 'uses the cpi associated with disk' do
-          expect(cloud_factory).to receive(:get_cpi_config).with(disk&.cpi).once
+          expect(cloud_factory).to receive(:get).with(disk&.cpi).once
           expect(cloud_factory).to_not receive(:get_default_cloud)
 
           step.perform(report)
-        end
-
-        context 'when disk cpi is unset (pre-multi-cpi disks)' do
-          let!(:disk) { Models::PersistentDisk.make(instance: instance, name: '') }
-
-          it 'uses the default cpi' do
-            expect(cloud_factory).to receive(:get_default_cloud).with(stemcell_api_version).once.and_return(cloud)
-            expect(cloud_factory).to_not receive(:get_cpi_config)
-
-            step.perform(report)
-          end
         end
 
         context 'update agent with persistent disk' do
