@@ -25,6 +25,7 @@ RUN apt-get install -y \
 	rsyslog \
 	libcurl4-openssl-dev \
 	python python-pip \
+	sudo \
 	&& apt-get clean
 
 RUN pip install awscli
