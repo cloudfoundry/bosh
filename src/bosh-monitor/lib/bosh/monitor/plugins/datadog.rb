@@ -94,6 +94,7 @@ module Bosh::Monitor
         [].tap do |tags|
           tags << "source:#{data[:source]}"
           tags << "deployment:#{data[:deployment]}"
+          custom_tags.each { |key, value| tags << "#{key}:#{value}" }
         end
       end
     end

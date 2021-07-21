@@ -221,5 +221,36 @@ describe Bhm::Plugins::DataDog do
       alert = make_alert(severity: 4)
       subject.process(alert)
     end
+
+    context 'when custom tags are defined' do
+      let(:options) do
+        {
+          'api_key' => 'api_key',
+          'application_key' => 'application_key',
+          'custom_tags' => {
+            'customkey' => 'customvalue',
+            'customkey2' => 'customvalue2',
+          },
+        }
+      end
+
+      it 'includes the custom tags' do
+        custom_tags = %w[
+          customkey:customvalue
+          customkey2:customvalue2
+        ]
+
+        expect(EM).to receive(:defer).and_yield
+
+        expect(Dogapi::Event).to receive(:new) do |_, options|
+          expect(options[:tags]).to include(*custom_tags)
+        end
+
+        allow(dog_client).to receive(:emit_event)
+
+        alert = make_alert
+        subject.process(alert)
+      end
+    end
   end
 end
