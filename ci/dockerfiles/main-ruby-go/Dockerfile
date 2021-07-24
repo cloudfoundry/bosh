@@ -24,11 +24,11 @@ RUN apt-get install -y \
 	libpq-dev \
 	rsyslog \
 	libcurl4-openssl-dev \
-	python python-pip \
+	python3-pip \
 	sudo \
 	&& apt-get clean
 
-RUN pip install awscli
+RUN pip3 install awscli
 
 # Nokogiri dependencies
 RUN apt-get install -y libxslt-dev libxml2-dev && apt-get clean
