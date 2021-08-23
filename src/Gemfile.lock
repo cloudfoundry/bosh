@@ -1,7 +1,7 @@
 GIT
-  remote: https://github.com/bosh-dep-forks/eventmachine
-  revision: edacf831d4e94e073bb0e1b8614995133f239225
-  branch: ruby-3.0
+  remote: https://github.com/eventmachine/eventmachine
+  revision: abe347b824e36453f8a013fbe14323342a2ac8de
+  ref: abe34
   specs:
     eventmachine (1.3.0.dev.1)
 

@@ -14,3 +14,5 @@ files:
 - bosh-director-core/**/*
 - bosh-template/**/*
 - vendor/cache/*.gem
+- vendor/cache/eventmachine-*/**
+- vendor/cache/extensions/**
