@@ -164,7 +164,8 @@ module Bosh::Director
             it 'returns an error' do
               expect {
                 consolidator.raw_manifest
-              }.to raise_error
+              }.to raise_error(Bosh::Director::ValidationInvalidType,
+                               /Property '#{key}' value \("omg"\) did not match the required type 'Array'/)
             end
           end
         end

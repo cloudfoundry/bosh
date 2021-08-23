@@ -24,11 +24,11 @@ module Bosh::Director
 
             expect {
               persistent_disk_collection.add_by_disk_size(300)
-            }.to raise_error
+            }.to raise_error(/This instance group is not supposed to have multiple disks/)
 
             expect {
               persistent_disk_collection.add_by_disk_type(disk_type)
-            }.to raise_error
+            }.to raise_error(/This instance group is not supposed to have multiple disks/)
           end
         end
       end
@@ -47,11 +47,11 @@ module Bosh::Director
 
             expect {
               persistent_disk_collection.add_by_disk_type(disk_type)
-            }.to raise_error
+            }.to raise_error(/This instance group is not supposed to have multiple disks/)
 
             expect {
               persistent_disk_collection.add_by_disk_size(300)
-            }.to raise_error
+            }.to raise_error(/This instance group is not supposed to have multiple disks/)
           end
         end
       end
@@ -74,7 +74,8 @@ module Bosh::Director
           end
 
           it 'raises' do
-            expect{ persistent_disk_collection.add_by_disk_name_and_type('another_disk', disk_type) }.to raise_error
+            expect{ persistent_disk_collection.add_by_disk_name_and_type('another_disk', disk_type) }
+              .to raise_error(/This instance group cannot have multiple disks when using a managed disk./)
           end
         end
       end

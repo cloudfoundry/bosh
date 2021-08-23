@@ -230,7 +230,8 @@ module Bosh::Director
         it 'returns an error' do
           expect {
             consolidator.raw_manifest
-          }.to raise_error
+          }.to raise_error(Bosh::Director::ValidationInvalidType,
+                           /Property 'releases' value \("omg"\) did not match the required type 'Array'/)
         end
 
       end
@@ -249,7 +250,8 @@ module Bosh::Director
         it 'returns an error ' do
           expect {
             consolidator.raw_manifest
-          }.to raise_error
+          }.to raise_error(Bosh::Director::ValidationInvalidType,
+                           /Property 'addons' value \(2\) did not match the required type 'Array'/)
         end
 
       end

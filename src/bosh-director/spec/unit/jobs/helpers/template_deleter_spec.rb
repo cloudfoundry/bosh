@@ -41,7 +41,7 @@ module Bosh::Director
               allow(blobstore).to receive(:delete).and_raise('wont')
             end
             it 'destroys the template' do
-              expect{ template_deleter.delete(template, force) }.to raise_error
+              expect{ template_deleter.delete(template, force) }.to raise_error(/wont/)
               expect(Models::Template.all).to_not be_empty
             end
           end

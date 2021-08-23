@@ -61,7 +61,7 @@ module Bosh::Director
       it 'does not allow null blob_id' do
         DBSpecHelper.migrate(migration_file)
 
-        expect { db[:local_dns_blobs] << {version: '2', created_at: created_at_time} }.to raise_error
+        expect { db[:local_dns_blobs] << {version: '2', created_at: created_at_time} }.to raise_error(/NOT NULL constraint failed: local_dns_blobs.blob_id/)
       end
     end
   end

@@ -84,10 +84,11 @@ module Bosh::Director
             allow(orphan_disk_manager)
               .to receive(:delete_orphan_disk)
               .with(orphan_disk_1)
-              .and_raise(Bosh::Clouds::CloudError.new('Bad stuff happened!')).ordered
+              .and_raise(Bosh::Clouds::CloudError.new('Bad stuff happened!'))
 
             allow(orphan_disk_manager)
-              .to receive(:delete_orphan_disk).with(orphan_disk_2).ordered
+              .to receive(:delete_orphan_disk)
+              .with(orphan_disk_2)
 
             expect { subject.perform }.to raise_error(
               Bosh::Clouds::CloudError,

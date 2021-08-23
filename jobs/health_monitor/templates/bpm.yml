@@ -4,7 +4,7 @@ health_monitor_config = {
   "executable" => "/var/vcap/jobs/health_monitor/bin/health_monitor",
   "env" => {
     "BUNDLE_GEMFILE" => "/var/vcap/packages/health_monitor/Gemfile",
-    "GEM_HOME" => "/var/vcap/packages/health_monitor/gem_home/ruby/2.6.0",
+    "GEM_HOME" => "/var/vcap/packages/health_monitor/gem_home/ruby/3.0.0",
   },
   "unsafe" => {
     "unrestricted_volumes" => [

@@ -497,7 +497,8 @@ module Bosh::Director::DeploymentPlan
                 it 'raises an error' do
                   expect do
                     ip_provider.reserve(reservation)
-                  end.to raise_error
+                  end.to raise_error(Bosh::Director::NetworkReservationNotEnoughCapacity,
+                                     /Failed to reserve IP for '.+' for vip network 'my-vip-network': no more available/)
                 end
               end
             end

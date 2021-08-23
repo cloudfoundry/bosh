@@ -658,7 +658,7 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
                                             .and_raise('Interpolation error occured')
         expect {
             subject.interpolate_cpi_config(raw_cpi_config)
-        }.to raise_error
+        }.to raise_error(RuntimeError, /Interpolation error occured/)
       end
     end
   end

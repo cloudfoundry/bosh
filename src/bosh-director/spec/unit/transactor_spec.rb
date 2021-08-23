@@ -66,7 +66,7 @@ module Bosh::Director
       context 'when a non deadlock mysql error is raised' do
         it 'retries the transaction on deadlock' do
           execute('fail to insert')
-          expect { transactor.retryable_transaction(fake_db) }.to raise_error
+          expect { transactor.retryable_transaction(fake_db) }.to raise_error(/fail to insert/)
         end
       end
     end

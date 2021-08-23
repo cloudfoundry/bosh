@@ -55,7 +55,7 @@ module Bosh::Director
             it 'raises an error' do
               expect{
                 act
-              }.to raise_error
+              }.to raise_error(/wont/)
             end
 
             describe 'when forced' do
@@ -88,7 +88,7 @@ module Bosh::Director
             it 'raises an error' do
               expect {
                 act
-              }.to raise_error
+              }.to raise_error(/wont/)
             end
           end
         end

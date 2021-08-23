@@ -2,7 +2,7 @@ set -e
 
 mkdir -p ${BOSH_INSTALL_TARGET}/{bin,gem_home}
 
-source /var/vcap/packages/ruby-2.6.5-r0.29.0/bosh/compile.env
+source /var/vcap/packages/ruby-3.0.2-r0.61.0/bosh/compile.env
 
 cat > Gemfile <<EOF
 # Explicitly require vendored version to avoid requiring builtin json gem
@@ -13,6 +13,11 @@ EOF
 pushd bosh-monitor/ > /dev/null
   gem build bosh-monitor
   mv *.gem ../vendor/cache
+popd > /dev/null
+
+pushd vendor/cache/eventmachine-* > /dev/null
+  gem build eventmachine.gemspec
+  mv *.gem ../
 popd > /dev/null
 
 if [ "`uname -m`" == "ppc64le" ]; then

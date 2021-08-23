@@ -1,8 +1,10 @@
 ---
 name: health_monitor
 dependencies:
-- ruby-2.6.5-r0.29.0
+- ruby-3.0.2-r0.61.0
 
 files:
 - bosh-monitor/**/*
 - vendor/cache/*.gem
+- vendor/cache/eventmachine-*/**
+- vendor/cache/extensions/**

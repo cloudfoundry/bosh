@@ -41,10 +41,10 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'bosh-director-core', "~>#{version}"
   spec.add_dependency 'bosh-template',      "~>#{version}"
 
-  spec.add_dependency 'bcrypt-ruby',      '>3.0.1'
+  spec.add_dependency 'bcrypt',           '~>3.1.16'
   spec.add_dependency 'bosh_cpi'
   spec.add_dependency 'cf-uaa-lib',       '~>3.2.1'
-  spec.add_dependency 'eventmachine',     '~>1.2.0'
+  spec.add_dependency 'eventmachine',     '~>1.3.0.dev.1'
   spec.add_dependency 'httpclient',       '~>2.8.3'
   spec.add_dependency 'logging',          '~>2.2.2'
   spec.add_dependency 'membrane',         '~>1.1.0'
@@ -54,10 +54,10 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'prometheus-client','~>1.0.0'
   spec.add_dependency 'puma'
   spec.add_dependency 'rack-test',        '~>0.6.2' # needed for console
-  spec.add_dependency 'rake',             '~> 12.3'
+  spec.add_dependency 'rake',             '~> 13.0.3'
   spec.add_dependency 'rufus-scheduler',  '~>3.0'
   spec.add_dependency 'semi_semantic',    '~>1.2.0'
-  spec.add_dependency 'sequel',           '~>5.16.0'
+  spec.add_dependency 'sequel',           '~>5.29.0'
   spec.add_dependency 'sinatra',          '~>2.0.2'
   spec.add_dependency 'sys-filesystem',   '~>1.1.0'
   spec.add_dependency 'talentbox-delayed_job_sequel', '~>4.3'

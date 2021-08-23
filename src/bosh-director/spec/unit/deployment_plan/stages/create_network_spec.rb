@@ -144,7 +144,7 @@ module Bosh::Director
               hash_including('gateway' => '192.168.20.1'),
             ).and_raise('cpi error')
             expect(cloud).to receive(:delete_network).with('12345')
-            expect { subject.perform }.to raise_error
+            expect { subject.perform }.to raise_error(/deployment failed during creating managed networks: cpi error/)
           end
         end
       end
@@ -183,7 +183,7 @@ module Bosh::Director
 
         describe '#perform' do
           it 'should fail when subnet has no name' do
-            expect { subject.perform }.to raise_error
+            expect { subject.perform }.to raise_error(/subnet in managed network must have a name/)
           end
         end
       end
@@ -223,7 +223,7 @@ module Bosh::Director
 
         describe '#perform' do
           it 'should fail when subnet has a non unique name' do
-            expect { subject.perform }.to raise_error
+            expect { subject.perform }.to raise_error(/subnet names within a managed network must be unique/)
           end
         end
       end

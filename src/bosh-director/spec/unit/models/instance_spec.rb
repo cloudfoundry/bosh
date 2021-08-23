@@ -337,12 +337,12 @@ module Bosh::Director::Models
       end
 
       context 'when updating new vm to be active fails' do
-        before { allow(vm1).to receive(:update).and_raise }
+        before { allow(vm1).to receive(:update).and_raise('error') }
 
         it 'is transactional' do
           expect(subject.active_vm).to eq(vm2)
 
-          expect { subject.active_vm = vm1 }.to raise_error
+          expect { subject.active_vm = vm1 }.to raise_error('error')
 
           expect(subject.active_vm).to eq(vm2)
         end

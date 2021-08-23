@@ -32,8 +32,9 @@ if [ $INDEX -eq 1 ]; then
 fi
 <% end %>
 
-export RUBY_THREAD_VM_STACK_SIZE=16777216
-export RUBY_THREAD_MACHINE_STACK_SIZE=16777216
+# previous value was 16777216, lowered because of: https://bugs.ruby-lang.org/issues/17583
+export RUBY_THREAD_VM_STACK_SIZE=15000000
+export RUBY_THREAD_MACHINE_STACK_SIZE=15000000
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/ps_utils.sh

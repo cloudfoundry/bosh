@@ -19,7 +19,7 @@ module Bosh::Core
       end
 
       it 'shells out with specified additional env variables even when SHELL env variable is not available' do
-        stub_const('ENV', {})
+        stub_const('ENV', 'PATH' => ENV['PATH'])
         expect(subject.run('env env', env: { 'VAR' => '123' })).to include('VAR=123')
         expect(stdout.string).to include('VAR=123')
       end

@@ -335,12 +335,12 @@ module Bosh::Director
 
           it 'does write run_errand agent response to result file because we did not run errand' do
             expect(task_result).to_not receive(:write)
-            expect { subject.run(instance) }.to raise_error
+            expect { subject.run(instance) }.to raise_error(Bosh::Director::RpcRemoteException, /unknown message {"method"=>"run_errand", "error"=>"details"}/)
           end
 
           it 'does not try to fetch logs from the agent because we did not run errand' do
             expect(logs_fetcher).to_not receive(:fetch)
-            expect { subject.run(instance) }.to raise_error
+            expect { subject.run(instance) }.to raise_error(Bosh::Director::RpcRemoteException, /unknown message {"method"=>"run_errand", "error"=>"details"}/)
           end
         end
 
@@ -357,12 +357,12 @@ module Bosh::Director
 
           it 'does write run_errand agent response to result file because there is was no response' do
             expect(task_result).to_not receive(:write)
-            expect { subject.run(instance) }.to raise_error
+            expect { subject.run(instance) }.to raise_error(Bosh::Director::RpcRemoteException, /timeout/)
           end
 
           it 'does not try to fetch logs from the agent because we failed contacting it already' do
             expect(logs_fetcher).to_not receive(:fetch)
-            expect { subject.run(instance) }.to raise_error
+            expect { subject.run(instance) }.to raise_error(Bosh::Director::RpcRemoteException, /timeout/)
           end
         end
 

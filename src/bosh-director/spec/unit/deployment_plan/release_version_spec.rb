@@ -218,10 +218,10 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
       release.get_or_create_template('dea')
       template = release.template('dea')
 
-      [:version, :blobstore, :sha1, :logs].each do |method|
+      %i[version blobstore_id sha1 logs].each do |method|
         expect {
           template.send(method)
-        }.to raise_error
+        }.to raise_error(Bosh::Director::DirectorError, /Job 'dea' model is unbound/)
       end
 
       release.bind_model

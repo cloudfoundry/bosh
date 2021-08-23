@@ -29,7 +29,7 @@ module Bosh::Director
             package: Models::Package.make(name: 'package-name', version: 'version'),
             blobstore_id: 'compiled-package-blb-1', stemcell_os: 'linux', stemcell_version: '2.6.11')
 
-          expect{ compiled_package_deleter.delete(compiled_package) }.to raise_error()
+          expect{ compiled_package_deleter.delete(compiled_package) }.to raise_error(/Failed to delete/)
           expect(Models::CompiledPackage[compiled_package.id]).not_to be_nil
         end
 

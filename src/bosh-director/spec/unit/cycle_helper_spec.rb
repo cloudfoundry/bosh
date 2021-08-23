@@ -7,7 +7,7 @@ describe Bosh::Director::CycleHelper do
       B: [:A],
     }
 
-    expect { Bosh::Director::CycleHelper.check_for_cycle(%i[A B C]) { |vertex| graph[vertex] } }.to raise_exception
+    expect { Bosh::Director::CycleHelper.check_for_cycle(%i[A B C]) { |vertex| graph[vertex] } }.to raise_error(/Cycle: A=/)
   end
 
   it 'should detect more complicated cycles' do
@@ -18,7 +18,7 @@ describe Bosh::Director::CycleHelper do
       D: [:B],
     }
 
-    expect { Bosh::Director::CycleHelper.check_for_cycle(%i[A B C]) { |vertex| graph[vertex] } }.to raise_exception
+    expect { Bosh::Director::CycleHelper.check_for_cycle(%i[A B C]) { |vertex| graph[vertex] } }.to raise_error(/Invalid edge: D/)
   end
 
   it "should not detect cycles when it's acyclic" do
@@ -50,6 +50,6 @@ describe Bosh::Director::CycleHelper do
       B: [:D],
     }
 
-    expect { Bosh::Director::CycleHelper.check_for_cycle(%i[A B C]) { |vertex| graph[vertex] } }.to raise_exception
+    expect { Bosh::Director::CycleHelper.check_for_cycle(%i[A B C]) { |vertex| graph[vertex] } }.to raise_error(/Invalid edge: D/)
   end
 end

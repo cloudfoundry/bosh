@@ -1,4 +1,4 @@
-FROM ubuntu:xenial
+FROM ubuntu:bionic
 
 RUN apt-get clean && apt-get update && apt-get install -y locales
 
@@ -20,7 +20,7 @@ RUN apt-get install -y \
 	dnsutils \
 	xvfb \
 	jq \
-	realpath \
+	coreutils \
 	libpq-dev \
 	rsyslog \
 	libcurl4-openssl-dev \
@@ -41,8 +41,8 @@ COPY --from=golang:1 /usr/local/go /usr/local/go
 ENV GOROOT=/usr/local/go PATH=/usr/local/go/bin:$PATH
 
 # Database clients
-RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" > /etc/apt/sources.list.d/pgdg.list && wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && apt-get update
-RUN apt-get install -y \
+RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ bionic-pgdg main" > /etc/apt/sources.list.d/pgdg.list && wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && apt-get update
+RUN DEBIAN_FRONTEND="noninteractive" apt-get install -y \
 	mysql-client \
 	libmysqlclient-dev \
 	postgresql-10 \

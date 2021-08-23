@@ -101,17 +101,17 @@ module Bosh::Director
             dns_encoder,
             planner.link_provider_intents,
           )
-          allow(job).to receive(:with_deployment_lock).and_yield.ordered
+          allow(job).to receive(:with_deployment_lock).and_yield
         end
 
         context 'when variables need to be interpolated from config server' do
           before do
-            allow(compile_stage).to receive(:perform).ordered
-            allow(update_stage).to receive(:perform).ordered
+            allow(compile_stage).to receive(:perform)
+            allow(update_stage).to receive(:perform)
             allow(planner).to receive(:instance_models).and_return([])
             allow(planner).to receive(:instance_groups).and_return([deployment_instance_group])
             allow(notifier).to receive(:send_start_event)
-            allow(notifier).to receive(:send_end_event).ordered
+            allow(notifier).to receive(:send_end_event)
           end
 
           context "when it is a 'deploy' action" do
@@ -753,7 +753,7 @@ Unable to render instance groups for deployment. Errors are:
 
               expect {
                 job.perform
-              }.to raise_error
+              }.to raise_error %r{'/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'}
             end
           end
 
@@ -816,7 +816,7 @@ Unable to render instance groups for deployment. Errors are:
           end
 
           before do
-            allow(JobRenderer).to receive(:render_job_instances_with_cache).with(anything, template_blob_cache, anything)
+            allow(JobRenderer).to receive(:render_job_instances_with_cache).with(anything, anything, template_blob_cache, anything, anything)
             allow(planner).to receive(:instance_models).and_return([])
             allow(planner).to receive(:instance_groups).and_return([deployment_instance_group])
             allow(Bosh::Director::Manifest).to receive(:load_from_hash).and_return(manifest)
@@ -835,10 +835,10 @@ Unable to render instance groups for deployment. Errors are:
 
           context 'when it fails the dry-run' do
             it 'should not send an error event to the health monitor' do
-              expect(assembler).to receive(:bind_models).and_raise
+              expect(assembler).to receive(:bind_models).and_raise('error')
               expect(notifier).not_to receive(:send_error_event)
 
-              expect { job.perform }.to raise_error
+              expect { job.perform }.to raise_error('error')
             end
           end
         end

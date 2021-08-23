@@ -167,7 +167,7 @@ module Bosh::Director
             allow(client).to receive(:handle_method).and_raise(RpcRemoteException, 'random failure!')
 
             expect(client).to_not receive(:warning)
-            expect { client.update_settings('no certs', 'no disks') }.to raise_error
+            expect { client.update_settings('no certs', 'no disks') }.to raise_error(Bosh::Director::RpcRemoteException, /random failure!/)
           end
         end
 
@@ -215,7 +215,7 @@ module Bosh::Director
             allow(client).to receive(:handle_method).and_raise(RpcRemoteException, 'random failure wooooooow!')
 
             expect(client).to_not receive(:warning)
-            expect { client.run_script('script_name', {}) }.to raise_error
+            expect { client.run_script('script_name', {}) }.to raise_error(Bosh::Director::RpcRemoteException, /random failure wooooooow!/)
           end
         end
 
@@ -260,7 +260,7 @@ module Bosh::Director
             allow(client).to receive(:handle_method).and_raise(RpcRemoteException, 'failure has been found')
 
             expect(client).to_not receive(:warning)
-            expect { client.upload_blob('blob_id', 'payload_checksum', 'base64_encoded_payload') }.to raise_error
+            expect { client.upload_blob('blob_id', 'payload_checksum', 'base64_encoded_payload') }.to raise_error(Bosh::Director::RpcRemoteException, /failure has been found/)
           end
         end
 

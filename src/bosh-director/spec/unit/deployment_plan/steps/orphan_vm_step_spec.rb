@@ -38,7 +38,7 @@ module Bosh::Director
 
           expect do
             vm.reload
-          end.to raise_error
+          end.to raise_error(/Record not found/)
         end
 
         it 'removes the ip address from the instance' do

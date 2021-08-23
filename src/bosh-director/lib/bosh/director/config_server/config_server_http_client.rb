@@ -10,13 +10,13 @@ module Bosh::Director::ConfigServer
     end
 
     def get_by_id(id)
-      uri = URI.join(@config_server_uri, URI.escape("v1/data/#{id}"))
+      uri = URI.join(@config_server_uri, "v1/data/#{id}")
       @http.get(uri.request_uri)
     end
 
     def get(name)
       uri = build_base_uri
-      uri.query = URI.escape("name=#{name}&current=true")
+      uri.query = URI.encode_www_form([["name", name], ["current", "true"]])
       @http.get(uri.request_uri)
     end
 
@@ -28,7 +28,7 @@ module Bosh::Director::ConfigServer
     private
 
     def build_base_uri
-      URI.join(@config_server_uri, URI.escape('v1/data'))
+      URI.join(@config_server_uri, 'v1/data')
     end
   end
 
