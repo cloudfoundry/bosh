@@ -1027,7 +1027,7 @@ resources:
     icon: github-circle
     source:
       uri: https://github.com/cloudfoundry/bosh-agent
-      branch: master
+      branch: main
 
   - name: tracker-output
     type: tracker
