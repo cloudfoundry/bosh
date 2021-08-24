@@ -11,7 +11,7 @@ module Bosh::Director
 
     context 'before migration' do
       it 'should NOT have a local_dns_aliases table' do
-        expect { db[:local_dns_aliases] << {} }.to raise_error(/no such table: local_dns_aliases/)
+        expect { db[:local_dns_aliases] << {} }.to raise_error Sequel::DatabaseError
       end
     end
 

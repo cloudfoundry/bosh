@@ -33,7 +33,7 @@ module Bosh::Director
 
         # MariaDB does not error when inserting record, and instead just truncates records
         raise unless db[:local_dns_records].first[:id] == 8589934592
-      }.to raise_error
+      }.to raise_error Sequel::DatabaseError
 
       DBSpecHelper.migrate(migration_file)
 
@@ -61,7 +61,7 @@ module Bosh::Director
 
         # MariaDB does not error when inserting record, and instead just truncates records
         raise unless db[:local_dns_blobs].first[:id] == 8589934592
-      }.to raise_error
+      }.to raise_error Sequel::DatabaseError
 
       DBSpecHelper.migrate(migration_file)
       can_insert_value_with_bigint(:local_dns_blobs, {id: 9223372036854775807, blobstore_id: '123', sha1: 'sha1', created_at: Time.now, version: 3}, Sequel.lit('id = 9223372036854775807'))
@@ -77,7 +77,7 @@ module Bosh::Director
 
         # MariaDB does not error when inserting record, and instead just truncates records
         raise unless db[:local_dns_blobs].first[:version] == 8589934592
-      }.to raise_error
+      }.to raise_error Sequel::DatabaseError
 
       DBSpecHelper.migrate(migration_file)
       can_insert_value_with_bigint(:local_dns_blobs, {version: 9223372036854775807, blobstore_id: '123', sha1: 'sha1', created_at: Time.now}, Sequel.lit('version = 9223372036854775807'))
@@ -93,7 +93,7 @@ module Bosh::Director
 
         # MariaDB does not error when inserting record, and instead just truncates records
         raise unless db[:agent_dns_versions].first[:dns_version] == 8589934592
-      }.to raise_error
+      }.to raise_error Sequel::DatabaseError
 
       DBSpecHelper.migrate(migration_file)
       can_insert_value_with_bigint(:agent_dns_versions, {dns_version: 9223372036854775807, agent_id: '456'}, Sequel.lit('dns_version = 9223372036854775807'))
@@ -120,7 +120,7 @@ module Bosh::Director
 
         # MariaDB does not error when inserting record, and instead just truncates records
         raise unless db[:agent_dns_versions].first[:id] == 8589934592
-      }.to raise_error
+      }.to raise_error Sequel::DatabaseError
 
       DBSpecHelper.migrate(migration_file)
       can_insert_value_with_bigint(:agent_dns_versions, {id: 9223372036854775807, agent_id: '456', dns_version: 3}, Sequel.lit('id = 9223372036854775807'))

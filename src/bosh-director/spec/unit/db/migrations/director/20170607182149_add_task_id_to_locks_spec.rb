@@ -33,7 +33,7 @@ module Bosh::Director
 
       expect{
         db[:locks] << {id: 100, name: 'lock1', uid: 'uuid-1', task_id: nil, expired_at: Time.now}
-      }.to raise_error(/NOT NULL constraint failed: locks.task_id/)
+      }.to raise_error Sequel::NotNullConstraintViolation
     end
   end
 end

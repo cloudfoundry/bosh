@@ -42,7 +42,7 @@ module Bosh::Director
 
       expect {
         db[:release_versions] << { id: 500, version: 'ver1', release_id: 1, commit_hash: 'uuid-1', uncommitted_changes: false, update_completed: nil }
-      }.to raise_error(/NOT NULL constraint failed: release_versions.update_completed/)
+      }.to raise_error Sequel::NotNullConstraintViolation
     end
   end
 end
