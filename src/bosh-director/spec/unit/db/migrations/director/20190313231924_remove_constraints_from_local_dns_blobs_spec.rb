@@ -4,6 +4,7 @@ module Bosh::Director
   describe '20190313231924_remove_constraints_from_local_dns_blobs.rb' do
     let(:db) { DBSpecHelper.db }
     let(:migration_file) { '20190313231924_remove_constraints_from_local_dns_blobs.rb' }
+    let(:mysql_db_adpater_schemes) { %i[mysql mysql2] }
 
     before do
       DBSpecHelper.migrate_all_before(migration_file)
@@ -14,7 +15,11 @@ module Bosh::Director
 
     context 'before migration' do
       it 'should NOT allow empty records in local_dns_blobs' do
-        expect { db[:local_dns_blobs] << {} }.to raise_error(/NOT NULL constraint failed: local_dns_blobs.blob_id/)
+        if mysql_db_adpater_schemes.include?(db.adapter_scheme)
+          skip('MYSQL v5.5.x running on CI + Ruby Sequel does NOT generate NULL constraint violations')
+        end
+
+        expect { db[:local_dns_blobs] << {} }.to raise_error Sequel::NotNullConstraintViolation
         expect(db[:local_dns_blobs].count).to eq(0)
       end
     end

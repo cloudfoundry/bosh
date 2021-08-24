@@ -19,9 +19,13 @@ module Bosh::Director
       end
 
       it 'has a non null constraint for deployment_id' do
+        if mysql_db_adpater_schemes.include?(db.adapter_scheme)
+          skip('MYSQL v5.5.x running on CI + Ruby Sequel does NOT generate NULL constraint violations')
+        end
+
         expect {
           db[:variable_sets] << {id: 100, created_at: Time.now}
-        }.to raise_error(/NOT NULL constraint failed: variable_sets.deployment_id/)
+        }.to raise_error(Sequel::NotNullConstraintViolation)
       end
 
       it 'has a non null constraint for created_at' do
@@ -31,7 +35,7 @@ module Bosh::Director
 
         expect {
           db[:variable_sets] << {id: 100, deployment_id: 1}
-        }.to raise_error(/NOT NULL constraint failed: variable_sets.created_at/)
+        }.to raise_error(Sequel::NotNullConstraintViolation)
       end
 
       it 'defaults deploy_success to false' do
@@ -80,7 +84,7 @@ module Bosh::Director
 
         expect {
           db[:variables] << {id: 1, variable_name: 'var_1', variable_set_id: 100}
-        }.to raise_error(/NOT NULL constraint failed: variables.variable_id/)
+        }.to raise_error(Sequel::NotNullConstraintViolation)
       end
 
       it 'has a non null constraint for variable_name' do
@@ -90,13 +94,17 @@ module Bosh::Director
 
         expect {
           db[:variables] << {id: 1, variable_id: 'var_id_1', variable_set_id: 100}
-        }.to raise_error(/NOT NULL constraint failed: variables.variable_name/)
+        }.to raise_error(Sequel::NotNullConstraintViolation)
       end
 
       it 'has a non null constraint for variable_set_id' do
+        if mysql_db_adpater_schemes.include?(db.adapter_scheme)
+          skip('MYSQL v5.5.x running on CI + Ruby Sequel does NOT generate NULL constraint violations')
+        end
+
         expect {
           db[:variables] << {id: 1, variable_id: 'var_id_1', variable_name: 'var_1'}
-        }.to raise_error(/NOT NULL constraint failed: variables.variable_set_id/)
+        }.to raise_error(Sequel::NotNullConstraintViolation)
       end
 
       it 'cascades on variable_sets deletion' do
@@ -208,10 +216,14 @@ module Bosh::Director
       end
 
       it 'does not allow null for variable_set_id column' do
+        if mysql_db_adpater_schemes.include?(db.adapter_scheme)
+          skip('MYSQL v5.5.x running on CI + Ruby Sequel does NOT generate NULL constraint violations')
+        end
+
         DBSpecHelper.migrate(migration_file)
         expect {
           db[:instances] << {job: 'job', index: 1, deployment_id: 1, state: 'running'}
-        }.to raise_error(/NOT NULL constraint failed: instances.variable_set_id/)
+        }.to raise_error(Sequel::NotNullConstraintViolation)
       end
 
       it 'has a foreign key association with variable_sets table' do

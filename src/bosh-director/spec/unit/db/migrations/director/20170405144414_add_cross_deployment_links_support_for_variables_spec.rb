@@ -46,7 +46,7 @@ module Bosh::Director
 
         expect {
           db[:variables] << {id: 999, variable_id: 'whatever', variable_name: 'another_whatever', variable_set_id: nil}
-        }.to raise_error(/NOT NULL constraint failed: variables.variable_set_id/)
+        }.to raise_error Sequel::NotNullConstraintViolation
 
         expect {
           db[:variables] << {id: 999, variable_id: 'whatever', variable_name: 'another_whatever', variable_set_id: 100}

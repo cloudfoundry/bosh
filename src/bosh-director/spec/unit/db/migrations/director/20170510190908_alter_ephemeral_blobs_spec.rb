@@ -5,6 +5,7 @@ module Bosh::Director
     let(:db) { DBSpecHelper.db }
     let(:migration_file) { '20170510190908_alter_ephemeral_blobs.rb' }
     let(:created_at_time) { Time.now.utc }
+    let(:mysql_db_adpater_schemes) { %i[mysql mysql2] }
 
     before { DBSpecHelper.migrate_all_before(migration_file) }
 
@@ -59,9 +60,14 @@ module Bosh::Director
       end
 
       it 'does not allow null blob_id' do
+        if mysql_db_adpater_schemes.include?(db.adapter_scheme)
+          skip('MYSQL v5.5.x running on CI + Ruby Sequel does NOT generate NULL constraint violations')
+        end
+
         DBSpecHelper.migrate(migration_file)
 
-        expect { db[:local_dns_blobs] << {version: '2', created_at: created_at_time} }.to raise_error(/NOT NULL constraint failed: local_dns_blobs.blob_id/)
+        expect { db[:local_dns_blobs] << { version: '2', created_at: created_at_time } }
+          .to raise_error Sequel::NotNullConstraintViolation
       end
     end
   end

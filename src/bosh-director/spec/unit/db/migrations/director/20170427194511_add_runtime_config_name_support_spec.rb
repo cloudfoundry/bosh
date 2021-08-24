@@ -33,7 +33,7 @@ module Bosh::Director
 
       expect{
         db[:runtime_configs] << {id: 100, properties: 'I am alive', name: nil, created_at: Time.now}
-      }.to raise_error(/NOT NULL constraint failed: runtime_configs.name/)
+      }.to raise_error Sequel::NotNullConstraintViolation
     end
   end
 end
