@@ -40,8 +40,8 @@ module Support
 
     def build_director_api_url(url_path, query)
       director_url = URI(current_sandbox.director_url)
-      director_url.path = URI.encode_www_form_component(url_path)
-      director_url.query = URI.encode_www_form_component(query)
+      director_url.path = url_path
+      director_url.query = query
       return director_url
     end
   end
