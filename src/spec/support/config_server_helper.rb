@@ -32,7 +32,7 @@ module Bosh::Spec
 
     def get_value(name)
       config_server_url = build_uri
-      config_server_url.query = URI.encode_www_form(['name', name])
+      config_server_url.query = URI.encode_www_form(name: name)
 
       response = send_request('GET', config_server_url, nil)
       raise "Config server responded with an error.\n #{response.inspect}" unless response.is_a? Net::HTTPSuccess
@@ -41,7 +41,7 @@ module Bosh::Spec
 
     def delete_variable(name)
       config_server_url = build_uri
-      config_server_url.query = URI.encode_www_form(['name', name])
+      config_server_url.query = URI.encode_www_form(name: name)
 
       response = send_request('DELETE', config_server_url, nil)
       raise "Config server responded with an error.\n #{response.inspect}" unless response.is_a? Net::HTTPSuccess
