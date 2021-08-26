@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM ubuntu:bionic
 
 RUN apt-get update && apt-get -yq install \
     build-essential locales git wget

@@ -11,7 +11,7 @@ RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ bionic-pgdg main" > /etc/
     wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
     apt update
 
-RUN apt install -y \
+RUN DEBIAN_FRONTEND="noninteractive" apt-get install -y \
 	postgresql-$DB_VERSION \
 	postgresql-client-$DB_VERSION \
 	&& apt clean
