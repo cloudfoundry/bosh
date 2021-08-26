@@ -5,7 +5,7 @@ registry_config = {
   "executable" => "/var/vcap/jobs/registry/bin/registry",
   "env" => {
     "BUNDLE_GEMFILE" => "/var/vcap/packages/registry/Gemfile",
-    "GEM_HOME" => "/var/vcap/packages/registry/gem_home/ruby/2.6.0",
+    "GEM_HOME" => "/var/vcap/packages/registry/gem_home/ruby/3.0.0",
   },
 }
 

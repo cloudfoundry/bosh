@@ -16,6 +16,11 @@ for gemspec in $( find . -maxdepth 2 -name *.gemspec ); do
   popd > /dev/null
 done
 
+pushd vendor/cache/eventmachine-* > /dev/null
+  gem build eventmachine.gemspec
+  mv *.gem ../
+popd > /dev/null
+
 cat > Gemfile <<EOF
 # Explicitly require vendored version to avoid requiring builtin json gem
 gem 'json', '2.3.0'
