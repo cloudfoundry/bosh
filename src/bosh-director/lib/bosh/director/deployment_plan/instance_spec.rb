@@ -27,7 +27,7 @@ module Bosh::Director
           'networks' => instance_plan.network_settings_hash,
           'vm_type' => instance_group.vm_type&.spec,
           'vm_resources' => instance_group.vm_resources&.spec,
-          'stemcell' => instance_group.stemcell.spec,
+          'stemcell' => instance_group.stemcell.spec(instance.model.cpi),
           'env' => instance_group.env.spec,
           'packages' => instance_group.package_spec,
           'properties' => instance_group.properties,

@@ -80,9 +80,9 @@ module Bosh::Director
         @models.first.sha1
       end
 
-      def spec
+      def spec(cpi = '')
         {
-          'name' => @name,
+          'name' => cpi_stemcell_name(cpi),
           'version' => @version,
         }
       end
@@ -103,6 +103,18 @@ module Bosh::Director
       end
 
       private
+
+      def cpi_stemcell_name(cpi)
+        # When bind_model has not been called fall back to default behaviour
+        return @name if @models.nil?
+
+        cpi_stemcell = @models.find { |model| model.cpi == cpi }
+
+        # when we can't find the stemcell, fall back to default behaviour
+        return @name if cpi_stemcell.nil?
+
+        cpi_stemcell.name
+      end
 
       def model_for_default_cpi
         stemcell = @models.find { |sc| sc.cpi.blank? }
