@@ -2,11 +2,11 @@
 ## explicit
 github.com/cloudfoundry/bosh-utils/errors
 github.com/cloudfoundry/bosh-utils/uuid
+# github.com/creack/pty v1.1.15
+## explicit
+github.com/creack/pty
 # github.com/golang/protobuf v1.4.3
 ## explicit
-# github.com/kr/pty v1.1.1
-## explicit
-github.com/kr/pty
 # github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
 ## explicit
 github.com/nu7hatch/gouuid

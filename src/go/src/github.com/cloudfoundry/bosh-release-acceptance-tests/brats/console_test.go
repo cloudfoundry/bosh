@@ -6,7 +6,7 @@ import (
 	"time"
 
 	bratsutils "github.com/cloudfoundry/bosh-release-acceptance-tests/brats-utils"
-	"github.com/kr/pty"
+	"github.com/creack/pty"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
@@ -35,18 +35,22 @@ var _ = Describe("director console", func() {
 
 		Eventually(session.Out, 1*time.Minute).Should(gbytes.Say(`bosh/[0-9a-f\-]{36}:~\$ `))
 
-		_, err = ptyF.Write([]byte("sudo /var/vcap/jobs/director/bin/console\n"))
+		_, err = ptyF.Write([]byte("sudo su -\n"))
 		Expect(err).NotTo(HaveOccurred())
 
-		Eventually(session.Out, 1*time.Minute).Should(gbytes.Say(`irb`))
+		Eventually(session.Out, 1*time.Minute).Should(gbytes.Say(`bosh/[0-9a-f\-]{36}:~\# `))
 
-		_, err = ptyF.Write([]byte("Bosh::Director::VERSION\n"))
+		_, err = ptyF.Write([]byte("echo 'IRB.conf[:USE_COLORIZE] = false' > ~/.irbrc\n"))
 		Expect(err).NotTo(HaveOccurred())
 
-		Eventually(session.Out).Should(gbytes.Say(`"0.0.0"`))
-
-		_, err = ptyF.Write([]byte("quit\n"))
+		_, err = ptyF.Write([]byte("echo 'Bosh::Director::VERSION' | /var/vcap/jobs/director/bin/console\n"))
 		Expect(err).NotTo(HaveOccurred())
+
+		Eventually(session.Out, 1*time.Minute).Should(gbytes.Say(`"0.0.0"`))
+
+		_, err = ptyF.Write([]byte("exit\n"))
+		Expect(err).NotTo(HaveOccurred())
+		Eventually(session.Out, 1*time.Minute).Should(gbytes.Say(`bosh/[0-9a-f\-]{36}:~\$ `))
 
 		_, err = ptyF.Write([]byte("exit\n"))
 		Expect(err).NotTo(HaveOccurred())
