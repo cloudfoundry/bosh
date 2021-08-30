@@ -88,9 +88,44 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
     end
   end
 
-  it 'returns stemcell spec as Hash' do
-    stemcell = make(valid_spec)
-    expect(stemcell.spec).to eq(valid_spec)
+  describe '#spec' do
+    context "when there's a single CPI (default CPI)" do
+      it 'returns stemcell spec as Hash' do
+        stemcell = make(valid_spec)
+        expect(stemcell.spec).to eq(valid_spec)
+      end
+    end
+    context 'when there are multiple CPIs' do
+      let(:multi_cpi_spec) do
+        {
+          'os' => 'ubuntu-bionic',
+          'version' => '1.24.0',
+        }
+      end
+      it 'returns the first stemcell (arbitrarily) in a backwards-compatible manner' do
+        make_stemcell('aws', '1.24.0', 'ubuntu-bionic', 'cid' => 'cid1', 'cpi' => 'aws')
+        make_stemcell('vsphere', '1.24.0', 'ubuntu-bionic', 'cid' => 'cid2', 'cpi' => 'vsphere')
+        stemcell = make(multi_cpi_spec)
+        stemcell.bind_model(deployment)
+        expect(stemcell.spec).to eq(
+          'name' => 'aws',
+          'version' => '1.24.0',
+        )
+      end
+      context 'when a CPI is passed in' do
+        it 'returns the appropriate stemcell for that CPI' do
+          make_stemcell('aws', '1.24.0', 'ubuntu-bionic', 'cid' => 'cid1', 'cpi' => 'aws')
+          make_stemcell('vsphere', '1.24.0', 'ubuntu-bionic', 'cid' => 'cid2', 'cpi' => 'vsphere-1')
+          make_stemcell('vsphere', '1.24.0', 'ubuntu-bionic', 'cid' => 'cid3', 'cpi' => 'vsphere-2')
+          stemcell = make(multi_cpi_spec)
+          stemcell.bind_model(deployment)
+          expect(stemcell.spec('vsphere-1')).to eq(
+            'name' => 'vsphere',
+            'version' => '1.24.0',
+          )
+        end
+      end
+    end
   end
 
   it 'can not create multiple stemcells with same name and version' do
