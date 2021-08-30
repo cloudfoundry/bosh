@@ -17,6 +17,9 @@ server {
 
   ssl_certificate /var/vcap/jobs/blobstore/config/server_tls_cert.pem;
   ssl_certificate_key /var/vcap/jobs/blobstore/config/server_tls_private_key.pem;
+  <% if p('blobstore.tls.ssl_prefer_server_ciphers') %>ssl_prefer_server_ciphers On;<% end %>
+  ssl_protocols <%= p('blobstore.tls.ssl_protocols') %>;
+  ssl_ciphers <%= p('blobstore.tls.ssl_ciphers') %>;
 
   location ~* ^/(?<object_id>[a-fA-F0-9][a-fA-F0-9]\/.+) {
     root /var/vcap/store/blobstore/store/;

@@ -58,6 +58,18 @@ properties:
   blobstore.tls.cert.private_key:
     description: SSL cert key for blobstore nginx server
 
+  blobstore.tls.ssl_prefer_server_ciphers:
+    description: "Prefer server's cipher priority instead of client's (true for On, false for Off)"
+    default: true
+
+  blobstore.tls.ssl_protocols:
+    description: "SSL/TLS protocols to allow"
+    default: TLSv1.2
+
+  blobstore.tls.ssl_ciphers:
+    description: "List of SSL ciphers to allow (format: https://www.openssl.org/docs/manmaster/man1/ciphers.html - CIPHER LIST FORMAT section)"
+    default: "DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!3DES:!MD5:!PSK"
+
   blobstore.bbr.enabled:
     description: Enable bbr backup and restore operations
     default: true
