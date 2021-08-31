@@ -28,6 +28,11 @@ describe 'blobstore.conf.erb' do
                 'enable_metrics_endpoint' => true
               },
               'enable_signed_urls' => false,
+              'tls' => {
+                'ssl_prefer_server_ciphers' => true,
+                'ssl_protocols' => 'TLSv1.2',
+                'ssl_ciphers' => 'ciphers',
+              },
             }
           }
         }
@@ -53,6 +58,9 @@ server {
 
   ssl_certificate /var/vcap/jobs/blobstore/config/server_tls_cert.pem;
   ssl_certificate_key /var/vcap/jobs/blobstore/config/server_tls_private_key.pem;
+  ssl_prefer_server_ciphers On;
+  ssl_protocols TLSv1.2;
+  ssl_ciphers ciphers;
 
   location ~* ^/(?<object_id>[a-fA-F0-9][a-fA-F0-9]\\/.+) {
     root /var/vcap/store/blobstore/store/;
@@ -114,6 +122,11 @@ server {
                 'enable_metrics_endpoint' => false
               },
               'enable_signed_urls' => false,
+              'tls' => {
+                'ssl_prefer_server_ciphers' => true,
+                'ssl_protocols' => 'TLSv1.2',
+                'ssl_ciphers' => 'ciphers',
+              },
             }
           }
         }
@@ -139,6 +152,9 @@ server {
 
   ssl_certificate /var/vcap/jobs/blobstore/config/server_tls_cert.pem;
   ssl_certificate_key /var/vcap/jobs/blobstore/config/server_tls_private_key.pem;
+  ssl_prefer_server_ciphers On;
+  ssl_protocols TLSv1.2;
+  ssl_ciphers ciphers;
 
   location ~* ^/(?<object_id>[a-fA-F0-9][a-fA-F0-9]\\/.+) {
     root /var/vcap/store/blobstore/store/;
@@ -191,6 +207,11 @@ server {
                 'enable_metrics_endpoint' => false
               },
               'enable_signed_urls' => false,
+              'tls' => {
+                'ssl_prefer_server_ciphers' => true,
+                'ssl_protocols' => 'TLSv1.2',
+                'ssl_ciphers' => 'ciphers',
+              },
             }
           }
         }
@@ -214,6 +235,9 @@ server {
 
   ssl_certificate /var/vcap/jobs/blobstore/config/server_tls_cert.pem;
   ssl_certificate_key /var/vcap/jobs/blobstore/config/server_tls_private_key.pem;
+  ssl_prefer_server_ciphers On;
+  ssl_protocols TLSv1.2;
+  ssl_ciphers ciphers;
 
   location ~* ^/(?<object_id>[a-fA-F0-9][a-fA-F0-9]\\/.+) {
     root /var/vcap/store/blobstore/store/;
@@ -266,6 +290,11 @@ server {
                 'enable_metrics_endpoint' => false
               },
               'enable_signed_urls' => false,
+              'tls' => {
+                'ssl_prefer_server_ciphers' => true,
+                'ssl_protocols' => 'TLSv1.2',
+                'ssl_ciphers' => 'ciphers',
+              },
             }
           }
         }
@@ -291,6 +320,9 @@ server {
 
   ssl_certificate /var/vcap/jobs/blobstore/config/server_tls_cert.pem;
   ssl_certificate_key /var/vcap/jobs/blobstore/config/server_tls_private_key.pem;
+  ssl_prefer_server_ciphers On;
+  ssl_protocols TLSv1.2;
+  ssl_ciphers ciphers;
 
   location ~* ^/(?<object_id>[a-fA-F0-9][a-fA-F0-9]\\/.+) {
     root /var/vcap/store/blobstore/store/;
@@ -343,6 +375,11 @@ server {
                 'enable_metrics_endpoint' => false
               },
               'enable_signed_urls' => false,
+              'tls' => {
+                'ssl_prefer_server_ciphers' => true,
+                'ssl_protocols' => 'TLSv1.2',
+                'ssl_ciphers' => 'ciphers',
+              },
             }
           }
         }
@@ -368,6 +405,9 @@ server {
 
   ssl_certificate /var/vcap/jobs/blobstore/config/server_tls_cert.pem;
   ssl_certificate_key /var/vcap/jobs/blobstore/config/server_tls_private_key.pem;
+  ssl_prefer_server_ciphers On;
+  ssl_protocols TLSv1.2;
+  ssl_ciphers ciphers;
 
   location ~* ^/(?<object_id>[a-fA-F0-9][a-fA-F0-9]\\/.+) {
     root /var/vcap/store/blobstore/store/;
@@ -419,6 +459,11 @@ server {
               'enable_metrics_endpoint' => false
             },
             'enable_signed_urls' => false,
+            'tls' => {
+              'ssl_prefer_server_ciphers' => true,
+              'ssl_protocols' => 'TLSv1.2',
+              'ssl_ciphers' => 'ciphers',
+            },
           },
         },
       }
@@ -452,6 +497,11 @@ server {
             },
             'enable_signed_urls' => true,
             'secret' => 'shhhhh',
+            'tls' => {
+              'ssl_prefer_server_ciphers' => true,
+              'ssl_protocols' => 'TLSv1.2',
+              'ssl_ciphers' => 'ciphers',
+            },
           },
         },
       }
