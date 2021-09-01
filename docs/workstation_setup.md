@@ -86,7 +86,23 @@
     cd ~/workspace/bosh/src
     bundle install
     ```
-    
+
+    If ever you hit some compilation issues with the `thin` Gem
+    about “implicit function declarations”, try installing it manually with
+    the following compilation flag:
+
+    ```
+    gem install thin -v '1.7.2' -- --with-cflags="-Wno-error=implicit-function-declaration"
+    ```
+
+    If ever you hit some linker issues like “_ld: library not found
+    for -lssl_” when installing the `mysql2` Gem, try installing it manually
+    with the following linker flags:
+
+    ```
+    gem install mysql2 -v '0.5.3' -- --with-ldflags="-L/usr/local/opt/openssl@1.1/lib"
+    ```
+
 10. Download `bosh-agent` dependency:
     ```
     cd ~/workspace/bosh/src
