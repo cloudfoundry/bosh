@@ -239,7 +239,7 @@ module Bosh::Director
         end
 
         context 'when resize_disk is not supported' do
-          let(:job_persistent_disk_size) { 512 }
+          let(:job_persistent_disk_size) { 3072 }
 
           it 'falls back to manually copying disk' do
             allow(cloud).to receive(:resize_disk).and_raise(Bosh::Clouds::NotSupported)
@@ -248,9 +248,22 @@ module Bosh::Director
 
             expect(cloud).to have_received(:detach_disk).with('vm234', 'disk123').twice
             expect(cloud).to have_received(:resize_disk)
-            expect(cloud).to have_received(:create_disk).with(512, { 'cloud' => 'properties' }, 'vm234')
+            expect(cloud).to have_received(:create_disk).with(3072, { 'cloud' => 'properties' }, 'vm234')
             expect(cloud).to have_received(:attach_disk).with('vm234', 'disk123')
             expect(cloud).to have_received(:attach_disk).with('vm234', 'new-disk-cid')
+          end
+        end
+
+        context 'when shrinking disk' do
+          let(:job_persistent_disk_size) { 512 }
+
+          it 'falls back to manually copying disk' do
+            disk_manager.update_persistent_disk(instance_plan)
+
+            expect(cloud).not_to have_received(:resize_disk)
+            expect(cloud).to have_received(:create_disk).with(512, { 'cloud' => 'properties' }, 'vm234')
+            expect(cloud).to have_received(:attach_disk).with('vm234', 'new-disk-cid')
+            expect(cloud).to have_received(:detach_disk).with('vm234', 'disk123')
           end
         end
       end
