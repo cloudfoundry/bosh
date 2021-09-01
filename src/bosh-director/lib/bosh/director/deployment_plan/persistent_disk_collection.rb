@@ -144,6 +144,15 @@ module Bosh::Director
           cloud_properties == other.cloud_properties &&
             size != other.size && name == other.name
         end
+
+        def is_bigger_than?(other)
+          unless other.is_a? PersistentDisk
+            raise Exception, 'Cannot compare persistent disk size to anything
+                              that is not a persistent disk.'
+          end
+
+          size >= other.size
+        end
       end
 
       class NewPersistentDisk < PersistentDisk

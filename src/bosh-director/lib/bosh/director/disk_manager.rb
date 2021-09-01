@@ -32,7 +32,7 @@ module Bosh::Director
 
         @logger.info("CPI resize disk enabled: #{Config.enable_cpi_resize_disk}")
 
-        if use_cpi_resize_disk?(old_disk, new_disk)
+        if use_iaas_native_disk_resize?(old_disk, new_disk)
           resize_disk(instance_plan, new_disk, old_disk)
         else
           update_disk(instance_plan, new_disk, old_disk)
@@ -84,8 +84,12 @@ module Bosh::Director
       DeploymentPlan::Stages::Report.new
     end
 
-    def use_cpi_resize_disk?(old_disk, new_disk)
-      Config.enable_cpi_resize_disk && new_disk && new_disk.size_diff_only?(old_disk) && new_disk.managed?
+    def use_iaas_native_disk_resize?(old_disk, new_disk)
+      Config.enable_cpi_resize_disk &&
+        new_disk &&
+        new_disk.managed? &&
+        new_disk.size_diff_only?(old_disk) &&
+        new_disk.is_bigger_than?(old_disk)
     end
 
     def add_event(action, deployment_name, instance_name, object_name = nil, parent_id = nil, error = nil)
