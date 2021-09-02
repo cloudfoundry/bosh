@@ -242,6 +242,41 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
+    describe '#blobstore_config_changed?' do
+      before do
+        instance.bind_existing_instance_model(instance_model)
+      end
+
+      describe 'when blobstore config has changed' do
+        before do
+          allow(Bosh::Director::Config).to receive(:blobstore_config_fingerprint).and_return("new fingerprint")
+        end
+
+        it 'should return true' do
+          expect(instance.blobstore_config_changed?).to be(true)
+        end
+
+        it 'should log the change reason' do
+          allow(instance_model).to receive(:blobstore_config_sha1).and_return("old fingerprint")
+          expect(logger).to receive(:debug)
+            .with('blobstore_config_changed? changed '\
+                  'FROM: old fingerprint '\
+                  'TO: new fingerprint')
+          instance.blobstore_config_changed?
+        end
+      end
+
+      describe 'when blobstore config has not changed' do
+        before do
+          allow(Bosh::Director::Config).to receive(:blobstore_config_fingerprint).and_return(instance_model.blobstore_config_sha1)
+        end
+
+        it 'should return false' do
+          expect(instance.blobstore_config_changed?).to be(false)
+        end
+      end
+    end
+
     describe '#cloud_properties_changed?' do
       let(:instance_model) do
         model = Bosh::Director::Models::Instance.make(deployment: deployment)

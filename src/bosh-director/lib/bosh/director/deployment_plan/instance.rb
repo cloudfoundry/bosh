@@ -281,6 +281,15 @@ module Bosh::Director
         changed
       end
 
+      def blobstore_config_changed?
+        blobstore_config_fingerprint = Bosh::Director::Config.blobstore_config_fingerprint
+        if blobstore_config_fingerprint != @model.blobstore_config_sha1
+          log_changes(__method__, @model.blobstore_config_sha1, blobstore_config_fingerprint)
+          return true
+        end
+        false
+      end
+
       def vm_created?
         !@model.active_vm.nil?
       end

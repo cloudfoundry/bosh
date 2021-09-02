@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'fakefs/spec_helpers'
 
 #
 # This supplants the config_old_spec.rb behavior. We are
@@ -6,13 +7,15 @@ require 'spec_helper'
 #
 
 describe Bosh::Director::Config do
-  let(:test_config) { YAML.safe_load(spec_asset('test-director-config.yml')) }
+  include FakeFS::SpecHelpers
+  let(:test_config_path) { asset('test-director-config.yml') }
+  let(:test_config) { YAML.safe_load(File.read(test_config_path)) }
   let(:temp_dir) { Dir.mktmpdir }
   let(:base_config) do
     blobstore_dir = File.join(temp_dir, 'blobstore')
     FileUtils.mkdir_p(blobstore_dir)
 
-    config = YAML.safe_load(spec_asset('test-director-config.yml'))
+    config = YAML.safe_load(File.read(test_config_path))
     config['dir'] = temp_dir
     config['blobstore'] = {
       'provider' => 'local',
@@ -25,8 +28,11 @@ describe Bosh::Director::Config do
   end
 
   before do
-    allow(File).to receive(:read).and_call_original
-    allow(File).to receive(:read).with('/path/to/server_ca_path').and_return('whatever makes you happy')
+    FakeFS::FileSystem.clone(test_config_path)
+    FileUtils.mkdir_p('/path/to')
+    File.write('/path/to/server_ca_path','server_ca_path')
+    File.write('/path/to/client_ca_certificate_path','client_ca_certificate_path')
+    File.write('/path/to/client_ca_private_key_path','client_ca_private_key_path')
   end
 
   describe 'initialization' do
@@ -356,6 +362,21 @@ describe Bosh::Director::Config do
         expect(described_class.version).to eq('0.0.2')
       end
     end
+
+    describe 'blobstore config fingerprint' do
+      it 'returns the sha1 of the blobstore config' do
+        described_class.configure(test_config)
+        expect(described_class.blobstore_config_fingerprint).to eq('d8500dc13f23babb7f83d8ebd5995416544df6c1')
+
+      end
+    end
+
+    describe 'nats config fingerprint' do
+      it 'returns the sha1 of the nats config' do
+        described_class.configure(test_config)
+        expect(described_class.nats_config_fingerprint).to eq(Digest::SHA1.hexdigest("client_ca_certificate_pathclient_ca_private_key_pathserver_ca_path"))
+      end
+    end
   end
 
   describe '#identity_provider' do
@@ -525,7 +546,7 @@ describe Bosh::Director::Config do
 
     context 'when nats_ca is specified' do
       it 'returns non-nil' do
-        expect(described_class.nats_server_ca).to eq('whatever makes you happy')
+        expect(described_class.nats_server_ca).to eq('server_ca_path')
       end
     end
 

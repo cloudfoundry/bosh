@@ -375,6 +375,7 @@ module Bosh::Director::Models
           agent_id: 'my-agent-id',
           cid: 'my-cid',
           trusted_certs_sha1: 'trusted-sha',
+          blobstore_config_sha1: 'blobstore-config',
           instance_id: subject.id,
           cpi: 'my-cpi'
         )
@@ -411,6 +412,12 @@ module Bosh::Director::Models
           expect(subject.trusted_certs_sha1).to eq('trusted-sha')
         end
       end
+
+      describe 'blobstore_config_sha1' do
+        it 'returns active vms blobstore_config_sha1' do
+          expect(subject.blobstore_config_sha1).to eq('blobstore-config')
+        end
+      end
     end
 
     context 'without active vm' do
@@ -442,6 +449,12 @@ module Bosh::Director::Models
       describe 'trusted_certs_sha1' do
         it 'returns sha1 digest of empty string' do
           expect(subject.trusted_certs_sha1).to eq(::Digest::SHA1.hexdigest(''))
+        end
+      end
+
+      describe 'blobstore_config_sha1' do
+        it 'returns nil' do
+          expect(subject.blobstore_config_sha1).to be_nil
         end
       end
     end

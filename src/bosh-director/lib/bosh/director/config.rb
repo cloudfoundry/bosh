@@ -55,6 +55,7 @@ module Bosh::Director
       )
 
       attr_reader(
+        :blobstore_config_fingerprint,
         :config_server,
         :config_server_enabled,
         :db_config,
@@ -66,6 +67,7 @@ module Bosh::Director
         :nats_client_ca_private_key_path,
         :nats_client_certificate_path,
         :nats_client_private_key_path,
+        :nats_config_fingerprint,
         :record_events,
         :runtime,
       )
@@ -145,6 +147,11 @@ module Bosh::Director
         @nats_client_ca_certificate_path = config['nats']['client_ca_certificate_path']
         @nats_client_ca_private_key_path = config['nats']['client_ca_private_key_path']
         @nats_server_ca = File.read(@nats_server_ca_path)
+        nats_client_ca_certificate = File.read(@nats_client_ca_certificate_path)
+        nats_client_ca_private_key = File.read(@nats_client_ca_private_key_path)
+        @nats_config_fingerprint = Digest::SHA1.hexdigest("#{nats_client_ca_certificate}#{nats_client_ca_private_key}#{@nats_server_ca}")
+
+        @blobstore_config_fingerprint = Digest::SHA1.hexdigest(config.fetch('blobstore').to_s)
 
         @director_certificate_expiry_json_path = config['director_certificate_expiry_json_path']
 
