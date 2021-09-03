@@ -96,16 +96,43 @@ module Bosh::Clouds
       logger = ::Bosh::Director::TaggedLogger.new(@logger, request_id)
 
       logger.debug("request: #{redacted_request} with command: #{cpi_exec_path}")
-      cpi_response, stderr, exit_status = Open3.capture3(env, cpi_exec_path, stdin_data: request, unsetenv_others: true)
-      logger.debug("response: #{cpi_response}, err: #{stderr}, exit_status: #{exit_status}")
 
-      parsed_response = parsed_response(cpi_response)
+      cpi_response = StringIO.new
+      err_response = StringIO.new
+      exit_status = nil
+      Open3.popen3(env, cpi_exec_path, unsetenv_others: true) do |stdin, stdout, stderr, wait_thr|
+        stdin.write request
+        stdin.close
+        files = [stdout, stderr]
+        until files.empty?
+          ready = IO.select(files)
+          next unless ready
+
+          readable = ready[0]
+          readable.each do |f|
+            line = f.readline
+            case f.fileno
+            when stdout.fileno
+              cpi_response.write(line)
+            when stderr.fileno
+              err_response.write(line)
+              save_cpi_log(line)
+            end
+          rescue EOFError
+            files.delete f
+          end
+        end
+        exit_status = wait_thr.value.exitstatus
+      end
+      logger.debug("response: #{cpi_response.string}, err: #{err_response.string}, exit_status: #{exit_status}")
+
+      parsed_response = parsed_response(cpi_response.string)
       validate_response(parsed_response)
 
       save_cpi_log(parsed_response['log'])
-      save_cpi_log(stderr)
 
       if parsed_response['error']
+        cpi_logger.error(parsed_response['error'])
         handle_error(parsed_response['error'], method_name, request_id)
       end
 
