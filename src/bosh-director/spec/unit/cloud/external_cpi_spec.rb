@@ -7,12 +7,22 @@ describe Bosh::Clouds::ExternalCpi do
   subject(:external_cpi) { described_class.new('/path/to/fake-cpi/bin/cpi', 'fake-director-uuid', logger) }
 
   def self.it_calls_cpi_method(method, *arguments, api_version: 1)
-    define_method(:call_cpi_method) { external_cpi.public_send(method, *arguments) }
+    define_method(:call_cpi_method) do
+      Thread.new do
+        stderr[1].write cpi_error
+        stderr[1].close
+        stdout[1].write cpi_response
+        stdout[1].close
+      end
+      external_cpi.public_send(method, *arguments)
+    end
 
     before { allow(File).to receive(:executable?).with('/path/to/fake-cpi/bin/cpi').and_return(true) }
 
     let(:method) { method }
     let(:cpi_response) { JSON.dump(result: nil, error: nil, log: '') }
+    let(:cpi_error) { 'fake-stderr-data' }
+    let(:cpi_request) { stdin[0].read }
     let(:cpi_log_path) { '/var/vcap/task/5/cpi' }
     let(:logger) { double(:logger, debug: nil, info: nil) }
     let(:config) { double('Bosh::Director::Config', logger: logger, cpi_task_log: cpi_log_path) }
@@ -20,7 +30,13 @@ describe Bosh::Clouds::ExternalCpi do
 
     before { FileUtils.mkdir_p('/var/vcap/task/5') }
 
-    before { allow(Open3).to receive(:capture3).and_return([cpi_response, 'fake-stderr-data', exit_status]) }
+    let(:wait_thread) do
+      double('Process::Waiter', value: double('Process::Status', exitstatus: exit_status))
+    end
+    let(:stdin)  { IO.pipe }
+    let(:stdout) { IO.pipe }
+    let(:stderr) { IO.pipe }
+    before { allow(Open3).to receive(:popen3).and_yield(stdin[1], stdout[0], stderr[0], wait_thread) }
     before { allow(Random).to receive(:rand).and_return('fake-request-id') }
     let(:exit_status) { instance_double('Process::Status', exitstatus: 0) }
 
@@ -37,8 +53,9 @@ describe Bosh::Clouds::ExternalCpi do
         expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":) +
                          %({"director_uuid":"fake-director-uuid","request_id":"cpi-fake-request-id"},"api_version":#{api_version}})
 
-        expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
+        expect(Open3).to receive(:popen3).with(expected_env, expected_cmd, unsetenv_others: true)
         call_cpi_method
+        expect(cpi_request).to match(expected_stdin)
       end
     end
 
@@ -51,8 +68,9 @@ describe Bosh::Clouds::ExternalCpi do
         expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":) +
                          %({"director_uuid":"fake-director-uuid","request_id":"cpi-fake-request-id"}})
 
-        expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
+        expect(Open3).to receive(:popen3).with(expected_env, expected_cmd, unsetenv_others: true)
         call_cpi_method
+        expect(cpi_request).to match(expected_stdin)
       end
     end
 
@@ -77,8 +95,9 @@ describe Bosh::Clouds::ExternalCpi do
         context = {'director_uuid' => director_uuid, 'request_id' => request_id}.merge(cpi_config_properties)
         expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":#{context.to_json}})
 
-        expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
+        expect(Open3).to receive(:popen3).with(expected_env, expected_cmd, unsetenv_others: true)
         call_cpi_method
+        expect(cpi_request).to match(expected_stdin)
       end
 
       it 'logs requests and responses with request id' do
@@ -126,8 +145,9 @@ describe Bosh::Clouds::ExternalCpi do
         expected_log = %([external-cpi] [#{request_id}] request: {"method":"#{method}","arguments":#{expected_arguments.to_json},"context":#{redacted_context.to_json}} with command: #{expected_cmd})
         expect(logger).to receive(:debug).with(expected_log)
 
-        expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
+        expect(Open3).to receive(:popen3).with(expected_env, expected_cmd, unsetenv_others: true)
         call_cpi_method
+        expect(cpi_request).to match(expected_stdin)
       end
     end
 
@@ -160,8 +180,9 @@ describe Bosh::Clouds::ExternalCpi do
         expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":#{context.to_json}})
         expect(logger).to receive(:debug).with(/api_version/)
 
-        expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
+        expect(Open3).to receive(:popen3).with(expected_env, expected_cmd, unsetenv_others: true)
         call_cpi_method
+        expect(cpi_request).to match(expected_stdin)
       end
 
       it 'logs requests and responses with request id' do
@@ -189,19 +210,20 @@ describe Bosh::Clouds::ExternalCpi do
 
       it 'saves the log and stderr in task cpi log' do
         call_cpi_method
-        expect(File.read(cpi_log_path)).to eq('fake-logfake-stderr-data')
+        expect(File.read(cpi_log_path)).to eq('fake-stderr-datafake-log')
       end
 
       it 'adds to existing file if for a given task several cpi requests were made' do
-        external_cpi.public_send(method, *arguments)
-        external_cpi.public_send(method, *arguments)
-        expect(File.read(cpi_log_path)).to eq('fake-logfake-stderr-datafake-logfake-stderr-data')
+        call_cpi_method
+        call_cpi_method
+        expect(File.read(cpi_log_path)).to eq('fake-stderr-datafake-logfake-stderr-datafake-log')
       end
 
       context 'when no stderr' do
-        before {
-          allow(Open3).to receive(:capture3).and_return(cpi_response, nil, 0)
-        }
+        let(:cpi_error) { nil }
+        # before {
+        #   allow(Open3).to receive(:capture3).and_return(cpi_response, nil, 0)
+        # }
 
         it 'saves the log in task cpi log' do
           call_cpi_method
@@ -265,7 +287,7 @@ describe Bosh::Clouds::ExternalCpi do
           begin
             call_cpi_method
           rescue
-            expect(File.read(cpi_log_path)).to eq('fake-logfake-stderr-data')
+            expect(File.read(cpi_log_path)).to eq('fake-stderr-datafake-log')
           else
             fail 'It should throw exception'
           end

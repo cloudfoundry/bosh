@@ -132,7 +132,6 @@ module Bosh::Clouds
       save_cpi_log(parsed_response['log'])
 
       if parsed_response['error']
-        cpi_logger.error(parsed_response['error'])
         handle_error(parsed_response['error'], method_name, request_id)
       end
 
