@@ -290,6 +290,15 @@ module Bosh::Director
         false
       end
 
+      def nats_config_changed?
+        nats_config_fingerprint = Bosh::Director::Config.nats_config_fingerprint
+        if nats_config_fingerprint != @model.nats_config_sha1
+          log_changes(__method__, @model.nats_config_sha1, nats_config_fingerprint)
+          return true
+        end
+        false
+      end
+
       def vm_created?
         !@model.active_vm.nil?
       end

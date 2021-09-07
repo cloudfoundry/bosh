@@ -249,7 +249,7 @@ module Bosh::Director::DeploymentPlan
 
       describe 'when blobstore config has changed' do
         before do
-          allow(Bosh::Director::Config).to receive(:blobstore_config_fingerprint).and_return("new fingerprint")
+          allow(Bosh::Director::Config).to receive(:blobstore_config_fingerprint).and_return('new fingerprint')
         end
 
         it 'should return true' do
@@ -257,7 +257,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should log the change reason' do
-          allow(instance_model).to receive(:blobstore_config_sha1).and_return("old fingerprint")
+          allow(instance_model).to receive(:blobstore_config_sha1).and_return('old fingerprint')
           expect(logger).to receive(:debug)
             .with('blobstore_config_changed? changed '\
                   'FROM: old fingerprint '\
@@ -273,6 +273,41 @@ module Bosh::Director::DeploymentPlan
 
         it 'should return false' do
           expect(instance.blobstore_config_changed?).to be(false)
+        end
+      end
+    end
+
+    describe '#nats_config_changed?' do
+      before do
+        instance.bind_existing_instance_model(instance_model)
+      end
+
+      describe 'when nats config has changed' do
+        before do
+          allow(Bosh::Director::Config).to receive(:nats_config_fingerprint).and_return('new fingerprint')
+        end
+
+        it 'should return true' do
+          expect(instance.nats_config_changed?).to be(true)
+        end
+
+        it 'should log the change reason' do
+          allow(instance_model).to receive(:nats_config_sha1).and_return('old fingerprint')
+          expect(logger).to receive(:debug)
+            .with('nats_config_changed? changed '\
+                  'FROM: old fingerprint '\
+                  'TO: new fingerprint')
+          instance.nats_config_changed?
+        end
+      end
+
+      describe 'when nats config has not changed' do
+        before do
+          allow(Bosh::Director::Config).to receive(:nats_config_fingerprint).and_return(instance_model.blobstore_config_sha1)
+        end
+
+        it 'should return false' do
+          expect(instance.nats_config_changed?).to be(false)
         end
       end
     end

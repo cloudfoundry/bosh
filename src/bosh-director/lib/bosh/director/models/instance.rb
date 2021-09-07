@@ -187,6 +187,10 @@ module Bosh::Director::Models
       active_vm&.blobstore_config_sha1
     end
 
+    def nats_config_sha1
+      active_vm&.nats_config_sha1
+    end
+
     def stopped?
       state == 'stopped'
     end

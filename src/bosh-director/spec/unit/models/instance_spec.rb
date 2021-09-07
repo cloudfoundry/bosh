@@ -376,6 +376,7 @@ module Bosh::Director::Models
           cid: 'my-cid',
           trusted_certs_sha1: 'trusted-sha',
           blobstore_config_sha1: 'blobstore-config',
+          nats_config_sha1: 'nats-config',
           instance_id: subject.id,
           cpi: 'my-cpi'
         )
@@ -418,6 +419,12 @@ module Bosh::Director::Models
           expect(subject.blobstore_config_sha1).to eq('blobstore-config')
         end
       end
+
+      describe 'nats_config_sha1' do
+        it 'returns active vms nats_config_sha1' do
+          expect(subject.nats_config_sha1).to eq('nats-config')
+        end
+      end
     end
 
     context 'without active vm' do
@@ -455,6 +462,12 @@ module Bosh::Director::Models
       describe 'blobstore_config_sha1' do
         it 'returns nil' do
           expect(subject.blobstore_config_sha1).to be_nil
+        end
+      end
+
+      describe 'nats_config_sha1' do
+        it 'returns nil' do
+          expect(subject.nats_config_sha1).to be_nil
         end
       end
     end
