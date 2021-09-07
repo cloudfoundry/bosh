@@ -492,13 +492,16 @@ module Bosh::Director::DeploymentPlan
         instance_double(Bosh::Director::DeploymentPlan::PersistentDiskCollection, collection: [disk_collection_model])
       end
       let(:agent_client) { instance_double(Bosh::Director::AgentClient) }
+      let(:vm) { instance_model.active_vm }
 
       before do
         allow(instance_model).to receive(:active_persistent_disks).and_return(active_persistent_disks)
         allow(Bosh::Director::AgentClient).to receive(:with_agent_id)
-          .with(instance_model.agent_id, instance_model.name).and_return(agent_client)
+          .with(vm.agent_id, instance_model.name).and_return(agent_client)
         allow(Bosh::Director::Config).to receive(:trusted_certs).and_return(fake_cert)
+        allow(persistent_disk_model).to receive(:managed?).and_return(true)
         instance.bind_existing_instance_model(instance_model)
+        instance_model.active_vm.update(trusted_certs_sha1: 'trusted-cert-sha')
       end
 
       context 'when there are non managed disks' do
@@ -507,9 +510,8 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'tells the agent to update instance settings and updates the instance model' do
-          expect(agent_client).to receive(:update_settings).with(fake_cert, [{ 'name' => 'some-disk', 'cid' => 'some-cid' }])
-          instance.update_instance_settings
-          expect(instance.model.active_vm.trusted_certs_sha1).to eq(::Digest::SHA1.hexdigest(fake_cert))
+          expect(agent_client).to receive(:update_settings).with(hash_including('disk_associations' => [{ 'name' => 'some-disk', 'cid' => 'some-cid' }]))
+          instance.update_instance_settings(vm)
         end
       end
 
@@ -519,10 +521,16 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'does not send any disk associations to update' do
-          expect(agent_client).to receive(:update_settings).with(fake_cert, [])
-          instance.update_instance_settings
-          expect(instance.model.active_vm.trusted_certs_sha1).to eq(::Digest::SHA1.hexdigest(fake_cert))
+          expect(agent_client).to receive(:update_settings).with(hash_including('disk_associations' => []))
+          instance.update_instance_settings(vm)
         end
+      end
+
+      it 'updates the agent settings and VM table with configured trusted certs' do
+        expect(agent_client).to receive(:update_settings).with(hash_including('trusted_certs' => fake_cert))
+        expect { instance.update_instance_settings(vm) }.to change {
+          vm.reload.trusted_certs_sha1
+        }.from('trusted-cert-sha').to(::Digest::SHA1.hexdigest(fake_cert))
       end
     end
 

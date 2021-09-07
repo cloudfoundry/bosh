@@ -11,7 +11,7 @@ module Bosh::Director
           { 'prop1' => 'value1' }
         end
         let(:agent_client) { instance_double(AgentClient, update_settings: nil) }
-        let(:instance) { instance_double(Instance, model: instance_model, cloud_properties: cloud_props) }
+        let(:instance) { instance_double(Instance, model: instance_model, cloud_properties: cloud_props, update_instance_settings: nil) }
         let(:trusted_certs) { 'fake-cert' }
         let(:old_trusted_certs_sha1) { 'old-fake-cert' }
         let!(:vm) do
@@ -29,35 +29,10 @@ module Bosh::Director
             allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
             allow(Config).to receive(:trusted_certs).and_return(trusted_certs)
           end
-          context 'when there are unmanaged persistent disks' do
-            let!(:disk1) do
-              Models::PersistentDisk.make(
-                instance: instance_model,
-                active: true,
-                name: '',
-              )
-            end
-            let!(:disk2) do
-              Models::PersistentDisk.make(
-                instance: instance_model,
-                active: true,
-                name: 'unmanaged',
-                disk_cid: 'cid2',
-              )
-            end
 
-            it 'updates agent disk associations' do
-              expect(agent_client).to receive(:update_settings)
-                .with(trusted_certs, [{ 'name' => 'unmanaged', 'cid' => 'cid2' }])
-              step.perform(report)
-            end
-          end
-
-          it 'updates the agent settings and VM table with configured trusted certs' do
-            expect(agent_client).to receive(:update_settings).with(trusted_certs, [])
-            expect { step.perform(report) }.to change {
-              vm.trusted_certs_sha1
-            }.from(old_trusted_certs_sha1).to(::Digest::SHA1.hexdigest(trusted_certs))
+          it 'should update the instance settings with the proper VM' do
+            step.perform(report)
+            expect(instance).to have_received(:update_instance_settings).with(vm)
           end
 
           it 'should update any cloud_properties provided' do

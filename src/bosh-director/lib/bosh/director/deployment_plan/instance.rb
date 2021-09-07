@@ -178,7 +178,7 @@ module Bosh::Director
         @model.update(spec: @current_state)
       end
 
-      def update_instance_settings
+      def update_instance_settings(vm)
         disk_associations = @model.reload.active_persistent_disks.collection.reject do |disk|
           disk.model.managed?
         end
@@ -187,8 +187,12 @@ module Bosh::Director
           { 'name' => disk.model.name, 'cid' => disk.model.disk_cid }
         end
 
-        agent_client.update_settings(Config.trusted_certs, disk_associations)
-        @model.active_vm.update(trusted_certs_sha1: ::Digest::SHA1.hexdigest(Config.trusted_certs))
+        settings = {
+          'trusted_certs' => Config.trusted_certs,
+          'disk_associations' => disk_associations,
+        }
+        AgentClient.with_agent_id(vm.agent_id, @model.name).update_settings(settings)
+        vm.update(trusted_certs_sha1: ::Digest::SHA1.hexdigest(Config.trusted_certs))
       end
 
       def update_cloud_properties!

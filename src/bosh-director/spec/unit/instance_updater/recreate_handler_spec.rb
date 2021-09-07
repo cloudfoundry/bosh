@@ -29,7 +29,7 @@ module Bosh::Director
         end
 
         let(:instance) do
-          double(
+          instance_double(
             Instance,
             model: instance_model,
             update_instance_settings: true,
@@ -108,7 +108,7 @@ module Bosh::Director
             end
 
             it 'updates instance settings' do
-              expect(instance).to have_received(:update_instance_settings)
+              expect(instance).to have_received(:update_instance_settings).with(instance.model.active_vm)
             end
 
             context 'when it needs a disk' do

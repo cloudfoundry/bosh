@@ -150,7 +150,7 @@ module Bosh::Director
         instance_report.vm = instance_plan.instance.model.active_vm
         @disk_manager.update_persistent_disk(instance_plan)
 
-        instance.update_instance_settings unless recreate
+        instance.update_instance_settings(instance.model.active_vm) unless recreate
       end
 
       # Full update drains jobs and starts them again

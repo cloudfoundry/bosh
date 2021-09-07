@@ -168,8 +168,8 @@ module Bosh::Director
       end
     end
 
-    def update_settings(certs, disk_associations)
-      safe_send_message(:update_settings, 'trusted_certs' => certs, 'disk_associations' => disk_associations)
+    def update_settings(settings)
+      safe_send_message(:update_settings, settings)
     end
 
     def run_script(script_name, options)
