@@ -372,10 +372,10 @@ module Bosh::Director
         end
 
         context 'when the size is equal' do
-          it 'is true' do
+          it 'is false' do
             old_disk = PersistentDiskCollection::PersistentDisk.new('', {}, 10)
 
-            expect(new_disk.is_bigger_than?(old_disk)).to eq(true)
+            expect(new_disk.is_bigger_than?(old_disk)).to eq(false)
           end
         end
 

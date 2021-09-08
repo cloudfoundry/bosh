@@ -150,7 +150,7 @@ module Bosh::Director
             raise Exception, 'Cannot compare persistent disk size to anything that is not a persistent disk.'
           end
 
-          size >= other.size
+          size > other.size
         end
       end
 
