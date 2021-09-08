@@ -141,6 +141,19 @@ module Bosh
         SecureRandom.uuid
       end
 
+      def redact_credentials(blobstore_hashes)
+        if signing_enabled?
+          blobstore_hashes.map do |blobstore_hash|
+            redacted_options = blobstore_hash.fetch('options', {}).reject do |key, _|
+              redacted_credential_properties_list.include?(key)
+            end
+            blobstore_hash.merge('options' => redacted_options)
+          end
+        else
+          blobstore_hashes
+        end
+      end
+
       def redacted_credential_properties_list
         # needs to be implemented in each subclass
         not_supported

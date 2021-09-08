@@ -102,6 +102,60 @@ describe Bosh::Blobstore::BaseClient do
     end
   end
 
+  describe '#redact_credentials' do
+    let(:blobstore_hashes) do
+      [
+        {
+          'options' => {
+            'my-key' => 'foo',
+            'my-key-id' => 'bar',
+            'allowed-key' => 'baz',
+          },
+        },
+      ]
+    end
+
+    before do
+      allow(subject).to receive(:redacted_credential_properties_list).and_return(%w[my-key my-key-id])
+    end
+
+    context 'when the blobstore is configured to use signed urls' do
+      let(:options) { { 'enable_signed_urls' => true } }
+
+      it 'redacts the blobstore credentials' do
+        redacted_blobstore_hashes = subject.redact_credentials(blobstore_hashes)
+        expect(redacted_blobstore_hashes).to eq(
+          [
+            {
+              'options' => {
+                'allowed-key' => 'baz',
+              },
+            }
+          ]
+        )
+      end
+    end
+
+    context 'when the blobstore is not configured to use signed urls' do
+      let(:options) { { 'enable_signed_urls' => false } }
+
+      it 'does not redact the blobstore credentials' do
+        redacted_blobstore_hashes = subject.redact_credentials(blobstore_hashes)
+        expect(redacted_blobstore_hashes).to eq(
+          [
+            {
+              'options' => {
+                'my-key' => 'foo',
+                'my-key-id' => 'bar',
+                'allowed-key' => 'baz',
+              },
+            }
+          ]
+        )
+      end
+    end
+  end
+
   describe 'signed urls' do
     context 'when enabled' do
       let(:options) { { 'enable_signed_urls' => true } }

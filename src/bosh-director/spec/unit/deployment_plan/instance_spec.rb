@@ -499,9 +499,13 @@ module Bosh::Director::DeploymentPlan
         allow(Bosh::Director::AgentClient).to receive(:with_agent_id)
           .with(vm.agent_id, instance_model.name).and_return(agent_client)
         allow(Bosh::Director::Config).to receive(:trusted_certs).and_return(fake_cert)
+        allow(Bosh::Director::Config).to receive(:blobstore_config_fingerprint).and_return('blobstore-sha')
         allow(persistent_disk_model).to receive(:managed?).and_return(true)
         instance.bind_existing_instance_model(instance_model)
-        instance_model.active_vm.update(trusted_certs_sha1: 'trusted-cert-sha')
+        vm.update(
+          trusted_certs_sha1: 'trusted-cert-sha',
+          blobstore_config_sha1: 'blobstore-sha',
+        )
       end
 
       context 'when there are non managed disks' do
@@ -531,6 +535,16 @@ module Bosh::Director::DeploymentPlan
         expect { instance.update_instance_settings(vm) }.to change {
           vm.reload.trusted_certs_sha1
         }.from('trusted-cert-sha').to(::Digest::SHA1.hexdigest(fake_cert))
+      end
+
+      context 'when there is a blobstore configuration change' do
+        before do
+          allow(Bosh::Director::Config).to receive(:blobstore_config_fingerprint).and_return('new-blobstore-sha')
+        end
+
+        it 'should include the blobstore config' do
+          expect(agent_client).to receive(:update_settings).with(hash_including('blobstore' => {}))
+        end
       end
     end
 

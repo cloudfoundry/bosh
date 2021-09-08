@@ -98,8 +98,12 @@ module Bosh::Director
           env['bosh'] ||= {}
           env['bosh'] = Config.agent_env.merge(env['bosh'])
 
-          @blobstore.validate!(env['bosh'].fetch('blobstores', [{}]).first.fetch('options', {}), stemcell_api_version)
-          remove_blobstore_credentials(env) if @blobstore.can_sign_urls?(stemcell_api_version)
+          if env['bosh'].key?('blobstores')
+            @blobstore.validate!(env['bosh']['blobstores'].first.fetch('options', {}), stemcell_api_version)
+            if @blobstore.can_sign_urls?(stemcell_api_version)
+              env['bosh']['blobstores'] = @blobstore.redact_credentials(env['bosh']['blobstores'])
+            end
+          end
           env['bosh']['tags'] = @tags unless @tags.empty?
 
           if Config.nats_server_ca
@@ -177,14 +181,6 @@ module Bosh::Director
             }
           )
           event.id
-        end
-
-        def remove_blobstore_credentials(env)
-          env['bosh'].fetch('blobstores', [{}]).each do |blobstore|
-            blobstore.fetch('options', {}).reject! do |k, _|
-              @blobstore.redacted_credential_properties_list.include?(k)
-            end
-          end
         end
       end
     end
