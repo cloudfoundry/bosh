@@ -191,6 +191,15 @@ module Bosh::Director
           'trusted_certs' => Config.trusted_certs,
           'disk_associations' => disk_associations,
         }
+        if blobstore_config_changed?
+          blobstore = App.instance.blobstores.blobstore
+          blobstore.validate!(env['bosh']['blobstores'].first.fetch('options', {}), @stemcell.api_version)
+          if blobstore.can_sign_urls?(@stemcell.api_version)
+            settings['blobstores'] = blobstore.redact_credentials(env['bosh']['blobstores'])
+          else
+            settings['blobstores'] = env['bosh']['blobstores']
+          end
+        end
         AgentClient.with_agent_id(vm.agent_id, @model.name).update_settings(settings)
         vm.update(trusted_certs_sha1: ::Digest::SHA1.hexdigest(Config.trusted_certs))
       end

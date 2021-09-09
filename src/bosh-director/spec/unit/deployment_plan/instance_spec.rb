@@ -23,9 +23,13 @@ module Bosh::Director::DeploymentPlan
     end
 
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
+    let(:stemcell) { make_stemcell({:name => 'fake-stemcell-name', :version => '1.0', api_version: 3}) }
+    let(:env) { Env.new({'bosh' => {'blobstores' => [{'options' => {'blobstore_option' => 'blobstore_value'}}]}}) }
     let(:instance_group) do
       InstanceGroup.make(
         name: 'fake_job',
+        env: env,
+        stemcell: stemcell,
         vm_type: vm_type,
         vm_extensions: vm_extensions,
       )
@@ -43,7 +47,7 @@ module Bosh::Director::DeploymentPlan
     let(:current_state) do
       { 'current' => 'state' }
     end
-    let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
+    let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient, validate!: nil) }
 
     describe '#bind_existing_instance_model' do
       let(:instance_model) { Bosh::Director::Models::Instance.make(bootstrap: true) }
@@ -542,8 +546,37 @@ module Bosh::Director::DeploymentPlan
           allow(Bosh::Director::Config).to receive(:blobstore_config_fingerprint).and_return('new-blobstore-sha')
         end
 
-        it 'should include the blobstore config' do
-          expect(agent_client).to receive(:update_settings).with(hash_including('blobstore' => {}))
+        context 'when the stemcell supports signed urls' do
+          before do
+            allow(blobstore).to receive(:can_sign_urls?).and_return(true)
+          end
+
+          it 'should include the blobstore config' do
+            allow(blobstore).to receive(:redact_credentials).and_return([{ 'options' => 'redacted' }])
+            expect(agent_client).to receive(:update_settings).with(hash_including('blobstores' => [{ 'options' => 'redacted' }]))
+
+            instance.update_instance_settings(vm)
+          end
+        end
+
+        context 'when the stemcell does not support signed urls' do
+          before do
+            allow(blobstore).to receive(:can_sign_urls?).and_return(false)
+          end
+
+          it 'should include the unredacted blobstore config when the stemcell does not support signed urls' do
+            expect(agent_client).to receive(:update_settings).with(hash_including('blobstores' => env.spec['bosh']['blobstores']))
+
+            instance.update_instance_settings(vm)
+          end
+        end
+      end
+
+      context 'when there are no blobstore configuration changes' do
+        it 'should not include the blobstore config' do
+          expect(agent_client).to receive(:update_settings).with(hash_excluding('blobstores'))
+
+          instance.update_instance_settings(vm)
         end
       end
     end
