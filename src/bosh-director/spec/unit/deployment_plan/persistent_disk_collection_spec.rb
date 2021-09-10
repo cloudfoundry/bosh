@@ -349,44 +349,6 @@ module Bosh::Director
           end
         end
       end
-
-      describe '#is_bigger_than?' do
-        let(:new_disk) { new_disk = PersistentDiskCollection::PersistentDisk.new('', {}, 10) }
-
-        context 'when other thing is not a disk' do
-          it 'raises an error' do
-            old_disk = {}
-
-            expect {
-              new_disk.is_bigger_than?(old_disk)
-            }.to raise_error(/Cannot compare persistent disk size to anything that is not a persistent disk/)
-          end
-        end
-
-        context 'when the size is bigger' do
-          it 'is true' do
-            old_disk = PersistentDiskCollection::PersistentDisk.new('', {}, 5)
-
-            expect(new_disk.is_bigger_than?(old_disk)).to eq(true)
-          end
-        end
-
-        context 'when the size is equal' do
-          it 'is false' do
-            old_disk = PersistentDiskCollection::PersistentDisk.new('', {}, 10)
-
-            expect(new_disk.is_bigger_than?(old_disk)).to eq(false)
-          end
-        end
-
-        context 'when the size is smaller' do
-          it 'is false' do
-            old_disk = PersistentDiskCollection::PersistentDisk.new('', {}, 15)
-
-            expect(new_disk.is_bigger_than?(old_disk)).to eq(false)
-          end
-        end
-      end
     end
   end
 end
