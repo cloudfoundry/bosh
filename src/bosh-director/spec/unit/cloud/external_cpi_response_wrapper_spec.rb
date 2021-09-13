@@ -5,6 +5,7 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
   include FakeFS::SpecHelpers
 
   let(:cpi_response) { JSON.dump(result: nil, error: nil, log: '') }
+  let(:cpi_error) { 'fake-stderr-data' }
   let(:additional_expected_args) { nil }
   let(:exit_status) { instance_double('Process::Status', exitstatus: 0) }
   let(:cpi_log_path) { '/var/vcap/task/5/cpi' }
@@ -13,19 +14,42 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
   let(:config) { double('Bosh::Director::Config', logger: logger, cpi_task_log: cpi_log_path, preferred_cpi_api_version: 2) }
   let(:cloud) { Bosh::Clouds::ExternalCpi.new('/path/to/fake-cpi/bin/cpi', 'fake-director-uuid', logger) }
 
+  let(:wait_thread) do
+    double('Process::Waiter', value: double('Process::Status', exitstatus: exit_status))
+  end
+
+  let(:stdin)  { instance_double('IO') }
+  let(:stdout) { instance_double('IO') }
+  let(:stderr) { instance_double('IO') }
+
+  before do
+    allow(stdin).to receive(:write)
+    allow(stdin).to receive(:close)
+    allow(IO).to receive(:select).and_return([[stdout, stderr]])
+
+    allow(stdout).to receive(:fileno).and_return(1)
+
+    stdout_reponse_values = [cpi_response, nil, cpi_response, nil, cpi_response, nil]
+    allow(stdout).to receive(:readline) { stdout_reponse_values.shift || raise(EOFError) }
+
+    allow(stderr).to receive(:fileno).and_return(2)
+
+    stderr_reponse_values = [cpi_error, nil, cpi_error, nil, cpi_error, nil]
+    allow(stderr).to receive(:readline) { stderr_reponse_values.shift || raise(EOFError) }
+  end
+
   before(:each) do
     stub_const('Bosh::Director::Config', config)
   end
 
   subject { described_class.new(cloud, cpi_api_version) }
-
   def self.it_should_raise_error(method, error_type, error_msg, *arguments)
     define_method(:call_cpi_method) { subject.public_send(method, *arguments) }
 
     before do
       allow(File).to receive(:executable?).with('/path/to/fake-cpi/bin/cpi').and_return(true)
       FileUtils.mkdir_p('/var/vcap/task/5')
-      allow(Open3).to receive(:capture3).and_return([cpi_response, 'fake-stderr-data', exit_status])
+      allow(Open3).to receive(:popen3).and_yield(stdin, stdout, stderr, wait_thread)
       allow(Random).to receive(:rand).and_return('fake-request-id')
     end
 
@@ -42,7 +66,7 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
     before do
       allow(File).to receive(:executable?).with('/path/to/fake-cpi/bin/cpi').and_return(true)
       FileUtils.mkdir_p('/var/vcap/task/5')
-      allow(Open3).to receive(:capture3).and_return([cpi_response, 'fake-stderr-data', exit_status])
+      allow(Open3).to receive(:popen3).and_yield(stdin, stdout, stderr, wait_thread)
       allow(Random).to receive(:rand).and_return('fake-request-id')
     end
 
@@ -54,7 +78,7 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
       arguments << additional_expected_args unless additional_expected_args.nil?
       expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":{"director_uuid":"fake-director-uuid","request_id":"cpi-fake-request-id"},"api_version":#{cpi_api_version}})
 
-      expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
+      allow(Open3).to receive(:popen3).and_yield(stdin, stdout, stderr, wait_thread)
       expect(call_cpi_method).to eq(expected_response)
     end
 
@@ -79,7 +103,8 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
         lines = []
         allow(logger).to receive(:debug) { |line| lines << line }
 
-        expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
+        expect(Open3).to receive(:popen3).and_yield(stdin, stdout, stderr, wait_thread)
+        expect(stdin).to receive(:write).with(expected_stdin)
         call_cpi_method
         expect(lines[0]).to start_with "[external-cpi] [#{request_id}] request"
         expect(lines[1]).to start_with "[external-cpi] [#{request_id}] response"
@@ -118,7 +143,8 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
         expected_request_log = %([external-cpi] [#{request_id}] request: {"method":"#{method}","arguments":#{expected_arguments.to_json},"context":#{redacted_context.to_json},"api_version":#{cpi_api_version}} with command: #{expected_cmd})
         expect(logger).to receive(:debug).with(expected_request_log)
 
-        expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
+        expect(Open3).to receive(:popen3).and_yield(stdin, stdout, stderr, wait_thread)
+        expect(stdin).to receive(:write).with(expected_stdin)
         call_cpi_method
       end
     end
@@ -160,7 +186,8 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
         lines = []
         allow(logger).to receive(:debug) { |line| lines << line }
 
-        expect(Open3).to receive(:capture3).with(expected_env, expected_cmd, stdin_data: expected_stdin, unsetenv_others: true)
+        expect(Open3).to receive(:popen3).and_yield(stdin, stdout, stderr, wait_thread)
+        expect(stdin).to receive(:write).with(expected_stdin)
         call_cpi_method
 
         expect(lines[0]).to start_with "[external-cpi] [#{request_id}] request"
@@ -173,14 +200,15 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
 
       it 'saves the log and stderr in task cpi log' do
         call_cpi_method
-        expect(File.read(cpi_log_path)).to eq('fake-logfake-stderr-data')
+        expect(File.read(cpi_log_path)).to eq('fake-stderr-datafake-log')
         call_cpi_method
-        expect(File.read(cpi_log_path)).to eq('fake-logfake-stderr-datafake-logfake-stderr-data')
+        expect(File.read(cpi_log_path)).to eq('fake-stderr-datafake-logfake-stderr-datafake-log')
       end
 
       context 'when no stderr' do
+        let(:cpi_error) { nil }
         before do
-          allow(Open3).to receive(:capture3).and_return(cpi_response, nil, 0)
+          allow(Open3).to receive(:popen3).and_yield(stdin, stdout, stderr, wait_thread)
         end
 
         it 'saves the log in task cpi log' do
@@ -235,7 +263,7 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
 
         it 'raises an error constructed from error response' do
           expect { call_cpi_method }.to raise_error(error_class, /CPI error '#{error_type}' with message '#{message}' in '#{method}' CPI method/)
-          expect(File.read(cpi_log_path)).to eq('fake-logfake-stderr-data')
+          expect(File.read(cpi_log_path)).to eq('fake-stderr-datafake-log')
         end
       end
 
