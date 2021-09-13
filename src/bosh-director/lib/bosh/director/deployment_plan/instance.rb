@@ -200,8 +200,25 @@ module Bosh::Director
             settings['blobstores'] = env['bosh']['blobstores']
           end
         end
+
+        if nats_config_changed?
+          cert_generator = NatsClientCertGenerator.new(@logger)
+          agent_cert_key_result = cert_generator.generate_nats_client_certificate "#{vm.agent_id}.agent.bosh-internal"
+          settings['mbus'] = {
+            'cert' => {
+              'ca' => Config.nats_server_ca,
+              'certificate' => agent_cert_key_result[:cert].to_pem,
+              'private_key' => agent_cert_key_result[:key].to_pem,
+            }
+          }
+        end
+
         AgentClient.with_agent_id(vm.agent_id, @model.name).update_settings(settings)
-        vm.update(trusted_certs_sha1: ::Digest::SHA1.hexdigest(Config.trusted_certs))
+        vm.update(
+          blobstore_config_sha1: Config.blobstore_config_fingerprint,
+          nats_config_sha1: Config.nats_config_fingerprint,
+          trusted_certs_sha1: ::Digest::SHA1.hexdigest(Config.trusted_certs),
+        )
       end
 
       def update_cloud_properties!

@@ -11,6 +11,7 @@ module Bosh::Director::DeploymentPlan
     let(:state) { 'started' }
     let(:variables_interpolator) { Bosh::Director::ConfigServer::VariablesInterpolator.new }
     let(:deployment_variable_set) { Bosh::Director::Models::VariableSet.make(deployment: deployment) }
+    let(:cert_generator) { instance_double Bosh::Director::NatsClientCertGenerator }
 
     before do
       Bosh::Director::Config.current_job = Bosh::Director::Jobs::BaseJob.new
@@ -544,6 +545,7 @@ module Bosh::Director::DeploymentPlan
       context 'when there is a blobstore configuration change' do
         before do
           allow(Bosh::Director::Config).to receive(:blobstore_config_fingerprint).and_return('new-blobstore-sha')
+          allow(agent_client).to receive(:update_settings)
         end
 
         context 'when the stemcell supports signed urls' do
@@ -570,11 +572,58 @@ module Bosh::Director::DeploymentPlan
             instance.update_instance_settings(vm)
           end
         end
+
+        it 'updates the VM table with the new blobstore config sha1' do
+          instance.update_instance_settings(vm)
+
+          expect(vm.reload.blobstore_config_sha1).to eq('new-blobstore-sha')
+        end
       end
 
       context 'when there are no blobstore configuration changes' do
         it 'should not include the blobstore config' do
           expect(agent_client).to receive(:update_settings).with(hash_excluding('blobstores'))
+
+          instance.update_instance_settings(vm)
+        end
+      end
+
+      context 'when there is a nats configuration change' do
+        before do
+          allow(Bosh::Director::Config).to receive(:nats_config_fingerprint).and_return('new-nats-sha')
+          allow(Bosh::Director::NatsClientCertGenerator).to receive(:new).and_return(cert_generator)
+
+          allow(cert_generator).to receive(:generate_nats_client_certificate).with(
+            /^#{vm.agent_id}\.agent\.bosh-internal/,
+          ).and_return(
+            cert: double(to_pem: 'new nats cert'),
+            key: double(to_pem: 'new nats key'),
+          )
+          allow(agent_client).to receive(:update_settings)
+        end
+
+        it 'should include the nats config' do
+          expect(agent_client).to receive(:update_settings).with(hash_including('mbus' => {
+            'cert' => {
+              'ca' => Bosh::Director::Config.nats_server_ca,
+              'certificate' => 'new nats cert',
+              'private_key' => 'new nats key',
+            }
+          }))
+
+          instance.update_instance_settings(vm)
+        end
+
+        it 'updates the VM table with the new nats config sha1' do
+          instance.update_instance_settings(vm)
+
+          expect(vm.reload.nats_config_sha1).to eq('new-nats-sha')
+        end
+      end
+
+      context 'when there are no nats configuration changes' do
+        it 'should not include the nats config' do
+          expect(agent_client).to receive(:update_settings).with(hash_excluding('mbus'))
 
           instance.update_instance_settings(vm)
         end
