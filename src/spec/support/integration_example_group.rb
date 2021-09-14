@@ -416,9 +416,9 @@ module IntegrationSandboxHelpers
 
   def prepare_sandbox
     cleanup_client_sandbox_dir
+    setup_home_dir
     setup_test_release_dir
     setup_bosh_work_dir
-    setup_home_dir
     Thread.current[:sandbox] ||= Bosh::Dev::Sandbox::Main.from_env
   end
 
@@ -472,6 +472,7 @@ module IntegrationSandboxHelpers
   def setup_home_dir
     FileUtils.mkdir_p(ClientSandbox.home_dir)
     ENV['HOME'] = ClientSandbox.home_dir
+    `git config --global init.defaultBranch "master"`
   end
 
   def cleanup_client_sandbox_dir
