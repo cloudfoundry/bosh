@@ -261,7 +261,13 @@ module Bosh
             ).and_return(create_vm_response)
 
             expect(agent_client).to receive(:wait_until_ready)
-            expect(Models::Vm).to receive(:create).with(hash_including(cid: 'new-vm-cid', instance: instance_model, stemcell_api_version: nil))
+            expect(Models::Vm).to receive(:create).with(hash_including(
+              cid: 'new-vm-cid',
+              instance: instance_model,
+              stemcell_api_version: nil,
+              blobstore_config_sha1: Config.blobstore_config_fingerprint,
+              nats_config_sha1: Config.nats_config_fingerprint
+            ))
 
             subject.perform(report)
           end

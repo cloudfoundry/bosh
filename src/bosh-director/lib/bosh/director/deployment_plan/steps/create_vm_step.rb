@@ -93,7 +93,13 @@ module Bosh::Director
 
           cpi = cloud_factory.get_name_for_az(instance_model.availability_zone)
 
-          vm_options = { instance: instance_model, agent_id: agent_id, cpi: cpi }
+          vm_options = {
+            instance: instance_model,
+            agent_id: agent_id,
+            cpi: cpi,
+            blobstore_config_sha1: Config.blobstore_config_fingerprint,
+            nats_config_sha1: Config.nats_config_fingerprint,
+          }
 
           env['bosh'] ||= {}
           env['bosh'] = Config.agent_env.merge(env['bosh'])
