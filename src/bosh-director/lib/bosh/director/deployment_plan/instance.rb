@@ -193,11 +193,11 @@ module Bosh::Director
         }
         if blobstore_config_changed?
           blobstore = App.instance.blobstores.blobstore
-          blobstore.validate!(env['bosh']['blobstores'].first.fetch('options', {}), @stemcell.api_version)
+          blobstore.validate!(Config.agent_env['blobstores'].first.fetch('options', {}), @stemcell.api_version)
           if blobstore.can_sign_urls?(@stemcell.api_version)
-            settings['blobstores'] = blobstore.redact_credentials(env['bosh']['blobstores'])
+            settings['blobstores'] = blobstore.redact_credentials(Config.agent_env['blobstores'])
           else
-            settings['blobstores'] = env['bosh']['blobstores']
+            settings['blobstores'] = Config.agent_env['blobstores']
           end
         end
 
