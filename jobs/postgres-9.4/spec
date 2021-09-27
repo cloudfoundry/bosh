@@ -7,6 +7,7 @@ templates:
   create-database.erb: bin/create-database
   postgres.erb: bin/postgres
   postgresql.conf.erb: config/postgresql.conf
+  bpm-stop-postgres: bin/bpm-stop-postgres
 
 packages:
   - postgres-9.4
