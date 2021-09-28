@@ -34,9 +34,9 @@ properties:
     description: Password director must use to access blobstore via HTTP Basic
 
   blobstore.agent.user:
-    description: Username agents must use to access blobstore via HTTP Basic
+    description: Username agents must use to access blobstore via HTTP Basic (optional, if provided the password is mandatory)
   blobstore.agent.password:
-    description: Password agents must use to access blobstore via HTTP Basic
+    description: Password agents must use to access blobstore via HTTP Basic (mandatory when the user is provided)
   blobstore.agent.additional_users:
     description: An array of objects with keys 'user' and 'password' agents must use to access Blobstore via HTTP Basic Auth. These users are in addition to the user defined by 'blobstore.agent.user' and 'blobstore.agent.password'. This is to enable blobstore credential rotation for the agents.
 
