@@ -21,10 +21,12 @@ if config_file.nil?
 end
 
 config = Bosh::Director::Config.load_file(config_file)
+director_db = config.db
 # Configure the singleton for migrations that need access to this config. There does not appear
 # to be a way to pass additional data or objects into Sequel gem migrations.
-config.configure_evil_config_singleton!
-director_db = config.db
+if director_db.table_exists?(:releases)
+  config.configure_evil_config_singleton!
+end
 abort 'Director database config missing from config file' unless director_db
 dns_db = config.dns_db
 
