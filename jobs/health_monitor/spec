@@ -12,7 +12,7 @@ templates:
 
 packages:
   - health_monitor
-  - ruby-3.0.2-r0.61.0
+  - ruby-3.0.2-r0.67.0
 
 properties:
   #
