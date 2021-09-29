@@ -14,6 +14,7 @@ groups:
       - compile-bosh-dev-release-bionic
       - bats-ubuntu-bionic
       - brats-ubuntu-bionic
+      - bats-ubuntu-xenial
       - bosh-disaster-recovery-acceptance-tests
       - upgrade
       - upload-compiled-staging-tarball
@@ -458,6 +459,80 @@ jobs:
               GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
             action: destroy
 
+  #The VMware Bosh Ecosystem team has a need to cross-check the behavior of
+  #BATS on both the (VMware-"proprietary") Xenial ESM stemcell, as well as
+  #the latest Open Source stemcell. If you are an Open Source user, and do
+  #not have access to the Xenial ESM stemcell, do know that you can comment
+  #out the `bats-ubuntu-xenial` job, and all resources that it references
+  #and have no loss of pipeline functionality.
+  - name: bats-ubuntu-xenial
+    serial: true
+    plan:
+    - do:
+      - in_parallel:
+        - get: bosh-candidate-release-tarballs
+          passed: [compile-bosh-dev-release-bionic]
+        - get: bosh-release
+          resource: bosh-compiled-candidate-bionic
+          trigger: true
+          passed: [compile-bosh-dev-release-bionic]
+        - get: cpi-release
+        - get: stemcell
+          resource: vsphere-esxi-ubuntu-xenial
+          params:
+             globs: ["*vsphere*"]
+        - get: bosh-cli
+        - get: bats
+        - get: bosh-deployment
+        - get: bosh-src
+          passed: [compile-bosh-dev-release-bionic]
+        - get: main-ruby-go-image
+      - put: environment
+        resource: nimbus-environment
+        params:
+          acquire: true
+      - do:
+        - task: deploy-director
+          tags: [nimbus]
+          file: bosh-src/ci/bats/tasks/deploy-director.yml
+          image: main-ruby-go-image
+          params:
+            BAT_INFRASTRUCTURE: vsphere
+            BOSH_CLIENT: ((stemcell-test-director-username))
+            BOSH_CLIENT_SECRET: ((stemcell-test-director-password))
+            BOSH_VAR_vcenter_ip: "((nimbus_concourse-testbed-bosh-main_ip))"
+            BOSH_VAR_vcenter_user: "((nimbus_concourse-testbed-bosh-main_user.username))"
+            BOSH_VAR_vcenter_password: "((nimbus_concourse-testbed-bosh-main_user.password))"
+            BOSH_VAR_vcenter_cluster: "((nimbus_concourse-testbed-bosh-main_cluster))"
+            BOSH_VAR_vcenter_dc: "((nimbus_concourse-testbed-bosh-main_dc))"
+            BOSH_VAR_vcenter_ds: "((nimbus_concourse-testbed-bosh-main_ds))"
+            BOSH_VAR_vcenter_rp: "((nimbus_concourse-testbed-bosh-main_rp))"
+            DEPLOY_ARGS: |
+              -o bosh-deployment/vsphere/resource-pool.yml
+              --vars-env=BOSH_VAR
+        - task: prepare-bats
+          tags: [nimbus]
+          file: bosh-src/ci/bats/iaas/vsphere/prepare-bats-config.yml
+          image: main-ruby-go-image
+          params:
+            STEMCELL_NAME: bosh-vsphere-esxi-ubuntu-xenial-go_agent
+        - task: run-bats
+          tags: [nimbus]
+          file: bats/ci/tasks/run-bats.yml
+          image: main-ruby-go-image
+      ensure:
+        do:
+        - task: teardown
+          tags: [nimbus]
+          file: bosh-src/ci/bats/tasks/destroy-director.yml
+          image: main-ruby-go-image
+          attempts: 3
+        - put: environment
+          resource: nimbus-environment
+          params:
+           release: environment
+          attempts: 3
+
   - name: bosh-disaster-recovery-acceptance-tests
     plan:
     - in_parallel:
@@ -841,6 +916,15 @@ resource_types:
   source:
     repository: frodenas/gcs-resource
 
+- name: pivnet
+  type: docker-image
+  check_every: 168h
+  source:
+    repository: pivotalcf/pivnet-resource
+    tag: latest-final
+    username: ((docker.username))
+    password: ((docker.password))
+
 resources:
   - name: bosh-src
     type: git
@@ -1001,6 +1085,12 @@ resources:
     type: bosh-io-stemcell
     source:
       name: bosh-vsphere-esxi-ubuntu-bionic-go_agent
+
+  - name: vsphere-esxi-ubuntu-xenial
+    type: pivnet
+    source:
+      api_token: ((pivnet_bot_api_token))
+      product_slug: stemcells-ubuntu-xenial
 
   - name: google-kvm-ubuntu-bionic
     type: bosh-io-stemcell
