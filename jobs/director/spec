@@ -411,10 +411,6 @@ properties:
     description: Username director uses to connect to blobstore used by simple blobstore plugin
   blobstore.director.password:
     description: Password director uses to connect to blobstore used by simple blobstore plugin
-  blobstore.agent.user:
-    description: Username agent uses to connect to blobstore used by simple blobstore plugin
-  blobstore.agent.password:
-    description: Password agent uses to connect to blobstore used by simple blobstore plugin
   blobstore.tls.cert.ca:
     description: CA Cert for TLS communcation with blobstore
   blobstore.enable_signed_urls:
