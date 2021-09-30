@@ -9,6 +9,27 @@ shared_examples 'rendered *_users.erb' do
     ERB.new(template).result(binding).split("\n")
   end
 
+  context 'blobstore with no agent user settings' do
+    let(:properties) do
+      {
+        'properties' => {
+          'blobstore' => {
+            'director' => {
+              'user' => 'director-0',
+              'password' => 'oeuirgh9453yt44y98',
+            },
+          },
+        },
+      }
+    end
+
+    it 'should render *_users.erb file with director user only' do
+      expect(rendered_template_lines.count).to eq(1)
+      expect(rendered_template_lines).not_to include('agent-0:')
+      expect(rendered_template_lines).to include('director-0:{PLAIN}oeuirgh9453yt44y98')
+    end
+  end
+
   context 'blobstore with single users settings' do
     let(:properties) do
       {
