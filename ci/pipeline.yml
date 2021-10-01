@@ -32,9 +32,9 @@ groups:
   - name: docker
     jobs:
     - build-main-ruby-go
-    - build-main-postgres-9.4
+    - build-main-postgres-9-4
     - build-main-postgres-10
-    - build-main-mysql-5.7
+    - build-main-mysql-5-7
     - build-integration
     - build-docker-cpi
 
@@ -79,12 +79,12 @@ jobs:
         - get: bosh-src
           passed: [gate]
           trigger: true
-        - get: main-mysql-5.7-image
+        - get: main-mysql-5-7-image
       - task: test-mysql-5.7
         timeout: 2h
         privileged: true
         file: bosh-src/ci/tasks/test-unit.yml
-        image: main-mysql-5.7-image
+        image: main-mysql-5-7-image
         params:
           DB: mysql
 
@@ -98,14 +98,14 @@ jobs:
         - get: bosh-src
           passed: [gate]
           trigger: true
-        - get: main-postgres-9.4-image
+        - get: main-postgres-9-4-image
         - get: main-postgres-10-image
       - in_parallel:
         - task: test-postgres-9.4
           timeout: 2h
           privileged: true
           file: bosh-src/ci/tasks/test-unit.yml
-          image: main-postgres-9.4-image
+          image: main-postgres-9-4-image
           params:
             DB: postgresql
             DB_VERSION: 9.4
@@ -219,11 +219,11 @@ jobs:
           trigger: true
         - get: bosh-agent
         - get: integration-tests-parallel-runtime
-        - get: main-mysql-5.7-image
+        - get: main-mysql-5-7-image
       - task: tests
         privileged: true
         file: bosh-src/ci/tasks/test-integration.yml
-        image: main-mysql-5.7-image
+        image: main-mysql-5-7-image
         params:
           DB:           mysql
           DB_TLS:       true
@@ -814,7 +814,7 @@ jobs:
         get_params:
           skip_download: true
 
-  - name: build-main-postgres-9.4
+  - name: build-main-postgres-9-4
     public: true
     serial: true
     plan:
@@ -824,7 +824,7 @@ jobs:
       - get: integration-image
         trigger: true
         passed: [build-integration]
-      - put: main-postgres-9.4-image
+      - put: main-postgres-9-4-image
         params:
           build: "bosh-src/ci/dockerfiles/main-postgres"
           build_args:
@@ -852,7 +852,7 @@ jobs:
         get_params:
           skip_download: true
 
-  - name: build-main-mysql-5.7
+  - name: build-main-mysql-5-7
     public: true
     serial: true
     plan:
@@ -862,7 +862,7 @@ jobs:
       - get: integration-image
         trigger: true
         passed: [build-integration]
-      - put: main-mysql-5.7-image
+      - put: main-mysql-5-7-image
         params:
           build: "bosh-src/ci/dockerfiles/main-mysql"
           build_args:
@@ -1135,7 +1135,7 @@ resources:
       username: ((dockerhub_username))
       password: ((dockerhub_password))
 
-  - name: main-mysql-5.7-image
+  - name: main-mysql-5-7-image
     type: docker-image
     source:
       repository: bosh/main-mysql-5.7
@@ -1144,7 +1144,7 @@ resources:
       username: ((dockerhub_username))
       password: ((dockerhub_password))
 
-  - name: main-postgres-9.4-image
+  - name: main-postgres-9-4-image
     type: docker-image
     source:
       repository: bosh/main-postgres-9.4
