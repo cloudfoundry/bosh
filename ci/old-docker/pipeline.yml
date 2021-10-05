@@ -228,18 +228,6 @@ jobs:
         get_params:
           skip_download: true
 
-  - name: build-bosh-agent
-    public: true
-    serial: true
-    plan:
-      - get: bosh-agent-src
-        trigger: true
-      - put: bosh-agent
-        params:
-          build: "bosh-agent-src/ci/docker"
-        get_params:
-          skip_download: true
-
 resources:
   - name: bosh-src
     type: git
@@ -255,14 +243,6 @@ resources:
     source:
       uri: https://github.com/cloudfoundry/bosh-linux-stemcell-builder
       branch: master
-      paths:
-        - "ci/docker"
-
-  - name: bosh-agent-src
-    type: git
-    source:
-      uri: https://github.com/cloudfoundry/bosh-agent
-      branch: develop
       paths:
         - "ci/docker"
 
@@ -389,14 +369,6 @@ resources:
     type: docker-image
     source:
       repository: bosh/blobstore_client
-      email: ((dockerhub_email))
-      username: ((dockerhub_username))
-      password: ((dockerhub_password))
-
-  - name: bosh-agent
-    type: docker-image
-    source:
-      repository: bosh/agent
       email: ((dockerhub_email))
       username: ((dockerhub_username))
       password: ((dockerhub_password))
