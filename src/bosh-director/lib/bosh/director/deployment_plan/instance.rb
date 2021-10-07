@@ -213,6 +213,8 @@ module Bosh::Director
           }
         end
 
+        # We have to create our own AgentClient rather than use the `agent_client` method here because the VM
+        # we are updating the settings on might not be the active VM for the instance depending on deployment strategy
         AgentClient.with_agent_id(vm.agent_id, @model.name).update_settings(settings)
         vm.update(
           blobstore_config_sha1: Config.blobstore_config_fingerprint,
