@@ -178,7 +178,7 @@ module Bosh::Director
         @model.update(spec: @current_state)
       end
 
-      def update_instance_settings
+      def update_instance_settings(vm)
         disk_associations = @model.reload.active_persistent_disks.collection.reject do |disk|
           disk.model.managed?
         end
@@ -187,8 +187,40 @@ module Bosh::Director
           { 'name' => disk.model.name, 'cid' => disk.model.disk_cid }
         end
 
-        agent_client.update_settings(Config.trusted_certs, disk_associations)
-        @model.active_vm.update(trusted_certs_sha1: ::Digest::SHA1.hexdigest(Config.trusted_certs))
+        settings = {
+          'trusted_certs' => Config.trusted_certs,
+          'disk_associations' => disk_associations,
+        }
+        if blobstore_config_changed?
+          blobstore = App.instance.blobstores.blobstore
+          blobstore.validate!(Config.agent_env['blobstores'].first.fetch('options', {}), @stemcell.api_version)
+          if blobstore.can_sign_urls?(@stemcell.api_version)
+            settings['blobstores'] = blobstore.redact_credentials(Config.agent_env['blobstores'])
+          else
+            settings['blobstores'] = Config.agent_env['blobstores']
+          end
+        end
+
+        if nats_config_changed?
+          cert_generator = NatsClientCertGenerator.new(@logger)
+          agent_cert_key_result = cert_generator.generate_nats_client_certificate "#{vm.agent_id}.agent.bosh-internal"
+          settings['mbus'] = {
+            'cert' => {
+              'ca' => Config.nats_server_ca,
+              'certificate' => agent_cert_key_result[:cert].to_pem,
+              'private_key' => agent_cert_key_result[:key].to_pem,
+            }
+          }
+        end
+
+        # We have to create our own AgentClient rather than use the `agent_client` method here because the VM
+        # we are updating the settings on might not be the active VM for the instance depending on deployment strategy
+        AgentClient.with_agent_id(vm.agent_id, @model.name).update_settings(settings)
+        vm.update(
+          blobstore_config_sha1: Config.blobstore_config_fingerprint,
+          nats_config_sha1: Config.nats_config_fingerprint,
+          trusted_certs_sha1: ::Digest::SHA1.hexdigest(Config.trusted_certs),
+        )
       end
 
       def update_cloud_properties!
@@ -279,6 +311,24 @@ module Bosh::Director
         changed = config_trusted_certs != @model.trusted_certs_sha1
         log_changes(__method__, @model.trusted_certs_sha1, config_trusted_certs) if changed
         changed
+      end
+
+      def blobstore_config_changed?
+        blobstore_config_fingerprint = Bosh::Director::Config.blobstore_config_fingerprint
+        if blobstore_config_fingerprint != @model.blobstore_config_sha1
+          log_changes(__method__, @model.blobstore_config_sha1, blobstore_config_fingerprint)
+          return true
+        end
+        false
+      end
+
+      def nats_config_changed?
+        nats_config_fingerprint = Bosh::Director::Config.nats_config_fingerprint
+        if nats_config_fingerprint != @model.nats_config_sha1
+          log_changes(__method__, @model.nats_config_sha1, nats_config_fingerprint)
+          return true
+        end
+        false
       end
 
       def vm_created?

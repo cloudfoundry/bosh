@@ -188,8 +188,8 @@ module Bosh
             allow(cloud).to receive(:set_vm_metadata)
             allow(DeleteVmStep).to receive(:new).and_return(delete_vm_step)
             allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
-            allow(blobstore).to receive(:can_sign_urls?).and_return(false)
             allow(blobstore).to receive(:validate!)
+            allow(blobstore).to receive(:redact_credentials).and_return([])
           end
 
           it 'sets vm on given report' do
@@ -261,7 +261,13 @@ module Bosh
             ).and_return(create_vm_response)
 
             expect(agent_client).to receive(:wait_until_ready)
-            expect(Models::Vm).to receive(:create).with(hash_including(cid: 'new-vm-cid', instance: instance_model, stemcell_api_version: nil))
+            expect(Models::Vm).to receive(:create).with(hash_including(
+              cid: 'new-vm-cid',
+              instance: instance_model,
+              stemcell_api_version: nil,
+              blobstore_config_sha1: Config.blobstore_config_fingerprint,
+              nats_config_sha1: Config.nats_config_fingerprint
+            ))
 
             subject.perform(report)
           end
@@ -323,7 +329,7 @@ module Bosh
             end
           end
 
-          context 'when the blobstore is configured to use signed urls' do
+          context 'with a blobstore config' do
             let(:agent_env_hash) do
               {
                 'blobstores' => [{
@@ -336,31 +342,36 @@ module Bosh
               }
             end
             before do
-              allow(blobstore).to receive(:can_sign_urls?).and_return(true)
-              allow(blobstore).to receive(:redacted_credential_properties_list).and_return(%w[my-key my-key-id])
               allow(Config).to receive(:agent_env).and_return(agent_env_hash)
-              allow(cloud_factory).to receive(:get).with('cpi1', stemcell_api_version).and_return(cloud_wrapper)
+              allow(blobstore).to receive(:redact_credentials).and_return('redacted-credentials')
+              # allow(cloud_factory).to receive(:get).with('cpi1', stemcell_api_version).and_return(cloud_wrapper)
             end
 
-            it 'validates blobstore configuration' do
-              expect(blobstore).to receive(:validate!).with(agent_env_hash['blobstores'].first['options'], anything)
-              allow(cloud_wrapper).to receive(:create_vm).and_return(create_vm_response)
-              subject.perform(report)
-            end
+            context 'and the blobstore is configured to use signed urls' do
+              before do
+                allow(blobstore).to receive(:can_sign_urls?).and_return(true)
+              end
 
-            it 'does not send blobstore credentials to the agent' do
-              expect(cloud_wrapper).to receive(:create_vm).with(
-                kind_of(String),
-                'stemcell-id', { 'ram' => '2gb' },
-                network_settings,
-                disks,
-                'bosh' => {
-                  'group' => expected_group,
-                  'groups' => expected_groups,
-                  'blobstores' => [{ 'options' => { 'allowed-key' => 'baz' } }],
-                }
-              ).and_return(create_vm_response)
-              subject.perform(report)
+              it 'validates blobstore configuration' do
+                expect(blobstore).to receive(:validate!).with(agent_env_hash['blobstores'].first['options'], anything)
+                allow(cloud_wrapper).to receive(:create_vm).and_return(create_vm_response)
+                subject.perform(report)
+              end
+
+              it 'does not send blobstore credentials to the agent' do
+                expect(cloud_wrapper).to receive(:create_vm).with(
+                  kind_of(String),
+                  'stemcell-id', { 'ram' => '2gb' },
+                  network_settings,
+                  disks,
+                  'bosh' => {
+                    'group' => expected_group,
+                    'groups' => expected_groups,
+                    'blobstores' => 'redacted-credentials',
+                  }
+                ).and_return(create_vm_response)
+                subject.perform(report)
+              end
             end
 
             context 'and the agent is unable to use signed urls' do
@@ -368,7 +379,7 @@ module Bosh
                 allow(blobstore).to receive(:can_sign_urls?).and_return(false)
               end
 
-              it 'still sends blobstore credentials to the agent' do
+              it 'sends blobstore credentials to the agent' do
                 expect(cloud_wrapper).to receive(:create_vm).with(
                   kind_of(String),
                   'stemcell-id', { 'ram' => '2gb' },

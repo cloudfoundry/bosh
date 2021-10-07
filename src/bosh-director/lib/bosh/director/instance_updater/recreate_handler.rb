@@ -36,7 +36,7 @@ module Bosh::Director
 
         attach_disks if instance_plan.needs_disk?
 
-        instance.update_instance_settings
+        instance.update_instance_settings(instance.model.active_vm)
       end
 
       def delete_create

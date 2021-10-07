@@ -146,28 +146,28 @@ module Bosh::Director
               'disk_associations' => [{ 'name' => 'zak', 'cid' => 'new-disk-cid' }],
             )
             allow(client).to receive(:get_task)
-            client.update_settings('these are the certificates', [{ 'name' => 'zak', 'cid' => 'new-disk-cid' }])
+            client.update_settings('trusted_certs' => 'these are the certificates', 'disk_associations' => [{ 'name' => 'zak', 'cid' => 'new-disk-cid' }])
           end
 
           it 'periodically polls the update settings task while it is running' do
             allow(client).to receive(:handle_message_with_retry).and_return task
             allow(client).to receive(:sleep).with(AgentClient::DEFAULT_POLL_INTERVAL)
             expect(client).to receive(:get_task).with('fake-agent_task_id')
-            client.update_settings('these are the certificates', [{ 'name' => 'zak', 'cid' => 'new-disk-cid' }])
+            client.update_settings('some-agent-setting' => 'value')
           end
 
           it 'is only a warning when the remote agent does not implement update_settings' do
             allow(client).to receive(:handle_method).and_raise(RpcRemoteException, 'unknown message update_settings')
 
             expect(Config.logger).to receive(:warn).with("Ignoring update_settings 'unknown message' error from the agent: #<Bosh::Director::RpcRemoteException: unknown message update_settings>")
-            expect { client.update_settings('no certs', 'no disks') }.to_not raise_error
+            expect { client.update_settings('some-agent-setting' => 'value') }.to_not raise_error
           end
 
           it 'still raises an exception for other RPC failures' do
             allow(client).to receive(:handle_method).and_raise(RpcRemoteException, 'random failure!')
 
             expect(client).to_not receive(:warning)
-            expect { client.update_settings('no certs', 'no disks') }.to raise_error(Bosh::Director::RpcRemoteException, /random failure!/)
+            expect { client.update_settings('some-agent-setting' => 'value') }.to raise_error(Bosh::Director::RpcRemoteException, /random failure!/)
           end
         end
 

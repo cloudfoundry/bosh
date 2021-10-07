@@ -183,6 +183,14 @@ module Bosh::Director::Models
       instance_active_vm.nil? ? ::Digest::SHA1.hexdigest('') : instance_active_vm.trusted_certs_sha1
     end
 
+    def blobstore_config_sha1
+      active_vm&.blobstore_config_sha1
+    end
+
+    def nats_config_sha1
+      active_vm&.nats_config_sha1
+    end
+
     def stopped?
       state == 'stopped'
     end

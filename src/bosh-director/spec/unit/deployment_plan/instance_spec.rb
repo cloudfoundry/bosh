@@ -11,6 +11,7 @@ module Bosh::Director::DeploymentPlan
     let(:state) { 'started' }
     let(:variables_interpolator) { Bosh::Director::ConfigServer::VariablesInterpolator.new }
     let(:deployment_variable_set) { Bosh::Director::Models::VariableSet.make(deployment: deployment) }
+    let(:cert_generator) { instance_double Bosh::Director::NatsClientCertGenerator }
 
     before do
       Bosh::Director::Config.current_job = Bosh::Director::Jobs::BaseJob.new
@@ -23,9 +24,13 @@ module Bosh::Director::DeploymentPlan
     end
 
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
+    let(:stemcell) { make_stemcell({:name => 'fake-stemcell-name', :version => '1.0', api_version: 3}) }
+    let(:env) { Env.new({'bosh' => {'blobstores' => [{'options' => {'blobstore_option' => 'blobstore_value'}}]}}) }
     let(:instance_group) do
       InstanceGroup.make(
         name: 'fake_job',
+        env: env,
+        stemcell: stemcell,
         vm_type: vm_type,
         vm_extensions: vm_extensions,
       )
@@ -43,7 +48,7 @@ module Bosh::Director::DeploymentPlan
     let(:current_state) do
       { 'current' => 'state' }
     end
-    let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
+    let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient, validate!: nil) }
 
     describe '#bind_existing_instance_model' do
       let(:instance_model) { Bosh::Director::Models::Instance.make(bootstrap: true) }
@@ -242,6 +247,76 @@ module Bosh::Director::DeploymentPlan
       end
     end
 
+    describe '#blobstore_config_changed?' do
+      before do
+        instance.bind_existing_instance_model(instance_model)
+      end
+
+      describe 'when blobstore config has changed' do
+        before do
+          allow(Bosh::Director::Config).to receive(:blobstore_config_fingerprint).and_return('new fingerprint')
+        end
+
+        it 'should return true' do
+          expect(instance.blobstore_config_changed?).to be(true)
+        end
+
+        it 'should log the change reason' do
+          allow(instance_model).to receive(:blobstore_config_sha1).and_return('old fingerprint')
+          expect(logger).to receive(:debug)
+            .with('blobstore_config_changed? changed '\
+                  'FROM: old fingerprint '\
+                  'TO: new fingerprint')
+          instance.blobstore_config_changed?
+        end
+      end
+
+      describe 'when blobstore config has not changed' do
+        before do
+          allow(Bosh::Director::Config).to receive(:blobstore_config_fingerprint).and_return(instance_model.blobstore_config_sha1)
+        end
+
+        it 'should return false' do
+          expect(instance.blobstore_config_changed?).to be(false)
+        end
+      end
+    end
+
+    describe '#nats_config_changed?' do
+      before do
+        instance.bind_existing_instance_model(instance_model)
+      end
+
+      describe 'when nats config has changed' do
+        before do
+          allow(Bosh::Director::Config).to receive(:nats_config_fingerprint).and_return('new fingerprint')
+        end
+
+        it 'should return true' do
+          expect(instance.nats_config_changed?).to be(true)
+        end
+
+        it 'should log the change reason' do
+          allow(instance_model).to receive(:nats_config_sha1).and_return('old fingerprint')
+          expect(logger).to receive(:debug)
+            .with('nats_config_changed? changed '\
+                  'FROM: old fingerprint '\
+                  'TO: new fingerprint')
+          instance.nats_config_changed?
+        end
+      end
+
+      describe 'when nats config has not changed' do
+        before do
+          allow(Bosh::Director::Config).to receive(:nats_config_fingerprint).and_return(instance_model.blobstore_config_sha1)
+        end
+
+        it 'should return false' do
+          expect(instance.nats_config_changed?).to be(false)
+        end
+      end
+    end
+
     describe '#cloud_properties_changed?' do
       let(:instance_model) do
         model = Bosh::Director::Models::Instance.make(deployment: deployment)
@@ -422,13 +497,20 @@ module Bosh::Director::DeploymentPlan
         instance_double(Bosh::Director::DeploymentPlan::PersistentDiskCollection, collection: [disk_collection_model])
       end
       let(:agent_client) { instance_double(Bosh::Director::AgentClient) }
+      let(:vm) { instance_model.active_vm }
 
       before do
         allow(instance_model).to receive(:active_persistent_disks).and_return(active_persistent_disks)
         allow(Bosh::Director::AgentClient).to receive(:with_agent_id)
-          .with(instance_model.agent_id, instance_model.name).and_return(agent_client)
+          .with(vm.agent_id, instance_model.name).and_return(agent_client)
         allow(Bosh::Director::Config).to receive(:trusted_certs).and_return(fake_cert)
+        allow(Bosh::Director::Config).to receive(:blobstore_config_fingerprint).and_return('blobstore-sha')
+        allow(persistent_disk_model).to receive(:managed?).and_return(true)
         instance.bind_existing_instance_model(instance_model)
+        vm.update(
+          trusted_certs_sha1: 'trusted-cert-sha',
+          blobstore_config_sha1: 'blobstore-sha',
+        )
       end
 
       context 'when there are non managed disks' do
@@ -437,9 +519,8 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'tells the agent to update instance settings and updates the instance model' do
-          expect(agent_client).to receive(:update_settings).with(fake_cert, [{ 'name' => 'some-disk', 'cid' => 'some-cid' }])
-          instance.update_instance_settings
-          expect(instance.model.active_vm.trusted_certs_sha1).to eq(::Digest::SHA1.hexdigest(fake_cert))
+          expect(agent_client).to receive(:update_settings).with(hash_including('disk_associations' => [{ 'name' => 'some-disk', 'cid' => 'some-cid' }]))
+          instance.update_instance_settings(vm)
         end
       end
 
@@ -449,9 +530,102 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'does not send any disk associations to update' do
-          expect(agent_client).to receive(:update_settings).with(fake_cert, [])
-          instance.update_instance_settings
-          expect(instance.model.active_vm.trusted_certs_sha1).to eq(::Digest::SHA1.hexdigest(fake_cert))
+          expect(agent_client).to receive(:update_settings).with(hash_including('disk_associations' => []))
+          instance.update_instance_settings(vm)
+        end
+      end
+
+      it 'updates the agent settings and VM table with configured trusted certs' do
+        expect(agent_client).to receive(:update_settings).with(hash_including('trusted_certs' => fake_cert))
+        expect { instance.update_instance_settings(vm) }.to change {
+          vm.reload.trusted_certs_sha1
+        }.from('trusted-cert-sha').to(::Digest::SHA1.hexdigest(fake_cert))
+      end
+
+      context 'when there is a blobstore configuration change' do
+        before do
+          allow(Bosh::Director::Config).to receive(:blobstore_config_fingerprint).and_return('new-blobstore-sha')
+          allow(agent_client).to receive(:update_settings)
+        end
+
+        context 'when the stemcell supports signed urls' do
+          before do
+            allow(blobstore).to receive(:can_sign_urls?).and_return(true)
+          end
+
+          it 'should include the blobstore config' do
+            allow(blobstore).to receive(:redact_credentials).and_return([{ 'options' => 'redacted' }])
+            expect(agent_client).to receive(:update_settings).with(hash_including('blobstores' => [{ 'options' => 'redacted' }]))
+
+            instance.update_instance_settings(vm)
+          end
+        end
+
+        context 'when the stemcell does not support signed urls' do
+          before do
+            allow(blobstore).to receive(:can_sign_urls?).and_return(false)
+          end
+
+          it 'should include the unredacted blobstore config when the stemcell does not support signed urls' do
+            expect(agent_client).to receive(:update_settings).with(hash_including('blobstores' => env.spec['bosh']['blobstores']))
+
+            instance.update_instance_settings(vm)
+          end
+        end
+
+        it 'updates the VM table with the new blobstore config sha1' do
+          instance.update_instance_settings(vm)
+
+          expect(vm.reload.blobstore_config_sha1).to eq('new-blobstore-sha')
+        end
+      end
+
+      context 'when there are no blobstore configuration changes' do
+        it 'should not include the blobstore config' do
+          expect(agent_client).to receive(:update_settings).with(hash_excluding('blobstores'))
+
+          instance.update_instance_settings(vm)
+        end
+      end
+
+      context 'when there is a nats configuration change' do
+        before do
+          allow(Bosh::Director::Config).to receive(:nats_config_fingerprint).and_return('new-nats-sha')
+          allow(Bosh::Director::NatsClientCertGenerator).to receive(:new).and_return(cert_generator)
+
+          allow(cert_generator).to receive(:generate_nats_client_certificate).with(
+            /^#{vm.agent_id}\.agent\.bosh-internal/,
+          ).and_return(
+            cert: double(to_pem: 'new nats cert'),
+            key: double(to_pem: 'new nats key'),
+          )
+          allow(agent_client).to receive(:update_settings)
+        end
+
+        it 'should include the nats config' do
+          expect(agent_client).to receive(:update_settings).with(hash_including('mbus' => {
+            'cert' => {
+              'ca' => Bosh::Director::Config.nats_server_ca,
+              'certificate' => 'new nats cert',
+              'private_key' => 'new nats key',
+            }
+          }))
+
+          instance.update_instance_settings(vm)
+        end
+
+        it 'updates the VM table with the new nats config sha1' do
+          instance.update_instance_settings(vm)
+
+          expect(vm.reload.nats_config_sha1).to eq('new-nats-sha')
+        end
+      end
+
+      context 'when there are no nats configuration changes' do
+        it 'should not include the nats config' do
+          expect(agent_client).to receive(:update_settings).with(hash_excluding('mbus'))
+
+          instance.update_instance_settings(vm)
         end
       end
     end

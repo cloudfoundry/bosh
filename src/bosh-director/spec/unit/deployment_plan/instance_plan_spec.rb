@@ -1734,6 +1734,18 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#changes' do
+      before do
+        instance_model.active_vm.update(
+          blobstore_config_sha1: Bosh::Director::Config.blobstore_config_fingerprint,
+          nats_config_sha1: Bosh::Director::Config.nats_config_fingerprint,
+        )
+      end
+
+      it 'does not include nats_config or blobstore_config by default' do
+        expect(instance_plan.changes).to_not include(:nats_config)
+        expect(instance_plan.changes).to_not include(:blobstore_config)
+      end
+
       context 'when the spec_json is nil' do
         before do
           instance_plan.existing_instance.update(spec_json: nil)
@@ -1751,6 +1763,26 @@ module Bosh::Director::DeploymentPlan
 
         it 'should report changes' do
           expect(instance_plan.changes).to_not be_empty
+        end
+      end
+
+      context 'when theres a change to blobstore config' do
+        before do
+          instance_model.active_vm.update(blobstore_config_sha1: 'new-blobstore-config')
+        end
+
+        it 'includes blobstore_config' do
+          expect(instance_plan.changes).to include(:blobstore_config)
+        end
+      end
+
+      context 'when theres a change to nats config' do
+        before do
+          instance_model.active_vm.update(nats_config_sha1: 'new-nats-config')
+        end
+
+        it 'includes nats_config' do
+          expect(instance_plan.changes).to include(:nats_config)
         end
       end
     end

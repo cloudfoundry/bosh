@@ -86,6 +86,8 @@ module Bosh
           @changes << :state if state_changed?
           @changes << :dns if dns_changed?
           @changes << :trusted_certs if instance.trusted_certs_changed?
+          @changes << :blobstore_config if instance.blobstore_config_changed?
+          @changes << :nats_config if instance.nats_config_changed?
           @changes << :tags if tags_changed?
           @changes
         end

@@ -466,7 +466,7 @@ module Bosh::Director
 
               it 'does not recreate the vm' do
                 expect(recreate_handler).to_not have_received(:perform)
-                expect(instance).to have_received(:update_instance_settings)
+                expect(instance).to have_received(:update_instance_settings).with(instance.model.active_vm)
               end
             end
           end
