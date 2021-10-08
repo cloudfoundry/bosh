@@ -3,9 +3,10 @@
 Features should always contain unit tests to verify functionality and may need additional tests depending on the feature scope.
 
 
-## Test Suites
+## BOSH Director Ruby app tests
 
-BOSH uses several different types of tests, depending on the scope and subject.
+The BOSH Director Ruby web app, as a component, uses several different types
+of tests, depending on the scope and subject.
 
 
 ### Unit Tests
@@ -132,6 +133,23 @@ To focus on a given spec file you can use the environment variable `SPEC_PATH`
 
 ```
 bosh/src$ SPEC_PATH=./spec/integration/cancel_tasks_spec.rb CONCOURSE_TARGET=bosh bundle exec rake fly:integration
+```
+
+
+## BOSH Release tests
+
+The BOSH Release
+
+### Run the ERB unit tests
+
+Install the Gem dependencies.
+```
+(cd src && bundle install)
+```
+
+Run the ERB unit tests.
+```
+(cd src && bundle exec rspec ../spec)
 ```
 
 ### Acceptance Tests (BATs)
