@@ -149,7 +149,7 @@ Install the Gem dependencies.
 
 Run the ERB unit tests.
 ```
-(cd src && bundle exec rspec ../spec)
+scripts/test-unit-erb
 ```
 
 ### Acceptance Tests (BATs)

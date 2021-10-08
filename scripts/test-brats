@@ -14,11 +14,11 @@ script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # BOSH_BINARY_PATH
 
 
-cd src/go
+cd "${script_dir}/../src/go" || exit 1
 export GOPATH=$(pwd)
 export PATH="${GOPATH}/bin":$PATH
 
-cd src/github.com/cloudfoundry/bosh-release-acceptance-tests
+cd src/github.com/cloudfoundry/bosh-release-acceptance-tests || exit 1
 
 if [[ -n "${FOCUS_SPEC+x}" ]];then
   go run github.com/onsi/ginkgo/ginkgo -r -v -race -randomizeSuites -randomizeAllSpecs -focus="${FOCUS_SPEC}" -nodes 5 brats
