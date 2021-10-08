@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'fakefs/spec_helpers'
 
 module Bosh::Director::DeploymentPlan
   describe Instance do
@@ -483,6 +484,10 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#update_instance_settings' do
+      include FakeFS::SpecHelpers
+      let(:config_path) { asset('test-director-config.yml') }
+      let(:config) { YAML.load_file(config_path) }
+
       let(:fake_cert) { 'super trustworthy cert' }
       let(:persistent_disk_model) do
         instance_double(Bosh::Director::Models::PersistentDisk, name: 'some-disk', disk_cid: 'some-cid')
@@ -500,16 +505,20 @@ module Bosh::Director::DeploymentPlan
       let(:vm) { instance_model.active_vm }
 
       before do
+        configure_fake_config_files(config_path)
+        Bosh::Director::Config.configure(config)
         allow(instance_model).to receive(:active_persistent_disks).and_return(active_persistent_disks)
         allow(Bosh::Director::AgentClient).to receive(:with_agent_id)
           .with(vm.agent_id, instance_model.name).and_return(agent_client)
         allow(Bosh::Director::Config).to receive(:trusted_certs).and_return(fake_cert)
         allow(Bosh::Director::Config).to receive(:blobstore_config_fingerprint).and_return('blobstore-sha')
+        allow(Bosh::Director::Config).to receive(:nats_config_fingerprint).and_return('nats-sha')
         allow(persistent_disk_model).to receive(:managed?).and_return(true)
         instance.bind_existing_instance_model(instance_model)
         vm.update(
           trusted_certs_sha1: 'trusted-cert-sha',
           blobstore_config_sha1: 'blobstore-sha',
+          nats_config_sha1: 'nats-sha',
         )
       end
 
@@ -567,7 +576,7 @@ module Bosh::Director::DeploymentPlan
           end
 
           it 'should include the unredacted blobstore config when the stemcell does not support signed urls' do
-            expect(agent_client).to receive(:update_settings).with(hash_including('blobstores' => env.spec['bosh']['blobstores']))
+            expect(agent_client).to receive(:update_settings).with(hash_including('blobstores' => Bosh::Director::Config.agent_env['blobstores']))
 
             instance.update_instance_settings(vm)
           end

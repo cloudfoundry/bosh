@@ -22,6 +22,14 @@ module Support
         full_path
       end
     end
+
+    def configure_fake_config_files(config_path)
+      FakeFS::FileSystem.clone(config_path)
+      FileUtils.mkdir_p('/path/to')
+      File.write('/path/to/server_ca_path','server_ca_path')
+      File.write('/path/to/client_ca_certificate_path','client_ca_certificate_path')
+      File.write('/path/to/client_ca_private_key_path','client_ca_private_key_path')
+    end
   end
 end
 

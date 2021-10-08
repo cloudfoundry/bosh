@@ -28,11 +28,7 @@ describe Bosh::Director::Config do
   end
 
   before do
-    FakeFS::FileSystem.clone(test_config_path)
-    FileUtils.mkdir_p('/path/to')
-    File.write('/path/to/server_ca_path','server_ca_path')
-    File.write('/path/to/client_ca_certificate_path','client_ca_certificate_path')
-    File.write('/path/to/client_ca_private_key_path','client_ca_private_key_path')
+    configure_fake_config_files(test_config_path)
   end
 
   describe 'initialization' do
