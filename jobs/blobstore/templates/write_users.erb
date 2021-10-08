@@ -3,6 +3,10 @@ all_users = {
   p('blobstore.director.user') => p('blobstore.director.password'),
 }
 
+if p('blobstore.agent.user', nil).nil? && !p('blobstore.enable_signed_urls')
+  raise "Either 'blobstore.agent.user' must be set or 'blobstore.enable_signed_urls' must be true."
+end
+
 if_p('blobstore.agent.user') do |agent_user|
   all_users[agent_user] = p('blobstore.agent.password')
 end

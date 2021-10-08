@@ -10,7 +10,25 @@ shared_examples 'rendered *_users.erb' do
     template.render(properties).split("\n")
   end
 
-  context 'blobstore with no agent user settings' do
+  context 'blobstore with no agent user settings and signed URLs disabled' do
+    let(:properties) do
+      {
+        'blobstore' => {
+          'director' => {
+            'user' => 'director-0',
+            'password' => 'oeuirgh9453yt44y98',
+          },
+        },
+      }
+    end
+
+    it 'should raise an error mentioning the misconfigured properties' do
+      expect { rendered_template_lines }.to raise_error(/'blobstore\.agent\.user'/)
+      expect { rendered_template_lines }.to raise_error(/'blobstore\.enable_signed_urls'/)
+    end
+  end
+
+  context 'blobstore with no agent user settings and signed URLs enabled' do
     let(:properties) do
       {
         'blobstore' => {
