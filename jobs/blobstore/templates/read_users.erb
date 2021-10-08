@@ -3,8 +3,8 @@ all_users = {
   p('blobstore.director.user') => p('blobstore.director.password'),
 }
 
-if_p('blobstore.agent.user') do
-  all_users[p('blobstore.agent.user')] = p('blobstore.agent.password')
+if_p('blobstore.agent.user') do |agent_user|
+  all_users[agent_user] = p('blobstore.agent.password')
 end
 
 if_p('blobstore.agent.additional_users') do |agent_additional_users|

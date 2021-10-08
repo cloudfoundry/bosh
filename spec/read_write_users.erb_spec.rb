@@ -2,23 +2,23 @@ require 'bosh/template/evaluation_context'
 require_relative './template_example_group'
 
 shared_examples 'rendered *_users.erb' do
-  let(:template) { File.read(File.join(File.dirname(__FILE__), erb_file_name)) }
+  let(:release) { Bosh::Template::Test::ReleaseDir.new(File.join(File.dirname(__FILE__), '..')) }
+  let(:job) { release.job('blobstore') }
+  let(:template) { job.template(rendered_erb_file_name) }
 
   subject(:rendered_template_lines) do
-    binding = Bosh::Template::EvaluationContext.new(properties, nil).get_binding
-    ERB.new(template).result(binding).split("\n")
+    template.render(properties).split("\n")
   end
 
   context 'blobstore with no agent user settings' do
     let(:properties) do
       {
-        'properties' => {
-          'blobstore' => {
-            'director' => {
-              'user' => 'director-0',
-              'password' => 'oeuirgh9453yt44y98',
-            },
+        'blobstore' => {
+          'director' => {
+            'user' => 'director-0',
+            'password' => 'oeuirgh9453yt44y98',
           },
+          'enable_signed_urls' => true
         },
       }
     end
@@ -33,16 +33,14 @@ shared_examples 'rendered *_users.erb' do
   context 'blobstore with single users settings' do
     let(:properties) do
       {
-        'properties' => {
-          'blobstore' => {
-            'agent' => {
-              'user' => 'agent-0',
-              'password' => 'uyerbvfg84357gf43u',
-            },
-            'director' => {
-              'user' => 'director-0',
-              'password' => 'oeuirgh9453yt44y98',
-            },
+        'blobstore' => {
+          'agent' => {
+            'user' => 'agent-0',
+            'password' => 'uyerbvfg84357gf43u',
+          },
+          'director' => {
+            'user' => 'director-0',
+            'password' => 'oeuirgh9453yt44y98',
           },
         },
       }
@@ -58,26 +56,24 @@ shared_examples 'rendered *_users.erb' do
   context 'blobstore with multiple users settings' do
     let(:properties) do
       {
-        'properties' => {
-          'blobstore' => {
-            'agent' => {
-              'user' => 'agent-0',
-              'password' => 'uyerbvfg84357gf43u',
-              'additional_users' => [
-                {
-                  'user' => 'agent-1',
-                  'password' => '87y34tfgbyt4f487',
-                },
-                {
-                  'user' => 'agent-2',
-                  'password' => '78y4rfehg4f7834g',
-                },
-              ],
-            },
-            'director' => {
-              'user' => 'director-0',
-              'password' => 'oeuirgh9453yt44y98',
-            },
+        'blobstore' => {
+          'agent' => {
+            'user' => 'agent-0',
+            'password' => 'uyerbvfg84357gf43u',
+            'additional_users' => [
+              {
+                'user' => 'agent-1',
+                'password' => '87y34tfgbyt4f487',
+              },
+              {
+                'user' => 'agent-2',
+                'password' => '78y4rfehg4f7834g',
+              },
+            ],
+          },
+          'director' => {
+            'user' => 'director-0',
+            'password' => 'oeuirgh9453yt44y98',
           },
         },
       }
@@ -95,12 +91,12 @@ end
 
 describe 'read_users.erb' do
   it_should_behave_like 'rendered *_users.erb' do
-    let(:erb_file_name) { '../jobs/blobstore/templates/read_users.erb' }
+    let(:rendered_erb_file_name) { 'config/read_users' }
   end
 end
 
 describe 'write_users.erb' do
   it_should_behave_like 'rendered *_users.erb' do
-    let(:erb_file_name) { '../jobs/blobstore/templates/write_users.erb' }
+    let(:rendered_erb_file_name) { 'config/write_users' }
   end
 end
