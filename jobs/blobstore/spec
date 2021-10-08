@@ -34,7 +34,9 @@ properties:
     description: Password director must use to access blobstore via HTTP Basic
 
   blobstore.agent.user:
-    description: Username agents must use to access blobstore via HTTP Basic (optional, if provided the password is mandatory)
+    description: |
+      Username agents must use to access blobstore via HTTP Basic
+      (optional when 'blobstore.enable_signed_urls' is true)
   blobstore.agent.password:
     description: Password agents must use to access blobstore via HTTP Basic (mandatory when the user is provided)
   blobstore.agent.additional_users:
