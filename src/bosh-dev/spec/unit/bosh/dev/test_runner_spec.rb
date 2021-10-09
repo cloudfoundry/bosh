@@ -38,13 +38,13 @@ module Bosh::Dev
     describe '#unit_parallel' do
       it 'builds an parallel_test command' do
         expect(runner.unit_parallel('rocket')).to eq(
-          'parallel_test --type rspec --runtime-log /tmp/bosh_rocket_parallel_runtime_rspec.log spec',
+          "parallel_test --test-options '--no-fail-fast' --type rspec --runtime-log /tmp/bosh_rocket_parallel_runtime_rspec.log spec",
         )
       end
 
       it 'redirects output if logfile passed' do
         expect(runner.unit_parallel('pumpkin', 'potato.log')).to eq(
-          'parallel_test --type rspec --runtime-log /tmp/bosh_pumpkin_parallel_runtime_rspec.log spec > potato.log 2>&1',
+          "parallel_test --test-options '--no-fail-fast' --type rspec --runtime-log /tmp/bosh_pumpkin_parallel_runtime_rspec.log spec > potato.log 2>&1",
         )
       end
     end
@@ -61,10 +61,11 @@ module Bosh::Dev
         runner.unit_exec(build)
       end
 
-      it 'raises an error if the command fails' do
+      it 'signals failure if the command fails' do
         allow(Kernel).to receive(:system).and_return(false)
 
-        expect { runner.unit_exec(build) }.to raise_error(/#{build} failed to build unit tests/)
+        retval = runner.unit_exec(build)
+        expect(retval[:error]).to equal(true)
       end
     end
 
@@ -75,7 +76,7 @@ module Bosh::Dev
         end
 
         it 'raises and error' do
-          expect { runner.ruby }.to raise_error(/failed to build unit tests/)
+          expect { runner.ruby }.to raise_error(/Failed while running tests. See output above for more information./)
         end
       end
 
