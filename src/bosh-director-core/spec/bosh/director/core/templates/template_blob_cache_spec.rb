@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'fileutils'
 
 require 'bosh/director/core/templates/template_blob_cache'
 
