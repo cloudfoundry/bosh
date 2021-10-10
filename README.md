@@ -26,3 +26,17 @@ Cloud Foundry BOSH is an open source tool for release engineering, deployment, l
 ## Contributions
 
 Please read the [contributors' guide](https://github.com/cloudfoundry/bosh/blob/master/CONTRIBUTING.md)
+
+## Minimum software requirements
+
+Ruby 3.0.2 or later
+
+## Running the tests
+
+The code and all tests live in the `src` directory. All commands assume that `src` is your current working directory, and that `bundle install` has been run from that directory to install all required Ruby gems.
+
+### Unit Tests
+
+Either run `bundle exec rake unit:spec` or `bundle exec rake unit:spec:parallel`.
+
+The latter will run all unit tests, and should spread the load across all of the logical CPU cores that you have on your system.
