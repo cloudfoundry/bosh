@@ -88,7 +88,7 @@ module Bosh::Director
         @nats_rpc = nil
       end
 
-      def configure(config)
+      def configure(config, preload_db_classes: true)
         @max_vm_create_tries = Integer(config.fetch('max_vm_create_tries', 5))
         @flush_arp = config.fetch('flush_arp', false)
 
@@ -177,7 +177,7 @@ module Bosh::Director
         @dns = config['dns']
         if @dns && @dns['db']
           @dns_db = configure_db(@dns['db'])
-          if @dns_db
+          if @dns_db && preload_db_classes
             # Load these constants early.
             # These constants are not 'require'd, they are 'autoload'ed
             # in models.rb. We're seeing that in 1.9.3 that sometimes
@@ -569,8 +569,8 @@ module Bosh::Director
       Config.director_pool
     end
 
-    def configure_evil_config_singleton!
-      Config.configure(hash)
+    def configure_evil_config_singleton!(preload_db_classes: true)
+      Config.configure(hash, preload_db_classes: preload_db_classes)
     end
 
     def get_uuid_provider
