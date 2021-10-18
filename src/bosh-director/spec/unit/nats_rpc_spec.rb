@@ -26,7 +26,7 @@ describe Bosh::Director::NatsRpc do
       reconnect_time_wait: reconnect_time_wait,
       reconnect: true,
       tls: {
-          context: tls_context,
+        context: tls_context,
       },
     }
   end
@@ -136,16 +136,13 @@ describe Bosh::Director::NatsRpc do
       expect(called_times).to eql(1)
     end
 
-    context 'logging' do
-      let(:arguments) do
-        [{
+    context 'logging sensitive arguments' do
+      it 'logs redacted payload and checksum message in the debug logs for upload_blob call' do
+        arguments = [{
           'blob_id' => '1234-5678',
           'checksum' => 'QWERTY',
           'payload' => 'ASDFGH',
         }]
-      end
-
-      it 'logs redacted payload and checksum message in the debug logs for upload_blob call' do
         expect(some_logger).to receive(:debug).with('SENT: test_upload_blob {"method":"upload_blob","arguments":[{"blob_id":"1234-5678","checksum":"<redacted>","payload":"<redacted>"}],"reply_to":"director.123.client_id_567.req1"}')
         expect(nats).to receive(:subscribe).with('director.123.>')
         expect(nats).to receive(:publish) do |subject, message|
@@ -167,6 +164,55 @@ describe Bosh::Director::NatsRpc do
         expect(request_id).to eql('req1')
       end
 
+      it 'redacts certs from blobstore/mbus arguments in the debug logs during update_settings calls' do
+        expected_args = 'SENT: test_update_settings ' \
+          '{"method":"update_settings",' \
+          '"arguments":[{"trusted_certs":"trusted-cert","mbus":"<redacted>","blobstores":"<redacted>","disk_associations":[]}]' \
+          ',"reply_to":"director.123.client_id_567.req1"}'
+
+        passed_args = [{
+          'trusted_certs' => 'trusted-cert',
+          'mbus' => {
+            'cert' => {
+              'ca' => 'CA-CERT',
+              'certificate' => 'new nats cert',
+              'private_key' => 'new nats key',
+            },
+          },
+          'blobstores' => [
+            {
+              'provider' => 'cool-blob',
+              'options' => {
+                'endpoint' => 'http://127.0.0.1',
+                'user' => 'admin',
+                'password' => 'very-secret',
+              },
+            },
+          ],
+          'disk_associations' => [],
+        }]
+
+        expect(some_logger).to receive(:debug).with(expected_args)
+        expect(nats).to receive(:subscribe).with('director.123.>')
+        expect(nats).to receive(:publish) do |subject, message|
+          expect(subject).to eql('test_update_settings')
+          payload = JSON.parse(message)
+          expect(payload).to eql(
+            'method' => 'update_settings',
+            'arguments' => passed_args,
+            'reply_to' => 'director.123.client_id_567.req1',
+          )
+        end
+
+        request_id = nats_rpc.send_request(
+          'test_update_settings',
+          'client_id_567',
+          { method: :update_settings, arguments: passed_args },
+          options,
+        )
+        expect(request_id).to eql('req1')
+      end
+
       it 'does NOT redact other messages arguments calls' do
         expect(some_logger).to receive(:debug).with('SENT: test_any_method {"method":"any_method","arguments":'\
         '[{"blob_id":"1234-5678","checksum":"QWERTY","payload":"ASDFGH"}],"reply_to":"director.123.client_id_567.req1"}')
@@ -176,7 +222,11 @@ describe Bosh::Director::NatsRpc do
           payload = JSON.parse(message)
           expect(payload).to eql(
             'method' => 'any_method',
-            'arguments' => arguments,
+            'arguments' => [{
+              'blob_id' => '1234-5678',
+              'checksum' => 'QWERTY',
+              'payload' => 'ASDFGH',
+            }],
             'reply_to' => 'director.123.client_id_567.req1',
           )
         end
@@ -184,7 +234,11 @@ describe Bosh::Director::NatsRpc do
         request_id = nats_rpc.send_request(
           'test_any_method',
           'client_id_567',
-          { method: :any_method, arguments: arguments },
+          { method: :any_method, arguments: [{
+            'blob_id' => '1234-5678',
+            'checksum' => 'QWERTY',
+            'payload' => 'ASDFGH',
+          }] },
           options,
         )
         expect(request_id).to eql('req1')
@@ -205,7 +259,11 @@ describe Bosh::Director::NatsRpc do
         nats_rpc.send_request(
           'test_upload_blob',
           'client_id_567',
-          { method: :upload_blob, arguments: arguments },
+          { method: :upload_blob, arguments: [{
+            'blob_id' => '1234-5678',
+            'checksum' => 'QWERTY',
+            'payload' => 'ASDFGH',
+          }] },
           { 'logging' => false },
         )
       end
