@@ -770,12 +770,13 @@ module Bosh::Director
       end
 
       it 'does not error' do
+        extra_whitespace = YAML::LIBYAML_VERSION =~ /^0.2/ ? '' : ' '
         expect(changeset).to eq([
           ['service_catalog:', nil],
           ['  plans:', nil],
           ['  - name: some-name', 'added'],
-          ['  -', 'added'],
-          ['  -', 'added'],
+          ["  -#{extra_whitespace}", 'added'],
+          ["  -#{extra_whitespace}", 'added'],
           ['  - name: cache-small', 'removed'],
           ['    description: Blah', 'removed'],
           ['  - name: cache-medium', 'removed'],
@@ -796,13 +797,14 @@ module Bosh::Director
         end
 
         it 'does not error' do
+          extra_whitespace = YAML::LIBYAML_VERSION =~ /^0.2/ ? '' : ' '
           expect(changeset).to eq([
             ['service_catalog:', nil],
             ['  plans:', nil],
             ['  - name: some-name', 'added'],
             ['    range: some-range', 'added'],
-            ['  -', 'added'],
-            ['  -', 'added'],
+            ["  -#{extra_whitespace}", 'added'],
+            ["  -#{extra_whitespace}", 'added'],
             ['  - name: cache-small', 'removed'],
             ['    description: Blah', 'removed'],
             ['  - name: cache-medium', 'removed'],
