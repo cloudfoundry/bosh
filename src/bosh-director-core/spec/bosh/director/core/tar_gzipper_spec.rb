@@ -51,14 +51,12 @@ module Bosh::Director::Core
     end
 
     context 'if the source directory does not exist' do
-      let(:base_dir) { '/tmp/this/is/not/here' }
+      let(:missing_base_dir) { '/tmp/this/is/not/here' }
 
       it 'raises an error' do
-        FileUtils.rm_rf(base_dir)
-
         expect {
-          subject.compress(base_dir, sources, dest.path)
-        }.to raise_error("The base directory #{base_dir} could not be found.")
+          subject.compress(missing_base_dir, sources, dest.path)
+        }.to raise_error("The base directory #{missing_base_dir} could not be found.")
       end
     end
 
