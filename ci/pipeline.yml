@@ -805,6 +805,8 @@ jobs:
     public: true
     serial: true
     plan:
+      - get: weekly
+        trigger: true
       - get: bosh-src
       - get: bosh-src-dockerfiles
         trigger: true
@@ -874,6 +876,8 @@ jobs:
     public: true
     serial: true
     plan:
+      - get: weekly
+        trigger: true
       - get: bosh-src
       - get: bosh-src-dockerfiles
         trigger: true
@@ -926,6 +930,13 @@ resource_types:
     password: ((docker.password))
 
 resources:
+  - name: weekly
+    type: time
+    source:
+      start: 3:00 -0700
+      stop: 4:30 -0700
+      days: [ Saturday ]
+
   - name: bosh-src
     type: git
     icon: github-circle
