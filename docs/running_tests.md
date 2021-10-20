@@ -144,12 +144,12 @@ The BOSH Release
 
 Install the Gem dependencies.
 ```
-(cd src && bundle install)
+bundle install --gemfile=./src/Gemfile
 ```
 
 Run the ERB unit tests.
 ```
-scripts/test-unit-erb
+./scripts/test-unit-erb
 ```
 
 ### Acceptance Tests (BATs)
