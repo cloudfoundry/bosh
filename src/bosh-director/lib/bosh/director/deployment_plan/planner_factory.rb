@@ -41,14 +41,14 @@ module Bosh
         end
 
         def create_from_manifest(manifest, cloud_configs, runtime_configs, options)
-          consolidated_runtime_config = Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator.new(runtime_configs)
           consolidated_cloud_config = Bosh::Director::CloudConfig::CloudConfigsConsolidator.new(cloud_configs)
-          parse_from_manifest(manifest, consolidated_cloud_config, consolidated_runtime_config, options)
+          parse_from_manifest(manifest, consolidated_cloud_config, runtime_configs, options)
         end
 
         private
 
-        def parse_from_manifest(manifest, cloud_config_consolidator, runtime_config_consolidator, options)
+        def parse_from_manifest(manifest, cloud_config_consolidator, runtime_configs, options)
+          runtime_config_consolidator = Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator.new(runtime_configs)
           @manifest_validator.validate(manifest.manifest_hash)
 
           cloud_manifest = manifest.cloud_config_hash
@@ -81,7 +81,7 @@ module Bosh
             manifest.manifest_hash,
             manifest.manifest_text,
             cloud_config_consolidator.cloud_configs,
-            runtime_config_consolidator.runtime_configs,
+            [],
             deployment_model,
             plan_options,
             manifest_hash.fetch('properties', {}),
@@ -97,17 +97,25 @@ module Bosh
             end
           end
 
-          if runtime_config_consolidator.have_runtime_configs?
-            variables_spec_parser = Bosh::Director::DeploymentPlan::VariablesSpecParser.new(@logger, deployment.model)
-            parsed_runtime_config = RuntimeConfig::RuntimeManifestParser.new(@logger, variables_spec_parser).parse(runtime_config_consolidator.interpolate_manifest_for_deployment(name))
+          variables_spec_parser = Bosh::Director::DeploymentPlan::VariablesSpecParser.new(@logger, deployment.model)
+          variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new
+          runtime_configs.each do |runtime_config|
+            parsed_runtime_config = RuntimeConfig::RuntimeManifestParser.new(@logger, variables_spec_parser).parse(variables_interpolator.interpolate_runtime_manifest(runtime_config.raw_manifest, name))
+            runtime_config_applies = false
 
             parsed_runtime_config.get_applicable_releases(deployment).each do |release|
+              runtime_config_applies = true
               release.add_to_deployment(deployment)
             end
             parsed_runtime_config.addons.each do |addon|
+              runtime_config_applies = true
               addon.add_to_deployment(deployment)
             end
             deployment.add_variables(parsed_runtime_config.variables)
+
+            if runtime_config_applies
+              deployment.runtime_configs.push(runtime_config)
+            end
           end
 
           DeploymentValidator.new.validate(deployment)

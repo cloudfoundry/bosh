@@ -10,8 +10,7 @@ module Bosh
         let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
         let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new }
         let(:cloud_configs) { [Models::Config.make(:cloud, content: YAML.dump(cloud_config_hash))] }
-        let(:runtime_config_models) { [instance_double(Bosh::Director::Models::Config)] }
-        let(:runtime_config_consolidator) { instance_double(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator) }
+        let(:runtime_config_models) { [Bosh::Director::Models::Config.make(:runtime, content: runtime_config_hash.to_yaml)] }
         let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
         let(:runtime_config_hash) { Bosh::Spec::Deployments.simple_runtime_config }
 
@@ -38,13 +37,8 @@ module Bosh
         end
 
         before do
-          allow(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator)
-            .to receive(:new).with(runtime_config_models).and_return(runtime_config_consolidator)
+          allow_any_instance_of(ConfigServer::VariablesInterpolator).to receive(:interpolate_runtime_manifest) {|instance, manifest, deployment_name| manifest }
 
-          allow(runtime_config_consolidator).to receive(:interpolate_manifest_for_deployment).with('simple').and_return({})
-          allow(runtime_config_consolidator).to receive(:tags).and_return({})
-          allow(runtime_config_consolidator).to receive(:have_runtime_configs?).and_return(false)
-          allow(runtime_config_consolidator).to receive(:runtime_configs)
           upload_releases
           upload_stemcell
           configure_config
@@ -131,7 +125,6 @@ module Bosh
               manifest_hash['properties'] = expected_properties
               allow(deployment_repo)
                 .to receive(:find_or_create_by_name).with(deployment_name, plan_options).and_return(deployment_model)
-              allow(runtime_config_consolidator).to receive(:runtime_configs).and_return(runtime_config_models)
             end
 
             it 'calls planner new with appropriate arguments' do
@@ -140,7 +133,7 @@ module Bosh
                 manifest_hash,
                 YAML.dump(manifest_hash),
                 cloud_configs,
-                runtime_config_models,
+                [],
                 deployment_model,
                 expected_plan_options,
                 expected_properties,
@@ -157,7 +150,7 @@ module Bosh
 
             describe 'tags' do
               before do
-                allow(runtime_config_consolidator).to receive(:tags).and_return('runtime_tag' => 'dryer')
+                allow_any_instance_of(RuntimeConfig::RuntimeConfigsConsolidator).to receive(:tags).and_return('runtime_tag' => 'dryer')
               end
 
               it 'sets tag values from manifest and from runtime_config' do
@@ -170,14 +163,14 @@ module Bosh
               it 'passes deployment name to get interpolated runtime_config tags' do
                 runtime_config_hash['tags'] = { 'runtime_tag' => '((some_variable))' }
 
-                expect(runtime_config_consolidator)
+                expect_any_instance_of(RuntimeConfig::RuntimeConfigsConsolidator)
                   .to receive(:tags).with('simple').and_return('runtime_tag' => 'some_interpolated_value')
                 expect(planner.tags).to eq('runtime_tag' => 'some_interpolated_value')
               end
 
               it 'gives deployment manifest tags precedence over runtime_config tags' do
                 manifest_hash['tags'] = { 'tag_key' => 'sears' }
-                allow(runtime_config_consolidator).to receive(:tags).and_return('tag_key' => 'dryer')
+                allow_any_instance_of(RuntimeConfig::RuntimeConfigsConsolidator).to receive(:tags).and_return('tag_key' => 'dryer')
 
                 expect(planner.tags).to eq('tag_key' => 'sears')
               end
@@ -196,13 +189,9 @@ module Bosh
                 manifest_hash
               end
 
-              before do
-                allow(runtime_config_consolidator).to receive(:have_runtime_configs?).and_return(true)
-                allow(runtime_config_consolidator)
-                  .to receive(:interpolate_manifest_for_deployment).with('simple').and_return(runtime_config_hash)
-              end
-
               context 'and the runtime config does not have any applicable jobs' do
+                let(:runtime_config_hash) { Bosh::Spec::Deployments.runtime_config_with_addon_includes }
+
                 it 'has the releases from the deployment manifest' do
                   expect(planner.releases.map { |r| [r.name, r.version] }).to match_array(
                     [
@@ -339,32 +328,90 @@ module Bosh
           end
 
           context 'runtime config' do
-            before do
-              allow(runtime_config_consolidator).to receive(:have_runtime_configs?).and_return(true)
+            context "when the version of a release is 'latest'" do
+              let(:runtime_config_hash) { Bosh::Spec::Deployments.simple_runtime_config(release = 'bosh-release', version = 'latest') }
+
+              it "throws an error" do
+                expect do
+                  planner
+                end.to raise_error Bosh::Director::RuntimeInvalidReleaseVersion,
+                                   "Runtime manifest contains the release 'bosh-release' with version as 'latest'. " \
+                                   'Please specify the actual version string.'
+              end
             end
 
-            it "throws an error if the version of a release is 'latest'" do
-              invalid_manifest = Bosh::Spec::Deployments.simple_runtime_config('bosh-release', 'latest')
-              allow(runtime_config_consolidator)
-                .to receive(:interpolate_manifest_for_deployment).with(String).and_return(invalid_manifest)
+            context "when the release used by an addon is not listed in the releases section" do
+              let(:runtime_config_hash) { Bosh::Spec::Deployments.runtime_config_release_missing }
 
-              expect do
-                planner
-              end.to raise_error Bosh::Director::RuntimeInvalidReleaseVersion,
-                                 "Runtime manifest contains the release 'bosh-release' with version as 'latest'. " \
-                                 'Please specify the actual version string.'
+              it 'throws an error' do
+                expect do
+                  planner
+                end.to raise_error Bosh::Director::AddonReleaseNotListedInReleases,
+                                   "Manifest specifies job 'job_using_pkg_2' which is defined in 'release2', " \
+                                   "but 'release2' is not listed in the runtime releases section."
+              end
             end
 
-            it 'throws an error if the release used by an addon is not listed in the releases section' do
-              invalid_manifest = Bosh::Spec::Deployments.runtime_config_release_missing
-              allow(runtime_config_consolidator)
-                .to receive(:interpolate_manifest_for_deployment).with(String).and_return(invalid_manifest)
+            context 'when a non-matching runtime config contains a conflicting release version that is contained in a different matching config' do
+              let(:release_name) { manifest_hash['releases'].first['name'] }
+              let(:release_version) { manifest_hash['releases'].first['version'] }
+              let(:non_matching_release_version) { "#{release_version}-2" }
+              let(:matching_runtime_config_hash) do
+                Bosh::Spec::Deployments.simple_runtime_config(release_name, release_version).merge(
+                  'addons' => [
+                    {
+                      'name' => 'addon1',
+                      'jobs' => [
+                        {
+                          'name' => 'my_template',
+                          'release' => release_name,
+                          'properties' => { },
+                        },
+                      ]
+                    },
+                  ],
+                )
+              end
+              let(:non_matching_runtime_config_hash) do
+                Bosh::Spec::Deployments.simple_runtime_config(release_name, non_matching_release_version).merge(
+                  'addons' => [
+                    {
+                      'name' => 'addon1',
+                      'jobs' => [
+                        {
+                          'name' => 'my_template',
+                          'release' => release_name,
+                          'properties' => { },
+                        },
+                      ],
+                      'include' => {
+                        'deployments' => ['non_matching_deployment']
+                      },
+                    },
+                  ],
+                )
+              end
+              let(:runtime_config_hash) do
+                matching_runtime_config_hash.merge(non_matching_runtime_config_hash) {|key, old_hash, new_hash| old_hash += new_hash }
+              end
+              let(:runtime_config_models) do
+                [
+                  Bosh::Director::Models::Config.new(
+                    type: 'runtime',
+                    name: 'matching',
+                    content: matching_runtime_config_hash.to_yaml
+                  ),
+                  Bosh::Director::Models::Config.new(
+                    type: 'runtime',
+                    name: 'non_matching',
+                    content: non_matching_runtime_config_hash.to_yaml
+                  )
+                ]
+              end
 
-              expect do
-                planner
-              end.to raise_error Bosh::Director::AddonReleaseNotListedInReleases,
-                                 "Manifest specifies job 'job_using_pkg_2' which is defined in 'release2', " \
-                                 "but 'release2' is not listed in the runtime releases section."
+              it 'does not include releases from the non-matching runtime config' do
+                expect(planner.release(release_name).version).to equal(release_version)
+              end
             end
           end
         end
@@ -394,9 +441,9 @@ module Bosh
           end
 
           runtime_config_hash['releases'].each do |release_entry|
-            release = Models::Release.make(name: release_entry['name'])
+            release = Models::Release.find(name: release_entry['name']) || Models::Release.make(name: release_entry['name'])
             template = Models::Template.make(name: 'my_template', release: release)
-            release_version = Models::ReleaseVersion.make(release: release, version: release_entry['version'])
+            release_version = Models::ReleaseVersion.find(release: release, version: release_entry['version']) || Models::ReleaseVersion.make(release: release, version: release_entry['version'])
             release_version.add_template(template)
           end
         end

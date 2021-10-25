@@ -681,12 +681,7 @@ module Bosh::Spec
     def self.simple_runtime_config(release = 'test_release_2', version = '2')
       {
         'releases' => [{ 'name' => release, 'version' => version }],
-      }
-    end
-
-    def self.runtime_config_latest_release
-      {
-        'releases' => [{ 'name' => 'bosh-release', 'version' => 'latest' }],
+        'addons' => [{ 'name' => 'addon1', 'jobs' => [{ 'name' => 'my_template', 'release' => release }] }],
       }
     end
 
