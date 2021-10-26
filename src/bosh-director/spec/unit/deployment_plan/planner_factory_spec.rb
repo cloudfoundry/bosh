@@ -363,7 +363,7 @@ module Bosh
                       'name' => 'addon1',
                       'jobs' => [
                         {
-                          'name' => 'my_template',
+                          'name' => 'job_using_pkg_1',
                           'release' => release_name,
                           'properties' => { },
                         },
@@ -379,7 +379,7 @@ module Bosh
                       'name' => 'addon1',
                       'jobs' => [
                         {
-                          'name' => 'my_template',
+                          'name' => 'job_using_pkg_1',
                           'release' => release_name,
                           'properties' => { },
                         },
