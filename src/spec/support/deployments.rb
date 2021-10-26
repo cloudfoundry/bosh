@@ -681,7 +681,7 @@ module Bosh::Spec
     def self.simple_runtime_config(release = 'test_release_2', version = '2')
       {
         'releases' => [{ 'name' => release, 'version' => version }],
-        'addons' => [{ 'name' => 'addon1', 'jobs' => [{ 'name' => 'job_using_pkg_1', 'release' => release }] }],
+        'addons' => [{ 'name' => 'addon1', 'jobs' => [{ 'name' => 'job_using_pkg_5', 'release' => release }] }],
       }
     end
 
