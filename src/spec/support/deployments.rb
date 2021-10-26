@@ -678,10 +678,10 @@ module Bosh::Spec
     end
 
     ### Other Configs
-    def self.simple_runtime_config(release = 'test_release_2', version = '2')
+    def self.simple_runtime_config(release = 'test_release_2', version = '2', job = 'my_template')
       {
         'releases' => [{ 'name' => release, 'version' => version }],
-        'addons' => [{ 'name' => 'addon1', 'jobs' => [{ 'name' => 'job_using_pkg_5', 'release' => release }] }],
+        'addons' => [{ 'name' => 'addon1', 'jobs' => [{ 'name' => job, 'release' => release }] }],
       }
     end
 

@@ -151,6 +151,7 @@ describe 'using director with config server and deployments having links', type:
       Bosh::Spec::Deployments.simple_runtime_config.tap do |config|
         config['variables'] = variables
         config['releases'] = []
+        config['addons'] = []
       end
     end
 

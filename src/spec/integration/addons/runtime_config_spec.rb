@@ -97,8 +97,7 @@ describe 'runtime config', type: :integration do
     it 'deploys it after comparing both versions as a string' do
       bosh_runner.run("upload-release #{spec_asset('test_release_2.tgz')}")
 
-      runtime_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::Deployments.simple_runtime_config)
-      runtime_config['releases'][0]['version'] = 2
+      runtime_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::Deployments.simple_runtime_config('test_release_2', 2, 'job_using_pkg_1'))
       runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
       expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
