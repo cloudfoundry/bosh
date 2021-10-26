@@ -16,7 +16,11 @@ describe 'cli: cloudcheck', type: :integration do
     before do
       manifest['instance_groups'][0]['persistent_disk'] = 100
       manifest['tags'] = { 'deployment-tag' => 'deployment-value' }
-      upload_runtime_config(runtime_config_hash: { 'tags' => { 'runtime-tag' => 'runtime-value' } })
+      upload_runtime_config(runtime_config_hash: { 'tags' => { 'runtime-tag' => 'runtime-value' },
+                                                   'addons' => [
+                                                     'name' => 'ubiquitious',
+                                                     'jobs' => [],
+                                                   ] })
       deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
 
       expect(runner.run('cloud-check --report', deployment_name: 'simple')).to match(regexp('0 problems'))
