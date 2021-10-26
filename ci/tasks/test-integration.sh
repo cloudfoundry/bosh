@@ -15,10 +15,12 @@ echo "Starting $DB..."
 case "$DB" in
   mysql)
     export DB_PASSWORD="password"
-    mv /var/lib/mysql /var/lib/mysql-src
-    mkdir /var/lib/mysql
-    mount -t tmpfs -o size=512M tmpfs /var/lib/mysql
-    mv /var/lib/mysql-src/* /var/lib/mysql/
+    if [ ! -d /var/lib/mysql-src ]; then # Set up MySQL if it's the first time
+      mv /var/lib/mysql /var/lib/mysql-src
+      mkdir -p /var/lib/mysql
+      mount -t tmpfs -o size=512M tmpfs /var/lib/mysql
+      mv /var/lib/mysql-src/* /var/lib/mysql/
+    fi
     echo '
 [client]
 default-character-set=utf8
@@ -53,50 +55,52 @@ max_allowed_packet=6M' >> /etc/mysql/my.cnf
     export PATH=$( echo /usr/lib/postgresql/*/bin ):$PATH
     export DB_PASSWORD="smurf"
 
-    mkdir /tmp/postgres
-    mount -t tmpfs -o size=512M tmpfs /tmp/postgres
-    mkdir /tmp/postgres/data
-    chown postgres:postgres /tmp/postgres/data
-    export PGDATA=/tmp/postgres/data
-
-    su postgres -c '
-      export PATH=$( echo /usr/lib/postgresql/*/bin ):$PATH
+    if [ ! -d /tmp/postgres ]; then # PostgreSQL hasn't been set up
+      mkdir /tmp/postgres
+      mount -t tmpfs -o size=512M tmpfs /tmp/postgres
+      mkdir /tmp/postgres/data
+      chown postgres:postgres /tmp/postgres/data
       export PGDATA=/tmp/postgres/data
-      export PGLOGS=/tmp/log/postgres
-      mkdir -p $PGDATA
-      mkdir -p $PGLOGS
-      echo $DB_PASSWORD > /tmp/bosh-postgres.password
-      initdb -U postgres -D $PGDATA --pwfile /tmp/bosh-postgres.password
-    '
 
-    echo "max_connections = 1024" >> $PGDATA/postgresql.conf
-    echo "shared_buffers = 240MB" >> $PGDATA/postgresql.conf
-
-    if [ "$DB_TLS" = true ]; then
-      echo "....... DB TLS enabled ......."
-      cp bosh-src/src/bosh-dev/assets/sandbox/database/database_server/private_key $PGDATA/server.key
-      cp bosh-src/src/bosh-dev/assets/sandbox/database/database_server/certificate.pem $PGDATA/server.crt
-      chown postgres $PGDATA/server.key
-      chown postgres $PGDATA/server.crt
       su postgres -c '
+        export PATH=$( echo /usr/lib/postgresql/*/bin ):$PATH
         export PGDATA=/tmp/postgres/data
-        echo "ssl = on" >> $PGDATA/postgresql.conf
-        echo "client_encoding = 'UTF8'" >> $PGDATA/postgresql.conf
-        echo "hostssl all all 127.0.0.1/32 password" > $PGDATA/pg_hba.conf
-        echo "hostssl all all 0.0.0.0/32 password" >> $PGDATA/pg_hba.conf
-        echo "hostssl all all ::1/128 password" >> $PGDATA/pg_hba.conf
-        echo "hostssl all all localhost password" >> $PGDATA/pg_hba.conf
+        export PGLOGS=/tmp/log/postgres
+        mkdir -p $PGDATA
+        mkdir -p $PGLOGS
+        echo $DB_PASSWORD > /tmp/bosh-postgres.password
+        initdb -U postgres -D $PGDATA --pwfile /tmp/bosh-postgres.password
+      '
 
-        chmod 600 $PGDATA/server.*
+      echo "max_connections = 1024" >> $PGDATA/postgresql.conf
+      echo "shared_buffers = 240MB" >> $PGDATA/postgresql.conf
+
+      if [ "$DB_TLS" = true ]; then
+        echo "....... DB TLS enabled ......."
+        cp bosh-src/src/bosh-dev/assets/sandbox/database/database_server/private_key $PGDATA/server.key
+        cp bosh-src/src/bosh-dev/assets/sandbox/database/database_server/certificate.pem $PGDATA/server.crt
+        chown postgres $PGDATA/server.key
+        chown postgres $PGDATA/server.crt
+        su postgres -c '
+          export PGDATA=/tmp/postgres/data
+          echo "ssl = on" >> $PGDATA/postgresql.conf
+          echo "client_encoding = 'UTF8'" >> $PGDATA/postgresql.conf
+          echo "hostssl all all 127.0.0.1/32 password" > $PGDATA/pg_hba.conf
+          echo "hostssl all all 0.0.0.0/32 password" >> $PGDATA/pg_hba.conf
+          echo "hostssl all all ::1/128 password" >> $PGDATA/pg_hba.conf
+          echo "hostssl all all localhost password" >> $PGDATA/pg_hba.conf
+
+          chmod 600 $PGDATA/server.*
+        '
+      fi
+
+      su postgres -c '
+        export PATH=$( echo /usr/lib/postgresql/*/bin ):$PATH
+        export PGLOGS=/tmp/log/postgres
+        export PGCLIENTENCODING=UTF8
+        pg_ctl start -l $PGLOGS/server.log -o "-N 400"
       '
     fi
-
-    su postgres -c '
-      export PATH=$( echo /usr/lib/postgresql/*/bin ):$PATH
-      export PGLOGS=/tmp/log/postgres
-      export PGCLIENTENCODING=UTF8
-      pg_ctl start -l $PGLOGS/server.log -o "-N 400"
-    '
     ;;
   *)
     echo "Usage: DB={mysql|postgresql} $0 {commands}"
