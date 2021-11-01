@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-
-set -e -o pipefail
-
-postgres_pid=$(/var/vcap/packages/bpm/bin/bpm pid postgres)
-kill -s SIGINT "${postgres_pid}"
-
-/var/vcap/jobs/bpm/bin/bpm stop postgres
