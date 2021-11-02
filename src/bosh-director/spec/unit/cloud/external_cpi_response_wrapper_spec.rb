@@ -30,12 +30,12 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
     allow(stdout).to receive(:fileno).and_return(1)
 
     stdout_reponse_values = [cpi_response, nil, cpi_response, nil, cpi_response, nil]
-    allow(stdout).to receive(:readline) { stdout_reponse_values.shift || raise(EOFError) }
+    allow(stdout).to receive(:readline_nonblock) { stdout_reponse_values.shift || raise(EOFError) }
 
     allow(stderr).to receive(:fileno).and_return(2)
 
     stderr_reponse_values = [cpi_error, nil, cpi_error, nil, cpi_error, nil]
-    allow(stderr).to receive(:readline) { stderr_reponse_values.shift || raise(EOFError) }
+    allow(stderr).to receive(:readline_nonblock) { stderr_reponse_values.shift || raise(EOFError) }
   end
 
   before(:each) do

@@ -38,12 +38,12 @@ describe Bosh::Clouds::ExternalCpi do
       allow(stdout).to receive(:fileno).and_return(1)
 
       stdout_reponse_values = [cpi_response, nil, cpi_response, nil, cpi_response, nil]
-      allow(stdout).to receive(:readline) { stdout_reponse_values.shift || raise(EOFError) }
+      allow(stdout).to receive(:readline_nonblock) { stdout_reponse_values.shift || raise(EOFError) }
 
       allow(stderr).to receive(:fileno).and_return(2)
 
       stderr_reponse_values = [cpi_error, nil, cpi_error, nil, cpi_error, nil]
-      allow(stderr).to receive(:readline) { stderr_reponse_values.shift || raise(EOFError) }
+      allow(stderr).to receive(:readline_nonblock) { stderr_reponse_values.shift || raise(EOFError) }
 
       allow(Open3).to receive(:popen3).and_yield(stdin, stdout, stderr, wait_thread)
 
@@ -643,5 +643,23 @@ describe Bosh::Clouds::ExternalCpi do
 
   describe '#info' do
     it_calls_cpi_method(:info)
+  end
+
+  context 'Fix for a dealock scenario when a cpi sub-process sends an inclomplete line (missing "\n") to STDOUT' do
+    let(:logger) { Logging::Logger.new('ExternalCpi') }
+    let(:cpi_log_path) { '/var/vcap/task/5/cpi' }
+    let(:config) { double('Bosh::Director::Config', logger: logger, cpi_task_log: cpi_log_path) }
+    let(:external_cpi) { described_class.new(asset("bin/dummy_cpi"), 'fake-director-uuid', logger) }
+
+    before { stub_const('Bosh::Director::Config', config) }
+    before { FileUtils.mkdir_p('/var/vcap/task/5') }
+    before { allow(File).to receive(:executable?).with(asset("bin/dummy_cpi")).and_return(true) }
+
+    it 'does not deadlock' do
+      Timeout::timeout(20) do
+        result = external_cpi.info
+        expect(result).to eq 'OK'
+      end
+    end
   end
 end
