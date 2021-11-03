@@ -2,6 +2,21 @@
 
 Cloud Foundry BOSH is an open source tool for release engineering, deployment, lifecycle management, and monitoring of distributed systems.
 
+This repository is a Bosh Release, providing the necessary binaries and
+configuration templates for deploying a new Bosh Director instance, as
+instructed by some Bosh deployment manifest, to be applied by some Bosh CLI
+invocation or a pre-existing Bosh Director instance.
+
+## Quick start
+
+Bosh is deployed by Bosh, and in order to bootstrap a new Bosh server from
+scratch, the Bosh CLI acts as a lightweight Bosh server with the
+`bosh create-env` command. Please refer to this
+[Quick Start installation guide](https://bosh.io/docs/quick-start/) for more
+details.
+
+## See also
+
 * Documentation:
 	- [bosh.io/docs](https://bosh.io/docs) for installation & usage guide
 	- [docs/ directory](docs/) for developer docs
