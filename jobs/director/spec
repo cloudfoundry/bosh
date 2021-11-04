@@ -425,10 +425,15 @@ properties:
 
   # Compiled Package Cache
   compiled_package_cache.provider:
-    description: Provider of the blobstore used for the compiled package cache
+    description: |
+      Provider of the blobstore used for the compiled package cache.
+      Possible values are: 'local', 's3' and 'gcs'.
+      A value of 'local' is implied (and thus optional) when blobstore_path is provided.
     default: 's3'
   compiled_package_cache.options.bucket_name:
-    description: AWS S3 Bucket used for the compiled package cache
+    description: AWS S3 or GCS Bucket used for the compiled package cache
+  compiled_package_cache.options.blobstore_path:
+    description: Local directory where blobs will be stored. Implies a provider of 'local'.
 
   compiled_package_cache.options.credentials_source:
     description:  AWS credentials (static / env_or_profile)
