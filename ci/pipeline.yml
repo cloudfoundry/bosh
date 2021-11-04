@@ -3,6 +3,7 @@ groups:
   - name: bosh
     jobs:
       - gate
+      - bump-packages
       - unit
       - unit-mysql
       - unit-postgres
@@ -909,6 +910,26 @@ jobs:
         get_params:
           skip_download: true
 
+  - name: bump-packages
+    plan:
+    - in_parallel:
+      - get: bosh-src
+      - get: nginx-release
+        trigger: true
+    - task: bump-nginx-packages
+      file: nginx-release/ci/shared/bump-nginx-package.yml
+      input_mapping:
+        input_repo: bosh-src
+      output_mapping:
+        output_repo: bosh-src-out
+      params:
+        PACKAGES: [nginx]
+        PRIVATE_YML: ((bosh_release_private_yml))
+    - put: bosh-src
+      params:
+        repository: bosh-src-out
+        rebase: true
+
 resource_types:
 - name: terraform
   type: docker-image
@@ -1129,6 +1150,12 @@ resources:
     source:
       uri: https://github.com/cloudfoundry/bosh-agent
       branch: main
+
+  - name: nginx-release
+    type: git
+    source:
+      uri: https://github.com/bosh-packages/nginx-release.git
+      branch: master
 
   - name: tracker-output
     type: tracker
