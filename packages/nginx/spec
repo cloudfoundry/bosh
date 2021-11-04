@@ -1,8 +1,0 @@
----
-name: nginx
-files:
-- nginx/nginx-1.20.1.tar.gz
-- nginx/headers-more-nginx-module-0.30.tar.gz
-- nginx/pcre-8.44.tar.gz
-- nginx/nginx-upload-module-2.3.0.tar.gz
-- nginx/ngx_http_hmac_secure_link_module-0.3.tar.gz
