@@ -3,6 +3,7 @@
 postgres_config = {
   "name" => "postgres",
   "executable" => "/var/vcap/jobs/postgres/bin/postgres",
+  "shutdown_signal" => "INT",
   "additional_volumes" => [
     {
       "path" => "/var/vcap/store/postgres-13",

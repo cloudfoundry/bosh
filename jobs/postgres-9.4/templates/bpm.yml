@@ -3,6 +3,7 @@
 postgres_config = {
   "name" => "postgres-9.4",
   "executable" => "/var/vcap/jobs/postgres-9.4/bin/postgres",
+  "shutdown_signal" => "INT",
   "persistent_disk" => true,
   "limits" => {
     "open_files" => 65536,
