@@ -14,6 +14,7 @@ module Bosh::Dev::Sandbox
 
     def install
       sync_release_blobs
+      retrieve_nginx_package
       if !File.file?(File.join(@install_dir, 'sbin', 'nginx')) || blob_has_changed || platform_has_changed
         compile
       else
@@ -52,6 +53,14 @@ module Bosh::Dev::Sandbox
       Dir.chdir(RELEASE_ROOT) { @runner.run('bosh sync-blobs') }
     end
 
+    def retrieve_nginx_package
+      Dir.chdir(RELEASE_ROOT) do
+        @runner.run('bosh create-release --force --tarball /tmp/release.tgz')
+        @runner.run('tar -zxvf /tmp/release.tgz -C /tmp packages/nginx.tgz')
+        @runner.run('tar -xvf /tmp/packages/nginx.tgz  -C packages/nginx')
+      end
+    end
+
     def compile
       # Clean up old compiled nginx bits to stay up-to-date
       FileUtils.rm_rf(@working_dir)
@@ -68,8 +77,8 @@ module Bosh::Dev::Sandbox
       @runner.run("echo '#{RUBY_PLATFORM}' > #{@install_dir}/platform")
 
       # Make sure packaging script has its own blob copies so that blobs/ directory is not affected
-      nginx_blobs_path = File.join(RELEASE_ROOT, 'blobs', 'nginx')
-      @runner.run("cp -R #{nginx_blobs_path} #{File.join(@working_dir)}")
+      nginx_blobs_path = File.join(RELEASE_ROOT, 'packages', 'nginx')
+      @runner.run("cp -R #{nginx_blobs_path}/. #{File.join(@working_dir)}")
 
       Dir.chdir(@working_dir) do
         packaging_script_path = File.join(RELEASE_ROOT, 'packages', 'nginx', 'packaging')
