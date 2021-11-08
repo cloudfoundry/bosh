@@ -770,7 +770,7 @@ module Bosh::Director
       end
 
       it 'does not error' do
-        extra_whitespace = YAML::LIBYAML_VERSION =~ /^0.2/ ? '' : ' '
+        extra_whitespace = Gem::Version.new(YAML::LIBYAML_VERSION) >= Gem::Version.new('0.2.5')  ? '' : ' '
         expect(changeset).to eq([
           ['service_catalog:', nil],
           ['  plans:', nil],
@@ -797,7 +797,7 @@ module Bosh::Director
         end
 
         it 'does not error' do
-          extra_whitespace = YAML::LIBYAML_VERSION =~ /^0.2/ ? '' : ' '
+          extra_whitespace = Gem::Version.new(YAML::LIBYAML_VERSION) >= Gem::Version.new('0.2.5')  ? '' : ' '
           expect(changeset).to eq([
             ['service_catalog:', nil],
             ['  plans:', nil],
