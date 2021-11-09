@@ -1,8 +1,10 @@
 # Contributing to BOSH
 
-When contributing a pull request, be sure to submit your pull request against
-the [**master**](https://github.com/cloudfoundry/bosh/tree/master) branch. See
-[Pull Request Workflow](docs/pull_request_workflow.md) for further details.
+When contributing a pull request, be sure to:
+- Check the [BOSH Code Style](docs/code_style.md)
+- See [Pull Request Workflow](docs/pull_request_workflow.md) for further details
+- Submit your pull request against
+the [**master**](https://github.com/cloudfoundry/bosh/tree/master) branch
 
 ## Contributor License Agreement
 

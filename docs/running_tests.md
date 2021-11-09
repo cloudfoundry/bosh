@@ -1,6 +1,6 @@
 # Tests
 
-Features should always contain unit tests to verify functionality and may need additional tests depending on the feature scope.
+Features should always contain unit tests to verify functionality and may need additional tests depending on the feature scope. Please check the [Workstation Setup](workstation_setup.md) to set the test environment up.
 
 
 ## BOSH Director Ruby app tests
@@ -32,13 +32,12 @@ For components like BOSH's director you can specify the database connection via 
 bosh/src$ DB=mysql bundle exec rake spec:unit:director
 ```
 
-To run unit tests for all components, use the `spec:unit` rake task from the project root:
+To run unit tests for all components, use the `spec:unit` or `spec:unit:parallel` rake task. The latter will run all unit tests, and should spread the load across all of the logical CPU cores that you have on your system. E.g.:
 
 ```
 bosh/src$ bundle exec rake spec:unit
 ```
 
-The CLI must be backwards compatible with Ruby 1.9.3, so when making CLI changes make sure that the CLI tests pass when run with Ruby 1.9.3. All code needs to run on Ruby 2.x.x.
 
 You can also use a [Concourse CI](https://concourse.ci/) instance with the rake task:
 
