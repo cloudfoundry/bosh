@@ -19,7 +19,6 @@ groups:
       - bosh-disaster-recovery-acceptance-tests
       - upgrade
       - upload-compiled-staging-tarball
-      - deploy-acceptance-env
       - delivery
 
   - name: cut-release
@@ -642,41 +641,6 @@ jobs:
             get_params:
               action: destroy
 
-  - name: deploy-acceptance-env
-    serial: true
-    plan:
-      - in_parallel:
-        - get: bbl-state
-          resource: acceptance-env-state
-        - get: zookeeper-release
-        - get: prometheus-boshrelease
-        - get: bosh-deployment
-        - get: stemcell
-          resource: google-kvm-ubuntu-bionic
-        - get: bosh-src
-          passed:
-          - bats-ubuntu-bionic
-          - brats-ubuntu-bionic
-          - bosh-disaster-recovery-acceptance-tests
-        - get: candidate-release
-          resource: bosh-compiled-candidate-bionic
-          trigger: true
-          passed:
-          - bats-ubuntu-bionic
-          - brats-ubuntu-bionic
-          - bosh-disaster-recovery-acceptance-tests
-      - task: deploy-env
-        file: bosh-src/ci/tasks/setup-env.yml
-        params:
-          BBL_GCP_SERVICE_ACCOUNT_KEY: ((acceptance_gcp_service_account_key))
-          BBL_GCP_REGION: us-west2
-          BBL_IAAS: gcp
-        ensure:
-          put: acceptance-env-state
-          params:
-            repository: updated-bbl-state
-            rebase: true
-
   - name: upload-compiled-staging-tarball
     plan:
     - get: compiled-release
@@ -709,7 +673,7 @@ jobs:
     plan:
       - in_parallel:
         - get: bosh-src
-          passed: [deploy-acceptance-env, delivery]
+          passed: [delivery]
         - get: bosh-src-latest
           resource: bosh-src
         - get: bosh-cli
@@ -1047,14 +1011,6 @@ resources:
         access_key_id: ((bosh-ci-database-terraform-aws-access-key-id))
         secret_access_key: ((bosh-ci-database-terraform-aws-secret-access-key))
 
-  - name: acceptance-env-state
-    type: git
-    icon: github-circle
-    source:
-      branch: master
-      uri: git@github.com:cloudfoundry/bosh-bbl-ci-envs.git
-      private_key: ((bosh-bbl-ci-envs-private-key))
-
   - name: zookeeper-release
     type: git
     icon: github-circle
@@ -1069,11 +1025,6 @@ resources:
       uri: ((bosh_src_url))
       branch: master
       private_key: ((github_deployment_key))
-
-  - name: prometheus-boshrelease
-    type: bosh-io-release
-    source:
-      repository: cloudfoundry-community/prometheus-boshrelease
 
   - name: bosh-cli
     type: s3
@@ -1123,11 +1074,6 @@ resources:
     source:
       api_token: ((pivnet_bot_api_token))
       product_slug: stemcells-ubuntu-xenial
-
-  - name: google-kvm-ubuntu-bionic
-    type: bosh-io-stemcell
-    source:
-      name: bosh-google-kvm-ubuntu-bionic-go_agent
 
   - name: aws-xen-hvm-ubuntu-bionic
     type: bosh-io-stemcell
