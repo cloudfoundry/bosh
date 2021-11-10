@@ -142,6 +142,8 @@ module Bosh::Clouds
             end
           rescue EOFError
             files.delete f
+          rescue IO::WaitReadable
+            # do nothing
           end
         end
         exit_status = wait_thr.value.exitstatus
