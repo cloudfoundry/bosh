@@ -645,15 +645,23 @@ describe Bosh::Clouds::ExternalCpi do
     it_calls_cpi_method(:info)
   end
 
-  context 'Fix for a dealock scenario when a cpi sub-process sends an inclomplete line (missing "\n") to STDOUT' do
+  context 'Fix for a deadlock scenario when a cpi sub-process sends an incomplete line (missing "\n") to STDOUT' do
     let(:logger) { Logging::Logger.new('ExternalCpi') }
     let(:cpi_log_path) { '/var/vcap/task/5/cpi' }
     let(:config) { double('Bosh::Director::Config', logger: logger, cpi_task_log: cpi_log_path) }
     let(:external_cpi) { described_class.new(asset("bin/dummy_cpi"), 'fake-director-uuid', logger) }
 
-    before { stub_const('Bosh::Director::Config', config) }
-    before { FileUtils.mkdir_p('/var/vcap/task/5') }
-    before { allow(File).to receive(:executable?).with(asset("bin/dummy_cpi")).and_return(true) }
+    before do
+      stub_const('Bosh::Director::Config', config)
+      FileUtils.mkdir_p('/var/vcap/task/5')
+      allow(File).to receive(:executable?).with(asset('bin/dummy_cpi')).and_return(true)
+      allow(Open3).to receive(:popen3).and_wrap_original do |original_method, *args, &block|
+        # We need to make sure Open3.popen3 gets called with a env path where ruby exists.
+        # We happen to know it is /usr/local/bin/ in this case.
+        args[0]['PATH'] += ':/usr/local/bin'
+        original_method.call(*args, &block)
+      end
+    end
 
     it 'does not deadlock' do
       Timeout::timeout(20) do
