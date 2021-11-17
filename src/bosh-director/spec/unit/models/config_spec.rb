@@ -44,15 +44,19 @@ module Bosh::Director::Models
       end
 
       context 'deleted config name' do
-        it 'is not enumerated in latest' do
-          Bosh::Director::Models::Config.new(type: 'fake-cloud', content: 'v1', name: 'one').save
-          one2 = Bosh::Director::Models::Config.new(type: 'fake-cloud', content: 'v2', name: 'one').save
-
-          Bosh::Director::Models::Config.new(type: 'fake-cloud', content: 'v1', name: 'two').save
-          Bosh::Director::Models::Config.new(type: 'fake-cloud', content: 'v2', name: 'two', deleted: true).save
+        it 'enumerates the prior config in latest' do
+          one1 = Bosh::Director::Models::Config.new(type: 'fake-cloud', content: 'v1', name: 'one').save
+          Bosh::Director::Models::Config.new(type: 'fake-cloud', content: 'v2', name: 'one', deleted: true).save
 
           latests = Bosh::Director::Models::Config.latest_set('fake-cloud')
-          expect(latests).to contain_exactly(one2)
+          expect(latests).to contain_exactly(one1)
+        end
+
+        it 'if there are no undeleted configs, returns empty array' do
+          Bosh::Director::Models::Config.new(type: 'fake-cloud', content: 'v1', name: 'one', deleted: true).save
+
+          latests = Bosh::Director::Models::Config.latest_set('fake-cloud')
+          expect(latests).to eq([])
         end
 
         context 'resurrected a named config' do
@@ -148,9 +152,9 @@ module Bosh::Director::Models
           Bosh::Director::Models::Config.make(type: 'cloud', name: 'blue-config', team_id: blue_team.id, deleted: true)
         end
 
-        it 'is not enumerated in latest' do
+        it 'the prior version of the config of that type with that name appears in latest' do
           latest = Bosh::Director::Models::Config.latest_set_for_teams('cloud', blue_team)
-          expect(latest).to contain_exactly(global_cloud_config)
+          expect(latest).to contain_exactly(global_cloud_config, blue_team_cloud_config)
         end
 
         context 'resurrected a named config' do
