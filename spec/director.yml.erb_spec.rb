@@ -15,7 +15,6 @@ describe 'director.yml.erb' do
           }
         }
       },
-      'compiled_package_cache' => {},
       'blobstore' => {
         'address' => '10.10.0.7',
         'port' => 25251,
@@ -191,32 +190,6 @@ describe 'director.yml.erb' do
 
         it 'set the domain_name field appropriately' do
           expect(parsed_yaml['dns']).to_not be_nil
-        end
-      end
-
-      context 'and when configured with a compiled_package_cache bucket_name' do
-        before do
-          merged_manifest_properties['compiled_package_cache']['options'] = {
-            'bucket_name' => 'some-bucket',
-            's3_port' => 443,
-            'ssl_verify_peer' => true,
-            'use_ssl' => true,
-          }
-        end
-
-        it 'sets the compiled_package_cache fields appropriately' do
-          expect(parsed_yaml['compiled_package_cache']['options']).to eq({
-            'bucket_name'=>'some-bucket',
-            'credentials_source'=>'static',
-            'access_key_id'=>nil,
-            'secret_access_key'=>nil,
-            'region'=>nil,
-            's3cli_config_path'=>'/var/vcap/data/director/tmp',
-            's3cli_path'=>'/var/vcap/packages/s3cli/bin/s3cli',
-            'port'=>443,
-            'use_ssl'=>true,
-            'ssl_verify_peer'=>true
-          })
         end
       end
 
@@ -590,7 +563,6 @@ describe 'director.yml.erb' do
     let(:erb_yaml) { File.read(File.join(File.dirname(__FILE__), '../jobs/director/templates/director.yml.erb')) }
 
     subject(:parsed_yaml) do
-      merged_manifest_properties['compiled_package_cache']['provider'] = 's3'
 
       binding = Bosh::Template::EvaluationContext.new(
         {

@@ -76,9 +76,6 @@ blobstore: &director_blobstore
     blobstore_path: <%= blobstore_storage_dir %>
     secret: 56aa5b1144e2ac784b30f156d24a873c
 
-compiled_package_cache:
-  <<: *director_blobstore
-
 scan_and_fix:
   auto_fix_stateful_nodes: <%= director_fix_stateful_nodes || false %>
 

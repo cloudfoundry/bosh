@@ -31,10 +31,6 @@ module Bosh::Director
               'status' => @powerdns_manager.dns_enabled?,
               'extras' => { 'domain_name' => @powerdns_manager.root_domain },
             },
-            'compiled_package_cache' => {
-              'status' => Config.use_compiled_package_cache?,
-              'extras' => { 'provider' => Config.compiled_package_cache_provider },
-            },
             'snapshots' => {
               'status' => Config.enable_snapshots,
             },

@@ -81,9 +81,7 @@ module Bosh::Director
           thr[:bosh] = nil
         end
 
-        @compiled_package_cache = nil
         @compiled_package_blobstore = nil
-        @compiled_package_cache_options = nil
 
         @nats_rpc = nil
       end
@@ -163,14 +161,12 @@ module Bosh::Director
 
         @agent_wait_timeout = agent_config.fetch('agent_wait_timeout', 600)
 
-        @compiled_package_cache_options = config['compiled_package_cache']
         @name = config['name'] || ''
 
         @runtime = config.fetch('runtime', {})
         @runtime['ip'] ||= '127.0.0.1'
         @runtime['instance'] ||= 'unknown'
 
-        @compiled_package_cache = nil
 
         @db_config = config['db']
         @db = configure_db(config['db'])
@@ -275,10 +271,6 @@ module Bosh::Director
         File.dirname(@log_file_path) if @log_file_path
       end
 
-      def use_compiled_package_cache?
-        !@compiled_package_cache_options.nil?
-      end
-
       def local_dns_enabled?
         !!@local_dns_enabled
       end
@@ -365,21 +357,6 @@ module Bosh::Director
         end
 
         db
-      end
-
-      def compiled_package_cache_blobstore
-        @lock.synchronize do
-          if @compiled_package_cache_blobstore.nil? && use_compiled_package_cache?
-            provider = @compiled_package_cache_options['provider']
-            options = @compiled_package_cache_options['options']
-            @compiled_package_cache_blobstore = Bosh::Blobstore::Client.safe_create(provider, options)
-          end
-        end
-        @compiled_package_cache_blobstore
-      end
-
-      def compiled_package_cache_provider
-        use_compiled_package_cache? ? @compiled_package_cache_options['provider'] : nil
       end
 
       def cloud_type

@@ -85,10 +85,6 @@ module Bosh::Director
               'status' => true,
               'extras' => { 'domain_name' => 'bosh' },
             },
-            'compiled_package_cache' => {
-              'status' => true,
-              'extras' => { 'provider' => 'local' },
-            },
             'snapshots' => {
               'status' => false,
             },

@@ -14,7 +14,6 @@ module Bosh::Director
         compiled_package = find_newest_match(package, stemcell, dependency_key) unless package.source?
         return compiled_package if compiled_package
 
-        fetch_from_global_cache(package, stemcell, dependency_key, cache_key, event_log_stage)
       end
 
       private
@@ -48,18 +47,6 @@ module Bosh::Director
 
         compiled_package_fuzzy_matches.max_by do |compiled_package_model|
           SemiSemantic::Version.parse(compiled_package_model.stemcell_version).release.components[1] || 0
-        end
-      end
-
-      def fetch_from_global_cache(package, stemcell, dependency_key, cache_key, event_log_stage)
-        return unless Config.use_compiled_package_cache? && BlobUtil.exists_in_global_cache?(package, cache_key)
-
-        event_log_stage.advance_and_track("Downloading '#{package.desc}' from global cache") do
-          @logger.info(
-            "Found compiled version of package '#{package.desc}'" \
-              " for stemcell '#{stemcell.desc}' in global cache",
-          )
-          return BlobUtil.fetch_from_global_cache(package, stemcell, cache_key, dependency_key)
         end
       end
     end

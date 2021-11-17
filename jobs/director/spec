@@ -423,46 +423,6 @@ properties:
     description: Allow gateway to be omitted from subnet configuration. Boshlite vms(containers) do not require gateway.
     default: false
 
-  # Compiled Package Cache
-  compiled_package_cache.provider:
-    description: |
-      Provider of the blobstore used for the compiled package cache.
-      Possible values are: 'local', 's3' and 'gcs'.
-      A value of 'local' is implied (and thus optional) when blobstore_path is provided.
-    default: 's3'
-  compiled_package_cache.options.bucket_name:
-    description: AWS S3 or GCS Bucket used for the compiled package cache
-  compiled_package_cache.options.blobstore_path:
-    description: Local directory where blobs will be stored. Implies a provider of 'local'.
-
-  compiled_package_cache.options.credentials_source:
-    description:  AWS credentials (static / env_or_profile)
-    default: 'static'
-  compiled_package_cache.options.access_key_id:
-    description: AWS access_key_id used for the compiled package cache
-  compiled_package_cache.options.secret_access_key:
-    description: AWS secret_access_key used for the compiled package cache
-  compiled_package_cache.options.port:
-    description: Port of blobstore server used for compiled package cache
-    default: 25250
-  compiled_package_cache.options.host:
-    description: Host of blobstore server used for compiled package cache
-  compiled_package_cache.options.use_ssl:
-    description: Whether the simple blobstore plugin should use SSL to connect to the blobstore server
-    default: true
-  compiled_package_cache.options.ssl_verify_peer:
-    description: Verify the SSL certificate used on the blobstore?
-    default: true
-  compiled_package_cache.options.s3_port:
-    description: Port of blobstore server used by s3 blobstore plugin
-    default: 443
-  compiled_package_cache.options.s3_signature_version:
-    description: Signature version of the blobstore used by s3 blobstore plugin (optional, if not provided the s3 client decides which version to use)
-  compiled_package_cache.options.server_side_encryption:
-    description: Server-side encryption algorithm used when storing blobs in S3 (Optional - "AES256"|"aws:kms")
-  compiled_package_cache.options.sse_kms_key_id:
-    description: AWS KMS key ID to use for object encryption. All GET and PUT requests for an object protected by AWS KMS will fail if not made via SSL or using SigV4.
-
   director.trusted_certs:
     description: Cerfiticates that VMs created by this director should trust in addition to those packaged with the stemcell (PEM encoded; zero or more certs allowed)
     default: ''
