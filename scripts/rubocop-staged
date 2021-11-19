@@ -1,12 +1,61 @@
-#!/usr/bin/env ruby
-# frozen_string_literal: true
+#!/usr/bin/env bash
 
-require 'English'
+set -e
 
-Dir.chdir(File.expand_path(__dir__ + '/../src')) do
-  command = 'bundle exec rubocop-git --cached'
-  puts("Running '#{command}'")
-  system(command)
-end
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NO_COLOR='\033[0m'
+CLEAR_LINE='\r\033[K'
 
-exit $CHILD_STATUS.exitstatus
+REPO_BASE_DIR="$(git rev-parse --show-toplevel)"
+
+pushd "${REPO_BASE_DIR}"
+  export BUNDLE_GEMFILE="./src/Gemfile"
+  INNOCENTS="$(git diff --name-only --diff-filter=AMC | grep -i '.*\.rb' | sort)"
+  SUSPECTS="$(git diff --cached --name-only --diff-filter=AMC | grep -i '.*\.rb' | sort)"
+  if [ ! "${SUSPECTS}" ]; then
+    exit 0
+  fi
+
+  printf "\n🚔 Linting with Rubocop...\n"
+
+  if bundle exec rubocop --parallel --cache=true --format autogenconf ${SUSPECTS}; then
+    printf "${CLEAR_LINE}🎉${GREEN} Rubocop is appeased.${NO_COLOR}\n"
+    exit 0
+  fi
+
+  printf "\n${CLEAR_LINE}${RED}💀 Rubocop found some issues. Let's see if it can autocorrect the files you're trying to commit...${NO_COLOR}\n"
+
+  if ! bundle exec rubocop --auto-correct --cache=true ${SUSPECTS}; then
+    printf "\n${CLEAR_LINE}${RED}💀 Rubocop couldn't autocorrect everything! 😭 ${NO_COLOR}\n"
+    exit 1
+  fi
+
+  printf "\n${CLEAR_LINE}${GREEN}🚔  Rubocop has autocorrected your transgressions!${NO_COLOR}\n"
+
+  # if a file is both a suspect and an innocent, this script is gonna need a lawyer
+  if [ -n "$(comm -12 <(echo "${INNOCENTS}") <(echo "${SUSPECTS}"))" ]; then
+    printf "\n${CLEAR_LINE}${GREEN}❓ Some of your files are partially staged- add the corrections yourself (try `git add -p`) and commit with -n.${NO_COLOR}\n"
+    exit 1
+  fi
+
+  # reopen stdin to make this interactive
+  exec < /dev/tty
+  trap "exec <&-" EXIT # close stdin when this script exits
+
+  while read -p "Would you like to add those corrections to this commit? (Y/n) " yn; do
+    case $yn in
+      "") break;;
+      [Yy] ) break;;
+      [Nn] ) echo "Then add them yourself!"; exit 1;;
+      * ) echo "Please answer y (yes) or n (no):" && continue;
+    esac
+  done
+
+  # updating the index directly is not the safest thing,
+  # but because we only add SUSPECTS and guard against situations
+  # where files are partially committed, it should be alright
+  git add -u ${SUSPECTS}
+
+  printf "${CLEAR_LINE}🎉${GREEN} Rubocop is appeased.${NO_COLOR}\n"
+popd
