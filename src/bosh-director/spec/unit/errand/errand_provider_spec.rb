@@ -566,7 +566,8 @@ module Bosh::Director
             expect do
               subject.get(deployment_name, ig_name, keep_alive, instance_slugs)
             end.to raise_error(RunErrandError,
-                               "Instance(s) 'job-1/instance-uuid' is stopped, unable to run errand. Maybe start vm?")
+                               "Instance(s) '#{instance_model.job}/instance-uuid' is stopped, " \
+                               'unable to run errand. Maybe start vm?')
           end
         end
 
