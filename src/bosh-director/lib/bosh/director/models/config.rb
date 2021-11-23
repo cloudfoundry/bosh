@@ -9,7 +9,7 @@ module Bosh
         end
 
         def self.latest_set(type)
-          find_by_ids(dataset.select { max(:id) }.where(type: type).group_by(:name)).reject(&:deleted)
+          find_by_ids(dataset.select { max(:id) }.where(type: type, deleted: false).group_by(:name))
         end
 
         def self.dataset_for_teams(*teams)
@@ -17,8 +17,9 @@ module Bosh
         end
 
         def self.latest_set_for_teams(type, *teams)
-          latest_config_ids_by_name = dataset_for_teams(*teams).select { max(:id) }.where(type: type).group_by(:name)
-          find_by_ids(latest_config_ids_by_name).reject(&:deleted)
+          latest_config_ids_by_name = dataset_for_teams(*teams).select { max(:id) }
+            .where(type: type, deleted: false).group_by(:name)
+          find_by_ids(latest_config_ids_by_name)
         end
 
         def self.find_by_ids(ids)
