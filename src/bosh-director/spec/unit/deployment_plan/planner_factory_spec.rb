@@ -328,6 +328,15 @@ module Bosh
           end
 
           context 'runtime config' do
+            context 'when the runtime config has tags' do
+              let(:runtime_config_hash) { { 'releases' => [], 'tags' => { 'tag_name' => 'tag_value' } } }
+
+              it 'includes the runtime config' do
+                expect(planner.runtime_configs.length).to equal(1)
+                expect(planner.runtime_configs.first.content).to include('tag_name')
+              end
+            end
+
             context "when the version of a release is 'latest'" do
               let(:runtime_config_hash) { Bosh::Spec::Deployments.simple_runtime_config(release = 'bosh-release', version = 'latest') }
 
