@@ -67,39 +67,6 @@ jobs:
         get_params:
           skip_download: true
 
-  - name: build-os-image-stemcell-builder-bionic
-    public: true
-    serial: true
-    plan:
-      - get: bosh-linux-stemcell-builder-in
-        trigger: true
-        resource: bosh-linux-stemcell-builder
-      - get: bosh-os-image-builder-vmware-ovftool
-      - task: copy-ovf
-        config:
-          platform: linux
-          image_resource:
-            type: docker-image
-            source:
-              repository: bosh/main-ruby-go
-          run:
-            path: /bin/bash
-            args:
-            - -cex
-            - |
-              git clone bosh-linux-stemcell-builder-in bosh-linux-stemcell-builder
-              cp bosh-os-image-builder-vmware-ovftool/VMware-ovftool-4.1.0-2459827-lin.x86_64.bundle bosh-linux-stemcell-builder/ci/docker/os-image-stemcell-builder-bionic/
-          inputs:
-          - name: bosh-os-image-builder-vmware-ovftool
-          - name: bosh-linux-stemcell-builder-in
-          outputs:
-          - name: bosh-linux-stemcell-builder
-      - put: os-image-stemcell-builder-bionic
-        params:
-          build: "bosh-linux-stemcell-builder/ci/docker/os-image-stemcell-builder-bionic"
-        get_params:
-          skip_download: true
-
   - name: build-os-image-stemcell-builder
     public: true
     serial: true
@@ -303,15 +270,6 @@ resources:
     type: docker-image
     source:
       repository: bosh/os-image-stemcell-builder
-      email: ((dockerhub_email))
-      username: ((dockerhub_username))
-      password: ((dockerhub_password))
-
-  - name: os-image-stemcell-builder-bionic
-    type: docker-image
-    source:
-      repository: bosh/os-image-stemcell-builder
-      tag: bionic
       email: ((dockerhub_email))
       username: ((dockerhub_username))
       password: ((dockerhub_password))
