@@ -11,23 +11,21 @@ module Bosh::Monitor::Plugins
 
         host = URI.parse(uri).host
         logger.debug("checking if uri: #{uri} is covered by no_proxy: #{no_proxy}")
-        if no_proxy_host.match(/^\./) || no_proxy_host.match(/^\*\./)
-          # if no_proxy_host starts with a "." or ".*" it is a wildcard.
-          # We create arrays from the domain and drop the first element.
-          # If the rest of the arrays has the same contents, the wildcard matches
-          # eg
-          # host = test.google.com => ["test","google","com"] => ["google","com"]
-          # no_proxy_host_array = .google.com => ["","google","com"] => ["google","com"] => true
-          # no_proxy_host_array = *.google.com => ["*","google","com"] => ["google","com"] => true
-          # no_proxy_host_array = *.test.google.com => ["*","test","google","com"] => ["test","google","com"] => false
-          host_array = host.downcase.split('.').drop(1)
-          no_proxy_host_array = no_proxy_host.downcase.split('.').drop(1)
-          return false if no_proxy_host_array.sort == host_array.sort
-        end
-        return false if host.downcase == no_proxy_host.downcase
+        drop = no_proxy_host.match(/^\./) || no_proxy_host.match(/^\*\./) ? 1 : 0
+
+        # if no_proxy_host starts with a "." or ".*" it is a wildcard.
+        # We create arrays from the domain and drop the first element.
+        # If the rest of the arrays has the same contents, the wildcard matches
+        # eg
+        # host = test.google.com => ["test","google","com"] => ["google","com"]
+        # no_proxy_host_array = .google.com => ["","google","com"] => ["google","com"] => true
+        # no_proxy_host_array = *.google.com => ["*","google","com"] => ["google","com"] => true
+        # no_proxy_host_array = *.test.google.com => ["*","test","google","com"] => ["test","google","com"] => false
+        return false if host.downcase.split('.').drop(drop) == no_proxy_host.downcase.split('.').drop(drop)
       end
       true
     end
+
     def send_http_put_request(uri, request)
       logger.debug("sending HTTP PUT to: #{uri}")
 
