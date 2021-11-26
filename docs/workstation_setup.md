@@ -4,6 +4,7 @@
 
 * We include examples using Homebrew here. Replace with your package manager of choice.
 * You have cloned the project to $HOME/workspace/bosh
+* You have installed Ruby `3.0.2` or later
 
 ## Steps
 

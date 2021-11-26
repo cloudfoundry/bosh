@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+
+# Dummy cpi to test for a dealock scenario when a cpi sends an inclomplete line (missing line break) to STDOUT
+
+# Force the reading end to see incomplete line so that it blocks on 'readline' method
+# by $stdout.sync = true
+$stdout.sync = true
+$stdout.print('{"result":"OK","log":"LogMessage","error":null}')
+
+sleep 1
+
+# send a massive amount of output to fill the pipe buffer (64 KB) so that this script blocks on the next line
+$stderr.print('abcdefghijklmnopqrstuwxyz' * 100000)

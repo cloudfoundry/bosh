@@ -549,6 +549,28 @@ module Bosh::Director
           end
         end
 
+        context 'when there is a lifecycle: errand and instance is stopped' do
+          let(:instance_group) do
+            instance_double(DeploymentPlan::InstanceGroup,
+                            name: ig_name,
+                            jobs: [errand_job, non_errand_job],
+                            instances: [],
+                            errand?: true,
+                            needed_instance_plans: needed_instance_plans,
+                            bind_instances: nil)
+          end
+
+          let!(:instance_model) { Models::Instance.make(deployment: deployment_model, uuid: 'instance-uuid', state: 'stopped') }
+
+          it 'returns an error that instance is stopped' do
+            expect do
+              subject.get(deployment_name, ig_name, keep_alive, instance_slugs)
+            end.to raise_error(RunErrandError,
+                               "Instance(s) '#{instance_model.job}/instance-uuid' is stopped, " \
+                               'unable to run errand. Maybe start vm?')
+          end
+        end
+
         context 'when there is not a lifecycle: errand instance group with that name' do
           let(:instance_group) do
             instance_double(

@@ -21,7 +21,7 @@ Follow these steps to make a contribution to any of CF open source repositories:
       1. Ensure that tests still pass
         * If you find yourself changing tests after a refactor, consider refactoring the tests first
 
-  See [running tests](running_tests.md) to determine which test suite to run.
+  See [running tests](running_tests.md) to determine which test suite to run. We expect you to run the unit tests.
 
 1. Push to your fork (`git push origin better_bosh`) and submit a pull request selecting `master` as the target branch
 

@@ -10,7 +10,7 @@ module Bosh::Director
     let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
     let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
     let(:thread_pool) { double(Bosh::ThreadPool) }
-    let(:instances) { [instance_double(Bosh::Director::Models::Instance, uuid: 'instance-uuid')] }
+    let(:instances) { [instance_double(Bosh::Director::Models::Instance, uuid: 'instance-uuid', stopped?: false)] }
     let(:template_blob_cache) { instance_double('Bosh::Director::Core::Templates::TemplateBlobCache') }
     let(:instance_manager) { instance_double(Bosh::Director::Api::InstanceManager) }
 
@@ -170,7 +170,7 @@ module Bosh::Director
               .and_return(instance_double(
                             'Bosh::Director::DeploymentPlan::PlannerFactory',
                             create_from_model: planner,
-              ))
+                          ))
             allow(job).to receive(:task_id).and_return(task.id)
 
             allow(DeploymentPlan::Assembler).to receive(:create).and_return(assembler)

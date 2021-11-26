@@ -103,6 +103,8 @@ module Bosh
             parsed_runtime_config = RuntimeConfig::RuntimeManifestParser.new(@logger, variables_spec_parser).parse(variables_interpolator.interpolate_runtime_manifest(runtime_config.raw_manifest, name))
             runtime_config_applies = false
 
+            runtime_config_applies = true if parsed_runtime_config.addons.empty?
+
             parsed_runtime_config.get_applicable_releases(deployment).each do |release|
               runtime_config_applies = true
               release.add_to_deployment(deployment)

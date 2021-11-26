@@ -1,6 +1,28 @@
 require 'membrane'
 require 'open3'
 
+# Robbed from:
+# https://github.com/Homebrew/brew/blob/master/Library/Homebrew/extend/io.rb
+class IO
+  def readline_nonblock(sep = $INPUT_RECORD_SEPARATOR)
+    line = +""
+    buffer = +""
+
+    loop do
+      break if buffer == sep
+
+      read_nonblock(1, buffer)
+      line.concat(buffer)
+    end
+
+    line.freeze
+  rescue IO::WaitReadable, EOFError => e
+    raise e if line.empty?
+
+    line.freeze
+  end
+end
+
 module Bosh::Clouds
   class ExternalCpi
     # Raised when the external CPI executable returns an error unknown to director
@@ -110,7 +132,7 @@ module Bosh::Clouds
 
           readable = ready[0]
           readable.each do |f|
-            line = f.readline
+            line = f.readline_nonblock
             case f.fileno
             when stdout.fileno
               cpi_response.write(line)
@@ -120,6 +142,8 @@ module Bosh::Clouds
             end
           rescue EOFError
             files.delete f
+          rescue IO::WaitReadable
+            # do nothing
           end
         end
         exit_status = wait_thr.value.exitstatus
