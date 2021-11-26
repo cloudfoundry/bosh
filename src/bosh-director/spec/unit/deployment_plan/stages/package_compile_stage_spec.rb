@@ -887,8 +887,6 @@ module Bosh::Director
       expect(requirement.compiled_package).to eq(fake_compiled_package)
     end
 
-    end
-
     describe '#prepare_vm' do
       let(:package) { Models::Package.make }
       let(:number_of_workers) { 2 }
