@@ -46,7 +46,7 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
     end
 
     it 'matches domain_names' do
-      expect(use_proxy?('https://one.tw0.three.four/some/path?with=query', no_proxy_no_match_domain)).to eq true
+      expect(use_proxy?('https://one.two.three.four/some/path?with=query', no_proxy_no_match_domain)).to eq true
       expect(use_proxy?('https://one.two.three.four/some/path?with=query', no_proxy_match_domain)).to eq false
       expect(use_proxy?('https://one.two.three.Four/some/path?with=query', no_proxy_match_domain)).to eq false
     end

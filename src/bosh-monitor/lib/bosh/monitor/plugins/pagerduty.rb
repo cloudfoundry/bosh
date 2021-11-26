@@ -31,7 +31,9 @@ module Bosh::Monitor
         request = {
           body: JSON.dump(payload),
         }
-        request[:proxy] = options['http_proxy'] if options.key?('http_proxy') && use_proxy?(API_URI, options['no_proxy'] || '')
+        if options['no_proxy'].nil? || use_proxy?(API_URI, options['no_proxy'])
+          request[:proxy] = options['http_proxy'] if options.key?('http_proxy')
+        end
         EventMachine.defer do
           send_http_post_sync_request(API_URI, request)
         rescue StandardError => e
