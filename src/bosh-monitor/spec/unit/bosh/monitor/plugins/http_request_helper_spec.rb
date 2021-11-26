@@ -22,7 +22,33 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
       send_http_put_request('some-uri', 'some-request')
     end
   end
+  describe '#use_proxy?' do
+    no_proxy_no_match = 'one.three.four,two.three.four,three.two.three.four,*.One.three.four,.one.Three.four'
+    no_proxy_no_match_ip = '192.168.0.1,22.24.26.28'
+    no_proxy_match_domain = 'one.two.three.one,one.two.three.four'
+    no_proxy_match_wildcard_star = 'one.two.three.one,*.two.three.Four,*.threE.three.four'
+    no_proxy_match_wildcard_dot = 'one.two.three.one,.two.three.four'
+    no_proxy_match_ip = '192.168.0.2,22.24.26.28'
 
+    it 'matches wildcards' do
+      expect(use_proxy?('https://one.two.three.four/some/path?with=query', no_proxy_no_match)).to eq true
+      expect(use_proxy?('http://one.two.three.four/some/path?with=query', no_proxy_no_match)).to eq true
+      expect(use_proxy?('one.two.three.four/some/path?with=query', no_proxy_no_match)).to eq true
+      expect(use_proxy?('https://one.two.three.four/some/path?with=query', no_proxy_match_wildcard_star)).to eq false
+      expect(use_proxy?('https://one.two.three.four/some/path?with=query', no_proxy_match_wildcard_dot)).to eq false
+    end
+
+    it 'matches IPs' do
+      expect(use_proxy?('https://one.two.three.four/some/path?with=query', no_proxy_no_match_ip)).to eq true
+      expect(use_proxy?('tcp://192.168.0.2/some/path?with=query', no_proxy_no_match_ip)).to eq true
+      expect(use_proxy?('https://192.168.0.2/some/path?with=query', no_proxy_match_ip)).to eq false
+    end
+
+    it 'matches domain_names' do
+      expect(use_proxy?('https://one.two.three.four/some/path?with=query', no_proxy_match_domain)).to eq false
+      expect(use_proxy?('https://one.two.three.Four/some/path?with=query', no_proxy_match_domain)).to eq false
+    end
+  end
   describe '#send_http_post_request' do
     let(:http_request) { instance_double(EM::HttpRequest) }
     let(:http_response) { instance_double(EM::Completion) }

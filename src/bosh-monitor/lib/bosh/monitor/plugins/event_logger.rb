@@ -63,9 +63,9 @@ module Bosh::Monitor
         @url.path = '/events'
 
         logger.info("(Event logger) notifying director about event: #{alert}")
-
-        request[:proxy] = options['http_proxy'] if options['http_proxy']
-
+        unless options.key?('no_proxy') && use_proxy?(@url.dup.to_s, options['no_proxy'])
+          request[:proxy] = options['http_proxy'] if options['http_proxy']
+        end
         send_http_post_request(@url.to_s, request)
       end
 

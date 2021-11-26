@@ -115,6 +115,9 @@ module Bosh::Monitor
         uri     = consul_uri(event, note_type)
 
         request = { body: body }
+        if options['no_proxy'].nil? || use_proxy?(uri, options['no_proxy'])
+          request[:proxy] = options['http_proxy'] if options.key?('http_proxy')
+        end
 
         send_http_put_request(uri, request)
 

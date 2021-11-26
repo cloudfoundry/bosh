@@ -81,6 +81,8 @@ module Bosh::Monitor
                   title: 'Scan unresponsive VMs',
                   summary: 'Notifying Director to scan instances: '\
                   "#{pretty_str(jobs_to_instances_resurrection_enabled)}; #{state.summary}")
+
+            request[:proxy] = options['http_proxy'] if options.key?('http_proxy') && use_proxy?(url, options['no_proxy'] || '')
             send_http_put_request(url.to_s, request)
           end
 

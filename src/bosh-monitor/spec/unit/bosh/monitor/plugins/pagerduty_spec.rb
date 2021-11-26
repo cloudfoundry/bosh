@@ -8,6 +8,13 @@ describe Bhm::Plugins::Pagerduty do
     }
 
     @plugin = Bhm::Plugins::Pagerduty.new(@options)
+
+    @options_np = {
+      'service_key' => 'zbzb',
+      'http_proxy' => 'http://nowhere.com:3128',
+      'no_proxy' => 'events.pagerduty.com',
+    }
+    @plugin_np = Bhm::Plugins::Pagerduty.new(@options_np)
   end
 
   it 'validates options' do
@@ -66,6 +73,30 @@ describe Bhm::Plugins::Pagerduty do
 
       @plugin.process(alert)
       @plugin.process(heartbeat)
+      EM.stop
+    end
+  end
+  it 'does not use a proxy if host matches no_proxy' do
+    uri = 'https://events.pagerduty.com/generic/2010-04-15/create_event.json'
+    alert = Bhm::Events::Base.create!(:alert, alert_payload)
+    alert_request = {
+      body: JSON.dump(
+        service_key: 'zbzb',
+        event_type: 'trigger',
+        incident_key: alert.id,
+        description: alert.short_description,
+        details: alert.to_hash,
+      ),
+    }
+
+    EM.run do
+      @plugin_np.run
+
+      allow(EventMachine).to receive(:defer) { |&arg| arg.call }
+
+      expect(@plugin_np).to receive(:send_http_post_sync_request).with(uri, alert_request)
+      expect(@plugin_np).to receive(:use_proxy?).with(uri, @options_np['no_proxy'])
+      @plugin_np.process(alert)
       EM.stop
     end
   end
