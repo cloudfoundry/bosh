@@ -25,6 +25,7 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
   describe '#use_proxy?' do
     no_proxy_no_match = 'one.three.four,two.three.four,three.two.three.four,*.One.three.four,.one.Three.four'
     no_proxy_no_match_ip = '192.168.0.1,22.24.26.28'
+    no_proxy_no_match_domain = 'one.tw0.three.one,one.tw0.three.four'
     no_proxy_match_domain = 'one.two.three.one,one.two.three.four'
     no_proxy_match_wildcard_star = 'one.two.three.one,*.two.three.Four,*.threE.three.four'
     no_proxy_match_wildcard_dot = 'one.two.three.one,.two.three.four'
@@ -45,6 +46,7 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
     end
 
     it 'matches domain_names' do
+      expect(use_proxy?('https://one.tw0.three.four/some/path?with=query', no_proxy_no_match_domain)).to eq true
       expect(use_proxy?('https://one.two.three.four/some/path?with=query', no_proxy_match_domain)).to eq false
       expect(use_proxy?('https://one.two.three.Four/some/path?with=query', no_proxy_match_domain)).to eq false
     end

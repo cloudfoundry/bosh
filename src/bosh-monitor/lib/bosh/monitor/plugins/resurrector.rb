@@ -82,7 +82,9 @@ module Bosh::Monitor
                   summary: 'Notifying Director to scan instances: '\
                   "#{pretty_str(jobs_to_instances_resurrection_enabled)}; #{state.summary}")
 
-            request[:proxy] = options['http_proxy'] if options.key?('http_proxy') && use_proxy?(url, options['no_proxy'] || '')
+            if options['no_proxy'].nil? || use_proxy?(url, options['no_proxy'])
+              request[:proxy] = options['http_proxy'] if options.key?('http_proxy')
+            end
             send_http_put_request(url.to_s, request)
           end
 
