@@ -140,17 +140,6 @@ module Bosh::Director
                 p.dependency_key = requirement.dependency_key
               end
 
-              if Config.use_compiled_package_cache?
-                if BlobUtil.exists_in_global_cache?(package, requirement.cache_key)
-                  @logger.info('Already exists in global package cache, skipping upload')
-                else
-                  @logger.info('Uploading to global package cache')
-                  BlobUtil.save_to_global_cache(compiled_package, requirement.cache_key)
-                end
-              else
-                @logger.info('Global blobstore not configured, skipping upload')
-              end
-
               @counter_mutex.synchronize { @compilations_performed += 1 }
             end
 

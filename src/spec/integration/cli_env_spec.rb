@@ -15,7 +15,6 @@ describe 'cli: env', type: :integration do
     expect(out).to match(/^CPI\s*test-cpi\s*/)
     expect(out).to match(/^User\s*test\s*/)
     features = []
-    features << 'compiled_package_cache: enabled'
     features << 'config_server: disabled'
     features << 'local_dns: disabled'
     features << 'power_dns: enabled'

@@ -139,7 +139,6 @@ module Bosh::Director
 
       allow(plan).to receive(:network).with('default').and_return(network)
 
-      allow(Config).to receive(:use_compiled_package_cache?).and_return(false)
       allow(Config).to receive(:preferred_cpi_api_version).and_return(1)
 
       allow(Config).to receive(:current_job).and_return(update_job)
@@ -886,72 +885,6 @@ module Bosh::Director
       compiler.compile_package(requirement)
 
       expect(requirement.compiled_package).to eq(fake_compiled_package)
-    end
-
-    describe 'the global blobstore' do
-      let(:package) { Models::Package.make }
-      let(:stemcell) { make_stemcell }
-      let(:requirement) do
-        CompiledPackageRequirement.new(
-          package: package,
-          stemcell: stemcell,
-          initial_instance_group: job,
-          dependency_key: 'fake-dependency-key',
-          cache_key: 'fake-cache-key',
-          compiled_package: nil,
-        )
-      end
-      let(:cache_key) { 'cache key' }
-
-      before do
-        allow(requirement).to receive(:cache_key).and_return(cache_key)
-
-        allow(Config).to receive(:use_compiled_package_cache?).and_return(true)
-
-        allow(compiled_package_finder).to receive(:find_compiled_package)
-      end
-
-      it 'should check if compiled package is in global blobstore' do
-        allow(compiler).to receive(:with_compile_lock).with(package.id, "#{stemcell.os}/#{stemcell.version}", deployment.name).and_yield
-
-        expect(BlobUtil).to receive(:exists_in_global_cache?).with(package, cache_key).and_return(true)
-        expect(BlobUtil).not_to receive(:save_to_global_cache)
-        allow(compiler).to receive(:prepare_vm)
-        compiled_package = instance_double('Bosh::Director::Models::CompiledPackage', name: 'fake')
-        allow(Models::CompiledPackage).to receive(:create).and_return(compiled_package)
-
-        compiler.compile_package(requirement)
-      end
-
-      it 'should save compiled package to global cache if not exists' do
-        expect(compiler).to receive(:with_compile_lock).with(package.id, "#{stemcell.os}/#{stemcell.version}", deployment.name).and_yield
-
-        compiled_package = instance_double(
-          'Bosh::Director::Models::CompiledPackage',
-          name: 'fake-package-name', package: package,
-          stemcell_os: stemcell.os, stemcell_version: stemcell.version, blobstore_id: 'some blobstore id'
-        )
-        expect(BlobUtil).to receive(:exists_in_global_cache?).with(package, cache_key).and_return(false)
-        expect(BlobUtil).to receive(:save_to_global_cache).with(compiled_package, cache_key)
-        allow(compiler).to receive(:prepare_vm)
-        allow(Models::CompiledPackage).to receive(:create).and_return(compiled_package)
-
-        compiler.compile_package(requirement)
-      end
-
-      it 'only checks the global cache if Config.use_compiled_package_cache? is set' do
-        allow(Config).to receive(:use_compiled_package_cache?).and_return(false)
-
-        allow(compiler).to receive(:with_compile_lock).with(package.id, "#{stemcell.os}/#{stemcell.version}", deployment.name).and_yield
-
-        expect(BlobUtil).not_to receive(:exists_in_global_cache?)
-        expect(BlobUtil).not_to receive(:save_to_global_cache)
-        allow(compiler).to receive(:prepare_vm)
-        compiled_package = instance_double('Bosh::Director::Models::CompiledPackage', name: 'fake')
-        allow(Models::CompiledPackage).to receive(:create).and_return(compiled_package)
-
-        compiler.compile_package(requirement)
-      end
     end
 
     describe '#prepare_vm' do

@@ -73,39 +73,6 @@ describe Bosh::Director::Config do
     end
   end
 
-  context 'compiled package cache' do
-    context 'is configured' do
-      before(:each) do
-        described_class.configure(test_config)
-      end
-
-      it 'uses package cache' do
-        expect(described_class.use_compiled_package_cache?).to be(true)
-      end
-
-      it 'returns a compiled package cache blobstore' do
-        expect(Bosh::Blobstore::Client)
-          .to receive(:safe_create)
-          .with('local', 'blobstore_path' => '/path/to/some/bucket')
-        described_class.compiled_package_cache_blobstore
-      end
-    end
-
-    context 'is not configured' do
-      before { test_config.delete('compiled_package_cache') }
-
-      it 'returns false for use_compiled_package_cache?' do
-        described_class.configure(test_config)
-        expect(described_class.use_compiled_package_cache?).to be(false)
-      end
-
-      it 'returns nil for compiled_package_cache' do
-        described_class.configure(test_config)
-        expect(described_class.compiled_package_cache_blobstore).to be_nil
-      end
-    end
-  end
-
   context 'database' do
     let(:database_options) do
       {
