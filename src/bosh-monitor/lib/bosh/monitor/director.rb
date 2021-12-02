@@ -68,7 +68,15 @@ module Bosh::Monitor
       headers = {}
       headers['authorization'] = auth_provider.auth_header unless options.fetch(:no_login, false)
 
-      http = EM::HttpRequest.new(target_uri).send(method.to_sym, head: headers)
+      unless use_proxy?(target_uri, ENV['no_proxy'] || ENV['NO_PROXY'] || '')
+        conoptions = HttpConnectionOptions.new(target_uri, proxy: { host: '127.0.0.1', port: 25555, type: :http })
+        conoptions.https = false
+      end
+
+      http_con = EM::HttpConnection.new
+      http_con.connopts = conoptions
+      http_con.uri = target_uri
+      http = http_con.send(method.to_sym, head: headers)
 
       http.callback { f.resume(http) }
       http.errback  { f.resume(http) }
