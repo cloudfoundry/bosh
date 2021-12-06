@@ -27,9 +27,6 @@ cpi_api_test_max_version: 2
 local_dns:
   enabled: false
   include_index: false
-  provider: local
-  options:
-    blobstore_path: /path/to/some/bucket
 snapshots:
   enabled: false
 scan_and_fix:
