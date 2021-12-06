@@ -887,54 +887,6 @@ module Bosh::Director
       expect(requirement.compiled_package).to eq(fake_compiled_package)
     end
 
-    describe 'the global blobstore' do
-      let(:package) { Models::Package.make }
-      let(:stemcell) { make_stemcell }
-      let(:requirement) do
-        CompiledPackageRequirement.new(
-          package: package,
-          stemcell: stemcell,
-          initial_instance_group: job,
-          dependency_key: 'fake-dependency-key',
-          cache_key: 'fake-cache-key',
-          compiled_package: nil,
-        )
-      end
-      let(:cache_key) { 'cache key' }
-
-      before do
-        allow(requirement).to receive(:cache_key).and_return(cache_key)
-
-        allow(compiled_package_finder).to receive(:find_compiled_package)
-      end
-
-      it 'should check if compiled package is in global blobstore' do
-        allow(compiler).to receive(:with_compile_lock).with(package.id, "#{stemcell.os}/#{stemcell.version}", deployment.name).and_yield
-
-        allow(compiler).to receive(:prepare_vm)
-        compiled_package = instance_double('Bosh::Director::Models::CompiledPackage', name: 'fake')
-        allow(Models::CompiledPackage).to receive(:create).and_return(compiled_package)
-
-        compiler.compile_package(requirement)
-      end
-
-      it 'should save compiled package to global cache if not exists' do
-        expect(compiler).to receive(:with_compile_lock).with(package.id, "#{stemcell.os}/#{stemcell.version}", deployment.name).and_yield
-
-        compiled_package = instance_double(
-          'Bosh::Director::Models::CompiledPackage',
-          name: 'fake-package-name', package: package,
-          stemcell_os: stemcell.os, stemcell_version: stemcell.version, blobstore_id: 'some blobstore id'
-        )
-
-        allow(compiler).to receive(:prepare_vm)
-        allow(Models::CompiledPackage).to receive(:create).and_return(compiled_package)
-
-        compiler.compile_package(requirement)
-      end
-
-    end
-
     describe '#prepare_vm' do
       let(:package) { Models::Package.make }
       let(:number_of_workers) { 2 }
