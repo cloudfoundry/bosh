@@ -168,7 +168,7 @@ describe 'vm_types and stemcells', type: :integration do
         deploy_simple_manifest(manifest_hash: manifest_hash_different_stemcell)
 
         new_create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
-        expect(new_create_vm_invocations.count).to eq(create_vm_invocations.count + 1)
+        expect(new_create_vm_invocations.count).to eq(create_vm_invocations.count + 3)
       end
 
       context 'create-swap-delete' do
