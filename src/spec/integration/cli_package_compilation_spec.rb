@@ -7,50 +7,6 @@ describe 'cli: package compilation', type: :integration do
   let!(:release_file) { Tempfile.new('release.tgz') }
   after { release_file.delete }
 
-  it 'uses compile package cache for previously compiled packages in sha2 mode', sha2: true do
-    foo_sha = 'a915ffa8d7a3761a31dc613f1f39e1d80e03db07d173bb28ecf2e8d690cf5b20'
-    bar_sha = '637044d11958dea0a9ce300dd4e24c2f5609d653fbcd7a3afb6c3adc82b39939'
-
-    stemcell_filename = spec_asset('valid_stemcell.tgz')
-
-    simple_blob_store_path = current_sandbox.blobstore_storage_dir
-
-    Dir.chdir(ClientSandbox.test_release_dir) do
-      FileUtils.rm_rf('dev_releases')
-      bosh_runner.run_in_current_dir("create-release --tarball=#{release_file.path}")
-    end
-
-    cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
-    deployment_manifest = yaml_file('deployment_manifest', Bosh::Spec::Deployments.simple_manifest_with_instance_groups)
-
-    bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
-    bosh_runner.run("upload-stemcell #{stemcell_filename}")
-    bosh_runner.run("upload-release #{release_file.path}")
-
-    output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
-    expect(output).to match %r{Compiling packages: foo/#{foo_sha}}
-    expect(output).to match %r{Compiling packages: bar/#{bar_sha}}
-
-    bosh_runner.run('instances', deployment_name: 'simple')
-    bosh_runner.run('vms', deployment_name: 'simple')
-
-    dir_glob = Dir.glob(File.join(simple_blob_store_path, '**/*'))
-    cached_items = dir_glob.detect do |cache_item|
-      cache_item =~ /foo-/
-    end
-    expect(cached_items).to_not be(nil)
-
-    bosh_runner.run('delete-deployment', deployment_name: 'simple')
-    bosh_runner.run('delete-release bosh-release')
-
-    bosh_runner.run("upload-release #{release_file.path}")
-    output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
-
-    expect(output).to match %r{Preparing package compilation: Downloading 'foo/#{foo_sha}' from global cache}
-    expect(output).to_not match %r{Compiling packages: foo/#{foo_sha}}
-    expect(output).to_not match %r{Compiling packages: bar/#{bar_sha}}
-  end
-
   RELEASE_COMPILATION_TEMPLATE_ASSETS = File.join(ASSETS_DIR, 'release_compilation_test_release')
   TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX = File.join(ClientSandbox.base_dir, 'release_compilation_test_release')
   before do
