@@ -5,6 +5,8 @@ module Bosh::Monitor::Plugins
     def send_http_put_request(uri, request)
       logger.debug("sending HTTP PUT to: #{uri}")
 
+      env_proxy = URI.parse(uri.to_s).find_proxy
+      request[:proxy] = { host: env_proxy.host, port: env_proxy.port } unless env_proxy.nil?
       name = self.class.name
       started = Time.now
       http = EM::HttpRequest.new(uri).send(:put, request)
@@ -22,6 +24,8 @@ module Bosh::Monitor::Plugins
 
       name = self.class.name
       started = Time.now
+      env_proxy = URI.parse(uri.to_s).find_proxy
+      request[:proxy] = { host: env_proxy.host, port: env_proxy.port } unless env_proxy.nil?
       http = EM::HttpRequest.new(uri).send(:post, request)
       http.callback do
         logger.debug("#{name} event sent (took #{Time.now - started} seconds): #{http.response_header.status}")
@@ -35,12 +39,16 @@ module Bosh::Monitor::Plugins
     def send_http_get_request(uri)
       # we are interested in response, so send sync request
       logger.debug("Sending GET request to #{uri}")
-      sync_client(OpenSSL::SSL::VERIFY_NONE).get(uri)
+      cli = sync_client(OpenSSL::SSL::VERIFY_NONE)
+      env_proxy = URI.parse(uri.to_s).find_proxy
+      cli.proxy = env_proxy unless env_proxy.nil?
+      cli.get(uri)
     end
 
     def send_http_post_sync_request(uri, request)
       cli = sync_client
-      cli.proxy = request[:proxy] if request[:proxy]
+      env_proxy = URI.parse(uri.to_s).find_proxy
+      cli.proxy = env_proxy unless env_proxy.nil?
       cli.post(uri, request[:body])
     end
 
