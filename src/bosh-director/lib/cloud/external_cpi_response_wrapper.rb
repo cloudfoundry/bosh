@@ -52,7 +52,6 @@ module Bosh::Clouds
     def attach_disk(*args)
       cpi_response = @cpi.attach_disk(*args)
 
-      #TODO registry-refactor: replace switch statement if multiple cases are not specified
       case @cpi_api_version
       when 2
         raise Bosh::Clouds::AttachDiskResponseError, 'No disk_hint' if cpi_response.nil? || cpi_response.empty?

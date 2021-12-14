@@ -6,7 +6,6 @@ gem 'bosh-core', path: 'bosh-core'
 gem 'bosh-director', path: 'bosh-director'
 gem 'bosh-director-core', path: 'bosh-director-core'
 gem 'bosh-monitor', path: 'bosh-monitor'
-gem 'bosh-registry', path: 'bosh-registry'
 gem 'bosh-template', path: 'bosh-template'
 gem 'bosh_common', path: 'bosh_common'
 
@@ -21,8 +20,6 @@ gem 'talentbox-delayed_job_sequel', '~>4.3'
 gem 'ruby-prof', '0.17.0'
 
 group :production do
-  # this was pulled from bosh_aws_registry's Gemfile.  Why does it exist?
-  # also bosh_openstack_registry, director
   gem 'mysql2'
   gem 'pg'
 end
@@ -73,6 +70,4 @@ group :development, :test do
 
   gem 'unix-crypt'
 
-  # for registry
-  gem 'mono_logger'
 end

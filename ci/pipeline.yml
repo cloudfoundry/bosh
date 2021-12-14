@@ -595,7 +595,7 @@ jobs:
           AWS_DEFAULT_REGION:    ((aws_region__primary))
           AWS_SSH_PRIVATE_KEY:   ((aws_ssh_private_key))
           DEPLOY_ARGS: |
-            -o bosh-deployment/external-ip-with-registry-not-recommended.yml
+            -o bosh-deployment/external-ip-not-recommended.yml
       - task: deploy-zookeeper
         image: main-ruby-go-image
         file: bosh-src/ci/tasks/deploy-zookeeper.yml
@@ -611,7 +611,7 @@ jobs:
           AWS_DEFAULT_REGION:    ((aws_region__primary))
           AWS_SSH_PRIVATE_KEY:   ((aws_ssh_private_key))
           DEPLOY_ARGS: |
-            -o bosh-deployment/external-ip-with-registry-not-recommended.yml
+            -o bosh-deployment/external-ip-not-recommended.yml
       - task: recreate-zookeeper
         image: main-ruby-go-image
         file: bosh-src/ci/tasks/deploy-zookeeper.yml

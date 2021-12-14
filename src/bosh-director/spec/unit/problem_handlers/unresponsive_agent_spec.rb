@@ -202,9 +202,6 @@ module Bosh::Director
         def expect_vm_to_be_created
           allow(agent).to receive(:ping).and_raise(RpcTimeout)
 
-          #TODO Registry: Make sure we actually need `set_vm_metadata` call; we didn't need to allow it before introducing wrapper.
-          # Even though wrapper::set_vm_metadata gets called now, the wrapper is real (but it houses a fake cloud). If we didn't need
-          # to allow set_vm_metadata on the fake cloud before the wrapper changes, why do we need to now?
           expect(cloud).to receive(:set_vm_metadata)
           expect(cloud).to receive(:delete_vm).with('vm-cid')
           expect(cloud)

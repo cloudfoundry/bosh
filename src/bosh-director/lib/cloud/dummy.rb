@@ -528,8 +528,7 @@ module Bosh
               'Sources' => [{
                   'Type' => 'File',
                   'SettingsPath' => agent_settings_file(agent_id)
-                }],
-              'UseRegistry' => true
+                }]
             }
           }
         }

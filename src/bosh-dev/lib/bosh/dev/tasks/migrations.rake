@@ -48,28 +48,6 @@ EOF
     end
   end
 
-  namespace :bosh_registry do
-    desc 'Generate new migration with NAME'
-    task :new, :name do |_, args|
-      args = args.to_hash
-      name = args.fetch(:name)
-
-      timestamp = Time.new.getutc.strftime('%Y%m%d%H%M%S')
-      new_migration_path = "bosh-registry/db/migrations/#{timestamp}_#{name}.rb"
-
-      puts "Creating #{new_migration_path}"
-      FileUtils.touch(new_migration_path)
-    end
-
-    desc 'Generate digest for a migration file'
-    task :generate_migration_digest, :name do |_, args|
-      args = args.to_hash
-      name = args.fetch(:name)
-
-      generate_migration_digest("bosh-registry/db/migrations", "", name)
-    end
-  end
-
   def generate_migration_digest(migrations_dir, namespace, name)
     require 'json'
     new_migration_path = File.join(migrations_dir, "#{namespace}","#{name}.rb")

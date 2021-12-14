@@ -84,13 +84,13 @@ module Bosh::Director
     end
     let(:instance_groups_to_compile) { [] }
     let(:expected_groups) do
-      [
-        'fake-director-name',
-        'mycloud',
-        'compilation-deadbeef',
-        'fake-director-name-mycloud',
-        'mycloud-compilation-deadbeef',
-        'fake-director-name-mycloud-compilation-deadbeef',
+      %w[
+        fake-director-name
+        mycloud
+        compilation-deadbeef
+        fake-director-name-mycloud
+        mycloud-compilation-deadbeef
+        fake-director-name-mycloud-compilation-deadbeef
       ]
     end
     let(:initial_state) do
@@ -148,9 +148,6 @@ module Bosh::Director
       allow(cloud).to receive(:info)
       allow(cloud).to receive(:request_cpi_api_version=)
       allow(cloud).to receive(:request_cpi_api_version)
-      # TODO: Registry: Make sure we actually need `set_vm_metadata` call; we didn't need to allow it before introducing wrapper.
-      # Even though wrapper::set_vm_metadata gets called now, the wrapper is real (but it houses a fake cloud). If we didn't need
-      # to allow set_vm_metadata on the fake cloud before the wrapper changes, why do we need to now?
       allow(cloud).to receive(:set_vm_metadata)
       allow(Bosh::Clouds::ExternalCpi).to receive(:new).and_return(cloud)
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
@@ -171,12 +168,12 @@ module Bosh::Director
       package_dependency_key = KeyGenerator.new.dependency_key_from_models(package, release_version_model)
 
       Models::CompiledPackage.make(package: package,
-        dependency_key: package_dependency_key,
-        stemcell_os: stemcell.operating_system,
-        stemcell_version: stemcell.version,
-        build: 1,
-        sha1: sha1,
-        blobstore_id: blobstore_id)
+                                   dependency_key: package_dependency_key,
+                                   stemcell_os: stemcell.operating_system,
+                                   stemcell_version: stemcell.version,
+                                   build: 1,
+                                   sha1: sha1,
+                                   blobstore_id: blobstore_id)
     end
 
     def prepare_samples
@@ -215,25 +212,22 @@ module Bosh::Director
       @t_deps_ruby = instance_double('Bosh::Director::DeploymentPlan::Job', release: @release, package_models: [@p_deps_ruby], name: 'needs_ruby')
 
       @j_dea = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
-        name: 'dea',
-        jobs: [@t_dea, @t_warden],
-        vm_type: vm_type_large,
-        stemcell: @stemcell_a
-      )
+                               name: 'dea',
+                               jobs: [@t_dea, @t_warden],
+                               vm_type: vm_type_large,
+                               stemcell: @stemcell_a)
 
       @j_router = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
-        name: 'router',
-        jobs: [@t_nginx, @t_router, @t_warden],
-        vm_type: vm_type_small,
-        stemcell: @stemcell_b
-      )
+                                  name: 'router',
+                                  jobs: [@t_nginx, @t_router, @t_warden],
+                                  vm_type: vm_type_small,
+                                  stemcell: @stemcell_b)
 
       @j_deps_ruby = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
-        name: 'needs_ruby',
-        jobs: [@t_deps_ruby],
-        vm_type: vm_type_small,
-        stemcell: @stemcell_b
-      )
+                                     name: 'needs_ruby',
+                                     jobs: [@t_deps_ruby],
+                                     vm_type: vm_type_small,
+                                     stemcell: @stemcell_b)
 
       @package_set_a = [@p_dea, @p_nginx, @p_syslog, @p_warden, @p_common, @p_ruby]
 
@@ -249,7 +243,7 @@ module Bosh::Director
     def compile_package_stub(args)
       name = args[2]
       dot = args[3].rindex('.')
-      version, build = args[3][0..dot-1], args[3][dot+1..-1]
+      version, build = args[3][0..dot - 1], args[3][dot + 1..-1]
 
       package = Models::Package.find(name: name, version: version)
       expect(args[0]).to eq(package.blobstore_id)
@@ -517,16 +511,14 @@ module Bosh::Director
     end
 
     context 'when there are compiled packages with the same major version number but different patch number' do
-
       before do
         prepare_samples
 
         @j_dea = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
-          name: 'dea',
-          jobs: [@t_dea, @t_warden],
-          vm_type: @vm_type_large,
-          stemcell: @stemcell_b
-        )
+                                 name: 'dea',
+                                 jobs: [@t_dea, @t_warden],
+                                 vm_type: @vm_type_large,
+                                 stemcell: @stemcell_b)
       end
 
       context 'and we are using a source release' do
@@ -748,9 +740,9 @@ module Bosh::Director
 
         agent = instance_double('Bosh::Director::AgentClient')
 
-        expect(cloud).to receive(:create_vm).once.ordered.
-          with(instance_of(String), stemcell.models.first.cid, {}, net, [], {'bosh' => {'group' => 'fake-director-name-mycloud-compilation-deadbeef', 'groups' => expected_groups}}).
-          and_return(vm_cid)
+        expect(cloud).to receive(:create_vm).once.ordered
+          .with(instance_of(String), stemcell.models.first.cid, {}, net, [], 'bosh' => { 'group' => 'fake-director-name-mycloud-compilation-deadbeef', 'groups' => expected_groups })
+          .and_return(vm_cid)
 
         allow(AgentClient).to receive(:with_agent_id).and_return(agent)
 
@@ -845,9 +837,9 @@ module Bosh::Director
         vm_cid = 'vm-cid-1'
         agent = instance_double('Bosh::Director::AgentClient')
 
-        expect(cloud).to receive(:create_vm).
-          with(instance_of(String), @stemcell_a.models.first.cid, {}, net, [], {'bosh' => {'group' => 'fake-director-name-mycloud-compilation-deadbeef', 'groups' => expected_groups}}).
-          and_return(vm_cid)
+        expect(cloud).to receive(:create_vm)
+          .with(instance_of(String), @stemcell_a.models.first.cid, {}, net, [], 'bosh' => { 'group' => 'fake-director-name-mycloud-compilation-deadbeef', 'groups' => expected_groups })
+          .and_return(vm_cid)
 
         allow(AgentClient).to receive(:with_agent_id).and_return(agent)
 
@@ -895,13 +887,12 @@ module Bosh::Director
         Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
 
         instance_double('Bosh::Director::DeploymentPlan::Planner',
-          compilation: compilation_config,
-          model: deployment_model,
-          name: 'fake-deployment',
-          ip_provider: ip_provider,
-          tags: {},
-          link_provider_intents: [],
-        )
+                        compilation: compilation_config,
+                        model: deployment_model,
+                        name: 'fake-deployment',
+                        ip_provider: ip_provider,
+                        tags: {},
+                        link_provider_intents: [])
       end
       let(:stemcell) { make_stemcell(cid: 'stemcell-cid') }
       let(:instance) { instance_double(DeploymentPlan::Instance) }
