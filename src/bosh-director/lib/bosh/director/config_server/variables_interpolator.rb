@@ -4,13 +4,14 @@ module Bosh::Director::ConfigServer
     def initialize
       @logger = Bosh::Director::Config.logger
       @config_server_client = ClientFactory.create(@logger).create_client
+      @cache_by_job_name = {}
     end
 
     # @param [Hash] template_spec_properties Hash to be interpolated
     # @param [Hash] deployment_name The deployment context in-which the interpolation will occur
     # @param [VariableSet] variable_set The variable set which the interpolation will use.
     # @return [Hash] A Deep copy of the interpolated template_spec_properties
-    def interpolate_template_spec_properties(template_spec_properties, deployment_name, variable_set)
+    def interpolate_template_spec_properties(template_spec_properties, deployment_name, instance_name, variable_set)
       if template_spec_properties.nil?
         return template_spec_properties
       end
@@ -24,7 +25,13 @@ module Bosh::Director::ConfigServer
 
       template_spec_properties.each do |job_name, job_properties|
         begin
-          interpolated_hash = @config_server_client.interpolate_with_versioning(job_properties, variable_set)
+          key = job_name + "-" + instance_name
+          if @cache_by_job_name.has_key?(key)
+            interpolated_hash = @cache_by_job_name[key]
+          else
+            interpolated_hash = @config_server_client.interpolate_with_versioning(job_properties, variable_set)
+            @cache_by_job_name[key] = interpolated_hash
+          end
           result[job_name] = interpolated_hash
         rescue Exception => e
           @logger.debug("Unable to render templates for job '#{job_name}'. Received error: #{e.inspect}")

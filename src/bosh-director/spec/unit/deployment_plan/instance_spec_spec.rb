@@ -239,7 +239,7 @@ module Bosh::Director::DeploymentPlan
       before do
         allow(Bosh::Director::ConfigServer::VariablesInterpolator).to receive(:new).and_return(variables_interpolator)
         allow(variables_interpolator).to receive(:interpolate_template_spec_properties)
-          .with(properties, 'fake-deployment', instance.desired_variable_set)
+          .with(properties, 'fake-deployment', instance.instance_group_name, instance.desired_variable_set)
           .and_return(properties)
         allow(variables_interpolator).to receive(:interpolate_link_spec_properties)
           .with(smurf_job_links, instance.desired_variable_set)
@@ -317,7 +317,7 @@ module Bosh::Director::DeploymentPlan
 
         it 'resolves properties and links properties' do
           expect(variables_interpolator).to receive(:interpolate_template_spec_properties)
-            .with(properties, 'fake-deployment', instance.desired_variable_set)
+            .with(properties, 'fake-deployment', instance.instance_group_name, instance.desired_variable_set)
             .and_return(resolved_properties)
           expect(variables_interpolator).to receive(:interpolate_link_spec_properties)
             .with(smurf_job_links, instance.desired_variable_set)
