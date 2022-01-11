@@ -26,6 +26,7 @@ RUN apt-get install -y \
 	libcurl4-openssl-dev \
 	python3-pip \
 	sudo \
+	netcat-openbsd \
 	&& apt-get clean
 
 RUN pip3 install awscli
