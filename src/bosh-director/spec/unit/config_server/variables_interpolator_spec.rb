@@ -6,6 +6,7 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
   let(:client_factory) { double(Bosh::Director::ConfigServer::ClientFactory) }
   let(:config_server_client) { instance_double(Bosh::Director::ConfigServer::ConfigServerClient) }
   let(:deployment_name) {'my_deployment_name'}
+  let(:instance_name) {'my_instance_name'}
 
   before do
     allow(Bosh::Director::ConfigServer::ClientFactory).to receive(:create).and_return(client_factory)
@@ -73,7 +74,7 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
       expect(config_server_client).to receive(:interpolate_with_versioning).with(job_1_properties, given_variable_set).and_return(interpolated_job_1_properties)
       expect(config_server_client).to receive(:interpolate_with_versioning).with(job_2_properties, given_variable_set).and_return(interpolated_job_2_properties)
 
-      expect(subject.interpolate_template_spec_properties(properties_spec, deployment_name, given_variable_set)).to eq(interpolated_properties_spec)
+      expect(subject.interpolate_template_spec_properties(properties_spec, deployment_name, instance_name, given_variable_set)).to eq(interpolated_properties_spec)
     end
 
     it 'interpolates using the variable set passed in' do
@@ -82,19 +83,19 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
       expect(config_server_client).to receive(:interpolate_with_versioning).with(job_1_properties, variable_set).and_return(interpolated_job_1_properties)
       expect(config_server_client).to receive(:interpolate_with_versioning).with(job_2_properties, variable_set).and_return(interpolated_job_2_properties)
 
-      expect(subject.interpolate_template_spec_properties(properties_spec, deployment_name, variable_set)).to eq(interpolated_properties_spec)
+      expect(subject.interpolate_template_spec_properties(properties_spec, deployment_name, instance_name, variable_set)).to eq(interpolated_properties_spec)
     end
 
     context 'when src hash is nil' do
       it 'returns the src as is' do
-        expect(subject.interpolate_template_spec_properties(nil, deployment_name, given_variable_set)).to eq(nil)
+        expect(subject.interpolate_template_spec_properties(nil, deployment_name, instance_name, given_variable_set)).to eq(nil)
       end
     end
 
     context 'when deployment name is nil' do
       it 'raises an error' do
         expect{
-          subject.interpolate_template_spec_properties(properties_spec, nil, given_variable_set)
+          subject.interpolate_template_spec_properties(properties_spec, nil, instance_name, given_variable_set)
         }.to raise_error(Bosh::Director::ConfigServerDeploymentNameMissing, "Deployment name missing while interpolating jobs' properties")
       end
     end
@@ -127,7 +128,7 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
         EXPECTED
 
         expect {
-          subject.interpolate_template_spec_properties(properties_spec, deployment_name, anything)
+          subject.interpolate_template_spec_properties(properties_spec, deployment_name, instance_name, anything)
         }.to raise_error { |error|
           expect(error.message).to eq(expected_error_msg)
         }

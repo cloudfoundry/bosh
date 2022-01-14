@@ -234,6 +234,7 @@ module Bosh::Director
               @variables_interpolator.interpolate_template_spec_properties(
                 instance_group.properties,
                 deployment_name,
+                instance_group.name,
                 current_variable_set,
               )
             end
@@ -251,7 +252,7 @@ module Bosh::Director
           instance_group_errors = []
 
           begin
-            @variables_interpolator.interpolate_template_spec_properties(instance_group.properties, deployment_name, current_variable_set)
+            @variables_interpolator.interpolate_template_spec_properties(instance_group.properties, deployment_name, instance_group.name, current_variable_set)
             unless instance_group&.env&.spec.nil?
               @variables_interpolator.interpolate_with_versioning(instance_group.env.spec, current_variable_set)
             end
