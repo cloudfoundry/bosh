@@ -72,7 +72,7 @@ module Bosh::Director
 
         it 'always updates checkpoint_time' do
           db_job.perform
-          expect(Models::Task.where(id: task.id).first.checkpoint_time).to be > Time.new('2017-06-01 00:00:00')
+          expect(Models::Task.where(id: task.id).first.checkpoint_time).to be > Time.new(2017, 6, 1)
         end
 
         it 'safely updates the task once and only once (to avoid two jobs separately trying to claim the task)' do

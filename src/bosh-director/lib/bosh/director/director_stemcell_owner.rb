@@ -28,11 +28,11 @@ module Bosh::Director
 
       os = results[1].downcase
       version_number = results[0]
-      version_name = if version_number.starts_with?('16.')
+      version_name = if version_number.start_with?('16.')
                        'xenial'
-                     elsif version_number.starts_with?('14.')
+                     elsif version_number.start_with?('14.')
                        'trusty'
-                     elsif version_number.starts_with?('18.')
+                     elsif version_number.start_with?('18.')
                        'bionic'
                      else
                        version_number

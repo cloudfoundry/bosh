@@ -1,7 +1,7 @@
 "pkg-config --exists openssl"
 | pkg-config --libs openssl
-=> "-L/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/lib -lssl -lcrypto\n"
-"gcc -o conftest -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I.    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable conftest.c  -L. -L/home/kkiess/.rubies/ruby-3.0.2/lib -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L. -L/usr/local/lib/ -fstack-protector-strong -rdynamic -Wl,-export-dynamic     -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L/home/kkiess/.rubies/ruby-3.0.2/lib -lruby-static -lz -lpthread -lrt -lrt -lgmp -ldl -lcrypt -lm   -lm   -lc"
+=> "-lssl -lcrypto\n"
+"gcc -o conftest -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable conftest.c  -L. -L/usr/local/lib -Wl,-rpath,/usr/local/lib -L. -fstack-protector-strong -rdynamic -Wl,-export-dynamic     -Wl,-rpath,/usr/local/lib -L/usr/local/lib -lruby-static -lz -lpthread -lrt -lrt -ldl -lcrypt -lm   -lm   -lc"
 checked program was:
 /* begin */
 1: #include "ruby.h"
@@ -12,7 +12,7 @@ checked program was:
 6: }
 /* end */
 
-"gcc -o conftest -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I.    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable conftest.c  -L. -L/home/kkiess/.rubies/ruby-3.0.2/lib -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L. -L/usr/local/lib/ -fstack-protector-strong -rdynamic -Wl,-export-dynamic     -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L/home/kkiess/.rubies/ruby-3.0.2/lib -lruby-static -lz -lpthread -lrt -lrt -lgmp -ldl -lcrypt -lm  -L/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/lib -lssl -lcrypto -lm   -lc"
+"gcc -o conftest -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable conftest.c  -L. -L/usr/local/lib -Wl,-rpath,/usr/local/lib -L. -fstack-protector-strong -rdynamic -Wl,-export-dynamic     -Wl,-rpath,/usr/local/lib -L/usr/local/lib -lruby-static -lz -lpthread -lrt -lrt -ldl -lcrypt -lm  -lssl -lcrypto -lm   -lc"
 checked program was:
 /* begin */
 1: #include "ruby.h"
@@ -24,20 +24,20 @@ checked program was:
 /* end */
 
 | pkg-config --cflags-only-I openssl
-=> "-I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include\n"
+=> "\n"
 | pkg-config --cflags-only-other openssl
 => "\n"
 | pkg-config --libs-only-l openssl
 => "-lssl -lcrypto\n"
 package configuration for openssl
-incflags: -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include
+incflags: 
 cflags: 
-ldflags: -L/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/lib
+ldflags: 
 libs: -lssl -lcrypto
 
 have_header: checking for openssl/ssl.h... -------------------- yes
 
-"gcc -E -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable   conftest.c -o conftest.i"
+"gcc -E -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable   conftest.c -o conftest.i"
 checked program was:
 /* begin */
 1: #include "ruby.h"
@@ -49,7 +49,7 @@ checked program was:
 
 have_header: checking for openssl/err.h... -------------------- yes
 
-"gcc -E -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable   conftest.c -o conftest.i"
+"gcc -E -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable   conftest.c -o conftest.i"
 checked program was:
 /* begin */
 1: #include "ruby.h"
@@ -61,16 +61,18 @@ checked program was:
 
 have_library: checking for BIO_read() in -lcrypto... -------------------- yes
 
-"gcc -o conftest -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/home/kkiess/.rubies/ruby-3.0.2/lib -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L. -L/usr/local/lib/ -fstack-protector-strong -rdynamic -Wl,-export-dynamic -L/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/lib     -lssl -lcrypto -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L/home/kkiess/.rubies/ruby-3.0.2/lib -lruby-static -lz -lpthread -lrt -lrt -lgmp -ldl -lcrypt -lm   -lssl -lcrypto -lcrypto -lm   -lc"
+"gcc -o conftest -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/usr/local/lib -Wl,-rpath,/usr/local/lib -L. -fstack-protector-strong -rdynamic -Wl,-export-dynamic      -lssl -lcrypto -Wl,-rpath,/usr/local/lib -L/usr/local/lib -lruby-static -lz -lpthread -lrt -lrt -ldl -lcrypt -lm   -lssl -lcrypto -lcrypto -lm   -lc"
 conftest.c: In function ‘t’:
-conftest.c:14:57: error: ‘BIO_read’ undeclared (first use in this function)
-   14 | int t(void) { void ((*volatile p)()); p = (void ((*)()))BIO_read; return !p; }
-      |                                                         ^~~~~~~~
+conftest.c:14:57: error: ‘BIO_read’ undeclared (first use in this function); did you mean ‘pread’?
+ int t(void) { void ((*volatile p)()); p = (void ((*)()))BIO_read; return !p; }
+                                                         ^~~~~~~~
+                                                         pread
 conftest.c:14:57: note: each undeclared identifier is reported only once for each function it appears in
 conftest.c: At top level:
 cc1: warning: unrecognized command line option ‘-Wno-self-assign’
 cc1: warning: unrecognized command line option ‘-Wno-parentheses-equality’
 cc1: warning: unrecognized command line option ‘-Wno-constant-logical-operand’
+cc1: warning: unrecognized command line option ‘-Wno-cast-function-type’
 checked program was:
 /* begin */
  1: #include "ruby.h"
@@ -89,7 +91,7 @@ checked program was:
 14: int t(void) { void ((*volatile p)()); p = (void ((*)()))BIO_read; return !p; }
 /* end */
 
-"gcc -o conftest -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/home/kkiess/.rubies/ruby-3.0.2/lib -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L. -L/usr/local/lib/ -fstack-protector-strong -rdynamic -Wl,-export-dynamic -L/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/lib     -lssl -lcrypto -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L/home/kkiess/.rubies/ruby-3.0.2/lib -lruby-static -lz -lpthread -lrt -lrt -lgmp -ldl -lcrypt -lm   -lssl -lcrypto -lcrypto -lm   -lc"
+"gcc -o conftest -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/usr/local/lib -Wl,-rpath,/usr/local/lib -L. -fstack-protector-strong -rdynamic -Wl,-export-dynamic      -lssl -lcrypto -Wl,-rpath,/usr/local/lib -L/usr/local/lib -lruby-static -lz -lpthread -lrt -lrt -ldl -lcrypt -lm   -lssl -lcrypto -lcrypto -lm   -lc"
 checked program was:
 /* begin */
  1: #include "ruby.h"
@@ -113,16 +115,17 @@ checked program was:
 
 have_library: checking for SSL_CTX_new() in -lssl... -------------------- yes
 
-"gcc -o conftest -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/home/kkiess/.rubies/ruby-3.0.2/lib -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L. -L/usr/local/lib/ -fstack-protector-strong -rdynamic -Wl,-export-dynamic -L/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/lib     -lssl -lcrypto -lcrypto -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L/home/kkiess/.rubies/ruby-3.0.2/lib -lruby-static -lz -lpthread -lrt -lrt -lgmp -ldl -lcrypt -lm   -lssl -lcrypto -lcrypto -lssl -lm   -lc"
+"gcc -o conftest -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/usr/local/lib -Wl,-rpath,/usr/local/lib -L. -fstack-protector-strong -rdynamic -Wl,-export-dynamic      -lssl -lcrypto -lcrypto -Wl,-rpath,/usr/local/lib -L/usr/local/lib -lruby-static -lz -lpthread -lrt -lrt -ldl -lcrypt -lm   -lssl -lcrypto -lcrypto -lssl -lm   -lc"
 conftest.c: In function ‘t’:
 conftest.c:14:57: error: ‘SSL_CTX_new’ undeclared (first use in this function)
-   14 | int t(void) { void ((*volatile p)()); p = (void ((*)()))SSL_CTX_new; return !p; }
-      |                                                         ^~~~~~~~~~~
+ int t(void) { void ((*volatile p)()); p = (void ((*)()))SSL_CTX_new; return !p; }
+                                                         ^~~~~~~~~~~
 conftest.c:14:57: note: each undeclared identifier is reported only once for each function it appears in
 conftest.c: At top level:
 cc1: warning: unrecognized command line option ‘-Wno-self-assign’
 cc1: warning: unrecognized command line option ‘-Wno-parentheses-equality’
 cc1: warning: unrecognized command line option ‘-Wno-constant-logical-operand’
+cc1: warning: unrecognized command line option ‘-Wno-cast-function-type’
 checked program was:
 /* begin */
  1: #include "ruby.h"
@@ -141,7 +144,7 @@ checked program was:
 14: int t(void) { void ((*volatile p)()); p = (void ((*)()))SSL_CTX_new; return !p; }
 /* end */
 
-"gcc -o conftest -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/home/kkiess/.rubies/ruby-3.0.2/lib -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L. -L/usr/local/lib/ -fstack-protector-strong -rdynamic -Wl,-export-dynamic -L/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/lib     -lssl -lcrypto -lcrypto -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L/home/kkiess/.rubies/ruby-3.0.2/lib -lruby-static -lz -lpthread -lrt -lrt -lgmp -ldl -lcrypt -lm   -lssl -lcrypto -lcrypto -lssl -lm   -lc"
+"gcc -o conftest -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/usr/local/lib -Wl,-rpath,/usr/local/lib -L. -fstack-protector-strong -rdynamic -Wl,-export-dynamic      -lssl -lcrypto -lcrypto -Wl,-rpath,/usr/local/lib -L/usr/local/lib -lruby-static -lz -lpthread -lrt -lrt -ldl -lcrypt -lm   -lssl -lcrypto -lcrypto -lssl -lm   -lc"
 checked program was:
 /* begin */
  1: #include "ruby.h"
@@ -165,7 +168,7 @@ checked program was:
 
 have_type: checking for rb_fdset_t in ruby/intern.h... -------------------- yes
 
-"gcc -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable    -c conftest.c"
+"gcc -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable    -c conftest.c"
 checked program was:
 /* begin */
 1: #include "ruby.h"
@@ -181,16 +184,17 @@ checked program was:
 
 have_func: checking for rb_wait_for_single_fd()... -------------------- yes
 
-"gcc -o conftest -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/home/kkiess/.rubies/ruby-3.0.2/lib -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L. -L/usr/local/lib/ -fstack-protector-strong -rdynamic -Wl,-export-dynamic -L/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/lib     -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L/home/kkiess/.rubies/ruby-3.0.2/lib -lruby-static -lz -lpthread -lrt -lrt -lgmp -ldl -lcrypt -lm   -lssl -lcrypto -lcrypto -lssl -lm   -lc"
+"gcc -o conftest -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/usr/local/lib -Wl,-rpath,/usr/local/lib -L. -fstack-protector-strong -rdynamic -Wl,-export-dynamic      -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/usr/local/lib -L/usr/local/lib -lruby-static -lz -lpthread -lrt -lrt -ldl -lcrypt -lm   -lssl -lcrypto -lcrypto -lssl -lm   -lc"
 conftest.c: In function ‘t’:
 conftest.c:14:57: error: ‘rb_wait_for_single_fd’ undeclared (first use in this function)
-   14 | int t(void) { void ((*volatile p)()); p = (void ((*)()))rb_wait_for_single_fd; return !p; }
-      |                                                         ^~~~~~~~~~~~~~~~~~~~~
+ int t(void) { void ((*volatile p)()); p = (void ((*)()))rb_wait_for_single_fd; return !p; }
+                                                         ^~~~~~~~~~~~~~~~~~~~~
 conftest.c:14:57: note: each undeclared identifier is reported only once for each function it appears in
 conftest.c: At top level:
 cc1: warning: unrecognized command line option ‘-Wno-self-assign’
 cc1: warning: unrecognized command line option ‘-Wno-parentheses-equality’
 cc1: warning: unrecognized command line option ‘-Wno-constant-logical-operand’
+cc1: warning: unrecognized command line option ‘-Wno-cast-function-type’
 checked program was:
 /* begin */
  1: #include "ruby.h"
@@ -209,7 +213,7 @@ checked program was:
 14: int t(void) { void ((*volatile p)()); p = (void ((*)()))rb_wait_for_single_fd; return !p; }
 /* end */
 
-"gcc -o conftest -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/home/kkiess/.rubies/ruby-3.0.2/lib -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L. -L/usr/local/lib/ -fstack-protector-strong -rdynamic -Wl,-export-dynamic -L/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/lib     -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L/home/kkiess/.rubies/ruby-3.0.2/lib -lruby-static -lz -lpthread -lrt -lrt -lgmp -ldl -lcrypt -lm   -lssl -lcrypto -lcrypto -lssl -lm   -lc"
+"gcc -o conftest -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/usr/local/lib -Wl,-rpath,/usr/local/lib -L. -fstack-protector-strong -rdynamic -Wl,-export-dynamic      -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/usr/local/lib -L/usr/local/lib -lruby-static -lz -lpthread -lrt -lrt -ldl -lcrypt -lm   -lssl -lcrypto -lcrypto -lssl -lm   -lc"
 checked program was:
 /* begin */
  1: #include "ruby.h"
@@ -233,7 +237,7 @@ checked program was:
 
 have_func: checking for rb_thread_fd_select()... -------------------- yes
 
-"gcc -o conftest -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/home/kkiess/.rubies/ruby-3.0.2/lib -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L. -L/usr/local/lib/ -fstack-protector-strong -rdynamic -Wl,-export-dynamic -L/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/lib     -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L/home/kkiess/.rubies/ruby-3.0.2/lib -lruby-static -lz -lpthread -lrt -lrt -lgmp -ldl -lcrypt -lm   -lssl -lcrypto -lcrypto -lssl -lm   -lc"
+"gcc -o conftest -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/usr/local/lib -Wl,-rpath,/usr/local/lib -L. -fstack-protector-strong -rdynamic -Wl,-export-dynamic      -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/usr/local/lib -L/usr/local/lib -lruby-static -lz -lpthread -lrt -lrt -ldl -lcrypt -lm   -lssl -lcrypto -lcrypto -lssl -lm   -lc"
 checked program was:
 /* begin */
  1: #include "ruby.h"
@@ -256,7 +260,7 @@ checked program was:
 
 have_func: checking for inotify_init() in sys/inotify.h... -------------------- yes
 
-"gcc -o conftest -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/home/kkiess/.rubies/ruby-3.0.2/lib -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L. -L/usr/local/lib/ -fstack-protector-strong -rdynamic -Wl,-export-dynamic -L/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/lib     -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L/home/kkiess/.rubies/ruby-3.0.2/lib -lruby-static -lz -lpthread -lrt -lrt -lgmp -ldl -lcrypt -lm   -lssl -lcrypto -lcrypto -lssl -lm   -lc"
+"gcc -o conftest -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/usr/local/lib -Wl,-rpath,/usr/local/lib -L. -fstack-protector-strong -rdynamic -Wl,-export-dynamic      -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/usr/local/lib -L/usr/local/lib -lruby-static -lz -lpthread -lrt -lrt -ldl -lcrypt -lm   -lssl -lcrypto -lcrypto -lssl -lm   -lc"
 checked program was:
 /* begin */
  1: #include "ruby.h"
@@ -281,7 +285,7 @@ checked program was:
 
 have_func: checking for writev() in sys/uio.h... -------------------- yes
 
-"gcc -o conftest -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/home/kkiess/.rubies/ruby-3.0.2/lib -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L. -L/usr/local/lib/ -fstack-protector-strong -rdynamic -Wl,-export-dynamic -L/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/lib     -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L/home/kkiess/.rubies/ruby-3.0.2/lib -lruby-static -lz -lpthread -lrt -lrt -lgmp -ldl -lcrypt -lm   -lssl -lcrypto -lcrypto -lssl -lm   -lc"
+"gcc -o conftest -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/usr/local/lib -Wl,-rpath,/usr/local/lib -L. -fstack-protector-strong -rdynamic -Wl,-export-dynamic      -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/usr/local/lib -L/usr/local/lib -lruby-static -lz -lpthread -lrt -lrt -ldl -lcrypt -lm   -lssl -lcrypto -lcrypto -lssl -lm   -lc"
 checked program was:
 /* begin */
  1: #include "ruby.h"
@@ -306,7 +310,7 @@ checked program was:
 
 have_func: checking for pipe2() in unistd.h... -------------------- yes
 
-"gcc -o conftest -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/home/kkiess/.rubies/ruby-3.0.2/lib -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L. -L/usr/local/lib/ -fstack-protector-strong -rdynamic -Wl,-export-dynamic -L/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/lib     -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L/home/kkiess/.rubies/ruby-3.0.2/lib -lruby-static -lz -lpthread -lrt -lrt -lgmp -ldl -lcrypt -lm   -lssl -lcrypto -lcrypto -lssl -lm   -lc"
+"gcc -o conftest -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/usr/local/lib -Wl,-rpath,/usr/local/lib -L. -fstack-protector-strong -rdynamic -Wl,-export-dynamic      -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/usr/local/lib -L/usr/local/lib -lruby-static -lz -lpthread -lrt -lrt -ldl -lcrypt -lm   -lssl -lcrypto -lcrypto -lssl -lm   -lc"
 checked program was:
 /* begin */
  1: #include "ruby.h"
@@ -331,7 +335,7 @@ checked program was:
 
 have_func: checking for accept4() in sys/socket.h... -------------------- yes
 
-"gcc -o conftest -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/home/kkiess/.rubies/ruby-3.0.2/lib -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L. -L/usr/local/lib/ -fstack-protector-strong -rdynamic -Wl,-export-dynamic -L/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/lib     -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L/home/kkiess/.rubies/ruby-3.0.2/lib -lruby-static -lz -lpthread -lrt -lrt -lgmp -ldl -lcrypt -lm   -lssl -lcrypto -lcrypto -lssl -lm   -lc"
+"gcc -o conftest -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/usr/local/lib -Wl,-rpath,/usr/local/lib -L. -fstack-protector-strong -rdynamic -Wl,-export-dynamic      -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/usr/local/lib -L/usr/local/lib -lruby-static -lz -lpthread -lrt -lrt -ldl -lcrypt -lm   -lssl -lcrypto -lcrypto -lssl -lm   -lc"
 checked program was:
 /* begin */
  1: #include "ruby.h"
@@ -356,7 +360,7 @@ checked program was:
 
 have_const: checking for SOCK_CLOEXEC in sys/socket.h... -------------------- yes
 
-"gcc -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable    -c conftest.c"
+"gcc -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable    -c conftest.c"
 checked program was:
 /* begin */
 1: #include "ruby.h"
@@ -372,10 +376,10 @@ checked program was:
 
 have_header: checking for sys/event.h... -------------------- no
 
-"gcc -E -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable   conftest.c -o conftest.i"
+"gcc -E -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable   conftest.c -o conftest.i"
 conftest.c:3:10: fatal error: sys/event.h: No such file or directory
-    3 | #include <sys/event.h>
-      |          ^~~~~~~~~~~~~
+ #include <sys/event.h>
+          ^~~~~~~~~~~~~
 compilation terminated.
 checked program was:
 /* begin */
@@ -388,7 +392,7 @@ checked program was:
 
 have_func: checking for epoll_create1() in sys/epoll.h... -------------------- yes
 
-"gcc -o conftest -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/home/kkiess/.rubies/ruby-3.0.2/lib -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L. -L/usr/local/lib/ -fstack-protector-strong -rdynamic -Wl,-export-dynamic -L/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/lib     -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L/home/kkiess/.rubies/ruby-3.0.2/lib -lruby-static -lz -lpthread -lrt -lrt -lgmp -ldl -lcrypt -lm   -lssl -lcrypto -lcrypto -lssl -lm   -lc"
+"gcc -o conftest -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/usr/local/lib -Wl,-rpath,/usr/local/lib -L. -fstack-protector-strong -rdynamic -Wl,-export-dynamic      -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/usr/local/lib -L/usr/local/lib -lruby-static -lz -lpthread -lrt -lrt -ldl -lcrypt -lm   -lssl -lcrypto -lcrypto -lssl -lm   -lc"
 checked program was:
 /* begin */
  1: #include "ruby.h"
@@ -413,7 +417,7 @@ checked program was:
 
 have_func: checking for clock_gettime()... -------------------- yes
 
-"gcc -o conftest -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/home/kkiess/.rubies/ruby-3.0.2/lib -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L. -L/usr/local/lib/ -fstack-protector-strong -rdynamic -Wl,-export-dynamic -L/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/lib     -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L/home/kkiess/.rubies/ruby-3.0.2/lib -lruby-static -lz -lpthread -lrt -lrt -lgmp -ldl -lcrypt -lm   -lssl -lcrypto -lcrypto -lssl -lm   -lc"
+"gcc -o conftest -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/usr/local/lib -Wl,-rpath,/usr/local/lib -L. -fstack-protector-strong -rdynamic -Wl,-export-dynamic      -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/usr/local/lib -L/usr/local/lib -lruby-static -lz -lpthread -lrt -lrt -ldl -lcrypt -lm   -lssl -lcrypto -lcrypto -lssl -lm   -lc"
 checked program was:
 /* begin */
  1: #include "ruby.h"
@@ -436,7 +440,7 @@ checked program was:
 
 have_const: checking for CLOCK_MONOTONIC_RAW in time.h... -------------------- yes
 
-"gcc -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable    -c conftest.c"
+"gcc -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable    -c conftest.c"
 checked program was:
 /* begin */
 1: #include "ruby.h"
@@ -452,7 +456,7 @@ checked program was:
 
 have_const: checking for CLOCK_MONOTONIC in time.h... -------------------- yes
 
-"gcc -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable    -c conftest.c"
+"gcc -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable    -c conftest.c"
 checked program was:
 /* begin */
 1: #include "ruby.h"
@@ -468,7 +472,7 @@ checked program was:
 
 have_func: checking for TLS_server_method() in openssl/ssl.h... -------------------- yes
 
-"gcc -o conftest -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/home/kkiess/.rubies/ruby-3.0.2/lib -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L. -L/usr/local/lib/ -fstack-protector-strong -rdynamic -Wl,-export-dynamic -L/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/lib     -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L/home/kkiess/.rubies/ruby-3.0.2/lib -lruby-static -lz -lpthread -lrt -lrt -lgmp -ldl -lcrypt -lm   -lssl -lcrypto -lcrypto -lssl -lm   -lc"
+"gcc -o conftest -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/usr/local/lib -Wl,-rpath,/usr/local/lib -L. -fstack-protector-strong -rdynamic -Wl,-export-dynamic      -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/usr/local/lib -L/usr/local/lib -lruby-static -lz -lpthread -lrt -lrt -ldl -lcrypt -lm   -lssl -lcrypto -lcrypto -lssl -lm   -lc"
 checked program was:
 /* begin */
  1: #include "ruby.h"
@@ -493,7 +497,7 @@ checked program was:
 
 have_macro: checking for SSL_CTX_set_min_proto_version in openssl/ssl.h... -------------------- yes
 
-"gcc -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable    -c conftest.c"
+"gcc -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable    -c conftest.c"
 checked program was:
 /* begin */
 1: #include "ruby.h"
@@ -508,12 +512,13 @@ checked program was:
 
 --------------------
 
-"g++ -o conftest -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/home/kkiess/.rubies/ruby-3.0.2/lib -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L. -L/usr/local/lib/ -fstack-protector-strong -rdynamic -Wl,-export-dynamic -L/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/lib     -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L/home/kkiess/.rubies/ruby-3.0.2/lib -lruby-static -lz -lpthread -lrt -lrt -lgmp -ldl -lcrypt -lm  -Wall -lm   -lc"
+"g++ -o conftest -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/usr/local/lib -Wl,-rpath,/usr/local/lib -L. -fstack-protector-strong -rdynamic -Wl,-export-dynamic      -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/usr/local/lib -L/usr/local/lib -lruby-static -lz -lpthread -lrt -lrt -ldl -lcrypt -lm  -Wall -lm   -lc"
 cc1plus: warning: command line option ‘-Wimplicit-function-declaration’ is valid for C/ObjC but not for C++
 cc1plus: warning: command line option ‘-Wimplicit-int’ is valid for C/ObjC but not for C++
 cc1plus: warning: unrecognized command line option ‘-Wno-self-assign’
 cc1plus: warning: unrecognized command line option ‘-Wno-parentheses-equality’
 cc1plus: warning: unrecognized command line option ‘-Wno-constant-logical-operand’
+cc1plus: warning: unrecognized command line option ‘-Wno-cast-function-type’
 checked program was:
 /* begin */
 1: #include "ruby.h"
@@ -521,12 +526,13 @@ checked program was:
 3: int main() {return 0;}
 /* end */
 
-"g++ -o conftest -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/home/kkiess/.rubies/ruby-3.0.2/lib -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L. -L/usr/local/lib/ -fstack-protector-strong -rdynamic -Wl,-export-dynamic -L/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/lib     -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L/home/kkiess/.rubies/ruby-3.0.2/lib -lruby-static -lz -lpthread -lrt -lrt -lgmp -ldl -lcrypt -lm  -Wextra -lm   -lc"
+"g++ -o conftest -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/usr/local/lib -Wl,-rpath,/usr/local/lib -L. -fstack-protector-strong -rdynamic -Wl,-export-dynamic      -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/usr/local/lib -L/usr/local/lib -lruby-static -lz -lpthread -lrt -lrt -ldl -lcrypt -lm  -Wextra -lm   -lc"
 cc1plus: warning: command line option ‘-Wimplicit-function-declaration’ is valid for C/ObjC but not for C++
 cc1plus: warning: command line option ‘-Wimplicit-int’ is valid for C/ObjC but not for C++
 cc1plus: warning: unrecognized command line option ‘-Wno-self-assign’
 cc1plus: warning: unrecognized command line option ‘-Wno-parentheses-equality’
 cc1plus: warning: unrecognized command line option ‘-Wno-constant-logical-operand’
+cc1plus: warning: unrecognized command line option ‘-Wno-cast-function-type’
 checked program was:
 /* begin */
 1: #include "ruby.h"
@@ -534,12 +540,13 @@ checked program was:
 3: int main() {return 0;}
 /* end */
 
-"g++ -o conftest -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/home/kkiess/.rubies/ruby-3.0.2/lib -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L. -L/usr/local/lib/ -fstack-protector-strong -rdynamic -Wl,-export-dynamic -L/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/lib     -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L/home/kkiess/.rubies/ruby-3.0.2/lib -lruby-static -lz -lpthread -lrt -lrt -lgmp -ldl -lcrypt -lm  -Wno-deprecated-declarations -lm   -lc"
+"g++ -o conftest -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/usr/local/lib -Wl,-rpath,/usr/local/lib -L. -fstack-protector-strong -rdynamic -Wl,-export-dynamic      -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/usr/local/lib -L/usr/local/lib -lruby-static -lz -lpthread -lrt -lrt -ldl -lcrypt -lm  -Wno-deprecated-declarations -lm   -lc"
 cc1plus: warning: command line option ‘-Wimplicit-function-declaration’ is valid for C/ObjC but not for C++
 cc1plus: warning: command line option ‘-Wimplicit-int’ is valid for C/ObjC but not for C++
 cc1plus: warning: unrecognized command line option ‘-Wno-self-assign’
 cc1plus: warning: unrecognized command line option ‘-Wno-parentheses-equality’
 cc1plus: warning: unrecognized command line option ‘-Wno-constant-logical-operand’
+cc1plus: warning: unrecognized command line option ‘-Wno-cast-function-type’
 checked program was:
 /* begin */
 1: #include "ruby.h"
@@ -547,12 +554,13 @@ checked program was:
 3: int main() {return 0;}
 /* end */
 
-"g++ -o conftest -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/home/kkiess/.rubies/ruby-3.0.2/lib -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L. -L/usr/local/lib/ -fstack-protector-strong -rdynamic -Wl,-export-dynamic -L/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/lib     -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L/home/kkiess/.rubies/ruby-3.0.2/lib -lruby-static -lz -lpthread -lrt -lrt -lgmp -ldl -lcrypt -lm  -Wno-ignored-qualifiers -lm   -lc"
+"g++ -o conftest -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/usr/local/lib -Wl,-rpath,/usr/local/lib -L. -fstack-protector-strong -rdynamic -Wl,-export-dynamic      -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/usr/local/lib -L/usr/local/lib -lruby-static -lz -lpthread -lrt -lrt -ldl -lcrypt -lm  -Wno-ignored-qualifiers -lm   -lc"
 cc1plus: warning: command line option ‘-Wimplicit-function-declaration’ is valid for C/ObjC but not for C++
 cc1plus: warning: command line option ‘-Wimplicit-int’ is valid for C/ObjC but not for C++
 cc1plus: warning: unrecognized command line option ‘-Wno-self-assign’
 cc1plus: warning: unrecognized command line option ‘-Wno-parentheses-equality’
 cc1plus: warning: unrecognized command line option ‘-Wno-constant-logical-operand’
+cc1plus: warning: unrecognized command line option ‘-Wno-cast-function-type’
 checked program was:
 /* begin */
 1: #include "ruby.h"
@@ -560,12 +568,13 @@ checked program was:
 3: int main() {return 0;}
 /* end */
 
-"g++ -o conftest -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/home/kkiess/.rubies/ruby-3.0.2/lib -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L. -L/usr/local/lib/ -fstack-protector-strong -rdynamic -Wl,-export-dynamic -L/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/lib     -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L/home/kkiess/.rubies/ruby-3.0.2/lib -lruby-static -lz -lpthread -lrt -lrt -lgmp -ldl -lcrypt -lm  -Wno-unused-result -lm   -lc"
+"g++ -o conftest -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/usr/local/lib -Wl,-rpath,/usr/local/lib -L. -fstack-protector-strong -rdynamic -Wl,-export-dynamic      -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/usr/local/lib -L/usr/local/lib -lruby-static -lz -lpthread -lrt -lrt -ldl -lcrypt -lm  -Wno-unused-result -lm   -lc"
 cc1plus: warning: command line option ‘-Wimplicit-function-declaration’ is valid for C/ObjC but not for C++
 cc1plus: warning: command line option ‘-Wimplicit-int’ is valid for C/ObjC but not for C++
 cc1plus: warning: unrecognized command line option ‘-Wno-self-assign’
 cc1plus: warning: unrecognized command line option ‘-Wno-parentheses-equality’
 cc1plus: warning: unrecognized command line option ‘-Wno-constant-logical-operand’
+cc1plus: warning: unrecognized command line option ‘-Wno-cast-function-type’
 checked program was:
 /* begin */
 1: #include "ruby.h"
@@ -573,12 +582,13 @@ checked program was:
 3: int main() {return 0;}
 /* end */
 
-"g++ -o conftest -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/home/kkiess/.rubies/ruby-3.0.2/lib -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L. -L/usr/local/lib/ -fstack-protector-strong -rdynamic -Wl,-export-dynamic -L/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/lib     -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L/home/kkiess/.rubies/ruby-3.0.2/lib -lruby-static -lz -lpthread -lrt -lrt -lgmp -ldl -lcrypt -lm  -Wno-address -lm   -lc"
+"g++ -o conftest -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/usr/local/lib -Wl,-rpath,/usr/local/lib -L. -fstack-protector-strong -rdynamic -Wl,-export-dynamic      -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/usr/local/lib -L/usr/local/lib -lruby-static -lz -lpthread -lrt -lrt -ldl -lcrypt -lm  -Wno-address -lm   -lc"
 cc1plus: warning: command line option ‘-Wimplicit-function-declaration’ is valid for C/ObjC but not for C++
 cc1plus: warning: command line option ‘-Wimplicit-int’ is valid for C/ObjC but not for C++
 cc1plus: warning: unrecognized command line option ‘-Wno-self-assign’
 cc1plus: warning: unrecognized command line option ‘-Wno-parentheses-equality’
 cc1plus: warning: unrecognized command line option ‘-Wno-constant-logical-operand’
+cc1plus: warning: unrecognized command line option ‘-Wno-cast-function-type’
 checked program was:
 /* begin */
 1: #include "ruby.h"
@@ -586,17 +596,18 @@ checked program was:
 3: int main() {return 0;}
 /* end */
 
-"g++ -o conftest -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/x86_64-linux -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0/ruby/backward -I/home/kkiess/.rubies/ruby-3.0.2/include/ruby-3.0.0 -I. -I/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/include    -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/home/kkiess/.rubies/ruby-3.0.2/lib -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L. -L/usr/local/lib/ -fstack-protector-strong -rdynamic -Wl,-export-dynamic -L/home/linuxbrew/.linuxbrew/Cellar/openssl@1.1/1.1.1l_1/lib     -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/home/kkiess/.rubies/ruby-3.0.2/lib -L/home/kkiess/.rubies/ruby-3.0.2/lib -lruby-static -lz -lpthread -lrt -lrt -lgmp -ldl -lcrypt -lm  -lstdc++ -lm   -lc"
+"g++ -o conftest -I/usr/local/include/ruby-3.0.0/x86_64-linux -I/usr/local/include/ruby-3.0.0/ruby/backward -I/usr/local/include/ruby-3.0.0 -I.     -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wduplicated-cond -Wimplicit-function-declaration -Wimplicit-int -Wmisleading-indentation -Wpointer-arith -Wwrite-strings -Wimplicit-fallthrough=0 -Wmissing-noreturn -Wno-cast-function-type -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-packed-bitfield-compat -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wsuggest-attribute=format -Wsuggest-attribute=noreturn -Wunused-variable  conftest.c  -L. -L/usr/local/lib -Wl,-rpath,/usr/local/lib -L. -fstack-protector-strong -rdynamic -Wl,-export-dynamic      -lssl -lcrypto -lcrypto -lssl -Wl,-rpath,/usr/local/lib -L/usr/local/lib -lruby-static -lz -lpthread -lrt -lrt -ldl -lcrypt -lm  -lstdc++ -lm   -lc"
 cc1plus: warning: command line option ‘-Wimplicit-function-declaration’ is valid for C/ObjC but not for C++
 cc1plus: warning: command line option ‘-Wimplicit-int’ is valid for C/ObjC but not for C++
 conftest.c: In function ‘int main()’:
 conftest.c:5:35: warning: variable ‘tuple’ set but not used [-Wunused-but-set-variable]
-    5 |   int main(){ pair<const int,int> tuple = make_pair(1,2); }
-      |                                   ^~~~~
+   int main(){ pair<const int,int> tuple = make_pair(1,2); }
+                                   ^~~~~
 At global scope:
 cc1plus: warning: unrecognized command line option ‘-Wno-self-assign’
 cc1plus: warning: unrecognized command line option ‘-Wno-parentheses-equality’
 cc1plus: warning: unrecognized command line option ‘-Wno-constant-logical-operand’
+cc1plus: warning: unrecognized command line option ‘-Wno-cast-function-type’
 checked program was:
 /* begin */
 1: #include "ruby.h"

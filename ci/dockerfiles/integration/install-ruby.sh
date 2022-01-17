@@ -3,7 +3,7 @@
 set -e
 set -x
 
-RUBY_INSTALL_VER="0.8.1"
+RUBY_INSTALL_VER="0.8.3"
 RUBY_INSTALL_URL=https://github.com/postmodern/ruby-install/archive/v${RUBY_INSTALL_VER}.tar.gz
 
 echo "Installing ruby-install v${RUBY_INSTALL_VER}..."
@@ -27,4 +27,4 @@ install_ruby() {
 
 }
 
-install_ruby 3.0.2 570e7773100f625599575f363831166d91d49a1ab97d3ab6495af44774155c40
+install_ruby 3.1.0 1a0e0b69b9b062b6299ff1f6c6d77b66aff3995f63d1d8b8771e7a113ec472e2

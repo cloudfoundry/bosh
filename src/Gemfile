@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-ruby '3.0.2'
+ruby '3.1.0'
 
 gem 'bosh-core', path: 'bosh-core'
 gem 'bosh-director', path: 'bosh-director'
@@ -66,8 +66,12 @@ group :development, :test do
 
   gem 'blue-shell'
   gem 'sqlite3'
-  gem 'timecop', '~>0.7.1'
+  gem 'timecop', '~>0.9.4'
 
   gem 'unix-crypt'
 
+  # locking this see as getting errer "Psych::BadAlias: Unknown alias: ..."
+  # Psych 4.0 changes Psych.load to use safe_load by default. You may need to use Psych 3.3.2 for migrating to this behavior. [Bug #17866]
+  # https://bugs.ruby-lang.org/issues/17866
+  gem "psych", "~> 3.0"
 end
