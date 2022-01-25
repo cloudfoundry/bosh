@@ -48,29 +48,6 @@ fi
 
 if [[ -f ${STORE_DIR}/fresh ]] ; then
   if [[ -d ${STORE_DIR_OLD} ]] ; then
-    echo "checking status of postgres-9.4..."
-    if ! "${PACKAGE_DIR_OLD}/bin/pg_controldata" "${STORE_DIR_OLD}" | grep -E "Database cluster state:\s+shut down"; then
-      echo "postgres-9.4 did not shut down cleanly"
-      echo "repairing postgres-9.4. cluster state..."
-
-      su - vcap -c "${PACKAGE_DIR_OLD}/bin/postgres -D ${STORE_DIR_OLD}" &
-      postgres_pid=$!
-
-      count=0
-      while ! "${PACKAGE_DIR_OLD}/bin/pg_isready" -t 30 -U postgres; do
-        echo "waiting for postgres-9.4 to start..."
-        sleep 1
-        count=$(( count + 1 ))
-        if [ $count -ge 120 ]; then
-          echo "timed out waiting for postgres-9.4 to start"
-          exit 1
-        fi
-      done
-
-      kill "${postgres_pid}"
-      wait "${postgres_pid}"
-    fi
-
     echo "copying contents of postgres-9.4 to postgres-10 for postgres upgrade..."
     su - vcap -c "${PACKAGE_DIR}/bin/pg_upgrade \
       --old-bindir=${PACKAGE_DIR_OLD}/bin \
