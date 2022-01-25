@@ -5,10 +5,10 @@ set -eu
 PACKAGE_DIR=/var/vcap/packages/postgres-10
 PACKAGE_DIR_OLD=/var/vcap/packages/postgres-9.4
 
-STORE_DIR=/var/vcap/store
+PERSISTENT_DISK_DIR=/var/vcap/store
 
-DATA_DIR=$STORE_DIR/postgres-10
-DATA_DIR_OLD=$STORE_DIR/postgres-9.4
+STORE_DIR=${PERSISTENT_DISK_DIR}/postgres-10
+STORE_DIR_OLD=${PERSISTENT_DISK_DIR}/postgres-9.4
 
 USER='<%= p("postgres.user") %>'
 
@@ -26,38 +26,38 @@ fi
 
 # We cannot kill the following conditional
 # because initdb is very picky about looking at an empty dir
-if [ ! -d $DATA_DIR ] || [ ! -f $DATA_DIR/postgresql.conf ]; then
-  mkdir -p $DATA_DIR
-  chown vcap:vcap $DATA_DIR
+if [ ! -d ${STORE_DIR} ] || [ ! -f ${STORE_DIR}/postgresql.conf ]; then
+  mkdir -p "${STORE_DIR}"
+  chown vcap:vcap "${STORE_DIR}"
 
   # initdb creates data directories
-  su - vcap -c "$PACKAGE_DIR/bin/initdb -E utf8 -D $DATA_DIR"
+  su - vcap -c "${PACKAGE_DIR}/bin/initdb -E utf8 -D ${STORE_DIR}"
 
-  touch /var/vcap/store/postgres-10/fresh
+  touch "${STORE_DIR}/fresh"
 
   if [ $? != 0 ]; then
     echo "ERROR: Unable to Initialize Postgres DB"
     exit 1
   fi
 
-  echo "host all $USER 0.0.0.0/0 md5" >> $DATA_DIR/pg_hba.conf
+  echo "host all $USER 0.0.0.0/0 md5" >> "${STORE_DIR}/pg_hba.conf"
 
-  mkdir -p $DATA_DIR/pg_log
-  chown vcap:vcap $DATA_DIR/pg_log
+  mkdir -p "${STORE_DIR}/pg_log"
+  chown vcap:vcap "${STORE_DIR}/pg_log"
 fi
 
-if [[ -f /var/vcap/store/postgres-10/fresh ]] ; then
-  if [[ -d /var/vcap/store/postgres-9.4 ]] ; then
+if [[ -f ${STORE_DIR}/fresh ]] ; then
+  if [[ -d ${STORE_DIR_OLD} ]] ; then
     echo "checking status of postgres-9.4..."
-    if ! ${PACKAGE_DIR_OLD}/bin/pg_controldata "${DATA_DIR_OLD}" | grep -E "Database cluster state:\s+shut down"; then
+    if ! "${PACKAGE_DIR_OLD}/bin/pg_controldata" "${STORE_DIR_OLD}" | grep -E "Database cluster state:\s+shut down"; then
       echo "postgres-9.4 did not shut down cleanly"
       echo "repairing postgres-9.4. cluster state..."
 
-      su - vcap -c "$PACKAGE_DIR_OLD/bin/postgres -D $DATA_DIR_OLD" &
+      su - vcap -c "${PACKAGE_DIR_OLD}/bin/postgres -D ${STORE_DIR_OLD}" &
       postgres_pid=$!
 
       count=0
-      while ! ${PACKAGE_DIR_OLD}/bin/pg_isready -t 30 -U postgres; do
+      while ! "${PACKAGE_DIR_OLD}/bin/pg_isready" -t 30 -U postgres; do
         echo "waiting for postgres-9.4 to start..."
         sleep 1
         count=$(( count + 1 ))
@@ -72,17 +72,17 @@ if [[ -f /var/vcap/store/postgres-10/fresh ]] ; then
     fi
 
     echo "copying contents of postgres-9.4 to postgres-10 for postgres upgrade..."
-    su - vcap -c "/var/vcap/packages/postgres-10/bin/pg_upgrade \
-      --old-bindir=$PACKAGE_DIR_OLD/bin \
-      --new-bindir=$PACKAGE_DIR/bin \
-      --old-datadir=$DATA_DIR_OLD \
-      --new-datadir=$DATA_DIR"
+    su - vcap -c "${PACKAGE_DIR}/bin/pg_upgrade \
+      --old-bindir=${PACKAGE_DIR_OLD}/bin \
+      --new-bindir=${PACKAGE_DIR}/bin \
+      --old-datadir=${STORE_DIR_OLD} \
+      --new-datadir=${STORE_DIR}"
 
     echo "successfully upgraded from postgres-9.4"
-    rm -rf '/var/vcap/store/postgres-9'
+    rm -rf "${STORE_DIR_OLD}"
   fi
 
-  rm /var/vcap/store/postgres-10/fresh
+  rm "${STORE_DIR}/fresh"
 fi
 
 # "bpm enforces its own locking around process operations to avoid race conditions"
@@ -90,6 +90,6 @@ fi
 # so postmaster.pid is stale of it still exists
 # remove it to prevent running into:
 # FATAL:  lock file "postmaster.pid" already exists
-if [[ -f /var/vcap/store/postgres-10/postmaster.pid ]] ; then
-    rm /var/vcap/store/postgres-10/postmaster.pid
+if [[ -f ${STORE_DIR}/postmaster.pid ]] ; then
+    rm "${STORE_DIR}/postmaster.pid"
 fi

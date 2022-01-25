@@ -5,10 +5,10 @@ set -eu
 PACKAGE_DIR=/var/vcap/packages/postgres-13
 PACKAGE_DIR_OLD=/var/vcap/packages/postgres-10
 
-STORE_DIR=/var/vcap/store
+PERSISTENT_DISK_DIR=/var/vcap/store
 
-DATA_DIR=$STORE_DIR/postgres-13
-DATA_DIR_OLD=$STORE_DIR/postgres-10
+STORE_DIR=${PERSISTENT_DISK_DIR}/postgres-13
+STORE_DIR_OLD=${PERSISTENT_DISK_DIR}/postgres-10
 
 USER='<%= p("postgres.user") %>'
 
@@ -21,40 +21,40 @@ fi
 
 # We cannot kill the following conditional
 # because initdb is very picky about looking at an empty dir
-if [ ! -d $DATA_DIR ] || [ ! -f $DATA_DIR/postgresql.conf ]; then
-  mkdir -p $DATA_DIR
-  chown vcap:vcap $DATA_DIR
+if [ ! -d ${STORE_DIR} ] || [ ! -f ${STORE_DIR}/postgresql.conf ]; then
+  mkdir -p "${STORE_DIR}"
+  chown vcap:vcap "${STORE_DIR}"
 
   # initdb creates data directories
-  su - vcap -c "$PACKAGE_DIR/bin/initdb -E utf8 -D $DATA_DIR"
+  su - vcap -c "${PACKAGE_DIR}/bin/initdb -E utf8 -D ${STORE_DIR}"
 
-  touch /var/vcap/store/postgres-13/fresh
+  touch "${STORE_DIR}/fresh"
 
   if [ $? != 0 ]; then
     echo "ERROR: Unable to Initialize Postgres DB"
     exit 1
   fi
 
-  echo "host all $USER 0.0.0.0/0 md5" >> $DATA_DIR/pg_hba.conf
+  echo "host all ${USER} 0.0.0.0/0 md5" >> "${STORE_DIR}/pg_hba.conf"
 
-  mkdir -p $DATA_DIR/pg_log
-  chown vcap:vcap $DATA_DIR/pg_log
+  mkdir -p "${STORE_DIR}/pg_log"
+  chown vcap:vcap "${STORE_DIR}/pg_log"
 fi
 
-if [[ -f /var/vcap/store/postgres-13/fresh ]] ; then
-  if [[ -d /var/vcap/store/postgres-10 ]] ; then
+if [[ -f ${STORE_DIR}/fresh ]] ; then
+  if [[ -d ${STORE_DIR_OLD} ]] ; then
     echo "copying contents of postgres-10 to postgres-13 for postgres upgrade..."
-    su - vcap -c "$PACKAGE_DIR/bin/pg_upgrade \
-      --old-bindir=$PACKAGE_DIR_OLD/bin \
-      --new-bindir=$PACKAGE_DIR/bin \
-      --old-datadir=$DATA_DIR_OLD \
-      --new-datadir=$DATA_DIR"
+    su - vcap -c "${PACKAGE_DIR}/bin/pg_upgrade \
+      --old-bindir=${PACKAGE_DIR_OLD}/bin \
+      --new-bindir=${PACKAGE_DIR}/bin \
+      --old-datadir=${STORE_DIR_OLD} \
+      --new-datadir=${STORE_DIR}"
 
     echo "successfully upgraded from postgres-10"
-    rm -rf '/var/vcap/store/postgres-10'
+    rm -rf "${STORE_DIR_OLD}"
   fi
 
-  rm /var/vcap/store/postgres-13/fresh
+  rm "${STORE_DIR}/fresh"
 fi
 
 # "bpm enforces its own locking around process operations to avoid race conditions"
@@ -62,6 +62,6 @@ fi
 # so postmaster.pid is stale if it still exists
 # remove it to prevent running into:
 # FATAL:  lock file "postmaster.pid" already exists
-if [[ -f /var/vcap/store/postgres-13/postmaster.pid ]] ; then
-    rm /var/vcap/store/postgres-13/postmaster.pid
+if [[ -f ${STORE_DIR}/postmaster.pid ]] ; then
+    rm "${STORE_DIR}/postmaster.pid"
 fi
