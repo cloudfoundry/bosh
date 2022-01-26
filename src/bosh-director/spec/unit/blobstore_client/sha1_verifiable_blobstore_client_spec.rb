@@ -6,7 +6,6 @@ module Bosh::Blobstore
     let(:wrapped_client) { instance_double('Bosh::Blobstore::BaseClient') }
     let(:multidigest_path) { 'some/path/to/binary' }
 
-    it_implements_base_client_interface
     it_calls_wrapped_client_methods(except: [:get])
 
     before do

@@ -6,7 +6,6 @@ module Bosh::Blobstore
     let(:wrapped_client) { instance_double('Bosh::Blobstore::BaseClient') }
     let(:retryable)      { Bosh::Retryable.new(tries: 2, sleep: 0, on: [BlobstoreError]) }
 
-    it_implements_base_client_interface
     it_calls_wrapped_client_methods(except: [:get])
 
     describe '#get' do
