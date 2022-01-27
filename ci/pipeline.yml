@@ -935,7 +935,6 @@ resources:
     icon: github-circle
     source:
       uri: https://github.com/cloudfoundry/bosh.git
-      branch: master
       paths:
         - "ci/dockerfiles"
 
