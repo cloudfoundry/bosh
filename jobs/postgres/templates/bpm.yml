@@ -9,17 +9,10 @@ postgres_config = {
       "path" => "/var/vcap/store/postgres-13",
       "writable" => true,
     },
-    {
-      "path" => "/var/vcap/store/postgres-10",
-      "writable" => true,
-    },
   ],
   "limits" => {
     "open_files" => 65536,
   },
-  "hooks" => {
-    "pre_start" => "/var/vcap/jobs/postgres/bin/pre-start",
-  }
 }
 
 config = {
