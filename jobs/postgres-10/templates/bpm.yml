@@ -8,9 +8,6 @@ postgres_config = {
   "limits" => {
     "open_files" => 65536,
   },
-  "hooks" => {
-    "pre_start" => "/var/vcap/jobs/postgres-10/bin/pre-start",
-  }
 }
 
 config = {
