@@ -14,8 +14,8 @@ USER='<%= p("postgres.user") %>'
 
 sysctl -w "kernel.shmmax=67108864"
 
-if [[ -d /var/vcap/store/postgres-9 ]]; then
-  echo "Please use a previous bosh release version (271.x or lower) to migrate data from postgres-9 to postgres-10."
+if [[ -d /var/vcap/store/postgres-9.4 ]]; then
+  echo "Please use a previous bosh release version (271.x or lower) to migrate data from postgres-9.4 to postgres-10."
   exit 1
 fi
 
