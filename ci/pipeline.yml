@@ -684,7 +684,7 @@ jobs:
       - task: prepare-release
         image: main-ruby-go-image
         file: bosh-src/ci/tasks/prepare-release.yml
-      - get: bosh-master
+      - get: bosh-main
       - task: finalize-release
         image: main-ruby-go-image
         file: bosh-src-latest-with-release-commit/ci/tasks/finalize-bosh-release.yml
@@ -693,17 +693,17 @@ jobs:
       - put: bosh-src
         params:
           repository: bosh-src-latest-with-release-commit
-          tag: bosh-master-with-final/tag-name
-          annotate: bosh-master-with-final/annotate-msg
+          tag: bosh-main-with-final/tag-name
+          annotate: bosh-main-with-final/annotate-msg
           merge: true
-      - put: bosh-master
+      - put: bosh-main
         params:
-          repository: bosh-master-with-final
+          repository: bosh-main
           rebase: true
       - put: bosh-github-release
         params:
-          name: bosh-master-with-final/tag-name
-          tag: bosh-master-with-final/tag-name
+          name: bosh-main/tag-name
+          tag: bosh-main/tag-name
       - put: version
         params:
           file: version/version
@@ -712,7 +712,7 @@ jobs:
     serial: true
     plan:
     - in_parallel:
-      - get: bosh-master
+      - get: bosh-main
       - get: version
         passed: [finalize-release]
         trigger: true
@@ -721,16 +721,16 @@ jobs:
       - get: docker-cpi-image
     - task: export-final-release
       image: docker-cpi-image
-      file: bosh-master/ci/tasks/export-final-release.yml
+      file: bosh-main/ci/tasks/export-final-release.yml
       privileged: true
       input_mapping:
         stemcell: warden-ubuntu-bionic
-        bosh-src: bosh-master
+        bosh-src: bosh-main
     - task: push-bosh-compiled-releases
-      file: bosh-master/ci/tasks/push-bosh-compiled-release.yml
+      file: bosh-main/ci/tasks/push-bosh-compiled-release.yml
       input_mapping:
         candidate-version: version
-        bosh-src: bosh-master
+        bosh-src: bosh-main
       params:
         AWS_ACCESS_KEY_ID: ((bosh-compiled-releases-aws-access-key-id))
         AWS_SECRET_ACCESS_KEY: ((bosh-compiled-releases-aws-secret-access-key))
@@ -924,7 +924,6 @@ resources:
 
   - name: bosh-src
     type: git
-    icon: github-circle
     source:
       uri: ((bosh_src_url))
       branch: ((branch_name))
@@ -932,7 +931,6 @@ resources:
 
   - name: bosh-src-dockerfiles
     type: git
-    icon: github-circle
     source:
       uri: https://github.com/cloudfoundry/bosh.git
       paths:
@@ -980,7 +978,6 @@ resources:
 
   - name: bosh-disaster-recovery-acceptance-tests
     type: git
-    icon: github-circle
     source:
       uri: https://github.com/cloudfoundry-incubator/bosh-disaster-recovery-acceptance-tests.git
       branch: master
@@ -1012,17 +1009,15 @@ resources:
 
   - name: zookeeper-release
     type: git
-    icon: github-circle
     source:
       uri: https://github.com/cppforlife/zookeeper-release
       branch: master
 
-  - name: bosh-master
+  - name: bosh-main
     type: git
-    icon: github-circle
     source:
       uri: ((bosh_src_url))
-      branch: master
+      branch: main
       private_key: ((github_deployment_key))
 
   - name: bosh-cli
@@ -1043,14 +1038,12 @@ resources:
 
   - name: bats
     type: git
-    icon: github-circle
     source:
       uri: https://github.com/cloudfoundry/bosh-acceptance-tests.git
       branch: master
 
   - name: bosh-deployment
     type: git
-    icon: github-circle
     source:
       uri: https://github.com/cloudfoundry/bosh-deployment
       branch: master
@@ -1091,7 +1084,6 @@ resources:
 
   - name: bosh-agent
     type: git
-    icon: github-circle
     source:
       uri: https://github.com/cloudfoundry/bosh-agent
       branch: main

@@ -7,17 +7,17 @@ image_resource:
     repository: bosh/main-ruby-go
 
 inputs:
-  - name: bosh-master
+  - name: bosh-main
   - name: bosh-cli
   - name: version
   - name: release-tarball
 
 outputs:
-  - name: bosh-master-with-final
+  - name: bosh-main
 
 params:
   BLOBSTORE_ACCESS_KEY_ID: replace-me
   BLOBSTORE_SECRET_ACCESS_KEY: replace-me
 
 run:
-  path: bosh-master/ci/tasks/finalize-bosh-release.sh
+  path: bosh-main/ci/tasks/finalize-bosh-release.sh
