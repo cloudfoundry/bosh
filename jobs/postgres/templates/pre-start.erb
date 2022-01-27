@@ -21,7 +21,7 @@ fi
 
 # We cannot kill the following conditional
 # because initdb is very picky about looking at an empty dir
-if [ ! -d ${STORE_DIR} ] || [ ! -f ${STORE_DIR}/postgresql.conf ]; then
+if [[ ! -d ${STORE_DIR} || ! -f ${STORE_DIR}/postgresql.conf ]]; then
   mkdir -p "${STORE_DIR}"
   chown vcap:vcap "${STORE_DIR}"
 
