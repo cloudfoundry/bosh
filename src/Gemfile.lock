@@ -338,7 +338,7 @@ DEPENDENCIES
   sinatra-contrib (>= 2.0.2)
   sqlite3
   talentbox-delayed_job_sequel (~> 4.3)
-  timecop
+  timecop (~> 0.9.4)
   unix-crypt
   webmock
 
