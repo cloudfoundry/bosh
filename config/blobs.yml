@@ -14,26 +14,6 @@ mysql/mariadb-connector-c-3.1.11-src.tar.gz:
   size: 752342
   object_id: 0939120b-af11-4faf-7cab-8609bc40d447
   sha: sha256:3e6f6c399493fe90efdc21a3fe70c30434b7480e8195642a959f1dd7a0fa5b0f
-nginx/headers-more-nginx-module-0.30.tar.gz:
-  size: 27793
-  object_id: ee5b4828-67f9-42f7-a0fb-23b4d4c9805f
-  sha: a188a399f3e365a0831585a9d7aa0e6ed1a75f0d
-nginx/nginx-1.20.1.tar.gz:
-  size: 1061461
-  object_id: b096e990-4e24-413e-6b46-6398fdef2c3e
-  sha: sha256:e462e11533d5c30baa05df7652160ff5979591d291736cfa5edb9fd2edb48c49
-nginx/nginx-upload-module-2.3.0.tar.gz:
-  size: 40139
-  object_id: 598d93c6-90b8-4472-5308-5235bb476a45
-  sha: sha256:c86e318addb9c88d70fdbd58ff1f6ef6f404a93070f6db8017a1f880c97946c4
-nginx/ngx_http_hmac_secure_link_module-0.3.tar.gz:
-  size: 5452
-  object_id: 9901c036-d3dd-4167-4fc0-41be17deef02
-  sha: sha256:0d4a69f39b513a3427f5fb41a7503844e703395ca04517d0a55400e4a3150927
-nginx/pcre-8.44.tar.gz:
-  size: 2090750
-  object_id: e7dd6f33-c214-428f-46fb-b94ecd3ae9b7
-  sha: sha256:aecafd4af3bd0f3935721af77b889d9024b2e01d96b58471bd91a3063fb47728
 postgres/postgresql-9.4.23.tar.gz:
   size: 21943235
   object_id: 94e77351-2ede-4657-46ae-8208e2aee252
