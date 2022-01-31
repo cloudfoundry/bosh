@@ -15,6 +15,8 @@ module Bosh::Director
             @package_names.include? package.name
           end
 
+          packages_to_compile = resolve_dependencies(packages_to_compile)
+
           packages_to_compile.map do |package|
             package_dependency_key = KeyGenerator.new.dependency_key_from_models(package, @release_version)
 
@@ -30,6 +32,21 @@ module Bosh::Director
 
     def stemcell_sha1
       @stemcell.sha1
+    end
+
+    private
+
+    def resolve_dependencies(packages)
+      initial_count = packages.count
+      new_list = (packages + packages.map do |package|
+        @release_version.packages.select { |p| package.dependency_set.include?(p.name) }
+      end).flatten.uniq
+
+      if initial_count < new_list.count
+        resolve_dependencies(new_list)
+      else
+        new_list
+      end
     end
   end
 end
