@@ -696,14 +696,14 @@ jobs:
           tag: bosh-main/tag-name
           annotate: bosh-main/annotate-msg
           merge: true
-      - put: bosh-main
-        params:
-          repository: bosh-main
-          rebase: true
       - put: bosh-github-release
         params:
           name: bosh-main/tag-name
           tag: bosh-main/tag-name
+      - put: bosh-main
+        params:
+          repository: bosh-main
+          rebase: true
       - put: version
         params:
           file: version/version
