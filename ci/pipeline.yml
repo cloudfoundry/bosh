@@ -693,8 +693,8 @@ jobs:
       - put: bosh-src
         params:
           repository: bosh-src-latest-with-release-commit
-          tag: bosh-main-with-final/tag-name
-          annotate: bosh-main-with-final/annotate-msg
+          tag: bosh-main/tag-name
+          annotate: bosh-main/annotate-msg
           merge: true
       - put: bosh-main
         params:
