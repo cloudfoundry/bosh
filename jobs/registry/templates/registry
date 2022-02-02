@@ -1,4 +1,0 @@
-#!/bin/bash
-
-source /var/vcap/packages/ruby-3.0.2-r0.67.0/bosh/runtime.env
-exec /var/vcap/jobs/registry/bin/bosh-registry

@@ -1,0 +1,16 @@
+current directory: /home/kkiess/workspace/bosh/src/vendor/cache/eventmachine-abe347b824e3/ext/fastfilereader
+/home/kkiess/.rubies/ruby-3.0.2/bin/ruby -I /home/kkiess/.rubies/ruby-3.0.2/lib/ruby/site_ruby/3.0.0 -r ./siteconf20220126-30479-q4elvn.rb extconf.rb
+creating Makefile
+
+current directory: /home/kkiess/workspace/bosh/src/vendor/cache/eventmachine-abe347b824e3/ext/fastfilereader
+make DESTDIR\= clean
+
+current directory: /home/kkiess/workspace/bosh/src/vendor/cache/eventmachine-abe347b824e3/ext/fastfilereader
+make DESTDIR\=
+compiling mapper.cpp
+compiling rubymain.cpp
+linking shared-object fastfilereaderext.so
+
+current directory: /home/kkiess/workspace/bosh/src/vendor/cache/eventmachine-abe347b824e3/ext/fastfilereader
+make DESTDIR\= install
+/bin/install -c -m 0755 fastfilereaderext.so ./.gem.20220126-30479-oltqju
