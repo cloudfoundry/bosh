@@ -9,7 +9,6 @@ dependencies:
 files:
 - bosh-director/**/*
 - bosh_common/**/*
-- bosh-registry/**/*
 - bosh-core/**/*
 - bosh-director-core/**/*
 - bosh-template/**/*
