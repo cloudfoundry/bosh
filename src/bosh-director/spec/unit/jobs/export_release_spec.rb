@@ -239,20 +239,11 @@ module Bosh::Director
         let(:release_version) {release.add_version(:version => '0.1-dev')}
 
         before do
-          package_foo = release_version.add_package(
+          release_version.add_package(
             Bosh::Director::Models::Package.make(
               name: 'foo',
-              version: 'foo_version',
               dependency_set_json: JSON.generate(['postgres']),
             ),
-          )
-          package_foo.add_compiled_package(
-            sha1: 'foocompiledpackagesha1',
-            blobstore_id: 'foo_package_blobstore_id',
-            dependency_key: '[["postgres","postgres_version",[["ruby","ruby_version"]]]]',
-            build: 23,
-            stemcell_os: 'ubuntu',
-            stemcell_version: '1'
           )
           release_version.add_package(Bosh::Director::Models::Package.make(name: 'bar'))
 
@@ -347,7 +338,7 @@ module Bosh::Director
               expect(files).to include('compiled_packages', 'release.MF', 'jobs')
 
               files = Dir.entries(File.join(download_dir, 'compiled_packages'))
-              expect(files).to include('foo.tgz')
+              expect(files).to include('postgres.tgz')
 
               files = Dir.entries(File.join(download_dir, 'jobs'))
               expect(files).to include('foobar.tgz')
@@ -356,7 +347,8 @@ module Bosh::Director
             }
 
             expect(blobstore_client).to receive(:create).and_return('blobstore_id')
-            expect(blobstore_client).to receive(:get).with('foo_package_blobstore_id', anything, sha1: 'foocompiledpackagesha1')
+            expect(blobstore_client).to receive(:get).with('ruby_compiled_package_blobstore_id', anything, sha1: 'rubycompiledpackagesha1')
+            expect(blobstore_client).to receive(:get).with('postgres_package_blobstore_id', anything, sha1: 'postgrescompiledpackagesha1')
             expect(blobstore_client).to receive(:get).with('foobar_blobstore_id', anything, sha1: 'foo_sha1')
             expect(blobstore_client).to receive(:get).with('foobaz_blobstore_id', anything, sha1: 'foo_sha1')
             expect(blobstore_client).to receive(:get).with('foofoo_blobstore_id', anything, sha1: 'foo_sha1')
@@ -368,13 +360,19 @@ module Bosh::Director
               manifest_hash = YAML.load_file(File.join(download_dir, 'release.MF'))
               expected_manifest_hash = YAML.load(%q(---
 compiled_packages:
-- name: foo
-  version: foo_version
-  fingerprint:
-  sha1: foocompiledpackagesha1
+- name: postgres
+  version: postgres_version
+  fingerprint: postgres_fingerprint
+  sha1: postgrescompiledpackagesha1
   stemcell: ubuntu/1
   dependencies:
-  - postgres
+  - ruby
+- name: ruby
+  version: ruby_version
+  fingerprint: ruby_fingerprint
+  sha1: rubycompiledpackagesha1
+  stemcell: ubuntu/1
+  dependencies: []
 jobs:
 - name: foobar
   version: foo_version
@@ -428,7 +426,7 @@ version: 0.1-dev
               expect(files).to include('compiled_packages', 'release.MF', 'jobs')
 
               files = Dir.entries(File.join(download_dir, 'compiled_packages'))
-              expect(files).to include('foo.tgz')
+              expect(files).to include('postgres.tgz')
 
               files = Dir.entries(File.join(download_dir, 'jobs'))
               expect(files).to contain_exactly('.', '..', 'foobaz.tgz', 'foobar.tgz', 'foofoo.tgz')
@@ -437,7 +435,8 @@ version: 0.1-dev
             }
 
             expect(blobstore_client).to receive(:create).and_return('blobstore_id')
-            expect(blobstore_client).to receive(:get).with('foo_package_blobstore_id', anything, sha1: 'foocompiledpackagesha1')
+            expect(blobstore_client).to receive(:get).with('ruby_compiled_package_blobstore_id', anything, sha1: 'rubycompiledpackagesha1')
+            expect(blobstore_client).to receive(:get).with('postgres_package_blobstore_id', anything, sha1: 'postgrescompiledpackagesha1')
             allow(blobstore_client).to receive(:get)
             job.perform
           end
@@ -458,7 +457,7 @@ version: 0.1-dev
               expect(files).to include('compiled_packages', 'release.MF', 'jobs')
 
               files = Dir.entries(File.join(download_dir, 'compiled_packages'))
-              expect(files).to include('foo.tgz')
+              expect(files).to include('postgres.tgz')
 
               files = Dir.entries(File.join(download_dir, 'jobs'))
               expect(files).to include('foobaz.tgz')
@@ -468,7 +467,8 @@ version: 0.1-dev
             }
 
             expect(blobstore_client).to receive(:create).and_return('blobstore_id')
-            expect(blobstore_client).to receive(:get).with('foo_package_blobstore_id', anything, sha1: 'foocompiledpackagesha1')
+            expect(blobstore_client).to receive(:get).with('ruby_compiled_package_blobstore_id', anything, sha1: 'rubycompiledpackagesha1')
+            expect(blobstore_client).to receive(:get).with('postgres_package_blobstore_id', anything, sha1: 'postgrescompiledpackagesha1')
             allow(blobstore_client).to receive(:get)
             job.perform
           end
@@ -478,13 +478,19 @@ version: 0.1-dev
               manifest_hash = YAML.load_file(File.join(download_dir, 'release.MF'))
               expected_manifest_hash = YAML.load(%q(---
 compiled_packages:
-- name: foo
-  version: foo_version
-  fingerprint:
-  sha1: foocompiledpackagesha1
+- name: postgres
+  version: postgres_version
+  fingerprint: postgres_fingerprint
+  sha1: postgrescompiledpackagesha1
   stemcell: ubuntu/1
   dependencies:
-  - postgres
+  - ruby
+- name: ruby
+  version: ruby_version
+  fingerprint: ruby_fingerprint
+  sha1: rubycompiledpackagesha1
+  stemcell: ubuntu/1
+  dependencies: []
 jobs:
 - name: foobaz
   version: foo_version

@@ -9,11 +9,11 @@ module Bosh::Director
     let(:release) { Models::Release.make }
     let(:stemcell) { make_stemcell(sha1: 'fakestemcellsha1', operating_system: 'chrome-os') }
 
-    let(:package1) { Models::Package.make(name: 'pkg-1', release: release, dependency_set_json: ['pkg-2', 'pkg-4'].to_json) }
+    let(:package1) { Models::Package.make(release: release, dependency_set_json: ['pkg-2', 'pkg-4'].to_json) }
     let(:package2) { Models::Package.make(name: 'pkg-2', version: '2', release: release) }
     let(:package3) { Models::Package.make(name: 'pkg-3', version: '3', release: release) }
     let(:package4) { Models::Package.make(name: 'pkg-4', version: '4', release: release) }
-    let(:templates) { [Models::Template.make(package_names_json: JSON.generate([package1.name, package3.name]))] }
+    let(:templates) { [Models::Template.make(package_names_json: JSON.generate([package1.name]))] }
 
     subject(:package_group) { CompiledPackageGroup.new(release_version, stemcell, templates) }
 
@@ -50,15 +50,15 @@ module Bosh::Director
         release_version.add_package(package4)
       end
 
-      it 'returns list of first level dependent packages for the given release version and stemcell' do
-        expect(package_group.compiled_packages).to eq([compiled_package1, compiled_package3])
+      it 'returns list of packages for the given release version and stemcell' do
+        expect(package_group.compiled_packages).to eq([compiled_package1, compiled_package4])
       end
 
       it 'only queries database once' do
         allow(Models::CompiledPackage).to receive(:[]).and_call_original
         package_group.compiled_packages
         package_group.compiled_packages
-        expect(Models::CompiledPackage).to have_received(:[]).exactly(2).times
+        expect(Models::CompiledPackage).to have_received(:[]).exactly(3).times
       end
     end
 

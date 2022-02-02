@@ -101,6 +101,7 @@ describe 'exporting release with templates that have links', type: :integration 
     expect(out).to match(%r{Compiling packages: pkg_2\/[a-f0-9]+})
     expect(out).to match(%r{Compiling packages: pkg_3_depends_on_2\/[a-f0-9]+})
     expect(out).to match(%r{copying packages: pkg_1\/[a-f0-9]+})
+    expect(out).to match(%r{copying packages: pkg_2\/[a-f0-9]+})
     expect(out).to match(%r{copying packages: pkg_3_depends_on_2\/[a-f0-9]+})
     expect(out).to match(%r{copying jobs: addon\/[a-f0-9]+})
     expect(out).to match(%r{copying jobs: api_server\/[a-f0-9]+})
