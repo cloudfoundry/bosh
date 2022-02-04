@@ -1,5 +1,5 @@
 current directory: /opt/bosh/src/vendor/cache/eventmachine-abe347b824e3/ext/fastfilereader
-/usr/local/bin/ruby -I /usr/local/lib/ruby/site_ruby/3.0.0 -r ./siteconf20220117-19-pi22x4.rb extconf.rb
+/usr/local/bin/ruby -I /usr/local/lib/ruby/site_ruby/3.1.0 -r ./siteconf20220114-26524-g1mele.rb extconf.rb
 creating Makefile
 
 current directory: /opt/bosh/src/vendor/cache/eventmachine-abe347b824e3/ext/fastfilereader
@@ -13,4 +13,4 @@ linking shared-object fastfilereaderext.so
 
 current directory: /opt/bosh/src/vendor/cache/eventmachine-abe347b824e3/ext/fastfilereader
 make DESTDIR\= install
-/usr/bin/install -c -m 0755 fastfilereaderext.so ./.gem.20220117-19-b0mkzd
+/usr/bin/install -c -m 0755 fastfilereaderext.so ./.gem.20220114-26524-lcuvqk

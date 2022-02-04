@@ -19,7 +19,7 @@ module Bosh::Template
 
         binding = Bosh::Template::EvaluationContext.new(sanitized_hash_with_spec, nil).get_binding
         raise "No such file at #{@template_path}" unless File.exist?(@template_path)
-        ERB.new(File.read(@template_path), nil, '-').result(binding)
+        ERB.new(File.read(@template_path), trim_mode: '-').result(binding)
       end
 
       private
