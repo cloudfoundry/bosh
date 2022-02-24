@@ -1,0 +1,16 @@
+current directory: /bosh/vendor/cache/eventmachine-edacf831d4e9/ext/fastfilereader
+/usr/local/bin/ruby -I /usr/local/lib/ruby/3.0.0 -r ./siteconf20210623-7-bq73c2.rb extconf.rb
+creating Makefile
+
+current directory: /bosh/vendor/cache/eventmachine-edacf831d4e9/ext/fastfilereader
+make DESTDIR\= clean
+
+current directory: /bosh/vendor/cache/eventmachine-edacf831d4e9/ext/fastfilereader
+make DESTDIR\=
+compiling mapper.cpp
+compiling rubymain.cpp
+linking shared-object fastfilereaderext.so
+
+current directory: /bosh/vendor/cache/eventmachine-edacf831d4e9/ext/fastfilereader
+make DESTDIR\= install
+/usr/bin/install -c -m 0755 fastfilereaderext.so ./.gem.20210623-7-nea3ud

@@ -1,0 +1,17 @@
+current directory: /Users/rubenk/workspace/bosh/src/vendor/cache/eventmachine-758d24b29898/ext/fastfilereader
+/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/bin/ruby -I /nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/lib/ruby/3.0.0 -r ./siteconf20210623-31150-azgiqv.rb extconf.rb
+creating Makefile
+
+current directory: /Users/rubenk/workspace/bosh/src/vendor/cache/eventmachine-758d24b29898/ext/fastfilereader
+make DESTDIR\= clean
+
+current directory: /Users/rubenk/workspace/bosh/src/vendor/cache/eventmachine-758d24b29898/ext/fastfilereader
+make DESTDIR\=
+compiling mapper.cpp
+compiling rubymain.cpp
+linking shared-object fastfilereaderext.bundle
+ld: warning: directory not found for option '-L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib'
+
+current directory: /Users/rubenk/workspace/bosh/src/vendor/cache/eventmachine-758d24b29898/ext/fastfilereader
+make DESTDIR\= install
+/nix/store/yzvj23zkg314xjywc3dmzdlqchkqq4m0-coreutils-8.32/bin/install -c -m 0755 fastfilereaderext.bundle ./.gem.20210623-31150-xmvibc

@@ -1,0 +1,659 @@
+package configuration for openssl is not found
+have_header: checking for openssl/ssl.h... -------------------- yes
+
+"clang -fdeclspec -o conftest -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe conftest.c  -L. -L/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/lib -L. -fstack-protector-strong -L/nix/store/sc4qmg3bk9rw0cyz3yzncyy3kaala7cv-gettext-0.21/lib -L/nix/store/s9mcjkl0xnpa3zbx48qp1sl36h4d5hdw-libffi-3.3-dev/lib -L/nix/store/p2j79y2qwmv49g87gg2dzwhbskbxdca4-ncurses-6.2-dev/lib -L/nix/store/hsg6zc53fmv6p2r4sqrs32xc3gi4frmx-zlib-1.2.11-dev/lib -L/nix/store/a98fnfgs4pla2h2a9x5qlh0fb6gybynd-openssl-1.1.1k-dev/lib -L/nix/store/s0vl1h85nnpd6na89zrmjzd51bc6pwl8-gdbm-1.19/lib -L/nix/store/4rl9g6074rpx02blpaywlij2n6y0gkk7-libyaml-0.2.5/lib -L/nix/store/pgnb12anscja205zycd2l994028vas2b-libiconv-50/lib -L/nix/store/08iavk27gxjf5kwpzisj9fqhbfqxg0r1-objc4-709.1/lib -L/nix/store/klpi84nmgjhxmh3mhllkyl47qshk9qva-libunwind-35.3/lib -L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib -L/nix/store/rvqdp9l0ncp69mcxfpf0vfmrafh8zqa8-Libsystem-1238.60.2/lib     -lruby-3.0.1   "
+ld: warning: directory not found for option '-L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib'
+checked program was:
+/* begin */
+1: #include "ruby.h"
+2: 
+3: int main(int argc, char **argv)
+4: {
+5:   return !!argv[argc];
+6: }
+/* end */
+
+"clang -E -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe  conftest.c -o conftest.i"
+checked program was:
+/* begin */
+1: #include "ruby.h"
+2: 
+3: #include <openssl/ssl.h>
+/* end */
+
+--------------------
+
+have_header: checking for openssl/err.h... -------------------- yes
+
+"clang -E -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe  conftest.c -o conftest.i"
+checked program was:
+/* begin */
+1: #include "ruby.h"
+2: 
+3: #include <openssl/err.h>
+/* end */
+
+--------------------
+
+have_library: checking for BIO_read() in -lcrypto... -------------------- yes
+
+"clang -fdeclspec -o conftest -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe conftest.c  -L. -L/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/lib -L. -fstack-protector-strong -L/nix/store/sc4qmg3bk9rw0cyz3yzncyy3kaala7cv-gettext-0.21/lib -L/nix/store/s9mcjkl0xnpa3zbx48qp1sl36h4d5hdw-libffi-3.3-dev/lib -L/nix/store/p2j79y2qwmv49g87gg2dzwhbskbxdca4-ncurses-6.2-dev/lib -L/nix/store/hsg6zc53fmv6p2r4sqrs32xc3gi4frmx-zlib-1.2.11-dev/lib -L/nix/store/a98fnfgs4pla2h2a9x5qlh0fb6gybynd-openssl-1.1.1k-dev/lib -L/nix/store/s0vl1h85nnpd6na89zrmjzd51bc6pwl8-gdbm-1.19/lib -L/nix/store/4rl9g6074rpx02blpaywlij2n6y0gkk7-libyaml-0.2.5/lib -L/nix/store/pgnb12anscja205zycd2l994028vas2b-libiconv-50/lib -L/nix/store/08iavk27gxjf5kwpzisj9fqhbfqxg0r1-objc4-709.1/lib -L/nix/store/klpi84nmgjhxmh3mhllkyl47qshk9qva-libunwind-35.3/lib -L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib -L/nix/store/rvqdp9l0ncp69mcxfpf0vfmrafh8zqa8-Libsystem-1238.60.2/lib     -lruby-3.0.1  -lcrypto  "
+conftest.c:14:57: error: use of undeclared identifier 'BIO_read'
+int t(void) { void ((*volatile p)()); p = (void ((*)()))BIO_read; return !p; }
+                                                        ^
+1 error generated.
+checked program was:
+/* begin */
+ 1: #include "ruby.h"
+ 2: 
+ 3: /*top*/
+ 4: extern int t(void);
+ 5: int main(int argc, char **argv)
+ 6: {
+ 7:   if (argc > 1000000) {
+ 8:     int (* volatile tp)(void)=(int (*)(void))&t;
+ 9:     printf("%d", (*tp)());
+10:   }
+11: 
+12:   return !!argv[argc];
+13: }
+14: int t(void) { void ((*volatile p)()); p = (void ((*)()))BIO_read; return !p; }
+/* end */
+
+"clang -fdeclspec -o conftest -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe conftest.c  -L. -L/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/lib -L. -fstack-protector-strong -L/nix/store/sc4qmg3bk9rw0cyz3yzncyy3kaala7cv-gettext-0.21/lib -L/nix/store/s9mcjkl0xnpa3zbx48qp1sl36h4d5hdw-libffi-3.3-dev/lib -L/nix/store/p2j79y2qwmv49g87gg2dzwhbskbxdca4-ncurses-6.2-dev/lib -L/nix/store/hsg6zc53fmv6p2r4sqrs32xc3gi4frmx-zlib-1.2.11-dev/lib -L/nix/store/a98fnfgs4pla2h2a9x5qlh0fb6gybynd-openssl-1.1.1k-dev/lib -L/nix/store/s0vl1h85nnpd6na89zrmjzd51bc6pwl8-gdbm-1.19/lib -L/nix/store/4rl9g6074rpx02blpaywlij2n6y0gkk7-libyaml-0.2.5/lib -L/nix/store/pgnb12anscja205zycd2l994028vas2b-libiconv-50/lib -L/nix/store/08iavk27gxjf5kwpzisj9fqhbfqxg0r1-objc4-709.1/lib -L/nix/store/klpi84nmgjhxmh3mhllkyl47qshk9qva-libunwind-35.3/lib -L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib -L/nix/store/rvqdp9l0ncp69mcxfpf0vfmrafh8zqa8-Libsystem-1238.60.2/lib     -lruby-3.0.1  -lcrypto  "
+ld: warning: directory not found for option '-L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib'
+checked program was:
+/* begin */
+ 1: #include "ruby.h"
+ 2: 
+ 3: /*top*/
+ 4: extern int t(void);
+ 5: int main(int argc, char **argv)
+ 6: {
+ 7:   if (argc > 1000000) {
+ 8:     int (* volatile tp)(void)=(int (*)(void))&t;
+ 9:     printf("%d", (*tp)());
+10:   }
+11: 
+12:   return !!argv[argc];
+13: }
+14: extern void BIO_read();
+15: int t(void) { BIO_read(); return 0; }
+/* end */
+
+--------------------
+
+have_library: checking for SSL_CTX_new() in -lssl... -------------------- yes
+
+"clang -fdeclspec -o conftest -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe conftest.c  -L. -L/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/lib -L. -fstack-protector-strong -L/nix/store/sc4qmg3bk9rw0cyz3yzncyy3kaala7cv-gettext-0.21/lib -L/nix/store/s9mcjkl0xnpa3zbx48qp1sl36h4d5hdw-libffi-3.3-dev/lib -L/nix/store/p2j79y2qwmv49g87gg2dzwhbskbxdca4-ncurses-6.2-dev/lib -L/nix/store/hsg6zc53fmv6p2r4sqrs32xc3gi4frmx-zlib-1.2.11-dev/lib -L/nix/store/a98fnfgs4pla2h2a9x5qlh0fb6gybynd-openssl-1.1.1k-dev/lib -L/nix/store/s0vl1h85nnpd6na89zrmjzd51bc6pwl8-gdbm-1.19/lib -L/nix/store/4rl9g6074rpx02blpaywlij2n6y0gkk7-libyaml-0.2.5/lib -L/nix/store/pgnb12anscja205zycd2l994028vas2b-libiconv-50/lib -L/nix/store/08iavk27gxjf5kwpzisj9fqhbfqxg0r1-objc4-709.1/lib -L/nix/store/klpi84nmgjhxmh3mhllkyl47qshk9qva-libunwind-35.3/lib -L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib -L/nix/store/rvqdp9l0ncp69mcxfpf0vfmrafh8zqa8-Libsystem-1238.60.2/lib     -lcrypto -lruby-3.0.1  -lcrypto -lssl  "
+conftest.c:14:57: error: use of undeclared identifier 'SSL_CTX_new'
+int t(void) { void ((*volatile p)()); p = (void ((*)()))SSL_CTX_new; return !p; }
+                                                        ^
+1 error generated.
+checked program was:
+/* begin */
+ 1: #include "ruby.h"
+ 2: 
+ 3: /*top*/
+ 4: extern int t(void);
+ 5: int main(int argc, char **argv)
+ 6: {
+ 7:   if (argc > 1000000) {
+ 8:     int (* volatile tp)(void)=(int (*)(void))&t;
+ 9:     printf("%d", (*tp)());
+10:   }
+11: 
+12:   return !!argv[argc];
+13: }
+14: int t(void) { void ((*volatile p)()); p = (void ((*)()))SSL_CTX_new; return !p; }
+/* end */
+
+"clang -fdeclspec -o conftest -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe conftest.c  -L. -L/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/lib -L. -fstack-protector-strong -L/nix/store/sc4qmg3bk9rw0cyz3yzncyy3kaala7cv-gettext-0.21/lib -L/nix/store/s9mcjkl0xnpa3zbx48qp1sl36h4d5hdw-libffi-3.3-dev/lib -L/nix/store/p2j79y2qwmv49g87gg2dzwhbskbxdca4-ncurses-6.2-dev/lib -L/nix/store/hsg6zc53fmv6p2r4sqrs32xc3gi4frmx-zlib-1.2.11-dev/lib -L/nix/store/a98fnfgs4pla2h2a9x5qlh0fb6gybynd-openssl-1.1.1k-dev/lib -L/nix/store/s0vl1h85nnpd6na89zrmjzd51bc6pwl8-gdbm-1.19/lib -L/nix/store/4rl9g6074rpx02blpaywlij2n6y0gkk7-libyaml-0.2.5/lib -L/nix/store/pgnb12anscja205zycd2l994028vas2b-libiconv-50/lib -L/nix/store/08iavk27gxjf5kwpzisj9fqhbfqxg0r1-objc4-709.1/lib -L/nix/store/klpi84nmgjhxmh3mhllkyl47qshk9qva-libunwind-35.3/lib -L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib -L/nix/store/rvqdp9l0ncp69mcxfpf0vfmrafh8zqa8-Libsystem-1238.60.2/lib     -lcrypto -lruby-3.0.1  -lcrypto -lssl  "
+ld: warning: directory not found for option '-L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib'
+checked program was:
+/* begin */
+ 1: #include "ruby.h"
+ 2: 
+ 3: /*top*/
+ 4: extern int t(void);
+ 5: int main(int argc, char **argv)
+ 6: {
+ 7:   if (argc > 1000000) {
+ 8:     int (* volatile tp)(void)=(int (*)(void))&t;
+ 9:     printf("%d", (*tp)());
+10:   }
+11: 
+12:   return !!argv[argc];
+13: }
+14: extern void SSL_CTX_new();
+15: int t(void) { SSL_CTX_new(); return 0; }
+/* end */
+
+--------------------
+
+have_type: checking for rb_fdset_t in ruby/intern.h... -------------------- yes
+
+"clang -fdeclspec -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe   -c conftest.c"
+checked program was:
+/* begin */
+1: #include "ruby.h"
+2: 
+3: #include <ruby/intern.h>
+4: 
+5: /*top*/
+6: typedef rb_fdset_t conftest_type;
+7: int conftestval[sizeof(conftest_type)?1:-1];
+/* end */
+
+--------------------
+
+have_func: checking for rb_wait_for_single_fd()... -------------------- yes
+
+"clang -fdeclspec -o conftest -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe conftest.c  -L. -L/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/lib -L. -fstack-protector-strong -L/nix/store/sc4qmg3bk9rw0cyz3yzncyy3kaala7cv-gettext-0.21/lib -L/nix/store/s9mcjkl0xnpa3zbx48qp1sl36h4d5hdw-libffi-3.3-dev/lib -L/nix/store/p2j79y2qwmv49g87gg2dzwhbskbxdca4-ncurses-6.2-dev/lib -L/nix/store/hsg6zc53fmv6p2r4sqrs32xc3gi4frmx-zlib-1.2.11-dev/lib -L/nix/store/a98fnfgs4pla2h2a9x5qlh0fb6gybynd-openssl-1.1.1k-dev/lib -L/nix/store/s0vl1h85nnpd6na89zrmjzd51bc6pwl8-gdbm-1.19/lib -L/nix/store/4rl9g6074rpx02blpaywlij2n6y0gkk7-libyaml-0.2.5/lib -L/nix/store/pgnb12anscja205zycd2l994028vas2b-libiconv-50/lib -L/nix/store/08iavk27gxjf5kwpzisj9fqhbfqxg0r1-objc4-709.1/lib -L/nix/store/klpi84nmgjhxmh3mhllkyl47qshk9qva-libunwind-35.3/lib -L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib -L/nix/store/rvqdp9l0ncp69mcxfpf0vfmrafh8zqa8-Libsystem-1238.60.2/lib     -lcrypto -lssl -lruby-3.0.1  -lcrypto -lssl  "
+conftest.c:14:57: error: use of undeclared identifier 'rb_wait_for_single_fd'
+int t(void) { void ((*volatile p)()); p = (void ((*)()))rb_wait_for_single_fd; return !p; }
+                                                        ^
+1 error generated.
+checked program was:
+/* begin */
+ 1: #include "ruby.h"
+ 2: 
+ 3: /*top*/
+ 4: extern int t(void);
+ 5: int main(int argc, char **argv)
+ 6: {
+ 7:   if (argc > 1000000) {
+ 8:     int (* volatile tp)(void)=(int (*)(void))&t;
+ 9:     printf("%d", (*tp)());
+10:   }
+11: 
+12:   return !!argv[argc];
+13: }
+14: int t(void) { void ((*volatile p)()); p = (void ((*)()))rb_wait_for_single_fd; return !p; }
+/* end */
+
+"clang -fdeclspec -o conftest -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe conftest.c  -L. -L/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/lib -L. -fstack-protector-strong -L/nix/store/sc4qmg3bk9rw0cyz3yzncyy3kaala7cv-gettext-0.21/lib -L/nix/store/s9mcjkl0xnpa3zbx48qp1sl36h4d5hdw-libffi-3.3-dev/lib -L/nix/store/p2j79y2qwmv49g87gg2dzwhbskbxdca4-ncurses-6.2-dev/lib -L/nix/store/hsg6zc53fmv6p2r4sqrs32xc3gi4frmx-zlib-1.2.11-dev/lib -L/nix/store/a98fnfgs4pla2h2a9x5qlh0fb6gybynd-openssl-1.1.1k-dev/lib -L/nix/store/s0vl1h85nnpd6na89zrmjzd51bc6pwl8-gdbm-1.19/lib -L/nix/store/4rl9g6074rpx02blpaywlij2n6y0gkk7-libyaml-0.2.5/lib -L/nix/store/pgnb12anscja205zycd2l994028vas2b-libiconv-50/lib -L/nix/store/08iavk27gxjf5kwpzisj9fqhbfqxg0r1-objc4-709.1/lib -L/nix/store/klpi84nmgjhxmh3mhllkyl47qshk9qva-libunwind-35.3/lib -L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib -L/nix/store/rvqdp9l0ncp69mcxfpf0vfmrafh8zqa8-Libsystem-1238.60.2/lib     -lcrypto -lssl -lruby-3.0.1  -lcrypto -lssl  "
+ld: warning: directory not found for option '-L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib'
+checked program was:
+/* begin */
+ 1: #include "ruby.h"
+ 2: 
+ 3: /*top*/
+ 4: extern int t(void);
+ 5: int main(int argc, char **argv)
+ 6: {
+ 7:   if (argc > 1000000) {
+ 8:     int (* volatile tp)(void)=(int (*)(void))&t;
+ 9:     printf("%d", (*tp)());
+10:   }
+11: 
+12:   return !!argv[argc];
+13: }
+14: extern void rb_wait_for_single_fd();
+15: int t(void) { rb_wait_for_single_fd(); return 0; }
+/* end */
+
+--------------------
+
+have_func: checking for rb_thread_fd_select()... -------------------- yes
+
+"clang -fdeclspec -o conftest -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe conftest.c  -L. -L/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/lib -L. -fstack-protector-strong -L/nix/store/sc4qmg3bk9rw0cyz3yzncyy3kaala7cv-gettext-0.21/lib -L/nix/store/s9mcjkl0xnpa3zbx48qp1sl36h4d5hdw-libffi-3.3-dev/lib -L/nix/store/p2j79y2qwmv49g87gg2dzwhbskbxdca4-ncurses-6.2-dev/lib -L/nix/store/hsg6zc53fmv6p2r4sqrs32xc3gi4frmx-zlib-1.2.11-dev/lib -L/nix/store/a98fnfgs4pla2h2a9x5qlh0fb6gybynd-openssl-1.1.1k-dev/lib -L/nix/store/s0vl1h85nnpd6na89zrmjzd51bc6pwl8-gdbm-1.19/lib -L/nix/store/4rl9g6074rpx02blpaywlij2n6y0gkk7-libyaml-0.2.5/lib -L/nix/store/pgnb12anscja205zycd2l994028vas2b-libiconv-50/lib -L/nix/store/08iavk27gxjf5kwpzisj9fqhbfqxg0r1-objc4-709.1/lib -L/nix/store/klpi84nmgjhxmh3mhllkyl47qshk9qva-libunwind-35.3/lib -L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib -L/nix/store/rvqdp9l0ncp69mcxfpf0vfmrafh8zqa8-Libsystem-1238.60.2/lib     -lcrypto -lssl -lruby-3.0.1  -lcrypto -lssl  "
+ld: warning: directory not found for option '-L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib'
+checked program was:
+/* begin */
+ 1: #include "ruby.h"
+ 2: 
+ 3: /*top*/
+ 4: extern int t(void);
+ 5: int main(int argc, char **argv)
+ 6: {
+ 7:   if (argc > 1000000) {
+ 8:     int (* volatile tp)(void)=(int (*)(void))&t;
+ 9:     printf("%d", (*tp)());
+10:   }
+11: 
+12:   return !!argv[argc];
+13: }
+14: int t(void) { void ((*volatile p)()); p = (void ((*)()))rb_thread_fd_select; return !p; }
+/* end */
+
+--------------------
+
+have_func: checking for inotify_init() in sys/inotify.h... -------------------- no
+
+"clang -fdeclspec -o conftest -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe conftest.c  -L. -L/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/lib -L. -fstack-protector-strong -L/nix/store/sc4qmg3bk9rw0cyz3yzncyy3kaala7cv-gettext-0.21/lib -L/nix/store/s9mcjkl0xnpa3zbx48qp1sl36h4d5hdw-libffi-3.3-dev/lib -L/nix/store/p2j79y2qwmv49g87gg2dzwhbskbxdca4-ncurses-6.2-dev/lib -L/nix/store/hsg6zc53fmv6p2r4sqrs32xc3gi4frmx-zlib-1.2.11-dev/lib -L/nix/store/a98fnfgs4pla2h2a9x5qlh0fb6gybynd-openssl-1.1.1k-dev/lib -L/nix/store/s0vl1h85nnpd6na89zrmjzd51bc6pwl8-gdbm-1.19/lib -L/nix/store/4rl9g6074rpx02blpaywlij2n6y0gkk7-libyaml-0.2.5/lib -L/nix/store/pgnb12anscja205zycd2l994028vas2b-libiconv-50/lib -L/nix/store/08iavk27gxjf5kwpzisj9fqhbfqxg0r1-objc4-709.1/lib -L/nix/store/klpi84nmgjhxmh3mhllkyl47qshk9qva-libunwind-35.3/lib -L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib -L/nix/store/rvqdp9l0ncp69mcxfpf0vfmrafh8zqa8-Libsystem-1238.60.2/lib     -lcrypto -lssl -lruby-3.0.1  -lcrypto -lssl  "
+conftest.c:3:10: fatal error: 'sys/inotify.h' file not found
+#include <sys/inotify.h>
+         ^~~~~~~~~~~~~~~
+1 error generated.
+checked program was:
+/* begin */
+ 1: #include "ruby.h"
+ 2: 
+ 3: #include <sys/inotify.h>
+ 4: 
+ 5: /*top*/
+ 6: extern int t(void);
+ 7: int main(int argc, char **argv)
+ 8: {
+ 9:   if (argc > 1000000) {
+10:     int (* volatile tp)(void)=(int (*)(void))&t;
+11:     printf("%d", (*tp)());
+12:   }
+13: 
+14:   return !!argv[argc];
+15: }
+16: int t(void) { void ((*volatile p)()); p = (void ((*)()))inotify_init; return !p; }
+/* end */
+
+"clang -fdeclspec -o conftest -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe conftest.c  -L. -L/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/lib -L. -fstack-protector-strong -L/nix/store/sc4qmg3bk9rw0cyz3yzncyy3kaala7cv-gettext-0.21/lib -L/nix/store/s9mcjkl0xnpa3zbx48qp1sl36h4d5hdw-libffi-3.3-dev/lib -L/nix/store/p2j79y2qwmv49g87gg2dzwhbskbxdca4-ncurses-6.2-dev/lib -L/nix/store/hsg6zc53fmv6p2r4sqrs32xc3gi4frmx-zlib-1.2.11-dev/lib -L/nix/store/a98fnfgs4pla2h2a9x5qlh0fb6gybynd-openssl-1.1.1k-dev/lib -L/nix/store/s0vl1h85nnpd6na89zrmjzd51bc6pwl8-gdbm-1.19/lib -L/nix/store/4rl9g6074rpx02blpaywlij2n6y0gkk7-libyaml-0.2.5/lib -L/nix/store/pgnb12anscja205zycd2l994028vas2b-libiconv-50/lib -L/nix/store/08iavk27gxjf5kwpzisj9fqhbfqxg0r1-objc4-709.1/lib -L/nix/store/klpi84nmgjhxmh3mhllkyl47qshk9qva-libunwind-35.3/lib -L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib -L/nix/store/rvqdp9l0ncp69mcxfpf0vfmrafh8zqa8-Libsystem-1238.60.2/lib     -lcrypto -lssl -lruby-3.0.1  -lcrypto -lssl  "
+conftest.c:3:10: fatal error: 'sys/inotify.h' file not found
+#include <sys/inotify.h>
+         ^~~~~~~~~~~~~~~
+1 error generated.
+checked program was:
+/* begin */
+ 1: #include "ruby.h"
+ 2: 
+ 3: #include <sys/inotify.h>
+ 4: 
+ 5: /*top*/
+ 6: extern int t(void);
+ 7: int main(int argc, char **argv)
+ 8: {
+ 9:   if (argc > 1000000) {
+10:     int (* volatile tp)(void)=(int (*)(void))&t;
+11:     printf("%d", (*tp)());
+12:   }
+13: 
+14:   return !!argv[argc];
+15: }
+16: extern void inotify_init();
+17: int t(void) { inotify_init(); return 0; }
+/* end */
+
+--------------------
+
+have_macro: checking for __NR_inotify_init in sys/syscall.h... -------------------- no
+
+"clang -fdeclspec -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe   -c conftest.c"
+conftest.c:6:3: error: 
+# error
+  ^
+conftest.c:7:1: error: expected identifier or '('
+|:/ === __NR_inotify_init undefined === /:|
+^
+2 errors generated.
+checked program was:
+/* begin */
+1: #include "ruby.h"
+2: 
+3: #include <sys/syscall.h>
+4: /*top*/
+5: #ifndef __NR_inotify_init
+6: # error
+7: |:/ === __NR_inotify_init undefined === /:|
+8: #endif
+/* end */
+
+--------------------
+
+have_func: checking for writev() in sys/uio.h... -------------------- yes
+
+"clang -fdeclspec -o conftest -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe conftest.c  -L. -L/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/lib -L. -fstack-protector-strong -L/nix/store/sc4qmg3bk9rw0cyz3yzncyy3kaala7cv-gettext-0.21/lib -L/nix/store/s9mcjkl0xnpa3zbx48qp1sl36h4d5hdw-libffi-3.3-dev/lib -L/nix/store/p2j79y2qwmv49g87gg2dzwhbskbxdca4-ncurses-6.2-dev/lib -L/nix/store/hsg6zc53fmv6p2r4sqrs32xc3gi4frmx-zlib-1.2.11-dev/lib -L/nix/store/a98fnfgs4pla2h2a9x5qlh0fb6gybynd-openssl-1.1.1k-dev/lib -L/nix/store/s0vl1h85nnpd6na89zrmjzd51bc6pwl8-gdbm-1.19/lib -L/nix/store/4rl9g6074rpx02blpaywlij2n6y0gkk7-libyaml-0.2.5/lib -L/nix/store/pgnb12anscja205zycd2l994028vas2b-libiconv-50/lib -L/nix/store/08iavk27gxjf5kwpzisj9fqhbfqxg0r1-objc4-709.1/lib -L/nix/store/klpi84nmgjhxmh3mhllkyl47qshk9qva-libunwind-35.3/lib -L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib -L/nix/store/rvqdp9l0ncp69mcxfpf0vfmrafh8zqa8-Libsystem-1238.60.2/lib     -lcrypto -lssl -lruby-3.0.1  -lcrypto -lssl  "
+ld: warning: directory not found for option '-L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib'
+checked program was:
+/* begin */
+ 1: #include "ruby.h"
+ 2: 
+ 3: #include <sys/uio.h>
+ 4: 
+ 5: /*top*/
+ 6: extern int t(void);
+ 7: int main(int argc, char **argv)
+ 8: {
+ 9:   if (argc > 1000000) {
+10:     int (* volatile tp)(void)=(int (*)(void))&t;
+11:     printf("%d", (*tp)());
+12:   }
+13: 
+14:   return !!argv[argc];
+15: }
+16: int t(void) { void ((*volatile p)()); p = (void ((*)()))writev; return !p; }
+/* end */
+
+--------------------
+
+have_func: checking for pipe2() in unistd.h... -------------------- no
+
+"clang -fdeclspec -o conftest -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe conftest.c  -L. -L/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/lib -L. -fstack-protector-strong -L/nix/store/sc4qmg3bk9rw0cyz3yzncyy3kaala7cv-gettext-0.21/lib -L/nix/store/s9mcjkl0xnpa3zbx48qp1sl36h4d5hdw-libffi-3.3-dev/lib -L/nix/store/p2j79y2qwmv49g87gg2dzwhbskbxdca4-ncurses-6.2-dev/lib -L/nix/store/hsg6zc53fmv6p2r4sqrs32xc3gi4frmx-zlib-1.2.11-dev/lib -L/nix/store/a98fnfgs4pla2h2a9x5qlh0fb6gybynd-openssl-1.1.1k-dev/lib -L/nix/store/s0vl1h85nnpd6na89zrmjzd51bc6pwl8-gdbm-1.19/lib -L/nix/store/4rl9g6074rpx02blpaywlij2n6y0gkk7-libyaml-0.2.5/lib -L/nix/store/pgnb12anscja205zycd2l994028vas2b-libiconv-50/lib -L/nix/store/08iavk27gxjf5kwpzisj9fqhbfqxg0r1-objc4-709.1/lib -L/nix/store/klpi84nmgjhxmh3mhllkyl47qshk9qva-libunwind-35.3/lib -L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib -L/nix/store/rvqdp9l0ncp69mcxfpf0vfmrafh8zqa8-Libsystem-1238.60.2/lib     -lcrypto -lssl -lruby-3.0.1  -lcrypto -lssl  "
+conftest.c:16:57: error: use of undeclared identifier 'pipe2'
+int t(void) { void ((*volatile p)()); p = (void ((*)()))pipe2; return !p; }
+                                                        ^
+1 error generated.
+checked program was:
+/* begin */
+ 1: #include "ruby.h"
+ 2: 
+ 3: #include <unistd.h>
+ 4: 
+ 5: /*top*/
+ 6: extern int t(void);
+ 7: int main(int argc, char **argv)
+ 8: {
+ 9:   if (argc > 1000000) {
+10:     int (* volatile tp)(void)=(int (*)(void))&t;
+11:     printf("%d", (*tp)());
+12:   }
+13: 
+14:   return !!argv[argc];
+15: }
+16: int t(void) { void ((*volatile p)()); p = (void ((*)()))pipe2; return !p; }
+/* end */
+
+"clang -fdeclspec -o conftest -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe conftest.c  -L. -L/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/lib -L. -fstack-protector-strong -L/nix/store/sc4qmg3bk9rw0cyz3yzncyy3kaala7cv-gettext-0.21/lib -L/nix/store/s9mcjkl0xnpa3zbx48qp1sl36h4d5hdw-libffi-3.3-dev/lib -L/nix/store/p2j79y2qwmv49g87gg2dzwhbskbxdca4-ncurses-6.2-dev/lib -L/nix/store/hsg6zc53fmv6p2r4sqrs32xc3gi4frmx-zlib-1.2.11-dev/lib -L/nix/store/a98fnfgs4pla2h2a9x5qlh0fb6gybynd-openssl-1.1.1k-dev/lib -L/nix/store/s0vl1h85nnpd6na89zrmjzd51bc6pwl8-gdbm-1.19/lib -L/nix/store/4rl9g6074rpx02blpaywlij2n6y0gkk7-libyaml-0.2.5/lib -L/nix/store/pgnb12anscja205zycd2l994028vas2b-libiconv-50/lib -L/nix/store/08iavk27gxjf5kwpzisj9fqhbfqxg0r1-objc4-709.1/lib -L/nix/store/klpi84nmgjhxmh3mhllkyl47qshk9qva-libunwind-35.3/lib -L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib -L/nix/store/rvqdp9l0ncp69mcxfpf0vfmrafh8zqa8-Libsystem-1238.60.2/lib     -lcrypto -lssl -lruby-3.0.1  -lcrypto -lssl  "
+ld: warning: directory not found for option '-L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib'
+Undefined symbols for architecture x86_64:
+  "_pipe2", referenced from:
+      _t in conftest-94b6ce.o
+ld: symbol(s) not found for architecture x86_64
+clang-7: error: linker command failed with exit code 1 (use -v to see invocation)
+checked program was:
+/* begin */
+ 1: #include "ruby.h"
+ 2: 
+ 3: #include <unistd.h>
+ 4: 
+ 5: /*top*/
+ 6: extern int t(void);
+ 7: int main(int argc, char **argv)
+ 8: {
+ 9:   if (argc > 1000000) {
+10:     int (* volatile tp)(void)=(int (*)(void))&t;
+11:     printf("%d", (*tp)());
+12:   }
+13: 
+14:   return !!argv[argc];
+15: }
+16: extern void pipe2();
+17: int t(void) { pipe2(); return 0; }
+/* end */
+
+--------------------
+
+have_func: checking for accept4() in sys/socket.h... -------------------- no
+
+"clang -fdeclspec -o conftest -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe conftest.c  -L. -L/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/lib -L. -fstack-protector-strong -L/nix/store/sc4qmg3bk9rw0cyz3yzncyy3kaala7cv-gettext-0.21/lib -L/nix/store/s9mcjkl0xnpa3zbx48qp1sl36h4d5hdw-libffi-3.3-dev/lib -L/nix/store/p2j79y2qwmv49g87gg2dzwhbskbxdca4-ncurses-6.2-dev/lib -L/nix/store/hsg6zc53fmv6p2r4sqrs32xc3gi4frmx-zlib-1.2.11-dev/lib -L/nix/store/a98fnfgs4pla2h2a9x5qlh0fb6gybynd-openssl-1.1.1k-dev/lib -L/nix/store/s0vl1h85nnpd6na89zrmjzd51bc6pwl8-gdbm-1.19/lib -L/nix/store/4rl9g6074rpx02blpaywlij2n6y0gkk7-libyaml-0.2.5/lib -L/nix/store/pgnb12anscja205zycd2l994028vas2b-libiconv-50/lib -L/nix/store/08iavk27gxjf5kwpzisj9fqhbfqxg0r1-objc4-709.1/lib -L/nix/store/klpi84nmgjhxmh3mhllkyl47qshk9qva-libunwind-35.3/lib -L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib -L/nix/store/rvqdp9l0ncp69mcxfpf0vfmrafh8zqa8-Libsystem-1238.60.2/lib     -lcrypto -lssl -lruby-3.0.1  -lcrypto -lssl  "
+conftest.c:16:57: error: use of undeclared identifier 'accept4'
+int t(void) { void ((*volatile p)()); p = (void ((*)()))accept4; return !p; }
+                                                        ^
+1 error generated.
+checked program was:
+/* begin */
+ 1: #include "ruby.h"
+ 2: 
+ 3: #include <sys/socket.h>
+ 4: 
+ 5: /*top*/
+ 6: extern int t(void);
+ 7: int main(int argc, char **argv)
+ 8: {
+ 9:   if (argc > 1000000) {
+10:     int (* volatile tp)(void)=(int (*)(void))&t;
+11:     printf("%d", (*tp)());
+12:   }
+13: 
+14:   return !!argv[argc];
+15: }
+16: int t(void) { void ((*volatile p)()); p = (void ((*)()))accept4; return !p; }
+/* end */
+
+"clang -fdeclspec -o conftest -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe conftest.c  -L. -L/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/lib -L. -fstack-protector-strong -L/nix/store/sc4qmg3bk9rw0cyz3yzncyy3kaala7cv-gettext-0.21/lib -L/nix/store/s9mcjkl0xnpa3zbx48qp1sl36h4d5hdw-libffi-3.3-dev/lib -L/nix/store/p2j79y2qwmv49g87gg2dzwhbskbxdca4-ncurses-6.2-dev/lib -L/nix/store/hsg6zc53fmv6p2r4sqrs32xc3gi4frmx-zlib-1.2.11-dev/lib -L/nix/store/a98fnfgs4pla2h2a9x5qlh0fb6gybynd-openssl-1.1.1k-dev/lib -L/nix/store/s0vl1h85nnpd6na89zrmjzd51bc6pwl8-gdbm-1.19/lib -L/nix/store/4rl9g6074rpx02blpaywlij2n6y0gkk7-libyaml-0.2.5/lib -L/nix/store/pgnb12anscja205zycd2l994028vas2b-libiconv-50/lib -L/nix/store/08iavk27gxjf5kwpzisj9fqhbfqxg0r1-objc4-709.1/lib -L/nix/store/klpi84nmgjhxmh3mhllkyl47qshk9qva-libunwind-35.3/lib -L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib -L/nix/store/rvqdp9l0ncp69mcxfpf0vfmrafh8zqa8-Libsystem-1238.60.2/lib     -lcrypto -lssl -lruby-3.0.1  -lcrypto -lssl  "
+ld: warning: directory not found for option '-L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib'
+Undefined symbols for architecture x86_64:
+  "_accept4", referenced from:
+      _t in conftest-ae8a91.o
+ld: symbol(s) not found for architecture x86_64
+clang-7: error: linker command failed with exit code 1 (use -v to see invocation)
+checked program was:
+/* begin */
+ 1: #include "ruby.h"
+ 2: 
+ 3: #include <sys/socket.h>
+ 4: 
+ 5: /*top*/
+ 6: extern int t(void);
+ 7: int main(int argc, char **argv)
+ 8: {
+ 9:   if (argc > 1000000) {
+10:     int (* volatile tp)(void)=(int (*)(void))&t;
+11:     printf("%d", (*tp)());
+12:   }
+13: 
+14:   return !!argv[argc];
+15: }
+16: extern void accept4();
+17: int t(void) { accept4(); return 0; }
+/* end */
+
+--------------------
+
+have_const: checking for SOCK_CLOEXEC in sys/socket.h... -------------------- no
+
+"clang -fdeclspec -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe   -c conftest.c"
+conftest.c:7:34: error: use of undeclared identifier 'SOCK_CLOEXEC'
+conftest_type conftestval = (int)SOCK_CLOEXEC;
+                                 ^
+1 error generated.
+checked program was:
+/* begin */
+1: #include "ruby.h"
+2: 
+3: #include <sys/socket.h>
+4: 
+5: /*top*/
+6: typedef int conftest_type;
+7: conftest_type conftestval = (int)SOCK_CLOEXEC;
+/* end */
+
+--------------------
+
+have_header: checking for sys/event.h... -------------------- yes
+
+"clang -E -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe  conftest.c -o conftest.i"
+checked program was:
+/* begin */
+1: #include "ruby.h"
+2: 
+3: #include <sys/event.h>
+/* end */
+
+--------------------
+
+have_header: checking for sys/queue.h... -------------------- yes
+
+"clang -E -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe  conftest.c -o conftest.i"
+checked program was:
+/* begin */
+1: #include "ruby.h"
+2: 
+3: #include <sys/queue.h>
+/* end */
+
+--------------------
+
+have_func: checking for clock_gettime()... -------------------- yes
+
+"clang -fdeclspec -o conftest -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe conftest.c  -L. -L/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/lib -L. -fstack-protector-strong -L/nix/store/sc4qmg3bk9rw0cyz3yzncyy3kaala7cv-gettext-0.21/lib -L/nix/store/s9mcjkl0xnpa3zbx48qp1sl36h4d5hdw-libffi-3.3-dev/lib -L/nix/store/p2j79y2qwmv49g87gg2dzwhbskbxdca4-ncurses-6.2-dev/lib -L/nix/store/hsg6zc53fmv6p2r4sqrs32xc3gi4frmx-zlib-1.2.11-dev/lib -L/nix/store/a98fnfgs4pla2h2a9x5qlh0fb6gybynd-openssl-1.1.1k-dev/lib -L/nix/store/s0vl1h85nnpd6na89zrmjzd51bc6pwl8-gdbm-1.19/lib -L/nix/store/4rl9g6074rpx02blpaywlij2n6y0gkk7-libyaml-0.2.5/lib -L/nix/store/pgnb12anscja205zycd2l994028vas2b-libiconv-50/lib -L/nix/store/08iavk27gxjf5kwpzisj9fqhbfqxg0r1-objc4-709.1/lib -L/nix/store/klpi84nmgjhxmh3mhllkyl47qshk9qva-libunwind-35.3/lib -L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib -L/nix/store/rvqdp9l0ncp69mcxfpf0vfmrafh8zqa8-Libsystem-1238.60.2/lib     -lcrypto -lssl -lruby-3.0.1  -lcrypto -lssl  "
+ld: warning: directory not found for option '-L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib'
+checked program was:
+/* begin */
+ 1: #include "ruby.h"
+ 2: 
+ 3: /*top*/
+ 4: extern int t(void);
+ 5: int main(int argc, char **argv)
+ 6: {
+ 7:   if (argc > 1000000) {
+ 8:     int (* volatile tp)(void)=(int (*)(void))&t;
+ 9:     printf("%d", (*tp)());
+10:   }
+11: 
+12:   return !!argv[argc];
+13: }
+14: int t(void) { void ((*volatile p)()); p = (void ((*)()))clock_gettime; return !p; }
+/* end */
+
+--------------------
+
+have_const: checking for CLOCK_MONOTONIC_RAW in time.h... -------------------- yes
+
+"clang -fdeclspec -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe   -c conftest.c"
+checked program was:
+/* begin */
+1: #include "ruby.h"
+2: 
+3: #include <time.h>
+4: 
+5: /*top*/
+6: typedef int conftest_type;
+7: conftest_type conftestval = (int)CLOCK_MONOTONIC_RAW;
+/* end */
+
+--------------------
+
+have_const: checking for CLOCK_MONOTONIC in time.h... -------------------- yes
+
+"clang -fdeclspec -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe   -c conftest.c"
+checked program was:
+/* begin */
+1: #include "ruby.h"
+2: 
+3: #include <time.h>
+4: 
+5: /*top*/
+6: typedef int conftest_type;
+7: conftest_type conftestval = (int)CLOCK_MONOTONIC;
+/* end */
+
+--------------------
+
+have_func: checking for TLS_server_method() in openssl/ssl.h... -------------------- yes
+
+"clang -fdeclspec -o conftest -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe conftest.c  -L. -L/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/lib -L. -fstack-protector-strong -L/nix/store/sc4qmg3bk9rw0cyz3yzncyy3kaala7cv-gettext-0.21/lib -L/nix/store/s9mcjkl0xnpa3zbx48qp1sl36h4d5hdw-libffi-3.3-dev/lib -L/nix/store/p2j79y2qwmv49g87gg2dzwhbskbxdca4-ncurses-6.2-dev/lib -L/nix/store/hsg6zc53fmv6p2r4sqrs32xc3gi4frmx-zlib-1.2.11-dev/lib -L/nix/store/a98fnfgs4pla2h2a9x5qlh0fb6gybynd-openssl-1.1.1k-dev/lib -L/nix/store/s0vl1h85nnpd6na89zrmjzd51bc6pwl8-gdbm-1.19/lib -L/nix/store/4rl9g6074rpx02blpaywlij2n6y0gkk7-libyaml-0.2.5/lib -L/nix/store/pgnb12anscja205zycd2l994028vas2b-libiconv-50/lib -L/nix/store/08iavk27gxjf5kwpzisj9fqhbfqxg0r1-objc4-709.1/lib -L/nix/store/klpi84nmgjhxmh3mhllkyl47qshk9qva-libunwind-35.3/lib -L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib -L/nix/store/rvqdp9l0ncp69mcxfpf0vfmrafh8zqa8-Libsystem-1238.60.2/lib     -lcrypto -lssl -lruby-3.0.1  -lcrypto -lssl  "
+ld: warning: directory not found for option '-L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib'
+checked program was:
+/* begin */
+ 1: #include "ruby.h"
+ 2: 
+ 3: #include <openssl/ssl.h>
+ 4: 
+ 5: /*top*/
+ 6: extern int t(void);
+ 7: int main(int argc, char **argv)
+ 8: {
+ 9:   if (argc > 1000000) {
+10:     int (* volatile tp)(void)=(int (*)(void))&t;
+11:     printf("%d", (*tp)());
+12:   }
+13: 
+14:   return !!argv[argc];
+15: }
+16: int t(void) { void ((*volatile p)()); p = (void ((*)()))TLS_server_method; return !p; }
+/* end */
+
+--------------------
+
+have_macro: checking for SSL_CTX_set_min_proto_version in openssl/ssl.h... -------------------- yes
+
+"clang -fdeclspec -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe   -c conftest.c"
+checked program was:
+/* begin */
+1: #include "ruby.h"
+2: 
+3: #include <openssl/ssl.h>
+4: /*top*/
+5: #ifndef SSL_CTX_set_min_proto_version
+6: # error
+7: |:/ === SSL_CTX_set_min_proto_version undefined === /:|
+8: #endif
+/* end */
+
+--------------------
+
+"clang++ -fdeclspec -o conftest -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe conftest.c  -L. -L/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/lib -L. -fstack-protector-strong -L/nix/store/sc4qmg3bk9rw0cyz3yzncyy3kaala7cv-gettext-0.21/lib -L/nix/store/s9mcjkl0xnpa3zbx48qp1sl36h4d5hdw-libffi-3.3-dev/lib -L/nix/store/p2j79y2qwmv49g87gg2dzwhbskbxdca4-ncurses-6.2-dev/lib -L/nix/store/hsg6zc53fmv6p2r4sqrs32xc3gi4frmx-zlib-1.2.11-dev/lib -L/nix/store/a98fnfgs4pla2h2a9x5qlh0fb6gybynd-openssl-1.1.1k-dev/lib -L/nix/store/s0vl1h85nnpd6na89zrmjzd51bc6pwl8-gdbm-1.19/lib -L/nix/store/4rl9g6074rpx02blpaywlij2n6y0gkk7-libyaml-0.2.5/lib -L/nix/store/pgnb12anscja205zycd2l994028vas2b-libiconv-50/lib -L/nix/store/08iavk27gxjf5kwpzisj9fqhbfqxg0r1-objc4-709.1/lib -L/nix/store/klpi84nmgjhxmh3mhllkyl47qshk9qva-libunwind-35.3/lib -L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib -L/nix/store/rvqdp9l0ncp69mcxfpf0vfmrafh8zqa8-Libsystem-1238.60.2/lib     -lcrypto -lssl -lruby-3.0.1 -Wall  "
+clang-7: warning: treating 'c' input as 'c++' when in C++ mode, this behavior is deprecated [-Wdeprecated]
+ld: warning: directory not found for option '-L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib'
+checked program was:
+/* begin */
+1: #include "ruby.h"
+2: 
+3: int main() {return 0;}
+/* end */
+
+"clang++ -fdeclspec -o conftest -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe conftest.c  -L. -L/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/lib -L. -fstack-protector-strong -L/nix/store/sc4qmg3bk9rw0cyz3yzncyy3kaala7cv-gettext-0.21/lib -L/nix/store/s9mcjkl0xnpa3zbx48qp1sl36h4d5hdw-libffi-3.3-dev/lib -L/nix/store/p2j79y2qwmv49g87gg2dzwhbskbxdca4-ncurses-6.2-dev/lib -L/nix/store/hsg6zc53fmv6p2r4sqrs32xc3gi4frmx-zlib-1.2.11-dev/lib -L/nix/store/a98fnfgs4pla2h2a9x5qlh0fb6gybynd-openssl-1.1.1k-dev/lib -L/nix/store/s0vl1h85nnpd6na89zrmjzd51bc6pwl8-gdbm-1.19/lib -L/nix/store/4rl9g6074rpx02blpaywlij2n6y0gkk7-libyaml-0.2.5/lib -L/nix/store/pgnb12anscja205zycd2l994028vas2b-libiconv-50/lib -L/nix/store/08iavk27gxjf5kwpzisj9fqhbfqxg0r1-objc4-709.1/lib -L/nix/store/klpi84nmgjhxmh3mhllkyl47qshk9qva-libunwind-35.3/lib -L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib -L/nix/store/rvqdp9l0ncp69mcxfpf0vfmrafh8zqa8-Libsystem-1238.60.2/lib     -lcrypto -lssl -lruby-3.0.1 -Wextra  "
+clang-7: warning: treating 'c' input as 'c++' when in C++ mode, this behavior is deprecated [-Wdeprecated]
+ld: warning: directory not found for option '-L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib'
+checked program was:
+/* begin */
+1: #include "ruby.h"
+2: 
+3: int main() {return 0;}
+/* end */
+
+"clang++ -fdeclspec -o conftest -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe conftest.c  -L. -L/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/lib -L. -fstack-protector-strong -L/nix/store/sc4qmg3bk9rw0cyz3yzncyy3kaala7cv-gettext-0.21/lib -L/nix/store/s9mcjkl0xnpa3zbx48qp1sl36h4d5hdw-libffi-3.3-dev/lib -L/nix/store/p2j79y2qwmv49g87gg2dzwhbskbxdca4-ncurses-6.2-dev/lib -L/nix/store/hsg6zc53fmv6p2r4sqrs32xc3gi4frmx-zlib-1.2.11-dev/lib -L/nix/store/a98fnfgs4pla2h2a9x5qlh0fb6gybynd-openssl-1.1.1k-dev/lib -L/nix/store/s0vl1h85nnpd6na89zrmjzd51bc6pwl8-gdbm-1.19/lib -L/nix/store/4rl9g6074rpx02blpaywlij2n6y0gkk7-libyaml-0.2.5/lib -L/nix/store/pgnb12anscja205zycd2l994028vas2b-libiconv-50/lib -L/nix/store/08iavk27gxjf5kwpzisj9fqhbfqxg0r1-objc4-709.1/lib -L/nix/store/klpi84nmgjhxmh3mhllkyl47qshk9qva-libunwind-35.3/lib -L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib -L/nix/store/rvqdp9l0ncp69mcxfpf0vfmrafh8zqa8-Libsystem-1238.60.2/lib     -lcrypto -lssl -lruby-3.0.1 -Wno-deprecated-declarations  "
+clang-7: warning: treating 'c' input as 'c++' when in C++ mode, this behavior is deprecated [-Wdeprecated]
+ld: warning: directory not found for option '-L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib'
+checked program was:
+/* begin */
+1: #include "ruby.h"
+2: 
+3: int main() {return 0;}
+/* end */
+
+"clang++ -fdeclspec -o conftest -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe conftest.c  -L. -L/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/lib -L. -fstack-protector-strong -L/nix/store/sc4qmg3bk9rw0cyz3yzncyy3kaala7cv-gettext-0.21/lib -L/nix/store/s9mcjkl0xnpa3zbx48qp1sl36h4d5hdw-libffi-3.3-dev/lib -L/nix/store/p2j79y2qwmv49g87gg2dzwhbskbxdca4-ncurses-6.2-dev/lib -L/nix/store/hsg6zc53fmv6p2r4sqrs32xc3gi4frmx-zlib-1.2.11-dev/lib -L/nix/store/a98fnfgs4pla2h2a9x5qlh0fb6gybynd-openssl-1.1.1k-dev/lib -L/nix/store/s0vl1h85nnpd6na89zrmjzd51bc6pwl8-gdbm-1.19/lib -L/nix/store/4rl9g6074rpx02blpaywlij2n6y0gkk7-libyaml-0.2.5/lib -L/nix/store/pgnb12anscja205zycd2l994028vas2b-libiconv-50/lib -L/nix/store/08iavk27gxjf5kwpzisj9fqhbfqxg0r1-objc4-709.1/lib -L/nix/store/klpi84nmgjhxmh3mhllkyl47qshk9qva-libunwind-35.3/lib -L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib -L/nix/store/rvqdp9l0ncp69mcxfpf0vfmrafh8zqa8-Libsystem-1238.60.2/lib     -lcrypto -lssl -lruby-3.0.1 -Wno-ignored-qualifiers  "
+clang-7: warning: treating 'c' input as 'c++' when in C++ mode, this behavior is deprecated [-Wdeprecated]
+ld: warning: directory not found for option '-L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib'
+checked program was:
+/* begin */
+1: #include "ruby.h"
+2: 
+3: int main() {return 0;}
+/* end */
+
+"clang++ -fdeclspec -o conftest -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe conftest.c  -L. -L/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/lib -L. -fstack-protector-strong -L/nix/store/sc4qmg3bk9rw0cyz3yzncyy3kaala7cv-gettext-0.21/lib -L/nix/store/s9mcjkl0xnpa3zbx48qp1sl36h4d5hdw-libffi-3.3-dev/lib -L/nix/store/p2j79y2qwmv49g87gg2dzwhbskbxdca4-ncurses-6.2-dev/lib -L/nix/store/hsg6zc53fmv6p2r4sqrs32xc3gi4frmx-zlib-1.2.11-dev/lib -L/nix/store/a98fnfgs4pla2h2a9x5qlh0fb6gybynd-openssl-1.1.1k-dev/lib -L/nix/store/s0vl1h85nnpd6na89zrmjzd51bc6pwl8-gdbm-1.19/lib -L/nix/store/4rl9g6074rpx02blpaywlij2n6y0gkk7-libyaml-0.2.5/lib -L/nix/store/pgnb12anscja205zycd2l994028vas2b-libiconv-50/lib -L/nix/store/08iavk27gxjf5kwpzisj9fqhbfqxg0r1-objc4-709.1/lib -L/nix/store/klpi84nmgjhxmh3mhllkyl47qshk9qva-libunwind-35.3/lib -L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib -L/nix/store/rvqdp9l0ncp69mcxfpf0vfmrafh8zqa8-Libsystem-1238.60.2/lib     -lcrypto -lssl -lruby-3.0.1 -Wno-unused-result  "
+clang-7: warning: treating 'c' input as 'c++' when in C++ mode, this behavior is deprecated [-Wdeprecated]
+ld: warning: directory not found for option '-L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib'
+checked program was:
+/* begin */
+1: #include "ruby.h"
+2: 
+3: int main() {return 0;}
+/* end */
+
+"clang++ -fdeclspec -o conftest -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe conftest.c  -L. -L/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/lib -L. -fstack-protector-strong -L/nix/store/sc4qmg3bk9rw0cyz3yzncyy3kaala7cv-gettext-0.21/lib -L/nix/store/s9mcjkl0xnpa3zbx48qp1sl36h4d5hdw-libffi-3.3-dev/lib -L/nix/store/p2j79y2qwmv49g87gg2dzwhbskbxdca4-ncurses-6.2-dev/lib -L/nix/store/hsg6zc53fmv6p2r4sqrs32xc3gi4frmx-zlib-1.2.11-dev/lib -L/nix/store/a98fnfgs4pla2h2a9x5qlh0fb6gybynd-openssl-1.1.1k-dev/lib -L/nix/store/s0vl1h85nnpd6na89zrmjzd51bc6pwl8-gdbm-1.19/lib -L/nix/store/4rl9g6074rpx02blpaywlij2n6y0gkk7-libyaml-0.2.5/lib -L/nix/store/pgnb12anscja205zycd2l994028vas2b-libiconv-50/lib -L/nix/store/08iavk27gxjf5kwpzisj9fqhbfqxg0r1-objc4-709.1/lib -L/nix/store/klpi84nmgjhxmh3mhllkyl47qshk9qva-libunwind-35.3/lib -L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib -L/nix/store/rvqdp9l0ncp69mcxfpf0vfmrafh8zqa8-Libsystem-1238.60.2/lib     -lcrypto -lssl -lruby-3.0.1 -Wno-address  "
+clang-7: warning: treating 'c' input as 'c++' when in C++ mode, this behavior is deprecated [-Wdeprecated]
+ld: warning: directory not found for option '-L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib'
+checked program was:
+/* begin */
+1: #include "ruby.h"
+2: 
+3: int main() {return 0;}
+/* end */
+
+"clang++ -fdeclspec -o conftest -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/x86_64-darwin17 -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0/ruby/backward -I/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/include/ruby-3.0.0 -I. -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE -D_DARWIN_UNLIMITED_SELECT -D_REENTRANT   -O3 -ggdb3 -Wall -Wextra -Wdeprecated-declarations -Wdivision-by-zero -Wimplicit-function-declaration -Wimplicit-int -Wpointer-arith -Wshorten-64-to-32 -Wwrite-strings -Wmissing-noreturn -Wno-constant-logical-operand -Wno-long-long -Wno-missing-field-initializers -Wno-overlength-strings -Wno-parentheses-equality -Wno-self-assign -Wno-tautological-compare -Wno-unused-parameter -Wno-unused-value -Wunused-variable -Wextra-tokens  -fno-common -pipe conftest.c  -L. -L/nix/store/vc1iy1xz3ddshwvgb8cn0pkyxmy7k3sg-ruby-3.0.1/lib -L. -fstack-protector-strong -L/nix/store/sc4qmg3bk9rw0cyz3yzncyy3kaala7cv-gettext-0.21/lib -L/nix/store/s9mcjkl0xnpa3zbx48qp1sl36h4d5hdw-libffi-3.3-dev/lib -L/nix/store/p2j79y2qwmv49g87gg2dzwhbskbxdca4-ncurses-6.2-dev/lib -L/nix/store/hsg6zc53fmv6p2r4sqrs32xc3gi4frmx-zlib-1.2.11-dev/lib -L/nix/store/a98fnfgs4pla2h2a9x5qlh0fb6gybynd-openssl-1.1.1k-dev/lib -L/nix/store/s0vl1h85nnpd6na89zrmjzd51bc6pwl8-gdbm-1.19/lib -L/nix/store/4rl9g6074rpx02blpaywlij2n6y0gkk7-libyaml-0.2.5/lib -L/nix/store/pgnb12anscja205zycd2l994028vas2b-libiconv-50/lib -L/nix/store/08iavk27gxjf5kwpzisj9fqhbfqxg0r1-objc4-709.1/lib -L/nix/store/klpi84nmgjhxmh3mhllkyl47qshk9qva-libunwind-35.3/lib -L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib -L/nix/store/rvqdp9l0ncp69mcxfpf0vfmrafh8zqa8-Libsystem-1238.60.2/lib     -lcrypto -lssl -lruby-3.0.1 -lstdc++  "
+clang-7: warning: treating 'c' input as 'c++' when in C++ mode, this behavior is deprecated [-Wdeprecated]
+conftest.c:5:35: warning: unused variable 'tuple' [-Wunused-variable]
+  int main(){ pair<const int,int> tuple = make_pair(1,2); }
+                                  ^
+1 warning generated.
+ld: warning: directory not found for option '-L/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-clang-wrapper-7.1.0/resource-root/lib'
+checked program was:
+/* begin */
+1: #include "ruby.h"
+2: 
+3:   #include <utility>
+4:   using namespace std;
+5:   int main(){ pair<const int,int> tuple = make_pair(1,2); }
+/* end */
+
