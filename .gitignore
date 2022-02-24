@@ -78,4 +78,4 @@ src/parallel_runtime_rspec.log
 
 cscope.out
 .starscope.db
-/src/vendor/cache/extensions/x86_64-darwin-21
+/src/vendor/cache/extensions/*
