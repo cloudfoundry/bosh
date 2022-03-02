@@ -92,7 +92,7 @@ module Bosh
 
           expect { subject }.to raise_error(DeploymentNATSClientCertificateGenerationError) do |error|
             expect(error.message).to include('Error occurred while loading CA Certificate to generate NATS Client certificates')
-            expect(error.message).to include('OpenSSL::X509::CertificateError: nested asn1 error')
+            expect(error.message).to include('OpenSSL::X509::CertificateError: PEM_read_bio_X509: short header')
           end
         end
 
@@ -101,7 +101,7 @@ module Bosh
 
           expect { subject }.to raise_error(DeploymentNATSClientCertificateGenerationError) do |error|
             expect(error.message).to include('Error occurred while loading private key to generate NATS Client certificates')
-            expect(error.message).to include('OpenSSL::PKey::RSAError: Neither PUB key nor PRIV key: nested asn1 error')
+            expect(error.message).to include('OpenSSL::PKey::RSAError: Neither PUB key nor PRIV key: short header')
           end
         end
 
