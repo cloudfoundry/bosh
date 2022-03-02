@@ -24,7 +24,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'em-http-request'
   spec.add_dependency 'nats-pure',       '~>0.6.2'
   spec.add_dependency 'openssl'
-  spec.add_dependency 'thin',      '~>1.7.0'
+  spec.add_dependency 'thin'
   spec.add_dependency 'sinatra',   '~>2.0.2'
   spec.add_dependency 'dogapi',    '~> 1.21.0'
   spec.add_dependency 'riemann-client', '~>0.2.6'
