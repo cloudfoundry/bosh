@@ -16,7 +16,7 @@ describe 'using director with nats server', type: :integration do
       task_id = Bosh::Spec::OutputParser.new(output).task_id('*')
 
       debug_output = bosh_runner.run("task #{task_id} --debug", failure_expected: true)
-      expect(debug_output).to include('NATS client error: SSL_connect returned=1 errno=0 peeraddr=127.0.0.1:62200 state=error: certificate verify failed')
+      expect(debug_output).to include(/NATS client error: SSL_connect returned=1 errno=0 peeraddr=127.0.0.1:\d+ state=error: certificate verify failed/)
     end
   end
 end
