@@ -246,7 +246,7 @@ GEM
       rubocop (>= 0.24.1)
     ruby-prof (0.17.0)
     ruby-progressbar (1.10.1)
-    ruby2_keywords (0.0.2)
+    ruby2_keywords (0.0.5)
     rufus-scheduler (3.8.0)
       fugit (~> 1.1, >= 1.1.6)
     semi_semantic (1.2.0)
