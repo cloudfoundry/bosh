@@ -135,7 +135,7 @@ describe 'upload release', type: :integration do
       ensure
         FileUtils.rm_rf(new_file)
       end
-      release_manifest = Psych.load_file(release_manifest_1)
+      release_manifest = YAML.load_file(release_manifest_1)
       expect(release_manifest['commit_hash']).to eq commit_hash
       expect(release_manifest['uncommitted_changes']).to be(true)
 

@@ -55,7 +55,7 @@ module Bosh::Director
           latest_runtime_configs = deployment.runtime_configs
           options['manifest_text'] = manifest
         else
-          manifest_hash = validate_manifest_yml(request.body.read, nil)
+          manifest_hash = validate_manifest_yml(request.body.read)
           manifest = YAML.dump(manifest_hash)
           teams = deployment.teams
           latest_cloud_configs = Models::Config.latest_set_for_teams('cloud', *teams)
@@ -100,7 +100,7 @@ module Bosh::Director
           latest_runtime_configs = deployment.runtime_configs
           options['manifest_text'] = manifest
         else
-          manifest_hash = validate_manifest_yml(request.body.read, nil)
+          manifest_hash = validate_manifest_yml(request.body.read)
           manifest = YAML.dump(manifest_hash)
           teams = deployment.teams
           latest_cloud_configs = Models::Config.latest_set_for_teams('cloud', *teams)
@@ -392,7 +392,7 @@ module Bosh::Director
 
       post '/', authorization: :create_deployment, consumes: :yaml do
         manifest_text = request.body.read.force_encoding('utf-8')
-        manifest_hash = validate_manifest_yml(manifest_text, nil)
+        manifest_hash = validate_manifest_yml(manifest_text)
 
         raise ValidationMissingField, "Deployment manifest must have a 'name' key" unless manifest_hash['name']
 
@@ -454,7 +454,7 @@ module Bosh::Director
       post '/:deployment/diff', authorization: :diff, consumes: :yaml do
         begin
           manifest_text = request.body.read
-          manifest_hash = validate_manifest_yml(manifest_text, nil)
+          manifest_hash = validate_manifest_yml(manifest_text)
 
           if deployment
             before_manifest = Manifest.load_from_model(deployment, resolve_interpolation: false)

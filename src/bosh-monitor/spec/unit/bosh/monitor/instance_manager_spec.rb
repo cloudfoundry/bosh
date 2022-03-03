@@ -531,7 +531,7 @@ module Bhm
       let(:mock_nats) { double('nats') }
 
       before do
-        Bhm.config = Psych.load_file(sample_config)
+        Bhm.config = YAML.load_file(sample_config,  permitted_classes: [Symbol], permitted_symbols:[], aliases: true)
         allow(mock_nats).to receive(:subscribe)
         allow(Bhm).to receive(:nats).and_return(mock_nats)
         allow(EM).to receive(:schedule).and_yield
@@ -549,7 +549,7 @@ module Bhm
 
     context 'when loading plugin not found' do
       before do
-        config = Psych.load_file(sample_config)
+        config = YAML.load_file(sample_config,  permitted_classes: [Symbol], permitted_symbols:[], aliases: true)
         config['plugins'] << { 'name' => 'joes_plugin_thing', 'events' => %w[alerts heartbeats] }
         Bhm.config = config
       end
