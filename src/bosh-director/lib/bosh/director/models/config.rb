@@ -44,7 +44,7 @@ module Bosh
         end
 
         def raw_manifest
-          YAML.safe_load(content, [Symbol], [], true)
+          YAML.safe_load(content, permitted_classes: [Symbol], aliases: true)
         end
 
         def current?

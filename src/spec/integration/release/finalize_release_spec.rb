@@ -19,12 +19,12 @@ describe 'finalize release', type: :integration do
         Dir.chdir(ClientSandbox.test_release_dir) do
           bosh_runner.run_in_current_dir("finalize-release #{spec_asset('dummy-gocli-release.tgz')} --force")
 
-          job_index = Psych.load_file(File.absolute_path('.final_builds/jobs/dummy/index.yml'))
+          job_index = YAML.load_file(File.absolute_path('.final_builds/jobs/dummy/index.yml'))
           expect(job_index).to include('builds')
           expect(job_index['builds']).to include('a2f501d07c3e96689185ee6ebe26c15d54d4849a')
           expect(job_index['builds']['a2f501d07c3e96689185ee6ebe26c15d54d4849a']).to include('version', 'blobstore_id', 'sha1')
 
-          package_index = Psych.load_file(File.absolute_path('.final_builds/packages/dummy_package/index.yml'))
+          package_index = YAML.load_file(File.absolute_path('.final_builds/packages/dummy_package/index.yml'))
           expect(package_index).to include('builds')
           expect(package_index['builds']).to include('a29b3b1174dc200826055732082bf21c7a765669')
           expect(package_index['builds']['a29b3b1174dc200826055732082bf21c7a765669'])
@@ -82,7 +82,7 @@ describe 'finalize release', type: :integration do
       it 'updates the releases index' do
         Dir.chdir(ClientSandbox.test_release_dir) do
           bosh_runner.run_in_current_dir("finalize-release #{spec_asset('dummy-gocli-release.tgz')} --force")
-          job_index = Psych.load_file(File.absolute_path('.final_builds/jobs/dummy/index.yml'))
+          job_index = YAML.load_file(File.absolute_path('.final_builds/jobs/dummy/index.yml'))
           expect(job_index).to include('builds')
           expect(job_index['builds']).to include('a2f501d07c3e96689185ee6ebe26c15d54d4849a')
           expect(job_index['builds']['a2f501d07c3e96689185ee6ebe26c15d54d4849a']).to include('version', 'blobstore_id', 'sha1')

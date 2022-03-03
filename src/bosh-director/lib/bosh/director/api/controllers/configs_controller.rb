@@ -157,7 +157,7 @@ module Bosh::Director
 
         def parse_config_content(content)
           begin
-            content = YAML.safe_load(content, [Symbol], [], true)
+            content = YAML.safe_load(content, permitted_classes: [Symbol], aliases: true)
           rescue StandardError => e
             raise BadConfig, "Config must be valid YAML: #{e.message}"
           end

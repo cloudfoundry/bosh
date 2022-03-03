@@ -6,7 +6,7 @@ module Bosh::Director
       post '/', :consumes => :yaml do
         manifest_text = request.body.read
         begin
-          validate_manifest_yml(manifest_text, nil)
+          validate_manifest_yml(manifest_text)
 
           latest_cpi_config = Bosh::Director::Api::CpiConfigManager.new.list(1)
 
@@ -49,7 +49,7 @@ module Bosh::Director
       end
 
       post '/diff', :consumes => :yaml do
-        new_cpi_configs_hash = validate_manifest_yml(request.body.read, nil) || {}
+        new_cpi_configs_hash = validate_manifest_yml(request.body.read) || {}
         old_cpi_configs = Bosh::Director::Api::CpiConfigManager.new.latest
 
         old_cpi_configs_hash = old_cpi_configs&.raw_manifest || {}

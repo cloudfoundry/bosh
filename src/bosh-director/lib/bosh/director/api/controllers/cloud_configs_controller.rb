@@ -6,7 +6,7 @@ module Bosh::Director
       post '/', :consumes => :yaml do
         manifest_text = request.body.read
         begin
-          validate_manifest_yml(manifest_text, nil)
+          validate_manifest_yml(manifest_text)
 
           latest_cloud_config = Bosh::Director::Api::CloudConfigManager.new.list(1)
 
@@ -28,7 +28,7 @@ module Bosh::Director
             latest_set('cloud').
             find{|config| config[:name] == 'default'}
         )
-        new_config_hash = validate_manifest_yml(request.body.read, nil) || {}
+        new_config_hash = validate_manifest_yml(request.body.read) || {}
 
         result = {}
         begin

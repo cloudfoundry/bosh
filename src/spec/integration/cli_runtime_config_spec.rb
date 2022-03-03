@@ -38,7 +38,7 @@ describe 'cli runtime config', type: :integration do
     bosh_runner.run("update-runtime-config --name=named_rc_1 #{named_runtime_config_file_1.path}")
     bosh_runner.run("update-runtime-config --name=named_rc_2 #{named_runtime_config_file_2.path}")
 
-    expect(YAML.safe_load(bosh_runner.run('runtime-config', tty: false), [Symbol], [], true)).to eq(un_named_rc)
+    expect(YAML.safe_load(bosh_runner.run('runtime-config', tty: false), permitted_classes: [Symbol], permitted_symbols:[], aliases: true)).to eq(un_named_rc)
   end
 
   it 'can download a named runtime config' do
@@ -52,8 +52,8 @@ describe 'cli runtime config', type: :integration do
     bosh_runner.run("update-runtime-config --name=named_rc_1 #{named_runtime_config_file_1.path}")
     bosh_runner.run("update-runtime-config --name=named_rc_2  #{named_runtime_config_file_2.path}")
 
-    expect(YAML.safe_load(bosh_runner.run('runtime-config --name=named_rc_1', tty: false), [Symbol], [], true)).to eq(named_rc_1)
-    expect(YAML.safe_load(bosh_runner.run('runtime-config --name=named_rc_2', tty: false), [Symbol], [], true)).to eq(named_rc_2)
+    expect(YAML.safe_load(bosh_runner.run('runtime-config --name=named_rc_1', tty: false), permitted_classes: [Symbol], permitted_symbols:[], aliases: true)).to eq(named_rc_1)
+    expect(YAML.safe_load(bosh_runner.run('runtime-config --name=named_rc_2', tty: false), permitted_classes: [Symbol], permitted_symbols:[], aliases: true)).to eq(named_rc_2)
   end
 
   it 'downloads the latest version of each runtime config' do
@@ -69,16 +69,14 @@ describe 'cli runtime config', type: :integration do
     bosh_runner.run("update-runtime-config #{yaml_file('runtime_config.yml', un_named_rc_v2).path}")
     bosh_runner.run("update-runtime-config --name=named_rc_1 #{yaml_file('runtime_config.yml', named_rc_1_v2).path}")
 
-    expect(YAML.safe_load(bosh_runner.run('runtime-config', tty: false), [Symbol], [], true)).to eq(un_named_rc_v2)
+    expect(YAML.safe_load(bosh_runner.run('runtime-config', tty: false), permitted_classes: [Symbol], permitted_symbols:[], aliases: true)).to eq(un_named_rc_v2)
     expect(
       YAML.safe_load(
         bosh_runner.run('runtime-config --name=named_rc_1', tty: false),
-        [Symbol],
-        [],
-        true,
+        permitted_classes: [Symbol], permitted_symbols:[], aliases: true,
       ),
     ).to eq(named_rc_1_v2)
-    expect(YAML.safe_load(bosh_runner.run('runtime-config --name=named_rc_2', tty: false), [Symbol], [], true)).to eq(named_rc_2)
+    expect(YAML.safe_load(bosh_runner.run('runtime-config --name=named_rc_2', tty: false), permitted_classes: [Symbol], permitted_symbols:[], aliases: true)).to eq(named_rc_2)
   end
 
   it "gives an error when release version is 'latest'" do

@@ -54,13 +54,13 @@ describe Bosh::Director::Api::ApiHelper do
   describe :validate_manifest_yml do
     it 'should handle empty manifest' do
       expect {
-        validate_manifest_yml('', 'context')
+        validate_manifest_yml('')
       }.to raise_exception(Bosh::Director::BadManifest, 'Manifest should not be empty')
     end
 
     it 'should handle YAML-nil' do
       expect {
-        validate_manifest_yml("--- \n...\n", 'context')
+        validate_manifest_yml("--- \n...\n")
       }.to raise_exception(Bosh::Director::BadManifest, 'Manifest should be a hash')
     end
 
@@ -70,7 +70,7 @@ foo
   k: v
 FOO
       expect {
-        validate_manifest_yml(yml, 'context')
+        validate_manifest_yml(yml)
       }.to raise_exception(Bosh::Director::BadManifest, /Incorrect YAML structure of the uploaded manifest: /)
     end
 
@@ -80,7 +80,7 @@ foo
   k: v
 FOO
       expect {
-        validate_manifest_yml(yml, 'context')
+        validate_manifest_yml(yml)
       }.to raise_exception(Bosh::Director::BadManifest, /context/)
     end
 
@@ -90,7 +90,7 @@ foo:
   k: *v
 FOO
       expect {
-        validate_manifest_yml(yml, 'context')
+        validate_manifest_yml(yml)
       }.to raise_exception(Bosh::Director::BadManifest, /Incorrect YAML structure of the uploaded manifest: /)
     end
 
@@ -101,7 +101,7 @@ foo:
   k: v
 FOO
 
-        expect(validate_manifest_yml(yml, 'context')).to eq({'foo' => {'k' => 'v'}})
+        expect(validate_manifest_yml(yml)).to eq({'foo' => {'k' => 'v'}})
       end
     end
   end
