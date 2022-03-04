@@ -12,7 +12,7 @@ subjectAltName = IP:${ip}
 EOL
 
   echo "Generating CA..."
-  openssl genrsa -out rootCA.key 1024
+  openssl genrsa -out rootCA.key 2048
   openssl req -x509 -new -nodes -key rootCA.key -days 99999 -out rootCA.pem \
     -subj "/C=US/O=BOSH"
 
