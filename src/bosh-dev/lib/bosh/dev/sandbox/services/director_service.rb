@@ -118,7 +118,7 @@ module Bosh::Dev::Sandbox
     end
 
     def db_config
-      connection_config = YAML.load_file(@director_config)['db']
+      connection_config = YAML.load_file(@director_config, permitted_classes: [Symbol], aliases: true)['db']
 
       custom_connection_options = connection_config.delete('connection_options') do
         {}
