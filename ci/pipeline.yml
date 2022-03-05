@@ -772,12 +772,11 @@ jobs:
     plan:
       - get: weekly
         trigger: true
-      - get: bosh-src
       - get: bosh-src-dockerfiles
         trigger: true
       - put: main-ruby-go-image
         params:
-          build: "bosh-src/ci/dockerfiles/main-ruby-go"
+          build: "bosh-src-dockerfiles/ci/dockerfiles/main-ruby-go"
         get_params:
           skip_download: true
 
@@ -785,7 +784,6 @@ jobs:
     public: true
     serial: true
     plan:
-      - get: bosh-src
       - get: bosh-src-dockerfiles
         trigger: true
       - get: integration-image
@@ -793,7 +791,7 @@ jobs:
         passed: [build-integration]
       - put: main-postgres-9-4-image
         params:
-          build: "bosh-src/ci/dockerfiles/main-postgres"
+          build: "bosh-src-dockerfiles/ci/dockerfiles/main-postgres"
           build_args:
             DB_VERSION: "9.4"
             BRANCH: ((branch_name))
@@ -804,7 +802,6 @@ jobs:
     public: true
     serial: true
     plan:
-      - get: bosh-src
       - get: bosh-src-dockerfiles
         trigger: true
       - get: integration-image
@@ -812,7 +809,7 @@ jobs:
         passed: [build-integration]
       - put: main-postgres-10-image
         params:
-          build: "bosh-src/ci/dockerfiles/main-postgres"
+          build: "bosh-src-dockerfiles/ci/dockerfiles/main-postgres"
           build_args:
             DB_VERSION: "10"
             BRANCH: ((branch_name))
@@ -823,7 +820,6 @@ jobs:
     public: true
     serial: true
     plan:
-      - get: bosh-src
       - get: bosh-src-dockerfiles
         trigger: true
       - get: integration-image
@@ -831,7 +827,7 @@ jobs:
         passed: [build-integration]
       - put: main-mysql-5-7-image
         params:
-          build: "bosh-src/ci/dockerfiles/main-mysql"
+          build: "bosh-src-dockerfiles/ci/dockerfiles/main-mysql"
           build_args:
             BRANCH: ((branch_name))
         get_params:
@@ -843,12 +839,11 @@ jobs:
     plan:
       - get: weekly
         trigger: true
-      - get: bosh-src
       - get: bosh-src-dockerfiles
         trigger: true
       - put: integration-image
         params:
-          build: "bosh-src/ci/dockerfiles/integration"
+          build: "bosh-src-dockerfiles/ci/dockerfiles/integration"
           build_args:
             BRANCH: ((branch_name))
         get_params:
