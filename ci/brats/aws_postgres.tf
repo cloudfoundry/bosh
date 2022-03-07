@@ -19,7 +19,7 @@ resource "aws_db_instance" "postgres" {
   password               = var.rds_postgres_password
   vpc_security_group_ids = [aws_security_group.allow-db-access.id]
   db_subnet_group_name   = aws_db_subnet_group.default.id
-  parameter_group_name   = "default.postgres9.6"
+  parameter_group_name   = "default.postgres10"
   publicly_accessible    = true
 }
 
