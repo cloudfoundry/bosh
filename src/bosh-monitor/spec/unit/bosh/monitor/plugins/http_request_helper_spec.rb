@@ -12,7 +12,7 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
     let(:http_response) { instance_double(EM::Completion) }
 
     it 'sends a put request' do
-      expect(EM::HttpRequest).to receive(:new).with('http://some-uri').and_return(http_request)
+      expect(EM::HttpRequest).to receive(:new).with('http://some-uri', tls: { verify_peer: false }).and_return(http_request)
 
       expect(http_request).to receive(:send).with(:put, 'some-request').and_return(http_response)
       expect(http_response).to receive(:callback)
@@ -28,7 +28,7 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
     let(:http_response) { instance_double(EM::Completion) }
 
     it 'sends a post request' do
-      expect(EM::HttpRequest).to receive(:new).with('http://some-uri').and_return(http_request)
+      expect(EM::HttpRequest).to receive(:new).with('http://some-uri', tls: { verify_peer: false }).and_return(http_request)
 
       expect(http_request).to receive(:send).with(:post, 'some-request').and_return(http_response)
       expect(http_response).to receive(:callback)
