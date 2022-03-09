@@ -14,6 +14,10 @@ mysql/mariadb-connector-c-3.1.11-src.tar.gz:
   size: 752342
   object_id: 0939120b-af11-4faf-7cab-8609bc40d447
   sha: sha256:3e6f6c399493fe90efdc21a3fe70c30434b7480e8195642a959f1dd7a0fa5b0f
+mysql/mariadb-connector-c-3.1.13-src.tar.gz:
+  size: 968401
+  object_id: b3c4867c-ca9f-4819-4e11-e62595e7bd77
+  sha: sha256:0271a5edfd64b13bca5937267474e4747d832ec62e169fc2589d2ead63746875
 postgres/postgresql-9.4.23.tar.gz:
   size: 21943235
   object_id: 94e77351-2ede-4657-46ae-8208e2aee252
