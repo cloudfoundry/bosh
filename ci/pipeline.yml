@@ -982,7 +982,7 @@ resources:
     source:
       owner: cloudfoundry-incubator
       repository: bosh-backup-and-restore
-      access_token: ((github_token))
+      access_token: ((github_read_only_token))
 
   - name: integration-tests-parallel-runtime
     type: s3
