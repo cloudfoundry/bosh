@@ -1,18 +1,4 @@
 jobs:
-  - name: build-main-postgres-9.4
-    public: true
-    serial: true
-    plan:
-      - get: bosh-src
-        trigger: true
-      - put: main-postgres-9.4
-        params:
-          build: "bosh-src/ci/old-docker/main-postgres"
-          build_args:
-            DB_VERSION: "9.4"
-        get_params:
-          skip_download: true
-
   - name: build-main-postgres-10
     public: true
     serial: true
@@ -225,13 +211,6 @@ resources:
       bucket: ((bosh_cli_aws_s3_alpha_release_bucket))
       region_name: ((bosh_cli_aws_s3_release_bucket_region))
 
-  - name: main-postgres-9.4
-    type: docker-image
-    source:
-      repository: bosh/main-postgres-9.4
-      email: ((dockerhub_email))
-      username: ((dockerhub_username))
-      password: ((dockerhub_password))
 
   - name: main-postgres-10
     type: docker-image

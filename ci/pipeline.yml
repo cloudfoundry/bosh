@@ -98,17 +98,8 @@ jobs:
         - get: bosh-src
           passed: [gate]
           trigger: true
-        - get: main-postgres-9-4-image
         - get: main-postgres-10-image
       - in_parallel:
-        - task: test-postgres-9.4
-          timeout: 2h
-          privileged: true
-          file: bosh-src/ci/tasks/test-unit.yml
-          image: main-postgres-9-4-image
-          params:
-            DB: postgresql
-            DB_VERSION: 9.4
         - task: test-postgres-10
           timeout: 2h
           privileged: true
@@ -1111,15 +1102,7 @@ resources:
       tag: ((branch_name))
       username: ((docker.username))
       password: ((docker.password))
-
-  - name: main-postgres-9-4-image
-    type: docker-image
-    source:
-      repository: bosh/main-postgres-9.4
-      tag: ((branch_name))
-      username: ((docker.username))
-      password: ((docker.password))
-
+      
   - name: main-postgres-10-image
     type: docker-image
     source:
