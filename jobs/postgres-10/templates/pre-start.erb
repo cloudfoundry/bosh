@@ -19,6 +19,11 @@ if [[ -d /var/vcap/store/postgres-13 ]]; then
   exit 1
 fi
 
+if [[ -d ${STORE_DIR_OLD} ]]; then
+  echo "Please use a previous bosh release version (271.x or lower) to migrate data from postgres-9.4 to postgres-10."
+  exit 1
+fi
+
 if [[ -d /var/vcap/store/postgres ]]; then
   echo "Please use a previous bosh release version (264.x or lower) to migrate data from postgres to postgres-9.4."
   exit 1
