@@ -51,7 +51,9 @@ export GOPATH="${PWD}/gopath"
 export PATH="${PATH}:${GOPATH}/bin"
 
 pushd gopath/src/github.com/cloudfoundry-incubator/bosh-disaster-recovery-acceptance-tests
-  go get -u github.com/onsi/ginkgo/ginkgo
+  # Note: this must happen in the context of a `go.mod` file, otherwise `@{VERSION}` must be used
+  # => https://go.dev/doc/go-get-install-deprecation
+  go install github.com/onsi/ginkgo/ginkgo
 
   ./scripts/_run_acceptance_tests.sh
 popd
