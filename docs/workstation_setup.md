@@ -59,7 +59,7 @@
 6. Get Golang dependencies
 
     Install golint
-    * `go get -u golang.org/x/lint/golint`
+    * `go install golang.org/x/lint/golint`
 
     Optional: Install direnv to keep your GOPATH correct when working with the bosh-agent submodule
     * `brew install direnv`
