@@ -46,14 +46,16 @@ cat > integration-config.json <<EOF
 }
 EOF
 
+set -x # debugging info
 export INTEGRATION_CONFIG_PATH=${PWD}/integration-config.json
 export GOPATH="${PWD}/gopath"
 export PATH="${PATH}:${GOPATH}/bin"
 
-pushd gopath/src/github.com/cloudfoundry-incubator/bosh-disaster-recovery-acceptance-tests
-  # Note: this must happen in the context of a `go.mod` file, otherwise `@{VERSION}` must be used
-  # => https://go.dev/doc/go-get-install-deprecation
-  go install github.com/onsi/ginkgo/ginkgo
+# Note: this must happen in the context of a `go.mod` file, otherwise `@{VERSION}` must be used
+# => https://go.dev/doc/go-get-install-deprecation
+export GINKGO_VERSION="v1.16.5"
+go install "github.com/onsi/ginkgo/ginkgo@${GINKGO_VERSION}"
 
+pushd gopath/src/github.com/cloudfoundry-incubator/bosh-disaster-recovery-acceptance-tests
   ./scripts/_run_acceptance_tests.sh
 popd
