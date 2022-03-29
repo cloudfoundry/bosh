@@ -99,6 +99,7 @@ jobs:
           passed: [gate]
           trigger: true
         - get: main-postgres-10-image
+        - get: main-postgres-13-image
       - in_parallel:
         - task: test-postgres-10
           timeout: 2h
@@ -108,6 +109,14 @@ jobs:
           params:
             DB: postgresql
             DB_VERSION: 10
+        - task: test-postgres-13
+          timeout: 2h
+          privileged: true
+          file: bosh-src/ci/tasks/test-unit.yml
+          image: main-postgres-13-image
+          params:
+            DB: postgresql
+            DB_VERSION: 13
 
   - name: run-bundle-audit
     public: true
@@ -154,11 +163,11 @@ jobs:
           trigger: true
         - get: bosh-agent
         - get: integration-tests-parallel-runtime
-        - get: main-postgres-10-image
+        - get: main-postgres-13-image
       - task: tests
         privileged: true
         file: bosh-src/ci/tasks/test-integration.yml
-        image: main-postgres-10-image
+        image: main-postgres-13-image
         params:
           DB:           postgresql
           DB_TLS:       true
@@ -181,11 +190,11 @@ jobs:
           trigger: true
         - get: bosh-agent
         - get: integration-tests-parallel-runtime
-        - get: main-postgres-10-image
+        - get: main-postgres-13-image
       - task: tests
         privileged: true
         file: bosh-src/ci/tasks/test-integration.yml
-        image: main-postgres-10-image
+        image: main-postgres-13-image
         params:
           DB:           postgresql
           DEFAULT_UPDATE_VM_STRATEGY: create-swap-delete
@@ -771,24 +780,6 @@ jobs:
         get_params:
           skip_download: true
 
-  - name: build-main-postgres-9-4
-    public: true
-    serial: true
-    plan:
-      - get: bosh-src-dockerfiles
-        trigger: true
-      - get: integration-image
-        trigger: true
-        passed: [build-integration]
-      - put: main-postgres-9-4-image
-        params:
-          build: "bosh-src-dockerfiles/ci/dockerfiles/main-postgres"
-          build_args:
-            DB_VERSION: "9.4"
-            BRANCH: ((branch_name))
-        get_params:
-          skip_download: true
-
   - name: build-main-postgres-10
     public: true
     serial: true
@@ -803,6 +794,24 @@ jobs:
           build: "bosh-src-dockerfiles/ci/dockerfiles/main-postgres"
           build_args:
             DB_VERSION: "10"
+            BRANCH: ((branch_name))
+        get_params:
+          skip_download: true
+
+  - name: build-main-postgres-13
+    public: true
+    serial: true
+    plan:
+      - get: bosh-src-dockerfiles
+        trigger: true
+      - get: integration-image
+        trigger: true
+        passed: [build-integration]
+      - put: main-postgres-13-image
+        params:
+          build: "bosh-src-dockerfiles/ci/dockerfiles/main-postgres"
+          build_args:
+            DB_VERSION: "13"
             BRANCH: ((branch_name))
         get_params:
           skip_download: true
@@ -1107,6 +1116,14 @@ resources:
     type: docker-image
     source:
       repository: bosh/main-postgres-10
+      tag: ((branch_name))
+      username: ((docker.username))
+      password: ((docker.password))
+
+  - name: main-postgres-10-image
+    type: docker-image
+    source:
+      repository: bosh/main-postgres-13
       tag: ((branch_name))
       username: ((docker.username))
       password: ((docker.password))
