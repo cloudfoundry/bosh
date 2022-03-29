@@ -41,5 +41,3 @@ describe 'postgres-10 job' do
     let(:job) { release.job('postgres-10') }
   end
 end
-
-end
