@@ -1120,7 +1120,7 @@ resources:
       username: ((docker.username))
       password: ((docker.password))
 
-  - name: main-postgres-10-image
+  - name: main-postgres-13-image
     type: docker-image
     source:
       repository: bosh/main-postgres-13
