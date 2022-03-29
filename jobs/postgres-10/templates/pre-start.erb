@@ -3,7 +3,6 @@
 set -eu
 
 PACKAGE_DIR=/var/vcap/packages/postgres-10
-PACKAGE_DIR_OLD=/var/vcap/packages/postgres-9.4
 
 PERSISTENT_DISK_DIR=/var/vcap/store
 
@@ -38,8 +37,6 @@ if [[ ! -d ${STORE_DIR} || ! -f ${STORE_DIR}/postgresql.conf ]]; then
   # initdb creates data directories
   su - vcap -c "${PACKAGE_DIR}/bin/initdb -E utf8 -D ${STORE_DIR}"
 
-  touch "${STORE_DIR}/fresh"
-
   if [ $? != 0 ]; then
     echo "ERROR: Unable to Initialize Postgres DB"
     exit 1
@@ -49,22 +46,6 @@ if [[ ! -d ${STORE_DIR} || ! -f ${STORE_DIR}/postgresql.conf ]]; then
 
   mkdir -p "${STORE_DIR}/pg_log"
   chown vcap:vcap "${STORE_DIR}/pg_log"
-fi
-
-if [[ -f ${STORE_DIR}/fresh ]] ; then
-  if [[ -d ${STORE_DIR_OLD} ]] ; then
-    echo "copying contents of postgres-9.4 to postgres-10 for postgres upgrade..."
-    su - vcap -c "${PACKAGE_DIR}/bin/pg_upgrade \
-      --old-bindir=${PACKAGE_DIR_OLD}/bin \
-      --new-bindir=${PACKAGE_DIR}/bin \
-      --old-datadir=${STORE_DIR_OLD} \
-      --new-datadir=${STORE_DIR}"
-
-    echo "successfully upgraded from postgres-9.4"
-    rm -rf "${STORE_DIR_OLD}"
-  fi
-
-  rm "${STORE_DIR}/fresh"
 fi
 
 # "bpm enforces its own locking around process operations to avoid race conditions"
