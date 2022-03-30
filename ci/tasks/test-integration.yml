@@ -29,3 +29,4 @@ params:
   DB_TLS:                  false
   DEFAULT_UPDATE_VM_STRATEGY: "delete-create"
   NUM_PROCESSES:
+  GOOS:                    linux
