@@ -41,9 +41,3 @@ describe 'postgres-10 job' do
     let(:job) { release.job('postgres-10') }
   end
 end
-
-describe 'postgres-9.4 job' do
-  it_should_behave_like 'rendered postgres* bpm.yml' do
-    let(:job) { release.job('postgres-9.4') }
-  end
-end

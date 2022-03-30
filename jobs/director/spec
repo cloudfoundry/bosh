@@ -46,7 +46,6 @@ packages:
 - director
 - nginx
 - libpq
-- postgres-9.4
 - mysql
 - ruby-3.1.0-r0.81.0
 - s3cli

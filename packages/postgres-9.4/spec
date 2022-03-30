@@ -1,5 +1,0 @@
----
-name: postgres-9.4
-
-files:
-- postgres/postgresql-9.4.*.tar.gz
