@@ -18,7 +18,7 @@ module Bosh::Dev
               aliases: true,
             )
 
-          # sort alphanumerics correctly, i.e 10 > 9
+          # sort alphanumerics correctly, e.g. 10 > 9
           postgres_version = postgres_release_config['packages'].max_by { |s| s.scan(/\d+/).first.to_i }
 
           postgres_version.split('-').last
