@@ -1,4 +1,4 @@
-require File.expand_path('../shared/spec_helper', __FILE__)
+require File.expand_path('shared/spec_helper', __dir__)
 
 require 'fileutils'
 require 'digest/sha1'
@@ -12,9 +12,9 @@ require 'bosh/director'
 require 'blue-shell'
 require_relative '../bosh-dev/lib/bosh/dev/postgres_version'
 
-Dir.glob(File.expand_path('../support/**/*.rb', __FILE__)).each { |f| require(f) }
+Dir.glob(File.expand_path('support/**/*.rb', __dir__)).sort.each { |f| require(f) }
 
-ASSETS_DIR = File.expand_path('../assets', __FILE__)
+ASSETS_DIR = File.expand_path('assets', __dir__)
 TEST_RELEASE_TEMPLATE = File.join(ASSETS_DIR, 'test_release_template')
 LINKS_RELEASE_TEMPLATE = File.join(ASSETS_DIR, 'links_releases', 'links_release_template')
 MULTIDISK_RELEASE_TEMPLATE = File.join(ASSETS_DIR, 'multidisks_releases', 'multidisks_release_template')
@@ -33,7 +33,7 @@ RSpec.configure do |c|
   c.include BlueShell::Matchers
 
   c.before(:suite) do
-    agent_dir = File.expand_path('../../go/src/github.com/cloudfoundry/bosh-agent', __FILE__)
+    agent_dir = File.expand_path('../go/src/github.com/cloudfoundry/bosh-agent', __dir__)
     unless File.exist?("#{agent_dir}/out/bosh-agent") || ENV['TEST_ENV_NUMBER']
       puts "Building agent in #{agent_dir}..."
 
@@ -44,8 +44,8 @@ RSpec.configure do |c|
       local_major_and_minor_version = Bosh::Dev::PostgresVersion.local_version.split('.')[0]
       release_major_and_minor_version = Bosh::Dev::PostgresVersion.release_version.split('.')[0]
       unless local_major_and_minor_version == release_major_and_minor_version
-        raise 'Postgres version mismatch: release version is' \
-          "#{release_major_and_minor_version}; local version is #{local_major_and_minor_version}"
+        raise "Postgres version mismatch: release version is #{release_major_and_minor_version};" \
+          " local version is #{local_major_and_minor_version}."
       end
     end
   end
