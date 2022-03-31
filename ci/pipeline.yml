@@ -32,8 +32,8 @@ groups:
   - name: docker
     jobs:
     - build-main-ruby-go
-    - build-main-postgres-9-4
     - build-main-postgres-10
+    - build-main-postgres-13
     - build-main-mysql-5-7
     - build-integration
     - build-docker-cpi
