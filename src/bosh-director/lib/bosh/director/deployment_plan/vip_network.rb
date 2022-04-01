@@ -46,7 +46,7 @@ module Bosh::Director
 
         {
           'type' => 'vip',
-          'ip' => ip_to_netaddr(reservation.ip).ip,
+          'ip' => format_ip(reservation.ip),
           'cloud_properties' => @cloud_properties,
         }
       end

@@ -54,8 +54,8 @@ module Bosh::Director
 
     describe 'create_from_db' do
       context 'when there are IP addresses in db' do
-        let(:ip1) { NetAddr::CIDR.create('192.168.0.1').to_i }
-        let(:ip2) { NetAddr::CIDR.create('192.168.0.2').to_i }
+        let(:ip1) { NetAddr::IPv4.parse('192.168.0.1').addr }
+        let(:ip2) { NetAddr::IPv4.parse('192.168.0.2').addr }
 
         let(:ip_model1) do
           Models::IpAddress.make(address_str: ip1.to_s, instance: instance_model, network_name: 'fake-network')
@@ -218,7 +218,7 @@ module Bosh::Director
         it 'creates reservations for dynamic networks' do
           reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, logger)
           expect(reservations.first).to_not be_nil
-          expect(reservations.first.ip).to eq(NetAddr::CIDR.create('10.10.0.10').to_i)
+          expect(reservations.first.ip).to eq(NetAddr::IPv4.parse('10.10.0.10').addr)
         end
       end
     end

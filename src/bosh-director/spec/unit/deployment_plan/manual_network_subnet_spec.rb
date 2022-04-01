@@ -15,12 +15,12 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
   let(:instance) { instance_double(BD::DeploymentPlan::Instance, model: BD::Models::Instance.make) }
 
   def create_static_reservation(ip)
-    BD::StaticNetworkReservation.new(instance, @network, NetAddr::CIDR.create(ip))
+    BD::StaticNetworkReservation.new(instance, @network, NetAddr::IPv4.parse(ip))
   end
 
   def create_dynamic_reservation(ip)
     reservation = BD::DynamicNetworkReservation.new(instance, @network)
-    reservation.resolve_ip(NetAddr::CIDR.create(ip))
+    reservation.resolve_ip(NetAddr::IPv4.parse(ip))
     reservation
   end
 
@@ -37,10 +37,10 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
         [],
       )
 
-      expect(subnet.range.ip).to eq('192.168.0.0')
-      subnet.range.ip.size == 255
+      expect(subnet.range.network.to_s).to eq('192.168.0.0')
+      # subnet.range.ip.size == 255 # TODO NETADDR: bug? / what was tested here?
       expect(subnet.netmask).to eq('255.255.255.0')
-      expect(subnet.gateway).to eq('192.168.0.254')
+      expect(subnet.gateway.to_s).to eq('192.168.0.254') # TODO NETADDR: not sure how it worked before (was previously an object as well)
       expect(subnet.dns).to eq(nil)
     end
 
@@ -55,10 +55,10 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
         [],
       )
 
-      expect(subnet.range.ip).to eq('192.168.0.0')
-      subnet.range.ip.size == 255
+      expect(subnet.range.network.to_s).to eq('192.168.0.0')
+      # subnet.range.ip.size == 255 # TODO NETADDR: bug? / what was tested here?
       expect(subnet.netmask).to eq('255.255.255.0')
-      expect(subnet.gateway).to eq('192.168.0.254')
+      expect(subnet.gateway.to_s).to eq('192.168.0.254') # TODO NETADDR: not sure how it worked before (was previously an object as well)
       expect(subnet.dns).to eq(nil)
     end
 
@@ -191,7 +191,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
         []
       )
 
-      expect(subnet.gateway.ip).to eq('192.168.0.254')
+      expect(subnet.gateway.to_s).to eq('192.168.0.254')
     end
 
     it 'should make sure gateway is a single ip' do
@@ -205,7 +205,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
           []
         )
       }.to raise_error(BD::NetworkInvalidGateway,
-          /must be a single IP/)
+          /not a valid IP format/)
     end
 
     it 'should make sure gateway is inside the subnet' do
@@ -327,8 +327,8 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
     end
 
     it 'should include the directors ip addresses in the reserved range' do
-      ip1 = NetAddr::CIDR.create('192.168.1.1')
-      ip2 = NetAddr::CIDR.create('192.168.1.2')
+      ip1 = NetAddr::IPv4.parse('192.168.1.1')
+      ip2 = NetAddr::IPv4.parse('192.168.1.2')
 
       allow(Bosh::Director::Config).to receive(:director_ips).and_return([ip1.to_s, ip2.to_s])
       subnet = make_subnet(
@@ -341,8 +341,8 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
         [],
       )
 
-      expect(subnet.restricted_ips).to include(ip1.to_i)
-      expect(subnet.restricted_ips).to include(ip2.to_i)
+      expect(subnet.restricted_ips).to include(ip1.addr)
+      expect(subnet.restricted_ips).to include(ip2.addr)
     end
   end
 
@@ -413,26 +413,26 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
         let(:reserved) { ['192.168.0.50-192.168.0.60'] }
 
         it 'returns false' do
-          expect(subnet.is_reservable?(NetAddr::CIDR.create('192.168.0.55'))).to be_falsey
+          expect(subnet.is_reservable?(NetAddr::IPv4.parse('192.168.0.55'))).to be_falsey
         end
       end
 
       context 'when subnet reserved does not include IP' do
         it 'returns true' do
-          expect(subnet.is_reservable?(NetAddr::CIDR.create('192.168.0.55'))).to be_truthy
+          expect(subnet.is_reservable?(NetAddr::IPv4.parse('192.168.0.55'))).to be_truthy
         end
       end
     end
 
     context 'when subnet range does not include IP' do
       it 'returns false' do
-        expect(subnet.is_reservable?(NetAddr::CIDR.create('192.168.10.55'))).to be_falsey
+        expect(subnet.is_reservable?(NetAddr::IPv4.parse('192.168.10.55'))).to be_falsey
       end
     end
 
     context 'when subnet range is not the same IP version' do
       it 'returns false' do
-        expect(subnet.is_reservable?(NetAddr::CIDR.create('f1ee:0000:0000:0000:0000:0000:0000:0001'))).to be_falsey
+        expect(subnet.is_reservable?(NetAddr::IPv6.parse('f1ee:0000:0000:0000:0000:0000:0000:0001'))).to be_falsey
       end
     end
   end

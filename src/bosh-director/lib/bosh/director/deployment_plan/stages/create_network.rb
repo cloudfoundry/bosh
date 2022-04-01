@@ -121,7 +121,7 @@ module Bosh::Director
           network_cloud_properties = network_create_results[2]
 
           range = subnet.range ? subnet.range.to_s : network_address_properties['range']
-          gw = subnet.gateway ? subnet.gateway.ip : network_address_properties['gateway']
+          gw = subnet.gateway ? subnet.gateway.to_s : network_address_properties['gateway']
 
           reserved_ips = network_address_properties.fetch('reserved', [])
           rollback[network_cid] = cpi
@@ -146,28 +146,30 @@ module Bosh::Director
           }
           cpi_input['cloud_properties'] = az_cloud_props.merge(subnet.cloud_properties) if subnet.cloud_properties
           cpi_input['range'] = subnet.range.to_s if subnet.range
-          cpi_input['gateway'] = subnet.gateway.ip if subnet.gateway
+          cpi_input['gateway'] = subnet.gateway.to_s if subnet.gateway
           cpi_input['netmask_bits'] = subnet.netmask_bits if subnet.netmask_bits
           cpi_input
         end
 
         def populate_subnet_properties(subnet, db_subnet)
+          cidr = CIDR.new(db_subnet.range)
           subnet.cloud_properties = JSON.parse(db_subnet.cloud_properties)
-          subnet.range = NetAddr::CIDR.create(db_subnet.range)
-          subnet.gateway = NetAddr::CIDR.create(db_subnet.gateway)
-          subnet.netmask = subnet.range.wildcard_mask
-          network_id = subnet.range.network(Objectify: true)
-          broadcast = subnet.range.version == 6 ? subnet.range.last(Objectify: true) : subnet.range.broadcast(Objectify: true)
-          subnet.restricted_ips.add(subnet.gateway.to_i) if subnet.gateway
-          subnet.restricted_ips.add(network_id.to_i)
-          subnet.restricted_ips.add(broadcast.to_i)
-          each_ip(JSON.parse(db_subnet.reserved)) do |ip|
-            unless subnet.range.contains?(ip)
+          subnet.gateway = CIDRIP.parse(db_subnet.gateway)
+          subnet.range = cidr.netaddr
+          subnet.netmask = cidr.netmask
+          network_id = subnet.range.network
+          broadcast = subnet.range.nth(subnet.range.len - 1)
+          subnet.restricted_ips.add(subnet.gateway.addr) if subnet.gateway
+          subnet.restricted_ips.add(network_id.addr)
+          subnet.restricted_ips.add(broadcast.addr)
+          each_ip(JSON.parse(db_subnet.reserved)) do |ip_int|
+            ip = CIDRIP.parse(ip_int)
+            unless subnet.range.contains(ip)
               raise NetworkReservedIpOutOfRange,
-                    "Reserved IP '#{format_ip(ip)}' is out of " \
+                    "Reserved IP '#{ip.to_s}' is out of " \
                     "subnet '#{subnet.name}' range"
             end
-            subnet.restricted_ips.add(ip)
+            subnet.restricted_ips.add(ip_int)
           end
         end
       end

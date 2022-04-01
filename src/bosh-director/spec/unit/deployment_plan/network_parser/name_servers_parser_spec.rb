@@ -16,7 +16,7 @@ module Bosh::Director
       it "should raise an error if a DNS server isn't specified with as an IP" do
         expect {
           name_servers_parser.parse('network', {'dns' => %w[1.2.3.4 foo.bar]})
-        }.to raise_error(NetAddr::ValidationError, /foo.bar is invalid \(contains invalid characters\)./)
+        }.to raise_error(Bosh::Director::NetworkInvalidDns, /foo.bar contains invalid characters./)
       end
 
       context 'when power dns is not enabled' do

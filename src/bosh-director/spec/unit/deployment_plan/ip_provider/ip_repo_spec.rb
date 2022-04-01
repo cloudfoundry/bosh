@@ -56,7 +56,7 @@ module Bosh::Director::DeploymentPlan
     before { fake_job }
 
     def cidr_ip(ip)
-      NetAddr::CIDR.create(ip).to_i
+      NetAddr::IPv4.parse(ip).addr
     end
 
     context :add do

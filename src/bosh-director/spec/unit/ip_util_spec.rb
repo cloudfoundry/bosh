@@ -12,7 +12,7 @@ describe Bosh::Director::IpUtil do
     it 'should handle single ip' do
       counter = 0
       @obj.each_ip('1.2.3.4') do |ip|
-        expect(ip).to eql(NetAddr::CIDR.create('1.2.3.4').to_i)
+        expect(ip).to eql(NetAddr::IPv4.parse('1.2.3.4').addr)
         counter += 1
       end
       expect(counter).to eq(1)
@@ -21,7 +21,7 @@ describe Bosh::Director::IpUtil do
     it 'should handle a range' do
       counter = 0
       @obj.each_ip('1.0.0.0/24') do |ip|
-        expect(ip).to eql(NetAddr::CIDR.create('1.0.0.0').to_i + counter)
+        expect(ip).to eql(NetAddr::IPv4.parse('1.0.0.0').addr + counter)
         counter += 1
       end
       expect(counter).to eq(256)
@@ -30,20 +30,20 @@ describe Bosh::Director::IpUtil do
     it 'should handle a differently formatted range' do
       counter = 0
       @obj.each_ip('1.0.0.0 - 1.0.1.0') do |ip|
-        expect(ip).to eql(NetAddr::CIDR.create('1.0.0.0').to_i + counter)
+        expect(ip).to eql(NetAddr::IPv4.parse('1.0.0.0').addr + counter)
         counter += 1
       end
       expect(counter).to eq(257)
     end
 
     it 'should not accept invalid input' do
-      expect { @obj.each_ip('1.2.4') {} }.to raise_error(Bosh::Director::NetworkInvalidIpRangeFormat, /invalid \(IPv4 requires \(4\) octets\)/)
+      expect { @obj.each_ip('1.2.4') {} }.to raise_error(Bosh::Director::NetworkInvalidIpRangeFormat, /IPv4 requires \(4\) octets/)
     end
 
     it 'should ignore nil values' do
       counter = 0
       @obj.each_ip(nil) do |ip|
-        expect(ip).to eql(NetAddr::CIDR.create('1.2.3.4').to_i)
+        expect(ip).to eql(NetAddr::IPv4.parse('1.2.3.4').addr)
         counter += 1
       end
       expect(counter).to eq(0)
@@ -59,7 +59,7 @@ describe Bosh::Director::IpUtil do
       it 'should raise NetAddr::ValidationError' do
         range = '192.168.1.1-192.168.1.1/25'
         expect { @obj.each_ip(range) {} }.to raise_error Bosh::Director::NetworkInvalidIpRangeFormat,
-                                                         "Invalid IP range format: #{range}"
+                                                         /Invalid IP range format: #{range}/
       end
     end
   end

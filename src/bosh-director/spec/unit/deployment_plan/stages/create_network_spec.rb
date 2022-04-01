@@ -50,6 +50,13 @@ module Bosh::Director
                 'cloud_properties' => { 't0_id' => '123456' },
                 'dns' => ['8.8.8.8'],
               },
+              {
+                'name' => 'subnet-3',
+                'range' => 'fdab:d85c:118d:8a46::/125',
+                'gateway' => 'fdab:d85c:118d:8a46::1',
+                'dns' => ['fdab:d85c:118d:8a46::1'],
+                'cloud_properties' => { 't0_id' => '123456' },
+              },
             ],
           }
         end
@@ -74,6 +81,11 @@ module Bosh::Director
             ).and_return(
               ['67890', {}, { 'name': 'dummy2' }],
             )
+            expect(cloud).to receive(:create_network).with(
+              hash_including('gateway' => 'fdab:d85c:118d:8a46::1'),
+            ).and_return(
+              ['24680', {}, { 'name': 'dummy3' }],
+            )
             subject.perform
           end
 
@@ -87,6 +99,11 @@ module Bosh::Director
               hash_including('gateway' => '192.168.20.1'),
             ).and_return(
               ['67890', {}, { 'name': 'dummy2' }],
+            )
+            expect(cloud).to receive(:create_network).with(
+              hash_including('gateway' => 'fdab:d85c:118d:8a46::1'),
+            ).and_return(
+              ['24680', {}, { 'name': 'dummy3' }],
             )
             subject.perform
             nw = Bosh::Director::Models::Network.first(name: 'a')
@@ -108,6 +125,11 @@ module Bosh::Director
             ).and_return(
               ['67890', {}, { 'name': 'dummy2' }],
             )
+            expect(cloud).to receive(:create_network).once.with(
+              hash_including('gateway' => 'fdab:d85c:118d:8a46::1'),
+            ).and_return(
+              ['24680', {}, { 'name': 'dummy3' }],
+            )
             3.times do
               subject.perform
             end
@@ -123,6 +145,11 @@ module Bosh::Director
               hash_including('gateway' => '192.168.20.1'),
             ).and_return(
               ['67890', {}, { 'name': 'dummy2' }],
+            )
+            expect(cloud).to receive(:create_network).once.with(
+              hash_including('gateway' => 'fdab:d85c:118d:8a46::1'),
+            ).and_return(
+              ['24680', {}, { 'name': 'dummy3' }],
             )
 
             subject.perform

@@ -55,7 +55,7 @@ module Bosh::Director
         Models::IpAddress.make(
           instance_id: instance.id,
           vm_id: vm.id,
-          address_str: NetAddr::CIDR.create('1.1.1.1').to_i.to_s,
+          address_str: NetAddr::IPv4.parse('1.1.1.1').addr.to_s,
           task_id: '12345',
         )
         expect(agent).to receive(:get_state).with('full').and_return(
@@ -83,13 +83,13 @@ module Bosh::Director
           Models::IpAddress.make(
             instance_id: instance.id,
             vm_id: vm.id,
-            address_str: NetAddr::CIDR.create('1.1.1.1').to_i.to_s,
+            address_str: NetAddr::IPv4.parse('1.1.1.1').addr.to_s,
             task_id: '12345',
           )
           Models::IpAddress.make(
             instance_id: instance.id,
             vm_id: vm.id,
-            address_str: NetAddr::CIDR.create('2.2.2.2').to_i.to_s,
+            address_str: NetAddr::IPv4.parse('2.2.2.2').addr.to_s,
             task_id: '12345',
           )
         end
@@ -126,13 +126,13 @@ module Bosh::Director
           Models::IpAddress.make(
             instance_id: instance.id,
             vm_id: vm.id,
-            address_str: NetAddr::CIDR.create('1.1.1.1').to_i.to_s,
+            address_str: NetAddr::IPv4.parse('1.1.1.1').addr.to_s,
             task_id: '12345',
           )
           Models::IpAddress.make(
             instance_id: instance.id,
             vm_id: vm.id,
-            address_str: NetAddr::CIDR.create('2.2.2.2').to_i.to_s,
+            address_str: NetAddr::IPv4.parse('2.2.2.2').addr.to_s,
             task_id: '12345',
           )
 
@@ -169,7 +169,7 @@ module Bosh::Director
         Models::IpAddress.make(
           instance_id: instance.id,
           vm_id: vm.id,
-          address_str: NetAddr::CIDR.create('1.1.1.1').to_i.to_s,
+          address_str: NetAddr::IPv4.parse('1.1.1.1').addr.to_s,
           task_id: '12345',
         )
         stub_agent_get_state_to_return_state_with_vitals
@@ -389,7 +389,7 @@ module Bosh::Director
         Models::IpAddress.make(
           instance_id: instance.id,
           vm_id: vm.id,
-          address_str: NetAddr::CIDR.create('1.1.1.1').to_i.to_s,
+          address_str: NetAddr::IPv4.parse('1.1.1.1').addr.to_s,
           task_id: '12345',
         )
         instance.update(spec: { 'vm_type' => { 'name' => 'fake-vm-type', 'cloud_properties' => {} } })
@@ -470,13 +470,13 @@ module Bosh::Director
           Models::IpAddress.make(
             instance_id: instance.id,
             vm_id: vm.id,
-            address_str: NetAddr::CIDR.create('1.1.1.1').to_i.to_s,
+            address_str: NetAddr::IPv4.parse('1.1.1.1').addr.to_s,
             task_id: '12345',
           )
           Models::IpAddress.make(
             instance_id: instance.id,
             vm_id: inactive_vm.id,
-            address_str: NetAddr::CIDR.create('1.1.1.2').to_i.to_s,
+            address_str: NetAddr::IPv4.parse('1.1.1.2').addr.to_s,
             task_id: '12345',
           )
           allow(AgentClient).to receive(:with_agent_id).with('other_agent_id', anything, timeout: 5).and_return(lazy_agent)

@@ -51,7 +51,7 @@ module Bosh::Director::DeploymentPlan
       [
         ManualNetworkSubnet.new(
           'network_A',
-          NetAddr::CIDR.create('192.168.1.0/24'),
+          NetAddr::IPv4Net.parse('192.168.1.0/24'),
           nil, nil, nil, nil, ['zone_1'], [],
           %w[
             192.168.1.10
@@ -63,7 +63,7 @@ module Bosh::Director::DeploymentPlan
         ),
         ManualNetworkSubnet.new(
           'network_A',
-          NetAddr::CIDR.create('10.10.1.0/24'),
+          NetAddr::IPv4Net.parse('10.10.1.0/24'),
           nil, nil, nil, nil, ['zone_2'], [],
           %w[
             10.10.1.10
@@ -75,7 +75,7 @@ module Bosh::Director::DeploymentPlan
         ),
         ManualNetworkSubnet.new(
           'network_A',
-          NetAddr::CIDR.create('10.0.1.0/24'),
+          NetAddr::IPv4Net.parse('10.0.1.0/24'),
           nil, nil, nil, nil, ['zone_3'], [],
           %w[
             10.0.1.10

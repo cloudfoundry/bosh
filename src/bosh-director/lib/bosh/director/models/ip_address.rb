@@ -21,13 +21,14 @@ module Bosh::Director::Models
 
     def info
       instance_info = "#{instance.deployment.name}.#{instance.job}/#{instance.index}"
-      formatted_ip = NetAddr::CIDR.create(address_str.to_i).ip
+      formatted_ip = format_ip(address_str.to_i)
       "#{instance_info} - #{network_name} - #{formatted_ip} (#{type})"
     end
 
-    def formatted_ip
-      NetAddr::CIDR.create(address).ip
-    end
+    # TODO NETADDR: not used since 4a35c4b -> to be removed
+    # def formatted_ip
+    #   NetAddr::IPv4.new(address).to_s
+    # end
 
     def type
       static ? 'static' : 'dynamic'

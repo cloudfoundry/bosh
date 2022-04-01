@@ -21,7 +21,7 @@ module Bosh::Director
     private
 
     def formatted_ip
-      @ip.nil? ? nil : ip_to_netaddr(@ip).ip
+      @ip.nil? ? nil : format_ip(@ip)
     end
   end
 
@@ -49,6 +49,7 @@ module Bosh::Director
   end
 
   class DesiredNetworkReservation < NetworkReservation
+
     def self.new_dynamic(instance_model, network)
       new(instance_model, network, nil, :dynamic)
     end

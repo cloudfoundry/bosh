@@ -110,7 +110,7 @@ module Bosh::Director::Models
   end
 
   IpAddress.blueprint do
-    address_str { NetAddr::CIDR.create(Sham.ip).to_i.to_s }
+    address_str { NetAddr::IPv4.parse(Sham.ip).addr.to_s }
     vm { nil }
     instance
     static { false }

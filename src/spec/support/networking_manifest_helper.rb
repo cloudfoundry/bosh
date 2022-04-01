@@ -22,20 +22,20 @@ module Bosh::Spec
 
     def self.make_subnet(opts)
       range = opts.fetch(:range, '192.168.1.0/24')
-      ip_range = NetAddr::CIDR.create(range)
+      ip_range = NetAddr::IPv4Net.parse(range)
       ip_range_shift = opts.fetch(:shift_ip_range_by, 0)
       available_ips = opts.fetch(:available_ips)
-      raise "not enough IPs, don't be so greedy" if available_ips > ip_range.size
+      raise "not enough IPs, don't be so greedy" if available_ips > ip_range.len
 
       ip_to_reserve_from = ip_range.nth(available_ips+2+ip_range_shift) # first IP is gateway, range is inclusive, so +2
-      reserved_ips = ["#{ip_to_reserve_from}-#{ip_range.last}"]
+      reserved_ips = ["#{ip_to_reserve_from}-#{ip_range.nth(ip_range.len-1)}"]
       if ip_range_shift > 0
         reserved_ips << "#{ip_range.nth(2)}-#{ip_range.nth(ip_range_shift+1)}"
       end
 
       {
         'range' => ip_range.to_s,
-        'gateway' => ip_range.nth(1),
+        'gateway' => ip_range.nth(1).to_s,
         'dns' => [],
         'static' => [],
         'reserved' => reserved_ips,

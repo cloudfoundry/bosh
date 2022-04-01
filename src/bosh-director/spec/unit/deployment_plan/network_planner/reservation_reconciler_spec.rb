@@ -14,13 +14,13 @@ module Bosh::Director::DeploymentPlan
         [
           ManualNetworkSubnet.new(
             'my-network',
-            NetAddr::CIDR.create('192.168.1.0/24'),
+            NetAddr::IPv4Net.parse('192.168.1.0/24'),
             nil, nil, nil, nil, ['zone_1'], [],
             ['192.168.1.10']
           ),
           ManualNetworkSubnet.new(
             'my-network',
-            NetAddr::CIDR.create('192.168.2.0/24'),
+            NetAddr::IPv4Net.parse('192.168.2.0/24'),
             nil, nil, nil, nil, ['zone_2'], [],
             ['192.168.2.10']
           ),
@@ -235,7 +235,7 @@ module Bosh::Director::DeploymentPlan
 
             expect(existing_plans[0].reservation.network.name).to eq('global-vip-network')
             expect(existing_plans[0].reservation.instance_model).to eq(instance_model)
-            expect(ip_to_netaddr(existing_plans[0].reservation.ip)).to eq('192.168.1.2')
+            expect(format_ip(existing_plans[0].reservation.ip)).to eq('192.168.1.2')
           end
         end
 
@@ -255,7 +255,7 @@ module Bosh::Director::DeploymentPlan
 
             expect(existing_plans[0].reservation.network.name).to eq('my-network-2')
             expect(existing_plans[0].reservation.instance_model).to eq(instance_model)
-            expect(ip_to_netaddr(existing_plans[0].reservation.ip)).to eq('192.168.1.2')
+            expect(format_ip(existing_plans[0].reservation.ip)).to eq('192.168.1.2')
           end
 
           context 'and the new network does not match az' do
@@ -280,7 +280,7 @@ module Bosh::Director::DeploymentPlan
               [
                 ManualNetworkSubnet.new(
                   'my-network',
-                  NetAddr::CIDR.create('192.168.1.0/24'),
+                  NetAddr::IPv4Net.parse('192.168.1.0/24'),
                   nil, nil, nil, nil, [], [],
                   ['192.168.1.10']
                 ),
@@ -311,7 +311,7 @@ module Bosh::Director::DeploymentPlan
             [
               ManualNetworkSubnet.new(
                 'my-network',
-                NetAddr::CIDR.create('192.168.1.0/24'),
+                NetAddr::IPv4Net.parse('192.168.1.0/24'),
                 nil, nil, nil, nil, [], [],
                 ['192.168.1.10']
               ),
@@ -417,11 +417,11 @@ module Bosh::Director::DeploymentPlan
             desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
 
             expect(obsolete_plans.count).to eq(1)
-            expect(ip_to_netaddr(obsolete_plans.first.reservation.ip)).to eq('192.168.1.2')
+            expect(format_ip(obsolete_plans.first.reservation.ip)).to eq('192.168.1.2')
             expect(existing_plans.count).to eq(1)
-            expect(ip_to_netaddr(existing_plans.first.reservation.ip)).to eq('192.168.1.3')
+            expect(format_ip(existing_plans.first.reservation.ip)).to eq('192.168.1.3')
             expect(desired_plans.count).to eq(1)
-            expect(ip_to_netaddr(desired_plans.first.reservation.ip)).to eq('192.168.1.4')
+            expect(format_ip(desired_plans.first.reservation.ip)).to eq('192.168.1.4')
           end
         end
       end
@@ -440,7 +440,7 @@ module Bosh::Director::DeploymentPlan
           desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
 
           expect(obsolete_plans.count).to eq(1)
-          expect(ip_to_netaddr(obsolete_plans.first.reservation.ip)).to eq('192.168.1.2')
+          expect(format_ip(obsolete_plans.first.reservation.ip)).to eq('192.168.1.2')
           expect(existing_plans.count).to eq(0)
           expect(desired_plans.count).to eq(1)
           expect(desired_plans.first.reservation.type).to eq(:dynamic)
@@ -468,7 +468,7 @@ module Bosh::Director::DeploymentPlan
           [
             ManualNetworkSubnet.new(
               'my-network',
-              NetAddr::CIDR.create('192.168.1.0/24'),
+              NetAddr::IPv4Net.parse('192.168.1.0/24'),
               nil, nil, nil, nil, nil, [],
               ['192.168.1.10']
             ),
@@ -485,7 +485,7 @@ module Bosh::Director::DeploymentPlan
 
           expect(obsolete_plans.count).to eq(0)
           expect(existing_plans.count).to eq(1)
-          expect(ip_to_netaddr(existing_plans.first.reservation.ip)).to eq('192.168.1.2')
+          expect(format_ip(existing_plans.first.reservation.ip)).to eq('192.168.1.2')
           expect(desired_plans.count).to eq(0)
         end
       end

@@ -756,7 +756,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     let(:subnet) do
       BD::DeploymentPlan::ManualNetworkSubnet.new(
         'fake-network',
-        NetAddr::CIDR.create('192.168.1.0/24'),
+        NetAddr::IPv4Net.parse('192.168.1.0/24'),
         nil, nil, nil, nil, ['foo-az'], [],
         []
       )

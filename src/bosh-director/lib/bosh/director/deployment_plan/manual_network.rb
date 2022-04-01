@@ -20,6 +20,7 @@ module Bosh::Director
           end
           subnets << new_subnet
         end
+
         validate_all_subnets_use_azs(subnets, name)
         new(name, subnets, logger, managed)
       end
@@ -46,7 +47,7 @@ module Bosh::Director
                 "Can't generate network settings without an IP"
         end
 
-        ip = ip_to_netaddr(reservation.ip)
+        ip = format_ip(reservation.ip)
         subnet = find_subnet_containing(reservation.ip)
         unless subnet
           raise NetworkReservationInvalidIp, "Provided IP '#{ip}' does not belong to any subnet"
@@ -54,7 +55,7 @@ module Bosh::Director
 
         config = {
           "type" => "manual",
-          "ip" => ip.ip,
+          "ip" => ip,
           "netmask" => subnet.netmask,
           "cloud_properties" => subnet.cloud_properties
         }
@@ -64,13 +65,13 @@ module Bosh::Director
         end
 
         config["dns"] = subnet.dns if subnet.dns
-        config["gateway"] = subnet.gateway.ip if subnet.gateway
+        config["gateway"] = subnet.gateway.to_s if subnet.gateway
         config
       end
 
       def ip_type(cidr_ip)
         static_ips = @subnets.map { |subnet| subnet.static_ips.to_a }.flatten
-        static_ips.include?(cidr_ip.to_i) ? :static : :dynamic
+        static_ips.include?(cidr_ip.addr) ? :static : :dynamic
       end
 
       def find_az_names_for_ip(ip)
@@ -87,7 +88,8 @@ module Bosh::Director
       # @param [Integer, NetAddr::CIDR, String] ip
       # @yield the subnet that contains the IP.
       def find_subnet_containing(ip)
-        @subnets.find { |subnet| subnet.range.contains?(ip) }
+        ip = CIDRIP.parse(ip)
+        @subnets.find { |subnet| subnet.range.contains(ip) }
       end
 
       private

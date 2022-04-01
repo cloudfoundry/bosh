@@ -2,8 +2,8 @@ module Bosh::Director
   module DeploymentPlan
     module NetworkParser
       class NameServersParser
-
         include ValidationHelper
+        include IpUtil
 
         def initialize()
           dns_config = Config.dns || {}
@@ -19,13 +19,14 @@ module Bosh::Director
           if dns_spec
             servers = []
             dns_spec.each do |dns|
-              dns = NetAddr::CIDR.create(dns)
-              unless dns.size == 1
+              begin
+                dns = CIDRIP.parse(dns)
+              rescue NetAddr::ValidationError => e
                 raise NetworkInvalidDns,
-                      "Invalid DNS for network '#{network}': must be a single IP"
+                      "Invalid DNS for network '#{network}': #{e}"
               end
 
-              servers << dns.ip
+              servers << dns.to_s
             end
           end
 

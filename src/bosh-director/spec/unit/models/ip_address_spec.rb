@@ -7,7 +7,7 @@ module Bosh::Director::Models
       described_class.make(
         instance: instance,
         network_name: 'foonetwork',
-        address_str: NetAddr::CIDR.create('10.10.0.1').to_i.to_s,
+        address_str: NetAddr::IPv4.parse('10.10.0.1').addr.to_s,
         static: true,
         vm: vm
       )
@@ -45,7 +45,7 @@ module Bosh::Director::Models
         ip.address_str = ""
         expect { ip.save }.to raise_error /address_str presence/
 
-        ip.address_str = NetAddr::CIDR.create('10.10.0.1').to_i.to_s
+        ip.address_str = NetAddr::IPv4.parse('10.10.0.1').addr.to_s
         expect { ip.save }.not_to raise_error
       end
 

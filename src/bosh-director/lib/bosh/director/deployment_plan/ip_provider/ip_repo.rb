@@ -11,7 +11,7 @@ module Bosh::Director::DeploymentPlan
     def delete(ip)
       cidr_ip = CIDRIP.new(ip)
 
-      ip_address = Bosh::Director::Models::IpAddress.first(address_str: cidr_ip.to_i.to_s)
+      ip_address = Bosh::Director::Models::IpAddress.first(address_str: cidr_ip.stringify)
 
       if ip_address
         @logger.debug("Releasing ip '#{cidr_ip}'")
@@ -50,8 +50,8 @@ module Bosh::Director::DeploymentPlan
         retry
       end
 
-      @logger.debug("Allocated dynamic IP '#{ip_address.ip}' for #{reservation.network.name}")
-      ip_address.to_i
+      @logger.debug("Allocated dynamic IP '#{ip_address}' for #{reservation.network.name}")
+      ip_address.addr
     end
 
     def allocate_vip_ip(reservation, subnet)
@@ -68,8 +68,8 @@ module Bosh::Director::DeploymentPlan
         retry
       end
 
-      @logger.debug("Allocated vip IP '#{ip_address.ip}' for #{reservation.network.name}")
-      ip_address.to_i
+      @logger.debug("Allocated vip IP '#{ip_address}' for #{reservation.network.name}")
+      ip_address.addr
     end
 
     private
@@ -77,20 +77,16 @@ module Bosh::Director::DeploymentPlan
     def try_to_allocate_dynamic_ip(reservation, subnet)
       addresses_in_use = Set.new(all_ip_addresses)
 
-      first_range_address = subnet.range.first(Objectify: true).to_i - 1
+      first_range_address = subnet.range.network.addr - 1
       addresses_we_cant_allocate = addresses_in_use
       addresses_we_cant_allocate << first_range_address
 
       addresses_we_cant_allocate.merge(subnet.restricted_ips.to_a) unless subnet.restricted_ips.empty?
       addresses_we_cant_allocate.merge(subnet.static_ips.to_a) unless subnet.static_ips.empty?
       addr = find_first_available_address(addresses_we_cant_allocate, first_range_address)
-      if subnet.range.version == 6
-        ip_address = NetAddr::CIDRv6.new(addr)
-      else
-        ip_address = NetAddr::CIDRv4.new(addr)
-      end
+      ip_address = CIDRIP.new(addr)
 
-      unless subnet.range == ip_address || subnet.range.contains?(ip_address)
+      unless subnet.range.contains(ip_address.netaddr)
         raise NoMoreIPsAvailableAndStopRetrying
       end
 
@@ -115,7 +111,7 @@ module Bosh::Director::DeploymentPlan
 
       raise NoMoreIPsAvailableAndStopRetrying if available_ips.empty?
 
-      ip_address = NetAddr::CIDRv4.new(available_ips.first)
+      ip_address = CIDRIP.new(available_ips.first)
 
       save_ip(ip_address, reservation, false)
 
@@ -130,7 +126,7 @@ module Bosh::Director::DeploymentPlan
       # try to save IP first before validating its instance to prevent race conditions
       save_ip(ip, reservation, is_static)
     rescue IpFoundInDatabaseAndCanBeRetried
-      ip_address = Bosh::Director::Models::IpAddress.first(address_str: ip.to_i.to_s)
+      ip_address = Bosh::Director::Models::IpAddress.first(address_str: ip.stringify)
 
       retry unless ip_address
 
@@ -161,7 +157,7 @@ module Bosh::Director::DeploymentPlan
 
     def save_ip(ip, reservation, is_static)
       ip_address = Bosh::Director::Models::IpAddress.new(
-        address_str: ip.to_i.to_s,
+        address_str: ip.stringify,
         network_name: reservation.network.name,
         task_id: Bosh::Director::Config.current_job.task_id,
         static: is_static,

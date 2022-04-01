@@ -1,8 +1,11 @@
+require 'netaddr'
+
 module Bosh::Director
   module DeploymentPlan
     class ManualNetworkSubnet < Subnet
       extend ValidationHelper
       extend IpUtil
+      include IpUtil
 
       attr_reader :network_name, :name, :dns,
                   :availability_zone_names, :netmask_bits
@@ -25,38 +28,44 @@ module Bosh::Director
         end
 
         if range_property
-          range = NetAddr::CIDR.create(range_property)
+          range_wrapper = CIDR.new(range_property)
+          range = range_wrapper.netaddr
 
-          if range.size <= 1
+          if range.len <= 1
             raise NetworkInvalidRange, "Invalid network range '#{range_property}', " \
               'should include at least 2 IPs'
           end
 
-          netmask = range.wildcard_mask
-          network_id = range.network(Objectify: true)
-          broadcast = range.version == 6 ? range.last(Objectify: true) : range.broadcast(Objectify: true)
+          netmask = range_wrapper.netmask
+          network_id = range.network
+          broadcast = range.nth(range.len - 1)
 
           if gateway_property
-            gateway = NetAddr::CIDR.create(gateway_property)
-            invalid_gateway(network_name, 'must be a single IP') unless gateway.size == 1
-            invalid_gateway(network_name, 'must be inside the range') unless range.contains?(gateway)
-            invalid_gateway(network_name, "can't be the network id") if gateway == network_id
-            invalid_gateway(network_name, "can't be the broadcast IP") if gateway == broadcast
+            begin
+              gateway = CIDRIP.parse(gateway_property)
+            rescue NetAddr::ValidationError
+              invalid_gateway(network_name, 'not a valid IP format')
+            end
+
+            invalid_gateway(network_name, 'must be inside the range') unless range.contains(gateway)
+            invalid_gateway(network_name, "can't be the network id") if gateway.addr == network_id.addr
+            invalid_gateway(network_name, "can't be the broadcast IP") if gateway.addr == broadcast.addr
           end
 
           static_property = safe_property(subnet_spec, 'static', optional: true)
 
-          restricted_ips.add(gateway.to_i) if gateway
-          restricted_ips.add(network_id.to_i)
-          restricted_ips.add(broadcast.to_i)
+          restricted_ips.add(gateway.addr) if gateway
+          restricted_ips.add(network_id.addr)
+          restricted_ips.add(broadcast.addr)
 
-          each_ip(reserved_property) do |ip|
-            unless range.contains?(ip)
-              raise NetworkReservedIpOutOfRange, "Reserved IP '#{format_ip(ip)}' is out of " \
+          each_ip(reserved_property) do |ip_int|
+            ip = CIDRIP.parse(ip_int)
+            unless range.contains(ip)
+              raise NetworkReservedIpOutOfRange, "Reserved IP '#{ip.to_s}' is out of " \
                 "network '#{network_name}' range"
             end
 
-            restricted_ips.add(ip)
+            restricted_ips.add(ip_int)
           end
 
           Config.director_ips&.each do |cidr|
@@ -70,7 +79,7 @@ module Bosh::Director
               raise NetworkStaticIpOutOfRange, "Static IP '#{format_ip(ip)}' is in network '#{network_name}' reserved range"
             end
 
-            unless range.contains?(ip)
+            unless range.contains(CIDRIP.parse(ip))
               raise NetworkStaticIpOutOfRange, "Static IP '#{format_ip(ip)}' is out of network '#{network_name}' range"
             end
 
@@ -115,17 +124,19 @@ module Bosh::Director
 
       def overlaps?(subnet)
         return false unless range && subnet.range
+        return false unless range.version == subnet.range.version
 
-        range == subnet.range ||
-          range.contains?(subnet.range) ||
-          subnet.range.contains?(range)
-      rescue NetAddr::VersionError
+        ! range.rel(subnet.range).nil?
+      rescue NetAddr::ValidationError
         false
       end
 
       def is_reservable?(ip)
-        range.contains?(ip) && !restricted_ips.include?(ip.to_i)
-      rescue NetAddr::VersionError
+        ip = CIDRIP.parse(ip) # TODO NETADDR: according to test should not be neccessary, ip should already be a IPv4 object, however method is sometimes used differently
+        return false unless ip.version == range.version
+
+        range.contains(ip) && !restricted_ips.include?(ip.addr)
+      rescue NetAddr::ValidationError
         false
       end
 

@@ -103,7 +103,7 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
 
     it 'returns the availability zones associated with the given ip' do
       network = BD::DeploymentPlan::VipNetwork.parse(network_spec, azs, logger)
-      az = network.find_az_names_for_ip(NetAddr::CIDR.create('69.69.69.69.').to_i)
+      az = network.find_az_names_for_ip(NetAddr::IPv4.parse('69.69.69.69.').addr)
       expect(az).to include('z1')
     end
   end

@@ -2024,8 +2024,8 @@ module Bosh::Director::DeploymentPlan
 
       let(:network_plans) { [plan1, plan2, plan3, plan4] }
 
-      let(:ip1) { NetAddr::CIDR.create('192.168.1.25').to_i }
-      let(:ip2) { NetAddr::CIDR.create('192.168.1.26').to_i }
+      let(:ip1) { NetAddr::IPv4.parse('192.168.1.25').addr }
+      let(:ip2) { NetAddr::IPv4.parse('192.168.1.26').addr }
 
       let(:ip_address1) { Bosh::Director::Models::IpAddress.make(address_str: ip1.to_s) }
       let(:ip_address2) { Bosh::Director::Models::IpAddress.make(address_str: ip2.to_s) }

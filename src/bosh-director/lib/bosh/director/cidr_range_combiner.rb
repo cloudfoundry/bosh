@@ -10,18 +10,18 @@ module Bosh::Director
     private
 
     def stringify_tuples(cidr_tuples)
-      cidr_tuples.map { |tuple| [tuple[0].ip, tuple[1].ip] }
+      cidr_tuples.map { |tuple| [tuple[0].to_s, tuple[1].to_s] }
     end
 
     def sort_ranges(reserved_ranges)
       reserved_ranges.sort do |e1, e2|
-        e1.to_i <=> e2.to_i
+        e1.network.addr <=> e2.network.addr
       end
     end
 
     def min_max_tuples(sorted_reserved_ranges)
       sorted_reserved_ranges.map do |r|
-        [r.first(Objectify: true), r.last(Objectify: true)]
+        [r.nth(0), r.nth(r.len - 1)]
       end
     end
 
@@ -40,11 +40,11 @@ module Bosh::Director
               can_combine = false
               break
             end
-            if (range_tuple[1].succ == next_range_tuple[0])
+            if (range_tuple[1].next.addr == next_range_tuple[0].addr)
               range_tuple[1] = next_range_tuple[1]
               i += 1
             # does not cover all cases: 10/32, 10/8
-            elsif ((range_tuple[0] < next_range_tuple[0]) && (range_tuple[1] > next_range_tuple[1]))
+            elsif ((range_tuple[0].addr < next_range_tuple[0].addr) && (range_tuple[1].addr > next_range_tuple[1].addr))
               i += 1
             else
               can_combine = false

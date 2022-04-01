@@ -59,7 +59,7 @@ module Bosh::Director::DeploymentPlan
     def make_subnet_spec(range, static_ips, zone_names)
       spec = {
         'range' => range,
-        'gateway' => NetAddr::CIDR.create(range)[1].ip,
+        'gateway' => NetAddr::IPv4Net.parse(range).nth(1).to_s,
         'dns' => ['8.8.8.8'],
         'static' => static_ips,
         'reserved' => [],
@@ -952,7 +952,7 @@ module Bosh::Director::DeploymentPlan
       ips.each do |ip|
         instance.add_ip_address(
           Bosh::Director::Models::IpAddress.make(
-            address_str: NetAddr::CIDR.create(ip).to_i.to_s,
+            address_str: NetAddr::IPv4.parse(ip).addr.to_s,
             network_name: network_name,
           ),
         )

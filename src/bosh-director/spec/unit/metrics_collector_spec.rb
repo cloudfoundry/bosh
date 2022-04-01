@@ -163,7 +163,7 @@ module Bosh
               Models::IpAddress.make(
                 instance_id: instance.id,
                 vm_id: vm.id,
-                address_str: NetAddr::CIDR.create('192.168.1.5').to_i.to_s,
+                address_str: NetAddr::IPv4.parse('192.168.1.5').addr.to_s,
                 network_name: manual_network_spec['name'],
                 static: false,
               )
@@ -180,7 +180,7 @@ module Bosh
                 Models::IpAddress.make(
                   instance_id: instance.id,
                   vm_id: vm.id,
-                  address_str: NetAddr::CIDR.create('192.168.1.4').to_i.to_s,
+                  address_str: NetAddr::IPv4.parse('192.168.1.4').addr.to_s,
                   network_name: manual_network_spec['name'],
                   static: true,
                 )

@@ -40,8 +40,8 @@ module Bosh::Director::Models
     end
 
     describe '#ips' do
-      let!(:ip_address) { BD::Models::IpAddress.make(vm: vm, address_str: NetAddr::CIDR.create('1.1.1.1').to_i.to_s) }
-      let!(:ip_address2) { BD::Models::IpAddress.make(vm: vm, address_str: NetAddr::CIDR.create('1.1.1.2').to_i.to_s) }
+      let!(:ip_address) { BD::Models::IpAddress.make(vm: vm, address_str: NetAddr::IPv4.parse('1.1.1.1').addr.to_s) }
+      let!(:ip_address2) { BD::Models::IpAddress.make(vm: vm, address_str: NetAddr::IPv4.parse('1.1.1.2').addr.to_s) }
 
       before do
         vm.network_spec = { 'some' => { 'ip' => '1.1.1.3' } }

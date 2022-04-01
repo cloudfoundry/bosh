@@ -20,7 +20,7 @@ module Bosh
           Bosh::Director::Models::IpAddress.create(
             orphaned_vm: orphaned_vm1,
             network_name: 'my-manual-network',
-            address_str: NetAddr::CIDR.create('127.0.0.2').to_i,
+            address_str: NetAddr::IPv4.parse('127.0.0.2').addr,
             task_id: 1,
           )
         end
@@ -38,7 +38,7 @@ module Bosh
           Bosh::Director::Models::IpAddress.create(
             orphaned_vm: orphaned_vm2,
             network_name: 'my-manual-network',
-            address_str: NetAddr::CIDR.create('127.0.0.1').to_i,
+            address_str: NetAddr::IPv4.parse('127.0.0.1').addr,
             task_id: 1,
           )
         end
@@ -72,8 +72,8 @@ module Bosh
 
         it 'releases the ip address used by the vm' do
           subject.delete_all
-          expect(Bosh::Director::Models::IpAddress.first(address_str: NetAddr::CIDR.create('127.0.0.1').to_i.to_s)).to be_nil
-          expect(Bosh::Director::Models::IpAddress.first(address_str: NetAddr::CIDR.create('127.0.0.2').to_i.to_s)).to be_nil
+          expect(Bosh::Director::Models::IpAddress.first(address_str: NetAddr::IPv4.parse('127.0.0.1').addr.to_s)).to be_nil
+          expect(Bosh::Director::Models::IpAddress.first(address_str: NetAddr::IPv4.parse('127.0.0.2').addr.to_s)).to be_nil
         end
 
         it 'records bosh event for vm deletion' do
@@ -174,8 +174,8 @@ module Bosh
           it 'deletes the model from the database' do
             subject.delete_all
             expect(Models::OrphanedVm.all.find { |vm| vm.cid == 'cid1' }).to be_nil
-            expect(Bosh::Director::Models::IpAddress.first(address_str: NetAddr::CIDR.create('127.0.0.1').to_i.to_s)).to be_nil
-            expect(Bosh::Director::Models::IpAddress.first(address_str: NetAddr::CIDR.create('127.0.0.2').to_i.to_s)).to be_nil
+            expect(Bosh::Director::Models::IpAddress.first(address_str: NetAddr::IPv4.parse('127.0.0.1').addr.to_s)).to be_nil
+            expect(Bosh::Director::Models::IpAddress.first(address_str: NetAddr::IPv4.parse('127.0.0.2').addr.to_s)).to be_nil
           end
         end
 

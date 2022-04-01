@@ -3,7 +3,7 @@ require_relative '../../spec_helper'
 def make_subnet_spec(range, static_ips, zone_names = nil)
   spec = {
     'range' => range,
-    'gateway' => NetAddr::CIDR.create(range)[1].ip,
+    'gateway' => NetAddr::IPv4Net.parse(range).nth(1).to_s,
     'dns' => ['8.8.8.8'],
     'static' => static_ips,
     'reserved' => [],
