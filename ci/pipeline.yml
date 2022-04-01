@@ -612,6 +612,16 @@ jobs:
           AWS_SSH_PRIVATE_KEY:   ((aws_ssh_private_key))
           DEPLOY_ARGS: |
             -o bosh-deployment/external-ip-not-recommended.yml
+      - task: sleep-180-seconds
+        image: main-ruby-go-image
+        config:
+          platform: linux
+          run:
+            path: /bin/sh
+            args:
+              - -exc
+              - |
+                sleep 180
       - task: recreate-zookeeper
         image: main-ruby-go-image
         file: bosh-src/ci/tasks/deploy-zookeeper.yml
@@ -1111,7 +1121,7 @@ resources:
       tag: ((branch_name))
       username: ((docker.username))
       password: ((docker.password))
-      
+
   - name: main-postgres-10-image
     type: docker-image
     source:
