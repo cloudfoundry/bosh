@@ -53,7 +53,7 @@ PATH
       semi_semantic (~> 1.2.0)
       sequel (~> 5.29.0)
       sinatra (~> 2.0.2)
-      sys-filesystem (~> 1.1.0)
+      sys-filesystem (~> 1.4.1)
       talentbox-delayed_job_sequel (~> 4.3)
       thin
       tzinfo-data
@@ -142,7 +142,7 @@ GEM
     factory_bot (6.2.0)
       activesupport (>= 5.0.0)
     fakefs (1.0.0)
-    ffi (1.15.3)
+    ffi (1.15.5)
     fugit (1.5.0)
       et-orbi (~> 1.1, >= 1.1.8)
       raabro (~> 1.4)
@@ -264,8 +264,8 @@ GEM
       tilt (~> 2.0)
     slop (3.6.0)
     sqlite3 (1.4.2)
-    sys-filesystem (1.1.9)
-      ffi
+    sys-filesystem (1.4.3)
+      ffi (~> 1.1)
     talentbox-delayed_job_sequel (4.3.0)
       delayed_job (~> 4.1.0)
       sequel (>= 3.38, < 6.0)

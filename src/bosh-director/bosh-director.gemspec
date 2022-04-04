@@ -58,7 +58,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'semi_semantic',    '~>1.2.0'
   spec.add_dependency 'sequel',           '~>5.29.0'
   spec.add_dependency 'sinatra',          '~>2.0.2'
-  spec.add_dependency 'sys-filesystem',   '~>1.1.0'
+  spec.add_dependency 'sys-filesystem',   '~>1.4.1'
   spec.add_dependency 'talentbox-delayed_job_sequel', '~>4.3'
   spec.add_dependency 'thin'
   spec.add_dependency 'tzinfo-data'
