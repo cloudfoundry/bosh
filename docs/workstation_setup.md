@@ -83,7 +83,7 @@
 
 9. Bundle BOSH
 
-    ```
+    ```bash
     cd ~/workspace/bosh/src
     bundle install
     ```
@@ -92,7 +92,7 @@
     about “implicit function declarations”, try installing it manually with
     the following compilation flag:
 
-    ```
+    ```bash
     gem install thin -v '1.7.2' -- --with-cflags="-Wno-error=implicit-function-declaration"
     ```
 
@@ -100,8 +100,16 @@
     for -lssl_” when installing the `mysql2` Gem, try installing it manually
     with the following linker flags:
 
-    ```
+    ```bash
     gem install mysql2 -v '0.5.3' -- --with-ldflags="-L/usr/local/opt/openssl@1.1/lib"
+    ```
+
+    If you ever hit "ld: library not found for -lzstd" when installing the
+    `mysql2` gem, try the [following](https://stackoverflow.com/questions/67840691/ld-library-not-found-for-lzstd-while-bundle-install-for-mysql2-gem-ruby-on-mac/67877734#67877734):
+
+    ```bash
+    bundle config --local build.mysql2 "--with-opt-dir="$(brew --prefix zstd)""
+    bundle
     ```
 
 10. Download `bosh-agent` dependency:
