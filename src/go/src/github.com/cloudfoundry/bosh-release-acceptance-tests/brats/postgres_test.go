@@ -12,9 +12,9 @@ import (
 )
 
 var _ = Describe("postgres", func() {
-	Context("postgres-10", func() {
+	Context("postgres-13", func() {
 		var (
-			postgres94Manifest     string
+			postgres13Manifest     string
 			postgres10Manifest     string
 			postgresDeploymentName string
 		)
@@ -25,10 +25,10 @@ var _ = Describe("postgres", func() {
 			postgresDeploymentName, err = uuid.NewGenerator().Generate()
 			Expect(err).NotTo(HaveOccurred())
 
-			postgres94Manifest = bratsutils.AssetPath("postgres-94-manifest.yml")
+			postgres13Manifest = bratsutils.AssetPath("postgres-13-manifest.yml")
 			postgres10Manifest = bratsutils.AssetPath("postgres-10-manifest.yml")
 
-			session := bratsutils.OuterBosh("deploy", "-n", postgres94Manifest,
+			session := bratsutils.OuterBosh("deploy", "-n", postgres10Manifest,
 				"-d", postgresDeploymentName,
 				"-v", fmt.Sprintf("stemcell-os=%s", bratsutils.StemcellOS()),
 				"-v", fmt.Sprintf("deployment-name=%s", postgresDeploymentName),
@@ -36,8 +36,8 @@ var _ = Describe("postgres", func() {
 			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
 		})
 
-		It("Upgrades from 9.4", func() {
-			session := bratsutils.OuterBosh("deploy", "-n", postgres10Manifest,
+		It("Upgrades from 10", func() {
+			session := bratsutils.OuterBosh("deploy", "-n", postgres13Manifest,
 				"-d", postgresDeploymentName,
 				"-v", fmt.Sprintf("stemcell-os=%s", bratsutils.StemcellOS()),
 				"-v", fmt.Sprintf("deployment-name=%s", postgresDeploymentName),

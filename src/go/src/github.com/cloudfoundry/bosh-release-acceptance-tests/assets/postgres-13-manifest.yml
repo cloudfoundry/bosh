@@ -1,0 +1,38 @@
+---
+name: ((deployment-name))
+instance_groups:
+- name: bosh
+  azs: [z1]
+  instances: 1
+  jobs:
+  - name: postgres
+    release: bosh
+  - name: bpm
+    release: bpm
+  vm_type: default
+  stemcell: default
+  persistent_disk_type: default
+  networks:
+  - name: default
+  properties:
+    postgres:
+      user: postgres
+      password: c1oudc0w
+      database: bosh
+
+stemcells:
+- alias: default
+  os: ((stemcell-os))
+  version: latest
+
+releases:
+- name: bosh
+  version: latest
+- name: bpm
+  version: latest
+
+update:
+  canaries: 1
+  max_in_flight: 10
+  canary_watch_time: 1000-30000
+  update_watch_time: 1000-30000
