@@ -13,7 +13,7 @@ EOL
 
   echo "Generating CA..."
   openssl genrsa -out rootCA.key 2048
-  openssl req -x509 -new -nodes -key rootCA.key -days 99999 -out rootCA.pem \
+  openssl req -x509 -new -sha256 -nodes -key rootCA.key -days 99999 -out rootCA.pem \
     -subj "/C=US/O=BOSH"
 
   echo "Generating private key..."
@@ -21,7 +21,7 @@ EOL
 
   echo "Generating certificate signing request for ${ip}..."
   # golang requires to have SAN for the IP
-  openssl req -new -nodes -key ${name}.key \
+  openssl req -new -sha256 -nodes -key ${name}.key \
     -out ${name}.csr \
     -subj "/C=US/O=BOSH/CN=${ip}"
 
