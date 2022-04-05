@@ -86,7 +86,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
     it 'should create an IPv6 subnet spec' do
       subnet = make_subnet(
         {
-          'range' => 'fdab:d85c:118d:8a46::/64',
+          'range' => 'fdab:d85c:118d:8a46::/96',
           'gateway' => 'fdab:d85c:118d:8a46::1',
           'reserved' => [
             'fdab:d85c:118d:8a46::10-fdab:d85c:118d:8a46::ff',
@@ -105,14 +105,27 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
         [],
       )
 
-      expect(subnet.range.ip).to eq('fdab:d85c:118d:8a46:0000:0000:0000:0000')
-      subnet.range.ip.size == 2**64
-      expect(subnet.netmask).to eq('ffff:ffff:ffff:ffff:0000:0000:0000:0000')
-      expect(subnet.gateway).to eq('fdab:d85c:118d:8a46:0000:0000:0000:0001')
+      expect(subnet.range.network.to_s).to eq('fdab:d85c:118d:8a46::')
+      # subnet.range.ip.size == 2**64  # TODO NETADDR: bug? / what was tested here?
+      expect(subnet.netmask).to eq('ffff:ffff:ffff:ffff:ffff:ffff::')
+      expect(subnet.gateway.to_s).to eq('fdab:d85c:118d:8a46::1') # TODO NETADDR: not sure how it worked before (was previously an object as well)
       expect(subnet.dns).to eq([
-        "2001:4860:4860:0000:0000:0000:0000:8888",
-        "2001:4860:4860:0000:0000:0000:0000:8844",
+        "2001:4860:4860::8888",
+        "2001:4860:4860::8844",
       ])
+    end
+
+    it 'should fail for <= /64 IPv6 CIDR prefixes' do
+      expect {
+        make_subnet(
+          {
+            'range' => 'fdab:d85c:118d:8a46::/64',
+            'gateway' => 'fdab:d85c:118d:8a46::1',
+            'cloud_properties' => {'foo' => 'bar'},
+          },
+          []
+        )
+      }.to raise_error(/Unsupported CIDR prefix length/)
     end
 
     it 'should require a range' do
@@ -385,7 +398,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
     it 'should return false when IPv4 and IPv6 ranges are compared' do
       other = make_subnet(
         {
-          'range' => 'f1ee:0000:0000:0000:0000:0000:0000:0000/64',
+          'range' => 'f1ee:0000:0000:0000:0000:0000:0000:0000/96',
           'gateway' => 'f1ee:0000:0000:0000:0000:0000:0000:0001',
           'cloud_properties' => { 'foo' => 'bar' },
         },

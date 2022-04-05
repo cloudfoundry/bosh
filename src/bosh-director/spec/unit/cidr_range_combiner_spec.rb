@@ -92,7 +92,7 @@ module Bosh::Director
         [
           NetAddr::IPv4Net.parse('192.168.0.8/30'),
           NetAddr::IPv6Net.parse('fd7a:eeed:e696:968f:0000:0000:0000:0005/128'),
-          NetAddr::IPv6Net.parse('fd7a:eeed:e696:968f:0000:0000:0000:0005/64'),
+          NetAddr::IPv6Net.parse('fd7a:eeed:e696:968f:0000:0000:0000:0005/96'),
           NetAddr::IPv4Net.parse('192.168.0.20/32'),
         ]
       end
@@ -100,7 +100,7 @@ module Bosh::Director
       it 'combines the ranges' do
         expect(range_combiner.combine_ranges(cidr_ranges)).to eq(
           [['192.168.0.8', '192.168.0.11'], ['192.168.0.20', '192.168.0.20'],
-           ['fd7a:eeed:e696:968f:0000:0000:0000:0000', 'fd7a:eeed:e696:968f:ffff:ffff:ffff:ffff']],
+           ['fd7a:eeed:e696:968f::', 'fd7a:eeed:e696:968f::ffff:ffff']],
         )
       end
     end

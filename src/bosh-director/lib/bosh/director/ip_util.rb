@@ -98,13 +98,17 @@ module Bosh::Director
       private
 
       def parse(cidr)
-        NetAddr::IPv4Net.parse(cidr)
+        cidr = NetAddr::IPv4Net.parse(cidr)
       rescue NetAddr::ValidationError => e_v4
         begin
-          NetAddr::IPv6Net.parse(cidr)
+          cidr = NetAddr::IPv6Net.parse(cidr)
+          if cidr.netmask.prefix_len <= 64
+            raise "Unsupported CIDR prefix length. Please choose a CIDR mask numerically larger than /64."
+          end
         rescue NetAddr::ValidationError => e_v6
           raise NetAddr::ValidationError, "IP CIDR format #{ip} is neither a valid IPv4 nor IPv6 format: #{e_v4} / #{e_v6}"
         end
+        cidr
       end
     end
 
