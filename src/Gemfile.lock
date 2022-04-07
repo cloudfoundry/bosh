@@ -43,7 +43,7 @@ PATH
       logging (~> 2.2.2)
       membrane (~> 1.1.0)
       nats-pure (~> 0.6.2)
-      netaddr (~> 1.5.0)
+      netaddr (~> 2.0.5)
       openssl
       prometheus-client (~> 1.0.0)
       puma
@@ -175,7 +175,7 @@ GEM
     mysql2 (0.5.3)
     nats-pure (0.6.2)
     net-ssh (5.2.0)
-    netaddr (1.5.1)
+    netaddr (2.0.5)
     netrc (0.11.0)
     nio4r (2.5.8)
     openssl (3.0.0)
