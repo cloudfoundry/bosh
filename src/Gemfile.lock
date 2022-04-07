@@ -155,7 +155,7 @@ GEM
     i18n (1.8.2)
       concurrent-ruby (~> 1.0)
     jaro_winkler (1.5.4)
-    json (2.3.0)
+    json (2.6.1)
     little-plugger (1.1.4)
     logging (2.2.2)
       little-plugger (~> 1.1)
@@ -312,7 +312,7 @@ DEPENDENCIES
   factory_bot (~> 6.2)
   fakefs
   httpclient
-  json (= 2.3.0)
+  json (= 2.6.1)
   machinist (~> 1.0)
   minitar
   mysql2

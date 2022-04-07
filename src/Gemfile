@@ -11,9 +11,9 @@ gem 'bosh_common', path: 'bosh_common'
 
 gem 'rake', '~>13.0.3'
 
-# json version is hardcoded in release director, health_monitor and registry packages
+# json version is hardcoded in release director and health_monitor
 # when modified needs to be updated there as well
-gem 'json', '=2.3.0'
+gem 'json', '=2.6.1'
 
 gem 'talentbox-delayed_job_sequel', '~>4.3'
 
