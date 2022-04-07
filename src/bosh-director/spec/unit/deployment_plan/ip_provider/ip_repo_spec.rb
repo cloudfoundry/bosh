@@ -511,6 +511,15 @@ module Bosh::Director::DeploymentPlan
             Bosh::Director::Models::IpAddress.all.size
           }.by(-1)
       end
+
+      it 'does not accidentally delete a IPv4 address when a IPv6 address is being deleted' do
+        expect(logger).to receive(:debug).with("[network-configuration] Skipping releasing ip '0000:0000:0000:0000:0000:0000:c0a8:0105': not reserved")
+        expect {
+          ip_repo.delete('0000:0000:0000:0000:0000:0000:c0a8:0105')
+        }.to change {
+            Bosh::Director::Models::IpAddress.all.size
+          }.by(0)
+      end
     end
   end
 end
