@@ -378,18 +378,27 @@ module Bosh::Director::DeploymentPlan
 
     describe :delete do
       before do
-        network_spec['subnets'].first['static'] = ['fdab:d85c:118d:8a46::5']
+        network_spec['subnets'].first['static'] = ['0000:0000:0000:0000:0000:0000:c0a8:0105']
 
-        reservation = BD::DesiredNetworkReservation.new_static(instance_model, network, 'fdab:d85c:118d:8a46::5')
+        reservation = BD::DesiredNetworkReservation.new_static(instance_model, network, '0000:0000:0000:0000:0000:0000:c0a8:0105')
         ip_repo.add(reservation)
       end
 
       it 'deletes IP address' do
         expect {
-          ip_repo.delete('fdab:d85c:118d:8a46::5')
+          ip_repo.delete('0000:0000:0000:0000:0000:0000:c0a8:0105')
         }.to change {
             Bosh::Director::Models::IpAddress.all.size
           }.by(-1)
+      end
+
+      it 'does not accidentally delete a IPv6 address when a IPv4 address is being deleted' do
+        expect(logger).to receive(:debug).with("[network-configuration] Skipping releasing ip '192.168.1.5': not reserved")
+        expect {
+          ip_repo.delete('192.168.1.5')
+        }.to change {
+            Bosh::Director::Models::IpAddress.all.size
+          }.by(0)
       end
     end
   end
