@@ -9,14 +9,22 @@ PERSISTENT_DISK_DIR=/var/vcap/store
 
 STORE_DIR=${PERSISTENT_DISK_DIR}/postgres-13
 STORE_DIR_OLD=${PERSISTENT_DISK_DIR}/postgres-10
+STORE_DIR_OBSOLETE=${PERSISTENT_DISK_DIR}/postgres-9.4
 
 USER='<%= p("postgres.user") %>'
 
 sysctl -w "kernel.shmmax=67108864"
 
-if [[ -d /var/vcap/store/postgres-9.4 ]]; then
-  echo "Please use a previous bosh release version (271.x or lower) to migrate data from postgres-9.4 to postgres-10."
-  exit 1
+if [ -d $STORE_DIR_OBSOLETE ]; then
+  # uh-oh, we have years-old BOSH Director
+  if [ ! -d $STORE_DIR_OLD ] && [ ! -d $STORE_DIR ]; then
+    # we never upgraded this BOSH Director from PostgreSQL 9.4 to 10
+    echo "Please use a previous bosh release version (271.x or lower) to migrate data from postgres-9.4 to postgres-10."
+    exit 1
+  fi
+  # delete the obsolete 9.4 directory to free up space
+  echo "Deleting obsolete $STORE_DIR_OBSOLETE directory."
+  rm -rf "${STORE_DIR_OBSOLETE}"
 fi
 
 # We cannot kill the following conditional
