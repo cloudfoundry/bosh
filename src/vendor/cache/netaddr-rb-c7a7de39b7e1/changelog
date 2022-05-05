@@ -1,0 +1,52 @@
+Version 1.5.2
+Changes:
+* bug fixes from: https://github.com/KirillSmirnov, https://github.com/rwhitworth, https://github.com/y13i
+
+Version 1.5.1
+Changes:
+* fixed bug with NetAddr#merge (credit to Daniel Boughton)
+
+
+Version 1.5.0
+Changes:
+* fixed bug with EUI48#to_eui64 (credit to Erik Kline)
+* fixed bug with u/l bit toggle on EUI#link_local (credit to Erik Kline)
+* added EUI#to_ipv6
+* added NetAddr#supernets
+
+
+Version 1.4.0
+Changes:
+* Added additional options to NetAddr#sort
+
+
+Version 1.3.0
+New Features:
+* added CIDR#[]
+* added CIDR#succ (CIDR objects may now be used as args for the standard Ruby Range class)
+* added CIDR#allocate_rfc3531
+* added CIDR#to_i
+* added CIDRv6.unique_local
+* added EUI48#to_eui64
+* added EUI#to_i
+* added EUI#to_s
+
+Changes:
+* deprecated 'packed' methods
+
+
+Version 1.2.0
+Changes:
+* CIDRv4#new and CIDRv6#new methods have been changed for the sake of speed improvements.
+  Please use the CIDR#create method instead.
+* changes to CIDR#wildcard_mask
+* bug fix with validate_eui method
+* bug fix with validate_ip_addr
+* bug fix and *vast* simplification of NetAddr.merge
+
+
+New Features:
+* speed improvements
+* added CIDR#set_wildcard_mask
+* added <=>, >, <, == methods to CIDR
+* NetAddr.merge now reports which CIDR addresses were used to create new summary addresses

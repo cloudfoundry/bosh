@@ -1,4 +1,11 @@
 GIT
+  remote: https://github.com/dspinhirne/netaddr-rb
+  revision: c7a7de39b7e1126aef11821f98970db18582948b
+  tag: 1.5.3
+  specs:
+    netaddr (1.5.3)
+
+GIT
   remote: https://github.com/eventmachine/eventmachine
   revision: abe347b824e36453f8a013fbe14323342a2ac8de
   ref: abe34
@@ -43,7 +50,7 @@ PATH
       logging (~> 2.2.2)
       membrane (~> 1.1.0)
       nats-pure (~> 0.6.2)
-      netaddr (~> 1.5.0)
+      netaddr (~> 1.5.3.dev.1)
       openssl
       prometheus-client (~> 1.0.0)
       puma
@@ -175,7 +182,6 @@ GEM
     mysql2 (0.5.3)
     nats-pure (0.6.2)
     net-ssh (5.2.0)
-    netaddr (1.5.1)
     netrc (0.11.0)
     nio4r (2.5.8)
     openssl (3.0.0)
@@ -318,6 +324,7 @@ DEPENDENCIES
   mysql2
   nats-pure (~> 0.6.2)
   net-ssh
+  netaddr (~> 1.5.3.dev.1)!
   openssl
   parallel_tests (~> 2.0)
   pg

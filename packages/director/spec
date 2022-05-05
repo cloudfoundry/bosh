@@ -15,3 +15,4 @@ files:
 - vendor/cache/*.gem
 - vendor/cache/eventmachine-*/**
 - vendor/cache/extensions/**
+- vendor/cache/netaddr-rb-*/**
