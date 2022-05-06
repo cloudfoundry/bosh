@@ -24,16 +24,18 @@ module Bosh::Director
       matcher = Errand::InstanceMatcher.new(requested_instances)
       instances, unmatched_filters = matcher.match(instances_from_db)
 
-      # Check if any of the instances are stopped because we don't know why an operator stopped an instance,
-      # maybe it might be colocated with other jobs to save time on rebooting vms but forgot it was stopped.
-      # Since we don't know why an instance is stopped, it is safer to error out.
-      stopped_instances = []
-      instances.each do |instance|
-        stopped_instances << "'#{instance.name}'" if instance.stopped?
-      end
-      unless stopped_instances.empty?
-        instance_string = stopped_instances.join(',')
-        raise RunErrandError, "Instance(s) #{instance_string} is stopped, unable to run errand. Maybe start vm?"
+      unless Config.allow_errands_on_stopped_instances
+        # Check if any of the instances are stopped because we don't know why an operator stopped an instance,
+        # maybe it might be colocated with other jobs to save time on rebooting vms but forgot it was stopped.
+        # Since we don't know why an instance is stopped, it is safer to error out.
+        stopped_instances = []
+        instances.each do |instance|
+          stopped_instances << "'#{instance.name}'" if instance.stopped?
+        end
+        unless stopped_instances.empty?
+          instance_string = stopped_instances.join(',')
+          raise RunErrandError, "Instance(s) #{instance_string} is stopped, unable to run errand. Maybe start vm?"
+        end
       end
 
       event_log_stage.advance_and_track('Preparing deployment') do

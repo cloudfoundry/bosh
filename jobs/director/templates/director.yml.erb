@@ -42,6 +42,7 @@ params = {
   },
   'audit_log_path' => '/var/vcap/sys/log/director',
   'parallel_problem_resolution' => p('director.parallel_problem_resolution', true),
+  'allow_errands_on_stopped_instances' => p('director.allow_errands_on_stopped_instances'),
   'metrics_server' => {
     'enabled' => p('director.metrics_server.enabled'),
     'port' => p('director.metrics_server.port'),
