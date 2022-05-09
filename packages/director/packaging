@@ -22,6 +22,11 @@ pushd vendor/cache/eventmachine-* > /dev/null
   mv *.gem ../
 popd > /dev/null
 
+pushd vendor/cache/netaddr-rb-* > /dev/null
+  gem build netaddr.gemspec
+  mv *.gem ../
+popd > /dev/null
+
 cat > Gemfile <<EOF
 # Explicitly require vendored version to avoid requiring builtin json gem
 gem 'json', '2.6.1'
