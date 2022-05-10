@@ -120,6 +120,12 @@ pushd bosh-src/src
   gem install -f bundler
   bundle update --bundler
   bundle install --local
+  
+  # Install netaddr, needed for dummy cpi
+  pushd vendor/cache/netaddr-rb-*
+    gem build *.gemspec
+    gem install *.gem
+  popd
 
   set +e
   bundle exec rake --trace spec:integration
