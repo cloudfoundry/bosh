@@ -59,7 +59,7 @@ PATH
       rufus-scheduler (~> 3.0)
       semi_semantic (~> 1.2.0)
       sequel (~> 5.29.0)
-      sinatra (~> 2.0.2)
+      sinatra (~> 2.2.0)
       sys-filesystem (~> 1.4.1)
       talentbox-delayed_job_sequel (~> 4.3)
       thin
@@ -79,7 +79,7 @@ PATH
       nats-pure (~> 0.6.2)
       openssl
       riemann-client (~> 0.2.6)
-      sinatra (~> 2.0.2)
+      sinatra (~> 2.2.0)
       thin
 
 PATH
@@ -107,7 +107,6 @@ GEM
     addressable (2.8.0)
       public_suffix (>= 2.0.2, < 5.0)
     ast (2.4.0)
-    backports (3.16.0)
     bcrypt (3.1.16)
     beefcake (1.0.0)
     blue-shell (0.3.0)
@@ -206,7 +205,7 @@ GEM
       nio4r (~> 2.0)
     raabro (1.4.0)
     rack (2.2.3)
-    rack-protection (2.0.8.1)
+    rack-protection (2.2.0)
       rack
     rack-test (0.6.3)
       rack (>= 1.0)
@@ -256,17 +255,16 @@ GEM
       fugit (~> 1.1, >= 1.1.6)
     semi_semantic (1.2.0)
     sequel (5.29.0)
-    sinatra (2.0.8.1)
+    sinatra (2.2.0)
       mustermann (~> 1.0)
-      rack (~> 2.0)
-      rack-protection (= 2.0.8.1)
+      rack (~> 2.2)
+      rack-protection (= 2.2.0)
       tilt (~> 2.0)
-    sinatra-contrib (2.0.8.1)
-      backports (>= 2.8.2)
+    sinatra-contrib (2.2.0)
       multi_json
       mustermann (~> 1.0)
-      rack-protection (= 2.0.8.1)
-      sinatra (= 2.0.8.1)
+      rack-protection (= 2.2.0)
+      sinatra (= 2.2.0)
       tilt (~> 2.0)
     slop (3.6.0)
     sqlite3 (1.4.2)
@@ -339,8 +337,8 @@ DEPENDENCIES
   rubocop
   rubocop-git
   ruby-prof (= 0.17.0)
-  sinatra (>= 2.0.2)
-  sinatra-contrib (>= 2.0.2)
+  sinatra (>= 2.2.0)
+  sinatra-contrib (>= 2.2.0)
   sqlite3
   talentbox-delayed_job_sequel (~> 4.3)
   timecop (~> 0.9.4)
