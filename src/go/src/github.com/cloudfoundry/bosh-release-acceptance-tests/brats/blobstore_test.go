@@ -75,7 +75,8 @@ var _ = Describe("Blobstore", func() {
 			Expect(err).ToNot(HaveOccurred())
 			jqSession, err := gexec.Start(jq, ioutil.Discard, ioutil.Discard)
 			Expect(err).ToNot(HaveOccurred())
-			io.Copy(si, bytes.NewReader(boshCmdOutput))
+			_, err = io.Copy(si, bytes.NewReader(boshCmdOutput))
+			Expect(err).ToNot(HaveOccurred())
 			si.Close()
 			Eventually(jqSession, 5*time.Second).Should(gexec.Exit(0))
 			return jqSession.Out.Contents()
@@ -94,7 +95,8 @@ var _ = Describe("Blobstore", func() {
 			)
 			Eventually(session, 30*time.Second).Should(gexec.Exit(0))
 			c := config{}
-			json.Unmarshal(getStdout(session.Out.Contents()), &c)
+			err := json.Unmarshal(getStdout(session.Out.Contents()), &c)
+			Expect(err).ToNot(HaveOccurred())
 			return c.BlobstoreConfig.Options.User,
 				c.BlobstoreConfig.Options.Password,
 				c.Env.AgentEnv.BlobstoresConfig[0].Options.Password,
@@ -216,7 +218,8 @@ var _ = Describe("Blobstore", func() {
 			session = bratsutils.BoshQuiet("-d", "syslog-deployment", "ssh", "syslog_forwarder/0", "-r", "--json", "-c", "sudo cat /var/vcap/bosh/settings.json")
 			Eventually(session, 30*time.Second).Should(gexec.Exit(0))
 			c := config{}
-			json.Unmarshal(getStdout(session.Out.Contents()), &c)
+			err := json.Unmarshal(getStdout(session.Out.Contents()), &c)
+			Expect(err).ToNot(HaveOccurred())
 			fmt.Printf("%+v\n", c)
 			Expect(c.Env.AgentEnv.BlobstoresConfig[0].Options.Password).To(Equal(""))
 			Expect(c.Env.AgentEnv.BlobstoresConfig[0].Options.User).To(Equal(""))
@@ -228,7 +231,8 @@ var _ = Describe("Blobstore", func() {
 			session = bratsutils.BoshQuiet("-d", "syslog-deployment", "ssh", "syslog_forwarder/0", "-r", "--json", "-c", "sudo cat /var/vcap/bosh/warden-cpi-agent-env.json")
 			Eventually(session, 30*time.Second).Should(gexec.Exit(0))
 			c = config{}
-			json.Unmarshal(getStdout(session.Out.Contents()), &c)
+			err = json.Unmarshal(getStdout(session.Out.Contents()), &c)
+			Expect(err).ToNot(HaveOccurred())
 			fmt.Printf("%+v\n", c)
 			Expect(c.Env.AgentEnv.BlobstoresConfig[0].Options.Password).To(Equal(""))
 			Expect(c.Env.AgentEnv.BlobstoresConfig[0].Options.User).To(Equal(""))
