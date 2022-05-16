@@ -179,6 +179,9 @@ properties:
   director.parallel_problem_resolution:
     description: When true, problems (e.g. resurrection, disk reattaching) are resolved in parallel
     default: true
+  director.allow_errands_on_stopped_instances:
+    description: When true, bosh will not error out when running errands on stopped instances
+    default: false
 
   director.cpi.preferred_api_version:
     description: The preferred api version to use when communicating with the CPI. If specified greater than the max supported version it will only communicate via the highest available api version.

@@ -559,8 +559,11 @@ module Bosh::Director
                             needed_instance_plans: needed_instance_plans,
                             bind_instances: nil)
           end
-
           let!(:instance_model) { Models::Instance.make(deployment: deployment_model, uuid: 'instance-uuid', state: 'stopped') }
+
+          before do
+            allow(Config).to receive(:allow_errands_on_stopped_instances).and_return(false)
+          end
 
           it 'returns an error that instance is stopped' do
             expect do
@@ -568,6 +571,18 @@ module Bosh::Director
             end.to raise_error(RunErrandError,
                                "Instance(s) '#{instance_model.job}/instance-uuid' is stopped, " \
                                'unable to run errand. Maybe start vm?')
+          end
+
+          context 'when allow_errands_on_stopped_instances property is set to true' do
+            before do
+              allow(Config).to receive(:allow_errands_on_stopped_instances).and_return(true)
+            end
+
+            it 'will not raise an error' do
+              expect do
+                subject.get(deployment_name, ig_name, keep_alive, instance_slugs)
+              end.not_to raise_error(RunErrandError)
+            end
           end
         end
 

@@ -61,6 +61,7 @@ module Bosh::Director
         :db_config,
         :director_ips,
         :enable_nats_delivered_templates,
+        :allow_errands_on_stopped_instances,
         :ignore_missing_gateway,
         :director_certificate_expiry_json_path,
         :nats_client_ca_certificate_path,
@@ -209,6 +210,7 @@ module Bosh::Director
         @keep_unreachable_vms = config.fetch('keep_unreachable_vms', false)
         @enable_post_deploy = config.fetch('enable_post_deploy', true)
         @enable_nats_delivered_templates = config.fetch('enable_nats_delivered_templates', false)
+        @allow_errands_on_stopped_instances = config.fetch('allow_errands_on_stopped_instances', false)
         @generate_vm_passwords = config.fetch('generate_vm_passwords', false)
         @remove_dev_tools = config['remove_dev_tools']
         @record_events = config.fetch('record_events', false)

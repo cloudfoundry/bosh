@@ -351,6 +351,24 @@ describe Bosh::Director::Config do
       end
     end
 
+    describe 'allow_errands_on_stopped_instances' do
+      it 'defaults to false' do
+        described_class.configure(test_config)
+        expect(described_class.allow_errands_on_stopped_instances).to be_falsey
+      end
+
+      context 'when explicitly set to true' do
+        before do
+          test_config['allow_errands_on_stopped_instances'] = true
+        end
+
+        it 'resolves to true' do
+          described_class.configure(test_config)
+          expect(described_class.allow_errands_on_stopped_instances).to be_truthy
+        end
+      end
+    end
+
     describe 'director version' do
       it 'sets the expected version/revision' do
         described_class.configure(test_config)
