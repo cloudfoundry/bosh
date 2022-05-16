@@ -102,7 +102,7 @@ module Bosh
 
           expect { subject }.to raise_error(DeploymentNATSClientCertificateGenerationError) do |error|
             expect(error.message).to include('Error occurred while loading private key to generate NATS Client certificates')
-            expect(error.message).to include('OpenSSL::PKey::RSAError: Neither PUB key nor PRIV key: bad end line')
+            expect(error.message).to include('OpenSSL::PKey::RSAError: Neither PUB key nor PRIV key')
           end
         end
 
