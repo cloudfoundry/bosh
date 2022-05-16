@@ -7,7 +7,7 @@ ARG DB_VERSION
 RUN apt update && apt -yq install \
     libmysqlclient-dev libpq-dev libsqlite3-dev
 
-RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ bionic-pgdg main" > /etc/apt/sources.list.d/pgdg.list && \
+RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ jammy-pgdg main" > /etc/apt/sources.list.d/pgdg.list && \
     wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
     apt update
 
