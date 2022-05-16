@@ -92,23 +92,25 @@ module Bosh
 
           expect { subject }.to raise_error(DeploymentNATSClientCertificateGenerationError) do |error|
             expect(error.message).to include('Error occurred while loading CA Certificate to generate NATS Client certificates')
-            expect(error.message).to include('OpenSSL::X509::CertificateError: PEM_read_bio_X509: short header')
+            expect(error.message).to include('OpenSSL::X509::CertificateError: PEM_read_bio_X509: bad end line')
           end
         end
 
         it 'throws an invalid Private Key error if an error occurs while loading the certificate private key' do
-          allow(Config).to receive(:nats_client_ca_private_key_path).and_return(asset('nats/invalid_nats_ca_certificate_private_key.pem'))
+          allow(Config).to receive(:nats_client_ca_private_key_path)
+            .and_return(asset('nats/invalid_nats_ca_certificate_private_key.pem'))
 
           expect { subject }.to raise_error(DeploymentNATSClientCertificateGenerationError) do |error|
             expect(error.message).to include('Error occurred while loading private key to generate NATS Client certificates')
-            expect(error.message).to include('OpenSSL::PKey::RSAError: Neither PUB key nor PRIV key: short header')
+            expect(error.message).to include('OpenSSL::PKey::RSAError: Neither PUB key nor PRIV key: bad end line')
           end
         end
 
         context 'when the key does not correspond to the certificate passed' do
           before do
             allow(Config).to receive(:nats_client_ca_certificate_path).and_return(asset('nats/nats_ca_certificate.pem'))
-            allow(Config).to receive(:nats_client_ca_private_key_path).and_return(asset('nats/one_off_intermediate_certificate_private_key.pem'))
+            allow(Config).to receive(:nats_client_ca_private_key_path)
+              .and_return(asset('nats/one_off_intermediate_certificate_private_key.pem'))
           end
 
           it 'throws an error' do
@@ -140,8 +142,10 @@ module Bosh
         end
 
         before do
-          allow(Config).to receive(:nats_client_ca_certificate_path).and_return(asset('nats/one_off_intermediate_certificate.pem'))
-          allow(Config).to receive(:nats_client_ca_private_key_path).and_return(asset('nats/one_off_intermediate_certificate_private_key.pem'))
+          allow(Config).to receive(:nats_client_ca_certificate_path)
+            .and_return(asset('nats/one_off_intermediate_certificate.pem'))
+          allow(Config).to receive(:nats_client_ca_private_key_path)
+            .and_return(asset('nats/one_off_intermediate_certificate_private_key.pem'))
         end
 
         it_behaves_like 'agents nats certificates generation'
