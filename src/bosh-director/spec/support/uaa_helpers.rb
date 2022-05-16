@@ -15,7 +15,7 @@ module Support
           'iss' => 'https://fake-url/oauth/token',
           'aud' =>['test']
       }
-      access_token = CF::UAA::TokenCoder.encode(token_data, {verify: false, skey: ''})
+      access_token = CF::UAA::TokenCoder.encode(token_data, {verify: false, skey: 's3cr3t'})
 
       CF::UAA::TokenInfo.new(
           token_type: 'bearer',
