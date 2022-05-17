@@ -2,12 +2,12 @@ variables:
 - name: default_ca
   type: certificate
   options:
-    duration: 1000
+    duration: 9999
     is_ca: true
 - name: nats
   type: certificate
   options:
-    duration: 1000
+    duration: 9999
     ca: default_ca
     common_name: default.nats.bosh-internal
     alternative_names:
@@ -20,7 +20,7 @@ variables:
 - name: director_client
   type: certificate
   options:
-    duration: 1000
+    duration: 9999
     ca: default_ca
     common_name: default.director.bosh-internal
     alternative_names:
@@ -33,7 +33,7 @@ variables:
 - name: hm_client
   type: certificate
   options:
-    duration: 1000
+    duration: 9999
     ca: default_ca
     common_name: default.hm.bosh-internal
     alternative_names:
@@ -46,7 +46,7 @@ variables:
 - name: test_client
   type: certificate
   options:
-    duration: 1000
+    duration: 9999
     ca: default_ca
     common_name: default.integration.test.bosh-internal
     alternative_names:

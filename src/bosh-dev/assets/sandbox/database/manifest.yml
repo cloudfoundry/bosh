@@ -2,12 +2,12 @@ variables:
 - name: default_ca
   type: certificate
   options:
-    duration: 1000
+    duration: 9999
     is_ca: true
 - name: database_server
   type: certificate
   options:
-    duration: 1000
+    duration: 9999
     ca: default_ca
     common_name: 127.0.0.1
     alternative_names:
@@ -17,7 +17,7 @@ variables:
 - name: database_client
   type: certificate
   options:
-    duration: 1000
+    duration: 9999
     ca: default_ca
     common_name: 127.0.0.1
     alternative_names:
