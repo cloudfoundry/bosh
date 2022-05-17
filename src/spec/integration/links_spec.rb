@@ -813,15 +813,12 @@ describe 'Links', type: :integration do
       out, exit_code = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true, return_exit_code: true)
 
       expect(exit_code).not_to eq(0)
-      expect(out).to include(<<~OUTPUT.strip)
-        Error: Failed to resolve links from deployment 'simple'. See errors below:
-          - Failed to resolve link 'db' with type 'bad_link' from job 'api_server_with_bad_link_types' in instance group 'api_server_with_bad_link_types'. Details below:
-            - No link providers found
-          - Failed to resolve link 'backup_db' with type 'bad_link_2' from job 'api_server_with_bad_link_types' in instance group 'api_server_with_bad_link_types'. Details below:
-            - No link providers found
-          - Failed to resolve link 'some_link_name' with type 'bad_link_3' from job 'api_server_with_bad_link_types' in instance group 'api_server_with_bad_link_types'. Details below:
-            - No link providers found
-      OUTPUT
+
+      expect(out).to include("No link providers found").at_least(3).times
+      expect(out).to include("- Failed to resolve link 'db' with type 'bad_link' from job 'api_server_with_bad_link_types' in instance group 'api_server_with_bad_link_types'. Details below:")
+      expect(out).to include("- Failed to resolve link 'backup_db' with type 'bad_link_2' from job 'api_server_with_bad_link_types' in instance group 'api_server_with_bad_link_types'. Details below:")
+      expect(out).to include("- Failed to resolve link 'some_link_name' with type 'bad_link_3' from job 'api_server_with_bad_link_types' in instance group 'api_server_with_bad_link_types'. Details below:")
+
     end
   end
 end
