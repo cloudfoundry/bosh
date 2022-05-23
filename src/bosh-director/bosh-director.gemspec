@@ -50,7 +50,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'nats-pure',        '~>0.6.2'
   spec.add_dependency 'openssl'
   spec.add_dependency 'netaddr',          '~>1.5.3.dev.1'
-  spec.add_dependency 'prometheus-client','~>1.0.0'
+  spec.add_dependency 'prometheus-client','~>2.1.0'
   spec.add_dependency 'puma'
   spec.add_dependency 'rack-test',        '~>0.6.2' # needed for console
   spec.add_dependency 'rake',             '~> 13.0.3'

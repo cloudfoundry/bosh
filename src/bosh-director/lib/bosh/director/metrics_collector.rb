@@ -116,8 +116,20 @@ module Bosh
         unresponsive_agent_counts = JSON.parse(response.body)
         return unless unresponsive_agent_counts.is_a?(Hash)
 
-        unresponsive_agent_counts.map do |deployment, count|
+        existing_deployment_names = @unresponsive_agents.values.map do |key, _|
+          # The keys within the Prometheus::Client::Metric#values method are actually hashes. So the
+          # data returned from values looks like:
+          # { { name: "deployment_a"} => 10, { name: "deployment_b "} => 0, ... }
+          key[:name]
+        end
+
+        unresponsive_agent_counts.each do |deployment, count|
           @unresponsive_agents.set(count, labels: { name: deployment })
+        end
+
+        removed_deployments = existing_deployment_names - unresponsive_agent_counts.keys
+        removed_deployments.each do |deployment|
+          @unresponsive_agents.set(0, labels: { name: deployment })
         end
       end
 
