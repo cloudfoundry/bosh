@@ -1,0 +1,28 @@
+<%=
+
+director = {
+  'url' => "https://#{p('director.address')}:#{p('director.port')}",
+  'user' => p('nats.director_account.user'),
+  'password' => p('nats.director_account.password'),
+  'client_id' => p('nats.director_account.client_id'),
+  'client_secret' => p('nats.director_account.client_secret'),
+  'ca_cert' => '/var/vcap/jobs/nats/config/uaa.pem',
+  'director_subject_file' => '/var/vcap/data/nats/director-subject',
+  'hm_subject_file' => '/var/vcap/data/nats/hm-subject',
+}
+
+params = {
+  'director' => director,
+  'intervals' => {
+    'poll_user_sync' => p('nats-sync.intervals.poll_user_sync'),
+  },
+  'nats' => {
+    'config_file_path' => '/var/vcap/data/nats/auth.json',
+  },
+  'logfile' => '/var/vcap/sys/log/nats/bosh-nats-sync.log',
+}
+
+YAML.dump(params)
+
+%>
+

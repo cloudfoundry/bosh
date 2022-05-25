@@ -3,14 +3,21 @@ name: nats
 
 templates:
   pre-start: bin/pre-start
+  post-deploy: bin/post-deploy
   bpm.yml: config/bpm.yml
   nats.cfg.erb: config/nats.cfg
   nats_client_ca.pem.erb: config/nats_client_ca.pem
   nats_server_certificate.pem.erb: config/nats_server_certificate.pem
   nats_server_private_key.erb: config/nats_server_private_key
+  nats_director_client_certificate.pem.erb: config/nats_director_client_certificate.pem
+  nats_hm_client_certificate.pem.erb: config/nats_hm_client_certificate.pem
+  bosh_nats_sync: bin/bosh_nats_sync
+  bosh_nats_sync_config.yml.erb: config/bosh_nats_sync_config.yml
+  uaa.pem.erb: config/uaa.pem
 
 packages:
-  - gonats
+  - nats
+  - ruby-3.1.0-r0.81.0
 
 properties:
   nats.listen_address:
@@ -24,7 +31,7 @@ properties:
     default: false
   nats.ping_interval:
     description: Time interval (in seconds) pings from server
-    default: 5
+    default: 5s
   nats.ping_max_outstanding:
     description: Maximum number of pings before declaring a client unresponsive
     default: 2
@@ -40,6 +47,14 @@ properties:
     default: 30
   nats.tls.ca:
     description: CA cert used by NATS server to verify clients certificates (For Mutual TLS Connections)
+  nats.tls.health_monitor.certificate:
+    description: |
+      Certificate for establishing mutual TLS with NATS server. The Common-Name for the certificate
+      should be "default.hm.bosh-internal"
+  nats.tls.director.certificate:
+    description: |
+      Certificate for NATs mutual TLS client (Director client). The Common-Name for this certificate
+      should be "default.director.bosh-internal"
   nats.tls.server.certificate:
     description: |
       Certificate used by the NATS server to serve TLS connections. The Common-Name for the certificate
@@ -49,3 +64,32 @@ properties:
   nats.tls.timeout:
     description: Timeout (in seconds) for TLS handshake
     default: 30
+
+  #
+  # Bosh Director options (to get the list of managed VMs)
+  #
+
+  director.address:
+    description: Address of the Bosh Director to connect to
+  director.port:
+    description: Port of the Bosh Director to connect to
+    default: 25555
+  nats.director_account.user:
+    description: User to access Bosh Director
+    default: ''
+  nats.director_account.password:
+    description: Password to access Bosh Director
+    default: ''
+  nats.director_account.client_id:
+    description: UAA client id to access Bosh Director
+    default: ''
+  nats.director_account.client_secret:
+    description: UAA client secret to access Bosh Director
+    default: ''
+  nats.director_account.ca_cert:
+    description: Certificate to verify UAA endpoint
+    default: ''
+
+  nats-sync.intervals.poll_user_sync:
+    description: Interval (in seconds) to get the list of managed VMs from Bosh Director
+    default: 10

@@ -6,6 +6,56 @@ require 'json'
 require 'bosh/template/evaluation_context'
 require_relative './template_example_group'
 
+describe 'bosh_nats_sync_config.yml.erb' do
+  it_should_behave_like 'a rendered file' do
+    let(:file_name) { '../jobs/nats/templates/bosh_nats_sync_config.yml.erb' }
+    let(:properties) do
+      {
+        'properties' => {
+          'director' => {
+            'address' => '10.9.9.20',
+            'port' => '25555'
+          },
+          'nats' => {
+            'director_account' => {
+              'client_id' => 'my-client',
+              'client_secret' => 'my-client-secret',
+              'user' => 'my-user',
+              'password' => 'my-password'
+            },
+          },
+          'nats-sync' => {
+            'intervals' => {
+              'poll_user_sync' => "sync-me",
+            }
+          }
+        }
+      }
+    end
+    let(:expected_content) do
+      <<~HEREDOC
+        ---
+        director:
+          url: https://10.9.9.20:25555
+          user: my-user
+          password: my-password
+          client_id: my-client
+          client_secret: my-client-secret
+          ca_cert: "/var/vcap/jobs/nats/config/uaa.pem"
+          director_subject_file: "/var/vcap/data/nats/director-subject"
+          hm_subject_file: "/var/vcap/data/nats/hm-subject"
+        intervals:
+          poll_user_sync: sync-me
+        nats:
+          config_file_path: "/var/vcap/data/nats/auth.json"
+        logfile: "/var/vcap/sys/log/nats/bosh-nats-sync.log"
+
+
+      HEREDOC
+    end
+  end
+end
+
 describe 'nats.cfg.erb' do
   it_should_behave_like 'a rendered file' do
     let(:file_name) { '../jobs/nats/templates/nats.cfg.erb' }
@@ -39,55 +89,42 @@ describe 'nats.cfg.erb' do
         log_file: /var/vcap/sys/log/nats/nats.log
 
         authorization {
-          DIRECTOR_PERMISSIONS: {
-            publish: [
-              "agent.*",
-              "hm.director.alert"
-            ]
-            subscribe: ["director.>"]
-          }
-
-          AGENT_PERMISSIONS: {
-            publish: [
-              "hm.agent.heartbeat._CLIENT_ID",
-              "hm.agent.alert._CLIENT_ID",
-              "hm.agent.shutdown._CLIENT_ID",
-              "director.*._CLIENT_ID.*"
-            ]
-            subscribe: ["agent._CLIENT_ID"]
-          }
-
-          HM_PERMISSIONS: {
-            publish: []
-            subscribe: [
-              "hm.agent.heartbeat.*",
-              "hm.agent.alert.*",
-              "hm.agent.shutdown.*",
-              "hm.director.alert"
-            ]
-          }
-
-          certificate_clients: [
-            {client_name: director.bosh-internal, permissions: $DIRECTOR_PERMISSIONS},
-            {client_name: agent.bosh-internal, permissions: $AGENT_PERMISSIONS},
-            {client_name: hm.bosh-internal, permissions: $HM_PERMISSIONS},
+          users = [
+            {
+              user: "C=USA, O=Cloud Foundry, CN=default.director.bosh-internal"
+              permissions: {
+                publish: [ "agent.*", "hm.director.alert" ]
+                subscribe: [ "director.>" ]
+              }
+            },
+            {
+              user: "C=USA, O=Cloud Foundry, CN=default.hm.bosh-internal"
+              permissions: {
+                publish: []
+                subscribe: [
+                  "hm.agent.heartbeat.*",
+                  "hm.agent.alert.*",
+                  "hm.agent.shutdown.*",
+                  "hm.director.alert"
+               ]
+              }
+            }
           ]
-
-          timeout: 10
         }
 
         tls {
-          cert_file:  "/var/vcap/jobs/nats/config/nats_server_certificate.pem"
-          key_file:   "/var/vcap/jobs/nats/config/nats_server_private_key"
-          ca_file:    "/var/vcap/jobs/nats/config/nats_client_ca.pem"
-          verify:     true
-          timeout:    10
-          enable_cert_authorization: true
+          cert_file:          "/var/vcap/jobs/nats/config/nats_server_certificate.pem"
+          key_file:           "/var/vcap/jobs/nats/config/nats_server_private_key"
+          ca_file:            "/var/vcap/jobs/nats/config/nats_client_ca.pem"
+          verify_and_map:     true
+          timeout:            10
         }
 
         ping_interval: 7
         ping_max: 10
         max_payload: 1572864
+
+        include ../../../data/nats/auth.json
       HEREDOC
     end
   end
@@ -102,6 +139,44 @@ describe 'nats_client_ca.pem.erb' do
           'nats' => {
             'tls' => {
               'ca' => content
+            }
+          }
+        }
+      }
+    end
+  end
+end
+
+describe 'nats_director_client_certificate.pem.erb' do
+  it_should_behave_like 'a rendered file' do
+    let(:file_name) { '../jobs/nats/templates/nats_director_client_certificate.pem.erb' }
+    let(:properties) do
+      {
+        'properties' => {
+          'nats' => {
+            'tls' => {
+              'director' => {
+                'certificate' => content
+              }
+            }
+          }
+        }
+      }
+    end
+  end
+end
+
+describe 'nats_hm_client_certificate.pem.erb' do
+  it_should_behave_like 'a rendered file' do
+    let(:file_name) { '../jobs/nats/templates/nats_hm_client_certificate.pem.erb' }
+    let(:properties) do
+      {
+        'properties' => {
+          'nats' => {
+            'tls' => {
+              'health_monitor' => {
+                'certificate' => content
+              }
             }
           }
         }

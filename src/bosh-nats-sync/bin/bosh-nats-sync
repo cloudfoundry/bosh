@@ -1,0 +1,27 @@
+#!/usr/bin/env ruby
+
+require 'nats_sync'
+require 'optparse'
+
+config_file = nil
+
+opts = OptionParser.new do |opts|
+  opts.on('-c', '--config FILE', 'configuration file') do |opt|
+    config_file = opt
+  end
+end
+
+opts.parse!(ARGV.dup)
+
+if config_file.nil?
+  puts opts
+  exit 1
+end
+
+runner = NATSSync::Runner.new(config_file)
+
+Signal.trap('INT') do
+  runner.stop
+end
+
+runner.run
