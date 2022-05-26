@@ -260,6 +260,23 @@ module Bosh
               expect(metric.values).to be_empty
             end
           end
+
+          context 'when a deployment is deleted after metrics are gathered' do
+            before do
+              stub_request(:get, /unresponsive_agents/)
+                .to_return(status: 200, body: JSON.dump('flaky_deployment' => 1, 'good_deployment' => 0))
+              metrics_collector.start
+
+              stub_request(:get, /unresponsive_agents/)
+                .to_return(status: 200, body: JSON.dump('good_deployment' => 0))
+              scheduler.tick
+            end
+
+            it 'resets the metrics for the deleted deployment' do
+              metric = Prometheus::Client.registry.get(:bosh_unresponsive_agents)
+              expect(metric.get(labels: { name: 'flaky_deployment' })).to eq(0)
+            end
+          end
         end
 
         describe 'task metrics' do
