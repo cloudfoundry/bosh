@@ -21,7 +21,7 @@ run:
   path: bosh-src/ci/tasks/test-integration.sh
 
 params:
-  RUBY_VERSION:            3.1.0
+  RUBY_VERSION:            3.1.2
   DB:                      postgresql
   LOG_LEVEL:               ERROR
   SPEC_PATH:               ~

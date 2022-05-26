@@ -1,7 +1,7 @@
 ---
 name: health_monitor
 dependencies:
-- ruby-3.1.0-r0.81.0
+- ruby-3.1.2-r0.93.0
 
 files:
 - bosh-monitor/**/*

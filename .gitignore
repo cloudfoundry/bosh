@@ -79,3 +79,4 @@ src/parallel_runtime_rspec.log
 cscope.out
 .starscope.db
 /src/vendor/cache/extensions/*
+/src/vendor/ruby

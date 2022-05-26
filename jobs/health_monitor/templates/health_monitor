@@ -1,4 +1,4 @@
 #!/bin/bash
 
-source /var/vcap/packages/ruby-3.1.0-r0.81.0/bosh/runtime.env
+source /var/vcap/packages/ruby-3.1.2-r0.93.0/bosh/runtime.env
 exec /var/vcap/packages/health_monitor/bin/bosh-monitor -c /var/vcap/jobs/health_monitor/config/health_monitor.yml

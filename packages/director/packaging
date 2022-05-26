@@ -5,7 +5,7 @@ mkdir -p ${BOSH_INSTALL_TARGET}/{bin,gem_home}
 libpq_dir=/var/vcap/packages/libpq
 mysqlclient_dir=/var/vcap/packages/mysql
 
-source /var/vcap/packages/ruby-3.1.0-r0.81.0/bosh/compile.env
+source /var/vcap/packages/ruby-3.1.2-r0.93.0/bosh/compile.env
 
 for gemspec in $( find . -maxdepth 2 -name *.gemspec ); do
   gem_name="$( basename "$( dirname "$gemspec" )" )"

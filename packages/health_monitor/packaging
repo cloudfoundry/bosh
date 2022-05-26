@@ -2,7 +2,7 @@ set -e
 
 mkdir -p ${BOSH_INSTALL_TARGET}/{bin,gem_home}
 
-source /var/vcap/packages/ruby-3.1.0-r0.81.0/bosh/compile.env
+source /var/vcap/packages/ruby-3.1.2-r0.93.0/bosh/compile.env
 
 cat > Gemfile <<EOF
 # Explicitly require vendored version to avoid requiring builtin json gem
