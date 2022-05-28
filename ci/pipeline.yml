@@ -699,7 +699,11 @@ jobs:
         image: main-ruby-go-image
         file: bosh-src-latest-with-release-commit/ci/tasks/finalize-bosh-release.yml
         params:
-          RELEASE_PRIVATE_YML: ((bosh_release_private_yml))
+          RELEASE_PRIVATE_YML: |
+            blobstore:
+              options:
+                credentials_source: static
+                json_key: '((bosh_release_blobs_gcp_credentials_json))'
       - put: bosh-src
         params:
           repository: bosh-src-latest-with-release-commit
@@ -885,6 +889,8 @@ jobs:
       - get: bosh-src
       - get: nginx-release
         trigger: true
+      - get: ruby-release
+        trigger: true
     - task: bump-nginx-packages
       file: nginx-release/ci/shared/bump-nginx-package.yml
       input_mapping:
@@ -893,7 +899,26 @@ jobs:
         output_repo: bosh-src-out
       params:
         PACKAGES: [nginx]
-        PRIVATE_YML: ((bosh_release_private_yml))
+        PRIVATE_YML: |
+          blobstore:
+            options:
+              credentials_source: static
+              json_key: '((bosh_release_blobs_gcp_credentials_json))'
+    - task: bump-ruby-package
+      file: ruby-release/ci/tasks/shared/bump-ruby-package.yml
+      input_mapping:
+        bosh-release: bosh-src-out
+      output_mapping:
+        bosh-release: bosh-src-out
+      params:
+        GIT_USER_NAME: CI Bot
+        GIT_USER_EMAIL: cf-bosh-eng@pivotal.io
+        PACKAGE: ruby-3.1
+        PRIVATE_YML: |
+          blobstore:
+            options:
+              credentials_source: static
+              json_key: '((bosh_release_blobs_gcp_credentials_json))'
     - put: bosh-src
       params:
         repository: bosh-src-out
@@ -1097,6 +1122,12 @@ resources:
     type: git
     source:
       uri: https://github.com/bosh-packages/nginx-release.git
+      branch: master
+
+  - name: ruby-release
+    type: git
+    source:
+      uri: https://github.com/bosh-packages/ruby-release
       branch: master
 
   - name: tracker-output
