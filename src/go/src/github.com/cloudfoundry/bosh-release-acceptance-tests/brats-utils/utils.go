@@ -344,7 +344,7 @@ func StartInnerBoshWithExpectation(expectedFailure bool, expectedErrorToMatch st
 	effectiveArgs = append(effectiveArgs, args...)
 
 	cmd := exec.Command(
-		fmt.Sprintf("../../../../../../../ci/dockerfiles/docker-cpi/start-inner-bosh-parallel.sh"),
+		"../../../../../../../ci/dockerfiles/docker-cpi/start-inner-bosh-parallel.sh",
 		effectiveArgs...,
 	)
 	cmd.Env = os.Environ()
@@ -362,7 +362,7 @@ func StartInnerBoshWithExpectation(expectedFailure bool, expectedErrorToMatch st
 
 func CreateAndUploadBOSHRelease() {
 	cmd := exec.Command(
-		fmt.Sprintf("../../../../../../../ci/dockerfiles/docker-cpi/create-and-upload-release.sh"),
+		"../../../../../../../ci/dockerfiles/docker-cpi/create-and-upload-release.sh",
 		strconv.Itoa(config.GinkgoConfig.ParallelNode),
 	)
 	cmd.Env = os.Environ()
