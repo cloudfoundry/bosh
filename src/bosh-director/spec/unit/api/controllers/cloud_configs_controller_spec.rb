@@ -116,34 +116,125 @@ module Bosh::Director
         expect(event.user).to eq('admin')
         expect(event.error).to eq('Manifest should not be empty')
       end
+
+      context 'when name is the empty string' do
+        before { authorize 'admin', 'admin' }
+
+        let(:path) { '/?name=' }
+        let(:content) { YAML.dump(Bosh::Spec::Deployments.simple_cloud_config) }
+
+        it "creates a new cloud config with name 'default'" do
+          post path, content, 'CONTENT_TYPE' => 'text/yaml'
+
+          expect(last_response.status).to eq(201)
+          expect(Bosh::Director::Models::Config.first.name).to eq('default')
+        end
+      end
+
+      context 'when a name is passed in via a query param' do
+        before { authorize 'admin', 'admin' }
+
+        let(:path) { '/?name=smurf' }
+        let(:content) { YAML.dump(Bosh::Spec::Deployments.simple_cloud_config) }
+
+        it 'creates a new named cloud config' do
+          post path, content, 'CONTENT_TYPE' => 'text/yaml'
+
+          expect(last_response.status).to eq(201)
+          expect(Bosh::Director::Models::Config.first.name).to eq('smurf')
+        end
+
+        it 'ignores named cloud config when config already exists' do
+          Models::Config.make(:cloud, content: content, name: 'smurf')
+
+          expect do
+            post path, content, 'CONTENT_TYPE' => 'text/yaml'
+          end.to_not change(Models::Config, :count)
+
+          expect(last_response.status).to eq(201)
+        end
+
+        it 'creates a new event and add name to event context' do
+          expect do
+            post path, content, 'CONTENT_TYPE' => 'text/yaml'
+          end.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
+
+          event = Bosh::Director::Models::Event.first
+          expect(event.object_type).to eq('cloud-config')
+          expect(event.object_name).to eq('smurf')
+          expect(event.action).to eq('update')
+          expect(event.user).to eq('admin')
+        end
+      end
     end
 
     describe 'GET', '/' do
-      it 'returns the number of cloud configs specified by ?limit' do
+      it "returns the number of cloud configs specified by ?limit and only considers 'default' names" do
         authorize('admin', 'admin')
 
         Models::Config.make(
           :cloud,
           content: 'config_from_time_immortal',
+          created_at: Time.now - 4,
+          name: 'not-default'
+        )
+        Models::Config.make(
+          :cloud,
+          content: 'config_from_second_last_year',
           created_at: Time.now - 3,
+          name: 'default'
         )
         Models::Config.make(
           :cloud,
           content: 'config_from_last_year',
           created_at: Time.now - 2,
+          name: 'not-default'
         )
         newer_cloud_config_content = "---\nsuper_shiny: new_config"
         Models::Config.make(
           :cloud,
           content: newer_cloud_config_content,
           created_at: Time.now - 1,
+          name: 'default'
         )
 
         get '/?limit=2'
 
         expect(last_response.status).to eq(200)
         expect(JSON.parse(last_response.body).count).to eq(2)
-        expect(JSON.parse(last_response.body).first['properties']).to eq(newer_cloud_config_content)
+        expect(JSON.parse(last_response.body)[0]['properties']).to eq(newer_cloud_config_content)
+        expect(JSON.parse(last_response.body)[1]['properties']).to eq('config_from_second_last_year')
+      end
+
+      it "returns the cloud configs specified by name" do
+        authorize('admin', 'admin')
+
+        Models::Config.make(
+          :cloud,
+          content: 'config_from_second_last_year',
+          created_at: Time.now - 3,
+          name: 'not-default'
+        )
+        Models::Config.make(
+          :cloud,
+          content: 'config_from_last_year',
+          created_at: Time.now - 2,
+          name: 'not-default'
+        )
+        newer_cloud_config_content = "---\nsuper_shiny: new_config"
+        Models::Config.make(
+          :cloud,
+          content: newer_cloud_config_content,
+          created_at: Time.now - 1,
+          name: 'default'
+        )
+
+        get '/?limit=2&name=not-default'
+
+        expect(last_response.status).to eq(200)
+        expect(JSON.parse(last_response.body).count).to eq(2)
+        expect(JSON.parse(last_response.body)[0]['properties']).to eq('config_from_last_year')
+        expect(JSON.parse(last_response.body)[1]['properties']).to eq('config_from_second_last_year')
       end
 
       it 'returns STATUS 400 if limit was not specified or malformed' do
@@ -277,7 +368,7 @@ module Bosh::Director
 
         end
 
-        context 'when there are two previous cloud config ' do
+        context 'when there are two previous cloud config' do
           before do
             Models::Config.make(:cloud, name: 'foo',content: YAML.dump(cloud_config_hash_with_one_az))
             Models::Config.make(:cloud, content: YAML.dump(cloud_config_hash_with_two_azs))
@@ -286,6 +377,21 @@ module Bosh::Director
             post(
                 '/diff',
                 YAML.dump(cloud_config_hash_with_two_azs),
+                {'CONTENT_TYPE' => 'text/yaml'}
+            )
+            expect(last_response.body).to eq('{"diff":[]}')
+          end
+        end
+
+        context 'when a config name is provided' do
+          before do
+            Models::Config.make(:cloud, name: 'foo',content: YAML.dump(cloud_config_hash_with_one_az))
+            Models::Config.make(:cloud, content: YAML.dump(cloud_config_hash_with_two_azs))
+          end
+          it 'always diffs against the named cloud config' do
+            post(
+                '/diff?name=foo',
+                YAML.dump(cloud_config_hash_with_one_az),
                 {'CONTENT_TYPE' => 'text/yaml'}
             )
             expect(last_response.body).to eq('{"diff":[]}')
