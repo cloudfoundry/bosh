@@ -86,10 +86,11 @@ module Bosh::Director::DeploymentPlan
         },
         'env' => { 'bosh' => { 'password' => 'foobar' } },
         'networks' => network_settings,
-        'stemcell' => { 'name' => 'ubuntu-stemcell', 'version' => '1' },
+        'stemcell' => { 'name' => 'ubuntu-stemcell', 'version' => '1', 'os' => operating_system },
       }
     end
 
+    let(:operating_system) { 'ubuntu' }
     let(:use_dns_addresses) { false }
     let(:use_short_dns_addresses) { false }
     let(:tags) do
@@ -173,6 +174,7 @@ module Bosh::Director::DeploymentPlan
       Bosh::Director::Models::Stemcell.make(
         name: deployment_manifest['stemcells'].first['name'],
         version: deployment_manifest['stemcells'].first['version'],
+        operating_system: operating_system,
       )
 
       Bosh::Director::Config.current_job = Bosh::Director::Jobs::BaseJob.new
@@ -1079,6 +1081,45 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
+      context "when it's a multi-CPI deployment (CPIs are defined)" do
+        let(:spec) do
+          {
+            'vm_type' =>
+              {
+                'name' => 'original_vm_type_name',
+                'cloud_properties' => { 'old' => 'value' },
+              },
+            'env' => { 'bosh' => { 'password' => 'foobar' } },
+            'networks' => network_settings,
+            'stemcell' => { 'name' => 'deployed-stemcell', 'os' => 'ubuntu', 'version' => '1' },
+          }
+        end
+        let(:availability_zone) { AvailabilityZone.new('foo-az', { 'old' => 'value' }, 'foo-cpi') }
+        before do
+          Bosh::Director::Models::Stemcell.make(
+            name: 'deployed-stemcell',
+            operating_system: 'ubuntu', # can't use deployment_manifest['stemcells'].first['os']; it's nil
+            version: deployment_manifest['stemcells'].first['version'],
+            cpi: 'foo-cpi',
+          )
+        end
+        context "when the stemcell hasn't changed" do
+          it "returns false because we don't need to recreate" do
+            expect(instance_plan.recreate_for_non_network_reasons?).to be(false)
+          end
+        end
+        context "when the stemcell has changed" do
+          before do
+            instance_plan.existing_instance.update(spec: spec.merge(
+              'stemcell' => { 'os' => 'ubuntu', 'version' => '2' },
+            ))
+          end
+          it "returns true because we need to recreate" do
+            expect(instance_plan.recreate_for_non_network_reasons?).to be(true)
+          end
+        end
+      end
+
       context 'when the network has changed' do
         # everything else should be the same
         let(:availability_zone) { AvailabilityZone.new('foo-az', 'old' => 'value') }
@@ -1180,6 +1221,57 @@ module Bosh::Director::DeploymentPlan
 
         it 'returns false for stemcell changed' do
           expect(instance_plan.recreate_for_non_network_reasons?).to be_falsey
+        end
+      end
+    end
+
+    describe 'stemcell_model_for_cpi' do
+      before do
+        Bosh::Director::Models::Stemcell.make(
+          name: 'a-different-name-to-sidestep-uniqueness-constraints',
+          version: deployment_manifest['stemcells'].first['version'],
+          operating_system: operating_system,
+        )
+      end
+
+      let (:cpi) { 'foo-cpi' }
+      context "when there's no availability zone" do
+        let(:availability_zone) { nil }
+        it "returns the instance's stemcell model, which is the pre-multi-CPI behavior" do
+          expect(instance_plan.stemcell_model_for_cpi(instance)).to eq(instance.stemcell.models.first)
+        end
+      end
+      context "when there's an availability zone but no CPI" do
+        it "returns the instance's stemcell model, which is the pre-multi-CPI behavior" do
+          expect(instance_plan.stemcell_model_for_cpi(instance)).to eq(instance.stemcell.models.first)
+        end
+      end
+      context "when there's a CPI but no matching stemcell models" do
+        let(:availability_zone) { AvailabilityZone.new('foo-az', { 'a' => 'b' }, 'foo-cpi') }
+        it "returns the instance's stemcell model, which is the pre-multi-CPI behavior" do
+          expect(instance_plan.stemcell_model_for_cpi(instance)).to eq(instance.stemcell.models.first)
+        end
+      end
+      context "when there's a CPI and there are matching models" do
+        let(:availability_zone) { AvailabilityZone.new('foo-az', { 'a' => 'b' }, 'foo-cpi') }
+        before do
+          # A bad model, same as the good model except wrong cpi
+          Bosh::Director::Models::Stemcell.make(
+            name: deployment_manifest['stemcells'].first['name'],
+            version: deployment_manifest['stemcells'].first['version'],
+            operating_system: operating_system,
+            cpi: 'wrong-cpi',
+          )
+        end
+        # which fixes a bug where multi-CPI would erroneously conclude a stemcell change
+        it "returns the stemcell model for the appropriate CPI" do
+          good_model = Bosh::Director::Models::Stemcell.make(
+            name: deployment_manifest['stemcells'].first['name'],
+            version: deployment_manifest['stemcells'].first['version'],
+            operating_system: operating_system,
+            cpi: 'foo-cpi',
+          )
+          expect(instance_plan.stemcell_model_for_cpi(instance)).to eq(good_model)
         end
       end
     end
