@@ -428,6 +428,28 @@ module Bosh
           instance_model.update(spec: spec.full_spec)
         end
 
+        def stemcell_model_for_cpi(instance)
+          return instance.stemcell.models.first if instance&.availability_zone.nil? # no AZ, ergo no CPI
+          return instance.stemcell.models.first if instance&.availability_zone&.cpi.nil? # no CPI, ergo no CPI
+
+          # Don't use "instance.stemcell.name" ("bosh-vsphere-esxi-ubuntu-jammy-go_agent") to filter;
+          # it's unique across CPIs (e.g. contains substring "vsphere") & won't match properly
+          stemcell_model_cpi = Bosh::Director::Models::Stemcell.where(
+            version: instance.stemcell.version,
+            operating_system: instance.stemcell.os,
+            cpi: instance.availability_zone.cpi,
+          ).first
+
+          # stemcell_model_cpi should ALWAYS have a value, but if for some reason it's nil we fallback to original behavior
+          stemcell_model_cpi ||= instance.stemcell.models.first
+          @logger.debug("#{__method__} instance: #{instance}, stemcell name: #{stemcell_model_cpi.name}, " \
+                          "version: #{stemcell_model_cpi.version}, " \
+                          "os: #{stemcell_model_cpi.operating_system}, " \
+                          "cpi: #{stemcell_model_cpi.cpi}")
+
+          stemcell_model_cpi
+        end
+
         private
 
         def remove_dns_record_name_from_network_settings(network_settings)
@@ -452,19 +474,25 @@ module Bosh
         end
 
         def stemcell_changed?
-          if @existing_instance&.spec_p('stemcell.name') &&
-             @instance.stemcell.name != @existing_instance.spec_p('stemcell.name')
-            log_changes(__method__, @existing_instance.spec_p('stemcell.name'), @instance.stemcell.name, @existing_instance)
+          instance_stemcell_model = stemcell_model_for_cpi(instance)
+          if existing_instance&.spec_p('stemcell.name') &&
+            instance_stemcell_model.name != existing_instance.spec_p('stemcell.name')
+            log_changes(
+              __method__,
+              existing_instance.spec_p('stemcell.name'),
+              instance_stemcell_model.name,
+              existing_instance,
+            )
             return true
           end
 
-          if @existing_instance&.spec_p('stemcell.version') &&
-             @instance.stemcell.version != @existing_instance.spec_p('stemcell.version')
+          if existing_instance&.spec_p('stemcell.version') &&
+            instance_stemcell_model.version != existing_instance.spec_p('stemcell.version')
             log_changes(
               __method__,
-              "version: #{@existing_instance.spec_p('stemcell.version')}",
-              "version: #{@instance.stemcell.version}",
-              @existing_instance,
+              "version: #{existing_instance.spec_p('stemcell.version')}",
+              "version: #{instance_stemcell_model.version}",
+              existing_instance,
             )
             return true
           end
