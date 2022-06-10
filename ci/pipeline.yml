@@ -15,6 +15,9 @@ groups:
       - compile-bosh-dev-release-bionic
       - bats-ubuntu-bionic
       - brats-ubuntu-bionic
+      - compile-bosh-dev-release-jammy
+      - bats-ubuntu-jammy
+      - brats-ubuntu-jammy
       - bats-ubuntu-xenial
       - bosh-disaster-recovery-acceptance-tests
       - upgrade
@@ -454,6 +457,211 @@ jobs:
               gcp_mysql_databasename: ((brats-gcp-mysql-external-db-name))
               gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
               gcp_private_network_name: brats-ubuntu-bionic-((branch_name))
+              concourse_authorized_network: ((concourse_egress_ip))
+            env:
+              GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
+            action: destroy
+
+
+  - name: compile-bosh-dev-release-jammy
+    plan:
+    - in_parallel:
+      - get: bosh-src
+        passed: [candidate-release]
+      - get: release
+        resource: bosh-candidate-release-tarballs
+        passed: [candidate-release]
+        trigger: true
+      - get: stemcell
+        resource: warden-ubuntu-jammy
+        trigger: true
+      - get: docker-cpi-image
+    - task: export-release
+      image: docker-cpi-image
+      file: bosh-src/ci/tasks/export-release.yml
+      privileged: true
+    - put: bosh-compiled-candidate-jammy
+      params:
+        file: "compiled-release/*.tgz"
+
+  - name: bats-ubuntu-jammy
+    serial: true
+    plan:
+    - do:
+      - in_parallel:
+        - get: bosh-candidate-release-tarballs
+          passed: [compile-bosh-dev-release-jammy]
+        - get: bosh-release
+          resource: bosh-compiled-candidate-jammy
+          trigger: true
+          passed: [compile-bosh-dev-release-jammy]
+        - get: cpi-release
+        - get: stemcell
+          resource: vsphere-esxi-ubuntu-jammy
+        - get: bosh-cli
+        - get: bats
+        - get: bosh-deployment
+        - get: bosh-src
+          passed: [compile-bosh-dev-release-jammy]
+        - get: main-ruby-go-image
+      - put: environment
+        resource: nimbus-environment
+        params:
+          acquire: true
+      - do:
+        - task: deploy-director
+          tags: [nimbus]
+          file: bosh-src/ci/bats/tasks/deploy-director.yml
+          image: main-ruby-go-image
+          params:
+            BAT_INFRASTRUCTURE: vsphere
+            BOSH_CLIENT: ((stemcell-test-director-username))
+            BOSH_CLIENT_SECRET: ((stemcell-test-director-password))
+            BOSH_VAR_vcenter_ip: "((nimbus_concourse-testbed-bosh-main_ip))"
+            BOSH_VAR_vcenter_user: "((nimbus_concourse-testbed-bosh-main_user.username))"
+            BOSH_VAR_vcenter_password: "((nimbus_concourse-testbed-bosh-main_user.password))"
+            BOSH_VAR_vcenter_cluster: "((nimbus_concourse-testbed-bosh-main_cluster))"
+            BOSH_VAR_vcenter_dc: "((nimbus_concourse-testbed-bosh-main_dc))"
+            BOSH_VAR_vcenter_ds: "((nimbus_concourse-testbed-bosh-main_ds))"
+            BOSH_VAR_vcenter_rp: "((nimbus_concourse-testbed-bosh-main_rp))"
+            DEPLOY_ARGS: |
+              -o bosh-deployment/vsphere/resource-pool.yml
+              -o bosh-deployment/vsphere/use-jammy.yml
+              --vars-env=BOSH_VAR
+        - task: prepare-bats
+          tags: [nimbus]
+          file: bosh-src/ci/bats/iaas/vsphere/prepare-bats-config.yml
+          image: main-ruby-go-image
+          params:
+            STEMCELL_NAME: bosh-vsphere-esxi-ubuntu-jammy-go_agent
+        - task: run-bats
+          tags: [nimbus]
+          file: bats/ci/tasks/run-bats.yml
+          image: main-ruby-go-image
+      ensure:
+        do:
+        - task: teardown
+          tags: [nimbus]
+          file: bosh-src/ci/bats/tasks/destroy-director.yml
+          image: main-ruby-go-image
+          attempts: 3
+        - put: environment
+          resource: nimbus-environment
+          params:
+           release: environment
+          attempts: 3
+
+  - name: brats-ubuntu-jammy
+    serial: true
+    plan:
+    - in_parallel:
+      - get: bosh-src
+        passed: [compile-bosh-dev-release-jammy]
+      - get: bosh-dns-release
+      - get: stemcell
+        resource: warden-ubuntu-jammy
+      - get: bosh-candidate-release-tarballs
+        passed: [compile-bosh-dev-release-jammy]
+      - get: bosh-release
+        resource: bosh-compiled-candidate-jammy
+        trigger: true
+        passed: [compile-bosh-dev-release-jammy]
+      - get: bosh-deployment
+      - get: docker-cpi-image
+    - do:
+      - put: brats-terraform
+        attempts: 2
+        params:
+          env_name: brats-ubuntu-jammy-((branch_name))
+          terraform_source: bosh-src/ci/brats
+          vars:
+            rds_mysql_username: ((brats-rds-mysql-external-db-user))
+            rds_mysql_password: ((brats-rds-mysql-external-db-password))
+            rds_mysql_databasename: ((brats-rds-mysql-external-db-name))
+            rds_postgres_username: ((brats-rds-postgres-external-db-user))
+            rds_postgres_password: ((brats-rds-postgres-external-db-password))
+            rds_postgres_databasename: ((brats-rds-postgres-external-db-name))
+            aws_access_key_id: ((bosh-ci-database-terraform-rds-aws-access-key-id))
+            aws_secret_access_key: ((bosh-ci-database-terraform-rds-aws-secret-access-key))
+            gcp_mysql_databasename: ((brats-gcp-mysql-external-db-name))
+            gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
+            gcp_private_network_name: brats-ubuntu-jammy-((branch_name))
+            concourse_authorized_network: ((concourse_egress_ip))
+          env:
+            GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
+      - task: create-brats-sql-users
+        file: bosh-src/ci/tasks/create-brats-sql-users.yml
+        params:
+          GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
+          GCP_POSTGRES_USERNAME: ((brats-gcp-postgres-external-db-user))
+          GCP_POSTGRES_PASSWORD: ((brats-gcp-postgres-external-db-password))
+          GCP_MYSQL_USERNAME: ((brats-gcp-mysql-external-db-user))
+          GCP_MYSQL_PASSWORD: ((brats-gcp-mysql-external-db-password))
+        input_mapping:
+          terraform-output: brats-terraform
+      - task: create-ssl-certificates
+        attempts: 2
+        file: bosh-src/ci/tasks/create-brats-ssl-certificates.yml
+        params:
+          GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
+        input_mapping:
+          terraform-output: brats-terraform
+      - task: test-brats
+        image: docker-cpi-image
+        file: bosh-src/ci/tasks/test-brats.yml
+        input_mapping:
+          database-metadata: brats-terraform
+        privileged: true
+        params: &brats-dbs-params
+          RDS_MYSQL_EXTERNAL_DB_USER: ((brats-rds-mysql-external-db-user))
+          RDS_MYSQL_EXTERNAL_DB_PASSWORD: ((brats-rds-mysql-external-db-password))
+          RDS_MYSQL_EXTERNAL_DB_NAME: ((brats-rds-mysql-external-db-name))
+          RDS_POSTGRES_EXTERNAL_DB_USER: ((brats-rds-postgres-external-db-user))
+          RDS_POSTGRES_EXTERNAL_DB_PASSWORD: ((brats-rds-postgres-external-db-password))
+          RDS_POSTGRES_EXTERNAL_DB_NAME: ((brats-rds-postgres-external-db-name))
+          GCP_MYSQL_EXTERNAL_DB_USER: ((brats-gcp-mysql-external-db-user))
+          GCP_MYSQL_EXTERNAL_DB_PASSWORD: ((brats-gcp-mysql-external-db-password))
+          GCP_MYSQL_EXTERNAL_DB_NAME: ((brats-gcp-mysql-external-db-name))
+          GCP_POSTGRES_EXTERNAL_DB_USER: ((brats-gcp-postgres-external-db-user))
+          GCP_POSTGRES_EXTERNAL_DB_PASSWORD: ((brats-gcp-postgres-external-db-password))
+          GCP_POSTGRES_EXTERNAL_DB_NAME: ((brats-gcp-postgres-external-db-name))
+          GCP_PRIVATE_NETWORK_NAME: brats-ubuntu-bionic-((branch_name))
+          STEMCELL_OS: ubuntu-jammy
+      ensure:
+        do:
+        - task: cleanup-external-dbs
+          file: bosh-src/ci/tasks/test-brats-db-cleanup.yml
+          input_mapping:
+            database-metadata: brats-terraform
+          params: *brats-dbs-params
+        - task: destroy-brats-sql-users
+          file: bosh-src/ci/tasks/destroy-brats-sql-users.yml
+          params:
+            GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
+            GCP_POSTGRES_USERNAME: ((brats-gcp-postgres-external-db-user))
+            GCP_POSTGRES_PASSWORD: ((brats-gcp-postgres-external-db-password))
+            GCP_MYSQL_USERNAME: ((brats-gcp-mysql-external-db-user))
+            GCP_MYSQL_PASSWORD: ((brats-gcp-mysql-external-db-password))
+          input_mapping:
+            terraform-output: brats-terraform
+        - put: brats-terraform
+          attempts: 3
+          get_params: { action: destroy }
+          params:
+            env_name: brats-ubuntu-bjammyionic-((branch_name))
+            terraform_source: bosh-src/ci/brats
+            vars:
+              rds_mysql_username: ((brats-rds-mysql-external-db-user))
+              rds_mysql_password: ((brats-rds-mysql-external-db-password))
+              rds_mysql_databasename: ((brats-rds-mysql-external-db-name))
+              rds_postgres_username: ((brats-rds-postgres-external-db-user))
+              rds_postgres_password: ((brats-rds-postgres-external-db-password))
+              rds_postgres_databasename: ((brats-rds-postgres-external-db-name))
+              aws_access_key_id: ((bosh-ci-database-terraform-rds-aws-access-key-id))
+              aws_secret_access_key: ((bosh-ci-database-terraform-rds-aws-secret-access-key))
+              gcp_mysql_databasename: ((brats-gcp-mysql-external-db-name))
+              gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
+              gcp_private_network_name: brats-ubuntu-jammy-((branch_name))
               concourse_authorized_network: ((concourse_egress_ip))
             env:
               GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
@@ -998,6 +1206,14 @@ resources:
       secret_access_key: ((bosh-compiled-releases-aws-secret-access-key))
       regexp: "bosh-.*dev\\.(\\d+).*bionic.*.tgz"
 
+  - name: bosh-compiled-candidate-jammy
+    type: s3
+    source:
+      bucket: "bosh-compiled-candidate-tarballs"
+      access_key_id: ((bosh-compiled-releases-aws-access-key-id))
+      secret_access_key: ((bosh-compiled-releases-aws-secret-access-key))
+      regexp: "bosh-.*dev\\.(\\d+).*jammy.*.tgz"
+
   - name: bosh-compiled-staging-tarballs
     type: s3
     source:
@@ -1091,6 +1307,11 @@ resources:
     source:
       name: bosh-vsphere-esxi-ubuntu-bionic-go_agent
 
+  - name: vsphere-esxi-ubuntu-jammy
+    type: bosh-io-stemcell
+    source:
+      name: bosh-vsphere-esxi-ubuntu-jammy-go_agent
+
   - name: vsphere-esxi-ubuntu-xenial
     type: pivnet
     source:
@@ -1106,6 +1327,11 @@ resources:
     type: bosh-io-stemcell
     source:
       name: bosh-warden-boshlite-ubuntu-bionic-go_agent
+
+  - name: warden-ubuntu-jammy
+    type: bosh-io-stemcell
+    source:
+      name: bosh-warden-boshlite-ubuntu-jammy-go_agent
 
   - name: cpi-release
     type: bosh-io-release

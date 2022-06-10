@@ -41,7 +41,5 @@ pushd ${BOSH_DEPLOYMENT_PATH} > /dev/null
     --sha1 "$(bosh int bosh.yml -o misc/source-releases/bosh.yml --path /releases/name=bpm/sha1)"
   bosh upload-release "$(bosh int bosh.yml -o jumpbox-user.yml --path /releases/name=os-conf/url)" \
     --sha1 "$(bosh int bosh.yml -o jumpbox-user.yml --path /releases/name=os-conf/sha1)"
-  bosh upload-release "$(bosh int bosh.yml -o bbr.yml --path /releases/name=backup-and-restore-sdk/url)" \
-    --sha1 "$(bosh int bosh.yml -o bbr.yml --path /releases/name=backup-and-restore-sdk/sha1)"
   bosh upload-release https://bosh.io/d/github.com/cppforlife/bosh-docker-cpi-release?v=0.0.5 --sha1 075bc0264d2548173da55a40127757ae962a25b1
 popd > /dev/null
