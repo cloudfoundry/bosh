@@ -21,6 +21,7 @@ pushd ${BOSH_DEPLOYMENT_PATH} > /dev/null
     -v docker_host="${DOCKER_HOST}" \
     -v network=director_network \
     -v docker_tls="${DOCKER_CERTS}" \
+    -v stemcell_os="${STEMCELL_OS}" \
     -o "${BOSH_DEPLOYMENT_PATH}/misc/source-releases/bosh.yml" \
     -o "$script_dir/latest-bosh-release.yml" \
     -o "$script_dir/deployment-name.yml" \

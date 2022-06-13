@@ -14,7 +14,7 @@
   path: /stemcells?
   value:
   - alias: default
-    os: ubuntu-bionic
+    os: ((stemcell_os))
     version: latest
 
 - type: replace

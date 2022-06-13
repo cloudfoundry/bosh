@@ -39,6 +39,7 @@ pushd ${BOSH_DEPLOYMENT_PATH} > /dev/null
     -v docker_host="${DOCKER_HOST}" \
     -v network=director_network \
     -v docker_tls="${DOCKER_CERTS}" \
+    -v stemcell_os="${STEMCELL_OS}" \
     -o "${BOSH_DEPLOYMENT_PATH}/misc/source-releases/bosh.yml" \
     -o "${BOSH_DEPLOYMENT_PATH}/local-bosh-release-tarball.yml" \
     -v local_bosh_release="${bosh_release_path}" \
