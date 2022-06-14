@@ -11,7 +11,7 @@ module Bosh
         end
 
         def manifest
-          YAML.load properties
+          YAML.load(properties, aliases: true)
         end
       end
     end

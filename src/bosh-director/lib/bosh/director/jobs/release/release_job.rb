@@ -72,7 +72,7 @@ module Bosh::Director
           "Missing job manifest for '#{name}'"
       end
 
-      YAML.load_file(manifest_file)
+      YAML.load_file(manifest_file, aliases: true)
     end
 
     def validate_templates(job_manifest)

@@ -422,6 +422,60 @@ module Bosh::Director
               expect { job.perform }.to raise_error(manifest_error)
             end
           end
+
+          context 'when the manifest contains YAML anchors' do
+            let(:manifest_content) do
+              <<~MANIFEST
+                ---
+                deployment-name: &name-alias 'simple'
+                name: *name-alias
+
+                releases:
+                - name: test_release
+                  version: 1
+
+                stemcells:
+                - alias: default
+                  os: toronto-os
+                  version: latest
+
+                update:
+                  canaries: 2
+                  canary_watch_time: 4000
+                  max_in_flight: 1
+                  update_watch_time: 20
+              MANIFEST
+            end
+
+            let(:cloud_config_id) { ['cloud_config_id'] }
+            let(:cloud_configs) do
+              [Models::Config.make(:cloud, content: YAML.dump('azs' => ['my-az'],
+                                                             'vm_types' => ['my-vm-type'],
+                                                             'disk_types' => ['my-disk-type'],
+                                                             'networks' => ['my-net'],
+                                                             'vm_extensions' => ['my-extension']))]
+            end
+
+            let(:runtime_config_ids) { ['runtime_config_id'] }
+            let(:runtime_configs) { [Models::Config.make(type: 'runtime')] }
+
+
+            it 'should be successfully loaded' do
+              allow(Bosh::Director::Models::Config).to receive(:find_by_ids).with(cloud_config_id).and_return(cloud_configs)
+              allow(Bosh::Director::Models::Config).to receive(:find_by_ids).with(runtime_config_ids).and_return(runtime_configs)
+              allow(variables_interpolator).to receive(:interpolate_cloud_manifest).and_return({})
+              allow(variables_interpolator).to receive(:interpolate_runtime_manifest).and_return({})
+
+              job.perform
+
+              expect(planner_factory).to have_received(:create_from_manifest) do |arg1, arg2, arg3, arg4|
+                expect(arg1.manifest_hash['name']).to eq('simple')
+                expect(arg2).to eq(cloud_configs)
+                expect(arg3).to eq(runtime_configs)
+                expect(arg4).to eq({})
+              end
+            end
+          end
         end
 
         context 'when all steps complete' do
