@@ -132,6 +132,8 @@ http {
     ssl_client_certificate /var/vcap/jobs/director/config/metrics_server/ca.pem;
     ssl_verify_client on;
 
+    proxy_read_timeout       <%= p('director.proxy_timeout') %>;
+
     location / {
       proxy_pass http://metrics_server;
     }
