@@ -5,7 +5,7 @@ set -x
 
 CHRUBY_VER="0.3.9"
 CHRUBY_URL=https://github.com/postmodern/chruby/archive/v${CHRUBY_VER}.tar.gz
-RUBY_INSTALL_VER="0.5.0"
+RUBY_INSTALL_VER="0.8.3"
 RUBY_INSTALL_URL=https://github.com/postmodern/ruby-install/archive/v${RUBY_INSTALL_VER}.tar.gz
 
 echo "Installing chruby v${CHRUBY_VER}..."
@@ -41,4 +41,4 @@ install_ruby() {
 
 }
 
-install_ruby 2.6.3 dd638bf42059182c1d04af0d5577131d4ce70b79105231c4cc0a60de77b14f2e
+install_ruby 3.1.2 ca10d017f8a1b6d247556622c841fc56b90c03b1803f87198da1e4fd3ec3bf2a
