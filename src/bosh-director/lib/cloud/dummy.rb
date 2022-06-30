@@ -49,7 +49,7 @@ module Bosh
         validate_and_record_inputs(CREATE_STEMCELL_SCHEMA, __method__, image_path, cloud_properties)
 
         content = File.read(image_path)
-        data = YAML.load(content)
+        data = YAML.load(content, aliases: true)
         data.merge!('image' => image_path)
         stemcell_id = SecureRandom.uuid
 
@@ -377,7 +377,7 @@ module Bosh
           [].tap do |results|
             files.each do |file|
               # data --> [{ 'name' => 'ubuntu-stemcell', 'version': '1', 'image' => <image path> }]
-              data = YAML.load(File.read(file))
+              data = YAML.load(File.read(file), aliases: true)
               results << { 'id' => file.sub(/^stemcell_/, '') }.merge(data)
             end
           end.sort { |a, b| a[:version].to_i <=> b[:version].to_i }

@@ -56,7 +56,7 @@ module Bosh::Director
 
         track_and_log('Verifying stemcell manifest') do
           stemcell_manifest_file = File.join(stemcell_dir, 'stemcell.MF')
-          stemcell_manifest = YAML.load_file(stemcell_manifest_file)
+          stemcell_manifest = YAML.load_file(stemcell_manifest_file, aliases: true)
 
           @name = safe_property(stemcell_manifest, 'name', class: String)
           @operating_system = safe_property(stemcell_manifest, 'operating_system', class: String, optional: true, default: @name)

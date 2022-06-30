@@ -8,7 +8,7 @@ module Bosh::Template::Test
       @job_path = File.join(@release_path, 'jobs', @name)
       # raise "No such job at path: #{@job_path}" if !File.exist?(@job_path)
       spec_path = File.join(@job_path, 'spec')
-      @spec = YAML.load(File.read(spec_path))
+      @spec = YAML.load(File.read(spec_path), aliases: true)
       @templates = @spec['templates']
     end
 

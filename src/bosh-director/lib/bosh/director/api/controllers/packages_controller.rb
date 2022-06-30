@@ -4,7 +4,7 @@ module Bosh::Director
   module Api::Controllers
     class PackagesController < BaseController
       post '/matches', :consumes => :yaml do
-        manifest = YAML.load(request.body.read)
+        manifest = YAML.load(request.body.read, aliases: true)
 
         unless manifest.is_a?(Hash) && manifest['packages'].is_a?(Array)
           raise BadManifest, "Manifest doesn't have a usable packages section"
@@ -28,7 +28,7 @@ module Bosh::Director
       end
 
       post '/matches_compiled', :consumes => :yaml do
-        manifest = YAML.load(request.body.read)
+        manifest = YAML.load(request.body.read, aliases: true)
 
         unless manifest.is_a?(Hash) && manifest['compiled_packages'].is_a?(Array)
           raise BadManifest, "Manifest doesn't have a usable packages section"

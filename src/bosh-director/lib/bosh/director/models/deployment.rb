@@ -86,7 +86,7 @@ module Bosh::Director::Models
     def tags
       return {} unless manifest
 
-      manifest_tags = YAML.load(manifest)['tags']
+      manifest_tags = YAML.load(manifest, aliases: true)['tags']
 
       consolidated_runtime_config = Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator.new(runtime_configs)
 

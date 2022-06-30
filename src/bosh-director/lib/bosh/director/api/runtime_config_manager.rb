@@ -20,7 +20,7 @@ module Bosh
         private
 
         def validate_yml(runtime_config)
-          YAML.load(runtime_config)
+          YAML.load(runtime_config, aliases: true)
         rescue Exception => e
           raise InvalidYamlError, e.message
         end

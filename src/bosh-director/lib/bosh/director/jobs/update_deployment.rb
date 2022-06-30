@@ -327,7 +327,7 @@ module Bosh::Director
         raise(BadManifest, 'No successful BOSH deployment manifest available') if raw_manifest_text.nil?
 
         logger.info('Reading deployment manifest')
-        @manifest_hash = YAML.load(raw_manifest_text)
+        @manifest_hash = YAML.load(raw_manifest_text, aliases: true)
         logger.debug("Manifest:\n#{raw_manifest_text}")
         @manifest_hash
       end
