@@ -306,7 +306,9 @@ properties:
     description: Name of the director database
     default: bosh
   director.db.connection_options:
-    description: Additional options for the database
+    description: |
+      Additional options for the database
+      The below default applies to postgres databases. For config options for mysql dbs, refer to the mysql2 gem options.
     default:
       max_connections: 32  #Maximum size of the connection pool
       pool_timeout: 10     #Number of seconds to wait if a connection cannot be acquired before  raising an error
@@ -347,7 +349,9 @@ properties:
     description: Name of the powerdns database
     default: bosh
   dns.db.connection_options:
-    description: Additional options for the powerdns database
+    description: |
+      Additional options for the powerdns database.
+      The below default applies to postgres databases. For config options for mysql dbs, refer to the mysql2 gem options.
     default:
       max_connections: 32  #Maximum size of the connection pool
       pool_timeout: 10     #Number of seconds to wait if a connection cannot be acquired before  raising an error
