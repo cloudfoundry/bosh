@@ -7,7 +7,7 @@ describe Bosh::Director::Api::CloudConfigManager do
   let(:event_manager) {Bosh::Director::Api::EventManager.new(true)}
 
   describe '#update' do
-    it 'saves the cloud config' do
+    it 'saves default cloud config' do
       expect {
         manager.update(valid_cloud_manifest)
       }.to change(Bosh::Director::Models::Config, :count).from(0).to(1)
@@ -15,6 +15,18 @@ describe Bosh::Director::Api::CloudConfigManager do
       cloud_config = Bosh::Director::Models::Config.first
       expect(cloud_config.created_at).to_not be_nil
       expect(cloud_config.content).to eq(valid_cloud_manifest)
+      expect(cloud_config.name).to eq('default')
+    end
+
+    it 'saves named cloud config' do
+      expect {
+        manager.update(valid_cloud_manifest, 'foo-cloud-config')
+      }.to change(Bosh::Director::Models::Config, :count).from(0).to(1)
+
+      cloud_config = Bosh::Director::Models::Config.first
+      expect(cloud_config.created_at).to_not be_nil
+      expect(cloud_config.content).to eq(valid_cloud_manifest)
+      expect(cloud_config.name).to eq('foo-cloud-config')
     end
 
     context 'when cloud config uses placeholders' do
@@ -70,6 +82,21 @@ describe Bosh::Director::Api::CloudConfigManager do
         expect(cloud_configs[0]).to eq(@newer_cloud_config)
         expect(cloud_configs[0].content).to eq( "---\nsuper_shiny: new_config")
         expect(cloud_configs[1]).to eq(@oldest_cloud_config)
+      end
+    end
+
+    context 'when name is specified' do
+      let(:name){ 'some-foo-name'}
+
+      it 'returns the specified number of cloud configs (most recent first)' do
+        named_config1 = Bosh::Director::Models::Config.new(type: 'cloud', content: 'named_config', name: 'some-foo-name').save
+        Bosh::Director::Models::Config.new(type: 'cloud', content: 'default_config', name: 'default').save
+        Bosh::Director::Models::Config.new(type: 'cloud', content: 'default_config', name: 'some-other-foo-name').save
+        named_config2 = Bosh::Director::Models::Config.new(type: 'cloud', content: 'named_config2', name: 'some-foo-name').save
+
+        runtime_configs = manager.list(2, name)
+
+        expect(runtime_configs).to eq([named_config2, named_config1])
       end
     end
   end
