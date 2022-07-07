@@ -1,8 +1,0 @@
----
-- type: replace
-  path: /releases/name=bosh/url
-  value: file:///usr/local/bosh.tgz
-
-- type: replace
-  path: /releases/name=bpm/url
-  value: file:///usr/local/bpm.tgz

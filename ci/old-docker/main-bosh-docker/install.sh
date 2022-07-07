@@ -9,8 +9,10 @@ apt-get install -y --no-install-recommends \
   ca-certificates \
   curl \
   dnsutils \
+  gcc \
   git \
   iproute2 \
+  jq \
   openssh-client \
   software-properties-common \
   libpq-dev
