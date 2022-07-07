@@ -745,15 +745,15 @@ jobs:
     plan:
     - in_parallel:
       - get: bosh-src
-        passed: [compile-bosh-dev-release-bionic]
+        passed: [compile-bosh-dev-release-jammy]
       - get: stemcell
-        resource: warden-ubuntu-bionic
+        resource: warden-ubuntu-jammy
       - get: bosh-candidate-release-tarballs
-        passed: [compile-bosh-dev-release-bionic]
+        passed: [compile-bosh-dev-release-jammy]
       - get: bosh-release
-        resource: bosh-compiled-candidate-bionic
+        resource: bosh-compiled-candidate-jammy
         trigger: true
-        passed: [compile-bosh-dev-release-bionic]
+        passed: [compile-bosh-dev-release-jammy]
       - get: bosh-disaster-recovery-acceptance-tests
       - get: bosh-deployment
       - get: bbr-cli-binary
@@ -867,7 +867,6 @@ jobs:
       passed:
       - bats-ubuntu-bionic
       - brats-ubuntu-bionic
-      - bosh-disaster-recovery-acceptance-tests
     - put: bosh-compiled-staging-tarballs
       params:
         file: "compiled-release/*.tgz"
