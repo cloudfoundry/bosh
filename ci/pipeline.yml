@@ -771,15 +771,15 @@ jobs:
     - do:
       - in_parallel:
         - get: bosh-src
-          passed: [compile-bosh-dev-release-bionic]
+          passed: [compile-bosh-dev-release-jammy]
         - get: stemcell
-          resource: aws-xen-hvm-ubuntu-bionic
+          resource: aws-xen-hvm-ubuntu-jammy
         - get: bosh-deployment
         - get: bosh-cli
         - get: bosh-release
-          resource: bosh-compiled-candidate-bionic
+          resource: bosh-compiled-candidate-jammy
           trigger: true
-          passed: [compile-bosh-dev-release-bionic]
+          passed: [compile-bosh-dev-release-jammy]
         - get: last-released-bosh-release
         - get: zookeeper-release
         - get: main-ruby-go-image
@@ -1316,10 +1316,10 @@ resources:
       api_token: ((pivnet_bot_api_token))
       product_slug: stemcells-ubuntu-xenial
 
-  - name: aws-xen-hvm-ubuntu-bionic
+  - name: aws-xen-hvm-ubuntu-jammy
     type: bosh-io-stemcell
     source:
-      name: bosh-aws-xen-hvm-ubuntu-bionic-go_agent
+      name: bosh-aws-xen-hvm-ubuntu-jammy-go_agent
 
   - name: warden-ubuntu-bionic
     type: bosh-io-stemcell
