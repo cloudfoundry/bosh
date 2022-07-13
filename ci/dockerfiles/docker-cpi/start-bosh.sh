@@ -185,6 +185,11 @@ function main() {
         -v docker_tls="{\"ca\": \"$(cat ${certs_dir}/ca_json_safe.pem)\",\"certificate\": \"$(cat ${certs_dir}/client_certificate_json_safe.pem)\",\"private_key\": \"$(cat ${certs_dir}/client_private_key_json_safe.pem)\"}" \
         ${@} > "${local_bosh_dir}/bosh-director.yml"
 
+      if [[ "${STEMCELL_OS}" == "ubuntu-bionic" ]]; then
+        bosh int "${local_bosh_dir}/bosh-director.yml" -o docker/use-bionic.yml > "${local_bosh_dir}/bosh-director-bionic.yml"
+        mv "${local_bosh_dir}/bosh-director-bionic.yml"  "${local_bosh_dir}/bosh-director.yml"
+      fi
+
       command bosh create-env "${local_bosh_dir}/bosh-director.yml" \
               --vars-store="${local_bosh_dir}/creds.yml" \
               --state="${local_bosh_dir}/state.json"
