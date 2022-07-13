@@ -322,6 +322,7 @@ jobs:
             BOSH_VAR_vcenter_rp: "((nimbus_concourse-testbed-bosh-main_rp))"
             DEPLOY_ARGS: |
               -o bosh-deployment/vsphere/resource-pool.yml
+              -o bosh-deployment/misc/source-releases/bosh.yml
               --vars-env=BOSH_VAR
         - task: prepare-bats
           tags: [nimbus]
@@ -716,6 +717,7 @@ jobs:
             BOSH_VAR_vcenter_rp: "((nimbus_concourse-testbed-bosh-main_rp))"
             DEPLOY_ARGS: |
               -o bosh-deployment/vsphere/resource-pool.yml
+              -o bosh-deployment/misc/source-releases/bosh.yml
               --vars-env=BOSH_VAR
         - task: prepare-bats
           tags: [nimbus]
