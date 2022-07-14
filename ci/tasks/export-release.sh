@@ -3,17 +3,17 @@
 main() {
   set -eu
 
-  source start-bosh
-  source /tmp/local-bosh/director/env
-
   tar -xzf release/*.tgz $( tar -tzf release/*.tgz | grep 'release.MF' )
+  tar -xzf stemcell/*.tgz $( tar -tzf stemcell/*.tgz | grep 'stemcell.MF' )
+
+  export STEMCELL_OS=$( grep -E '^operating_system: ' stemcell.MF | awk '{print $2}' | tr -d "\"'" )
   local RELEASE_NAME=$( grep -E '^name: ' release.MF | awk '{print $2}' | tr -d "\"'" )
   local RELEASE_VERSION=$( grep -E '^version: ' release.MF | awk '{print $2}' | tr -d "\"'" )
   local RELEASE_TARBALL=$( echo release/*.tgz )
-
-  tar -xzf stemcell/*.tgz $( tar -tzf stemcell/*.tgz | grep 'stemcell.MF' )
-  local STEMCELL_OS=$( grep -E '^operating_system: ' stemcell.MF | awk '{print $2}' | tr -d "\"'" )
   local STEMCELL_VERSION=$( grep -E '^version: ' stemcell.MF | awk '{print $2}' | tr -d "\"'" )
+
+  source start-bosh
+  source /tmp/local-bosh/director/env
 
   bosh -n upload-stemcell stemcell/*.tgz
   bosh -n upload-release $RELEASE_TARBALL
