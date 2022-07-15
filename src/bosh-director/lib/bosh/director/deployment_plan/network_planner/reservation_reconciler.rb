@@ -101,7 +101,7 @@ module Bosh::Director::DeploymentPlan
             next unless subnet.availability_zone_names.include?(existing_reservation.instance_model.availability_zone)
           end
 
-          true if subnet.is_reservable?(existing_reservation.ip)
+          true if subnet.is_reservable?(existing_reservation.ip) # TODO: IPv6 - should be CIDR obj here instead of int
         end
       end
 

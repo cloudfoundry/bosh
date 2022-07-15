@@ -87,7 +87,7 @@ module Bosh::Director
       # @param [Integer, NetAddr::CIDR, String] ip
       # @yield the subnet that contains the IP.
       def find_subnet_containing(ip)
-        @subnets.find { |subnet| subnet.range.contains?(ip) }
+        @subnets.find { |subnet| subnet.range.contains?(ip) } # TODO: IPv6 can a subnet have both ipv4 and ipv6 addresses?
       end
 
       private

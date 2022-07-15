@@ -55,7 +55,7 @@ module Bosh::Director
       end
 
       def add_existing(instance_model, deployment, network_name, ip, existing_network_type)
-        network = find_network(deployment, ip, network_name, instance_model)
+        network = find_network(deployment, ip, network_name, instance_model) # TODO: IPv6 finding network ambiguous?
         reservation = ExistingNetworkReservation.new(instance_model, network, ip, existing_network_type)
         deployment.ip_provider.reserve_existing_ips(reservation)
         @reservations << reservation

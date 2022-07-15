@@ -34,6 +34,7 @@ module Bosh::Director
     # @param [Integer] ip Integer IP representation
     # @return [String] Human-readable IP representation
     def format_ip(ip)
+      # TODO: IPv6
       ip_to_netaddr(ip).ip
     end
 

@@ -83,7 +83,7 @@ module Bosh::Director::DeploymentPlan
 
       addresses_we_cant_allocate.merge(subnet.restricted_ips.to_a) unless subnet.restricted_ips.empty?
       addresses_we_cant_allocate.merge(subnet.static_ips.to_a) unless subnet.static_ips.empty?
-      addr = find_first_available_address(addresses_we_cant_allocate, first_range_address)
+      addr = find_first_available_address(addresses_we_cant_allocate, first_range_address) # TODO: IPv6
       if subnet.range.version == 6
         ip_address = NetAddr::CIDRv6.new(addr)
       else
@@ -111,7 +111,7 @@ module Bosh::Director::DeploymentPlan
     def try_to_allocate_vip_ip(reservation, subnet)
       addresses_in_use = Set.new(all_ip_addresses)
 
-      available_ips = subnet.static_ips - addresses_in_use
+      available_ips = subnet.static_ips - addresses_in_use # TODO: IPv6
 
       raise NoMoreIPsAvailableAndStopRetrying if available_ips.empty?
 

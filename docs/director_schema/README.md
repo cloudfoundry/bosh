@@ -8,7 +8,7 @@ Sequel. The Ruby classes that this schema maps to are located in the
 ![ER diagram of BOSH director schema](bosh-db-diagram.png)
 
 **Warning: This diagram can become stale quickly; generate when necessary**
-
+# TODO: IPv6 regenerate SVG & PNG images
 The above PNG file was generated using RubyMine Database Plugin.
 There's also a [searchable SVG version.](https://cdn.rawgit.com/cloudfoundry/bosh/master/docs/director_schema/bosh-db-diagram.svg)
 Steps to generate:

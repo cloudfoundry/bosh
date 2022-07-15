@@ -64,11 +64,16 @@ module Bosh::Director
 
     def initialize(instance_model, network, ip, type)
       super(instance_model, network)
-      @ip = ip_to_i(ip) if ip
       @type = type
+      if ip
+        cidr_ip = ip_to_netaddr(ip)
+        @ip = cidr_ip.to_i
+        @version = cidr_ip.version
+      end
     end
 
     def resolve_ip(ip)
+      # TODO: IPv6 should also set @version, but is sometimes called with int, sometimes with IPAddr and sometimes with string
       @ip = ip_to_i(ip)
     end
 

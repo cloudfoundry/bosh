@@ -124,6 +124,7 @@ module Bosh::Director
       end
 
       def is_reservable?(ip)
+        # TODO: IPv6 - unclear what ip representation is expected here? test say NetAddr obj (but netaddr implementation would also support an int)
         range.contains?(ip) && !restricted_ips.include?(ip.to_i)
       rescue NetAddr::VersionError
         false
