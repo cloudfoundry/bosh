@@ -46,7 +46,7 @@ module Bosh::Director
                 "Can't generate network settings without an IP"
         end
 
-        ip = ip_to_netaddr(reservation.ip)
+        ip = ip_to_netaddr(reservation.ip, reservation.version)
         subnet = find_subnet_containing(reservation.ip)
         unless subnet
           raise NetworkReservationInvalidIp, "Provided IP '#{ip}' does not belong to any subnet"

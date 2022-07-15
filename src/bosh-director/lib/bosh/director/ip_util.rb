@@ -24,9 +24,9 @@ module Bosh::Director
       ip
     end
 
-    def ip_to_netaddr(ip)
+    def ip_to_netaddr(ip, version)
       unless ip.kind_of?(NetAddr::CIDR)
-        ip = NetAddr::CIDR.create(ip)
+        ip = NetAddr::CIDR.create(ip, Version: version)
       end
       ip
     end
@@ -87,6 +87,10 @@ module Bosh::Director
 
       def to_s
         @cidr.ip.to_s
+      end
+
+      def version
+        @cidr.version
       end
     end
   end

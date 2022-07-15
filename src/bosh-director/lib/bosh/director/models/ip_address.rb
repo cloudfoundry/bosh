@@ -11,6 +11,7 @@ module Bosh::Director::Models
       validates_presence :orphaned_vm_id, allow_nil: true
       validates_presence :task_id
       validates_presence :address_str
+      validates_presence :version
       validates_unique :address_str
       raise 'Invalid type for address_str column' unless address_str.is_a?(String)
     end
@@ -21,12 +22,12 @@ module Bosh::Director::Models
 
     def info
       instance_info = "#{instance.deployment.name}.#{instance.job}/#{instance.index}"
-      formatted_ip = NetAddr::CIDR.create(address_str.to_i).ip
+      formatted_ip = NetAddr::CIDR.create(address_str.to_i, Version: version).ip
       "#{instance_info} - #{network_name} - #{formatted_ip} (#{type})"
     end
 
     def formatted_ip
-      NetAddr::CIDR.create(address).ip
+      NetAddr::CIDR.create(address, Version: version).ip
     end
 
     def type

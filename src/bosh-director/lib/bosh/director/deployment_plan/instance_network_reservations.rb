@@ -16,7 +16,7 @@ module Bosh::Director
           reservations.add_existing(instance_model,
                                     deployment,
                                     ip_address.network_name,
-                                    ip_address.address,
+                                    ip_address.formatted_ip,
                                     'not-dynamic')
         end
 
@@ -63,7 +63,8 @@ module Bosh::Director
 
       private
 
-      def find_network(deployment, cidr_ip, network_name, instance_model)
+      def find_network(deployment, ip, network_name, instance_model)
+        cidr_ip =  NetAddr::CIDR.create(ip)
         networks = deployment.networks.dup
 
         network_match_on_name = deployment.network(network_name)
