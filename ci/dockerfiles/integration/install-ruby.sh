@@ -17,14 +17,12 @@ rm ruby-install-${RUBY_INSTALL_VER}.tar.gz
 
 install_ruby() {
     local version=$1
-    local sha=$2
 
     echo "Installing ruby $version..."
-    ruby-install --jobs=2 --cleanup --system --sha256 "$sha" ruby "$version" -- --disable-install-rdoc
+    ruby-install --jobs=2 --cleanup --system ruby "$version" -- --disable-install-rdoc
 
     ruby -v
     gem update --system
-
 }
 
-install_ruby 3.1.2 ca10d017f8a1b6d247556622c841fc56b90c03b1803f87198da1e4fd3ec3bf2a
+install_ruby 3.1
