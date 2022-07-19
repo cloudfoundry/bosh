@@ -45,6 +45,7 @@ pkg/
 .final_builds/jobs/**/*.tgz
 .final_builds/packages/**/*.tgz
 .idea
+.vscode
 blobs
 config/dev.yml
 config/private.yml
