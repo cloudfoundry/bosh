@@ -16,23 +16,27 @@ module Bosh::Monitor
     end
 
     def update_rules(resurrection_configs)
+      return if resurrection_configs.nil?
+
       new_parsed_rules = []
-      return if resurrection_configs.nil? || resurrection_configs.empty?
 
       resurrection_config_sha = resurrection_configs.map do |resurrection_config|
         Digest::SHA256.digest(resurrection_config['content'])
       end
+
       if @resurrection_config_sha.to_set != resurrection_config_sha.to_set
         @logger.info('Resurrection config update starting...')
 
         resurrection_rule_hashes = resurrection_configs.map do |resurrection_config|
           YAML.safe_load(resurrection_config['content'])['rules']
         end.flatten || []
+
         resurrection_rule_hashes.each do |resurrection_rule_hash|
           new_parsed_rules << ResurrectionRule.parse(resurrection_rule_hash)
         rescue StandardError => e
           @logger.error("Failed to parse resurrection config rule #{resurrection_rule_hash.inspect}: #{e.inspect}")
         end
+
         @parsed_rules = new_parsed_rules
         @resurrection_config_sha = resurrection_config_sha
         @logger.info('Resurrection config update finished')
