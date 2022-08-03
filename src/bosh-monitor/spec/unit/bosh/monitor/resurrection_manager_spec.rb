@@ -119,6 +119,31 @@ module Bhm
           expect(resurrection_rules[1].enabled?).to be_falsey
         end
       end
+
+      context 'when resurrection config is an empty array' do
+        it 'deletes existing resurrection rules' do
+          manager.update_rules(resurrection_config)
+          expect(logger).to receive(:info).with('Resurrection config update starting...')
+          expect(logger).to receive(:info).with('Resurrection config update finished')
+          manager.update_rules([])
+          resurrection_rules = manager.instance_variable_get(:@parsed_rules)
+          expect(resurrection_rules.count).to eq(0)
+        end
+      end
+
+      context 'when resurrection config is nil' do
+        it 'uses existing resurrection rules' do
+          expect(logger).to receive(:info).with('Resurrection config update starting...')
+          expect(logger).to receive(:info).with('Resurrection config update finished')
+          manager.update_rules(resurrection_config)
+
+          manager.update_rules(nil)
+          resurrection_rules = manager.instance_variable_get(:@parsed_rules)
+          expect(resurrection_rules.count).to eq(2)
+          expect(resurrection_rules[0].enabled?).to be_truthy
+          expect(resurrection_rules[1].enabled?).to be_falsey
+        end
+      end
     end
 
     describe '#resurrection_enabled?' do
