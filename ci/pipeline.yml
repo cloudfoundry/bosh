@@ -313,13 +313,13 @@ jobs:
             BAT_INFRASTRUCTURE: vsphere
             BOSH_CLIENT: ((stemcell-test-director-username))
             BOSH_CLIENT_SECRET: ((stemcell-test-director-password))
-            BOSH_VAR_vcenter_ip: "((nimbus_concourse-testbed-bosh-main_ip))"
-            BOSH_VAR_vcenter_user: "((nimbus_concourse-testbed-bosh-main_user.username))"
-            BOSH_VAR_vcenter_password: "((nimbus_concourse-testbed-bosh-main_user.password))"
-            BOSH_VAR_vcenter_cluster: "((nimbus_concourse-testbed-bosh-main_cluster))"
-            BOSH_VAR_vcenter_dc: "((nimbus_concourse-testbed-bosh-main_dc))"
-            BOSH_VAR_vcenter_ds: "((nimbus_concourse-testbed-bosh-main_ds))"
-            BOSH_VAR_vcenter_rp: "((nimbus_concourse-testbed-bosh-main_rp))"
+            BOSH_VAR_vcenter_ip: "((nimbus_bosh-main_ip))"
+            BOSH_VAR_vcenter_user: "((nimbus_bosh-main_user.username))"
+            BOSH_VAR_vcenter_password: "((nimbus_bosh-main_user.password))"
+            BOSH_VAR_vcenter_cluster: "((nimbus_bosh-main_cluster))"
+            BOSH_VAR_vcenter_dc: "((nimbus_bosh-main_dc))"
+            BOSH_VAR_vcenter_ds: "((nimbus_bosh-main_ds))"
+            BOSH_VAR_vcenter_rp: "((nimbus_bosh-main_rp))"
             DEPLOY_ARGS: |
               -o bosh-deployment/vsphere/resource-pool.yml
               -o bosh-deployment/misc/source-releases/bosh.yml
@@ -518,13 +518,13 @@ jobs:
             BAT_INFRASTRUCTURE: vsphere
             BOSH_CLIENT: ((stemcell-test-director-username))
             BOSH_CLIENT_SECRET: ((stemcell-test-director-password))
-            BOSH_VAR_vcenter_ip: "((nimbus_concourse-testbed-bosh-main_ip))"
-            BOSH_VAR_vcenter_user: "((nimbus_concourse-testbed-bosh-main_user.username))"
-            BOSH_VAR_vcenter_password: "((nimbus_concourse-testbed-bosh-main_user.password))"
-            BOSH_VAR_vcenter_cluster: "((nimbus_concourse-testbed-bosh-main_cluster))"
-            BOSH_VAR_vcenter_dc: "((nimbus_concourse-testbed-bosh-main_dc))"
-            BOSH_VAR_vcenter_ds: "((nimbus_concourse-testbed-bosh-main_ds))"
-            BOSH_VAR_vcenter_rp: "((nimbus_concourse-testbed-bosh-main_rp))"
+            BOSH_VAR_vcenter_ip: "((nimbus_bosh-main_ip))"
+            BOSH_VAR_vcenter_user: "((nimbus_bosh-main_user.username))"
+            BOSH_VAR_vcenter_password: "((nimbus_bosh-main_user.password))"
+            BOSH_VAR_vcenter_cluster: "((nimbus_bosh-main_cluster))"
+            BOSH_VAR_vcenter_dc: "((nimbus_bosh-main_dc))"
+            BOSH_VAR_vcenter_ds: "((nimbus_bosh-main_ds))"
+            BOSH_VAR_vcenter_rp: "((nimbus_bosh-main_rp))"
             DEPLOY_ARGS: |
               -o bosh-deployment/vsphere/resource-pool.yml
               --vars-env=BOSH_VAR
@@ -708,13 +708,13 @@ jobs:
             BAT_INFRASTRUCTURE: vsphere
             BOSH_CLIENT: ((stemcell-test-director-username))
             BOSH_CLIENT_SECRET: ((stemcell-test-director-password))
-            BOSH_VAR_vcenter_ip: "((nimbus_concourse-testbed-bosh-main_ip))"
-            BOSH_VAR_vcenter_user: "((nimbus_concourse-testbed-bosh-main_user.username))"
-            BOSH_VAR_vcenter_password: "((nimbus_concourse-testbed-bosh-main_user.password))"
-            BOSH_VAR_vcenter_cluster: "((nimbus_concourse-testbed-bosh-main_cluster))"
-            BOSH_VAR_vcenter_dc: "((nimbus_concourse-testbed-bosh-main_dc))"
-            BOSH_VAR_vcenter_ds: "((nimbus_concourse-testbed-bosh-main_ds))"
-            BOSH_VAR_vcenter_rp: "((nimbus_concourse-testbed-bosh-main_rp))"
+            BOSH_VAR_vcenter_ip: "((nimbus_bosh-main_ip))"
+            BOSH_VAR_vcenter_user: "((nimbus_bosh-main_user.username))"
+            BOSH_VAR_vcenter_password: "((nimbus_bosh-main_user.password))"
+            BOSH_VAR_vcenter_cluster: "((nimbus_bosh-main_cluster))"
+            BOSH_VAR_vcenter_dc: "((nimbus_bosh-main_dc))"
+            BOSH_VAR_vcenter_ds: "((nimbus_bosh-main_ds))"
+            BOSH_VAR_vcenter_rp: "((nimbus_bosh-main_rp))"
             DEPLOY_ARGS: |
               -o bosh-deployment/vsphere/resource-pool.yml
               -o bosh-deployment/misc/source-releases/bosh.yml
