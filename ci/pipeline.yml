@@ -1095,6 +1095,7 @@ jobs:
     plan:
     - in_parallel:
       - get: bosh-src
+      - get: postgres-src
       - get: nginx-release
         trigger: true
       - get: ruby-release
@@ -1107,6 +1108,19 @@ jobs:
         output_repo: bosh-src-out
       params:
         PACKAGES: [nginx]
+        PRIVATE_YML: |
+          blobstore:
+            options:
+              credentials_source: static
+              json_key: '((bosh_release_blobs_gcp_credentials_json))'
+    - task: bump-postgres-package
+      file: bosh-src/ci/tasks/bump-postgres-packages.yml
+      input_mapping:
+        bosh-src: bosh-src-out
+      output_mapping:
+        bosh-src: bosh-src-out
+      params:
+        MAJOR_VERSIONS: "10,13"
         PRIVATE_YML: |
           blobstore:
             options:
@@ -1153,6 +1167,14 @@ resource_types:
     password: ((docker.password))
 
 resources:
+  - name: postgres-src
+    type: git
+    source:
+      uri: https://github.com/postgres/postgres.git
+      #match minor 10,13 and all patch versions
+      fetch_tags: true
+      tag_regex: "REL_1[0,3]_[0-9]*"
+
   - name: weekly
     type: time
     source:
