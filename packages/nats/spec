@@ -2,7 +2,7 @@
 name: nats
 
 dependencies:
-- ruby-3.1.0-r0.81.0
+- ruby-3.1
 
 files:
 - nats/nats-server-v2.8.3-linux-amd64.tar.gz
