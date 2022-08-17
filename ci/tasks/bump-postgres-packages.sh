@@ -1,4 +1,4 @@
-#/usr/bin/env bash
+#!/usr/bin/env bash
 NEED_COMMIT=false
 
 echo "${PRIVATE_YML}" > bosh-src/config/private.yml
