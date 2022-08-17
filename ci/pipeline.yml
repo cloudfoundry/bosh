@@ -1095,6 +1095,10 @@ jobs:
     plan:
     - in_parallel:
       - get: bosh-src
+      - get: postgres-10-src
+        trigger: true
+      - get: postgres-13-src
+        trigger: true
       - get: nginx-release
         trigger: true
       - get: ruby-release
@@ -1107,6 +1111,34 @@ jobs:
         output_repo: bosh-src-out
       params:
         PACKAGES: [nginx]
+        PRIVATE_YML: |
+          blobstore:
+            options:
+              credentials_source: static
+              json_key: '((bosh_release_blobs_gcp_credentials_json))'
+    - task: bump-postgres-10-package
+      file: bosh-src/ci/tasks/bump-postgres-packages.yml
+      input_mapping:
+        bosh-src: bosh-src-out
+        postgres-src: postgres-10-src
+      output_mapping:
+        bosh-src: bosh-src-out
+      params:
+        MAJOR_VERSION: 10
+        PRIVATE_YML: |
+          blobstore:
+            options:
+              credentials_source: static
+              json_key: '((bosh_release_blobs_gcp_credentials_json))'
+    - task: bump-postgres-13-package
+      file: bosh-src/ci/tasks/bump-postgres-packages.yml
+      input_mapping:
+        bosh-src: bosh-src-out
+        postgres-src: postgres-13-src
+      output_mapping:
+        bosh-src: bosh-src-out
+      params:
+        MAJOR_VERSION: 13
         PRIVATE_YML: |
           blobstore:
             options:
@@ -1152,7 +1184,26 @@ resource_types:
     username: ((docker.username))
     password: ((docker.password))
 
+- name: http-resource
+  type: docker-image
+  source:
+    repository: aequitas/http-resource
+
 resources:
+  - name: postgres-10-src
+    type: http-resource
+    source:
+      index: "https://ftp.postgresql.org/pub/source/"
+      regex: 'href="v(?P<version>10\.[0-9.]+)/"'
+      uri: "https://ftp.postgresql.org/pub/source/v{version}/postgresql-{version}.tar.gz"
+
+  - name: postgres-13-src
+    type: http-resource
+    source:
+      index: "https://ftp.postgresql.org/pub/source/"
+      regex: 'href="v(?P<version>13\.[0-9.]+)/"'
+      uri: "https://ftp.postgresql.org/pub/source/v{version}/postgresql-{version}.tar.gz"
+
   - name: weekly
     type: time
     source:
