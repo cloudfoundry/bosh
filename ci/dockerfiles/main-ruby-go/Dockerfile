@@ -1,13 +1,5 @@
 FROM ubuntu:jammy
 
-RUN apt-get update -y \
-    && apt-get install -y --no-install-recommends \
-    locales
-
-ENV LANG en_US.UTF-8
-ENV LC_ALL en_US.UTF-8
-RUN locale-gen en_US.UTF-8
-
 ENV DEBIAN_FRONTEND "noninteractive"
 ENV RUBY_VERSION "3.1"
 ENV RUBY_INSTALL_VERSION "0.8.4"
