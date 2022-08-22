@@ -83,6 +83,20 @@ PATH
       thin
 
 PATH
+  remote: bosh-nats-sync
+  specs:
+    bosh-nats-sync (0.0.0)
+      cf-uaa-lib (~> 3.2.1)
+      em-http-request
+      eventmachine (~> 1.3.0.dev.1)
+      logging (~> 2.2.2)
+      nats-pure (~> 0.6.2)
+      openssl
+      rest-client
+      sinatra (~> 2.2.0)
+      thin
+
+PATH
   remote: bosh-template
   specs:
     bosh-template (0.0.0)
@@ -308,6 +322,7 @@ DEPENDENCIES
   bosh-director!
   bosh-director-core!
   bosh-monitor!
+  bosh-nats-sync!
   bosh-template!
   bosh_common!
   bosh_cpi

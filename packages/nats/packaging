@@ -1,0 +1,43 @@
+set -e
+
+VERSION=2.8.3
+
+mkdir -p ${BOSH_INSTALL_TARGET}/bin
+
+tar xzf nats/nats-server-v${VERSION}-linux-amd64.tar.gz
+cp nats-server-v${VERSION}-linux-amd64/nats-server ${BOSH_INSTALL_TARGET}/bin/nats-server
+chmod +x ${BOSH_INSTALL_TARGET}/bin/nats-server
+
+
+mkdir -p ${BOSH_INSTALL_TARGET}/{bin,gem_home}
+
+source /var/vcap/packages/ruby-3.1/bosh/compile.env
+
+cat > Gemfile <<EOF
+# Explicitly require vendored version to avoid requiring builtin json gem
+gem 'json', '2.6.1'
+gem 'bosh-nats-sync'
+EOF
+
+pushd bosh-nats-sync/ > /dev/null
+  gem build bosh-nats-sync
+  mv *.gem ../vendor/cache
+popd > /dev/null
+
+pushd vendor/cache/eventmachine-* > /dev/null
+  gem build eventmachine.gemspec
+  mv *.gem ../
+popd > /dev/null
+
+if [ "`uname -m`" == "ppc64le" ]; then
+    bundle config build.nokogiri '--use-system-libraries'
+fi
+
+bundle install \
+  --local \
+  --no-prune \
+  --binstubs ${BOSH_INSTALL_TARGET}/bin \
+  --path ${BOSH_INSTALL_TARGET}/gem_home
+
+cp Gemfile ${BOSH_INSTALL_TARGET}
+cp Gemfile.lock ${BOSH_INSTALL_TARGET}

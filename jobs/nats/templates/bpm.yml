@@ -1,16 +1,27 @@
 <%=
 
+bosh_nats_sync_config = {
+  "name" => "bosh_nats_sync",
+  "executable" => "/var/vcap/jobs/nats/bin/bosh_nats_sync",
+  "ephemeral_disk" => true,
+  "env" => {
+    "BUNDLE_GEMFILE" => "/var/vcap/packages/nats/Gemfile",
+    "GEM_HOME" => "/var/vcap/packages/nats/gem_home/ruby/3.1.0",
+  },
+}
+
 nats_config = {
   "name" => "nats",
-  "executable" => "/var/vcap/packages/gonats/bin/gnatsd",
+  "executable" => "/var/vcap/packages/nats/bin/nats-server",
   "args" => ["-c", "/var/vcap/jobs/nats/config/nats.cfg"],
+  "ephemeral_disk" => true,
   "limits" => {
     "open_files" => 65536,
   },
 }
 
 config = {
-  "processes" => [nats_config],
+  "processes" => [nats_config, bosh_nats_sync_config],
 }
 
 YAML.dump(config)

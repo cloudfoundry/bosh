@@ -3,3 +3,13 @@ check process nats
   start program "/var/vcap/jobs/bpm/bin/bpm start nats"
   stop program "/var/vcap/jobs/bpm/bin/bpm stop nats"
   group vcap
+
+check process bosh_nats_sync
+  with pidfile /var/vcap/sys/run/bpm/nats/bosh_nats_sync.pid
+  start program "/var/vcap/jobs/bpm/bin/bpm start nats -p bosh_nats_sync"
+  stop program "/var/vcap/jobs/bpm/bin/bpm stop nats -p bosh_nats_sync"
+  group vcap
+
+check file nats_auth_conf
+  with path /var/vcap/data/nats/auth.json
+  if changed checksum then exec "/var/vcap/packages/nats/bin/nats-server --signal reload"

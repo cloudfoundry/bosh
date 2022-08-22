@@ -1,7 +1,0 @@
----
-name: gonats
-
-dependencies: []
-
-files:
-- gnatsd/gnatsd-1.3.0-bosh.10-linux-amd64
