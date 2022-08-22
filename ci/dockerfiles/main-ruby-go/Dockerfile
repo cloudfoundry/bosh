@@ -15,6 +15,8 @@ ENV GEM_HOME "/usr/local/bundle"
 ENV POSTGRES_MAJOR_VERSION "10"
 
 RUN apt-get update -y \
+    && apt-get -y install --no-install-recommends \
+        software-properties-common \
     && apt-get install -y --no-install-recommends \
         awscli \
         build-essential \
