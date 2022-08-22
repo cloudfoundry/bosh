@@ -16,31 +16,25 @@ ENV POSTGRES_MAJOR_VERSION "10"
 
 RUN apt-get update -y \
     && apt-get install -y --no-install-recommends \
-    awscli \
-    build-essential \
-	git \
-	curl \
-	wget \
-	tar \
-	libssl-dev \
-	libreadline-dev \
-	sqlite3 \
-	libsqlite3-dev \
-	dnsutils \
-	xvfb \
-	jq \
-	coreutils \
-	libpq-dev \
-	rsyslog \
-	libcurl4-openssl-dev \
-	python3-pip \
-	sudo \
-	netcat-openbsd
-
-# Nokogiri dependencies
-RUN apt-get update -y \
-    && apt-get install -y --no-install-recommends \
-    libxslt-dev libxml2-dev
+        awscli \
+        build-essential \
+        curl \
+        coreutils \
+        dnsutils \
+        git \
+        jq \
+        libcurl4-openssl-dev \
+        libpq-dev \
+        libreadline-dev \
+        libsqlite3-dev \
+        libssl-dev \
+        netcat-openbsd \
+        rsyslog \
+        sqlite3 \
+        sudo \
+        tar \
+        wget \
+        xvfb
 
 RUN echo 'gem: --no-document' > /etc/gemrc \
     && curl -sL -O https://github.com/postmodern/ruby-install/archive/refs/tags/v${RUBY_INSTALL_VERSION}.tar.gz \
@@ -51,9 +45,6 @@ RUN echo 'gem: --no-document' > /etc/gemrc \
     && gem update --system \
     && bundle config --global path "${GEM_HOME}" \
     && bundle config --global bin "${GEM_HOME}/bin"
-
-COPY --from=golang:1 /usr/local/go /usr/local/go
-ENV GOROOT=/usr/local/go PATH=/usr/local/go/bin:$PATH
 
 # Database clients
 RUN echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
@@ -66,3 +57,6 @@ RUN echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg m
     libmysqlclient-dev \
     postgresql-${POSTGRES_MAJOR_VERSION} \
     postgresql-client-${POSTGRES_MAJOR_VERSION}
+
+COPY --from=golang:1 /usr/local/go /usr/local/go
+ENV GOROOT=/usr/local/go PATH=/usr/local/go/bin:$PATH
