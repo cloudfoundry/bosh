@@ -16,6 +16,7 @@ RUN apt-get update -y \
         coreutils \
         dnsutils \
         git \
+        gpg-agent \
         jq \
         libcurl4-openssl-dev \
         libpq-dev \
