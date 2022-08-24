@@ -29,7 +29,8 @@ RUN apt-get update -y \
         sudo \
         tar \
         wget \
-        xvfb
+        xvfb \
+        openssh-client
 
 RUN echo 'gem: --no-document' > /etc/gemrc \
     && curl -sL -O https://github.com/postmodern/ruby-install/archive/refs/tags/v${RUBY_INSTALL_VERSION}.tar.gz \
