@@ -37,10 +37,12 @@ describe NATSSync::AuthProvider do
   include Support::UaaHelpers
 
   subject(:auth_provider) { described_class.new(auth_info, config) }
+  let(:user) { 'fake-user' }
+  let(:password) { 'secret-password' }
   let(:config) do
     {
-      'user' => 'fake-user',
-      'password' => 'secret-password',
+      'user' => user,
+      'password' => password,
       'client_id' => 'fake-client',
       'client_secret' => 'fake-client-secret',
     }
@@ -100,8 +102,15 @@ describe NATSSync::AuthProvider do
       {}
     end
 
-    it 'returns username and password' do
-      expect(auth_provider.auth_header).to eq(%w[fake-user secret-password])
+    it 'returns Basic authentication string with username and password' do
+      expect(auth_provider.auth_header).to eq(base64_user_password(user, password))
     end
   end
+
+  private
+
+  def base64_user_password (plain_user, plain_password)
+    'Basic ' + Base64.encode64(plain_user.to_s + ':' + plain_password.to_s)
+  end
+
 end

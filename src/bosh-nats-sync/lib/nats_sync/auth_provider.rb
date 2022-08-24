@@ -18,7 +18,7 @@ module NATSSync
         return uaa_token_header(uaa_url)
       end
 
-      [@user, @password]
+      'Basic ' + Base64.encode64(@user + ':' + @password)
     end
 
     private
