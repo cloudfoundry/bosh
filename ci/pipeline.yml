@@ -149,8 +149,8 @@ jobs:
                 cd bosh-src/src;
                 gem install bundler:"$(grep -A 1 'BUNDLED WITH' Gemfile.lock | tail -n 1 | awk '{$1=$1};1')";
                 bundle install;
-                bundler-audit update;
-                bundler-audit check --ignore 'CVE-2019-17383';
+                bundle exec bundle-audit update;
+                bundle exec bundle-audit check --ignore 'CVE-2019-17383';
 
   - name: integration-db-tls-postgres
     public: true
