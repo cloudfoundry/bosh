@@ -68,7 +68,7 @@
           host: ((docker_host))
           tls: ((docker_tls))
         agent:
-          mbus: nats://nats:((nats_password))@((internal_ip)):4222
+          mbus: nats://((internal_ip)):4222
           blobstore:
             provider: dav
             options:
