@@ -79,7 +79,7 @@ describe 'nats.cfg.erb' do
     end
     let(:expected_content) do
       <<~HEREDOC
-        net: 1.2.3.4
+        host: 1.2.3.4
         port: 4222
 
         http: localhost:8222
