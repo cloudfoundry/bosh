@@ -1,4 +1,4 @@
-net: <%= p("nats.listen_address") %>
+host: <%= p("nats.listen_address") %>
 port: <%= p("nats.port") %>
 <% if p('nats.enable_metrics_endpoint') %>
 http: localhost:8222

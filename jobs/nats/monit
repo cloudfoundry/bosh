@@ -12,4 +12,4 @@ check process bosh_nats_sync
 
 check file nats_auth_conf
   with path /var/vcap/data/nats/auth.json
-  if changed checksum then exec "/var/vcap/packages/nats/bin/nats-server --signal reload"
+  if changed checksum then exec "/var/vcap/packages/nats/bin/nats-server --signal reload=/var/vcap/sys/run/bpm/nats/nats.pid"
