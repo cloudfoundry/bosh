@@ -3,7 +3,7 @@ name: nats
 
 templates:
   pre-start: bin/pre-start
-  post-deploy: bin/post-deploy
+  post-start: bin/post-start
   bpm.yml: config/bpm.yml
   nats.cfg.erb: config/nats.cfg
   nats_client_ca.pem.erb: config/nats_client_ca.pem

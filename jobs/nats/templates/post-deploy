@@ -1,3 +1,0 @@
-#!/bin/bash -x
-
-/var/vcap/packages/nats/bin/nats-server --signal reload
