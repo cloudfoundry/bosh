@@ -1,21 +1,34 @@
 require 'rest-client'
 require 'base64'
 require 'nats_sync/nats_auth_config'
+require 'open3'
 
 module NATSSync
   class UsersSync
-    def initialize(nats_config_file_path, bosh_config)
+    def initialize(nats_config_file_path, bosh_config, nats_server_executable, nats_server_pid_file)
       @nats_config_file_path = nats_config_file_path
       @bosh_config = bosh_config
+      @nats_server_executable = nats_server_executable
+      @nats_server_pid_file = nats_server_pid_file
     end
 
     def execute_users_sync
       NATSSync.logger.info 'Executing NATS Users Synchronization'
       vms_uuids = query_all_running_vms
+      current_file_hash = nats_file_hash
       write_nats_config_file(vms_uuids, read_subject_file(@bosh_config['director_subject_file']),
                              read_subject_file(@bosh_config['hm_subject_file']))
+      new_file_hash = nats_file_hash
+      UsersSync.restart_nats_server(@nats_server_executable, @nats_server_pid_file) unless current_file_hash == new_file_hash
       NATSSync.logger.info 'Finishing NATS Users Synchronization'
       vms_uuids
+    end
+
+    def self.restart_nats_server(nats_server_executable, nats_server_pid_file)
+      output, status = Open3.capture2e("#{nats_server_executable} --signal reload=#{nats_server_pid_file}")
+      unless status.success?
+        raise("Cannot execute: #{nats_server_executable} --signal reload=#{nats_server_pid_file}, Status Code: #{status} \nError: #{output}")
+      end
     end
 
     private

@@ -8,12 +8,15 @@ module NATSSync
       @bosh_config = config['director']
       @poll_user_sync = config['intervals']['poll_user_sync']
       @nats_config_file_path = config['nats']['config_file_path']
+      @nats_server_executable = config['nats']['nats_server_executable']
+      @nats_server_pid_file = config['nats']['nats_server_pid_file']
     end
 
     def run
       NATSSync.logger.info('Nats Sync starting...')
       EM.error_handler { |e| handle_em_error(e) }
       EM.run do
+        UsersSync.restart_nats_server(@nats_server_executable, @nats_server_pid_file)
         setup_timers
       end
     end
@@ -31,7 +34,7 @@ module NATSSync
     end
 
     def sync_nats_users
-      UsersSync.new(@nats_config_file_path, @bosh_config).execute_users_sync
+      UsersSync.new(@nats_config_file_path, @bosh_config, @nats_server_executable, @nats_server_pid_file).execute_users_sync
     end
 
     def handle_em_error(err)

@@ -7,12 +7,16 @@ module NATSSync
     before do
       allow(NATSSync).to receive(:logger).and_return(logger)
       allow(logger).to receive :info
+      allow(Open3).to receive(:capture2e).and_return(["Success", capture_status])
     end
 
-    subject { UsersSync.new(nats_config_file_path, bosh_config) }
+    subject { UsersSync.new(nats_config_file_path, bosh_config, nats_executable, nats_server_pid_file) }
 
     let(:logger) { double('Logger') }
+    let(:capture_status) { instance_double(Process::Status, success?: true) }
     let(:nats_config_file_path) { Tempfile.new('nats_config.json').path }
+    let(:nats_executable) { '/var/vcap/packages/nats/bin/nats-server' }
+    let(:nats_server_pid_file) { '/var/vcap/sys/run/bpm/nats/nats.pid' }
     let(:bosh_config) do
       { 'url' => url,
         'user' => user,
@@ -168,7 +172,6 @@ module NATSSync
           stub_request(:get, url + '/deployments/deployment-1/vms')
             .with(headers: { 'Authorization' => 'Bearer xyz' })
             .to_return(status: 200, body: vms_json)
-          allow(Kernel).to receive(:system).and_return(true)
         end
 
         it 'logs when it is starting and finishing' do
@@ -209,6 +212,33 @@ module NATSSync
             .not_to include(include('user' => format(bosh_vms_subject, '209b96c8-e482-43c7-9f3e-04de9f93c535.agent')))
         end
 
+        it 'should restart the nats process' do
+          expect(Open3).to receive(:capture2e).with("#{nats_executable} --signal reload=#{nats_server_pid_file}")
+          subject.execute_users_sync
+        end
+
+        describe 'when there is a previous configuration file with the same users' do
+          before do
+            write_config_file(%w[fef068d8-bbdd-46ff-b4a5-bf0838f918d9 c5e7c705-459e-41c0-b640-db32d8dc6e71])
+          end
+
+          it 'should not restart the NATs process' do
+            expect(Open3).not_to receive(:capture2e)
+            subject.execute_users_sync
+          end
+        end
+
+        describe 'when there is a previous configuration file with different users' do
+          before do
+            write_config_file(%w[fef068d8-bbdd-46ff-b4a5-bf0838f918d9 209b96c8-e482-43c7-8f3e-04de9f93c535])
+          end
+
+          it 'should restart the NATs process' do
+            expect(Open3).to receive(:capture2e).with("#{nats_executable} --signal reload=#{nats_server_pid_file}")
+            subject.execute_users_sync
+          end
+        end
+
         describe 'when there are running vms in Bosh and there are is no subject information for hm or the director' do
           let(:director_subject_file) { '/file/nonexistent1' }
           let(:hm_subject_file) { '/file/nonexistent2' }
@@ -229,6 +259,23 @@ module NATSSync
             expect(data_hash['authorization']['users'])
               .not_to include(include('user' => director_subject))
           end
+        end
+
+        describe 'when reloading the NATs server fails' do
+          let(:capture_status) { instance_double(Process::Status, success?: false) }
+          before do
+            allow(Open3).to receive(:capture2e).and_return(["Failed to reload NATs server", capture_status])
+          end
+
+          it 'should raise an error' do
+            expect { subject.execute_users_sync }.to raise_error(RuntimeError, /Failed to reload NATs server/)
+          end
+        end
+      end
+
+      def write_config_file(vms_uuids)
+        File.open(nats_config_file_path, 'w') do |f|
+          f.write(JSON.unparse(NatsAuthConfig.new(vms_uuids, director_subject, hm_subject).create_config))
         end
       end
     end
