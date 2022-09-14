@@ -1168,10 +1168,10 @@ jobs:
     - task: bump-bosh-blobstore-dav
       file: bosh-src/ci/tasks/bump-blobstore-cli.yml
       input_mapping:
-        bosh-release: bosh-src-out
+        bosh-src: bosh-src-out
         bosh-blobstore-cli: bosh-blobstore-dav
       output_mapping:
-        bosh-release: bosh-src-out
+        bosh-src: bosh-src-out
       params:
         BLOBSTORE_TYPE: dav
         GIT_USER_NAME: CI Bot
@@ -1184,10 +1184,10 @@ jobs:
     - task: bump-bosh-blobstore-gcs
       file: bosh-src/ci/tasks/bump-blobstore-cli.yml
       input_mapping:
-        bosh-release: bosh-src-out
+        bosh-src: bosh-src-out
         bosh-blobstore-cli: bosh-blobstore-gcs
       output_mapping:
-        bosh-release: bosh-src-out
+        bosh-src: bosh-src-out
       params:
         BLOBSTORE_TYPE: gcs
         GIT_USER_NAME: CI Bot
@@ -1200,10 +1200,10 @@ jobs:
     - task: bump-bosh-blobstore-s3
       file: bosh-src/ci/tasks/bump-blobstore-cli.yml
       input_mapping:
-        bosh-release: bosh-src-out
+        bosh-src: bosh-src-out
         bosh-blobstore-cli: bosh-blobstore-s3
       output_mapping:
-        bosh-release: bosh-src-out
+        bosh-src: bosh-src-out
       params:
         BLOBSTORE_TYPE: s3
         GIT_USER_NAME: CI Bot
