@@ -27,13 +27,20 @@ pushd bosh-src
 
     git add .
 
-    git --no-pager diff --cached
-#    TODO - uncomment
     if [[ "$( git status --porcelain )" != "" ]]; then
+      update_message="Updating blob ${EXISTING_CLI_BLOB_KEY} -> ${LATEST_CLI_BLOB_KEY}"
       git config user.name "${GIT_USER_NAME}"
       git config user.email "${GIT_USER_EMAIL}"
-      git commit --message "Updating blob ${EXISTING_CLI_BLOB_KEY} -> ${LATEST_CLI_BLOB_KEY}"
 
+      echo ""
+      echo "Commit info:"
+      echo "--message '${update_message}'"
+      echo ""
+      git --no-pager diff --cached
+      echo ""
+
+      git commit --message "${update_message}"
+#      TODO - uncomment
 #      bosh upload-blobs
     fi
   fi
