@@ -28,6 +28,8 @@ pushd bosh-src
     git add .
 
     if [[ "$( git status --porcelain )" != "" ]]; then
+      bosh upload-blobs
+
       update_message="Updating blob ${EXISTING_CLI_BLOB_KEY} -> ${LATEST_CLI_BLOB_KEY}"
       git config user.name "${GIT_USER_NAME}"
       git config user.email "${GIT_USER_EMAIL}"
