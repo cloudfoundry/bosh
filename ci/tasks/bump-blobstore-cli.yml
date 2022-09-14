@@ -1,0 +1,70 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: bosh/main-bosh-docker
+
+inputs:
+- name: bosh-src
+- name: bosh-blobstore-cli
+
+outputs:
+- name: bosh-src
+
+run:
+#  path: bosh-src/ci/tasks/bump-blobstore-cli.sh
+  path: bash
+  args:
+  - -c
+  - |
+    set -euo pipefail
+    
+    echo "${PRIVATE_YML}" > bosh-src/config/private.yml
+    
+    case "${BLOBSTORE_TYPE}" in
+    dav)
+      cli_name="davcli";;
+    gcs)
+      cli_name="bosh-gcscli";;
+    s3)
+      cli_name="s3cli";;
+    *)
+      echo "Error: unknown BLOBSTORE_TYPE=${BLOBSTORE_TYPE}; exiting"
+      exit 1;;
+    esac
+    
+    pushd bosh-src
+      LATEST_CLI_BLOB_PATH=$(ls ../bosh-blobstore-cli/*cli*)
+      LATEST_CLI_BLOB_KEY="${cli_name}/$( basename "${LATEST_CLI_BLOB_PATH}" )"
+    
+      EXISTING_CLI_BLOB_KEY=$(bosh blobs | cut -f1 | grep "${cli_name}")
+      
+      if [ "${EXISTING_CLI_BLOB_KEY}" != "${LATEST_CLI_BLOB_KEY}" ]; then
+        echo "add-blob ${LATEST_CLI_BLOB_PATH} ${LATEST_CLI_BLOB_KEY}"
+        bosh add-blob --sha2 "${LATEST_CLI_BLOB_PATH}" "${LATEST_CLI_BLOB_KEY}"
+        
+        echo "remove-blob ${EXISTING_CLI_BLOB_KEY}"
+        bosh remove-blob "${EXISTING_CLI_BLOB_KEY}"
+        #  TODO - uncomment
+        #    bosh upload-blobs
+      
+        echo "-----> $(date): Creating git commit"
+        git config user.name "${GIT_USER_NAME}"
+        git config user.email "${GIT_USER_EMAIL}"
+        git add .
+        
+        git --no-pager diff --cached
+        #  TODO - uncomment
+        #    if [[ "$( git status --porcelain )" != "" ]]; then
+        #      git commit --message "Updating blob ${EXISTING_CLI_BLOB_KEY} -> ${LATEST_CLI_BLOB_KEY}"
+        #    fi
+      fi
+    popd
+
+params:
+  BLOBSTORE_TYPE: dav
+  PRIVATE_YML: ''
+  GIT_USER_NAME: CI Bot
+  GIT_USER_EMAIL: cf-bosh-eng@pivotal.io
