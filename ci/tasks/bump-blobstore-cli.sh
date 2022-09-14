@@ -14,7 +14,7 @@ s3)
 esac
 
 pushd bosh-src
-  echo "${PRIVATE_YML}" > bosh-src/config/private.yml
+  echo "${PRIVATE_YML}" > config/private.yml
 
   LATEST_CLI_BLOB_PATH=$(ls ../bosh-blobstore-cli/*cli*)
   LATEST_CLI_BLOB_KEY="${cli_name}/$( basename "${LATEST_CLI_BLOB_PATH}" )"
@@ -29,12 +29,12 @@ pushd bosh-src
 
     git --no-pager diff --cached
 #    TODO - uncomment
-#    if [[ "$( git status --porcelain )" != "" ]]; then
-#      git config user.name "${GIT_USER_NAME}"
-#      git config user.email "${GIT_USER_EMAIL}"
-#      git commit --message "Updating blob ${EXISTING_CLI_BLOB_KEY} -> ${LATEST_CLI_BLOB_KEY}"
-#
+    if [[ "$( git status --porcelain )" != "" ]]; then
+      git config user.name "${GIT_USER_NAME}"
+      git config user.email "${GIT_USER_EMAIL}"
+      git commit --message "Updating blob ${EXISTING_CLI_BLOB_KEY} -> ${LATEST_CLI_BLOB_KEY}"
+
 #      bosh upload-blobs
-#    fi
+    fi
   fi
 popd
