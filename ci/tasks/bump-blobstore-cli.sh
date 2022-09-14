@@ -33,15 +33,14 @@ pushd bosh-src
       git config user.email "${GIT_USER_EMAIL}"
 
       echo ""
-      echo "Commit info:"
-      echo "--message '${update_message}'"
+      echo "### Commit info"
+      echo "    Message: '${update_message}'"
       echo ""
       git --no-pager diff --cached
+      echo "^^^ Commit info"
       echo ""
 
       git commit --message "${update_message}"
-#      TODO - uncomment
-#      bosh upload-blobs
     fi
   fi
 popd
