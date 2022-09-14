@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "${PRIVATE_YML}" > bosh-src/config/private.yml
-
 case "${BLOBSTORE_TYPE}" in
 dav)
   cli_name="davcli";;
@@ -16,10 +14,12 @@ s3)
 esac
 
 pushd bosh-src
+  echo "${PRIVATE_YML}" > bosh-src/config/private.yml
+
   LATEST_CLI_BLOB_PATH=$(ls ../bosh-blobstore-cli/*cli*)
   LATEST_CLI_BLOB_KEY="${cli_name}/$( basename "${LATEST_CLI_BLOB_PATH}" )"
 
-  EXISTING_CLI_BLOB_KEY=$(bosh blobs | cut -f1 | grep "${cli_name}" | tr -d '[:space:]')
+  EXISTING_CLI_BLOB_KEY=$(bosh blobs | cut -d ' ' -f1 | grep "${cli_name}")
 
    if [ "${EXISTING_CLI_BLOB_KEY}" != "${LATEST_CLI_BLOB_KEY}" ]; then
     bosh add-blob --sha2 "${LATEST_CLI_BLOB_PATH}" "${LATEST_CLI_BLOB_KEY}"
