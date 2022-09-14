@@ -1103,6 +1103,12 @@ jobs:
         trigger: true
       - get: ruby-release
         trigger: true
+      - get: bosh-blobstore-dav
+        trigger: true
+      - get: bosh-blobstore-gcs
+        trigger: true
+      - get: bosh-blobstore-s3
+        trigger: true
     - task: bump-nginx-packages
       file: nginx-release/ci/shared/bump-nginx-package.yml
       input_mapping:
@@ -1159,6 +1165,54 @@ jobs:
             options:
               credentials_source: static
               json_key: '((bosh_release_blobs_gcp_credentials_json))'
+    - task: bump-bosh-blobstore-dav
+      file: bosh-src/ci/tasks/bump-blobstore-cli.yml
+      input_mapping:
+        bosh-release: bosh-src-out
+        bosh-blobstore-cli: bosh-blobstore-dav
+      output_mapping:
+        bosh-release: bosh-src-out
+      params:
+        BLOBSTORE_TYPE: dav
+        GIT_USER_NAME: CI Bot
+        GIT_USER_EMAIL: cf-bosh-eng@pivotal.io
+        PRIVATE_YML: |
+          blobstore:
+            options:
+              credentials_source: static
+              json_key: '((bosh_release_blobs_gcp_credentials_json))'
+    - task: bump-bosh-blobstore-gcs
+      file: bosh-src/ci/tasks/bump-blobstore-cli.yml
+      input_mapping:
+        bosh-release: bosh-src-out
+        bosh-blobstore-cli: bosh-blobstore-gcs
+      output_mapping:
+        bosh-release: bosh-src-out
+      params:
+        BLOBSTORE_TYPE: gcs
+        GIT_USER_NAME: CI Bot
+        GIT_USER_EMAIL: cf-bosh-eng@pivotal.io
+        PRIVATE_YML: |
+          blobstore:
+            options:
+              credentials_source: static
+              json_key: '((bosh_release_blobs_gcp_credentials_json))'
+    - task: bump-bosh-blobstore-s3
+      file: bosh-src/ci/tasks/bump-blobstore-cli.yml
+      input_mapping:
+        bosh-release: bosh-src-out
+        bosh-blobstore-cli: bosh-blobstore-s3
+      output_mapping:
+        bosh-release: bosh-src-out
+      params:
+        BLOBSTORE_TYPE: s3
+        GIT_USER_NAME: CI Bot
+        GIT_USER_EMAIL: cf-bosh-eng@pivotal.io
+        PRIVATE_YML: |
+          blobstore:
+            options:
+              credentials_source: static
+              json_key: '((bosh_release_blobs_gcp_credentials_json))'
     - put: bosh-src
       params:
         repository: bosh-src-out
@@ -1203,6 +1257,24 @@ resources:
       index: "https://ftp.postgresql.org/pub/source/"
       regex: 'href="v(?P<version>13\.[0-9.]+)/"'
       uri: "https://ftp.postgresql.org/pub/source/v{version}/postgresql-{version}.tar.gz"
+
+  - name: bosh-blobstore-dav
+    type: s3
+    source:
+      regexp: davcli-(.*)-linux-amd64
+      bucket: davcli
+
+  - name: bosh-blobstore-gcs
+    type: s3
+    source:
+      regexp: bosh-gcscli-(.*)-linux-amd64
+      bucket: bosh-gcscli
+
+  - name: bosh-blobstore-s3
+    type: s3
+    source:
+      regexp: s3cli-(.*)-linux-amd64
+      bucket: s3cli-artifacts
 
   - name: weekly
     type: time
