@@ -25,7 +25,7 @@ describe NATSSync::Runner do
     let(:file_path) { '/var/vcap/data/nats/auth.json' }
     before do
       allow(user_sync_instance).to receive(:execute_users_sync)
-      allow(user_sync_class).to receive(:restart_nats_server)
+      allow(user_sync_class).to receive(:reload_nats_server_config)
       allow(user_sync_class).to receive(:new).and_return(user_sync_instance)
       Thread.new do
         subject.run
@@ -54,7 +54,7 @@ describe NATSSync::Runner do
       allow(EM).to receive(:stop_event_loop)
 
       allow(user_sync_instance).to receive(:execute_users_sync).and_raise(error)
-      allow(user_sync_class).to receive(:restart_nats_server)
+      allow(user_sync_class).to receive(:reload_nats_server_config)
       allow(user_sync_class).to receive(:new).and_return(user_sync_instance)
       Thread.new do
         subject.run

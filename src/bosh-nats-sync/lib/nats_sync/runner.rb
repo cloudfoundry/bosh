@@ -16,7 +16,7 @@ module NATSSync
       NATSSync.logger.info('Nats Sync starting...')
       EM.error_handler { |e| handle_em_error(e) }
       EM.run do
-        UsersSync.restart_nats_server(@nats_server_executable, @nats_server_pid_file)
+        UsersSync.reload_nats_server_config(@nats_server_executable, @nats_server_pid_file)
         setup_timers
       end
     end
