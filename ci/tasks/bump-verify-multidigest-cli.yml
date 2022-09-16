@@ -1,0 +1,22 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: bosh/main-bosh-docker
+
+inputs:
+- name: bosh-src
+- name: verify-multidigest-cli
+
+outputs:
+- name: bosh-src
+
+run:
+  path: bosh-src/ci/tasks/bump-verify-multidigest-cli.sh
+
+params:
+  PRIVATE_YML:
+  GIT_USER_NAME: CI Bot
+  GIT_USER_EMAIL: cf-bosh-eng@pivotal.io

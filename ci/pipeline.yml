@@ -1111,6 +1111,8 @@ jobs:
         trigger: true
       - get: bosh-blobstore-s3
         trigger: true
+      - get: verify-multidigest-cli
+        trigger: true
     - task: bump-nginx-packages
       file: nginx-release/ci/shared/bump-nginx-package.yml
       input_mapping:
@@ -1229,6 +1231,20 @@ jobs:
             options:
               credentials_source: static
               json_key: '((bosh_release_blobs_gcp_credentials_json))'
+    - task: bump-verify-multidigest-cli
+      file: bosh-src/ci/tasks/bump-verify-multidigest-cli.yml
+      input_mapping:
+        bosh-src: bosh-src-out
+      output_mapping:
+        bosh-src: bosh-src-out
+      params:
+        GIT_USER_NAME: CI Bot
+        GIT_USER_EMAIL: cf-bosh-eng@pivotal.io
+        PRIVATE_YML: |
+          blobstore:
+            options:
+              credentials_source: static
+              json_key: '((bosh_release_blobs_gcp_credentials_json))'
     - put: bosh-src
       params:
         repository: bosh-src-out
@@ -1298,6 +1314,15 @@ resources:
     source:
       regexp: s3cli-(.*)-linux-amd64
       bucket: s3cli-artifacts
+
+  - name: verify-multidigest-cli
+    type: s3
+    source:
+      regexp: verify-multidigest-(.*)-linux-amd64
+      bucket: ((aws_s3_release_bucket))
+      region_name: ((aws_s3_release_bucket_region))
+      access_key_id: ((aws_s3_release_bucket_access_key))
+      secret_access_key: ((aws_s3_release_bucket_secret_key))
 
   - name: weekly
     type: time
