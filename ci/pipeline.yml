@@ -4,6 +4,7 @@ groups:
     jobs:
       - gate
       - bump-packages
+      - bump-test
       - unit
       - unit-mysql
       - unit-postgres
@@ -1095,11 +1096,13 @@ jobs:
     plan:
     - in_parallel:
       - get: bosh-src
+      - get: nginx-release
+        trigger: true
+      - get: mariadb-connector-c-resource
+        trigger: true
       - get: postgres-10-src
         trigger: true
       - get: postgres-13-src
-        trigger: true
-      - get: nginx-release
         trigger: true
       - get: ruby-release
         trigger: true
@@ -1117,6 +1120,20 @@ jobs:
         output_repo: bosh-src-out
       params:
         PACKAGES: [nginx]
+        PRIVATE_YML: |
+          blobstore:
+            options:
+              credentials_source: static
+              json_key: '((bosh_release_blobs_gcp_credentials_json))'
+    - task: bump-mariadb-connector
+      file: bosh-src/ci/tasks/bump-mariadb-connector.yml
+      input_mapping:
+        bosh-src: bosh-src-out
+      output_mapping:
+        bosh-src: bosh-src-out
+      params:
+        GIT_USER_NAME: CI Bot
+        GIT_USER_EMAIL: cf-bosh-eng@pivotal.io
         PRIVATE_YML: |
           blobstore:
             options:
@@ -1244,6 +1261,13 @@ resource_types:
     repository: aequitas/http-resource
 
 resources:
+  - name: mariadb-connector-c-resource
+    type: http-resource
+    source:
+      index: "https://mariadb.org/connector-c/all-releases/"
+      regex: 'href="https://mariadb\.org/download/\?tab=connector&#038;prod=connector-c&#038;rel=(?P<version>\d+\.\d+.\d)[^"]*">\d+\.\d+\.\d+</a></td><td>\d{4}-\d{2}-\d{2}</td><td>Stable'
+      uri: "https://archive.mariadb.org/connector-c-{version}/mariadb-connector-c-{version}-src.tar.gz"
+
   - name: postgres-10-src
     type: http-resource
     source:

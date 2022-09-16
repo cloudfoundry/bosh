@@ -1,0 +1,22 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: bosh/main-bosh-docker
+
+inputs:
+- name: bosh-src
+- name: mariadb-connector-c-resource
+
+outputs:
+- name: bosh-src
+
+run:
+  path: bosh-src/ci/tasks/bump-mariadb-connector.sh
+
+params:
+  PRIVATE_YML:
+  GIT_USER_NAME: CI Bot
+  GIT_USER_EMAIL: cf-bosh-eng@pivotal.io
