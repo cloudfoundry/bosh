@@ -8,6 +8,16 @@ bosh_nats_sync_config = {
     "BUNDLE_GEMFILE" => "/var/vcap/packages/nats/Gemfile",
     "GEM_HOME" => "/var/vcap/packages/nats/gem_home/ruby/3.1.0",
   },
+  "unsafe" => {
+    "privileged" => true,
+    "host_pid_namespace" => true,
+  },
+  "additional_volumes" => [
+    {
+      "path" => "/var/vcap/sys/run/bpm/nats",
+      "mount_only" => true,
+    }
+  ]
 }
 
 nats_config = {

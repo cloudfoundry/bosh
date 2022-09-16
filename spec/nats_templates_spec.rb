@@ -48,6 +48,8 @@ describe 'bosh_nats_sync_config.yml.erb' do
           poll_user_sync: sync-me
         nats:
           config_file_path: "/var/vcap/data/nats/auth.json"
+          nats_server_executable: "/var/vcap/packages/nats/bin/nats-server"
+          nats_server_pid_file: "/var/vcap/sys/run/bpm/nats/nats.pid"
         logfile: "/var/vcap/sys/log/nats/bosh-nats-sync.log"
 
 
