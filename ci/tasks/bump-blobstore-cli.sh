@@ -19,7 +19,7 @@ pushd bosh-src
   LATEST_CLI_BLOB_PATH=$(ls ../bosh-blobstore-cli/*cli*)
   LATEST_CLI_BLOB_KEY="${cli_name}/$( basename "${LATEST_CLI_BLOB_PATH}" )"
 
-  EXISTING_CLI_BLOB_KEY=$(bosh blobs | cut -d ' ' -f1 | grep "${cli_name}")
+  EXISTING_CLI_BLOB_KEY=$(bosh blobs | cut -f1 | grep "${cli_name}" |  tr -d '[:space:]')
 
    if [ "${EXISTING_CLI_BLOB_KEY}" != "${LATEST_CLI_BLOB_KEY}" ]; then
     bosh add-blob --sha2 "${LATEST_CLI_BLOB_PATH}" "${LATEST_CLI_BLOB_KEY}"
