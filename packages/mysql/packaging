@@ -1,11 +1,10 @@
 # abort script on any command that exit with a non zero value
 set -e
 
-MARIADB_VERSION='3.1.13'
 (
   set -e
-  tar xzf mysql/mariadb-connector-c-${MARIADB_VERSION}-src.tar.gz
-  cd mariadb-connector-c-${MARIADB_VERSION}-src
+  tar xzf mysql/mariadb-connector-c-*-src.tar.gz
+  cd mariadb-connector-c-*-src
   mkdir bld
   cd bld
   cmake .. -DCMAKE_INSTALL_PREFIX=${BOSH_INSTALL_TARGET}
