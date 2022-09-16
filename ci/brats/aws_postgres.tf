@@ -11,7 +11,7 @@ resource "aws_db_instance" "postgres" {
   allocated_storage      = 10
   storage_type           = "gp2"
   engine                 = "postgres"
-  engine_version         = "10.22"
+  engine_version         = "10.21"
   instance_class         = "db.t2.micro"
   skip_final_snapshot    = true
   name                   = var.rds_postgres_databasename
