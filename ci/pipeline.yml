@@ -4,7 +4,6 @@ groups:
     jobs:
       - gate
       - bump-packages
-      - bump-test
       - unit
       - unit-mysql
       - unit-postgres
