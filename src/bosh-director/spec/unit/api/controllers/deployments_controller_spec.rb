@@ -2346,9 +2346,9 @@ module Bosh::Director
                 manifest_hash['networks'] = [{'name'=> 'network2'}]
                 diff = post '/fake-dep-name-no-cloud-conf/diff', YAML.dump(manifest_hash), {'CONTENT_TYPE' => 'text/yaml'}
 
-                expect(diff).not_to match /very-cloudy-network/
-                expect(diff).to match /non-cloudy-network/
-                expect(diff).to match /network2/
+                expect(diff).not_to match(/very-cloudy-network/)
+                expect(diff).to match(/non-cloudy-network/)
+                expect(diff).to match(/network2/)
               end
             end
 

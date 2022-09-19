@@ -371,7 +371,7 @@ module Bosh
       end
 
       def all_stemcells
-        files = Dir.entries(@base_dir).select { |file| file.match /stemcell_./ }
+        files = Dir.entries(@base_dir).select { |file| file.match(/stemcell_./) }
 
         Dir.chdir(@base_dir) do
           [].tap do |results|

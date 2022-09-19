@@ -120,7 +120,7 @@ module Bosh::Director
         time = Time.new
         time_format = time.strftime('%Y-%m-%dT%H:%M:%S.') << format('%06d ', time.usec)
         log_contents = File.read(task_dir + '/debug')
-        expect(log_contents).to match /D, \[#{time_format}.*\] \[\] DEBUG -- DirectorJobRunner: test/
+        expect(log_contents).to match(/D, \[#{time_format}.*\] \[\] DEBUG -- DirectorJobRunner: test/)
       end
     end
 

@@ -29,9 +29,9 @@ describe 'cli: deploy uploading', type: :integration do
       )
 
       output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal')
-      expect(output).to match /Using deployment 'minimal'/
-      expect(output).to match /Release has been created: test_release\/1/
-      expect(output).to match /Succeeded/
+      expect(output).to match(/Using deployment 'minimal'/)
+      expect(output).to match(/Release has been created: test_release\/1/)
+      expect(output).to match(/Succeeded/)
 
       expect(bosh_runner.run('cloud-check --report', deployment_name: 'minimal')).to match(/0 problems/)
     end
@@ -43,14 +43,14 @@ describe 'cli: deploy uploading', type: :integration do
       )
 
       output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal')
-      expect(output).to match /Using deployment 'minimal'/
-      expect(output).to match /Release has been created: test_release\/1/
-      expect(output).to match /Succeeded/
+      expect(output).to match(/Using deployment 'minimal'/)
+      expect(output).to match(/Release has been created: test_release\/1/)
+      expect(output).to match(/Succeeded/)
       expect(bosh_runner.run('cloud-check --report', deployment_name: 'minimal')).to match(/0 problems/)
 
       output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal')
-      expect(output).to match /Release 'test_release\/1' already exists/
-      expect(output).to match /Succeeded/
+      expect(output).to match(/Release 'test_release\/1' already exists/)
+      expect(output).to match(/Succeeded/)
 
       expect(bosh_runner.run('cloud-check --report', deployment_name: 'minimal')).to match(/0 problems/)
     end
@@ -62,8 +62,8 @@ describe 'cli: deploy uploading', type: :integration do
       )
 
       output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal', failure_expected: true)
-      expect(output).to match /Expected stream to have digest 'abcd1234' but was '#{release_sha}'/
-      expect(output).not_to match /Succeeded/
+      expect(output).to match(/Expected stream to have digest 'abcd1234' but was '#{release_sha}'/)
+      expect(output).not_to match(/Succeeded/)
     end
 
     it 'allows multiple digests in the sha1 field' do
@@ -73,9 +73,9 @@ describe 'cli: deploy uploading', type: :integration do
       )
 
       output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal', failure_expected: true)
-      expect(output).to match /Using deployment 'minimal'/
-      expect(output).to match /Release has been created: test_release\/1/
-      expect(output).to match /Succeeded/
+      expect(output).to match(/Using deployment 'minimal'/)
+      expect(output).to match(/Release has been created: test_release\/1/)
+      expect(output).to match(/Succeeded/)
     end
   end
 
@@ -89,9 +89,9 @@ describe 'cli: deploy uploading', type: :integration do
       )
 
       output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal')
-      expect(output).to match /Using deployment 'minimal'/
-      expect(output).to match /Release has been created: test_release\/1/
-      expect(output).to match /Succeeded/
+      expect(output).to match(/Using deployment 'minimal'/)
+      expect(output).to match(/Release has been created: test_release\/1/)
+      expect(output).to match(/Succeeded/)
 
       expect(bosh_runner.run('cloud-check --report', deployment_name: 'minimal')).to match(/0 problems/)
     end
@@ -103,8 +103,8 @@ describe 'cli: deploy uploading', type: :integration do
       )
 
       output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal', failure_expected: true)
-      expect(output).to match /stat goobers: no such file or directory/
-      expect(output).not_to match /Succeeded/
+      expect(output).to match(/stat goobers: no such file or directory/)
+      expect(output).not_to match(/Succeeded/)
     end
 
     it 'fails to deploy when the path is not a release' do
@@ -114,8 +114,8 @@ describe 'cli: deploy uploading', type: :integration do
       )
 
       output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal', failure_expected: true)
-      expect(output).to match /stat \/goobers: no such file or directory/
-      expect(output).not_to match /Succeeded/
+      expect(output).to match(/stat \/goobers: no such file or directory/)
+      expect(output).not_to match(/Succeeded/)
     end
   end
 
@@ -134,9 +134,9 @@ describe 'cli: deploy uploading', type: :integration do
       )
 
       output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal')
-      expect(output).to match /Using deployment 'minimal'/
-      expect(output).to match /Added dev release 'test_release/
-      expect(output).to match /Succeeded/
+      expect(output).to match(/Using deployment 'minimal'/)
+      expect(output).to match(/Added dev release 'test_release/)
+      expect(output).to match(/Succeeded/)
       expect(bosh_runner.run('cloud-check --report', deployment_name: 'minimal')).to match(/0 problems/)
     end
 
@@ -147,9 +147,9 @@ describe 'cli: deploy uploading', type: :integration do
       )
 
       output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal', failure_expected: true)
-      expect(output).to match /Processing release 'test_release\/create'/
-      expect(output).to match /not a directory/
-      expect(output).not_to match /Succeeded/
+      expect(output).to match(/Processing release 'test_release\/create'/)
+      expect(output).to match(/not a directory/)
+      expect(output).not_to match(/Succeeded/)
     end
 
     it 'rejects paths that are not local files' do
@@ -159,9 +159,9 @@ describe 'cli: deploy uploading', type: :integration do
       )
 
       output = bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'minimal', failure_expected: true)
-      expect(output).to match /Processing release 'test_release\/create'/
-      expect(output).to match /no such file or directory/
-      expect(output).not_to match /Succeeded/
+      expect(output).to match(/Processing release 'test_release\/create'/)
+      expect(output).to match(/no such file or directory/)
+      expect(output).not_to match(/Succeeded/)
     end
   end
 end

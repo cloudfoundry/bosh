@@ -8,8 +8,8 @@ describe 'cli: stemcell', type: :integration do
     stemcell_filename = spec_asset('valid_stemcell.tgz')
 
     out = bosh_runner.run("upload-stemcell #{stemcell_filename}")
-    expect(out).to match /Save stemcell/
-    expect(out).to match /Succeeded/
+    expect(out).to match(/Save stemcell/)
+    expect(out).to match(/Succeeded/)
 
     out = table(bosh_runner.run('stemcells', json: true))
     expect(out).to contain_exactly(
@@ -72,8 +72,8 @@ describe 'cli: stemcell', type: :integration do
     stemcell_filename = spec_asset('valid_stemcell.tgz')
 
     out = bosh_runner.run("upload-stemcell #{stemcell_filename}")
-    expect(out).to match /Save stemcell/
-    expect(out).to match /Succeeded/
+    expect(out).to match(/Save stemcell/)
+    expect(out).to match(/Succeeded/)
 
     out = table(bosh_runner.run('stemcells', json: true))
     expect(out).to contain_exactly(
@@ -87,15 +87,15 @@ describe 'cli: stemcell', type: :integration do
     stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{out[0]['cid']}")
     expect(File).to be_exists(stemcell_path)
     out = bosh_runner.run('delete-stemcell ubuntu-stemcell/1')
-    expect(out).to match /Succeeded/
+    expect(out).to match(/Succeeded/)
     stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{out[0]['cid']}")
     expect(File).not_to be_exists(stemcell_path)
   end
 
   it 'allows --sha1 even when used during upload of a local stemcell' do
     out = bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')} --sha1 shawone")
-    expect(out).to match /Save stemcell/
-    expect(out).to match /Succeeded/
+    expect(out).to match(/Save stemcell/)
+    expect(out).to match(/Succeeded/)
   end
 
   context 'when stemcell is in use by a deployment' do
@@ -147,8 +147,8 @@ describe 'cli: stemcell', type: :integration do
           # Upload a new stemcell with same version and name as the existing one, but is of different image content
           new_local_stemcell_path = spec_asset('valid_stemcell_with_different_content.tgz')
           output = bosh_runner.run("upload-stemcell #{new_local_stemcell_path} --fix")
-          expect(output).to match /Save stemcell/
-          expect(output).to match /Succeeded/
+          expect(output).to match(/Save stemcell/)
+          expect(output).to match(/Succeeded/)
 
           # Re-check the stemcell list and should return the new stemcell CID
           out = table(bosh_runner.run('stemcells', json: true))
@@ -182,8 +182,8 @@ describe 'cli: stemcell', type: :integration do
 
       it 'downloads the file' do
         out = bosh_runner.run("upload-stemcell #{stemcell_url}")
-        expect(out).to match /Save stemcell/
-        expect(out).to match /Succeeded/
+        expect(out).to match(/Save stemcell/)
+        expect(out).to match(/Succeeded/)
 
         out = table(bosh_runner.run('stemcells', json: true))
         expect(out).to contain_exactly(
@@ -203,8 +203,8 @@ describe 'cli: stemcell', type: :integration do
 
         it 'follows the redirect' do
           out = bosh_runner.run("upload-stemcell #{redirect_url}")
-          expect(out).to match /Save stemcell/
-          expect(out).to match /Succeeded/
+          expect(out).to match(/Save stemcell/)
+          expect(out).to match(/Succeeded/)
 
           out = table(bosh_runner.run('stemcells', json: true))
           expect(out).to contain_exactly(
@@ -247,8 +247,8 @@ describe 'cli: stemcell', type: :integration do
             # Upload a new stemcell with same version and name as the existing one, but is of different image content
             new_stemcell_url = file_server.http_url('valid_stemcell_with_different_content.tgz')
             output = bosh_runner.run("upload-stemcell #{new_stemcell_url} --fix")
-            expect(output).to match /Save stemcell/
-            expect(output).to match /Succeeded/
+            expect(output).to match(/Save stemcell/)
+            expect(output).to match(/Succeeded/)
 
 
             # Re-check the stemcell list and should return the new stemcell CID
@@ -275,8 +275,8 @@ describe 'cli: stemcell', type: :integration do
       context 'when a sha1 is provided' do
         it 'accepts shas' do
           output = bosh_runner.run("upload-stemcell #{stemcell_url} --sha1 bd0c5cc17b6753870f0e6b0155a2122e32649c22")
-          expect(output).to match /Save stemcell/
-          expect(output).to match /Succeeded/
+          expect(output).to match(/Save stemcell/)
+          expect(output).to match(/Succeeded/)
         end
 
         it 'fails if the sha is incorrect' do
@@ -300,8 +300,8 @@ describe 'cli: stemcell', type: :integration do
 
             it 'accepts and verifies the multiple digests' do
               output = bosh_runner.run("upload-stemcell #{stemcell_url} --sha1 '#{multidigest_string}'")
-              expect(output).to match /Save stemcell/
-              expect(output).to match /Succeeded/
+              expect(output).to match(/Save stemcell/)
+              expect(output).to match(/Succeeded/)
             end
           end
 

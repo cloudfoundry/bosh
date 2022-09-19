@@ -18,7 +18,7 @@ describe 'sync blobs', type: :integration do
       end
 
       out = bosh_runner.run_in_current_dir('upload-blobs')
-      blobs.each { |b| expect(out).to match /Blob upload '#{b}' .* finished/ }
+      blobs.each { |b| expect(out).to match(/Blob upload '#{b}' .* finished/) }
 
       FileUtils.rm_rf(blobs_dir)
       FileUtils.rm_rf(File.join(ClientSandbox.test_release_dir, '.blobs'))
@@ -36,8 +36,8 @@ describe 'sync blobs', type: :integration do
 
     it 'properly outputs progress' do
       blobs.each do |blob_name|
-        expect(sync_blobs_output).to match /Blob download '#{blob_name}' .* started/
-        expect(sync_blobs_output).to match /Blob download '#{blob_name}' .* finished/
+        expect(sync_blobs_output).to match(/Blob download '#{blob_name}' .* started/)
+        expect(sync_blobs_output).to match(/Blob download '#{blob_name}' .* finished/)
       end
     end
   end

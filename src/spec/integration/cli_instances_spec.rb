@@ -292,17 +292,17 @@ describe 'cli: deployment process', type: :integration do
     )
     vitals = director.instances_ps_vitals[0]
 
-    expect(vitals[:cpu_user]).to match /\d+\.?\d*[%]/
-    expect(vitals[:cpu_sys]).to match /\d+\.?\d*[%]/
-    expect(vitals[:cpu_wait]).to match /\d+\.?\d*[%]/
+    expect(vitals[:cpu_user]).to match(/\d+\.?\d*[%]/)
+    expect(vitals[:cpu_sys]).to match(/\d+\.?\d*[%]/)
+    expect(vitals[:cpu_wait]).to match(/\d+\.?\d*[%]/)
 
-    expect(vitals[:memory_usage]).to match /\d+\.?\d*[%] \(\d+\.?\d* \w+\)/
-    expect(vitals[:swap_usage]).to match /\d+\.?\d*[%] \(\d+\.?\d* \w+\)/
+    expect(vitals[:memory_usage]).to match(/\d+\.?\d*[%] \(\d+\.?\d* \w+\)/)
+    expect(vitals[:swap_usage]).to match(/\d+\.?\d*[%] \(\d+\.?\d* \w+\)/)
 
-    expect(vitals[:system_disk_usage]).to match /\d+\.?\d*[%]/
-    expect(vitals[:ephemeral_disk_usage]).to match /\d+\.?\d*[%]/
+    expect(vitals[:system_disk_usage]).to match(/\d+\.?\d*[%]/)
+    expect(vitals[:ephemeral_disk_usage]).to match(/\d+\.?\d*[%]/)
 
-    expect(vitals[:uptime]).to match /\d+d \d{1,2}h \d{1,2}m \d{1,2}s/
+    expect(vitals[:uptime]).to match(/\d+d \d{1,2}h \d{1,2}m \d{1,2}s/)
 
     # persistent disk was not deployed
     expect(vitals[:persistent_disk_usage]).to eq('')

@@ -54,7 +54,7 @@ module Bosh::Director
           get '/existing_resource_id'
           expect(last_response.status).to eq(200)
           expect(last_response.headers).to have_key('X-Accel-Redirect')
-          expect(last_response.headers['X-Accel-Redirect']).to match /\/x_accel_files\/.*/
+          expect(last_response.headers['X-Accel-Redirect']).to match(/\/x_accel_files\/.*/)
           expect(last_response.body).to eq('')
         end
 

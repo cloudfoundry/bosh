@@ -30,7 +30,7 @@ describe 'stop command', type: :integration do
       it 'stops the indexed job' do
         expect {
           output = bosh_runner.run('stop foobar/0', deployment_name: 'simple')
-          expect(output).to match /Updating instance foobar: foobar.* \(0\)/
+          expect(output).to match(/Updating instance foobar: foobar.* \(0\)/)
         }.to change { vm_states }
           .from({
               'another-job/0' => 'running',
@@ -50,7 +50,7 @@ describe 'stop command', type: :integration do
 
         expect {
           output = bosh_runner.run("stop foobar/#{instance_uuid}", deployment_name: 'simple')
-          expect(output).to match /Updating instance foobar: foobar\/#{instance_uuid} \(\d\)/
+          expect(output).to match(/Updating instance foobar: foobar\/#{instance_uuid} \(\d\)/)
         }.to change { vm_states }
           .from({
               'another-job/0' => 'running',
@@ -80,9 +80,9 @@ describe 'stop command', type: :integration do
       it 'stops all instances of the job' do
         expect {
           output = bosh_runner.run('stop foobar', deployment_name: 'simple')
-          expect(output).to match /Updating instance foobar: foobar\/.* \(0\)/
-          expect(output).to match /Updating instance foobar: foobar\/.* \(1\)/
-          expect(output).to match /Updating instance foobar: foobar\/.* \(2\)/
+          expect(output).to match(/Updating instance foobar: foobar\/.* \(0\)/)
+          expect(output).to match(/Updating instance foobar: foobar\/.* \(1\)/)
+          expect(output).to match(/Updating instance foobar: foobar\/.* \(2\)/)
         }.to change { vm_states }
           .from({
               'another-job/0' => 'running',
@@ -103,7 +103,7 @@ describe 'stop command', type: :integration do
       it 'deletes the VM(s)' do
         expect {
           output = bosh_runner.run('stop foobar/0 --hard', deployment_name: 'simple')
-          expect(output).to match /Updating instance foobar: foobar\/.* \(0\)/
+          expect(output).to match(/Updating instance foobar: foobar\/.* \(0\)/)
         }.to change { director.vms.count }.by(-1)
       end
     end
@@ -117,10 +117,10 @@ describe 'stop command', type: :integration do
     it 'stops all jobs in the deployment' do
       expect {
         output = bosh_runner.run('stop', deployment_name: 'simple')
-        expect(output).to match /Updating instance foobar: foobar\/.* \(0\)/
-        expect(output).to match /Updating instance foobar: foobar\/.* \(1\)/
-        expect(output).to match /Updating instance foobar: foobar\/.* \(2\)/
-        expect(output).to match /Updating instance another-job: another-job\/.* \(0\)/
+        expect(output).to match(/Updating instance foobar: foobar\/.* \(0\)/)
+        expect(output).to match(/Updating instance foobar: foobar\/.* \(1\)/)
+        expect(output).to match(/Updating instance foobar: foobar\/.* \(2\)/)
+        expect(output).to match(/Updating instance another-job: another-job\/.* \(0\)/)
       }.to change { vm_states }
         .from({
             'another-job/0' => 'running',

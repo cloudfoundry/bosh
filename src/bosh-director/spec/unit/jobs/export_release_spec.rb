@@ -223,7 +223,7 @@ module Bosh::Director
 
             it 'chooses the first stemcell alphabetically by name' do
               job.perform
-              expect(log_string).to match /Will compile with stemcell: ubuntu-stemcell/
+              expect(log_string).to match(/Will compile with stemcell: ubuntu-stemcell/)
             end
           end
         end

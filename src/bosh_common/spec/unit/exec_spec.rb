@@ -28,7 +28,7 @@ describe Bosh::Exec do
           Bosh::Exec.sh("ls /asdasd 2>&1", opts)
         }.to raise_error { |error|
           expect(error).to be_a Bosh::Exec::Error
-          expect(error.output).to match /No such file or directory/
+          expect(error.output).to match(/No such file or directory/)
         }
       end
 

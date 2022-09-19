@@ -35,7 +35,7 @@ module Bosh::Director
 
       context 'after successfully logging and cleaning bundles' do
         before do
-          expect(log).to receive(:info).with(match /some-log-type.*some-filters/)
+          expect(log).to receive(:info).with(match(/some-log-type.*some-filters/))
           expect(log_bundles_cleaner).to receive(:clean)
           expect(instance_manager)
             .to receive(:agent_client_for)

@@ -372,7 +372,7 @@ describe Bosh::Director::Config do
     describe 'director version' do
       it 'sets the expected version/revision' do
         described_class.configure(test_config)
-        expect(described_class.revision).to match /^[0-9a-f]{8}$/
+        expect(described_class.revision).to match(/^[0-9a-f]{8}$/)
         expect(described_class.version).to eq('0.0.2')
       end
     end

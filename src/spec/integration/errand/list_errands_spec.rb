@@ -14,9 +14,9 @@ describe 'list errands', type: :integration, with_tmp_dir: true do
 
     it 'lists the instance group name and the job name as errands' do
       output = bosh_runner.run('errands', deployment_name: deployment_name)
-      expect(output).to match /fake-errand-name/
-      expect(output).to match /errand1/
-      expect(output).to match /2 errands/
+      expect(output).to match(/fake-errand-name/)
+      expect(output).to match(/errand1/)
+      expect(output).to match(/2 errands/)
     end
   end
 
@@ -24,8 +24,8 @@ describe 'list errands', type: :integration, with_tmp_dir: true do
     let(:manifest_hash) { Bosh::Spec::Deployments.manifest_with_errand_on_service_instance }
     it 'lists the job name as a errand' do
       output = bosh_runner.run('errands', deployment_name: deployment_name)
-      expect(output).to match /errand1/
-      expect(output).to match /1 errands/
+      expect(output).to match(/errand1/)
+      expect(output).to match(/1 errands/)
     end
   end
 
@@ -38,9 +38,9 @@ describe 'list errands', type: :integration, with_tmp_dir: true do
 
     it 'lists both the instance group name and the job name' do
       output = bosh_runner.run('errands', deployment_name: deployment_name)
-      expect(output).to match /fake-errand-name/
-      expect(output).to match /errand1/
-      expect(output).to match /2 errands/
+      expect(output).to match(/fake-errand-name/)
+      expect(output).to match(/errand1/)
+      expect(output).to match(/2 errands/)
     end
 
     context 'the instance group and job have the same name' do
@@ -53,8 +53,8 @@ describe 'list errands', type: :integration, with_tmp_dir: true do
 
       it 'lists the name only once' do
         output = bosh_runner.run('errands --column=name', deployment_name: deployment_name)
-        expect(output).to match /errand1/
-        expect(output).to match /1 errands/
+        expect(output).to match(/errand1/)
+        expect(output).to match(/1 errands/)
       end
     end
   end

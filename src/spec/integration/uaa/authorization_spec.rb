@@ -19,14 +19,14 @@ describe 'User authorization with UAA', type: :integration do
     deploy_simple_manifest(environment_name: current_sandbox.director_url, include_credentials: false, no_login: true, env: client_env, manifest_hash: manifest_hash)
 
     output = bosh_runner.run('deployments', environment_name: current_sandbox.director_url, env: client_env , include_credentials: false)
-    expect(output).to match /1 deployments/
+    expect(output).to match(/1 deployments/)
     client_env = {'BOSH_CLIENT' => 'dev_team', 'BOSH_CLIENT_SECRET' => 'secret'}
     output = bosh_runner.run('deployments', environment_name: current_sandbox.director_url, env: client_env , failure_expected: true, include_credentials: false)
-    expect(output).to match /0 deployments/
+    expect(output).to match(/0 deployments/)
 
     client_env = {'BOSH_CLIENT' => 'director-access', 'BOSH_CLIENT_SECRET' => 'secret'}
     output = bosh_runner.run('deployments', environment_name: current_sandbox.director_url, env: client_env , include_credentials: false)
-    expect(output).to match /1 deployments/
+    expect(output).to match(/1 deployments/)
   end
 
   it 'can deploy and delete a deployment as a team member' do

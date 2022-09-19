@@ -12,7 +12,7 @@ describe 'recreate instance', type: :integration do
 
     initial_instances = director.instances
     instance_to_be_recreated = director.find_instance(initial_instances, 'foobar', '0')
-    expect(bosh_runner.run('recreate foobar/0', deployment_name: 'simple')).to match /Updating instance foobar: foobar.* \(0\)/
+    expect(bosh_runner.run('recreate foobar/0', deployment_name: 'simple')).to match(/Updating instance foobar: foobar.* \(0\)/)
 
     instances_after_instance_recreate = director.instances
     instance_was_recreated = director.find_instance(instances_after_instance_recreate, 'foobar', '0')
@@ -70,8 +70,8 @@ describe 'recreate instance', type: :integration do
     #only vms for one job should be recreated
     initial_instances = director.instances
     output = bosh_runner.run('recreate foobar', deployment_name: 'simple')
-    expect(output).to match /Updating instance foobar: foobar.* \(0\)/
-    expect(output).to match /Updating instance foobar: foobar.* \(1\)/
+    expect(output).to match(/Updating instance foobar: foobar.* \(0\)/)
+    expect(output).to match(/Updating instance foobar: foobar.* \(1\)/)
     instances_after_job_recreate = director.instances
     expect(director.find_instance(initial_instances, 'foobar', '0').vm_cid).not_to eq(director.find_instance(instances_after_job_recreate, 'foobar', '0').vm_cid)
     expect(director.find_instance(initial_instances, 'foobar', '1').vm_cid).not_to eq(director.find_instance(instances_after_job_recreate, 'foobar', '1').vm_cid)
@@ -80,9 +80,9 @@ describe 'recreate instance', type: :integration do
     #all vms should be recreated
     initial_instances = instances_after_job_recreate
     output = bosh_runner.run('recreate', deployment_name: 'simple')
-    expect(output).to match /Updating instance foobar: foobar.* \(0\)/
-    expect(output).to match /Updating instance foobar: foobar.* \(1\)/
-    expect(output).to match /Updating instance another-job: another-job.* \(0\)/
+    expect(output).to match(/Updating instance foobar: foobar.* \(0\)/)
+    expect(output).to match(/Updating instance foobar: foobar.* \(1\)/)
+    expect(output).to match(/Updating instance another-job: another-job.* \(0\)/)
     expect(director.instances).not_to match_array(initial_instances.map(&:vm_cid))
   end
 

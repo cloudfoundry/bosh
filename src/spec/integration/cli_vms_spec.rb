@@ -7,15 +7,15 @@ describe 'cli: vms', type: :integration do
     deploy_from_scratch(manifest_hash: Bosh::Spec::Deployments.simple_manifest_with_instance_groups)
     vitals = director.vms_vitals[0]
 
-    expect(vitals[:cpu_user]).to match /\d+\.?\d*[%]/
-    expect(vitals[:cpu_sys]).to match /\d+\.?\d*[%]/
-    expect(vitals[:cpu_wait]).to match /\d+\.?\d*[%]/
+    expect(vitals[:cpu_user]).to match(/\d+\.?\d*[%]/)
+    expect(vitals[:cpu_sys]).to match(/\d+\.?\d*[%]/)
+    expect(vitals[:cpu_wait]).to match(/\d+\.?\d*[%]/)
 
-    expect(vitals[:memory_usage]).to match /\d+\.?\d*[%] \(\d+\.?\d* \w+\)/
-    expect(vitals[:swap_usage]).to match /\d+\.?\d*[%] \(\d+\.?\d* \w+\)/
+    expect(vitals[:memory_usage]).to match(/\d+\.?\d*[%] \(\d+\.?\d* \w+\)/)
+    expect(vitals[:swap_usage]).to match(/\d+\.?\d*[%] \(\d+\.?\d* \w+\)/)
 
-    expect(vitals[:system_disk_usage]).to match /\d+\.?\d*[%]/
-    expect(vitals[:ephemeral_disk_usage]).to match /\d+\.?\d*[%]/
+    expect(vitals[:system_disk_usage]).to match(/\d+\.?\d*[%]/)
+    expect(vitals[:ephemeral_disk_usage]).to match(/\d+\.?\d*[%]/)
 
     # persistent disk was not deployed
     expect(vitals[:persistent_disk_usage]).to eq('')

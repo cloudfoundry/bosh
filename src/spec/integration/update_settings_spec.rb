@@ -39,6 +39,6 @@ describe 'update settings configuration', type: :integration do
     deploy_simple_manifest(manifest_hash: manifest_hash)
 
     nats_messages = extract_agent_messages(director.finish_recording_nats, director.instance('foobar', '0').agent_id).join(',')
-    expect(nats_messages).to match /stop.*update_settings.*start/
+    expect(nats_messages).to match(/stop.*update_settings.*start/)
   end
 end

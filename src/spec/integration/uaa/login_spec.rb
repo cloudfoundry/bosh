@@ -14,7 +14,7 @@ describe 'Logging into a director with UAA authentication', type: :integration d
       end
 
       output = bosh_runner.run('env', environment_name: current_sandbox.director_url, include_credentials: false)
-      expect(output).to match /marissa/
+      expect(output).to match(/marissa/)
 
       _, exit_code = bosh_runner.run('vms', environment_name: current_sandbox.director_url, return_exit_code: true, include_credentials: false)
       expect(exit_code).to eq(0)
@@ -23,22 +23,22 @@ describe 'Logging into a director with UAA authentication', type: :integration d
     it 'can access director using client id and client secret' do
       client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
       output = bosh_runner.run('env', environment_name: current_sandbox.director_url, include_credentials: false, env: client_env)
-      expect(output).to match /User.*test/
+      expect(output).to match(/User.*test/)
 
       _, exit_code = bosh_runner.run('vms', environment_name: current_sandbox.director_url, return_exit_code: true, env: client_env, include_credentials: false)
       expect(exit_code).to eq(0)
 
       # no creds, no dice
       output = bosh_runner.run('vms', environment_name: current_sandbox.director_url, include_credentials: false, failure_expected: true)
-      expect(output).to match /as anonymous user/
-      expect(output).to match /Not authorized: '\/deployments'/
+      expect(output).to match(/as anonymous user/)
+      expect(output).to match(/Not authorized: '\/deployments'/)
     end
 
     it 'can login with director uuid scope and director uuid authorities' do
       client_env = {'BOSH_CLIENT' => 'director-access', 'BOSH_CLIENT_SECRET' => 'secret'}
 
       output = bosh_runner.run('deployments', environment_name: current_sandbox.director_url, env: client_env, include_credentials: false, failure_expected: true)
-      expect(output).to match /0 deployments/
+      expect(output).to match(/0 deployments/)
     end
 
     it 'refreshes the token when running long command' do
@@ -73,7 +73,7 @@ describe 'Logging into a director with UAA authentication', type: :integration d
         expect(runner).to have_output 'Failed to authenticate with UAA'
       end
       output = bosh_runner.run('env', environment_name: current_sandbox.director_url, include_credentials: false)
-      expect(output).to match /not logged in/
+      expect(output).to match(/not logged in/)
     end
 
     #FIXME: doesn't seem like bosh requires ca-cert to be provided when doing a log-in command. Maybe makes sense since it's needed for basically everything else.
@@ -162,7 +162,7 @@ CERT
     it 'logs in successfully' do
       client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
       output = bosh_runner.run('env', environment_name: current_sandbox.director_url, env: client_env, no_login: true, include_credentials: false)
-      expect(output).to match /User.*test/
+      expect(output).to match(/User.*test/)
 
       _, exit_code = bosh_runner.run('vms', environment_name: current_sandbox.director_url, env: client_env, no_login: true, return_exit_code: true, include_credentials: false)
       expect(exit_code).to eq(0)

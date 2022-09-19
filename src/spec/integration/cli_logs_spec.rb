@@ -40,7 +40,7 @@ describe 'cli: logs', type: :integration do
     expect(bosh_runner.run("-d #{deployment_name} logs first-job/'#{instance1.id}'")).to include "Fetching logs for #{instance0.instance_group_name}/#{instance1.id} (1)"
 
     output_single_job = bosh_runner.run("-d #{deployment_name} logs first-job")
-    expect(output_single_job).to match /#{deployment_name}.first-job-.*\.tgz/
+    expect(output_single_job).to match(/#{deployment_name}.first-job-.*\.tgz/)
 
     expect(output_single_job).to include "Fetching logs for #{instance0.instance_group_name}/#{instance0.id} (#{instance0.index})"
     expect(output_single_job).to include "Fetching logs for #{instance1.instance_group_name}/#{instance1.id} (#{instance1.index})"
@@ -48,7 +48,7 @@ describe 'cli: logs', type: :integration do
 
     output_deployment, exit_code = bosh_runner.run("-d #{deployment_name} logs", return_exit_code: true)
     expect(exit_code).to eq(0)
-    expect(output_deployment).to match /#{deployment_name}-.*\.tgz/
+    expect(output_deployment).to match(/#{deployment_name}-.*\.tgz/)
 
     expect(output_deployment).to include "Fetching logs for #{instance0.instance_group_name}/#{instance0.id} (#{instance0.index})"
     expect(output_deployment).to include "Fetching logs for #{instance1.instance_group_name}/#{instance1.id} (#{instance1.index})"

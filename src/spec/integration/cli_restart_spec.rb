@@ -23,15 +23,15 @@ describe 'restart job', type: :integration do
     instance_before_with_index_1 = director.instances.find{ |instance| instance.index == '1' }
     instance_uuid = instance_before_with_index_1.id
 
-    expect(bosh_runner.run('restart foobar/0', deployment_name: 'simple')).to match /Updating instance foobar: foobar.* \(0\)/
-    expect(bosh_runner.run("restart foobar/#{instance_uuid}", deployment_name: 'simple')).to match /Updating instance foobar: foobar\/#{instance_uuid} \(\d\)/
+    expect(bosh_runner.run('restart foobar/0', deployment_name: 'simple')).to match(/Updating instance foobar: foobar.* \(0\)/)
+    expect(bosh_runner.run("restart foobar/#{instance_uuid}", deployment_name: 'simple')).to match(/Updating instance foobar: foobar\/#{instance_uuid} \(\d\)/)
     output = bosh_runner.run('restart foobar', deployment_name: 'simple')
-    expect(output).to match /Updating instance foobar: foobar\/.* \(0\)/
-    expect(output).to match /Updating instance foobar: foobar\/.* \(1\)/
+    expect(output).to match(/Updating instance foobar: foobar\/.* \(0\)/)
+    expect(output).to match(/Updating instance foobar: foobar\/.* \(1\)/)
     output = bosh_runner.run('restart', deployment_name: 'simple')
-    expect(output).to match /Updating instance foobar: foobar\/.* \(0\)/
-    expect(output).to match /Updating instance foobar: foobar\/.* \(1\)/
-    expect(output).to match /Updating instance another-job: another-job\/.* \(0\)/
+    expect(output).to match(/Updating instance foobar: foobar\/.* \(0\)/)
+    expect(output).to match(/Updating instance foobar: foobar\/.* \(1\)/)
+    expect(output).to match(/Updating instance another-job: another-job\/.* \(0\)/)
 
     output = bosh_runner.run('events', json: true)
     events = scrub_event_time(scrub_random_cids(scrub_random_ids(table(output))))
