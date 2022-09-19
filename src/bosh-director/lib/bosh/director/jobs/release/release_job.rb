@@ -91,7 +91,7 @@ module Bosh::Director
       main_monit_file = File.join(job_dir, 'monit')
       aux_monit_files = Dir.glob(File.join(job_dir, '*.monit'))
 
-      unless File.exists?(main_monit_file) || aux_monit_files.size > 0
+      unless File.exist?(main_monit_file) || aux_monit_files.size > 0
         raise JobMissingMonit, "Job '#{name}' is missing monit file"
       end
     end

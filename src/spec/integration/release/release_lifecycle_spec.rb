@@ -30,20 +30,20 @@ describe 'release lifecycle', type: :integration do
 
       out = bosh_runner.run_in_current_dir('create-release --force')
       expect(parse_release_version(out)).to eq('0+dev.1')
-      expect(File.exists?(File.join(Dir.pwd, 'dev_releases', 'bosh-release', 'bosh-release-0+dev.1.yml'))).to eq(true)
+      expect(File.exist?(File.join(Dir.pwd, 'dev_releases', 'bosh-release', 'bosh-release-0+dev.1.yml'))).to eq(true)
 
       out = bosh_runner.run_in_current_dir('create-release --final --force --version 1.0')
       expect(parse_release_version(out)).to eq('1.0')
-      expect(File.exists?(File.join(Dir.pwd, 'releases', 'bosh-release', 'bosh-release-1.0.yml'))).to eq(true)
+      expect(File.exist?(File.join(Dir.pwd, 'releases', 'bosh-release', 'bosh-release-1.0.yml'))).to eq(true)
 
       with_changed_release do
         out = bosh_runner.run_in_current_dir('create-release --force')
         expect(parse_release_version(out)).to eq('1.0+dev.1')
-        expect(File.exists?(File.join(Dir.pwd, 'dev_releases', 'bosh-release', 'bosh-release-1.0+dev.1.yml'))).to eq(true)
+        expect(File.exist?(File.join(Dir.pwd, 'dev_releases', 'bosh-release', 'bosh-release-1.0+dev.1.yml'))).to eq(true)
 
         out = bosh_runner.run_in_current_dir('create-release --final --force --version 2.0')
         expect(parse_release_version(out)).to eq('2.0')
-        expect(File.exists?(File.join(Dir.pwd, 'releases', 'bosh-release', 'bosh-release-2.0.yml'))).to eq(true)
+        expect(File.exist?(File.join(Dir.pwd, 'releases', 'bosh-release', 'bosh-release-2.0.yml'))).to eq(true)
       end
       bosh_runner.run_in_current_dir('upload-release')
 

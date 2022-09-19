@@ -86,7 +86,7 @@ module Bosh::Director
       end
 
       def create_stemcell_from_file_path(username, stemcell_path, options)
-        unless File.exists?(stemcell_path)
+        unless File.exist?(stemcell_path)
           raise DirectorError, "Failed to create stemcell: file not found - #{stemcell_path}"
         end
 

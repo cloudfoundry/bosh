@@ -39,15 +39,15 @@ module Bosh
       private
 
       def load_or_create_key_and_csr_cert
-        if File.exists?(@key_path) && !File.exists?(@certificate_path)
+        if File.exist?(@key_path) && !File.exist?(@certificate_path)
           raise MatchingFileNotFound, 'The key that matches the given certificate could not be found.'
         end
 
-        if File.exists?(@certificate_path) && !File.exists?(@key_path)
+        if File.exist?(@certificate_path) && !File.exist?(@key_path)
           raise MatchingFileNotFound, 'The certificate that matches the given key could not be found.'
         end
 
-        if File.exists?(@key_path) && File.exists?(@certificate_path)
+        if File.exist?(@key_path) && File.exist?(@certificate_path)
           load_key_and_csr_cert
         else
           create_key_and_csr_cert

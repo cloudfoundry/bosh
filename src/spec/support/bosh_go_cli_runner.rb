@@ -99,7 +99,7 @@ module Bosh::Spec
     def print_agent_debug_logs(agent_id)
       agent_output = File.read(@agent_log_path_resolver.call(agent_id)) rescue nil
       output_debug_log("Agent log #{agent_id}", agent_output)
-      output_debug_log("Nats log #{agent_id}", File.read(@nats_log_path)) if File.exists?(@nats_log_path)
+      output_debug_log("Nats log #{agent_id}", File.read(@nats_log_path)) if File.exist?(@nats_log_path)
     end
 
     def print_task_debug_logs(task_id, options)

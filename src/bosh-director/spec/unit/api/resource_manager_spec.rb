@@ -30,7 +30,7 @@ module Bosh::Director
       }
       path = manager.get_resource_path(99)
 
-      expect(File.exists?(path)).to be(true)
+      expect(File.exist?(path)).to be(true)
       expect(File.read(path)).to eq('some data')
     end
 

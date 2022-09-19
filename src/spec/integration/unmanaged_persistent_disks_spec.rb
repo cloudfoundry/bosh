@@ -217,7 +217,7 @@ describe 'multiple persistent disks', type: :integration do
   it 'does not mount anything' do
     agent_dir = current_sandbox.cpi.agent_dir_for_vm_cid(director.instances.first.vm_cid)
 
-    expect(File.exists?("#{agent_dir}/bosh/mounts.json")).to eq(false)
+    expect(File.exist?("#{agent_dir}/bosh/mounts.json")).to eq(false)
   end
 
   it 'does not mount anything even when disk is formatted and mountable' do
@@ -233,7 +233,7 @@ describe 'multiple persistent disks', type: :integration do
     # Allow restarted agent process time to start
     sleep 1
 
-    expect(File.exists?("#{agent_dir}/bosh/mounts.json")).to eq(false)
+    expect(File.exist?("#{agent_dir}/bosh/mounts.json")).to eq(false)
   end
 
   it 'maintains existing symlinks when new disks are added' do

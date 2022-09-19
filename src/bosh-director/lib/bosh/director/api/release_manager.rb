@@ -82,7 +82,7 @@ module Bosh::Director
       end
 
       def create_release_from_file_path(username, release_path, options)
-        unless File.exists?(release_path)
+        unless File.exist?(release_path)
           raise DirectorError, "Failed to create release: file not found - #{release_path}"
         end
 

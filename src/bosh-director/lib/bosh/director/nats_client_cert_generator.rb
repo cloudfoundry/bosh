@@ -12,11 +12,11 @@ module Bosh::Director
         raise DeploymentNATSClientCertificateGenerationError, 'Client certificate generation error. Config for nats_client_ca_certificate_path is nil.'
       end
 
-      if !File.exists?(Config.nats_client_ca_private_key_path)
+      if !File.exist?(Config.nats_client_ca_private_key_path)
         raise DeploymentNATSClientCertificateGenerationError, 'Client certificate generation error. Config for nats_client_ca_private_key_path is not found.'
       end
 
-      if !File.exists?(Config.nats_client_ca_certificate_path)
+      if !File.exist?(Config.nats_client_ca_certificate_path)
         raise DeploymentNATSClientCertificateGenerationError, 'Client certificate generation error. Config for nats_client_ca_certificate_path is not found.'
       end
 

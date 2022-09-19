@@ -175,7 +175,7 @@ module Bosh
       HAS_DISK_SCHEMA = Membrane::SchemaParser.parse { {disk_id: String} }
       def has_disk(disk_id)
         validate_and_record_inputs(HAS_DISK_SCHEMA, __method__, disk_id)
-        File.exists?(disk_file(disk_id))
+        File.exist?(disk_file(disk_id))
       end
 
       ATTACH_DISK_SCHEMA = Membrane::SchemaParser.parse { {vm_cid: String, disk_id: String} }
@@ -389,7 +389,7 @@ module Bosh
       end
 
       def all_snapshots
-        if File.exists?(snapshot_file(''))
+        if File.exist?(snapshot_file(''))
           Dir.glob(snapshot_file('*'))
         else
           []
@@ -625,7 +625,7 @@ module Bosh
         def wait_for_delete_vms
           @logger.debug('Wait for delete_vms')
           path = File.join(@cpi_commands, 'wait_for_unpause_delete_vms')
-          sleep(0.1) until File.exists?(path)
+          sleep(0.1) until File.exist?(path)
         end
 
         def wait_for_unpause_delete_vms
@@ -634,10 +634,10 @@ module Bosh
           File.write(path, 'marker')
 
           path = File.join(@cpi_commands, 'pause_delete_vms')
-          if File.exists?(path)
+          if File.exist?(path)
             @logger.debug('Wait for unpausing delete_vms')
           end
-          sleep(0.1) while File.exists?(path)
+          sleep(0.1) while File.exist?(path)
         end
 
         def make_create_vm_always_use_dynamic_ip(ip_address)
@@ -665,9 +665,9 @@ module Bosh
 
         def next_create_vm_cmd
           @logger.debug('Reading create_vm configuration')
-          ip_address = File.read(always_path) if File.exists?(always_path)
-          azs_to_ip = File.exists?(azs_path) ? JSON.load(File.read(azs_path)) : {}
-          failed = File.exists?(failed_path)
+          ip_address = File.read(always_path) if File.exist?(always_path)
+          azs_to_ip = File.exist?(azs_path) ? JSON.load(File.read(azs_path)) : {}
+          failed = File.exist?(failed_path)
           CreateVmCommand.new(ip_address, azs_to_ip, failed)
         end
 
@@ -695,7 +695,7 @@ module Bosh
 
         def raise_vmnotfound
           @logger.info('Reading delete_vm configuration')
-          File.exists?(raise_vmnotfound_path)
+          File.exist?(raise_vmnotfound_path)
         end
 
         def allow_detach_disk_to_succeed
@@ -884,7 +884,7 @@ module Bosh
         end
 
         def exists?(id)
-          File.exists?(vm_file(id))
+          File.exist?(vm_file(id))
         end
 
         def save(vm)

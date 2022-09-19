@@ -131,7 +131,7 @@ module Bosh::Director
 
         log_file = @task_manager.log_file(task, log_type)
 
-        if (['result', 'event'].include? log_type) && (!File.exists?(log_file))
+        if (['result', 'event'].include? log_type) && (!File.exist?(log_file))
           result = task["#{log_type}_output".to_sym]
           size = result.bytesize
           ranges = Rack::Utils.byte_ranges(env, size)

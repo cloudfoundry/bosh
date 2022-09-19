@@ -91,7 +91,7 @@ module Bosh::Spec
       @logger.debug("Unblocking package at #{job_dir_path}")
 
       @waiter.wait(15) do
-        raise('Must find errand dir') unless File.exists?(job_dir_path)
+        raise('Must find errand dir') unless File.exist?(job_dir_path)
         FileUtils.touch(File.join(job_dir_path, 'unblock_errand'))
       end
     end

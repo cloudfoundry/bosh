@@ -39,14 +39,14 @@ module Bosh::Dev
       if Kernel.system({'BOSH_BUILD_NAME' => build}, "cd #{build} && #{command}")
         lines.append "----- BEGIN #{build}"
         lines.append "            #{command}"
-        lines.append(File.read(log_file)) if log_file && File.exists?(log_file)
+        lines.append(File.read(log_file)) if log_file && File.exist?(log_file)
         lines.append "----- END   #{build}\n\n"
         return {:lines => lines, :error => false}
       else
         lines.append "----- BEGIN #{build}"
         lines.append "            #{command}"
         error_message = "#{build} failed to build or run unit tests"
-        error_message += ": #{File.read(log_file)}" if log_file && File.exists?(log_file)
+        error_message += ": #{File.read(log_file)}" if log_file && File.exist?(log_file)
         lines.append "            #{error_message}\n"
         lines.append "----- END   #{build}\n\n"
         return {:lines => lines, :error => true}
@@ -69,7 +69,7 @@ module Bosh::Dev
     def unit_builds
       @unit_builds ||= begin
                          builds = Dir['*'].select do |f|
-                           File.directory?(f) && File.exists?("#{f}/spec")
+                           File.directory?(f) && File.exist?("#{f}/spec")
                          end.sort
                          builds -= %w(bat)
                        end
