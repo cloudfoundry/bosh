@@ -354,7 +354,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
       let(:az2) { BD::DeploymentPlan::AvailabilityZone.new('fake-az2', {'az_key' => 'az_value2'}) }
 
       context 'when both azs and az are both specified' do
-        let (:network) do
+        let(:network) do
           BD::DeploymentPlan::DynamicNetwork.parse({
               'name' => 'foo',
               'subnets' => [{
@@ -371,7 +371,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
       end
 
       context 'when multiple azs are specified on the network' do
-        let (:network) do
+        let(:network) do
           BD::DeploymentPlan::DynamicNetwork.parse({
               'name' => 'foo',
               'subnets' => [{
@@ -433,7 +433,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
       end
 
       context 'when singular az is specified' do
-        let (:network) do
+        let(:network) do
           BD::DeploymentPlan::DynamicNetwork.parse({
               'name' => 'foo',
               'subnets' => [{

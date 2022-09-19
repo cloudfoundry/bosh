@@ -7,7 +7,7 @@ module Bosh::Director
 
   describe Jobs::DBJob do
 
-    let (:db_job) { Jobs::DBJob.new(job_class, task.id, args) }
+    let(:db_job) { Jobs::DBJob.new(job_class, task.id, args) }
     let(:job_class) do
       Class.new(Jobs::BaseJob) do
         def perform

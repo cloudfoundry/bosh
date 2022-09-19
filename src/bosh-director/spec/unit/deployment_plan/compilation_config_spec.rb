@@ -51,7 +51,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
       end
 
       context 'when cloud_properties is NOT a hash' do
-        let (:cloud_properties) { 'not_hash' }
+        let(:cloud_properties) { 'not_hash' }
 
         it 'should raise an error' do
           expect {

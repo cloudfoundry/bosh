@@ -43,7 +43,7 @@ module Bosh::Director
       it 'deletes old events' do
         make_n_events(3)
         job.perform
-        expect(Models::Event.count).to eq (2)
+        expect(Models::Event.count).to eq(2)
       end
 
       it 'should log' do

@@ -1234,7 +1234,7 @@ module Bosh::Director::DeploymentPlan
         )
       end
 
-      let (:cpi) { 'foo-cpi' }
+      let(:cpi) { 'foo-cpi' }
       context "when there's no availability zone" do
         let(:availability_zone) { nil }
         it "returns the instance's stemcell model, which is the pre-multi-CPI behavior" do

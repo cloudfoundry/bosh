@@ -42,7 +42,7 @@ module Bosh::Blobstore
           host_style: true,
         ).reject { |k, _v| k == :s3cli_path }
       end
-      let (:stored_config_file) { File.new(expected_config_file).readlines }
+      let(:stored_config_file) { File.new(expected_config_file).readlines }
 
       context 'when there is no s3cli' do
         it 'raises an error' do
@@ -96,8 +96,8 @@ module Bosh::Blobstore
       end
 
       context 'when s3cli_config_path option is provided' do
-        let (:s3cli_config_path) { Dir.tmpdir }
-        let (:config_file_options) do
+        let(:s3cli_config_path) { Dir.tmpdir }
+        let(:config_file_options) do
           options.merge (
               {
                 s3cli_config_path: s3cli_config_path,

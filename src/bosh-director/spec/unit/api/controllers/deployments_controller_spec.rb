@@ -36,7 +36,7 @@ module Bosh::Director
       end
 
       let(:cloud_config) { Models::Config.make(:cloud_with_manifest) }
-      let (:time) {Time.now}
+      let(:time) {Time.now}
 
       before do
         App.new(config)
@@ -601,19 +601,19 @@ module Bosh::Director
           end
 
           context 'for all jobs in deployment' do
-            let (:path) { '/foo/jobs/*?state=stopped' }
+            let(:path) { '/foo/jobs/*?state=stopped' }
             it_behaves_like 'change state'
           end
           context 'for one job in deployment' do
-            let (:path) { '/foo/jobs/dea?state=stopped' }
+            let(:path) { '/foo/jobs/dea?state=stopped' }
             it_behaves_like 'change state'
           end
           context 'for job instance in deployment by index' do
-            let (:path) { '/foo/jobs/dea/2?state=stopped' }
+            let(:path) { '/foo/jobs/dea/2?state=stopped' }
             it_behaves_like 'change state'
           end
           context 'for job instance in deployment by id' do
-            let (:path) { '/foo/jobs/dea/0B949287-CDED-4761-9002-FC4035E11B21?state=stopped' }
+            let(:path) { '/foo/jobs/dea/0B949287-CDED-4761-9002-FC4035E11B21?state=stopped' }
             it_behaves_like 'change state'
           end
 
@@ -1916,7 +1916,7 @@ module Bosh::Director
               @queue = :normal
             end
           end
-          let (:db_job) { Jobs::DBJob.new(job_class, task.id, args)}
+          let(:db_job) { Jobs::DBJob.new(job_class, task.id, args)}
 
           it 'exposes problem managent REST API' do
             get '/mycloud/problems'
@@ -1974,7 +1974,7 @@ module Bosh::Director
             before { Models::DirectorAttribute.make(name: 'resurrection_paused', value: resurrection_paused) }
 
             context 'when global resurrection is on' do
-              let (:resurrection_paused) {'false'}
+              let(:resurrection_paused) {'false'}
 
               it 'runs scan_and_fix task' do
                 Models::Instance.make(deployment: deployment, job: 'job', index: 0)
@@ -1983,7 +1983,7 @@ module Bosh::Director
             end
 
             context 'when global resurrection is off' do
-              let (:resurrection_paused) {'true'}
+              let(:resurrection_paused) {'true'}
 
               it 'does not run scan_and_fix task' do
                 Models::Instance.make(deployment: deployment, job: 'job', index: 0)

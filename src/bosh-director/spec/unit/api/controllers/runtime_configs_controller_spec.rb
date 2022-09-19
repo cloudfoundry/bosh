@@ -147,7 +147,7 @@ module Bosh::Director
         end
 
         describe 'when multiple named runtime configs exist' do
-          let (:addons_runtime_config) do
+          let(:addons_runtime_config) do
             { addons: runtime_config['addons'] }
           end
           before do

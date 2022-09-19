@@ -40,7 +40,7 @@ module Bosh::Blobstore
             }
         ).reject { |k, v| k == :gcscli_path }
       end
-      let (:stored_config_file) { File.new(expected_config_file).readlines }
+      let(:stored_config_file) { File.new(expected_config_file).readlines }
 
       context 'when there is no gcscli' do
         it 'raises an error' do
@@ -68,8 +68,8 @@ module Bosh::Blobstore
       end
 
       context 'when gcscli_config_path option is provided' do
-        let (:gcscli_config_path) { Dir::tmpdir }
-        let (:config_file_options) do
+        let(:gcscli_config_path) { Dir::tmpdir }
+        let(:config_file_options) do
           options.merge (
               {
                   gcscli_config_path: gcscli_config_path

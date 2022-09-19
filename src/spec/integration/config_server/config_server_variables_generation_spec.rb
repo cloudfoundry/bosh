@@ -290,7 +290,7 @@ describe 'variable generation with config server', type: :integration do
           )
 
           expect(exit_code).to_not eq(0)
-          expect(output).to include ("Error: Config Server failed to generate value for '/TestDirector/simple/var_e' with type 'meow'. HTTP Code '400', Error: 'Unsupported value type: meow'")
+          expect(output).to include("Error: Config Server failed to generate value for '/TestDirector/simple/var_e' with type 'meow'. HTTP Code '400', Error: 'Unsupported value type: meow'")
         end
       end
 

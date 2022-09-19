@@ -481,8 +481,8 @@ module Bosh::Director
         end
 
         context 'when max_in_flight and canaries are specified as percents' do
-          let (:canaries) { '50%' }
-          let (:max_in_flight) { '100%' }
+          let(:canaries) { '50%' }
+          let(:max_in_flight) { '100%' }
 
           it 'should understand it' do
             expect(canary_updater).to receive(:update).with(canary_plan, canary: true)

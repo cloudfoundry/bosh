@@ -97,7 +97,7 @@ module Bosh::Director::DeploymentPlan
 
     describe '#network_address' do
       context 'when prefer_dns_entry is set to true' do
-        let (:prefer_dns_entry) {true}
+        let(:prefer_dns_entry) {true}
 
         context 'when it is a manual network' do
           context 'and local dns is disabled' do
@@ -226,7 +226,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when prefer_dns_entry is set to false' do
-        let (:prefer_dns_entry) {false}
+        let(:prefer_dns_entry) {false}
 
         context 'when it is a manual network' do
           context 'and local dns is disabled' do

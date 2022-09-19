@@ -124,7 +124,7 @@ module Bosh::Director::Api
         end
 
         context 'state is queued' do
-          let (:state) { :queued }
+          let(:state) { :queued }
 
           it 'removes task older than the latest max_tasks that do not correspond to a task that is in a queued state' do
             expect(remover).to receive(:remove_task).with(tasks[2])

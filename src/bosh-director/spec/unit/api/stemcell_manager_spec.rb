@@ -286,7 +286,7 @@ module Bosh::Director
         it 'should raise error' do
 
           expect {
-            expect(subject.latest_by_name ('my-stemcell-with-b-name'))
+            expect(subject.latest_by_name('my-stemcell-with-b-name'))
           }.to raise_error(StemcellNotFound)
         end
       end
@@ -324,8 +324,8 @@ module Bosh::Director
         }
 
         it 'should return the stemcell matching the name with the latest version' do
-          stemcell = subject.latest_by_name ('my-stemcell-with-b-name')
-          expect(stemcell.version).to eq ('1471.9')
+          stemcell = subject.latest_by_name('my-stemcell-with-b-name')
+          expect(stemcell.version).to eq('1471.9')
           expect(stemcell.name).to eq('my-stemcell-with-b-name')
         end
 
@@ -364,7 +364,7 @@ module Bosh::Director
 
         it 'should raise error' do
           expect {
-            expect(subject.latest_by_os ('stemcell_os_1'))
+            expect(subject.latest_by_os('stemcell_os_1'))
           }.to raise_error(StemcellNotFound)
         end
       end

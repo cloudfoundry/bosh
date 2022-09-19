@@ -624,7 +624,7 @@ module Bosh::Director
           end
 
           context 'when the deployment makes changes to existing vms' do
-            let (:instance_plan) { instance_double(DeploymentPlan::InstancePlan) }
+            let(:instance_plan) { instance_double(DeploymentPlan::InstancePlan) }
 
             it 'will run post-deploy scripts' do
               allow(planner).to receive(:instance_groups).and_return([deployment_instance_group])
