@@ -142,8 +142,8 @@ module Bosh::Director
           it 'packages the certificates and disk associations into a map and sends to the agent' do
             expect(client).to receive(:send_message).with(
               :update_settings,
-              'trusted_certs' => 'these are the certificates',
-              'disk_associations' => [{ 'name' => 'zak', 'cid' => 'new-disk-cid' }],
+              { 'trusted_certs' => 'these are the certificates',
+                'disk_associations' => [{ 'name' => 'zak', 'cid' => 'new-disk-cid' }], }
             )
             allow(client).to receive(:get_task)
             client.update_settings('trusted_certs' => 'these are the certificates', 'disk_associations' => [{ 'name' => 'zak', 'cid' => 'new-disk-cid' }])
@@ -222,9 +222,9 @@ module Bosh::Director
         describe 'upload_blob' do
           it 'sends payload, payload_checksum, and blob_id to the agent' do
             expect(client).to receive(:send_message).with(:upload_blob,
-                                                          'blob_id' => 'blob_id',
-                                                          'checksum' => 'payload_checksum',
-                                                          'payload' => 'base64_encoded_payload')
+                                                          { 'blob_id' => 'blob_id',
+                                                            'checksum' => 'payload_checksum',
+                                                            'payload' => 'base64_encoded_payload' })
             allow(client).to receive(:get_task)
             client.upload_blob('blob_id', 'payload_checksum', 'base64_encoded_payload')
           end

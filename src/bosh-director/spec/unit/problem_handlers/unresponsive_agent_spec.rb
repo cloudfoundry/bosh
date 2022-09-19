@@ -204,17 +204,21 @@ module Bosh::Director
 
           expect(cloud).to receive(:set_vm_metadata)
           expect(cloud).to receive(:delete_vm).with('vm-cid')
-          expect(cloud)
-            .to receive(:create_vm).with('agent-222', 'sc-302', { 'foo' => 'bar' }, networks, [], 'key1' => 'value1', 'bosh' => { 'group' => String, 'groups' => anything })
-                                   .and_return('new-vm-cid')
+          expect(cloud).to receive(:create_vm).with(
+            'agent-222', 'sc-302',
+            { 'foo' => 'bar' },
+            networks,
+            [],
+            { 'key1' => 'value1', 'bosh' => { 'group' => String, 'groups' => anything } }
+          ).and_return('new-vm-cid')
 
           expect(fake_new_agent).to receive(:wait_until_ready).ordered
           expect(fake_new_agent).to receive(:update_settings).ordered
           expect(fake_new_agent).to receive(:apply).with(
-            'deployment' => 'simple',
-            'job' => { 'name' => 'job', 'release' => 'bosh-release' },
-            'index' => 0,
-            'networks' => networks,
+            { 'deployment' => 'simple',
+              'job' => { 'name' => 'job', 'release' => 'bosh-release' },
+              'index' => 0,
+              'networks' => networks, }
           ).ordered
           expect(fake_new_agent).to receive(:get_state).and_return(agent_spec).ordered
           expect(fake_new_agent).to receive(:apply).with(agent_spec).ordered

@@ -57,12 +57,12 @@ module Bhm
 
             expect(event_processor).to receive(:process).with(
               :heartbeat,
-              'timestamp' => Integer,
-              'agent_id' => '007',
-              'deployment' => 'mycloud',
-              'instance_id' => 'iuuid1',
-              'job' => 'mutator',
-              'teams' => ['ateam'],
+              { 'timestamp' => an_instance_of(Integer),
+                'agent_id' => '007',
+                'deployment' => 'mycloud',
+                'instance_id' => 'iuuid1',
+                'job' => 'mutator',
+                'teams' => ['ateam'], }
             )
 
             manager.process_event(:heartbeat, 'hm.agent.heartbeat.007')
@@ -84,13 +84,13 @@ module Bhm
               manager.sync_deployment_state({ 'name' => 'mycloud', 'teams' => ['ateam'] }, cloud1)
 
               expect(event_processor).to receive(:process).with(
-                :heartbeat,
-                'timestamp' => Integer,
-                'agent_id' => '007',
-                'deployment' => 'mycloud',
-                'instance_id' => 'iuuid1',
-                'job' => 'mutator',
-                'teams' => ['ateam'],
+                 :heartbeat,
+                { 'timestamp' => an_instance_of(Integer),
+                  'agent_id' => '007',
+                  'deployment' => 'mycloud',
+                  'instance_id' => 'iuuid1',
+                  'job' => 'mutator',
+                  'teams' => ['ateam'], }
               )
 
               manager.process_event(:heartbeat, 'hm.agent.heartbeat.007')
@@ -99,12 +99,12 @@ module Bhm
 
               expect(event_processor).to receive(:process).with(
                 :heartbeat,
-                'timestamp' => Integer,
-                'agent_id' => '007',
-                'deployment' => 'mycloud',
-                'instance_id' => 'iuuid1',
-                'job' => 'mutator',
-                'teams' => %w[ateam bteam],
+                { 'timestamp' => an_instance_of(Integer),
+                  'agent_id' => '007',
+                  'deployment' => 'mycloud',
+                  'instance_id' => 'iuuid1',
+                  'job' => 'mutator',
+                  'teams' => %w[ateam bteam], }
               )
 
               manager.process_event(:heartbeat, 'hm.agent.heartbeat.007')
