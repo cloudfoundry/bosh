@@ -2,15 +2,13 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DirectorStemcellOwner do
-    subject { DirectorStemcellOwner.new(fake_unamer, fake_file_owner) }
+    subject { DirectorStemcellOwner.new }
 
-    let(:fake_unamer) do
-      double(Etc, uname: { version: version_string })
+    before do
+      allow(Etc).to receive(:uname).and_return({ version: version_string })
     end
 
     let(:version_string) { '#35~16.04.1-Ubuntu SMP Fri Aug 10 21:54:34 UTC 2018' }
-
-    let(:fake_file_owner) { double(File) }
 
     describe '#stemcell_os' do
       context 'trusty' do
@@ -57,8 +55,8 @@ module Bosh::Director
     describe '#stemcell_version' do
       context 'that file is actually there' do
         before do
-          allow(fake_file_owner).to receive(:read).with('/var/vcap/bosh/etc/stemcell_version').and_return("123.45\n")
-          allow(fake_file_owner).to receive(:exists?).with('/var/vcap/bosh/etc/stemcell_version').and_return(true)
+          allow(File).to receive(:read).with('/var/vcap/bosh/etc/stemcell_version').and_return("123.45\n")
+          allow(File).to receive(:exist?).with('/var/vcap/bosh/etc/stemcell_version').and_return(true)
         end
 
         it 'returns the stemcell_version specified in the config' do
@@ -68,7 +66,7 @@ module Bosh::Director
 
       context 'there is no file' do
         before do
-          allow(fake_file_owner).to receive(:exists?).with('/var/vcap/bosh/etc/stemcell_version').and_return(false)
+          allow(File).to receive(:exist?).with('/var/vcap/bosh/etc/stemcell_version').and_return(false)
         end
 
         it 'returns -' do
@@ -78,14 +76,14 @@ module Bosh::Director
 
       context 'the file is removed while running' do
         before do
-          allow(fake_file_owner).to receive(:read).with('/var/vcap/bosh/etc/stemcell_version').and_return("123.45\n")
-          allow(fake_file_owner).to receive(:exists?).with('/var/vcap/bosh/etc/stemcell_version').and_return(true)
+          allow(File).to receive(:read).with('/var/vcap/bosh/etc/stemcell_version').and_return("123.45\n")
+          allow(File).to receive(:exist?).with('/var/vcap/bosh/etc/stemcell_version').and_return(true)
         end
 
         it 'returns the stemcell_version specified in the config' do
           expect(subject.stemcell_version).to eq('123.45')
 
-          allow(fake_file_owner).to receive(:exists?).with('/var/vcap/bosh/etc/stemcell_version').and_return(false)
+          allow(File).to receive(:exist?).with('/var/vcap/bosh/etc/stemcell_version').and_return(false)
 
           expect(subject.stemcell_version).to eq('123.45')
         end
