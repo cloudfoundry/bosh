@@ -48,7 +48,7 @@ module Bosh::Director
       let(:stemcell_path) { '/path/to/stemcell.tgz' }
 
       context 'when stemcell file exists' do
-        before { allow(File).to receive(:exists?).with(stemcell_path).and_return(true) }
+        before { allow(File).to receive(:exist?).with(stemcell_path).and_return(true) }
 
         it 'enqueues a task to upload a remote stemcell' do
           expect(job_queue).to receive(:enqueue).with(
@@ -66,7 +66,7 @@ module Bosh::Director
             { sha1: 'shawone' }
           end
 
-          before { allow(File).to receive(:exists?).with(stemcell_path).and_return(true) }
+          before { allow(File).to receive(:exist?).with(stemcell_path).and_return(true) }
 
           it 'enqueues a task to upload a remote stemcell' do
             expect(job_queue).to receive(:enqueue).with(
@@ -82,7 +82,7 @@ module Bosh::Director
       end
 
       context 'when stemcell file does not exist' do
-        before { allow(File).to receive(:exists?).with(stemcell_path).and_return(false) }
+        before { allow(File).to receive(:exist?).with(stemcell_path).and_return(false) }
 
         it 'raises an error' do
           expect(job_queue).to_not receive(:enqueue)

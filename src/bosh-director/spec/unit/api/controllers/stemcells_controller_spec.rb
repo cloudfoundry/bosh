@@ -25,7 +25,8 @@ module Bosh::Director
         end
 
         it 'allow form parameters with a stemcell local file path' do
-          allow(File).to receive(:exists?).with('/path/to/stemcell.tgz').and_return(true)
+          allow(File).to receive(:exist?).and_call_original
+          allow(File).to receive(:exist?).with('/path/to/stemcell.tgz').and_return(true)
 
           post '/', { 'nginx_upload_path' => '/path/to/stemcell.tgz'}, { 'CONTENT_TYPE' => 'multipart/form-data' }
           expect_redirect_to_queued_task(last_response)
@@ -38,7 +39,8 @@ module Bosh::Director
           end
 
           it 'allow form parameters with a stemcell local file path and sha1' do
-            allow(File).to receive(:exists?).with('/path/to/stemcell.tgz').and_return(true)
+            allow(File).to receive(:exist?).and_call_original
+            allow(File).to receive(:exist?).with('/path/to/stemcell.tgz').and_return(true)
 
             post '/', { 'nginx_upload_path' => '/path/to/stemcell.tgz', 'sha1' => 'shawone'}, { 'CONTENT_TYPE' => 'multipart/form-data' }
             expect_redirect_to_queued_task(last_response)

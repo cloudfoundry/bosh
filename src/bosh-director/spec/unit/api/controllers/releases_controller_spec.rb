@@ -41,7 +41,8 @@ module Bosh::Director
           end
 
           it 'allow form parameters with a release local file path' do
-            allow(File).to receive(:exists?).with('/path/to/release.tgz').and_return(true)
+            allow(File).to receive(:exist?).and_call_original
+            allow(File).to receive(:exist?).with('/path/to/release.tgz').and_return(true)
 
             post '/', { 'nginx_upload_path' => '/path/to/release.tgz' }, { 'CONTENT_TYPE' => 'multipart/form-data' }
             expect_redirect_to_queued_task(last_response)

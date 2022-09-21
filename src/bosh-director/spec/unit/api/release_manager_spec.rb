@@ -143,7 +143,7 @@ module Bosh::Director
       let(:release_path) { '/path/to/release.tgz' }
 
       context 'when release file exists' do
-        before { allow(File).to receive(:exists?).with(release_path).and_return(true) }
+        before { allow(File).to receive(:exist?).with(release_path).and_return(true) }
 
         it 'enqueues a task to upload a release file' do
           rebase = double('bool')
@@ -160,7 +160,7 @@ module Bosh::Director
       end
 
       context 'when release file does not exist' do
-        before { allow(File).to receive(:exists?).with(release_path).and_return(false) }
+        before { allow(File).to receive(:exist?).with(release_path).and_return(false) }
 
         it 'raises an error' do
           rebase = double('bool')
