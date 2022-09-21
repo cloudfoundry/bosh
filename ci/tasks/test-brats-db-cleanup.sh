@@ -24,9 +24,6 @@ function cleanup_postgres() {
   dropdb -U ${username} -p 5432 -h ${hostname} ${database_name} || true
 }
 
-apt-get update
-apt-get install -y jq
-
 RDS_MYSQL_EXTERNAL_DB_HOST="$(jq -r .aws_mysql_endpoint database-metadata/metadata | cut -d':' -f1)"
 RDS_POSTGRES_EXTERNAL_DB_HOST="$(jq -r .aws_postgres_endpoint database-metadata/metadata | cut -d':' -f1)"
 GCP_MYSQL_EXTERNAL_DB_HOST="$(jq -r .gcp_mysql_endpoint database-metadata/metadata)"
