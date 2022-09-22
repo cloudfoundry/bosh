@@ -1,11 +1,9 @@
 set -e
 
-VERSION=2.8.3
-
 mkdir -p ${BOSH_INSTALL_TARGET}/bin
 
-tar xzf nats/nats-server-v${VERSION}-linux-amd64.tar.gz
-cp nats-server-v${VERSION}-linux-amd64/nats-server ${BOSH_INSTALL_TARGET}/bin/nats-server
+tar xzf nats/nats-server-v*-linux-amd64.tar.gz
+cp nats-server-v*-linux-amd64/nats-server ${BOSH_INSTALL_TARGET}/bin/nats-server
 chmod +x ${BOSH_INSTALL_TARGET}/bin/nats-server
 
 
