@@ -16,20 +16,22 @@ esac
 pushd bosh-src
   echo "${PRIVATE_YML}" > config/private.yml
 
-  LATEST_CLI_BLOB_PATH=$(ls ../bosh-blobstore-cli/*cli*)
-  LATEST_CLI_BLOB_KEY="${cli_name}/$( basename "${LATEST_CLI_BLOB_PATH}" )"
+  BLOB_PREFIX="${cli_name}"
 
-  EXISTING_CLI_BLOB_KEY=$(bosh blobs | cut -f1 | grep "${cli_name}" |  tr -d '[:space:]')
+  LATEST_BLOB_PATH=$(ls ../bosh-blobstore-cli/*cli*)
+  LATEST_BLOB_KEY="${BLOB_PREFIX}/$( basename "${LATEST_BLOB_PATH}" )"
 
-   if [ "${EXISTING_CLI_BLOB_KEY}" != "${LATEST_CLI_BLOB_KEY}" ]; then
-    bosh add-blob --sha2 "${LATEST_CLI_BLOB_PATH}" "${LATEST_CLI_BLOB_KEY}"
-    bosh remove-blob "${EXISTING_CLI_BLOB_KEY}"
+  EXISTING_BLOB_KEY=$(bosh blobs | cut -f1 | grep "${BLOB_PREFIX}" |  tr -d '[:space:]')
+
+   if [ "${EXISTING_BLOB_KEY}" != "${LATEST_BLOB_KEY}" ]; then
+    bosh add-blob --sha2 "${LATEST_BLOB_PATH}" "${LATEST_BLOB_KEY}"
+    bosh remove-blob "${EXISTING_BLOB_KEY}"
     bosh upload-blobs
 
     git add .
 
     if [[ "$( git status --porcelain )" != "" ]]; then
-      update_message="Updating blob ${EXISTING_CLI_BLOB_KEY} -> ${LATEST_CLI_BLOB_KEY}"
+      update_message="Updating blob ${EXISTING_BLOB_KEY} -> ${LATEST_BLOB_KEY}"
       git config user.name "${GIT_USER_NAME}"
       git config user.email "${GIT_USER_EMAIL}"
 
