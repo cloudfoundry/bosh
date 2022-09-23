@@ -14,7 +14,7 @@ pushd bosh-src
    if [ "${EXISTING_BLOB_KEY}" != "${LATEST_BLOB_KEY}" ]; then
     bosh add-blob --sha2 "${LATEST_BLOB_PATH}" "${LATEST_BLOB_KEY}"
     bosh remove-blob "${EXISTING_BLOB_KEY}"
-    echo "bosh upload-blobs"
+    bosh upload-blobs
 
     git add .
 
@@ -31,8 +31,7 @@ pushd bosh-src
       echo "^^^ Commit info"
       echo ""
 
-      echo "git commit --message ${update_message}"
+      git commit --message "${update_message}"
     fi
   fi
 popd
-exit 1 # for testing

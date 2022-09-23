@@ -1113,6 +1113,10 @@ jobs:
         trigger: true
       - get: verify-multidigest-cli
         trigger: true
+      - get: nats-server-github-release
+        trigger: true
+        params:
+          globs: [ nats-server-v*-linux-amd64.tar.gz ]
     - task: bump-nginx-packages
       file: nginx-release/ci/shared/bump-nginx-package.yml
       input_mapping:
@@ -1245,6 +1249,20 @@ jobs:
             options:
               credentials_source: static
               json_key: '((bosh_release_blobs_gcp_credentials_json))'
+    - task: bump-nats-server
+      file: bosh-src/ci/tasks/bump-nats-server.yml
+      input_mapping:
+        bosh-src: bosh-src-out
+      output_mapping:
+        bosh-src: bosh-src-out
+      params:
+        GIT_USER_NAME: CI Bot
+        GIT_USER_EMAIL: cf-bosh-eng@pivotal.io
+        PRIVATE_YML: |
+          blobstore:
+            options:
+              credentials_source: static
+              json_key: '((bosh_release_blobs_gcp_credentials_json))'
     - put: bosh-src
       params:
         repository: bosh-src-out
@@ -1323,6 +1341,13 @@ resources:
       region_name: ((aws_s3_release_bucket_region))
       access_key_id: ((aws_s3_release_bucket_access_key))
       secret_access_key: ((aws_s3_release_bucket_secret_key))
+
+  - name: nats-server-github-release
+    type: github-release
+    source:
+      owner: nats-io
+      repository: nats-server
+      access_token: ((github_public_repo_token))
 
   - name: weekly
     type: time
