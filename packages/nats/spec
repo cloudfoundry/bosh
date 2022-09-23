@@ -5,7 +5,7 @@ dependencies:
 - ruby-3.1
 
 files:
-- nats/nats-server-v2.8.3-linux-amd64.tar.gz
+- nats/nats-server-v*-linux-amd64.tar.gz
 - bosh-nats-sync/**/*
 - vendor/cache/*.gem
 - vendor/cache/eventmachine-*/**
