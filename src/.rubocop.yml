@@ -10,6 +10,8 @@ Layout/FirstHashElementIndentation:
 Layout/MultilineMethodCallIndentation:
   EnforcedStyle: indented
 
+Layout/LineLength:
+  Max: 130
 
 # Metrics
 Metrics/AbcSize:
@@ -21,9 +23,6 @@ Metrics/BlockLength:
 
 Metrics/ClassLength:
   Max: 200
-
-Metrics/LineLength:
-  Max: 130
 
 Metrics/MethodLength:
   Max: 30
@@ -37,9 +36,6 @@ Metrics/ParameterLists:
 
 
 # Style
-Style/BracesAroundHashParameters:
-  EnforcedStyle: context_dependent
-
 Style/ClassAndModuleChildren:
   Enabled: false
 

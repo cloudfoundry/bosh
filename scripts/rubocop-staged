@@ -26,7 +26,7 @@ pushd "${REPO_BASE_DIR}"
 
   printf "\n${CLEAR_LINE}${RED}💀 Rubocop found some issues. Let's see if it can autocorrect the files you're trying to commit...${NO_COLOR}\n"
 
-  if ! bundle exec rubocop --auto-correct --cache=true ${SUSPECTS}; then
+  if ! bundle exec rubocop --autocorrect --cache=true ${SUSPECTS}; then
     printf "\n${CLEAR_LINE}${RED}💀 Rubocop couldn't autocorrect everything! 😭 ${NO_COLOR}\n"
     exit 1
   fi
