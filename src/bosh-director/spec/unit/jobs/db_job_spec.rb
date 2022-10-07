@@ -185,40 +185,19 @@ module Bosh::Director
         allow(Process).to receive(:waitpid).with(-1)
       end
 
-      let(:em_event_loop_exception_message) {'EM event loop exception raised OMG'}
-      let(:em_thread_exception_message) {'EM defer thread exception raised OMG'}
+      let(:fork_thread_exception_message) {'fork exception raised OMG'}
 
-      it 'emits exceptions raised in the EM event loop to the logger' do
+      it 'emits exceptions raised in the fork operation thread to the logger' do
         expect(Config.logger).to receive(:error) do |message|
-          expect(message).to match(em_event_loop_exception_message)
-          expect(message).to_not match(em_thread_exception_message)
-        end
-
-        expect {
-          Bosh::Director::ForkedProcess.run do
-            EM.schedule do
-              raise MyError, em_event_loop_exception_message
-            end
-            sleep 10
-            raise MyError, em_event_loop_exception_message
-          end
-        }.to raise_error MyError, em_event_loop_exception_message
-      end
-
-      it 'emits exceptions raised in the EM operation thread to the logger' do
-        expect(Config.logger).to receive(:error) do |message|
-          expect(message).to match(em_thread_exception_message)
+          expect(message).to match(fork_thread_exception_message)
         end
 
         Thread.report_on_exception = false
         expect {
           Bosh::Director::ForkedProcess.run do
-            EM.schedule do
-              puts 'doing complex processing'
-            end
-            raise MyError, em_thread_exception_message
+            raise MyError, fork_thread_exception_message
           end
-        }.to raise_error MyError, em_thread_exception_message
+        }.to raise_error MyError, fork_thread_exception_message
         Thread.report_on_exception = true
       end
     end

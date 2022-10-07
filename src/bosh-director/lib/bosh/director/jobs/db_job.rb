@@ -93,16 +93,10 @@ module Bosh::Director
   class ForkedProcess
     def self.run
       pid = Process.fork do
-        begin
-          EM.run do
-            operation = proc { yield }
-            operation_complete_callback = proc { EM.stop }
-            EM.defer( operation, operation_complete_callback )
-          end
-        rescue Exception => e
-          Config.logger.error("Fatal error from event machine: #{e}\n#{e.backtrace.join("\n")}")
-          raise e
-        end
+        yield
+      rescue Exception => e
+        Config.logger.error("Fatal error from fork: #{e}\n#{e.backtrace.join("\n")}")
+        raise e
       end
       Process.waitpid(pid)
 
