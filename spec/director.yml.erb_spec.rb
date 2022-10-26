@@ -13,7 +13,8 @@ describe 'director.yml.erb' do
           'bosh' => {
             'foo' => 'bar'
           }
-        }
+        },
+        'agent_wait_timeout' => 600,
       },
       'blobstore' => {
         'address' => '10.10.0.7',
@@ -517,6 +518,7 @@ describe 'director.yml.erb' do
         merged_manifest_properties['director']['cpi_job'] = 'test-cpi'
         merged_manifest_properties['agent']['env']['bosh'] = {'foo' => 'bar'}
         merged_manifest_properties['agent']['env']['abc'] = {'foo' => 'bar'}
+        merged_manifest_properties['agent']['agent_wait_timeout'] = 'some-timeout'
       end
 
       it 'configures the cpi correctly with agent.env.bosh properties' do
@@ -525,6 +527,10 @@ describe 'director.yml.erb' do
 
       it 'ignores non-supported agent.env properties' do
         expect(parsed_yaml['agent']['env']['abc']).to eq(nil)
+      end
+
+      it 'outputs the agent_wait_timeout' do
+        expect(parsed_yaml['agent']['agent_wait_timeout']).to eq('some-timeout')
       end
     end
 
