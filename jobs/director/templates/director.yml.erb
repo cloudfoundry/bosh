@@ -369,7 +369,8 @@ params['cloud'] = {
 params['agent'] = {
   'env' => {
     'bosh' => p('agent.env.bosh')
-  }
+  },
+  'agent_wait_timeout' => p('agent.agent_wait_timeout')
 }
 
 JSON.dump(params)

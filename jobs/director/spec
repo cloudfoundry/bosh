@@ -441,6 +441,9 @@ properties:
   agent.env.bosh:
     description: Base env for agent
     default: {}
+  agent.agent_wait_timeout:
+    description: optional agent wait timeout setting, default 600s
+    default: 600
   registry.address:
     description: Address of the Registry to connect to
   registry.port:
