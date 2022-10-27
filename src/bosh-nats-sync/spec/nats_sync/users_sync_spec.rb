@@ -6,8 +6,10 @@ module NATSSync
   describe UsersSync do
     before do
       allow(NATSSync).to receive(:logger).and_return(logger)
-      allow(logger).to receive :info
-      allow(Open3).to receive(:capture2e).and_return(["Success", capture_status])
+      allow(logger).to receive(:debug)
+      allow(logger).to receive(:error)
+      allow(logger).to receive(:info)
+      allow(Open3).to receive(:capture2e).and_return(['Success', capture_status])
     end
 
     subject { UsersSync.new(nats_config_file_path, bosh_config, nats_executable, nats_server_pid_file) }
@@ -142,14 +144,70 @@ module NATSSync
 
     describe '#execute_nats_sync' do
       before do
-        stub_request(:get, url + '/info')
+        stub_request(:get, "#{url}/info")
           .to_return(status: 200, body: info_json)
-        stub_request(:get, url + '/deployments')
+        stub_request(:get, "#{url}/deployments")
           .with(headers: { 'Authorization' => 'Bearer xyz' })
           .to_return(status: 200, body: deployments_json)
         allow(auth_provider).to receive(:new).and_return(auth_provider_double)
         allow(auth_provider_double).to receive(:auth_header).and_return('Bearer xyz')
-        allow(logger).to receive(:debug)
+        File.open(nats_config_file_path, 'w') do |f|
+          f.write('{}')
+        end
+      end
+
+      describe 'when UAA is not deployed and the BOSH API is not available' do
+        before do
+          stub_request(:get, "#{url}/deployments")
+            .with(headers: { 'Authorization' => 'Bearer xyz' })
+            .to_return(status: 401, body: 'Unauthorized')
+        end
+
+        describe 'and the authentication file is empty' do
+          it 'should write the basic bosh configuration' do
+            expect(JSON.parse(File.read(nats_config_file_path)).empty?).to be true
+            subject.execute_users_sync
+            file = File.read(nats_config_file_path)
+            data_hash = JSON.parse(file)
+            expect(data_hash['authorization']['users'])
+              .to include(include('user' => director_subject))
+            expect(data_hash['authorization']['users'])
+              .to include(include('user' => hm_subject))
+            expect(data_hash['authorization']['users'].length).to eq(2)
+          end
+        end
+
+        describe 'and the authentication file is corrupted' do
+          before do
+            File.open(nats_config_file_path, 'w') do |f|
+              f.write('{invalidchar')
+            end
+          end
+          it 'should write the basic bosh configuration' do
+            subject.execute_users_sync
+            file = File.read(nats_config_file_path)
+            data_hash = JSON.parse(file)
+            expect(data_hash['authorization']['users'])
+              .to include(include('user' => director_subject))
+            expect(data_hash['authorization']['users'])
+              .to include(include('user' => hm_subject))
+            expect(data_hash['authorization']['users'].length).to eq(2)
+          end
+        end
+
+        describe 'and the authentication file is not empty' do
+          before do
+            File.open(nats_config_file_path, 'w') do |f|
+              f.write('{"authorization": {"users": [{"user": "foo"}]}}')
+            end
+          end
+          it 'should not overwrite the authentication file' do
+            subject.execute_users_sync
+            file = File.read(nats_config_file_path)
+            data_hash = JSON.parse(file)
+            expect(data_hash).to eq({ 'authorization' => { 'users' => [{ 'user' => 'foo' }] } })
+          end
+        end
       end
 
       describe 'when there are no deployments with running vms in Bosh' do
@@ -169,7 +227,7 @@ module NATSSync
 
       describe 'when there are deployments with running vms in Bosh' do
         before do
-          stub_request(:get, url + '/deployments/deployment-1/vms')
+          stub_request(:get, "#{url}/deployments/deployment-1/vms")
             .with(headers: { 'Authorization' => 'Bearer xyz' })
             .to_return(status: 200, body: vms_json)
         end
@@ -264,7 +322,7 @@ module NATSSync
         describe 'when reloading the NATs server fails' do
           let(:capture_status) { instance_double(Process::Status, success?: false) }
           before do
-            allow(Open3).to receive(:capture2e).and_return(["Failed to reload NATs server", capture_status])
+            allow(Open3).to receive(:capture2e).and_return(['Failed to reload NATs server', capture_status])
           end
 
           it 'should raise an error' do
