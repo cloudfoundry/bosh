@@ -1103,8 +1103,6 @@ jobs:
         trigger: true
       - get: postgres-13-src
         trigger: true
-      - get: ruby-release
-        trigger: true
       - get: bosh-blobstore-dav
         trigger: true
       - get: bosh-blobstore-gcs
@@ -1117,6 +1115,17 @@ jobs:
         trigger: true
         params:
           globs: [ nats-server-v*-linux-amd64.tar.gz ]
+      - get: ruby
+        resource: ruby-3.1
+        trigger: true
+      - get: rubygems
+        resource: rubygems-3.3
+        trigger: true
+      - get: libyaml
+        resource: yaml-0.2
+        trigger: true
+      - get: stemcell
+        resource: warden-ubuntu-bionic
     - task: bump-nginx-packages
       file: nginx-release/ci/shared/bump-nginx-package.yml
       input_mapping:
@@ -1172,21 +1181,22 @@ jobs:
             options:
               credentials_source: static
               json_key: '((bosh_release_blobs_gcp_credentials_json))'
-    - task: bump-ruby-package
-      file: ruby-release/ci/tasks/shared/bump-ruby-package.yml
-      input_mapping:
-        bosh-release: bosh-src-out
-      output_mapping:
-        bosh-release: bosh-src-out
+    - task: bump-ruby
+      file: bosh-src/ci/tasks/bump-ruby.yml
       params:
-        GIT_USER_NAME: CI Bot
-        GIT_USER_EMAIL: cf-bosh-eng@pivotal.io
-        PACKAGE: ruby-3.1
+        LIBYAML_VERSION: "0.2"
         PRIVATE_YML: |
           blobstore:
             options:
               credentials_source: static
               json_key: '((bosh_release_blobs_gcp_credentials_json))'
+        RUBY_VERSION: "3.1"
+        RUBYGEMS_VERSION: "3.3"
+    - task: test-bumped-ruby
+      file: bosh-src/ci/tasks/test-ruby.yml
+      params:
+        RUBY_VERSION: "3.1"
+      privileged: true
     - task: bump-bosh-blobstore-dav
       file: bosh-src/ci/tasks/bump-blobstore-cli.yml
       input_mapping:
@@ -1292,6 +1302,12 @@ resource_types:
   type: docker-image
   source:
     repository: aequitas/http-resource
+
+- name: dynamic-metalink
+  type: docker-image
+  source:
+    repository: dpb587/dynamic-metalink-resource
+
 
 resources:
   - name: mariadb-connector-c-resource
@@ -1546,12 +1562,6 @@ resources:
       uri: https://github.com/bosh-packages/nginx-release.git
       branch: master
 
-  - name: ruby-release
-    type: git
-    source:
-      uri: https://github.com/bosh-packages/ruby-release
-      branch: master
-
   - name: tracker-output
     type: tracker
     source:
@@ -1627,3 +1637,77 @@ resources:
     source:
       repository: cloudfoundry/bosh
       tarball: true
+
+  - name: ruby-3.1
+    source:
+      metalink_get: |
+        export name="ruby-${version}.tar.gz"
+        export url="http://cache.ruby-lang.org/pub/ruby/3.1/${name}"
+        export sha256="$(curl --silent --location https://raw.githubusercontent.com/postmodern/ruby-versions/master/ruby/checksums.sha256 | grep ruby-${version}.tar.gz | awk {'print $1'})"
+        export size="$(curl --silent --head "$url" | grep -i Content-Length | awk '{ print $2 }' | tr -cd '[:digit:]')"
+        jq -n '
+        {
+        "files": [
+          {
+          "name": env.name,
+          "urls": [ { "url": env.url } ],
+          "hashes": [{ "type": "sha-256", "hash": env.sha256 }],
+          "size": env.size | tonumber
+          }
+        ]
+        }'
+      version: 3.1.x
+      version_check: |
+        curl --silent --location https://raw.githubusercontent.com/postmodern/ruby-versions/master/ruby/stable.txt
+    type: dynamic-metalink
+  - name: rubygems-3.3
+    source:
+      metalink_get: |
+        export name="rubygems-${version}.tgz"
+        export url="https://rubygems.org/rubygems/rubygems-${version}.tgz"
+        export size=$( curl --silent --head "$url" | grep Content-Length | awk '{ print $2 }' | tr -cd '[:digit:]' )
+        jq -n '
+        {
+        "files": [
+          {
+          "name": env.name,
+          "urls": [ { "url": env.url } ],
+          "size": env.size | tonumber
+          }
+        ]
+        }'
+      version: 3.3.x
+      version_check: |
+        git ls-remote --tags https://github.com/rubygems/rubygems.git \
+          | cut -f2 \
+          | grep -v '\^{}' \
+          | grep -E '^refs/tags/.+$' \
+          | sed  -E 's/^refs\/tags\/(.+)$/\1/'  \
+          | sed  's/^v//' \
+          | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$'
+    type: dynamic-metalink
+  - name: yaml-0.2
+    source:
+      metalink_get: |
+        export name="yaml-${version}.tar.gz"
+        export url="http://pyyaml.org/download/libyaml/yaml-${version}.tar.gz"
+        export size=$( curl --silent --head "$url" | grep Content-Length | awk '{ print $2 }' | tr -cd '[:digit:]' )
+        jq -n '
+        {
+        "files": [
+          {
+          "name": env.name,
+          "urls": [ { "url": env.url } ],
+          "size": env.size | tonumber
+          }
+        ]
+        }'
+      version: 0.2.x
+      version_check: |
+        git ls-remote --tags https://github.com/yaml/libyaml.git \
+          | cut  -f2 \
+          | grep -v '\^{}' \
+          | grep -E '^refs/tags/.+$' \
+          | sed  -E 's/^refs\/tags\/(.+)$/\1/'  \
+          | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$'
+    type: dynamic-metalink

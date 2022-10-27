@@ -1,0 +1,14 @@
+---
+name: <%= ruby_packagename %>
+
+files:
+- compile-<%= ruby_version %>.env
+- config/config.guess
+- config/config.sub
+- gemrc
+- overwrite_shebang.rb
+- <%= ruby_blob %>
+- <%= rubygems_blob %>
+- runtime-<%= ruby_version %>.env
+- <%= yaml_blob %>
+<%= /^0\.2/ =~ yaml_version ? "- patches/libyaml-#{yaml_version}.patch" : "" %>
