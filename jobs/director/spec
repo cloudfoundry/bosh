@@ -47,7 +47,7 @@ packages:
 - nginx
 - libpq
 - mysql
-- ruby-3.1
+- director-ruby-3.1
 - s3cli
 - davcli
 - bosh-gcscli
