@@ -54,8 +54,8 @@ replace_if_necessary "yaml-${LIBYAML_VERSION}" "${yaml_blob}" "../libyaml"
 echo "-----> $(date): Rendering package and job templates"
 
 
-git rm -r packages/ruby-${RUBY_VERSION}* && :
-git rm -r jobs/ruby-${RUBY_VERSION}* && :
+git rm -r packages/director-ruby-${RUBY_VERSION}* && :
+git rm -r jobs/director-ruby-${RUBY_VERSION}* && :
 
 mkdir -p "packages/${ruby_packagename}"
 mkdir -p "packages/${test_packagename}"
