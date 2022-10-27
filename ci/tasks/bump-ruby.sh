@@ -88,7 +88,7 @@ erb "${template_variables[@]}" "ci/templates/jobs/ruby-test/monit.erb" > "jobs/$
 erb "${template_variables[@]}" "ci/templates/jobs/ruby-test/spec.erb" > "jobs/${test_packagename}/spec"
 erb "${template_variables[@]}" "ci/templates/jobs/ruby-test/templates/run.erb" > "jobs/${test_packagename}/templates/run"
 
-for blob in $(bosh blobs | awk '{print $1}')
+for blob in $(bosh blobs | awk '{print $1}' | grep -E "ruby|yaml")
 do
   if ! grep -q -R ${blob} packages; then
     echo "Removing unused blob ${blob}"
