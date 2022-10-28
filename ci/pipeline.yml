@@ -1184,6 +1184,10 @@ jobs:
               json_key: '((bosh_release_blobs_gcp_credentials_json))'
     - task: bump-ruby
       file: bosh-src/ci/tasks/bump-ruby.yml
+      input_mapping:
+        bosh-src: bosh-src-out
+      output_mapping:
+        bosh-src: bosh-src-out
       params:
         LIBYAML_VERSION: "0.2"
         PRIVATE_YML: |
@@ -1195,6 +1199,8 @@ jobs:
         RUBYGEMS_VERSION: "3.3"
     - task: test-bumped-ruby
       file: bosh-src/ci/tasks/test-ruby.yml
+      input_mapping:
+        bosh-src: bosh-src-out
       params:
         RUBY_VERSION: "3.1"
       privileged: true
