@@ -1,0 +1,11 @@
+---
+name: director-ruby-3.1-test
+
+templates:
+  run: bin/run
+
+packages:
+- director-ruby-3.1
+- director-ruby-3.1-test
+
+properties: {}

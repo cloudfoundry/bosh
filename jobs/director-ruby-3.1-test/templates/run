@@ -1,0 +1,34 @@
+#!/bin/bash
+
+set -eux
+
+ASSERT_GEM_VERSION=3.3.24
+
+echo "Testing runtime compability"
+
+# shellcheck disable=1091
+source "/var/vcap/packages/director-ruby-3.1/bosh/runtime.env"
+ruby -e 'puts "test"'
+
+if [ $(ruby -e 'require "yaml"; puts({a: "b\n\n\n"}.to_yaml)' | grep "\.\.\.") ]; then
+  echo "Found unpatched libyaml"
+  exit 1
+fi
+
+echo "Testing compile compability"
+
+# shellcheck disable=1091
+source "/var/vcap/packages/director-ruby-3.1-test/bosh/runtime.env"
+cd /var/vcap/packages/director-ruby-3.1-test/
+bundle exec thin start &
+sleep 3
+curl http://localhost:3000 | grep test
+kill -9 $!
+
+gems_version=$(bundle exec gem -v)
+if [[ $gems_version == *"$ASSERT_GEM_VERSION"* ]]; then
+  echo "found correct rubygems version $gems_version"
+else
+  echo "wrong rubygems version: $gems_version"
+  exit 1
+fi

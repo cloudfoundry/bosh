@@ -26,6 +26,14 @@ powerdns/pdns-static_3.3.1-1_amd64.deb:
   size: 9353694
   object_id: 6e861aa6-2e83-4027-a1e8-0ebec995c274
   sha: 22bb46aa0b3e7671e0ee9aa30ed95c38841106ab
+ruby-3.1.2.tar.gz:
+  size: 20553628
+  object_id: 3f434df1-814e-469d-4a27-c68d8ca3d28e
+  sha: sha256:61843112389f02b735428b53bb64cf988ad9fb81858b8248e22e57336f24a83e
+rubygems-3.3.24.tgz:
+  size: 1300342
+  object_id: 33058ca8-c296-4e19-6540-48464f207efa
+  sha: sha256:15e2bc2625843fe7328db41156b556b54d7af9cd57438e33de11e9b8177d9102
 s3cli/s3cli-0.0.162-linux-amd64:
   size: 12496526
   object_id: 0dea0b83-83b4-4db5-64b3-bf8ca1dde944
@@ -34,3 +42,7 @@ verify-multidigest/verify-multidigest-0.0.340-linux-amd64:
   size: 3337450
   object_id: b7f79a3f-b126-46f4-62af-9d51a77baf4f
   sha: sha256:c8637cdaf77efae12e084c5c82715b708f7d7f31162a72a5784b8677cc6fd478
+yaml-0.2.5.tar.gz:
+  size: 609454
+  object_id: a57e6233-13c1-4f92-790f-9fc961113705
+  sha: sha256:c642ae9b75fee120b2d96c712538bd2cf283228d2337df2cf2988e3c02678ef4

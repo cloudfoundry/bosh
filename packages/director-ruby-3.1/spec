@@ -1,0 +1,14 @@
+---
+name: director-ruby-3.1
+
+files:
+- compile-3.1.env
+- config/config.guess
+- config/config.sub
+- gemrc
+- overwrite_shebang.rb
+- ruby-3.1.2.tar.gz
+- rubygems-3.3.24.tgz
+- runtime-3.1.env
+- yaml-0.2.5.tar.gz
+- patches/libyaml-0.2.5.patch
