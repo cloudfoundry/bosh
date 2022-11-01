@@ -14,6 +14,11 @@ if [ $(uname -s) == "Darwin" ]; then
   fi
 fi
 
+# Use Clang if available; the resulting Ruby is faster
+if [ -x /usr/bin/clang ]; then
+  export CXX=/usr/bin/clang++ CC=/usr/bin/clang
+fi
+
 openssl_version=$(openssl version)
 openssl_major_version=$(echo "${openssl_version}" | cut -f2 -d\ | cut -f1 -d.)
 if [ "${openssl_major_version}" == 0 ]; then
