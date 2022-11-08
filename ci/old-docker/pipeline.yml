@@ -5,6 +5,8 @@ jobs:
     plan:
       - get: bosh-src
         trigger: true
+      - get: weekly
+        trigger: true
       - put: main-postgres-10
         params:
           build: "bosh-src/ci/old-docker/main-postgres"
@@ -19,6 +21,8 @@ jobs:
     plan:
       - get: bosh-src
         trigger: true
+      - get: weekly
+        trigger: true
       - put: main-mysql-5.7
         params:
           build: "bosh-src/ci/old-docker/main-mysql"
@@ -31,6 +35,8 @@ jobs:
     public: true
     serial: true
     plan:
+      - get: weekly
+        trigger: true
       - get: bosh-src
         trigger: true
         passed:
@@ -57,6 +63,8 @@ jobs:
     public: true
     serial: true
     plan:
+      - get: weekly
+        trigger: true
       - get: bosh-linux-stemcell-builder-in
         trigger: true
         resource: bosh-linux-stemcell-builder
@@ -91,6 +99,8 @@ jobs:
     serial: true
     plan:
       - in_parallel:
+        - get: weekly
+          trigger: true
         - get: bosh-src
           trigger: true
         - get: bosh-cli
@@ -147,6 +157,8 @@ jobs:
     public: true
     serial: true
     plan:
+      - get: weekly
+        trigger: true
       - get: bosh-src
         trigger: true
       - put: main-ruby-go-image
@@ -189,7 +201,12 @@ resources:
       paths:
         - "ci/old-docker"
         - "ci/pipelines/docker-images/tasks"
-
+  - name: weekly
+    type: time
+    source:
+      start: 3:00 -0700
+      stop: 4:30 -0700
+      days: [Saturday]
   - name: bosh-linux-stemcell-builder
     type: git
     source:
