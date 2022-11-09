@@ -117,9 +117,10 @@ module NATSSync
     end
 
     def info
+      return @director_info if @director_info
       body = call_bosh_api_no_auth('/info')
 
-      JSON.parse(body)
+      @director_info = JSON.parse(body)
     end
 
     def create_authentication_header
