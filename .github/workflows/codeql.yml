@@ -1,0 +1,42 @@
+name: "CodeQL"
+
+on:
+  push:
+    branches: [ "main", "255.x", "255.x-azure", "256.x", "256.x-3233.x", "256.x-3233.x-azure", "256.x-azure", "256.x-dynamic-net-fix", "256.x-softlayer", "257.x", "257.x-3263.x", "257.x-azure", "260.x", "261.x", "262.x", "263.x", "264.x", "265.x", "266.x", "267.x", "268.2.x", "269.0.x", "3146.x", "3146.x-os-image", "3146.7-os-image", "3146.7", "3146.9-os-image", "3146.9", "3197.1", "3215.x", "3312.x", "3363.x" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: "17 1 * * 2"
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ go, ruby ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: ${{ matrix.language }}
+          queries: +security-and-quality
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
+        if: ${{ matrix.language == 'go' || matrix.language == 'ruby' }}
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: "/language:${{ matrix.language }}"
