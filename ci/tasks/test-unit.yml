@@ -4,7 +4,7 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: bosh/main
+    repository: bosh/main-ruby-go
 
 inputs:
   - name: bosh-src

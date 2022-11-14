@@ -1,20 +1,4 @@
 jobs:
-  - name: build-main-postgres-10
-    public: true
-    serial: true
-    plan:
-      - get: bosh-src
-        trigger: true
-      - get: weekly
-        trigger: true
-      - put: main-postgres-10
-        params:
-          build: "bosh-src/ci/old-docker/main-postgres"
-          build_args:
-            DB_VERSION: "10"
-        get_params:
-          skip_download: true
-
   - name: build-main-mysql-5.7
     public: true
     serial: true
@@ -28,22 +12,6 @@ jobs:
           build: "bosh-src/ci/old-docker/main-mysql"
           build_args:
             DB_VERSION: "-5.7"
-        get_params:
-          skip_download: true
-
-  - name: build-main
-    public: true
-    serial: true
-    plan:
-      - get: weekly
-        trigger: true
-      - get: bosh-src
-        trigger: true
-        passed:
-          - "build-main-ruby-go"
-      - put: main-image
-        params:
-          build: "bosh-src/ci/old-docker/main"
         get_params:
           skip_download: true
 
@@ -138,49 +106,6 @@ jobs:
         get_params:
           skip_download: true
 
-  - name: build-main-ubuntu-chroot
-    public: true
-    serial: true
-    plan:
-      - in_parallel:
-        - get: bosh-src
-          trigger: true
-          passed:
-            - "build-main-ruby-go"
-      - put: main-ubuntu-chroot
-        params:
-          build: "bosh-src/ci/old-docker/main-ubuntu-chroot"
-        get_params:
-          skip_download: true
-
-  - name: build-main-ruby-go
-    public: true
-    serial: true
-    plan:
-      - get: weekly
-        trigger: true
-      - get: bosh-src
-        trigger: true
-      - put: main-ruby-go-image
-        params:
-          build: "bosh-src/ci/old-docker/main-ruby-go"
-        get_params:
-          skip_download: true
-
-  - name: build-main-bats-aws
-    public: true
-    serial: true
-    plan:
-      - get: bosh-src
-        trigger: true
-        passed:
-          - "build-main-ruby-go"
-      - put: main-bats-aws
-        params:
-          build: "bosh-src/ci/old-docker/main-bats-aws"
-        get_params:
-          skip_download: true
-
   - name: build-bosh-blobstore-client
     public: true
     serial: true
@@ -248,25 +173,10 @@ resources:
       bucket: bosh-cli-alpha-artifacts
       region_name: us-east-1
 
-
-  - name: main-postgres-10
-    type: docker-image
-    source:
-      repository: bosh/main-postgres-10
-      username: ((docker.username))
-      password: ((docker.password))
-
   - name: main-mysql-5.7
     type: docker-image
     source:
       repository: bosh/main-mysql-5.7
-      username: ((docker.username))
-      password: ((docker.password))
-
-  - name: main-image
-    type: docker-image
-    source:
-      repository: bosh/main
       username: ((docker.username))
       password: ((docker.password))
 
@@ -293,13 +203,6 @@ resources:
       secret_access_key: ((vmware_ovftool_aws_access_key.password))
       versioned_file: VMware-ovftool-4.1.0-2459827-lin.x86_64.bundle
 
-  - name: main-ubuntu-chroot
-    type: docker-image
-    source:
-      repository: bosh/main-ubuntu-chroot
-      username: ((docker.username))
-      password: ((docker.password))
-
   - name: main-bosh-docker
     type: docker-image
     source:
@@ -311,20 +214,6 @@ resources:
     type: docker-image
     source:
       repository: bosh/main-bosh-garden
-      username: ((docker.username))
-      password: ((docker.password))
-
-  - name: main-bats-aws
-    type: docker-image
-    source:
-      repository: bosh/main-bats-aws
-      username: ((docker.username))
-      password: ((docker.password))
-
-  - name: main-ruby-go-image
-    type: docker-image
-    source:
-      repository: bosh/main-ruby-go
       username: ((docker.username))
       password: ((docker.password))
 
