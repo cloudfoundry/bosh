@@ -2,7 +2,7 @@
 
 set -eux
 
-ASSERT_GEM_VERSION=3.3.24
+ASSERT_GEM_VERSION=3.3.26
 
 echo "Testing runtime compability"
 

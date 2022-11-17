@@ -3,7 +3,7 @@
 set -e
 
 RUBY_VERSION=3.1.2
-RUBYGEMS_VERSION=3.3.24
+RUBYGEMS_VERSION=3.3.26
 LIBYAML_VERSION=0.2.5
 
 if [ $(uname -s) == "Darwin" ]; then
