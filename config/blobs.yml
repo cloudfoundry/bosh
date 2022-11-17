@@ -34,10 +34,10 @@ rubygems-3.3.26.tgz:
   size: 1300400
   object_id: b7b0663a-2bb7-4d32-6f7f-1ea5ae9f36fc
   sha: sha256:9b17a53a000a599926cf1ef19e9d2a35f87b436ae6500225eebe55db320dc68c
-s3cli/s3cli-0.0.163-linux-amd64:
-  size: 12496526
-  object_id: 25753821-b735-4dad-4111-c5e2397c304b
-  sha: sha256:d20405d6344572c2ee476e19f9971bd9253057a6a0e67b05bae2fc91ab0e1aa4
+s3cli/s3cli-0.0.164-linux-amd64:
+  size: 12501310
+  object_id: cef2da71-1549-465d-48d8-c0b46c438769
+  sha: sha256:48680c4d805c2cc89bb9bf37cdd40944a61fca03a7a4405f603feaf641a4b761
 verify-multidigest/verify-multidigest-0.0.341-linux-amd64:
   size: 3337450
   object_id: 5150dfc5-6e78-43ea-7f9d-6371f798babd
