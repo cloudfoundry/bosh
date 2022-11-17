@@ -14,10 +14,10 @@ nats/nats-server-v2.9.4-linux-amd64.tar.gz:
   size: 4907932
   object_id: e9f83072-d5d0-4c64-5f71-fbff711bb186
   sha: sha256:a2fa39fd0f9e4526f08e309bdced1450b9305674772815838f6db6adc5e99a9b
-postgres/postgresql-10.22.tar.gz:
-  size: 25460734
-  object_id: 108d738e-cd36-4e1d-4aa8-4bb6a9386fa7
-  sha: sha256:3ca98f49a31f595fd90664818eaa35a7a96d86123aedda8a023b2be8c96733f2
+postgres/postgresql-10.23.tar.gz:
+  size: 25493839
+  object_id: 1549746f-1e8d-4ce5-5585-36eca41ab528
+  sha: sha256:39886b7fbf375fdd79e94b676d8346a62c3c190ccf00b3f763002c8fc8fb71f0
 postgres/postgresql-13.8.tar.gz:
   size: 28046336
   object_id: 9b297da1-f0a6-4827-564a-691ccf35b833
