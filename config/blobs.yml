@@ -1,7 +1,7 @@
-bosh-gcscli/bosh-gcscli-0.0.70-linux-amd64:
-  size: 19725496
-  object_id: 15535782-8893-43e8-63e4-e7d482ef9412
-  sha: sha256:9ea065adab5674cc3ea5c1a88f50be5a3d54b7a86dbf48e5e4bbd03923487b8b
+bosh-gcscli/bosh-gcscli-0.0.71-linux-amd64:
+  size: 19852753
+  object_id: 5a882c5c-82dc-42a9-6016-9bcd622acb3d
+  sha: sha256:7c24281c933b440e2000ba9ea56a9f91a7aed646054b8a4c959bfe485376efe4
 davcli/davcli-0.0.98-linux-amd64:
   size: 8190083
   object_id: 37ea668a-396f-4c0f-53d0-fdcb85bef446
