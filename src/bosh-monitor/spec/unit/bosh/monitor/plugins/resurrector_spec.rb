@@ -19,8 +19,23 @@ module Bosh::Monitor::Plugins
     let(:plugin) { Bhm::Plugins::Resurrector.new(options) }
     let(:uri) { 'http://foo.bar.com:25555' }
     let(:status_uri) { "#{uri}/info" }
+    let(:tasks_uri) { "#{uri}/tasks?deployment=d&state=queued,processing&verbose=2" }
+    let(:tasks_body) {
+      '[{
+        "id": 60337,
+        "state": "processing",
+        "description": "create deployment",
+        "timestamp": null,
+        "started_at": 1669644079,
+        "result": null,
+        "user": "admin",
+        "deployment": "d",
+        "context_id": ""
+      }]'
+    }
 
     before do
+      stub_request(:get, tasks_uri).to_return(status: 200, headers: {}, body: tasks_body)
       stub_request(:get, status_uri)
         .to_return(status: 200, body: JSON.dump('user_authentication' => user_authentication))
     end
@@ -49,6 +64,63 @@ module Bosh::Monitor::Plugins
         EM.run do
           example.call
           EM.stop
+        end
+      end
+
+      context 'when there are already scan and fix tasks scheduled for a deployment' do
+        let(:event_processor) { Bhm::EventProcessor.new }
+        let(:state) { double(Bhm::Plugins::ResurrectorHelper::DeploymentState, managed?: true, meltdown?: false, summary: 'summary') }
+
+        before do
+          Bhm.event_processor = event_processor
+          @don = double(Bhm::Plugins::ResurrectorHelper::AlertTracker, record: nil, state_for: state)
+          expect(Bhm::Plugins::ResurrectorHelper::AlertTracker).to receive(:new).and_return(@don)
+        end
+
+        context 'with a scan task already queued' do 
+          let(:tasks_body) {
+            '[{
+              "id": 12345,
+              "state": "queued",
+              "description": "scan and fix",
+              "timestamp": 1654794744,
+              "started_at": 0,
+              "result": "",
+              "user": "admin",
+              "deployment": "d",
+              "context_id": ""
+            }]'
+          }
+          it 'will not add an additional queued task' do
+            plugin.run
+
+            expect(plugin).not_to receive(:send_http_put_request)
+
+            plugin.process(alert)
+          end
+        end
+
+        context 'with a scan task being processed' do 
+          let(:tasks_body) {
+            '[{
+              "id": 12345,
+              "state": "processing",
+              "description": "scan and fix",
+              "timestamp": 1654794744,
+              "started_at": 0,
+              "result": "",
+              "user": "admin",
+              "deployment": "d",
+              "context_id": ""
+            }]'
+          }
+          it 'will not add an additional queued task' do
+            plugin.run
+
+            expect(plugin).not_to receive(:send_http_put_request)
+
+            plugin.process(alert)
+          end
         end
       end
 

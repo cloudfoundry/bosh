@@ -66,6 +66,11 @@ module Bosh::Monitor
             split_by_resurrection_enabled(deployment, jobs_to_instances)
 
           unless jobs_to_instances_resurrection_enabled.empty?
+
+            if scan_and_fix_already_queued_or_processing?(deployment)
+              logger.info("(Resurrector) CCK is already queued for #{deployment}")
+              return
+            end
             payload = { 'jobs' => jobs_to_instances_resurrection_enabled }
             request = {
               head: {
@@ -97,6 +102,17 @@ module Bosh::Monitor
       end
 
       private
+
+      def scan_and_fix_already_queued_or_processing?(deployment_name)
+        url = @uri.dup
+
+        url.path = "/tasks"
+        url.query = URI.encode_www_form({deployment: deployment_name, state: "queued,processing", verbose: 2}) 
+        response = send_http_get_request(url.to_s)
+        return false if JSON.parse(response.body).select { |item | item['description'] == 'scan and fix'}.empty? && response.status_code == 200
+
+        true
+      end
 
       def auth_provider(director_info)
         @auth_provider ||= AuthProvider.new(director_info, @director_options, logger)
