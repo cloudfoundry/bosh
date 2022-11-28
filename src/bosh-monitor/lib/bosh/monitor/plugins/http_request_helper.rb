@@ -4,7 +4,6 @@ module Bosh::Monitor::Plugins
   module HttpRequestHelper
     def send_http_put_request(uri, request)
       logger.debug("sending HTTP PUT to: #{uri}")
-
       env_proxy = URI.parse(uri.to_s).find_proxy
       request[:proxy] = { host: env_proxy.host, port: env_proxy.port } unless env_proxy.nil?
       name = self.class.name
@@ -36,13 +35,16 @@ module Bosh::Monitor::Plugins
       end
     end
 
-    def send_http_get_request(uri)
+    def send_http_get_request(uri, headers = nil)
       # we are interested in response, so send sync request
       logger.debug("Sending GET request to #{uri}")
       cli = sync_client(OpenSSL::SSL::VERIFY_NONE)
       env_proxy = URI.parse(uri.to_s).find_proxy
       cli.proxy = env_proxy unless env_proxy.nil?
-      cli.get(uri)
+
+      return cli.get(uri) if headers.nil?
+
+      cli.get(uri, nil, headers)
     end
 
     def send_http_post_sync_request(uri, request)
