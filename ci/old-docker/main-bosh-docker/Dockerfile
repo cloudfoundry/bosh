@@ -5,7 +5,7 @@ RUN /tmp/install.sh && rm /tmp/install.sh
 
 ADD install-ruby.sh /tmp/install-ruby.sh
 RUN /tmp/install-ruby.sh && rm /tmp/install-ruby.sh
-ENV PATH /opt/rubies/ruby-3.1.2/bin:$PATH
+ENV PATH /opt/rubies/ruby-3.1.*/bin:$PATH
 
 COPY --from=golang:1 /usr/local/go /usr/local/go
 ENV GOROOT=/usr/local/go PATH=/usr/local/go/bin:$PATH
