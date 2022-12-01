@@ -1,8 +1,0 @@
----
-name: director-ruby-3.1-test
-
-dependencies:
-- director-ruby-3.1
-
-files:
-- ruby-test-app/**/*
