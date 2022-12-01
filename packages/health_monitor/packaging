@@ -24,11 +24,7 @@ if [ "`uname -m`" == "ppc64le" ]; then
     bundle config build.nokogiri '--use-system-libraries'
 fi
 
-bundle install \
-  --local \
-  --no-prune \
-  --binstubs ${BOSH_INSTALL_TARGET}/bin \
-  --path ${BOSH_INSTALL_TARGET}/gem_home
+bosh_bundle_local
 
 cp Gemfile ${BOSH_INSTALL_TARGET}
 cp Gemfile.lock ${BOSH_INSTALL_TARGET}

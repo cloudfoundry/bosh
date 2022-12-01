@@ -47,11 +47,7 @@ bundle config build.pg \
   --with-pg-lib=$libpq_dir/lib \
   --with-pg-include=$libpq_dir/include
 
-bundle install \
-  --local \
-  --no-prune \
-  --binstubs ${BOSH_INSTALL_TARGET}/bin \
-  --path ${BOSH_INSTALL_TARGET}/gem_home
+bosh_bundle_local
 
 cp Gemfile ${BOSH_INSTALL_TARGET}
 cp Gemfile.lock ${BOSH_INSTALL_TARGET}
