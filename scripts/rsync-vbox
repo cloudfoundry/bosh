@@ -5,7 +5,7 @@ do-rsync() {
   rsync -PrlptDv -e "ssh -i $key_path" \
     --rsync-path="sudo rsync" \
     "${bosh_dir}/src/$1/$2" \
-    "jumpbox@192.168.50.6:/var/vcap/packages/$3/gem_home/ruby/*/gems/$1-0.0.0/"
+    "jumpbox@192.168.56.6:/var/vcap/packages/$3/gem_home/ruby/*/gems/$1-0.0.0/"
 }
 
 version() {
@@ -34,19 +34,21 @@ main() {
   do-rsync bosh-template lib director
   do-rsync bosh-monitor lib health_monitor
   do-rsync bosh-monitor bin health_monitor
+  do-rsync bosh-nats-sync bin nats
+  do-rsync bosh-nats-sync lib nats
 
   echo "Replacing Director Version to $(version)"
 
-  ssh -i "${key_path}" jumpbox@192.168.50.6 \
+  ssh -i "${key_path}" jumpbox@192.168.56.6 \
     "sudo bash -c 'sed -i \"s/\\\"version\\\":\\\"[^\\\"]*\\\"/\\\"version\\\":\\\"$(version)\\\"/\" /var/vcap/jobs/director/config/director.yml'"
 
   monit_cmd="/var/vcap/bosh/bin/monit"
-  ssh -i "${key_path}" jumpbox@192.168.50.6 \
+  ssh -i "${key_path}" jumpbox@192.168.56.6 \
     "sudo bash -c '${monit_cmd} restart director; ${monit_cmd} restart director_scheduler; ${monit_cmd} restart director_sync_dns; ${monit_cmd} restart health_monitor'"
 
   echo -n "Restarting director..."
   sleep 5
-  while ! curl -fk https://192.168.50.6:25555/info >/dev/null 2>&1 ; do sleep 2 ; echo -n . ; done
+  while ! curl -fk https://192.168.56.6:25555/info >/dev/null 2>&1 ; do sleep 2 ; echo -n . ; done
   echo done
 }
 
