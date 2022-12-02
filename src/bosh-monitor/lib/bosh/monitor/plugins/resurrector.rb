@@ -116,12 +116,21 @@ module Bosh::Monitor
           'Content-Type' => 'application/json',
         }
         url.query = URI.encode_www_form({ deployment: deployment_name, state: 'queued,processing', verbose: 2 })
-        response = send_http_get_request(url.to_s, headers)
-        return true unless JSON.parse(response.body).select do |item|
-                             item['description'] == 'scan and fix'
-                           end.empty? && response.status_code == 200
+        tasks_response = send_http_get_request(url.to_s, headers)
 
-        false
+        # Getting the current tasks may fail. In a situation where the director is already dealing with lots of scan and fix tasks,
+        # we may want to postpone adding another one to the queue to give the director time to deal with the currently scheduled tasks.
+        # In the case of the tasks endpoint misbehaving ( status != 200 ) we can safely skip scheduling the the scan and fix in the current iteration.
+        # The alerts about missing healthchecks will trigger again some time later (when the director is under less pressure). 
+        return true if tasks_response.status != 200
+
+        queued_scan_and_fix = JSON.parse(tasks_response.body).select do |task|
+          task['description'] == 'scan and fix'
+        end
+
+        return false if queued_scan_and_fix.empty?
+
+        true
       end
 
       def auth_provider(director_info)

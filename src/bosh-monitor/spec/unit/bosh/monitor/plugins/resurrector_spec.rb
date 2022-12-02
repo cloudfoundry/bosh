@@ -19,6 +19,7 @@ module Bosh::Monitor::Plugins
     let(:uri) { 'http://foo.bar.com:25555' }
     let(:status_uri) { "#{uri}/info" }
     let(:tasks_uri) { "#{uri}/tasks?deployment=d&state=queued,processing&verbose=2" }
+    let(:tasks_status) { 200 }
     let(:tasks_body) do
       '[{
         "id": 60337,
@@ -36,7 +37,7 @@ module Bosh::Monitor::Plugins
     before do
       stub_request(:get, tasks_uri).to_return(lambda do |request|
         if request.headers.fetch('Authorization') || request.headers.fetch('authorization')
-          { status: 200, body: tasks_body }
+          { status: tasks_status, body: tasks_body }
         else
           { status: 401, body: '{"error": "unauthorized"}' }
         end
@@ -72,7 +73,7 @@ module Bosh::Monitor::Plugins
         end
       end
 
-      context 'when there are already scan and fix tasks scheduled for a deployment' do
+      context 'when resurrector checks if scan and fix needs to be scheduled' do
         let(:event_processor) { Bhm::EventProcessor.new }
         let(:state) do
           double(Bhm::Plugins::ResurrectorHelper::DeploymentState, managed?: true, meltdown?: false, summary: 'summary')
@@ -121,6 +122,22 @@ module Bosh::Monitor::Plugins
               "context_id": ""
             }]'
           end
+          it 'will not add an additional queued task' do
+            plugin.run
+
+            expect(plugin).not_to receive(:send_http_put_request)
+
+            plugin.process(alert)
+          end
+        end
+
+        context 'when the tasks endpoint is not responding with a 200 and resurrector does not know if tasks are scheduled for a deployment' do
+          let(:state) do
+            double(Bhm::Plugins::ResurrectorHelper::DeploymentState, managed?: true, meltdown?: false, summary: 'summary')
+          end
+          let(:tasks_body) { '{}' }
+          let(:tasks_status) { 500 }
+
           it 'will not add an additional queued task' do
             plugin.run
 
