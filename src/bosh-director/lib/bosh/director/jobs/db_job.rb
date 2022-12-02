@@ -34,7 +34,6 @@ module Bosh::Director
 
           @job_class.perform(@task_id, @worker_name, *perform_args)
         end
-
         return unless process_status.signaled?
 
         Config.logger.debug("Task #{@task_id} was terminated, marking as failed")
@@ -54,7 +53,8 @@ module Bosh::Director
       private
 
       def update_task_state
-        Config.db.transaction(retry_on: [Sequel::DatabaseConnectionError]) do
+        Config.db.transaction(wait: 1.seconds, attempts: 5,
+                              retry_on: [Sequel::DatabaseDisconnectError, Sequel::DatabaseConnectionError]) do
           task = Models::Task.where(id: @task_id).first
           raise DirectorError, "Task #{@task_id} not found in queue" unless task
 
@@ -66,15 +66,21 @@ module Bosh::Director
           when 'queued'
             task.state = 'processing'
           else
-            task.save
+            raise DirectorError, "Cannot update task state in DB for #{@task_id}" if task.save.nil?
+
             raise DirectorError, "Cannot perform job for task #{@task_id} (not in 'queued' state)"
+
           end
-          task.save
+
+          raise DirectorError, "Cannot update task state in DB for #{@task_id}" if task.save.nil?
         end
       end
 
       def fail_task
-        Models::Task.first(id: @task_id).update(state: 'error')
+        Config.db.transaction(wait: 1.seconds, attempts: 5,
+                              retry_on: [Sequel::DatabaseConnectionError, Sequel::DatabaseDisconnectError]) do
+          Models::Task.first(id: @task_id).update(state: 'error')
+        end
       end
 
       def encode(object)
@@ -98,7 +104,7 @@ module Bosh::Director
     def self.run
       pid = Process.fork do
         yield
-      rescue Exception => e
+      rescue Exception => e # rubocop:disable Lint/RescueException
         Config.logger.error("Fatal error from fork: #{e}\n#{e.backtrace.join("\n")}")
         raise e
       end
