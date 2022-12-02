@@ -196,7 +196,7 @@ GEM
     net-ssh (5.2.0)
     netrc (0.11.0)
     nio4r (2.5.8)
-    openssl (3.0.0)
+    openssl (3.0.1)
     parallel (1.22.1)
     parallel_tests (2.31.0)
       parallel
