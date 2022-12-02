@@ -1,7 +1,6 @@
 require 'bosh/director/api/task_remover'
 
 module Bosh::Director
-
   # Abstracts the delayed jobs system.
 
   class JobQueue
@@ -17,17 +16,17 @@ module Bosh::Director
     private
 
     def create_task(username, type, description, deployment, context_id)
-      task = Models::Task.create_with_teams(:username => username,
-        :type => type,
-        :description => description,
-        :state => :queued,
-        :deployment_name => deployment ? deployment.name : nil,
-        :timestamp => Time.now,
-        :teams => deployment ? deployment.teams : nil,
-        :checkpoint_time => Time.now,
-        :context_id => context_id,
-        :result_output => "",
-        :event_output => "")
+      task = Models::Task.create_with_teams(username:,
+                                            type:,
+                                            description:,
+                                            state: :queued,
+                                            deployment_name: deployment ? deployment.name : nil,
+                                            timestamp: Time.now,
+                                            teams: deployment ? deployment.teams : nil,
+                                            checkpoint_time: Time.now,
+                                            context_id:,
+                                            result_output: '',
+                                            event_output: '')
       log_dir = File.join(Config.base_dir, 'tasks', task.id.to_s)
       FileUtils.rm_rf(log_dir)
       task_status_file = File.join(log_dir, 'debug')

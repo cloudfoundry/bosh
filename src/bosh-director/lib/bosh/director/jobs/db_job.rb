@@ -4,11 +4,16 @@ module Bosh::Director
       attr_reader :job_class, :task_id
 
       def initialize(job_class, task_id, args)
-        unless job_class.kind_of?(Class) &&
-          job_class <= Jobs::BaseJob
+        unless job_class.is_a?(Class) &&
+               job_class <= Jobs::BaseJob
           raise DirectorError, "Invalid director job class `#{job_class}'"
         end
-        raise DirectorError, "Invalid director job class `#{job_class}'. It should have `perform' method." unless job_class.instance_methods(false).include?(:perform)
+
+        unless job_class.instance_methods(false).include?(:perform)
+          raise DirectorError,
+                "Invalid director job class `#{job_class}'. It should have `perform' method."
+        end
+
         @job_class = job_class
         @task_id = task_id
         @args = args
@@ -25,17 +30,15 @@ module Bosh::Director
         process_status = ForkedProcess.run do
           perform_args = []
 
-          unless @args.nil?
-            perform_args = decode(encode(@args))
-          end
+          perform_args = decode(encode(@args)) unless @args.nil?
 
           @job_class.perform(@task_id, @worker_name, *perform_args)
         end
 
-        if process_status.signaled?
-          Config.logger.debug("Task #{@task_id} was terminated, marking as failed")
-          fail_task
-        end
+        return unless process_status.signaled?
+
+        Config.logger.debug("Task #{@task_id} was terminated, marking as failed")
+        fail_task
       end
 
       def queue_name
@@ -56,10 +59,11 @@ module Bosh::Director
           raise DirectorError, "Task #{@task_id} not found in queue" unless task
 
           task.checkpoint_time = Time.now
-          if task.state == 'cancelling'
+          case task.state
+          when 'cancelling'
             task.state = 'cancelled'
             Config.logger.debug("Task #{@task_id} cancelled")
-          elsif task.state == 'queued'
+          when 'queued'
             task.state = 'processing'
           else
             task.save
