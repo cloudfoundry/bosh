@@ -15,6 +15,27 @@ module Bosh::Director
         @task_remover = Bosh::Director::Api::TaskRemover.new(Config.max_tasks)
       end
 
+      def update_orphaned_tasks_with_state_error(result)
+        actual_delayed_job_scheduled_task_ids = []
+        Delayed::Worker.backend = :sequel
+        Delayed::Job.all.select do |job|
+          actual_delayed_job_scheduled_task_ids << YAML.safe_load(job.handler)['task_id']
+        end
+
+        errored_tasks = []
+        Bosh::Director::Models::Task.select.where('state': %w[queued processing]).each do |task|
+          next if actual_delayed_job_scheduled_task_ids.include?(task.id)
+
+          errored_tasks << task.id
+          task.state = 'error'
+          task.save
+        end
+
+        return result if errored_tasks.empty?
+
+        result << "Marked orphaned tasks with ids: #{errored_tasks} as errored. They do not have a worker job backing them"
+      end
+
       def perform
         result = "Deleted tasks and logs for\n"
 
@@ -23,7 +44,7 @@ module Bosh::Director
           result << "#{tasks_removed} task(s) of type '#{type}'\n"
         end
 
-        result
+        update_orphaned_tasks_with_state_error result
       end
 
       def task_types

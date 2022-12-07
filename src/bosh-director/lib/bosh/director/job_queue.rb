@@ -8,6 +8,7 @@ module Bosh::Director
       task = create_task(username, job_class.job_type, description, deployment, context_id)
 
       Delayed::Worker.backend = :sequel
+
       db_job = Bosh::Director::Jobs::DBJob.new(job_class, task.id, params)
       Delayed::Job.enqueue db_job
       task
