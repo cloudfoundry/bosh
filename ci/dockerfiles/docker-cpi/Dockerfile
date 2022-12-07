@@ -1,4 +1,4 @@
-FROM ubuntu:xenial
+FROM ubuntu:latest
 
 ADD install.sh /tmp/install.sh
 RUN /tmp/install.sh && rm /tmp/install.sh
