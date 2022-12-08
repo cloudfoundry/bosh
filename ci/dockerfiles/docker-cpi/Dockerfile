@@ -1,3 +1,6 @@
+# this image builds bosh/docker-cpi
+# it is used across ci to start a bosh in a docker container
+
 FROM ubuntu:latest
 
 ADD install.sh /tmp/install.sh
