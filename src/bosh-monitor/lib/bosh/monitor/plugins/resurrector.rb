@@ -66,6 +66,11 @@ module Bosh::Monitor
             split_by_resurrection_enabled(deployment, jobs_to_instances)
 
           unless jobs_to_instances_resurrection_enabled.empty?
+
+            if scan_and_fix_already_queued_or_processing?(deployment)
+              logger.info("(Resurrector) CCK is already queued for #{deployment}")
+              return
+            end
             payload = { 'jobs' => jobs_to_instances_resurrection_enabled }
             request = {
               head: {
@@ -97,6 +102,36 @@ module Bosh::Monitor
       end
 
       private
+
+      def scan_and_fix_already_queued_or_processing?(deployment_name)
+        url = @uri.dup
+        url.path = '/tasks'
+        if auth_provider(director_info).auth_header.is_a?(Array)
+          auth_header_value = "Basic #{Base64.strict_encode64("#{auth_provider(director_info).auth_header[0]}:#{auth_provider(director_info).auth_header[1]}")}"
+        else
+          auth_header_value = auth_provider(director_info).auth_header
+        end
+        headers = {
+          'Authorization' => auth_header_value,
+          'Content-Type' => 'application/json',
+        }
+        url.query = URI.encode_www_form({ deployment: deployment_name, state: 'queued,processing', verbose: 2 })
+        tasks_response = send_http_get_request(url.to_s, headers)
+
+        # Getting the current tasks may fail. In a situation where the director is already dealing with lots of scan and fix tasks,
+        # we may want to postpone adding another one to the queue to give the director time to deal with the currently scheduled tasks.
+        # In the case of the tasks endpoint misbehaving ( status != 200 ) we can safely skip scheduling the the scan and fix in the current iteration.
+        # The alerts about missing healthchecks will trigger again some time later (when the director is under less pressure). 
+        return true if tasks_response.status != 200
+
+        queued_scan_and_fix = JSON.parse(tasks_response.body).select do |task|
+          task['description'] == 'scan and fix'
+        end
+
+        return false if queued_scan_and_fix.empty?
+
+        true
+      end
 
       def auth_provider(director_info)
         @auth_provider ||= AuthProvider.new(director_info, @director_options, logger)
@@ -139,11 +174,11 @@ module Bosh::Monitor
       def alert(deployment, severity:, title:, summary:)
         @processor.process(
           :alert,
-          severity: severity,
-          title: title,
-          summary: summary,
+          severity:,
+          title:,
+          summary:,
           source: 'HM plugin resurrector',
-          deployment: deployment,
+          deployment:,
           created_at: Time.now.to_i,
         )
       end

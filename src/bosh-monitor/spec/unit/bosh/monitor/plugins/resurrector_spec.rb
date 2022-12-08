@@ -3,7 +3,6 @@ require_relative '../../../../spec_helper'
 module Bosh::Monitor::Plugins
   describe Resurrector do
     include Support::UaaHelpers
-
     let(:options) do
       {
         'director' => {
@@ -19,8 +18,30 @@ module Bosh::Monitor::Plugins
     let(:plugin) { Bhm::Plugins::Resurrector.new(options) }
     let(:uri) { 'http://foo.bar.com:25555' }
     let(:status_uri) { "#{uri}/info" }
+    let(:tasks_uri) { "#{uri}/tasks?deployment=d&state=queued,processing&verbose=2" }
+    let(:tasks_status) { 200 }
+    let(:tasks_body) do
+      '[{
+        "id": 60337,
+        "state": "processing",
+        "description": "create deployment",
+        "timestamp": null,
+        "started_at": 1669644079,
+        "result": null,
+        "user": "admin",
+        "deployment": "d",
+        "context_id": ""
+      }]'
+    end
 
     before do
+      stub_request(:get, tasks_uri).to_return(lambda do |request|
+        if request.headers.fetch('Authorization') || request.headers.fetch('authorization')
+          { status: tasks_status, body: tasks_body }
+        else
+          { status: 401, body: '{"error": "unauthorized"}' }
+        end
+      end)
       stub_request(:get, status_uri)
         .to_return(status: 200, body: JSON.dump('user_authentication' => user_authentication))
     end
@@ -52,9 +73,86 @@ module Bosh::Monitor::Plugins
         end
       end
 
+      context 'when resurrector checks if scan and fix needs to be scheduled' do
+        let(:event_processor) { Bhm::EventProcessor.new }
+        let(:state) do
+          double(Bhm::Plugins::ResurrectorHelper::DeploymentState, managed?: true, meltdown?: false, summary: 'summary')
+        end
+
+        before do
+          Bhm.event_processor = event_processor
+          @don = double(Bhm::Plugins::ResurrectorHelper::AlertTracker, record: nil, state_for: state)
+          expect(Bhm::Plugins::ResurrectorHelper::AlertTracker).to receive(:new).and_return(@don)
+        end
+
+        context 'with a scan task already queued' do
+          let(:tasks_body) do
+            '[{
+              "id": 12345,
+              "state": "queued",
+              "description": "scan and fix",
+              "timestamp": 1654794744,
+              "started_at": 0,
+              "result": "",
+              "user": "admin",
+              "deployment": "d",
+              "context_id": ""
+            }]'
+          end
+          it 'will not add an additional queued task' do
+            plugin.run
+
+            expect(plugin).not_to receive(:send_http_put_request)
+
+            plugin.process(alert)
+          end
+        end
+
+        context 'with a scan task being processed' do
+          let(:tasks_body) do
+            '[{
+              "id": 12345,
+              "state": "processing",
+              "description": "scan and fix",
+              "timestamp": 1654794744,
+              "started_at": 0,
+              "result": "",
+              "user": "admin",
+              "deployment": "d",
+              "context_id": ""
+            }]'
+          end
+          it 'will not add an additional queued task' do
+            plugin.run
+
+            expect(plugin).not_to receive(:send_http_put_request)
+
+            plugin.process(alert)
+          end
+        end
+
+        context 'when the tasks endpoint is not responding with a 200 and resurrector does not know if tasks are scheduled for a deployment' do
+          let(:state) do
+            double(Bhm::Plugins::ResurrectorHelper::DeploymentState, managed?: true, meltdown?: false, summary: 'summary')
+          end
+          let(:tasks_body) { '{}' }
+          let(:tasks_status) { 500 }
+
+          it 'will not add an additional queued task' do
+            plugin.run
+
+            expect(plugin).not_to receive(:send_http_put_request)
+
+            plugin.process(alert)
+          end
+        end
+      end
+
       context 'alert of CATEGORY_DEPLOYMENT_HEALTH' do
         let(:event_processor) { Bhm::EventProcessor.new }
-        let(:state) { double(Bhm::Plugins::ResurrectorHelper::DeploymentState, managed?: true, meltdown?: false, summary: 'summary') }
+        let(:state) do
+          double(Bhm::Plugins::ResurrectorHelper::DeploymentState, managed?: true, meltdown?: false, summary: 'summary')
+        end
 
         before do
           Bhm.event_processor = event_processor
@@ -120,7 +218,9 @@ module Bosh::Monitor::Plugins
         end
 
         context 'while melting down' do
-          let(:state) { double(Bhm::Plugins::ResurrectorHelper::DeploymentState, managed?: false, meltdown?: true, summary: 'summary') }
+          let(:state) do
+            double(Bhm::Plugins::ResurrectorHelper::DeploymentState, managed?: false, meltdown?: true, summary: 'summary')
+          end
 
           it 'does not send requests to scan and fix' do
             plugin.run
@@ -240,7 +340,9 @@ module Bosh::Monitor::Plugins
       end
 
       context 'alert of CATEGORY_VM_HEALTH' do
-        let(:alert) { Bhm::Events::Base.create!(:alert, alert_payload(category: Bosh::Monitor::Events::Alert::CATEGORY_VM_HEALTH)) }
+        let(:alert) do
+          Bhm::Events::Base.create!(:alert, alert_payload(category: Bosh::Monitor::Events::Alert::CATEGORY_VM_HEALTH))
+        end
 
         it 'does not send request to scan and fix' do
           plugin.run
@@ -253,7 +355,7 @@ module Bosh::Monitor::Plugins
 
       context 'when director status is not 200' do
         before do
-          stub_request(:get, status_uri).to_return(status: 500, headers: {}, body: 'Failed')
+          stub_request(:get, status_uri).to_return({ status: 500, headers: {}, body: 'Failed' })
         end
 
         it 'returns false' do
@@ -268,7 +370,6 @@ module Bosh::Monitor::Plugins
           before do
             state = double(Bhm::Plugins::ResurrectorHelper::DeploymentState, managed?: true, meltdown?: false, summary: 'summary')
             expect(Bhm::Plugins::ResurrectorHelper::DeploymentState).to receive(:new).and_return(state)
-            stub_request(:get, status_uri).to_return({ status: 500 }, { status: 200, body: '{}' })
           end
 
           it 'starts sending alerts' do
@@ -276,7 +377,11 @@ module Bosh::Monitor::Plugins
 
             expect(plugin).to receive(:send_http_put_request).once
 
+            stub_request(:get, status_uri).to_return({ status: 500 })
             plugin.process(alert) # fails to send request
+
+            stub_request(:get,
+                         status_uri).to_return({ status: 200, body: JSON.dump('user_authentication' => user_authentication) })
             plugin.process(alert)
           end
         end
