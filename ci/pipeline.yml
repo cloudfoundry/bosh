@@ -34,7 +34,6 @@ groups:
 
   - name: docker
     jobs:
-    - build-main-ruby-go
     - build-main-postgres-10
     - build-main-postgres-13
     - build-main-mysql-5-7
@@ -64,11 +63,11 @@ jobs:
       - get: bosh-src
         trigger: true
         passed: [gate]
-      - get: main-ruby-go-image
+      - get: integration-image
       - task: test
         timeout: 2h
         file: bosh-src/ci/tasks/test-unit.yml
-        image: main-ruby-go-image
+        image: integration-image
         params:
           DB: sqlite
 
@@ -82,12 +81,12 @@ jobs:
         - get: bosh-src
           passed: [gate]
           trigger: true
-        - get: main-mysql-5-7-image
+        - get: integration-mysql-5-7-image
       - task: test-mysql-5.7
         timeout: 2h
         privileged: true
         file: bosh-src/ci/tasks/test-unit.yml
-        image: main-mysql-5-7-image
+        image: integration-mysql-5-7-image
         params:
           DB: mysql
 
@@ -101,14 +100,14 @@ jobs:
         - get: bosh-src
           passed: [gate]
           trigger: true
-        - get: main-postgres-10-image
-        - get: main-postgres-13-image
+        - get: integration-postgres-10-image
+        - get: integration-postgres-13-image
       - in_parallel:
         - task: test-postgres-10
           timeout: 2h
           privileged: true
           file: bosh-src/ci/tasks/test-unit.yml
-          image: main-postgres-10-image
+          image: integration-postgres-10-image
           params:
             DB: postgresql
             DB_VERSION: 10
@@ -116,7 +115,7 @@ jobs:
           timeout: 2h
           privileged: true
           file: bosh-src/ci/tasks/test-unit.yml
-          image: main-postgres-13-image
+          image: integration-postgres-13-image
           params:
             DB: postgresql
             DB_VERSION: 13
@@ -139,7 +138,7 @@ jobs:
             type: docker-image
             source:
               tag: ((branch_name))
-              repository: bosh/main-ruby-go
+              repository: bosh/integration
           run:
             path: /bin/sh
             args:
@@ -166,11 +165,11 @@ jobs:
           trigger: true
         - get: bosh-agent
         - get: integration-tests-parallel-runtime
-        - get: main-postgres-13-image
+        - get: integration-postgres-13-image
       - task: tests
         privileged: true
         file: bosh-src/ci/tasks/test-integration.yml
-        image: main-postgres-13-image
+        image: integration-postgres-13-image
         params:
           DB:           postgresql
           DB_TLS:       true
@@ -193,11 +192,11 @@ jobs:
           trigger: true
         - get: bosh-agent
         - get: integration-tests-parallel-runtime
-        - get: main-postgres-13-image
+        - get: integration-postgres-13-image
       - task: tests
         privileged: true
         file: bosh-src/ci/tasks/test-integration.yml
-        image: main-postgres-13-image
+        image: integration-postgres-13-image
         params:
           DB:           postgresql
           DEFAULT_UPDATE_VM_STRATEGY: create-swap-delete
@@ -222,11 +221,11 @@ jobs:
           trigger: true
         - get: bosh-agent
         - get: integration-tests-parallel-runtime
-        - get: main-mysql-5-7-image
+        - get: integration-mysql-5-7-image
       - task: tests
         privileged: true
         file: bosh-src/ci/tasks/test-integration.yml
-        image: main-mysql-5-7-image
+        image: integration-mysql-5-7-image
         params:
           DB:           mysql
           DB_TLS:       true
@@ -248,13 +247,13 @@ jobs:
       - integration-db-tls-postgres-hotswap
       - run-bundle-audit
     - get: bosh-cli
-    - get: main-ruby-go-image
+    - get: integration-image
     - put: version
       params:
         pre: rc
     - task: make
       file: bosh-src/ci/tasks/make-candidate.yml
-      image: main-ruby-go-image
+      image: integration-image
     - put: bosh-candidate-release-tarballs
       params:
         file: "release/bosh-dev-release.tgz"
@@ -299,7 +298,7 @@ jobs:
         - get: bosh-deployment
         - get: bosh-src
           passed: [compile-bosh-dev-release-bionic]
-        - get: main-ruby-go-image
+        - get: integration-image
       - put: environment
         resource: nimbus-environment
         params:
@@ -308,7 +307,7 @@ jobs:
         - task: deploy-director
           tags: [nimbus]
           file: bosh-src/ci/bats/tasks/deploy-director.yml
-          image: main-ruby-go-image
+          image: integration-image
           params:
             BAT_INFRASTRUCTURE: vsphere
             BOSH_CLIENT: ((stemcell-test-director-username))
@@ -327,19 +326,19 @@ jobs:
         - task: prepare-bats
           tags: [nimbus]
           file: bosh-src/ci/bats/iaas/vsphere/prepare-bats-config.yml
-          image: main-ruby-go-image
+          image: integration-image
           params:
             STEMCELL_NAME: bosh-vsphere-esxi-ubuntu-bionic-go_agent
         - task: run-bats
           tags: [nimbus]
           file: bats/ci/tasks/run-bats.yml
-          image: main-ruby-go-image
+          image: integration-image
       ensure:
         do:
         - task: teardown
           tags: [nimbus]
           file: bosh-src/ci/bats/tasks/destroy-director.yml
-          image: main-ruby-go-image
+          image: integration-image
           attempts: 3
         - put: environment
           resource: nimbus-environment
@@ -504,7 +503,7 @@ jobs:
         - get: bosh-deployment
         - get: bosh-src
           passed: [compile-bosh-dev-release-jammy]
-        - get: main-ruby-go-image
+        - get: integration-image
       - put: environment
         resource: nimbus-environment
         params:
@@ -513,7 +512,7 @@ jobs:
         - task: deploy-director
           tags: [nimbus]
           file: bosh-src/ci/bats/tasks/deploy-director.yml
-          image: main-ruby-go-image
+          image: integration-image
           params:
             BAT_INFRASTRUCTURE: vsphere
             BOSH_CLIENT: ((stemcell-test-director-username))
@@ -531,19 +530,19 @@ jobs:
         - task: prepare-bats
           tags: [nimbus]
           file: bosh-src/ci/bats/iaas/vsphere/prepare-bats-config.yml
-          image: main-ruby-go-image
+          image: integration-image
           params:
             STEMCELL_NAME: bosh-vsphere-esxi-ubuntu-jammy-go_agent
         - task: run-bats
           tags: [nimbus]
           file: bats/ci/tasks/run-bats.yml
-          image: main-ruby-go-image
+          image: integration-image
       ensure:
         do:
         - task: teardown
           tags: [nimbus]
           file: bosh-src/ci/bats/tasks/destroy-director.yml
-          image: main-ruby-go-image
+          image: integration-image
           attempts: 3
         - put: environment
           resource: nimbus-environment
@@ -694,7 +693,7 @@ jobs:
         - get: bosh-deployment
         - get: bosh-src
           passed: [compile-bosh-dev-release-bionic]
-        - get: main-ruby-go-image
+        - get: integration-image
       - put: environment
         resource: nimbus-environment
         params:
@@ -703,7 +702,7 @@ jobs:
         - task: deploy-director
           tags: [nimbus]
           file: bosh-src/ci/bats/tasks/deploy-director.yml
-          image: main-ruby-go-image
+          image: integration-image
           params:
             BAT_INFRASTRUCTURE: vsphere
             BOSH_CLIENT: ((stemcell-test-director-username))
@@ -722,19 +721,19 @@ jobs:
         - task: prepare-bats
           tags: [nimbus]
           file: bosh-src/ci/bats/iaas/vsphere/prepare-bats-config.yml
-          image: main-ruby-go-image
+          image: integration-image
           params:
             STEMCELL_NAME: bosh-vsphere-esxi-ubuntu-xenial-go_agent
         - task: run-bats
           tags: [nimbus]
           file: bats/ci/tasks/run-bats.yml
-          image: main-ruby-go-image
+          image: integration-image
       ensure:
         do:
         - task: teardown
           tags: [nimbus]
           file: bosh-src/ci/bats/tasks/destroy-director.yml
-          image: main-ruby-go-image
+          image: integration-image
           attempts: 3
         - put: environment
           resource: nimbus-environment
@@ -784,7 +783,7 @@ jobs:
           passed: [compile-bosh-dev-release-jammy]
         - get: last-released-bosh-release
         - get: zookeeper-release
-        - get: main-ruby-go-image
+        - get: integration-image
       - put: terraform
         params:
           terraform_source: bosh-src/ci/bats/iaas/aws/terraform
@@ -792,7 +791,7 @@ jobs:
           env_name: upgrade-ubuntu-bionic-aws-((branch_name))
     - do:
       - task: deploy-previous-version
-        image: main-ruby-go-image
+        image: integration-image
         file: bosh-src/ci/bats/tasks/deploy-director.yml
         input_mapping:
           environment: terraform
@@ -806,10 +805,10 @@ jobs:
           DEPLOY_ARGS: |
             -o bosh-deployment/external-ip-not-recommended.yml
       - task: deploy-zookeeper
-        image: main-ruby-go-image
+        image: integration-image
         file: bosh-src/ci/tasks/deploy-zookeeper.yml
       - task: upgrade-to-current-version
-        image: main-ruby-go-image
+        image: integration-image
         file: bosh-src/ci/bats/tasks/deploy-director.yml
         input_mapping:
           environment: terraform
@@ -822,7 +821,7 @@ jobs:
           DEPLOY_ARGS: |
             -o bosh-deployment/external-ip-not-recommended.yml
       - task: sleep-180-seconds
-        image: main-ruby-go-image
+        image: integration-image
         config:
           platform: linux
           run:
@@ -832,18 +831,18 @@ jobs:
               - |
                 sleep 180
       - task: recreate-zookeeper
-        image: main-ruby-go-image
+        image: integration-image
         file: bosh-src/ci/tasks/deploy-zookeeper.yml
       ensure:
         do:
         - task: teardown
-          image: main-ruby-go-image
+          image: integration-image
           file: bosh-src/ci/bats/tasks/destroy-director.yml
           attempts: 3
         ensure:
           do:
           - task: ensure-terminated
-            image: main-ruby-go-image
+            image: integration-image
             file: bosh-src/ci/bats/iaas/aws/ensure-terminated.yml
             input_mapping:
               environment: terraform
@@ -895,16 +894,16 @@ jobs:
         - get: bosh-src-latest
           resource: bosh-src
         - get: bosh-cli
-        - get: main-ruby-go-image
+        - get: integration-image
         - get: version
           params:
             bump: final
       - task: prepare-release
-        image: main-ruby-go-image
+        image: integration-image
         file: bosh-src/ci/tasks/prepare-release.yml
       - get: bosh-main
       - task: finalize-release
-        image: main-ruby-go-image
+        image: integration-image
         file: bosh-src-latest-with-release-commit/ci/tasks/finalize-bosh-release.yml
         params:
           RELEASE_PRIVATE_YML: |
@@ -988,20 +987,6 @@ jobs:
       params:
         file: version/version
 
-  - name: build-main-ruby-go
-    public: true
-    serial: true
-    plan:
-      - get: weekly
-        trigger: true
-      - get: bosh-src-dockerfiles
-        trigger: true
-      - put: main-ruby-go-image
-        params:
-          build: "bosh-src-dockerfiles/ci/dockerfiles/main-ruby-go"
-        get_params:
-          skip_download: true
-
   - name: build-main-postgres-10
     public: true
     serial: true
@@ -1011,7 +996,7 @@ jobs:
       - get: integration-image
         trigger: true
         passed: [build-integration]
-      - put: main-postgres-10-image
+      - put: integration-postgres-10-image
         params:
           build: "bosh-src-dockerfiles/ci/dockerfiles/main-postgres"
           build_args:
@@ -1029,7 +1014,7 @@ jobs:
       - get: integration-image
         trigger: true
         passed: [build-integration]
-      - put: main-postgres-13-image
+      - put: integration-postgres-13-image
         params:
           build: "bosh-src-dockerfiles/ci/dockerfiles/main-postgres"
           build_args:
@@ -1047,7 +1032,7 @@ jobs:
       - get: integration-image
         trigger: true
         passed: [build-integration]
-      - put: main-mysql-5-7-image
+      - put: integration-mysql-5-7-image
         params:
           build: "bosh-src-dockerfiles/ci/dockerfiles/main-mysql"
           build_args:
@@ -1077,6 +1062,8 @@ jobs:
     plan:
       - in_parallel:
           - get: bosh-src
+          - get: integration-image
+            trigger: true
           - get: bosh-src-dockerfiles
             trigger: true
           - get: bosh-cli
@@ -1561,15 +1548,15 @@ resources:
       project_id: ((tracker_project_id))
       tracker_url: https://www.pivotaltracker.com
 
-  - name: main-ruby-go-image
+  - name: integration-image
     type: docker-image
     source:
-      repository: bosh/main-ruby-go
+      repository: bosh/integration
       tag: ((branch_name))
       username: ((docker.username))
       password: ((docker.password))
 
-  - name: main-mysql-5-7-image
+  - name: integration-mysql-5-7-image
     type: docker-image
     source:
       repository: bosh/main-mysql-5.7
@@ -1577,7 +1564,7 @@ resources:
       username: ((docker.username))
       password: ((docker.password))
 
-  - name: main-postgres-10-image
+  - name: integration-postgres-10-image
     type: docker-image
     source:
       repository: bosh/main-postgres-10
@@ -1585,7 +1572,7 @@ resources:
       username: ((docker.username))
       password: ((docker.password))
 
-  - name: main-postgres-13-image
+  - name: integration-postgres-13-image
     type: docker-image
     source:
       repository: bosh/main-postgres-13
@@ -1597,14 +1584,6 @@ resources:
     type: docker-image
     source:
       repository: bosh/docker-cpi
-      tag: ((branch_name))
-      username: ((docker.username))
-      password: ((docker.password))
-
-  - name: integration-image
-    type: docker-image
-    source:
-      repository: bosh/integration
       tag: ((branch_name))
       username: ((docker.username))
       password: ((docker.password))

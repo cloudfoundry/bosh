@@ -1,16 +1,9 @@
 # this image builds bosh/docker-cpi
 # it is used across ci to start a bosh in a docker container
-
-FROM ubuntu:latest
+FROM bosh/integration:main
 
 ADD install.sh /tmp/install.sh
 RUN /tmp/install.sh && rm /tmp/install.sh
-
-ADD install-ruby.sh /tmp/install-ruby.sh
-RUN /tmp/install-ruby.sh && rm /tmp/install-ruby.sh
-
-COPY --from=golang:1 /usr/local/go /usr/local/go
-ENV GOROOT=/usr/local/go PATH=/usr/local/go/bin:$PATH
 
 COPY bosh /usr/local/bin/
 RUN chmod +x /usr/local/bin/bosh

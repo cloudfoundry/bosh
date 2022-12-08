@@ -43,7 +43,7 @@ jobs:
           image_resource:
             type: docker-image
             source:
-              repository: bosh/main-ruby-go
+              repository: bosh/integration
           run:
             path: /bin/bash
             args:
