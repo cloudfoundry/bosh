@@ -16,7 +16,7 @@ RUN DEBIAN_FRONTEND="noninteractive" apt-get install -y \
 	postgresql-client-$DB_VERSION \
 	&& apt clean
 
-RUN cp /usr/lib/postgresql/$DB_VERSION/bin/initdb /usr/local/bin/initdb
+ENV PATH=$PATH:/usr/lib/postgresql/$DB_VERSION/bin
 
 ADD trust_pg_hba.conf /tmp/pg_hba.conf
 RUN cp /tmp/pg_hba.conf /etc/postgresql/$DB_VERSION/main/pg_hba.conf
