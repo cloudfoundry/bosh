@@ -992,7 +992,6 @@ jobs:
     serial: true
     plan:
       - get: bosh-src-dockerfiles
-        trigger: true
       - get: integration-image
         trigger: true
         passed: [build-integration]
@@ -1010,7 +1009,6 @@ jobs:
     serial: true
     plan:
       - get: bosh-src-dockerfiles
-        trigger: true
       - get: integration-image
         trigger: true
         passed: [build-integration]
@@ -1028,7 +1026,6 @@ jobs:
     serial: true
     plan:
       - get: bosh-src-dockerfiles
-        trigger: true
       - get: integration-image
         trigger: true
         passed: [build-integration]
@@ -1064,8 +1061,8 @@ jobs:
           - get: bosh-src
           - get: integration-image
             trigger: true
+            passed: [build-integration]
           - get: bosh-src-dockerfiles
-            trigger: true
           - get: bosh-cli
             trigger: true
           - get: bosh-deployment
