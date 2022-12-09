@@ -34,15 +34,30 @@ RUN apt-get update -y \
         wget \
         xvfb \
         vim \
-        openssh-client
+        openssh-client \
+        clang \
+        clang-14 \
+        lib32gcc-s1 \
+        lib32stdc++6 \
+        libc6-i386 \
+        libclang-common-14-dev \
+        libclang-cpp14 \
+        libclang1-14 \
+        libgc1 \
+        libllvm14 \
+        libobjc-11-dev \
+        libobjc4 \
+        llvm-14-linker-tools
 
+ENV CXX=/usr/bin/clang++ CC=/usr/bin/clang
 RUN echo 'gem: --no-document' > /etc/gemrc \
     && curl -sL -O https://github.com/postmodern/ruby-install/archive/refs/tags/v${RUBY_INSTALL_VERSION}.tar.gz \
     && tar -xzf v${RUBY_INSTALL_VERSION}.tar.gz \
     && cd ruby-install-${RUBY_INSTALL_VERSION}/ \
     && make -s install \
-    && ruby-install --jobs=2 --cleanup --system ruby ${RUBY_VERSION} -- --disable-install-rdoc \
-    && gem update --system \
+    && ruby-install --jobs=2 --cleanup --system ruby ${RUBY_VERSION} -- --disable-install-rdoc -- CC=clang
+
+RUN gem update --system \
     && bundle config --global path "${GEM_HOME}" \
     && bundle config --global bin "${GEM_HOME}/bin"
 
