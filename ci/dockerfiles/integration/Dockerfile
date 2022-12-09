@@ -33,6 +33,7 @@ RUN apt-get update -y \
         tar \
         wget \
         xvfb \
+        vim \
         openssh-client
 
 RUN echo 'gem: --no-document' > /etc/gemrc \
@@ -54,7 +55,6 @@ RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.
     && apt-get install -y --no-install-recommends \
     mysql-client \
     libmysqlclient-dev \
-    postgresql-${POSTGRES_MAJOR_VERSION} \
     postgresql-client-${POSTGRES_MAJOR_VERSION}
 
 COPY --from=golang:1 /usr/local/go /usr/local/go
