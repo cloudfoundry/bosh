@@ -96,7 +96,7 @@ max_allowed_packet=6M' >> /etc/mysql/my.cnf
       fi
 
       su postgres -c '
-        export PATH=$( echo /usr/lib/postgresql/*/bin ):$PATH
+        export PATH=/usr/lib/postgresql/$DB_VERSION/bin:$PATH
         export PGLOGS=/tmp/log/postgres
         export PGCLIENTENCODING=UTF8
         pg_ctl start -l $PGLOGS/server.log -o "-N 400"
