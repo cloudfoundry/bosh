@@ -20,4 +20,4 @@ ENV PATH=$PATH:/usr/lib/postgresql/$DB_VERSION/bin
 
 ADD trust_pg_hba.conf /tmp/pg_hba.conf
 RUN cp /tmp/pg_hba.conf /etc/postgresql/$DB_VERSION/main/pg_hba.conf
-RUN sed -i 's/port = 5432/port = 5433/g'
+RUN sed -i 's/port = 5432/port = 5433/g' /etc/postgresql/$DB_VERSION/main/postgresql.conf
