@@ -53,7 +53,7 @@ max_allowed_packet=6M' >> /etc/mysql/my.cnf
     sleep 5
     ;;
   postgresql)
-    export PATH=$( echo /usr/lib/postgresql/$DB_VERSION/bin ):$PATH
+    export PATH=/usr/lib/postgresql/$DB_VERSION/bin:$PATH
     export DB_PASSWORD="smurf"
 
     if [ ! -d /tmp/postgres ]; then # PostgreSQL hasn't been set up

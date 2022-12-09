@@ -173,6 +173,7 @@ jobs:
         params:
           DB:           postgresql
           DB_TLS:       true
+          DB_VERSION: 13
       - put: integration-tests-parallel-runtime
         params:
           file: parallel-runtime-log/parallel_runtime_rspec.log
@@ -201,6 +202,7 @@ jobs:
           DB:           postgresql
           DEFAULT_UPDATE_VM_STRATEGY: create-swap-delete
           DB_TLS:       true
+          DB_VERSION: 13
 
       - put: integration-tests-parallel-runtime
         params:

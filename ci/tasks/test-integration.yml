@@ -30,3 +30,4 @@ params:
   DEFAULT_UPDATE_VM_STRATEGY: "delete-create"
   NUM_PROCESSES:
   GOOS:                    linux
+  DB_VERSION:   13
