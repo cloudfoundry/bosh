@@ -1,4 +1,4 @@
-require 'spec_helper'
+require_relative '../../spec_helper'
 require 'fakefs/spec_helpers'
 
 describe Bosh::Clouds::ExternalCpi do
@@ -664,7 +664,7 @@ describe Bosh::Clouds::ExternalCpi do
     end
 
     it 'does not deadlock' do
-      Timeout::timeout(20) do
+      Timeout::timeout(30) do
         result = external_cpi.info
         expect(result).to eq 'OK'
       end
