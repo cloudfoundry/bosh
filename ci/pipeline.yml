@@ -365,6 +365,7 @@ jobs:
         passed: [compile-bosh-dev-release-bionic]
       - get: bosh-deployment
       - get: docker-cpi-image
+      - get: integration-image
     - do:
       - put: brats-terraform
         attempts: 2
@@ -428,6 +429,7 @@ jobs:
         do:
         - task: cleanup-external-dbs
           file: bosh-src/ci/tasks/test-brats-db-cleanup.yml
+          image: integration-image
           input_mapping:
             database-metadata: brats-terraform
           params: *brats-dbs-params
@@ -569,6 +571,7 @@ jobs:
         passed: [compile-bosh-dev-release-jammy]
       - get: bosh-deployment
       - get: docker-cpi-image
+      - get: integration-image
     - do:
       - put: brats-terraform
         attempts: 2
@@ -632,6 +635,7 @@ jobs:
         do:
         - task: cleanup-external-dbs
           file: bosh-src/ci/tasks/test-brats-db-cleanup.yml
+          image: integration-image
           input_mapping:
             database-metadata: brats-terraform
           params: *brats-dbs-params
@@ -999,6 +1003,7 @@ jobs:
         passed: [build-integration]
       - put: integration-postgres-10-image
         params:
+          tag_as_latest: true
           build: "bosh-src-dockerfiles/ci/dockerfiles/main-postgres"
           build_args:
             DB_VERSION: "10"
@@ -1016,6 +1021,7 @@ jobs:
         passed: [build-integration]
       - put: integration-postgres-13-image
         params:
+          tag_as_latest: true
           build: "bosh-src-dockerfiles/ci/dockerfiles/main-postgres"
           build_args:
             DB_VERSION: "13"
@@ -1033,6 +1039,7 @@ jobs:
         passed: [build-integration]
       - put: integration-mysql-5-7-image
         params:
+          tag_as_latest: true
           build: "bosh-src-dockerfiles/ci/dockerfiles/main-mysql"
           build_args:
             BRANCH: ((branch_name))
@@ -1049,6 +1056,7 @@ jobs:
         trigger: true
       - put: integration-image
         params:
+          tag_as_latest: true
           build: "bosh-src-dockerfiles/ci/dockerfiles/integration"
           build_args:
             BRANCH: ((branch_name))
@@ -1073,6 +1081,7 @@ jobs:
         file: bosh-src/ci/tasks/prepare-container-docker-cpi-build-context.yml
       - put: docker-cpi-image
         params:
+          tag_as_latest: true
           build: docker-build-context
         get_params:
           skip_download: true
