@@ -664,7 +664,7 @@ describe Bosh::Clouds::ExternalCpi do
     end
 
     it 'does not deadlock' do
-      Timeout::timeout(30) do
+      Timeout::timeout(60) do
         result = external_cpi.info
         expect(result).to eq 'OK'
       end
