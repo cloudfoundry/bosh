@@ -1491,7 +1491,7 @@ resources:
     source:
       branch: master
       pool: nimbus
-      private_key: ((github_deployment_key__bosh-cpi-environments))
+      private_key: ((github_deploy_key_bats-concourse-pool.private_key))
       uri: git@github.com:pivotal-cf-experimental/bats-concourse-pool.git
     type: pool
 
