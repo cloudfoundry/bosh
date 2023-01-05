@@ -1443,8 +1443,8 @@ resources:
         bucket: bosh-ci-terraform
         bucket_path: brats-ci/
         region_name: us-west-1
-        access_key_id: ((bosh-ci-database-terraform-aws-access-key-id))
-        secret_access_key: ((bosh-ci-database-terraform-aws-secret-access-key))
+        access_key_id: ((bosh-ci-terraform_aws_access_key.username))
+        secret_access_key: ((bosh-ci-terraform_aws_access_key.password))
 
   - name: zookeeper-release
     type: git
