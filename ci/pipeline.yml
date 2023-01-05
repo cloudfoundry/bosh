@@ -1378,17 +1378,17 @@ resources:
   - name: version
     type: semver
     source:
-      bucket: ((candidate_release_bucket))
+      bucket: bosh-candidate-release-tarballs
       key: version
-      access_key_id: ((candidate_release_access_key_id))
-      secret_access_key: ((candidate_release_secret_access_key))
+      access_key_id: ((bosh_candidate_release_tarballs_aws_access_key.username))
+      secret_access_key: ((bosh_candidate_release_tarballs_aws_access_key.password))
 
   - name: bosh-candidate-release-tarballs
     type: s3
     source:
-      bucket: ((candidate_release_bucket))
-      access_key_id: ((candidate_release_access_key_id))
-      secret_access_key: ((candidate_release_secret_access_key))
+      bucket: bosh-candidate-release-tarballs
+      access_key_id: ((bosh_candidate_release_tarballs_aws_access_key.username))
+      secret_access_key: ((bosh_candidate_release_tarballs_aws_access_key.password))
       versioned_file: "bosh-dev-release.tgz"
 
   - name: bosh-compiled-candidate-bionic
@@ -1431,9 +1431,9 @@ resources:
   - name: integration-tests-parallel-runtime
     type: s3
     source:
-      bucket: ((integration_runtime_bucket))
-      access_key_id: ((integration_runtime_access_key_id))
-      secret_access_key: ((integration_runtime_secret_access_key))
+      bucket: integration-tests-parallel-runtime-logs
+      access_key_id: ((bosh_integration_tests_parallel_aws_access_key.username))
+      secret_access_key: ((bosh_integration_tests_parallel_aws_access_key.password))
       versioned_file: "parallel_runtime_rspec.log"
 
   - name: brats-terraform
