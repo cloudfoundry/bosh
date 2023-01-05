@@ -961,7 +961,7 @@ jobs:
       params:
         AWS_ACCESS_KEY_ID: ((bosh-compiled-releases-aws-access-key-id))
         AWS_SECRET_ACCESS_KEY: ((bosh-compiled-releases-aws-secret-access-key))
-        git_private_key: ((bosh-compiled-releases-index-deploy-key))
+        git_private_key: ((github_deploy_key_bosh-compiled-releases-index.private_key))
 
   - name: bump-major
     serial: true
