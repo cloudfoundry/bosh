@@ -386,11 +386,11 @@ jobs:
             gcp_private_network_name: brats-ubuntu-bionic-((branch_name))
             concourse_authorized_network: ((concourse_egress_ip))
           env:
-            GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
+            GOOGLE_CREDENTIALS: ((cf-bosh-core_gcp-database-terraform_gcp_credentials_json))
       - task: create-brats-sql-users
         file: bosh-src/ci/tasks/create-brats-sql-users.yml
         params:
-          GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
+          GOOGLE_CREDENTIALS: ((cf-bosh-core_gcp-database-terraform_gcp_credentials_json))
           GCP_POSTGRES_USERNAME: ((brats-gcp-postgres-external-db-user))
           GCP_POSTGRES_PASSWORD: ((brats-gcp-postgres-external-db-password))
           GCP_MYSQL_USERNAME: ((brats-gcp-mysql-external-db-user))
@@ -401,7 +401,7 @@ jobs:
         attempts: 2
         file: bosh-src/ci/tasks/create-brats-ssl-certificates.yml
         params:
-          GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
+          GOOGLE_CREDENTIALS: ((cf-bosh-core_gcp-database-terraform_gcp_credentials_json))
         input_mapping:
           terraform-output: brats-terraform
       - task: test-brats
@@ -436,7 +436,7 @@ jobs:
         - task: destroy-brats-sql-users
           file: bosh-src/ci/tasks/destroy-brats-sql-users.yml
           params:
-            GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
+            GOOGLE_CREDENTIALS: ((cf-bosh-core_gcp-database-terraform_gcp_credentials_json))
             GCP_POSTGRES_USERNAME: ((brats-gcp-postgres-external-db-user))
             GCP_POSTGRES_PASSWORD: ((brats-gcp-postgres-external-db-password))
             GCP_MYSQL_USERNAME: ((brats-gcp-mysql-external-db-user))
@@ -463,7 +463,7 @@ jobs:
               gcp_private_network_name: brats-ubuntu-bionic-((branch_name))
               concourse_authorized_network: ((concourse_egress_ip))
             env:
-              GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
+              GOOGLE_CREDENTIALS: ((cf-bosh-core_gcp-database-terraform_gcp_credentials_json))
             action: destroy
 
 
@@ -592,11 +592,11 @@ jobs:
             gcp_private_network_name: brats-ubuntu-jammy-((branch_name))
             concourse_authorized_network: ((concourse_egress_ip))
           env:
-            GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
+            GOOGLE_CREDENTIALS: ((cf-bosh-core_gcp-database-terraform_gcp_credentials_json))
       - task: create-brats-sql-users
         file: bosh-src/ci/tasks/create-brats-sql-users.yml
         params:
-          GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
+          GOOGLE_CREDENTIALS: ((cf-bosh-core_gcp-database-terraform_gcp_credentials_json))
           GCP_POSTGRES_USERNAME: ((brats-gcp-postgres-external-db-user))
           GCP_POSTGRES_PASSWORD: ((brats-gcp-postgres-external-db-password))
           GCP_MYSQL_USERNAME: ((brats-gcp-mysql-external-db-user))
@@ -607,7 +607,7 @@ jobs:
         attempts: 2
         file: bosh-src/ci/tasks/create-brats-ssl-certificates.yml
         params:
-          GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
+          GOOGLE_CREDENTIALS: ((cf-bosh-core_gcp-database-terraform_gcp_credentials_json))
         input_mapping:
           terraform-output: brats-terraform
       - task: test-brats
@@ -642,7 +642,7 @@ jobs:
         - task: destroy-brats-sql-users
           file: bosh-src/ci/tasks/destroy-brats-sql-users.yml
           params:
-            GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
+            GOOGLE_CREDENTIALS: ((cf-bosh-core_gcp-database-terraform_gcp_credentials_json))
             GCP_POSTGRES_USERNAME: ((brats-gcp-postgres-external-db-user))
             GCP_POSTGRES_PASSWORD: ((brats-gcp-postgres-external-db-password))
             GCP_MYSQL_USERNAME: ((brats-gcp-mysql-external-db-user))
@@ -669,7 +669,7 @@ jobs:
               gcp_private_network_name: brats-ubuntu-jammy-((branch_name))
               concourse_authorized_network: ((concourse_egress_ip))
             env:
-              GOOGLE_CREDENTIALS: ((bosh-ci-database-terraform-google-credentials))
+              GOOGLE_CREDENTIALS: ((cf-bosh-core_gcp-database-terraform_gcp_credentials_json))
             action: destroy
 
   #The VMware Bosh Ecosystem team has a need to cross-check the behavior of
@@ -1356,9 +1356,9 @@ resources:
   - name: bosh-src
     type: git
     source:
-      uri: ((bosh_src_url))
+      uri: git@github.com:cloudfoundry/bosh.git
       branch: ((branch_name))
-      private_key: ((github_deployment_key))
+      private_key: ((github_deploy_key_bosh.private_key))
 
   - name: bosh-src-dockerfiles
     type: git
@@ -1455,9 +1455,9 @@ resources:
   - name: bosh-main
     type: git
     source:
-      uri: ((bosh_src_url))
+      uri: git@github.com:cloudfoundry/bosh.git
       branch: main
-      private_key: ((github_deployment_key))
+      private_key: ((github_deploy_key_bosh.private_key))
 
   - name: bosh-cli
     type: s3
