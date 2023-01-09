@@ -60,7 +60,7 @@ module Bosh
 
       # @return [Binding] Template binding
       def get_binding
-        binding.taint
+        binding
       end
 
       # Property lookup helper
