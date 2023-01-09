@@ -959,8 +959,8 @@ jobs:
         candidate-version: version
         bosh-src: bosh-main
       params:
-        AWS_ACCESS_KEY_ID: ((bosh-compiled-releases-aws-access-key-id))
-        AWS_SECRET_ACCESS_KEY: ((bosh-compiled-releases-aws-secret-access-key))
+        AWS_ACCESS_KEY_ID: ((bosh-compiled-releases_aws_access_key.username))
+        AWS_SECRET_ACCESS_KEY: ((bosh-compiled-releases_aws_access_key.password))
         git_private_key: ((github_deploy_key_bosh-compiled-releases-index.private_key))
 
   - name: bump-major
@@ -1395,24 +1395,24 @@ resources:
     type: s3
     source:
       bucket: "bosh-compiled-candidate-tarballs"
-      access_key_id: ((bosh-compiled-releases-aws-access-key-id))
-      secret_access_key: ((bosh-compiled-releases-aws-secret-access-key))
+      access_key_id: ((bosh-compiled-releases_aws_access_key.username))
+      secret_access_key: ((bosh-compiled-releases_aws_access_key.password))
       regexp: "bosh-.*dev\\.(\\d+).*bionic.*.tgz"
 
   - name: bosh-compiled-candidate-jammy
     type: s3
     source:
       bucket: "bosh-compiled-candidate-tarballs"
-      access_key_id: ((bosh-compiled-releases-aws-access-key-id))
-      secret_access_key: ((bosh-compiled-releases-aws-secret-access-key))
+      access_key_id: ((bosh-compiled-releases_aws_access_key.username))
+      secret_access_key: ((bosh-compiled-releases_aws_access_key.password))
       regexp: "bosh-.*dev\\.(\\d+).*jammy.*.tgz"
 
   - name: bosh-compiled-staging-tarballs
     type: s3
     source:
       bucket: "bosh-compiled-staging-tarballs"
-      access_key_id: ((bosh-compiled-releases-aws-access-key-id))
-      secret_access_key: ((bosh-compiled-releases-aws-secret-access-key))
+      access_key_id: ((bosh-compiled-releases_aws_access_key.username))
+      secret_access_key: ((bosh-compiled-releases_aws_access_key.password))
       regexp: "bosh-.*dev\\.(\\d+).*bionic.*.tgz"
 
   - name: bosh-disaster-recovery-acceptance-tests
