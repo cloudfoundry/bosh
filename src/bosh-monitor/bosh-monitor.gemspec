@@ -23,7 +23,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'logging',         '~>2.2.2'
   spec.add_dependency 'em-http-request'
   spec.add_dependency 'nats-pure',       '~>0.6.2'
-  spec.add_dependency 'openssl'
   spec.add_dependency 'thin'
   spec.add_dependency 'sinatra',   '~>2.2.0'
   spec.add_dependency 'dogapi',    '~> 1.21.0'

@@ -6,7 +6,7 @@ bosh_nats_sync_config = {
   "ephemeral_disk" => true,
   "env" => {
     "BUNDLE_GEMFILE" => "/var/vcap/packages/nats/Gemfile",
-    "GEM_HOME" => "/var/vcap/packages/nats/gem_home/ruby/3.1.0",
+    "GEM_HOME" => "/var/vcap/packages/nats/gem_home/ruby/3.2.0",
   },
   "unsafe" => {
     "privileged" => true,

@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-ruby '~> 3.1.0'
+ruby '~> 3.2.0'
 
 gem 'bosh-core', path: 'bosh-core'
 gem 'bosh-director', path: 'bosh-director'
@@ -14,7 +14,7 @@ gem 'rake', '~>13.0.3'
 
 # json version is hardcoded in release director and health_monitor
 # when modified needs to be updated there as well
-gem 'json', '=2.6.1'
+gem 'json', '2.6.3'
 
 gem 'talentbox-delayed_job_sequel', '~>4.3'
 
