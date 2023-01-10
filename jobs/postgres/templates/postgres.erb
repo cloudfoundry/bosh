@@ -1,11 +1,11 @@
 #!/bin/bash -e
 
-PACKAGE_DIR=/var/vcap/packages/postgres-13
+PACKAGE_DIR=/var/vcap/packages/postgres-15
 
 STORE_DIR=/var/vcap/store
 
 # then we switched to including version so it is easier to detect version changes
-DATA_DIR=$STORE_DIR/postgres-13
+DATA_DIR=$STORE_DIR/postgres-15
 
 JOB_DIR=/var/vcap/jobs/postgres
 RUN_DIR=/var/vcap/sys/run/bpm/postgres

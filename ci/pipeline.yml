@@ -102,6 +102,7 @@ jobs:
           trigger: true
         - get: integration-postgres-10-image
         - get: integration-postgres-13-image
+        - get: integration-postgres-15-image
       - in_parallel:
         - task: test-postgres-10
           timeout: 2h
@@ -119,6 +120,14 @@ jobs:
           params:
             DB: postgresql
             DB_VERSION: 13
+        - task: test-postgres-15
+          timeout: 2h
+          privileged: true
+          file: bosh-src/ci/tasks/test-unit.yml
+          image: integration-postgres-15-image
+          params:
+            DB: postgresql
+            DB_VERSION: 15
 
   - name: run-bundle-audit
     public: true
@@ -165,15 +174,15 @@ jobs:
           trigger: true
         - get: bosh-agent
         - get: integration-tests-parallel-runtime
-        - get: integration-postgres-13-image
+        - get: integration-postgres-15-image
       - task: tests
         privileged: true
         file: bosh-src/ci/tasks/test-integration.yml
-        image: integration-postgres-13-image
+        image: integration-postgres-15-image
         params:
           DB:           postgresql
           DB_TLS:       true
-          DB_VERSION: 13
+          DB_VERSION: 15
       - put: integration-tests-parallel-runtime
         params:
           file: parallel-runtime-log/parallel_runtime_rspec.log
@@ -193,11 +202,11 @@ jobs:
           trigger: true
         - get: bosh-agent
         - get: integration-tests-parallel-runtime
-        - get: integration-postgres-13-image
+        - get: integration-postgres-15-image
       - task: tests
         privileged: true
         file: bosh-src/ci/tasks/test-integration.yml
-        image: integration-postgres-13-image
+        image: integration-postgres-15-image
         params:
           DB:           postgresql
           DEFAULT_UPDATE_VM_STRATEGY: create-swap-delete
@@ -1029,6 +1038,24 @@ jobs:
         get_params:
           skip_download: true
 
+  - name: build-main-postgres-15
+    public: true
+    serial: true
+    plan:
+      - get: bosh-src-dockerfiles
+      - get: integration-image
+        trigger: true
+        passed: [build-integration]
+      - put: integration-postgres-15-image
+        params:
+          tag_as_latest: true
+          build: "bosh-src-dockerfiles/ci/dockerfiles/main-postgres"
+          build_args:
+            DB_VERSION: "15"
+            BRANCH: ((branch_name))
+        get_params:
+          skip_download: true
+
   - name: build-main-mysql-5-7
     public: true
     serial: true
@@ -1099,6 +1126,8 @@ jobs:
         trigger: true
       - get: postgres-13-src
         trigger: true
+      - get: postgres-15-src
+        trigger: true
       - get: ruby-release
         trigger: true
       - get: bosh-blobstore-dav
@@ -1163,6 +1192,20 @@ jobs:
         bosh-src: bosh-src-out
       params:
         MAJOR_VERSION: 13
+        PRIVATE_YML: |
+          blobstore:
+            options:
+              credentials_source: static
+              json_key: '((bosh_release_blobs_gcp_credentials_json))'
+    - task: bump-postgres-15-package
+      file: bosh-src/ci/tasks/bump-postgres-packages.yml
+      input_mapping:
+        bosh-src: bosh-src-out
+        postgres-src: postgres-15-src
+      output_mapping:
+        bosh-src: bosh-src-out
+      params:
+        MAJOR_VERSION: 15
         PRIVATE_YML: |
           blobstore:
             options:
@@ -1311,6 +1354,14 @@ resources:
       index: "https://ftp.postgresql.org/pub/source/"
       regex: 'href="v(?P<version>13\.[0-9.]+)/"'
       uri: "https://ftp.postgresql.org/pub/source/v{version}/postgresql-{version}.tar.gz"
+
+  - name: postgres-15-src
+    type: http-resource
+    source:
+      index: "https://ftp.postgresql.org/pub/source/"
+      regex: 'href="v(?P<version>15\.[0-9.]+)/"'
+      uri: "https://ftp.postgresql.org/pub/source/v{version}/postgresql-{version}.tar.gz"
+
 
   - name: bosh-blobstore-dav
     type: s3
@@ -1584,6 +1635,14 @@ resources:
     type: docker-image
     source:
       repository: bosh/main-postgres-13
+      tag: ((branch_name))
+      username: ((docker.username))
+      password: ((docker.password))
+
+  - name: integration-postgres-15-image
+    type: docker-image
+    source:
+      repository: bosh/main-postgres-15
       tag: ((branch_name))
       username: ((docker.username))
       password: ((docker.password))

@@ -2,14 +2,14 @@
 
 set -eu
 
-PACKAGE_DIR=/var/vcap/packages/postgres-13
-PACKAGE_DIR_OLD=/var/vcap/packages/postgres-10
+PACKAGE_DIR=/var/vcap/packages/postgres-15
+PACKAGE_DIR_OLD=/var/vcap/packages/postgres-13
 
 PERSISTENT_DISK_DIR=/var/vcap/store
 
-STORE_DIR=${PERSISTENT_DISK_DIR}/postgres-13
-STORE_DIR_OLD=${PERSISTENT_DISK_DIR}/postgres-10
-STORE_DIR_OBSOLETE=${PERSISTENT_DISK_DIR}/postgres-9.4
+STORE_DIR=${PERSISTENT_DISK_DIR}/postgres-15
+STORE_DIR_OLD=${PERSISTENT_DISK_DIR}/postgres-13
+STORE_DIR_OBSOLETE=${PERSISTENT_DISK_DIR}/postgres-10
 
 USER='<%= p("postgres.user") %>'
 
@@ -18,11 +18,11 @@ sysctl -w "kernel.shmmax=67108864"
 if [ -d $STORE_DIR_OBSOLETE ]; then
   # uh-oh, we have years-old BOSH Director
   if [ ! -d $STORE_DIR_OLD ] && [ ! -d $STORE_DIR ]; then
-    # we never upgraded this BOSH Director from PostgreSQL 9.4 to 10
-    echo "Please use a previous bosh release version (271.x or lower) to migrate data from postgres-9.4 to postgres-10."
+    # we never upgraded this BOSH Director from PostgreSQL 10 to 15
+    echo "Please use a previous bosh release version (277.x or lower) to migrate data from postgres-10 to postgres-13."
     exit 1
   fi
-  # delete the obsolete 9.4 directory to free up space
+  # delete the obsolete 10 directory to free up space
   echo "Deleting obsolete $STORE_DIR_OBSOLETE directory."
   rm -rf "${STORE_DIR_OBSOLETE}"
 fi
@@ -51,7 +51,7 @@ fi
 
 if [[ -f ${STORE_DIR}/fresh ]] ; then
   if [[ -d ${STORE_DIR_OLD} ]] ; then
-    echo "copying contents of postgres-10 to postgres-13 for postgres upgrade..."
+    echo "copying contents of postgres-13 to postgres-15 for postgres upgrade..."
     su - vcap -c "${PACKAGE_DIR}/bin/pg_upgrade \
       --old-bindir=${PACKAGE_DIR_OLD}/bin \
       --new-bindir=${PACKAGE_DIR}/bin \
