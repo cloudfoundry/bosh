@@ -158,7 +158,7 @@ GEM
       tzinfo
     factory_bot (6.2.0)
       activesupport (>= 5.0.0)
-    fakefs (1.0.0)
+    fakefs (2.0.0)
     ffi (1.15.5)
     fugit (1.5.0)
       et-orbi (~> 1.1, >= 1.1.8)
