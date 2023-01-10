@@ -3,10 +3,10 @@
 FROM ubuntu:latest
 
 ENV DEBIAN_FRONTEND "noninteractive"
-ENV RUBY_VERSION "3.1"
+ENV RUBY_VERSION "3.2"
 ENV RUBY_INSTALL_VERSION "0.8.5"
 ENV GEM_HOME "/usr/local/bundle"
-ENV POSTGRES_MAJOR_VERSION "10"
+ENV POSTGRES_MAJOR_VERSION "13"
 
 RUN apt-get update -y \
     && apt-get -y install --no-install-recommends \
