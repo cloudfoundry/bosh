@@ -1334,10 +1334,10 @@ resources:
     type: s3
     source:
       regexp: verify-multidigest-(.*)-linux-amd64
-      bucket: ((aws_s3_release_bucket))
-      region_name: ((aws_s3_release_bucket_region))
-      access_key_id: ((aws_s3_release_bucket_access_key))
-      secret_access_key: ((aws_s3_release_bucket_secret_key))
+      bucket: verify-multidigest
+      region_name: us-east-1
+      access_key_id: ((bosh-verify-multidigest-upload_aws_access_key.username))
+      secret_access_key: ((bosh-verify-multidigest-upload_aws_access_key.password))
 
   - name: nats-server-github-release
     type: github-release
