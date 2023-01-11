@@ -39,7 +39,7 @@ module Bosh::Director
       end
 
       def validate
-        if @version =~ /(^|[\._])latest$/
+        if @version.to_s =~ /(^|[\._])latest$/
           raise RuntimeInvalidReleaseVersion,
             "Runtime manifest contains the release '#{@name}' with version as '#{@version}'. " +
               'Please specify the actual version string.'

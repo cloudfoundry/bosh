@@ -27,7 +27,7 @@ module Bosh::Director
     let(:stage) { instance_double(EventLog::Stage) }
 
     before do
-      allow(Bosh::Director::ThreadPool).to receive(:new).and_call_original
+      allow(Bosh::Director::ThreadPool).to receive(:new).and_wrap_original { |m, *args| m.call(max_threads: 2) }
       allow(Config).to receive(:max_threads).and_return(2)
       allow(Config).to receive(:logger).and_return(logger)
       allow(logger).to receive(:debug)

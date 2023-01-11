@@ -21,7 +21,7 @@ describe 'cli: stemcell', type: :integration do
     )
 
     stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{out[0]['cid']}")
-    expect(File).to be_exists(stemcell_path)
+    expect(File).to be_exist(stemcell_path)
   end
 
   context 'when cpi does not have corresponding stemcell_formats value' do
@@ -85,11 +85,11 @@ describe 'cli: stemcell', type: :integration do
     )
 
     stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{out[0]['cid']}")
-    expect(File).to be_exists(stemcell_path)
+    expect(File).to be_exist(stemcell_path)
     out = bosh_runner.run('delete-stemcell ubuntu-stemcell/1')
     expect(out).to match(/Succeeded/)
     stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{out[0]['cid']}")
-    expect(File).not_to be_exists(stemcell_path)
+    expect(File).not_to be_exist(stemcell_path)
   end
 
   it 'allows --sha1 even when used during upload of a local stemcell' do
@@ -142,7 +142,7 @@ describe 'cli: stemcell', type: :integration do
           old_cid = out[0]['cid']
 
           stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{old_cid}")
-          expect(File).to be_exists(stemcell_path)
+          expect(File).to be_exist(stemcell_path)
 
           # Upload a new stemcell with same version and name as the existing one, but is of different image content
           new_local_stemcell_path = spec_asset('valid_stemcell_with_different_content.tgz')
@@ -163,10 +163,10 @@ describe 'cli: stemcell', type: :integration do
 
           # Check both old stemcell and new stemcll are in the storage
           stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{old_cid}")
-          expect(File).to be_exists(stemcell_path)
+          expect(File).to be_exist(stemcell_path)
 
           stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{new_cid}")
-          expect(File).to be_exists(stemcell_path)
+          expect(File).to be_exist(stemcell_path)
         end
       end
     end
@@ -195,7 +195,7 @@ describe 'cli: stemcell', type: :integration do
         )
 
         stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{out[0]['cid']}")
-        expect(File).to be_exists(stemcell_path)
+        expect(File).to be_exist(stemcell_path)
       end
 
       context 'when the URL is being redirected' do
@@ -216,7 +216,7 @@ describe 'cli: stemcell', type: :integration do
           )
 
           stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{out[0]['cid']}")
-          expect(File).to be_exists(stemcell_path)
+          expect(File).to be_exist(stemcell_path)
         end
       end
 
@@ -242,7 +242,7 @@ describe 'cli: stemcell', type: :integration do
             old_cid = out[0]['cid']
 
             stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{old_cid}")
-            expect(File).to be_exists(stemcell_path)
+            expect(File).to be_exist(stemcell_path)
 
             # Upload a new stemcell with same version and name as the existing one, but is of different image content
             new_stemcell_url = file_server.http_url('valid_stemcell_with_different_content.tgz')
@@ -264,10 +264,10 @@ describe 'cli: stemcell', type: :integration do
 
             # Check both old stemcell and new stemcll are in the storage
             stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{old_cid}")
-            expect(File).to be_exists(stemcell_path)
+            expect(File).to be_exist(stemcell_path)
 
             stemcell_path = File.join(current_sandbox.cloud_storage_dir, "stemcell_#{new_cid}")
-            expect(File).to be_exists(stemcell_path)
+            expect(File).to be_exist(stemcell_path)
           end
         end
       end

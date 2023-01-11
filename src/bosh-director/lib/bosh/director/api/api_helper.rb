@@ -8,7 +8,7 @@ module Bosh::Director
 
       class DisposableFile < ::Rack::File
         def close
-          FileUtils.rm_rf(self.path) if File.exists?(self.path)
+          FileUtils.rm_rf(self.path) if File.exist?(self.path)
         end
       end
 
