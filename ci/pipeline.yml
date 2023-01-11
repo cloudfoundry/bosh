@@ -804,10 +804,10 @@ jobs:
           bosh-release: last-released-bosh-release
         params:
           BAT_INFRASTRUCTURE: aws
-          AWS_ACCESS_KEY_ID:     ((aws_access_key__primary))
-          AWS_SECRET_ACCESS_KEY: ((aws_secret_key__primary))
-          AWS_DEFAULT_REGION:    ((aws_region__primary))
-          AWS_SSH_PRIVATE_KEY:   ((aws_ssh_private_key))
+          AWS_ACCESS_KEY_ID:     ((bats-dev_aws_access_key.username))
+          AWS_SECRET_ACCESS_KEY: ((bats-dev_aws_access_key.password))
+          AWS_DEFAULT_REGION:    us-east-1
+          AWS_SSH_PRIVATE_KEY:   ((terraform_aws_keypair.private_key))
           DEPLOY_ARGS: |
             -o bosh-deployment/external-ip-not-recommended.yml
       - task: deploy-zookeeper
@@ -820,10 +820,10 @@ jobs:
           environment: terraform
         params:
           BAT_INFRASTRUCTURE: aws
-          AWS_ACCESS_KEY_ID:     ((aws_access_key__primary))
-          AWS_SECRET_ACCESS_KEY: ((aws_secret_key__primary))
-          AWS_DEFAULT_REGION:    ((aws_region__primary))
-          AWS_SSH_PRIVATE_KEY:   ((aws_ssh_private_key))
+          AWS_ACCESS_KEY_ID:     ((bats-dev_aws_access_key.username))
+          AWS_SECRET_ACCESS_KEY: ((bats-dev_aws_access_key.password))
+          AWS_DEFAULT_REGION:    us-east-1
+          AWS_SSH_PRIVATE_KEY:   ((terraform_aws_keypair.private_key))
           DEPLOY_ARGS: |
             -o bosh-deployment/external-ip-not-recommended.yml
       - task: sleep-180-seconds
@@ -853,9 +853,9 @@ jobs:
             input_mapping:
               environment: terraform
             params:
-              AWS_ACCESS_KEY_ID:     ((aws_access_key__primary))
-              AWS_SECRET_ACCESS_KEY: ((aws_secret_key__primary))
-              AWS_DEFAULT_REGION:    ((aws_region__primary))
+              AWS_ACCESS_KEY_ID:     ((bats-dev_aws_access_key.username))
+              AWS_SECRET_ACCESS_KEY: ((bats-dev_aws_access_key.password))
+              AWS_DEFAULT_REGION:    us-east-1
           - put: terraform
             attempts: 3
             params:
@@ -1463,8 +1463,8 @@ resources:
     type: s3
     source:
       regexp: alpha-bosh-cli-(.*)-linux-amd64
-      bucket: ((bosh_cli_aws_s3_alpha_release_bucket))
-      region_name: ((bosh_cli_aws_s3_release_bucket_region))
+      bucket: bosh-cli-alpha-artifacts
+      region_name: us-east-1
 
   - name: bosh-dns-release
     type: bosh-io-release
@@ -1600,16 +1600,16 @@ resources:
     type: terraform
     source:
       storage:
-        access_key_id:     ((aws_access_key__primary))
-        secret_access_key: ((aws_secret_key__primary))
-        bucket:            ((terraform_bucket))
+        access_key_id:     ((bats-dev_aws_access_key.username))
+        secret_access_key: ((bats-dev_aws_access_key.password))
+        bucket:            bosh-bats-terraform
         bucket_path:       terraform-state
-        region_name: ((terraform_bucket_region))
+        region_name:       us-west-1
       vars:
-        access_key: ((aws_access_key__primary))
-        secret_key: ((aws_secret_key__primary))
-        region:     ((aws_region__primary))
-        ssh_public_key: ((aws_ssh_public_key))
+        access_key: ((bats-dev_aws_access_key.username))
+        secret_key: ((bats-dev_aws_access_key.password))
+        region:     us-east-1
+        ssh_public_key: ((terraform_aws_keypair.public_key))
 
   - name: last-released-bosh-release
     type: bosh-io-release
