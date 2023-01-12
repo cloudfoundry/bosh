@@ -886,10 +886,6 @@ jobs:
           - bats-ubuntu-bionic
           - brats-ubuntu-bionic
           - bosh-disaster-recovery-acceptance-tests
-      - put: tracker-output
-        params:
-          repos:
-          - bosh-src
 
   - name: finalize-release
     serial: true
@@ -1548,13 +1544,6 @@ resources:
     source:
       uri: https://github.com/bosh-packages/ruby-release
       branch: master
-
-  - name: tracker-output
-    type: tracker
-    source:
-      token: ((tracker_api_token))
-      project_id: ((tracker_project_id))
-      tracker_url: https://www.pivotaltracker.com
 
   - name: integration-image
     type: docker-image
