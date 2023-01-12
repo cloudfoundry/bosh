@@ -9,23 +9,25 @@ PERSISTENT_DISK_DIR=/var/vcap/store
 
 STORE_DIR=${PERSISTENT_DISK_DIR}/postgres-15
 STORE_DIR_OLD=${PERSISTENT_DISK_DIR}/postgres-13
-STORE_DIR_OBSOLETE=${PERSISTENT_DISK_DIR}/postgres-10
-
+STORE_DIR_OBSOLETE=${PERSISTENT_DISK_DIR}/postgres
+OBSOLETE_VERSIONS=(9.4 10)
 USER='<%= p("postgres.user") %>'
 
 sysctl -w "kernel.shmmax=67108864"
 
-if [ -d $STORE_DIR_OBSOLETE ]; then
-  # uh-oh, we have years-old BOSH Director
-  if [ ! -d $STORE_DIR_OLD ] && [ ! -d $STORE_DIR ]; then
-    # we never upgraded this BOSH Director from PostgreSQL 10 to 15
-    echo "Please use a previous bosh release version (277.x or lower) to migrate data from postgres-10 to postgres-13."
-    exit 1
+for version in ${OBSOLETE_VERSIONS[@]}; do
+  if [ -d ${PERSISTENT_DISK_DIR}/postgres-${version} ]; then
+    # uh-oh, we have years-old BOSH Director
+    if [ ! -d $STORE_DIR_OLD ] && [ ! -d $STORE_DIR ]; then
+      # we never upgraded this BOSH Director from PostgreSQL 10 or below to 15
+      echo "Please use a previous bosh release version (277.x or lower) to migrate data from postgres-${version} to postgres-13."
+      exit 1
+    fi
+    # delete the obsolete directory to free up space
+    echo "Deleting obsolete $STORE_DIR_OBSOLETE directory."
+    rm -rf "${STORE_DIR_OBSOLETE}"
   fi
-  # delete the obsolete 10 directory to free up space
-  echo "Deleting obsolete $STORE_DIR_OBSOLETE directory."
-  rm -rf "${STORE_DIR_OBSOLETE}"
-fi
+done
 
 # We cannot kill the following conditional
 # because initdb is very picky about looking at an empty dir
