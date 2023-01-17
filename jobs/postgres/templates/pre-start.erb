@@ -9,7 +9,6 @@ PERSISTENT_DISK_DIR=/var/vcap/store
 
 STORE_DIR=${PERSISTENT_DISK_DIR}/postgres-15
 STORE_DIR_OLD=${PERSISTENT_DISK_DIR}/postgres-13
-STORE_DIR_OBSOLETE=${PERSISTENT_DISK_DIR}/postgres
 OBSOLETE_VERSIONS=(9.4 10)
 USER='<%= p("postgres.user") %>'
 
@@ -24,8 +23,8 @@ for version in ${OBSOLETE_VERSIONS[@]}; do
       exit 1
     fi
     # delete the obsolete directory to free up space
-    echo "Deleting obsolete $STORE_DIR_OBSOLETE directory."
-    rm -rf "${STORE_DIR_OBSOLETE}"
+    echo "Deleting obsolete old postgres directory."
+    rm -rf "${PERSISTENT_DISK_DIR}/postgres-${version}"
   fi
 done
 
