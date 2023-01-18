@@ -53,13 +53,15 @@ module Bosh::Director
       private
 
       def update_task_state
+        task = Models::Task.where(id: @task_id).first
+        current_state = task.state
+
         Config.db.transaction(wait: 1.seconds, attempts: 5,
                               retry_on: [Sequel::DatabaseDisconnectError, Sequel::DatabaseConnectionError]) do
-          task = Models::Task.where(id: @task_id).first
           raise DirectorError, "Task #{@task_id} not found in queue" unless task
 
           task.checkpoint_time = Time.now
-          case task.state
+          case current_state
           when 'cancelling'
             task.state = 'cancelled'
             Config.logger.debug("Task #{@task_id} cancelled")
