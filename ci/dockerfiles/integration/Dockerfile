@@ -8,7 +8,8 @@ ENV RUBY_SHA512="733ecc6709470ee16916deeece9af1c76220ae95d17b2681116aff7f381d99b
 ENV RUBY_INSTALL_VERSION "0.8.5"
 ENV GEM_HOME "/usr/local/bundle"
 ENV POSTGRES_MAJOR_VERSION "13"
-ENV BOSH_CLI_VERSION 7.0.1-linux-amd64
+ENV BOSH_CLI_VERSION 7.1.2-linux-amd64
+ENV BOSH_CLI_SHA256SUM "bac6d4ee6b735b2ad061727b4abb7ec12d687b7274a10174dc18b84903380f40"
 ENV METALINK_VERSION 0.3.0-linux-amd64
 
 RUN apt-get update -y \
@@ -57,7 +58,7 @@ RUN apt-get update -y \
 RUN cd /tmp && \
     wget -nv "https://s3.amazonaws.com/bosh-cli-artifacts/bosh-cli-${BOSH_CLI_VERSION}" && \
     ( \
-        echo "808ed5b94c45ac1f5a351ace62f2a93adb6fcf2f689368cbba12b37343f1121e bosh-cli-${BOSH_CLI_VERSION}" | \
+        echo "${BOSH_CLI_SHA256SUM} bosh-cli-${BOSH_CLI_VERSION}" | \
         sha256sum -c - \
     ) && \
     mv /tmp/bosh-cli-* /usr/local/bin/bosh && \
