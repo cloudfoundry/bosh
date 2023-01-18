@@ -42,13 +42,7 @@ module Bosh::Director
       end
 
       task.output = log_dir
-      Config.db.transaction(
-        wait: 1.seconds,
-        attempts: 5,
-        retry_on: [Sequel::DatabaseConnectionError, Sequel::DatabaseDisconnectError],
-      ) do
-        task.save
-      end
+      task.save
 
       task
     end
