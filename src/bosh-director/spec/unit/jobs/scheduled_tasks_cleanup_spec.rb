@@ -18,6 +18,7 @@ module Bosh::Director
     end
 
     context 'orphaned tasks exists' do
+      let(:five_minutes_ago) { DateTime.now.to_time.to_i - 300 }
       let!(:delayed_jobs) do
         Delayed::Job.insert(id: 4, handler: '{task_id: 4}')
         Delayed::Job.insert(id: 8, handler: '{task_id: 8}')
@@ -25,10 +26,11 @@ module Bosh::Director
       let!(:tasks) do
         Models::Task.make(id: 4, type: 'vms', state: 'processing')
         Models::Task.make(id: 8, type: 'deployment', state: 'processing')
-        Models::Task.make(id: 9, type: 'deployment', state: 'queued')
-        Models::Task.make(id: 10, type: 'deployment', state: 'queued')
-        Models::Task.make(id: 11, type: 'snapshot_deployment', state: 'done')
-        Models::Task.make(id: 12, type: 'update_stemcell', state: 'done')
+        Models::Task.make(id: 9, timestamp: five_minutes_ago, type: 'deployment', state: 'queued')
+        Models::Task.make(id: 10, timestamp: DateTime.now.to_time, type: 'deployment', state: 'queued')
+        Models::Task.make(id: 11, timestamp: five_minutes_ago, type: 'snapshot_deployment', state: 'done')
+        Models::Task.make(id: 12, timestamp: DateTime.now.to_time, type: 'update_stemcell', state: 'done')
+        Models::Task.make(id: 13, timestamp: five_minutes_ago, type: 'deployment', state: 'queued')
       end
 
       describe '#perform' do
@@ -40,12 +42,14 @@ module Bosh::Director
             "Deleted tasks and logs for\n" \
             "1 task(s) of type 'snapshot_deployment'\n" \
             "1 task(s) of type 'update_stemcell'\n" \
-            'Marked orphaned tasks with ids: [9, 10] as errored. They do not have a worker job backing them',
+            'Marked orphaned tasks with ids: [9, 13] as errored. They do not have a worker job backing them',
           )
 
-          Models::Task.select.where(id: [9, 10]).each do |task|
+          Models::Task.select.where(id: [9, 13]).each do |task|
             expect(task.state).to eq('error')
           end
+          # Will not be marked as errored. It's not older than 5 minutes.
+          expect(Models::Task.find(id: 10).state).to eq('queued')
         end
       end
     end

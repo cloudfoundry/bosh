@@ -1,3 +1,5 @@
+require 'date'
+
 module Bosh::Director
   module Jobs
     class ScheduledTasksCleanup < BaseJob
@@ -25,6 +27,13 @@ module Bosh::Director
         errored_tasks = []
         Bosh::Director::Models::Task.select.where('state': %w[queued processing]).each do |task|
           next if actual_delayed_job_scheduled_task_ids.include?(task.id)
+
+          # Newly created tasks are first created in the tasks db, then in the delayed jobs db.
+          # So if a task is being created while we get the list of all jobs in the delayed jobs table,
+          # we may end up missing an item.
+          # To avoid cleaning up tasks where the delayed job item doesn't exist yet, we only clean tasks
+          # if the timestamp older than 5 minutes.
+          next unless (DateTime.now.to_time.to_i - task.timestamp.to_i) >= 300
 
           errored_tasks << task.id
           task.state = 'error'
