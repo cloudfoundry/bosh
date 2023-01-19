@@ -6,7 +6,7 @@ postgres_config = {
   "shutdown_signal" => "INT",
   "additional_volumes" => [
     {
-      "path" => "/var/vcap/store/postgres-13",
+      "path" => "/var/vcap/store/postgres-15",
       "writable" => true,
     },
   ],

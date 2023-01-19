@@ -1,0 +1,29 @@
+set -e -x
+
+tar xzf postgres/postgresql-15.*.tar.gz
+
+pushd postgresql-*
+  ./configure --prefix=${BOSH_INSTALL_TARGET}
+
+  pushd src/bin/pg_config
+    make
+    make install
+  popd
+
+  cp -LR src/include ${BOSH_INSTALL_TARGET}
+
+  pushd src/interfaces/libpq
+    make
+    make install
+  popd
+
+  pushd src
+    make
+    make install
+  popd
+
+  pushd contrib
+    make
+    make install
+  popd
+popd
