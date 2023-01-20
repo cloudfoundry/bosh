@@ -89,6 +89,7 @@ module Bosh
           @changes << :blobstore_config if instance.blobstore_config_changed?
           @changes << :nats_config if instance.nats_config_changed?
           @changes << :tags if tags_changed?
+          @changes << :variables if variables_changed?
           @changes
         end
 
@@ -105,7 +106,6 @@ module Bosh
             desired_disks_collection,
             instance.desired_variable_set,
           )
-
           changed_disk_pairs.each do |disk_pair|
             log_changes(__method__, disk_pair[:old], disk_pair[:new], instance)
           end
@@ -162,6 +162,28 @@ module Bosh
             changed = true
           end
 
+          changed
+        end
+
+        def variables_changed?
+          previous_variables = instance.previous_variable_set.variables.each_with_object({}) do |variable, hash|
+            hash[variable[:variable_name]] = variable
+          end
+          desired_variables = instance.desired_variable_set.variables.each_with_object({}) do |variable, hash|
+            hash[variable[:variable_name]] = variable
+          end
+          changed = false
+          previous_variables.each do |key, value|
+            if desired_variables.has_key?(key)
+              if desired_variables[key].variable_id != previous_variables[key].variable_id
+                @logger.debug(
+                  "#{__method__} variable changed NAME: #{key} FROM: #{previous_variables[key][:variable_id]} " \
+                  "TO: #{desired_variables[key][:variable_id]} on instance #{@existing_instance}",
+                )
+                changed = true
+              end
+            end
+          end
           changed
         end
 
