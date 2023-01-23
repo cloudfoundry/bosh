@@ -26,8 +26,10 @@ stemcells:
   version: latest
 
 releases:
-- name: bosh
-  version: latest
+- name: "bosh"
+  version: "276.1.1"
+  url: "https://bosh.io/d/github.com/cloudfoundry/bosh?v=276.1.1"
+  sha1: "f9a625dd8a8fc6e01f1641390ced3ac0fee31523"
 - name: bpm
   version: latest
 
