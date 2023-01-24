@@ -36,6 +36,7 @@ groups:
     jobs:
     - build-main-postgres-10
     - build-main-postgres-13
+    - build-main-postgres-15
     - build-main-mysql-5-7
     - build-integration
     - build-docker-cpi
