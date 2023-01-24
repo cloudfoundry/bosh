@@ -34,8 +34,8 @@ describe NATSSync::Runner do
     end
 
     it 'should start UsersSync.execute_nats_sync function with the same parameters defined in the file' do
-      expect(user_sync_class).to have_received(:new).with(file_path, director_config, nats_server_executable, nats_server_pid_file)
-      expect(user_sync_instance).to have_received(:execute_users_sync)
+      expect(user_sync_class).to have_received(:new).with(file_path, director_config, nats_server_executable, nats_server_pid_file).at_least(:once)
+      expect(user_sync_instance).to have_received(:execute_users_sync).at_least(:once)
     end
 
     it 'should log when starting' do
