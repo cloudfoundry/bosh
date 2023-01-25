@@ -9,8 +9,8 @@ templates:
   postgresql.conf.erb: config/postgresql.conf
 
 packages:
+  - postgres-15
   - postgres-13
-  - postgres-10
 
 properties:
   postgres.user:

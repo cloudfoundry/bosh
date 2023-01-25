@@ -212,7 +212,7 @@ jobs:
           DB:           postgresql
           DEFAULT_UPDATE_VM_STRATEGY: create-swap-delete
           DB_TLS:       true
-          DB_VERSION: 13
+          DB_VERSION: 15
 
       - put: integration-tests-parallel-runtime
         params:
