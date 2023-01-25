@@ -117,6 +117,7 @@ module Bosh::Dev::Sandbox
         FROM pg_constraint
           INNER JOIN pg_class ON conrelid=pg_class.oid
           INNER JOIN pg_namespace ON pg_namespace.oid=pg_class.relnamespace
+        WHERE nspname != 'pg_catalog'
         ORDER BY CASE WHEN contype='f' THEN 0 ELSE 1 END,contype,nspname,relname,conname
       "}
 
@@ -141,6 +142,7 @@ module Bosh::Dev::Sandbox
         FROM pg_constraint
           INNER JOIN pg_class ON conrelid=pg_class.oid
           INNER JOIN pg_namespace ON pg_namespace.oid=pg_class.relnamespace
+        WHERE nspname != 'pg_catalog'
         ORDER BY CASE WHEN contype='f' THEN 0 ELSE 1 END DESC,contype DESC,nspname DESC,relname DESC,conname DESC;
       "}
 
@@ -149,7 +151,6 @@ module Bosh::Dev::Sandbox
       add_constraints_cmds = `#{add_constraints_cmds_cmd}`.lines.to_a[2...-2] || []
 
       cmds = drop_constraints_cmds + clear_table_cmds + add_constraints_cmds
-
       @runner.run(
         "psql #{connection_string} -c '#{cmds.join(';')}' > /dev/null 2>&1",
       )
