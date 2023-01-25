@@ -25,6 +25,7 @@ module Bosh::Director
         end
 
         errored_tasks = []
+        failed_cleaning = []
         Bosh::Director::Models::Task.select.where('state': %w[queued processing]).each do |task|
           next if actual_delayed_job_scheduled_task_ids.include?(task.id)
 
@@ -37,10 +38,15 @@ module Bosh::Director
 
           errored_tasks << task.id
           task.state = 'error'
-          task.save
+          failed_cleaning << errored_tasks.pop if task.save.nil?
         end
 
         return result if errored_tasks.empty?
+
+        unless failed_cleaning.empty?
+          Bosh::Director::Config.logger.debug("There were issues updating task ids: #{failed_cleaning}.
+                                               These will be retried on the next cleanup")
+        end
 
         result << "Marked orphaned tasks with ids: #{errored_tasks} as errored. They do not have a worker job backing them"
       end
