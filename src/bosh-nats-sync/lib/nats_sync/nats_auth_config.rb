@@ -1,7 +1,7 @@
 module NATSSync
   class NatsAuthConfig
-    def initialize(agent_ids, director_subject, hm_subject)
-      @agent_ids = agent_ids
+    def initialize(vms, director_subject, hm_subject)
+      @vms = vms
       @hm_subject = hm_subject
       @director_subject = director_subject
       @config = { 'authorization' =>
@@ -28,9 +28,9 @@ module NATSSync
       }
     end
 
-    def agent_user(agent_id)
+    def agent_user(agent_id, cn)
       {
-        'user' => "C=USA, O=Cloud Foundry, CN=#{agent_id}.agent.bosh-internal",
+        'user' => "C=USA, O=Cloud Foundry, CN=#{cn}.agent.bosh-internal",
         'permissions' => {
           'publish' => [
             "hm.agent.heartbeat.#{agent_id}",
@@ -46,8 +46,13 @@ module NATSSync
     def create_config
       @config['authorization']['users'] << director_user unless @director_subject.nil?
       @config['authorization']['users'] << hm_user unless @hm_subject.nil?
-      @agent_ids.each { |agent_id| @config['authorization']['users'] << agent_user(agent_id) }
-
+      @vms.each do |vm|
+        agent_id = vm['agent_id']
+        if !vm['permanent_nats_credentials']
+          @config['authorization']['users'] << agent_user(agent_id, agent_id + '.bootstrap')
+        end
+        @config['authorization']['users'] << agent_user(agent_id, agent_id)
+      end
       @config
     end
   end

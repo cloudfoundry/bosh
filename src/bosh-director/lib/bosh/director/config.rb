@@ -26,6 +26,7 @@ module Bosh::Director
         :dns,
         :dns_db,
         :enable_cpi_resize_disk,
+        :enable_short_lived_nats_bootstrap_credentials,
         :enable_post_deploy,
         :enable_snapshots,
         :enable_virtual_delete_vms,
@@ -61,6 +62,7 @@ module Bosh::Director
         :db_config,
         :director_ips,
         :enable_nats_delivered_templates,
+        :enable_short_lived_nats_bootstrap_credentials,
         :allow_errands_on_stopped_instances,
         :ignore_missing_gateway,
         :director_certificate_expiry_json_path,
@@ -210,6 +212,7 @@ module Bosh::Director
         @keep_unreachable_vms = config.fetch('keep_unreachable_vms', false)
         @enable_post_deploy = config.fetch('enable_post_deploy', true)
         @enable_nats_delivered_templates = config.fetch('enable_nats_delivered_templates', false)
+        @enable_short_lived_nats_bootstrap_credentials = config.fetch('enable_short_lived_nats_bootstrap_credentials', false)
         @allow_errands_on_stopped_instances = config.fetch('allow_errands_on_stopped_instances', false)
         @generate_vm_passwords = config.fetch('generate_vm_passwords', false)
         @remove_dev_tools = config['remove_dev_tools']

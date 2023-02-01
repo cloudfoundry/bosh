@@ -178,7 +178,7 @@ module Bosh::Director
         @model.update(spec: @current_state)
       end
 
-      def update_instance_settings(vm)
+      def update_instance_settings(vm, force_nats_rotation = false)
         disk_associations = @model.reload.active_persistent_disks.collection.reject do |disk|
           disk.model.managed?
         end
@@ -201,7 +201,7 @@ module Bosh::Director
           end
         end
 
-        if nats_config_changed?
+        if nats_config_changed? || force_nats_rotation
           cert_generator = NatsClientCertGenerator.new(@logger)
           agent_cert_key_result = cert_generator.generate_nats_client_certificate "#{vm.agent_id}.agent.bosh-internal"
           settings['mbus'] = {

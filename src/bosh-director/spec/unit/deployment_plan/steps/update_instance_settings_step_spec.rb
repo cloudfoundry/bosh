@@ -28,17 +28,40 @@ module Bosh::Director
           before do
             allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
             allow(Config).to receive(:trusted_certs).and_return(trusted_certs)
+            allow(vm).to receive(:update)
+            Config.enable_short_lived_nats_bootstrap_credentials = true
           end
 
-          it 'should update the instance settings with the proper VM' do
+          it 'should update the instance settings with the proper VM and force nats rotation' do
             step.perform(report)
-            expect(instance).to have_received(:update_instance_settings).with(vm)
+            expect(instance).to have_received(:update_instance_settings).with(vm, true)
           end
 
           it 'should update any cloud_properties provided' do
             expect { step.perform(report) }.to change {
               instance_model.cloud_properties
             }.from('{}').to(JSON.dump(cloud_props))
+          end
+
+          it 'should set the permanent_nats_credentials flag to true' do
+            step.perform(report)
+            expect(vm).to have_received(:update).with(permanent_nats_credentials: true)
+          end
+
+          context 'when enable_short_lived_nats_bootstrap_credentials is deactivated' do
+            before do
+              Config.enable_short_lived_nats_bootstrap_credentials = false
+            end
+
+            it 'should update the instance settings with the proper VM and do not force nats rotation' do
+              step.perform(report)
+              expect(instance).to have_received(:update_instance_settings).with(vm, false)
+            end
+
+            it 'should set the permanent_nats_credentials flag to false' do
+              step.perform(report)
+              expect(vm).to have_received(:update).with(permanent_nats_credentials: false)
+            end
           end
         end
       end

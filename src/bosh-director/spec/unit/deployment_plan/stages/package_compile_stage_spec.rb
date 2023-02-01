@@ -144,6 +144,10 @@ module Bosh::Director
       allow(Config).to receive(:current_job).and_return(update_job)
       allow(Config).to receive(:name).and_return('fake-director-name')
       allow(Config).to receive(:cloud_options).and_return('provider' => { 'path' => '/path/to/default/cpi' })
+      allow(Config).to receive(:enable_short_lived_nats_bootstrap_credentials).and_return(true)
+      director_config = SpecHelper.spec_get_director_config
+      allow(Config).to receive(:nats_client_ca_private_key_path).and_return(director_config['nats']['client_ca_private_key_path'])
+      allow(Config).to receive(:nats_client_ca_certificate_path).and_return(director_config['nats']['client_ca_certificate_path'])
       allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
       allow(cloud).to receive(:info)
       allow(cloud).to receive(:request_cpi_api_version=)

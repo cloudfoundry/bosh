@@ -118,9 +118,10 @@ module Bosh::Director
             env['bosh']['mbus']['cert'] ||= {}
             env['bosh']['mbus']['cert']['ca'] = Config.nats_server_ca
             cert_generator = NatsClientCertGenerator.new(@logger)
-            agent_cert_key_result = cert_generator.generate_nats_client_certificate "#{agent_id}.agent.bosh-internal"
-            env['bosh']['mbus']['cert']['certificate'] = agent_cert_key_result[:cert].to_pem
-            env['bosh']['mbus']['cert']['private_key'] = agent_cert_key_result[:key].to_pem
+            agent_short_lived_creds = cert_generator.generate_nats_client_certificate "#{agent_id}.bootstrap.agent.bosh-internal"
+            env['bosh']['mbus']['cert']['certificate'] = agent_short_lived_creds[:cert].to_pem
+            env['bosh']['mbus']['cert']['private_key'] = agent_short_lived_creds[:key].to_pem
+
           end
 
           password = env.fetch('bosh', {}).fetch('password', "")

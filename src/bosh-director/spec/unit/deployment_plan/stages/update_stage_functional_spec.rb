@@ -72,6 +72,10 @@ module Bosh::Director::DeploymentPlan::Stages
       allow(Bosh::Director::Config).to receive(:uuid).and_return('meow-uuid')
       allow(Bosh::Director::Config).to receive(:cloud_options).and_return('provider' => { 'path' => '/path/to/default/cpi' })
       allow(Bosh::Director::Config).to receive(:preferred_cpi_api_version).and_return(1)
+      allow(Bosh::Director::Config).to receive(:enable_short_lived_nats_bootstrap_credentials).and_return(true)
+      director_config = SpecHelper.spec_get_director_config
+      allow(Bosh::Director::Config).to receive(:nats_client_ca_private_key_path).and_return(director_config['nats']['client_ca_private_key_path'])
+      allow(Bosh::Director::Config).to receive(:nats_client_ca_certificate_path).and_return(director_config['nats']['client_ca_certificate_path'])
       allow(Bosh::Clouds::ExternalCpiResponseWrapper).to receive(:new).with(anything, anything).and_return(cloud)
       allow(variables_interpolator).to receive(:interpolate_template_spec_properties).and_return({})
       allow(variables_interpolator).to receive(:interpolated_versioned_variables_changed?).and_return(false)

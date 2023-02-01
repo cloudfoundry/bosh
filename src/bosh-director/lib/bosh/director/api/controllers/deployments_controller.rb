@@ -595,7 +595,7 @@ module Bosh::Director
         results = []
         vms_instances_hash.each_pair do |instance, vms|
           vms.each do |vm|
-            results << create_vm_response(instance, vm).merge('active' => vm.active)
+            results << create_vm_response(instance, vm).merge('active' => vm.active).merge('permanent_nats_credentials' => vm.permanent_nats_credentials)
           end
         end
         results

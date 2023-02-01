@@ -596,7 +596,7 @@ module Bosh
                   allow(NatsClientCertGenerator).to receive(:new).and_return(cert_generator)
 
                   expect(cert_generator).to receive(:generate_nats_client_certificate).with(
-                    /^([0-9a-f\-]*)\.agent\.bosh-internal/,
+                    /^([0-9a-f\-]*)\.bootstrap\.agent\.bosh-internal/,
                   ).and_return(
                     cert: cert,
                     key: private_key,
