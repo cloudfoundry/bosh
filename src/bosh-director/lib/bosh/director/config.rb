@@ -452,6 +452,10 @@ module Bosh::Director
       hash['name']
     end
 
+    def enable_pre_ruby_3_2_equal_tilde_behavior
+      hash['enable_pre_ruby_3_2_equal_tilde_behavior']
+    end
+
     def port
       hash['port']
     end

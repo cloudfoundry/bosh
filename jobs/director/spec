@@ -144,6 +144,9 @@ properties:
   director.enable_nats_delivered_templates:
     description: When true, rendered templates will be sent over NATs
     default: false
+  director.enable_pre_ruby_3_2_equal_tilde_behavior:
+    description: When true, Kernel will be patched to enable Pre-Ruby 3.2 =~ behavior. This is needed for release templates incorrectly using =~.
+    default: false
   director.enable_short_lived_nats_bootstrap_credentials:
     description: When true, NATS bootstrap credentials will be short lived on new VMs
     default: true
