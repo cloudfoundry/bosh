@@ -41,6 +41,7 @@ authorization {
   certificate_clients: [
     {client_name: director.bosh-internal, permissions: $DIRECTOR_PERMISSIONS},
     {client_name: agent.bosh-internal, permissions: $AGENT_PERMISSIONS},
+    {client_name: bootstrap.agent.bosh-internal, permissions: $AGENT_PERMISSIONS},
     {client_name: hm.bosh-internal, permissions: $HM_PERMISSIONS},
     {client_name: integration.test.bosh-internal, permissions: $FULL_PERMISSIONS},
   ]
