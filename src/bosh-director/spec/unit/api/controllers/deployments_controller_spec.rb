@@ -1386,6 +1386,7 @@ module Bosh::Director
                 'az' => {0 => 'az0', 1 => 'az1', nil => nil}[instance_idx],
                 'ips' => ["#{instance_idx}.#{instance_idx}.#{vm_by_instance}.#{vm_by_instance}"],
                 'vm_created_at' => time.utc.iso8601,
+                'permanent_nats_credentials' => false,
               )
             end
           end
@@ -1467,6 +1468,7 @@ module Bosh::Director
                   'az' => { 0 => 'az0', 1 => 'az1', nil => nil }[instance_idx],
                   'ips' => ["1.2.#{instance_idx}.#{vm_by_instance}"],
                   'vm_created_at' => time.utc.iso8601,
+                  'permanent_nats_credentials' => false,
                 )
               end
             end
@@ -1516,7 +1518,8 @@ module Bosh::Director
                   'active' => vm_is_active,
                   'az' => {0 => 'az0', 1 => 'az1', nil => nil}[i],
                   'ips' => ["1.2.3.#{i}"],
-                  'vm_created_at' => time.utc.iso8601
+                  'vm_created_at' => time.utc.iso8601,
+                  'permanent_nats_credentials' => false,
                 )
               end
             end
@@ -1575,6 +1578,7 @@ module Bosh::Director
                 'ips' => [vip, network_spec_ip],
                 'job' => 'job',
                 'vm_created_at' => time.utc.iso8601,
+                'permanent_nats_credentials' => false,
               )
             end
           end

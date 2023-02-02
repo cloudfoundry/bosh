@@ -14,10 +14,10 @@ module NATSSync
 
     def execute_users_sync
       NATSSync.logger.info 'Executing NATS Users Synchronization'
-      vms_uuids = []
+      vms = []
       overwriteable_config_file = true
       begin
-        vms_uuids = query_all_running_vms
+        vms = query_all_running_vms
       rescue RuntimeError => e
         NATSSync.logger.error "Could not query all running vms: #{e.message}"
         overwriteable_config_file = user_file_overwritable?
@@ -30,7 +30,7 @@ module NATSSync
 
       if overwriteable_config_file
         current_file_hash = nats_file_hash
-        write_nats_config_file(vms_uuids, read_subject_file(@bosh_config['director_subject_file']),
+        write_nats_config_file(vms, read_subject_file(@bosh_config['director_subject_file']),
                                read_subject_file(@bosh_config['hm_subject_file']))
         new_file_hash = nats_file_hash
         unless current_file_hash == new_file_hash
@@ -93,15 +93,14 @@ module NATSSync
     end
 
     def get_vms_by_deployment(deployment)
-      virtual_machines = JSON.parse(call_bosh_api("/deployments/#{deployment}/vms"))
-      virtual_machines.map { |virtual_machine| virtual_machine['agent_id'] }
+      JSON.parse(call_bosh_api("/deployments/#{deployment}/vms"))
     end
 
     def query_all_running_vms
       deployments = query_all_deployments
-      vms_uuids = []
-      deployments.each { |deployment| vms_uuids += get_vms_by_deployment(deployment) }
-      vms_uuids
+      vms = []
+      deployments.each { |deployment| vms += get_vms_by_deployment(deployment) }
+      vms
     end
 
     def call_bosh_api_no_auth(endpoint)
@@ -127,9 +126,10 @@ module NATSSync
       NATSSync::AuthProvider.new(info, @bosh_config).auth_header
     end
 
-    def write_nats_config_file(vms_uuids, director_subject, hm_subject)
+    def write_nats_config_file(vms, director_subject, hm_subject)
+      NATSSync.logger.info 'Writing NATS config with the following users: ' + vms.to_s
       File.open(@nats_config_file_path, 'w') do |f|
-        f.write(JSON.unparse(NatsAuthConfig.new(vms_uuids, director_subject, hm_subject).create_config))
+        f.write(JSON.unparse(NatsAuthConfig.new(vms, director_subject, hm_subject).create_config))
       end
     end
   end

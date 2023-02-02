@@ -351,6 +351,33 @@ describe Bosh::Director::Config do
       end
     end
 
+    describe 'enable_short_lived_nats_bootstrap_credentials' do
+      it 'defaults to false' do
+        described_class.configure(test_config)
+        expect(described_class.enable_short_lived_nats_bootstrap_credentials).to be_falsey
+      end
+
+      context 'when explicitly set' do
+        context 'when set to true' do
+          before { test_config['enable_short_lived_nats_bootstrap_credentials'] = true }
+
+          it 'resolves to true' do
+            described_class.configure(test_config)
+            expect(described_class.enable_short_lived_nats_bootstrap_credentials).to be_truthy
+          end
+        end
+
+        context 'when set to false' do
+          before { test_config['enable_short_lived_nats_bootstrap_credentials'] = false }
+
+          it 'resolves to false' do
+            described_class.configure(test_config)
+            expect(described_class.enable_short_lived_nats_bootstrap_credentials).to be_falsey
+          end
+        end
+      end
+    end
+
     describe 'allow_errands_on_stopped_instances' do
       it 'defaults to false' do
         described_class.configure(test_config)
