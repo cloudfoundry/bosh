@@ -17,20 +17,62 @@ module Bosh::Director
       end
     end
 
-    context 'there are task counts beyond max_tasks' do
+    context 'orphaned tasks exists' do
+      let(:five_minutes_ago) { DateTime.now.to_time.to_i - 300 }
+      let!(:delayed_jobs) do
+        Delayed::Job.insert(id: 4, handler: '{task_id: 4}')
+        Delayed::Job.insert(id: 8, handler: '{task_id: 8}')
+      end
       let!(:tasks) do
-        Models::Task.make(type: 'vms', state: 'done')
-        Models::Task.make(type: 'vms', state: 'done')
-        Models::Task.make(type: 'vms', state: 'done')
-        Models::Task.make(type: 'vms', state: 'processing')
-        Models::Task.make(type: 'deployment', state: 'done')
-        Models::Task.make(type: 'deployment', state: 'done')
-        Models::Task.make(type: 'deployment', state: 'done')
-        Models::Task.make(type: 'deployment', state: 'processing')
-        Models::Task.make(type: 'deployment', state: 'queued')
-        Models::Task.make(type: 'deployment', state: 'queued')
-        Models::Task.make(type: 'snapshot_deployment', state: 'done')
-        Models::Task.make(type: 'update_stemcell', state: 'done')
+        Models::Task.make(id: 4, type: 'vms', state: 'processing')
+        Models::Task.make(id: 8, type: 'deployment', state: 'processing')
+        Models::Task.make(id: 9, timestamp: five_minutes_ago, type: 'deployment', state: 'queued')
+        Models::Task.make(id: 10, timestamp: DateTime.now.to_time, type: 'deployment', state: 'queued')
+        Models::Task.make(id: 11, timestamp: five_minutes_ago, type: 'snapshot_deployment', state: 'done')
+        Models::Task.make(id: 12, timestamp: DateTime.now.to_time, type: 'update_stemcell', state: 'done')
+        Models::Task.make(id: 13, timestamp: five_minutes_ago, type: 'deployment', state: 'queued')
+      end
+
+      describe '#perform' do
+        it 'should mark orphaned tasks as errored and not clean them up instantly' do
+          expect(task_remover).to receive(:remove).with('snapshot_deployment').and_return(1)
+          expect(task_remover).to receive(:remove).with('update_stemcell').and_return(1)
+
+          expect(subject.perform).to eq(
+            "Deleted tasks and logs for\n" \
+            "1 task(s) of type 'snapshot_deployment'\n" \
+            "1 task(s) of type 'update_stemcell'\n" \
+            'Marked orphaned tasks with ids: [9, 13] as errored. They do not have a worker job backing them',
+          )
+
+          Models::Task.select.where(id: [9, 13]).each do |task|
+            expect(task.state).to eq('error')
+          end
+          # Will not be marked as errored. It's not older than 5 minutes.
+          expect(Models::Task.find(id: 10).state).to eq('queued')
+        end
+      end
+    end
+    context 'there are task counts beyond max_tasks' do
+      let!(:delayed_jobs) do
+        Delayed::Job.insert(id: 4, handler: '{task_id: 4}')
+        Delayed::Job.insert(id: 8, handler: '{task_id: 8}')
+        Delayed::Job.insert(id: 9, handler: '{task_id: 9}')
+        Delayed::Job.insert(id: 10, handler: '{task_id: 10}')
+      end
+      let!(:tasks) do
+        Models::Task.make(id: 1, type: 'vms', state: 'done')
+        Models::Task.make(id: 2, type: 'vms', state: 'done')
+        Models::Task.make(id: 3, type: 'vms', state: 'done')
+        Models::Task.make(id: 4, type: 'vms', state: 'processing')
+        Models::Task.make(id: 5, type: 'deployment', state: 'done')
+        Models::Task.make(id: 6, type: 'deployment', state: 'done')
+        Models::Task.make(id: 7, type: 'deployment', state: 'done')
+        Models::Task.make(id: 8, type: 'deployment', state: 'processing')
+        Models::Task.make(id: 9, type: 'deployment', state: 'queued')
+        Models::Task.make(id: 10, type: 'deployment', state: 'queued')
+        Models::Task.make(id: 11, type: 'snapshot_deployment', state: 'done')
+        Models::Task.make(id: 12, type: 'update_stemcell', state: 'done')
       end
 
       describe '.schedule_message' do
