@@ -139,8 +139,9 @@ module Bosh::Director
         end
 
         it 'retries on Sequel::DatabaseConnectionError' do
-          expect(Models::Task).to receive(:where).and_raise(Sequel::DatabaseConnectionError).once.ordered
           expect(Models::Task).to receive(:where).and_return(task_dataset).ordered
+          expect(task).to receive(:save).and_raise(Sequel::DatabaseConnectionError).exactly(5).times.ordered
+          expect(task).to receive(:save).and_call_original.ordered
 
           db_job.perform
         end
