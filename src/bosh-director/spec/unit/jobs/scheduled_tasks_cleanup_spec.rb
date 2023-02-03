@@ -18,7 +18,7 @@ module Bosh::Director
     end
 
     context 'orphaned tasks exists' do
-      let(:five_minutes_ago) { DateTime.now.to_time.to_i - 300 }
+      let(:five_minutes_ago) { 5.minutes.ago }
       let!(:delayed_jobs) do
         Delayed::Job.insert(id: 4, handler: '{task_id: 4}')
         Delayed::Job.insert(id: 8, handler: '{task_id: 8}')
