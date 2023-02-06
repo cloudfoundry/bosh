@@ -7,8 +7,7 @@ import (
 
 	bratsutils "github.com/cloudfoundry/bosh-release-acceptance-tests/brats-utils"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 

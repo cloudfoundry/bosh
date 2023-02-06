@@ -1,6 +1,7 @@
 package matchers
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -21,25 +22,38 @@ func (matcher *MatchErrorMatcher) Match(actual interface{}) (success bool, err e
 	}
 
 	actualErr := actual.(error)
+	expected := matcher.Expected
 
-	if isError(matcher.Expected) {
-		return reflect.DeepEqual(actualErr, matcher.Expected), nil
+	if isError(expected) {
+		// first try the built-in errors.Is
+		if errors.Is(actualErr, expected.(error)) {
+			return true, nil
+		}
+		// if not, try DeepEqual along the error chain
+		for unwrapped := actualErr; unwrapped != nil; unwrapped = errors.Unwrap(unwrapped) {
+			if reflect.DeepEqual(unwrapped, expected) {
+				return true, nil
+			}
+		}
+		return false, nil
 	}
 
-	if isString(matcher.Expected) {
-		return actualErr.Error() == matcher.Expected, nil
+	if isString(expected) {
+		return actualErr.Error() == expected, nil
 	}
 
 	var subMatcher omegaMatcher
 	var hasSubMatcher bool
-	if matcher.Expected != nil {
-		subMatcher, hasSubMatcher = (matcher.Expected).(omegaMatcher)
+	if expected != nil {
+		subMatcher, hasSubMatcher = (expected).(omegaMatcher)
 		if hasSubMatcher {
 			return subMatcher.Match(actualErr.Error())
 		}
 	}
 
-	return false, fmt.Errorf("MatchError must be passed an error, string, or Matcher that can match on strings.  Got:\n%s", format.Object(matcher.Expected, 1))
+	return false, fmt.Errorf(
+		"MatchError must be passed an error, a string, or a Matcher that can match on strings. Got:\n%s",
+		format.Object(expected, 1))
 }
 
 func (matcher *MatchErrorMatcher) FailureMessage(actual interface{}) (message string) {

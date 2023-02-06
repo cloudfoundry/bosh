@@ -14,11 +14,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -57,10 +56,10 @@ func Bootstrap() {
 	outerBoshBinaryPath = AssertEnvExists("BOSH_BINARY_PATH")
 
 	innerDirectorUser = "jumpbox"
-	innerBoshPath = fmt.Sprintf("/tmp/inner-bosh/director/%d", config.GinkgoConfig.ParallelNode)
+	innerBoshPath = fmt.Sprintf("/tmp/inner-bosh/director/%d", GinkgoParallelProcess())
 	boshBinaryPath = filepath.Join(innerBoshPath, "bosh")
 	innerBoshJumpboxPrivateKeyPath = filepath.Join(innerBoshPath, "jumpbox_private_key.pem")
-	innerDirectorIP = fmt.Sprintf("10.245.0.%d", 10+config.GinkgoConfig.ParallelNode)
+	innerDirectorIP = fmt.Sprintf("10.245.0.%d", 10+GinkgoParallelProcess())
 	boshDirectorReleasePath = AssertEnvExists("BOSH_DIRECTOR_RELEASE_PATH")
 	stemcellOS = AssertEnvExists("STEMCELL_OS")
 
@@ -81,7 +80,7 @@ func LoadExternalDBConfig(DBaaS string, mutualTLSEnabled bool, tmpCertDir string
 		Host:                  AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_HOST", strings.ToUpper(DBaaS))),
 		User:                  AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_USER", strings.ToUpper(DBaaS))),
 		Password:              AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_PASSWORD", strings.ToUpper(DBaaS))),
-		DBName:                fmt.Sprintf("db_%s_%d", databaseType, config.GinkgoConfig.ParallelNode),
+		DBName:                fmt.Sprintf("db_%s_%d", databaseType, GinkgoParallelProcess()),
 		ConnectionVarFile:     fmt.Sprintf("external_db/%s.yml", DBaaS),
 		ConnectionOptionsFile: fmt.Sprintf("external_db/%s_connection_options.yml", DBaaS),
 	}
@@ -340,7 +339,7 @@ func StartInnerBosh(args ...string) {
 }
 
 func StartInnerBoshWithExpectation(expectedFailure bool, expectedErrorToMatch string, args ...string) {
-	effectiveArgs := []string{strconv.Itoa(config.GinkgoConfig.ParallelNode)}
+	effectiveArgs := []string{strconv.Itoa(GinkgoParallelProcess())}
 	effectiveArgs = append(effectiveArgs, args...)
 
 	cmd := exec.Command(
@@ -363,7 +362,7 @@ func StartInnerBoshWithExpectation(expectedFailure bool, expectedErrorToMatch st
 func CreateAndUploadBOSHRelease() {
 	cmd := exec.Command(
 		"../../../../../../../ci/dockerfiles/docker-cpi/create-and-upload-release.sh",
-		strconv.Itoa(config.GinkgoConfig.ParallelNode),
+		strconv.Itoa(GinkgoParallelProcess()),
 	)
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, fmt.Sprintf("bosh_release_path=%s", boshDirectorReleasePath))
@@ -377,7 +376,7 @@ func StopInnerBosh() {
 	session, err := gexec.Start(
 		exec.Command(
 			"../../../../../../../ci/dockerfiles/docker-cpi/destroy-inner-bosh.sh",
-			strconv.Itoa(config.GinkgoConfig.ParallelNode),
+			strconv.Itoa(GinkgoParallelProcess()),
 		),
 		GinkgoWriter,
 		GinkgoWriter,
@@ -428,7 +427,7 @@ func UploadRelease(releaseURL string) {
 }
 
 func InnerBoshDirectorName() string {
-	return fmt.Sprintf("bosh-%d", config.GinkgoConfig.ParallelNode)
+	return fmt.Sprintf("bosh-%d", GinkgoParallelProcess())
 }
 
 func InnerBoshWithExternalDBOptions(dbConfig *ExternalDBConfig) []string {

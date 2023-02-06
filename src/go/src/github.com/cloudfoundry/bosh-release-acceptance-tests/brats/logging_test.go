@@ -6,8 +6,7 @@ import (
 	"time"
 
 	bratsutils "github.com/cloudfoundry/bosh-release-acceptance-tests/brats-utils"
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/config"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 )
@@ -16,7 +15,7 @@ var _ = Describe("logging", func() {
 	var cpiConfigName string
 
 	BeforeEach(func() {
-		cpiConfigName = fmt.Sprintf("%s-logging-test-fake-cpi-config-%d", time.Now().Format("2006-01-02"), config.GinkgoConfig.ParallelNode)
+		cpiConfigName = fmt.Sprintf("%s-logging-test-fake-cpi-config-%d", time.Now().Format("2006-01-02"), GinkgoParallelProcess())
 		bratsutils.StartInnerBosh()
 	})
 

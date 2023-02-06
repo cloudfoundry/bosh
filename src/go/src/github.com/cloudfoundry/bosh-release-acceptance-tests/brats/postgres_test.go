@@ -6,7 +6,7 @@ import (
 
 	bratsutils "github.com/cloudfoundry/bosh-release-acceptance-tests/brats-utils"
 	"github.com/cloudfoundry/bosh-utils/uuid"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 )
