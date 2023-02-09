@@ -22,10 +22,10 @@ postgres/postgresql-13.10.tar.gz:
   size: 28117237
   object_id: 2456aabe-21c8-4049-6b6a-428190795d3a
   sha: sha256:a0a6b1b2e575fb15aa617fb77d3f2558ffd58a456e58d7d147539923d46d79cc
-postgres/postgresql-15.1.tar.gz:
-  size: 29778341
-  object_id: d98a42d0-afcd-4336-7786-603f5c8b6a8d
-  sha: sha256:ea2cf059a85882654b989acd07edc121833164a30340faee0d3615cf7058e66c
+postgres/postgresql-15.2.tar.gz:
+  size: 29811750
+  object_id: fab6d841-010e-4278-55f9-6351d4654a77
+  sha: sha256:eccd208f3e7412ad7bc4c648ecc87e0aa514e02c24a48f71bf9e46910bf284ca
 powerdns/pdns-static_3.3.1-1_amd64.deb:
   size: 9353694
   object_id: 6e861aa6-2e83-4027-a1e8-0ebec995c274
