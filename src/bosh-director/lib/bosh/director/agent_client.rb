@@ -11,7 +11,7 @@ module Bosh::Director
     SYNC_DNS_MESSAGE_TIMEOUT = 10
 
     # in case of timeout errors
-    GET_TASK_MAX_RETRIES = 2
+    GET_TASK_MAX_RETRIES = 4
 
     # get_task should retry at least once because some long running tasks
     # (e.g. configure_networks) will restart the agent (current implementation)
