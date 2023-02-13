@@ -166,7 +166,7 @@ module Bosh::Director
       allow(deployment_plan).to receive(:network).with('a').and_return(network)
       allow(instance_deleter).to receive(:delete_instance_plan)
       allow(Config).to receive(:current_job).and_return(update_job)
-      allow(Config).to receive(:enable_short_lived_nats_bootstrap_credentials).and_return(true)
+      allow(Config).to receive(:enable_short_lived_nats_bootstrap_credentials_compilation_vms).and_return(false)
       director_config = SpecHelper.spec_get_director_config
       allow(Config).to receive(:nats_client_ca_private_key_path).and_return(director_config['nats']['client_ca_private_key_path'])
       allow(Config).to receive(:nats_client_ca_certificate_path).and_return(director_config['nats']['client_ca_certificate_path'])

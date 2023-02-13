@@ -352,9 +352,9 @@ describe Bosh::Director::Config do
     end
 
     describe 'enable_short_lived_nats_bootstrap_credentials' do
-      it 'defaults to false' do
+      it 'defaults to true' do
         described_class.configure(test_config)
-        expect(described_class.enable_short_lived_nats_bootstrap_credentials).to be_falsey
+        expect(described_class.enable_short_lived_nats_bootstrap_credentials).to be_truthy
       end
 
       context 'when explicitly set' do
@@ -373,6 +373,33 @@ describe Bosh::Director::Config do
           it 'resolves to false' do
             described_class.configure(test_config)
             expect(described_class.enable_short_lived_nats_bootstrap_credentials).to be_falsey
+          end
+        end
+      end
+    end
+
+    describe 'enable_short_lived_nats_bootstrap_credentials_compilation_vms' do
+      it 'defaults to true' do
+        described_class.configure(test_config)
+        expect(described_class.enable_short_lived_nats_bootstrap_credentials_compilation_vms).to be_falsey
+      end
+
+      context 'when explicitly set' do
+        context 'when set to true' do
+          before { test_config['enable_short_lived_nats_bootstrap_credentials_compilation_vms'] = true }
+
+          it 'resolves to true' do
+            described_class.configure(test_config)
+            expect(described_class.enable_short_lived_nats_bootstrap_credentials_compilation_vms).to be_truthy
+          end
+        end
+
+        context 'when set to false' do
+          before { test_config['enable_short_lived_nats_bootstrap_credentials_compilation_vms'] = false }
+
+          it 'resolves to false' do
+            described_class.configure(test_config)
+            expect(described_class.enable_short_lived_nats_bootstrap_credentials_compilation_vms).to be_falsey
           end
         end
       end

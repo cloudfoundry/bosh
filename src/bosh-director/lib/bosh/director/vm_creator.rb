@@ -78,7 +78,7 @@ module Bosh::Director
         end
       end
 
-      agenda.steps << DeploymentPlan::Steps::UpdateInstanceSettingsStep.new(instance_plan.instance)
+      agenda.steps << DeploymentPlan::Steps::UpdateInstanceSettingsStep.new(instance_plan)
       agenda.steps << DeploymentPlan::Steps::ApplyVmSpecStep.new(instance_plan)
       agenda.steps << DeploymentPlan::Steps::RenderInstanceJobTemplatesStep.new(
         instance_plan,

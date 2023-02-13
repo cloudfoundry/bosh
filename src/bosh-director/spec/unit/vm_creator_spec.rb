@@ -106,7 +106,7 @@ module Bosh
             false,
           ).and_return(create_vm_step)
         allow(DeploymentPlan::Steps::UpdateInstanceSettingsStep).to receive(:new)
-          .with(instance).and_return(update_settings_step)
+          .with(instance_plan).and_return(update_settings_step)
         allow(DeploymentPlan::Steps::ElectActiveVmStep).to receive(:new)
           .and_return(elect_active_vm_step)
         allow(DeploymentPlan::Steps::ApplyVmSpecStep).to receive(:new).and_return(spec_apply_step)
