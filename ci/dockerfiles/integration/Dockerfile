@@ -4,7 +4,6 @@ FROM ubuntu:latest
 
 ENV DEBIAN_FRONTEND "noninteractive"
 ENV RUBY_VERSION "3.2"
-ENV RUBY_SHA512="733ecc6709470ee16916deeece9af1c76220ae95d17b2681116aff7f381d99bc3124b1b11b1c2336b2b29e468e91b90f158d5ae5fca810c6cf32a0b6234ae08e"
 ENV RUBY_INSTALL_VERSION "0.8.5"
 ENV GEM_HOME "/usr/local/bundle"
 ENV POSTGRES_MAJOR_VERSION "13"
@@ -80,7 +79,7 @@ RUN echo 'gem: --no-document' > /etc/gemrc \
     && tar -xzf v${RUBY_INSTALL_VERSION}.tar.gz \
     && cd ruby-install-${RUBY_INSTALL_VERSION}/ \
     && make -s install \
-    && ruby-install --sha512 $RUBY_SHA512 --jobs=2 --cleanup --system ruby ${RUBY_VERSION} -- --disable-install-rdoc -- CC=clang
+    && ruby-install --jobs=2 --cleanup --system ruby ${RUBY_VERSION} -- --disable-install-rdoc -- CC=clang
 
 RUN gem update --system \
     && bundle config --global path "${GEM_HOME}" \
