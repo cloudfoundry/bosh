@@ -211,6 +211,8 @@ module Bosh::Dev::Sandbox
         dns_enabled: @dns_enabled,
         enable_cpi_resize_disk: @enable_cpi_resize_disk,
         enable_nats_delivered_templates: @enable_nats_delivered_templates,
+        enable_short_lived_nats_bootstrap_credentials: @enable_short_lived_nats_bootstrap_credentials,
+        enable_short_lived_nats_bootstrap_credentials_compilation_vms: @enable_short_lived_nats_bootstrap_credentials_compilation_vms,
         enable_post_deploy: @enable_post_deploy,
         external_cpi_config: external_cpi_config,
         generate_vm_passwords: @generate_vm_passwords,
@@ -336,6 +338,11 @@ module Bosh::Dev::Sandbox
       @users_in_manifest = options.fetch(:users_in_manifest, true)
       @enable_post_deploy = options.fetch(:enable_post_deploy, true)
       @enable_nats_delivered_templates = options.fetch(:enable_nats_delivered_templates, false)
+      @enable_short_lived_nats_bootstrap_credentials = options.fetch(:enable_short_lived_nats_bootstrap_credentials, false)
+      @enable_short_lived_nats_bootstrap_credentials_compilation_vms = options.fetch(
+        :enable_short_lived_nats_bootstrap_credentials_compilation_vms,
+        false,
+      )
       @enable_cpi_resize_disk = options.fetch(:enable_cpi_resize_disk, false)
       @default_update_vm_strategy = options.fetch(:default_update_vm_strategy, ENV['DEFAULT_UPDATE_VM_STRATEGY'])
       @generate_vm_passwords = options.fetch(:generate_vm_passwords, false)
