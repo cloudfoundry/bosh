@@ -142,47 +142,6 @@ var _ = Describe("Blobstore", func() {
 			Expect(records).To(MatchRegexp("syslog-forwarder")) // presence of anything is shows it has been updated
 		})
 
-		It("falls back to agent credentials on a stemcell that does not support signed URLs", func() {
-			bratsutils.StartInnerBosh(
-				fmt.Sprintf("-o %s", bratsutils.BoshDeploymentAssetPath("enable-signed-urls.yml")),
-			)
-			bratsutils.UploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
-
-			By("uploading a stemcell that does not support signed URLs")
-			bratsutils.UploadStemcell("https://bosh-core-stemcells.s3-accelerate.amazonaws.com/456.40/bosh-stemcell-456.40-warden-boshlite-ubuntu-xenial-go_agent.tgz")
-
-			session := bratsutils.Bosh("-n", "deploy", bratsutils.AssetPath("syslog-manifest.yml"),
-				"-d", "syslog-deployment",
-				"-o", bratsutils.AssetPath("specify-stemcell-version.yml"),
-				"-v", fmt.Sprintf("stemcell-os=%s", "ubuntu-xenial"),
-				"-v", "stemcell-version='456.40'",
-			)
-			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
-
-			By("ensuring that credentials are on disk")
-			cpiBlobstoreUser, cpiBlobstorePassword, blobstoreUser, blobstorePassword := getCredentials("/var/vcap/bosh/settings.json")
-			Expect(cpiBlobstoreUser).NotTo(Equal(""))
-			Expect(cpiBlobstorePassword).NotTo(Equal(""))
-			Expect(blobstoreUser).NotTo(Equal(""))
-			Expect(blobstorePassword).NotTo(Equal(""))
-
-			cpiBlobstoreUser, cpiBlobstorePassword, blobstoreUser, blobstorePassword = getCredentials("/var/vcap/bosh/warden-cpi-agent-env.json")
-			Expect(cpiBlobstoreUser).NotTo(Equal(""))
-			Expect(cpiBlobstorePassword).NotTo(Equal(""))
-			Expect(blobstoreUser).NotTo(Equal(""))
-			Expect(blobstorePassword).NotTo(Equal(""))
-
-			By("fetch logs")
-			session = bratsutils.BoshQuiet("-d", "syslog-deployment", "logs")
-			Eventually(session, 30*time.Second).Should(gexec.Exit(0))
-
-			By("validating records.json are updated")
-			session = bratsutils.BoshQuiet("-d", "syslog-deployment", "ssh", "syslog_forwarder/0", "-r", "--json", "-c", "sudo cat /var/vcap/instance/dns/records.json")
-			Eventually(session, 30*time.Second).Should(gexec.Exit(0))
-			records := getStdout(session.Out.Contents())
-			Expect(records).To(MatchRegexp("syslog-forwarder")) // presence of anything is shows it has been updated
-		})
-
 		// This test is documenting existing non-ideal behavior: if there is a CPI change, this does not
 		//  trigger jobs to be recreated. With signed urls, we must update the CPI job and remove blobstore
 		//  creds. Operators then must recreate VMs for the new CPI configuration to take into effect. A
