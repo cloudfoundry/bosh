@@ -27,6 +27,11 @@ begin
   Bosh::Director::Config.audit_filename = "audit_worker_#{index}.log"
 
   config = Bosh::Director::Config.load_file(config_file)
+
+  if config.enable_pre_ruby_3_2_equal_tilde_behavior
+    require 'ruby_shims/kernel_equals_tilde'
+  end
+
   config.db
 
   worker = Bosh::Director::Worker.new(config, index)
