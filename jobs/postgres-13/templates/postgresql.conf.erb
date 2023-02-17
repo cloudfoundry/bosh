@@ -1,0 +1,20 @@
+data_directory = '/var/vcap/store/postgres-13'
+
+listen_addresses = '<%= p('postgres.listen_address') %>'
+port = <%= p('postgres.port') %>
+max_connections = <%= p('postgres.max_connections') %>
+
+ssl = false
+
+shared_buffers = 32MB
+
+log_line_prefix = '%t '
+
+datestyle = 'iso, mdy'
+
+lc_messages = 'en_US.UTF-8'
+lc_monetary = 'en_US.UTF-8'
+lc_numeric = 'en_US.UTF-8'
+lc_time = 'en_US.UTF-8'
+
+default_text_search_config = 'pg_catalog.english'

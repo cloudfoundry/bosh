@@ -1,0 +1,75 @@
+#!/bin/bash
+
+set -eu
+
+PACKAGE_DIR=/var/vcap/packages/postgres-13
+PACKAGE_DIR_OLD=/var/vcap/packages/postgres-10
+
+PERSISTENT_DISK_DIR=/var/vcap/store
+
+STORE_DIR=${PERSISTENT_DISK_DIR}/postgres-13
+STORE_DIR_OLD=${PERSISTENT_DISK_DIR}/postgres-10
+STORE_DIR_OBSOLETE=${PERSISTENT_DISK_DIR}/postgres-9.4
+
+USER='<%= p("postgres.user") %>'
+
+sysctl -w "kernel.shmmax=67108864"
+
+if [ -d $STORE_DIR_OBSOLETE ]; then
+  # uh-oh, we have years-old BOSH Director
+  if [ ! -d $STORE_DIR_OLD ] && [ ! -d $STORE_DIR ]; then
+    # we never upgraded this BOSH Director from PostgreSQL 9.4 to 10
+    echo "Please use a previous bosh release version (271.x or lower) to migrate data from postgres-9.4 to postgres-10."
+    exit 1
+  fi
+  # delete the obsolete 9.4 directory to free up space
+  echo "Deleting obsolete $STORE_DIR_OBSOLETE directory."
+  rm -rf "${STORE_DIR_OBSOLETE}"
+fi
+
+# We cannot kill the following conditional
+# because initdb is very picky about looking at an empty dir
+if [[ ! -d ${STORE_DIR} || ! -f ${STORE_DIR}/postgresql.conf ]]; then
+  mkdir -p "${STORE_DIR}"
+  chown vcap:vcap "${STORE_DIR}"
+
+  # initdb creates data directories
+  su - vcap -c "${PACKAGE_DIR}/bin/initdb -E utf8 -D ${STORE_DIR}"
+
+  touch "${STORE_DIR}/fresh"
+
+  if [ $? != 0 ]; then
+    echo "ERROR: Unable to Initialize Postgres DB"
+    exit 1
+  fi
+
+  echo "host all ${USER} 0.0.0.0/0 md5" >> "${STORE_DIR}/pg_hba.conf"
+
+  mkdir -p "${STORE_DIR}/pg_log"
+  chown vcap:vcap "${STORE_DIR}/pg_log"
+fi
+
+if [[ -f ${STORE_DIR}/fresh ]] ; then
+  if [[ -d ${STORE_DIR_OLD} ]] ; then
+    echo "copying contents of postgres-10 to postgres-13 for postgres upgrade..."
+    su - vcap -c "${PACKAGE_DIR}/bin/pg_upgrade \
+      --old-bindir=${PACKAGE_DIR_OLD}/bin \
+      --new-bindir=${PACKAGE_DIR}/bin \
+      --old-datadir=${STORE_DIR_OLD} \
+      --new-datadir=${STORE_DIR}"
+
+    echo "successfully upgraded from postgres-10"
+    rm -rf "${STORE_DIR_OLD}"
+  fi
+
+  rm "${STORE_DIR}/fresh"
+fi
+
+# "bpm enforces its own locking around process operations to avoid race conditions"
+# from docs: https://bosh.io/docs/bpm/runtime/
+# so postmaster.pid is stale if it still exists
+# remove it to prevent running into:
+# FATAL:  lock file "postmaster.pid" already exists
+if [[ -f ${STORE_DIR}/postmaster.pid ]] ; then
+    rm "${STORE_DIR}/postmaster.pid"
+fi

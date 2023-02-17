@@ -1,0 +1,35 @@
+---
+name: postgres-13
+
+templates:
+  bpm.yml: config/bpm.yml
+  pre-start.erb: bin/pre-start
+  create-database.erb: bin/create-database
+  postgres.erb: bin/postgres
+  postgresql.conf.erb: config/postgresql.conf
+
+packages:
+  - postgres-13
+  - postgres-10
+
+properties:
+  postgres.user:
+    description: Username clients must use to access Postgres
+    default: bosh
+  postgres.password:
+    description: Password clients must use to access Postgres
+  postgres.listen_address:
+    description: IP address Postgres listens on; use 0.0.0.0 to listen on all IP addresses
+    default: 127.0.0.1
+  postgres.port:
+    description: TCP port Postgres listens on
+    default: 5432
+  postgres.database:
+    description: Default Postgres database (it will be created during the startup process)
+    default: bosh
+  postgres.additional_databases:
+    description: Additional Postgres databases to be created (during the startup process)
+    default: []
+  postgres.max_connections:
+    description: Set max concurrent connections for database
+    default: 200
