@@ -51,6 +51,7 @@ describe 'director.yml.erb' do
         'enable_post_deploy' => true,
         'enable_nats_delivered_templates' => false,
         'enable_cpi_resize_disk' => false,
+        'enable_pre_ruby_3_2_equal_tilde_behavior' => false,
         'allow_errands_on_stopped_instances' => false,
         'generate_vm_passwords' => false,
         'remove_dev_tools' => false,
