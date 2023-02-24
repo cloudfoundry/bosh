@@ -14,6 +14,7 @@ module Bosh::Director
             version,
             manifest_packages,
             logger,
+            fix,
           )
         end
 
@@ -23,6 +24,7 @@ module Bosh::Director
         let(:release_model) { nil }
         let(:name) { nil }
         let(:version) { nil }
+        let(:fix) { false }
 
         context 'if a package fingerprint changes' do
           let(:manifest_packages) do
@@ -256,6 +258,26 @@ module Bosh::Director
                                                  'blobstore_id' => blobstore_id,
                                                  'sha1' => model_sha,
                                                ),
+                                             ])
+                  expect(existing_packages).to eq([])
+                  expect(registered_packages).to eq([])
+                end
+              end
+
+              context 'and the release is being uploaded via --fix' do
+                let(:release_model) { double(id: release.id + 1) }
+                let(:fix) { true }
+
+                it 'does not reuse the blob' do
+                  new_packages, existing_packages, registered_packages = process_packages
+
+                  new_package_sha1 = new_package_metadata['sha1']
+
+                  expect(new_packages).to eq([
+                                               new_package_metadata.merge(
+                                                 'compiled_package_sha1' => new_package_sha1,
+                                                 'sha1' => new_package_sha1,
+                                               ).except('blobstore_id'),
                                              ])
                   expect(existing_packages).to eq([])
                   expect(registered_packages).to eq([])

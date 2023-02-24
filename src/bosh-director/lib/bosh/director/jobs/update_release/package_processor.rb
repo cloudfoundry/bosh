@@ -3,7 +3,7 @@ module Bosh::Director
     class UpdateRelease
       class PackageProcessor
         class << self
-          def process(release_version_model, release_model, name, version, manifest_packages, logger)
+          def process(release_version_model, release_model, name, version, manifest_packages, logger, fix)
             new_packages = []
             existing_packages = []
             registered_packages = []
@@ -23,7 +23,9 @@ module Bosh::Director
                   package.version == package_meta['version']
               end
 
-              reuse_package_matching_fingerprint(packages, package_meta) unless existing_package&.blobstore_id
+              if !existing_package&.blobstore_id && !fix
+                reuse_package_matching_fingerprint(packages, package_meta)
+              end
 
               unless existing_package
                 new_packages << package_meta

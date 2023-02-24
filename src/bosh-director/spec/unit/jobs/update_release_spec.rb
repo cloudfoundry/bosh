@@ -936,7 +936,7 @@ module Bosh::Director
           end
         end
 
-        context 'when re-using existing packages' do
+        context 'when there are existing packages from another release' do
           let!(:another_release) { Models::Release.make(name: 'foocloud') }
           let!(:old_release_version_model) do
             Models::ReleaseVersion.make(
@@ -953,20 +953,21 @@ module Bosh::Director
               name: 'fake-name-1',
               version: 'fake-version-1',
               fingerprint: 'fake-fingerprint-1',
-              blobstore_id: 'fake-blobstore-id-1',
-              sha1: 'fakesha1',
+              blobstore_id: 'existing-fake-blobstore-id-1',
+              sha1: 'existing-fakesha1',
             ).save
 
             old_release_version_model.add_package(package)
             package
           end
 
-          it 'replaces existing packages and copy blobs' do
-            expect(BlobUtil).to receive(:delete_blob).with('fake-blobstore-id-1')
-            expect(BlobUtil).to receive(:create_blob).with(File.join(release_dir, 'packages', 'fake-name-1.tgz')).and_return('new-blobstore-id-after-fix')
-            expect(BlobUtil).to receive(:create_blob).with(File.join(release_dir, 'jobs', 'fake-name-2.tgz')).and_return('new-job-blobstore-id-after-fix')
-            expect(BlobUtil).to receive(:copy_blob).with('new-blobstore-id-after-fix').and_return('new-blobstore-id')
+          it 'does NOT attempt to fix the existing package in another release' do
+            expect(BlobUtil).to_not receive(:delete_blob).with('existing-fake-blobstore-id-1')
             job.perform
+
+            existing_pkg.reload
+            expect(existing_pkg.sha1).to eq('existing-fakesha1')
+            expect(existing_pkg.blobstore_id).to eq('existing-fake-blobstore-id-1')
           end
         end
 
