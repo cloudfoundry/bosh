@@ -40,6 +40,7 @@ groups:
     - build-main-mysql-5-7
     - build-integration
     - build-docker-cpi
+    - build-warden-cpi
 
 jobs:
   - name: gate
@@ -1110,6 +1111,26 @@ jobs:
         get_params:
           skip_download: true
 
+  - name: build-warden-cpi
+    plan:
+    - in_parallel:
+      - get: bosh-src
+      - get: bosh-cli-github-release
+        trigger: true
+        params:
+          globs:
+          - "bosh-cli-*-linux-amd64"
+      - get: bosh-deployment
+        trigger: true
+      - get: ubuntu-docker-image
+    - task: prepare-container-build-context
+      file: bosh-src/ci/dockerfiles/warden-cpi/prepare-container-build-context.yml
+      image: ubuntu-docker-image
+    - put: warden-cpi-docker-image
+      params:
+        build: docker-build-context
+        cache: true
+
   - name: bump-packages
     serial: true
     plan:
@@ -1423,6 +1444,13 @@ resources:
       drafts: true
       access_token: ((github_public_repo_token))
 
+  - name: bosh-cli-github-release
+    type: github-release
+    source:
+      access_token: ((github_public_repo_token))
+      owner: cloudfoundry
+      repository: bosh-cli
+
   - name: version
     type: semver
     source:
@@ -1642,6 +1670,21 @@ resources:
     source:
       repository: bosh/docker-cpi
       tag: ((branch_name))
+      username: ((docker.username))
+      password: ((docker.password))
+
+  - name: ubuntu-docker-image
+    type: registry-image
+    source:
+      repository: ubuntu
+      tag: latest
+      username: ((docker.username))
+      password: ((docker.password))
+
+  - name: warden-cpi-docker-image
+    type: docker-image
+    source:
+      repository: bosh/warden-cpi
       username: ((docker.username))
       password: ((docker.password))
 

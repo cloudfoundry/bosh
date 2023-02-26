@@ -1,0 +1,28 @@
+---
+- type: replace
+  path: /releases/name=bosh/url
+  value: file:///usr/local/releases/bosh.tgz
+
+- type: replace
+  path: /releases/name=bpm/url
+  value: file:///usr/local/releases/bpm.tgz
+
+- type: replace
+  path: /releases/name=garden-runc/url
+  value: file:///usr/local/releases/garden-runc.tgz
+
+- type: replace
+  path: /releases/name=bosh-warden-cpi/url
+  value: file:///usr/local/releases/warden-cpi.tgz
+
+- type: replace
+  path: /releases/name=os-conf/url
+  value: file:///usr/local/releases/os-conf.tgz
+
+- type: replace
+  path: /releases/name=uaa/url
+  value: file:///usr/local/releases/uaa.tgz
+
+- type: replace
+  path: /releases/name=credhub/url
+  value: file:///usr/local/releases/credhub.tgz

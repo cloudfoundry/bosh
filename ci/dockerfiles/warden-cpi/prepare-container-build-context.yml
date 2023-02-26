@@ -1,0 +1,14 @@
+---
+platform: linux
+
+inputs:
+  - name: bosh-cli-github-release
+  - name: bosh-src
+  - name: bosh-deployment
+
+run:
+  path: bosh-src/ci/dockerfiles/warden-cpi/prepare-container-build-context.sh
+
+outputs:
+  - name: docker-build-context
+
