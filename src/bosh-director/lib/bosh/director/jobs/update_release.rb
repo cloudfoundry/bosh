@@ -214,6 +214,7 @@ module Bosh::Director
           @version,
           manifest_packages,
           logger,
+          @fix,
         )
 
         PackagePersister.persist(
