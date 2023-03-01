@@ -60,6 +60,7 @@ go install "github.com/onsi/ginkgo/ginkgo@${GINKGO_VERSION}"
 # Hotfix until PR is merged: https://github.com/cloudfoundry/bosh-disaster-recovery-acceptance-tests/pull/41
 sed -i "s/^  os:.*/  os: $(cat stemcell/url  | cut -d- -f8-9)/g" $(find -name small-deployment.yml)
 
+export GINKGO_TIMEOUT="24h0m0s"
 pushd gopath/src/github.com/cloudfoundry-incubator/bosh-disaster-recovery-acceptance-tests
   ./scripts/_run_acceptance_tests.sh
 popd
