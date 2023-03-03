@@ -12,19 +12,11 @@ else
   export BOSH_DEPLOYMENT_PATH="/usr/local/bosh-deployment"
 fi
 
-set +e
-source /tmp/local-bosh/director/env
-set -e
-if ! bosh env; then
-  source "${src_dir}/bosh-src/ci/dockerfiles/docker-cpi/start-bosh.sh"
-fi
+. start-bosh
 
-source /tmp/local-bosh/director/env
+. /tmp/local-bosh/director/env
 
-bosh int /tmp/local-bosh/director/creds.yml --path /jumpbox_ssh/private_key > /tmp/jumpbox_ssh_key.pem
-chmod 400 /tmp/jumpbox_ssh_key.pem
-
-export BOSH_DIRECTOR_IP="10.245.0.3"
+export BOSH_DIRECTOR_IP="${BOSH_ENVIRONMENT}"
 
 BOSH_BINARY_PATH=$(which bosh)
 export BOSH_BINARY_PATH

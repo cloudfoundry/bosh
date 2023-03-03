@@ -24,7 +24,6 @@ pushd ${BOSH_DEPLOYMENT_PATH:-/usr/local/bosh-deployment} > /dev/null
     -o uaa.yml \
     -o credhub.yml \
     ${additional_ops_files} \
-    -o /usr/local/releases/local-releases.yml \
     --state "${local_bosh_dir}/state.json" \
     --vars-store "${local_bosh_dir}/creds.yml" \
     -v director_name=bosh-lite \
@@ -32,7 +31,8 @@ pushd ${BOSH_DEPLOYMENT_PATH:-/usr/local/bosh-deployment} > /dev/null
     -v internal_gw=192.168.56.1 \
     -v internal_cidr=192.168.56.0/24 \
     -v outbound_network_name=NatNetwork \
-    -v garden_host=127.0.0.1
+    -v garden_host=127.0.0.1 \
+    ${@}
 
   bosh int "${local_bosh_dir}/creds.yml" --path /director_ssl/ca > "${local_bosh_dir}/ca.crt"
 

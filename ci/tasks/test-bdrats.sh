@@ -19,8 +19,6 @@ fi
 
 source ${src_dir}/bosh-src/ci/dockerfiles/docker-cpi/start-bosh.sh \
   -o bbr.yml \
-  -o uaa.yml \
-  -o credhub.yml \
   -o local-bosh-release-tarball.yml \
   -o hm/disable.yml \
   -v local_bosh_release=${BOSH_RELEASE_PATH}
