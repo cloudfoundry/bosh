@@ -1575,7 +1575,7 @@ resources:
   - name: vsphere-esxi-ubuntu-xenial
     type: pivnet
     source:
-      api_token: ((pivnet_bot_api_token))
+      api_token: ((pivnet_linux_stemcell_api_token))
       product_slug: stemcells-ubuntu-xenial
 
   - name: aws-xen-hvm-ubuntu-jammy
