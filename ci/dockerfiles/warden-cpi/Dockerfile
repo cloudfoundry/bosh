@@ -1,4 +1,4 @@
-FROM ubuntu:jammy
+FROM bosh/integration:main
 
 RUN apt-get update -y \
     && apt-get -y install --no-install-recommends \
@@ -7,24 +7,10 @@ RUN apt-get update -y \
     && apt-get update -y \
     && apt-get install -y --no-install-recommends \
         apparmor \
-        build-essential \
         ca-certificates \
-        curl \
-        git \
         iproute2 \
         iptables \
-        jq \
-        libcurl4-gnutls-dev \
-        libssl-dev \
-        netcat-openbsd \
-        openssh-client \
-        ruby \
-        sudo \
-        wget \
         zlib1g-dev
-
-COPY bosh /usr/local/bin/bosh
-RUN chmod +x /usr/local/bin/bosh
 
 COPY bosh-deployment /usr/local/bosh-deployment/
 RUN \

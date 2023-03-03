@@ -8,6 +8,11 @@ local_bosh_dir="/tmp/local-bosh/director"
 /var/vcap/jobs/garden/bin/garden_ctl start &
 /var/vcap/jobs/garden/bin/post-start
 
+additional_ops_files=""
+if [ "${USE_LOCAL_RELEASES}" != "false" ]; then
+  additional_ops_files="/usr/local/releases/local-releases.yml"
+fi
+
 pushd ${BOSH_DEPLOYMENT_PATH:-/usr/local/bosh-deployment} > /dev/null
   export BOSH_DIRECTOR_IP="192.168.56.6"
 
@@ -18,6 +23,7 @@ pushd ${BOSH_DEPLOYMENT_PATH:-/usr/local/bosh-deployment} > /dev/null
     -o warden/cpi.yml \
     -o uaa.yml \
     -o credhub.yml \
+    ${additional_ops_files} \
     -o /usr/local/releases/local-releases.yml \
     --state "${local_bosh_dir}/state.json" \
     --vars-store "${local_bosh_dir}/creds.yml" \

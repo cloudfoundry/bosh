@@ -1115,11 +1115,9 @@ jobs:
     plan:
     - in_parallel:
       - get: bosh-src
-      - get: bosh-cli-github-release
+      - get: integration-image
         trigger: true
-        params:
-          globs:
-          - "bosh-cli-*-linux-amd64"
+        passed: [build-integration]
       - get: bosh-deployment
         trigger: true
       - get: ubuntu-docker-image
@@ -1443,13 +1441,6 @@ resources:
       repository: bosh
       drafts: true
       access_token: ((github_public_repo_token))
-
-  - name: bosh-cli-github-release
-    type: github-release
-    source:
-      access_token: ((github_public_repo_token))
-      owner: cloudfoundry
-      repository: bosh-cli
 
   - name: version
     type: semver

@@ -2,7 +2,6 @@
 platform: linux
 
 inputs:
-  - name: bosh-cli-github-release
   - name: bosh-src
   - name: bosh-deployment
 
