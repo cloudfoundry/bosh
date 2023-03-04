@@ -17,7 +17,7 @@ if [[ -e ${OVERRIDDEN_BOSH_DEPLOYMENT}/bosh.yml ]];then
   export BOSH_DEPLOYMENT_PATH=${OVERRIDDEN_BOSH_DEPLOYMENT}
 fi
 
-source ${src_dir}/bosh-src/ci/dockerfiles/docker-cpi/start-bosh.sh \
+source start-bosh \
   -o bbr.yml \
   -o local-bosh-release-tarball.yml \
   -o hm/disable.yml \
@@ -27,7 +27,7 @@ source /tmp/local-bosh/director/env
 
 STEMCELL_PATH="${PWD}/stemcell/$(basename stemcell/*.tgz)"
 BOSH_SSH_KEY="$(bosh int /tmp/local-bosh/director/creds.yml --path /jumpbox_ssh/private_key --json | jq .Blocks[0])"
-BOSH_HOST="$(bosh envs | grep ${BOSH_ENVIRONMENT} | cut -f1)"
+BOSH_HOST="${BOSH_ENVIRONMENT}"
 
 cat > integration-config.json <<EOF
 {
@@ -36,7 +36,7 @@ cat > integration-config.json <<EOF
   "bosh_ssh_private_key": ${BOSH_SSH_KEY},
   "bosh_client": "${BOSH_CLIENT}",
   "bosh_client_secret": "${BOSH_CLIENT_SECRET}",
-  "bosh_ca_cert": "",
+  "bosh_ca_cert": "$(awk '{printf "%s\\n", $0}' ${BOSH_CA_CERT})",
   "timeout_in_minutes": 30,
   "stemcell_src": "${STEMCELL_PATH}",
   "include_deployment_testcase": true,
