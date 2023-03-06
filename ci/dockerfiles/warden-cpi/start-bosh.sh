@@ -18,22 +18,24 @@ pushd ${BOSH_DEPLOYMENT_PATH:-/usr/local/bosh-deployment} > /dev/null
 
   mkdir -p ${local_bosh_dir}
 
-  bosh create-env bosh.yml \
+  bosh int bosh.yml \
     -o bosh-lite.yml \
     -o warden/cpi.yml \
     -o uaa.yml \
     -o credhub.yml \
     -o jumpbox-user.yml \
     ${additional_ops_files} \
-    --state "${local_bosh_dir}/state.json" \
-    --vars-store "${local_bosh_dir}/creds.yml" \
     -v director_name=bosh-lite \
     -v internal_ip=${BOSH_DIRECTOR_IP} \
     -v internal_gw=192.168.56.1 \
     -v internal_cidr=192.168.56.0/24 \
     -v outbound_network_name=NatNetwork \
     -v garden_host=127.0.0.1 \
-    ${@}
+    ${@} > "${local_bosh_dir}/bosh-director.yml"
+
+  bosh create-env "${local_bosh_dir}/bosh-director.yml" \
+       --vars-store="${local_bosh_dir}/creds.yml" \
+       --state="${local_bosh_dir}/state.json"
 
   bosh int "${local_bosh_dir}/creds.yml" --path /director_ssl/ca > "${local_bosh_dir}/ca.crt"
 
@@ -46,5 +48,5 @@ EOF
   source "${local_bosh_dir}/env"
 
   bosh -n update-cloud-config warden/cloud-config.yml
-  ip route add   10.244.0.0/16 via ${BOSH_DIRECTOR_IP}
+  ip route add   10.244.0.0/15 via ${BOSH_DIRECTOR_IP}
 popd > /dev/null

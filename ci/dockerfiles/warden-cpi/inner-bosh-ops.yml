@@ -1,0 +1,132 @@
+- type: replace
+  path: /releases/name=bosh-warden-cpi?
+  value:
+    name: bosh-warden-cpi
+    sha1: eea3e6e863ff63eda68470a7d622b01ba6f80b46
+    url: https://bosh.io/d/github.com/cloudfoundry/bosh-warden-cpi-release?v=43
+    version: 43
+    
+- type: replace
+  path: /releases/name=garden-runc?
+  value:
+    name: "garden-runc"
+    version: "1.25.0"
+    url: "https://bosh.io/d/github.com/cloudfoundry/garden-runc-release?v=1.25.0"
+    sha1: "a2e9eedc05fd1117aa842db39f74f3ab2d77bc27"
+    
+- type: replace
+  path: /releases/name=bosh-warden-cpi?
+  value:
+    name: bosh-warden-cpi
+    sha1: eea3e6e863ff63eda68470a7d622b01ba6f80b46
+    url: https://bosh.io/d/github.com/cloudfoundry/bosh-warden-cpi-release?v=43
+    version: 43
+- type: replace
+  path: /releases/name=bosh/version?
+  value: create
+
+- type: replace
+  path: /stemcells?
+  value:
+  - alias: default
+    os: ((stemcell_os))
+    version: latest
+
+- type: replace
+  path: /instance_groups/name=bosh/stemcell?
+  value: default
+
+- type: remove
+  path: /resource_pools
+
+- type: remove
+  path: /instance_groups/name=bosh/resource_pool
+
+- type: replace
+  path: /instance_groups/name=bosh/vm_type?
+  value: default
+
+- type: replace
+  path: /instance_groups/name=bosh/azs?
+  value: [z1]
+
+- type: remove
+  path: /networks
+
+- type: remove
+  path: /disk_pools
+
+- type: remove
+  path: /instance_groups/name=bosh/persistent_disk_pool
+
+- type: replace
+  path: /instance_groups/name=bosh/persistent_disk_type?
+  value: default
+
+- type: replace
+  path: /update?
+  value:
+    canary_watch_time: 60000-300000
+    update_watch_time: 60000-300000
+    serial: false
+    canaries: 1
+    max_in_flight: 1
+
+- path: /instance_groups/name=bosh/properties/warden_cpi?
+  type: replace
+  value:
+    actions:
+      expand_stemcell_tarball: false
+    agent:
+      blobstore: null
+      mbus: nats://10.254.50.4:4222
+    host_ip: 10.254.50.4
+    warden:
+      connect_address: 127.0.0.1:7777
+      connect_network: tcp
+
+- type: replace
+  path: /instance_groups/name=bosh/properties/director/cpi_job?
+  value: warden_cpi
+
+- type: replace
+  path: /instance_groups/name=bosh/properties/director/local_dns?/enabled?
+  value: true
+
+- type: replace
+  path: /instance_groups/name=bosh/properties/blobstore/tls?/cert
+  value:
+    ca: ((blobstore_ca_cert.ca))
+    certificate: ((blobstore_ssl.certificate))
+    private_key: ((blobstore_ssl.private_key))
+
+- type: replace
+  path: /variables/-
+  value:
+    name: blobstore_ca_cert
+    type: certificate
+    options:
+      is_ca: true
+      common_name: bosh-blobstore-ca
+
+- type: replace
+  path: /variables/-
+  value:
+    name: blobstore_ssl
+    type: certificate
+    options:
+      ca: blobstore_ca_cert
+      common_name: ((internal_ip))
+      alternative_names: [((internal_ip)), 10.254.50.4]
+
+- type: replace
+  path: /instance_groups/name=bosh/properties/agent/env?/bosh/blobstores
+  value:
+    - provider: dav
+      options:
+        endpoint: 'https://((internal_ip)):25250'
+        user: 'agent'
+        password: ((blobstore_agent_password))
+        tls:
+          cert:
+            ca: ((blobstore_ca_cert.ca))

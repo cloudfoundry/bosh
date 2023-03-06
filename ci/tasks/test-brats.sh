@@ -38,16 +38,6 @@ export BOSH_DNS_ADDON_OPS_FILE_PATH="${BOSH_DEPLOYMENT_PATH}/misc/dns-addon.yml"
 
 export OUTER_BOSH_ENV_PATH="/tmp/local-bosh/director/env"
 
-DOCKER_CERTS="$(bosh int /tmp/local-bosh/director/bosh-director.yml --path /instance_groups/0/properties/docker_cpi/docker/tls)"
-export DOCKER_CERTS
-DOCKER_HOST="$(bosh int /tmp/local-bosh/director/bosh-director.yml --path /instance_groups/name=bosh/properties/docker_cpi/docker/host)"
-export DOCKER_HOST
-
-bosh -n update-cloud-config \
-  "${BOSH_DEPLOYMENT_PATH}/docker/cloud-config.yml" \
-  -o "${src_dir}/bosh-src/ci/dockerfiles/docker-cpi/outer-cloud-config-ops.yml" \
-  -v network=director_network
-
 bosh -n upload-stemcell $CANDIDATE_STEMCELL_TARBALL_PATH
 
 apt-get update
