@@ -79,8 +79,8 @@
       expand_stemcell_tarball: false
     agent:
       blobstore: null
-      mbus: nats://10.254.50.4:4222
-    host_ip: 10.254.50.4
+      mbus: nats://((internal_ip)):4222
+    host_ip: ((internal_ip))
     warden:
       connect_address: 127.0.0.1:7777
       connect_network: tcp
