@@ -416,7 +416,7 @@ jobs:
         input_mapping:
           terraform-output: brats-terraform
       - task: test-brats
-        image: warden-cpi-image
+        image: warden-cpi-docker-image
         file: bosh-src/ci/tasks/test-brats.yml
         input_mapping:
           database-metadata: brats-terraform
