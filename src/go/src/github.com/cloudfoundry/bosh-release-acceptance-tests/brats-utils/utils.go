@@ -60,7 +60,7 @@ func Bootstrap() {
 	boshBinaryPath = filepath.Join(innerBoshPath, "bosh")
 	innerBoshJumpboxPrivateKeyPath = filepath.Join(innerBoshPath, "jumpbox_private_key.pem")
 	innerDirectorIP = fmt.Sprintf("10.245.0.%d", 10+GinkgoParallelProcess())
-	boshDirectorReleasePath = AssertEnvExists("")
+	boshDirectorReleasePath = AssertEnvExists("BOSH_DIRECTOR_RELEASE_PATH")
 	stemcellOS = AssertEnvExists("STEMCELL_OS")
 
 	AssertEnvExists("BOSH_ENVIRONMENT")
