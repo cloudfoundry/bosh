@@ -375,7 +375,7 @@ jobs:
         trigger: true
         passed: [compile-bosh-dev-release-bionic]
       - get: bosh-deployment
-      - get: docker-cpi-image
+      - get: warden-cpi-docker-image
       - get: integration-image
     - do:
       - put: brats-terraform
