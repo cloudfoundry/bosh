@@ -16,7 +16,6 @@ pushd ${BOSH_DEPLOYMENT_PATH} > /dev/null
     -o bosh-lite.yml \
     -o "$script_dir/inner-bosh-ops.yml" \
     -o jumpbox-user.yml \
-    -o experimental/bpm.yml \
     -v director_name=warden-inner \
     -v internal_ip="${BOSH_DIRECTOR_IP}" \
     -v network=default \

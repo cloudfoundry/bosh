@@ -13,7 +13,7 @@
     version: "1.25.0"
     url: "https://bosh.io/d/github.com/cloudfoundry/garden-runc-release?v=1.25.0"
     sha1: "a2e9eedc05fd1117aa842db39f74f3ab2d77bc27"
-    
+
 - type: replace
   path: /releases/name=bosh-warden-cpi?
   value:
@@ -130,3 +130,6 @@
         tls:
           cert:
             ca: ((blobstore_ca_cert.ca))
+
+- type: remove
+  path: /instance_groups/name=bosh/jobs/name=disable_agent
