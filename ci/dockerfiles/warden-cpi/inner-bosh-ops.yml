@@ -78,7 +78,12 @@
     actions:
       expand_stemcell_tarball: false
     agent:
-      blobstore: null
+      blobstore:
+        provider: dav
+        options:
+          endpoint: http://((internal_ip)):25250
+          user: agent
+          password: ((blobstore_agent_password))
       mbus: nats://((internal_ip)):4222
     host_ip: ((internal_ip))
     warden:
