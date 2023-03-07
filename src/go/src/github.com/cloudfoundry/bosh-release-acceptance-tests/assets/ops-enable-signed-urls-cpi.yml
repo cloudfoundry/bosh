@@ -1,12 +1,7 @@
 ---
 - type: remove
-  path: /instance_groups/name=bosh/properties/agent/env/bosh/blobstores/0/options/user
+  path: /instance_groups/name=bosh/jobs/name=warden_cpi/properties/warden_cpi/agent/blobstore/options/user
 
 - type: remove
-  path: /instance_groups/name=bosh/properties/agent/env/bosh/blobstores/0/options/password
+  path: /instance_groups/name=bosh/jobs/name=warden_cpi/properties/warden_cpi/agent/blobstore/options/password
 
-- type: remove
-  path: /instance_groups/name=bosh/properties/blobstore/agent/user
-
-- type: remove
-  path: /instance_groups/name=bosh/properties/blobstore/agent/password
