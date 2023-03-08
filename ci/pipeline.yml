@@ -375,7 +375,7 @@ jobs:
         trigger: true
         passed: [compile-bosh-dev-release-bionic]
       - get: bosh-deployment
-      - get: warden-cpi-docker-image
+      - get: docker-cpi-image
       - get: integration-image
     - do:
       - put: brats-terraform
@@ -416,7 +416,7 @@ jobs:
         input_mapping:
           terraform-output: brats-terraform
       - task: test-brats
-        image: warden-cpi-docker-image
+        image: docker-cpi-image
         file: bosh-src/ci/tasks/test-brats.yml
         input_mapping:
           database-metadata: brats-terraform
@@ -581,7 +581,7 @@ jobs:
         trigger: true
         passed: [compile-bosh-dev-release-jammy]
       - get: bosh-deployment
-      - get: warden-cpi-docker-image
+      - get: docker-cpi-image
       - get: integration-image
     - do:
       - put: brats-terraform
@@ -622,7 +622,7 @@ jobs:
         input_mapping:
           terraform-output: brats-terraform
       - task: test-brats
-        image: warden-cpi-docker-image
+        image: docker-cpi-image
         file: bosh-src/ci/tasks/test-brats.yml
         input_mapping:
           database-metadata: brats-terraform
