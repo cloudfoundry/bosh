@@ -343,7 +343,7 @@ func StartInnerBoshWithExpectation(expectedFailure bool, expectedErrorToMatch st
 	effectiveArgs = append(effectiveArgs, args...)
 
 	cmd := exec.Command(
-		"../../../../../../../ci/dockerfiles/warden-cpi/start-inner-bosh-parallel.sh",
+		"../../../../../../../ci/dockerfiles/docker-cpi/start-inner-bosh-parallel.sh",
 		effectiveArgs...,
 	)
 	cmd.Env = os.Environ()
@@ -361,7 +361,7 @@ func StartInnerBoshWithExpectation(expectedFailure bool, expectedErrorToMatch st
 
 func CreateAndUploadBOSHRelease() {
 	cmd := exec.Command(
-		"../../../../../../../ci/dockerfiles/warden-cpi/create-and-upload-release.sh",
+		"../../../../../../../ci/dockerfiles/docker-cpi/create-and-upload-release.sh",
 		strconv.Itoa(GinkgoParallelProcess()),
 	)
 	cmd.Env = os.Environ()
@@ -375,7 +375,7 @@ func CreateAndUploadBOSHRelease() {
 func StopInnerBosh() {
 	session, err := gexec.Start(
 		exec.Command(
-			"../../../../../../../ci/dockerfiles/warden-cpi/destroy-inner-bosh.sh",
+			"../../../../../../../ci/dockerfiles/docker-cpi/destroy-inner-bosh.sh",
 			strconv.Itoa(GinkgoParallelProcess()),
 		),
 		GinkgoWriter,
