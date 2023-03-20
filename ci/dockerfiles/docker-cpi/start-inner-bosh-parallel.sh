@@ -33,6 +33,7 @@ pushd ${BOSH_DEPLOYMENT_PATH} > /dev/null
   # set up inner director
   export BOSH_ENVIRONMENT="docker-inner-director-${node_number}"
   export BOSH_CONFIG="${inner_bosh_dir}/config"
+  export BOSH_CLIENT_SECRET=$(bosh int "${inner_bosh_dir}/creds.yml" --path /admin_password)
 
   bosh int "${inner_bosh_dir}/creds.yml" --path /director_ssl/ca > "${inner_bosh_dir}/ca.crt"
   bosh -e "${BOSH_DIRECTOR_IP}" --ca-cert "${inner_bosh_dir}/ca.crt" alias-env "${BOSH_ENVIRONMENT}"
@@ -46,7 +47,7 @@ pushd ${BOSH_DEPLOYMENT_PATH} > /dev/null
 export BOSH_CONFIG="${BOSH_CONFIG}"
 export BOSH_ENVIRONMENT="${BOSH_ENVIRONMENT}"
 export BOSH_CLIENT=admin
-export BOSH_CLIENT_SECRET=`bosh int "${inner_bosh_dir}/creds.yml" --path /admin_password`
+export BOSH_CLIENT_SECRET="${BOSH_CLIENT_SECRET}"
 export BOSH_CA_CERT="${inner_bosh_dir}/ca.crt"
 
 $(which bosh) "\$@"
@@ -56,7 +57,7 @@ EOF
 
   "${inner_bosh_dir}/bosh" -n update-cloud-config \
     "$script_dir/inner-bosh-cloud-config.yml" \
-    -v node_number="${node_number}" \
+    -v node_number="$((${node_number} * 4))" \
     -v network=director_network
 
 popd > /dev/null

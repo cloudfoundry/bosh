@@ -372,6 +372,11 @@ func CreateAndUploadBOSHRelease() {
 	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 }
 
+func CreateRelease(path string) {
+	session := Bosh("create-release", "--dir", path)
+	Eventually(session, 1*time.Minute).Should(gexec.Exit(0))
+}
+
 func StopInnerBosh() {
 	session, err := gexec.Start(
 		exec.Command(
@@ -423,6 +428,11 @@ func UploadStemcell(stemcellURL string) {
 
 func UploadRelease(releaseURL string) {
 	session := Bosh("-n", "upload-release", releaseURL)
+	Eventually(session, 4*time.Minute).Should(gexec.Exit(0))
+}
+
+func UploadReleaseDir(releaseDir string) {
+	session := Bosh("-n", "upload-release", "--dir", releaseDir)
 	Eventually(session, 4*time.Minute).Should(gexec.Exit(0))
 }
 

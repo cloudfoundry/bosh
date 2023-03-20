@@ -18,6 +18,7 @@ groups:
       - compile-bosh-dev-release-jammy
       - bats-ubuntu-jammy
       - brats-ubuntu-jammy
+      - brats-performance
       - bats-ubuntu-xenial
       - bosh-disaster-recovery-acceptance-tests
       - upgrade
@@ -757,6 +758,26 @@ jobs:
           params:
            release: environment
           attempts: 3
+
+  - name: brats-performance
+    serial: true
+    plan:
+    - in_parallel:
+      - get: bosh-src
+        passed: [compile-bosh-dev-release-jammy]
+      - get: bosh-release
+        resource: bosh-compiled-candidate-jammy
+        trigger: true
+      - get: cf-deployment
+      - get: docker-cpi-image
+      - get: stemcell
+        resource: warden-ubuntu-jammy
+        passed: [compile-bosh-dev-release-jammy]
+    - do:
+      - task: test-brats-performance
+        image: docker-cpi-image
+        file: bosh-src/ci/tasks/test-brats-performance.yml
+        privileged: true
 
   - name: bosh-disaster-recovery-acceptance-tests
     plan:
@@ -1553,6 +1574,11 @@ resources:
     source:
       uri: https://github.com/cloudfoundry/bosh-deployment
       branch: master
+
+  - name: cf-deployment
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/cf-deployment
 
   - name: nimbus-environment
     source:
