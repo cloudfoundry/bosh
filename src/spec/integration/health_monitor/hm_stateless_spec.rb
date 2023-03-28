@@ -108,17 +108,19 @@ describe 'health_monitor: 1', type: :integration, hm: true do
 
       start_time = Time.now
       while Time.now < start_time + 60
-        heartbeat_lines = []
-        health_monitor.read_log.split("\n").inject(heartbeat_lines) do |lines, line|
+        heartbeat_hashes = []
+        health_monitor.read_log.split("\n").inject(heartbeat_hashes) do |lines, line|
           match_data = /I, \[.* \#\d*\]  INFO : (\{\"kind\"\:\"heartbeat\".*)/.match(line)
-          lines << match_data[1] if match_data
+          begin
+            lines << JSON.parse(match_data[1]) if match_data
+          rescue => JSON::ParserError
+            # Do not add to the array if it isn't valid JSON
+          end
           lines
         end
 
-        break if !heartbeat_lines.empty?
+        break if !heartbeat_hashes.empty?
       end
-
-      heartbeat_hashes = heartbeat_lines.map {|json_line| JSON.parse(json_line) }
 
       instances = director.instances(no_login: true, env: team_client_env, include_credentials: false)
       instance = instances.first
