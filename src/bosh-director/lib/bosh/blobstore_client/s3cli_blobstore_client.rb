@@ -41,6 +41,7 @@ module Bosh::Blobstore
         signature_version: @options[:signature_version],
         server_side_encryption: @options[:server_side_encryption],
         sse_kms_key_id: @options[:sse_kms_key_id],
+        assume_role_arn: @options[:assume_role_arn],
       }
 
       @s3cli_options.reject! { |_k, v| v.nil? }

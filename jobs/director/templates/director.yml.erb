@@ -219,6 +219,10 @@ if p('blobstore.provider') == 's3'
      blobstore_options['host'] = host
   end
 
+  if_p('blobstore.assume_role_arn') do |assume_role_arn|
+     blobstore_options['assume_role_arn'] = assume_role_arn
+  end
+
   if_p('blobstore.ssl_verify_peer') do |ssl_verify_peer|
      blobstore_options['ssl_verify_peer'] = ssl_verify_peer
   end
