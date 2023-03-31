@@ -391,6 +391,8 @@ properties:
     description: AWS access_key_id used by s3 blobstore plugin
   blobstore.secret_access_key:
     description: AWS secret_access_key used by s3 blobstore plugin
+  blobstore.assume_role_arn:
+    description: Assume role arn used by s3 blobstore plugin
   blobstore.json_key:
     description: Contents of a GCP JSON service account file used for static credentials_source (optional)
   blobstore.address:
