@@ -85,7 +85,7 @@ RUN gem update --system \
     && bundle config --global path "${GEM_HOME}" \
     && bundle config --global bin "${GEM_HOME}/bin"
 
-COPY --from=golang:1.19 /usr/local/go /usr/local/go
+COPY --from=golang:1.20 /usr/local/go /usr/local/go
 ENV GOROOT=/usr/local/go PATH=/usr/local/go/bin:$PATH
 
 # Java to start UAA
