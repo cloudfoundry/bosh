@@ -391,8 +391,9 @@ jobs:
             rds_postgres_username: ((brats-rds-postgres-external-db-user))
             rds_postgres_password: ((brats-rds-postgres-external-db-password))
             rds_postgres_databasename: ((brats-rds-postgres-external-db-name))
-            aws_access_key_id: ((bosh-ci-rds-terraform_aws_access_key.username))
-            aws_secret_access_key: ((bosh-ci-rds-terraform_aws_access_key.password))
+            aws_access_key_id: ((bosh-ci-rds-terraform_assume_aws_access_key.username))
+            aws_secret_access_key: ((bosh-ci-rds-terraform_assume_aws_access_key.password))
+            aws_role_arn: ((bosh-ci-rds-terraform_assume_aws_access_key.role_arn))
             gcp_mysql_databasename: ((brats-gcp-mysql-external-db-name))
             gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
             gcp_private_network_name: brats-ubuntu-bionic-((branch_name))
@@ -468,8 +469,9 @@ jobs:
               rds_postgres_username: ((brats-rds-postgres-external-db-user))
               rds_postgres_password: ((brats-rds-postgres-external-db-password))
               rds_postgres_databasename: ((brats-rds-postgres-external-db-name))
-              aws_access_key_id: ((bosh-ci-rds-terraform_aws_access_key.username))
-              aws_secret_access_key: ((bosh-ci-rds-terraform_aws_access_key.password))
+              aws_access_key_id: ((bosh-ci-rds-terraform_assume_aws_access_key.username))
+              aws_secret_access_key: ((bosh-ci-rds-terraform_assume_aws_access_key.password))
+              aws_role_arn: ((bosh-ci-rds-terraform_assume_aws_access_key.role_arn))
               gcp_mysql_databasename: ((brats-gcp-mysql-external-db-name))
               gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
               gcp_private_network_name: brats-ubuntu-bionic-((branch_name))
@@ -597,8 +599,9 @@ jobs:
             rds_postgres_username: ((brats-rds-postgres-external-db-user))
             rds_postgres_password: ((brats-rds-postgres-external-db-password))
             rds_postgres_databasename: ((brats-rds-postgres-external-db-name))
-            aws_access_key_id: ((bosh-ci-rds-terraform_aws_access_key.username))
-            aws_secret_access_key: ((bosh-ci-rds-terraform_aws_access_key.password))
+            aws_access_key_id: ((bosh-ci-rds-terraform_assume_aws_access_key.username))
+            aws_secret_access_key: ((bosh-ci-rds-terraform_assume_aws_access_key.password))
+            aws_role_arn: ((bosh-ci-rds-terraform_assume_aws_access_key.role_arn))
             gcp_mysql_databasename: ((brats-gcp-mysql-external-db-name))
             gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
             gcp_private_network_name: brats-ubuntu-jammy-((branch_name))
@@ -674,8 +677,9 @@ jobs:
               rds_postgres_username: ((brats-rds-postgres-external-db-user))
               rds_postgres_password: ((brats-rds-postgres-external-db-password))
               rds_postgres_databasename: ((brats-rds-postgres-external-db-name))
-              aws_access_key_id: ((bosh-ci-rds-terraform_aws_access_key.username))
-              aws_secret_access_key: ((bosh-ci-rds-terraform_aws_access_key.password))
+              aws_access_key_id: ((bosh-ci-rds-terraform_assume_aws_access_key.username))
+              aws_secret_access_key: ((bosh-ci-rds-terraform_assume_aws_access_key.password))
+              aws_role_arn: ((bosh-ci-rds-terraform_assume_aws_access_key.role_arn))
               gcp_mysql_databasename: ((brats-gcp-mysql-external-db-name))
               gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
               gcp_private_network_name: brats-ubuntu-jammy-((branch_name))
@@ -1527,12 +1531,14 @@ resources:
   - name: brats-terraform
     type: terraform
     source:
-      storage:
+      backend_type: s3
+      backend_config:
         bucket: bosh-ci-terraform
-        bucket_path: brats-ci/
-        region_name: us-west-1
-        access_key_id: ((bosh-ci-terraform_aws_access_key.username))
-        secret_access_key: ((bosh-ci-terraform_aws_access_key.password))
+        key: brats-ci/brats-ubuntu-jammy-main.tfstate
+        region: us-west-1
+        access_key: ((bosh-ci-terraform_assume_aws_access_key.username))
+        secret_key: ((bosh-ci-terraform_assume_aws_access_key.password))
+        role_arn: ((bosh-ci-terraform_assume_aws_access_key.role_arn))
 
   - name: zookeeper-release
     type: git
