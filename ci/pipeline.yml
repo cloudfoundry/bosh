@@ -1524,8 +1524,9 @@ resources:
     type: s3
     source:
       bucket: integration-tests-parallel-runtime-logs
-      access_key_id: ((bosh_integration_tests_parallel_aws_access_key.username))
-      secret_access_key: ((bosh_integration_tests_parallel_aws_access_key.password))
+      access_key_id: ((bosh_integration_tests_parallel_assume_aws_access_key.username))
+      secret_access_key: ((bosh_integration_tests_parallel_assume_aws_access_key.password))
+      aws_role_arn: ((bosh_integration_tests_parallel_assume_aws_access_key.role_arn))
       versioned_file: "parallel_runtime_rspec.log"
 
   - name: brats-terraform
