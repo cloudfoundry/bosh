@@ -668,7 +668,7 @@ jobs:
           attempts: 3
           get_params: { action: destroy }
           params:
-            env_name: brats-ubuntu-bjammyionic-((branch_name))
+            env_name: brats-ubuntu-jammy-((branch_name))
             terraform_source: bosh-src/ci/brats
             vars:
               rds_mysql_username: ((brats-rds-mysql-external-db-user))
@@ -1487,24 +1487,27 @@ resources:
     type: s3
     source:
       bucket: "bosh-compiled-candidate-tarballs"
-      access_key_id: ((bosh-compiled-releases_aws_access_key.username))
-      secret_access_key: ((bosh-compiled-releases_aws_access_key.password))
+      access_key_id: ((bosh-compiled-releases_assume_aws_access_key.username))
+      secret_access_key: ((bosh-compiled-releases_assume_aws_access_key.password))
+      aws_role_arn: ((bosh-compiled-releases_assume_aws_access_key.role_arn))
       regexp: "bosh-.*dev\\.(\\d+).*bionic.*.tgz"
 
   - name: bosh-compiled-candidate-jammy
     type: s3
     source:
       bucket: "bosh-compiled-candidate-tarballs"
-      access_key_id: ((bosh-compiled-releases_aws_access_key.username))
-      secret_access_key: ((bosh-compiled-releases_aws_access_key.password))
+      access_key_id: ((bosh-compiled-releases_assume_aws_access_key.username))
+      secret_access_key: ((bosh-compiled-releases_assume_aws_access_key.password))
+      aws_role_arn: ((bosh-compiled-releases_assume_aws_access_key.role_arn))
       regexp: "bosh-.*dev\\.(\\d+).*jammy.*.tgz"
 
   - name: bosh-compiled-staging-tarballs
     type: s3
     source:
       bucket: "bosh-compiled-staging-tarballs"
-      access_key_id: ((bosh-compiled-releases_aws_access_key.username))
-      secret_access_key: ((bosh-compiled-releases_aws_access_key.password))
+      access_key_id: ((bosh-compiled-releases_assume_aws_access_key.username))
+      secret_access_key: ((bosh-compiled-releases_assume_aws_access_key.password))
+      aws_role_arn: ((bosh-compiled-releases_assume_aws_access_key.role_arn))
       regexp: "bosh-.*dev\\.(\\d+).*bionic.*.tgz"
 
   - name: bosh-disaster-recovery-acceptance-tests
@@ -1535,7 +1538,7 @@ resources:
       backend_type: s3
       backend_config:
         bucket: bosh-ci-terraform
-        key: brats-ci/brats-ubuntu-jammy-main.tfstate
+        key: brats-ci/terraform.tfstate
         region: us-west-1
         access_key: ((bosh-ci-terraform_assume_aws_access_key.username))
         secret_key: ((bosh-ci-terraform_assume_aws_access_key.password))
