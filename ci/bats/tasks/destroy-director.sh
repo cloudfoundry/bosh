@@ -23,6 +23,6 @@ export BOSH_CLIENT_SECRET=`bosh-cli int director-state/director-creds.yml --path
 
 set +e
 
-bosh-cli deployments --column name | xargs -n1 -I % bosh-cli -n -d % delete-deployment
+bosh-cli deployments --column name --json | jq -r ".Tables[0].Rows[].name" | xargs -n1 -I % bosh-cli -n -d % delete-deployment
 bosh-cli clean-up -n --all
 bosh-cli delete-env -n director-state/director.yml -l director-state/director-creds.yml
