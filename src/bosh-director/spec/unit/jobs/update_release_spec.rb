@@ -1106,7 +1106,7 @@ module Bosh::Director
           let!(:existing_package_with_same_fingerprint) do
             package = Models::Package.make(
               release: another_release,
-              name: 'fake-name-2',
+              name: 'fake-name-1',
               version: 'fake-version-2',
               fingerprint: 'fake-fingerprint-1',
             ).save
