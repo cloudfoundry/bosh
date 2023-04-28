@@ -302,7 +302,7 @@ module Bosh::Director
 
           def fix_similar_packages(logger, package, fix, stemcell, dependency_key, compiled_package_sha1, compiled_pkg_tgz)
             other_compiled_packages = []
-            packages = Models::Package.where(fingerprint: package.fingerprint).order_by(:id).all
+            packages = Models::Package.where(name: package.name, fingerprint: package.fingerprint).order_by(:id).all
             packages.each do |pkg|
               other_packages = find_compiled_packages(pkg.id, stemcell[:os], stemcell[:version], dependency_key).all
               other_packages.each do |other_compiled_package|

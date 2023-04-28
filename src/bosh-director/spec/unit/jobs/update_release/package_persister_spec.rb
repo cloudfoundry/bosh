@@ -128,6 +128,111 @@ module Bosh::Director
             expect(compiled_packages.length).to eq(2)
           end
 
+          context 'when there is a collision between package fingerprints' do
+            let(:manifest_compiled_packages) do
+              [
+                {
+                  'sha1' => 'fakesha2',
+                  'fingerprint' => 'same-fingerprint',
+                  'name' => package_name_2,
+                  'version' => 'fake-version-2',
+                  'compiled_package_sha1' => 'compiled-sha1-2',
+                  'stemcell' => 'foo/bar',
+                  'dependencies' => [],
+                },
+              ]
+            end
+
+            before do
+              other_release = Models::Release.make(name: 'other-release')
+              existing_package = Models::Package.make(
+                release: other_release,
+                sha1: 'sha1-1',
+                name: package_name_1,
+                version: 'fake-version-1',
+                fingerprint: 'same-fingerprint',
+              )
+              Models::CompiledPackage.make(
+                package: existing_package,
+                sha1: 'compiled-sha1-1',
+                stemcell_os: 'foo',
+                stemcell_version: 'bar',
+              )
+            end
+
+            context 'and the packages have different names' do
+              let(:package_name_1) { 'fake-name-1' }
+              let(:package_name_2) { 'fake-name-2' }
+
+              it 'should not copy the existing blob' do
+                ['fake-name-2.tgz'].each do |name|
+                  tgz = "#{release_dir}/compiled_packages/#{name}"
+                  allow(Bosh::Exec).to receive(:sh).with(
+                    "tar -tzf #{tgz} 2>&1",
+                    on_error: :return,
+                  ).and_return(instance_double(Bosh::Exec::Result, failed?: false))
+                  expect(BlobUtil).to receive(:create_blob).with(tgz).and_return(1)
+                end
+                expect(BlobUtil).to_not receive(:copy_blob)
+
+                persist_packages(manifest_compiled_packages, true)
+                new_package = Models::Package.all.find { |pkg| pkg.name == package_name_2 }
+                new_package.tap do |p|
+                  expect(p.sha1).to eq(nil)
+                  expect(p.compiled_packages.length).to eq(1)
+                  expect(p.compiled_packages.first.sha1).to eq('compiled-sha1-2')
+                  expect(p.compiled_packages.first.dependency_key_sha1).to eq('97d170e1550eee4afc0af065b78cda302a97674c')
+                  expect(p.compiled_packages.first.stemcell_os).to eq('foo')
+                  expect(p.compiled_packages.first.stemcell_version).to eq('bar')
+                  expect(p.compiled_packages.first.build).to eq(1)
+                  expect(p.compiled_packages.first.blobstore_id).to eq('1')
+                  expect(p.fingerprint).to eq('same-fingerprint')
+                  expect(p.name).to eq(package_name_2)
+                  expect(p.version).to eq('fake-version-2')
+                end
+
+                compiled_packages = Models::CompiledPackage.all
+                expect(compiled_packages.length).to eq(2)
+              end
+            end
+
+            context 'and the packages have the same name' do
+              let(:package_name_1) { 'same-name' }
+              let(:package_name_2) { 'same-name' }
+
+              it 'should copy the existing blob' do
+                ['fake-name-1.tgz', 'fake-name-2.tgz'].each do |name|
+                  tgz = "#{release_dir}/compiled_packages/#{name}"
+                  allow(Bosh::Exec).to receive(:sh).with(
+                    "tar -tzf #{tgz} 2>&1",
+                    on_error: :return,
+                  ).and_return(instance_double(Bosh::Exec::Result, failed?: false))
+                end
+                expect(BlobUtil).to_not receive(:create_blob)
+                expect(BlobUtil).to receive(:copy_blob).and_return('copied-blob-id')
+
+                persist_packages(manifest_compiled_packages, true)
+                new_package = Models::Package.all.select { |pkg| pkg.name == package_name_2 }.last
+                new_package.tap do |p|
+                  expect(p.sha1).to eq(nil)
+                  expect(p.compiled_packages.length).to eq(1)
+                  expect(p.compiled_packages.first.sha1).to eq('compiled-sha1-1')
+                  expect(p.compiled_packages.first.dependency_key_sha1).to eq('97d170e1550eee4afc0af065b78cda302a97674c')
+                  expect(p.compiled_packages.first.stemcell_os).to eq('foo')
+                  expect(p.compiled_packages.first.stemcell_version).to eq('bar')
+                  expect(p.compiled_packages.first.build).to eq(1)
+                  expect(p.compiled_packages.first.blobstore_id).to eq('copied-blob-id')
+                  expect(p.fingerprint).to eq('same-fingerprint')
+                  expect(p.name).to eq(package_name_2)
+                  expect(p.version).to eq('fake-version-2')
+                end
+
+                compiled_packages = Models::CompiledPackage.all
+                expect(compiled_packages.length).to eq(2)
+              end
+            end
+          end
+
           context 'when there are packages in manifest' do
             let(:manifest_packages) do
               [
