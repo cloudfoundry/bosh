@@ -5,15 +5,14 @@ if ENV['COVERAGE'] == 'true'
 
   SimpleCov.configure do
     add_filter '/spec/'
+    add_filter '/vendor/'
   end
 
   SimpleCov.start do
-    root          File.expand_path('../../..', __FILE__)
+    root          File.expand_path('../..', __dir__)
     merge_timeout 3600
     # command name is injected by the spec.rake runner
-    if ENV['BOSH_BUILD_NAME']
-      command_name ENV['BOSH_BUILD_NAME']
-    end
+    command_name ENV['BOSH_BUILD_NAME'] if ENV['BOSH_BUILD_NAME']
   end
 end
 
@@ -23,10 +22,10 @@ require 'rspec/its'
 # Useful to see that tests are using expected version of Ruby in CI
 puts "Using #{RUBY_DESCRIPTION}"
 
-Dir.glob(File.expand_path('../support/**/*.rb', __FILE__)).each { |f| require(f) }
+Dir.glob(File.expand_path('support/**/*.rb', __dir__)).each { |f| require(f) }
 
 RSpec.configure do |config|
-  #config.deprecation_stream = StringIO.new
+  # config.deprecation_stream = StringIO.new
 
   config.mock_with :rspec do |mocks|
     mocks.verify_partial_doubles = true
