@@ -16,3 +16,4 @@ params:
   RUBY_VERSION: 3.2.0
   DB:           replace-me
   DB_VERSION:   replace-me
+  COVERAGE:     true
