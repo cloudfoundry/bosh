@@ -24,6 +24,7 @@ RUN apt-get update -y \
         coreutils \
         dnsutils \
         git \
+        git-lfs \
         gpg-agent \
         jq \
         libcurl4-openssl-dev \
