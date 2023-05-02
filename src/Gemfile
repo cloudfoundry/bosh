@@ -48,6 +48,8 @@ group :development, :test do
   gem 'sinatra-contrib', '>= 2.2.0'
   gem 'webmock'
 
+  gem 'simplecov', require: false
+
   gem 'pry-byebug'
   gem 'pry-remote'
 

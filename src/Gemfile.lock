@@ -141,6 +141,7 @@ GEM
     delayed_job (4.1.11)
       activesupport (>= 3.0, < 8.0)
     diff-lcs (1.5.0)
+    docile (1.4.0)
     dogapi (1.21.0)
       multi_json
     domain_name (0.5.20190701)
@@ -270,6 +271,12 @@ GEM
       fugit (~> 1.1, >= 1.1.6)
     semi_semantic (1.2.0)
     sequel (5.29.0)
+    simplecov (0.22.0)
+      docile (~> 1.1)
+      simplecov-html (~> 0.11)
+      simplecov_json_formatter (~> 0.1)
+    simplecov-html (0.12.3)
+    simplecov_json_formatter (0.1.4)
     sinatra (2.2.3)
       mustermann (~> 2.0)
       rack (~> 2.2)
@@ -351,6 +358,7 @@ DEPENDENCIES
   rubocop
   rubocop-git
   ruby-prof (= 0.17.0)
+  simplecov
   sinatra (>= 2.2.0)
   sinatra-contrib (>= 2.2.0)
   sqlite3
