@@ -97,7 +97,7 @@ RUN locale-gen en_US.UTF-8
 ADD install-java.sh /tmp/install-java.sh
 RUN chmod a+x /tmp/install-java.sh
 RUN cd /tmp && ./install-java.sh && rm install-java.sh
-ENV JAVA_HOME /usr/lib/jvm/zulu8.23.0.3-jdk8.0.144-linux_x64
+ENV JAVA_HOME /usr/lib/jvm/
 ENV PATH $JAVA_HOME/bin:$PATH
 
 # Database clients
