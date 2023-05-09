@@ -2,8 +2,8 @@
 set -e
 set -x
 
-PACKAGE_NAME="zulu8.23.0.3-jdk8.0.144-linux_x64.tar.gz"
-PACKAGE_MD5="6ecd67688407b9f7e45c2736f003398b"
+PACKAGE_NAME="zulu8.70.0.23-ca-jre8.0.372-linux_x64.tar.gz"
+PACKAGE_MD5="50763488aa8aef344a408115e709226a"
 PACKAGE_TMP="/tmp/${PACKAGE_NAME}"
 PACKAGE_URL="http://cdn.azul.com/zulu/bin/${PACKAGE_NAME}"
 INSTALL_PREFIX="/usr/lib/jvm"
