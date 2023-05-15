@@ -155,19 +155,7 @@ module Bosh::Director
     end
 
     def update_canary_instance(instance_plan, event_log_stage)
-      event_log_stage.advance_and_track(
-        "#{instance_plan.instance.model} (canary)",
-      ) do |task|
-        with_thread_name("canary_update(#{instance_plan.instance.model})") do
-          InstanceUpdater.new_instance_updater(
-            @ip_provider, @template_blob_cache,
-            @dns_encoder, @link_provider_intents, task
-          ).update(instance_plan, canary: true)
-        rescue Exception => e
-          @logger.error("Error updating canary instance: #{e.inspect}\n#{e.backtrace.join("\n")}")
-          raise
-        end
-      end
+      update_instance_common(instance_plan, event_log_stage, canary: true)
     end
 
     def update_instances(pool, instance_plans, event_log_stage)
@@ -177,16 +165,30 @@ module Bosh::Director
     end
 
     def update_instance(instance_plan, event_log_stage)
-      event_log_stage.advance_and_track(
-        instance_plan.instance.model.to_s,
-      ) do |task|
-        with_thread_name("instance_update(#{instance_plan.instance.model})") do
+      update_instance_common(instance_plan, event_log_stage, canary: false)
+    end
+
+    private
+
+    def update_instance_common(instance_plan, event_log_stage, canary:)
+      if canary
+        event_name = "#{instance_plan.instance.model} (canary)"
+        thread_name = "canary_update(#{instance_plan.instance.model})"
+        error_prefix = 'Error updating canary instance'
+      else
+        event_name = "#{instance_plan.instance.model}"
+        thread_name = "instance_update(#{instance_plan.instance.model})"
+        error_prefix = 'Error updating instance'
+      end
+
+      event_log_stage.advance_and_track(event_name) do |task|
+        with_thread_name(thread_name) do
           InstanceUpdater.new_instance_updater(
-            @ip_provider, @template_blob_cache, @dns_encoder,
-            @link_provider_intents, task
-          ).update(instance_plan)
+            @ip_provider, @template_blob_cache,
+            @dns_encoder, @link_provider_intents, task
+          ).update(instance_plan, canary: canary)
         rescue Exception => e
-          @logger.error("Error updating instance: #{e.inspect}\n#{e.backtrace.join("\n")}")
+          @logger.error("#{error_prefix}: #{e.inspect}\n#{e.backtrace.join("\n")}")
           raise
         end
       end

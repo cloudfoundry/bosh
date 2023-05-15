@@ -286,7 +286,7 @@ module Bosh::Director
 
         it 'should update changed instance_group instances with canaries' do
           expect(canary_updater).to receive(:update).with(canary_plan, canary: true)
-          expect(changed_updater).to receive(:update).with(changed_instance_plan)
+          expect(changed_updater).to receive(:update).with(changed_instance_plan, canary: false)
           expect(unchanged_updater).to_not receive(:update)
 
           instance_group_updater.update
@@ -322,7 +322,7 @@ module Bosh::Director
 
         it 'should raise an error if updating changed instance_groups instances failed' do
           expect(canary_updater).to receive(:update).with(canary_plan, canary: true)
-          expect(changed_updater).to receive(:update).with(changed_instance_plan).and_raise(update_error)
+          expect(changed_updater).to receive(:update).with(changed_instance_plan, canary: false).and_raise(update_error)
           expect(unchanged_updater).to_not receive(:update)
 
           expect { instance_group_updater.update }.to raise_error(update_error)
@@ -450,9 +450,9 @@ module Bosh::Director
 
         it 'should finish the max_in_flight for an AZ before beginning the next AZ' do
           expect(canary_updater).to receive(:update).with(canary_plan, canary: true)
-          expect(changed_updater).to receive(:update).with(changed_instance_plan_1)
-          expect(changed_updater).to receive(:update).with(changed_instance_plan_2)
-          expect(changed_updater).to receive(:update).with(changed_instance_plan_3)
+          expect(changed_updater).to receive(:update).with(changed_instance_plan_1, canary: false)
+          expect(changed_updater).to receive(:update).with(changed_instance_plan_2, canary: false)
+          expect(changed_updater).to receive(:update).with(changed_instance_plan_3, canary: false)
 
           instance_group_updater.update
 
@@ -486,9 +486,9 @@ module Bosh::Director
 
           it 'should understand it' do
             expect(canary_updater).to receive(:update).with(canary_plan, canary: true)
-            expect(changed_updater).to receive(:update).with(changed_instance_plan_1)
-            expect(changed_updater).to receive(:update).with(changed_instance_plan_2)
-            expect(changed_updater).to receive(:update).with(changed_instance_plan_3)
+            expect(changed_updater).to receive(:update).with(changed_instance_plan_1, canary: false)
+            expect(changed_updater).to receive(:update).with(changed_instance_plan_2, canary: false)
+            expect(changed_updater).to receive(:update).with(changed_instance_plan_3, canary: false)
 
             instance_group_updater.update
 
@@ -538,9 +538,9 @@ module Bosh::Director
 
             it 'should update all instances in parallel across all azs' do
               expect(canary_updater).to receive(:update).with(canary_plan, canary: true)
-              expect(changed_updater).to receive(:update).with(changed_instance_plan_1)
-              expect(changed_updater).to receive(:update).with(changed_instance_plan_2)
-              expect(changed_updater).to receive(:update).with(changed_instance_plan_3)
+              expect(changed_updater).to receive(:update).with(changed_instance_plan_1, canary: false)
+              expect(changed_updater).to receive(:update).with(changed_instance_plan_2, canary: false)
+              expect(changed_updater).to receive(:update).with(changed_instance_plan_3, canary: false)
 
               instance_group_updater.update
 
@@ -566,9 +566,9 @@ module Bosh::Director
 
             it 'should update all instances in parallel across all azs' do
               expect(canary_updater).to receive(:update).with(canary_plan, canary: true)
-              expect(changed_updater).to receive(:update).with(changed_instance_plan_1)
-              expect(changed_updater).to receive(:update).with(changed_instance_plan_2)
-              expect(changed_updater).to receive(:update).with(changed_instance_plan_3)
+              expect(changed_updater).to receive(:update).with(changed_instance_plan_1, canary: false)
+              expect(changed_updater).to receive(:update).with(changed_instance_plan_2, canary: false)
+              expect(changed_updater).to receive(:update).with(changed_instance_plan_3, canary: false)
 
               instance_group_updater.update
 
