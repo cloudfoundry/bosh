@@ -26,10 +26,13 @@ git config --global user.email "your_email@example.com"
 
 ## Creating a Local Development Release
 
-1. Run `bundle exec rake release:create_dev_release`.
+1. Create a tarball release with a desired name 'e.g. bosh-test-release.tgz':
 
-2. If you need a tarball release from this then you can run `bundle exec bosh
-   create release --with-tarball /path/to/yaml/made/in/previous/step.yml`.
+   ``` bosh create-release --force --tarball bosh-test-release.tgz ```
+
+2. Upload release to test environment:
+
+   ``` bosh upload-release ./path/to/bosh-test-release.tgz ```
 
 ## Commit messages
 
