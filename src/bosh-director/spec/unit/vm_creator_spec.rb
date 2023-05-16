@@ -16,6 +16,7 @@ module Bosh
       end
       let(:dns_encoder) { instance_double(DnsEncoder) }
       let(:ip_provider) { double(:ip_provider) }
+      let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
       let(:instance) do
         instance_double(DeploymentPlan::Instance, model: instance_model, vm_created?: false)
@@ -31,6 +32,19 @@ module Bosh
           network_plans: [network_plan],
           variables_interpolator: nil,
         )
+      end
+
+      let(:agent_env_bosh_hash) do
+        {
+          'value_1_key' => 'value_1_value_changed',
+          'value_6_key' => {
+            'smurf' => 'i am here',
+          },
+          'a' => '12',
+          'b' => {
+            'c' => '34',
+          },
+        }
       end
 
       let(:tags) { { 'mytag' => 'foobar' } }
@@ -93,7 +107,9 @@ module Bosh
 
       before do
         fake_app
-
+        allow(instance).to receive(:env).and_return({ "bosh": {} })
+        allow(instance).to receive(:desired_variable_set).and_return({})
+        allow(variables_interpolator).to receive(:interpolate_with_versioning).and_return({})
         allow(instance_model).to receive(:managed_persistent_disk_cid).and_return('fake-disk-cid')
         allow(DeploymentPlan::Stages::Report).to receive(:new).and_return(report)
 
@@ -120,6 +136,8 @@ module Bosh
           .and_return(commit_networks_step)
         allow(DeploymentPlan::Steps::ReleaseObsoleteNetworksStep).to receive(:new)
           .with(ip_provider).and_return(release_networks_step)
+          allow(ConfigServer::VariablesInterpolator).to receive(:new).and_return(variables_interpolator)
+          allow(Config).to receive(:agent_env).and_return(agent_env_bosh_hash)
       end
 
       describe '#create_for_instance_plan' do
@@ -188,6 +206,7 @@ module Bosh
           context 'when the instance uses create-swap-delete strategy' do
             before do
               allow(instance_plan).to receive(:should_create_swap_delete?).and_return(true)
+              allow(instance).to receive(:env).and_return({})
             end
 
             context 'when there is already an active vm' do

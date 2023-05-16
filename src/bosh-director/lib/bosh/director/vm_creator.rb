@@ -54,6 +54,12 @@ module Bosh::Director
       instance = instance_plan.instance
       already_had_active_vm = instance.vm_created?
 
+      variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new
+      env = variables_interpolator.interpolate_with_versioning(instance.env, instance.desired_variable_set)
+      env['bosh'] ||= {}
+      env['bosh'] = Config.agent_env.merge(env['bosh'])
+      tags = combined_tags(tags, env['bosh']['tags'])
+
       agenda.steps = [
         DeploymentPlan::Steps::CreateVmStep.new(
           instance_plan,
@@ -92,6 +98,10 @@ module Bosh::Director
 
     def creating_first_create_swap_delete_vm?(instance_plan, already_had_active_vm)
       instance_plan.should_create_swap_delete? && !already_had_active_vm
+    end
+
+    def combined_tags(deployment_tags, instance_tags)
+      instance_tags.nil? ? deployment_tags : deployment_tags.merge(instance_tags)
     end
   end
 end
