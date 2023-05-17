@@ -1374,6 +1374,13 @@ resource_types:
   source:
     repository: aequitas/http-resource
 
+- name: semver
+  type: docker-image
+  source:
+    repository: concourse/semver-resource
+    tag: 1.6
+
+
 resources:
   - name: mariadb-connector-c-resource
     type: http-resource
@@ -1473,15 +1480,17 @@ resources:
     source:
       bucket: bosh-candidate-release-tarballs
       key: version
-      access_key_id: ((bosh_candidate_release_tarballs_aws_access_key.username))
-      secret_access_key: ((bosh_candidate_release_tarballs_aws_access_key.password))
+      access_key_id: ((bosh_candidate_release_tarballs_assume_aws_access_key.username))
+      secret_access_key: ((bosh_candidate_release_tarballs_assume_aws_access_key.password))
+      assume_role_arn: ((bosh_candidate_release_tarballs_assume_aws_access_key.role_arn))
 
   - name: bosh-candidate-release-tarballs
     type: s3
     source:
       bucket: bosh-candidate-release-tarballs
-      access_key_id: ((bosh_candidate_release_tarballs_aws_access_key.username))
-      secret_access_key: ((bosh_candidate_release_tarballs_aws_access_key.password))
+      access_key_id: ((bosh_candidate_release_tarballs_assume_aws_access_key.username))
+      secret_access_key: ((bosh_candidate_release_tarballs_assume_aws_access_key.password))
+      aws_role_arn: ((bosh_candidate_release_tarballs_assume_aws_access_key.role_arn))
       versioned_file: "bosh-dev-release.tgz"
 
   - name: bosh-compiled-candidate-bionic
