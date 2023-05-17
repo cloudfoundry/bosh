@@ -13,6 +13,7 @@ exec jq '{
   "private_key": env.AWS_SSH_PRIVATE_KEY,
   "access_key_id": env.AWS_ACCESS_KEY_ID,
   "secret_access_key": env.AWS_SECRET_ACCESS_KEY,
+  "role_arn": env.AWS_ROLE_ARN,
   "region": env.AWS_DEFAULT_REGION,
   "internal_dns": ["8.8.8.8", "8.8.4.4"],
   "internal_ntp": ["time1.google.com", "time2.google.com"],

@@ -7,6 +7,9 @@ variable "access_key" {
 variable "secret_key" {
 }
 
+variable "role_arn" {
+}
+
 variable "region" {
 }
 
@@ -17,6 +20,10 @@ provider "aws" {
   access_key = var.access_key
   secret_key = var.secret_key
   region     = var.region
+
+  assume_role {
+    role_arn     = var.role_arn != "" ? var.role_arn : ""
+  }
 }
 
 # Create a VPC to launch our instances into

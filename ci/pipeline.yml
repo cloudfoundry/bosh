@@ -840,12 +840,14 @@ jobs:
           bosh-release: last-released-bosh-release
         params:
           BAT_INFRASTRUCTURE: aws
-          AWS_ACCESS_KEY_ID:     ((bats-dev_aws_access_key.username))
-          AWS_SECRET_ACCESS_KEY: ((bats-dev_aws_access_key.password))
+          AWS_ACCESS_KEY_ID:     ((bats_dev_aws_access_key.username))
+          AWS_SECRET_ACCESS_KEY: ((bats_dev_aws_access_key.password))
+          AWS_ROLE_ARN: ((bats_dev_aws_access_key.role_arn))
           AWS_DEFAULT_REGION:    us-east-1
           AWS_SSH_PRIVATE_KEY:   ((terraform_aws_keypair.private_key))
           DEPLOY_ARGS: |
             -o bosh-deployment/external-ip-not-recommended.yml
+            -o bosh-deployment/aws/cpi-assume-role-credentials.yml
       - task: deploy-zookeeper
         image: integration-image
         file: bosh-src/ci/tasks/deploy-zookeeper.yml
@@ -856,12 +858,14 @@ jobs:
           environment: terraform
         params:
           BAT_INFRASTRUCTURE: aws
-          AWS_ACCESS_KEY_ID:     ((bats-dev_aws_access_key.username))
-          AWS_SECRET_ACCESS_KEY: ((bats-dev_aws_access_key.password))
+          AWS_ACCESS_KEY_ID:     ((bats_dev_aws_access_key.username))
+          AWS_SECRET_ACCESS_KEY: ((bats_dev_aws_access_key.password))
+          AWS_ROLE_ARN: ((bats_dev_aws_access_key.role_arn))
           AWS_DEFAULT_REGION:    us-east-1
           AWS_SSH_PRIVATE_KEY:   ((terraform_aws_keypair.private_key))
           DEPLOY_ARGS: |
             -o bosh-deployment/external-ip-not-recommended.yml
+            -o bosh-deployment/aws/cpi-assume-role-credentials.yml
       - task: sleep-180-seconds
         image: integration-image
         config:
@@ -889,8 +893,9 @@ jobs:
             input_mapping:
               environment: terraform
             params:
-              AWS_ACCESS_KEY_ID:     ((bats-dev_aws_access_key.username))
-              AWS_SECRET_ACCESS_KEY: ((bats-dev_aws_access_key.password))
+              AWS_ACCESS_KEY_ID:     ((bats_dev_aws_access_key.username))
+              AWS_SECRET_ACCESS_KEY: ((bats_dev_aws_access_key.password))
+              AWS_ROLE_ARN:          ((bats_dev_aws_access_key.role_arn))
               AWS_DEFAULT_REGION:    us-east-1
           - put: terraform
             attempts: 3
@@ -1728,15 +1733,18 @@ resources:
   - name: terraform
     type: terraform
     source:
-      storage:
-        access_key_id:     ((bats-dev_aws_access_key.username))
-        secret_access_key: ((bats-dev_aws_access_key.password))
-        bucket:            bosh-bats-terraform
-        bucket_path:       terraform-state
-        region_name:       us-west-1
+      backend_type: s3
+      backend_config:
+        access_key: ((bats_dev_aws_access_key.username))
+        secret_key: ((bats_dev_aws_access_key.password))
+        role_arn:   ((bats_dev_aws_access_key.role_arn))
+        bucket:     bosh-bats-terraform
+        key:        terraform-state
+        region:     us-west-1
       vars:
-        access_key: ((bats-dev_aws_access_key.username))
-        secret_key: ((bats-dev_aws_access_key.password))
+        access_key: ((bats_dev_aws_access_key.username))
+        secret_key: ((bats_dev_aws_access_key.password))
+        role_arn:   ((bats_dev_aws_access_key.role_arn))
         region:     us-east-1
         ssh_public_key: ((terraform_aws_keypair.public_key))
 
