@@ -980,7 +980,7 @@ jobs:
       - get: version
         passed: [finalize-release]
         trigger: true
-      - get: warden-ubuntu-bionic
+      - get: warden-ubuntu-jammy
         trigger: true
       - get: warden-cpi-docker-image
     - task: export-final-release
@@ -988,7 +988,7 @@ jobs:
       file: bosh-main/ci/tasks/export-final-release.yml
       privileged: true
       input_mapping:
-        stemcell: warden-ubuntu-bionic
+        stemcell: warden-ubuntu-jammy
         bosh-src: bosh-main
     - task: push-bosh-compiled-releases
       file: bosh-main/ci/tasks/push-bosh-compiled-release.yml
