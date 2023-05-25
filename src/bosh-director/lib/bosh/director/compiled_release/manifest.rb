@@ -15,6 +15,15 @@ module Bosh::Director
         KeyGenerator.new.dependency_key_from_manifest(package_name, @manifest['compiled_packages'])
       end
 
+      def fingerprints_not_matching_packages(packages)
+        missing_compiled_packages = @manifest['compiled_packages'].reject do |manifest_package|
+          packages.any? do |package|
+            package[:name] == manifest_package['name'] && package[:fingerprint] == manifest_package['fingerprint']
+          end
+        end
+        missing_compiled_packages.map { |package| package['fingerprint'] }
+      end
+
       private
 
       def meta_data(package_name)

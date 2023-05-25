@@ -330,6 +330,19 @@ module Bosh::Director
             expect(JSON.parse(last_response.body)).to eq(%w[fake-pkg4-fingerprint])
           end
 
+          it 'does not return a fingerprint when two packages with identical fingerprints are passed, but only one has a matching name' do
+            params_compiled = {'compiled_packages' => [
+              { 'name' => 'fake-pkg1', 'version' => 'fake-pkg1-version', 'fingerprint' => 'fake-pkg1-fingerprint', 'stemcell' => 'ubuntu-trusty/3000','dependencies' => ['fake-pkg2', 'fake-pkg3'] },
+              { 'name' => 'fake-pkg2', 'version' => 'fake-pkg2-version', 'fingerprint' => 'fake-pkg2-fingerprint', 'stemcell' => 'ubuntu-trusty/3000','dependencies' => [] },
+              { 'name' => 'fake-pkg3', 'version' => 'fake-pkg3-version', 'fingerprint' => 'fake-pkg3-fingerprint', 'stemcell' => 'ubuntu-trusty/3000','dependencies' => [] },
+              { 'name' => 'renamed-fake-pkg1', 'version' => 'fake-pkg1-version', 'fingerprint' => 'fake-pkg1-fingerprint', 'stemcell' => 'ubuntu-trusty/3000','dependencies' => ['fake-pkg2', 'fake-pkg3'] },
+              { 'name' => 'fake-pkg4', 'version' => 'fake-pkg4-version', 'fingerprint' => 'fake-pkg4-fingerprint', 'stemcell' => 'ubuntu-trusty/3000','dependencies' => ['fake-pkg1'] },
+            ]}
+            perform_matches_compiled(params_compiled)
+            expect(last_response.status).to eq(200)
+            expect(JSON.parse(last_response.body)).to eq(%w[fake-pkg4-fingerprint])
+          end
+
           context 'when release-version is dirty due to failed relea`se upload' do
             before do
               release_version.update_completed = false
