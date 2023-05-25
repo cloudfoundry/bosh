@@ -14,7 +14,7 @@ resource "aws_db_instance" "postgres" {
   engine_version         = "10.21"
   instance_class         = "db.t2.micro"
   skip_final_snapshot    = true
-  name                   = var.rds_postgres_databasename
+  db_name                = var.rds_postgres_databasename
   username               = var.rds_postgres_username
   password               = var.rds_postgres_password
   vpc_security_group_ids = [aws_security_group.allow-db-access.id]
