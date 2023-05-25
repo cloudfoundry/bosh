@@ -67,7 +67,12 @@ module Bosh::Director
             filtered_packages << package
           end
         end
-        filtered_packages
+
+        # Remove packages that were not matched, but have identical fingerprints to ones that were matched
+        # This step is needed to prevent the cli from filtering compiled packages that have a matching fingerprint already
+        # but not the exact compiled package with an identical name too
+        unmatched_package_fingerprints = compiled_release_manifest.fingerprints_not_matching_packages(matching_packages)
+        filtered_packages.reject { |package| unmatched_package_fingerprints.include?(package.fingerprint) }
       end
 
       def existing_release_version_dirty?(manifest)
