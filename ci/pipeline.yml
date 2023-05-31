@@ -384,7 +384,7 @@ jobs:
         params:
           env_name: brats-ubuntu-bionic-((branch_name))
           terraform_source: bosh-src/ci/brats
-          vars:
+          vars: &brats-terraform-bionic-vars
             rds_mysql_username: ((brats-rds-mysql-external-db-user))
             rds_mysql_password: ((brats-rds-mysql-external-db-password))
             rds_mysql_databasename: ((brats-rds-mysql-external-db-name))
@@ -398,6 +398,14 @@ jobs:
             gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
             gcp_private_network_name: brats-ubuntu-bionic-((branch_name))
             concourse_authorized_network: ((concourse_egress_ip))
+          env:
+            GOOGLE_CREDENTIALS: ((cf-bosh-core_gcp-database-terraform_gcp_credentials_json))
+      - put: brats-terraform
+        params:
+          action: refresh
+          env_name: brats-ubuntu-bionic-((branch_name))
+          terraform_source: bosh-src/ci/brats
+          vars: *brats-terraform-bionic-vars
           env:
             GOOGLE_CREDENTIALS: ((cf-bosh-core_gcp-database-terraform_gcp_credentials_json))
       - task: create-brats-sql-users
@@ -592,7 +600,7 @@ jobs:
         params:
           env_name: brats-ubuntu-jammy-((branch_name))
           terraform_source: bosh-src/ci/brats
-          vars:
+          vars: &brats-terraform-jammy-vars
             rds_mysql_username: ((brats-rds-mysql-external-db-user))
             rds_mysql_password: ((brats-rds-mysql-external-db-password))
             rds_mysql_databasename: ((brats-rds-mysql-external-db-name))
@@ -606,6 +614,14 @@ jobs:
             gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
             gcp_private_network_name: brats-ubuntu-jammy-((branch_name))
             concourse_authorized_network: ((concourse_egress_ip))
+          env:
+            GOOGLE_CREDENTIALS: ((cf-bosh-core_gcp-database-terraform_gcp_credentials_json))
+      - put: brats-terraform
+        params:
+          action: refresh
+          env_name: brats-ubuntu-jammy-((branch_name))
+          terraform_source: bosh-src/ci/brats
+          vars: *brats-terraform-bionic-vars
           env:
             GOOGLE_CREDENTIALS: ((cf-bosh-core_gcp-database-terraform_gcp_credentials_json))
       - task: create-brats-sql-users
