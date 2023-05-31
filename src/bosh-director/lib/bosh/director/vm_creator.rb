@@ -39,6 +39,9 @@ module Bosh::Director
     private
 
     def get_agenda_for_instance_plan(instance_plan, disks, tags, ip_provider, total, use_existing = false)
+      #instance_group tags have higher priority during merge
+      instance_group_tags = instance_plan.desired_instance.instance_group&.tags || {}
+      merged_tags = tags.merge(instance_group_tags)
       instance_string = instance_plan.instance.model.to_s
 
       agenda = DeploymentPlan::Stages::Agenda.new.tap do |a|
@@ -59,7 +62,7 @@ module Bosh::Director
           instance_plan,
           @agent_broadcaster,
           disks,
-          tags,
+          merged_tags,
           use_existing,
         ),
       ]
@@ -73,7 +76,7 @@ module Bosh::Director
       # TODO(mxu, cdutra): find cleaner way to express when you need to Attach and Mount the disk
       if instance_plan.needs_disk?
         if !instance_plan.should_create_swap_delete? || creating_first_create_swap_delete_vm?(instance_plan, already_had_active_vm)
-          agenda.steps << DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance.model, tags)
+          agenda.steps << DeploymentPlan::Steps::AttachInstanceDisksStep.new(instance.model, merged_tags)
           agenda.steps << DeploymentPlan::Steps::MountInstanceDisksStep.new(instance.model)
         end
       end

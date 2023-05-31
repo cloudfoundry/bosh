@@ -277,7 +277,7 @@ module Bosh::Director
 
     class CompilationInstanceGroup
       attr_reader :vm_type, :vm_resources, :vm_extensions, :stemcell, :env, :name
-      attr_reader :instance_plans
+      attr_reader :instance_plans, :tags
 
       def initialize(vm_type, vm_resources, vm_extensions, stemcell, env, compilation_network_name, logger)
         @vm_type = vm_type
@@ -289,6 +289,7 @@ module Bosh::Director
         @name = "compilation-#{SecureRandom.uuid}"
         @instance_plans = []
         @logger = logger
+        @tags = {}
       end
 
       def default_network

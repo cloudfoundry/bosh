@@ -54,6 +54,8 @@ module Bosh::Director
 
         num_desired_instances = parse_desired_instances(name, networks)
 
+        tags = safe_property(@instance_group_spec, 'tags', class: Hash, default: {})
+
         instance_group = InstanceGroup.new(
           name: name,
           canonical_name: Canonicalizer.canonicalize(name),
@@ -74,6 +76,7 @@ module Bosh::Director
           instance_states: instance_states,
           deployment_name: @deployment.name,
           logger: @logger,
+          tags: tags
         )
 
         instance_group.create_desired_instances(num_desired_instances, @deployment)

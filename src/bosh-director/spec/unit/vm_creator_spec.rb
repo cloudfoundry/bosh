@@ -33,13 +33,16 @@ module Bosh
         )
       end
 
-      let(:tags) { { 'mytag' => 'foobar' } }
+      let(:tags) { { 'mytag' => 'foobar', 'secondtag' => 'overwriteme' } }
+      let(:expected_merged_tags) { { 'mytag' => 'foobar', 'secondtag' => 'overwritten', 'instance_tag' => 'buzz' } }
 
       let(:instance_group) do
         disk = DeploymentPlan::PersistentDiskCollection.new(logger)
         disk.add_by_disk_size(1024)
+        instance_group_tags = { 'instance_tag' => 'buzz', 'secondtag' => 'overwritten' }
         BD::DeploymentPlan::InstanceGroup.make(
           persistent_disk_collection: disk,
+          tags: instance_group_tags,
         )
       end
 
@@ -102,7 +105,7 @@ module Bosh
             instance_plan,
             agent_broadcaster,
             ['fake-disk-cid'],
-            tags,
+            expected_merged_tags,
             false,
           ).and_return(create_vm_step)
         allow(DeploymentPlan::Steps::UpdateInstanceSettingsStep).to receive(:new)
@@ -113,7 +116,7 @@ module Bosh
         allow(DeploymentPlan::Steps::RenderInstanceJobTemplatesStep).to receive(:new)
           .with(instance_plan, template_blob_cache, dns_encoder, link_provider_intents).and_return(render_step)
         allow(DeploymentPlan::Steps::AttachInstanceDisksStep).to receive(:new)
-          .with(instance_model, tags).and_return(attach_instance_disks_step)
+          .with(instance_model, expected_merged_tags).and_return(attach_instance_disks_step)
         allow(DeploymentPlan::Steps::MountInstanceDisksStep).to receive(:new)
           .with(instance_model).and_return(mount_instance_disks_step)
         allow(DeploymentPlan::Steps::CommitInstanceNetworkSettingsStep).to receive(:new)
