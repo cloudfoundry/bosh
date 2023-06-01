@@ -145,6 +145,7 @@ module Bosh::Director
                   update_deployment
                   update_release
                   update_stemcell
+                  export_release
                 ]
               end
 
