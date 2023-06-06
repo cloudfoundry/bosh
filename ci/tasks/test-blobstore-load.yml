@@ -2,9 +2,9 @@
 platform: linux
 
 image_resource:
-  type: docker-image
+  type: registry-image
   source:
-    repository: bosh/main-bosh-docker
+    repository: bosh/integration
 
 inputs:
 - name: bosh-src
