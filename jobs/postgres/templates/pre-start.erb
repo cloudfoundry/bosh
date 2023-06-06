@@ -20,7 +20,7 @@ sysctl -w "kernel.shmmax=67108864"
 for version in ${OBSOLETE_VERSIONS[@]}; do
   if [ -d ${PERSISTENT_DISK_DIR}/postgres-${version} ]; then
     # uh-oh, we have years-old BOSH Director
-    if [ ! -d $STORE_DIR_OLD ] && [ ! -d $STORE_DIR ]; then
+    if [ ! -d $STORE_DIR_OLD || ! -d $STORE_DIR_OLD_10 ] && [ ! -d $STORE_DIR ]; then
       # we never upgraded this BOSH Director from PostgreSQL 9.4 or below to 15
       echo "Please use a previous bosh release version (277.x or lower) to migrate data from postgres-${version} to postgres-13."
       exit 1
