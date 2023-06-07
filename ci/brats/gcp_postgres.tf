@@ -2,7 +2,7 @@ variable "gcp_postgres_databasename" {
 }
 
 resource "google_sql_database_instance" "postgres-master" {
-  database_version = "POSTGRES_9_6"
+  database_version = "POSTGRES_15"
   region           = "us-central1"
   deletion_protection = false
 
