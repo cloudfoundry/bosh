@@ -58,6 +58,7 @@ module Bosh::Director
         end
 
         @vm_deleter.delete_for_instance(instance_model)
+        LocalDnsManager.create(Config.root_domain, @logger).delete_dns_for_instance(instance_model)
         instance_model.remove_all_templates
       end
     end
