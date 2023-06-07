@@ -6,10 +6,10 @@ module Bosh::Director
     let(:ip_provider) { instance_double(DeploymentPlan::IpProvider) }
     let(:skip_drain) { instance_double(DeploymentPlan::SkipDrain) }
     let(:deployment) do
-      instance_double(DeploymentPlan::Planner, ip_provider: ip_provider,
+      instance_double(DeploymentPlan::Planner, ip_provider:,
                                                tags: ['tags'],
-                                               template_blob_cache: template_blob_cache,
-                                               skip_drain: skip_drain,
+                                               template_blob_cache:,
+                                               skip_drain:,
                                                use_short_dns_addresses?: false,
                                                use_link_dns_names?: false,
                                                link_provider_intents: [],
@@ -37,10 +37,15 @@ module Bosh::Director
     let(:event_log) { EventLog::Log.new(task_writer) }
 
     let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
-    let(:instance_plan1) { DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: nil, variables_interpolator: variables_interpolator) }
-    let(:instance_plan2) { DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: nil, variables_interpolator: variables_interpolator) }
+    let(:instance_plan1) do
+      DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: nil, variables_interpolator:)
+    end
+    let(:instance_plan2) do
+      DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: nil, variables_interpolator:)
+    end
 
     let(:dns_encoder) { instance_double(DnsEncoder) }
+    let(:local_dns_manager) { instance_double(LocalDnsManager, update_dns_record_for_instance: nil) }
 
     before do
       fake_app
@@ -59,6 +64,8 @@ module Bosh::Director
         .and_return vm_creator
       allow(job).to receive(:needed_instance_plans).with(no_args).and_return([instance_plan1, instance_plan2])
       allow(Config).to receive(:event_log).and_return(event_log)
+
+      allow(LocalDnsManager).to receive(:create).with(Config.root_domain, logger).and_return(local_dns_manager)
     end
 
     describe '#create_missing_vms' do
@@ -76,11 +83,11 @@ module Bosh::Director
       it 'binds vms to instances, creates jobs configurations and updates dns' do
         instance_group_updater = instance_double(InstanceGroupUpdater)
         expect(InstanceGroupUpdater).to receive(:new).with(
-          ip_provider: ip_provider,
+          ip_provider:,
           instance_group: job,
           disk_manager: an_instance_of(DiskManager),
-          template_blob_cache: template_blob_cache,
-          dns_encoder: dns_encoder,
+          template_blob_cache:,
+          dns_encoder:,
           link_provider_intents: deployment.link_provider_intents,
         ).and_return(instance_group_updater)
         expect(instance_group_updater).to receive(:update).with(no_args)
@@ -100,11 +107,18 @@ module Bosh::Director
         is
       end
       let(:instance2_model) do
-        Models::Instance.make(deployment: deployment_model, job: 'foo-job', uuid: 'instance_id2', index: 1, ignore: true, state: 'detached')
+        Models::Instance.make(deployment: deployment_model, job: 'foo-job', uuid: 'instance_id2', index: 1, ignore: true,
+                              state: 'detached')
       end
 
-      let(:instance_plan1) { DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance1, variables_interpolator: variables_interpolator) }
-      let(:instance_plan2) { DeploymentPlan::InstancePlan.new(existing_instance: instance2_model, desired_instance: nil, instance: instance2, variables_interpolator: variables_interpolator) }
+      let(:instance_plan1) do
+        DeploymentPlan::InstancePlan.new(existing_instance: nil, desired_instance: nil, instance: instance1,
+                                         variables_interpolator:)
+      end
+      let(:instance_plan2) do
+        DeploymentPlan::InstancePlan.new(existing_instance: instance2_model, desired_instance: nil, instance: instance2,
+                                         variables_interpolator:)
+      end
 
       let(:unmount_step) { instance_double(DeploymentPlan::Steps::UnmountInstanceDisksStep) }
       let(:vm_deleter) { VmDeleter.new(logger, false, false) }
@@ -123,6 +137,9 @@ module Bosh::Director
           expect(vm_deleter).to receive(:delete_for_instance).with(instance1_model)
           expect(vm_deleter).to receive(:delete_for_instance).with(instance2_model)
           expect(unmount_step).to receive(:perform)
+
+          expect(local_dns_manager).to receive(:delete_dns_for_instance).with(instance1_model)
+          expect(local_dns_manager).to receive(:delete_dns_for_instance).with(instance2_model)
 
           subject.delete_vms
         end
