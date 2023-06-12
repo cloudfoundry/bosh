@@ -9,7 +9,7 @@ ENV GEM_HOME "/usr/local/bundle"
 ENV POSTGRES_MAJOR_VERSION "13"
 ENV BOSH_CLI_VERSION 7.2.2-linux-amd64
 ENV BOSH_CLI_SHA256SUM "2b01dbdf5192ade3587ad82df127f8ab9a7256d2be23b3f1c37de39f6750fe34"
-ENV METALINK_VERSION 0.3.0-linux-amd64
+ENV METALINK_VERSION 0.5.0-linux-amd64
 
 RUN apt-get update -y \
     && apt-get -y install --no-install-recommends \
@@ -65,9 +65,9 @@ RUN cd /tmp && \
     chmod +x /usr/local/bin/bosh
 
 RUN cd /tmp && \
-    wget -nv "https://github.com/dpb587/metalink/releases/download/v0.3.0/meta4-${METALINK_VERSION}" && \
+    wget -nv "https://github.com/dpb587/metalink/releases/download/v0.5.0/meta4-${METALINK_VERSION}" && \
     ( \
-        echo "e276ccff74cbe9a85eda17e5955df0b0b06ee68fcdb67d860f691d41b34f65cf meta4-${METALINK_VERSION}" | \
+        echo "9f3ff22e1ac3a8b4a667a9505dce2a224e099475ab69a02b23813ad073e27e01 meta4-${METALINK_VERSION}" | \
         sha256sum -c - \
     ) && \
     mv /tmp/meta4-* /usr/local/bin/meta4 && \
