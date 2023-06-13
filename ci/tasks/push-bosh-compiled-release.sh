@@ -19,6 +19,7 @@ cat <<EOF > settings.json
         "env": {
           "AWS_ACCESS_KEY_ID": "$AWS_ACCESS_KEY_ID",
           "AWS_SECRET_ACCESS_KEY": "$AWS_SECRET_ACCESS_KEY"
+          "AWS_ROLE_ARN": "$AWS_ROLE_ARN"
         }
       }
     ],
