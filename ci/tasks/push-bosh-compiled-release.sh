@@ -18,7 +18,7 @@ cat <<EOF > settings.json
         "destination": "s3://s3-external-1.amazonaws.com/bosh-compiled-releases/bosh/{{.Version}}/{{.Name}}",
         "env": {
           "AWS_ACCESS_KEY_ID": "$AWS_ACCESS_KEY_ID",
-          "AWS_SECRET_ACCESS_KEY": "$AWS_SECRET_ACCESS_KEY"
+          "AWS_SECRET_ACCESS_KEY": "$AWS_SECRET_ACCESS_KEY",
           "AWS_ROLE_ARN": "$AWS_ROLE_ARN"
         }
       }
