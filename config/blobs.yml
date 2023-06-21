@@ -1,11 +1,11 @@
-bosh-gcscli/bosh-gcscli-0.0.133-linux-amd64:
+bosh-gcscli/bosh-gcscli-0.0.134-linux-amd64:
   size: 21728801
-  object_id: 71a393a7-96a1-471a-4ca7-c4e498788585
-  sha: sha256:4a3f511d4d0141063645d21630a4131937a9094419b3e1d96297f617d6dce78a
-davcli/davcli-0.0.221-linux-amd64:
+  object_id: 701a67f6-7fd6-4076-5eca-0891bd9fc724
+  sha: sha256:9cbd6b53ea67893a11590207c9ea13d8d7bdad641c5bd763fcdbd2505fc56623
+davcli/davcli-0.0.225-linux-amd64:
   size: 8332074
-  object_id: 125f925c-2d72-4109-47e5-22beebf9bbc1
-  sha: sha256:905c70db669aeda6f22a98518174edb9253b58e790afc847e090b0052241a568
+  object_id: de2e602a-01c5-46ff-7f77-0fbf001d1195
+  sha: sha256:5af46130d26b6200f91e519f7c117bdbe3f73d1958c228d90b43ec35a7e4d413
 mysql/mariadb-connector-c-3.3.5-src.tar.gz:
   size: 1392609
   object_id: fd0baefd-f0c0-4b3e-5fc3-f9e8f23850d6
@@ -30,10 +30,10 @@ powerdns/pdns-static_3.3.1-1_amd64.deb:
   size: 9353694
   object_id: 6e861aa6-2e83-4027-a1e8-0ebec995c274
   sha: 22bb46aa0b3e7671e0ee9aa30ed95c38841106ab
-s3cli/s3cli-0.0.201-linux-amd64:
-  size: 12628936
-  object_id: 123644f5-fbc3-48c2-6243-6660c225ee15
-  sha: sha256:6babe867016f6bb924cf493bc11259d8ed5085f99c2c56b4d2b34c1d5595dd71
+s3cli/s3cli-0.0.202-linux-amd64:
+  size: 12629268
+  object_id: a5c7e405-0d4b-4ed3-54da-c36a0de635a1
+  sha: sha256:c8b792019be452ef1eae547b0a3eacf0ad46ebc3e51f50daa5ad5823b771689f
 verify-multidigest/verify-multidigest-0.0.369-linux-amd64:
   size: 3127912
   object_id: c605a5d3-7a40-4015-4d97-992730255322

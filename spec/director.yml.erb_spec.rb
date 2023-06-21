@@ -478,7 +478,7 @@ describe 'director.yml.erb' do
       end
 
       it 'should contain the version' do
-        expect(parsed_yaml['version']).to eq('277.3.3')
+        expect(parsed_yaml['version']).to eq('277.3.4')
       end
 
       it 'should contain the audit log path' do
