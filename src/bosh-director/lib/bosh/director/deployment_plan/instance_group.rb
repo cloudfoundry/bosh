@@ -82,6 +82,8 @@ module Bosh::Director
 
       attr_accessor :did_change
 
+      attr_accessor :tags
+
       def self.parse(plan, instance_group_spec, event_log, logger, parse_options = {})
         parser = InstanceGroupSpecParser.new(plan, instance_group_spec, event_log, logger)
         parser.parse(parse_options)
@@ -106,7 +108,8 @@ module Bosh::Director
         migrated_from: [],
         state: nil,
         instance_states: {},
-        deployment_name: nil
+        deployment_name: nil,
+        tags: {}
       )
         @name = name
         @canonical_name = canonical_name
@@ -134,6 +137,8 @@ module Bosh::Director
         @packages = {}
         @instance_plans = []
         @did_change = false
+
+        @tags = tags
       end
 
       def self.legacy_spec?(instance_group_spec)

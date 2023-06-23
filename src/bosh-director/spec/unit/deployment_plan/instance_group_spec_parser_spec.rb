@@ -116,6 +116,7 @@ module Bosh::Director
             'env' => { 'key' => 'value' },
             'instances' => 1,
             'networks' => [{ 'name' => 'fake-network-name' }],
+            'tags' => { 'mytag' => 'foobar' },
           }
         end
 
@@ -129,6 +130,19 @@ module Bosh::Director
             instance_group = parsed_instance_group
             expect(instance_group.name).to eq('instance-group-name')
             expect(instance_group.canonical_name).to eq('instance-group-name')
+          end
+        end
+
+        describe 'tags key' do
+          it 'parses tags' do
+            instance_group = parsed_instance_group
+            expect(instance_group.tags).to eq({ 'mytag' => 'foobar' })
+          end
+
+          it 'tags default empty Hash if not found' do
+            instance_group_spec.delete('tags')
+            instance_group = parsed_instance_group
+            expect(instance_group.tags).to eq({})
           end
         end
 
