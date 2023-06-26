@@ -72,13 +72,27 @@ describe 'local DNS', type: :integration do
       it 'deploys and downgrades with max_in_flight' do
         manifest_deployment['instance_groups'][0]['instances'] = 5
         deploy_simple_manifest(manifest_hash: manifest_deployment)
-        etc_hosts = parse_agent_etc_hosts(4)
+        tries = 0
+        # retry for 45 seconds while DNS removals are propagating; this test was failing 16% of the time with too many entries in /etc/hosts
+        while tries < 45
+          etc_hosts = parse_agent_etc_hosts(4)
+          break if etc_hosts.size == 5
+          sleep 1
+          tries += 1
+        end
         expect(etc_hosts.size).to eq(5), "expected etc_hosts to have 5 lines, got contents #{etc_hosts} with size #{etc_hosts.size}"
         expect(etc_hosts).to match_array(generate_instance_dns)
 
         manifest_deployment['instance_groups'][0]['instances'] = 6
         deploy_simple_manifest(manifest_hash: manifest_deployment)
-        etc_hosts = parse_agent_etc_hosts(5)
+        tries = 0
+        # we've never seen a failure here, but we're wrapping it in a retry loop out of an abundance of caution
+        while tries < 45
+          etc_hosts = parse_agent_etc_hosts(5)
+          break if etc_hosts.size == 6
+          sleep 1
+          tries += 1
+        end
         expect(etc_hosts.size).to eq(6), "expected etc_hosts to have 6 lines, got contents #{etc_hosts} with size #{etc_hosts.size}"
         expect(etc_hosts).to match_array(generate_instance_dns)
       end
