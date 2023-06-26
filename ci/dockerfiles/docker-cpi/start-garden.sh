@@ -41,6 +41,12 @@ permit_device_control() {
 
 create_loop_devices() {
   set +e
+  LOOP_CONTROL=/dev/loop-control
+  if [ ! -c $LOOP_CONTROL ]; then
+    mknod $LOOP_CONTROL c 10 237
+    chown root:disk $LOOP_CONTROL
+    chmod 660 $LOOP_CONTROL
+  fi
   amt=${1:-256}
   for i in $(seq 0 "$amt"); do
     if ! mknod -m 0660 "/dev/loop$i" b 7 "$i"; then
