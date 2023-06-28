@@ -20,6 +20,10 @@ module Bosh::Director
         false
       end
 
+      def instance_group
+        'unknown job'
+      end
+
       resolution :close do
         plan { "Close problem" }
         action { }

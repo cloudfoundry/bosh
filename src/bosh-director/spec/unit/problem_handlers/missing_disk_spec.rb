@@ -40,6 +40,12 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
     expect(handler.description).to eq("Disk 'disk-cid' (mysql_node/uuid-42, 300M) is missing")
   end
 
+  describe 'instance group' do
+    it 'returns the job of the instance of the disk' do
+      expect(handler.instance_group).to eq('mysql_node')
+    end
+  end
+
   describe 'resolutions' do
     describe 'delete_disk_reference' do
       let(:event_manager) {Bosh::Director::Api::EventManager.new(true)}

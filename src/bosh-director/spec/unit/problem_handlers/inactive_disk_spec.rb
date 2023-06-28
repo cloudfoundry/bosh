@@ -44,6 +44,12 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
     expect(@handler.instance_problem?).to be_falsey
   end
 
+  describe 'instance group' do
+    it 'returns the job of the instance of the disk' do
+      expect(@handler.instance_group).to eq('mysql_node')
+    end
+  end
+
   describe 'invalid states' do
     it 'is invalid if disk is gone' do
       @disk.destroy

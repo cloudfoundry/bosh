@@ -101,6 +101,12 @@ module Bosh::Director
       expect(handler.description).to eq("VM for 'mysql_node/uuid-1 (0)' with cloud ID 'vm-cid' is not responding.")
     end
 
+    describe 'instance group' do
+      it 'returns the job of the instance of the disk' do
+        expect(handler.instance_group).to eq('mysql_node')
+      end
+    end
+
     describe 'reboot_vm resolution' do
       it 'skips reboot if CID is not present' do
         instance.active_vm = nil

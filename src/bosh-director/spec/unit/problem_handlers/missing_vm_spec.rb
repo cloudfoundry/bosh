@@ -81,6 +81,12 @@ module Bosh::Director
       handler.auto_resolve
     end
 
+    describe 'instance group' do
+      it 'returns the job of the instance of the disk' do
+        expect(handler.instance_group).to eq('foobar')
+      end
+    end
+
     describe '#description' do
       context 'when vm cid is given' do
         it 'includes instance job name, uuid, index and vm cid' do
