@@ -16,4 +16,11 @@ describe Bosh::Director::ProblemHandlers::InvalidProblem do
     expect(handler.instance_problem?).to be_falsey
     expect(handler.description).to eq('Problem (err 42) is no longer valid: foobar')
   end
+
+  describe 'instance group' do
+    it 'returns "unknown job"' do
+      handler = Bosh::Director::ProblemHandlers::Base.create_by_type(:err, 42, {})
+      expect(handler.instance_group).to eq('unknown job')
+    end
+  end
 end

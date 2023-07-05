@@ -1922,7 +1922,7 @@ module Bosh::Director
           end
           let(:db_job) { Jobs::DBJob.new(job_class, task.id, args)}
 
-          it 'exposes problem managent REST API' do
+          it 'exposes problem management REST API' do
             get '/mycloud/problems'
             expect(last_response.status).to eq(200)
             expect(JSON.parse(last_response.body)).to eq([])
@@ -1933,12 +1933,61 @@ module Bosh::Director
             put '/mycloud/problems', JSON.generate('solutions' => { 42 => 'do_this', 43 => 'do_that', 44 => nil }), { 'CONTENT_TYPE' => 'application/json' }
             expect_redirect_to_queued_task(last_response)
 
-            problem = Models::DeploymentProblem.
-                create(:deployment_id => deployment.id, :resource_id => 2,
-                       :type => 'test', :state => 'open', :data => {})
-
             put '/mycloud/problems', JSON.generate('solution' => 'default'), { 'CONTENT_TYPE' => 'application/json' }
             expect_redirect_to_queued_task(last_response)
+          end
+
+          context 'listing problems' do
+            let(:problems) do
+              [
+                Models::DeploymentProblem.
+                create(:deployment_id => deployment.id, :resource_id => 2,
+                  :type => 'unresponsive_agent', :state => 'open', :data => {}),
+                Models::DeploymentProblem.
+                  create(:deployment_id => deployment.id, :resource_id => 3,
+                    :type => 'unresponsive_agent', :state => 'open', :data => {})
+              ]
+            end
+            let(:handler) { instance_double(ProblemHandlers::UnresponsiveAgent) }
+
+            before do
+              allow(handler).to receive(:description).and_return('description', 'other_description')
+              allow(handler).to receive(:resolutions).and_return([1,2], [3,4])
+              allow(handler).to receive(:instance_group).and_return('router', 'diego_cell')
+
+              allow(problems[0])
+                .to receive(:handler).and_return(handler)
+              allow(problems[1])
+                .to receive(:handler).and_return(handler)
+
+              expect_any_instance_of(ProblemManager)
+                .to receive(:get_problems).with(deployment).and_return(problems)
+            end
+
+            it 'correctly renders problems' do
+              get '/mycloud/problems'
+              expect(last_response.status).to eq(200)
+              expect(JSON.parse(last_response.body)).to eq(
+                [
+                  {
+                    'data' => {},
+                    'description' => 'description',
+                    'id' => 1,
+                    'resolutions' => [1, 2],
+                    'type' => 'unresponsive_agent',
+                    'instance_group' => 'router',
+                  },
+                  {
+                    'data' => {},
+                    'description' => 'other_description',
+                    'id' => 2,
+                    'resolutions' => [3, 4],
+                    'type' => 'unresponsive_agent',
+                    'instance_group' => 'diego_cell',
+                  }
+                ]
+              )
+            end
           end
         end
 

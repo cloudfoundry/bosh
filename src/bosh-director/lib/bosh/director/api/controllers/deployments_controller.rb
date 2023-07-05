@@ -368,6 +368,7 @@ module Bosh::Director
             'data' => problem.data,
             'description' => problem.description,
             'resolutions' => problem.resolutions,
+            'instance_group' => problem.instance_group,
           }
         end
 

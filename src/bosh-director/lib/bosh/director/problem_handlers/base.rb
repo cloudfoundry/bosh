@@ -56,6 +56,8 @@ module Bosh::Director
 
       def instance_problem?; end
 
+      def instance_group; end
+
       def resolutions
         self.class.resolutions.map do |name|
           { :name => name.to_s, :plan => resolution_plan(name) }

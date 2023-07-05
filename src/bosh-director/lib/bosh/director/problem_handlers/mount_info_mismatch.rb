@@ -45,6 +45,10 @@ module Bosh::Director
         false
       end
 
+      def instance_group
+        @instance.job || 'unknown job'
+      end
+
       resolution :ignore do
         plan { "Ignore" }
         action { }

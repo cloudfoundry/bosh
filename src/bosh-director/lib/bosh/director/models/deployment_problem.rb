@@ -46,5 +46,9 @@ module Bosh::Director::Models
     def instance_problem?
       handler.instance_problem?
     end
+
+    def instance_group
+      handler.instance_group
+    end
   end
 end

@@ -42,6 +42,10 @@ module Bosh::Director
       def instance_problem?
         true
       end
+
+      def instance_group
+        @instance.job || 'unknown job'
+      end
     end
   end
 end
