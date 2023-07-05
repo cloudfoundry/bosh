@@ -23,12 +23,13 @@ module Bosh::Director
 
     describe '#apply_resolutions' do
       let(:resolutions) { double('Resolutions') }
+      let(:max_in_flight_overrides) { double('Max_in_flight_overrides') }
 
       it 'enqueues a task' do
         expect(job_queue).to receive(:enqueue).with(
             username, Jobs::CloudCheck::ApplyResolutions, 'apply resolutions',
-            [deployment.name, resolutions], deployment).and_return(task)
-        expect(subject.apply_resolutions(username, deployment, resolutions)).to eq(task)
+            [deployment.name, resolutions, max_in_flight_overrides], deployment).and_return(task)
+        expect(subject.apply_resolutions(username, deployment, resolutions, max_in_flight_overrides)).to eq(task)
       end
     end
 

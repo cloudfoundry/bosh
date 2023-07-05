@@ -14,8 +14,8 @@ module Bosh::Director
         Models::DeploymentProblem.filter(filters).order(:created_at).all
       end
 
-      def apply_resolutions(username, deployment, resolutions)
-        JobQueue.new.enqueue(username, Jobs::CloudCheck::ApplyResolutions, 'apply resolutions', [deployment.name, resolutions], deployment)
+      def apply_resolutions(username, deployment, resolutions, max_in_flight_overrides)
+        JobQueue.new.enqueue(username, Jobs::CloudCheck::ApplyResolutions, 'apply resolutions', [deployment.name, resolutions, max_in_flight_overrides], deployment)
       end
 
       def scan_and_fix(username, deployment, jobs)

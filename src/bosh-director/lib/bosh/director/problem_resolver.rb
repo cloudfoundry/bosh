@@ -27,7 +27,7 @@ module Bosh::Director
       end
     end
 
-    def apply_resolutions(resolutions)
+    def apply_resolutions(resolutions, max_in_flight_overrides={})
       @resolutions = resolutions
       all_problems = Models::DeploymentProblem.where(id: resolutions.keys, deployment_id: @deployment.id).all
       begin_stage('Applying problem resolutions', all_problems.size)
@@ -35,7 +35,7 @@ module Bosh::Director
       if Config.parallel_problem_resolution && all_problems.size > 1
         igs_to_problems = problems_by_instance_group(all_problems)
         partitions_to_problem_igs = partition_instance_groups_by_serial(igs_to_problems.keys)
-        process_partitions(partitions_to_problem_igs, igs_to_problems)
+        process_partitions(partitions_to_problem_igs, igs_to_problems, max_in_flight_overrides)
       else
         all_problems.each do |problem|
           process_problem(problem)
@@ -82,23 +82,28 @@ module Bosh::Director
       ]
     end
 
-    def process_partitions(ig_partition_to_ig_names_with_problems, igs_to_problems)
+    def process_partitions(ig_partition_to_ig_names_with_problems, igs_to_problems, igs_to_max_in_flight)
       ig_partition_to_ig_names_with_problems.each do |ig_partition, igs_with_problems|
         num_threads = ig_partition.first.update.serial? ? 1 : igs_with_problems.size
 
         parallel_each(num_threads, igs_with_problems) do |ig_name|
-          process_instance_group(ig_name, igs_to_problems[ig_name])
+          process_instance_group(ig_name, igs_to_problems[ig_name], igs_to_max_in_flight[ig_name])
         end
       end
     end
 
-    def process_instance_group(ig_name, problems)
+    def process_instance_group(ig_name, problems, max_in_flight_override)
       instance_group = @instance_groups.find do |plan_ig|
         plan_ig.name == ig_name
       end
-      max_in_flight = instance_group.update.max_in_flight(problems.size)
 
-      num_threads = [problems.size, max_in_flight].min
+      if max_in_flight_override
+        numerical_override_value = NumericalValueCalculator.get_numerical_value(max_in_flight_override, problems.size)
+        num_threads = [problems.size, numerical_override_value].min
+      else
+        max_in_flight = instance_group.update.max_in_flight(problems.size)
+        num_threads = [problems.size, max_in_flight].min
+      end
       parallel_each(num_threads, problems) do |problem|
         process_problem(problem)
       end

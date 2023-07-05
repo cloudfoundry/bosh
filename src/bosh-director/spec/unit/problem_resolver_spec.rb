@@ -52,7 +52,7 @@ module Bosh::Director
                                      state: 'open')
     end
 
-    def test_instance_apply_resolutions
+    def test_instance_apply_resolutions(max_in_flight_overrides={})
       problem_resolutions = {}
       (1..num_problem_instance_groups).each do |n|
         problems_per_instance_group.times do
@@ -70,7 +70,7 @@ module Bosh::Director
       resolver = make_resolver(@deployment)
       allow_any_instance_of(ProblemHandlers::MissingVM).to receive(:apply_resolution).with('recreate_vm')
 
-      expect(resolver.apply_resolutions(problem_resolutions)).to eq([problem_resolutions.size, nil])
+      expect(resolver.apply_resolutions(problem_resolutions, max_in_flight_overrides)).to eq([problem_resolutions.size, nil])
       expect(Models::DeploymentProblem.filter(state: 'open').count).to eq(0)
     end
 
@@ -148,6 +148,25 @@ module Bosh::Director
               ).times.with(max_threads: problems_per_instance_group)
             end
           end
+
+          context 'when max_in_flight_overrides are provided' do
+            let(:num_problem_instance_groups) { 3 }
+            let(:problems_per_instance_group) { 10 }
+            let(:max_in_flight_overrides) do
+              {
+                'ig-2' => '2',
+                'ig-3' => '40%',
+              }
+            end
+
+            it 'overrides max_in_flight for the instance groups overridden' do
+              test_instance_apply_resolutions(max_in_flight_overrides)
+              expect(ThreadPool).to have_received(:new).once.with(max_threads: num_problem_instance_groups)
+              expect(ThreadPool).to have_received(:new).once.with(max_threads: max_in_flight)
+              expect(ThreadPool).to have_received(:new).once.with(max_threads: 2)
+              expect(ThreadPool).to have_received(:new).once.with(max_threads: 4)
+            end
+          end
         end
 
         context 'when parallel resurrection is turned off' do
@@ -156,6 +175,22 @@ module Bosh::Director
           it 'resolves the problems serial' do
             test_instance_apply_resolutions
             expect(ThreadPool).not_to have_received(:new)
+          end
+
+          context 'when max_in_flight_overrides are provided' do
+            let(:num_problem_instance_groups) { 3 }
+            let(:problems_per_instance_group) { 10 }
+            let(:max_in_flight_overrides) do
+              {
+                'ig-2' => '2',
+                'ig-3' => '40%',
+              }
+            end
+
+            it 'does not use them' do
+              test_instance_apply_resolutions(max_in_flight_overrides)
+              expect(ThreadPool).not_to have_received(:new)
+            end
           end
         end
 
