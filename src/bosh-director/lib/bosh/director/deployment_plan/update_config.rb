@@ -114,11 +114,11 @@ module Bosh::Director
       end
 
       def canaries(size)
-        get_numerical_value(@canaries_before_calculation, size)
+        NumericalValueCalculator.get_numerical_value(@canaries_before_calculation, size)
       end
 
       def max_in_flight(size)
-        value = get_numerical_value(@max_in_flight_before_calculation, size)
+        value = NumericalValueCalculator.get_numerical_value(@max_in_flight_before_calculation, size)
         value < 1 ? 1 : value
       end
 
@@ -148,19 +148,6 @@ module Bosh::Director
 
       def update_azs_in_parallel_on_initial_deploy?
         @initial_deploy_az_update_strategy == PARALLEL_AZ_UPDATE_STRATEGY
-      end
-
-      private
-
-      def get_numerical_value(value, size)
-        case value
-        when /^\d+%$/
-          [((/\d+/.match(value)[0].to_i * size) / 100).round, size].min
-        when /\A[-+]?[0-9]+\z/
-          value.to_i
-        else
-          raise 'cannot be calculated'
-        end
       end
     end
   end

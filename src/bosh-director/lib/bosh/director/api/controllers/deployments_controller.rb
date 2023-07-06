@@ -377,7 +377,15 @@ module Bosh::Director
 
       put '/:deployment/problems', consumes: [:json] do
         payload = json_decode(request.body.read)
-        start_task { @problem_manager.apply_resolutions(current_user, deployment, payload['resolutions']) }
+
+        start_task do
+          @problem_manager.apply_resolutions(
+            current_user,
+            deployment,
+            payload['resolutions'],
+            payload['max_in_flight_overrides'] || {},
+          )
+        end
       end
 
       put '/:deployment/scan_and_fix', consumes: :json do

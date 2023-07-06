@@ -16,19 +16,25 @@ module Bosh::Director
     let(:resolutions) do
       { 1 => 'delete_disk', 2 => 'ignore' }
     end
+    let(:max_in_flight_overrides) do
+      { 'diego_cell' => '100%', 'router' => 5 }
+    end
+    let(:normalized_max_in_flight_overrides) do
+      { 'diego_cell' => '100%', 'router' => '5' }
+    end
     let(:normalized_resolutions) do
       { '1' => 'delete_disk', '2' => 'ignore' }
     end
-    let(:job) { described_class.new('deployment', resolutions) }
+    let(:job) { described_class.new('deployment', resolutions, max_in_flight_overrides) }
     let(:resolver) { instance_double('Bosh::Director::ProblemResolver') }
     let(:deployment) { Models::Deployment.first }
 
     describe '#perform' do
       context 'when resolution succeeds' do
-        it 'should normalize the problem ids' do
+        it 'should normalize the problem ids and overrides' do
           allow(job).to receive(:with_deployment_lock).and_yield
 
-          expect(resolver).to receive(:apply_resolutions).with(normalized_resolutions)
+          expect(resolver).to receive(:apply_resolutions).with(normalized_resolutions, normalized_max_in_flight_overrides)
 
           job.perform
         end

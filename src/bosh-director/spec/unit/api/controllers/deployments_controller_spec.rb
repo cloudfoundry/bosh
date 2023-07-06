@@ -1930,11 +1930,50 @@ module Bosh::Director
             post '/mycloud/scans'
             expect_redirect_to_queued_task(last_response)
 
-            put '/mycloud/problems', JSON.generate('solutions' => { 42 => 'do_this', 43 => 'do_that', 44 => nil }), { 'CONTENT_TYPE' => 'application/json' }
+            put '/mycloud/problems', JSON.generate(
+              'resolutions' => { 42 => 'do_this', 43 => 'do_that', 44 => nil },
+              'max_in_flight_overrides' => {'diego_cell' => '3', 'router' => '50%'},
+            ), { 'CONTENT_TYPE' => 'application/json' }
             expect_redirect_to_queued_task(last_response)
 
             put '/mycloud/problems', JSON.generate('solution' => 'default'), { 'CONTENT_TYPE' => 'application/json' }
             expect_redirect_to_queued_task(last_response)
+          end
+
+          context 'fixing problems' do
+            let(:resolutions) do
+              { '1' => 'foo', '4' => 'bar' }
+            end
+
+            let(:max_in_flight_overrides) do
+              { 'router' => '3', 'diego_cell' => '50%' }
+            end
+
+            before do
+              expect_any_instance_of(ProblemManager)
+                .to receive(:apply_resolutions)
+                .with(anything, deployment, resolutions, max_in_flight_overrides)
+                .and_return(Models::Task.make)
+            end
+
+            it 'should pass resolutions and overrides to the problem manager' do
+              put '/mycloud/problems', JSON.generate(
+                'resolutions' => resolutions,
+                'max_in_flight_overrides' => max_in_flight_overrides,
+              ), { 'CONTENT_TYPE' => 'application/json' }
+              expect_redirect_to_queued_task(last_response)
+            end
+
+            context 'when no max_in_flight_overrides are provided' do
+              let!(:max_in_flight_overrides) { {} }
+
+              it 'should pass an empty hash for overrides to the problem manager' do
+                put '/mycloud/problems', JSON.generate(
+                  'resolutions' => resolutions,
+                ), { 'CONTENT_TYPE' => 'application/json' }
+                expect_redirect_to_queued_task(last_response)
+              end
+            end
           end
 
           context 'listing problems' do
