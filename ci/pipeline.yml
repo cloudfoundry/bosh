@@ -1218,7 +1218,7 @@ resources:
     type: s3
     source:
       regexp: s3cli-(.*)-linux-amd64
-      bucket: s3cli-artifacts
+      bucket: bosh-s3cli-artifacts
 
   - name: verify-multidigest-cli
     type: s3
