@@ -34,45 +34,60 @@ module Bosh::Director
           raise BadManifest, "Manifest doesn't have a usable packages section"
         end
 
-        fingerprint_list = []
-        manifest['compiled_packages'].each do |package|
-          fingerprint_list << package['fingerprint'] if package['fingerprint']
-        end
-
-        matching_packages = []
+        fingerprints = []
 
         unless existing_release_version_dirty?(manifest)
-          matching_packages = Models::Package.join('compiled_packages', package_id: :id)
-                                             .select(Sequel.qualify('packages', 'name'),
-                                                     Sequel.qualify('packages', 'fingerprint'),
-                                                     Sequel.qualify('compiled_packages', 'dependency_key'),
-                                                     :stemcell_os,
-                                                     :stemcell_version)
-                                             .where(fingerprint: fingerprint_list).all
-
-          matching_packages = filter_matching_packages(matching_packages, manifest)
+          fingerprints = fingerprints_that_do_not_need_to_be_uploaded(manifest)
         end
 
-        json_encode(matching_packages.map(&:fingerprint).compact.uniq)
+        json_encode(fingerprints)
       end
 
       private
 
+      def fingerprints_that_do_not_need_to_be_uploaded(manifest_yaml)
+        manifest_fingerprints = manifest_yaml['compiled_packages'].map { |package| package['fingerprint'] }.compact
+
+        existing_packages =
+          Models::Package.join('compiled_packages', package_id: :id)
+            .select(Sequel.qualify('packages', 'name'),
+                    Sequel.qualify('packages', 'fingerprint'),
+                    Sequel.qualify('compiled_packages', 'dependency_key'),
+                    :stemcell_os,
+                    :stemcell_version)
+            .where(fingerprint: manifest_fingerprints).all
+
+        filtered_packages = filter_matching_packages(existing_packages, manifest_yaml)
+        filtered_packages.map(&:fingerprint).compact.uniq
+      end
+
       # dependencies & stemcell should also match
-      def filter_matching_packages(matching_packages, manifest)
-        compiled_release_manifest = CompiledRelease::Manifest.new(manifest)
-        filtered_packages = []
-        matching_packages.each do |package|
-          if compiled_release_manifest.has_matching_package(package.name, package[:stemcell_os], package[:stemcell_version], package[:dependency_key])
-            filtered_packages << package
-          end
-        end
+      def filter_matching_packages(existing_packages, manifest_yaml)
+        compiled_release_manifest = CompiledRelease::Manifest.new(manifest_yaml)
 
         # Remove packages that were not matched, but have identical fingerprints to ones that were matched
         # This step is needed to prevent the cli from filtering compiled packages that have a matching fingerprint already
         # but not the exact compiled package with an identical name too
-        unmatched_package_fingerprints = compiled_release_manifest.fingerprints_not_matching_packages(matching_packages)
-        filtered_packages.reject { |package| unmatched_package_fingerprints.include?(package.fingerprint) }
+        unmatched_package_fingerprints = fingerprints_not_matching_packages(existing_packages, compiled_release_manifest)
+
+        filtered_packages =
+          existing_packages.select do |package|
+            compiled_release_manifest.has_matching_package(package.name, package[:stemcell_os], package[:stemcell_version],
+                                                           package[:dependency_key]) &&
+              !unmatched_package_fingerprints.include?(package.fingerprint)
+          end
+
+        filtered_packages
+      end
+
+      def fingerprints_not_matching_packages(existing_packages, compiled_release_manifest)
+        missing_compiled_packages = compiled_release_manifest.compiled_packages.reject do |manifest_package|
+          existing_packages.any? do |package|
+            package[:name] == manifest_package['name'] &&
+              package[:fingerprint] == manifest_package['fingerprint']
+          end
+        end
+        missing_compiled_packages.map { |package| package['fingerprint'] }
       end
 
       def existing_release_version_dirty?(manifest)
