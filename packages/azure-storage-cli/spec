@@ -1,0 +1,4 @@
+---
+name: azure-storage-cli
+files:
+- azure-storage-cli/azure-storage-cli-*-linux-amd64
