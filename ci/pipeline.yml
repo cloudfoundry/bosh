@@ -1416,14 +1416,14 @@ resources:
   - name: nginx-release
     type: git
     source:
-      uri: https://github.com/bosh-packages/nginx-release.git
-      branch: master
+      branch: main
+      uri: https://github.com/cloudfoundry/bosh-package-nginx-release.git
 
   - name: ruby-release
     type: git
     source:
-      uri: https://github.com/bosh-packages/ruby-release
-      branch: master
+      uri: https://github.com/cloudfoundry/bosh-package-ruby-release.git
+      branch: main
 
   - name: integration-image
     type: docker-image
