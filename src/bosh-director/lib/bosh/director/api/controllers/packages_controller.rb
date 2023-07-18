@@ -3,81 +3,101 @@ require 'bosh/director/api/controllers/base_controller'
 module Bosh::Director
   module Api::Controllers
     class PackagesController < BaseController
-      post '/matches', :consumes => :yaml do
-        manifest = YAML.load(request.body.read, aliases: true)
+      post '/matches', consumes: :yaml do
+        manifest_hash = YAML.load(request.body.read, aliases: true)
 
-        unless manifest.is_a?(Hash) && manifest['packages'].is_a?(Array)
+        unless manifest_hash.is_a?(Hash) && manifest_hash['packages'].is_a?(Array)
           raise BadManifest, "Manifest doesn't have a usable packages section"
         end
 
-        fingerprint_list = []
+        fingerprints =
+          if existing_release_version_dirty?(manifest_hash)
+            []
+          else
+            fingerprint_list = manifest_hash['packages'].map { |package| package['fingerprint'] }.compact
+            Models::Package.where(fingerprint: fingerprint_list)
+              .where(Sequel.~(sha1: nil))
+              .where(Sequel.~(blobstore_id: nil)).all
+              .map(&:fingerprint).compact.uniq
+          end
 
-        manifest['packages'].each do |package|
-          fingerprint_list << package['fingerprint'] if package['fingerprint']
-        end
-
-        matching_packages = []
-
-        unless existing_release_version_dirty?(manifest)
-          matching_packages = Models::Package.where(fingerprint: fingerprint_list)
-                                             .where(Sequel.~(sha1: nil))
-                                             .where(Sequel.~(blobstore_id: nil)).all
-        end
-
-        json_encode(matching_packages.map(&:fingerprint).compact.uniq)
+        json_encode(fingerprints)
       end
 
-      post '/matches_compiled', :consumes => :yaml do
-        manifest = YAML.load(request.body.read, aliases: true)
+      post '/matches_compiled', consumes: :yaml do
+        manifest_hash = YAML.load(request.body.read, aliases: true)
 
-        unless manifest.is_a?(Hash) && manifest['compiled_packages'].is_a?(Array)
+        unless manifest_hash.is_a?(Hash) && manifest_hash['compiled_packages'].is_a?(Array)
           raise BadManifest, "Manifest doesn't have a usable packages section"
         end
 
-        fingerprint_list = []
-        manifest['compiled_packages'].each do |package|
-          fingerprint_list << package['fingerprint'] if package['fingerprint']
-        end
+        fingerprints =
+          if existing_release_version_dirty?(manifest_hash)
+            []
+          else
+            compiled_package_fingerprints_not_to_be_uploaded(manifest_hash)
+          end
 
-        matching_packages = []
-
-        unless existing_release_version_dirty?(manifest)
-          matching_packages = Models::Package.join('compiled_packages', package_id: :id)
-                                             .select(Sequel.qualify('packages', 'name'),
-                                                     Sequel.qualify('packages', 'fingerprint'),
-                                                     Sequel.qualify('compiled_packages', 'dependency_key'),
-                                                     :stemcell_os,
-                                                     :stemcell_version)
-                                             .where(fingerprint: fingerprint_list).all
-
-          matching_packages = filter_matching_packages(matching_packages, manifest)
-        end
-
-        json_encode(matching_packages.map(&:fingerprint).compact.uniq)
+        json_encode(fingerprints)
       end
 
       private
 
-      # dependencies & stemcell should also match
-      def filter_matching_packages(matching_packages, manifest)
-        compiled_release_manifest = CompiledRelease::Manifest.new(manifest)
-        filtered_packages = []
-        matching_packages.each do |package|
-          if compiled_release_manifest.has_matching_package(package.name, package[:stemcell_os], package[:stemcell_version], package[:dependency_key])
-            filtered_packages << package
-          end
-        end
+      def compiled_package_fingerprints_not_to_be_uploaded(manifest_hash)
+        compiled_release_manifest = CompiledRelease::Manifest.new(manifest_hash)
+
+        existing_package_hashes = get_existing_package_hashes(compiled_release_manifest)
+        compiled_package_hashes = get_compiled_package_hashes(compiled_release_manifest)
 
         # Remove packages that were not matched, but have identical fingerprints to ones that were matched
         # This step is needed to prevent the cli from filtering compiled packages that have a matching fingerprint already
         # but not the exact compiled package with an identical name too
-        unmatched_package_fingerprints = compiled_release_manifest.fingerprints_not_matching_packages(matching_packages)
-        filtered_packages.reject { |package| unmatched_package_fingerprints.include?(package.fingerprint) }
+        package_hashes_that_need_upload = compiled_package_hashes - existing_package_hashes
+
+        package_hashes_that_are_already_uploaded = existing_package_hashes & compiled_package_hashes
+
+        fingerprints_that_need_upload = package_hashes_that_need_upload.map { |h| h[:fingerprint] }.compact.uniq
+        fingerprints_that_are_already_uploaded = package_hashes_that_are_already_uploaded.map { |h| h[:fingerprint] }.compact.uniq
+
+        fingerprints_that_are_already_uploaded - fingerprints_that_need_upload
       end
 
-      def existing_release_version_dirty?(manifest)
-        release = Models::Release.first(name: manifest['name'])
-        release_version = Models::ReleaseVersion.first(release_id: release&.id, version: manifest['version'])
+      def get_existing_package_hashes(compiled_release_manifest)
+        manifest_fingerprints = compiled_release_manifest.compiled_packages.map { |package| package['fingerprint'] }.compact
+
+        existing_packages =
+          Models::Package.join('compiled_packages', package_id: :id)
+            .select(Sequel.qualify('packages', 'name'),
+                    Sequel.qualify('packages', 'fingerprint'),
+                    Sequel.qualify('compiled_packages', 'dependency_key'),
+                    :stemcell_os,
+                    :stemcell_version)
+            .where(fingerprint: manifest_fingerprints).all
+
+        existing_packages.map do |package|
+          {
+            name: package.name,
+            fingerprint: package[:fingerprint],
+            stemcell: "#{package[:stemcell_os]}/#{package[:stemcell_version]}",
+            dependency_key: package[:dependency_key],
+          }
+        end
+      end
+
+      def get_compiled_package_hashes(compiled_release_manifest)
+        compiled_release_manifest.compiled_packages.map do |package|
+          {
+            name: package['name'],
+            fingerprint: package['fingerprint'],
+            stemcell: package['stemcell'],
+            dependency_key: compiled_release_manifest.dependency_key(package['name']),
+          }
+        end
+      end
+
+      def existing_release_version_dirty?(manifest_hash)
+        release = Models::Release.first(name: manifest_hash['name'])
+        release_version = Models::ReleaseVersion.first(release_id: release&.id, version: manifest_hash['version'])
 
         release_version && !release_version.update_completed
       end

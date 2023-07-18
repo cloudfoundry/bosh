@@ -343,6 +343,40 @@ module Bosh::Director
             expect(JSON.parse(last_response.body)).to eq(%w[fake-pkg4-fingerprint])
           end
 
+          context 'when there is an existing compiled package for a different stemcell' do
+            before do
+              renamed = Models::Package.make(
+                release: release,
+                name: 'renamed-fake-pkg1',
+                version: 'fake-pkg1-version',
+                sha1: 'fakepkg1sha',
+                fingerprint: 'fake-pkg1-fingerprint',
+              )
+
+              Models::CompiledPackage.make(
+                package_id: renamed.id,
+                blobstore_id: 'cpkg1_blobstore_id',
+                sha1: 'cpkg1sha1',
+                stemcell_os: 'ubuntu-trusty',
+                stemcell_version: '2999',
+                dependency_key: '[["fake-pkg2","fake-pkg2-version"],["fake-pkg3","fake-pkg3-version"]]',
+              )
+            end
+
+            it 'does not return the fingerprint for that package to ensure the CLI uploads it' do
+              params_compiled = {'compiled_packages' => [
+                { 'name' => 'fake-pkg1', 'version' => 'fake-pkg1-version', 'fingerprint' => 'fake-pkg1-fingerprint', 'stemcell' => 'ubuntu-trusty/3000','dependencies' => ['fake-pkg2', 'fake-pkg3'] },
+                { 'name' => 'fake-pkg2', 'version' => 'fake-pkg2-version', 'fingerprint' => 'fake-pkg2-fingerprint', 'stemcell' => 'ubuntu-trusty/3000','dependencies' => [] },
+                { 'name' => 'fake-pkg3', 'version' => 'fake-pkg3-version', 'fingerprint' => 'fake-pkg3-fingerprint', 'stemcell' => 'ubuntu-trusty/3000','dependencies' => [] },
+                { 'name' => 'renamed-fake-pkg1', 'version' => 'fake-pkg1-version', 'fingerprint' => 'fake-pkg1-fingerprint', 'stemcell' => 'ubuntu-trusty/3000','dependencies' => ['fake-pkg2', 'fake-pkg3'] },
+                { 'name' => 'fake-pkg4', 'version' => 'fake-pkg4-version', 'fingerprint' => 'fake-pkg4-fingerprint', 'stemcell' => 'ubuntu-trusty/3000','dependencies' => ['fake-pkg1'] },
+              ]}
+              perform_matches_compiled(params_compiled)
+              expect(last_response.status).to eq(200)
+              expect(JSON.parse(last_response.body)).to eq(%w[fake-pkg4-fingerprint])
+            end
+          end
+
           context 'when release-version is dirty due to failed relea`se upload' do
             before do
               release_version.update_completed = false
