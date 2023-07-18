@@ -71,28 +71,6 @@ module Bosh::Director
         end
       end
 
-      describe 'fingerprints_not_matching_packages' do
-        let(:packages) do
-          [
-            {
-              name: 'fake-pkg1',
-              fingerprint: 'fake-pkg1-fingerprint'
-            },
-            {
-              name: 'fake-pkg2',
-              fingerprint: 'fake-pkg2-fingerprint'
-            },
-            {
-              name: 'fake-pkg3',
-              fingerprint: 'fake-pkg3-fingerprint'
-            },
-          ]
-        end
-
-        it 'returns fingerprints from the manifest that do not match the name and fingerprint of provided packages' do
-          expect(compiled_release_manifest.fingerprints_not_matching_packages(packages)).to eq(['fake-pkg1-fingerprint'])
-        end
-      end
     end
   end
 end
