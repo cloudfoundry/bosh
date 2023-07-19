@@ -21,7 +21,7 @@ module Bosh::Director
         actual_delayed_job_scheduled_task_ids = []
         Delayed::Worker.backend = :sequel
         Delayed::Job.all.select do |job|
-          actual_delayed_job_scheduled_task_ids << YAML.safe_load(job.handler)['task_id']
+          actual_delayed_job_scheduled_task_ids << job.payload_object.task_id
         end
 
         errored_tasks = []

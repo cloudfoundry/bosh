@@ -20,8 +20,8 @@ module Bosh::Director
     context 'orphaned tasks exists' do
       let(:five_minutes_ago) { 5.minutes.ago }
       let!(:delayed_jobs) do
-        Delayed::Job.insert(id: 4, handler: '{task_id: 4}')
-        Delayed::Job.insert(id: 8, handler: '{task_id: 8}')
+        Delayed::Job.enqueue Bosh::Director::Jobs::DBJob.new(Bosh::Director::Jobs::VmState, 4, {})
+        Delayed::Job.enqueue Bosh::Director::Jobs::DBJob.new(Bosh::Director::Jobs::VmState, 8, {})
       end
       let!(:tasks) do
         Models::Task.make(id: 4, type: 'vms', state: 'processing')
@@ -55,10 +55,10 @@ module Bosh::Director
     end
     context 'there are task counts beyond max_tasks' do
       let!(:delayed_jobs) do
-        Delayed::Job.insert(id: 4, handler: '{task_id: 4}')
-        Delayed::Job.insert(id: 8, handler: '{task_id: 8}')
-        Delayed::Job.insert(id: 9, handler: '{task_id: 9}')
-        Delayed::Job.insert(id: 10, handler: '{task_id: 10}')
+        Delayed::Job.enqueue Bosh::Director::Jobs::DBJob.new(Bosh::Director::Jobs::VmState, 4, {})
+        Delayed::Job.enqueue Bosh::Director::Jobs::DBJob.new(Bosh::Director::Jobs::VmState, 8, {})
+        Delayed::Job.enqueue Bosh::Director::Jobs::DBJob.new(Bosh::Director::Jobs::VmState, 9, {})
+        Delayed::Job.enqueue Bosh::Director::Jobs::DBJob.new(Bosh::Director::Jobs::VmState, 10, {})
       end
       let!(:tasks) do
         Models::Task.make(id: 1, type: 'vms', state: 'done')
