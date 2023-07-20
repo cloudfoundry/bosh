@@ -43,7 +43,7 @@ group :development, :test do
 
   gem 'fakefs'
   gem 'parallel_tests', '~> 2.0'
-  gem 'rack-test', '>= 0.6.3'
+  gem 'rack-test'
   gem 'sinatra', '>= 2.2.0'
   gem 'sinatra-contrib', '>= 2.2.0'
   gem 'webmock'
