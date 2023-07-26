@@ -121,11 +121,11 @@ resource "aws_security_group" "allow_all" {
 }
 
 resource "aws_eip" "director" {
-  vpc = true
+  domain = "vpc"
 }
 
 resource "aws_eip" "deployment" {
-  vpc = true
+  domain = "vpc"
 }
 
 # Create a new load balancer
