@@ -52,8 +52,7 @@ module Bosh::Blobstore
     # @param [File] file file to store in az storage account
     def create_file(object_id, file)
       object_id ||= generate_object_id
-      # in Ruby 1.8 File doesn't respond to :path
-      path = file.respond_to?(:path) ? file.path : file
+      path = file.path
 
       store_in_azure_storage(path, full_oid_path(object_id))
 
