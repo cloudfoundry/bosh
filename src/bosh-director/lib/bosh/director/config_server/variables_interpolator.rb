@@ -49,8 +49,8 @@ module Bosh::Director::ConfigServer
       @config_server_client.interpolate_with_versioning(raw_hash, variable_set, options)
     end
 
-    def generate_values(variables, deployment_name, converge_variables = false, use_link_dns_names = false)
-      @config_server_client.generate_values(variables, deployment_name, converge_variables, use_link_dns_names)
+    def generate_values(variables, deployment_name, converge_variables = false, use_link_dns_names = false, stemcell_change = false)
+      @config_server_client.generate_values(variables, deployment_name, converge_variables, use_link_dns_names, stemcell_change)
     end
 
     def interpolated_versioned_variables_changed?(previous_raw_hash, next_raw_hash, previous_variable_set, target_variable_set)

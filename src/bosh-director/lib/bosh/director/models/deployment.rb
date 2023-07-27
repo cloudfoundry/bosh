@@ -104,6 +104,10 @@ module Bosh::Director::Models
       variable_sets_dataset.order(Sequel.desc(:created_at)).limit(1).first
     end
 
+    def previous_variable_set
+      variable_sets_dataset.order(Sequel.desc(:created_at)).limit(2, 1).first
+    end
+
     def last_successful_variable_set
       variable_sets_dataset.where(deployed_successfully: true).order(Sequel.desc(:created_at)).limit(1).first
     end

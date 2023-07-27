@@ -1330,6 +1330,10 @@ module Bosh::Director::ConfigServer
     end
 
     describe '#generate_values' do
+      let(:converge_variables) { false }
+      let(:use_link_dns_names) { false }
+      let(:stemcell_change) { false }
+
       context 'when given a variables object' do
         context 'when some variable names syntax are NOT correct' do
           let(:variable_specs_list) do
@@ -1508,7 +1512,7 @@ module Bosh::Director::ConfigServer
             expect(event1.task).to eq(task_id.to_s)
             expect(event1.deployment).to eq(deployment_name)
             expect(event1.instance).to eq(nil)
-            expect(event1.context).to eq('id' => 1, 'name' => '/smurf_director_name/deployment_name/placeholder_a')
+            expect(event1.context).to eq('update_strategy' => 'on-deploy', 'latest_version' => true, 'id' => 1, 'name' => '/smurf_director_name/deployment_name/placeholder_a')
 
             event2 = Bosh::Director::Models::Event.order(:id).all[1]
             expect(event2.user).to eq('user')
@@ -1518,7 +1522,7 @@ module Bosh::Director::ConfigServer
             expect(event2.task).to eq(task_id.to_s)
             expect(event2.deployment).to eq(deployment_name)
             expect(event2.instance).to eq(nil)
-            expect(event2.context).to eq('id' => 2, 'name' => '/smurf_director_name/deployment_name/placeholder_b')
+            expect(event2.context).to eq('update_strategy' => 'on-deploy', 'latest_version' => true, 'id' => 2, 'name' => '/smurf_director_name/deployment_name/placeholder_b')
 
             event3 = Bosh::Director::Models::Event.order(:id).all[2]
             expect(event3.user).to eq('user')
@@ -1528,7 +1532,7 @@ module Bosh::Director::ConfigServer
             expect(event3.task).to eq(task_id.to_s)
             expect(event3.deployment).to eq(deployment_name)
             expect(event3.instance).to eq(nil)
-            expect(event3.context).to eq('id' => 3, 'name' => '/placeholder_c')
+            expect(event3.context).to eq('update_strategy' => 'on-deploy', 'latest_version' => true, 'id' => 3, 'name' => '/placeholder_c')
 
             event4 = Bosh::Director::Models::Event.order(:id).all[3]
             expect(event4.user).to eq('user')
@@ -1538,7 +1542,7 @@ module Bosh::Director::ConfigServer
             expect(event4.task).to eq(task_id.to_s)
             expect(event4.deployment).to eq(deployment_name)
             expect(event4.instance).to eq(nil)
-            expect(event4.context).to eq('id' => 4, 'name' => '/smurf_director_name/deployment_name/cred-with-update-mode')
+            expect(event4.context).to eq('update_strategy' => 'on-deploy', 'latest_version' => true, 'id' => 4, 'name' => '/smurf_director_name/deployment_name/cred-with-update-mode')
           end
 
           context 'when variable options contains a CA key' do
@@ -2017,6 +2021,7 @@ module Bosh::Director::ConfigServer
           end
 
           context 'when converge_variables is true' do
+            let(:converge_variables) { true }
             let(:variables_spec) do
               [
                 {
@@ -2061,11 +2066,12 @@ module Bosh::Director::ConfigServer
                   }.to_json,
                 ),
               )
-              client.generate_values(variables_obj, deployment_name, true)
+              client.generate_values(variables_obj, deployment_name, converge_variables)
             end
           end
 
           context 'when use_link_dns_names is set to true' do
+            let(:use_link_dns_names) { true }
             let(:variables_spec) do
               [
                 {
@@ -2166,7 +2172,204 @@ module Bosh::Director::ConfigServer
                 ),
               )
 
-              client.generate_values(variables_obj, deployment_name, false, true)
+              client.generate_values(variables_obj, deployment_name, converge_variables, use_link_dns_names)
+            end
+          end
+
+          context 'stemcell_change' do
+            let(:variables_spec) do
+              [
+                { 'name' => 'placeholder_a', 'type' => 'password' },
+                { 'name' => 'placeholder_b', 'type' => 'password', 'update' => { 'strategy' => 'on-stemcell-change' } },
+              ]
+            end
+            let(:previous_variable_set) do
+              Bosh::Director::Models::VariableSet.make(
+                deployment: deployment_model,
+                deployed_successfully: false,
+                writable: false,
+                created_at: 2.days.ago,
+              )
+            end
+            let!(:on_stemcell_change_variable) do
+              Bosh::Director::Models::Variable.make(
+                variable_id: 'some_id99',
+                variable_name: '/smurf_director_name/deployment_name/placeholder_b',
+                variable_set: previous_variable_set,
+              )
+            end
+
+            before do
+              expect(http_client).to receive(:post).with(
+                { 'name' => prepend_namespace('placeholder_a'),
+                  'type' => 'password',
+                  'parameters' => {},
+                  'mode' => 'no-overwrite', }
+              ).ordered.and_return(
+                generate_success_response(
+                  {
+                    "id": 'some_id1',
+                    "name": '/smurf_director_name/deployment_name/placeholder_a',
+                    "value": 'abc',
+                  }.to_json,
+                  ),
+                )
+            end
+
+            context 'stemcell_change is set to false' do
+              it 'only affects variables with on-stemcell-change update strategy' do
+                expect(http_client).not_to receive(:post).with(
+                  { 'name' => prepend_namespace('placeholder_b'),
+                    'type' => 'password',
+                    'parameters' => {},
+                    'mode' => 'no-overwrite', }
+                ).ordered
+
+                client.generate_values(variables_obj, deployment_name, converge_variables, use_link_dns_names, stemcell_change)
+              end
+
+              it 'references the value from the previous variable set' do
+                expect(Bosh::Director::Models::Variable[variable_id: 'some_id99', variable_name: prepend_namespace('placeholder_b'), variable_set_id: variables_set_id]).to be_nil
+
+                client.generate_values(variables_obj, deployment_name, converge_variables, use_link_dns_names, stemcell_change)
+
+                expect(Bosh::Director::Models::Variable[variable_id: 'some_id99', variable_name: prepend_namespace('placeholder_b'), variable_set_id: variables_set_id]).to_not be_nil
+              end
+
+              context 'when there is no previous_variable_set' do
+                before do
+                  previous_variable_set.delete
+                end
+
+                it 'creates a new variable' do
+                  expect(http_client).to receive(:post).with(
+                    { 'name' => prepend_namespace('placeholder_b'),
+                      'type' => 'password',
+                      'parameters' => {},
+                      'mode' => 'no-overwrite', }
+                  ).ordered.and_return(
+                    generate_success_response(
+                      {
+                        "id": 'some_id2',
+                      }.to_json,
+                      ),
+                    )
+
+                  client.generate_values(variables_obj, deployment_name, converge_variables, use_link_dns_names, stemcell_change)
+                end
+              end
+
+              context "when the previous version of the variable is not found even though there's been a previous deploy" do
+                it 'creates a new variable' do
+                  on_stemcell_change_variable.delete
+                  expect(http_client).to receive(:post).with(
+                    { 'name' => prepend_namespace('placeholder_b'),
+                      'type' => 'password',
+                      'parameters' => {},
+                      'mode' => 'no-overwrite', }
+                  ).ordered.and_return(
+                    generate_success_response(
+                      {
+                        "id": 'some_id2',
+                      }.to_json,
+                      ),
+                    )
+                  client.generate_values(variables_obj, deployment_name, converge_variables, use_link_dns_names, stemcell_change)
+                end
+              end
+
+              context 'handles unique constraint violation when saving variable' do
+                let(:variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
+
+                before do
+                  allow_any_instance_of(Bosh::Director::Models::Deployment).to receive(:current_variable_set).and_return(variable_set)
+                  allow(variable_set).to receive(:add_variable)
+                    .with(
+                      variable_name: '/smurf_director_name/deployment_name/placeholder_a',
+                      variable_id: 'some_id1',
+                    )
+                  allow(variable_set).to receive(:add_variable)
+                    .with(
+                      variable_name: '/smurf_director_name/deployment_name/placeholder_b',
+                      variable_id: 'some_id99',
+                    )
+                    .and_raise(Sequel::UniqueConstraintViolation.new)
+                  allow(variable_set).to receive(:id).and_return('my_id')
+                  allow(variable_set).to receive(:writable).and_return(true)
+                end
+
+                it 'should catch the exception, log a debug message, and interpolates as correctly' do
+                  expect(logger).to receive(:debug).with("variable '/smurf_director_name/deployment_name/placeholder_b' was already added to set 'my_id'")
+                  expect do
+                    client.generate_values(variables_obj, deployment_name, converge_variables, use_link_dns_names, stemcell_change)
+                  end.to_not raise_error
+                end
+              end
+
+              it 'adds an event showing when this strategy is being used' do
+                expect do
+                  client.generate_values(variables_obj, deployment_name, converge_variables, use_link_dns_names, stemcell_change)
+                end.to change { Bosh::Director::Models::Event.count }.from(0).to(2)
+
+                event1 = Bosh::Director::Models::Event.order(:id).first
+                expect(event1.user).to eq('user')
+                expect(event1.action).to eq('create')
+                expect(event1.object_type).to eq('variable')
+                expect(event1.object_name).to eq('/smurf_director_name/deployment_name/placeholder_a')
+                expect(event1.task).to eq(task_id.to_s)
+                expect(event1.deployment).to eq(deployment_name)
+                expect(event1.instance).to eq(nil)
+                expect(event1.context).to eq('update_strategy' => 'on-deploy', 'latest_version' => true, 'id' => 'some_id1', 'name' => '/smurf_director_name/deployment_name/placeholder_a')
+
+                event2 = Bosh::Director::Models::Event.order(:id).all[1]
+                expect(event2.user).to eq('user')
+                expect(event2.action).to eq('create')
+                expect(event2.object_type).to eq('variable')
+                expect(event2.object_name).to eq('/smurf_director_name/deployment_name/placeholder_b')
+                expect(event2.task).to eq(task_id.to_s)
+                expect(event2.deployment).to eq(deployment_name)
+                expect(event2.instance).to eq(nil)
+                expect(event2.context).to eq('update_strategy' => 'on-stemcell-change', 'latest_version' => false, 'id' => 'some_id99', 'name' => '/smurf_director_name/deployment_name/placeholder_b')
+              end
+            end
+
+            context 'stemcell_change is set to true' do
+              let(:stemcell_change) { true }
+
+              before do
+                expect(http_client).to receive(:post).with(
+                  { 'name' => prepend_namespace('placeholder_b'),
+                    'type' => 'password',
+                    'parameters' => {},
+                    'mode' => 'no-overwrite', }
+                ).ordered.and_return(
+                  generate_success_response(
+                    {
+                      "id": 'some_id2',
+                    }.to_json,
+                  ),
+                )
+              end
+
+              it 'generates a new version of the variables with on-stemcell-change update strategy' do
+                client.generate_values(variables_obj, deployment_name, converge_variables, use_link_dns_names, stemcell_change)
+              end
+
+              it 'adds an event showing when this strategy is being used and that the version is latest' do
+                expect do
+                  client.generate_values(variables_obj, deployment_name, converge_variables, use_link_dns_names, stemcell_change)
+                end.to change { Bosh::Director::Models::Event.count }.from(0).to(2)
+
+                event2 = Bosh::Director::Models::Event.order(:id).all[1]
+                expect(event2.user).to eq('user')
+                expect(event2.action).to eq('create')
+                expect(event2.object_type).to eq('variable')
+                expect(event2.object_name).to eq('/smurf_director_name/deployment_name/placeholder_b')
+                expect(event2.task).to eq(task_id.to_s)
+                expect(event2.deployment).to eq(deployment_name)
+                expect(event2.instance).to eq(nil)
+                expect(event2.context).to eq('update_strategy' => 'on-stemcell-change', 'latest_version' => true, 'id' => 'some_id2', 'name' => '/smurf_director_name/deployment_name/placeholder_b')
+              end
             end
           end
         end

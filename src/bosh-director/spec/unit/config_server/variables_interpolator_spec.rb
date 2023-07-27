@@ -663,4 +663,26 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
       end
     end
   end
+
+  describe '#generate_values' do
+    let(:variables) { double(:variables) }
+
+    it 'passes through arguments to the config server client' do
+      allow(config_server_client).to receive(:generate_values).with(
+        variables,
+        "deployment-name",
+        true,
+        true,
+        true,
+        )
+
+      subject.generate_values(
+        variables,
+        "deployment-name",
+        true,
+        true,
+        true,
+        )
+    end
+  end
 end

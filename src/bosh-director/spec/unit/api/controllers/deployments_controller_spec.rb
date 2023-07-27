@@ -421,6 +421,17 @@ module Bosh::Director
               post '/', spec_asset('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
             end
           end
+
+          context 'with the "force_latest_variables" param which is needed because their BOSH DNS certs expire tomorrow and there is no new stemcell to trigger a cert rotation' do
+            it 'passes the parameter' do
+              expect_any_instance_of(DeploymentManager)
+                .to receive(:create_deployment)
+                      .with(anything(), anything(), anything(), anything(), anything(), hash_including('force_latest_variables' => true), anything())
+                      .and_return(OpenStruct.new(:id => 1))
+              post '/?force_latest_variables=true', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+              expect(last_response).to be_redirect
+            end
+          end
         end
 
         describe 'deleting deployment' do

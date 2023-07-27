@@ -32,6 +32,7 @@ module Bosh::Director
       let(:minimal_manifest) { Bosh::Spec::Deployments.minimal_manifest }
 
       its(:model) { deployment_model }
+
       describe 'with valid options' do
         let(:stemcell_model) { Bosh::Director::Models::Stemcell.create(name: 'default', version: '1', cid: 'abc') }
         let(:vm_type) { VmType.new('name' => 'vm_type') }

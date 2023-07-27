@@ -416,6 +416,7 @@ module Bosh::Director
         options['canaries'] = params[:canaries] if params['canaries']
         options['max_in_flight'] = params[:max_in_flight] if params['max_in_flight']
         options['scopes'] = token_scopes
+        options['force_latest_variables'] = true if params['force_latest_variables'] == 'true'
 
         # since authorizer does not look at manifest payload for deployment name
         @deployment = Models::Deployment[name: deployment_name]

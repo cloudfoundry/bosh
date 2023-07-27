@@ -342,7 +342,7 @@ module Bosh::Director
             end
 
             it 'generates the values through config server' do
-              expect(variables_interpolator).to receive(:generate_values).with(variables, 'simple', false, false)
+              expect(variables_interpolator).to receive(:generate_values).with(variables, 'simple', false, false, false)
               assembler.bind_models(is_deploy_action: true)
             end
 
@@ -350,7 +350,7 @@ module Bosh::Director
               let(:converge_variables) { true }
 
               it 'should generate the values through config server' do
-                expect(variables_interpolator).to receive(:generate_values).with(variables, 'simple', true, false)
+                expect(variables_interpolator).to receive(:generate_values).with(variables, 'simple', true, false, false)
                 assembler.bind_models(is_deploy_action: true)
               end
             end
@@ -359,7 +359,19 @@ module Bosh::Director
               let(:use_link_dns_names) { true }
 
               it 'should generate the values through config server' do
-                expect(variables_interpolator).to receive(:generate_values).with(variables, 'simple', false, true)
+                expect(variables_interpolator).to receive(:generate_values).with(variables, 'simple', false, true, false)
+                assembler.bind_models(is_deploy_action: true)
+              end
+            end
+
+            context 'stemcell change' do
+              it 'passes through the :stemcell_change value' do
+                expect(variables_interpolator).to receive(:generate_values).with(variables, 'simple', false, false, true)
+                assembler.bind_models(is_deploy_action: true, stemcell_change: true)
+              end
+
+              it 'defaults :stemcell_change to false' do
+                expect(variables_interpolator).to receive(:generate_values).with(variables, 'simple', false, false, false)
                 assembler.bind_models(is_deploy_action: true)
               end
             end

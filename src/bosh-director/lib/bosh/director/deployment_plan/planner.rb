@@ -26,7 +26,6 @@ module Bosh::Director
       #   Default job update configuration
       attr_accessor :update
 
-      # @return [Array<Bosh::Director::DeploymentPlan::Job>]
       #   All instance_groups in the deployment
       attr_reader :instance_groups
 
