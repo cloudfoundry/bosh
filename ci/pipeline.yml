@@ -1206,7 +1206,7 @@ resources:
     type: s3
     source:
       regexp: davcli-(.*)-linux-amd64
-      bucket: davcli
+      bucket: bosh-davcli-artifacts
 
   - name: bosh-blobstore-gcs
     type: s3
