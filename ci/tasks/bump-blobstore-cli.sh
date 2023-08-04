@@ -8,6 +8,8 @@ gcs)
   cli_name="bosh-gcscli";;
 s3)
   cli_name="s3cli";;
+azure-storage)
+  cli_name="azure-storage-cli";;
 *)
   echo "Error: unknown BLOBSTORE_TYPE='${BLOBSTORE_TYPE}'; exiting"
   exit 1;;

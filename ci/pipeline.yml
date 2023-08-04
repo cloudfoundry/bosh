@@ -968,6 +968,8 @@ jobs:
         trigger: true
       - get: bosh-blobstore-s3
         trigger: true
+      - get: bosh-blobstore-azure-storage
+        trigger: true
       - get: verify-multidigest-cli
         trigger: true
       - get: nats-server-github-release
@@ -1107,6 +1109,22 @@ jobs:
             options:
               credentials_source: static
               json_key: '((bosh_release_blobs_gcp_credentials_json))'
+    - task: bump-bosh-blobstore-azure-storage
+      file: bosh-src/ci/tasks/bump-blobstore-cli.yml
+      input_mapping:
+        bosh-src: bosh-src-out
+        bosh-blobstore-cli: bosh-blobstore-azure-storage
+      output_mapping:
+        bosh-src: bosh-src-out
+      params:
+        BLOBSTORE_TYPE: azure-storage
+        GIT_USER_NAME: CI Bot
+        GIT_USER_EMAIL: cf-bosh-eng@pivotal.io
+        PRIVATE_YML: |
+          blobstore:
+            options:
+              credentials_source: static
+              json_key: '((bosh_release_blobs_gcp_credentials_json))'
     - task: bump-verify-multidigest-cli
       file: bosh-src/ci/tasks/bump-verify-multidigest-cli.yml
       input_mapping:
@@ -1219,6 +1237,12 @@ resources:
     source:
       regexp: s3cli-(.*)-linux-amd64
       bucket: bosh-s3cli-artifacts
+
+  - name: bosh-blobstore-azure-storage
+    type: s3
+    source:
+      regexp: azure-storage-cli-(.*)-linux-amd64
+      bucket: bosh-azure-storage-cli-artifacts
 
   - name: verify-multidigest-cli
     type: s3
