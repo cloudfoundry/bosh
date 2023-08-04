@@ -253,6 +253,12 @@ elsif p('blobstore.provider') == 'gcs'
   if_p('blobstore.encryption_key') do |encryption_key|
      blobstore_options['encryption_key'] = encryption_key
   end
+elsif p('blobstore.provider') == 'azure-storage'
+  blobstore_options = {
+    'account_name' => p('blobstore.account_name'),
+    'container_name' => p('blobstore.container_name'),
+    'account_key' => p('blobstore.account_key')
+  }
 else
   blobstore_options = {
     'endpoint' => "https://#{p('blobstore.address')}:#{p('blobstore.port')}",
@@ -288,6 +294,12 @@ if p('blobstore.provider') == "gcs"
    params['blobstore']['provider'] = "gcscli"
    params['blobstore']['options']['gcscli_config_path'] = "/var/vcap/data/director/tmp"
    params['blobstore']['options']['gcscli_path'] = "/var/vcap/packages/bosh-gcscli/bin/bosh-gcscli"
+end
+
+if p('blobstore.provider') == "azure-storage"
+   params['blobstore']['provider'] = "azurestoragecli"
+   params['blobstore']['options']['azure_storage_cli_config_path'] = "/var/vcap/data/director/tmp"
+   params['blobstore']['options']['azure_storage_cli_path'] = "/var/vcap/packages/azure-storage-cli/bin/azure-storage-cli"
 end
 
 if p('blobstore.provider') == "dav"

@@ -1,7 +1,7 @@
 module Bosh
   module Blobstore
     class Client
-      PROVIDER_NAMES = %w[local s3cli gcscli davcli]
+      PROVIDER_NAMES = %w[local s3cli gcscli davcli azurestoragecli]
 
       def self.create(blobstore_provider, options = {})
         unless PROVIDER_NAMES.include?(blobstore_provider)
