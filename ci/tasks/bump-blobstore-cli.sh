@@ -23,11 +23,15 @@ pushd bosh-src
   LATEST_BLOB_PATH=$(ls ../bosh-blobstore-cli/*cli*)
   LATEST_BLOB_KEY="${BLOB_PREFIX}/$( basename "${LATEST_BLOB_PATH}" )"
 
+  set +e
   EXISTING_BLOB_KEY=$(bosh blobs | cut -f1 | grep "${BLOB_PREFIX}" |  tr -d '[:space:]')
+  set -e
 
-   if [ "${EXISTING_BLOB_KEY}" != "${LATEST_BLOB_KEY}" ]; then
+  if [ "${EXISTING_BLOB_KEY}" != "${LATEST_BLOB_KEY}" ]; then
     bosh add-blob --sha2 "${LATEST_BLOB_PATH}" "${LATEST_BLOB_KEY}"
-    bosh remove-blob "${EXISTING_BLOB_KEY}"
+    if [ -n "${EXISTING_BLOB_KEY}" ]; then
+      bosh remove-blob "${EXISTING_BLOB_KEY}"
+    fi
     bosh upload-blobs
 
     git add .
