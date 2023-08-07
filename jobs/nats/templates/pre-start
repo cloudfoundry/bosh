@@ -7,7 +7,7 @@
   > /etc/sysctl.d/100-bosh-nats.conf
 
 if [ ! -f /var/vcap/data/nats/auth.json ]; then
-   echo "{}" > /var/vcap/data/nats/auth.json
+   echo "{"authorization": {"token": "f0oBar"}}" > /var/vcap/data/nats/auth.json
 fi
 
 chown vcap:vcap /var/vcap/data/nats/auth.json
