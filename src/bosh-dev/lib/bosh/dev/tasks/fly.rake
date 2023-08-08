@@ -5,18 +5,22 @@ namespace :fly do
   desc 'Fly unit specs'
   task :unit do
     execute('test-unit', '-p',
-            DB: (ENV['DB'] || 'postgresql'),
-            DB_VERSION: (ENV['DB_VERSION'] || '10'))
+      DB: ENV.fetch('DB', 'postgresql'),
+      DB_VERSION: ENV.fetch('DB_VERSION', '15'),
+      DB_TLS: ENV.fetch('DB_TLS', true))
   end
 
   # bundle exec rake fly:integration
   desc 'Fly integration specs'
   task :integration, [:cli_dir] do |_, args|
-    command_opts = '-p --inputs-from bosh/integration-db-tls-postgres'
+    command_opts = '-p --inputs-from bosh-director/integration-db-tls-postgres'
     command_opts += " -i bosh-cli=#{args[:cli_dir]}" if args[:cli_dir]
 
     execute('test-integration', command_opts,
-            DB: (ENV['DB'] || 'postgresql'), SPEC_PATH: (ENV['SPEC_PATH'] || nil))
+            DB: ENV.fetch('DB', 'postgresql'),
+            DB_VERSION: ENV.fetch('DB_VERSION', '15'),
+            DB_TLS: ENV.fetch('DB_TLS', true),
+            SPEC_PATH: ENV.fetch('SPEC_PATH', nil))
   end
 
   # bundle exec rake fly:run["pwd ; ls -al"]
@@ -28,7 +32,7 @@ namespace :fly do
   private
 
   def concourse_tag
-    tag = ENV.fetch('CONCOURSE_TAG', 'fly-integration')
+    tag = ENV.fetch('CONCOURSE_TAG', '')
     "--tag=#{tag}" unless tag.empty?
   end
 
