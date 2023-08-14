@@ -65,6 +65,7 @@ director_db = {
   'connection_options' => p('director.db.connection_options'),
   'tls' => {
     'enabled' => p('director.db.tls.enabled', false),
+    'skip_host_verify' => p('director.db.tls.skip_host_verify', false),
     'cert' => {
       'ca' => '/var/vcap/jobs/director/config/db/ca.pem',
       'certificate' => '/var/vcap/jobs/director/config/db/client_certificate.pem',

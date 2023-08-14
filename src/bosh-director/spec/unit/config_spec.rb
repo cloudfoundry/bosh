@@ -967,6 +967,45 @@ describe Bosh::Director::Config do
             end
           end
         end
+
+        context 'when skip_host_verify is enabled' do
+          it_behaves_like 'db connects with custom parameters' do
+            let(:config) do
+              {
+                'adapter' => 'postgres',
+                'host' => '127.0.0.1',
+                'port' => 5432,
+                'tls' => {
+                  'enabled' => true,
+                  'cert' => {
+                    'ca' => '/path/to/root/ca',
+                    'certificate' => '/path/to/client/certificate',
+                    'private_key' => '/path/to/client/private_key',
+                  },
+                  'skip_host_verify' => true,
+                  'bosh_internal' => {
+                    'ca_provided' => true,
+                    'mutual_tls_enabled' => true,
+                  },
+                },
+              }
+            end
+
+            let(:connection_parameters) do
+              {
+                'adapter' => 'postgres',
+                'host' => '127.0.0.1',
+                'port' => 5432,
+                'sslmode' => 'verify-ca',
+                'sslrootcert' => '/path/to/root/ca',
+                'driver_options' => {
+                  'sslcert' =>  '/path/to/client/certificate',
+                  'sslkey' => '/path/to/client/private_key',
+                },
+              }
+            end
+          end
+        end
       end
 
       context 'mysql2' do
@@ -1105,6 +1144,44 @@ describe Bosh::Director::Config do
                 'host' => '127.0.0.1',
                 'port' => 3306,
                 'ssl_mode' => 'verify_identity',
+                'sslca' => '/path/to/root/ca',
+                'sslverify' => true,
+                'sslcert' =>  '/path/to/client/certificate',
+                'sslkey' => '/path/to/client/private_key',
+              }
+            end
+          end
+        end
+
+        context 'when skip_host_verify is enabled' do
+          it_behaves_like 'db connects with custom parameters' do
+            let(:config) do
+              {
+                'adapter' => 'mysql2',
+                'host' => '127.0.0.1',
+                'port' => 3306,
+                'tls' => {
+                  'enabled' => true,
+                  'skip_host_verify' => true,
+                  'cert' => {
+                    'ca' => '/path/to/root/ca',
+                    'certificate' => '/path/to/client/certificate',
+                    'private_key' => '/path/to/client/private_key',
+                  },
+                  'bosh_internal' => {
+                    'ca_provided' => true,
+                    'mutual_tls_enabled' => true,
+                  },
+                },
+              }
+            end
+
+            let(:connection_parameters) do
+              {
+                'adapter' => 'mysql2',
+                'host' => '127.0.0.1',
+                'port' => 3306,
+                'ssl_mode' => 'verify_ca',
                 'sslca' => '/path/to/root/ca',
                 'sslverify' => true,
                 'sslcert' =>  '/path/to/client/certificate',
