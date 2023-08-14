@@ -419,6 +419,36 @@ describe 'director.yml.erb' do
           end
         end
 
+        context 'when director.db.tls.skip_host_verify is true' do
+          before do
+            merged_manifest_properties['director']['db']['tls']['skip_host_verify'] = true
+          end
+
+          it 'configures enabled TLS for database property' do
+            expect(parsed_yaml['db']['tls']['skip_host_verify']).to be_truthy
+          end
+        end
+
+        context 'when director.db.tls.skip_host_verify is false' do
+          before do
+            merged_manifest_properties['director']['db']['tls']['skip_host_verify'] = false
+          end
+
+          it 'configures disables TLS for database property' do
+            expect(parsed_yaml['db']['tls']['skip_host_verify']).to be_falsey
+          end
+        end
+
+        context 'when director.db.tls.skip_host_verify is not defined' do
+          before do
+            merged_manifest_properties['director']['db']['tls'].delete('skip_host_verify')
+          end
+
+          it 'configures disables TLS for database property' do
+            expect(parsed_yaml['db']['tls']['skip_host_verify']).to be_falsey
+          end
+        end
+
         context 'when director.db.tls.cert.ca is provided' do
           it 'set bosh_internal ca_provided to true' do
             expect(parsed_yaml['db']['tls']['bosh_internal']['ca_provided']).to be_truthy

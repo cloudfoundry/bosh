@@ -326,14 +326,14 @@ module Bosh::Director
           case connection_config['adapter']
             when 'mysql2'
               # http://sequel.jeremyevans.net/rdoc/files/doc/opening_databases_rdoc.html#label-mysql+
-              connection_config['ssl_mode'] = 'verify_identity'
+              connection_config['ssl_mode'] = tls_options.fetch('skip_host_verify', false) ? 'verify_ca' : 'verify_identity'
               connection_config['sslverify'] = true
               connection_config['sslca'] = db_ca_path if db_ca_provided
               connection_config['sslcert'] = db_client_cert_path if mutual_tls_enabled
               connection_config['sslkey'] = db_client_private_key_path if mutual_tls_enabled
             when 'postgres'
               # http://sequel.jeremyevans.net/rdoc/files/doc/opening_databases_rdoc.html#label-postgres
-              connection_config['sslmode'] = 'verify-full'
+              connection_config['sslmode'] = tls_options.fetch('skip_host_verify', false) ? 'verify-ca' : 'verify-full'
               connection_config['sslrootcert'] = db_ca_path if db_ca_provided
 
               postgres_driver_options = {
