@@ -6,6 +6,9 @@ module Bosh::Director::ConfigServer
     GENERATION_MODE_CONVERGE = 'converge'.freeze
     GENERATION_MODE_NO_OVERWRITE = 'no-overwrite'.freeze
 
+    ON_DEPLOY_UPDATE_STRATEGY = 'on-deploy'.freeze
+    ON_STEMCELL_CHANGE_UPDATE_STRATEGY = 'on-stemcell-change'.freeze
+
     def initialize(http_client, director_name, logger)
       @config_server_http_client = http_client
       @director_name = director_name
@@ -86,29 +89,53 @@ module Bosh::Director::ConfigServer
 
     # @param [DeploymentPlan::Variables] variables Object representing variables passed by the user
     # @param [String] deployment_name
-    def generate_values(variables, deployment_name, converge_variables = false, use_link_dns_names = false)
+    def generate_values(variables, deployment_name, converge_variables = false, use_link_dns_names = false, stemcell_change = false)
       deployment_model = @deployment_lookup.by_name(deployment_name)
 
       variables.spec.map do |variable|
         ConfigServerHelper.validate_variable_name(variable['name'])
+        constructed_name = ConfigServerHelper.add_prefix_if_not_absolute(variable['name'], @director_name, deployment_name)
 
-        if variable['type'] == 'certificate'
-          has_ca = variable['options'] && variable['options']['ca']
-          generate_ca(variable, deployment_name) if has_ca
-          variable = generate_links(variable, deployment_model, use_link_dns_names)
+        strategy = variable.dig('update', 'strategy') || ON_DEPLOY_UPDATE_STRATEGY
+        use_latest_version =
+          strategy == ON_DEPLOY_UPDATE_STRATEGY ||
+          stemcell_change && strategy == ON_STEMCELL_CHANGE_UPDATE_STRATEGY ||
+          deployment_model.previous_variable_set&.find_variable_by_name(constructed_name).nil?
+
+        if use_latest_version
+          if variable['type'] == 'certificate'
+            has_ca = variable['options'] && variable['options']['ca']
+            generate_ca(variable, deployment_name) if has_ca
+            variable = generate_links(variable, deployment_model, use_link_dns_names)
+          end
+
+          generation_mode = variable['update_mode']
+          generation_mode ||= converge_variables ? GENERATION_MODE_CONVERGE : GENERATION_MODE_NO_OVERWRITE
+
+          variable_id = generate_latest_version_id(
+            constructed_name,
+            variable['type'],
+            deployment_name,
+            deployment_model.current_variable_set,
+            variable['options'],
+            generation_mode,
+          )
+        else
+          previous_variable_version = deployment_model.previous_variable_set.find_variable_by_name(constructed_name)
+          variable_id = previous_variable_version[:variable_id]
         end
 
-        generation_mode = variable['update_mode']
-        generation_mode ||= converge_variables ? GENERATION_MODE_CONVERGE : GENERATION_MODE_NO_OVERWRITE
+        begin
+          save_variable(get_name_root(constructed_name), deployment_model.current_variable_set, variable_id)
+        rescue Sequel::UniqueConstraintViolation
+          @logger.debug("variable '#{get_name_root(constructed_name)}' was already added to set '#{deployment_model.current_variable_set.id}'")
+        end
 
-        constructed_name = ConfigServerHelper.add_prefix_if_not_absolute(variable['name'], @director_name, deployment_name)
-        generate_value_and_record_event(
-          constructed_name,
-          variable['type'],
-          deployment_name,
-          deployment_model.current_variable_set,
-          variable['options'],
-          generation_mode,
+        add_event(
+          action: 'create',
+          deployment_name: deployment_name,
+          object_name: constructed_name,
+          context: { 'update_strategy' => strategy, 'latest_version' => use_latest_version, 'name' => constructed_name, 'id' => variable_id },
         )
 
         variable
@@ -395,25 +422,6 @@ module Bosh::Director::ConfigServer
       variable_set.add_variable(variable_name: name_root, variable_id: variable_id)
     end
 
-    def generate_and_save_value(name, type, variable_set, options, generation_mode)
-      unless variable_set.writable
-        raise Bosh::Director::ConfigServerGenerationError,
-              "Variable '#{get_name_root(name)}' cannot be generated. Variable generation allowed only during deploy action"
-      end
-
-      generated_variable = generate_value(name, type, options, generation_mode)
-
-      raise Bosh::Director::ConfigServerGenerationError, "Failed to version generated variable '#{name}'. Expected Config Server response to have key 'id'" unless generated_variable.key?('id')
-
-      begin
-        save_variable(get_name_root(name), variable_set, generated_variable['id'])
-      rescue Sequel::UniqueConstraintViolation
-        @logger.debug("variable '#{get_name_root(name)}' was already added to set '#{variable_set.id}'")
-      end
-
-      generated_variable
-    end
-
     def generate_value(name, type, options, mode)
       parameters = options.nil? ? {} : options
 
@@ -458,15 +466,17 @@ module Bosh::Director::ConfigServer
       )
     end
 
-    def generate_value_and_record_event(variable_name, variable_type, deployment_name, variable_set, options, generation_mode)
-      result = generate_and_save_value(variable_name, variable_type, variable_set, options, generation_mode)
-      add_event(
-        action: 'create',
-        deployment_name: deployment_name,
-        object_name: variable_name,
-        context: { 'name' => result['name'], 'id' => result['id'] },
-      )
-      result
+    def generate_latest_version_id(variable_name, variable_type, deployment_name, variable_set, options, generation_mode)
+      unless variable_set.writable
+        raise Bosh::Director::ConfigServerGenerationError,
+              "Variable '#{get_name_root(variable_name)}' cannot be generated. Variable generation allowed only during deploy action"
+      end
+
+      generated_variable = generate_value(variable_name, variable_type, options, generation_mode)
+
+      raise Bosh::Director::ConfigServerGenerationError, "Failed to version generated variable '#{variable_name}'. Expected Config Server response to have key 'id'" unless generated_variable.key?('id')
+
+      generated_variable['id']
     rescue Exception => e
       add_event(
         action: 'create',

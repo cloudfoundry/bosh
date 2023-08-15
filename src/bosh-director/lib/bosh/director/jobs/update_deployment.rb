@@ -91,9 +91,15 @@ module Bosh::Director
           # the DNS encoder having an updated index before bind_models is called
           dns_encoder # TODO(ja): unit test that new_encoder_with_updated_index is called before bind_models
 
+          existing_stemcells = current_deployment.stemcells.map { |s| { os: s.operating_system, version: s.version } }.uniq
+          plan_stemcells = deployment_plan.stemcells.values.map { |s| { os: s.os || s.name, version: s.version } }.uniq
+
+          all_stemcell_versions_changed = (existing_stemcells.intersection(plan_stemcells)).empty?
+
           DeploymentPlan::Assembler.create(deployment_plan, @variables_interpolator).bind_models(
             is_deploy_action: deploy_action?,
             should_bind_new_variable_set: deploy_action?,
+            stemcell_change: @options['force_latest_variables'] || all_stemcell_versions_changed
           )
         end
       end

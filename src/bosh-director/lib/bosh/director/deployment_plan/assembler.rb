@@ -25,6 +25,7 @@ module Bosh::Director
       should_bind_links = is_deploy_action && options.fetch(:should_bind_links, true)
       should_bind_properties = options.fetch(:should_bind_properties, true)
       should_bind_new_variable_set = options.fetch(:should_bind_new_variable_set, false)
+      stemcell_change = options.fetch(:stemcell_change, false)
       deployment_options = @deployment_plan.deployment_wide_options
       fix = deployment_options.fetch(:fix, false)
       tags = deployment_options.fetch(:tags, {})
@@ -100,7 +101,7 @@ module Bosh::Director
       bind_instance_networks
       bind_dns
       bind_links if should_bind_links
-      generate_variables if is_deploy_action
+      generate_variables(stemcell_change) if is_deploy_action
     end
 
     private
@@ -169,12 +170,13 @@ module Bosh::Director
       end
     end
 
-    def generate_variables
+    def generate_variables(stemcell_change)
       @variables_interpolator.generate_values(
         @deployment_plan.variables,
         @deployment_plan.name,
         @deployment_plan.features.converge_variables,
         @deployment_plan.features.use_link_dns_names,
+        stemcell_change,
       )
     end
 

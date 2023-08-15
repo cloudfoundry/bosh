@@ -1,4 +1,5 @@
 require_relative '../../spec_helper'
+require 'yaml'
 
 describe 'variable generation with config server', type: :integration do
   with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa')
@@ -74,8 +75,8 @@ describe 'variable generation with config server', type: :integration do
 
         expect(scrubbed_variables_events.size).to eq(2)
         expect(scrubbed_variables_events).to include(
-           {'id' => /[0-9]{1,3}/, 'time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'user' => 'test', 'action' => 'create', 'object_type' => 'variable', 'task_id' => /[0-9]{1,3}/, 'object_name' => '/TestDirector/simple/var_a', 'deployment' => 'simple', 'instance' => '', 'context' => /id: \"[0-9]{1,3}\"\nname: \/TestDirector\/simple\/var_a/, 'error' => ''},
-           {'id' => /[0-9]{1,3}/, 'time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'user' => 'test', 'action' => 'create', 'object_type' => 'variable', 'task_id' => /[0-9]{1,3}/, 'object_name' => '/var_b', 'deployment' => 'simple', 'instance' => '', 'context' => /id: \"[0-9]{1,3}\"\nname: \/var_b/, 'error' => ''},
+           {'id' => /[0-9]{1,3}/, 'time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'user' => 'test', 'action' => 'create', 'object_type' => 'variable', 'task_id' => /[0-9]{1,3}/, 'object_name' => '/TestDirector/simple/var_a', 'deployment' => 'simple', 'instance' => '', 'context' => /id: \"[0-9]{1,3}\"\nlatest_version: true\nname: \/TestDirector\/simple\/var_a/, 'error' => ''},
+           {'id' => /[0-9]{1,3}/, 'time' => 'xxx xxx xx xx:xx:xx UTC xxxx', 'user' => 'test', 'action' => 'create', 'object_type' => 'variable', 'task_id' => /[0-9]{1,3}/, 'object_name' => '/var_b', 'deployment' => 'simple', 'instance' => '', 'context' => /id: \"[0-9]{1,3}\"\nlatest_version: true\nname: \/var_b/, 'error' => ''},
          )
       end
 
@@ -509,6 +510,96 @@ describe 'variable generation with config server', type: :integration do
               expect(foobar_job_template).to include("test_property=#{var_e}")
             end
           end
+        end
+      end
+
+      context 'when using the on-stemcell-change update strategy' do
+        let(:variables) do
+          [
+            {
+              'name' => '/var_a',
+              'type' => 'password'
+            },
+            {
+              'name' => '/var_b',
+              'type' => 'password',
+              'update' => {
+                'strategy' => 'on-stemcell-change'
+              }
+            },
+          ]
+        end
+
+        def event_context_for(variable_events, variable_name)
+          YAML.load(variable_events.find { |e| e['object_name'] == variable_name}['context'])
+        end
+
+        it 'only updates variables when a stemcell update being deployed' do
+          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+
+          variables_after_original_deploy = table(bosh_runner.run('variables', deployment_name: manifest_hash['name'], no_login: true, json: true, include_credentials: false, env: client_env))
+
+          # logs events for both var_a and var_b using latest version
+          events_output = table(bosh_runner.run('events', no_login: true, json: true, include_credentials: false, env: client_env))
+          variable_events = events_output.select{ | event | event['object_type'] == 'variable'}.first(2)
+
+          expect(event_context_for(variable_events, '/var_a')).to match(hash_including({
+            'update_strategy' => 'on-deploy',
+            'latest_version' => true
+          }))
+          expect(event_context_for(variable_events, '/var_b')).to match(hash_including({
+            'update_strategy' => 'on-stemcell-change',
+            'latest_version' => true
+          }))
+
+          # update var_a + var_b
+          config_server_helper.put_value('/var_a', 'new-value-a')
+          config_server_helper.put_value('/var_b', 'new-value-b')
+
+          # deploy again with no stemcell change
+          deploy_simple_manifest(no_login: true, manifest_hash: manifest_hash, include_credentials: false, env: client_env)
+
+          # check that var_a has changed but var_b has not
+          variables_after_updating_values = table(bosh_runner.run('variables', deployment_name: manifest_hash['name'], no_login: true, json: true, include_credentials: false, env: client_env))
+          expect(variables_after_updating_values.find { |v| v['name'] == '/var_a' }['id']).to_not eq(variables_after_original_deploy.find { |v| v['name'] == '/var_a' }['id'])
+          expect(variables_after_updating_values.find { |v| v['name'] == '/var_b' }['id']).to eq(variables_after_original_deploy.find { |v| v['name'] == '/var_b' }['id'])
+
+          # logs events for var_a using latest version, but var_b not using latest version
+          events_output = table(bosh_runner.run('events', no_login: true, json: true, include_credentials: false, env: client_env))
+          variable_events = events_output.select{ | event | event['object_type'] == 'variable'}.first(2)
+
+          expect(event_context_for(variable_events, '/var_a')).to match(hash_including({
+            'update_strategy' => 'on-deploy',
+            'latest_version' => true
+          }))
+          expect(event_context_for(variable_events, '/var_b')).to match(hash_including({
+            'update_strategy' => 'on-stemcell-change',
+            'latest_version' => false
+          }))
+
+          # upload valid_stemcell_v2
+          bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_v2.tgz')}", no_login: true, include_credentials: false, env: client_env)
+
+          # deploy again using that stemcell
+          deploy_simple_manifest(no_login: true, manifest_hash: manifest_hash, include_credentials: false, env: client_env)
+
+          # check that var_b has been changed
+          variables_after_updating_stemcell = table(bosh_runner.run('variables', deployment_name: manifest_hash['name'], no_login: true, json: true, include_credentials: false, env: client_env))
+          expect(variables_after_updating_stemcell.find { |v| v['name'] == '/var_a' }['id']).to eq(variables_after_updating_values.find { |v| v['name'] == '/var_a' }['id'])
+          expect(variables_after_updating_stemcell.find { |v| v['name'] == '/var_b' }['id']).to_not eq(variables_after_updating_values.find { |v| v['name'] == '/var_b' }['id'])
+
+          # logs events for both var_a and var_b using latest version
+          events_output = table(bosh_runner.run('events', no_login: true, json: true, include_credentials: false, env: client_env))
+          variable_events = events_output.select{ | event | event['object_type'] == 'variable'}.first(2)
+
+          expect(event_context_for(variable_events, '/var_a')).to match(hash_including({
+            'update_strategy' => 'on-deploy',
+            'latest_version' => true
+          }))
+          expect(event_context_for(variable_events, '/var_b')).to match(hash_including({
+            'update_strategy' => 'on-stemcell-change',
+            'latest_version' => true
+          }))
         end
       end
     end

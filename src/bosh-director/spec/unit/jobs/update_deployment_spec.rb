@@ -72,6 +72,7 @@ module Bosh::Director
             availability_zones: availability_zones,
             model: deployment_model,
             link_provider_intents: [],
+            stemcells: {},
           )
         end
         let(:assembler) { instance_double(DeploymentPlan::Assembler, bind_models: nil) }
@@ -358,7 +359,12 @@ module Bosh::Director
             end
 
             it 'should bind the models with correct options in the assembler' do
-              expect(assembler).to receive(:bind_models).with({:is_deploy_action => true, :should_bind_new_variable_set => true})
+              expect(assembler).to receive(:bind_models).with(
+                hash_including({
+                  :is_deploy_action => true,
+                  :should_bind_new_variable_set => true,
+                }),
+              )
 
               job.perform
             end
@@ -376,7 +382,12 @@ module Bosh::Director
             end
 
             it 'should bind the models with correct options in the assembler' do
-              expect(assembler).to receive(:bind_models).with({:is_deploy_action => false, :should_bind_new_variable_set => false})
+              expect(assembler).to receive(:bind_models).with(
+                hash_including({
+                  :is_deploy_action => false,
+                  :should_bind_new_variable_set => false,
+                }),
+              )
 
               job.perform
             end
@@ -616,6 +627,123 @@ module Bosh::Director
                 .with(anything, anything, anything, [runtime_config])
               expect(planner_factory).to have_received(:create_from_manifest)
                 .with(anything, anything, [runtime_config], anything)
+            end
+          end
+
+          context 'stemcell change' do
+            let(:stemcell1) { Bosh::Director::Models::Stemcell.make(name: 'ubuntu-alias', operating_system: 'ubuntu-jammy', version: '1.2', cid: 'cid-1') }
+            let(:stemcell2) { Bosh::Director::Models::Stemcell.make(name: 'windows-alias', operating_system: 'windows2019', version: '3.4', cid: 'cid-2') }
+
+            before do
+              deployment_model.add_stemcell(stemcell1)
+              deployment_model.add_stemcell(stemcell2)
+            end
+
+            context 'all stemcell versions have changed and it is not overridden with "force_latest_variables"' do
+              before do
+                allow(planner).to receive(:stemcells).and_return({
+                  'ubuntu-alias' => Bosh::Director::DeploymentPlan::Stemcell.new('ubuntu-alias', nil, 'ubuntu-jammy', '5.6'),
+                  'windows-alias' => Bosh::Director::DeploymentPlan::Stemcell.new('windows-alias', nil, 'windows2019', '7.8'),
+                })
+              end
+
+              it 'passes stemcell_change: true to the assembler' do
+                expect(assembler).to receive(:bind_models).with(hash_including(:stemcell_change => true))
+
+                job.perform
+              end
+            end
+
+            context 'all stemcell versions have changed and it is overridden with "force_latest_variables"' do
+              let(:options) { { 'force_latest_variables' => true } }
+              before do
+                allow(planner).to receive(:stemcells).and_return({
+                  'ubuntu-alias' => Bosh::Director::DeploymentPlan::Stemcell.new('ubuntu-alias', nil, 'ubuntu-jammy', '5.6'),
+                  'windows-alias' => Bosh::Director::DeploymentPlan::Stemcell.new('windows-alias', nil, 'windows2019', '7.8'),
+                })
+              end
+
+              it 'passes stemcell_change: true to the assembler' do
+                expect(assembler).to receive(:bind_models).with(hash_including(:stemcell_change => true))
+
+                job.perform
+              end
+            end
+
+            context 'some stemcell versions have NOT changed and it is not overridden with "force_latest_variables"' do
+              before do
+                allow(planner).to receive(:stemcells).and_return({
+                  'ubuntu-alias' => Bosh::Director::DeploymentPlan::Stemcell.new('ubuntu-alias', nil, 'ubuntu-jammy', '1.2'),
+                  'windows-alias' => Bosh::Director::DeploymentPlan::Stemcell.new('windows-alias', nil, 'windows2019', '7.8'),
+                })
+              end
+
+              it 'passes stemcell_change: false to the assembler' do
+                expect(assembler).to receive(:bind_models).with(hash_including(:stemcell_change => false))
+
+                job.perform
+              end
+            end
+
+            context 'some stemcell versions have NOT changed and it is overridden with "force_latest_variables"' do
+              let(:options) { { 'force_latest_variables' => true } }
+
+              before do
+                allow(planner).to receive(:stemcells).and_return({
+                  'ubuntu-alias' => Bosh::Director::DeploymentPlan::Stemcell.new('ubuntu-alias', nil, 'ubuntu-jammy', '1.2'),
+                  'windows-alias' => Bosh::Director::DeploymentPlan::Stemcell.new('windows-alias', nil, 'windows2019', '7.8'),
+                })
+              end
+
+              it 'passes stemcell_change: true to the assembler' do
+                expect(assembler).to receive(:bind_models).with(hash_including(:stemcell_change => true))
+
+                job.perform
+              end
+            end
+
+            context 'when there is a deleted stemcell and the remaining versions have NOT changed' do
+              before do
+                allow(planner).to receive(:stemcells).and_return({
+                  'windows-alias' => Bosh::Director::DeploymentPlan::Stemcell.new('windows-alias', nil, 'windows2019', '3.4'),
+                })
+              end
+
+              it 'passes stemcell_change: false to the assembler' do
+                expect(assembler).to receive(:bind_models).with(hash_including(:stemcell_change => false))
+
+                job.perform
+              end
+            end
+
+            context 'when a stemcell alias is renamed and the version has NOT changed' do
+              before do
+                deployment_model.remove_stemcell(stemcell2)
+                allow(planner).to receive(:stemcells).and_return({
+                  'ubuntu-alias-renamed' => Bosh::Director::DeploymentPlan::Stemcell.new('ubuntu-alias-renamed', nil, 'ubuntu-jammy', '1.2'),
+                })
+              end
+
+              it 'passes stemcell_change: false to the assembler' do
+                expect(assembler).to receive(:bind_models).with(hash_including(:stemcell_change => false))
+
+                job.perform
+              end
+            end
+
+            context 'when a stemcell alias is renamed and the version has changed' do
+              before do
+                deployment_model.remove_stemcell(stemcell2)
+                allow(planner).to receive(:stemcells).and_return({
+                  'ubuntu-alias-renamed' => Bosh::Director::DeploymentPlan::Stemcell.new('ubuntu-alias-renamed', nil, 'ubuntu-jammy', '3.4'),
+                })
+              end
+
+              it 'passes stemcell_change: true to the assembler' do
+                expect(assembler).to receive(:bind_models).with(hash_including(:stemcell_change => true))
+
+                job.perform
+              end
             end
           end
 
