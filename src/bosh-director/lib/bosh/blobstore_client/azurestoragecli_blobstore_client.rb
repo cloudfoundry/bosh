@@ -27,9 +27,9 @@ module Bosh::Blobstore
       end
 
       @azure_storage_cli_options = {
-        "account-name": @options[:account_name],
-        "container-name": @options[:container_name],
-        "account-key": @options[:account_key]
+        "account_name": @options[:account_name],
+        "container_name": @options[:container_name],
+        "account_key": @options[:account_key]
       }
 
       @azure_storage_cli_options.reject! { |_k, v| v.nil? }
