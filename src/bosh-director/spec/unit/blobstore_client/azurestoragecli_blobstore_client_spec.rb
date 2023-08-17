@@ -35,9 +35,9 @@ module Bosh::Blobstore
     describe 'options' do
       let(:expected_options) do
         {
-          'container-name' => 'test',
-          'account-name' => 'NAME',
-          'account-key' => 'SECRET'
+          'container_name' => 'test',
+          'account_name' => 'NAME',
+          'account_key' => 'SECRET'
         }
       end
       let(:stored_config_file) { File.new(expected_config_file).readlines }
