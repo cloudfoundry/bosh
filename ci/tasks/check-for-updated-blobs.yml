@@ -1,0 +1,22 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: bosh/golang-release-security-scanner
+
+inputs:
+- name: bosh-src
+- name: version
+- name: release-notes
+  optional: true
+
+outputs:
+- name: release-notes
+
+run:
+  path: bosh-src/ci/tasks/check-for-updated-blobs.sh
+
+params:
+  BLOBS:
