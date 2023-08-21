@@ -16,7 +16,8 @@ module NATSSync
 
     let(:logger) { double('Logger') }
     let(:capture_status) { instance_double(Process::Status, success?: true) }
-    let(:nats_config_file_path) { Tempfile.new('nats_config.json').path }
+    let(:nats_config_file) { Tempfile.new('nats_config.json') }
+    let(:nats_config_file_path) { nats_config_file.path }
     let(:nats_executable) { '/var/vcap/packages/nats/bin/nats-server' }
     let(:nats_server_pid_file) { '/var/vcap/sys/run/bpm/nats/nats.pid' }
     let(:bosh_config) do
