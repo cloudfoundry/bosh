@@ -259,9 +259,6 @@ jobs:
       - run-bundle-audit
     - get: bosh-cli
     - get: integration-image
-    - put: version
-      params:
-        pre: rc
     - task: make
       file: bosh-src/ci/tasks/make-candidate.yml
       image: integration-image
@@ -725,8 +722,6 @@ jobs:
         - get: bosh-cli
         - get: integration-image
         - get: version
-          params:
-            bump: final
       - task: prepare-release
         image: integration-image
         file: bosh-src/ci/tasks/prepare-release.yml
@@ -754,9 +749,6 @@ jobs:
         params:
           repository: bosh-main
           rebase: true
-      - put: version
-        params:
-          file: version/version
 
   - name: export-final-release
     serial: true
