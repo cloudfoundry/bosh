@@ -538,10 +538,10 @@ module Bhm
       end
 
       it 'has the tsdb plugin' do
-        expect(Bhm::Plugins::Tsdb).to receive(:new).with(
+        expect(Bhm::Plugins::Tsdb).to receive(:new).with({
           'host' => 'localhost',
           'port' => 4242,
-        ).and_call_original
+        }).and_call_original
 
         manager.setup_events
       end
