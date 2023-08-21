@@ -371,7 +371,7 @@ module Bosh::Director::DeploymentPlan
               allow(Bosh::Director::Config).to receive(:local_dns_enabled?).and_return(true)
 
               expect(fake_encoder).to receive(:encode_link)
-                .with(link_def, root_domain: 'bosh1.tld', default_network: 'net_a', uuid: 'uuid-1').and_return('encoded-link')
+                .with(link_def, { root_domain: 'bosh1.tld', default_network: 'net_a', uuid: 'uuid-1' }).and_return('encoded-link')
               expect(network_settings.link_network_address(link_def, true)).to eq('encoded-link')
             end
           end
@@ -389,7 +389,7 @@ module Bosh::Director::DeploymentPlan
               allow(Bosh::Director::Config).to receive(:local_dns_enabled?).and_return(false)
 
               expect(fake_encoder).to receive(:encode_link)
-                .with(link_def, root_domain: 'bosh1.tld', default_network: 'net_a', uuid: 'uuid-1').and_return('encoded-link')
+                .with(link_def, { root_domain: 'bosh1.tld', default_network: 'net_a', uuid: 'uuid-1' }).and_return('encoded-link')
               expect(network_settings.link_network_address(link_def, true)).to eq('encoded-link')
             end
           end
@@ -399,7 +399,7 @@ module Bosh::Director::DeploymentPlan
               allow(Bosh::Director::Config).to receive(:local_dns_enabled?).and_return(true)
 
               expect(fake_encoder).to receive(:encode_link)
-                .with(link_def, root_domain: 'bosh1.tld', default_network: 'net_a', uuid: 'uuid-1').and_return('encoded-link')
+                .with(link_def, { root_domain: 'bosh1.tld', default_network: 'net_a', uuid: 'uuid-1' }).and_return('encoded-link')
               expect(network_settings.link_network_address(link_def, true)).to eq('encoded-link')
             end
           end
@@ -466,7 +466,7 @@ module Bosh::Director::DeploymentPlan
           it 'returns the encoded query for the link with the public address' do
             allow(Bosh::Director::Config).to receive(:local_dns_enabled?).and_return(true)
             expect(fake_encoder).to receive(:encode_link)
-              .with(link_def, root_domain: 'bosh1.tld', default_network: 'net_public', uuid: 'uuid-1').and_return('encoded-link')
+              .with(link_def, { root_domain: 'bosh1.tld', default_network: 'net_public', uuid: 'uuid-1' }).and_return('encoded-link')
             expect(network_settings.link_network_address(link_def, true)).to eq('encoded-link')
           end
         end
@@ -503,7 +503,7 @@ module Bosh::Director::DeploymentPlan
               allow(Bosh::Director::Config).to receive(:local_dns_enabled?).and_return(false)
 
               expect(fake_encoder).to receive(:encode_link)
-                .with(link_def, root_domain: 'bosh1.tld', default_network: 'net_a', uuid: 'uuid-1').and_return('encoded-link')
+                .with(link_def, { root_domain: 'bosh1.tld', default_network: 'net_a', uuid: 'uuid-1' }).and_return('encoded-link')
               expect(network_settings.link_network_address(link_def, true)).to eq('encoded-link')
             end
           end
@@ -513,7 +513,7 @@ module Bosh::Director::DeploymentPlan
               allow(Bosh::Director::Config).to receive(:local_dns_enabled?).and_return(true)
 
               expect(fake_encoder).to receive(:encode_link)
-                .with(link_def, root_domain: 'bosh1.tld', default_network: 'net_a', uuid: 'uuid-1').and_return('encoded-link')
+                .with(link_def, { root_domain: 'bosh1.tld', default_network: 'net_a', uuid: 'uuid-1' }).and_return('encoded-link')
               expect(network_settings.link_network_address(link_def, true)).to eq('encoded-link')
             end
           end
@@ -549,10 +549,10 @@ module Bosh::Director::DeploymentPlan
 
         it 'will return the correct address for each reservation' do
           expect(fake_encoder).to receive(:encode_link)
-            .with(link_def, root_domain: 'bosh1.tld', default_network: 'net_a', uuid: 'uuid-1')
+            .with(link_def, { root_domain: 'bosh1.tld', default_network: 'net_a', uuid: 'uuid-1' })
             .and_return('encoded-query')
           expect(fake_encoder).to receive(:encode_link)
-            .with(link_def, root_domain: 'bosh1.tld', default_network: 'net_b', uuid: 'uuid-1')
+            .with(link_def, { root_domain: 'bosh1.tld', default_network: 'net_b', uuid: 'uuid-1' })
             .and_return('encoded-query-b')
           expect(network_settings.link_network_addresses(link_def, true))
             .to eq('net_a' => 'encoded-query', 'net_b' => 'encoded-query-b')
@@ -570,7 +570,7 @@ module Bosh::Director::DeploymentPlan
         context 'when DNS entries are requested' do
           it 'includes the network name and encoded query for the link address' do
             expect(fake_encoder).to receive(:encode_link)
-              .with(link_def, root_domain: 'bosh1.tld', default_network: 'net_a', uuid: 'uuid-1')
+              .with(link_def, { root_domain: 'bosh1.tld', default_network: 'net_a', uuid: 'uuid-1' })
               .and_return('encoded-query')
             expect(network_settings.link_network_addresses(link_def, true)).to eq('net_a' => 'encoded-query')
           end
@@ -579,7 +579,7 @@ module Bosh::Director::DeploymentPlan
         context 'when DNS entries are NOT requested' do
           it 'still includes the network name and encoded query for the link address' do
             expect(fake_encoder).to receive(:encode_link)
-              .with(link_def, root_domain: 'bosh1.tld', default_network: 'net_a', uuid: 'uuid-1')
+              .with(link_def, { root_domain: 'bosh1.tld', default_network: 'net_a', uuid: 'uuid-1' })
               .and_return('encoded-query')
             expect(network_settings.link_network_addresses(link_def, false)).to eq('net_a' => 'encoded-query')
           end
@@ -613,7 +613,7 @@ module Bosh::Director::DeploymentPlan
           context 'and DNS entries are requested' do
             it 'includes the network name dns record' do
               expect(fake_encoder).to receive(:encode_link)
-                .with(link_def, root_domain: 'bosh1.tld', default_network: 'net_a', uuid: 'uuid-1')
+                .with(link_def, { root_domain: 'bosh1.tld', default_network: 'net_a', uuid: 'uuid-1' })
                 .and_return('encoded-query')
               expect(network_settings.link_network_addresses(link_def, true)).to eq('net_a' => 'encoded-query')
             end

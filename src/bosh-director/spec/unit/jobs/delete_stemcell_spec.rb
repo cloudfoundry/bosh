@@ -22,7 +22,7 @@ module Bosh::Director
         end
 
         it 'deletes the stemcell' do
-          expect(stemcell_deleter).to receive(:delete).with(stemcell_model, blobstore: blobstore)
+          expect(stemcell_deleter).to receive(:delete).with(stemcell_model, { blobstore: blobstore })
           job.perform
         end
 

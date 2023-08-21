@@ -110,7 +110,7 @@ module Bosh::Director
         end
 
         it 'calls the manifest resolver with correct values' do
-          expect(variables_interpolator).to receive(:interpolate_deployment_manifest).with('name' => 'surfing_deployment', 'smurf' => '((smurf_placeholder))').and_return('smurf' => 'blue')
+          expect(variables_interpolator).to receive(:interpolate_deployment_manifest).with({ 'name' => 'surfing_deployment', 'smurf' => '((smurf_placeholder))'}).and_return('smurf' => 'blue')
           manifest_object_result = Manifest.load_from_model(deployment_model)
 
           expect(manifest_object_result.manifest_hash).to eq('smurf' => 'blue')
@@ -183,7 +183,7 @@ module Bosh::Director
         end
 
         it 'calls the manifest resolver with correct values' do
-          expect(variables_interpolator).to receive(:interpolate_deployment_manifest).with('smurf' => '((smurf_placeholder))').and_return('smurf' => 'blue')
+          expect(variables_interpolator).to receive(:interpolate_deployment_manifest).with({ 'smurf' => '((smurf_placeholder))' }).and_return('smurf' => 'blue')
           manifest_object_result = Manifest.load_from_hash(passed_in_manifest_hash, YAML.dump(passed_in_manifest_hash), [cloud_config], runtime_configs)
           expect(manifest_object_result.manifest_hash).to eq('smurf' => 'blue')
           expect(manifest_object_result.cloud_config_hash).to eq(cloud_config.raw_manifest)

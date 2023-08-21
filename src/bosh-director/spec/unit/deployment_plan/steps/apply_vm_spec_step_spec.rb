@@ -57,15 +57,15 @@ module Bosh::Director
           let(:update_spec) { double(:update_spec) }
 
           it 'applies limited fields from given spec to correct agent' do
-            expect(agent_client).to receive(:apply).with(
+            expect(agent_client).to receive(:apply).with({
               'networks' => 'my-networks',
               'deployment' => 'my-deployment',
               'job' => 'my-job',
               'index' => 'my-index',
               'id' => 'my-id',
-            )
+            })
 
-            expect(plan_instance).to receive(:add_state_to_model).with(
+            expect(plan_instance).to receive(:add_state_to_model).with({
               'networks' => 'agent-network',
               'deployment' => 'my-deployment',
               'job' => 'my-job',
@@ -75,7 +75,7 @@ module Bosh::Director
               'vm_type' => { 'cloud_properties' => { 'a' => 'b' } },
               'update' => update_spec,
               'env' => { 'env' => 'json' },
-            )
+            })
 
             step.perform(report)
           end

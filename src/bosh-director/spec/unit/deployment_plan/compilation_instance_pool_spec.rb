@@ -268,7 +268,7 @@ module Bosh::Director
         it 'retrieves the vm requirements from the CPI/cache and populates the cloud properties' do
           allow(SecureRandom).to receive(:uuid).and_return('deadbeef', 'instance-uuid-1', 'agent-id')
           allow(deployment_plan.vm_resources_cache).to receive(:get_vm_cloud_properties)
-            .with(nil, 'cpu' => 4, 'ram' => 2048, 'ephemeral_disk_size' => 100)
+            .with(nil, { 'cpu' => 4, 'ram' => 2048, 'ephemeral_disk_size' => 100 })
             .and_return('vm_resources' => 'foo')
 
           allow(cloud).to receive(:create_vm) do |_, _, cloud_properties|

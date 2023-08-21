@@ -160,8 +160,10 @@ module Bosh::Director
             { 'foo' => 'bar' },
             anything,
             [],
-            'key1' => 'value1',
-            'bosh' => { 'group' => String, 'groups' => anything },
+            {
+              'key1' => 'value1',
+              'bosh' => { 'group' => String, 'groups' => anything },
+            },
           )
           .and_return('new-vm-cid')
 

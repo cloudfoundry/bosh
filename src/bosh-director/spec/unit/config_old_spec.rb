@@ -107,7 +107,7 @@ describe Bosh::Director::Config do
     end
 
     it 'ignores empty and nil options' do
-      expect(Sequel).to receive(:connect).with('baz' => 'baz').and_return(database_connection)
+      expect(Sequel).to receive(:connect).with({ 'baz' => 'baz' }).and_return(database_connection)
       described_class.configure_db('foo' => nil, 'bar' => '', 'baz' => 'baz')
     end
 

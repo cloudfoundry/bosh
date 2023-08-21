@@ -411,7 +411,7 @@ module Bosh::Director
           'agent.fake-agent-id',
           'fake-agent-id',
           hash_including(method: :sync_dns),
-          'logging' => false,
+          { 'logging' => false },
         )
         client.sync_dns(blobstore_id: 'fake-blob-id', sha1: 'fakesha1', version: 1)
       end

@@ -83,7 +83,7 @@ describe 'Bhm::Plugins::Resurrector' do
           allow(File).to receive(:exist?).with('ca-cert').and_return(true)
           allow(File).to receive(:read).with('ca-cert').and_return('test')
           allow(CF::UAA::TokenIssuer).to receive(:new).with(
-            'uaa-url', 'client-id', 'client-secret', ssl_ca_file: 'ca-cert'
+            'uaa-url', 'client-id', 'client-secret', { ssl_ca_file: 'ca-cert' }
           ).and_return(token_issuer)
           allow(token_issuer).to receive(:client_credentials_grant)
             .and_return(token)

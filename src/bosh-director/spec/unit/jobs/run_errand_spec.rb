@@ -237,8 +237,10 @@ module Bosh::Director
                 before do
                   allow(Lock).to receive(:new).with(
                     'lock:deployment:fake-dep-name',
-                    timeout: 10,
-                    deployment_name: 'fake-dep-name',
+                    {
+                      timeout: 10,
+                      deployment_name: 'fake-dep-name'
+                    },
                   ).and_return(lock)
                 end
 

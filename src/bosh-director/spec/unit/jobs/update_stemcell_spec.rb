@@ -68,7 +68,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
       context 'uploading a local stemcell' do
         it 'should upload a local stemcell' do
           expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
-          expect(cloud).to receive(:create_stemcell).with(anything, 'ram' => '2gb') do |image, _|
+          expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
             contents = File.open(image, &:read)
             expect(contents).to eq('image contents')
             'stemcell-cid'
@@ -105,7 +105,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
           it 'should upload a local stemcell' do
             expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
-            expect(cloud).to receive(:create_stemcell).with(anything, 'ram' => '2gb') do |image, _|
+            expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
               contents = File.open(image, &:read)
               expect(contents).to eq('image contents')
               'stemcell-cid'
@@ -133,7 +133,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
         it 'should upload a remote stemcell' do
           expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
-          expect(cloud).to receive(:create_stemcell).with(anything, 'ram' => '2gb') do |image, _|
+          expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
             contents = File.open(image, &:read)
             expect(contents).to eql('image contents')
             'stemcell-cid'
@@ -189,7 +189,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
           it 'should upload a remote stemcell' do
             expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
-            expect(cloud).to receive(:create_stemcell).with(anything, 'ram' => '2gb') do |image, _|
+            expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
               contents = File.open(image, &:read)
               expect(contents).to eql('image contents')
               'stemcell-cid'
@@ -217,7 +217,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
       it 'should cleanup the stemcell file' do
         expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
-        expect(cloud).to receive(:create_stemcell).with(anything, 'ram' => '2gb') do |image, _|
+        expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
           contents = File.open(image, &:read)
           expect(contents).to eql('image contents')
           'stemcell-cid'
@@ -301,8 +301,8 @@ describe Bosh::Director::Jobs::UpdateStemcell do
         end
 
         it 'creates multiple stemcell records with different cpi attributes' do
-          expect(cloud1).to receive(:create_stemcell).with(anything, 'ram' => '2gb').and_return('stemcell-cid1')
-          expect(cloud3).to receive(:create_stemcell).with(anything, 'ram' => '2gb').and_return('stemcell-cid3')
+          expect(cloud1).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }).and_return('stemcell-cid1')
+          expect(cloud3).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }).and_return('stemcell-cid3')
 
           expect(cloud1).to receive(:info).and_return('stemcell_formats' => ['dummy'])
           expect(cloud2).to receive(:info).and_return('stemcell_formats' => ['dummy1'])
@@ -357,7 +357,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
         end
 
         it 'skips creating a stemcell match when a CPI fails' do
-          expect(cloud1).to receive(:create_stemcell).with(anything, 'ram' => '2gb').and_raise('I am flaky')
+          expect(cloud1).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }).and_raise('I am flaky')
           expect(cloud1).to receive(:info).and_return('stemcell_formats' => ['dummy'])
           expect(cloud_factory).to receive(:get).with('cloud1').and_return(cloud1)
           expect(cloud_factory).to receive(:all_names).exactly(3).times.and_return(['cloud1'])
@@ -383,7 +383,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
             expect(cloud2).to receive(:info).and_return('stemcell_formats' => ['dummy1'])
             expect(cloud3).to receive(:info).and_return('stemcell_formats' => ['dummy'])
 
-            expect(cloud3).to receive(:create_stemcell).with(anything, 'ram' => '2gb').and_return('stemcell-cid3')
+            expect(cloud3).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }).and_return('stemcell-cid3')
 
             expect(BD::Models::Stemcell.all.count).to eq(1)
             expect(BD::Models::StemcellUpload.all.count).to eq(1)
@@ -409,7 +409,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
         it 'still works with the default cpi' do
           expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
-          expect(cloud).to receive(:create_stemcell).with(anything, 'ram' => '2gb').and_return('stemcell-cid')
+          expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }).and_return('stemcell-cid')
 
           expect(cloud_factory).to receive(:get_cpi_aliases).with('').and_return([''])
           expect(cloud_factory).to receive(:all_names).exactly(3).times.and_return([''])
@@ -450,7 +450,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
       context 'when stemcell does not have stemcell formats' do
         it 'should not fail' do
           expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
-          expect(cloud).to receive(:create_stemcell).with(anything, 'ram' => '2gb') do |image, _|
+          expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
             contents = File.open(image, &:read)
             expect(contents).to eql('image contents')
             'stemcell-cid'
@@ -472,7 +472,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
         it 'should not fail' do
           expect(cloud).to receive(:info).and_return({})
-          expect(cloud).to receive(:create_stemcell).with(anything, 'ram' => '2gb') do |image, _|
+          expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
             contents = File.open(image, &:read)
             expect(contents).to eql('image contents')
             'stemcell-cid'
@@ -494,7 +494,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
         it 'should not fail' do
           expect(cloud).to receive(:info).and_raise(Bosh::Clouds::NotImplemented)
-          expect(cloud).to receive(:create_stemcell).with(anything, 'ram' => '2gb') do |image, _|
+          expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
             contents = File.open(image, &:read)
             expect(contents).to eql('image contents')
             'stemcell-cid'
@@ -517,7 +517,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
       it 'should not fail' do
         expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
-        expect(cloud).to receive(:create_stemcell).with(anything, 'ram' => '2gb') do |image, _|
+        expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
           contents = File.open(image, &:read)
           expect(contents).to eql('image contents')
           'stemcell-cid'
@@ -543,7 +543,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
       it 'should update api_version' do
         expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
-        expect(cloud).to receive(:create_stemcell).with(anything, 'ram' => '2gb') do |image, _|
+        expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
           contents = File.open(image, &:read)
           expect(contents).to eq('image contents')
           'stemcell-cid'

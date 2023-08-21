@@ -73,7 +73,7 @@ describe NATSSync::AuthProvider do
         allow(File).to receive(:read).with('fake-ca-cert-path').and_return('test')
 
         allow(CF::UAA::TokenIssuer).to receive(:new).with(
-          'uaa-url', 'fake-client', 'fake-client-secret', ssl_ca_file: 'fake-ca-cert-path'
+          'uaa-url', 'fake-client', 'fake-client-secret', { ssl_ca_file: 'fake-ca-cert-path' }
         ).and_return(token_issuer)
         allow(token_issuer).to receive(:client_credentials_grant).and_return(first_token, second_token)
       end
@@ -88,7 +88,7 @@ describe NATSSync::AuthProvider do
         allow(OpenSSL::X509::Store).to receive(:new).and_return(cert_store)
         allow(cert_store).to receive(:set_default_paths)
         allow(CF::UAA::TokenIssuer).to receive(:new).with(
-          'uaa-url', 'fake-client', 'fake-client-secret', ssl_cert_store: cert_store
+          'uaa-url', 'fake-client', 'fake-client-secret', { ssl_cert_store: cert_store }
         ).and_return(token_issuer)
         allow(token_issuer).to receive(:client_credentials_grant).and_return(first_token, second_token)
       end

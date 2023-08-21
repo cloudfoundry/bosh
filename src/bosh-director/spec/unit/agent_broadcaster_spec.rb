@@ -300,11 +300,11 @@ module Bosh::Director
           expect(blobstore).to receive(:can_sign_urls?).with(3)
           expect(blobstore).to receive(:sign).with('fake-blob-id').and_return('signed')
           expect(AgentClient).to receive(:with_agent_id).with(instance1.agent_id, instance1.name) do
-            expect(agent).to receive(:sync_dns_with_signed_url).with(
+            expect(agent).to receive(:sync_dns_with_signed_url).with({
               'signed_url' => 'signed',
               'multi_digest' => 'fake-sha1',
               'version' => anything,
-            ) do |&blk|
+            }) do |&blk|
               blk.call('value' => 'synced')
               Timecop.freeze(end_time)
             end
@@ -323,12 +323,12 @@ module Bosh::Director
 
           it 'adds headers to the request' do
             expect(AgentClient).to receive(:with_agent_id).with(instance1.agent_id, instance1.name) do
-              expect(agent).to receive(:sync_dns_with_signed_url).with(
+              expect(agent).to receive(:sync_dns_with_signed_url).with({
                 'signed_url' => 'signed',
                 'multi_digest' => 'fake-sha1',
                 'version' => anything,
                 'blobstore_headers' => { 'header' => 'value' },
-              ) do |&blk|
+              }) do |&blk|
                 blk.call('value' => 'synced')
                 Timecop.freeze(end_time)
               end

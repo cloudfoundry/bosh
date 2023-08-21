@@ -268,7 +268,7 @@ module Bosh::Director
 
             expect(rendered_templates_persister).to receive(:persist)
 
-            expect(agent_client).to receive(:apply).with('networks' => { 'ip' => '192.1.3.4' }).ordered
+            expect(agent_client).to receive(:apply).with({ 'networks' => { 'ip' => '192.1.3.4' } }).ordered
             expect(agent_client).to receive(:run_script).with('pre-start', {}).ordered
             expect(agent_client).to receive(:start).ordered
 
@@ -278,8 +278,10 @@ module Bosh::Director
 
             expect(powerdns_manager).to receive(:update_dns_record_for_instance).with(
               instance,
-              'index.record.name' => nil,
-              'uuid.record.name' => nil,
+              {
+                'index.record.name' => nil,
+                'uuid.record.name' => nil,
+              },
             )
             expect(powerdns_manager).to receive(:flush_dns_cache)
 

@@ -121,7 +121,7 @@ describe 'Bhm::Director' do
         'http://localhost:8080/uaa',
         'hm',
         'secret',
-        ssl_ca_file: 'fake-ca-cert',
+        { ssl_ca_file: 'fake-ca-cert' },
       ).and_return(token_issuer)
       token = uaa_token_info('fake-token-id')
       allow(token_issuer).to receive(:client_credentials_grant).and_return(token)

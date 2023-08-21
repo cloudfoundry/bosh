@@ -775,7 +775,7 @@ describe Bosh::Director::Config do
           'empty_value' => '',
         }
 
-        expect(Sequel).to receive(:connect).with('host' => '127.0.0.1', 'port' => 5432).and_return(database)
+        expect(Sequel).to receive(:connect).with({ 'host' => '127.0.0.1', 'port' => 5432 }).and_return(database)
         described_class.configure_db(parameters)
       end
     end
@@ -791,9 +791,9 @@ describe Bosh::Director::Config do
           },
         }
 
-        expect(Sequel).to receive(:connect).with(
+        expect(Sequel).to receive(:connect).with({
           'host' => '127.0.0.1', 'port' => 5432, 'max_connections' => 100, 'foo' => 'bar',
-        ).and_return(database)
+        }).and_return(database)
 
         described_class.configure_db(parameters)
       end
@@ -810,9 +810,9 @@ describe Bosh::Director::Config do
           },
         }
 
-        expect(Sequel).to receive(:connect).with(
+        expect(Sequel).to receive(:connect).with({
           'host' => 'rds-somewhere', 'port' => 7000, 'max_connections' => 100, 'foo' => 'bar',
-        ).and_return(database)
+        }).and_return(database)
 
         described_class.configure_db(parameters)
       end

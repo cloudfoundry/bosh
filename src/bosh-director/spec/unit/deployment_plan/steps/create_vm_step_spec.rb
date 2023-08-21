@@ -254,9 +254,11 @@ module Bosh
               'stemcell-id', { 'ram' => '2gb' },
               network_settings,
               disks,
-              'bosh' => {
-                'group' => expected_group,
-                'groups' => expected_groups,
+              {
+                'bosh' => {
+                  'group' => expected_group,
+                  'groups' => expected_groups,
+                }
               }
             ).and_return(create_vm_response)
 
@@ -281,10 +283,12 @@ module Bosh
                 'stemcell-id', { 'ram' => '2gb' },
                 network_settings,
                 disks,
-                'bosh' => {
-                  'group' => expected_group,
-                  'groups' => expected_groups,
-                  'tags' => tags,
+                {
+                  'bosh' => {
+                    'group' => expected_group,
+                    'groups' => expected_groups,
+                    'tags' => tags,
+                  }
                 }
               ).and_return(create_vm_response)
               expect(agent_client).to receive(:wait_until_ready)
@@ -301,10 +305,12 @@ module Bosh
                 kind_of(Hash),
                 network_settings,
                 disks,
-                'bosh' => {
-                  'group' => expected_group,
-                  'groups' => expected_groups,
-                  'tags' => tags,
+                {
+                  'bosh' => {
+                    'group' => expected_group,
+                    'groups' => expected_groups,
+                    'tags' => tags,
+                  },
                 },
               ).and_return(create_vm_response)
 
@@ -364,10 +370,12 @@ module Bosh
                   'stemcell-id', { 'ram' => '2gb' },
                   network_settings,
                   disks,
-                  'bosh' => {
-                    'group' => expected_group,
-                    'groups' => expected_groups,
-                    'blobstores' => 'redacted-credentials',
+                  {
+                    'bosh' => {
+                      'group' => expected_group,
+                      'groups' => expected_groups,
+                      'blobstores' => 'redacted-credentials',
+                    }
                   }
                 ).and_return(create_vm_response)
                 subject.perform(report)
@@ -385,16 +393,18 @@ module Bosh
                   'stemcell-id', { 'ram' => '2gb' },
                   network_settings,
                   disks,
-                  'bosh' => {
-                    'group' => expected_group,
-                    'groups' => expected_groups,
-                    'blobstores' => [
-                      'options' => {
-                        'my-key' => 'foo',
-                        'my-key-id' => 'bar',
-                        'allowed-key' => 'baz',
-                      },
-                    ],
+                  {
+                    'bosh' => {
+                      'group' => expected_group,
+                      'groups' => expected_groups,
+                      'blobstores' => [
+                        'options' => {
+                          'my-key' => 'foo',
+                          'my-key-id' => 'bar',
+                          'allowed-key' => 'baz',
+                        },
+                      ],
+                    }
                   }
                 ).and_return(create_vm_response)
                 subject.perform(report)
@@ -408,9 +418,11 @@ module Bosh
               'stemcell-id', { 'ram' => '2gb' },
               network_settings,
               disks,
-              'bosh' => {
-                'group' => expected_group,
-                'groups' => expected_groups,
+              {
+                'bosh' => {
+                  'group' => expected_group,
+                  'groups' => expected_groups,
+                }
               }
             ).and_return(create_vm_response)
 
@@ -464,9 +476,11 @@ module Bosh
               { 'ram' => '2gb' },
               network_settings.merge(extra_ip),
               disks,
-              'bosh' => {
-                'group' => expected_group,
-                'groups' => expected_groups,
+              {
+                'bosh' => {
+                  'group' => expected_group,
+                  'groups' => expected_groups,
+                },
               },
             ).and_return(create_vm_response)
 
@@ -487,9 +501,11 @@ module Bosh
               { 'ram' => '2gb' },
               network_settings.merge(extra_ip),
               disks,
-              'bosh' => {
-                'group' => expected_group,
-                'groups' => expected_groups,
+              {
+                'bosh' => {
+                  'group' => expected_group,
+                  'groups' => expected_groups,
+                },
               },
             ).and_return(create_vm_response)
 
@@ -571,9 +587,11 @@ module Bosh
                 expect(cloud_wrapper).to receive(:create_vm).with(
                   kind_of(String), 'stemcell-id',
                   kind_of(Hash), network_settings, disks,
-                  'bosh' => {
-                    'group' => kind_of(String),
-                    'groups' => kind_of(Array),
+                  {
+                    'bosh' => {
+                      'group' => kind_of(String),
+                      'groups' => kind_of(Array),
+                    }
                   }
                 ).and_return(create_vm_response)
                 subject.perform(report)
@@ -607,16 +625,18 @@ module Bosh
                   expect(cloud_wrapper).to receive(:create_vm).with(
                     kind_of(String), 'stemcell-id',
                     kind_of(Hash), network_settings, disks,
-                    'bosh' => {
-                      'mbus' => {
-                        'cert' => {
-                          'ca' => 'nats begin\nnats content\nnats end\n',
-                          'certificate' => 'certificate begin\ncertificate content\ncertificate end\n',
-                          'private_key' => 'pkey begin\npkey content\npkey end\n',
+                    {
+                      'bosh' => {
+                        'mbus' => {
+                          'cert' => {
+                            'ca' => 'nats begin\nnats content\nnats end\n',
+                            'certificate' => 'certificate begin\ncertificate content\ncertificate end\n',
+                            'private_key' => 'pkey begin\npkey content\npkey end\n',
+                          },
                         },
-                      },
-                      'group' => kind_of(String),
-                      'groups' => kind_of(Array),
+                        'group' => kind_of(String),
+                        'groups' => kind_of(Array),
+                      }
                     }
                   ).and_return(create_vm_response)
                   subject.perform(report)
@@ -632,9 +652,11 @@ module Bosh
                 expect(cloud_wrapper).to receive(:create_vm).with(
                   kind_of(String), 'stemcell-id',
                   kind_of(Hash), network_settings, disks,
-                  'bosh' => {
-                    'group' => kind_of(String),
-                    'groups' => kind_of(Array),
+                  {
+                    'bosh' => {
+                      'group' => kind_of(String),
+                      'groups' => kind_of(Array),
+                    }
                   }
                 ).and_return(create_vm_response)
                 subject.perform(report)
@@ -886,9 +908,11 @@ module Bosh
                 { 'ram' => '2gb' },
                 network_settings,
                 disks,
-                'bosh' => {
-                  'group' => expected_group,
-                  'groups' => expected_groups,
+                {
+                  'bosh' => {
+                    'group' => expected_group,
+                    'groups' => expected_groups,
+                  },
                 },
               ).and_return(create_vm_response)
 
@@ -905,9 +929,11 @@ module Bosh
                 { 'ram' => '2gb' },
                 network_settings,
                 disks,
-                'bosh' => {
-                  'group' => expected_group,
-                  'groups' => expected_groups,
+                {
+                  'bosh' => {
+                    'group' => expected_group,
+                    'groups' => expected_groups,
+                  },
                 },
               ).and_return(create_vm_response)
 

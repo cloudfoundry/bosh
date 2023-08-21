@@ -362,7 +362,7 @@ module Bosh::Director
         metadata_updater = instance_double('Bosh::Director::MetadataUpdater', update_vm_metadata: nil)
 
         allow(Bosh::Director::MetadataUpdater).to receive_messages(build: metadata_updater)
-        expect(metadata_updater).to receive(:update_vm_metadata).with(anything, anything, compiling: 'common')
+        expect(metadata_updater).to receive(:update_vm_metadata).with(anything, anything, { compiling: 'common' })
         expect(metadata_updater).to receive(:update_vm_metadata)
           .with(anything, anything, hash_including(:compiling)).exactly(10).times
 
@@ -418,7 +418,7 @@ module Bosh::Director
         metadata_updater = instance_double('Bosh::Director::MetadataUpdater', update_vm_metadata: nil)
 
         allow(Bosh::Director::MetadataUpdater).to receive_messages(build: metadata_updater)
-        expect(metadata_updater).to receive(:update_vm_metadata).with(anything, anything, compiling: 'common')
+        expect(metadata_updater).to receive(:update_vm_metadata).with(anything, anything, { compiling: 'common' })
         expect(metadata_updater).to receive(:update_vm_metadata)
           .with(anything, anything, hash_including(:compiling)).exactly(10).times
 
@@ -471,7 +471,7 @@ module Bosh::Director
           metadata_updater = instance_double('Bosh::Director::MetadataUpdater', update_vm_metadata: nil)
 
           allow(Bosh::Director::MetadataUpdater).to receive_messages(build: metadata_updater)
-          expect(metadata_updater).to receive(:update_vm_metadata).with(anything, anything, compiling: 'common')
+          expect(metadata_updater).to receive(:update_vm_metadata).with(anything, anything, { compiling: 'common' })
           expect(metadata_updater).to receive(:update_vm_metadata)
             .with(anything, anything, hash_including(:compiling)).exactly(10).times
 
@@ -679,11 +679,13 @@ module Bosh::Director
           anything, # source package sha1
           'ruby', # package name
           '0.1-dev.1', # package version
-          'common' => {
-            'name' => 'common',
-            'version' => '0.1-dev.1',
-            'sha1' => 'compiled.common.sha1',
-            'blobstore_id' => 'blob.common.id',
+          {
+            'common' => {
+              'name' => 'common',
+              'version' => '0.1-dev.1',
+              'sha1' => 'compiled.common.sha1',
+              'blobstore_id' => 'blob.common.id',
+            },
           },
         ).ordered # immediate dependencies
         expect(agent).to receive(:compile_package).with(
@@ -691,11 +693,13 @@ module Bosh::Director
           anything, # source package sha1
           'needs_ruby', # package name
           '0.1-dev.1', # package version
-          'ruby' => {
-            'name' => 'ruby',
-            'version' => '0.1-dev.1',
-            'sha1' => 'compiled.ruby.sha1',
-            'blobstore_id' => 'blob.ruby.id',
+          {
+            'ruby' => {
+              'name' => 'ruby',
+              'version' => '0.1-dev.1',
+              'sha1' => 'compiled.ruby.sha1',
+              'blobstore_id' => 'blob.ruby.id',
+            },
           },
         ).ordered # immediate dependencies
 
@@ -745,7 +749,7 @@ module Bosh::Director
         agent = instance_double('Bosh::Director::AgentClient')
 
         expect(cloud).to receive(:create_vm).once.ordered
-          .with(instance_of(String), stemcell.models.first.cid, {}, net, [], 'bosh' => { 'group' => 'fake-director-name-mycloud-compilation-deadbeef', 'groups' => expected_groups })
+          .with(instance_of(String), stemcell.models.first.cid, {}, net, [], { 'bosh' => { 'group' => 'fake-director-name-mycloud-compilation-deadbeef', 'groups' => expected_groups } })
           .and_return(vm_cid)
 
         allow(AgentClient).to receive(:with_agent_id).and_return(agent)
@@ -842,7 +846,7 @@ module Bosh::Director
         agent = instance_double('Bosh::Director::AgentClient')
 
         expect(cloud).to receive(:create_vm)
-          .with(instance_of(String), @stemcell_a.models.first.cid, {}, net, [], 'bosh' => { 'group' => 'fake-director-name-mycloud-compilation-deadbeef', 'groups' => expected_groups })
+          .with(instance_of(String), @stemcell_a.models.first.cid, {}, net, [], { 'bosh' => { 'group' => 'fake-director-name-mycloud-compilation-deadbeef', 'groups' => expected_groups } })
           .and_return(vm_cid)
 
         allow(AgentClient).to receive(:with_agent_id).and_return(agent)

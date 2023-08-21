@@ -180,7 +180,7 @@ module Bosh::Director
               end
 
               it 'updates the DB with the new blobstore ID and sha1' do
-                expect(latest_rendered_templates_archive).to receive(:update).with(blobstore_id: new_blobstore_id, sha1: new_sha1)
+                expect(latest_rendered_templates_archive).to receive(:update).with({ blobstore_id: new_blobstore_id, sha1: new_sha1 })
 
                 perform_persist
               end
