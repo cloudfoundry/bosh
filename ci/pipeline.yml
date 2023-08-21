@@ -3,6 +3,7 @@ groups:
   - name: bosh
     jobs:
       - gate
+      - bump-deps
       - bump-packages
       - unit
       - unit-mysql
@@ -944,6 +945,40 @@ jobs:
       params:
         build: docker-build-context
         cache: true
+
+  - name: bump-deps
+    serial: true
+    plan:
+    - in_parallel:
+      - get: bosh-src
+      - get: ruby-release
+      - get: weekly
+        trigger: true
+      - get: integration-image
+    - task: bump-gems
+      file: ruby-release/ci/tasks/shared/bump-gems.yml
+      input_mapping:
+        input-repo: bosh-src
+      output_mapping:
+        output-repo: bosh-src-out
+      params:
+        GEM_DIRS: src
+        GIT_USER_NAME: CI Bot
+        GIT_USER_EMAIL: cf-bosh-eng@pivotal.io
+        PACKAGE: ruby-3.2
+        VENDOR: true
+    - task: test
+      timeout: 2h
+      file: bosh-src/ci/tasks/test-unit.yml
+      image: integration-image
+      input_mapping:
+        bosh-src: bosh-src-out
+      params:
+        DB: sqlite
+    - put: bosh-src
+      params:
+        repository: bosh-src-out
+        rebase: true
 
   - name: bump-packages
     serial: true
