@@ -959,6 +959,7 @@ jobs:
         GIT_USER_EMAIL: cf-bosh-eng@pivotal.io
         PACKAGE: ruby-3.2
         VENDOR: true
+        VENDOR_PATH: vendor/cache
     - task: test
       timeout: 2h
       file: bosh-src/ci/tasks/test-unit.yml
