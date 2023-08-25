@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-set -e
+set -euo pipefail
+set -x
 
 source bosh-src/ci/tasks/utils.sh
 
