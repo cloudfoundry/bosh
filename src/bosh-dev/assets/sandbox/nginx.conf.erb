@@ -22,9 +22,8 @@ http {
   }
 
   server {
-    listen <%= nginx_port %>;
+    listen <%= nginx_port %> ssl;
 
-    ssl                 on;
     ssl_certificate     <%= ssl_cert_path %>;
     ssl_certificate_key <%= ssl_cert_key_path %>;
     ssl_session_timeout 7200;
