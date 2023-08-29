@@ -24,11 +24,13 @@ groups:
 
   - name: cut-release
     jobs:
+      - automatically-release-new-patch
       - bump-major
       - bump-minor
       - bump-patch
       - finalize-release
       - export-final-release
+      - clear-release-notes
 
   - name: docker
     jobs:
@@ -722,6 +724,7 @@ jobs:
         - get: bosh-cli
         - get: integration-image
         - get: version
+          trigger: true
       - task: prepare-release
         image: integration-image
         file: bosh-src/ci/tasks/prepare-release.yml
@@ -778,6 +781,65 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ((bosh-compiled-releases_assume_aws_access_key.password))
         AWS_ROLE_ARN: ((bosh-compiled-releases_assume_aws_access_key.role_arn))
         git_private_key: ((github_deploy_key_bosh-compiled-releases-index.private_key))
+
+  - name: clear-release-notes
+    plan:
+    - get: version
+      passed:
+      - finalize-release
+      trigger: true
+    - task: clear-release-notes
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: alpine
+        outputs:
+        - name: release-notes
+        run:
+          path: sh
+          args:
+          - -exc
+          - touch release-notes/release-notes.md
+    - put: release-notes
+      params:
+        file: release-notes/release-notes.md
+
+  - name: automatically-release-new-patch
+    serial_groups:
+    - version
+    plan:
+    - in_parallel:
+      - get: bosh-src
+        trigger: true
+        passed:
+        - delivery
+      - get: current-version
+        resource: version
+      - get: patched-version
+        resource: version
+        params:
+          bump: patch
+    - try:
+        task: check-for-updated-blobs
+        file: bosh-src/ci/tasks/check-for-updated-blobs.yml
+        input_mapping:
+          version: current-version
+        params:
+          BLOBS:
+          - nats-server
+          - postgresql-10
+          - postgresql-13
+          - postgresql-15
+        on_success:
+          do:
+          - put: release-notes
+            params:
+              file: release-notes/release-notes.md
+          - put: version
+            params:
+              file: patched-version/version
 
   - name: bump-major
     serial: true
@@ -1563,3 +1625,11 @@ resources:
     source:
       repository: cloudfoundry/bosh
       tarball: true
+
+  - name: release-notes
+    type: gcs-resource
+    source:
+      bucket: bosh-ci-release-notes
+      json_key: ((gcp_credentials_json))
+      versioned_file: bosh-director/release-notes.md
+      initial_content_text: ""
