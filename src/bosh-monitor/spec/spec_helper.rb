@@ -2,10 +2,10 @@ require File.expand_path('../../spec/shared/spec_helper', __dir__)
 
 require 'tempfile'
 require 'bosh/monitor'
-require_relative 'support/buffered_logger'
-require_relative 'support/uaa_helpers'
 require 'webmock/rspec'
 require 'timecop'
+
+Dir.glob(File.expand_path('support/**/*.rb', __dir__)).each { |f| require(f) }
 
 def spec_asset(filename)
   File.expand_path(File.join(File.dirname(__FILE__), 'assets', filename))
@@ -108,6 +108,6 @@ RSpec.configure do |c|
       end
 
       raise 'EM still running, but expected to not.' if EM.reactor_running?
-     end
+    end
   end
 end
