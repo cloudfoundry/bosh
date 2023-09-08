@@ -360,7 +360,7 @@ DEPENDENCIES
   rack-test
   rake (~> 13.0.3)
   rest-client
-  rspec (~> 3.4)
+  rspec
   rspec-instafail
   rspec-its
   rubocop

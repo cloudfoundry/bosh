@@ -37,7 +37,7 @@ group :development, :test do
 
   gem 'bundle-audit'
 
-  gem 'rspec', '~> 3.4'
+  gem 'rspec'
   gem 'rspec-instafail'
   gem 'rspec-its'
 
