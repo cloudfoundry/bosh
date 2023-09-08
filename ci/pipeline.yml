@@ -1281,7 +1281,7 @@ resource_types:
   type: docker-image
   source:
     repository: concourse/semver-resource
-    tag: 1.6
+    tag: "1.6"
 
 
 resources:
