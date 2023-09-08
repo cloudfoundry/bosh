@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'timecop'
 
 describe Bosh::Director::EventLog::Log do
   subject(:event_log) { described_class.new(task_db_writer) }

@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'timecop'
 require 'rack/test'
 require 'bosh/director/api/controllers/events_controller'
 

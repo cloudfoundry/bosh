@@ -1,6 +1,5 @@
 require 'spec_helper'
 require 'bosh/director/log_bundles_cleaner'
-require 'timecop'
 
 module Bosh::Director
   describe Jobs::FetchLogs do

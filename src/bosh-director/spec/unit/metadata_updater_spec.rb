@@ -1,6 +1,5 @@
 require 'spec_helper'
 require 'logger'
-require 'timecop'
 
 describe Bosh::Director::MetadataUpdater do
   subject(:metadata_updater) { described_class.new(director_metadata, logger) }

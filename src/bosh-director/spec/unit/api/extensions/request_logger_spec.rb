@@ -1,6 +1,5 @@
 require 'spec_helper'
 require 'rack/test'
-require 'timecop'
 
 module Bosh::Director
   module Api

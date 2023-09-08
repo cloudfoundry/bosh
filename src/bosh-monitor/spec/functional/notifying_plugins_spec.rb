@@ -1,5 +1,4 @@
 require_relative '../spec_helper'
-require 'timecop'
 
 class FakeNATS
   def initialize(verbose = false)

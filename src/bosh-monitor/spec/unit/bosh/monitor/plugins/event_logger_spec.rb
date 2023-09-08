@@ -1,5 +1,4 @@
 require_relative '../../../../spec_helper'
-require 'timecop'
 
 describe 'Bhm::Plugins::Resurrector' do
   include Support::UaaHelpers

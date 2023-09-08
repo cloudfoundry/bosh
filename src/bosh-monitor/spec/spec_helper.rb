@@ -5,6 +5,7 @@ require 'bosh/monitor'
 require_relative 'support/buffered_logger'
 require_relative 'support/uaa_helpers'
 require 'webmock/rspec'
+require 'timecop'
 
 def spec_asset(filename)
   File.expand_path(File.join(File.dirname(__FILE__), 'assets', filename))

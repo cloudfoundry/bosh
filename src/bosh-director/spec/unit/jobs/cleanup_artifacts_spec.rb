@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'timecop'
 
 module Bosh::Director
   describe Jobs::CleanupArtifacts do
