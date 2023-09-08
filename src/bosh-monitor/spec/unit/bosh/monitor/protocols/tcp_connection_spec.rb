@@ -1,4 +1,4 @@
-require_relative '../../../../spec_helper'
+require 'spec_helper'
 
 describe Bosh::Monitor::TcpConnection do
   describe 'exponential back off' do

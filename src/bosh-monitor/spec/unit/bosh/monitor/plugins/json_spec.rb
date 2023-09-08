@@ -1,4 +1,4 @@
-require_relative '../../../../spec_helper'
+require 'spec_helper'
 
 describe Bhm::Plugins::Json do
   let(:process_manager) { instance_double(Bosh::Monitor::Plugins::ProcessManager) }

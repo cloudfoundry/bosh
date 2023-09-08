@@ -1,4 +1,4 @@
-require_relative '../../../../spec_helper'
+require 'spec_helper'
 
 describe 'Bhm::Plugins::Resurrector' do
   include Support::UaaHelpers

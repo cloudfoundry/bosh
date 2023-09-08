@@ -1,4 +1,4 @@
-require_relative '../../../../spec_helper'
+require 'spec_helper'
 
 describe Bhm::Plugins::Tsdb do
   subject(:plugin) { Bhm::Plugins::Tsdb.new(options) }

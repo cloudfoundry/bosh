@@ -1,4 +1,4 @@
-require_relative '../../../../spec_helper'
+require 'spec_helper'
 
 describe Bhm::Plugins::Dummy do
   let(:plugin) { described_class.new }

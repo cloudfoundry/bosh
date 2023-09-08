@@ -1,4 +1,4 @@
-require_relative '../../../spec_helper'
+require 'spec_helper'
 require 'rack/test'
 
 shared_examples :auth_provider_shared_tests do

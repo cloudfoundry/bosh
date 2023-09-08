@@ -1,4 +1,4 @@
-require_relative '../../../../spec_helper'
+require 'spec_helper'
 
 describe Bhm::Plugins::ConsulEventForwarder do
   WebMock.allow_net_connect!

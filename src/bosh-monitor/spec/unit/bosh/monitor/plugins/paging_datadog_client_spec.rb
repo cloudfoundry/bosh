@@ -1,4 +1,4 @@
-require_relative '../../../../spec_helper'
+require 'spec_helper'
 
 class FakeDatadogClient
   def emit_points_called?

@@ -1,4 +1,4 @@
-require_relative '../../../spec_helper'
+require 'spec_helper'
 require 'rack/test'
 
 describe Bosh::Monitor::ApiController do
