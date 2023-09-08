@@ -12,7 +12,7 @@ require 'bosh/director'
 require 'blue-shell'
 require_relative '../bosh-dev/lib/bosh/dev/postgres_version'
 
-Dir.glob(File.expand_path('support/**/*.rb', __dir__)).sort.each { |f| require(f) }
+Dir.glob(File.expand_path('support/**/*.rb', __dir__)).each { |f| require(f) }
 
 ASSETS_DIR = File.expand_path('assets', __dir__)
 TEST_RELEASE_TEMPLATE = File.join(ASSETS_DIR, 'test_release_template')
