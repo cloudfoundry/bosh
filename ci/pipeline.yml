@@ -873,6 +873,25 @@ jobs:
       params:
         file: version/version
 
+  - name: build-integration
+    public: true
+    serial: true
+    plan:
+    - get: weekly
+      trigger: true
+    - get: golang-docker-image
+      trigger: true
+    - get: bosh-src-dockerfiles
+      trigger: true
+    - put: integration-image
+      params:
+        tag_as_latest: true
+        build: "bosh-src-dockerfiles/ci/dockerfiles/integration"
+        build_args:
+          BRANCH: ((branch_name))
+      get_params:
+        skip_download: true
+
   - name: build-main-postgres-10
     public: true
     serial: true
@@ -939,23 +958,6 @@ jobs:
         params:
           tag_as_latest: true
           build: "bosh-src-dockerfiles/ci/dockerfiles/main-mysql"
-          build_args:
-            BRANCH: ((branch_name))
-        get_params:
-          skip_download: true
-
-  - name: build-integration
-    public: true
-    serial: true
-    plan:
-      - get: weekly
-        trigger: true
-      - get: bosh-src-dockerfiles
-        trigger: true
-      - put: integration-image
-        params:
-          tag_as_latest: true
-          build: "bosh-src-dockerfiles/ci/dockerfiles/integration"
           build_args:
             BRANCH: ((branch_name))
         get_params:
@@ -1592,6 +1594,14 @@ resources:
     type: registry-image
     source:
       repository: ubuntu
+      tag: latest
+      username: ((docker.username))
+      password: ((docker.password))
+
+  - name: golang-docker-image
+    type: registry-image
+    source:
+      repository: golang
       tag: latest
       username: ((docker.username))
       password: ((docker.password))
