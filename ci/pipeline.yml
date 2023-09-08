@@ -725,6 +725,7 @@ jobs:
         - get: integration-image
         - get: version
           trigger: true
+        - get: release-notes
       - task: prepare-release
         image: integration-image
         file: bosh-src/ci/tasks/prepare-release.yml
@@ -748,6 +749,7 @@ jobs:
         params:
           name: bosh-main/tag-name
           tag: bosh-main/tag-name
+          body: release-notes/release-notes.md
       - put: bosh-main
         params:
           repository: bosh-main
@@ -1377,7 +1379,6 @@ resources:
     source:
       owner: cloudfoundry
       repository: bosh
-      drafts: true
       access_token: ((github_public_repo_token))
 
   - name: version
