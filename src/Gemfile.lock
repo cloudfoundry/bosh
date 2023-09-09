@@ -186,7 +186,7 @@ GEM
     mime-types-data (3.2023.0808)
     mini_portile2 (2.8.4)
     minitar (0.9)
-    minitest (5.19.0)
+    minitest (5.20.0)
     mtrc (0.0.4)
     multi_json (1.15.0)
     mustermann (2.0.2)
