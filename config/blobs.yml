@@ -34,10 +34,10 @@ powerdns/pdns-static_3.3.1-1_amd64.deb:
   size: 9353694
   object_id: 6e861aa6-2e83-4027-a1e8-0ebec995c274
   sha: 22bb46aa0b3e7671e0ee9aa30ed95c38841106ab
-s3cli/s3cli-0.0.229-linux-amd64:
+s3cli/s3cli-0.0.230-linux-amd64:
   size: 16621907
-  object_id: cbcce5a4-034e-4fb9-4338-fdcd2be146bf
-  sha: sha256:13a2ca3ee45cc0ff3172463527dca2c66ebd729cad2fe081fed309e9e27bdd6a
+  object_id: d02c915d-d04c-453d-5c6f-14445c7b55d2
+  sha: sha256:ac7e848cadea9c28e324280356d3828c107f270820773e8567637b8942566ab0
 verify-multidigest/verify-multidigest-0.0.401-linux-amd64:
   size: 3168599
   object_id: 4a729b45-8e9a-4312-7c12-1402bb7ff8c8
