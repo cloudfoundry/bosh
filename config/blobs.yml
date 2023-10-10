@@ -6,10 +6,10 @@ bosh-gcscli/bosh-gcscli-0.0.165-linux-amd64:
   size: 20027835
   object_id: 1e5a041f-06df-4640-4c4f-cd799942945b
   sha: sha256:060f0cf4a8f8bafd7c69c9e6633ef665a99773c6ccfed396ca09e7e4d44967f9
-davcli/davcli-0.0.282-linux-amd64:
-  size: 8472830
-  object_id: 3fa39c27-1a4d-4c27-4924-f7bdf3a2e702
-  sha: sha256:b38c4a1a4114f7839304df9bba0d320c1275c72a4bae849fd88361440f601230
+davcli/davcli-0.0.283-linux-amd64:
+  size: 8472843
+  object_id: 37c7e7a8-d633-4fd4-5cb0-fb14133785c1
+  sha: sha256:a6ec9ba05385c691dac5eaa7141e6bb8ff8efe9a54d083b2ef67ee85aa6813dd
 mysql/mariadb-connector-c-3.3.7-src.tar.gz:
   size: 1393100
   object_id: bb617393-c1d2-42ee-4ef4-c864c31eba79
