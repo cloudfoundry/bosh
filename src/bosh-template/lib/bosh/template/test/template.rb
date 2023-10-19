@@ -1,5 +1,4 @@
 require 'bosh/template/evaluation_context'
-require 'bosh/template/evaluation_context'
 
 module Bosh::Template
   module Test

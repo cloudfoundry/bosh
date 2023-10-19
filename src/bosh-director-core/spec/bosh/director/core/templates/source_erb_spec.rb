@@ -17,6 +17,19 @@ module Bosh::Director::Core::Templates
         expect(subject.render(context, logger)).to eq('erb code to render')
       end
 
+      context 'when using backward-compatible Ruby methods' do
+        context 'with ActiveSupport #present?' do
+          let(:erb_contents) { '<%= p("property").present? ? "present? is available" : "" %>' }
+          let(:context) do
+            Bosh::Template::EvaluationContext.new({ 'properties' => { 'property' => 'value'} }, nil)
+          end
+
+          it 'renders the erb for the given template context' do
+            expect(subject.render(context, logger)).to eq('present? is available')
+          end
+        end
+      end
+
       context 'when an error occurs in erb rendering' do
         let(:erb_contents) { '<% nil.no_method %>' }
         before do

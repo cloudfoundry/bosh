@@ -21,4 +21,5 @@ Gem::Specification.new do |spec|
   spec.executables << 'bosh-template'
 
   spec.add_dependency 'semi_semantic', '~>1.2.0'
+  spec.add_dependency 'activesupport'
 end

@@ -7,6 +7,10 @@ require 'bosh/template/evaluation_link_instance'
 require 'bosh/template/evaluation_link'
 require 'bosh/template/manual_link_dns_encoder'
 
+# Include for backward compatibility within ERB template rendering
+require 'active_support'
+require 'active_support/core_ext'
+
 module Bosh
   module Template
     # Helper class to evaluate templates. Used by Director, CLI and Agent.

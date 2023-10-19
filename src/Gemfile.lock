@@ -97,6 +97,7 @@ PATH
   remote: bosh-template
   specs:
     bosh-template (0.0.0)
+      activesupport
       semi_semantic (~> 1.2.0)
 
 PATH
