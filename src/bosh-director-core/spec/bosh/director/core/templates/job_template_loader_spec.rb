@@ -20,7 +20,8 @@ def write_tar(configuration_files, manifest, monit, options)
 
   Archive::Tar::Minitar::Writer.open(io) do |tar|
     unless options[:skip_manifest]
-      tar.add_file('job.MF', { mode: '0644', mtime: 0 }) { |os, _| os.write(manifest.to_yaml) }
+      string_manifest = manifest.is_a?(String) ? manifest : manifest.to_yaml
+      tar.add_file('job.MF', { mode: '0644', mtime: 0 }) { |os, _| os.write(string_manifest) }
     end
     unless options[:skip_monit]
       monit_file = options[:monit_file] ? options[:monit_file] : 'monit'
@@ -159,6 +160,33 @@ module Bosh::Director::Core::Templates
 
         generated_renderer = job_template_loader.process(job)
         expect(generated_renderer).to eq(fake_renderer)
+      end
+
+      context 'when the job manifest uses yaml anchors' do
+        it 'parses the anchors correctly' do
+          manifest = <<~EOF
+            ---
+            bogus_key: &empty_hash {}
+            name: test
+            templates: *empty_hash
+            packages: []
+          EOF
+          tarball = write_tar([], manifest, "", {})
+          tgz = gzip(tarball.string)
+
+          File.open(tmp_file.path, 'w') { |f| f.write(tgz) }
+
+          job = double('Bosh::Director::DeploymentPlan::Job',
+            download_blob: tmp_file.path,
+            name: 'plan-job-name',
+            blobstore_id: 'blob-id',
+            release: release,
+            model: double('Bosh::Director::Models::Template', provides: [])
+          )
+
+          job_template_renderer = job_template_loader.process(job)
+          expect(job_template_renderer.source_erbs).to eq([])
+        end
       end
     end
   end
