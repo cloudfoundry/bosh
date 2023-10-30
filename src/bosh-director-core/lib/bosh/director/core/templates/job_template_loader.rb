@@ -17,7 +17,7 @@ module Bosh::Director
 
       def process(job_template)
         template_dir = extract_template(job_template)
-        manifest = Psych.load_file(File.join(template_dir, 'job.MF'))
+        manifest = Psych.load_file(File.join(template_dir, 'job.MF'), aliases: true)
 
         monit_erb_file = File.read(File.join(template_dir, 'monit'))
         monit_source_erb = SourceErb.new('monit', 'monit', monit_erb_file, job_template.name)
