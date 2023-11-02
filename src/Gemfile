@@ -18,7 +18,7 @@ gem 'json', '2.6.3'
 
 gem 'talentbox-delayed_job_sequel', '~>4.3'
 
-gem 'ruby-prof', '0.17.0'
+gem 'ruby-prof', '1.6.3'
 
 group :production do
   gem 'mysql2'
@@ -64,7 +64,7 @@ group :development, :test do
   gem 'factory_bot', '~> 6.2'
 
   # for root level specs
-  gem 'nats-pure', '~>0.6.2'
+  gem 'nats-pure', '~>2.3'
   gem 'openssl'
   gem 'rest-client'
 
