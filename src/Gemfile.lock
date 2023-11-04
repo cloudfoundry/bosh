@@ -229,7 +229,7 @@ GEM
     puma (6.4.0)
       nio4r (~> 2.0)
     raabro (1.4.0)
-    racc (1.7.1)
+    racc (1.7.3)
     rack (2.2.8)
     rack-protection (2.2.4)
       rack
@@ -306,7 +306,7 @@ GEM
       sinatra (= 2.2.4)
       tilt (~> 2.0)
     slop (3.6.0)
-    sqlite3 (1.6.7)
+    sqlite3 (1.6.8)
       mini_portile2 (~> 2.8.0)
     sys-filesystem (1.4.4)
       ffi (~> 1.1)
