@@ -1,0 +1,22 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: bosh/integration
+    tag: main
+
+inputs:
+  - name: bosh-linux-stemcell-builder
+  - name: bosh-stemcells-ci
+  - name: director-state
+
+params:
+  STEMCELL_NAME: null
+
+outputs:
+  - name: bats-config
+
+run:
+  path: bosh-stemcells-ci/tasks/bats/iaas/gcp/prepare-bats-config.sh

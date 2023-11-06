@@ -1,0 +1,21 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source: {repository: bosh/integration, tag: main }
+
+inputs:
+  - name: bosh-deployment
+  - name: bosh-stemcells-ci
+  - name: bosh-linux-stemcell-builder
+  - name: bosh-cli
+
+outputs:
+  - name: director-state
+
+params:
+
+
+run:
+  path: bosh-stemcells-ci/tasks/gcp/deploy-director.sh
