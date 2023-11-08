@@ -123,7 +123,7 @@ GEM
     addressable (2.8.5)
       public_suffix (>= 2.0.2, < 6.0)
     ast (2.4.2)
-    base64 (0.1.1)
+    base64 (0.2.0)
     bcrypt (3.1.19)
     beefcake (1.0.0)
     bigdecimal (3.1.4)
@@ -155,7 +155,7 @@ GEM
       multi_json
     domain_name (0.5.20190701)
       unf (>= 0.0.5, < 1.0.0)
-    drb (2.1.1)
+    drb (2.2.0)
       ruby2_keywords
     em-http-request (1.1.7)
       addressable (>= 2.3.4)
@@ -201,7 +201,7 @@ GEM
     multi_json (1.15.0)
     mustermann (2.0.2)
       ruby2_keywords (~> 0.0.1)
-    mutex_m (0.1.2)
+    mutex_m (0.2.0)
     mysql2 (0.5.5)
     nats-pure (0.6.2)
     net-ssh (7.2.0)
