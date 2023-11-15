@@ -65,7 +65,7 @@ describe 'director_scheduler', type: :integration do
           event['user'] == 'scheduler' && event['object_type'] != 'lock'
         end
 
-        expect(events.length).to equal(2 * deployment_hash['instance_groups'][0]['instances'])
+        expect(events.length).to eq(2 * deployment_hash['instance_groups'][0]['instances'])
         event = {
           'id' => /[0-9]{1,}/,
           'time' => 'xxx xxx xx xx:xx:xx UTC xxxx',
