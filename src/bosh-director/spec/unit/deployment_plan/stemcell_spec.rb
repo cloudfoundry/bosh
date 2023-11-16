@@ -48,6 +48,13 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
           valid_spec['name'] = 'stemcell-name'
           expect { make(valid_spec) }.to_not raise_error
         end
+        it 'populates os' do
+          make_stemcell('stemcell-name','0.5.2','plan-9')
+          valid_spec.delete('os')
+          valid_spec['name'] = 'stemcell-name'
+          stemcell = make(valid_spec)
+          expect(stemcell.os).to eq('plan-9')
+        end
       end
 
       context 'when neither os or name are specified' do

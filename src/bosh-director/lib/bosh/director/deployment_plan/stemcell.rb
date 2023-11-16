@@ -33,6 +33,12 @@ module Bosh::Director
         @os = os
         @version = version
         @manager = Api::StemcellManager.new
+        if @os.blank?
+          models = @manager.all_by_name_and_version(@name, @version)
+          unless models.empty?
+            @os = models.first.operating_system
+          end
+        end
       end
 
       def is_using_os?
