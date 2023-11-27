@@ -7,8 +7,8 @@ module Bosh::Director::Core::Templates
   # @param [Array<DeploymentPlan::Job>] instance_jobs
   # @param [JobTemplateLoader] job_template_loader
   class JobInstanceRenderer
-    def initialize(templates, job_template_loader)
-      @templates = templates
+    def initialize(instance_jobs, job_template_loader)
+      @instance_jobs = instance_jobs
       @job_template_loader = job_template_loader
     end
 
@@ -36,14 +36,14 @@ module Bosh::Director::Core::Templates
     #                           in the `spec` object exposed to ERB templates
     # @return [RenderedJobInstance] An object containing the rendering results
     #                               (when successful)
-    def render(spec)
+    def render(spec_object)
       errors = []
 
-      rendered_templates = @templates.map do |template|
-        job_template_renderer = job_template_renderers[template.name]
+      rendered_templates = @instance_jobs.map do |instance_job|
+        job_template_renderer = job_template_renderers[instance_job.name]
 
         begin
-          job_template_renderer.render(spec)
+          job_template_renderer.render(spec_object)
         rescue Exception => e
           errors.push e
         end
@@ -51,7 +51,7 @@ module Bosh::Director::Core::Templates
 
       if errors.length > 0
         combined_errors = errors.map{|error| error.message.strip }.join("\n")
-        header = "- Unable to render jobs for instance group '#{spec['job']['name']}'. Errors are:"
+        header = "- Unable to render jobs for instance group '#{spec_object['name']}'. Errors are:"
         message = Bosh::Director::FormatterHelper.new.prepend_header_and_indent_body(header, combined_errors.strip, {:indent_by => 2})
         raise message
       end
@@ -62,9 +62,9 @@ module Bosh::Director::Core::Templates
     private
 
     def job_template_renderers
-      @job_template_renderers ||= @templates.reduce({}) do |hash, template|
-        hash[template.name] = @job_template_loader.process(template)
-        hash
+      @job_template_renderers ||= @instance_jobs.reduce({}) do |renderers_hash, instance_job|
+        renderers_hash[instance_job.name] = @job_template_loader.process(instance_job)
+        renderers_hash
       end
     end
   end

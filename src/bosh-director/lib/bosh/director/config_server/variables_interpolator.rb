@@ -20,9 +20,9 @@ module Bosh::Director::ConfigServer
     # @param [VariableSet] variable_set The variable set which the
     #                                   interpolation will use.
     # @return [Hash] A Deep copy of the interpolated instance_group_properties
-    def interpolate_template_spec_properties(template_spec_properties, deployment_name, instance_name, variable_set)
-      if template_spec_properties.nil?
-        return template_spec_properties
+    def interpolate_template_spec_properties(instance_group_properties, deployment_name, instance_group_name, variable_set)
+      if instance_group_properties.nil?
+        return instance_group_properties
       end
 
       if deployment_name.nil?
@@ -32,9 +32,9 @@ module Bosh::Director::ConfigServer
       result = {}
       errors = []
 
-      template_spec_properties.each do |job_name, job_properties|
+      instance_group_properties.each do |job_name, job_properties|
         begin
-          key = job_name + "-" + instance_name
+          key = job_name + "-" + instance_group_name
           if @cache_by_job_name.has_key?(key)
             interpolated_hash = @cache_by_job_name[key]
           else

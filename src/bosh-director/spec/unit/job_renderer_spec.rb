@@ -59,7 +59,7 @@ module Bosh::Director
         end
 
         it 'does not render' do
-          expect(logger).to receive(:debug).with("Skipping rendering templates for 'test-instance-group/5', no templates")
+          expect(logger).to receive(:debug).with("Skipping rendering templates for 'test-instance-group/5': no job")
           expect { perform }.not_to change { instance_plan.rendered_templates }
         end
       end

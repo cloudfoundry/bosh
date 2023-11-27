@@ -10,7 +10,8 @@ module Bosh::Director::Core::Templates
 
       let(:spec) do
         {
-          'job' => {
+          'name' => 'fake-instance-group-name',
+          'job' => { # <- here 'job' is the Bosh v1 term for 'instance group'
             'name' => 'fake-instance-group-name'
           }
         }

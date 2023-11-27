@@ -7,11 +7,11 @@ module Bosh::Director::Core::Templates
 
     attr_reader :src_name, :dest_name, :erb
 
-    def initialize(src_name, dest_name, erb_contents, template_name)
+    def initialize(src_name, dest_name, erb_contents, job_name)
       @src_name = src_name
       @dest_name = dest_name
       erb = ERB.new(erb_contents, trim_mode: "-")
-      erb.filename = File.join(template_name, src_name)
+      erb.filename = File.join(job_name, src_name)
       @erb = erb
     end
 
