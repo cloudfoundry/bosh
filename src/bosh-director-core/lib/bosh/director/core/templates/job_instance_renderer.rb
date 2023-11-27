@@ -3,12 +3,39 @@ require 'bosh/director/core/templates/rendered_job_instance'
 require 'bosh/director/formatter_helper'
 
 module Bosh::Director::Core::Templates
+
+  # @param [Array<DeploymentPlan::Job>] instance_jobs
+  # @param [JobTemplateLoader] job_template_loader
   class JobInstanceRenderer
     def initialize(templates, job_template_loader)
       @templates = templates
       @job_template_loader = job_template_loader
     end
 
+    # Render all templates for a Bosh instance.
+    #
+    # From a list of instance jobs (typically comming from a single instance
+    # plan, so they cover all templates of some instance) this method is
+    # responsible for orchestrating several tasks.
+    #
+    # Lazily-delegated work to a 'JobTemplateLoader' object:
+    #   - Load all templates of the release job that the instance job is
+    #     referring to
+    #   - Convert each of these to a 'JobTemplateRenderer' object
+    #
+    # Work done here on top of this:
+    #   - Render each template with the necessary bindings (comming from
+    #     deployment manifest properties) for building the special 'spec'
+    #     object that the ERB rendring code can use.
+    #
+    # The actual rendering of each template is delegated to its related
+    # 'JobTemplateRenderer' object, as created in the first place by the
+    # 'JobTemplateLoader' object.
+    #
+    # @param [Hash] spec_object A hash of properties that will finally result
+    #                           in the `spec` object exposed to ERB templates
+    # @return [RenderedJobInstance] An object containing the rendering results
+    #                               (when successful)
     def render(spec)
       errors = []
 

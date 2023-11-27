@@ -15,6 +15,24 @@ module Bosh::Director
         @dns_encoder = dns_encoder
       end
 
+      # Perform these operations in order:
+      #
+      #  1. Download (or fetch from cache) a single job blob tarball.
+      #
+      #  2. Extract the job blob tarball in a temporary directory.
+      #
+      #  3. Access the extracted 'job.MF' manifest from the job blob.
+      #
+      #  4. Load all ERB templates (including the 'monit' file and all other
+      #     declared files within the 'templates' subdir) and create one
+      #     'SourceErb' object for each of these.
+      #
+      #  5. Create and return a 'JobTemplateRenderer' object, populated with
+      #     all created 'SourceErb' objects.
+      #
+      # @param [DeploymentPlan::Job] instance_job The job whose templates
+      #                                           should be rendered
+      # @return [JobTemplateRenderer] Object that can render the templates
       def process(job_template)
         template_dir = extract_template(job_template)
         manifest = Psych.load_file(File.join(template_dir, 'job.MF'), aliases: true)

@@ -17,7 +17,7 @@ module Bosh::Director
 
         spec = {
           'deployment' => deployment_name,
-          'job' => instance_group.spec,
+          'job' => instance_group.spec, # <- here 'job' is old Bosh v1 naming, meaning 'instance group'
           'index' => instance.index,
           'bootstrap' => instance.bootstrap?,
           'lifecycle' => instance_group.lifecycle,

@@ -4,6 +4,20 @@ require 'bosh/director/core/templates/template_blob_cache'
 
 module Bosh::Director
   class JobRenderer
+
+    # Render the related job templates for each instance plan passed as
+    # argument in the 'instance_plans' array.
+    #
+    # @param [Logging::Logger] logger A logger where to log activity
+    # @param [Array<InstancePlan>] instance_plans A list of instance plans
+    # @param [TemplateBlobCache] cache A cache through which job blobs are to
+    #                                  be fetched
+    # @param [DnsEncoder] dns_encoder A DNS encoder for generating Bosh DNS
+    #                                 queries out of context and criteria
+    # @param [Array<LinkProviderIntent>] link_provider_intents Relevant
+    #                                                          context-dependant
+    #                                                          link provider
+    #                                                          intents
     def self.render_job_instances_with_cache(logger, instance_plans, cache, dns_encoder, link_provider_intents)
       job_template_loader = Core::Templates::JobTemplateLoader.new(
         logger,
@@ -17,6 +31,15 @@ module Bosh::Director
       end
     end
 
+    # For one instance plan, create a 'JobInstanceRenderer' object that will
+    # lazily load the ERB templates for all desired jobs on the instance, then
+    # render these templates with the bindings populated by the
+    # 'spec' properties of the instance plan.
+    #
+    # @param [DeploymentPlan::InstancePlan] instance_plan An instance plan
+    # @param [JobTemplateLoader] loader The object that will load the ERB
+    #                                   templates
+    # @param [Logging::Logger] logger A logger where to log activity
     def self.render_job_instance(instance_plan, loader, logger)
       instance = instance_plan.instance
 

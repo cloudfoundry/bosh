@@ -7,10 +7,19 @@ module Bosh::Director::ConfigServer
       @cache_by_job_name = {}
     end
 
-    # @param [Hash] template_spec_properties Hash to be interpolated
-    # @param [Hash] deployment_name The deployment context in-which the interpolation will occur
-    # @param [VariableSet] variable_set The variable set which the interpolation will use.
-    # @return [Hash] A Deep copy of the interpolated template_spec_properties
+    # From a `job_name => job_properties` hash of instance group properties,
+    # resolve the `((var_name))`` placeholders, fetching their values from the
+    # config server. Most often, these placeholders refers to secrets stored
+    # in CredHub.
+    #
+    # @param [Hash] instance_group_properties a hash of per-job properties, to
+    #                                         be interpolated
+    # @param [String] deployment_name The name of the deployment, as context
+    #                                 in-which the interpolation will occur
+    # @param [String] instance_group_name The name of the instance group
+    # @param [VariableSet] variable_set The variable set which the
+    #                                   interpolation will use.
+    # @return [Hash] A Deep copy of the interpolated instance_group_properties
     def interpolate_template_spec_properties(template_spec_properties, deployment_name, instance_name, variable_set)
       if template_spec_properties.nil?
         return template_spec_properties

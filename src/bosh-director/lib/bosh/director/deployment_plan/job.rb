@@ -34,7 +34,10 @@ module Bosh::Director
         @properties = {}
       end
 
-      # Looks up template model and its package models in DB
+      # Looks up job model and its package models in DB.
+      #
+      # Here “template” is the old Bosh v1 name for “job”.
+      #
       # @return [void]
       def bind_models
         @model = @release.get_template_model_by_name(@name)

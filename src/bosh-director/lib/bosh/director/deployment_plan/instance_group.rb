@@ -409,10 +409,19 @@ module Bosh::Director
 
       private
 
+      # Returns the aggregated list of package names, considering all jobs
+      # desired on this instance group, with no duplicate.
+      #
+      # @return [Array<String>] The list of package names
       def run_time_dependencies
         run_time_packages.map(&:name)
       end
 
+      # The aggregated list of models for all packages to install on instances
+      # of the group, considering all jobs desired on this instance group,
+      # with no duplicate.
+      #
+      # @return [Array<Models::Package>] The list of packages
       def run_time_packages
         jobs.flat_map(&:package_models).uniq
       end
