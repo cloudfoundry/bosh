@@ -95,6 +95,10 @@ module Bosh::Director::Core::Templates
           release: release
         )
 
+        job_model = double('Bosh::Director::Models::Template')
+        expect(job).to receive(:model).and_return(job_model)
+        expect(job_model).to receive(:spec).and_return({ "templates" => { "test" => "test_dst" } })
+
         monit_erb = instance_double(SourceErb)
         job_template_erb = instance_double(SourceErb)
         fake_renderer = instance_double(JobTemplateRenderer)
@@ -136,6 +140,10 @@ module Bosh::Director::Core::Templates
           blobstore_id: 'blob-id',
           release: release,
         )
+
+        job_model = double('Bosh::Director::Models::Template')
+        expect(job).to receive(:model).and_return(job_model)
+        expect(job_model).to receive(:spec).and_return({ "templates" => {} })
 
         monit_erb = instance_double(SourceErb)
         fake_renderer = instance_double(JobTemplateRenderer)
@@ -181,6 +189,10 @@ module Bosh::Director::Core::Templates
             release: release,
             model: double('Bosh::Director::Models::Template', provides: [])
           )
+
+          job_model = double('Bosh::Director::Models::Template')
+          expect(job).to receive(:model).and_return(job_model)
+          expect(job_model).to receive(:spec).and_return({ "templates" => {} })
 
           job_template_renderer = job_template_loader.process(job)
           expect(job_template_renderer.source_erbs).to eq([])

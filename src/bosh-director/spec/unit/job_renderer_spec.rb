@@ -41,13 +41,21 @@ module Bosh::Director
 
       before do
         release_version = DeploymentPlan::ReleaseVersion.parse(deployment_model, 'name' => 'fake-release', 'version' => '123')
+
         job1 = DeploymentPlan::Job.new(release_version, 'dummy')
-        job1.bind_existing_model(
-          Models::Template.make(blobstore_id: 'my-blobstore-id', sha1: '16baf0c24e2dac2a21ccdcd4655be403a602f573'),
-        )
+        job1.bind_existing_model(Models::Template.make(
+          name: 'dummy',
+          spec_json: '{ "templates": { "ctl.erb": "bin/dummy_ctl" } }',
+          blobstore_id: 'my-blobstore-id',
+          sha1: '16baf0c24e2dac2a21ccdcd4655be403a602f573'
+        ))
 
         job2 = DeploymentPlan::Job.new(release_version, 'dummy')
-        job2.bind_existing_model(Models::Template.make(blobstore_id: 'my-blobstore-id'))
+        job2.bind_existing_model(Models::Template.make(
+          name: 'dummy',
+          spec_json: '{ "templates": { "ctl.erb": "bin/dummy_ctl" } }',
+          blobstore_id: 'my-blobstore-id')
+        )
 
         allow(instance_plan).to receive_message_chain(:spec, :as_template_spec).and_return('template' => 'spec')
         allow(instance_plan).to receive(:templates).and_return([job1, job2])

@@ -35,21 +35,13 @@ module Bosh::Director
       # @return [JobTemplateRenderer] Object that can render the templates
       def process(instance_job)
         template_dir = extract_template(instance_job)
-        manifest = Psych.load_file(File.join(template_dir, 'job.MF'), aliases: true)
 
         monit_erb_file = File.read(File.join(template_dir, 'monit'))
         monit_source_erb = SourceErb.new('monit', 'monit', monit_erb_file, instance_job.name)
 
         source_erbs = []
 
-        job_name_from_manifest = manifest.fetch('name', {})
-        if job_name_from_manifest != instance_job.name
-          raise Bosh::Director::JobTemplateUnpackFailed,
-            "Inconsistent name in extracted job.MF manifest " +
-              "(exptected: '#{instance_job.name}', got: '#{job_name_from_manifest}')"
-        end
-
-        manifest.fetch('templates', {}).each_pair do |src_name, dest_name|
+        instance_job.model.spec.fetch('templates', {}).each_pair do |src_name, dest_name|
           erb_file = File.read(File.join(template_dir, 'templates', src_name))
           source_erbs << SourceErb.new(src_name, dest_name, erb_file, instance_job.name)
         end

@@ -15,6 +15,7 @@ module Bosh::Director
 
       job_manifest = load_manifest
 
+      validate_name(job_manifest)
       validate_templates(job_manifest)
       validate_monit
       validate_logs(job_manifest)
@@ -73,6 +74,13 @@ module Bosh::Director
       end
 
       YAML.load_file(manifest_file, aliases: true)
+    end
+
+    def validate_name(job_manifest)
+      unless name == job_manifest['name']
+        raise JobInvalidName, "Inconsistent name for job '#{name}'" +
+          "(exptected: '#{name}', got: '#{job_manifest['name']}')"
+      end
     end
 
     def validate_templates(job_manifest)
