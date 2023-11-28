@@ -71,7 +71,7 @@ module Bosh
 
         dst_ref[keys[-1]] = value
       end
-      
+
       def validate_properties_format(properties, name)
         keys = name.split('.')
         properties_ref = properties

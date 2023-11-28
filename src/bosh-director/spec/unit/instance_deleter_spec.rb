@@ -68,9 +68,6 @@ module Bosh::Director
 
       describe 'deleting instances' do
         let(:deployment_model) { Models::Deployment.make(name: 'deployment-name') }
-        let(:deployment_plan) { instance_double(DeploymentPlan::Planner, model: deployment_model) }
-        let(:job) { DeploymentPlan::InstanceGroup.new(logger) }
-        let(:network) { instance_double(DeploymentPlan::ManualNetwork, name: 'manual-network') }
         let(:vm_deleter) { VmDeleter.new(logger, false, false) }
 
         let(:job_templates_cleaner) do

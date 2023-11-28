@@ -22,25 +22,25 @@ module Bosh::Director
       validate_properties(job_manifest)
       validate_links(job_manifest)
 
-      template = Models::Template.find_or_init_from_release_meta(
+      job_model = Models::Template.find_or_init_from_release_meta(
         release: @release_model,
         job_meta: @job_meta,
         job_manifest: job_manifest,
       )
 
-      if template.blobstore_id
+      if job_model.blobstore_id
         begin
-          @logger.info("Deleting blob for template '#{name}/#{@version}' with blobstore_id '#{template.blobstore_id}'")
-          BlobUtil.delete_blob(template.blobstore_id)
-          template.blobstore_id = nil
+          @logger.info("Deleting blob for job '#{name}/#{@version}' with blobstore_id '#{job_model.blobstore_id}'")
+          BlobUtil.delete_blob(job_model.blobstore_id)
+          job_model.blobstore_id = nil
         rescue Bosh::Blobstore::BlobstoreError => e
-          @logger.info("Error deleting blob for template '#{name}/#{@version}' with blobstore_id '#{template.blobstore_id}': #{e.inspect}")
+          @logger.info("Error deleting blob for job '#{name}/#{@version}' with blobstore_id '#{job_model.blobstore_id}': #{e.inspect}")
         end
       end
 
-      template.blobstore_id = BlobUtil.create_blob(job_tgz)
+      job_model.blobstore_id = BlobUtil.create_blob(job_tgz)
 
-      template.save
+      job_model.save
     end
 
     private

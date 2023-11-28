@@ -55,11 +55,12 @@ module Bosh::Director
         @model = model
       end
 
-      # Downloads template blob to a given path
+      # Downloads job blob to a given path
+      #
       # @return [String] Path to downloaded blob
       def download_blob
         uuid = SecureRandom.uuid
-        path = File.join(Dir.tmpdir, "template-#{uuid}")
+        path = File.join(Dir.tmpdir, "job-#{uuid}")
 
         @logger.debug("Downloading job '#{@name}' (#{blobstore_id})...")
         t1 = Time.now
