@@ -22,7 +22,7 @@ module Bosh::Director::Core::Templates
           end
 
           rendered_job_template.templates.each do |rendered_file_template|
-            template_path = File.join(job_name, rendered_file_template.dest_name)
+            template_path = File.join(job_name, rendered_file_template.dest_filepath)
 
             tar.add_file template_path, CREATED_FILES_PERMISSIONS do |tf|
               tf.write(rendered_file_template.contents)

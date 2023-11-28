@@ -57,7 +57,7 @@ module Bosh::Director::Core::Templates
           errors.push e
         end
 
-        RenderedFileTemplate.new(source_erb.src_name, source_erb.dest_name, file_contents)
+        RenderedFileTemplate.new(source_erb.src_filepath, source_erb.dest_filepath, file_contents)
       end
 
       if errors.length > 0

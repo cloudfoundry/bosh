@@ -41,9 +41,9 @@ module Bosh::Director
 
         source_erbs = []
 
-        instance_job.model.spec.fetch('templates', {}).each_pair do |src_name, dest_name|
-          erb_file = File.read(File.join(template_dir, 'templates', src_name))
-          source_erbs << SourceErb.new(src_name, dest_name, erb_file, instance_job.name)
+        instance_job.model.spec.fetch('templates', {}).each_pair do |src_filepath, dest_filepath|
+          erb_contents = File.read(File.join(template_dir, 'templates', src_filepath))
+          source_erbs << SourceErb.new(src_filepath, dest_filepath, erb_contents, instance_job.name)
         end
 
         JobTemplateRenderer.new(instance_job: instance_job,

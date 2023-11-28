@@ -20,9 +20,9 @@ module Bosh::Director::Core::Templates
         bound_templates << rendered_job_template.monit
         bound_templates << rendered_job_template.name
 
-        rendered_job_template.templates.sort { |x, y| x.src_name <=> y.src_name }.each do |template_file|
+        rendered_job_template.templates.sort { |x, y| x.src_filepath <=> y.src_filepath }.each do |template_file|
           bound_templates << template_file.contents
-          bound_templates << template_file.dest_name
+          bound_templates << template_file.dest_filepath
         end
 
         instance_digest << bound_templates

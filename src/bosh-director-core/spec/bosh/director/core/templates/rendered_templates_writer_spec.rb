@@ -10,14 +10,14 @@ module Bosh::Director::Core::Templates
 
     let(:rendered_file_template) do
       instance_double('Bosh::Director::Core::Templates::RenderedFileTemplate',
-                      dest_name: 'bin/script-filename',
+                      dest_filepath: 'bin/script-filename',
                       contents: 'script file contents'
       )
     end
 
     let(:rendered_file_template_with_deep_path) do
       instance_double('Bosh::Director::Core::Templates::RenderedFileTemplate',
-                      dest_name: 'config/with/deeper/path/filename.cfg',
+                      dest_filepath: 'config/with/deeper/path/filename.cfg',
                       contents: 'config file contents'
       )
     end

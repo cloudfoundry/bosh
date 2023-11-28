@@ -13,7 +13,7 @@ module Bosh::Director::Core::Templates
         end
 
         job_template.templates.each do |file_template|
-          file_template_dest = File.join(job_template_dir, file_template.dest_name)
+          file_template_dest = File.join(job_template_dir, file_template.dest_filepath)
           FileUtils.mkdir_p(File.dirname(file_template_dest))
           File.open(file_template_dest, 'w') do |f|
             f.write(file_template.contents)

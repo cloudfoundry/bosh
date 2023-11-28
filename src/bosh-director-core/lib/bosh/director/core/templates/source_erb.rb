@@ -5,13 +5,13 @@ module Bosh::Director::Core::Templates
   class SourceErb
     @@mutex = Mutex.new
 
-    attr_reader :src_name, :dest_name, :erb
+    attr_reader :src_filepath, :dest_filepath, :erb
 
-    def initialize(src_name, dest_name, erb_contents, job_name)
-      @src_name = src_name
-      @dest_name = dest_name
+    def initialize(src_filepath, dest_filepath, erb_contents, job_name)
+      @src_filepath = src_filepath
+      @dest_filepath = dest_filepath
       erb = ERB.new(erb_contents, trim_mode: "-")
-      erb.filename = File.join(job_name, src_name)
+      erb.filename = File.join(job_name, src_filepath)
       @erb = erb
     end
 
@@ -28,7 +28,7 @@ module Bosh::Director::Core::Templates
       line = line_index ? e.backtrace[line_index] : '(unknown):(unknown)'
       template_name, line = line.split(':')
 
-      message = "Error filling in template '#{File.basename(template_name)}' (line #{line}: #{e})"
+      message = "Error filling in template '#{@src_filepath}' (line #{line}: #{e})"
 
       logger.debug("#{message}\n#{e.backtrace.join("\n")}")
       raise message
