@@ -1,6 +1,3 @@
-variable "gcp_mysql_databasename" {
-}
-
 resource "google_sql_database_instance" "mysql-master" {
   database_version = "MYSQL_5_7"
   region           = "us-central1"
@@ -25,7 +22,13 @@ resource "google_sql_database_instance" "mysql-master" {
 
 resource "google_sql_database" "mysql" {
   instance = google_sql_database_instance.mysql-master.name
-  name     = var.gcp_mysql_databasename
+  name     = var.database_name
+}
+
+resource "google_sql_user" "mysql_user" {
+  instance = google_sql_database_instance.mysql-master.name
+  name     = var.database_username
+  password = var.database_password
 }
 
 output "gcp_mysql_endpoint" {
