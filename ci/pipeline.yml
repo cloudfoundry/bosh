@@ -371,17 +371,11 @@ jobs:
           env_name: brats-ubuntu-jammy-((branch_name))
           terraform_source: bosh-src/ci/brats
           vars: &brats-terraform-jammy-vars
-            rds_mysql_username: ((brats-rds-mysql-external-db-user))
-            rds_mysql_password: ((brats-rds-mysql-external-db-password))
-            rds_mysql_databasename: ((brats-rds-mysql-external-db-name))
-            rds_postgres_username: ((brats-rds-postgres-external-db-user))
-            rds_postgres_password: ((brats-rds-postgres-external-db-password))
-            rds_postgres_databasename: ((brats-rds-postgres-external-db-name))
             aws_access_key_id: ((brats_rds_terraform_aws_access_key.username))
             aws_secret_access_key: ((brats_rds_terraform_aws_access_key.password))
-            gcp_mysql_databasename: ((brats-gcp-mysql-external-db-name))
-            gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
-            gcp_private_network_name: brats-ubuntu-jammy-((branch_name))
+            database_name: brats
+            database_username: ((brats_database_user.username))
+            database_password: ((brats_database_user.password))
             concourse_authorized_network: 0.0.0.0/0
           env:
             GOOGLE_CREDENTIALS: ((gcp_json_key))
@@ -393,16 +387,6 @@ jobs:
           vars: *brats-terraform-jammy-vars
           env:
             GOOGLE_CREDENTIALS: ((gcp_json_key))
-      - task: create-brats-sql-users
-        file: bosh-src/ci/tasks/create-brats-sql-users.yml
-        params:
-          GOOGLE_CREDENTIALS: ((gcp_json_key))
-          GCP_POSTGRES_USERNAME: ((brats-gcp-postgres-external-db-user))
-          GCP_POSTGRES_PASSWORD: ((brats-gcp-postgres-external-db-password))
-          GCP_MYSQL_USERNAME: ((brats-gcp-mysql-external-db-user))
-          GCP_MYSQL_PASSWORD: ((brats-gcp-mysql-external-db-password))
-        input_mapping:
-          terraform-output: brats-terraform
       - task: create-ssl-certificates
         attempts: 2
         file: bosh-src/ci/tasks/create-brats-ssl-certificates.yml
@@ -416,61 +400,30 @@ jobs:
         input_mapping:
           database-metadata: brats-terraform
         privileged: true
-        params: &brats-dbs-params
-          RDS_MYSQL_EXTERNAL_DB_USER: ((brats-rds-mysql-external-db-user))
-          RDS_MYSQL_EXTERNAL_DB_PASSWORD: ((brats-rds-mysql-external-db-password))
-          RDS_MYSQL_EXTERNAL_DB_NAME: ((brats-rds-mysql-external-db-name))
-          RDS_POSTGRES_EXTERNAL_DB_USER: ((brats-rds-postgres-external-db-user))
-          RDS_POSTGRES_EXTERNAL_DB_PASSWORD: ((brats-rds-postgres-external-db-password))
-          RDS_POSTGRES_EXTERNAL_DB_NAME: ((brats-rds-postgres-external-db-name))
-          GCP_MYSQL_EXTERNAL_DB_USER: ((brats-gcp-mysql-external-db-user))
-          GCP_MYSQL_EXTERNAL_DB_PASSWORD: ((brats-gcp-mysql-external-db-password))
-          GCP_MYSQL_EXTERNAL_DB_NAME: ((brats-gcp-mysql-external-db-name))
-          GCP_POSTGRES_EXTERNAL_DB_USER: ((brats-gcp-postgres-external-db-user))
-          GCP_POSTGRES_EXTERNAL_DB_PASSWORD: ((brats-gcp-postgres-external-db-password))
-          GCP_POSTGRES_EXTERNAL_DB_NAME: ((brats-gcp-postgres-external-db-name))
-          GCP_PRIVATE_NETWORK_NAME: brats-ubuntu-jammy-((branch_name))
+        params:
+          RDS_MYSQL_EXTERNAL_DB_USER: ((brats_database_user.username))
+          RDS_MYSQL_EXTERNAL_DB_PASSWORD: ((brats_database_user.password))
+          RDS_MYSQL_EXTERNAL_DB_NAME: brats
+          RDS_POSTGRES_EXTERNAL_DB_USER: ((brats_database_user.username))
+          RDS_POSTGRES_EXTERNAL_DB_PASSWORD: ((brats_database_user.password))
+          RDS_POSTGRES_EXTERNAL_DB_NAME: brats
+          GCP_MYSQL_EXTERNAL_DB_USER: ((brats_database_user.username))
+          GCP_MYSQL_EXTERNAL_DB_PASSWORD: ((brats_database_user.password))
+          GCP_MYSQL_EXTERNAL_DB_NAME: brats
+          GCP_POSTGRES_EXTERNAL_DB_USER: ((brats_database_user.username))
+          GCP_POSTGRES_EXTERNAL_DB_PASSWORD: ((brats_database_user.password))
+          GCP_POSTGRES_EXTERNAL_DB_NAME: brats
           STEMCELL_OS: ubuntu-jammy
       ensure:
-        do:
-        - task: cleanup-external-dbs
-          file: bosh-src/ci/tasks/test-brats-db-cleanup.yml
-          image: integration-image
-          input_mapping:
-            database-metadata: brats-terraform
-          params: *brats-dbs-params
-        - task: destroy-brats-sql-users
-          file: bosh-src/ci/tasks/destroy-brats-sql-users.yml
-          params:
+        put: brats-terraform
+        no_get: true
+        params:
+          env_name: brats-ubuntu-jammy-((branch_name))
+          terraform_source: bosh-src/ci/brats
+          vars: *brats-terraform-jammy-vars
+          env:
             GOOGLE_CREDENTIALS: ((gcp_json_key))
-            GCP_POSTGRES_USERNAME: ((brats-gcp-postgres-external-db-user))
-            GCP_POSTGRES_PASSWORD: ((brats-gcp-postgres-external-db-password))
-            GCP_MYSQL_USERNAME: ((brats-gcp-mysql-external-db-user))
-            GCP_MYSQL_PASSWORD: ((brats-gcp-mysql-external-db-password))
-          input_mapping:
-            terraform-output: brats-terraform
-        - put: brats-terraform
-          attempts: 3
-          get_params: { action: destroy }
-          params:
-            env_name: brats-ubuntu-jammy-((branch_name))
-            terraform_source: bosh-src/ci/brats
-            vars:
-              rds_mysql_username: ((brats-rds-mysql-external-db-user))
-              rds_mysql_password: ((brats-rds-mysql-external-db-password))
-              rds_mysql_databasename: ((brats-rds-mysql-external-db-name))
-              rds_postgres_username: ((brats-rds-postgres-external-db-user))
-              rds_postgres_password: ((brats-rds-postgres-external-db-password))
-              rds_postgres_databasename: ((brats-rds-postgres-external-db-name))
-              aws_access_key_id: ((brats_rds_terraform_aws_access_key.username))
-              aws_secret_access_key: ((brats_rds_terraform_aws_access_key.password))
-              gcp_mysql_databasename: ((brats-gcp-mysql-external-db-name))
-              gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
-              gcp_private_network_name: brats-ubuntu-jammy-((branch_name))
-              concourse_authorized_network: ((concourse_egress_ip))
-            env:
-              GOOGLE_CREDENTIALS: ((gcp_json_key))
-            action: destroy
+          action: destroy
 
   - name: brats-performance
     serial: true
