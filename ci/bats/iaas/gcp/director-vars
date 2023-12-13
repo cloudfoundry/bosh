@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+exec jq '{
+  "project_id": .project_id,
+  "zone": .zone,
+  "preemptible": true,
+  "tags": ["bosh-director"],
+  "director_name": director,
+  "internal_cidr": .internal_cidr,
+  "internal_ip": .director_ip,
+  "external_ip": .director_public_ip,
+  "internal_gw": .gateway,
+  "network":    .network,
+  "subnetwork": .subnetwork,
+  "reserved_range": [.gateway, .director_ip],
+  "gcp_credentials_json": $ENV.GCP_JSON_KEY
+}' \
+  < environment/metadata

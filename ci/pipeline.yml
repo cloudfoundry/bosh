@@ -17,7 +17,6 @@ groups:
       - bats-ubuntu-jammy
       - brats-ubuntu-jammy
       - brats-performance
-      - bats-ubuntu-xenial
       - bosh-disaster-recovery-acceptance-tests
       - upgrade
       - delivery
@@ -29,7 +28,6 @@ groups:
       - bump-minor
       - bump-patch
       - finalize-release
-      - export-final-release
       - clear-release-notes
 
   - name: docker
@@ -301,60 +299,52 @@ jobs:
           resource: bosh-compiled-candidate-jammy
           trigger: true
           passed: [compile-bosh-dev-release-jammy]
-        - get: cpi-release
         - get: stemcell
-          resource: vsphere-esxi-ubuntu-jammy
+          resource: gcp-ubuntu-jammy
         - get: bosh-cli
         - get: bats
         - get: bosh-deployment
         - get: bosh-src
           passed: [compile-bosh-dev-release-jammy]
         - get: integration-image
-      - put: environment
-        resource: nimbus-environment
+      - put: terraform
+        resource: gcp-terraform
         params:
-          acquire: true
+          delete_on_failure: true
+          env_name: bats-ubuntu-jammy
+          name: bats-ubuntu-jammy
+          terraform_source: bosh-src/ci/bats/iaas/gcp/terraform
       - do:
         - task: deploy-director
-          tags: [nimbus]
           file: bosh-src/ci/bats/tasks/deploy-director.yml
           image: integration-image
+          input_mapping:
+            environment: terraform
           params:
-            BAT_INFRASTRUCTURE: vsphere
-            BOSH_CLIENT: ((stemcell-test-director-username))
-            BOSH_CLIENT_SECRET: ((stemcell-test-director-password))
-            BOSH_VAR_vcenter_ip: "((nimbus_bosh-main_ip))"
-            BOSH_VAR_vcenter_user: "((nimbus_bosh-main_user.username))"
-            BOSH_VAR_vcenter_password: "((nimbus_bosh-main_user.password))"
-            BOSH_VAR_vcenter_cluster: "((nimbus_bosh-main_cluster))"
-            BOSH_VAR_vcenter_dc: "((nimbus_bosh-main_dc))"
-            BOSH_VAR_vcenter_ds: "((nimbus_bosh-main_ds))"
-            BOSH_VAR_vcenter_rp: "((nimbus_bosh-main_rp))"
+            BAT_INFRASTRUCTURE: gcp
+            GCP_JSON_KEY: ((gcp_json_key))
             DEPLOY_ARGS: |
-              -o bosh-deployment/vsphere/resource-pool.yml
-              --vars-env=BOSH_VAR
-        - task: prepare-bats
-          tags: [nimbus]
-          file: bosh-src/ci/bats/iaas/vsphere/prepare-bats-config.yml
+              -o bosh-deployment/external-ip-not-recommended.yml
+        - task: prepare-bats-config
+          file: bosh-src/ci/bats/iaas/gcp/prepare-bats-config.yml
           image: integration-image
           params:
-            STEMCELL_NAME: bosh-vsphere-esxi-ubuntu-jammy-go_agent
+            STEMCELL_NAME: bosh-google-kvm-ubuntu-jammy-go_agent
         - task: run-bats
-          tags: [nimbus]
           file: bats/ci/tasks/run-bats.yml
           image: integration-image
       ensure:
         do:
         - task: teardown
-          tags: [nimbus]
           file: bosh-src/ci/bats/tasks/destroy-director.yml
           image: integration-image
-          attempts: 3
-        - put: environment
-          resource: nimbus-environment
+        - put: terraform
+          resource: gcp-terraform
+          no_get: true
           params:
-           release: environment
-          attempts: 3
+            action: destroy
+            env_name: bats-ubuntu-jammy
+            terraform_source: bosh-src/ci/bats/iaas/gcp/terraform
 
   - name: brats-ubuntu-jammy
     serial: true
@@ -387,15 +377,14 @@ jobs:
             rds_postgres_username: ((brats-rds-postgres-external-db-user))
             rds_postgres_password: ((brats-rds-postgres-external-db-password))
             rds_postgres_databasename: ((brats-rds-postgres-external-db-name))
-            aws_access_key_id: ((bosh-ci-rds-terraform_assume_aws_access_key.username))
-            aws_secret_access_key: ((bosh-ci-rds-terraform_assume_aws_access_key.password))
-            aws_role_arn: ((bosh-ci-rds-terraform_assume_aws_access_key.role_arn))
+            aws_access_key_id: ((brats_rds_terraform_aws_access_key.username))
+            aws_secret_access_key: ((brats_rds_terraform_aws_access_key.password))
             gcp_mysql_databasename: ((brats-gcp-mysql-external-db-name))
             gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
             gcp_private_network_name: brats-ubuntu-jammy-((branch_name))
-            concourse_authorized_network: ((concourse_egress_ip))
+            concourse_authorized_network: 0.0.0.0/0
           env:
-            GOOGLE_CREDENTIALS: ((cf-bosh-core_gcp-database-terraform_gcp_credentials_json))
+            GOOGLE_CREDENTIALS: ((gcp_json_key))
       - put: brats-terraform
         params:
           action: refresh
@@ -403,11 +392,11 @@ jobs:
           terraform_source: bosh-src/ci/brats
           vars: *brats-terraform-jammy-vars
           env:
-            GOOGLE_CREDENTIALS: ((cf-bosh-core_gcp-database-terraform_gcp_credentials_json))
+            GOOGLE_CREDENTIALS: ((gcp_json_key))
       - task: create-brats-sql-users
         file: bosh-src/ci/tasks/create-brats-sql-users.yml
         params:
-          GOOGLE_CREDENTIALS: ((cf-bosh-core_gcp-database-terraform_gcp_credentials_json))
+          GOOGLE_CREDENTIALS: ((gcp_json_key))
           GCP_POSTGRES_USERNAME: ((brats-gcp-postgres-external-db-user))
           GCP_POSTGRES_PASSWORD: ((brats-gcp-postgres-external-db-password))
           GCP_MYSQL_USERNAME: ((brats-gcp-mysql-external-db-user))
@@ -418,7 +407,7 @@ jobs:
         attempts: 2
         file: bosh-src/ci/tasks/create-brats-ssl-certificates.yml
         params:
-          GOOGLE_CREDENTIALS: ((cf-bosh-core_gcp-database-terraform_gcp_credentials_json))
+          GOOGLE_CREDENTIALS: ((gcp_json_key))
         input_mapping:
           terraform-output: brats-terraform
       - task: test-brats
@@ -453,7 +442,7 @@ jobs:
         - task: destroy-brats-sql-users
           file: bosh-src/ci/tasks/destroy-brats-sql-users.yml
           params:
-            GOOGLE_CREDENTIALS: ((cf-bosh-core_gcp-database-terraform_gcp_credentials_json))
+            GOOGLE_CREDENTIALS: ((gcp_json_key))
             GCP_POSTGRES_USERNAME: ((brats-gcp-postgres-external-db-user))
             GCP_POSTGRES_PASSWORD: ((brats-gcp-postgres-external-db-password))
             GCP_MYSQL_USERNAME: ((brats-gcp-mysql-external-db-user))
@@ -473,91 +462,15 @@ jobs:
               rds_postgres_username: ((brats-rds-postgres-external-db-user))
               rds_postgres_password: ((brats-rds-postgres-external-db-password))
               rds_postgres_databasename: ((brats-rds-postgres-external-db-name))
-              aws_access_key_id: ((bosh-ci-rds-terraform_assume_aws_access_key.username))
-              aws_secret_access_key: ((bosh-ci-rds-terraform_assume_aws_access_key.password))
-              aws_role_arn: ((bosh-ci-rds-terraform_assume_aws_access_key.role_arn))
+              aws_access_key_id: ((brats_rds_terraform_aws_access_key.username))
+              aws_secret_access_key: ((brats_rds_terraform_aws_access_key.password))
               gcp_mysql_databasename: ((brats-gcp-mysql-external-db-name))
               gcp_postgres_databasename: ((brats-gcp-postgres-external-db-name))
               gcp_private_network_name: brats-ubuntu-jammy-((branch_name))
               concourse_authorized_network: ((concourse_egress_ip))
             env:
-              GOOGLE_CREDENTIALS: ((cf-bosh-core_gcp-database-terraform_gcp_credentials_json))
+              GOOGLE_CREDENTIALS: ((gcp_json_key))
             action: destroy
-
-  #The VMware Bosh Ecosystem team has a need to cross-check the behavior of
-  #BATS on both the (VMware-"proprietary") Xenial ESM stemcell, as well as
-  #the latest Open Source stemcell. If you are an Open Source user, and do
-  #not have access to the Xenial ESM stemcell, do know that you can comment
-  #out the `bats-ubuntu-xenial` job, and all resources that it references
-  #and have no loss of pipeline functionality.
-  - name: bats-ubuntu-xenial
-    serial: true
-    plan:
-    - do:
-      - in_parallel:
-        - get: bosh-candidate-release-tarballs
-          passed: [compile-bosh-dev-release-jammy]
-        - get: bosh-release
-          resource: bosh-compiled-candidate-jammy
-          trigger: true
-          passed: [compile-bosh-dev-release-jammy]
-        - get: cpi-release
-        - get: stemcell
-          resource: vsphere-esxi-ubuntu-xenial
-          params:
-             globs: ["*vsphere*"]
-        - get: bosh-cli
-        - get: bats
-        - get: bosh-deployment
-        - get: bosh-src
-          passed: [compile-bosh-dev-release-jammy]
-        - get: integration-image
-      - put: environment
-        resource: nimbus-environment
-        params:
-          acquire: true
-      - do:
-        - task: deploy-director
-          tags: [nimbus]
-          file: bosh-src/ci/bats/tasks/deploy-director.yml
-          image: integration-image
-          params:
-            BAT_INFRASTRUCTURE: vsphere
-            BOSH_CLIENT: ((stemcell-test-director-username))
-            BOSH_CLIENT_SECRET: ((stemcell-test-director-password))
-            BOSH_VAR_vcenter_ip: "((nimbus_bosh-main_ip))"
-            BOSH_VAR_vcenter_user: "((nimbus_bosh-main_user.username))"
-            BOSH_VAR_vcenter_password: "((nimbus_bosh-main_user.password))"
-            BOSH_VAR_vcenter_cluster: "((nimbus_bosh-main_cluster))"
-            BOSH_VAR_vcenter_dc: "((nimbus_bosh-main_dc))"
-            BOSH_VAR_vcenter_ds: "((nimbus_bosh-main_ds))"
-            BOSH_VAR_vcenter_rp: "((nimbus_bosh-main_rp))"
-            DEPLOY_ARGS: |
-              -o bosh-deployment/vsphere/resource-pool.yml
-              -o bosh-deployment/misc/source-releases/bosh.yml
-              --vars-env=BOSH_VAR
-        - task: prepare-bats
-          tags: [nimbus]
-          file: bosh-src/ci/bats/iaas/vsphere/prepare-bats-config.yml
-          image: integration-image
-          params:
-            STEMCELL_NAME: bosh-vsphere-esxi-ubuntu-xenial-go_agent
-        - task: run-bats
-          tags: [nimbus]
-          file: bats/ci/tasks/run-bats.yml
-          image: integration-image
-      ensure:
-        do:
-        - task: teardown
-          tags: [nimbus]
-          file: bosh-src/ci/bats/tasks/destroy-director.yml
-          image: integration-image
-          attempts: 3
-        - put: environment
-          resource: nimbus-environment
-          params:
-           release: environment
-          attempts: 3
 
   - name: brats-performance
     serial: true
@@ -612,7 +525,7 @@ jobs:
         - get: bosh-src
           passed: [compile-bosh-dev-release-jammy]
         - get: stemcell
-          resource: aws-xen-hvm-ubuntu-jammy
+          resource: gcp-ubuntu-jammy
         - get: bosh-deployment
         - get: bosh-cli
         - get: bosh-release
@@ -623,10 +536,11 @@ jobs:
         - get: zookeeper-release
         - get: integration-image
       - put: terraform
+        resource: gcp-terraform
         params:
-          terraform_source: bosh-src/ci/bats/iaas/aws/terraform
+          env_name: upgrade-ubuntu-jammy
+          name: upgrade-ubuntu-jammy
           delete_on_failure: true
-          env_name: upgrade-ubuntu-jammy-aws-((branch_name))
     - do:
       - task: deploy-previous-version
         image: integration-image
@@ -635,15 +549,10 @@ jobs:
           environment: terraform
           bosh-release: last-released-bosh-release
         params:
-          BAT_INFRASTRUCTURE: aws
-          AWS_ACCESS_KEY_ID:     ((bats_dev_aws_access_key.username))
-          AWS_SECRET_ACCESS_KEY: ((bats_dev_aws_access_key.password))
-          AWS_ROLE_ARN: ((bats_dev_aws_access_key.role_arn))
-          AWS_DEFAULT_REGION:    us-east-1
-          AWS_SSH_PRIVATE_KEY:   ((terraform_aws_keypair.private_key))
+          BAT_INFRASTRUCTURE: gcp
+          GCP_JSON_KEY: ((gcp_json_key))
           DEPLOY_ARGS: |
             -o bosh-deployment/external-ip-not-recommended.yml
-            -o bosh-deployment/aws/cpi-assume-role-credentials.yml
       - task: deploy-zookeeper
         image: integration-image
         file: bosh-src/ci/tasks/deploy-zookeeper.yml
@@ -653,15 +562,10 @@ jobs:
         input_mapping:
           environment: terraform
         params:
-          BAT_INFRASTRUCTURE: aws
-          AWS_ACCESS_KEY_ID:     ((bats_dev_aws_access_key.username))
-          AWS_SECRET_ACCESS_KEY: ((bats_dev_aws_access_key.password))
-          AWS_ROLE_ARN: ((bats_dev_aws_access_key.role_arn))
-          AWS_DEFAULT_REGION:    us-east-1
-          AWS_SSH_PRIVATE_KEY:   ((terraform_aws_keypair.private_key))
+          BAT_INFRASTRUCTURE: gcp
+          GCP_JSON_KEY: ((gcp_json_key))
           DEPLOY_ARGS: |
             -o bosh-deployment/external-ip-not-recommended.yml
-            -o bosh-deployment/aws/cpi-assume-role-credentials.yml
       - task: sleep-180-seconds
         image: integration-image
         config:
@@ -680,27 +584,13 @@ jobs:
         - task: teardown
           image: integration-image
           file: bosh-src/ci/bats/tasks/destroy-director.yml
-          attempts: 3
-        ensure:
-          do:
-          - task: ensure-terminated
-            image: integration-image
-            file: bosh-src/ci/bats/iaas/aws/ensure-terminated.yml
-            input_mapping:
-              environment: terraform
-            params:
-              AWS_ACCESS_KEY_ID:     ((bats_dev_aws_access_key.username))
-              AWS_SECRET_ACCESS_KEY: ((bats_dev_aws_access_key.password))
-              AWS_ROLE_ARN:          ((bats_dev_aws_access_key.role_arn))
-              AWS_DEFAULT_REGION:    us-east-1
-          - put: terraform
-            attempts: 3
-            params:
-              terraform_source: bosh-src/ci/bats/iaas/aws/terraform
-              env_name: upgrade-ubuntu-jammy-aws-((branch_name))
-              action: destroy
-            get_params:
-              action: destroy
+        - put: terraform
+          resource: gcp-terraform
+          no_get: true
+          params:
+            action: destroy
+            env_name: upgrade-ubuntu-jammy
+            terraform_source: bosh-src/ci/bats/iaas/gcp/terraform
 
   - name: delivery
     plan:
@@ -754,35 +644,6 @@ jobs:
         params:
           repository: bosh-main
           rebase: true
-
-  - name: export-final-release
-    serial: true
-    plan:
-    - in_parallel:
-      - get: bosh-main
-      - get: version
-        passed: [finalize-release]
-        trigger: true
-      - get: warden-ubuntu-jammy
-        trigger: true
-      - get: warden-cpi-docker-image
-    - task: export-final-release
-      image: warden-cpi-docker-image
-      file: bosh-main/ci/tasks/export-final-release.yml
-      privileged: true
-      input_mapping:
-        stemcell: warden-ubuntu-jammy
-        bosh-src: bosh-main
-    - task: push-bosh-compiled-releases
-      file: bosh-main/ci/tasks/push-bosh-compiled-release.yml
-      input_mapping:
-        candidate-version: version
-        bosh-src: bosh-main
-      params:
-        AWS_ACCESS_KEY_ID: ((bosh-compiled-releases_assume_aws_access_key.username))
-        AWS_SECRET_ACCESS_KEY: ((bosh-compiled-releases_assume_aws_access_key.password))
-        AWS_ROLE_ARN: ((bosh-compiled-releases_assume_aws_access_key.role_arn))
-        git_private_key: ((github_deploy_key_bosh-compiled-releases-index.private_key))
 
   - name: clear-release-notes
     plan:
@@ -1490,39 +1351,27 @@ resources:
     source:
       uri: https://github.com/cloudfoundry/cf-deployment
 
-  - name: nimbus-environment
+  - name: gcp-terraform
+    type: terraform
     source:
-      branch: master
-      pool: nimbus
-      private_key: ((github_deploy_key_bats-concourse-pool.private_key))
-      uri: git@github.com:pivotal-cf-experimental/bats-concourse-pool.git
-    type: pool
+      backend_type: gcs
+      backend_config:
+        bucket: bosh-director-pipeline
+        prefix: terraform
+        credentials: ((gcp_json_key))
+      vars:
+        project_id: ((gcp_project_id))
+        gcp_credentials_json: ((gcp_json_key))
 
-  - name: vsphere-esxi-ubuntu-jammy
+  - name: gcp-ubuntu-jammy
     type: bosh-io-stemcell
     source:
-      name: bosh-vsphere-esxi-ubuntu-jammy-go_agent
-
-  - name: vsphere-esxi-ubuntu-xenial
-    type: pivnet
-    source:
-      api_token: ((pivnet_linux_stemcell_api_token))
-      product_slug: stemcells-ubuntu-xenial
-
-  - name: aws-xen-hvm-ubuntu-jammy
-    type: bosh-io-stemcell
-    source:
-      name: bosh-aws-xen-hvm-ubuntu-jammy-go_agent
+      name: bosh-google-kvm-ubuntu-jammy-go_agent
 
   - name: warden-ubuntu-jammy
     type: bosh-io-stemcell
     source:
       name: bosh-warden-boshlite-ubuntu-jammy-go_agent
-
-  - name: cpi-release
-    type: bosh-io-release
-    source:
-      repository: cloudfoundry/bosh-vsphere-cpi-release
 
   - name: bosh-agent
     type: git
@@ -1612,24 +1461,6 @@ resources:
       repository: bosh/warden-cpi
       username: ((docker.username))
       password: ((docker.password))
-
-  - name: terraform
-    type: terraform
-    source:
-      backend_type: s3
-      backend_config:
-        access_key: ((bats_dev_aws_access_key.username))
-        secret_key: ((bats_dev_aws_access_key.password))
-        role_arn:   ((bats_dev_aws_access_key.role_arn))
-        bucket:     bosh-bats-terraform
-        key:        terraform-state
-        region:     us-west-1
-      vars:
-        access_key: ((bats_dev_aws_access_key.username))
-        secret_key: ((bats_dev_aws_access_key.password))
-        role_arn:   ((bats_dev_aws_access_key.role_arn))
-        region:     us-east-1
-        ssh_public_key: ((terraform_aws_keypair.public_key))
 
   - name: last-released-bosh-release
     type: bosh-io-release
