@@ -1,8 +1,5 @@
 provider "google" {
-  # export GOOGLE_CREDENTIALS as env var
-  project = "cf-bosh-core"
-  region  = "us-central1"
-}
-
-variable "concourse_authorized_network" {
+  project     = var.project_id
+  credentials = var.gcp_credentials_json
+  region      = var.region
 }

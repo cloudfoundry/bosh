@@ -13,8 +13,6 @@ inputs:
   - name: bosh-release
   - name: database-metadata
     optional: true
-  - name: gcp-ssl-config
-    optional: true
   - name: bosh-deployment
     optional: true
 
