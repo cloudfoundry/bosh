@@ -54,27 +54,16 @@ apt-get update
 apt-get install -y mysql-client postgresql-client
 
 if [ -d database-metadata ]; then
-  RDS_MYSQL_EXTERNAL_DB_HOST="$(jq -r .aws_mysql_endpoint database-metadata/metadata | cut -d':' -f1)"
-  RDS_POSTGRES_EXTERNAL_DB_HOST="$(jq -r .aws_postgres_endpoint database-metadata/metadata | cut -d':' -f1)"
-  GCP_MYSQL_EXTERNAL_DB_HOST="$(jq -r .gcp_mysql_endpoint database-metadata/metadata)"
-  GCP_POSTGRES_EXTERNAL_DB_HOST="$(jq -r .gcp_postgres_endpoint database-metadata/metadata)"
-  GCP_MYSQL_EXTERNAL_DB_CA="$(jq -r .mysql_ca_cert gcp-ssl-config/gcp_mysql.yml)"
-  GCP_MYSQL_EXTERNAL_DB_CLIENT_CERTIFICATE="$(jq -r .mysql_client_cert gcp-ssl-config/gcp_mysql.yml)"
-  GCP_MYSQL_EXTERNAL_DB_CLIENT_PRIVATE_KEY="$(jq -r .mysql_client_key gcp-ssl-config/gcp_mysql.yml)"
-  GCP_POSTGRES_EXTERNAL_DB_CA="$(jq -r .postgres_ca_cert gcp-ssl-config/gcp_postgres.yml)"
-  GCP_POSTGRES_EXTERNAL_DB_CLIENT_CERTIFICATE="$(jq -r .postgres_client_cert gcp-ssl-config/gcp_postgres.yml)"
-  GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY="$(jq -r .postgres_client_key gcp-ssl-config/gcp_postgres.yml)"
-
-  export RDS_MYSQL_EXTERNAL_DB_HOST
-  export RDS_POSTGRES_EXTERNAL_DB_HOST
-  export GCP_MYSQL_EXTERNAL_DB_HOST
-  export GCP_POSTGRES_EXTERNAL_DB_HOST
-  export GCP_MYSQL_EXTERNAL_DB_CA
-  export GCP_MYSQL_EXTERNAL_DB_CLIENT_CERTIFICATE
-  export GCP_MYSQL_EXTERNAL_DB_CLIENT_PRIVATE_KEY
-  export GCP_POSTGRES_EXTERNAL_DB_CA
-  export GCP_POSTGRES_EXTERNAL_DB_CLIENT_CERTIFICATE
-  export GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY
+  export RDS_MYSQL_EXTERNAL_DB_HOST="$(jq -r .aws_mysql_endpoint database-metadata/metadata | cut -d':' -f1)"
+  export RDS_POSTGRES_EXTERNAL_DB_HOST="$(jq -r .aws_postgres_endpoint database-metadata/metadata | cut -d':' -f1)"
+  export GCP_MYSQL_EXTERNAL_DB_HOST="$(jq -r .gcp_mysql_endpoint database-metadata/metadata)"
+  export GCP_POSTGRES_EXTERNAL_DB_HOST="$(jq -r .gcp_postgres_endpoint database-metadata/metadata)"
+  export GCP_MYSQL_EXTERNAL_DB_CA="$(jq -r .gcp_mysql_ca database-metadata/metadata)"
+  export GCP_MYSQL_EXTERNAL_DB_CLIENT_CERTIFICATE="$(jq -r .gcp_mysql_client_cert database-metadata/metadata)"
+  export GCP_MYSQL_EXTERNAL_DB_CLIENT_PRIVATE_KEY="$(jq -r .gcp_mysql_client_key database-metadata/metadata)"
+  export GCP_POSTGRES_EXTERNAL_DB_CA="$(jq -r .gcp_postgres_ca database-metadata/metadata)"
+  export GCP_POSTGRES_EXTERNAL_DB_CLIENT_CERTIFICATE="$(jq -r .gcp_postgres_client_cert database-metadata/metadata)"
+  export GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY="$(jq -r .gcp_postgres_client_key database-metadata/metadata)"
 fi
 
 pushd bosh-src > /dev/null

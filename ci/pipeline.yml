@@ -366,7 +366,6 @@ jobs:
       - get: integration-image
     - do:
       - put: brats-terraform
-        attempts: 2
         params:
           env_name: brats-ubuntu-jammy-((branch_name))
           terraform_source: bosh-src/ci/brats
@@ -376,24 +375,12 @@ jobs:
             database_name: brats
             database_username: ((brats_database_user.username))
             database_password: ((brats_database_user.password))
-            concourse_authorized_network: 0.0.0.0/0
-          env:
-            GOOGLE_CREDENTIALS: ((gcp_json_key))
       - put: brats-terraform
         params:
           action: refresh
           env_name: brats-ubuntu-jammy-((branch_name))
           terraform_source: bosh-src/ci/brats
           vars: *brats-terraform-jammy-vars
-          env:
-            GOOGLE_CREDENTIALS: ((gcp_json_key))
-      - task: create-ssl-certificates
-        attempts: 2
-        file: bosh-src/ci/tasks/create-brats-ssl-certificates.yml
-        params:
-          GOOGLE_CREDENTIALS: ((gcp_json_key))
-        input_mapping:
-          terraform-output: brats-terraform
       - task: test-brats
         image: docker-cpi-image
         file: bosh-src/ci/tasks/test-brats.yml
@@ -421,8 +408,6 @@ jobs:
           env_name: brats-ubuntu-jammy-((branch_name))
           terraform_source: bosh-src/ci/brats
           vars: *brats-terraform-jammy-vars
-          env:
-            GOOGLE_CREDENTIALS: ((gcp_json_key))
           action: destroy
 
   - name: brats-performance
@@ -494,6 +479,7 @@ jobs:
           env_name: upgrade-ubuntu-jammy
           name: upgrade-ubuntu-jammy
           delete_on_failure: true
+          terraform_source: bosh-src/ci/bats/iaas/gcp/terraform
     - do:
       - task: deploy-previous-version
         image: integration-image
@@ -1246,17 +1232,29 @@ resources:
       aws_role_arn: ((bosh_integration_tests_parallel_assume_aws_access_key.role_arn))
       versioned_file: "parallel_runtime_rspec.log"
 
+  - name: gcp-terraform
+    type: terraform
+    source:
+      backend_type: gcs
+      backend_config:
+        bucket: bosh-director-pipeline
+        prefix: bats-terraform
+        credentials: ((gcp_json_key))
+      vars:
+        project_id: ((gcp_project_id))
+        gcp_credentials_json: ((gcp_json_key))
+
   - name: brats-terraform
     type: terraform
     source:
-      backend_type: s3
+      backend_type: gcs
       backend_config:
-        bucket: bosh-ci-terraform
-        key: brats-ci/terraform.tfstate
-        region: us-west-1
-        access_key: ((bosh-ci-terraform_assume_aws_access_key.username))
-        secret_key: ((bosh-ci-terraform_assume_aws_access_key.password))
-        role_arn: ((bosh-ci-terraform_assume_aws_access_key.role_arn))
+        bucket: bosh-director-pipeline
+        prefix: brats-terraform
+        credentials: ((gcp_json_key))
+      vars:
+        project_id: ((gcp_project_id))
+        gcp_credentials_json: ((gcp_json_key))
 
   - name: zookeeper-release
     type: git
@@ -1303,18 +1301,6 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry/cf-deployment
-
-  - name: gcp-terraform
-    type: terraform
-    source:
-      backend_type: gcs
-      backend_config:
-        bucket: bosh-director-pipeline
-        prefix: terraform
-        credentials: ((gcp_json_key))
-      vars:
-        project_id: ((gcp_project_id))
-        gcp_credentials_json: ((gcp_json_key))
 
   - name: gcp-ubuntu-jammy
     type: bosh-io-stemcell

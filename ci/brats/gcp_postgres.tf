@@ -13,10 +13,6 @@ resource "google_sql_database_instance" "postgres-master" {
         name  = "concourse"
         value = var.concourse_authorized_network
       }
-      authorized_networks {
-        name  = "pivotal"
-        value = "209.234.137.222/32"
-      }
     }
   }
 }
@@ -32,10 +28,28 @@ resource "google_sql_user" "postgres_user" {
   password = var.database_password
 }
 
+resource "google_sql_ssl_cert" "postgres_client_cert" {
+  common_name = "brats-ssl"
+  instance    = google_sql_database_instance.postgres-master.name
+}
+
 output "gcp_postgres_endpoint" {
   value = google_sql_database_instance.postgres-master.first_ip_address
 }
 
 output "gcp_postgres_instance_name" {
   value = google_sql_database_instance.postgres-master.name
+}
+
+output "gcp_postgres_ca" {
+  value = google_sql_database_instance.postgres-master.server_ca_cert.0.cert
+}
+
+output "gcp_postgres_client_cert" {
+  value = google_sql_ssl_cert.postgres_client_cert.cert
+}
+
+output "gcp_postgres_client_key" {
+  value = google_sql_ssl_cert.postgres_client_cert.private_key
+  sensitive = true
 }
