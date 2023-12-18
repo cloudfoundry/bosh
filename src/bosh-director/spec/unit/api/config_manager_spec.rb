@@ -282,5 +282,19 @@ describe Bosh::Director::Api::ConfigManager do
     end
   end
 
+  describe '#deploy_config_enabled?' do
+    context 'when config of type deploy does not exist' do
+      it "returns 'false'" do
+        expect(manager.deploy_config_enabled?).to eq(false)
+      end
+    end
 
+    context 'when config of type deploy does not exist' do
+      let!(:config_id) { Bosh::Director::Models::Config.make(type: 'deploy', name: 'my-name') }
+
+      it "returns 'true'" do
+        expect(manager.deploy_config_enabled?).to eq(true)
+      end
+    end
+  end
 end
