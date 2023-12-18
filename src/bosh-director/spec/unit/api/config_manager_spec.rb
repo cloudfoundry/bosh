@@ -289,7 +289,7 @@ describe Bosh::Director::Api::ConfigManager do
       end
     end
 
-    context 'when config of type deploy does not exist' do
+    context 'when config of type deploy exists' do
       let!(:config_id) { Bosh::Director::Models::Config.make(type: 'deploy', name: 'my-name') }
 
       it "returns 'true'" do
