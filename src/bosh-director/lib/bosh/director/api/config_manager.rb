@@ -16,10 +16,7 @@ module Bosh
           def deploy_config_enabled?
             deploy_config = find(type: 'deploy', limit: 999)
 
-            deploy_config.each do |config|
-              return true
-            end
-            false
+            return !deploy_config.empty?
           end
 
           def find(type: nil, name: nil, limit: 1)
