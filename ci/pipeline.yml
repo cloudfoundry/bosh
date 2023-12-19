@@ -1170,28 +1170,23 @@ resources:
   - name: version
     type: semver
     source:
-      bucket: bosh-candidate-release-tarballs
+      bucket: bosh-director-oss-ci-candidate-release-tarballs
+      json_key: ((bosh_director_oss_ci_service_account_json))
+      driver: gcs
       key: version
-      access_key_id: ((bosh_candidate_release_tarballs_assume_aws_access_key.username))
-      secret_access_key: ((bosh_candidate_release_tarballs_assume_aws_access_key.password))
-      assume_role_arn: ((bosh_candidate_release_tarballs_assume_aws_access_key.role_arn))
 
   - name: bosh-candidate-release-tarballs
-    type: s3
+    type: gcs-resource
     source:
-      bucket: bosh-candidate-release-tarballs
-      access_key_id: ((bosh_candidate_release_tarballs_assume_aws_access_key.username))
-      secret_access_key: ((bosh_candidate_release_tarballs_assume_aws_access_key.password))
-      aws_role_arn: ((bosh_candidate_release_tarballs_assume_aws_access_key.role_arn))
+      bucket: bosh-director-oss-ci-candidate-release-tarballs
+      json_key: ((bosh_director_oss_ci_service_account_json))
       versioned_file: "bosh-dev-release.tgz"
 
   - name: bosh-compiled-candidate-jammy
-    type: s3
+    type: gcs-resource
     source:
-      bucket: "bosh-compiled-candidate-tarballs"
-      access_key_id: ((bosh-compiled-releases_assume_aws_access_key.username))
-      secret_access_key: ((bosh-compiled-releases_assume_aws_access_key.password))
-      aws_role_arn: ((bosh-compiled-releases_assume_aws_access_key.role_arn))
+      bucket: bosh-director-oss-ci-compiled-candidate-jammy
+      json_key: ((bosh_director_oss_ci_service_account_json))
       regexp: "bosh-.*dev\\.(\\d+).*jammy.*.tgz"
 
   - name: bosh-disaster-recovery-acceptance-tests
