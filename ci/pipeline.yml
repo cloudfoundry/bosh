@@ -173,7 +173,6 @@ jobs:
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
-        - get: integration-tests-parallel-runtime
         - get: integration-postgres-15-image
       - task: tests
         privileged: true
@@ -183,10 +182,6 @@ jobs:
           DB:           postgresql
           DB_TLS:       true
           DB_VERSION: 15
-      - put: integration-tests-parallel-runtime
-        params:
-          file: parallel-runtime-log/parallel_runtime_rspec.log
-          acl: public-read
 
   - name: integration-db-tls-postgres-hotswap
     public: true
@@ -201,7 +196,6 @@ jobs:
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
-        - get: integration-tests-parallel-runtime
         - get: integration-postgres-15-image
       - task: tests
         privileged: true
@@ -212,11 +206,6 @@ jobs:
           DEFAULT_UPDATE_VM_STRATEGY: create-swap-delete
           DB_TLS:       true
           DB_VERSION: 15
-
-      - put: integration-tests-parallel-runtime
-        params:
-          file: parallel-runtime-log/parallel_runtime_rspec.log
-          acl: public-read
 
   - name: integration-db-tls-mysql
     public: true
@@ -231,7 +220,6 @@ jobs:
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
-        - get: integration-tests-parallel-runtime
         - get: integration-mysql-5-7-image
       - task: tests
         privileged: true
@@ -240,10 +228,6 @@ jobs:
         params:
           DB:           mysql
           DB_TLS:       true
-      - put: integration-tests-parallel-runtime
-        params:
-          file: parallel-runtime-log/parallel_runtime_rspec.log
-          acl: public-read
 
   - name: candidate-release
     plan:
@@ -1069,8 +1053,8 @@ resource_types:
   source:
     repository: pivotalcf/pivnet-resource
     tag: latest-final
-    username: ((docker.username))
-    password: ((docker.password))
+    username: ((dockerhub_username))
+    password: ((dockerhub_password))
 
 - name: http-resource
   type: docker-image
@@ -1223,15 +1207,6 @@ resources:
       repository: bosh-backup-and-restore
       access_token: ((github_public_repo_token))
 
-  - name: integration-tests-parallel-runtime
-    type: s3
-    source:
-      bucket: integration-tests-parallel-runtime-logs
-      access_key_id: ((bosh_integration_tests_parallel_assume_aws_access_key.username))
-      secret_access_key: ((bosh_integration_tests_parallel_assume_aws_access_key.password))
-      aws_role_arn: ((bosh_integration_tests_parallel_assume_aws_access_key.role_arn))
-      versioned_file: "parallel_runtime_rspec.log"
-
   - name: gcp-terraform
     type: terraform
     source:
@@ -1335,71 +1310,71 @@ resources:
     source:
       repository: bosh/integration
       tag: ((branch_name))
-      username: ((docker.username))
-      password: ((docker.password))
+      username: ((dockerhub_username))
+      password: ((dockerhub_password))
 
   - name: integration-mysql-5-7-image
     type: docker-image
     source:
       repository: bosh/main-mysql-5.7
       tag: ((branch_name))
-      username: ((docker.username))
-      password: ((docker.password))
+      username: ((dockerhub_username))
+      password: ((dockerhub_password))
 
   - name: integration-postgres-10-image
     type: docker-image
     source:
       repository: bosh/main-postgres-10
       tag: ((branch_name))
-      username: ((docker.username))
-      password: ((docker.password))
+      username: ((dockerhub_username))
+      password: ((dockerhub_password))
 
   - name: integration-postgres-13-image
     type: docker-image
     source:
       repository: bosh/main-postgres-13
       tag: ((branch_name))
-      username: ((docker.username))
-      password: ((docker.password))
+      username: ((dockerhub_username))
+      password: ((dockerhub_password))
 
   - name: integration-postgres-15-image
     type: docker-image
     source:
       repository: bosh/main-postgres-15
       tag: ((branch_name))
-      username: ((docker.username))
-      password: ((docker.password))
+      username: ((dockerhub_username))
+      password: ((dockerhub_password))
 
   - name: docker-cpi-image
     type: docker-image
     source:
       repository: bosh/docker-cpi
       tag: ((branch_name))
-      username: ((docker.username))
-      password: ((docker.password))
+      username: ((dockerhub_username))
+      password: ((dockerhub_password))
 
   - name: ubuntu-docker-image
     type: registry-image
     source:
       repository: ubuntu
       tag: latest
-      username: ((docker.username))
-      password: ((docker.password))
+      username: ((dockerhub_username))
+      password: ((dockerhub_password))
 
   - name: golang-docker-image
     type: registry-image
     source:
       repository: golang
       tag: latest
-      username: ((docker.username))
-      password: ((docker.password))
+      username: ((dockerhub_username))
+      password: ((dockerhub_password))
 
   - name: warden-cpi-docker-image
     type: docker-image
     source:
       repository: bosh/warden-cpi
-      username: ((docker.username))
-      password: ((docker.password))
+      username: ((dockerhub_username))
+      password: ((dockerhub_password))
 
   - name: last-released-bosh-release
     type: bosh-io-release

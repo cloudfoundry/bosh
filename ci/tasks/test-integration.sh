@@ -5,10 +5,6 @@ set -x
 
 source bosh-src/ci/tasks/utils.sh
 
-if [ -d integration-tests-parallel-runtime ]; then
-  cp integration-tests-parallel-runtime/parallel_runtime_rspec.log bosh-src/src/parallel_runtime_rspec.log
-fi
-
 check_param RUBY_VERSION
 check_param DB
 

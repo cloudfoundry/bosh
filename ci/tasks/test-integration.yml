@@ -11,8 +11,6 @@ inputs:
 - name: bosh-src
 - name: bosh-cli
 - name: bosh-agent
-- name: integration-tests-parallel-runtime
-  optional: true
 
 outputs:
 - name: parallel-runtime-log
