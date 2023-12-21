@@ -8,6 +8,7 @@ image_resource:
     tag: main
 
 inputs:
+  - name: bosh-src
   - name: director-state
   - name: terraform
 

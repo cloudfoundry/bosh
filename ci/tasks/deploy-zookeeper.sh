@@ -24,9 +24,7 @@ export BOSH_CLIENT_SECRET=$(bosh-cli int director-state/director-creds.yml --pat
 export BOSH_CA_CERT=$(bosh-cli int director-state/director-creds.yml --path /director_ssl/ca)
 export BOSH_NON_INTERACTIVE=true
 
-
-CPI=$(bosh-cli env --json | jq -r ".Tables[].Rows[].cpi" | cut -d'_' -f1)
-bosh-cli update-cloud-config bosh-deployment/$CPI/cloud-config.yml \
+bosh-cli update-cloud-config bosh-deployment/${CPI}/cloud-config.yml \
   --vars-file director-state/director-vars.json
 
 bosh-cli upload-stemcell stemcell/*.tgz

@@ -294,7 +294,6 @@ jobs:
       - put: terraform
         resource: gcp-terraform
         params:
-          delete_on_failure: true
           env_name: bats-ubuntu-jammy
           terraform_source: bosh-src/ci/bats/iaas/gcp/terraform
           vars:
@@ -462,7 +461,6 @@ jobs:
         resource: gcp-terraform
         params:
           env_name: upgrade-ubuntu-jammy
-          delete_on_failure: true
           terraform_source: bosh-src/ci/bats/iaas/gcp/terraform
           vars:
             name: upgrade-ubuntu-jammy
@@ -481,6 +479,8 @@ jobs:
       - task: deploy-zookeeper
         image: integration-image
         file: bosh-src/ci/tasks/deploy-zookeeper.yml
+        params:
+          CPI: gcp
       - task: upgrade-to-current-version
         image: integration-image
         file: bosh-src/ci/bats/tasks/deploy-director.yml
@@ -504,6 +504,8 @@ jobs:
       - task: recreate-zookeeper
         image: integration-image
         file: bosh-src/ci/tasks/deploy-zookeeper.yml
+        params:
+          CPI: gcp
       ensure:
         do:
         - task: teardown
@@ -1212,6 +1214,7 @@ resources:
         bucket: bosh-director-pipeline
         prefix: bats-terraform
         credentials: ((gcp_json_key))
+      delete_on_failure: true
       vars:
         project_id: ((gcp_project_id))
         gcp_credentials_json: ((gcp_json_key))
@@ -1224,6 +1227,7 @@ resources:
         bucket: bosh-director-pipeline
         prefix: brats-terraform
         credentials: ((gcp_json_key))
+      delete_on_failure: true
       vars:
         project_id: ((gcp_project_id))
         gcp_credentials_json: ((gcp_json_key))

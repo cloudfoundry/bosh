@@ -16,3 +16,6 @@ inputs:
 
 run:
   path: bosh-src/ci/tasks/deploy-zookeeper.sh
+
+params:
+  CPI:
