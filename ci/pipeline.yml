@@ -296,8 +296,9 @@ jobs:
         params:
           delete_on_failure: true
           env_name: bats-ubuntu-jammy
-          name: bats-ubuntu-jammy
           terraform_source: bosh-src/ci/bats/iaas/gcp/terraform
+          vars:
+            name: bats-ubuntu-jammy
       - do:
         - task: deploy-director
           file: bosh-src/ci/bats/tasks/deploy-director.yml
@@ -461,9 +462,10 @@ jobs:
         resource: gcp-terraform
         params:
           env_name: upgrade-ubuntu-jammy
-          name: upgrade-ubuntu-jammy
           delete_on_failure: true
           terraform_source: bosh-src/ci/bats/iaas/gcp/terraform
+          vars:
+            name: upgrade-ubuntu-jammy
     - do:
       - task: deploy-previous-version
         image: integration-image

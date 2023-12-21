@@ -5,7 +5,7 @@ exec jq '{
   "zone": .zone,
   "preemptible": true,
   "tags": ["bosh-director"],
-  "director_name": director,
+  "director_name": "director",
   "internal_cidr": .internal_cidr,
   "internal_ip": .director_ip,
   "external_ip": .director_public_ip,
