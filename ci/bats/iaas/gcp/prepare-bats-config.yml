@@ -19,4 +19,4 @@ outputs:
   - name: bats-config
 
 run:
-  path: bosh-src/tasks/bats/iaas/gcp/prepare-bats-config.sh
+  path: bosh-src/ci/bats/iaas/gcp/prepare-bats-config.sh
