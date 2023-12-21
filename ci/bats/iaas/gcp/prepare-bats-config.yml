@@ -18,4 +18,4 @@ outputs:
   - name: bats-config
 
 run:
-  path: bosh-stemcells-ci/tasks/bats/iaas/gcp/prepare-bats-config.sh
+  path: bosh-src/tasks/bats/iaas/gcp/prepare-bats-config.sh
