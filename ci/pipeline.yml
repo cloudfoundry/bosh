@@ -518,6 +518,8 @@ jobs:
             action: destroy
             env_name: upgrade-ubuntu-jammy
             terraform_source: bosh-src/ci/bats/iaas/gcp/terraform
+            vars:
+              name: upgrade-ubuntu-jammy
 
   - name: delivery
     plan:

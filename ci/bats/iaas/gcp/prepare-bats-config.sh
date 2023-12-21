@@ -2,6 +2,7 @@
 
 set -e
 
+WORKSPACE_DIR="$(pwd)"
 TERRAFORM_OUTPUTS="${WORKSPACE_DIR}/terraform/metadata"
 
 terraform_output(){
