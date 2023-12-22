@@ -329,6 +329,8 @@ jobs:
             action: destroy
             env_name: bats-ubuntu-jammy
             terraform_source: bosh-src/ci/bats/iaas/gcp/terraform
+            vars:
+              name: bats-ubuntu-jammy
 
   - name: brats-ubuntu-jammy
     serial: true
@@ -359,12 +361,6 @@ jobs:
             database_name: brats
             database_username: ((brats_database_user.username))
             database_password: ((brats_database_user.password))
-      - put: brats-terraform
-        params:
-          action: refresh
-          env_name: brats-ubuntu-jammy-((branch_name))
-          terraform_source: bosh-src/ci/brats
-          vars: *brats-terraform-jammy-vars
       - task: test-brats
         image: docker-cpi-image
         file: bosh-src/ci/tasks/test-brats.yml
@@ -1388,7 +1384,7 @@ resources:
   - name: release-notes
     type: gcs-resource
     source:
-      bucket: bosh-ci-release-notes
-      json_key: ((gcp_credentials_json))
+      bucket: bosh-director-pipeline
+      json_key: ((gcp_json_key))
       versioned_file: bosh-director/release-notes.md
       initial_content_text: ""
