@@ -14,7 +14,7 @@ module Bosh
           end
 
           def deploy_config_enabled?
-            deploy_config = find(type: 'deploy', limit: 999)
+            deploy_config = find(type: 'deploy')
 
             return !deploy_config.empty?
           end
