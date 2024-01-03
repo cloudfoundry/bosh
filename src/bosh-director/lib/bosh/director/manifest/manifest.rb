@@ -124,6 +124,8 @@ module Bosh::Director
         generic_hash['stemcells'].to_a.each do |stemcell|
           if stemcell.is_a?(Hash)
             stemcell['version'] = resolve_stemcell_version(stemcell)
+            resolved_os = resolve_stemcell_os(stemcell)
+            stemcell['os'] = resolved_os if resolved_os
           end
         end
       end
@@ -168,10 +170,10 @@ module Bosh::Director
       resolvable_version = match_resolvable_version(stemcell['version'])
 
       if resolvable_version
-        if stemcell['os']
-          latest_stemcell = stemcell_manager.latest_by_os(stemcell['os'], resolvable_version[:prefix])
-        elsif stemcell['name']
+        if stemcell['name']
           latest_stemcell = stemcell_manager.latest_by_name(stemcell['name'], resolvable_version[:prefix])
+        elsif stemcell['os']
+          latest_stemcell = stemcell_manager.latest_by_os(stemcell['os'], resolvable_version[:prefix])
         else
           raise 'Stemcell definition must contain either name or os'
         end
@@ -179,6 +181,17 @@ module Bosh::Director
       end
 
       stemcell['version'].to_s
+    end
+
+    def resolve_stemcell_os(stemcell)
+      return stemcell['os'] if stemcell['os']
+
+      stemcell_manager = Api::StemcellManager.new
+
+      models = stemcell_manager.all_by_name_and_version(stemcell['name'], stemcell['version'])
+      unless models.empty?
+        return models.first.operating_system
+      end
     end
 
     def resolve_release_version(release_def)

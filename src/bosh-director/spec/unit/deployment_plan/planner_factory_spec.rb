@@ -85,7 +85,7 @@ module Bosh
             planner
             expected_deployment_manifest_log = <<~LOGMESSAGE
               Deployment manifest:
-              {"name"=>"simple", "releases"=>[{"name"=>"bosh-release", "version"=>"0.1-dev"}], "stemcells"=>[{"name"=>"ubuntu-stemcell", "version"=>"1", "alias"=>"default"}], "update"=>{"canaries"=>2, "canary_watch_time"=>4000, "max_in_flight"=>1, "update_watch_time"=>20}, "instance_groups"=>[{"name"=>"foobar", "stemcell"=>"default", "vm_type"=>"a", "instances"=>3, "networks"=>[{"name"=>"a"}], "jobs"=>[{"name"=>"foobar", "release"=>"bosh-release", "properties"=>{}}]}]}
+              {"name"=>"simple", "releases"=>[{"name"=>"bosh-release", "version"=>"0.1-dev"}], "stemcells"=>[{"name"=>"ubuntu-stemcell", "version"=>"1", "alias"=>"default", "os"=>"stemcell-os"}], "update"=>{"canaries"=>2, "canary_watch_time"=>4000, "max_in_flight"=>1, "update_watch_time"=>20}, "instance_groups"=>[{"name"=>"foobar", "stemcell"=>"default", "vm_type"=>"a", "instances"=>3, "networks"=>[{"name"=>"a"}], "jobs"=>[{"name"=>"foobar", "release"=>"bosh-release", "properties"=>{}}]}]}
             LOGMESSAGE
             expected_cloud_manifest_log = <<~LOGMESSAGE
               Cloud config manifest:
@@ -459,7 +459,7 @@ module Bosh
 
         def upload_stemcell
           stemcell_entry = manifest_hash['stemcells'].first
-          Models::Stemcell.make(name: stemcell_entry['name'], version: stemcell_entry['version'])
+          Models::Stemcell.make(name: stemcell_entry['name'], version: stemcell_entry['version'], operating_system: 'stemcell-os')
         end
       end
     end

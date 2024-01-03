@@ -20,10 +20,6 @@ module Bosh::Director
           raise ValidationMissingField, "Required property 'os' or 'name' was not specified in object (#{spec})"
         end
 
-        if !name.nil? && !os.nil?
-          raise StemcellBothNameAndOS, "Properties 'os' and 'name' are both specified for stemcell, choose one. (#{spec})"
-        end
-
         new(name_alias, name, os, version)
       end
 
@@ -33,15 +29,9 @@ module Bosh::Director
         @os = os
         @version = version
         @manager = Api::StemcellManager.new
-        if @os.blank?
-          models = @manager.all_by_name_and_version(@name, @version)
-          unless models.empty?
-            @os = models.first.operating_system
-          end
-        end
       end
 
-      def is_using_os?
+      def is_only_using_os?
         !@os.nil? && @name.nil?
       end
 
@@ -55,7 +45,7 @@ module Bosh::Director
       end
 
       def add_stemcell_models
-        if is_using_os?
+        if is_only_using_os?
           @models = @manager.all_by_os_and_version(@os, @version)
           raise StemcellNotFound, "Stemcell version '#{@version}' for OS '#{@os}' doesn't exist" if models.empty?
         else
