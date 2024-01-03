@@ -31,11 +31,11 @@ module Bosh::Director
       Models::ReleaseVersion.make(version: '1+dev.5', release: release_1)
       Models::ReleaseVersion.make(version: '1+dev.7', release: release_1)
 
-      Models::Stemcell.make(name: 'simple', version: '3163')
-      Models::Stemcell.make(name: 'simple', version: '3169')
+      Models::Stemcell.make(name: 'simple', version: '3163', operating_system: 'simple-os')
+      Models::Stemcell.make(name: 'simple', version: '3169', operating_system: 'simple-os')
 
-      Models::Stemcell.make(name: 'hard', version: '3146')
-      Models::Stemcell.make(name: 'hard', version: '3146.1')
+      Models::Stemcell.make(name: 'hard', version: '3146', operating_system: 'hard-os')
+      Models::Stemcell.make(name: 'hard', version: '3146.1', operating_system: 'hard-os')
 
       allow(Bosh::Director::ConfigServer::VariablesInterpolator).to receive(:new).and_return(variables_interpolator)
       allow(variables_interpolator).to receive(:interpolate_cloud_manifest) { |cloud_manifest| Bosh::Common::DeepCopy.copy(cloud_manifest) }
@@ -338,8 +338,8 @@ module Bosh::Director
           it 'replaces latest with the latest version number' do
             manifest_object.resolve_aliases
             expect(manifest_object.to_hash['stemcells']).to eq(
-              [{ 'name' => 'simple', 'version' => '3169' },
-               { 'name' => 'hard', 'version' => '3146.1' }],
+              [{ 'name' => 'simple', 'version' => '3169', 'os'=>'simple-os' },
+               { 'name' => 'hard', 'version' => '3146.1', 'os'=>'hard-os' }],
             )
           end
         end
@@ -357,8 +357,8 @@ module Bosh::Director
           it 'replaces prefixed-latest with the latest version number' do
             manifest_object.resolve_aliases
             expect(manifest_object.to_hash['stemcells']).to eq(
-              [{ 'name' => 'simple', 'version' => '3169' },
-               { 'name' => 'hard', 'version' => '3146.1' }],
+              [{ 'name' => 'simple', 'version' => '3169', 'os'=>'simple-os' },
+               { 'name' => 'hard', 'version' => '3146.1', 'os'=>'hard-os' }],
             )
           end
         end
@@ -377,7 +377,7 @@ module Bosh::Director
             manifest_object.resolve_aliases
             expect(manifest_object.to_hash['stemcells']).to eq(
               [{ 'name' => 'simple', 'version' => '42' },
-               { 'name' => 'hard', 'version' => '3146.1' }],
+               { 'name' => 'hard', 'version' => '3146.1', 'os'=>'hard-os' }],
             )
           end
         end
@@ -405,6 +405,25 @@ module Bosh::Director
           it 'keeps the uninterpolated value' do
             manifest_object.resolve_aliases
             expect(manifest_object.to_hash['stemcells']).to eq(['((foo))'])
+          end
+        end
+
+        context 'when manifest has stemcells specified by name without os' do
+          let(:manifest_hash) do
+            {
+              'stemcells' => [
+                { 'name' => 'simple', 'version' => 'latest' },
+                { 'name' => 'hard', 'version' => 'latest' },
+              ],
+            }
+          end
+
+          it 'adds the os' do
+            manifest_object.resolve_aliases
+            expect(manifest_object.to_hash['stemcells']).to eq(
+              [{ 'name' => 'simple', 'version' => '3169', 'os' => 'simple-os' },
+                { 'name' => 'hard', 'version' => '3146.1', 'os' => 'hard-os' }],
+            )
           end
         end
       end

@@ -48,13 +48,6 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
           valid_spec['name'] = 'stemcell-name'
           expect { make(valid_spec) }.to_not raise_error
         end
-        it 'populates os' do
-          make_stemcell('stemcell-name','0.5.2','plan-9')
-          valid_spec.delete('os')
-          valid_spec['name'] = 'stemcell-name'
-          stemcell = make(valid_spec)
-          expect(stemcell.os).to eq('plan-9')
-        end
       end
 
       context 'when neither os or name are specified' do
@@ -64,17 +57,6 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
           expect { make(valid_spec) }.to raise_error(
             BD::ValidationMissingField,
             "Required property 'os' or 'name' was not specified in object ({\"version\"=>\"0.5.2\"})",
-          )
-        end
-      end
-      context 'when both os and name are specified' do
-        it 'raises' do
-          valid_spec['name'] = 'stemcell-name'
-          valid_spec['os'] = 'os1'
-          expect { make(valid_spec) }.to raise_error(
-            BD::StemcellBothNameAndOS,
-            "Properties 'os' and 'name' are both specified for stemcell, choose one. "\
-            '({"name"=>"stemcell-name", "version"=>"0.5.2", "os"=>"os1"})',
           )
         end
       end
