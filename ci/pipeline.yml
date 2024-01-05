@@ -1387,4 +1387,5 @@ resources:
       bucket: bosh-director-pipeline
       json_key: ((gcp_json_key))
       versioned_file: bosh-director/release-notes.md
+      initial_version: "0"
       initial_content_text: ""
