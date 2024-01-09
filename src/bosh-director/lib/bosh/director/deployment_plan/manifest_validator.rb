@@ -28,14 +28,6 @@ module Bosh
                   'resource_pools is no longer supported. You must now define resources in a cloud-config'
           end
 
-          if manifest.key?('stemcells')
-            manifest['stemcells'].each do |stemcell|
-              if stemcell['name'] && stemcell['os']
-                raise StemcellBothNameAndOS, "Properties 'os' and 'name' are both specified for stemcell, choose one. (#{stemcell})"
-              end
-            end
-          end
-
           Config.event_log.warn_deprecated("Global 'properties' are deprecated. Please define 'properties' at the job level.") if manifest.key?('properties')
         end
 

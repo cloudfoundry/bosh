@@ -86,17 +86,6 @@ module Bosh
             'resource_pools is no longer supported. You must now define resources in a cloud-config',
           )
         end
-
-        it 'raises error when both os and name are specified for a stemcell' do
-          manifest_hash['stemcells'][0]['name'] = 'the-name'
-
-          expect do
-            manifest_validator.validate(manifest_hash)
-          end.to raise_error(
-            Bosh::Director::StemcellBothNameAndOS,
-            %[Properties 'os' and 'name' are both specified for stemcell, choose one. ({"alias"=>"default", "os"=>"toronto-os", "version"=>"latest", "name"=>"the-name"})],
-          )
-        end
       end
     end
   end
