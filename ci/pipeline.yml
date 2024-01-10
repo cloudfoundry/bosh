@@ -15,6 +15,7 @@ groups:
       - candidate-release
       - compile-bosh-dev-release-jammy
       - bats-ubuntu-jammy
+      - bats-ubuntu-jammy-fips
       - brats-ubuntu-jammy
       - brats-performance
       - bosh-disaster-recovery-acceptance-tests
@@ -331,6 +332,67 @@ jobs:
             terraform_source: bosh-src/ci/bats/iaas/gcp/terraform
             vars:
               name: bats-ubuntu-jammy
+
+  - name: bats-ubuntu-jammy-fips
+    serial: true
+    plan:
+    - do:
+      - in_parallel:
+        - get: bosh-candidate-release-tarballs
+          passed: [compile-bosh-dev-release-jammy]
+        - get: bosh-release
+          resource: bosh-compiled-candidate-jammy
+          trigger: true
+          passed: [compile-bosh-dev-release-jammy]
+        - get: stemcell
+          resource: gcp-ubuntu-jammy-fips
+        - get: bosh-cli
+        - get: bats
+        - get: bosh-deployment
+        - get: bosh-src
+          passed: [compile-bosh-dev-release-jammy]
+        - get: integration-image
+      - put: terraform
+        resource: gcp-terraform
+        params:
+          env_name: bats-ubuntu-jammy-fips
+          terraform_source: bosh-src/ci/bats/iaas/gcp/terraform
+          vars:
+            name: bats-ubuntu-jammy-fips
+      - do:
+        - task: deploy-director
+          file: bosh-src/ci/bats/tasks/deploy-director.yml
+          image: integration-image
+          input_mapping:
+            environment: terraform
+          params:
+            BAT_INFRASTRUCTURE: gcp
+            GCP_JSON_KEY: ((gcp_json_key))
+            DEPLOY_ARGS: |
+              -o bosh-deployment/external-ip-not-recommended.yml
+              -o bosh-src/ci/bats/ops/use-fips-stemcell.yml
+        - task: prepare-bats-config
+          file: bosh-src/ci/bats/iaas/gcp/prepare-bats-config.yml
+          image: integration-image
+          params:
+            STEMCELL_NAME: bosh-google-kvm-ubuntu-jammy-fips-go_agent
+        - task: run-bats
+          file: bats/ci/tasks/run-bats.yml
+          image: integration-image
+      ensure:
+        do:
+        - task: teardown
+          file: bosh-src/ci/bats/tasks/destroy-director.yml
+          image: integration-image
+        - put: terraform
+          resource: gcp-terraform
+          no_get: true
+          params:
+            action: destroy
+            env_name: bats-ubuntu-jammy-fips
+            terraform_source: bosh-src/ci/bats/iaas/gcp/terraform
+            vars:
+              name: bats-ubuntu-jammy-fips
 
   - name: brats-ubuntu-jammy
     serial: true
@@ -1069,6 +1131,11 @@ resource_types:
     repository: concourse/semver-resource
     tag: "1.6"
 
+- name: bosh-io-stemcell
+  source:
+    repository: foundationalinfrastructure/bosh-io-stemcell-resource
+    tag: v1.2.1
+  type: docker-image
 
 resources:
   - name: mariadb-connector-c-resource
@@ -1280,6 +1347,14 @@ resources:
     type: bosh-io-stemcell
     source:
       name: bosh-google-kvm-ubuntu-jammy-go_agent
+
+  - name: gcp-ubuntu-jammy-fips
+    type: bosh-io-stemcell
+    source:
+      name: bosh-google-kvm-ubuntu-jammy-fips-go_agent
+      auth:
+        access_key: ((hmac_accesskey))
+        secret_key: ((hmac_secret))
 
   - name: warden-ubuntu-jammy
     type: bosh-io-stemcell
