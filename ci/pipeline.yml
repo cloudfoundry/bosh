@@ -370,7 +370,7 @@ jobs:
             GCP_JSON_KEY: ((gcp_json_key))
             DEPLOY_ARGS: |
               -o bosh-deployment/external-ip-not-recommended.yml
-              -o bosh-src/ci/bats/ops/use-fips-stemcell.yml
+              -o bosh-src/ci/bats/ops/use-custom-stemcell.yml
         - task: prepare-bats-config
           file: bosh-src/ci/bats/iaas/gcp/prepare-bats-config.yml
           image: integration-image

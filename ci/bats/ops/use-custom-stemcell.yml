@@ -2,4 +2,4 @@
   path: /resource_pools/name=vms/stemcell?
   type: replace
   value:
-    url: stemcell/*.tgz
+    url: file://stemcell/stemcell.tgz
