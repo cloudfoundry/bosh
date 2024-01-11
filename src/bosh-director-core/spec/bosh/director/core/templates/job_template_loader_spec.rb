@@ -79,7 +79,7 @@ module Bosh::Director::Core::Templates
 
       it 'returns the jobs template erb objects' do
         tarball_path = create_job_tarball(
-          'release-job-name',
+          'fake-job-name-1',
           'monit file erb contents',
           tmp_file,
           { 'test' => {
@@ -90,10 +90,14 @@ module Bosh::Director::Core::Templates
 
         job = double('Bosh::Director::DeploymentPlan::Job',
           download_blob: tarball_path,
-          name: 'plan-job-name',
+          name: 'fake-job-name-1',
           blobstore_id: 'blob-id',
           release: release
         )
+
+        job_model = double('Bosh::Director::Models::Template')
+        expect(job).to receive(:model).and_return(job_model)
+        expect(job_model).to receive(:spec).and_return({ "templates" => { "test" => "test_dst" } })
 
         monit_erb = instance_double(SourceErb)
         job_template_erb = instance_double(SourceErb)
@@ -103,19 +107,18 @@ module Bosh::Director::Core::Templates
           'monit',
           'monit',
           'monit file erb contents',
-          'plan-job-name',
+          'fake-job-name-1',
         ).and_return(monit_erb)
 
         expect(SourceErb).to receive(:new).with(
           'test',
           'test_dst',
           'test contents',
-          'plan-job-name'
+          'fake-job-name-1'
         ).and_return(job_template_erb)
 
         expect(JobTemplateRenderer).to receive(:new).with(
-          job_template: job,
-          template_name: 'release-job-name',
+          instance_job: job,
           monit_erb: monit_erb,
           source_erbs: [job_template_erb],
           logger: logger,
@@ -128,15 +131,19 @@ module Bosh::Director::Core::Templates
       end
 
       it 'includes only monit erb object when no other templates exist' do
-        tarball_path = create_job_tarball('release-job-no-templates', 'monit file erb contents', tmp_file, {})
+        tarball_path = create_job_tarball('fake-job-name-2', 'monit file erb contents', tmp_file, {})
 
         job = double(
           'Bosh::Director::DeploymentPlan::Job',
           download_blob: tarball_path,
-          name: 'plan-job-name',
+          name: 'fake-job-name-2',
           blobstore_id: 'blob-id',
           release: release,
         )
+
+        job_model = double('Bosh::Director::Models::Template')
+        expect(job).to receive(:model).and_return(job_model)
+        expect(job_model).to receive(:spec).and_return({ "templates" => {} })
 
         monit_erb = instance_double(SourceErb)
         fake_renderer = instance_double(JobTemplateRenderer)
@@ -145,12 +152,11 @@ module Bosh::Director::Core::Templates
           'monit',
           'monit',
           'monit file erb contents',
-          'plan-job-name',
+          'fake-job-name-2',
         ).and_return(monit_erb)
 
         expect(JobTemplateRenderer).to receive(:new).with(
-          job_template: job,
-          template_name: 'release-job-no-templates',
+          instance_job: job,
           monit_erb: monit_erb,
           source_erbs: [],
           logger: logger,
@@ -167,7 +173,7 @@ module Bosh::Director::Core::Templates
           manifest = <<~EOF
             ---
             bogus_key: &empty_hash {}
-            name: test
+            name: test-job-name
             templates: *empty_hash
             packages: []
           EOF
@@ -178,11 +184,15 @@ module Bosh::Director::Core::Templates
 
           job = double('Bosh::Director::DeploymentPlan::Job',
             download_blob: tmp_file.path,
-            name: 'plan-job-name',
+            name: 'test-job-name',
             blobstore_id: 'blob-id',
             release: release,
             model: double('Bosh::Director::Models::Template', provides: [])
           )
+
+          job_model = double('Bosh::Director::Models::Template')
+          expect(job).to receive(:model).and_return(job_model)
+          expect(job_model).to receive(:spec).and_return({ "templates" => {} })
 
           job_template_renderer = job_template_loader.process(job)
           expect(job_template_renderer.source_erbs).to eq([])

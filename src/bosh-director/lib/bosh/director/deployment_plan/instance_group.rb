@@ -239,8 +239,8 @@ module Bosh::Director
       # name. To be used by all instances to populate agent state.
       # @return [Hash<String, Hash>] All package specs indexed by package name
       def package_spec
-        @packages.each_with_object({}) do |(name, package), acc|
-          acc[name] = package.spec
+        @packages.each_with_object({}) do |(name, package), accu|
+          accu[name] = package.spec
         end.select { |name, _| run_time_dependencies.include? name }
       end
 
@@ -272,9 +272,9 @@ module Bosh::Director
       # before 'bind_properties' is being called (as we persist instance group template
       # property definitions in DB).
       def bind_properties
-        @properties = @jobs.each_with_object({}) do |job, acc|
+        @properties = @jobs.each_with_object({}) do |job, accu|
           job.bind_properties(@name)
-          acc[job.name] = job.properties[@name]
+          accu[job.name] = job.properties[@name]
         end
       end
 
@@ -409,10 +409,19 @@ module Bosh::Director
 
       private
 
+      # Returns the aggregated list of package names, considering all jobs
+      # desired on this instance group, with no duplicate.
+      #
+      # @return [Array<String>] The list of package names
       def run_time_dependencies
         run_time_packages.map(&:name)
       end
 
+      # The aggregated list of models for all packages to install on instances
+      # of the group, considering all jobs desired on this instance group,
+      # with no duplicate.
+      #
+      # @return [Array<Models::Package>] The list of packages
       def run_time_packages
         jobs.flat_map(&:package_models).uniq
       end

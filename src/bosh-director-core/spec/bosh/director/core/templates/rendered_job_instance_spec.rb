@@ -18,8 +18,8 @@ module Bosh::Director::Core::Templates
             [
               instance_double(
                 'Bosh::Director::Core::Templates::RenderedFileTemplate',
-                src_name: 'template-file1',
-                dest_name: 'template-file1',
+                src_filepath: 'template-file1',
+                dest_filepath: 'template-file1',
                 contents: 'template file contents 1',
               ),
             ],
@@ -30,14 +30,14 @@ module Bosh::Director::Core::Templates
             [
               instance_double(
                 'Bosh::Director::Core::Templates::RenderedFileTemplate',
-                src_name: 'template-file3',
-                dest_name: 'template-file3',
+                src_filepath: 'template-file3',
+                dest_filepath: 'template-file3',
                 contents: 'template file contents 3',
               ),
               instance_double(
                 'Bosh::Director::Core::Templates::RenderedFileTemplate',
-                src_name: 'template-file2',
-                dest_name: 'template-file2',
+                src_filepath: 'template-file2',
+                dest_filepath: 'template-file2',
                 contents: 'template file contents 2',
               ),
             ],
@@ -57,8 +57,8 @@ module Bosh::Director::Core::Templates
               'monit file contents 1',
               [
                 instance_double('Bosh::Director::Core::Templates::RenderedFileTemplate',
-                                src_name: 'template-file1',
-                                dest_name: 'template-file1',
+                                src_filepath: 'template-file1',
+                                dest_filepath: 'template-file1',
                                 contents: 'template file contents 1'),
               ],
             ),
@@ -72,8 +72,8 @@ module Bosh::Director::Core::Templates
               'monit file contents 1',
               [
                 instance_double('Bosh::Director::Core::Templates::RenderedFileTemplate',
-                                src_name: 'template-file1',
-                                dest_name: 'template-file1',
+                                src_filepath: 'template-file1',
+                                dest_filepath: 'template-file1',
                                 contents: 'template file contents 1'),
               ],
             ),
@@ -82,8 +82,8 @@ module Bosh::Director::Core::Templates
               '',
               [
                 instance_double('Bosh::Director::Core::Templates::RenderedFileTemplate',
-                                src_name: 'template-file1',
-                                dest_name: 'template-file1',
+                                src_filepath: 'template-file1',
+                                dest_filepath: 'template-file1',
                                 contents: ''),
               ],
             ),
@@ -103,8 +103,8 @@ module Bosh::Director::Core::Templates
               'monit file contents 1',
               [
                 instance_double('Bosh::Director::Core::Templates::RenderedFileTemplate',
-                                src_name: 'template-file1',
-                                dest_name: 'template-file1',
+                                src_filepath: 'template-file1',
+                                dest_filepath: 'template-file1',
                                 contents: 'template file contents 1'),
               ],
             ),
@@ -118,8 +118,8 @@ module Bosh::Director::Core::Templates
               'monit file contents 1',
               [
                 instance_double('Bosh::Director::Core::Templates::RenderedFileTemplate',
-                                src_name: 'template-file1',
-                                dest_name: 'template-file1',
+                                src_filepath: 'template-file1',
+                                dest_filepath: 'template-file1',
                                 contents: 'template file contents 1'),
               ],
             ),

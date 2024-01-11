@@ -16,8 +16,8 @@ module Bosh::Director::Core::Templates
       let(:source_erb) do
         instance_double(
           'Bosh::Director::Core::Templates::SourceErb',
-          src_name: 'fake-template-src-name',
-          dest_name: 'fake-template-dest-name',
+          src_filepath: 'fake-template-src-name',
+          dest_filepath: 'fake-template-dest-name',
           render: 'test template',
         )
       end
@@ -26,7 +26,7 @@ module Bosh::Director::Core::Templates
         {
           'index' => 1,
           'job' => {
-            'name' => 'fake-job-name',
+            'name' => 'fake-instance-group-name',
           },
         }
       end
@@ -34,7 +34,7 @@ module Bosh::Director::Core::Templates
       let(:links_provided) { [] }
       let(:release) { double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'fake-release-name', version: '0.1') }
       let(:job_template_model) { double('Bosh::Director::Models::Template', provides: links_provided) }
-      let(:job_template) do
+      let(:instance_job) do
         double('Bosh::Director::DeploymentPlan::Job', name: 'fake-job-name', release: release, model: job_template_model)
       end
       let(:logger) { instance_double('Logger', debug: nil) }
@@ -43,8 +43,7 @@ module Bosh::Director::Core::Templates
 
       subject(:job_template_renderer) do
         JobTemplateRenderer.new(
-          job_template: job_template,
-          template_name: 'template-name',
+          instance_job: instance_job,
           monit_erb: monit_erb,
           source_erbs: [source_erb],
           logger: logger,
@@ -68,8 +67,8 @@ module Bosh::Director::Core::Templates
 
           expect(rendered_templates.monit).to eq('monit file')
           rendered_file_template = rendered_templates.templates.first
-          expect(rendered_file_template.src_name).to eq('fake-template-src-name')
-          expect(rendered_file_template.dest_name).to eq('fake-template-dest-name')
+          expect(rendered_file_template.src_filepath).to eq('fake-template-src-name')
+          expect(rendered_file_template.dest_filepath).to eq('fake-template-dest-name')
           expect(rendered_file_template.contents).to eq('test template')
 
           expect(monit_erb).to have_received(:render).with(context_copy, logger)
@@ -81,16 +80,17 @@ module Bosh::Director::Core::Templates
         let(:spec) do
           {
             'index' => 1,
-            'job' => {
-              'name' => 'reg-job-name',
-              'templates' =>
-                      [{ 'name' => 'template-name',
+            'name' => 'instance-group-name',
+            'job' => { # <- here 'job' is the Bosh v1 term for 'instance group'
+              'name' => 'reg-instance-group-name',
+              'templates' => # <- here 'template' is the Bosh v1 term for 'job'
+                      [{ 'name' => 'fake-job-name',
                          'version' => '1bbe5ab00082797999e2101d730de64aeb601b6a',
                          'sha1' => '728399f9ef342532c6224bce4eb5331b5c38d595',
                          'blobstore_id' => '6c1eec85-3c08-4464-8b11-dc43acaa79f9' }],
             },
             'properties' => {
-              'template-name' => {
+              'fake-job-name' => {
                 'inside' => 'insideValue',
                 'smurfs' => { 'name' => 'snoopy' },
               },
@@ -109,15 +109,16 @@ module Bosh::Director::Core::Templates
           expect(Bosh::Template::EvaluationContext).to have_received(:new).with(
             {
               'index' => 1,
-              'job' => {
-                'name' => 'reg-job-name',
-                'templates' =>
-                        [{ 'name' => 'template-name',
+              'name' => 'instance-group-name',
+              'job' => { # <- here 'job' is the Bosh v1 term for 'instance group'
+                'name' => 'reg-instance-group-name',
+                'templates' => # <- here 'template' is the Bosh v1 term for 'job'
+                        [{ 'name' => 'fake-job-name',
                            'version' => '1bbe5ab00082797999e2101d730de64aeb601b6a',
                            'sha1' => '728399f9ef342532c6224bce4eb5331b5c38d595',
                            'blobstore_id' => '6c1eec85-3c08-4464-8b11-dc43acaa79f9' }],
               },
-              'properties' => { # note: loses 'template-name' from :spec
+              'properties' => { # note: loses 'fake-job-name' from :spec
                 'inside' => 'insideValue',
                 'smurfs' => { 'name' => 'snoopy' },
               },
@@ -130,8 +131,7 @@ module Bosh::Director::Core::Templates
         context 'rendering templates returns errors' do
           let(:job_template_renderer) do
             JobTemplateRenderer.new(
-              job_template: job_template,
-              template_name: 'template-name',
+              instance_job: instance_job,
               monit_erb: monit_erb,
               source_erbs: [source_erb, source_erb],
               logger: logger,
@@ -161,18 +161,22 @@ module Bosh::Director::Core::Templates
       context 'when spec has links' do
         let(:raw_spec) do
           {
-            'name' => 'joao-da-silva',
+            'name' => 'fake-instance-group-name',
             'index' => 1,
-            'job' => {
-              'name' => 'template-name',
+            'job' => { # <- here 'job' is the Bosh v1 term for 'instance group'
+              'name' => 'fake-instance-group-name',
             },
             'properties_need_filtering' => true,
             'links' => {
-              'template-name' => {
-                'db_link' =>
-                    { 'properties' => { 'foo' => 'bar' }, 'instances' => [{ 'name' => 'mysql1' }, { 'name' => 'mysql' }] },
-                'backup_db' =>
-                    { 'properties' => { 'moop' => 'yar' }, 'instances' => [{ 'name' => 'postgres1' }, { 'name' => 'postgres' }] },
+              'fake-job-name' => {
+                'db_link' => {
+                  'properties' => { 'foo' => 'bar' },
+                  'instances' => [{ 'name' => 'mysql1' }, { 'name' => 'mysql' }]
+                },
+                'backup_db' => {
+                  'properties' => { 'moop' => 'yar' },
+                  'instances' => [{ 'name' => 'postgres1' }, { 'name' => 'postgres' }]
+                },
               },
             },
             'release' => { 'name' => 'fake-release-name', 'version' => '0.1' },
@@ -181,38 +185,36 @@ module Bosh::Director::Core::Templates
 
         let(:modified_spec) do
           {
-            'name' => 'joao-da-silva',
+            'name' => 'fake-instance-group-name',
             'index' => 1,
-            'job' => {
-              'name' => 'template-name',
+            'job' => { # <- here 'job' is the Bosh v1 term for 'instance group'
+              'name' => 'fake-instance-group-name',
             },
             'properties_need_filtering' => true,
             'links' => {
-              'db_link' =>
-              {
+              'db_link' => {
                 'properties' => { 'foo' => 'bar' },
                 'instances' => [{ 'name' => 'mysql1' }, { 'name' => 'mysql' }],
               },
-              'backup_db' =>
-                  {
-                    'properties' => { 'moop' => 'yar' },
-                    'instances' => [{ 'name' => 'postgres1' }, { 'name' => 'postgres' }],
-                  },
+              'backup_db' => {
+                'properties' => { 'moop' => 'yar' },
+                'instances' => [{ 'name' => 'postgres1' }, { 'name' => 'postgres' }],
+              },
             },
             'release' => { 'name' => 'fake-release-name', 'version' => '0.1' },
           }
         end
 
         let(:provider1) do
-          double('provider1', instance_group: 'joao-da-silva', name: 'fake-job-name')
+          double('provider1', instance_group: 'fake-instance-group-name', name: 'fake-job-name')
         end
 
         let(:provider2) do
-          double('provider2', instance_group: 'bob-de-smith')
+          double('provider2', instance_group: 'another-instance-group-name')
         end
 
         let(:provider3) do
-          double('provider3', instance_group: 'joao-da-silva', name: 'another-job-name')
+          double('provider3', instance_group: 'fake-instance-group-name', name: 'another-job-name')
         end
 
         let(:provider_intent) do
@@ -266,8 +268,8 @@ module Bosh::Director::Core::Templates
           expect(dns_encoder).to have_received(:id_for_group_tuple).once
 
           rendered_links_file = rendered_files.pop
-          expect(rendered_links_file.src_name).to(eq('.bosh/links.json'))
-          expect(rendered_links_file.dest_name).to(eq('.bosh/links.json'))
+          expect(rendered_links_file.src_filepath).to(eq('.bosh/links.json'))
+          expect(rendered_links_file.dest_filepath).to(eq('.bosh/links.json'))
 
           expect(JSON.parse(rendered_links_file.contents)).to eq(
             [

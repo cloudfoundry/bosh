@@ -1,4 +1,8 @@
 module Bosh::Director::Models
+
+  # This class models a job, as defined within a Bosh Release.
+  #
+  # Here “template” is the old Bosh v1 name for “job”.
   class Template < Sequel::Model(Bosh::Director::Config.db)
     many_to_one :release
     many_to_many :release_versions

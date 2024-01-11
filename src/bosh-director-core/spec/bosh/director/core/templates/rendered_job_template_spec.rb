@@ -9,12 +9,12 @@ module Bosh::Director::Core::Templates
         [
           instance_double(
             'Bosh::Director::Core::Templates::RenderedFileTemplate',
-            src_name: 'foo.erb',
+            src_filepath: 'foo.erb',
             contents: 'rendered foo erb',
           ),
           instance_double(
             'Bosh::Director::Core::Templates::RenderedFileTemplate',
-            src_name: 'bar.erb',
+            src_filepath: 'bar.erb',
             contents: 'rendered bar erb',
           ),
         ]

@@ -230,10 +230,11 @@ module Bosh::Director
         )
       end
 
-      # Finds job template definitions in release manifest and sorts them into
-      # two buckets: new and existing job templates, then creates new job
-      # template records in the database and points release version to existing ones.
-      # @param [String] release_dir local path to the unpacked release
+      # Finds job definitions in release manifest and sorts them into two
+      # buckets: new and existing jobs, then creates new job template records
+      # in the database and points release version to existing ones.
+      #
+      # @param [String] release_dir Local path to the unpacked release
       # @return [void]
       def process_jobs(release_dir)
         logger.info('Checking for new jobs in release')
@@ -242,29 +243,29 @@ module Bosh::Director
         existing_jobs = []
         manifest_jobs = @manifest['jobs'] || []
 
-        manifest_jobs.each do |job_meta|
+        manifest_jobs.each do |manifest_job|
           # Checking whether we might have the same bits somewhere
-          @release_version_model.templates.select { |t| t.name == job_meta['name'] }.each do |tmpl|
-            next unless tmpl.fingerprint != job_meta['fingerprint']
+          @release_version_model.templates.select { |t| t.name == manifest_job['name'] }.each do |release_job|
+            next unless release_job.fingerprint != manifest_job['fingerprint']
 
             raise(
               ReleaseExistingJobFingerprintMismatch,
-              "job '#{job_meta['name']}' had different fingerprint in previously uploaded release '#{@name}/#{@version}'",
+              "job '#{manifest_job['name']}' had different fingerprint in previously uploaded release '#{@name}/#{@version}'",
             )
           end
 
-          jobs = Models::Template.where(fingerprint: job_meta['fingerprint']).all
+          job_models = Models::Template.where(fingerprint: manifest_job['fingerprint']).all
 
-          template = jobs.find do |job|
+          job_model = job_models.find do |job|
             job.release_id == @release_model.id &&
-              job.name == job_meta['name'] &&
-              job.version == job_meta['version']
+              job.name == manifest_job['name'] &&
+              job.version == manifest_job['version']
           end
 
-          if template.nil?
-            new_jobs << job_meta
+          if job_model.nil?
+            new_jobs << manifest_job
           else
-            existing_jobs << [template, job_meta]
+            existing_jobs << [job_model, manifest_job]
           end
         end
 
@@ -279,21 +280,21 @@ module Bosh::Director
         return false if jobs.empty?
 
         event_log_stage = Config.event_log.begin_stage('Creating new jobs', jobs.size)
-        jobs.each do |job_meta|
-          job_desc = "#{job_meta['name']}/#{job_meta['version']}"
+        jobs.each do |manifest_job|
+          job_desc = "#{manifest_job['name']}/#{manifest_job['version']}"
           event_log_stage.advance_and_track(job_desc) do
-            logger.info("Creating new template '#{job_desc}'")
-            template = create_job(job_meta, release_dir)
-            register_template(template)
+            logger.info("Creating new job '#{job_desc}'")
+            job = create_job(manifest_job, release_dir)
+            register_template(job)
           end
         end
 
         true
       end
 
-      def create_job(job_meta, release_dir)
-        release_job = ReleaseJob.new(job_meta, @release_model, release_dir, logger)
-        logger.info("Creating job template '#{job_meta['name']}/#{job_meta['version']}' " \
+      def create_job(manifest_job, release_dir)
+        release_job = ReleaseJob.new(manifest_job, @release_model, release_dir, logger)
+        logger.info("Creating job '#{manifest_job['name']}/#{manifest_job['version']}' " \
             'from provided bits')
         release_job.update
       end
@@ -304,18 +305,18 @@ module Bosh::Director
         return false if jobs.empty?
 
         single_step_stage("Processing #{jobs.size} existing job#{'s' if jobs.size > 1}") do
-          jobs.each do |template, job_meta|
-            job_desc = "#{template.name}/#{template.version}"
+          jobs.each do |job_model, manifest_job|
+            job_desc = "#{job_model.name}/#{job_model.version}"
 
             if @fix
               logger.info("Fixing existing job '#{job_desc}'")
-              release_job = ReleaseJob.new(job_meta, @release_model, release_dir, logger)
+              release_job = ReleaseJob.new(manifest_job, @release_model, release_dir, logger)
               release_job.update
             else
               logger.info("Using existing job '#{job_desc}'")
             end
 
-            register_template(template) unless template.release_versions.include? @release_version_model
+            register_template(job_model) unless job_model.release_versions.include? @release_version_model
           end
         end
 
@@ -325,10 +326,13 @@ module Bosh::Director
       private
 
       # Marks job template model as being used by release version
-      # @param [Models::Template] template Job template model
+      #
+      # Here “template” is the old Bosh v1 name for “job”.
+      #
+      # @param [Models::Template] job The job model
       # @return [void]
-      def register_template(template)
-        @release_version_model.add_template(template)
+      def register_template(job)
+        @release_version_model.add_template(job)
       end
 
       def manifest_packages

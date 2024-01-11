@@ -24,6 +24,7 @@ module Bosh
 
       let(:spec) do
         {
+          'name' => 'foobar',
           'job' => {
             'name' => 'foobar',
           },

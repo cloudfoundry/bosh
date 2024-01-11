@@ -15,31 +15,32 @@ module Bosh::Director
 
       job_manifest = load_manifest
 
+      validate_name(job_manifest)
       validate_templates(job_manifest)
       validate_monit
       validate_logs(job_manifest)
       validate_properties(job_manifest)
       validate_links(job_manifest)
 
-      template = Models::Template.find_or_init_from_release_meta(
+      job_model = Models::Template.find_or_init_from_release_meta(
         release: @release_model,
         job_meta: @job_meta,
         job_manifest: job_manifest,
       )
 
-      if template.blobstore_id
+      if job_model.blobstore_id
         begin
-          @logger.info("Deleting blob for template '#{name}/#{@version}' with blobstore_id '#{template.blobstore_id}'")
-          BlobUtil.delete_blob(template.blobstore_id)
-          template.blobstore_id = nil
+          @logger.info("Deleting blob for job '#{name}/#{@version}' with blobstore_id '#{job_model.blobstore_id}'")
+          BlobUtil.delete_blob(job_model.blobstore_id)
+          job_model.blobstore_id = nil
         rescue Bosh::Blobstore::BlobstoreError => e
-          @logger.info("Error deleting blob for template '#{name}/#{@version}' with blobstore_id '#{template.blobstore_id}': #{e.inspect}")
+          @logger.info("Error deleting blob for job '#{name}/#{@version}' with blobstore_id '#{job_model.blobstore_id}': #{e.inspect}")
         end
       end
 
-      template.blobstore_id = BlobUtil.create_blob(job_tgz)
+      job_model.blobstore_id = BlobUtil.create_blob(job_tgz)
 
-      template.save
+      job_model.save
     end
 
     private
@@ -73,6 +74,13 @@ module Bosh::Director
       end
 
       YAML.load_file(manifest_file, aliases: true)
+    end
+
+    def validate_name(job_manifest)
+      unless name == job_manifest['name']
+        raise JobInvalidName, "Inconsistent name for job '#{name}'" +
+          "(exptected: '#{name}', got: '#{job_manifest['name']}')"
+      end
     end
 
     def validate_templates(job_manifest)

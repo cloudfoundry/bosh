@@ -379,6 +379,11 @@ module Bosh
           InstanceSpec.create_from_instance_plan(self)
         end
 
+        # Returns the desired jobs for the instance
+        #
+        # Here “template” is the old Bosh v1 name for “job”.
+        #
+        # @return [Array<DeploymentPlan::Job>] List of desired jobs
         def templates
           @desired_instance.instance_group.jobs
         end

@@ -40,11 +40,7 @@ module Bosh
                     "Hash expected, #{spec.class} given"
         end
 
-        if spec['job'].is_a?(Hash)
-          @name = spec['job']['name']
-        else
-          @name = nil
-        end
+        @name = spec['name']
 
         @index = spec['index']
         @spec = openstruct(spec, BackCompatOpenStruct)

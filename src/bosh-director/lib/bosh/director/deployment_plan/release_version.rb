@@ -91,8 +91,11 @@ module Bosh::Director
         }
       end
 
-      # Looks up up template model by template name
-      # @param [String] name Template name
+      # Looks up up job model by job name.
+      #
+      # Here “template” is the old Bosh v1 name for “job”.
+      #
+      # @param [String] name Job name
       # @return [Models::Template]
       def get_template_model_by_name(name)
         @all_jobs ||= @model.templates.each_with_object({}) do |job, all_jobs|
@@ -109,25 +112,38 @@ module Bosh::Director
         @model.package_by_name(name)
       end
 
-      # Adds template to a list of templates used by this release for the
-      # current deployment
+      # Adds a job to a list of jobs used by this release for the current
+      # deployment.
+      #
+      # Here “template” is the old Bosh v1 name for “job”.
+      #
       # @param [String] options Template name
       def get_or_create_template(name)
         @jobs[name] ||= Job.new(self, name)
       end
 
+      # Return a given job, identified by name.
+      #
+      # Here “template” is the old Bosh v1 name for “job”.
+      #
       # @param [String] name Job name
       # @return [DeploymentPlan::Job] Job with given name used by this
-      #   release (if any)
+      #                               release (if any)
       def template(name)
         @jobs[name]
       end
 
-      # Returns a list of job templates that need to be included into this
-      # release. Note that this is not just a list of all templates existing
-      # in the release but rather a list of templates for jobs that are included
-      # into current deployment plan.
-      # @return [Array<DeploymentPlan::Job>] List of job templates
+      # Returns a list of jobs from the release that are used by the
+      # deployment.
+      #
+      # Note that this is not the full list of all jobs existing in the
+      # release, but a subset list of the jobs defined in that release that
+      # are used by the current deployment, and thus included in its plan.
+      #
+      # Here “template” is the old Bosh v1 name for “job”.
+      #
+      # @return [Array<DeploymentPlan::Job>] List of the release jobs used by
+      #                                      the deployment
       def templates
         @jobs.values
       end

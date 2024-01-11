@@ -11,17 +11,15 @@ module Bosh::Director::Core::Templates
 
     attr_reader :monit_erb, :source_erbs
 
-    def initialize(job_template:,
-                   template_name:,
+    def initialize(instance_job:,
                    monit_erb:,
                    source_erbs:,
                    logger:,
                    link_provider_intents:,
                    dns_encoder: nil)
-      @links_provided = job_template.model.provides
-      @name = job_template.name
-      @release = job_template.release
-      @template_name = template_name
+      @links_provided = instance_job.model.provides
+      @job_name = instance_job.name
+      @release = instance_job.release
       @monit_erb = monit_erb
       @source_erbs = source_erbs
       @logger = logger
@@ -33,7 +31,7 @@ module Bosh::Director::Core::Templates
       spec = Bosh::Common::DeepCopy.copy(spec)
 
       if spec['properties_need_filtering']
-        spec = remove_unused_properties(spec)
+        spec = pick_job_properties(spec)
       end
 
       spec = namespace_links_to_current_job(spec)
@@ -59,12 +57,12 @@ module Bosh::Director::Core::Templates
           errors.push e
         end
 
-        RenderedFileTemplate.new(source_erb.src_name, source_erb.dest_name, file_contents)
+        RenderedFileTemplate.new(source_erb.src_filepath, source_erb.dest_filepath, file_contents)
       end
 
       if errors.length > 0
         combined_errors = errors.map{|error| "- #{error.message.strip}"}.join("\n")
-        header = "- Unable to render templates for job '#{@name}'. Errors are:"
+        header = "- Unable to render templates for job '#{@job_name}'. Errors are:"
         message = Bosh::Director::FormatterHelper.new.prepend_header_and_indent_body(header, combined_errors.strip, {:indent_by => 2})
 
         raise message
@@ -72,7 +70,7 @@ module Bosh::Director::Core::Templates
 
       rendered_files << RenderedFileTemplate.new('.bosh/links.json', '.bosh/links.json', links_data(spec))
 
-      RenderedJobTemplate.new(@name, monit, rendered_files)
+      RenderedJobTemplate.new(@job_name, monit, rendered_files)
     end
 
     private
@@ -83,8 +81,8 @@ module Bosh::Director::Core::Templates
       modified_spec = spec
 
       if modified_spec.has_key?('links')
-        if modified_spec['links'][@template_name]
-          links_spec = modified_spec['links'][@template_name]
+        if modified_spec['links'][@job_name]
+          links_spec = modified_spec['links'][@job_name]
           modified_spec['links'] = links_spec
         else
           modified_spec['links'] = {}
@@ -93,15 +91,15 @@ module Bosh::Director::Core::Templates
       modified_spec
     end
 
-    def remove_unused_properties(spec)
+    def pick_job_properties(spec)
       return nil if spec.nil?
 
       modified_spec = spec
 
       if modified_spec.has_key?('properties')
-        if modified_spec['properties'][@template_name]
-          properties_template = modified_spec['properties'][@template_name]
-          modified_spec['properties'] = properties_template
+        if modified_spec['properties'][@job_name]
+          job_properties = modified_spec['properties'][@job_name]
+          modified_spec['properties'] = job_properties
         end
       end
 
@@ -111,7 +109,7 @@ module Bosh::Director::Core::Templates
     def links_data(spec)
       provider_intents = @link_provider_intents.select do |provider_intent|
         provider_intent.link_provider.instance_group == spec['name'] &&
-          provider_intent.link_provider.name == @name
+          provider_intent.link_provider.name == @job_name
       end
 
       data = provider_intents.map do |provider_intent|

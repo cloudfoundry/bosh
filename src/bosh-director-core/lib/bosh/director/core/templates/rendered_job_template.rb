@@ -14,7 +14,7 @@ module Bosh::Director::Core::Templates
     def template_hash
       template_digest = Digest::SHA1.new
       template_digest << monit
-      templates.sort { |x, y| x.src_name <=> y.src_name }.each do |template_file|
+      templates.sort { |x, y| x.src_filepath <=> y.src_filepath }.each do |template_file|
         template_digest << template_file.contents
       end
 

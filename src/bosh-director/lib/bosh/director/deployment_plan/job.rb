@@ -34,7 +34,10 @@ module Bosh::Director
         @properties = {}
       end
 
-      # Looks up template model and its package models in DB
+      # Looks up job model and its package models in DB.
+      #
+      # Here “template” is the old Bosh v1 name for “job”.
+      #
       # @return [void]
       def bind_models
         @model = @release.get_template_model_by_name(@name)
@@ -52,11 +55,12 @@ module Bosh::Director
         @model = model
       end
 
-      # Downloads template blob to a given path
+      # Downloads job blob to a given path
+      #
       # @return [String] Path to downloaded blob
       def download_blob
         uuid = SecureRandom.uuid
-        path = File.join(Dir.tmpdir, "template-#{uuid}")
+        path = File.join(Dir.tmpdir, "job-#{uuid}")
 
         @logger.debug("Downloading job '#{@name}' (#{blobstore_id})...")
         t1 = Time.now
