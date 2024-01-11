@@ -12,6 +12,12 @@ gem 'bosh_common', path: 'bosh_common'
 
 gem 'rake', '~>13.0.3'
 
+# Bumping to openssl 3.2.0 while we are still on Ruby 3.2. This version
+# implements features necessary to support running on a FIPS stemcell.
+# If this is modified, it will need to be modified in the gemspecs for each
+# gem.
+gem 'openssl', '>=3.2.0'
+
 # json version is hardcoded in release director and health_monitor
 # when modified needs to be updated there as well
 gem 'json', '2.6.3'
@@ -65,7 +71,6 @@ group :development, :test do
 
   # for root level specs
   gem 'nats-pure', '~>2.3'
-  gem 'openssl'
   gem 'rest-client'
 
   gem 'blue-shell'
