@@ -21,4 +21,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'bosh-director'
   spec.add_dependency 'bundler'
   spec.add_dependency 'logging'
+  spec.add_dependency 'openssl', '>=3.2.0'
 end

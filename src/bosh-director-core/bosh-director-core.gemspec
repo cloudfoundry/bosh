@@ -22,4 +22,5 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'bosh_common', "~>#{version}"
   spec.add_dependency 'bosh-template', "~>#{version}"
+  spec.add_dependency 'openssl', '>=3.2.0'
 end
