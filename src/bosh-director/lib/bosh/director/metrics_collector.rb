@@ -10,6 +10,11 @@ module Bosh
         @config = config
         @logger = config.metrics_server_logger
 
+        @deploy_config_enabled = Prometheus::Client.registry.gauge(
+          :bosh_deploy_config_enabled,
+          docstring: 'Is a config of type deploy uploaded? 0 for no, 1 for yes',
+        )
+
         @resurrection_enabled = Prometheus::Client.registry.gauge(
           :bosh_resurrection_enabled,
           docstring: 'Is resurrection enabled? 0 for disabled, 1 for enabled',
@@ -82,6 +87,7 @@ module Bosh
       def populate_metrics
         @logger.info('populating metrics')
 
+        @deploy_config_enabled.set(Api::ConfigManager.deploy_config_enabled? ? 1 : 0)
         @resurrection_enabled.set(Api::ResurrectorManager.new.pause_for_all? ? 0 : 1)
 
         metrics = { 'processing' => {}, 'queued' => {} }

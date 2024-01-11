@@ -23,12 +23,14 @@ module Bosh
         allow(Rufus::Scheduler).to receive(:new).and_return(scheduler)
         allow(Api::ResurrectorManager).to receive(:new).and_return(resurrector_manager)
         allow(resurrector_manager).to receive(:pause_for_all?).and_return(false, true, false)
+        allow(Api::ConfigManager).to receive(:deploy_config_enabled?).and_return(true, false)
         stub_request(:get, /unresponsive_agents/)
           .to_return(status: 200, body: JSON.dump('flaky_deployment' => 1, 'good_deployment' => 0))
       end
 
       after do
         Prometheus::Client.registry.unregister(:bosh_resurrection_enabled)
+        Prometheus::Client.registry.unregister(:bosh_deploy_config_enabled)
         Prometheus::Client.registry.unregister(:bosh_tasks_total)
         Prometheus::Client.registry.unregister(:bosh_networks_dynamic_ips_total)
         Prometheus::Client.registry.unregister(:bosh_networks_dynamic_free_ips_total)
@@ -43,6 +45,16 @@ module Bosh
             expect(Prometheus::Client.registry.get(:bosh_resurrection_enabled).get).to eq(1)
             scheduler.tick
             expect(Prometheus::Client.registry.get(:bosh_resurrection_enabled).get).to eq(0)
+          end
+        end
+
+        describe 'deploy_config_enabled' do
+          it 'populates the metrics every 30 seconds' do
+            metrics_collector.start
+            expect(scheduler.interval_duration).to eq('30s')
+            expect(Prometheus::Client.registry.get(:bosh_deploy_config_enabled).get).to eq(1)
+            scheduler.tick
+            expect(Prometheus::Client.registry.get(:bosh_deploy_config_enabled).get).to eq(0)
           end
         end
 

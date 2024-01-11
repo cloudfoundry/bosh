@@ -13,6 +13,12 @@ module Bosh
             config.save
           end
 
+          def deploy_config_enabled?
+            deploy_config = find(type: 'deploy')
+
+            return !deploy_config.empty?
+          end
+
           def find(type: nil, name: nil, limit: 1)
             dataset = Bosh::Director::Models::Config.where(deleted: false)
             dataset = dataset.where(type: type) if type
