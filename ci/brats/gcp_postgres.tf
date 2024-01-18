@@ -43,10 +43,12 @@ output "gcp_postgres_instance_name" {
 
 output "gcp_postgres_ca" {
   value = google_sql_database_instance.postgres-master.server_ca_cert.0.cert
+  sensitive = true
 }
 
 output "gcp_postgres_client_cert" {
   value = google_sql_ssl_cert.postgres_client_cert.cert
+  sensitive = true
 }
 
 output "gcp_postgres_client_key" {

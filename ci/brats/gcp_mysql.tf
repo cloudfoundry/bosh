@@ -42,10 +42,12 @@ output "gcp_mysql_instance_name" {
 
 output "gcp_mysql_ca" {
   value = google_sql_database_instance.mysql-master.server_ca_cert.0.cert
+  sensitive = true
 }
 
 output "gcp_mysql_client_cert" {
   value = google_sql_ssl_cert.mysql_client_cert.cert
+  sensitive = true
 }
 
 output "gcp_mysql_client_key" {
