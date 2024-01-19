@@ -118,7 +118,7 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
-    activesupport (7.1.2)
+    activesupport (7.1.3)
       base64
       bigdecimal
       concurrent-ruby (~> 1.0, >= 1.0.2)
@@ -134,7 +134,7 @@ GEM
     base64 (0.2.0)
     bcrypt (3.1.20)
     beefcake (1.0.0)
-    bigdecimal (3.1.5)
+    bigdecimal (3.1.6)
     blue-shell (0.3.0)
       rspec
     bosh_cpi (2.5.0)
@@ -203,7 +203,7 @@ GEM
     mime-types-data (3.2023.1205)
     mini_portile2 (2.8.5)
     minitar (0.9)
-    minitest (5.21.1)
+    minitest (5.21.2)
     mtrc (0.0.4)
     multi_json (1.15.0)
     mustermann (2.0.2)
@@ -274,7 +274,7 @@ GEM
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.12.0)
     rspec-support (3.12.1)
-    rubocop (1.60.0)
+    rubocop (1.60.1)
       json (~> 2.3)
       language_server-protocol (>= 3.17.0)
       parallel (~> 1.10)
