@@ -2,9 +2,9 @@
   path: /releases/-
   value:
     name: bosh-docker-cpi
-    version: "0.0.10"
-    url: "https://bosh.io/d/github.com/cloudfoundry/bosh-docker-cpi-release?v=0.0.10"
-    sha1: "71c14a2fd90b52e980f95d400c5e64a3a920b417"
+    version: "0.0.13"
+    url: "https://bosh.io/d/github.com/cloudfoundry/bosh-docker-cpi-release?v=0.0.13"
+    sha1: "49c6ec845e5e7d68720895e6f5a42a0c328a57c3"
 
 - type: replace
   path: /releases/name=bosh/version?
