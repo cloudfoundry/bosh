@@ -81,7 +81,7 @@ var _ = Describe("Blobstore", func() {
 			return jqSession.Out.Contents()
 		}
 
-		getCredentials := func(filepath string) (string, string, string, string) {
+		getCredentials := func(filepath string) (string, string) {
 			session := bratsutils.BoshQuiet(
 				"-d",
 				"syslog-deployment",
@@ -96,9 +96,7 @@ var _ = Describe("Blobstore", func() {
 			c := config{}
 			err := json.Unmarshal(getStdout(session.Out.Contents()), &c)
 			Expect(err).ToNot(HaveOccurred())
-			return c.BlobstoreConfig.Options.User,
-				c.BlobstoreConfig.Options.Password,
-				c.Env.AgentEnv.BlobstoresConfig[0].Options.Password,
+			return c.Env.AgentEnv.BlobstoresConfig[0].Options.Password,
 				c.Env.AgentEnv.BlobstoresConfig[0].Options.User
 		}
 
@@ -119,15 +117,11 @@ var _ = Describe("Blobstore", func() {
 
 			By("ensuring that credentials are not on disk")
 
-			cpiBlobstoreUser, cpiBlobstorePassword, blobstoreUser, blobstorePassword := getCredentials("/var/vcap/bosh/settings.json")
-			Expect(cpiBlobstoreUser).To(Equal(""))
-			Expect(cpiBlobstorePassword).To(Equal(""))
+			blobstoreUser, blobstorePassword := getCredentials("/var/vcap/bosh/settings.json")
 			Expect(blobstoreUser).To(Equal(""))
 			Expect(blobstorePassword).To(Equal(""))
 
-			cpiBlobstoreUser, cpiBlobstorePassword, blobstoreUser, blobstorePassword = getCredentials("/var/vcap/bosh/warden-cpi-agent-env.json")
-			Expect(cpiBlobstoreUser).To(Equal(""))
-			Expect(cpiBlobstorePassword).To(Equal(""))
+			blobstoreUser, blobstorePassword = getCredentials("/var/vcap/bosh/warden-cpi-agent-env.json")
 			Expect(blobstoreUser).To(Equal(""))
 			Expect(blobstorePassword).To(Equal(""))
 
@@ -182,10 +176,6 @@ var _ = Describe("Blobstore", func() {
 			Expect(c.Env.AgentEnv.BlobstoresConfig[0].Options.Password).To(Equal(""))
 			Expect(c.Env.AgentEnv.BlobstoresConfig[0].Options.User).To(Equal(""))
 
-			// Not removed since the CPI config change does not make the VM recreate
-			Expect(c.BlobstoreConfig.Options.User).ToNot(Equal(""))
-			Expect(c.BlobstoreConfig.Options.Password).ToNot(Equal(""))
-
 			session = bratsutils.BoshQuiet("-d", "syslog-deployment", "ssh", "syslog_forwarder/0", "-r", "--json", "-c", "sudo cat /var/vcap/bosh/warden-cpi-agent-env.json")
 			Eventually(session, 30*time.Second).Should(gexec.Exit(0))
 			c = config{}
@@ -194,10 +184,6 @@ var _ = Describe("Blobstore", func() {
 			fmt.Printf("%+v\n", c)
 			Expect(c.Env.AgentEnv.BlobstoresConfig[0].Options.Password).To(Equal(""))
 			Expect(c.Env.AgentEnv.BlobstoresConfig[0].Options.User).To(Equal(""))
-
-			// Not removed since the CPI config change does not make the VM recreate
-			Expect(c.BlobstoreConfig.Options.User).ToNot(Equal(""))
-			Expect(c.BlobstoreConfig.Options.Password).ToNot(Equal(""))
 		})
 	})
 
