@@ -29,7 +29,7 @@ popd > /dev/null
 
 cat > Gemfile <<EOF
 # Explicitly require vendored version to avoid requiring builtin json gem
-gem 'json', '2.6.3'
+gem 'json', '~>2'
 
 gem 'bosh-director'
 gem 'mysql2'

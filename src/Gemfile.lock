@@ -189,7 +189,7 @@ GEM
     httpclient (2.8.3)
     i18n (1.14.1)
       concurrent-ruby (~> 1.0)
-    json (2.6.3)
+    json (2.7.1)
     language_server-protocol (3.17.0.3)
     little-plugger (1.1.4)
     logging (2.2.2)
@@ -360,7 +360,7 @@ DEPENDENCIES
   factory_bot (~> 6.2)
   fakefs
   httpclient
-  json (= 2.6.3)
+  json (~> 2)
   machinist (~> 1.0)
   minitar
   mysql2
