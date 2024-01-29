@@ -20,7 +20,7 @@ gem 'openssl', '>=3.2.0'
 
 # json version is hardcoded in release director and health_monitor
 # when modified needs to be updated there as well
-gem 'json', '2.6.3'
+gem 'json', '~>2'
 
 gem 'talentbox-delayed_job_sequel', '~>4.3'
 
