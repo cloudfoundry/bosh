@@ -165,6 +165,12 @@ module Bosh::Director
         expect(result_msg).to eq 'foobar/test-uuid'
       end
 
+      it 'should pass a longer timeout to the start command' do
+        Jobs::UpdateInstance.new(deployment.name, instance_model.id, 'start', {}).perform
+
+        expect(AgentClient).to have_received(:with_agent_id).with(instance_model.agent_id, instance_model.name, hash_including(timeout: 90))
+      end
+
       it 'obtains a deployment lock' do
         job = Jobs::UpdateInstance.new(deployment.name, instance_model.id, 'start', {})
         expect(job).to receive(:with_deployment_lock).with('simple').and_yield

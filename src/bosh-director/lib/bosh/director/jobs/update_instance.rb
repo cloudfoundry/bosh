@@ -3,6 +3,8 @@ module Bosh::Director
     class UpdateInstance < BaseJob
       include LockHelper
 
+      AGENT_START_TIMEOUT = 90
+
       @queue = :normal
 
       def initialize(deployment_name, instance_id, action, options = {})
@@ -168,7 +170,7 @@ module Bosh::Director
         task_checkpoint
 
         blobstore_client = App.instance.blobstores.blobstore
-        agent = AgentClient.with_agent_id(instance_model.agent_id, instance_model.name)
+        agent = AgentClient.with_agent_id(instance_model.agent_id, instance_model.name, timeout: AGENT_START_TIMEOUT)
 
         parent_event = add_event('start', instance_model)
 
