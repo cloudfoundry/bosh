@@ -258,7 +258,8 @@ elsif p('blobstore.provider') == 'azure-storage'
   blobstore_options = {
     'account_name' => p('blobstore.account_name'),
     'container_name' => p('blobstore.container_name'),
-    'account_key' => p('blobstore.account_key')
+    'account_key' => p('blobstore.account_key'),
+    'enable_signed_urls' => p('blobstore.enable_signed_urls')
   }
 else
   blobstore_options = {
