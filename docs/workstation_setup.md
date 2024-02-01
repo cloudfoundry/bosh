@@ -6,6 +6,9 @@
 * You have cloned the project to $HOME/workspace/bosh
 * You have installed Ruby `3.0.2` or later
 
+## Version manager
+If you are not using a version manager that supports fuzzy matching in `.ruby-version` like [rvm](https://github.com/rvm/rvm) or [chruby](https://github.com/postmodern/chruby), note that you might have to change `.ruby-version` to include full version (e.g. change `3.2` to `3.2.2`).
+
 ## Steps
 
 1. Bring homebrew index up-to-date
