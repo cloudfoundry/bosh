@@ -34,4 +34,18 @@ apt-get update
 
 apt-get install -y --no-install-recommends docker-ce
 
+# https://github.com/docker/cli/issues/4807
+# As of 02/01/2024 a change in the "/etc/init.d/docker" script shipped with docker v25 
+# is preventing the cpi image to work. 
+# when start-bosh runs `service docker start` it errors with:
+# "/etc/init.d/docker: 62: ulimit: error setting limit (Invalid argument)"
+# disable resetting ulimit. Pre v25 the script contained `ulimit -n 1048576`
+# the default in our base image is: 
+# ulimit | grep file
+# `open files                          (-n) 1048576`
+# so it was a noOp..
+# running `ulimit -Hn 1048576` will succeed.. The issue happens when we want to raise the ulimit.
+
+sed -i 's/\(ulimit -Hn [0-9]*\)/#\1/' /etc/init.d/docker
+
 rm -rf /var/lib/apt/lists/*
