@@ -627,6 +627,7 @@ jobs:
           name: bosh-main/tag-name
           tag: bosh-main/tag-name
           body: release-notes/release-notes.md
+          generate_release_notes: true
       - put: bosh-main
         params:
           repository: bosh-main
