@@ -56,6 +56,14 @@ module Bosh::Blobstore
       !!@gcscli_options[:encryption_key]
     end
 
+    def put_headers
+      {}
+    end
+
+    def put_headers?
+      false
+    end
+
     protected
 
     # @param [File] file file to store in GCS

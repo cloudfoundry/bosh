@@ -213,6 +213,25 @@ module Bosh::Blobstore
                                                             )
         end
       end
+
+      context 'put headers present' do
+        let(:options) do
+          {
+            bucket_name:    'test',
+            storage_class:  'REGIONAL',
+            gcscli_path:    '/var/vcap/packages/bosh-gcscli/bin/bosh-gcscli',
+            encryption_key: 'z3DJQ+ft7Y//Yh3rnmyP+Xw9IUYw6BcurheJSarz6ks=',
+          }
+        end
+
+        it '.put_headers? returns true' do
+          expect(subject.put_headers?).to be(false)
+        end
+
+        it '.put_headers returns a hash of headers' do
+          expect(subject.put_headers).to be_empty
+        end
+      end
     end
   end
 end

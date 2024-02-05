@@ -185,6 +185,15 @@ describe Bosh::Blobstore::BaseClient do
         expect(subject.encryption?).to eq(false)
       end
 
+      it 'does not support put headers by default' do
+        expect(subject.put_headers?).to eq(false)
+      end
+
+      it 'does return put headers from base class' do
+        expect{ subject.put_headers }.to raise_error(
+          Bosh::Blobstore::NotImplemented, 'not supported by this blobstore')
+      end
+
       context 'agent is not capable of using signed urls' do
         let(:stemcell_api_version) { 2 }
 

@@ -104,15 +104,20 @@ module Bosh::Director
                   package_get_signed_url = @blobstore.sign(package.blobstore_id)
                   upload_signed_url = @blobstore.sign(compiled_package_blobstore_id, 'put')
 
+                  blobstore_headers = {}
+                  blobstore_headers.merge!(@blobstore.signed_url_encryption_headers) if @blobstore.encryption?
+                  blobstore_headers.merge!(@blobstore.put_headers) if @blobstore.put_headers?
+
                   request = {
                     'package_get_signed_url' => package_get_signed_url,
                     'upload_signed_url' => upload_signed_url,
                     'digest' => package.sha1,
                     'name' => package.name,
                     'version' => version,
-                    'deps' => add_signed_urls(requirement.dependency_spec),
+                    'deps' => add_signed_urls(requirement.dependency_spec, blobstore_headers),
                   }
-                  request['blobstore_headers'] = @blobstore.signed_url_encryption_headers if @blobstore.encryption?
+
+                  request['blobstore_headers'] = blobstore_headers unless blobstore_headers.empty?
 
                   agent_task = instance.agent_client.compile_package_with_signed_url(request) { Config.job_cancelled? }
                   task_result = agent_task['result']
@@ -276,10 +281,10 @@ module Bosh::Director
           end
         end
 
-        def add_signed_urls(dependency_spec)
+        def add_signed_urls(dependency_spec, blobstore_headers)
           dependency_spec.each do |_, spec|
             spec['package_get_signed_url'] = @blobstore.sign(spec['blobstore_id'])
-            spec['blobstore_headers'] = @blobstore.signed_url_encryption_headers if @blobstore.encryption?
+            spec['blobstore_headers'] = blobstore_headers unless blobstore_headers.empty?
           end
         end
       end

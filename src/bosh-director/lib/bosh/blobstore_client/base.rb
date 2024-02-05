@@ -163,6 +163,15 @@ module Bosh
         false
       end
 
+      def put_headers?
+        false
+      end
+
+      def put_headers
+        # needs to be implemented in each subclass
+        not_supported
+      end
+
       protected
 
       def write_config_file(config, config_file_dir = nil)

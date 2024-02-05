@@ -64,6 +64,14 @@ module Bosh::Blobstore
       false
     end
 
+    def put_headers
+      {}
+    end
+
+    def put_headers?
+      false
+    end
+
     protected
 
     # @param [File] file file to store in S3

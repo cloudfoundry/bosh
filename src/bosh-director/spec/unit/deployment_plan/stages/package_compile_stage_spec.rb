@@ -306,6 +306,29 @@ module Bosh::Director
       }
     end
 
+    def compile_package_with_put_headers_stub(args)
+      request = args[0]
+      dot = request['version'].rindex('.')
+      version = request['version'][0..dot - 1]
+
+      package = Models::Package.find(name: request['name'], version: version)
+      expect(request['package_get_signed_url']).to eq("#{package.blobstore_id}-url")
+      expect(request['upload_signed_url']).to eq('putcompiled_id-url')
+      expect(request['digest']).to eq(package.sha1)
+      expect(request['blobstore_headers']).to eq("key"=>"value")
+
+      request['deps'].each do |_, spec|
+        expect(spec.keys).to include('package_get_signed_url')
+        expect(spec.keys).to include('blobstore_headers')
+      end
+
+      {
+        'result' => {
+          'sha1' => "compiled #{package.id}",
+        },
+      }
+    end
+
     context 'when all needed packages are compiled' do
       let(:instance_groups_to_compile) { [@j_dea, @j_router] }
 
@@ -353,9 +376,7 @@ module Bosh::Director
       end
     end
 
-    context 'when none of the packages are compiled' do
-      let(:instance_groups_to_compile) { [@j_dea, @j_router] }
-
+    shared_examples 'compiles all packages' do |compilation_method, compilation_method_stub|
       it 'compiles all packages' do
         prepare_samples
 
@@ -370,16 +391,20 @@ module Bosh::Director
 
         agent_client = instance_double('Bosh::Director::AgentClient')
         allow(BD::AgentClient).to receive(:with_agent_id).and_return(agent_client)
-        expect(agent_client).to receive(:compile_package).exactly(11).times do |*args|
-          compile_package_stub(args)
+        expect(agent_client).to receive(compilation_method).exactly(11).times do |*args|
+          send(compilation_method_stub, args)
         end
 
         @package_set_a.each do |package|
-          expect(compiler).to receive(:with_compile_lock).with(package.id, "#{@stemcell_a.os}/#{@stemcell_a.version}", deployment.name).and_yield
+          expect(compiler).to receive(:with_compile_lock)
+                                .with(package.id, "#{@stemcell_a.os}/#{@stemcell_a.version}", deployment.name)
+                                .and_yield
         end
 
         @package_set_b.each do |package|
-          expect(compiler).to receive(:with_compile_lock).with(package.id, "#{@stemcell_b.os}/#{@stemcell_b.version}", deployment.name).and_yield
+          expect(compiler).to receive(:with_compile_lock)
+                                .with(package.id, "#{@stemcell_b.os}/#{@stemcell_b.version}", deployment.name)
+                                .and_yield
         end
 
         expect(@j_dea).to receive(:use_compiled_package).exactly(6).times
@@ -400,11 +425,18 @@ module Bosh::Director
       end
     end
 
+    context 'when none of the packages are compiled' do
+      let(:instance_groups_to_compile) { [@j_dea, @j_router] }
+
+      include_examples 'compiles all packages', :compile_package, :compile_package_stub
+    end
+
     context 'when url signing is enabled' do
       let(:instance_groups_to_compile) { [@j_dea, @j_router] }
 
       before do
         allow(blobstore).to receive(:encryption?)
+        allow(blobstore).to receive(:put_headers?).and_return(false)
         allow(blobstore).to receive(:can_sign_urls?).and_return(true)
         allow(blobstore).to receive(:generate_object_id).and_return('compiled_id')
         allow(blobstore).to receive(:sign) do |oid, verb|
@@ -412,52 +444,7 @@ module Bosh::Director
         end
       end
 
-      it 'compiles all packages' do
-        prepare_samples
-
-        metadata_updater = instance_double('Bosh::Director::MetadataUpdater', update_vm_metadata: nil)
-
-        allow(Bosh::Director::MetadataUpdater).to receive_messages(build: metadata_updater)
-        expect(metadata_updater).to receive(:update_vm_metadata).with(anything, anything, { compiling: 'common' })
-        expect(metadata_updater).to receive(:update_vm_metadata)
-          .with(anything, anything, hash_including(:compiling)).exactly(10).times
-
-        expect(vm_creator).to receive(:create_for_instance_plan).exactly(11).times
-
-        agent_client = instance_double('Bosh::Director::AgentClient')
-        allow(BD::AgentClient).to receive(:with_agent_id).and_return(agent_client)
-        expect(agent_client).to receive(:compile_package_with_signed_url).exactly(11).times do |*args|
-          compile_package_with_url_stub(args)
-        end
-
-        @package_set_a.each do |package|
-          expect(compiler).to receive(:with_compile_lock)
-            .with(package.id, "#{@stemcell_a.os}/#{@stemcell_a.version}", deployment.name)
-            .and_yield
-        end
-
-        @package_set_b.each do |package|
-          expect(compiler).to receive(:with_compile_lock)
-            .with(package.id, "#{@stemcell_b.os}/#{@stemcell_b.version}", deployment.name)
-            .and_yield
-        end
-
-        expect(@j_dea).to receive(:use_compiled_package).exactly(6).times
-        expect(@j_router).to receive(:use_compiled_package).exactly(5).times
-
-        expect(instance_deleter).to receive(:delete_instance_plan).exactly(11).times
-
-        compiler.perform
-        expect(compiler.compilations_performed).to eq(11)
-
-        @package_set_a.each do |package|
-          expect(package.compiled_packages.size).to be >= 1
-        end
-
-        @package_set_b.each do |package|
-          expect(package.compiled_packages.size).to be >= 1
-        end
-      end
+      include_examples 'compiles all packages', :compile_package_with_signed_url, :compile_package_with_url_stub
 
       context 'with encrytion' do
         before do
@@ -465,52 +452,16 @@ module Bosh::Director
           allow(blobstore).to receive(:encryption?).and_return(true)
         end
 
-        it 'compiles all packages' do
-          prepare_samples
+        include_examples 'compiles all packages', :compile_package_with_signed_url, :compile_package_with_url_encrypt_stub
+      end
 
-          metadata_updater = instance_double('Bosh::Director::MetadataUpdater', update_vm_metadata: nil)
-
-          allow(Bosh::Director::MetadataUpdater).to receive_messages(build: metadata_updater)
-          expect(metadata_updater).to receive(:update_vm_metadata).with(anything, anything, { compiling: 'common' })
-          expect(metadata_updater).to receive(:update_vm_metadata)
-            .with(anything, anything, hash_including(:compiling)).exactly(10).times
-
-          expect(vm_creator).to receive(:create_for_instance_plan).exactly(11).times
-
-          agent_client = instance_double('Bosh::Director::AgentClient')
-          allow(BD::AgentClient).to receive(:with_agent_id).and_return(agent_client)
-          expect(agent_client).to receive(:compile_package_with_signed_url).exactly(11).times do |*args|
-            compile_package_with_url_encrypt_stub(args)
-          end
-
-          @package_set_a.each do |package|
-            expect(compiler).to receive(:with_compile_lock)
-              .with(package.id, "#{@stemcell_a.os}/#{@stemcell_a.version}", deployment.name)
-              .and_yield
-          end
-
-          @package_set_b.each do |package|
-            expect(compiler).to receive(:with_compile_lock)
-              .with(package.id, "#{@stemcell_b.os}/#{@stemcell_b.version}", deployment.name)
-              .and_yield
-          end
-
-          expect(@j_dea).to receive(:use_compiled_package).exactly(6).times
-          expect(@j_router).to receive(:use_compiled_package).exactly(5).times
-
-          expect(instance_deleter).to receive(:delete_instance_plan).exactly(11).times
-
-          compiler.perform
-          expect(compiler.compilations_performed).to eq(11)
-
-          @package_set_a.each do |package|
-            expect(package.compiled_packages.size).to be >= 1
-          end
-
-          @package_set_b.each do |package|
-            expect(package.compiled_packages.size).to be >= 1
-          end
+      context 'with put_headers' do
+        before do
+          allow(blobstore).to receive(:put_headers?).and_return(true)
+          allow(blobstore).to receive(:put_headers).and_return({'key' => 'value'})
         end
+
+        include_examples 'compiles all packages', :compile_package_with_signed_url, :compile_package_with_put_headers_stub
       end
     end
 

@@ -218,5 +218,25 @@ module Bosh::Blobstore
         expect(subject.encryption?).to eq(false)
       end
     end
+
+    context 'put headers present' do
+      let(:options) do
+        {
+          container_name: 'test',
+          account_name: 'NAME',
+          account_key: 'SECRET',
+          azure_storage_cli_path: '/var/vcap/packages/azure-storage-cli/bin/azure-storage-cli',
+        }
+      end
+
+      it '.put_headers? returns true' do
+        expect(subject.put_headers?).to be(true)
+      end
+
+      it '.put_headers returns a hash of headers' do
+        expect(subject.put_headers).to eq({ 'x-ms-blob-type' => 'blockblob' })
+      end
+    end
+
   end
 end
