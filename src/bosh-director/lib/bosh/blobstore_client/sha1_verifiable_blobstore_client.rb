@@ -32,7 +32,8 @@ module Bosh
       def_delegators :@client, :create, :delete, :exists?, :sign,
                      :signing_enabled?, :credential_properties,
                      :required_credential_properties_list, :redacted_credential_properties_list,
-                     :can_sign_urls?, :signed_url_encryption_headers, :encryption?
+                     :can_sign_urls?, :signed_url_encryption_headers, :encryption?,
+                     :put_headers, :put_headers?
 
       private
 

@@ -251,5 +251,26 @@ module Bosh::Blobstore
         expect(subject.encryption?).to eq(false)
       end
     end
+
+    context 'put headers present' do
+      let(:options) do
+        {
+          bucket_name: 'test',
+          access_key_id: 'KEY',
+          secret_access_key: 'SECRET',
+          s3cli_path: '/var/vcap/packages/s3cli/bin/s3cli',
+          server_side_encryption: 'aws:kms',
+          sse_kms_key_id: 'somekeything',
+        }
+      end
+
+      it '.put_headers? returns true' do
+        expect(subject.put_headers?).to be(false)
+      end
+
+      it '.put_headers returns a hash of headers' do
+        expect(subject.put_headers).to be_empty
+      end
+    end
   end
 end

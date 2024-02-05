@@ -47,6 +47,16 @@ module Bosh::Blobstore
       false
     end
 
+    def put_headers
+      {
+        'x-ms-blob-type' => 'blockblob'
+      }
+    end
+
+    def put_headers?
+      true
+    end
+
     protected
 
     # @param [File] file file to store in az storage account
