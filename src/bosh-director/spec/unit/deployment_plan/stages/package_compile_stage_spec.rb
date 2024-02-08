@@ -292,30 +292,7 @@ module Bosh::Director
       expect(request['package_get_signed_url']).to eq("#{package.blobstore_id}-url")
       expect(request['upload_signed_url']).to eq('putcompiled_id-url')
       expect(request['digest']).to eq(package.sha1)
-      expect(request['blobstore_headers']).to eq('encryption' => true)
-
-      request['deps'].each do |_, spec|
-        expect(spec.keys).to include('package_get_signed_url')
-        expect(spec.keys).to include('blobstore_headers')
-      end
-
-      {
-        'result' => {
-          'sha1' => "compiled #{package.id}",
-        },
-      }
-    end
-
-    def compile_package_with_put_headers_stub(args)
-      request = args[0]
-      dot = request['version'].rindex('.')
-      version = request['version'][0..dot - 1]
-
-      package = Models::Package.find(name: request['name'], version: version)
-      expect(request['package_get_signed_url']).to eq("#{package.blobstore_id}-url")
-      expect(request['upload_signed_url']).to eq('putcompiled_id-url')
-      expect(request['digest']).to eq(package.sha1)
-      expect(request['blobstore_headers']).to eq("key"=>"value")
+      expect(request['blobstore_headers']).to eq(key: 'value')
 
       request['deps'].each do |_, spec|
         expect(spec.keys).to include('package_get_signed_url')
@@ -435,8 +412,7 @@ module Bosh::Director
       let(:instance_groups_to_compile) { [@j_dea, @j_router] }
 
       before do
-        allow(blobstore).to receive(:encryption?)
-        allow(blobstore).to receive(:put_headers?).and_return(false)
+        allow(blobstore).to receive(:headers).and_return({})
         allow(blobstore).to receive(:can_sign_urls?).and_return(true)
         allow(blobstore).to receive(:generate_object_id).and_return('compiled_id')
         allow(blobstore).to receive(:sign) do |oid, verb|
@@ -446,22 +422,12 @@ module Bosh::Director
 
       include_examples 'compiles all packages', :compile_package_with_signed_url, :compile_package_with_url_stub
 
-      context 'with encrytion' do
+      context 'with headers' do
         before do
-          allow(blobstore).to receive(:signed_url_encryption_headers).and_return('encryption' => true)
-          allow(blobstore).to receive(:encryption?).and_return(true)
+          allow(blobstore).to receive(:headers).and_return({key: 'value'})
         end
 
         include_examples 'compiles all packages', :compile_package_with_signed_url, :compile_package_with_url_encrypt_stub
-      end
-
-      context 'with put_headers' do
-        before do
-          allow(blobstore).to receive(:put_headers?).and_return(true)
-          allow(blobstore).to receive(:put_headers).and_return({'key' => 'value'})
-        end
-
-        include_examples 'compiles all packages', :compile_package_with_signed_url, :compile_package_with_put_headers_stub
       end
     end
 

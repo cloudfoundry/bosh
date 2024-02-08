@@ -206,15 +206,17 @@ module Bosh::Blobstore
           }
         end
         it 'can build encryption headers with correct hash' do
-          expect(subject.signed_url_encryption_headers).to match(
-                                                                'x-goog-encryption-algorithm' => 'AES256',
-                                                                'x-goog-encryption-key' => 'z3DJQ+ft7Y//Yh3rnmyP+Xw9IUYw6BcurheJSarz6ks=',
-                                                                'x-goog-encryption-key-sha256' => 'gUOk6XciSqMkKgZX2lkeaU/FTlVzUm2DOo8eUMEYHAE='
-                                                            )
+          expect(subject.headers).to match(
+                                       'x-goog-encryption-algorithm' => 'AES256',
+                                       'x-goog-encryption-key' => 'z3DJQ+ft7Y//Yh3rnmyP+Xw9IUYw6BcurheJSarz6ks=',
+                                       'x-goog-encryption-key-sha256' => 'gUOk6XciSqMkKgZX2lkeaU/FTlVzUm2DOo8eUMEYHAE='
+                                     )
         end
       end
+    end
 
-      context 'put headers present' do
+    describe '#headers' do
+      describe 'with encryption key' do
         let(:options) do
           {
             bucket_name:    'test',
@@ -224,12 +226,18 @@ module Bosh::Blobstore
           }
         end
 
-        it '.put_headers? returns true' do
-          expect(subject.put_headers?).to be(false)
+        it 'returns encryption headers' do
+          expect(subject.headers).to match(
+                                       'x-goog-encryption-algorithm' => 'AES256',
+                                       'x-goog-encryption-key' => 'z3DJQ+ft7Y//Yh3rnmyP+Xw9IUYw6BcurheJSarz6ks=',
+                                       'x-goog-encryption-key-sha256' => 'gUOk6XciSqMkKgZX2lkeaU/FTlVzUm2DOo8eUMEYHAE='
+                                     )
         end
+      end
 
-        it '.put_headers returns a hash of headers' do
-          expect(subject.put_headers).to be_empty
+      describe 'without encryption key' do
+        it 'returns empty headers' do
+          expect(subject.headers).to be_empty
         end
       end
     end

@@ -31,7 +31,7 @@ module Bosh::Director
             log_type: log_type,
             filters: filters,
           }
-          request[:blobstore_headers] = @blobstore.signed_url_encryption_headers if @blobstore.encryption?
+          request[:blobstore_headers] = @blobstore.headers unless @blobstore.headers.empty?
           fetch_logs_result = agent.fetch_logs_with_signed_url(request)
         else
           fetch_logs_result = agent.fetch_logs(log_type, filters)
