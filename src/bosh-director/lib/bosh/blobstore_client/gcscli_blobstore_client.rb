@@ -44,24 +44,14 @@ module Bosh::Blobstore
       %w[json_key credentials_source]
     end
 
-    def encryption_headers
+    def headers
+      return {} unless @gcscli_options[:encryption_key]
+
       {
         'x-goog-encryption-algorithm' => 'AES256',
         'x-goog-encryption-key' => @gcscli_options[:encryption_key],
-        'x-goog-encryption-key-sha256' => hashed_encryption_key,
+        'x-goog-encryption-key-sha256' => hashed_encryption_key
       }
-    end
-
-    def encryption?
-      !!@gcscli_options[:encryption_key]
-    end
-
-    def put_headers
-      {}
-    end
-
-    def put_headers?
-      false
     end
 
     protected

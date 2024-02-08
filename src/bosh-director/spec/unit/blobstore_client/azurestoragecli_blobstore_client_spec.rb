@@ -200,41 +200,9 @@ module Bosh::Blobstore
       end
     end
 
-    describe 'signed url encryption headers - not implemented' do
-      let(:options) do
-        {
-          container_name: 'test',
-          account_name: 'NAME',
-          account_key: 'SECRET',
-          azure_storage_cli_path: '/var/vcap/packages/azure-storage-cli/bin/azure-storage-cli',
-        }
-      end
-
-      it 'should not produce headers based on encryption options' do
-        expect(subject.signed_url_encryption_headers).to be_nil
-      end
-
-      it 'does not support encryption' do
-        expect(subject.encryption?).to eq(false)
-      end
-    end
-
-    context 'put headers present' do
-      let(:options) do
-        {
-          container_name: 'test',
-          account_name: 'NAME',
-          account_key: 'SECRET',
-          azure_storage_cli_path: '/var/vcap/packages/azure-storage-cli/bin/azure-storage-cli',
-        }
-      end
-
-      it '.put_headers? returns true' do
-        expect(subject.put_headers?).to be(true)
-      end
-
-      it '.put_headers returns a hash of headers' do
-        expect(subject.put_headers).to eq({ 'x-ms-blob-type' => 'blockblob' })
+    describe '#headers' do
+      it 'returns put headers' do
+        expect(subject.headers).to eq({ 'x-ms-blob-type' => 'blockblob' })
       end
     end
 

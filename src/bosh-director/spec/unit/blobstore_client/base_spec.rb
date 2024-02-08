@@ -181,19 +181,6 @@ describe Bosh::Blobstore::BaseClient do
         expect(subject.generate_object_id).to_not be_nil
       end
 
-      it 'does not support encryption by default' do
-        expect(subject.encryption?).to eq(false)
-      end
-
-      it 'does not support put headers by default' do
-        expect(subject.put_headers?).to eq(false)
-      end
-
-      it 'does return put headers from base class' do
-        expect{ subject.put_headers }.to raise_error(
-          Bosh::Blobstore::NotImplemented, 'not supported by this blobstore')
-      end
-
       context 'agent is not capable of using signed urls' do
         let(:stemcell_api_version) { 2 }
 
@@ -292,6 +279,10 @@ describe Bosh::Blobstore::BaseClient do
       expect(subject).to receive(:object_exists?).ordered
       expect(logger).to receive(:debug).with("[blobstore] checking existence of 'oid' (took #{end_time - start_time})").ordered
       subject.exists?('oid')
+    end
+
+    it '#headers is not implemented in base class' do
+      expect{ subject.headers }.to raise_error(Bosh::Blobstore::NotImplemented, 'not supported by this blobstore')
     end
   end
 end

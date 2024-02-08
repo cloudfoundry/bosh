@@ -58,18 +58,8 @@ module Bosh::Blobstore
       %w[access_key_id secret_access_key credentials_source]
     end
 
-    def encryption_headers; end
-
-    def encryption?
-      false
-    end
-
-    def put_headers
+    def headers
       {}
-    end
-
-    def put_headers?
-      false
     end
 
     protected

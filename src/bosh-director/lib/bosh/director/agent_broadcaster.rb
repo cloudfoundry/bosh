@@ -135,7 +135,7 @@ module Bosh::Director
           'multi_digest' => digest,
           'version' => version,
         }
-        request['blobstore_headers'] = @blobstore_client.signed_url_encryption_headers if @blobstore_client.encryption?
+        request['blobstore_headers'] = @blobstore_client.headers unless @blobstore_client.headers.empty?
         agent_client(agent_id, instance_name).sync_dns_with_signed_url(request, &blk)
       else
         agent_client(agent_id, instance_name).sync_dns(blobstore_id, digest, version, &blk)
