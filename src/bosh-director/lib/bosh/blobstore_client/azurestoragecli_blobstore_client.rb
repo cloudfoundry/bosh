@@ -40,6 +40,7 @@ module Bosh::Blobstore
     def redacted_credential_properties_list
       %w[account_key]
     end
+
     def headers
       { 'x-ms-blob-type' => 'blockblob' }
     end
