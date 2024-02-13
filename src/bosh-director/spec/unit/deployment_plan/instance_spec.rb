@@ -6,12 +6,13 @@ module Bosh::Director::DeploymentPlan
     include Support::StemcellHelpers
 
     subject(:instance) do
-      Instance.create_from_instance_group(instance_group, index, state, deployment, current_state, az, logger, variables_interpolator)
+      Instance.create_from_instance_group(instance_group, index, state, deployment, current_state, az, logger,
+                                          variables_interpolator)
     end
     let(:index) { 0 }
     let(:state) { 'started' }
     let(:variables_interpolator) { Bosh::Director::ConfigServer::VariablesInterpolator.new }
-    let(:deployment_variable_set) { Bosh::Director::Models::VariableSet.make(deployment: deployment) }
+    let(:deployment_variable_set) { Bosh::Director::Models::VariableSet.make(deployment:) }
     let(:cert_generator) { instance_double Bosh::Director::NatsClientCertGenerator }
 
     before do
@@ -21,19 +22,19 @@ module Bosh::Director::DeploymentPlan
       allow(Bosh::Director::Config).to receive(:dns).and_return('domain_name' => 'test_domain')
       allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
       allow(blobstore).to receive(:can_sign_urls?).and_return(false)
-      allow(blobstore).to receive(:encryption?)
+      allow(blobstore).to receive(:headers).and_return({})
     end
 
     let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
-    let(:stemcell) { make_stemcell({:name => 'fake-stemcell-name', :version => '1.0', api_version: 3}) }
-    let(:env) { Env.new({'bosh' => {'blobstores' => [{'options' => {'blobstore_option' => 'blobstore_value'}}]}}) }
+    let(:stemcell) { make_stemcell({ name: 'fake-stemcell-name', version: '1.0', api_version: 3 }) }
+    let(:env) { Env.new({ 'bosh' => { 'blobstores' => [{ 'options' => { 'blobstore_option' => 'blobstore_value' } }] } }) }
     let(:instance_group) do
       InstanceGroup.make(
         name: 'fake_job',
-        env: env,
-        stemcell: stemcell,
-        vm_type: vm_type,
-        vm_extensions: vm_extensions,
+        env:,
+        stemcell:,
+        vm_type:,
+        vm_extensions:,
       )
     end
     let(:vm_type) { VmType.new('name' => 'fake-vm-type') }
@@ -41,8 +42,8 @@ module Bosh::Director::DeploymentPlan
     let(:az) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', 'a' => 'b') }
 
     let(:instance_model) do
-      instance = Bosh::Director::Models::Instance.make(deployment: deployment, bootstrap: true, uuid: 'uuid-1')
-      Bosh::Director::Models::Vm.make(instance: instance, active: true)
+      instance = Bosh::Director::Models::Instance.make(deployment:, bootstrap: true, uuid: 'uuid-1')
+      Bosh::Director::Models::Vm.make(instance:, active: true)
       instance
     end
 
@@ -72,7 +73,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       it 'sets the previous and desired variable sets correctly' do
-        variable_set_model = Bosh::Director::Models::VariableSet.make(deployment: deployment)
+        variable_set_model = Bosh::Director::Models::VariableSet.make(deployment:)
         instance_model.variable_set = variable_set_model
         instance.bind_existing_instance_model(instance_model)
 
@@ -87,7 +88,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'sets the desired variable set to the current variable set' do
-          variable_set_model = Bosh::Director::Models::VariableSet.make(deployment: deployment)
+          variable_set_model = Bosh::Director::Models::VariableSet.make(deployment:)
           instance_model.variable_set = variable_set_model
           instance.bind_existing_instance_model(instance_model)
 
@@ -194,12 +195,11 @@ module Bosh::Director::DeploymentPlan
             end
 
             before do
-              allow(blobstore).to receive(:encryption?).and_return(true)
-              allow(blobstore).to receive(:signed_url_encryption_headers).and_return('header' => 'meow')
+              allow(blobstore).to receive(:headers).and_return({ 'header' => 'meow' })
             end
 
             it 'adds encryption headers' do
-              expect(blobstore).to receive(:signed_url_encryption_headers)
+              expect(blobstore).to receive(:headers)
               expect(agent_client).to receive(:apply).with(apply_spec).ordered
               instance.apply_vm_state(instance_spec)
             end
@@ -320,7 +320,7 @@ module Bosh::Director::DeploymentPlan
 
     describe '#cloud_properties_changed?' do
       let(:instance_model) do
-        model = Bosh::Director::Models::Instance.make(deployment: deployment)
+        model = Bosh::Director::Models::Instance.make(deployment:)
         model.cloud_properties_hash = { 'a' => 'b' }
         model
       end
@@ -401,7 +401,7 @@ module Bosh::Director::DeploymentPlan
         describe 'when there is no availability zone' do
           let(:az) { nil }
           let(:instance_model) do
-            model = Bosh::Director::Models::Instance.make(deployment: deployment)
+            model = Bosh::Director::Models::Instance.make(deployment:)
             model.cloud_properties_hash = {}
             model
           end
@@ -528,7 +528,8 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'tells the agent to update instance settings and updates the instance model' do
-          expect(agent_client).to receive(:update_settings).with(hash_including('disk_associations' => [{ 'name' => 'some-disk', 'cid' => 'some-cid' }]))
+          expect(agent_client).to receive(:update_settings).with(hash_including('disk_associations' => [{ 'name' => 'some-disk',
+                                                                                                          'cid' => 'some-cid' }]))
           instance.update_instance_settings(vm)
         end
       end
@@ -617,7 +618,7 @@ module Bosh::Director::DeploymentPlan
               'ca' => Bosh::Director::Config.nats_server_ca,
               'certificate' => 'new nats cert',
               'private_key' => 'new nats key',
-            }
+            },
           }))
 
           instance.update_instance_settings(vm)
@@ -657,7 +658,7 @@ module Bosh::Director::DeploymentPlan
                 'ca' => Bosh::Director::Config.nats_server_ca,
                 'certificate' => 'new nats cert',
                 'private_key' => 'new nats key',
-              }
+              },
             }))
 
             instance.update_instance_settings(vm, true)
@@ -672,7 +673,8 @@ module Bosh::Director::DeploymentPlan
         allow(az).to receive(:cloud_properties).and_return('foo' => 'az-foo', 'zone' => 'the-right-one')
         allow(vm_type).to receive(:cloud_properties).and_return('foo' => 'rp-foo', 'resources' => 'the-good-stuff')
 
-        instance = Instance.create_from_instance_group(instance_group, index, state, deployment, current_state, az, logger, variables_interpolator)
+        instance = Instance.create_from_instance_group(instance_group, index, state, deployment, current_state, az, logger,
+                                                       variables_interpolator)
         instance.bind_existing_instance_model(instance_model)
 
         instance.update_cloud_properties!
@@ -687,11 +689,12 @@ module Bosh::Director::DeploymentPlan
       let(:fixed_time) { Time.now }
 
       it 'updates the instance model variable set to the desired_variable_set on the instance object' do
-        Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time + 1)
-        selected_variable_set = Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time)
-        Bosh::Director::Models::VariableSet.make(deployment: deployment, created_at: fixed_time - 1)
+        Bosh::Director::Models::VariableSet.make(deployment:, created_at: fixed_time + 1)
+        selected_variable_set = Bosh::Director::Models::VariableSet.make(deployment:, created_at: fixed_time)
+        Bosh::Director::Models::VariableSet.make(deployment:, created_at: fixed_time - 1)
 
-        instance = Instance.create_from_instance_group(instance_group, index, state, deployment, current_state, az, logger, variables_interpolator)
+        instance = Instance.create_from_instance_group(instance_group, index, state, deployment, current_state, az, logger,
+                                                       variables_interpolator)
         instance.bind_existing_instance_model(instance_model)
 
         instance.desired_variable_set = selected_variable_set

@@ -4,7 +4,7 @@ module Bosh::Director
   module DeploymentPlan
     module Steps
       describe PrepareInstanceStep do
-        subject(:step) { PrepareInstanceStep.new(instance_plan, use_active_vm: use_active_vm) }
+        subject(:step) { PrepareInstanceStep.new(instance_plan, use_active_vm:) }
 
         let(:instance) { Models::Instance.make }
         let(:deployment_instance) { instance_double(Instance, model: instance) }
@@ -29,7 +29,7 @@ module Bosh::Director
         before do
           allow(InstanceSpec).to receive(:create_from_instance_plan).with(instance_plan).and_return spec
           allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
-          allow(blobstore).to receive(:encryption?)
+          allow(blobstore).to receive(:headers).and_return({})
         end
 
         shared_examples_for 'perform' do
@@ -38,8 +38,8 @@ module Bosh::Director
             let(:lazy_agent) { instance_double(AgentClient) }
 
             before do
-              active = Models::Vm.make(instance: instance, agent_id: 'active-agent', active: true, stemcell_api_version: 3)
-              Models::Vm.make(instance: instance, agent_id: 'lazy-agent', active: false, stemcell_api_version: 3)
+              active = Models::Vm.make(instance:, agent_id: 'active-agent', active: true, stemcell_api_version: 3)
+              Models::Vm.make(instance:, agent_id: 'lazy-agent', active: false, stemcell_api_version: 3)
               allow(AgentClient).to receive(:with_agent_id).with('active-agent', instance.name).and_return(active_agent)
               allow(AgentClient).to receive(:with_agent_id).with('lazy-agent', instance.name).and_return(lazy_agent)
               allow(instance).to receive(:active_vm).and_return(active)
@@ -68,7 +68,7 @@ module Bosh::Director
             let(:old_agent) { instance_double(AgentClient) }
 
             before do
-              active = Models::Vm.make(instance: instance, agent_id: 'old-agent', active: true, stemcell_api_version: 3)
+              active = Models::Vm.make(instance:, agent_id: 'old-agent', active: true, stemcell_api_version: 3)
               allow(AgentClient).to receive(:with_agent_id).with('old-agent', instance.name).and_return(old_agent)
               allow(instance).to receive(:active_vm).and_return(active)
             end
@@ -95,7 +95,7 @@ module Bosh::Director
             let(:new_agent) { instance_double(AgentClient) }
 
             before do
-              Models::Vm.make(instance: instance, agent_id: 'new-agent', active: false, stemcell_api_version: 3)
+              Models::Vm.make(instance:, agent_id: 'new-agent', active: false, stemcell_api_version: 3)
               allow(AgentClient).to receive(:with_agent_id).with('new-agent', instance.name).and_return(new_agent)
             end
 
@@ -169,21 +169,20 @@ module Bosh::Director
               let(:expected_apply_spec) do
                 {
                   'test' => 'apply-me',
-                  'packages' => { 'pkg' => { 'blobstore_id' => 'blob1', 'signed_url' => 'http://sig1', 'blobstore_headers' => {} } },
+                  'packages' => { 'pkg' => { 'blobstore_id' => 'blob1', 'signed_url' => 'http://sig1' } },
                   'rendered_templates_archive' => { 'blobstore_id' => 'blob2' },
                 }
               end
               let(:expected_jobless_apply_spec) do
                 {
                   'test' => 'unemployed',
-                  'packages' => { 'pkg' => { 'blobstore_id' => 'blob3', 'signed_url' => 'http://sig3', 'blobstore_headers' => {} } },
+                  'packages' => { 'pkg' => { 'blobstore_id' => 'blob3', 'signed_url' => 'http://sig3' } },
                   'rendered_templates_archive' => { 'blobstore_id' => 'blob4' },
                 }
               end
 
               before do
-                allow(blobstore).to receive(:encryption?).and_return(true)
-                allow(blobstore).to receive(:signed_url_encryption_headers).and_return({})
+                allow(blobstore).to receive(:headers).and_return({})
               end
 
               it_behaves_like 'perform'

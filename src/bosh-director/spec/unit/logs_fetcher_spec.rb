@@ -78,11 +78,11 @@ module Bosh::Director
 
         context 'when signed urls are available' do
           let(:signed_url) { 'https://signed-url.com' }
-          let(:blobstore_id) { 'blobstore_id'}
+          let(:blobstore_id) { 'blobstore_id' }
 
           before do
             allow(blobstore).to receive(:generate_object_id).and_return(blobstore_id)
-            allow(blobstore).to receive(:encryption?)
+            allow(blobstore).to receive(:headers).and_return({})
             allow(blobstore).to receive(:sign).with(blobstore_id, 'put').and_return(signed_url)
             allow(SecureRandom).to receive(:uuid).and_return(blobstore_id)
           end
@@ -94,7 +94,7 @@ module Bosh::Director
 
             it 'generates a blobstore id, signs the url and fetches logs with the signed url' do
               expect(mock_agent).to receive(:fetch_logs_with_signed_url)
-                .with({ signed_url: signed_url, log_type: 'some-log-type', filters: filters })
+                .with({ signed_url:, log_type: 'some-log-type', filters: })
                 .and_return('sha1' => 'sha1-digest')
               blob, sha = subject.fetch(mock_instance_model, 'some-log-type', filters)
               expect(blob).to eq blobstore_id
@@ -110,7 +110,7 @@ module Bosh::Director
 
             it 'raises fetch errors' do
               expect(mock_agent).to receive(:fetch_logs_with_signed_url)
-                .with({ signed_url: signed_url, log_type: 'some-log-type', filters: filters })
+                .with({ signed_url:, log_type: 'some-log-type', filters: })
                 .and_raise('oops')
               expect do
                 subject.fetch(mock_instance_model, 'some-log-type', filters)
@@ -121,13 +121,13 @@ module Bosh::Director
               let(:encryption_headers) { { 'x-encrypt-header-key' => :value } }
 
               before do
-                allow(blobstore).to receive(:encryption?).and_return(true)
-                allow(blobstore).to receive(:signed_url_encryption_headers).and_return(encryption_headers)
+                allow(blobstore).to receive(:headers).and_return(encryption_headers)
               end
 
               it 'adds headers to the request' do
                 expect(mock_agent).to receive(:fetch_logs_with_signed_url)
-                  .with({ signed_url: signed_url, log_type: 'some-log-type', filters: filters, blobstore_headers: encryption_headers })
+                  .with({ signed_url:, log_type: 'some-log-type', filters:,
+                          blobstore_headers: encryption_headers })
                   .and_return('sha1' => 'sha1-digest')
                 blob, sha = subject.fetch(mock_instance_model, 'some-log-type', filters)
                 expect(blob).to eq blobstore_id

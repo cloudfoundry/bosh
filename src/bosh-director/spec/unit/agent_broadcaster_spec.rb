@@ -61,7 +61,7 @@ module Bosh::Director
 
       it 'excludes compilation VMs' do
         instance = Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, index: 0, job: 'fake-job-0', compilation: true)
-        active_vm = Bosh::Director::Models::Vm.make(id: 11, cid: 'fake-cid-0', instance: instance, active: true)
+        active_vm = Bosh::Director::Models::Vm.make(id: 11, cid: 'fake-cid-0', instance:, active: true)
         vm_being_created_cid = 'fake-cid-99'
 
         agent_broadcast = AgentBroadcaster.new
@@ -72,7 +72,7 @@ module Bosh::Director
 
       it 'includes VMs that need flushing' do
         instance = Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, index: 0, job: 'fake-job-0')
-        active_vm = Bosh::Director::Models::Vm.make(id: 11, cid: 'fake-cid-0', instance: instance, active: true)
+        active_vm = Bosh::Director::Models::Vm.make(id: 11, cid: 'fake-cid-0', instance:, active: true)
         vm_being_created_cid = 'fake-cid-99'
 
         agent_broadcast = AgentBroadcaster.new
@@ -292,7 +292,7 @@ module Bosh::Director
       context 'when blobstore and instance are capable of using signed urls' do
         before do
           allow(blobstore).to receive(:can_sign_urls?).and_return(true)
-          allow(blobstore).to receive(:encryption?)
+          allow(blobstore).to receive(:headers).and_return({})
         end
 
         it 'signs the existing blobstore id' do
@@ -315,8 +315,7 @@ module Bosh::Director
 
         context 'and encryption is enabled' do
           before do
-            allow(blobstore).to receive(:encryption?).and_return(true)
-            allow(blobstore).to receive(:signed_url_encryption_headers).and_return('header' => 'value')
+            allow(blobstore).to receive(:headers).and_return({ 'header' => 'value' })
             allow(blobstore).to receive(:sign).with('fake-blob-id').and_return('signed')
           end
 
@@ -325,7 +324,7 @@ module Bosh::Director
               expect(agent).to receive(:sync_dns_with_signed_url).with({
                 'signed_url' => 'signed',
                 'multi_digest' => 'fake-sha1',
-                'version' => anything,
+                'version' => 1,
                 'blobstore_headers' => { 'header' => 'value' },
               }) do |&blk|
                 blk.call('value' => 'synced')
