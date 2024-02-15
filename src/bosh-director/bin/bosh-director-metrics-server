@@ -33,7 +33,7 @@ thin_server = Thin::Server.new('127.0.0.1', config.metrics_server_port, signals:
   run ->(_) { [200, { 'Content-Type' => 'text/html' }, ['OK']] }
 end
 
-%w(TERM INT QUIT).each do |signal|
+%w[TERM INT QUIT].each do |signal|
   trap(signal) do
     thin_server.stop!
     metrics_collector.stop

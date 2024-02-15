@@ -34,7 +34,7 @@ Delayed::Worker.backend = :sequel
 loop do
   logger.info('Checking for any workers that are still processing..')
 
-  locked_jobs = Delayed::Job.exclude(:locked_by => nil)
+  locked_jobs = Delayed::Job.exclude(locked_by: nil)
   unless queue.nil?
     locked_jobs = locked_jobs.where(queue: queue)
   end

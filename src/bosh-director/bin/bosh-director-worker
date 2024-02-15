@@ -22,15 +22,12 @@ begin
   opts.parse!(ARGV.dup)
 
   config_file ||= ::File.expand_path('../../config/bosh-director.yml', __FILE__)
-  config = nil
 
   Bosh::Director::Config.audit_filename = "audit_worker_#{index}.log"
 
   config = Bosh::Director::Config.load_file(config_file)
 
-  if config.enable_pre_ruby_3_2_equal_tilde_behavior
-    require 'ruby_shims/kernel_equals_tilde'
-  end
+  require 'ruby_shims/kernel_equals_tilde' if config.enable_pre_ruby_3_2_equal_tilde_behavior
 
   config.db
 

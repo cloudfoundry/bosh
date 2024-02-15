@@ -27,7 +27,7 @@ config = Bosh::Director::Config.load_file(config_file)
 dns_sync_broadcaster = Bosh::Director::SyncDnsScheduler.new(config, 10)
 dns_sync_broadcaster.prep
 
-%w(TERM INT QUIT).each do |signal|
+%w[TERM INT QUIT].each do |signal|
   trap(signal) do
     stop(signal, dns_sync_broadcaster)
   end

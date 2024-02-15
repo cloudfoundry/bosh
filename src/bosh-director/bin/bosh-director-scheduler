@@ -18,7 +18,7 @@ Bosh::Director::App.new(config)
 
 scheduler = Bosh::Director::Scheduler.new(config.scheduled_jobs)
 
-%w(TERM INT QUIT).each do |signal|
+%w[TERM INT QUIT].each do |signal|
   trap(signal) do
     scheduler.stop!
   end
