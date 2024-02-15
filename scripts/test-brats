@@ -13,15 +13,17 @@ script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # BOSH_DIRECTOR_RELEASE_PATH
 # BOSH_BINARY_PATH
 
-
-cd "${script_dir}/../src/go" || exit 1
-export GOPATH=$(pwd)
-export PATH="${GOPATH}/bin":$PATH
-
-cd src/github.com/cloudfoundry/bosh-release-acceptance-tests || exit 1
-
-if [[ -n "${FOCUS_SPEC+x}" ]];then
-  go run github.com/onsi/ginkgo/v2/ginkgo -r -v --race --randomize-suites --randomize-all --skip-package=performance --focus="${FOCUS_SPEC}" -nodes 5 brats
-else
-  go run github.com/onsi/ginkgo/v2/ginkgo -r -v --race --randomize-suites --randomize-all --skip-package=performance
-fi
+pushd "${script_dir}/../src/go/src/github.com/cloudfoundry/bosh-release-acceptance-tests" || exit 1
+  if [[ -n "${FOCUS_SPEC+x}" ]];then
+    go run github.com/onsi/ginkgo/v2/ginkgo -r -v \
+      --race --randomize-suites --randomize-all \
+      --skip-package=performance \
+      --focus="${FOCUS_SPEC}" \
+      -nodes 5 \
+      brats
+  else
+    go run github.com/onsi/ginkgo/v2/ginkgo -r -v \
+      --race --randomize-suites --randomize-all \
+      --skip-package=performance
+  fi
+popd
