@@ -8,15 +8,15 @@ describe Bosh::Monitor::ApiController do
     Bosh::Monitor::ApiController.new
   end
 
-  before { allow(EM).to receive(:add_periodic_timer) {} }
+  before { allow(EventMachine).to receive(:add_periodic_timer) {} }
 
   describe '/healthz' do
     let(:periodic_timers) { [] }
     let(:defers) { [] }
     now = 0
     before do
-      allow(EM).to receive(:add_periodic_timer) { |&block| periodic_timers << block }
-      allow(EM).to receive(:defer) { |&block| defers << block }
+      allow(EventMachine).to receive(:add_periodic_timer) { |&block| periodic_timers << block }
+      allow(EventMachine).to receive(:defer) { |&block| defers << block }
       allow(Time).to receive(:now) { now }
 
       current_session # get the App started
@@ -32,7 +32,7 @@ describe Bosh::Monitor::ApiController do
       expect(last_response.status).to eq(200)
     end
 
-    context 'when a thread has become available in the EM thread pool within a time limit' do
+    context 'when a thread has become available in the EventMachine thread pool within a time limit' do
       it 'returns 200 OK' do
         now + Bosh::Monitor::ApiController::PULSE_TIMEOUT + 1
         run_em_timers
@@ -42,7 +42,7 @@ describe Bosh::Monitor::ApiController do
       end
     end
 
-    context 'when the EM thread pool has been occupied for a while' do
+    context 'when the EventMachine thread pool has been occupied for a while' do
       let(:last_pulse) { Bosh::Monitor::ApiController::PULSE_TIMEOUT + 1 }
 
       before { now += last_pulse }

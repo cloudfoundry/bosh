@@ -75,7 +75,7 @@ describe Bhm::Plugins::DataDog do
 
   context 'processing metrics' do
     it "didn't freak out once timeout sending datadog metric" do
-      expect(EM).to receive(:defer).and_yield
+      expect(EventMachine).to receive(:defer).and_yield
       heartbeat = make_heartbeat
       allow(dog_client).to receive(:batch_metrics).and_yield
       allow(dog_client).to receive(:emit_points).and_raise(Timeout::Error)
@@ -83,7 +83,7 @@ describe Bhm::Plugins::DataDog do
     end
 
     it "didn't freak out with exceptions while sending datadog event" do
-      expect(EM).to receive(:defer).and_yield
+      expect(EventMachine).to receive(:defer).and_yield
       heartbeat = make_heartbeat
       allow(dog_client).to receive(:batch_metrics).and_yield
       allow(dog_client).to receive(:emit_points).and_raise
@@ -108,7 +108,7 @@ describe Bhm::Plugins::DataDog do
       )
       expect(dog_client).to receive(:batch_metrics).and_yield
 
-      expect(EM).to receive(:defer).and_yield
+      expect(EventMachine).to receive(:defer).and_yield
       %w[
         cpu.user
         cpu.sys
@@ -133,7 +133,7 @@ describe Bhm::Plugins::DataDog do
     end
 
     it 'should do nothing if instance_id is missing' do
-      expect(EM).to_not receive(:defer)
+      expect(EventMachine).to_not receive(:defer)
       heartbeat = make_heartbeat(timestamp: Time.now.to_i, instance_id: nil)
       subject.process(heartbeat)
     end
@@ -160,7 +160,7 @@ describe Bhm::Plugins::DataDog do
 
         expect(dog_client).to receive(:batch_metrics).and_yield
         allow(dog_client).to receive(:emit_points)
-        expect(EM).to receive(:defer).and_yield
+        expect(EventMachine).to receive(:defer).and_yield
         expect(dog_client).to receive(:emit_points).with(
           anything,
           anything,
@@ -175,7 +175,7 @@ describe Bhm::Plugins::DataDog do
 
   context 'processing alerts' do
     it "didn't freak out once timeout sending datadog event" do
-      expect(EM).to receive(:defer).and_yield
+      expect(EventMachine).to receive(:defer).and_yield
       make_heartbeat
       allow(dog_client).to receive(:emit_event).and_raise(Timeout::Error)
       alert = make_alert
@@ -183,7 +183,7 @@ describe Bhm::Plugins::DataDog do
     end
 
     it "didn't freak out with exceptions while sending datadog event" do
-      expect(EM).to receive(:defer).and_yield
+      expect(EventMachine).to receive(:defer).and_yield
       make_heartbeat
       allow(dog_client).to receive(:emit_event).and_raise
       alert = make_alert
@@ -191,7 +191,7 @@ describe Bhm::Plugins::DataDog do
     end
 
     it 'sends datadog alerts' do
-      expect(EM).to receive(:defer).and_yield
+      expect(EventMachine).to receive(:defer).and_yield
 
       time = Time.now.to_i - 10
       fake_event = double('Datadog Event')
@@ -210,7 +210,7 @@ describe Bhm::Plugins::DataDog do
     end
 
     it 'sends datadog a low priority event for warning alerts' do
-      expect(EM).to receive(:defer).and_yield
+      expect(EventMachine).to receive(:defer).and_yield
 
       expect(Dogapi::Event).to receive(:new) do |_, options|
         expect(options[:priority]).to eq('low')
@@ -240,7 +240,7 @@ describe Bhm::Plugins::DataDog do
           customkey2:customvalue2
         ]
 
-        expect(EM).to receive(:defer).and_yield
+        expect(EventMachine).to receive(:defer).and_yield
 
         expect(Dogapi::Event).to receive(:new) do |_, options|
           expect(options[:tags]).to include(*custom_tags)

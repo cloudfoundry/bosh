@@ -52,7 +52,7 @@ properties:
     default: info
 
   hm.em_threadpool_size:
-    description: EM thread pool size
+    description: EventMachine thread pool size
     default: 20
 
   #

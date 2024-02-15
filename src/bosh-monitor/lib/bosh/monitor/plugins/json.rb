@@ -26,7 +26,7 @@ module Bosh::Monitor::Plugins
     end
 
     def start
-      unless EM.reactor_running?
+      unless EventMachine.reactor_running?
         @logger.error('JSON Plugin can only be started when event loop is running')
         return false
       end
@@ -75,7 +75,7 @@ module Bosh::Monitor::Plugins
     end
   end
 
-  # EM's DeferrableChildProcess does not give an opportunity
+  # EventMachine's DeferrableChildProcess does not give an opportunity
   # to get the exit status. So we are implementing our own unbind logic to handle the exit status.
   # This way we can execute our process restart on the err callback (errback).
   # https://stackoverflow.com/a/12092647

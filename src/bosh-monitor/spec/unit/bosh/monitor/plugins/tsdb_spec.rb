@@ -12,7 +12,7 @@ describe Bhm::Plugins::Tsdb do
   end
 
   let(:connection) { instance_double('Bosh::Monitor::TsdbConnection') }
-  before { allow(EM).to receive(:connect).with('fake-host', 4242, Bhm::TsdbConnection, 'fake-host', 4242, 42).and_return(connection) }
+  before { allow(EventMachine).to receive(:connect).with('fake-host', 4242, Bhm::TsdbConnection, 'fake-host', 4242, 42).and_return(connection) }
 
   it 'validates options' do
     valid_options = {
@@ -56,21 +56,21 @@ describe Bhm::Plugins::Tsdb do
   it 'does not send metrics for alerts' do
     alert = make_alert(timestamp: Time.now.to_i)
 
-    EM.run do
+    EventMachine.run do
       plugin.run
 
       expect(connection).not_to receive(:send_metric)
 
       plugin.process(alert)
 
-      EM.stop
+      EventMachine.stop
     end
   end
 
   it 'does not send empty tags to TSDB' do
     heartbeat = make_heartbeat(timestamp: Time.now.to_i, instance_id: '')
 
-    EM.run do
+    EventMachine.run do
       plugin.run
 
       heartbeat.metrics.each do |metric|
@@ -80,14 +80,14 @@ describe Bhm::Plugins::Tsdb do
 
       plugin.process(heartbeat)
 
-      EM.stop
+      EventMachine.stop
     end
   end
 
   it 'sends heartbeat metrics to TSDB' do
     heartbeat = make_heartbeat(timestamp: Time.now.to_i)
 
-    EM.run do
+    EventMachine.run do
       plugin.run
 
       heartbeat.metrics.each do |metric|
@@ -98,7 +98,7 @@ describe Bhm::Plugins::Tsdb do
 
       plugin.process(heartbeat)
 
-      EM.stop
+      EventMachine.stop
     end
   end
 end

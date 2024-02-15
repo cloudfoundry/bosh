@@ -20,7 +20,7 @@ module Bosh::Monitor
       end
 
       def run
-        unless EM.reactor_running?
+        unless EventMachine.reactor_running?
           logger.error('Resurrector plugin can only be started when event loop is running')
           return false
         end
@@ -121,7 +121,7 @@ module Bosh::Monitor
         # Getting the current tasks may fail. In a situation where the director is already dealing with lots of scan and fix tasks,
         # we may want to postpone adding another one to the queue to give the director time to deal with the currently scheduled tasks.
         # In the case of the tasks endpoint misbehaving ( status != 200 ) we can safely skip scheduling the the scan and fix in the current iteration.
-        # The alerts about missing healthchecks will trigger again some time later (when the director is under less pressure). 
+        # The alerts about missing healthchecks will trigger again some time later (when the director is under less pressure).
         return true if tasks_response.status != 200
 
         queued_scan_and_fix = JSON.parse(tasks_response.body).select do |task|

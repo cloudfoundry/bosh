@@ -40,7 +40,7 @@ module Bosh::Monitor
 
       @logger.info("#{logger_name}-failed-to-reconnect, will try again in #{retry_in} seconds...") if retries > 1
 
-      EM.add_timer(retry_in) { retry_reconnect }
+      EventMachine.add_timer(retry_in) { retry_reconnect }
     end
 
     def retry_reconnect

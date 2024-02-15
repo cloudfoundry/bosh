@@ -67,9 +67,9 @@ module Bosh::Monitor::Plugins
 
     context 'when the event machine reactor is running' do
       around do |example|
-        EM.run do
+        EventMachine.run do
           example.call
-          EM.stop
+          EventMachine.stop
         end
       end
 

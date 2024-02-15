@@ -10,7 +10,7 @@ module Bosh::Monitor
       end
 
       def run
-        unless EM.reactor_running?
+        unless EventMachine.reactor_running?
           logger.error('Graphite delivery agent can only be started when event loop is running')
           return false
         end
@@ -18,7 +18,7 @@ module Bosh::Monitor
         host = options['host']
         port = options['port']
         retries = options['max_retries'] || Bhm::TcpConnection::DEFAULT_RETRIES
-        @connection = EM.connect(host, port, Bhm::GraphiteConnection, host, port, retries)
+        @connection = EventMachine.connect(host, port, Bhm::GraphiteConnection, host, port, retries)
       end
 
       def process(event)

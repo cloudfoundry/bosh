@@ -56,7 +56,7 @@ describe Bhm::Plugins::Pagerduty do
       ),
     }
 
-    EM.run do
+    EventMachine.run do
       @plugin.run
 
       allow(EventMachine).to receive(:defer) { |&arg| arg.call }
@@ -66,7 +66,7 @@ describe Bhm::Plugins::Pagerduty do
 
       @plugin.process(alert)
       @plugin.process(heartbeat)
-      EM.stop
+      EventMachine.stop
     end
   end
 end

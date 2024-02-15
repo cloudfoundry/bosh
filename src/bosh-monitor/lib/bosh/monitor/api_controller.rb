@@ -6,8 +6,8 @@ module Bosh::Monitor
       @heartbeat = Time.now
       @instance_manager = Bosh::Monitor.instance_manager
 
-      EM.add_periodic_timer(1) do
-        EM.defer { @heartbeat = Time.now }
+      EventMachine.add_periodic_timer(1) do
+        EventMachine.defer { @heartbeat = Time.now }
       end
 
       super

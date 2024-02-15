@@ -17,7 +17,7 @@ module Bosh::Monitor
       end
 
       def run
-        unless EM.reactor_running?
+        unless EventMachine.reactor_running?
           logger.error('Event logger plugin can only be started when event loop is running')
           return false
         end

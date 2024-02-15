@@ -8,7 +8,7 @@ module Bosh::Monitor::Plugins
       request[:proxy] = { host: env_proxy.host, port: env_proxy.port } unless env_proxy.nil?
       name = self.class.name
       started = Time.now
-      http = EM::HttpRequest.new(uri, tls: { verify_peer: false }).send(:put, request)
+      http = EventMachine::HttpRequest.new(uri, tls: { verify_peer: false }).send(:put, request)
       http.callback do
         logger.debug("#{name} event sent (took #{Time.now - started} seconds): #{http.response_header.status}")
       end
@@ -25,7 +25,7 @@ module Bosh::Monitor::Plugins
       started = Time.now
       env_proxy = URI.parse(uri.to_s).find_proxy
       request[:proxy] = { host: env_proxy.host, port: env_proxy.port } unless env_proxy.nil?
-      http = EM::HttpRequest.new(uri, tls: { verify_peer: false }).send(:post, request)
+      http = EventMachine::HttpRequest.new(uri, tls: { verify_peer: false }).send(:post, request)
       http.callback do
         logger.debug("#{name} event sent (took #{Time.now - started} seconds): #{http.response_header.status}")
       end

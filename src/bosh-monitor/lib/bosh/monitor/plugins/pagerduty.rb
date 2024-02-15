@@ -6,7 +6,7 @@ module Bosh::Monitor
       API_URI = 'https://events.pagerduty.com/generic/2010-04-15/create_event.json'.freeze
 
       def run
-        unless EM.reactor_running?
+        unless EventMachine.reactor_running?
           logger.error('Pagerduty plugin can only be started when event loop is running')
           return false
         end

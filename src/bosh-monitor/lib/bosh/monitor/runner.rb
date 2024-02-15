@@ -15,17 +15,17 @@ module Bosh::Monitor
       @mbus          = Bhm.mbus
       @instance_manager = Bhm.instance_manager
       @resurrection_manager = Bhm.resurrection_manager
-      EM.threadpool_size = Bhm.em_threadpool_size
+      EventMachine.threadpool_size = Bhm.em_threadpool_size
     end
 
     def run
       @logger.info('HealthMonitor starting...')
-      EM.kqueue if EM.kqueue?
-      EM.epoll if EM.epoll?
+      EventMachine.kqueue if EventMachine.kqueue?
+      EventMachine.epoll if EventMachine.epoll?
 
-      EM.error_handler { |e| handle_em_error(e) }
+      EventMachine.error_handler { |e| handle_em_error(e) }
 
-      EM.run do
+      EventMachine.run do
         connect_to_mbus
         @director_monitor = DirectorMonitor.new(Bhm)
         @director_monitor.subscribe
@@ -40,18 +40,18 @@ module Bosh::Monitor
     def stop
       @logger.info('HealthMonitor shutting down...')
       @http_server&.stop!
-      EM.stop_event_loop
+      EventMachine.stop_event_loop
     end
 
     def setup_timers
-      EM.schedule do
+      EventMachine.schedule do
         poll_director
-        EM.add_periodic_timer(@intervals.poll_director) { poll_director }
-        EM.add_periodic_timer(@intervals.log_stats) { log_stats }
-        EM.add_periodic_timer(@intervals.resurrection_config) { update_resurrection_config }
-        EM.add_timer(@intervals.poll_grace_period) do
-          EM.add_periodic_timer(@intervals.analyze_agents) { analyze_agents }
-          EM.add_periodic_timer(@intervals.analyze_instances) { analyze_instances }
+        EventMachine.add_periodic_timer(@intervals.poll_director) { poll_director }
+        EventMachine.add_periodic_timer(@intervals.log_stats) { log_stats }
+        EventMachine.add_periodic_timer(@intervals.resurrection_config) { update_resurrection_config }
+        EventMachine.add_timer(@intervals.poll_grace_period) do
+          EventMachine.add_periodic_timer(@intervals.analyze_agents) { analyze_agents }
+          EventMachine.add_periodic_timer(@intervals.analyze_instances) { analyze_instances }
         end
       end
     end

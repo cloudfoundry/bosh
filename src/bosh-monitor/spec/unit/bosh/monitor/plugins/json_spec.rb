@@ -37,10 +37,10 @@ describe Bhm::Plugins::ProcessManager do
     expect(Bosh::Monitor::Plugins::DeferrableChildProcess).to receive(:open).once.with('/plugin').and_return(process)
     allow(EventMachine).to receive(:defer).and_yield
 
-    EM.run do
+    EventMachine.run do
       process_manager.start
 
-      EM.stop
+      EventMachine.stop
     end
   end
 
@@ -48,9 +48,9 @@ describe Bhm::Plugins::ProcessManager do
     allow(Dir).to receive(:[]).with('/*/json-plugin/*').and_return(['/non-existent-plugin'])
     expect(Bosh::Monitor::Plugins::DeferrableChildProcess).to receive(:open).at_least(2).times.with('/non-existent-plugin').and_call_original
 
-    EM.run do
+    EventMachine.run do
       allow(EventMachine).to receive(:add_timer).with(0.1).at_least(2).times.and_yield
-      expect(EventMachine).to receive(:add_timer) { EM.stop }
+      expect(EventMachine).to receive(:add_timer) { EventMachine.stop }
       process_manager.start
     end
   end
@@ -63,17 +63,17 @@ describe Bhm::Plugins::ProcessManager do
 
     succeeded = true
     begin
-      EM.run do
+      EventMachine.run do
         process_manager.start
 
-        EM.add_timer(5) do
+        EventMachine.add_timer(5) do
           # By this time the test is failing
           succeeded = false
-          EM.stop
+          EventMachine.stop
         end
 
-        EM.add_periodic_timer(0.5) do
-          EM.stop if process_manager.instance_variable_get(:@processes).size == 1
+        EventMachine.add_periodic_timer(0.5) do
+          EventMachine.stop if process_manager.instance_variable_get(:@processes).size == 1
         end
       end
     ensure
@@ -92,7 +92,7 @@ describe Bhm::Plugins::ProcessManager do
     process_b = double('process-b').as_null_object
     allow(Bosh::Monitor::Plugins::DeferrableChildProcess).to receive(:open).with('/process-b').and_return(process_b)
 
-    EM.run do
+    EventMachine.run do
       process_manager.start
 
       process_manager.send_event(alert)
@@ -100,7 +100,7 @@ describe Bhm::Plugins::ProcessManager do
       expect(process_a).to have_received(:send_data).with("#{alert.to_json}\n")
       expect(process_b).to have_received(:send_data).with("#{alert.to_json}\n")
 
-      EM.stop
+      EventMachine.stop
     end
   end
 end
