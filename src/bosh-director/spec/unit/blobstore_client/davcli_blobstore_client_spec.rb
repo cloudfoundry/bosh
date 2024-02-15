@@ -202,5 +202,11 @@ module Bosh::Blobstore
         expect(subject.redacted_credential_properties_list).to eq(%w[user password secret])
       end
     end
+
+    describe '#headers' do
+      it 'returns empty headers' do
+        expect(subject.headers).to be_empty
+      end
+    end
   end
 end

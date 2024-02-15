@@ -26,6 +26,10 @@ module Bosh::Blobstore
       %w[user password secret]
     end
 
+    def headers
+      {}
+    end
+
     protected
 
     def get_file(id, file)
