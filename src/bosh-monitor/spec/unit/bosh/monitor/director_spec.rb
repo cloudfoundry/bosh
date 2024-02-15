@@ -151,10 +151,10 @@ describe 'Bhm::Director' do
   end
 
   def with_fiber
-    EM.run do
+    EventMachine.run do
       Fiber.new do
         yield
-        EM.stop
+        EventMachine.stop
       end.resume
     end
   end

@@ -24,7 +24,7 @@ module Bosh::Monitor
       end
 
       def run
-        unless EM.reactor_running?
+        unless EventMachine.reactor_running?
           logger.error('Email plugin can only be started when event loop is running')
           return false
         end
@@ -33,7 +33,7 @@ module Bosh::Monitor
 
         logger.info('Email plugin is running...')
 
-        EM.add_periodic_timer(@delivery_interval) do
+        EventMachine.add_periodic_timer(@delivery_interval) do
           process_queues
         rescue StandardError => e
           logger.error("Problem processing email queues: #{e}")
@@ -106,14 +106,14 @@ module Bosh::Monitor
 
         if smtp_options['auth']
           smtp_client_options[:auth] = {
-            # FIXME: EM SMTP client will only work with plain auth
+            # FIXME: EventMachine SMTP client will only work with plain auth
             type: smtp_options['auth'].to_sym,
             username: smtp_options['user'],
             password: smtp_options['password'],
           }
         end
 
-        email = EM::Protocols::SmtpClient.send(smtp_client_options)
+        email = EventMachine::Protocols::SmtpClient.send(smtp_client_options)
 
         email.callback do
           logger.debug("Email sent (took #{Time.now - started} seconds)")

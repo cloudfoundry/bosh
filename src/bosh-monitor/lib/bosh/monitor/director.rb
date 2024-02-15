@@ -68,7 +68,7 @@ module Bosh::Monitor
       headers = {}
       headers['authorization'] = auth_provider.auth_header unless options.fetch(:no_login, false)
 
-      http = EM::HttpRequest.new(target_uri, tls: { verify_peer: false }).send(method.to_sym, head: headers)
+      http = EventMachine::HttpRequest.new(target_uri, tls: { verify_peer: false }).send(method.to_sym, head: headers)
 
       http.callback { f.resume(http) }
       http.errback  { f.resume(http) }

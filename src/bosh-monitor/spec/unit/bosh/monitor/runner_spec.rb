@@ -29,7 +29,7 @@ describe Bosh::Monitor::Runner do
   end
 
   describe '#handle_em_error' do
-    context 'when EM loop error occurs' do
+    context 'when EventMachine loop error occurs' do
       let(:http_server) { instance_double(Thin::Server) }
 
       before do
@@ -39,18 +39,18 @@ describe Bosh::Monitor::Runner do
         runner.start_http_server
       end
 
-      it 'stops the HM server, stops the EM loop and logs the error' do
-        allow(EM).to receive(:stop_event_loop)
+      it 'stops the HM server, stops the EventMachine loop and logs the error' do
+        allow(EventMachine).to receive(:stop_event_loop)
         allow(http_server).to receive(:stop!)
         allow(logger).to receive(:fatal)
-        error = StandardError.new('EM event loop exception')
+        error = StandardError.new('EventMachine event loop exception')
         error.set_backtrace(['backtrace'])
 
         runner.handle_em_error(error)
 
-        expect(EM).to have_received(:stop_event_loop)
+        expect(EventMachine).to have_received(:stop_event_loop)
         expect(http_server).to have_received(:stop!)
-        expect(logger).to have_received(:fatal).with('EM event loop exception')
+        expect(logger).to have_received(:fatal).with('EventMachine event loop exception')
         expect(logger).to have_received(:fatal).with('backtrace')
       end
     end

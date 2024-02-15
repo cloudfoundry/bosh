@@ -19,7 +19,7 @@ describe Bosh::Monitor::DirectorMonitor do
   end
 
   before do
-    allow(EM).to receive(:schedule).and_yield
+    allow(EventMachine).to receive(:schedule).and_yield
   end
 
   describe 'subscribe' do

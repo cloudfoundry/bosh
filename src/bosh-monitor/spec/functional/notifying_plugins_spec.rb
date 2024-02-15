@@ -46,17 +46,17 @@ describe 'notifying plugins' do
 
       called = false
       alert = nil
-      EM.run do
+      EventMachine.run do
         nats = FakeNATS.new
         allow(Bhm).to receive(:nats).and_return(nats)
         runner.run
         wait_for_plugins
         nats.alert(JSON.dump(payload))
-        EM.add_timer(2) { EM.stop }
-        EM.add_periodic_timer(0.1) do
+        EventMachine.add_timer(2) { EventMachine.stop }
+        EventMachine.add_periodic_timer(0.1) do
           alert = get_alert
           called = true
-          EM.stop if alert&.attributes&.match(payload)
+          EventMachine.stop if alert&.attributes&.match(payload)
         end
       end
 
@@ -87,16 +87,16 @@ describe 'notifying plugins' do
 
       called = false
       alert = nil
-      EM.run do
+      EventMachine.run do
         nats = FakeNATS.new
         allow(Bhm).to receive(:nats).and_return(nats)
         runner.run
         wait_for_plugins
-        EM.add_timer(5) { EM.stop }
-        EM.add_periodic_timer(0.1) do
+        EventMachine.add_timer(5) { EventMachine.stop }
+        EventMachine.add_periodic_timer(0.1) do
           alert = get_alert
           called = true
-          EM.stop if alert&.attributes&.match(alert_json)
+          EventMachine.stop if alert&.attributes&.match(alert_json)
         end
       end
 

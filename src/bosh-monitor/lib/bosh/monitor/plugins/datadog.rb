@@ -31,9 +31,9 @@ module Bosh::Monitor
       def process(event)
         case event
         when Bosh::Monitor::Events::Heartbeat
-          EM.defer { process_heartbeat(event) } if event.instance_id
+          EventMachine.defer { process_heartbeat(event) } if event.instance_id
         when Bosh::Monitor::Events::Alert
-          EM.defer { process_alert(event) }
+          EventMachine.defer { process_alert(event) }
         end
       end
 

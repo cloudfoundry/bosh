@@ -169,43 +169,43 @@ describe Bhm::Plugins::ConsulEventForwarder do
     end
 
     it 'should send a put request to the ttl endpoint the second time an event is encountered' do
-      EM.run do
+      EventMachine.run do
         subject.run
         subject.process(heartbeat)
         expect(subject).to receive(:send_http_put_request).with(ttl_pass_uri, heartbeat_request)
         subject.process(heartbeat)
-        EM.stop
+        EventMachine.stop
       end
     end
 
     it 'should send a fail ttl message when heartbeat is failing' do
       heartbeat.attributes['job_state'] = 'failing'
-      EM.run do
+      EventMachine.run do
         subject.run
         subject.process(heartbeat)
         expect(subject).to receive(:send_http_put_request).with(ttl_fail_uri, heartbeat_request)
         subject.process(heartbeat)
-        EM.stop
+        EventMachine.stop
       end
     end
 
     it 'should send a fail ttl message when heartbeat is unknown' do
       heartbeat.attributes['job_state'] = 'failing'
 
-      EM.run do
+      EventMachine.run do
         subject.run
         subject.process(heartbeat)
         expect(subject).to receive(:send_http_put_request).with(ttl_fail_uri, heartbeat_request)
         subject.process(heartbeat)
-        EM.stop
+        EventMachine.stop
       end
     end
 
     it 'should not send a registration request if an event is already registered' do
       subject.run
-      EM.run do
+      EventMachine.run do
         subject.process(heartbeat)
-        EM.stop
+        EventMachine.stop
       end
 
       expect(subject).to_not receive(:send_http_put_request).with(register_uri, register_request)
@@ -219,9 +219,9 @@ describe Bhm::Plugins::ConsulEventForwarder do
       it 'should not forward events' do
         subject.run
 
-        EM.run do
+        EventMachine.run do
           subject.process(heartbeat)
-          EM.stop
+          EventMachine.stop
         end
         expect(subject).to_not receive(:send_http_put_request).with(alert_uri, event_request)
         subject.process(alert)
@@ -244,9 +244,9 @@ describe Bhm::Plugins::ConsulEventForwarder do
       it 'should not send ttl and event requests for same event' do
         subject.run
 
-        EM.run do
+        EventMachine.run do
           subject.process(heartbeat)
-          EM.stop
+          EventMachine.stop
         end
         expect(subject).to_not receive(:send_http_put_request).with(alert_uri, event_request)
         expect(subject).to receive(:send_http_put_request).with(ttl_pass_uri, heartbeat_request)
@@ -258,9 +258,9 @@ describe Bhm::Plugins::ConsulEventForwarder do
           options.merge!('heartbeats_as_alerts' => true)
           subject.run
 
-          EM.run do
+          EventMachine.run do
             subject.process(heartbeat)
-            EM.stop
+            EventMachine.stop
           end
           expect(subject).to receive(:send_http_put_request).with(heartbeat_alert_uri, heartbeat_request)
           expect(subject).to receive(:send_http_put_request).with(ttl_pass_uri, heartbeat_request)

@@ -8,11 +8,11 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
   end
 
   describe '#send_http_put_request' do
-    let(:http_request) { instance_double(EM::HttpRequest) }
-    let(:http_response) { instance_double(EM::Completion) }
+    let(:http_request) { instance_double(EventMachine::HttpRequest) }
+    let(:http_response) { instance_double(EventMachine::Completion) }
 
     it 'sends a put request' do
-      expect(EM::HttpRequest).to receive(:new).with('http://some-uri', tls: { verify_peer: false }).and_return(http_request)
+      expect(EventMachine::HttpRequest).to receive(:new).with('http://some-uri', tls: { verify_peer: false }).and_return(http_request)
 
       expect(http_request).to receive(:send).with(:put, 'some-request').and_return(http_response)
       expect(http_response).to receive(:callback)
@@ -24,11 +24,11 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
   end
 
   describe '#send_http_post_request' do
-    let(:http_request) { instance_double(EM::HttpRequest) }
-    let(:http_response) { instance_double(EM::Completion) }
+    let(:http_request) { instance_double(EventMachine::HttpRequest) }
+    let(:http_response) { instance_double(EventMachine::Completion) }
 
     it 'sends a post request' do
-      expect(EM::HttpRequest).to receive(:new).with('http://some-uri', tls: { verify_peer: false }).and_return(http_request)
+      expect(EventMachine::HttpRequest).to receive(:new).with('http://some-uri', tls: { verify_peer: false }).and_return(http_request)
 
       expect(http_request).to receive(:send).with(:post, 'some-request').and_return(http_response)
       expect(http_response).to receive(:callback)

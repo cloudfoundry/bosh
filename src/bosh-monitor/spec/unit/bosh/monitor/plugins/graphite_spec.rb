@@ -45,7 +45,7 @@ describe Bhm::Plugins::Graphite do
   describe 'process metrics' do
     let(:connection) { instance_double('Bosh::Monitor::GraphiteConnection') }
     before do
-      allow(EM).to receive(:connect)
+      allow(EventMachine).to receive(:connect)
         .with('fake-graphite-host', 2003, Bhm::GraphiteConnection, 'fake-graphite-host', 2003, 42)
         .and_return(connection)
     end
@@ -60,13 +60,13 @@ describe Bhm::Plugins::Graphite do
       let(:event) { make_alert(timestamp: Time.now.to_i) }
 
       it 'does not send metrics' do
-        EM.run do
+        EventMachine.run do
           plugin.run
           expect(connection).to_not receive(:send_metric)
 
           plugin.process(event)
 
-          EM.stop
+          EventMachine.stop
         end
       end
     end
@@ -74,7 +74,7 @@ describe Bhm::Plugins::Graphite do
     context 'when event is of type Heartbeat' do
       it 'sends metrics to Graphite' do
         event = make_heartbeat(timestamp: Time.now.to_i)
-        EM.run do
+        EventMachine.run do
           plugin.run
 
           event.metrics.each do |metric|
@@ -84,20 +84,20 @@ describe Bhm::Plugins::Graphite do
 
           plugin.process(event)
 
-          EM.stop
+          EventMachine.stop
         end
       end
 
       it 'skips sending metrics if instance_id is missing' do
         event = make_heartbeat(timestamp: Time.now.to_i, instance_id: nil)
-        EM.run do
+        EventMachine.run do
           plugin.run
 
           expect(connection).not_to receive(:send_metric)
 
           plugin.process(event)
 
-          EM.stop
+          EventMachine.stop
         end
       end
     end
