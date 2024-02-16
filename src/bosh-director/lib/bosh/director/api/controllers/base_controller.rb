@@ -79,7 +79,7 @@ module Bosh::Director
           true
         end
 
-        after { headers('Date' => Time.now.rfc822) } # As thin doesn't inject date
+        after { headers('Date' => Time.now.rfc822) } # As puma doesn't inject date
 
         configure do
           set(:show_exceptions, false)

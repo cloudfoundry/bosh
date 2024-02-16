@@ -1,5 +1,7 @@
 require 'bosh/dev/sandbox/service'
 require 'bosh/dev/sandbox/socket_connector'
+require 'puma'
+require 'puma/configuration'
 
 module Bosh::Spec
   class LocalFileServer
@@ -7,7 +9,7 @@ module Bosh::Spec
       @port = port
       @logger = logger
 
-      builder = Rack::Builder.new do
+      builder = ::Puma::Rack::Builder.app do
         use Rack::CommonLogger
         use Rack::ShowExceptions
         run Rack::Directory.new(directory)
@@ -19,7 +21,13 @@ module Bosh::Spec
 
       @server_thread = Thread.new do
         begin
-          Rack::Handler::Thin.run builder, :Port => port
+          puma_configuration = ::Puma::Configuration.new do |user_config|
+            user_config.tag 'local-file-server'
+            user_config.bind "tcp://localhost:#{port}"
+            user_config.app builder
+          end
+          puma_launcher = ::Puma::Launcher.new(puma_configuration)
+          puma_launcher.run
         rescue Interrupt
           # that's ok, the spec is done with us...
         end
