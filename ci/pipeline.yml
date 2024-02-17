@@ -606,7 +606,6 @@ jobs:
       - task: prepare-release
         image: integration-image
         file: bosh-src/ci/tasks/prepare-release.yml
-      - get: bosh-main
       - task: finalize-release
         image: integration-image
         file: bosh-src-latest-with-release-commit/ci/tasks/finalize-bosh-release.yml
@@ -619,20 +618,16 @@ jobs:
       - put: bosh-src
         params:
           repository: bosh-src-latest-with-release-commit
-          tag: bosh-main/tag-name
-          annotate: bosh-main/annotate-msg
+          tag: bosh-src/tag-name
+          annotate: bosh-src/annotate-msg
           merge: true
       - put: bosh-github-release
         params:
           repository: bosh-src
-          name: bosh-main/tag-name
-          tag: bosh-main/tag-name
+          name: bosh-src/tag-name
+          tag: bosh-src/tag-name
           body: release-notes/release-notes.md
           generate_release_notes: true
-      - put: bosh-main
-        params:
-          repository: bosh-main
-          rebase: true
 
   - name: clear-release-notes
     plan:
@@ -1304,13 +1299,6 @@ resources:
     source:
       uri: https://github.com/cppforlife/zookeeper-release
       branch: master
-
-  - name: bosh-main
-    type: git
-    source:
-      uri: git@github.com:cloudfoundry/bosh.git
-      branch: main
-      private_key: ((github_deploy_key_bosh.private_key))
 
   - name: bosh-cli
     type: s3

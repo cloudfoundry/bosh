@@ -12,7 +12,7 @@ export GO_CLI_PATH=$ROOT_PATH/bosh-cli/bosh-cli
 chmod +x $GO_CLI_PATH
 
 
-pushd bosh-main
+pushd bosh-src
 
   set +x
   echo "$RELEASE_PRIVATE_YML" >> "config/private.yml"
@@ -30,10 +30,10 @@ pushd bosh-main
 
 popd
 
-cat <<EOF >bosh-main/tag-name
+cat <<EOF >bosh-src/tag-name
 v${FULL_VERSION}
 EOF
 
-cat <<EOF >bosh-main/annotate-msg
+cat <<EOF >bosh-src/annotate-msg
 Final release $FULL_VERSION tagged via concourse
 EOF

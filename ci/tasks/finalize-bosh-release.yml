@@ -7,17 +7,17 @@ image_resource:
     repository: bosh/integration
 
 inputs:
-  - name: bosh-main
+  - name: bosh-src
   - name: bosh-cli
   - name: version
   - name: release-tarball
 
 outputs:
-  - name: bosh-main
+  - name: bosh-src
 
 params:
   BLOBSTORE_ACCESS_KEY_ID: replace-me
   BLOBSTORE_SECRET_ACCESS_KEY: replace-me
 
 run:
-  path: bosh-main/ci/tasks/finalize-bosh-release.sh
+  path: bosh-src/ci/tasks/finalize-bosh-release.sh
