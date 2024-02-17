@@ -14,6 +14,7 @@ inputs:
 
 outputs:
   - name: bosh-src
+  - name: release-metadata
 
 params:
   BLOBSTORE_ACCESS_KEY_ID: replace-me

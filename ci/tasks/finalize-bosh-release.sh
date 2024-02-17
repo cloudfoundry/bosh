@@ -30,10 +30,10 @@ pushd bosh-src
 
 popd
 
-cat <<EOF >bosh-src/tag-name
+cat <<EOF > release-metadata/tag-name
 v${FULL_VERSION}
 EOF
 
-cat <<EOF >bosh-src/annotate-msg
+cat <<EOF > release-metadata/annotate-msg
 Final release $FULL_VERSION tagged via concourse
 EOF

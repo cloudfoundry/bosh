@@ -596,8 +596,6 @@ jobs:
       - in_parallel:
         - get: bosh-src
           passed: [delivery]
-        - get: bosh-src-latest
-          resource: bosh-src
         - get: bosh-cli
         - get: integration-image
         - get: version
@@ -617,15 +615,15 @@ jobs:
                 json_key: '((bosh_release_blobs_gcp_credentials_json))'
       - put: bosh-src
         params:
-          repository: bosh-src-latest-with-release-commit
-          tag: bosh-src/tag-name
-          annotate: bosh-src/annotate-msg
+          repository: bosh-src
+          tag: release-metadata/tag-name
+          annotate: release-metadata/annotate-msg
           merge: true
       - put: bosh-github-release
         params:
           repository: bosh-src
-          name: bosh-src/tag-name
-          tag: bosh-src/tag-name
+          name: release-metadata/tag-name
+          tag: release-metadata/tag-name
           body: release-notes/release-notes.md
           generate_release_notes: true
 
