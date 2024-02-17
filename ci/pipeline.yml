@@ -606,7 +606,7 @@ jobs:
         file: bosh-src/ci/tasks/prepare-release.yml
       - task: finalize-release
         image: integration-image
-        file: bosh-src-latest-with-release-commit/ci/tasks/finalize-bosh-release.yml
+        file: bosh-src/ci/tasks/finalize-bosh-release.yml
         params:
           RELEASE_PRIVATE_YML: |
             blobstore:
