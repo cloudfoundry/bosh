@@ -624,6 +624,7 @@ jobs:
           merge: true
       - put: bosh-github-release
         params:
+          repository: bosh-src
           name: bosh-main/tag-name
           tag: bosh-main/tag-name
           body: release-notes/release-notes.md
