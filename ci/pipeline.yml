@@ -621,10 +621,10 @@ jobs:
           merge: true
       - put: bosh-github-release
         params:
-          repository: bosh-src
           name: release-metadata/tag-name
           tag: release-metadata/tag-name
           body: release-notes/release-notes.md
+          commitish: bosh-src/.git/ref
           generate_release_notes: true
 
   - name: clear-release-notes
