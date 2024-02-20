@@ -1,6 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -e
 
-pushd "$(dirname $0)/../src"
+script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+pushd "${script_dir}/../src" || exit 1
   bundle install
   bundle exec rake spec:unit
 popd

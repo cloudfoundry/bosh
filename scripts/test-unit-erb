@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
-
 set -e
 
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-cd "${script_dir}/../src" || exit 1
-
-bundle exec rspec ../spec
+pushd "${script_dir}/../src" || exit 1
+  bundle exec rspec ../spec
+popd

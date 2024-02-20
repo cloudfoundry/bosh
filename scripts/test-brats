@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-
 set -e
+
+script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # assumes targeting director already
 # and variables have been exported
 
-script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # TODO(db, ja): validate required variables have been set
 # STEMCELL_OS
 # STEMCELL_VERSION
