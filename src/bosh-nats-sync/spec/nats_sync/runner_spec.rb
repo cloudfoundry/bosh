@@ -4,9 +4,12 @@ describe NATSSync::Runner do
   subject { NATSSync::Runner.new(sample_config) }
   let(:user_sync_class) { class_double('NATSSync::UsersSync').as_stubbed_const }
   let(:user_sync_instance) { instance_double(NATSSync::UsersSync) }
+  let(:scheduler) { Rufus::Scheduler.new }
   before do
     allow(NATSSync).to receive(:logger).and_return(logger)
     allow(logger).to receive :info
+    allow(Rufus::Scheduler).to receive(:new).and_return(scheduler)
+    allow(scheduler).to receive(:shutdown).and_call_original
   end
 
   let(:logger) { spy('Logger') }
@@ -49,9 +52,8 @@ describe NATSSync::Runner do
 
   describe 'exception handling' do
     before do
-      error = StandardError.new('EM event loop exception')
+      error = StandardError.new('exception')
       error.set_backtrace(['backtrace'])
-      allow(EM).to receive(:stop_event_loop)
 
       allow(user_sync_instance).to receive(:execute_users_sync).and_raise(error)
       allow(user_sync_class).to receive(:reload_nats_server_config)
@@ -62,10 +64,10 @@ describe NATSSync::Runner do
       sleep(2)
     end
 
-    context 'when EM loop error occurs' do
-      it 'stops the EM loop and logs the error' do
-        expect(EM).to have_received(:stop_event_loop)
-        expect(logger).to have_received(:fatal).with('EM event loop exception')
+    context 'when an error occurs' do
+      it 'stops the scheduler and logs the error' do
+        expect(scheduler).to have_received(:shutdown)
+        expect(logger).to have_received(:fatal).with('exception')
         expect(logger).to have_received(:fatal).with('backtrace')
       end
     end

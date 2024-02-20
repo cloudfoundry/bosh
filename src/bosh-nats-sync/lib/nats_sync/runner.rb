@@ -1,3 +1,5 @@
+require 'rufus-scheduler'
+
 module NATSSync
   class Runner
     include YamlHelper
@@ -10,38 +12,38 @@ module NATSSync
       @nats_config_file_path = config['nats']['config_file_path']
       @nats_server_executable = config['nats']['nats_server_executable']
       @nats_server_pid_file = config['nats']['nats_server_pid_file']
+
+      @scheduler = Rufus::Scheduler.new
     end
 
     def run
       NATSSync.logger.info('Nats Sync starting...')
-      EM.error_handler { |e| handle_em_error(e) }
-      EM.run do
-        UsersSync.reload_nats_server_config(@nats_server_executable, @nats_server_pid_file)
-        setup_timers
+
+      UsersSync.reload_nats_server_config(@nats_server_executable, @nats_server_pid_file)
+
+      # Rufus Scheduler does not have a way to inject an error handler, and in fact recommends
+      # in the readme to redefine the on_error method if you need custom behavior.
+      def @scheduler.on_error(job, err)
+        NATSSync.logger.fatal(err.message.to_s)
+        NATSSync.logger.fatal(err.backtrace.join("\n")) if err.respond_to?(:backtrace) && err.backtrace.respond_to?(:join)
+        shutdown
       end
+
+      @scheduler.interval "#{@poll_user_sync}s" do
+        sync_nats_users
+      end
+
+      @scheduler.join
     end
 
     def stop
-      EM.stop_event_loop
+      @scheduler.shutdown
     end
 
     private
 
-    def setup_timers
-      EM.schedule do
-        EM.add_periodic_timer(@poll_user_sync) { sync_nats_users }
-      end
-    end
-
     def sync_nats_users
       UsersSync.new(@nats_config_file_path, @bosh_config, @nats_server_executable, @nats_server_pid_file).execute_users_sync
-    end
-
-    def handle_em_error(err)
-      @shutting_down = true
-      NATSSync.logger.fatal(err.message.to_s)
-      NATSSync.logger.fatal(err.backtrace.join("\n")) if err.respond_to?(:backtrace) && err.backtrace.respond_to?(:join)
-      stop
     end
   end
 end

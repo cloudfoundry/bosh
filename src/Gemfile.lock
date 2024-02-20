@@ -90,14 +90,10 @@ PATH
   specs:
     bosh-nats-sync (0.0.0)
       cf-uaa-lib (~> 3.2.1)
-      em-http-request
-      eventmachine (~> 1.3.0.dev.1)
       logging (~> 2.2.2)
-      nats-pure
       openssl (>= 3.2.0)
       rest-client
-      sinatra (~> 2.2.0)
-      thin
+      rufus-scheduler
 
 PATH
   remote: bosh-template
