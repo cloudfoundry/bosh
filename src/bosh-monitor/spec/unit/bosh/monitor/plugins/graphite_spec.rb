@@ -43,10 +43,10 @@ describe Bhm::Plugins::Graphite do
   end
 
   describe 'process metrics' do
-    let(:connection) { instance_double('Bosh::Monitor::GraphiteConnection') }
+    let(:connection) { instance_double(Bosh::Monitor::GraphiteConnection, connect: nil) }
     before do
-      allow(EventMachine).to receive(:connect)
-        .with('fake-graphite-host', 2003, Bhm::GraphiteConnection, 'fake-graphite-host', 2003, 42)
+      allow(Bosh::Monitor::GraphiteConnection).to receive(:new)
+        .with('fake-graphite-host', 2003, 42)
         .and_return(connection)
     end
 
@@ -57,48 +57,42 @@ describe Bhm::Plugins::Graphite do
     end
 
     context 'when event is of type Alert' do
+      include_context Async::RSpec::Reactor
+
       let(:event) { make_alert(timestamp: Time.now.to_i) }
 
       it 'does not send metrics' do
-        EventMachine.run do
-          plugin.run
-          expect(connection).to_not receive(:send_metric)
+        plugin.run
+        expect(connection).to_not receive(:send_metric)
 
-          plugin.process(event)
-
-          EventMachine.stop
-        end
+        plugin.process(event)
       end
     end
 
     context 'when event is of type Heartbeat' do
+      include_context Async::RSpec::Reactor
+
       it 'sends metrics to Graphite' do
         event = make_heartbeat(timestamp: Time.now.to_i)
-        EventMachine.run do
-          plugin.run
 
-          event.metrics.each do |metric|
-            metric_name = "#{event.deployment}.#{event.job}.#{event.instance_id}.#{event.agent_id}.#{metric.name.gsub('.', '_')}"
-            expect(connection).to receive(:send_metric).with(metric_name, metric.value, metric.timestamp)
-          end
+        plugin.run
 
-          plugin.process(event)
-
-          EventMachine.stop
+        event.metrics.each do |metric|
+          metric_name = "#{event.deployment}.#{event.job}.#{event.instance_id}.#{event.agent_id}.#{metric.name.gsub('.', '_')}"
+          expect(connection).to receive(:send_metric).with(metric_name, metric.value, metric.timestamp)
         end
+
+        plugin.process(event)
       end
 
       it 'skips sending metrics if instance_id is missing' do
         event = make_heartbeat(timestamp: Time.now.to_i, instance_id: nil)
-        EventMachine.run do
-          plugin.run
 
-          expect(connection).not_to receive(:send_metric)
+        plugin.run
 
-          plugin.process(event)
+        expect(connection).not_to receive(:send_metric)
 
-          EventMachine.stop
-        end
+        plugin.process(event)
       end
     end
   end

@@ -1,5 +1,6 @@
 require File.expand_path('../../spec/shared/spec_helper', __dir__)
 
+require 'async/rspec'
 require 'tempfile'
 require 'bosh/monitor'
 require 'webmock/rspec'
@@ -90,24 +91,9 @@ end
 RSpec.configure do |c|
   c.color = true
 
-  # Could not use after hook because the tests can start EventMachine in an around block
-  # which causes EventMachine.reactor_running? to always return true.
   c.around do |example|
     Bhm.config = default_config
 
     example.call
-    if EventMachine.reactor_running?
-      EventMachine.stop
-
-      max_tries = 50
-      while max_tries > 0
-        break unless EventMachine.reactor_running?
-
-        max_tries -= 1
-        sleep(0.1)
-      end
-
-      raise 'EventMachine still running, but expected to not.' if EventMachine.reactor_running?
-    end
   end
 end

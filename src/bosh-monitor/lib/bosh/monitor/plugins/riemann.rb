@@ -4,7 +4,7 @@ module Bosh::Monitor
   module Plugins
     class Riemann < Base
       def run
-        unless EventMachine.reactor_running?
+        unless ::Async::Task.current?
           logger.error('Riemann plugin can only be started when event loop is running')
           return false
         end

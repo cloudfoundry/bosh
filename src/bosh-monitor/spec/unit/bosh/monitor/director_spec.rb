@@ -1,6 +1,7 @@
 require 'spec_helper'
 
 describe 'Bhm::Director' do
+  include_context Async::RSpec::Reactor
   include Support::UaaHelpers
 
   # Director client uses event loop and fibers to perform HTTP queries asynchronosuly.
@@ -22,10 +23,6 @@ describe 'Bhm::Director' do
   let(:deployments) { [{ 'name' => 'a' }, { 'name' => 'b' }] }
   let(:resurrection_config) { [{ 'content' => '--- {}', 'id' => '1', 'type' => 'resurrection', 'name' => 'some-name' }] }
 
-  before do
-    allow_any_instance_of(EventMachine::WebMockHttpClient).to receive(:uri).and_raise('This method was removed from the non-mocked EventMachine::HttpClient in the version of EventMachine we are using. WebMock has not been updated to reflect this reality.')
-  end
-
   context 'when director is running in non-UAA mode' do
     before do
       stub_request(:get, 'http://localhost:8080/director/info')
@@ -37,9 +34,7 @@ describe 'Bhm::Director' do
         .with(basic_auth: %w[admin admin])
         .to_return(body: json_dump(deployments), status: 200)
 
-      with_fiber do
-        expect(director.deployments).to eq(deployments)
-      end
+      expect(director.deployments).to eq(deployments)
     end
 
     it 'can fetch resurrection config from BOSH director' do
@@ -47,9 +42,7 @@ describe 'Bhm::Director' do
         .with(basic_auth: %w[admin admin])
         .to_return(body: json_dump(resurrection_config), status: 200)
 
-      with_fiber do
-        expect(director.resurrection_config).to eq(resurrection_config)
-      end
+      expect(director.resurrection_config).to eq(resurrection_config)
     end
 
     it 'raises an error if resurrection config cannot be fetched' do
@@ -57,14 +50,12 @@ describe 'Bhm::Director' do
         .with(basic_auth: %w[admin admin])
         .to_return(body: 'foo', status: 500)
 
-      with_fiber do
-        expect { director.resurrection_config }
-          .to raise_error(
-            Bhm::DirectorError,
-            'Cannot get resurrection config from director at'\
-            ' http://localhost:8080/director/configs?type=resurrection&latest=true: 500 foo',
-          )
-      end
+      expect { director.resurrection_config }
+        .to raise_error(
+          Bhm::DirectorError,
+          'Cannot get resurrection config from director at'\
+          ' http://localhost:8080/director/configs?type=resurrection&latest=true: 500 foo',
+        )
     end
 
     it 'raises an error if deployments cannot be fetched' do
@@ -72,15 +63,13 @@ describe 'Bhm::Director' do
         .with(basic_auth: %w[admin admin])
         .to_return(body: 'foo', status: 500)
 
-      with_fiber do
-        expect do
-          director.deployments
-        end.to raise_error(
-          Bhm::DirectorError,
-          'Cannot get deployments from director at ' \
-          'http://localhost:8080/director/deployments?exclude_configs=true&exclude_releases=true&exclude_stemcells=true: 500 foo',
-        )
-      end
+      expect do
+        director.deployments
+      end.to raise_error(
+        Bhm::DirectorError,
+        'Cannot get deployments from director at ' \
+        'http://localhost:8080/director/deployments?exclude_configs=true&exclude_releases=true&exclude_stemcells=true: 500 foo',
+      )
     end
 
     it 'can fetch instances by deployment name from BOSH director' do
@@ -88,9 +77,7 @@ describe 'Bhm::Director' do
         .with(basic_auth: %w[admin admin])
         .to_return(body: json_dump(deployments), status: 200)
 
-      with_fiber do
-        expect(director.get_deployment_instances('foo')).to eq(deployments)
-      end
+      expect(director.get_deployment_instances('foo')).to eq(deployments)
     end
 
     it 'raises an error if instances by deployment name cannot be fetched' do
@@ -98,15 +85,13 @@ describe 'Bhm::Director' do
         .with(basic_auth: %w[admin admin])
         .to_return(body: 'foo', status: 500)
 
-      with_fiber do
-        expect do
-          expect(director.get_deployment_instances('foo')).to eq(deployments)
-        end.to raise_error(
-          Bhm::DirectorError,
-          'Cannot get deployment \'foo\' from director at ' \
-          'http://localhost:8080/director/deployments/foo/instances: 500 foo',
-        )
-      end
+      expect do
+        expect(director.get_deployment_instances('foo')).to eq(deployments)
+      end.to raise_error(
+        Bhm::DirectorError,
+        'Cannot get deployment \'foo\' from director at ' \
+        'http://localhost:8080/director/deployments/foo/instances: 500 foo',
+      )
     end
   end
 
@@ -144,18 +129,7 @@ describe 'Bhm::Director' do
     end
 
     it 'can fetch deployments from BOSH director' do
-      with_fiber do
-        expect(director.deployments).to eq(deployments)
-      end
-    end
-  end
-
-  def with_fiber
-    EventMachine.run do
-      Fiber.new do
-        yield
-        EventMachine.stop
-      end.resume
+      expect(director.deployments).to eq(deployments)
     end
   end
 

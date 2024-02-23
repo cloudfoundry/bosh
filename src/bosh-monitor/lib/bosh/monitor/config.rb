@@ -4,7 +4,6 @@ module Bosh::Monitor
     attr_accessor :director
     attr_accessor :intervals
     attr_accessor :mbus
-    attr_accessor :em_threadpool_size
     attr_accessor :event_mbus
     attr_accessor :instance_manager
     attr_reader :resurrection_manager
@@ -22,8 +21,6 @@ module Bosh::Monitor
       @intervals = OpenStruct.new(config['intervals'])
       @director = Director.new(config['director'], @logger)
       @mbus = OpenStruct.new(config['mbus'])
-
-      @em_threadpool_size = config['em_threadpool_size']
 
       @event_processor = EventProcessor.new
       @instance_manager = InstanceManager.new(event_processor)

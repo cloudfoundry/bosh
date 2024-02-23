@@ -15,17 +15,12 @@ module Bosh::Monitor
       @mbus          = Bhm.mbus
       @instance_manager = Bhm.instance_manager
       @resurrection_manager = Bhm.resurrection_manager
-      EventMachine.threadpool_size = Bhm.em_threadpool_size
     end
 
     def run
       @logger.info('HealthMonitor starting...')
-      EventMachine.kqueue if EventMachine.kqueue?
-      EventMachine.epoll if EventMachine.epoll?
 
-      EventMachine.error_handler { |e| handle_em_error(e) }
-
-      EventMachine.run do
+      Sync do
         connect_to_mbus
         @director_monitor = DirectorMonitor.new(Bhm)
         @director_monitor.subscribe
@@ -34,25 +29,28 @@ module Bosh::Monitor
         start_http_server
         update_resurrection_config
         @logger.info("BOSH HealthMonitor #{Bhm::VERSION} is running...")
+      rescue => e
+        handle_fatal_error(e)
       end
     end
 
     def stop
       @logger.info('HealthMonitor shutting down...')
       @http_server&.stop!
-      EventMachine.stop_event_loop
+      # Async gem does not provide a way to get the global Reactor object, but sets it as the Fiber scheduler
+      Fiber.scheduler&.close
     end
 
     def setup_timers
-      EventMachine.schedule do
-        poll_director
-        EventMachine.add_periodic_timer(@intervals.poll_director) { poll_director }
-        EventMachine.add_periodic_timer(@intervals.log_stats) { log_stats }
-        EventMachine.add_periodic_timer(@intervals.resurrection_config) { update_resurrection_config }
-        EventMachine.add_timer(@intervals.poll_grace_period) do
-          EventMachine.add_periodic_timer(@intervals.analyze_agents) { analyze_agents }
-          EventMachine.add_periodic_timer(@intervals.analyze_instances) { analyze_instances }
-        end
+      poll_director
+      add_periodic_timer(@intervals.poll_director) { poll_director }
+      add_periodic_timer(@intervals.log_stats) { log_stats }
+      add_periodic_timer(@intervals.resurrection_config) { update_resurrection_config }
+
+      Async do |task|
+        sleep(@intervals.poll_grace_period)
+        add_periodic_timer(@intervals.analyze_agents) { analyze_agents }
+        add_periodic_timer(@intervals.analyze_instances) { analyze_instances }
       end
     end
 
@@ -65,7 +63,7 @@ module Bosh::Monitor
 
     def update_resurrection_config
       @logger.debug('Getting resurrection config from director...')
-      Fiber.new { fetch_resurrection_config }.resume
+      Async { fetch_resurrection_config }.wait
     end
 
     def connect_to_mbus
@@ -94,7 +92,7 @@ module Bosh::Monitor
         unless @shutting_down
           redacted_msg = @mbus.password.nil? ? "NATS client error: #{e}" : "NATS client error: #{e}".gsub(@mbus.password, '*****')
           if e.is_a?(NATS::IO::ConnectError)
-            handle_em_error(redacted_msg)
+            handle_fatal_error(redacted_msg)
           else
             log_exception(redacted_msg)
           end
@@ -113,12 +111,14 @@ module Bosh::Monitor
           run Bhm::ApiController.new
         end
       end
-      @http_server.start!
+      Async do
+        @http_server.start!
+      end
     end
 
     def poll_director
       @logger.debug('Getting deployments from director...')
-      Fiber.new { fetch_deployments }.resume
+      Async { fetch_deployments }.wait
     end
 
     def analyze_agents
@@ -131,13 +131,24 @@ module Bosh::Monitor
       @instance_manager.analyze_instances
     end
 
-    def handle_em_error(err)
+    def handle_fatal_error(err)
       @shutting_down = true
       log_exception(err, :fatal)
       stop
     end
 
     private
+
+    def add_periodic_timer(interval, &block)
+      Async do |task|
+        loop do
+          sleep(interval)
+          yield
+        end
+      rescue => e
+        handle_fatal_error(e)
+      end
+    end
 
     def log_exception(err, level = :error)
       level = :error unless level == :fatal

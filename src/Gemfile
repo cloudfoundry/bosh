@@ -46,6 +46,7 @@ group :development, :test do
   gem 'rspec'
   gem 'rspec-instafail'
   gem 'rspec-its'
+  gem 'async-rspec'
 
   gem 'fakefs'
   gem 'parallel_tests', '~> 2.0'

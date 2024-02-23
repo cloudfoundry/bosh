@@ -6,7 +6,7 @@ module Bosh::Monitor
       API_URI = 'https://events.pagerduty.com/generic/2010-04-15/create_event.json'.freeze
 
       def run
-        unless EventMachine.reactor_running?
+        unless ::Async::Task.current?
           logger.error('Pagerduty plugin can only be started when event loop is running')
           return false
         end
@@ -34,7 +34,7 @@ module Bosh::Monitor
 
         request[:proxy] = options['http_proxy'] if options['http_proxy']
 
-        EventMachine.defer do
+        Async do
           send_http_post_sync_request(API_URI, request)
         rescue StandardError => e
           logger.error("Error sending pagerduty event: #{e}")

@@ -51,10 +51,6 @@ properties:
     description: Level of log messages (fatal, error, warn, info, debug)
     default: info
 
-  hm.em_threadpool_size:
-    description: EventMachine thread pool size
-    default: 20
-
   #
   # NATS options (to get alerts from agents)
   #

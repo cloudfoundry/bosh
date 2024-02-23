@@ -96,8 +96,8 @@ describe Bosh::Monitor::AuthProvider do
       {}
     end
 
-    it 'returns username and password' do
-      expect(auth_provider.auth_header).to eq(%w[fake-user secret-password])
+    it 'returns the basic-auth header with encoded username and password' do
+      expect(auth_provider.auth_header).to eq('Basic ZmFrZS11c2VyOnNlY3JldC1wYXNzd29yZA==')
     end
   end
 end

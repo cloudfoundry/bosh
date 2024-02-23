@@ -17,8 +17,8 @@ end
 require 'ostruct'
 require 'set'
 
-require 'em-http-request'
-require 'eventmachine'
+require 'async'
+require 'async/http'
 require 'logging'
 require 'nats/io/client'
 require 'sinatra'

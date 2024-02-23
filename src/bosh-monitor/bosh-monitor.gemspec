@@ -19,10 +19,12 @@ Gem::Specification.new do |spec|
   spec.executables << 'bosh-monitor-console'
   spec.executables << 'bosh-monitor'
 
-  spec.add_dependency 'eventmachine',    '~>1.3.0.dev.1'
+  spec.add_dependency 'async'
+  spec.add_dependency 'async-http'
+  spec.add_dependency 'async-io'
   spec.add_dependency 'logging',         '~>2.2.2'
-  spec.add_dependency 'em-http-request'
   spec.add_dependency 'nats-pure'
+  spec.add_dependency 'net-smtp'
   spec.add_dependency 'openssl', '>=3.2.0'
   spec.add_dependency 'thin'
   spec.add_dependency 'sinatra',   '~>2.2.0'
@@ -30,4 +32,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'riemann-client', '~>0.2.6'
   spec.add_dependency 'cf-uaa-lib',  '~>3.2.1'
   spec.add_dependency 'httpclient',  '~>2.8.3'
+
+  spec.add_development_dependency 'async-rspec'
 end

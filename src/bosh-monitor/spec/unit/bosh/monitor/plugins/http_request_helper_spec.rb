@@ -2,40 +2,57 @@ require 'spec_helper'
 
 describe Bosh::Monitor::Plugins::HttpRequestHelper do
   include Bosh::Monitor::Plugins::HttpRequestHelper
+  include_context Async::RSpec::Reactor
 
   before do
     Bhm.logger = logger
   end
 
   describe '#send_http_put_request' do
-    let(:http_request) { instance_double(EventMachine::HttpRequest) }
-    let(:http_response) { instance_double(EventMachine::Completion) }
-
     it 'sends a put request' do
-      expect(EventMachine::HttpRequest).to receive(:new).with('http://some-uri', tls: { verify_peer: false }).and_return(http_request)
+      stub_request(:put, 'http://some-uri/some-path').with(body: 'some-request').to_return(body: 'response', status: 200)
 
-      expect(http_request).to receive(:send).with(:put, 'some-request').and_return(http_response)
-      expect(http_response).to receive(:callback)
-      expect(http_response).to receive(:errback)
-      expect(logger).not_to receive(:error)
+      task = reactor.async do
+        send_http_put_request('http://some-uri/some-path', { body: 'some-request' })
+      end
 
-      send_http_put_request('http://some-uri', 'some-request')
+      response = task.wait
+
+      expect(WebMock).to have_requested(:put, 'http://some-uri/some-path').with(body: 'some-request')
+      expect(response.read).to eq('response')
+      expect(response.status).to eq(200)
+    end
+
+    context 'when passed a proxy URI' do
+      it 'sends a put request' do
+        stub_request(:put, 'http://some-uri/some-path').with(body: 'some-request').to_return(body: 'response', status: 200)
+
+        task = reactor.async do
+          send_http_put_request('http://some-uri/some-path', { body: 'some-request', proxy: 'https://proxy.local:1234' })
+        end
+
+        response = task.wait
+
+        expect(WebMock).to have_requested(:put, 'http://some-uri/some-path').with(body: 'some-request')
+        expect(response.read).to eq('response')
+        expect(response.status).to eq(200)
+      end
     end
   end
 
   describe '#send_http_post_request' do
-    let(:http_request) { instance_double(EventMachine::HttpRequest) }
-    let(:http_response) { instance_double(EventMachine::Completion) }
-
     it 'sends a post request' do
-      expect(EventMachine::HttpRequest).to receive(:new).with('http://some-uri', tls: { verify_peer: false }).and_return(http_request)
+      stub_request(:post, 'http://some-uri/some-path').with(body: 'some-request').to_return(body: 'response', status: 200)
 
-      expect(http_request).to receive(:send).with(:post, 'some-request').and_return(http_response)
-      expect(http_response).to receive(:callback)
-      expect(http_response).to receive(:errback)
-      expect(logger).not_to receive(:error)
+      task = reactor.async do
+        send_http_post_request('http://some-uri/some-path', { body: 'some-request' })
+      end
 
-      send_http_post_request('http://some-uri', 'some-request')
+      response = task.wait
+
+      expect(WebMock).to have_requested(:post, 'http://some-uri/some-path').with(body: 'some-request')
+      expect(response.read).to eq('response')
+      expect(response.status).to eq(200)
     end
   end
 

@@ -18,10 +18,6 @@ describe Bosh::Monitor::DirectorMonitor do
     }
   end
 
-  before do
-    allow(EventMachine).to receive(:schedule).and_yield
-  end
-
   describe 'subscribe' do
     it 'subscribes to hm.director.alert over NATS' do
       expect(nats).to receive(:subscribe).with('hm.director.alert')

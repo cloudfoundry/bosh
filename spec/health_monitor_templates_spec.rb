@@ -29,7 +29,6 @@ describe 'health_monitor.yml.erb' do
             'analyze_instances' => 64,
           },
           'loglevel' => 'INFO',
-          'em_threadpool_size' => 20,
           # plugins
           'email_notifications' => false,
           'tsdb_enabled' => false,
@@ -83,7 +82,6 @@ describe 'health_monitor.yml.erb' do
       expect(parsed_yaml['intervals']['analyze_instances']).to eq(64)
       expect(parsed_yaml['logfile']).to be_a(String)
       expect(parsed_yaml['loglevel']).to eq('INFO')
-      expect(parsed_yaml['em_threadpool_size']).to eq(20)
 
       expect(parsed_yaml['plugins'].length).to eq(3)
       expect(parsed_yaml['plugins'].first['name']).to eq('logger')

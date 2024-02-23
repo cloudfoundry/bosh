@@ -20,7 +20,7 @@ module Bosh::Monitor
         return uaa_token_header(uaa_url)
       end
 
-      [@user, @password]
+      "Basic #{Base64.encode64("#{@user}:#{@password}").strip}"
     end
 
     private

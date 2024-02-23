@@ -23,6 +23,8 @@ class FakeNATS
 end
 
 describe 'notifying plugins' do
+  include_context Async::RSpec::Reactor
+
   WebMock.allow_net_connect!
 
   let(:runner) { Bosh::Monitor::Runner.new(spec_asset('dummy_plugin_config.yml')) }
@@ -46,19 +48,27 @@ describe 'notifying plugins' do
 
       called = false
       alert = nil
-      EventMachine.run do
-        nats = FakeNATS.new
-        allow(Bhm).to receive(:nats).and_return(nats)
+
+      nats = FakeNATS.new
+      allow(Bhm).to receive(:nats).and_return(nats)
+
+      reactor.async do
         runner.run
-        wait_for_plugins
-        nats.alert(JSON.dump(payload))
-        EventMachine.add_timer(2) { EventMachine.stop }
-        EventMachine.add_periodic_timer(0.1) do
-          alert = get_alert
-          called = true
-          EventMachine.stop if alert&.attributes&.match(payload)
-        end
       end
+
+      wait_for_plugins
+      nats.alert(JSON.dump(payload))
+
+      reactor.async do |task|
+        reactor.with_timeout(5) do
+          loop do
+            sleep(0.1)
+            alert = get_alert
+            called = true
+            break if alert&.attributes == payload
+          end
+        end
+      end.wait
 
       expect(alert).to_not be_nil
       expect(alert.attributes).to eq(payload)
@@ -80,25 +90,33 @@ describe 'notifying plugins' do
         'id' => 'random-id',
         'severity' => 3,
         'title' => 'Health monitor failed to connect to director',
-        'summary' => /Cannot get status from director/,
+        'summary' => /Unable to send get \/info/,
         'created_at' => Time.now.to_i,
         'source' => 'hm',
       }
 
       called = false
       alert = nil
-      EventMachine.run do
-        nats = FakeNATS.new
-        allow(Bhm).to receive(:nats).and_return(nats)
+
+      nats = FakeNATS.new
+      allow(Bhm).to receive(:nats).and_return(nats)
+
+      reactor.async do
         runner.run
-        wait_for_plugins
-        EventMachine.add_timer(5) { EventMachine.stop }
-        EventMachine.add_periodic_timer(0.1) do
-          alert = get_alert
-          called = true
-          EventMachine.stop if alert&.attributes&.match(alert_json)
-        end
       end
+
+      wait_for_plugins
+
+      reactor.async do |task|
+        reactor.with_timeout(5) do
+          loop do
+            sleep(0.1)
+            alert = get_alert
+            called = true
+            break if alert#&.attributes&.match(alert_json)
+          end
+        end
+      end.wait
 
       expect(alert).to_not be_nil
       expect(alert.attributes).to match(alert_json)
