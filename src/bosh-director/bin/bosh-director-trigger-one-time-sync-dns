@@ -17,10 +17,5 @@ publisher = Bosh::Director::BlobstoreDnsPublisher.new(
   logger
 )
 
-EventMachine.run do
-  Thread.new {
-    Bosh::Director::Models::LocalDnsRecord.create(:ip => "#{SecureRandom.uuid}-tombstone")
-    publisher.publish_and_broadcast
-    EM.stop
-  }
-end
+Bosh::Director::Models::LocalDnsRecord.create(:ip => "#{SecureRandom.uuid}-tombstone")
+publisher.publish_and_broadcast
