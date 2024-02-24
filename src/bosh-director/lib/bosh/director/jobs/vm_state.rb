@@ -46,14 +46,7 @@ module Bosh::Director
       private
 
       def process_vm_for_instance(instance, vm)
-        dns_records = []
-
         job_state, job_vitals, processes, _ = vm_details(vm)
-
-        if powerdns_manager.dns_enabled?
-          dns_records = powerdns_manager.find_dns_record_names_by_instance(instance)
-          dns_records.sort_by! { |name| -(name.split('.').first.length) }
-        end
 
         vm_type_name = instance.spec_p('vm_type.name')
 
@@ -65,7 +58,6 @@ module Bosh::Director
           disk_cid: instance.managed_persistent_disk_cid,
           disk_cids: instance.active_persistent_disks.collection.map { |d| d.model.disk_cid },
           ips: vm&.ips || [],
-          dns: dns_records,
           agent_id: vm&.agent_id,
           job_name: instance.job,
           index: instance.index,

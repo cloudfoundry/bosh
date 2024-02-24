@@ -124,12 +124,6 @@ module NATSSync
         "domain_name": "bosh"
       }
     },
-    "power_dns": {
-      "status": false,
-      "extras": {
-        "domain_name": "bosh"
-      }
-    },
     "snapshots": {
       "status": false
     },

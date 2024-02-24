@@ -1,10 +1,9 @@
 module Bosh::Director
   class DeploymentDeleter
     include LockHelper
-    def initialize(event_log, logger, powerdns_manager, max_threads)
+    def initialize(event_log, logger, max_threads)
       @event_log = event_log
       @logger = logger
-      @powerdns_manager = powerdns_manager
       @max_threads = max_threads
       @variables_interpolator = ConfigServer::VariablesInterpolator.new
     end

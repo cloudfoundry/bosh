@@ -17,14 +17,12 @@ module Bosh::Director
         :audit_filename,
         :audit_log_path,
         :base_dir,
-        :cloud_options,
         :preferred_cpi_api_version,
         :current_job,
         :db,
         :default_ssh_options,
         :default_update_vm_strategy,
         :dns,
-        :dns_db,
         :enable_cpi_resize_disk,
         :enable_short_lived_nats_bootstrap_credentials,
         :enable_short_lived_nats_bootstrap_credentials_compilation_vms,
@@ -58,6 +56,7 @@ module Bosh::Director
 
       attr_reader(
         :blobstore_config_fingerprint,
+        :cloud_options,
         :config_server,
         :config_server_enabled,
         :db_config,
@@ -89,7 +88,7 @@ module Bosh::Director
         @nats_rpc = nil
       end
 
-      def configure(config, preload_db_classes: true)
+      def configure(config)
         @max_vm_create_tries = Integer(config.fetch('max_vm_create_tries', 5))
         @flush_arp = config.fetch('flush_arp', false)
 
@@ -173,24 +172,7 @@ module Bosh::Director
 
         @db_config = config['db']
         @db = configure_db(config['db'])
-        @dns = config['dns']
-        if @dns && @dns['db']
-          @dns_db = configure_db(@dns['db'])
-          if @dns_db && preload_db_classes
-            # Load these constants early.
-            # These constants are not 'require'd, they are 'autoload'ed
-            # in models.rb. We're seeing that in 1.9.3 that sometimes
-            # the constants loaded from one thread are not visible to other threads,
-            # causing failures.
-            # These constants cannot be required because they are Sequel model classes
-            # that refer to database configuration that is only present when the (optional)
-            # powerdns job is present and configured and points to a valid DB.
-            # This is an attempt to make sure the constants are loaded
-            # before forking off to other threads, hopefully eliminating the errors.
-            Bosh::Director::Models::Dns::Record.class
-            Bosh::Director::Models::Dns::Domain.class
-          end
-        end
+        @dns = config.fetch('dns', {})
 
         @local_dns_enabled = config.fetch('local_dns', {}).fetch('enabled', false)
         @local_dns_include_index = config.fetch('local_dns', {}).fetch('include_index', false)
@@ -269,8 +251,7 @@ module Bosh::Director
       end
 
       def root_domain
-        dns_config = Config.dns || {}
-        dns_config.fetch('domain_name', 'bosh')
+        (Config.dns || {}).fetch('domain_name', 'bosh')
       end
 
       def log_dir
@@ -341,6 +322,8 @@ module Bosh::Director
                 'sslkey' => db_client_private_key_path,
               }
               connection_config['driver_options'] = postgres_driver_options if mutual_tls_enabled
+            else
+              # intentionally blank
           end
         end
 
@@ -535,11 +518,6 @@ module Bosh::Director
       Config.configure_db(hash['db'])
     end
 
-    def dns_db
-      dns_db = hash.dig('dns', 'db')
-      Config.configure_db(dns_db) if dns_db
-    end
-
     def cpi
       hash.dig('cloud', 'plugin')
     end
@@ -556,8 +534,8 @@ module Bosh::Director
       Config.director_pool
     end
 
-    def configure_evil_config_singleton!(preload_db_classes: true)
-      Config.configure(hash, preload_db_classes: preload_db_classes)
+    def configure_evil_config_singleton!
+      Config.configure(hash)
     end
 
     def get_uuid_provider

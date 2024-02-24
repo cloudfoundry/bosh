@@ -24,15 +24,13 @@ module Bosh::Director
 
           fail_if_ignored_instances_found(deployment_model)
 
-          powerdns_manager = PowerDnsManagerProvider.create
           disk_manager = DiskManager.new(logger)
           instance_deleter = InstanceDeleter.new(
-            powerdns_manager,
             disk_manager,
             force: @force,
             stop_intent: :delete_deployment,
           )
-          deployment_deleter = DeploymentDeleter.new(Config.event_log, logger, powerdns_manager, Config.max_threads)
+          deployment_deleter = DeploymentDeleter.new(Config.event_log, logger, Config.max_threads)
 
           vm_deleter = Bosh::Director::VmDeleter.new(logger, @force, Config.enable_virtual_delete_vms)
           deployment_deleter.delete(deployment_model, instance_deleter, vm_deleter)

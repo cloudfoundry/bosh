@@ -336,35 +336,9 @@ properties:
     default: false
 
   # DNS
-  dns.address:
-    description: Address of the powerdns server
   dns.domain_name:
     description: TLD of the dns zone used by bosh
     default: bosh
-  dns.db.adapter:
-    description: DNS Database adapter
-    default: postgres
-  dns.db.user:
-    description: DNS Database user
-    default: bosh
-  dns.db.password:
-    description: DNS Database password
-  dns.db.host:
-    description: DNS Database host
-    default: 127.0.0.1
-  dns.db.port:
-    description: Port that the powerdns database listens on
-    default: 5432
-  dns.db.database:
-    description: Name of the powerdns database
-    default: bosh
-  dns.db.connection_options:
-    description: |
-      Additional options for the powerdns database.
-      The below default applies to postgres databases. For config options for mysql dbs, refer to the mysql2 gem options.
-    default:
-      max_connections: 32  #Maximum size of the connection pool
-      pool_timeout: 10     #Number of seconds to wait if a connection cannot be acquired before  raising an error
 
   # Events
   director.events.record_events:

@@ -17,7 +17,6 @@ describe 'cli: env', type: :integration do
     features = []
     features << 'config_server: disabled'
     features << 'local_dns: disabled'
-    features << 'power_dns: enabled'
     features << 'snapshots: enabled'
     features_regex = /Features\s*#{features.join('\s*')}/m
 

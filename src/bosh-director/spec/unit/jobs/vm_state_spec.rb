@@ -32,7 +32,7 @@ module Bosh::Director
     let(:instance) { Models::Instance.make(deployment: deployment) }
 
     before do
-      allow(Config).to receive(:dns).and_return('domain_name' => 'microbosh', 'db' => {})
+      allow(Config).to receive(:dns).and_return('domain_name' => 'microbosh')
       allow(Config).to receive(:result).and_return(TaskDBWriter.new(:result_output, task.id))
     end
 
@@ -69,7 +69,6 @@ module Bosh::Director
 
         status = JSON.parse(Models::Task.first(id: task.id).result_output)
         expect(status['ips']).to eq(['1.1.1.1'])
-        expect(status['dns']).to be_empty
         expect(status['vm_cid']).to eq('fake-vm-cid')
         expect(status['active']).to eq(true)
         expect(status['agent_id']).to eq('fake-agent-id')
@@ -178,7 +177,6 @@ module Bosh::Director
 
         status = JSON.parse(Models::Task.first(id: task.id).result_output)
         expect(status['ips']).to eq(['1.1.1.1'])
-        expect(status['dns']).to be_empty
         expect(status['vm_cid']).to eq('fake-vm-cid')
         expect(status['active']).to eq(true)
         expect(status['agent_id']).to eq('fake-agent-id')
@@ -189,34 +187,6 @@ module Bosh::Director
         expect(status['vitals']['mem']).to eq('percent' => 'p', 'kb' => 'k')
         expect(status['vitals']['swap']).to eq('percent' => 'p', 'kb' => 'k')
         expect(status['vitals']['disk']).to eq('system' => { 'percent' => 'p' }, 'ephemeral' => { 'percent' => 'p' })
-      end
-
-      it 'should return DNS A records if they exist' do
-        instance.update(dns_record_names: ['index.job.network.deployment.microbosh'])
-
-        stub_agent_get_state_to_return_state_with_vitals
-
-        job.perform
-
-        status = JSON.parse(Models::Task.first(id: task.id).result_output)
-        expect(status['dns']).to eq(['index.job.network.deployment.microbosh'])
-      end
-
-      it 'should return DNS A records ordered by instance id records first' do
-        instance.update(
-          dns_record_names: [
-            '0.job.network.deployment.microbosh',
-            'd824057d-c92f-45a9-ad9f-87da12008b21.job.network.deployment.microbosh',
-          ],
-        )
-        stub_agent_get_state_to_return_state_with_vitals
-
-        job.perform
-
-        status = JSON.parse(Models::Task.first(id: task.id).result_output)
-        expect(status['dns']).to eq(
-          ['d824057d-c92f-45a9-ad9f-87da12008b21.job.network.deployment.microbosh', '0.job.network.deployment.microbosh'],
-        )
       end
 
       [RpcTimeout, RpcRemoteException].each do |error|

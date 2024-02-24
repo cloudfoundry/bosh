@@ -9,7 +9,7 @@ module Bosh::Director
       # populated with data. This test will fail every time a new migration script is added. Change
       # the file name below to the latest when a test is added.
       # Look at tests in this directory for similar examples: bosh-director/spec/unit/db/migrations/director
-      expect(latest_db_migration_file).to eq('20230103143246_add_permanent_nats_credentials_to_vms.rb')
+      expect(latest_db_migration_file).to eq('20240319204601_remove_dns_records_from_instances.rb')
     end
   end
 end

@@ -94,7 +94,6 @@ module Bosh::Dev::Sandbox
 
       @logger.level = ENV.fetch('LOG_LEVEL', 'DEBUG')
 
-      @dns_db_path = sandbox_path('director-dns.sqlite')
       @task_logs_dir = sandbox_path('boshdir/tasks')
       @blobstore_storage_dir = sandbox_path('bosh_test_blobstore')
       @verify_multidigest_path = File.join(REPO_ROOT, 'tmp', 'verify-multidigest', 'verify-multidigest')
@@ -278,7 +277,6 @@ module Bosh::Dev::Sandbox
 
       @sandbox_log_file.close unless @sandbox_log_file == STDOUT
 
-      FileUtils.rm_f(dns_db_path)
       FileUtils.rm_rf(agent_tmp_path)
       FileUtils.rm_rf(blobstore_storage_dir)
     end
@@ -289,9 +287,8 @@ module Bosh::Dev::Sandbox
 
       loop { sleep 60 }
 
-    # rubocop:disable HandleExceptions
     rescue Interrupt
-    # rubocop:enable HandleExceptions
+      # Ignored
     ensure
       stop
       @logger.info('Stopped sandbox')
@@ -580,6 +577,6 @@ module Bosh::Dev::Sandbox
       File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'rootCA.key')
     end
 
-    attr_reader :director_tmp_path, :dns_db_path, :task_logs_dir
+    attr_reader :director_tmp_path, :task_logs_dir
   end
 end

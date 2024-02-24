@@ -135,8 +135,7 @@ module Bosh::Director
         [@instance_group.name],
       )
 
-      powerdns_manager = PowerDnsManagerProvider.create
-      deleter = InstanceDeleter.new(powerdns_manager, @disk_manager)
+      deleter = InstanceDeleter.new(@disk_manager)
 
       deleter.delete_instance_plans(
         unneeded_instance_plans,

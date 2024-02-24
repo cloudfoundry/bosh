@@ -30,10 +30,6 @@ postgres/postgresql-15.6.tar.gz:
   size: 30299236
   object_id: 8cc25480-8de8-4f0b-56a2-b359ff6838dc
   sha: sha256:3a08314af1714671213a8a4f6bd646d0b1cdc94b029e8988944ab04d4b8cf2d2
-powerdns/pdns-static_3.3.1-1_amd64.deb:
-  size: 9353694
-  object_id: 6e861aa6-2e83-4027-a1e8-0ebec995c274
-  sha: 22bb46aa0b3e7671e0ee9aa30ed95c38841106ab
 s3cli/s3cli-0.0.278-linux-amd64:
   size: 18537400
   object_id: 0fd7c662-c598-46fd-4497-b729329be85e
