@@ -105,14 +105,9 @@ module Bosh::Director
     describe '#sync_dns' do
       let(:start_time) { Time.now }
       let(:end_time) { start_time + 0.01 }
-      let(:reactor) { instance_double(EmReactorLoop) }
 
       before do
         Timecop.freeze(start_time)
-
-        allow(EmReactorLoop).to receive(:new).and_return(reactor)
-
-        allow(reactor).to(receive(:queue)) { |&blk| blk.call }
       end
 
       context 'when all agents are responsive' do
@@ -270,20 +265,13 @@ module Bosh::Director
 
       context 'only after all messages have been sent off' do
         it 'starts the timeout timer' do
-          allow(reactor).to receive(:queue) do |&blk|
-            RSpec::Mocks.space.proxy_for(Timeout).reset
-            expect(Timeout).to receive(:new).and_call_original
-            blk.call
-          end
-
-          expect(Timeout).to_not receive(:new)
-
-          allow(AgentClient).to receive(:with_agent_id) do
+          expect(AgentClient).to receive(:with_agent_id) do
             allow(agent).to receive(:sync_dns) do |&blk|
               blk.call('value' => 'synced')
             end
             agent
-          end
+          end.ordered
+          expect(Timeout).to receive(:new).and_call_original.ordered
 
           agent_broadcast.sync_dns([instance1], 'fake-blob-id', 'fake-sha1', 1)
         end

@@ -8,7 +8,6 @@ require 'bosh/director/dns/dns_version_converger'
 def stop(reason, dns_sync_broadcaster)
   Bosh::Director::Config.logger.error("Shutting down bosh-director-sync-dns: #{reason}")
   dns_sync_broadcaster.stop!
-  EM.stop
 end
 
 config_file = nil
@@ -34,14 +33,8 @@ dns_sync_broadcaster.prep
 end
 
 
-EventMachine.run do
-  EM.defer do
-    Thread.new do
-      begin
-        dns_sync_broadcaster.start!
-      ensure
-        stop('Thread terminated', dns_sync_broadcaster)
-      end
-    end
-  end
+begin
+  dns_sync_broadcaster.start!
+ensure
+  stop('Thread terminated', dns_sync_broadcaster)
 end

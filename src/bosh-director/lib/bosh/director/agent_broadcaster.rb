@@ -6,7 +6,6 @@ module Bosh::Director
     def initialize(broadcast_timeout = DEFAULT_BROADCAST_TIMEOUT)
       @logger = Config.logger
       @broadcast_timeout = broadcast_timeout
-      @reactor_loop = EmReactorLoop.new
     end
 
     def delete_arp_entries(vm_cid_to_exclude, ip_addresses)
@@ -63,44 +62,42 @@ module Bosh::Director
         end
       end
 
-      @reactor_loop.queue do
-        # start timeout after current
-        # 10s? what if we have 1000 vms?
-        timeout = Timeout.new(@broadcast_timeout)
+      # start timeout after current
+      # 10s? what if we have 1000 vms?
+      timeout = Timeout.new(@broadcast_timeout)
 
-        pending_reqs = true
-        while pending_reqs && !timeout.timed_out?
-          sleep(0.1)
-          lock.synchronize do
-            pending_reqs = pending.any?
-          end
-        end
-
-        pending_clone = []
+      pending_reqs = true
+      while pending_reqs && !timeout.timed_out?
+        sleep(0.1)
         lock.synchronize do
-          pending_clone = pending.clone
+          pending_reqs = pending.any?
         end
+      end
 
-        unresponsive_agents = []
-        pending_clone.each do |instance|
-          agent_id = instance_agent_scv[instance].agent_id
-          agent_client = agent_client(agent_id, instance.name)
-          agent_client.cancel_sync_dns(instance_to_request_id[instance])
+      pending_clone = []
+      lock.synchronize do
+        pending_clone = pending.clone
+      end
 
-          lock.synchronize do
-            num_unresponsive += 1
-          end
+      unresponsive_agents = []
+      pending_clone.each do |instance|
+        agent_id = instance_agent_scv[instance].agent_id
+        agent_client = agent_client(agent_id, instance.name)
+        agent_client.cancel_sync_dns(instance_to_request_id[instance])
 
-          unresponsive_agents << agent_id
-        end
-        if num_unresponsive.positive?
-          @logger.warn("agent_broadcaster: sync_dns: no response received for #{num_unresponsive} agent(s): [#{unresponsive_agents.join(', ')}]")
-        end
-
-        elapsed_time = ((Time.now - start_time) * 1000).ceil
         lock.synchronize do
-          @logger.info("agent_broadcaster: sync_dns: attempted #{instances.length} agents in #{elapsed_time}ms (#{num_successful} successful, #{num_failed} failed, #{num_unresponsive} unresponsive)")
+          num_unresponsive += 1
         end
+
+        unresponsive_agents << agent_id
+      end
+      if num_unresponsive.positive?
+        @logger.warn("agent_broadcaster: sync_dns: no response received for #{num_unresponsive} agent(s): [#{unresponsive_agents.join(', ')}]")
+      end
+
+      elapsed_time = ((Time.now - start_time) * 1000).ceil
+      lock.synchronize do
+        @logger.info("agent_broadcaster: sync_dns: attempted #{instances.length} agents in #{elapsed_time}ms (#{num_successful} successful, #{num_failed} failed, #{num_unresponsive} unresponsive)")
       end
     end
 
@@ -144,12 +141,6 @@ module Bosh::Director
 
     def blobstore_client
       @blobstore_client ||= App.instance.blobstores.blobstore
-    end
-  end
-
-  class EmReactorLoop
-    def queue
-      yield
     end
   end
 end
