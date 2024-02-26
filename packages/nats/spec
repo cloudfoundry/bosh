@@ -8,5 +8,4 @@ files:
 - nats/nats-server-v*-linux-amd64.tar.gz
 - bosh-nats-sync/**/*
 - vendor/cache/*.gem
-- vendor/cache/eventmachine-*/**
 - vendor/cache/extensions/**

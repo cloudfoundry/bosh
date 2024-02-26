@@ -22,11 +22,6 @@ pushd bosh-nats-sync/ > /dev/null
   mv *.gem ../vendor/cache
 popd > /dev/null
 
-pushd vendor/cache/eventmachine-* > /dev/null
-  gem build eventmachine.gemspec
-  mv *.gem ../
-popd > /dev/null
-
 if [ "`uname -m`" == "ppc64le" ]; then
     bundle config build.nokogiri '--use-system-libraries'
 fi

@@ -9,6 +9,5 @@ require 'nats_sync/users_sync'
 require 'nats_sync/nats_auth_config'
 require 'nats_sync/auth_provider'
 
-require 'eventmachine'
 require 'json'
 require 'yaml'
