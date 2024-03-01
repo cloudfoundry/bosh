@@ -25,7 +25,6 @@ require 'bosh/template/evaluation_context'
 require 'common/version/release_version_list'
 
 require 'bcrypt'
-require 'eventmachine'
 require 'netaddr'
 require 'delayed_job'
 #TODO: remove when https://github.com/collectiveidea/delayed_job/pull/1185 is merged
