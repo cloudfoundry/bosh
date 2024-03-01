@@ -31,25 +31,24 @@ describe Bosh::Monitor::Runner do
 
   describe '#handle_fatal_error' do
     context 'when an unhandled event loop error occurs' do
-      let(:http_server) { instance_double(Thin::Server) }
+      let(:http_server) { instance_double(Puma::Launcher, run: nil, stop: nil) }
 
       before do
-        allow(Thin::Server).to receive(:new).and_return(http_server)
-        allow(http_server).to receive(:start!)
+        allow(Puma::Launcher).to receive(:new).and_return(http_server)
 
         runner.start_http_server
       end
 
       it 'stops the HM server, stops the event loop and logs the error' do
         allow(Fiber.scheduler).to receive(:close)
-        allow(http_server).to receive(:stop!)
+        allow(http_server).to receive(:stop)
         error = StandardError.new('uncaught event loop exception')
         error.set_backtrace(['backtrace'])
 
         runner.handle_fatal_error(error)
 
         expect(Fiber.scheduler).to have_received(:close)
-        expect(http_server).to have_received(:stop!)
+        expect(http_server).to have_received(:stop)
         expect(logger).to have_received(:fatal).with('uncaught event loop exception')
         expect(logger).to have_received(:fatal).with('backtrace')
       end

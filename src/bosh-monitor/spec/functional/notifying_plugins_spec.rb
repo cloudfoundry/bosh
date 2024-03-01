@@ -34,6 +34,7 @@ describe 'notifying plugins' do
     free_port = find_free_tcp_port
     allow(Bhm).to receive(:http_port).and_return(free_port)
     allow(runner).to receive(:connect_to_mbus)
+    allow_any_instance_of(Puma::Launcher).to receive(:run)
   end
 
   context 'when alert is received via nats' do

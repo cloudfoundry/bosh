@@ -36,7 +36,7 @@ module Bosh::Monitor
 
     def stop
       @logger.info('HealthMonitor shutting down...')
-      @http_server&.stop!
+      @http_server&.stop
       # Async gem does not provide a way to get the global Reactor object, but sets it as the Fiber scheduler
       Fiber.scheduler&.close
     end
@@ -105,14 +105,22 @@ module Bosh::Monitor
 
     def start_http_server
       @logger.info("HTTP server is starting on port #{Bhm.http_port}...")
-      @http_server = Thin::Server.new('127.0.0.1', Bhm.http_port, signals: false) do
-        Thin::Logging.silent = true
+      rack_app = Puma::Rack::Builder.app do
         map '/' do
           run Bhm::ApiController.new
         end
       end
+
+      puma_configuration = Puma::Configuration.new do |config|
+        config.tag 'bosh_monitor'
+        config.bind "tcp://127.0.0.1:#{Bhm.http_port}"
+        config.app rack_app
+        config.preload_app!
+      end
+
+      @http_server = Puma::Launcher.new(puma_configuration)
       Async do
-        @http_server.start!
+        @http_server.run
       end
     end
 
