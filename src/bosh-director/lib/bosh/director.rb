@@ -34,7 +34,6 @@ require 'sinatra/base'
 require 'securerandom'
 require 'nats/io/client'
 require 'openssl'
-require 'securerandom'
 require 'delayed_job_sequel'
 
 require 'common/thread_formatter'
