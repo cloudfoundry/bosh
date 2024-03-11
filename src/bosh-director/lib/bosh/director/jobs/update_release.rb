@@ -1,3 +1,4 @@
+require 'pp' # for #pretty_inspect
 require 'securerandom'
 require 'common/version/release_version'
 
