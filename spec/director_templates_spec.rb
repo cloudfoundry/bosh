@@ -375,16 +375,13 @@ describe 'director templates' do
       end
     end
 
-    # rubocop:disable Metrics/MethodLength
     describe 'certificate expiry template' do
       before do
         @key, @cert, @expiry = create_key_and_csr_cert
       end
 
-      # rubocop:disable Metrics/BlockLength
       it_should_behave_like 'a rendered file' do
         let(:file_name) { '../jobs/director/templates/certificate_expiry.json.erb' }
-        # rubocop:disable Metrics/BlockLength
         let(:properties) do
           {
             'properties' => {
@@ -445,8 +442,6 @@ describe 'director templates' do
           JSON
         end
       end
-      # rubocop:enable Metrics/BlockLength
-      # rubocop:enable Metrics/MethodLength
     end
   end
 end
