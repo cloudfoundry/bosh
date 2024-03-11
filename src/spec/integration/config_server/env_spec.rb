@@ -120,11 +120,7 @@ describe 'env values in instance groups and resource pools', type: :integration 
   end
 
   context 'when remove_dev_tools key exist' do
-    with_reset_sandbox_before_each(
-      remove_dev_tools: true,
-      config_server_enabled: true,
-      user_authentication: 'uaa',
-    )
+    with_reset_sandbox_before_each(remove_dev_tools: true, config_server_enabled: true, user_authentication: 'uaa')
 
     let(:env_hash) do
       {
