@@ -329,7 +329,7 @@ describe 'director templates' do
           )
         end
 
-        it 'converts the adapter to `mysqql`' do
+        it 'converts the adapter to `mysql`' do
           bbr_config = JSON.parse(template.render(properties))
           expect(bbr_config['adapter']).to eq('mysql')
         end
