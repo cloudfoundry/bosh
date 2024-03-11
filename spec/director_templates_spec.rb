@@ -460,7 +460,7 @@ def new_csr(key, subject)
   csr.version = 0
   csr.subject = subject
   csr.public_key = key.public_key
-  csr.sign key, OpenSSL::Digest::SHA1.new
+  csr.sign key, OpenSSL::Digest.new('SHA1')
 
   csr
 end
@@ -470,13 +470,13 @@ def new_csr_certificate(key, csr)
   csr_cert.serial = 0
   csr_cert.version = 2
   csr_cert.not_before = Time.now - 60 * 60 * 24
-  csr_cert.not_after = Time.now + 94608000
+  csr_cert.not_after = Time.now + 94_608_000
 
   csr_cert.subject = csr.subject
   csr_cert.public_key = csr.public_key
   csr_cert.issuer = csr.subject
 
-  csr_cert.sign key, OpenSSL::Digest::SHA1.new
+  csr_cert.sign key, OpenSSL::Digest.new('SHA1')
 
   csr_cert
 end
