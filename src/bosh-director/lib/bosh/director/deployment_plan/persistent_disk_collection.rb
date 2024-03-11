@@ -123,7 +123,7 @@ module Bosh::Director
           { name: name, size: size, cloud_properties: cloud_properties }.inspect
         end
 
-        def to_json
+        def to_json(*_args)
           { name: name, size: size, cloud_properties: cloud_properties }.to_json
         end
 
