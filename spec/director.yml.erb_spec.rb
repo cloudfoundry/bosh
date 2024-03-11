@@ -293,7 +293,7 @@ describe 'director.yml.erb' do
                 'enabled' => true,
                 'url' => 'https://config-server-host',
                 'uaa' => {
-                  'url' => 'http://something.com',
+                  'url' => 'https://something.com',
                   'client_secret' => 'secret',
                   'ca_cert_path' => '/var/vcap/blah/to/go'
                 }
