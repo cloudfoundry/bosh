@@ -140,7 +140,8 @@ module Bosh::Director
         if link_infos.has_key?(instance_group_name) && link_infos[instance_group_name].has_key?(kind)
           return link_infos[instance_group_name][kind]
         end
-        return []
+
+        []
       end
     end
   end

@@ -168,7 +168,7 @@ module Bosh::Director
         return (info['stemcell_formats'] & @stemcell_formats).any? if @stemcell_formats && info['stemcell_formats']
 
         logger.info('There is no enough information to check if stemcell format is supported')
-        return true
+        true
       rescue Bosh::Clouds::NotImplemented
         cpi_suffix = " (cpi: #{cpi})" unless cpi.blank?
         logger.info("info method is not supported by cpi #{cpi_suffix}")

@@ -146,7 +146,7 @@ module Bosh::Director::DeploymentPlan
           ip_address.update(static: is_static, network_name: network_name)
         end
 
-        return ip_address
+        ip_address
       elsif reserved_instance.nil?
         raise Bosh::Director::NetworkReservationAlreadyInUse,
               "Failed to reserve IP '#{ip}' for instance '#{instance_model}': " \

@@ -54,7 +54,7 @@ module Bosh
               end
             end
 
-            return nil
+            nil
           end
 
           def even_distribution_of_ips?(networks_to_static_ips)
@@ -113,7 +113,7 @@ module Bosh
                 end
               end
 
-              return true
+              true
             end
           end
         end

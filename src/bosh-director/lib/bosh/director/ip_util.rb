@@ -39,7 +39,8 @@ module Bosh::Director
 
     def ip_address?(ip)
       ip_address = IPAddr.new(ip)
-      return ip_address.ipv4? || ip_address.ipv6?
+
+      ip_address.ipv4? || ip_address.ipv6?
     rescue
       return false
     end

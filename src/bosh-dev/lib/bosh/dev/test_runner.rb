@@ -41,7 +41,8 @@ module Bosh::Dev
         lines.append "            #{command}"
         lines.append(File.read(log_file)) if log_file && File.exist?(log_file)
         lines.append "----- END   #{build}\n\n"
-        return {:lines => lines, :error => false}
+
+        {:lines => lines, :error => false}
       else
         lines.append "----- BEGIN #{build}"
         lines.append "            #{command}"
@@ -49,7 +50,8 @@ module Bosh::Dev
         error_message += ": #{File.read(log_file)}" if log_file && File.exist?(log_file)
         lines.append "            #{error_message}\n"
         lines.append "----- END   #{build}\n\n"
-        return {:lines => lines, :error => true}
+
+        {:lines => lines, :error => true}
       end
     end
 

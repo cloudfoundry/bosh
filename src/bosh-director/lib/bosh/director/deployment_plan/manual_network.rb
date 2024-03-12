@@ -76,7 +76,7 @@ module Bosh::Director
       def find_az_names_for_ip(ip)
         subnet = find_subnet_containing(ip)
         if subnet
-          return subnet.availability_zone_names
+          subnet.availability_zone_names
         end
       end
 

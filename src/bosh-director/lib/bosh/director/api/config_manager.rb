@@ -16,7 +16,7 @@ module Bosh
           def deploy_config_enabled?
             deploy_config = find(type: 'deploy')
 
-            return !deploy_config.empty?
+            !deploy_config.empty?
           end
 
           def find(type: nil, name: nil, limit: 1)

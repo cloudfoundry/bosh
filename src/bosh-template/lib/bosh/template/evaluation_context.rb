@@ -133,7 +133,7 @@ module Bosh
       def if_link(name)
         link_spec = lookup_property(@links, name)
         if link_spec.nil? || !link_spec.has_key?('instances')
-          return ActiveElseBlock.new(self)
+          ActiveElseBlock.new(self)
         else
           yield create_evaluation_link(link_spec)
           InactiveElseBlock.new

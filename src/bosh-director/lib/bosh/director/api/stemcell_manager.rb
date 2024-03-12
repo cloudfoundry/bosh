@@ -19,7 +19,7 @@ module Bosh::Director
         matched_cpis = found_cpis & cpi_aliases
         raise StemcellNotFound, "Stemcell '#{name}/#{version}' and cpi #{cpi} doesn't exist" if matched_cpis.empty?
 
-        return Models::Stemcell[:name => name, :version => version, :cpi => matched_cpis[0]]
+        Models::Stemcell[:name => name, :version => version, :cpi => matched_cpis[0]]
       end
 
       def find_all_stemcells

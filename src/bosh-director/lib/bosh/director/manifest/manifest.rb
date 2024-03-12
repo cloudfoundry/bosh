@@ -190,7 +190,7 @@ module Bosh::Director
 
       models = stemcell_manager.all_by_name_and_version(stemcell['name'], stemcell['version'])
       unless models.empty?
-        return models.first.operating_system
+        models.first.operating_system
       end
     end
 

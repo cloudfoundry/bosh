@@ -42,7 +42,8 @@ module Support
       director_url = URI(current_sandbox.director_url)
       director_url.path = url_path
       director_url.query = query
-      return director_url
+
+      director_url
     end
   end
 end

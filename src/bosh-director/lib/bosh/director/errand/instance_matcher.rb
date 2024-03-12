@@ -27,7 +27,7 @@ module Bosh::Director
         end
       end
 
-      return results.to_a, (@filters-applied_filters.to_a).compact.map(&:original)
+      [results.to_a, (@filters - applied_filters.to_a).compact.map(&:original)]
     end
 
   end

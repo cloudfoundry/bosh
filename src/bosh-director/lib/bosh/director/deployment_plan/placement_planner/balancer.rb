@@ -12,10 +12,12 @@ module Bosh
           def pop
             return nil if @weight.size == 0
             peek_value = peek
+
             if peek_value.length != 1
-              return choose(peek_value.find {|k| @preferred.include?(k.name) } || @tie_strategy.call(peek_value))
+              choose(peek_value.find {|k| @preferred.include?(k.name) } || @tie_strategy.call(peek_value))
+            else
+              choose(peek_value.first)
             end
-            return choose(peek_value.first)
           end
 
           private
