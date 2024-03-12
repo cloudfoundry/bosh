@@ -24,7 +24,7 @@ module Bosh::Director
 
     it 'saves resource to a local file' do
       blobstore.define_singleton_method(:get) {|id, f|
-        if id == 99 then
+        if id == 99
           f.write('some data')
         end
       }
@@ -49,7 +49,7 @@ module Bosh::Director
 
     it 'should return the contents of the blobstore id' do
       blobstore.define_singleton_method(:get) {|id|
-        if id == 99 then
+        if id == 99
           'some data'
         end
       }
