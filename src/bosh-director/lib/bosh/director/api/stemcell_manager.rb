@@ -112,12 +112,10 @@ module Bosh::Director
 
         latest_version = Bosh::Common::Version::StemcellVersionList.parse(versions).latest.to_s
 
-        latest_stemcell = stemcells.find do |stemcell|
+        stemcells.find do |stemcell|
           parsed_version = Bosh::Common::Version::StemcellVersion.parse(stemcell.version).to_s
           parsed_version == latest_version
         end
-
-        latest_stemcell
       end
     end
   end

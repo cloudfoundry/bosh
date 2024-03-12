@@ -7,11 +7,9 @@ module Bosh::Director::ConfigServer
       map = []
       construct_variables_paths(map, obj)
 
-      result = map.select do |elem|
+      map.select do |elem|
         !path_matches_subtrees_to_ignore?(subtrees_to_ignore, elem['path'])
       end
-
-      result
     end
 
     def replace_variables(obj_to_be_resolved, variables_paths, variable_values)

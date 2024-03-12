@@ -19,7 +19,6 @@ module Bosh::Monitor
 
       def client
         @client ||= ::Riemann::Client.new host: options['host'], port: options['port']
-        @client
       end
 
       def process(event)

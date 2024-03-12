@@ -73,10 +73,9 @@ module Bosh::Director::Links
           type: 'job',
         )
 
-        errors = create_consumer_intent_from_template_model(
+        create_consumer_intent_from_template_model(
           consumer, consumes_links, current_release_template_model, instance_group_name, job_name
         )
-        errors
       end
 
       def create_consumer_intent_from_template_model(
