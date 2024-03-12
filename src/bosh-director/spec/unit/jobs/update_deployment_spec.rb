@@ -917,9 +917,9 @@ Unable to render instance groups for deployment. Errors are:
           it 'formats the error messages' do
             expect {
               job.perform
-            }.to raise_error { |error|
+            }.to(raise_error { |error|
               expect(error.message).to eq(expected_result)
-            }
+            })
           end
 
           context 'when option deploy is set' do
@@ -984,9 +984,9 @@ Unable to render instance groups for deployment. Errors are:
             it 'formats the error messages for service & errand instance groups' do
               expect {
                 job.perform
-              }.to raise_error { |error|
+              }.to(raise_error { |error|
                 expect(error.message).to eq(expected_result)
-              }
+              })
             end
           end
         end
