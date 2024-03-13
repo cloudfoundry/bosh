@@ -2,12 +2,12 @@ require 'spec_helper'
 require 'db_migrator'
 require_relative '../../lib/bosh/director/sync_dns_scheduler'
 
-Models = Bosh::Director::Models
+SyncDnsSchedulerSpecModels = Bosh::Director::Models
 module Kernel
-  alias original_require require
+  alias sync_dns_scheduler_spec_require require
   def require(path)
-    Bosh::Director.const_set(:Models, Models) if path == 'bosh/director' && !defined?(Bosh::Director::Models)
-    original_require(path)
+    Bosh::Director.const_set(:Models, SyncDnsSchedulerSpecModels) if path == 'bosh/director' && !defined?(Bosh::Director::Models)
+    sync_dns_scheduler_spec_require(path)
   end
 end
 

@@ -1,12 +1,12 @@
 require 'spec_helper'
 require 'db_migrator'
 
-Models = Bosh::Director::Models
+WorkerSpecModels = Bosh::Director::Models
 module Kernel
-  alias old_require require
+  alias worker_spec_require require
   def require(path)
-    Bosh::Director.const_set(:Models, Models) if path == 'bosh/director' && !defined?(Bosh::Director::Models)
-    old_require(path)
+    Bosh::Director.const_set(:Models, WorkerSpecModels) if path == 'bosh/director' && !defined?(Bosh::Director::Models)
+    worker_spec_require(path)
   end
 end
 
@@ -103,7 +103,7 @@ module Bosh::Director
 
         worker.start
 
-        event = Models::Event.first
+        event = ::Bosh::Director::Models::Event.first
         expect(event.user).to eq('_director')
         expect(event.action).to eq('start')
         expect(event.object_type).to eq('worker')
