@@ -4,32 +4,72 @@ namespace :fly do
   # bundle exec rake fly:unit
   desc 'Fly unit specs'
   task :unit do
-    execute('test-unit', '-p',
-      DB: ENV.fetch('DB', 'postgresql'),
-      DB_VERSION: ENV.fetch('DB_VERSION', '15'),
-      DB_TLS: ENV.fetch('DB_TLS', true))
+    db = ENV.fetch('DB', 'postgresql')
+    db_version = ENV.fetch('DB_VERSION', '15')
+
+    execute('test-unit', command_opts('unit', db, db_version),
+            DB: db, DB_VERSION: db_version,
+            COVERAGE: ENV.fetch('COVERAGE', false))
   end
 
   # bundle exec rake fly:integration
   desc 'Fly integration specs'
   task :integration, [:cli_dir] do |_, args|
-    command_opts = '-p --inputs-from bosh-director/integration-db-tls-postgres'
-    command_opts += " -i bosh-cli=#{args[:cli_dir]}" if args[:cli_dir]
+    db = ENV.fetch('DB', 'postgresql')
+    db_version = ENV.fetch('DB_VERSION', '15')
+
+    command_opts = command_opts('integration', db, db_version)
+    command_opts += " --input bosh-cli=#{args[:cli_dir]}" if args[:cli_dir]
 
     execute('test-integration', command_opts,
-            DB: ENV.fetch('DB', 'postgresql'),
-            DB_VERSION: ENV.fetch('DB_VERSION', '15'),
-            DB_TLS: ENV.fetch('DB_TLS', true),
+            DB: db, DB_VERSION: db_version,
             SPEC_PATH: ENV.fetch('SPEC_PATH', nil))
   end
 
   # bundle exec rake fly:run["pwd ; ls -al"]
   task :run, [:command] do |_, args|
-    execute('run', '-p',
+    execute('run', '--privileged',
             COMMAND: %(\"#{args[:command]}\"))
   end
 
   private
+
+  def command_opts(test_type, db, db_version)
+    [
+      "--privileged",
+      input_from(test_type, db),
+      image(db, db_version)
+    ].join(' ')
+  end
+
+  def db_short_name(db)
+    db == 'postgresql' ? 'postgres' : db
+  end
+
+  def input_from(test_type, db)
+    case test_type
+    when 'unit'
+      if db == 'sqlite'
+        '--inputs-from bosh-director/unit'
+      else
+        "--inputs-from bosh-director/#{test_type}-#{db_short_name(db)}"
+      end
+
+    when 'integration'
+      "--inputs-from bosh-director/#{test_type}-db-tls-#{db_short_name(db)}"
+
+    else
+      fail "invalid test_type: '#{test_type}'"
+    end
+  end
+
+  def image(db, db_version)
+    if db == 'sqlite'
+      '--image integration-image'
+    else
+      "--image integration-#{db_short_name(db)}-#{db_version.gsub('.', '-')}-image"
+    end
+  end
 
   def concourse_tag
     tag = ENV.fetch('CONCOURSE_TAG', '')
@@ -37,11 +77,12 @@ namespace :fly do
   end
 
   def concourse_target
-    "-t #{ENV.fetch('CONCOURSE_TARGET', 'director')}"
+    "--target #{ENV.fetch('CONCOURSE_TARGET', 'director')}"
   end
 
   def prepare_env(additional_env = {})
     env = {
+      DB_TLS: ENV.fetch('DB_TLS', true), # specs only ever use TLS, however this value needs to be set
       RUBY_VERSION: ENV['RUBY_VERSION'] || RUBY_VERSION,
     }
     env.merge!(additional_env)
