@@ -459,9 +459,12 @@ describe 'create-release', type: :integration do
       Dir.mktmpdir do |temp_dir|
         `tar xzf #{release_file.path} -C #{temp_dir}`
         foo_package = File.join(temp_dir, 'packages', 'foo.tgz')
-        release_file_list = `tar -tzf #{foo_package}`
-        expect(release_file_list).to_not include('excluded_file')
-        expect(release_file_list).to include('foo')
+        release_file_list = list_tar_files(foo_package)
+
+        release_file_list.each do |file|
+          expect(file).to_not match('excluded_file')
+        end
+        expect(release_file_list).to include('./foo')
       end
     end
   end
@@ -556,6 +559,9 @@ describe 'create-release', type: :integration do
   end
 
   def list_tar_files(tarball_path)
-    `tar -ztf #{tarball_path}`.chomp.split(/\n/).reject { |f| f =~ %r{/$} }
+    `tar -ztf #{tarball_path}`.chomp.split(/\n/).reject do |f|
+      f =~ %r{/$} || # exclude "f" ending in '/' - these are directories
+        f =~ %r{.*\._.+} # exclude "f" matching "._" - these are macOS resource forks in a tar archive
+    end
   end
 end
