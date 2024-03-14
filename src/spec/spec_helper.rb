@@ -28,6 +28,9 @@ module Bosh
 end
 
 RSpec.configure do |c|
+  c.expect_with :rspec do |expect|
+    expect.max_formatted_output_length = 10_000
+  end
   c.filter_run focus: true if ENV['FOCUS']
   c.filter_run_excluding db: :postgresql unless ENV['DB'] == 'postgresql'
   c.include BlueShell::Matchers
