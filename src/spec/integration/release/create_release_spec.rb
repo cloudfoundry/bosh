@@ -136,7 +136,7 @@ describe 'create-release', type: :integration do
         expect(release_manifest['name']).to eq('bosh-release')
         expect(release_manifest['version']).to eq('1')
 
-        expect(release_manifest['packages']).to match(a_collection_containing_exactly(
+        expect(release_manifest['packages']).to contain_exactly(
                                                         package_desc('a', ['b']),
                                                         package_desc('b', ['c']),
                                                         package_desc('bar', ['foo']),
@@ -155,9 +155,9 @@ describe 'create-release', type: :integration do
                                                         package_desc('foo_8', []),
                                                         package_desc('foo_9', []),
                                                         package_desc('foo_10', []),
-                                                      ))
+                                                      )
 
-        expect(release_manifest['jobs']).to match(a_collection_containing_exactly(
+        expect(release_manifest['jobs']).to contain_exactly(
                                                     job_desc('emoji-errand'),
                                                     job_desc('errand1', ['errand1']),
                                                     job_desc('errand_without_package'),
@@ -197,7 +197,7 @@ describe 'create-release', type: :integration do
                                                     job_desc('id_job'),
                                                     job_desc('job_with_bad_template'),
                                                     job_desc('local_dns_records_json'),
-                                                  ))
+                                                  )
 
         expect(release_manifest['uncommitted_changes']).to eq(false)
       end
