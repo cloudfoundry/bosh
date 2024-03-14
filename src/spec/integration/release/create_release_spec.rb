@@ -4,8 +4,8 @@ require_relative '../../spec_helper'
 describe 'create-release', type: :integration do
   include Bosh::Spec::CreateReleaseOutputParsers
   with_reset_sandbox_before_each
-  SHA2_REGEXP = /^[0-9a-f]{64}$/
-  SHA2_PREFIXED_REGEXP = /^sha256:[0-9a-f]{64}$/
+  let(:sha2_regexp) { /^[0-9a-f]{64}$/ }
+  let(:sha2_prefixed_regexp) { /^sha256:[0-9a-f]{64}$/ }
 
   before do
     setup_test_release_dir
@@ -503,28 +503,28 @@ describe 'create-release', type: :integration do
   def package_desc(name, dependencies)
     match(
       'name' => name,
-      'version' => SHA2_REGEXP,
-      'fingerprint' => SHA2_REGEXP,
+      'version' => sha2_regexp,
+      'fingerprint' => sha2_regexp,
       'dependencies' => dependencies,
-      'sha1' => SHA2_PREFIXED_REGEXP,
+      'sha1' => sha2_prefixed_regexp,
     )
   end
 
   def job_desc(name, packages = [])
     match(
       'name' => name,
-      'version' => SHA2_REGEXP,
-      'fingerprint' => SHA2_REGEXP,
-      'sha1' => SHA2_PREFIXED_REGEXP,
+      'version' => sha2_regexp,
+      'fingerprint' => sha2_regexp,
+      'sha1' => sha2_prefixed_regexp,
       'packages' => packages,
     )
   end
 
   def license_desc
     match(
-      'version' => SHA2_REGEXP,
-      'fingerprint' => SHA2_REGEXP,
-      'sha1' => SHA2_PREFIXED_REGEXP,
+      'version' => sha2_regexp,
+      'fingerprint' => sha2_regexp,
+      'sha1' => sha2_prefixed_regexp,
     )
   end
 
@@ -539,7 +539,7 @@ describe 'create-release', type: :integration do
       'builds' => {
         fingerprint => {
           'version' => fingerprint,
-          'sha1' => SHA2_PREFIXED_REGEXP,
+          'sha1' => sha2_prefixed_regexp,
           'blobstore_id' => kind_of(String),
         },
       },
