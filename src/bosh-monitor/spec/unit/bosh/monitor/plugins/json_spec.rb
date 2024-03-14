@@ -49,7 +49,7 @@ describe Bhm::Plugins::ProcessManager do
       expect(Bosh::Monitor::Plugins::DeferrableChildProcess).to receive(:open).at_least(2).times.with('/non-existent-plugin').and_call_original
 
       process_manager.start
-      sleep restart_wait
+      sleep restart_wait * 2
     end
 
     it 'detects and starts new processes' do
