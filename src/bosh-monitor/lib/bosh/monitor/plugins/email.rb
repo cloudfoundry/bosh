@@ -1,3 +1,5 @@
+require 'net/smtp'
+
 module Bosh::Monitor
   module Plugins
     class Email < Base
@@ -24,7 +26,7 @@ module Bosh::Monitor
       end
 
       def run
-        unless EventMachine.reactor_running?
+        unless ::Async::Task.current?
           logger.error('Email plugin can only be started when event loop is running')
           return false
         end
@@ -33,10 +35,13 @@ module Bosh::Monitor
 
         logger.info('Email plugin is running...')
 
-        EventMachine.add_periodic_timer(@delivery_interval) do
-          process_queues
-        rescue StandardError => e
-          logger.error("Problem processing email queues: #{e}")
+        Async do |task|
+          loop do
+            process_queues
+            sleep(@delivery_interval)
+          rescue StandardError => e
+            logger.error("Problem processing email queues: #{e}")
+          end
         end
         @started = true
       end
@@ -92,38 +97,24 @@ module Bosh::Monitor
 
         headers = create_headers(subject, date)
 
-        smtp_client_options = {
-          domain: smtp_options['domain'],
-          host: smtp_options['host'],
-          port: smtp_options['port'],
-          from: smtp_options['from'],
-          to: recipients,
-          header: headers,
-          body: body,
-        }
-
-        smtp_client_options[:starttls] = true if smtp_options['tls']
-
+        smtp_start_params = [smtp_options['domain']]
         if smtp_options['auth']
-          smtp_client_options[:auth] = {
-            # FIXME: EventMachine SMTP client will only work with plain auth
-            type: smtp_options['auth'].to_sym,
-            username: smtp_options['user'],
-            password: smtp_options['password'],
-          }
+          smtp_start_params += [smtp_options['user'], smtp_options['password'], smtp_options['auth'].to_sym]
         end
 
-        email = EventMachine::Protocols::SmtpClient.send(smtp_client_options)
+        Async do
+          smtp = Net::SMTP.new(smtp_options['host'], smtp_options['port'])
+          smtp.enable_starttls if smtp_options['tls']
 
-        email.callback do
-          logger.debug("Email sent (took #{Time.now - started} seconds)")
-        end
-
-        email.errback do |e|
+          smtp.start(*smtp_start_params) do |smtp|
+            smtp.send_message(formatted_message(headers, body), smtp_options['from'], recipients)
+            logger.debug("Email sent (took #{Time.now - started} seconds)")
+          end
+        rescue Net::SMTPError => e
           logger.error("Failed to send email: #{e}")
+        rescue StandardError => e
+          logger.error("Error sending email: #{e}")
         end
-      rescue StandardError => e
-        logger.error("Error sending email: #{e}")
       end
 
       def create_headers(subject, date)
@@ -134,6 +125,12 @@ module Bosh::Monitor
           'Date' => date.strftime('%a, %-d %b %Y %T %z'),
           'Content-Type' => 'text/plain; charset="iso-8859-1"',
         }
+      end
+
+      def formatted_message(headers_hash, body_text)
+        headers_text = headers_hash.map { |key, value| "#{key}: #{value}" }.join('\n')
+
+        "#{headers_text}\n\n#{body_text}"
       end
     end
   end

@@ -10,7 +10,7 @@ module Bosh::Monitor
       end
 
       def run
-        unless EventMachine.reactor_running?
+        unless ::Async::Task.current?
           logger.error('Graphite delivery agent can only be started when event loop is running')
           return false
         end
@@ -18,7 +18,9 @@ module Bosh::Monitor
         host = options['host']
         port = options['port']
         retries = options['max_retries'] || Bhm::TcpConnection::DEFAULT_RETRIES
-        @connection = EventMachine.connect(host, port, Bhm::GraphiteConnection, host, port, retries)
+
+        @connection = Bhm::GraphiteConnection.new(host, port, retries)
+        @connection.connect
       end
 
       def process(event)
@@ -28,11 +30,14 @@ module Bosh::Monitor
 
         raise PluginError, "Invalid event metrics: Enumerable expected, #{metrics.class} given" unless metrics.is_a?(Enumerable)
 
+        semaphore = Async::Semaphore.new(20)
         metrics.each do |metric|
-          metric_name = get_metric_name(event, metric)
-          metric_timestamp = get_metric_timestamp(metric.timestamp)
-          metric_value = metric.value
-          @connection.send_metric(metric_name, metric_value, metric_timestamp)
+          semaphore.async do
+            metric_name = get_metric_name(event, metric)
+            metric_timestamp = get_metric_timestamp(metric.timestamp)
+            metric_value = metric.value
+            @connection.send_metric(metric_name, metric_value, metric_timestamp)
+          end
         end
       end
 

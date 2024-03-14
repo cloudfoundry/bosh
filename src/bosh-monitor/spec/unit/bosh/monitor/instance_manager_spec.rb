@@ -534,7 +534,6 @@ module Bhm
         Bhm.config = YAML.load_file(sample_config,  permitted_classes: [Symbol], permitted_symbols:[], aliases: true)
         allow(mock_nats).to receive(:subscribe)
         allow(Bhm).to receive(:nats).and_return(mock_nats)
-        allow(EventMachine).to receive(:schedule).and_yield
       end
 
       it 'has the tsdb plugin' do

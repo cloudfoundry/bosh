@@ -1,5 +1,5 @@
 module Bosh::Monitor
-  class TcpConnection < EventMachine::Connection
+  class TcpConnection
     BACKOFF_CEILING = 9
     DEFAULT_RETRIES = 35
 
@@ -14,6 +14,22 @@ module Bosh::Monitor
       reset_retries
     end
 
+    def send_data(data)
+      return unless @connected
+
+      @socket.write(data)
+    end
+
+    def connect
+      return if @connected
+
+      endpoint = Async::IO::Endpoint.tcp(@host, @port)
+      @socket = endpoint.connect
+      connection_completed
+    rescue
+      unbind
+    end
+
     def reset_retries
       @retries = 0
     end
@@ -24,7 +40,6 @@ module Bosh::Monitor
 
     def connection_completed
       reset_retries
-      @reconnecting = false
       @connected = true
       @logger.info("#{@logger_name}-connected")
     end
@@ -40,12 +55,15 @@ module Bosh::Monitor
 
       @logger.info("#{logger_name}-failed-to-reconnect, will try again in #{retry_in} seconds...") if retries > 1
 
-      EventMachine.add_timer(retry_in) { retry_reconnect }
+      retry_reconnect(retry_in)
     end
 
-    def retry_reconnect
-      @logger.info("#{@logger_name}-reconnecting (#{retries})...")
-      reconnect(@host, @port)
+    def retry_reconnect(retry_in)
+      Async do |task|
+        sleep(retry_in)
+        @logger.info("#{@logger_name}-reconnecting (#{retries})...")
+        connect
+      end
     end
 
     def receive_data(data)

@@ -3,28 +3,20 @@ require 'rack/test'
 
 describe Bosh::Monitor::ApiController do
   include Rack::Test::Methods
+  include_context Async::RSpec::Reactor
+
+  let(:heartbeat_interval) { 0.01 }
 
   def app
-    Bosh::Monitor::ApiController.new
+    Bosh::Monitor::ApiController.new(heartbeat_interval)
   end
 
-  before { allow(EventMachine).to receive(:add_periodic_timer) {} }
-
   describe '/healthz' do
-    let(:periodic_timers) { [] }
-    let(:defers) { [] }
     now = 0
     before do
-      allow(EventMachine).to receive(:add_periodic_timer) { |&block| periodic_timers << block }
-      allow(EventMachine).to receive(:defer) { |&block| defers << block }
       allow(Time).to receive(:now) { now }
 
       current_session # get the App started
-    end
-
-    def run_em_timers
-      periodic_timers.each(&:call)
-      defers.each(&:call); defers.clear
     end
 
     it 'should start out healthy' do
@@ -32,18 +24,15 @@ describe Bosh::Monitor::ApiController do
       expect(last_response.status).to eq(200)
     end
 
-    context 'when a thread has become available in the EventMachine thread pool within a time limit' do
+    context 'when the event loop processes the heartbeat task within a time limit' do
       it 'returns 200 OK' do
-        now + Bosh::Monitor::ApiController::PULSE_TIMEOUT + 1
-        run_em_timers
-
         get '/healthz'
         expect(last_response.status).to eq(200)
       end
     end
 
-    context 'when the EventMachine thread pool has been occupied for a while' do
-      let(:last_pulse) { Bosh::Monitor::ApiController::PULSE_TIMEOUT + 1 }
+    context 'when the event loop has been occupied for a while' do
+      let(:last_pulse) { Bosh::Monitor::ApiController::PULSE_TIMEOUT + heartbeat_interval }
 
       before { now += last_pulse }
 
@@ -57,7 +46,9 @@ describe Bosh::Monitor::ApiController do
         get '/healthz'
         expect(last_response.status).to eq(500)
         expect(last_response.body).to eq("Last pulse was #{last_pulse} seconds ago")
-        run_em_timers
+
+        # Allow async task to record new heartbeat
+        sleep heartbeat_interval
 
         get '/healthz'
         expect(last_response.status).to eq(200)

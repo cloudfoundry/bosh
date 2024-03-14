@@ -56,17 +56,14 @@ describe Bhm::Plugins::Pagerduty do
       ),
     }
 
-    EventMachine.run do
+    Sync do
       @plugin.run
-
-      allow(EventMachine).to receive(:defer) { |&arg| arg.call }
 
       expect(@plugin).to receive(:send_http_post_sync_request).with(uri, alert_request)
       expect(@plugin).to receive(:send_http_post_sync_request).with(uri, heartbeat_request)
 
       @plugin.process(alert)
       @plugin.process(heartbeat)
-      EventMachine.stop
     end
   end
 end

@@ -2,12 +2,15 @@ module Bosh::Monitor
   class ApiController < Sinatra::Base
     PULSE_TIMEOUT = 180
 
-    def initialize
+    def initialize(heartbeat_interval = 1)
       @heartbeat = Time.now
       @instance_manager = Bosh::Monitor.instance_manager
 
-      EventMachine.add_periodic_timer(1) do
-        EventMachine.defer { @heartbeat = Time.now }
+      Async do |task|
+        loop do
+          @heartbeat = Time.now
+          sleep(heartbeat_interval)
+        end
       end
 
       super
@@ -23,7 +26,7 @@ module Bosh::Monitor
       body "Last pulse was #{Time.now - @heartbeat} seconds ago"
 
       if Time.now - @heartbeat > PULSE_TIMEOUT
-        logger.error('PULSE TIMEOUT REACHED: Eventmachine not processing queued jobs in a timely fashion')
+        logger.error('PULSE TIMEOUT REACHED: queued jobs are not processing in a timely fashion')
         status(500)
       else
         status(200)

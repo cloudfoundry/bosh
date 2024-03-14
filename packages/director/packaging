@@ -17,11 +17,6 @@ for gemspec in $( find . -maxdepth 2 -name *.gemspec ); do
   popd > /dev/null
 done
 
-pushd vendor/cache/eventmachine-* > /dev/null
-  gem build eventmachine.gemspec
-  mv *.gem ../
-popd > /dev/null
-
 pushd vendor/cache/netaddr-rb-* > /dev/null
   gem build netaddr.gemspec
   mv *.gem ../

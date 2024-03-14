@@ -1,3 +1,5 @@
+require 'open3'
+
 module Bosh::Monitor::Plugins
   class Json < Base
     def initialize(options = {})
@@ -26,14 +28,17 @@ module Bosh::Monitor::Plugins
     end
 
     def start
-      unless EventMachine.reactor_running?
+      unless ::Async::Task.current?
         @logger.error('JSON Plugin can only be started when event loop is running')
         return false
       end
 
-      start_processes
-
-      EventMachine.add_periodic_timer(@check_interval) { start_processes }
+      Async do |task|
+        loop do
+          start_processes
+          sleep(@check_interval)
+        end
+      end
     end
 
     def send_event(event)
@@ -68,39 +73,80 @@ module Bosh::Monitor::Plugins
     def start_process(bin)
       process = Bosh::Monitor::Plugins::DeferrableChildProcess.open(bin)
       process.errback do
-        EventMachine.add_timer(@restart_wait) { restart_process bin }
+        Async do
+          sleep(@restart_wait)
+          restart_process bin
+        end
       end
+      process.run
 
       process
     end
   end
 
-  # EventMachine's DeferrableChildProcess does not give an opportunity
-  # to get the exit status. So we are implementing our own unbind logic to handle the exit status.
-  # This way we can execute our process restart on the err callback (errback).
-  # https://stackoverflow.com/a/12092647
-  class DeferrableChildProcess < EventMachine::Connection
-    include EventMachine::Deferrable
-
-    def initialize
-      super
+  class DeferrableChildProcess
+    def initialize(cmd)
+      @cmd = cmd
       @data = []
+      @errback = []
+      @lock = Mutex.new
+    end
+
+    def run
+      Async do |task|
+        stdin, stdout, stderr, wait_thr = Open3.popen3(@cmd)
+
+        @stdin = Async::IO::Stream.new(Async::IO::Generic.new(stdin))
+        @stdout = Async::IO::Stream.new(Async::IO::Generic.new(stdout))
+        @stderr = Async::IO::Stream.new(Async::IO::Generic.new(stderr))
+        @wait_thr = wait_thr
+
+        task.async do
+          while data = @stdout.read(1)
+            receive_data(data)
+          end
+        end
+
+        task.async do
+          while data = @stderr.read(1)
+            receive_data(data)
+          end
+        end
+
+        # Wait for the process to complete
+        status = @wait_thr.value
+        unless status.success?
+          @errback.each do |errback|
+            errback.call
+          end
+        end
+      rescue => e
+        @errback.each do |errback|
+          errback.call
+        end
+      ensure
+        @stdin.close if @stdin
+        @stdout.close if @stdout
+        @stderr.close if @stderr
+      end
     end
 
     def self.open(cmd)
-      EventMachine.popen(cmd, DeferrableChildProcess)
+      new(cmd)
+    end
+
+    def errback(&block)
+      @errback << block
+    end
+
+    def send_data(data)
+      @stdin.write(data)
+      @stdin.flush
     end
 
     def receive_data(data)
-      @data << data
-    end
-
-    def unbind
-      status = get_status
-      if status.exitstatus != 0
-        fail(status)
-      else
-        succeed(@data.join, status)
+      @lock.synchronize do
+        @data << data
       end
     end
   end

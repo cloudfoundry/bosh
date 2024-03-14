@@ -91,14 +91,6 @@ If you are not using a version manager that supports fuzzy matching in `.ruby-ve
     bundle install
     ```
 
-    If ever you hit some compilation issues with the `thin` Gem
-    about “implicit function declarations”, try installing it manually with
-    the following compilation flag:
-
-    ```bash
-    gem install thin -v '1.7.2' -- --with-cflags="-Wno-error=implicit-function-declaration"
-    ```
-
     If ever you hit some linker issues like “_ld: library not found
     for -lssl_” when installing the `mysql2` Gem, try installing it manually
     with the following linker flags:

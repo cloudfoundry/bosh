@@ -6,5 +6,4 @@ dependencies:
 files:
 - bosh-monitor/**/*
 - vendor/cache/*.gem
-- vendor/cache/eventmachine-*/**
 - vendor/cache/extensions/**

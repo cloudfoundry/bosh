@@ -38,7 +38,7 @@ describe Bhm::Plugins::Riemann do
     )
     heartbeat_request.delete :vitals
 
-    EventMachine.run do
+    Sync do
       expect(@plugin.run).to be(true)
 
       allow(@client).to receive(:<<)
@@ -47,7 +47,6 @@ describe Bhm::Plugins::Riemann do
 
       @plugin.process(alert)
       @plugin.process(heartbeat)
-      EventMachine.stop
     end
   end
 end

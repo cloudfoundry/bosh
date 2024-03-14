@@ -47,7 +47,9 @@ module Bosh::Monitor
       end
 
       @plugins[kind].each do |plugin|
-        plugin_process(plugin, event)
+        Async do
+          plugin_process(plugin, event)
+        end
       end
 
       true

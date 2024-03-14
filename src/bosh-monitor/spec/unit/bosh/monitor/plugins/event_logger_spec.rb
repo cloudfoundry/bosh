@@ -34,19 +34,14 @@ describe 'Bhm::Plugins::Resurrector' do
     expect(plugin.url.to_s).to eq(uri)
   end
 
-  context 'when the event machine reactor is not running' do
+  context 'when the reactor is not running' do
     it 'should not start' do
       expect(plugin.run).to be(false)
     end
   end
 
-  context 'when the event machine reactor is running' do
-    around do |example|
-      EventMachine.run do
-        example.call
-        EventMachine.stop
-      end
-    end
+  context 'when the reactor is running' do
+    include_context Async::RSpec::Reactor
 
     context 'alert' do
       let(:event_processor) { Bhm::EventProcessor.new }
@@ -57,7 +52,7 @@ describe 'Bhm::Plugins::Resurrector' do
         request_data = {
           head: {
             'Content-Type' => 'application/json',
-            'authorization' => %w[user password],
+            'authorization' => "Basic #{Base64.encode64('user:password').strip}",
           },
           body: "{\"timestamp\":\"#{time.to_i}\",\"action\":\"create\",\"object_type\":\"alert\"," \
           '"object_name":"foo","deployment":"d","instance":"j/i",' \

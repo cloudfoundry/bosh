@@ -17,12 +17,13 @@ end
 require 'ostruct'
 require 'set'
 
-require 'em-http-request'
-require 'eventmachine'
+require 'async'
+require 'async/http'
 require 'logging'
 require 'nats/io/client'
+require 'puma'
+require 'puma/configuration'
 require 'sinatra'
-require 'thin'
 require 'securerandom'
 
 # Helpers
