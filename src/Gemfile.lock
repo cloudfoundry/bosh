@@ -68,7 +68,7 @@ PATH
       async-http
       async-io
       cf-uaa-lib (~> 3.2.1)
-      dogapi (~> 1.21.0)
+      dogapi (~> 1.45.0)
       httpclient (~> 2.8.3)
       logging (~> 2.2.2)
       nats-pure
@@ -172,7 +172,7 @@ GEM
       activesupport (>= 3.0, < 8.0)
     diff-lcs (1.5.1)
     docile (1.4.0)
-    dogapi (1.21.0)
+    dogapi (1.45.0)
       multi_json
     domain_name (0.6.20240107)
     drb (2.2.1)
