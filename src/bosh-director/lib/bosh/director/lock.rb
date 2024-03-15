@@ -46,7 +46,7 @@ module Bosh::Director
               @refresh_signal.wait(@refresh_mutex, renew_interval)
               break if @unlock
 
-              @logger.debug("Renewing lock: #@name")
+              @logger.debug("Renewing lock: #{@name}")
               lock_expiration = Time.now.to_f + @expiration + 1
 
               if Models::Lock.where(name: @name, uid: @uid).update(expired_at: Time.at(lock_expiration)) == 0
