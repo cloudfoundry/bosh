@@ -70,7 +70,7 @@ module Bosh::Blobstore
       context 'when gcscli_config_path option is provided' do
         let(:gcscli_config_path) { Dir::tmpdir }
         let(:config_file_options) do
-          options.merge (
+          options.merge(
               {
                   gcscli_config_path: gcscli_config_path
               })

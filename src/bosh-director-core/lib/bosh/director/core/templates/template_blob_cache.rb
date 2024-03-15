@@ -1,7 +1,7 @@
 module Bosh::Director::Core::Templates
   class TemplateBlobCache
     def self.with_fresh_cache
-      cache = new()
+      cache = new
       yield cache
     ensure
       cache.clean_cache!

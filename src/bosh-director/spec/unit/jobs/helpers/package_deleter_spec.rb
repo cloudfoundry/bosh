@@ -8,8 +8,8 @@ module Bosh::Director
       let(:compiled_package_deleter) { CompiledPackageDeleter.new(blobstore, logger) }
       let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
       before { allow(blobstore).to receive(:delete) }
-      let(:release_version_1) { Models::ReleaseVersion.make() }
-      let(:release_version_2) { Models::ReleaseVersion.make() }
+      let(:release_version_1) { Models::ReleaseVersion.make }
+      let(:release_version_2) { Models::ReleaseVersion.make }
       let(:package) { Models::Package.make(blobstore_id: 'package_blobstore_id') }
 
       before do

@@ -246,7 +246,7 @@ describe Bosh::Blobstore::BaseClient do
           expect(logger).to receive(:debug).with("[blobstore] creating 'id' start: #{start_time}").ordered
           expect(subject).to receive(:create_file).ordered
           expect(logger).to receive(:debug).with("[blobstore] creating 'id' (took #{end_time - start_time})").ordered
-          subject.create(File.new(Tempfile.new().path, 'r'), 'id')
+          subject.create(File.new(Tempfile.new.path, 'r'), 'id')
         end
       end
 

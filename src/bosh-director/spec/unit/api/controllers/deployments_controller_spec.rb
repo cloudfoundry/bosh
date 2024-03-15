@@ -312,7 +312,7 @@ module Bosh::Director
             it 'does not skip draining' do
               expect_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
-                .with(anything(), anything(), anything(), anything(), anything(), hash_excluding('skip_drain'), anything())
+                .with(anything, anything, anything, anything, anything, hash_excluding('skip_drain'), anything)
                 .and_return(OpenStruct.new(:id => 1))
               post '/', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
@@ -323,7 +323,7 @@ module Bosh::Director
             it 'skips draining' do
               expect_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
-                .with(anything(), anything(), anything(), anything(), anything(), hash_including('skip_drain' => '*'),  anything())
+                .with(anything, anything, anything, anything, anything, hash_including('skip_drain' => '*'), anything)
                 .and_return(OpenStruct.new(:id => 1))
               post '/?skip_drain=*', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
@@ -334,7 +334,7 @@ module Bosh::Director
             it 'skips draining' do
               expect_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
-                .with(anything(), anything(), anything(), anything(), anything(), hash_including('skip_drain' => 'job_one,job_two'), anything())
+                .with(anything, anything, anything, anything, anything, hash_including('skip_drain' => 'job_one,job_two'), anything)
                 .and_return(OpenStruct.new(:id => 1))
               post '/?skip_drain=job_one,job_two', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
@@ -345,7 +345,7 @@ module Bosh::Director
             it 'passes the parameter' do
               expect_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
-                .with(anything(), anything(), anything(), anything(), anything(), hash_including('fix' => true), anything())
+                .with(anything, anything, anything, anything, anything, hash_including('fix' => true), anything)
                 .and_return(OpenStruct.new(:id => 1))
               post '/?fix=true', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
               expect(last_response).to be_redirect
@@ -396,7 +396,7 @@ module Bosh::Director
             it 'calls create deployment with deployment name' do
               expect_any_instance_of(DeploymentManager)
                   .to receive(:create_deployment)
-                          .with(anything(), anything(), anything(), anything(), deployment, hash_excluding('skip_drain'), anything())
+                          .with(anything, anything, anything, anything, deployment, hash_excluding('skip_drain'), anything)
                           .and_return(OpenStruct.new(:id => 1))
               post '/', spec_asset('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
@@ -407,7 +407,7 @@ module Bosh::Director
             it 'to false' do
               expect_any_instance_of(DeploymentManager)
                   .to receive(:create_deployment)
-                          .with(anything(), anything(), anything(), anything(), deployment, hash_including('new' => false), anything())
+                          .with(anything, anything, anything, anything, deployment, hash_including('new' => false), anything)
                           .and_return(OpenStruct.new(:id => 1))
               post '/', spec_asset('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
             end
@@ -415,7 +415,7 @@ module Bosh::Director
             it 'to true' do
               expect_any_instance_of(DeploymentManager)
                   .to receive(:create_deployment)
-                          .with(anything(), anything(), anything(), anything(), anything(), hash_including('new' => true), anything())
+                          .with(anything, anything, anything, anything, anything, hash_including('new' => true), anything)
                           .and_return(OpenStruct.new(:id => 1))
                Models::Deployment.first.delete
               post '/', spec_asset('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
@@ -426,7 +426,7 @@ module Bosh::Director
             it 'passes the parameter' do
               expect_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
-                      .with(anything(), anything(), anything(), anything(), anything(), hash_including('force_latest_variables' => true), anything())
+                      .with(anything, anything, anything, anything, anything, hash_including('force_latest_variables' => true), anything)
                       .and_return(OpenStruct.new(:id => 1))
               post '/?force_latest_variables=true', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
               expect(last_response).to be_redirect

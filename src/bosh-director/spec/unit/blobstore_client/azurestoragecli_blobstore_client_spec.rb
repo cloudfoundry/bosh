@@ -67,7 +67,7 @@ module Bosh::Blobstore
       context 'when azure_storage_cli_config_path option is provided' do
         let(:azure_storage_cli_config_path) { Dir.tmpdir }
         let(:config_file_options) do
-          options.merge (
+          options.merge(
               {
                 azure_storage_cli_config_path: azure_storage_cli_config_path,
               })

@@ -16,7 +16,7 @@ module Bosh::Director
       load_manifest(manifest_hash, manifest_text, consolidated_cloud_config, consolidated_runtime_config, options)
     end
 
-    def self.generate_empty_manifest()
+    def self.generate_empty_manifest
       consolidated_runtime_config = Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator.new([])
       load_manifest({}, '{}', nil, consolidated_runtime_config, resolve_interpolation: false)
     end
