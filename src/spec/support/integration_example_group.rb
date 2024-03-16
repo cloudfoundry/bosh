@@ -5,6 +5,14 @@ require 'bosh/dev/verify_multidigest_manager'
 require 'bosh/dev/gnatsd_manager'
 
 module IntegrationExampleGroup
+  class DeploymentFailedError < RuntimeError
+
+  end
+
+  class UnknownRecordTypeError < RuntimeError
+
+  end
+
   def logger
     @logger ||= current_sandbox.logger
   end
@@ -209,7 +217,9 @@ module IntegrationExampleGroup
 
     output, exit_code = deploy(options.merge(return_exit_code: true))
 
-    raise "Deploy failed. Exited #{exit_code}: #{output}" if exit_code != 0 && !options.fetch(:failure_expected, false)
+    if exit_code != 0 && !options.fetch(:failure_expected, false)
+      raise DeploymentFailedError, "Deploy failed. Exited #{exit_code}: #{output}"
+    end
 
     return_exit_code ? [output, exit_code] : output
   end
@@ -364,7 +374,7 @@ module IntegrationExampleGroup
       elsif record.is_a?(String)
         record.gsub(regex_pattern, replace_pattern)
       else
-        raise 'Unknown record type'
+        raise UnknownRecordTypeError, 'Unknown record type'
       end
     end
   end
@@ -380,7 +390,7 @@ module IntegrationSandboxHelpers
           current_sandbox.stop
           cleanup_client_sandbox_dir
         rescue StandardError => e
-          logger.error "Failed to stop sandbox! #{e.message}\n#{e.backtrace.join("\n")}"
+          logger.error "Failed to stop sandbox! #{e.message}\n#{e.backtrace&.join("\n")}"
         ensure
           exit(status)
         end

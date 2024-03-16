@@ -4,6 +4,26 @@ module Bosh::Spec
   class BoshGoCliRunner
     include Support::TableHelpers
 
+    class Error < RuntimeError
+
+    end
+
+    class TaskIdParseError < Error
+
+    end
+
+    class CommandExecutionError < Error
+
+    end
+
+    class TaskNotFoundError < Error
+
+    end
+
+    class ThreadSandboxMissingError < Error
+
+    end
+
     def initialize(bosh_work_dir, bosh_config, agent_log_path_resolver, nats_log_path, saved_logs_path, logger, sha2)
       @bosh_work_dir = bosh_work_dir
       @bosh_config = bosh_config
@@ -37,7 +57,7 @@ module Bosh::Spec
 
     def current_sandbox
       sandbox = Thread.current[:sandbox]
-      raise "call prepare_sandbox to set up this thread's sandbox" if sandbox.nil?
+      raise ThreadSandboxMissingError, "call prepare_sandbox to set up this thread's sandbox" if sandbox.nil?
       sandbox
     end
 
@@ -54,14 +74,14 @@ module Bosh::Spec
       exit_code = 0
 
       time = Benchmark.realtime do
-        Open3.popen2e(env, command, chdir: working_dir) do |stdin, stdout_and_stderr, wait_thr|
+        Open3.popen2e(env, command, chdir: working_dir) do |_stdin, stdout_and_stderr, wait_thr|
           if options.fetch(:no_track, false)
             line = "negative-ghostrider"
             start = Time.now
             loop do
               line = stdout_and_stderr.gets
               break if line =~ /Task (\d+)/
-              raise 'Failed to parse task id from output within timeout' if (Time.now - start) > 20
+              raise TaskIdParseError, 'Failed to parse task id from output within timeout' if (Time.now - start) > 20
             end
             output = line
             exit_code = 0
@@ -90,7 +110,7 @@ module Bosh::Spec
           print_agent_debug_logs($1)
         end
 
-        raise "ERROR: #{command} failed with output:\n#{output}"
+        raise CommandExecutionError, "ERROR: #{command} failed with output:\n#{output}"
       end
 
       options.fetch(:return_exit_code, false) ? [output, exit_code] : output
@@ -124,7 +144,7 @@ module Bosh::Spec
       task_table = table(run('tasks --recent --all --json'))
 
       if task_table.empty?
-        raise 'No tasks found!'
+        raise TaskNotFoundError, 'No tasks found!'
       end
 
       task_table[0]['id']

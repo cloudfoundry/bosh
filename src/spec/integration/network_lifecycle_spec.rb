@@ -63,9 +63,9 @@ describe 'network lifecycle', type: :integration do
           ],
         }]
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
-        expect do
+        expect {
           deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
-        end.to raise_error
+        }.to raise_error(Bosh::Spec::BoshGoCliRunner::Error)
       end
 
       it 'should have unique subnet names' do
@@ -102,9 +102,9 @@ describe 'network lifecycle', type: :integration do
         }]
 
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
-        expect do
+        expect {
           deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
-        end.to raise_error
+        }.to raise_error(Bosh::Spec::BoshGoCliRunner::Error)
       end
 
       it 'should not have both netmask_bits and range' do
@@ -125,9 +125,9 @@ describe 'network lifecycle', type: :integration do
         }]
 
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
-        expect do
+        expect {
           deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
-        end.to raise_error
+        }.to raise_error(Bosh::Spec::BoshGoCliRunner::Error)
       end
 
       it 'should create a subnet in the iaas for first deployment' do
@@ -269,9 +269,9 @@ describe 'network lifecycle', type: :integration do
         }]
 
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
-        expect do
+        expect {
           deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
-        end.to raise_error
+        }.to raise_error(Bosh::Spec::BoshGoCliRunner::Error)
         create_network_invocations = current_sandbox.cpi.invocations_for_method('create_network')
         expect(create_network_invocations.count).to eq(0)
       end
@@ -401,9 +401,9 @@ describe 'network lifecycle', type: :integration do
         ],
       }]
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
-      expect do
+      expect {
         deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
-      end.to raise_error
+      }.to raise_error(Bosh::Spec::BoshGoCliRunner::Error)
       create_network_invocations = current_sandbox.cpi.invocations_for_method('create_network')
       expect(create_network_invocations.count).to eq(4)
       delete_network_invocations = current_sandbox.cpi.invocations_for_method('delete_network')
