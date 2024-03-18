@@ -3,7 +3,7 @@ resource "aws_db_instance" "mysql" {
   storage_type           = "gp2"
   engine                 = "mysql"
   engine_version         = "8.0"
-  instance_class         = "db.t2.micro"
+  instance_class         = "db.t4g.micro"
   skip_final_snapshot    = true
   db_name                = var.database_name
   username               = var.database_username
