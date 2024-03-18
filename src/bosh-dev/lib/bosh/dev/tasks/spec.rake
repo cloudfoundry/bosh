@@ -83,12 +83,13 @@ namespace :spec do
     end
 
     def run_in_parallel(test_path, options = {})
-      spec_path = ENV['SPEC_PATH'] || ''
+      spec_path = ENV.fetch('SPEC_PATH', '').split(',')
       count = " -n #{options[:count]}" unless options[:count].to_s.empty?
       tag = "SPEC_OPTS='--tag #{options[:tags]}'" unless options[:tags].nil?
+
       command = begin
-        if spec_path != ''
-          "#{tag} https_proxy= http_proxy= bundle exec rspec #{spec_path}"
+        if !spec_path.empty?
+          "#{tag} https_proxy= http_proxy= bundle exec rspec #{spec_path.join(' ')}"
         else
           <<-BASH
           #{tag} https_proxy= http_proxy= bundle exec parallel_test \
@@ -98,6 +99,7 @@ namespace :spec do
           BASH
         end
       end
+
       puts command
       abort unless system(command)
     end
