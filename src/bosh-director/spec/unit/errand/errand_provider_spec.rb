@@ -579,9 +579,9 @@ module Bosh::Director
             end
 
             it 'will not raise an error' do
-              expect do
+              expect {
                 subject.get(deployment_name, ig_name, keep_alive, instance_slugs)
-              end.not_to raise_error(RunErrandError)
+              }.not_to raise_error(RunErrandError)
             end
           end
         end
@@ -600,9 +600,9 @@ module Bosh::Director
           end
 
           it 'fails' do
-            expect do
+            expect {
               subject.get(deployment_name, ig_name, keep_alive, instance_slugs)
-            end.to raise_error(
+            }.to raise_error(
               RunErrandError,
               "Instance group 'instance-group-name' is not an errand. " \
               "To mark an instance group as an errand set its lifecycle to 'errand' in the deployment manifest.",
