@@ -45,9 +45,9 @@ describe "cli cpi config", type: :integration do
   it 'does not fail when cpi config is very large' do
     cpi_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::Deployments.multi_cpi_config)
 
-    for i in 0..10001
+    (0..10001).each { |i|
       cpi_config["boshbosh#{i}"] = 'smurfsAreBlueGargamelIsBrownPinkpantherIsPinkAndPikachuIsYellow'
-    end
+    }
 
     cpi_yaml = yaml_file('cpi_config.yml', cpi_config)
     output, exit_code = bosh_runner.run("update-cpi-config #{cpi_yaml.path}", return_exit_code: true)
