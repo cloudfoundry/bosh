@@ -36,7 +36,7 @@ groups:
     - build-main-postgres-10
     - build-main-postgres-13
     - build-main-postgres-15
-    - build-main-mysql-5-7
+    - build-main-mysql-8-0
     - build-integration
     - build-docker-cpi
     - build-warden-cpi
@@ -82,12 +82,12 @@ jobs:
         - get: bosh-src
           passed: [gate]
           trigger: true
-        - get: integration-mysql-5-7-image
-      - task: test-mysql-5.7
+        - get: integration-mysql-8-0-image
+      - task: test-mysql-8.0
         timeout: 2h
         privileged: true
         file: bosh-src/ci/tasks/test-unit.yml
-        image: integration-mysql-5-7-image
+        image: integration-mysql-8-0-image
         params:
           DB: mysql
 
@@ -221,11 +221,11 @@ jobs:
         - get: bosh-cli
           trigger: true
         - get: bosh-agent
-        - get: integration-mysql-5-7-image
+        - get: integration-mysql-8-0-image
       - task: tests
         privileged: true
         file: bosh-src/ci/tasks/test-integration.yml
-        image: integration-mysql-5-7-image
+        image: integration-mysql-8-0-image
         params:
           DB:           mysql
           DB_TLS:       true
@@ -789,7 +789,7 @@ jobs:
         get_params:
           skip_download: true
 
-  - name: build-main-mysql-5-7
+  - name: build-main-mysql-8-0
     public: true
     serial: true
     plan:
@@ -797,7 +797,7 @@ jobs:
       - get: integration-image
         trigger: true
         passed: [build-integration]
-      - put: integration-mysql-5-7-image
+      - put: integration-mysql-8-0-image
         params:
           tag_as_latest: true
           build: "bosh-src-dockerfiles/ci/dockerfiles/main-mysql"
@@ -1375,10 +1375,10 @@ resources:
       username: ((dockerhub_username))
       password: ((dockerhub_password))
 
-  - name: integration-mysql-5-7-image
+  - name: integration-mysql-8-0-image
     type: docker-image
     source:
-      repository: bosh/main-mysql-5.7
+      repository: bosh/main-mysql-8.0
       tag: ((branch_name))
       username: ((dockerhub_username))
       password: ((dockerhub_password))

@@ -2,7 +2,7 @@ resource "aws_db_instance" "mysql" {
   allocated_storage      = 10
   storage_type           = "gp2"
   engine                 = "mysql"
-  engine_version         = "5.7"
+  engine_version         = "8.0"
   instance_class         = "db.t2.micro"
   skip_final_snapshot    = true
   db_name                = var.database_name
