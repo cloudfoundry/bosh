@@ -85,9 +85,9 @@ module Bosh::Director::DeploymentPlan
       addresses_we_cant_allocate.merge(subnet.static_ips.to_a) unless subnet.static_ips.empty?
       addr = find_first_available_address(addresses_we_cant_allocate, first_range_address)
       if subnet.range.version == 6
-        ip_address = NetAddr::CIDRv6.new(addr)
+        ip_address = NetAddr::CIDR.create(addr, Version: 6)
       else
-        ip_address = NetAddr::CIDRv4.new(addr)
+        ip_address = NetAddr::CIDR.create(addr, Version: 4)
       end
 
       unless subnet.range == ip_address || subnet.range.contains?(ip_address)
@@ -115,7 +115,7 @@ module Bosh::Director::DeploymentPlan
 
       raise NoMoreIPsAvailableAndStopRetrying if available_ips.empty?
 
-      ip_address = NetAddr::CIDRv4.new(available_ips.first)
+      ip_address = NetAddr::CIDR.create(available_ips.first, Version: 4)
 
       save_ip(ip_address, reservation, false)
 
