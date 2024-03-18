@@ -52,11 +52,11 @@ module Bosh::Director
           ])
         end
 
-        if context_id = params['context_id']
+        if (context_id = params['context_id'])
           dataset = dataset.filter(:context_id => context_id)
         end
 
-        if limit = params['limit']
+        if (limit = params['limit'])
           limit = limit.to_i
           limit = 1 if limit < 1
         end

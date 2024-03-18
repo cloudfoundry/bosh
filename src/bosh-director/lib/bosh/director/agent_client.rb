@@ -205,7 +205,7 @@ module Bosh::Director
       task = get_task_status(agent_task_id)
       timed_out = false
 
-      until task['state'] != 'running' || (timeout && timed_out = timeout.timed_out?)
+      until task['state'] != 'running' || (timeout && (timed_out = timeout.timed_out?))
         blk.call if block_given?
         sleep(DEFAULT_POLL_INTERVAL)
         task = get_task_status(agent_task_id)
@@ -324,7 +324,7 @@ module Bosh::Director
     def inject_compile_log(response)
       if response['value'] && response['value'].is_a?(Hash) &&
         response['value']['result'].is_a?(Hash) &&
-        blob_id = response['value']['result']['compile_log_id']
+        (blob_id = response['value']['result']['compile_log_id'])
         compile_log = download_and_delete_blob(blob_id)
         response['value']['result']['compile_log'] = compile_log
       end

@@ -29,7 +29,7 @@ module Bosh
 
           def choose(chosen_value)
             @weight[chosen_value]+=1
-            if preferred_chosen_index = @preferred.find_index {|v| v == chosen_value.name}
+            if (preferred_chosen_index = @preferred.find_index { |v| v == chosen_value.name })
               @preferred.delete_at(preferred_chosen_index)
             end
             chosen_value

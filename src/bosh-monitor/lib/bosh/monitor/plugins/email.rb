@@ -81,7 +81,7 @@ module Bosh::Monitor
           email_body = ''
 
           @lock.synchronize do
-            while event = queue.shift
+            while (event = queue.shift)
               logger.info('Dequeueing...')
               email_body << event.to_plain_text << "\n"
             end
