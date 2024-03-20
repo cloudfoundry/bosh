@@ -88,7 +88,31 @@ module DBSpecHelper
       Dir.glob(File.join(@director_migrations_dir, '..', '**', '[0-9]*_*.rb'))
     end
 
+    def skip_on_mysql(example, why = nil)
+      skip_on_db_type(:mysql, example, why)
+    end
+
+    def skip_on_postgresql(example, why = nil)
+      skip_on_db_type(:postgresql, example, why)
+    end
+
+    def skip_on_sqlite(example, why = nil)
+      skip_on_db_type(:sqlite, example, why)
+    end
+
     private
+
+    def skip_on_db_type(db_type, example, why)
+      if db_is?(db_type)
+        message = "Assertion not supported on DB #{db_type.inspect}"
+        message += " because '#{why}'." if why
+        example.skip(message)
+      end
+    end
+
+    def db_is?(db_type)
+      /#{db_type}/.match?("#{db.adapter_scheme}")
+    end
 
     def migrate_to_version(version)
       DBMigrator.new(@db, :director, target: version).migrate

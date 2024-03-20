@@ -24,9 +24,7 @@ module Bosh::Director
     end
 
     it 'local_dns_records should change the type from int to bigint' do
-      if [:sqlite].include?(db.adapter_scheme)
-        skip('Running using SQLite, wherein int == bigint')
-      end
+      DBSpecHelper.skip_on_sqlite(self, 'int == bigint')
 
       expect {
         db[:local_dns_records] << {id: 8589934592, ip: '987'}
@@ -52,9 +50,7 @@ module Bosh::Director
     end
 
     it 'local_dns_blobs should change the type of id from int to bigint' do
-      if [:sqlite].include?(db.adapter_scheme)
-        skip('Running using SQLite, wherein int == bigint')
-      end
+      DBSpecHelper.skip_on_sqlite(self, 'int == bigint')
 
       expect {
         db[:local_dns_blobs] << {id: 8589934592, blobstore_id: '123', sha1: 'sha1', created_at: Time.now, version: 2}
@@ -68,9 +64,7 @@ module Bosh::Director
     end
 
     it 'local_dns_blobs should change the type of version from int to bigint' do
-      if [:sqlite].include?(db.adapter_scheme)
-        skip('Running using SQLite, wherein int == bigint')
-      end
+      DBSpecHelper.skip_on_sqlite(self, 'int == bigint')
 
       expect {
         db[:local_dns_blobs] << {version: 8589934592, blobstore_id: '123', sha1: 'sha1', created_at: Time.now}
@@ -84,9 +78,7 @@ module Bosh::Director
     end
 
     it 'agent_dns_versions should change the type of dns_version from int to bigint' do
-      if [:sqlite].include?(db.adapter_scheme)
-        skip('Running using SQLite, wherein int == bigint')
-      end
+      DBSpecHelper.skip_on_sqlite(self, 'int == bigint')
 
       expect {
         db[:agent_dns_versions] << {dns_version: 8589934592, agent_id: '123'}
@@ -111,9 +103,7 @@ module Bosh::Director
     end
 
     it 'agent_dns_versions should change the type of id from int to bigint' do
-      if [:sqlite].include?(db.adapter_scheme)
-        skip('Running using SQLite, wherein int == bigint')
-      end
+      DBSpecHelper.skip_on_sqlite(self, 'int == bigint')
 
       expect {
         db[:agent_dns_versions] << {id: 8589934592, agent_id: '123', dns_version: 2}

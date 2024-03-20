@@ -42,16 +42,14 @@ module Bosh::Director
       end
 
       it 'variable_sets id should change the type from int to bigint' do
-        if [:sqlite].include?(db.adapter_scheme)
-          skip('Running using SQLite, wherein int == bigint')
-        end
+        DBSpecHelper.skip_on_sqlite(self, 'int == bigint')
 
         expect {
           db[:variable_sets] << {id: 8589934592, deployment_id: 1, created_at: some_time}
 
           # MariaDB does not error when inserting record, and instead just truncates records
           raise unless db[:variable_sets].first[:id] == 8589934592
-        }.to raise_error
+        }.to raise_error(Sequel::DatabaseError)
 
         DBSpecHelper.migrate(migration_file)
 
@@ -86,16 +84,14 @@ module Bosh::Director
       end
 
       it 'variables id should change the type from int to bigint' do
-        if [:sqlite].include?(db.adapter_scheme)
-          skip('Running using SQLite, wherein int == bigint')
-        end
+        DBSpecHelper.skip_on_sqlite(self, 'int == bigint')
 
         expect {
           db[:variables] << {id: 8589934592, variable_set_id: 1, variable_id: 'some_id', variable_name: 'some_name'}
 
           # MariaDB does not error when inserting record, and instead just truncates records
           raise unless db[:variables].first[:id] == 8589934592
-        }.to raise_error
+        }.to raise_error(Sequel::DatabaseError)
 
         DBSpecHelper.migrate(migration_file)
 

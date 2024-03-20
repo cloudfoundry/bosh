@@ -4,7 +4,6 @@ module Bosh::Director
   describe 'associate_vm_info_with_vms_table' do
     let(:db) { DBSpecHelper.db }
     let(:migration_file) { '20170328224049_associate_vm_info_with_vms_table.rb' }
-    let(:mysql_db_adpater_schemes) { %i[mysql mysql2] }
 
     before do
       DBSpecHelper.migrate_all_before(migration_file)
@@ -53,9 +52,7 @@ module Bosh::Director
     end
 
     it 'has a not null constraint on the instances id for the vm table' do
-      if mysql_db_adpater_schemes.include?(db.adapter_scheme)
-        skip('MYSQL v5.5.x running on CI + Ruby Sequel does NOT generate NULL constraint violations')
-      end
+      DBSpecHelper.skip_on_mysql(self, 'NULL constraint violations not generated')
 
       DBSpecHelper.migrate(migration_file)
       expect { db[:vms] << {} }.to raise_error(Sequel::NotNullConstraintViolation)

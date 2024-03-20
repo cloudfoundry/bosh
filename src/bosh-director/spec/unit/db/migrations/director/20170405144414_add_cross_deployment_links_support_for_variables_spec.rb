@@ -4,7 +4,6 @@ module Bosh::Director
   describe 'add cross deployment link support for variables' do
     let(:db) { DBSpecHelper.db }
     let(:migration_file) { '20170405144414_add_cross_deployment_links_support_for_variables.rb' }
-    let(:mysql_db_adpater_schemes) { [:mysql, :mysql2] }
 
     before do
       DBSpecHelper.migrate_all_before(migration_file)

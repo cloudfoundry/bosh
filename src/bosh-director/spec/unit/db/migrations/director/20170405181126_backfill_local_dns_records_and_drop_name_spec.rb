@@ -12,9 +12,7 @@ module Bosh::Director
     end
 
     it 'drops the name from local_dns_records table and backfills data' do
-      if db.adapter_scheme == :sqlite
-        skip('sqlite doesnt auto-increment sanely')
-      end
+      DBSpecHelper.skip_on_sqlite(self, 'auto-increment is not predictable')
 
       instance1_spec_json = JSON.dump(
           {

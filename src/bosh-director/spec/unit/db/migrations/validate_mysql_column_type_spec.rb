@@ -5,7 +5,7 @@ module Bosh::Director
     let(:db) { Bosh::Director::Config.db }
 
     before do
-      skip 'Skipping tests that check for longtext fields in MySQL' unless [:mysql2, :mysql].include?(db.adapter_scheme)
+      skip('Skipping tests that check for longtext fields in MySQL') unless [:mysql2, :mysql].include?(db.adapter_scheme)
     end
 
     it 'should only have longtext types' do

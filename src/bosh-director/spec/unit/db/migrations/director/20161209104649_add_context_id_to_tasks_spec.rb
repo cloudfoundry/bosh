@@ -17,16 +17,16 @@ module Bosh::Director
 
     context 'context length' do
       before do
-        skip 'SQL lite does not support limiting string size' if [:sqlite].include?(db.adapter_scheme)
+        DBSpecHelper.skip_on_sqlite(self, 'string size is not limitable')
       end
 
       it 'allows 64 chars in length' do
-        validContextId = "x" * 64
+        valid_context_id = "x" * 64
 
         DBSpecHelper.migrate(migration_file)
-        db[:tasks] << {id: 1, state: 'alabama', timestamp: '2016-12-09 11:53:42', description: 'descr', type: 'type', context_id: validContextId}
+        db[:tasks] << {id: 1, state: 'alabama', timestamp: '2016-12-09 11:53:42', description: 'descr', type: 'type', context_id: valid_context_id}
 
-        expect(db[:tasks].first[:context_id]).to eq(validContextId)
+        expect(db[:tasks].first[:context_id]).to eq(valid_context_id)
       end
     end
   end
