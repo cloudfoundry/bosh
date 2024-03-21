@@ -86,7 +86,7 @@ module Bosh::Director
 
     def get_address(network_name, network, prefer_dns_entry = true)
       if should_use_dns?(network, prefer_dns_entry)
-        return @dns_encoder.encode_query({
+        @dns_encoder.encode_query({
           group_type: Models::LocalDnsEncodedGroup::Types::INSTANCE_GROUP,
           group_name: @instance_group_name,
           root_domain: @root_domain,
@@ -95,13 +95,13 @@ module Bosh::Director
           uuid: @instance_id,
         })
       else
-        return network['ip']
+        network['ip']
       end
     end
 
     def get_link_address(link_def, network_name, network, prefer_dns_entry = true)
       if should_use_dns?(network, prefer_dns_entry)
-        return @dns_encoder.encode_link(
+        @dns_encoder.encode_link(
           link_def,
           {
             root_domain: @root_domain,
@@ -110,7 +110,7 @@ module Bosh::Director
           }
         )
       else
-        return network['ip']
+        network['ip']
       end
     end
 

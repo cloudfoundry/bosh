@@ -62,9 +62,9 @@ describe 'cli cloud config', type: :integration do
   it 'does not fail if the uploaded cloud config is a large file' do
     cloud_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::Deployments.simple_cloud_config)
 
-    for i in 0..10001
+    (0..10001).each { |i|
       cloud_config["boshbosh#{i}"] = 'smurfsAreBlueGargamelIsBrownPinkpantherIsPinkAndPikachuIsYellow'
-    end
+    }
 
     cloud_config_file = yaml_file('cloud_config.yml', cloud_config)
 

@@ -138,7 +138,7 @@ module Bosh::Spec
     def task(id)
       output = @runner.run("task #{id}", failure_expected: true) # permit failures, gocli task command fails if non-success. ruby cli return success despite task failure.
       failed = /Task (\d+) error/.match(output)
-      return output, !failed
+      [output, !failed]
     end
 
     def tasks

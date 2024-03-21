@@ -403,7 +403,7 @@ module Bosh::Director::ConfigServer
         raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected data[0] to have key 'id'" unless fetched_variable.key?('id')
         raise Bosh::Director::ConfigServerFetchError, "Failed to fetch variable '#{name_root}' from config server: Expected data[0] to have key 'value'" unless fetched_variable.key?('value')
 
-        return fetched_variable['id'], extract_variable_value(name, fetched_variable['value'])
+        [fetched_variable['id'], extract_variable_value(name, fetched_variable['value'])]
       elsif response.is_a? Net::HTTPNotFound
         raise Bosh::Director::ConfigServerMissingName, "Failed to find variable '#{name_root}' from config server: HTTP Code '404', Error: '#{response_body['error']}'"
       else

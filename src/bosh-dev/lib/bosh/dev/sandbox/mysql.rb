@@ -58,9 +58,7 @@ module Bosh::Dev::Sandbox
 
     def current_locked_jobs
       jobs_cmd = %Q{mysql -h #{@host} -P #{@port} --user=#{@username} --password=#{@password} -e "select * from delayed_jobs where locked_by is not null;" #{db_name} 2> /dev/null}
-      job_lines = `#{jobs_cmd}`.lines.to_a[1..-1] || []
-
-      job_lines
+      `#{jobs_cmd}`.lines.to_a[1..-1] || []
     end
 
     def truncate_db

@@ -14,14 +14,8 @@ RSpec::Matchers.define :be_create_swap_deleted do |old_vm|
 end
 
 describe 'deploy with create-swap-delete', type: :integration do
-  with_reset_sandbox_before_each(
-    local_dns: {
-      'enabled' => true,
-      'include_index' => false,
-      'use_dns_addresses' => true,
-    },
-    agent_wait_timeout: 3,
-  )
+  with_reset_sandbox_before_each(local_dns: {'enabled' => true, 'include_index' => false, 'use_dns_addresses' => true},
+                                 agent_wait_timeout: 3)
 
   let(:manifest) do
     manifest = Bosh::Spec::Deployments.simple_manifest_with_instance_groups(instances: 1, azs: ['z1'])

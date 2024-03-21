@@ -1,3 +1,5 @@
+require 'pp' # for #pretty_inspect
+
 module Bosh::Director
   module DeploymentPlan
     class AgentStateMigrator

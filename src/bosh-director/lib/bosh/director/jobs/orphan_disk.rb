@@ -28,7 +28,8 @@ module Bosh::Director
             @orphan_disk_manager.orphan_disk(persistent_disk)
           end
         end
-        return "disk #{@disk_cid} orphaned"
+
+        "disk #{@disk_cid} orphaned"
       end
     end
   end

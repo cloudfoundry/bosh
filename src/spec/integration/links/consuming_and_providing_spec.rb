@@ -384,7 +384,7 @@ describe 'consuming and providing', type: :integration do
     end
 
     def get_provider_instance_group(provides_definition)
-      instance_group_spec = Bosh::Spec::Deployments.simple_instance_group(
+      Bosh::Spec::Deployments.simple_instance_group(
         name: 'provider_ig',
         jobs: [
           {
@@ -395,7 +395,6 @@ describe 'consuming and providing', type: :integration do
         ],
         instances: 2,
       )
-      instance_group_spec
     end
 
     let(:consumer_instance_group) do

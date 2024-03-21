@@ -98,7 +98,7 @@ module Bosh::Blobstore
       context 'when s3cli_config_path option is provided' do
         let(:s3cli_config_path) { Dir.tmpdir }
         let(:config_file_options) do
-          options.merge (
+          options.merge(
               {
                 s3cli_config_path: s3cli_config_path,
               })

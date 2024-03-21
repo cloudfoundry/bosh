@@ -40,11 +40,11 @@ module Bosh::Director
               can_combine = false
               break
             end
-            if (range_tuple[1].succ == next_range_tuple[0])
+            if range_tuple[1].succ == next_range_tuple[0]
               range_tuple[1] = next_range_tuple[1]
               i += 1
             # does not cover all cases: 10/32, 10/8
-            elsif ((range_tuple[0] < next_range_tuple[0]) && (range_tuple[1] > next_range_tuple[1]))
+            elsif (range_tuple[0] < next_range_tuple[0]) && (range_tuple[1] > next_range_tuple[1])
               i += 1
             else
               can_combine = false

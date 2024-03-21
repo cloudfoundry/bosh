@@ -17,7 +17,6 @@ networks:
   - azs: [z1, z2, z3]
     dns: [8.8.8.8]
     range: 10.245.0.0/24
-    dns: [8.8.8.8]
     # IPs that will not be used for anything
     reserved: [10.245.0.2-10.245.0.10]
     gateway: 10.245.0.1

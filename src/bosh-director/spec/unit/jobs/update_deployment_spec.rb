@@ -351,7 +351,7 @@ module Bosh::Director
             it 'does not fail if cleaning up old VariableSets raises an error' do
               another_variable_set =  Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
               allow(deployment_instance_group).to receive(:referenced_variable_sets).and_return([variable_set, another_variable_set])
-              allow(deployment_model).to receive(:cleanup_variable_sets).with([variable_set, another_variable_set]).and_raise(Sequel::ForeignKeyConstraintViolation.new('bad stuff happened'))
+              allow(deployment_model).to receive(:cleanup_variable_sets).with([variable_set, another_variable_set]).and_raise(Sequel::ForeignKeyConstraintViolation.new)
 
               expect {
                 job.perform
@@ -917,9 +917,9 @@ Unable to render instance groups for deployment. Errors are:
           it 'formats the error messages' do
             expect {
               job.perform
-            }.to raise_error { |error|
+            }.to(raise_error { |error|
               expect(error.message).to eq(expected_result)
-            }
+            })
           end
 
           context 'when option deploy is set' do
@@ -984,9 +984,9 @@ Unable to render instance groups for deployment. Errors are:
             it 'formats the error messages for service & errand instance groups' do
               expect {
                 job.perform
-              }.to raise_error { |error|
+              }.to(raise_error { |error|
                 expect(error.message).to eq(expected_result)
-              }
+              })
             end
           end
         end

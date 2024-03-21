@@ -71,7 +71,8 @@ module Bosh::Director
 
       def find_az_names_for_ip(ip)
         subnet = @subnets.find { |sn| sn.static_ips.include?(ip) }
-        return subnet.availability_zone_names if subnet
+
+        subnet.availability_zone_names if subnet
       end
     end
   end

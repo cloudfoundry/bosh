@@ -109,35 +109,25 @@ module Bosh::Director
               {
                 'name' => 'release-1',
                 'release_versions' => [
-                  Hash[
-                    'version',
-                    '1',
-                    'commit_hash',
-                    'unknown',
-                    'uncommitted_changes',
-                    false,
-                    'currently_deployed',
-                    true,
-                    'job_names',
-                    [],
-                  ],
+                  {
+                    'version' => '1',
+                    'commit_hash' => 'unknown',
+                    'uncommitted_changes' => false,
+                    'currently_deployed' => true,
+                    'job_names' => [],
+                  },
                 ],
               },
               {
                 'name' => 'release-2',
                 'release_versions' => [
-                  Hash[
-                    'version',
-                    '2',
-                    'commit_hash',
-                    '0b2c3d',
-                    'uncommitted_changes',
-                    true,
-                    'currently_deployed',
-                    false,
-                    'job_names',
-                    [],
-                  ],
+                  {
+                    'version' => '2',
+                    'commit_hash' => '0b2c3d',
+                    'uncommitted_changes' => true,
+                    'currently_deployed' => false,
+                    'job_names' => [],
+                  },
                 ],
               },
             ]

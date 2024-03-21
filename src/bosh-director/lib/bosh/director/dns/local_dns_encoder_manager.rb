@@ -45,12 +45,12 @@ module Bosh::Director
     class << self
       private
 
-      # rubocop:disable Lint/HandleExceptions
+      # rubocop:disable Lint/SuppressedException
       def with_skip_dupes
         yield
       rescue Sequel::UniqueConstraintViolation => _
       end
-      # rubocop:enable Lint/HandleExceptions
+      # rubocop:enable Lint/SuppressedException
 
       def encode_az(name)
         with_skip_dupes { Models::LocalDnsEncodedAz.find_or_create(name: name) }

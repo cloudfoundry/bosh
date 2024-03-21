@@ -56,7 +56,7 @@ EOF
     migration_digest = Digest::SHA1.hexdigest(File.read(new_migration_path))
 
     digest_migration_json = JSON.parse(File.read(migration_digests))
-    if digest_migration_json[name] != nil then
+    if digest_migration_json[name] != nil
       puts '
         YOU ARE MODIFIFYING A DB MIGRATION DIGEST.
         IF THIS MIGRATION HAS ALREADY BEEN RELEASED, IT MIGHT RESULT IN UNDESIRABLE BEHAVIOR.

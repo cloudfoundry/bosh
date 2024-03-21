@@ -329,7 +329,7 @@ describe 'director templates' do
           )
         end
 
-        it 'converts the adapter to `mysqql`' do
+        it 'converts the adapter to `mysql`' do
           bbr_config = JSON.parse(template.render(properties))
           expect(bbr_config['adapter']).to eq('mysql')
         end
@@ -375,16 +375,13 @@ describe 'director templates' do
       end
     end
 
-    # rubocop:disable Metrics/MethodLength
     describe 'certificate expiry template' do
       before do
         @key, @cert, @expiry = create_key_and_csr_cert
       end
 
-      # rubocop:disable Metrics/BlockLength
       it_should_behave_like 'a rendered file' do
         let(:file_name) { '../jobs/director/templates/certificate_expiry.json.erb' }
-        # rubocop:disable Metrics/BlockLength
         let(:properties) do
           {
             'properties' => {
@@ -445,8 +442,6 @@ describe 'director templates' do
           JSON
         end
       end
-      # rubocop:enable Metrics/BlockLength
-      # rubocop:enable Metrics/MethodLength
     end
   end
 end
@@ -465,7 +460,7 @@ def new_csr(key, subject)
   csr.version = 0
   csr.subject = subject
   csr.public_key = key.public_key
-  csr.sign key, OpenSSL::Digest::SHA1.new
+  csr.sign key, OpenSSL::Digest.new('SHA1')
 
   csr
 end
@@ -475,13 +470,13 @@ def new_csr_certificate(key, csr)
   csr_cert.serial = 0
   csr_cert.version = 2
   csr_cert.not_before = Time.now - 60 * 60 * 24
-  csr_cert.not_after = Time.now + 94608000
+  csr_cert.not_after = Time.now + 94_608_000
 
   csr_cert.subject = csr.subject
   csr_cert.public_key = csr.public_key
   csr_cert.issuer = csr.subject
 
-  csr_cert.sign key, OpenSSL::Digest::SHA1.new
+  csr_cert.sign key, OpenSSL::Digest.new('SHA1')
 
   csr_cert
 end

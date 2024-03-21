@@ -5,7 +5,7 @@ module Bosh::Director
 
         include ValidationHelper
 
-        def initialize()
+        def initialize
           dns_config = Config.dns || {}
           @include_power_dns_server_addr = !!Config.dns_db
           @default_server = dns_config['server']

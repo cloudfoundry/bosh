@@ -121,7 +121,7 @@ module Bosh::Director::Links
           type: 'job',
         )
 
-        errors = process_provider_definitions(
+        process_provider_definitions(
           manifest_provides_links,
           provider,
           provider_definitions,
@@ -131,7 +131,6 @@ module Bosh::Director::Links
           job_name: job_name,
           job_properties: job_properties,
         )
-        errors
       end
 
       def process_provider_definitions(

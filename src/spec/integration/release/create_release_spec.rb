@@ -4,8 +4,8 @@ require_relative '../../spec_helper'
 describe 'create-release', type: :integration do
   include Bosh::Spec::CreateReleaseOutputParsers
   with_reset_sandbox_before_each
-  SHA2_REGEXP = /^[0-9a-f]{64}$/
-  SHA2_PREFIXED_REGEXP = /^sha256:[0-9a-f]{64}$/
+  let(:sha2_regexp) { /^[0-9a-f]{64}$/ }
+  let(:sha2_prefixed_regexp) { /^sha256:[0-9a-f]{64}$/ }
 
   before do
     setup_test_release_dir
@@ -136,7 +136,7 @@ describe 'create-release', type: :integration do
         expect(release_manifest['name']).to eq('bosh-release')
         expect(release_manifest['version']).to eq('1')
 
-        expect(release_manifest['packages']).to match(a_collection_containing_exactly(
+        expect(release_manifest['packages']).to contain_exactly(
                                                         package_desc('a', ['b']),
                                                         package_desc('b', ['c']),
                                                         package_desc('bar', ['foo']),
@@ -155,9 +155,9 @@ describe 'create-release', type: :integration do
                                                         package_desc('foo_8', []),
                                                         package_desc('foo_9', []),
                                                         package_desc('foo_10', []),
-                                                      ))
+                                                      )
 
-        expect(release_manifest['jobs']).to match(a_collection_containing_exactly(
+        expect(release_manifest['jobs']).to contain_exactly(
                                                     job_desc('emoji-errand'),
                                                     job_desc('errand1', ['errand1']),
                                                     job_desc('errand_without_package'),
@@ -197,7 +197,7 @@ describe 'create-release', type: :integration do
                                                     job_desc('id_job'),
                                                     job_desc('job_with_bad_template'),
                                                     job_desc('local_dns_records_json'),
-                                                  ))
+                                                  )
 
         expect(release_manifest['uncommitted_changes']).to eq(false)
       end
@@ -503,28 +503,28 @@ describe 'create-release', type: :integration do
   def package_desc(name, dependencies)
     match(
       'name' => name,
-      'version' => SHA2_REGEXP,
-      'fingerprint' => SHA2_REGEXP,
+      'version' => sha2_regexp,
+      'fingerprint' => sha2_regexp,
       'dependencies' => dependencies,
-      'sha1' => SHA2_PREFIXED_REGEXP,
+      'sha1' => sha2_prefixed_regexp,
     )
   end
 
   def job_desc(name, packages = [])
     match(
       'name' => name,
-      'version' => SHA2_REGEXP,
-      'fingerprint' => SHA2_REGEXP,
-      'sha1' => SHA2_PREFIXED_REGEXP,
+      'version' => sha2_regexp,
+      'fingerprint' => sha2_regexp,
+      'sha1' => sha2_prefixed_regexp,
       'packages' => packages,
     )
   end
 
   def license_desc
     match(
-      'version' => SHA2_REGEXP,
-      'fingerprint' => SHA2_REGEXP,
-      'sha1' => SHA2_PREFIXED_REGEXP,
+      'version' => sha2_regexp,
+      'fingerprint' => sha2_regexp,
+      'sha1' => sha2_prefixed_regexp,
     )
   end
 
@@ -539,7 +539,7 @@ describe 'create-release', type: :integration do
       'builds' => {
         fingerprint => {
           'version' => fingerprint,
-          'sha1' => SHA2_PREFIXED_REGEXP,
+          'sha1' => sha2_prefixed_regexp,
           'blobstore_id' => kind_of(String),
         },
       },

@@ -231,9 +231,13 @@ describe 'using director with config server', type: :integration do
           end
 
           it 'can redeploy' do
-            expect do
-              deploy_simple_manifest(no_login: true, manifest_hash: manifest_hash, return_exit_code: true, include_credentials: false, env: client_env)
-            end.to_not raise_error
+            expect {
+              deploy_simple_manifest(no_login: true,
+                                     manifest_hash: manifest_hash,
+                                     return_exit_code: true,
+                                     include_credentials: false,
+                                     env: client_env)
+            }.to_not raise_error
           end
         end
       end
@@ -247,9 +251,14 @@ describe 'using director with config server', type: :integration do
       end
 
       it 'errors on deploy' do
-        expect do
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, return_exit_code: true, include_credentials: false, env: client_env)
-        end.to raise_error
+        expect {
+          deploy_from_scratch(no_login: true,
+                              manifest_hash: manifest_hash,
+                              cloud_config_hash: cloud_config,
+                              return_exit_code: true,
+                              include_credentials: false,
+                              env: client_env)
+        }.to raise_error(Bosh::Spec::BoshGoCliRunner::Error)
       end
     end
 
@@ -260,15 +269,20 @@ describe 'using director with config server', type: :integration do
 
       it 'does NOT error on update of cloud-config' do
         cloud_config_manifest = yaml_file('cloud_manifest', cloud_config)
-        expect do
+        expect {
           bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}", no_login: true, include_credentials: false, env: client_env)
-        end.to_not raise_error
+        }.to_not raise_error
       end
 
       it 'errors on deploy' do
-        expect do
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, return_exit_code: true, include_credentials: false, env: client_env)
-        end.to raise_error(RuntimeError, /Relative paths are not allowed in this context. The following must be be switched to use absolute paths: 'z1_cloud_properties'/)
+        expect {
+          deploy_from_scratch(no_login: true,
+                              manifest_hash: manifest_hash,
+                              cloud_config_hash: cloud_config,
+                              return_exit_code: true,
+                              include_credentials: false,
+                              env: client_env)
+        }.to raise_error(RuntimeError, /Relative paths are not allowed in this context. The following must be be switched to use absolute paths: 'z1_cloud_properties'/)
       end
     end
   end
@@ -292,7 +306,12 @@ describe 'using director with config server', type: :integration do
 
     context 'after a successful deployment' do
       before do
-        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, return_exit_code: true, include_credentials: false, env: client_env)
+        deploy_from_scratch(no_login: true,
+                            manifest_hash: manifest_hash,
+                            cloud_config_hash: cloud_config,
+                            return_exit_code: true,
+                            include_credentials: false,
+                            env: client_env)
       end
 
       context 'deployment has unresponsive agents' do
@@ -393,9 +412,9 @@ describe 'using director with config server', type: :integration do
       manifest = yaml_file('manifest', manifest_hash)
       bosh_runner.run("deploy #{manifest.path}", deployment_name: 'foo-deployment', return_exit_code: true, include_credentials: false, env: client_env)
 
-      expect do
+      expect {
         bosh_runner.run('recreate', deployment_name: 'foo-deployment', return_exit_code: true, include_credentials: false, env: client_env)
-      end.to_not raise_error
+      }.to_not raise_error
     end
   end
 

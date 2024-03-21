@@ -106,7 +106,7 @@ module Bosh::Director
           end
         end
 
-        return job_state, job_vitals, processes, ips
+        [job_state, job_vitals, processes, ips]
       end
 
       def get_index(agent_state)

@@ -1,3 +1,4 @@
+require 'pp' # for #pretty_inspect
 require 'securerandom'
 require 'common/version/release_version'
 
@@ -270,9 +271,7 @@ module Bosh::Director
         end
 
         did_something = create_jobs(new_jobs, release_dir)
-        did_something |= use_existing_jobs(existing_jobs, release_dir)
-
-        did_something
+        did_something | use_existing_jobs(existing_jobs, release_dir)
       end
 
       # @return [boolean] true if at least one job was created; false if the call had no effect.

@@ -132,7 +132,7 @@ module Bosh::Director
 
       add_aliases(aliases, dns_records)
 
-      local_dns_records.each do |dns_record|
+      local_dns_records&.each do |dns_record|
         dns_records.add_record(
           instance_id: dns_record.instance.uuid,
           num_id: dns_record.instance.id,

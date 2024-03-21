@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   module DeploymentPlan::NetworkParser
     describe NameServersParser do
-      subject(:name_servers_parser) { NameServersParser.new() }
+      subject(:name_servers_parser) { NameServersParser.new }
 
       it 'should return nil when there are no DNS servers' do
         expect(name_servers_parser.parse('network', {})).to be_nil

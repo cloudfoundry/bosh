@@ -83,7 +83,7 @@ oauth:
     hm:
       id: hm
       override: true
-      authorized-grant-types: client_credentials
+      authorized-grant-types: client_credentials,refresh_token
       scope: openid
       authorities: uaa.none,bosh.admin
       secret: "secret"
@@ -108,13 +108,6 @@ oauth:
       scope: openid
       authorities: bosh.admin
       secret: "auditsecret"
-    hm:
-      id: hm
-      override: true
-      authorized-grant-types: client_credentials,refresh_token
-      scope: openid
-      authorities: uaa.none,bosh.admin
-      secret: "secret"
 jwt:
   token:
     signing-key: |

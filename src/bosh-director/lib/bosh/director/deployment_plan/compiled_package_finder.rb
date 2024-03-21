@@ -12,8 +12,8 @@ module Bosh::Director
         return compiled_package if compiled_package
 
         compiled_package = find_newest_match(package, stemcell, dependency_key) unless package.source?
-        return compiled_package if compiled_package
 
+        compiled_package if compiled_package
       end
 
       private

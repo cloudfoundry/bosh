@@ -102,13 +102,13 @@ module Bosh::Monitor::Plugins
         @wait_thr = wait_thr
 
         task.async do
-          while data = @stdout.read(1)
+          while (data = @stdout.read(1))
             receive_data(data)
           end
         end
 
         task.async do
-          while data = @stderr.read(1)
+          while (data = @stderr.read(1))
             receive_data(data)
           end
         end

@@ -141,8 +141,7 @@ module Bosh::Dev::Sandbox
       end
 
       connection_config.delete_if { |_, v| v.to_s.empty? }
-      connection_config = connection_config.merge(custom_connection_options)
-      connection_config
+      connection_config.merge(custom_connection_options)
     end
 
     def read_log

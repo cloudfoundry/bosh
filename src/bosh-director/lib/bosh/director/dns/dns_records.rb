@@ -51,7 +51,7 @@ module Bosh::Director
       "sha256:#{::Digest::SHA256.hexdigest(to_json)}"
     end
 
-    def to_json
+    def to_json(*_args)
       JSON.dump(
         records: @records,
         version: @version,
