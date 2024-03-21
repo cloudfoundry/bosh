@@ -3,10 +3,6 @@ require 'bosh/director/api/controllers/base_controller'
 module Bosh::Director
   module Api::Controllers
     class InfoController < BaseController
-      def initialize(config)
-        super(config)
-        @powerdns_manager = PowerDnsManagerProvider.create
-      end
 
       def requires_authentication?
         false
@@ -26,10 +22,6 @@ module Bosh::Director
             'local_dns' => {
               'status' => Config.local_dns_enabled?,
               'extras' => { 'domain_name' => Config.root_domain },
-            },
-            'power_dns' => {
-              'status' => @powerdns_manager.dns_enabled?,
-              'extras' => { 'domain_name' => @powerdns_manager.root_domain },
             },
             'snapshots' => {
               'status' => Config.enable_snapshots,

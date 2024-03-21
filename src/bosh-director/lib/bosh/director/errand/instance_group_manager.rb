@@ -11,7 +11,6 @@ module Bosh::Director
         @deployment_planner.use_short_dns_addresses?,
         @deployment_planner.use_link_dns_names?,
       )
-      @powerdns_manager = PowerDnsManagerProvider.create
       @vm_deleter = VmDeleter.new(logger, false, Config.enable_virtual_delete_vms)
       @vm_creator = VmCreator.new(
         logger,

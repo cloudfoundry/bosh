@@ -6,12 +6,10 @@ module Bosh::Director
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
     let(:delete_job) { Jobs::DeleteDeployment.new('test_deployment', {}) }
-    let(:deleter) { InstanceDeleter.new(powerdns_manager, disk_manager, options) }
+    let(:deleter) { InstanceDeleter.new(disk_manager, options) }
     let(:disk_manager) { DiskManager.new(logger) }
     let(:dns_publisher) { instance_double(BlobstoreDnsPublisher, publish_and_broadcast: nil) }
-    let(:domain) { Models::Dns::Domain.make(name: 'bosh') }
     let(:local_dns_records_repo) { instance_double(LocalDnsRecordsRepo, delete_for_instance: nil) }
-    let(:powerdns_manager) { instance_double(PowerDnsManager, delete_dns_for_instance: nil) }
     let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
     let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
@@ -171,7 +169,6 @@ module Bosh::Director
 
         it 'drains, deletes snapshots, dns records, persistent disk' do
           expect(Stopper).to receive(:stop)
-          expect(powerdns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
 
           expect(dns_publisher).to receive(:publish_and_broadcast)
           expect(local_dns_records_repo).to receive(:delete_for_instance)
@@ -224,7 +221,6 @@ module Bosh::Director
 
             it 'deletes snapshots, persistent disk' do
               expect(VmDeleter).to receive(:new).with(anything, true, false)
-              expect(powerdns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
 
               expect(dns_publisher).to receive(:publish_and_broadcast)
               expect(local_dns_records_repo).to receive(:delete_for_instance)
@@ -252,7 +248,6 @@ module Bosh::Director
             it 'drains, deletes snapshots, persistent disk' do
               expect(Stopper).to receive(:stop)
               expect(disk_manager).to receive(:delete_persistent_disks).with(existing_instance)
-              expect(powerdns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
 
               expect(dns_publisher).to receive(:publish_and_broadcast)
               expect(local_dns_records_repo).to receive(:delete_for_instance)
@@ -264,30 +259,6 @@ module Bosh::Director
               expect do
                 deleter.delete_instance_plans([instance_plan], event_log_stage)
               end.to change { Models::Instance.all.select { |i| i.active_vm == existing_vm }.count }.from(1).to(0)
-            end
-          end
-
-          context 'when deleting dns fails' do
-            before do
-              allow(powerdns_manager).to receive(:delete_dns_for_instance).and_raise('failed')
-
-              allow(dns_publisher).to receive(:publish_and_broadcast)
-              allow(local_dns_records_repo).to receive(:delete_for_instance)
-            end
-
-            it 'drains, deletes vm, snapshots, disks' do
-              expect(Stopper).to receive(:stop)
-              expect(cloud).to receive(:delete_vm).with(existing_instance.vm_cid)
-
-              expect(event_log_stage).to receive(:advance_and_track).with('fake-job-name/my-uuid-1 (5)')
-
-              expect(job_templates_cleaner).to receive(:clean_all).with(no_args)
-
-              expect do
-                deleter.delete_instance_plans([instance_plan], event_log_stage)
-              end.to change { Models::Instance.all.select { |i| i.active_vm == existing_vm }.count }.from(1).to(0)
-
-              expect(disk_manager).to have_received(:delete_persistent_disks).with(existing_instance)
             end
           end
 
@@ -322,8 +293,6 @@ module Bosh::Director
             expect(VmDeleter).to receive(:new).with(anything, anything, true)
             expect(Stopper).to receive(:stop)
             expect(cloud).not_to receive(:delete_vm)
-
-            expect(powerdns_manager).to receive(:delete_dns_for_instance).with(existing_instance)
 
             expect(dns_publisher).to receive(:publish_and_broadcast)
             expect(local_dns_records_repo).to receive(:delete_for_instance)

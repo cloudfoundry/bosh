@@ -1,8 +1,7 @@
 module Bosh::Director
   # Coordinates the safe deletion of an instance and all associates resources.
   class InstanceDeleter
-    def initialize(powerdns_manager, disk_manager, options = {})
-      @powerdns_manager = powerdns_manager
+    def initialize(disk_manager, options = {})
       @disk_manager = disk_manager
       @logger = Config.logger
       @local_dns_manager = LocalDnsManager.create(Config.root_domain, @logger)
@@ -31,10 +30,6 @@ module Bosh::Director
         unless instance_model.compilation
           error_ignorer.with_force_check do
             @disk_manager.delete_persistent_disks(instance_model)
-          end
-
-          error_ignorer.with_force_check do
-            @powerdns_manager.delete_dns_for_instance(instance_model)
           end
 
           error_ignorer.with_force_check do

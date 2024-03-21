@@ -35,7 +35,6 @@ module Bosh
           @link_provider_intents = link_provider_intents
           @logger = logger
           @tags = tags
-          @powerdns_manager = PowerDnsManagerProvider.create
           @variables_interpolator = variables_interpolator
         end
 
@@ -207,28 +206,12 @@ module Bosh
         end
 
         def dns_changed?
-          power_dns_changed = false
-
-          if @powerdns_manager.dns_enabled?
-            power_dns_changed = network_settings.dns_record_info.any? do |name, ip|
-              not_found = @powerdns_manager.find_dns_record(name, ip).nil?
-
-              if not_found
-                @logger.debug(
-                  "#{__method__} The requested dns record with name '#{name}' " \
-                  "and ip '#{ip}' was not found in the db.",
-                )
-              end
-
-              not_found
-            end
-          end
-
           diff = LocalDnsRecordsRepo.new(@logger, Config.root_domain).diff(self)
           if diff.changes?
             log_changes(:local_dns_changed?, diff.obsolete + diff.unaffected, diff.unaffected + diff.missing, instance)
           end
-          power_dns_changed || diff.changes?
+
+          diff.changes?
         end
 
         def configuration_changed?
@@ -328,7 +311,7 @@ module Bosh
         end
 
         def root_domain
-          @powerdns_manager.root_domain
+          Config.root_domain
         end
 
         def needs_shutting_down?

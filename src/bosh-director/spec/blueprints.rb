@@ -337,25 +337,4 @@ module Bosh::Director::Models
       link_content         { '{}' }
     end
   end
-
-  module Dns
-    Domain.blueprint do
-      name     { Sham.name }
-      type     { 'NATIVE' }
-    end
-
-    Record.blueprint do
-      domain   { Domain.make }
-      name     { Sham.name }
-      type     { 'A' }
-      content  { Sham.ip }
-    end
-
-    Record.blueprint(:PTR) do
-      domain   { Domain.make }
-      name     { Sham.ptr }
-      type     { 'PTR' }
-      content  { Sham.name }
-    end
-  end
 end

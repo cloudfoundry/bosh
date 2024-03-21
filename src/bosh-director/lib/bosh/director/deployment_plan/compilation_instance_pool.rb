@@ -17,10 +17,7 @@ module Bosh::Director
         private
 
         def make_instance_deleter(logger)
-          Bosh::Director::InstanceDeleter.new(
-            PowerDnsManagerProvider.create,
-            DiskManager.new(logger),
-          )
+          Bosh::Director::InstanceDeleter.new(DiskManager.new(logger))
         end
 
         def make_instance_provider(logger, deployment_plan)

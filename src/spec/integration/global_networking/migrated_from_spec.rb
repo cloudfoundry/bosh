@@ -296,66 +296,6 @@ describe 'migrated from', type: :integration do
     end
   end
 
-  it 'updates dns records' do
-    instance_group_spec =  Bosh::Spec::Deployments.simple_instance_group(
-      instances: 1,
-      name: 'etcd_z1',
-      persistent_disk_type: 'fast_disks',
-      azs: ['my-az-1'],
-      network_name: cloud_config_hash_with_azs['networks'].first['name'],
-    )
-    original_manifest_with_azs = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
-    original_manifest_with_azs['instance_groups'] = [instance_group_spec]
-
-    deploy_from_scratch(manifest_hash: original_manifest_with_azs, cloud_config_hash: cloud_config_hash_with_azs)
-    output = scrub_random_ids(table(bosh_runner.run('vms --dns', json: true)))
-    dns_records = output[0]['dns_a_records'].split("\n")
-    expect(dns_records).to include('0.etcd-z1.a.simple.bosh')
-    expect(dns_records).to include('xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.etcd-z1.a.simple.bosh')
-
-    new_manifest_hash = original_manifest_with_azs
-    instance_group_spec = etcd_instance_group
-    instance_group_spec['instances'] = 1
-    instance_group_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
-    instance_group_spec['azs'] = ['my-az-1']
-    instance_group_spec['migrated_from'] = [{'name' => 'etcd_z1'}]
-    new_manifest_hash['instance_groups'] = [instance_group_spec]
-
-    deploy_simple_manifest(manifest_hash: new_manifest_hash)
-    output = scrub_random_ids(table(bosh_runner.run('vms --dns', json: true)))
-    dns_records = output[0]['dns_a_records'].split("\n")
-    expect(dns_records).to include('0.etcd.a.simple.bosh')
-    expect(dns_records).to include('xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.etcd.a.simple.bosh')
-    expect(dns_records).to include('0.etcd-z1.a.simple.bosh')
-    expect(dns_records).to include('xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.etcd-z1.a.simple.bosh')
-  end
-
-  context 'when migrating job that does not exist in previous deployment' do
-    let(:manifest_with_unknown_migrated_from_job) do
-      new_manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
-      instance_group_spec = etcd_instance_group
-      instance_group_spec['instances'] = 1
-      instance_group_spec['networks'].first['name'] = cloud_config_hash_with_azs['networks'].first['name']
-      instance_group_spec['azs'] = ['my-az-1']
-      instance_group_spec['migrated_from'] = [{'name' => 'unknown_job'}]
-      new_manifest_hash['instance_groups'] = [instance_group_spec]
-      new_manifest_hash
-    end
-
-    it 'successfully deploys' do
-      deploy_from_scratch(manifest_hash: manifest_with_etcd_z1_in_az1, cloud_config_hash: cloud_config_hash_with_azs)
-      original_instances = director.instances
-      expect(original_instances.size).to eq(1)
-      expect(original_instances.map(&:instance_group_name)).to match_array(['etcd_z1'])
-
-      deploy_simple_manifest(manifest_hash: manifest_with_unknown_migrated_from_job)
-      new_instances = director.instances
-      expect(new_instances.size).to eq(1)
-      expect(new_instances.map(&:instance_group_name)).to match_array(['etcd'])
-      expect(new_instances.map(&:vm_cid)).to_not match_array(original_instances.map(&:vm_cid))
-    end
-  end
-
   describe 'bootstrap' do
     context 'when migrated_from has several bootstrap instances' do
       it 'picks only one bootstrap instance' do

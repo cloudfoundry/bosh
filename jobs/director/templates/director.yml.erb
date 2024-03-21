@@ -169,32 +169,10 @@ params['scan_and_fix'] = {
   'auto_fix_stateful_nodes' => p('director.auto_fix_stateful_nodes')
 }
 
-if_p('dns.db.adapter', 'dns.db.user', 'dns.db.password', 'dns.db.host',
-     'dns.db.port', 'dns.db.database', 'dns.db.connection_options', 'dns.address') do
-  |adapter, user, password, db_host, port, database, connection_options, address|
+if_p('dns.domain_name') do |domain_name|
   params['dns'] = {
-    'server' => address,
-    'flush_command' => '/var/vcap/jobs/powerdns/bin/powerdns_ctl flush',
-    'db' => {
-        'adapter' => adapter,
-        'user' => user,
-        'password' => password,
-        'host' => db_host,
-        'port' => port,
-        'database' => database,
-        'connection_options' => connection_options
-     }
+    'domain_name' => domain_name
   }
-
-  if_p('dns.domain_name') do |domain_name|
-    params['dns']['domain_name'] = domain_name
-  end
-end.else do
-  if_p('dns.domain_name') do |domain_name|
-    params['dns'] = {
-      'domain_name' => domain_name
-    }
-  end
 end
 
 if p('blobstore.provider') == 's3'

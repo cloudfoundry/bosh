@@ -64,5 +64,3 @@ require 'bosh/director/deployment_plan/instance_spec.rb'
 require 'bosh/director/deployment_plan/persistent_disk_collection.rb'
 require 'bosh/director/deployment_plan/merged_cloud_properties.rb'
 require 'bosh/director/deployment_plan/vm_resources_cache.rb'
-
-require 'bosh/director/dns/powerdns'

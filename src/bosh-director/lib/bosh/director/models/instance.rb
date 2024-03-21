@@ -74,16 +74,6 @@ module Bosh::Director::Models
       strategy == Bosh::Director::DeploymentPlan::UpdateConfig::VM_STRATEGY_CREATE_SWAP_DELETE
     end
 
-    def dns_record_names
-      return nil if dns_records.nil?
-
-      JSON.parse(dns_records)
-    end
-
-    def dns_record_names=(list)
-      self.dns_records = JSON.dump(list)
-    end
-
     def name
       "#{self.job}/#{self.uuid}"
     end
