@@ -161,7 +161,7 @@ GEM
     coderay (1.1.3)
     concurrent-ruby (1.2.3)
     connection_pool (2.4.1)
-    console (1.23.5)
+    console (1.23.6)
       fiber-annotation
       fiber-local
       json
@@ -176,7 +176,7 @@ GEM
       multi_json
     domain_name (0.6.20240107)
     drb (2.2.1)
-    et-orbi (1.2.9)
+    et-orbi (1.2.11)
       tzinfo
     factory_bot (6.4.6)
       activesupport (>= 5.0.0)
@@ -224,7 +224,7 @@ GEM
       net-protocol
     net-ssh (7.2.1)
     netrc (0.11.0)
-    nio4r (2.7.0)
+    nio4r (2.7.1)
     openssl (3.2.0)
     parallel (1.24.0)
     parallel_tests (2.32.0)
@@ -255,7 +255,7 @@ GEM
       nio4r (~> 2.0)
     raabro (1.4.0)
     racc (1.7.3)
-    rack (2.2.8.1)
+    rack (2.2.9)
     rack-protection (2.2.4)
       rack
     rack-test (2.1.0)
