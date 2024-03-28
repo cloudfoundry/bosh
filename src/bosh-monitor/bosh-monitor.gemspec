@@ -29,7 +29,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'puma'
   spec.add_dependency 'sinatra',   '~>2.2.0'
   spec.add_dependency 'dogapi',    '~> 1.45.0'
-  spec.add_dependency 'riemann-client', '~>0.2.6'
+  spec.add_dependency 'riemann-client'
   spec.add_dependency 'cf-uaa-lib',  '~>3.2.1'
   spec.add_dependency 'httpclient',  '~>2.8.3'
 
