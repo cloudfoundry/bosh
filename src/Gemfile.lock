@@ -120,12 +120,12 @@ GEM
     addressable (2.8.6)
       public_suffix (>= 2.0.2, < 6.0)
     ast (2.4.2)
-    async (2.9.0)
+    async (2.10.1)
       console (~> 1.10)
       fiber-annotation
       io-event (~> 1.5, >= 1.5.1)
       timers (~> 4.1)
-    async-http (0.63.0)
+    async-http (0.64.0)
       async (>= 1.25)
       async-io (>= 1.28)
       async-pool (>= 0.2)
@@ -133,7 +133,7 @@ GEM
       protocol-http1 (~> 0.18.0)
       protocol-http2 (~> 0.16.0)
       traces (>= 0.10.0)
-    async-io (1.41.0)
+    async-io (1.42.0)
       async
     async-pool (0.4.0)
       async (>= 1.25)
@@ -220,7 +220,7 @@ GEM
       concurrent-ruby (~> 1.0)
     net-protocol (0.2.2)
       timeout
-    net-smtp (0.4.0.1)
+    net-smtp (0.5.0)
       net-protocol
     net-ssh (7.2.1)
     netrc (0.11.0)
