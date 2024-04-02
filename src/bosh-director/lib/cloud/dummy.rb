@@ -96,7 +96,7 @@ module Bosh
             elsif cloud_properties['az_name']
               ip_address = cmd.ip_address_for_az(cloud_properties['az_name'])
             else
-              ip_address =  NetAddr::CIDRv4.new(rand(0..4294967295)).ip #collisions?
+              ip_address =  NetAddr::CIDR.create(rand(0..4294967295), Version: 4).ip #collisions?
             end
 
             if ip_address

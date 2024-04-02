@@ -1,15 +1,15 @@
-azure-storage-cli/azure-storage-cli-0.0.80-linux-amd64:
+azure-storage-cli/azure-storage-cli-0.0.82-linux-amd64:
   size: 8824052
-  object_id: df2f33c5-ed5d-4282-4829-a60ea4cbc53a
-  sha: sha256:959015ad18354817aecb3d4c227c3b01fd68726ff030ab54935a28b8e691d219
-bosh-gcscli/bosh-gcscli-0.0.213-linux-amd64:
-  size: 21236945
-  object_id: 83e9014d-6d71-4b82-4ebc-fb2a663639e2
-  sha: sha256:8938d61fbdd008d3b58eab910c3745dcf645670695c894d0eefb22d3dbf399fc
-davcli/davcli-0.0.330-linux-amd64:
+  object_id: 9106bff1-5729-46d2-79bd-d0c5ca20c809
+  sha: sha256:f5ef5b02e00ffb63b2b56f07a114ca956d8c502144f040cfce3d071d2ab5d096
+bosh-gcscli/bosh-gcscli-0.0.215-linux-amd64:
+  size: 21223798
+  object_id: d12c4703-4554-4262-5710-4285f0e4fa2c
+  sha: sha256:5a722e973216fb9fa519b417f960ddce738eae4501dcaea0634258931b389a80
+davcli/davcli-0.0.332-linux-amd64:
   size: 8737766
-  object_id: bfc9720f-6ad1-4d40-6dd9-4c76bbb84fc6
-  sha: sha256:f1de74dd934bac77c68fa6a7783b530f5fdbfaaa0ef6bb052d13adfd42f82798
+  object_id: 8f354bb6-db20-4e3c-62ff-b21bd331ab94
+  sha: sha256:0a9639ef8a85214faff60c818050d75ffc31c41fe43d6e48f2403b1f9b62aaec
 mysql/mariadb-connector-c-3.3.8-src.tar.gz:
   size: 1393368
   object_id: 1f7670c3-efd4-4bd9-7b91-c0a26ca854bb
@@ -30,11 +30,11 @@ postgres/postgresql-15.6.tar.gz:
   size: 30299236
   object_id: 8cc25480-8de8-4f0b-56a2-b359ff6838dc
   sha: sha256:3a08314af1714671213a8a4f6bd646d0b1cdc94b029e8988944ab04d4b8cf2d2
-s3cli/s3cli-0.0.278-linux-amd64:
-  size: 18537400
-  object_id: 0fd7c662-c598-46fd-4497-b729329be85e
-  sha: sha256:01a40e4be9bedeb6eac5af71171dd0e578fbf59d0186aabed1e091fe7fe67a4b
-verify-multidigest/verify-multidigest-0.0.452-linux-amd64:
+s3cli/s3cli-0.0.279-linux-amd64:
+  size: 18496144
+  object_id: a4445869-9b78-431b-5448-11810142b89c
+  sha: sha256:125f4a5f6e6fbdab8408e72b8466896613993b139e413ac4204bcd8348fceac9
+verify-multidigest/verify-multidigest-0.0.454-linux-amd64:
   size: 3314041
-  object_id: ed21c93b-7325-479b-5ffe-2d6df70282f1
-  sha: sha256:199dc8c9327df798f0cd4f150edf9f881edcebfc18cd53aa27ab123a15fa29b8
+  object_id: ee7ade8e-e052-46ab-66d7-310b5b99bfc8
+  sha: sha256:72bd943df316963a87ae23a1789ee7956547d7b461dfa9a1a9bc720bd2ce418c

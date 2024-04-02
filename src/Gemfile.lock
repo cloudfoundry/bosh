@@ -120,12 +120,12 @@ GEM
     addressable (2.8.6)
       public_suffix (>= 2.0.2, < 6.0)
     ast (2.4.2)
-    async (2.9.0)
+    async (2.10.1)
       console (~> 1.10)
       fiber-annotation
       io-event (~> 1.5, >= 1.5.1)
       timers (~> 4.1)
-    async-http (0.63.0)
+    async-http (0.64.0)
       async (>= 1.25)
       async-io (>= 1.28)
       async-pool (>= 0.2)
@@ -133,7 +133,7 @@ GEM
       protocol-http1 (~> 0.18.0)
       protocol-http2 (~> 0.16.0)
       traces (>= 0.10.0)
-    async-io (1.41.0)
+    async-io (1.42.0)
       async
     async-pool (0.4.0)
       async (>= 1.25)
@@ -161,7 +161,7 @@ GEM
     coderay (1.1.3)
     concurrent-ruby (1.2.3)
     connection_pool (2.4.1)
-    console (1.23.5)
+    console (1.23.6)
       fiber-annotation
       fiber-local
       json
@@ -176,7 +176,7 @@ GEM
       multi_json
     domain_name (0.6.20240107)
     drb (2.2.1)
-    et-orbi (1.2.9)
+    et-orbi (1.2.11)
       tzinfo
     factory_bot (6.4.6)
       activesupport (>= 5.0.0)
@@ -220,11 +220,11 @@ GEM
       concurrent-ruby (~> 1.0)
     net-protocol (0.2.2)
       timeout
-    net-smtp (0.4.0.1)
+    net-smtp (0.5.0)
       net-protocol
     net-ssh (7.2.1)
     netrc (0.11.0)
-    nio4r (2.7.0)
+    nio4r (2.7.1)
     openssl (3.2.0)
     parallel (1.24.0)
     parallel_tests (2.32.0)
@@ -255,7 +255,7 @@ GEM
       nio4r (~> 2.0)
     raabro (1.4.0)
     racc (1.7.3)
-    rack (2.2.8.1)
+    rack (2.2.9)
     rack-protection (2.2.4)
       rack
     rack-test (2.1.0)
