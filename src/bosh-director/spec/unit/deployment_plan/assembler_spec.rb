@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DeploymentPlan::Assembler do
-    subject(:assembler) { DeploymentPlan::Assembler.new(deployment_plan, stemcell_manager, powerdns_manager, variables_interpolator) }
+    subject(:assembler) { DeploymentPlan::Assembler.new(deployment_plan, stemcell_manager, variables_interpolator) }
     let(:deployment_plan) do
       instance_double(
         Bosh::Director::DeploymentPlan::Planner,
@@ -16,9 +16,8 @@ module Bosh::Director
     end
 
     let(:variables) { Bosh::Director::DeploymentPlan::Variables.new(nil) }
-    let(:deployment_model) {BD::Models::Deployment.make}
+    let(:deployment_model) {Bosh::Director::Models::Deployment.make}
     let(:stemcell_manager) {nil}
-    let(:powerdns_manager) {PowerDnsManagerProvider.create}
     let(:event_log) {Config.event_log}
     let(:links_manager) do
       instance_double(Bosh::Director::Links::LinksManager).tap do |double|
@@ -79,13 +78,6 @@ module Bosh::Director
           expect(agent_state_migrator).to receive(:get_state).with(instance_model_to_override, false)
 
           assembler.bind_models(instances: [instance_model_to_override])
-        end
-      end
-
-      describe 'migrate_legacy_dns_records' do
-        it 'migrates legacy dns records' do
-          expect(powerdns_manager).to receive(:migrate_legacy_records).with(instance_model)
-          assembler.bind_models
         end
       end
 
@@ -550,11 +542,6 @@ module Bosh::Director
         end
       end
 
-      it 'configures dns' do
-        expect(powerdns_manager).to receive(:configure_nameserver)
-        assembler.bind_models
-      end
-
       it 'passes fix into the state_migrator' do
         allow(deployment_plan).to receive(:deployment_wide_options).and_return(fix: true)
         instance_model_to_override = instance_double(
@@ -579,7 +566,6 @@ module Bosh::Director
         expect(DeploymentPlan::Assembler).to receive(:new).with(
           deployment_plan,
           an_instance_of(Api::StemcellManager),
-          an_instance_of(PowerDnsManager),
           variables_interpolator,
         ).and_call_original
 

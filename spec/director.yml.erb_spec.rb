@@ -184,10 +184,10 @@ describe 'director.yml.erb' do
         end
       end
 
-      context 'when domain name specified without all other dns properties' do
+      context 'when dns.domain_name specified' do
         before do
           merged_manifest_properties['dns'] = {
-            'domain_name' => 'domain.name'
+            'domain_name' => 'fake.domain.name'
           }
         end
 
@@ -617,7 +617,6 @@ describe 'director.yml.erb' do
     let(:erb_yaml) { File.read(File.join(File.dirname(__FILE__), '../jobs/director/templates/director.yml.erb')) }
 
     subject(:parsed_yaml) do
-
       binding = Bosh::Template::EvaluationContext.new(
         {
           'job' => {'name' => 'i_like_bosh'},

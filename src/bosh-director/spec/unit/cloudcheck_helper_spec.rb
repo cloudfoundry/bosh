@@ -61,7 +61,6 @@ module Bosh::Director
     let(:agent_client) { instance_double(AgentClient) }
     let(:event_manager) { Api::EventManager.new(true) }
     let(:update_job) { instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager) }
-    let(:powerdns_manager) { instance_double(PowerDnsManager) }
     let(:rendered_templates_persister) { instance_double(RenderedTemplatesPersister) }
 
     let(:planner) do
@@ -241,7 +240,6 @@ module Bosh::Director
         before do
           BD::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
           instance.update(spec: spec)
-          allow(PowerDnsManagerProvider).to receive(:create).and_return(powerdns_manager)
         end
 
         context 'recreates the vm' do
@@ -275,15 +273,6 @@ module Bosh::Director
             allow(Config).to receive(:root_domain).and_return('bosh')
             expect(Bosh::Director::DnsNameGenerator).to receive(:dns_record_name).with(0, 'mysql_node', 'ip', deployment_model.name, 'bosh').and_return('index.record.name')
             expect(Bosh::Director::DnsNameGenerator).to receive(:dns_record_name).with(instance.uuid, 'mysql_node', 'ip', deployment_model.name, 'bosh').and_return('uuid.record.name')
-
-            expect(powerdns_manager).to receive(:update_dns_record_for_instance).with(
-              instance,
-              {
-                'index.record.name' => nil,
-                'uuid.record.name' => nil,
-              },
-            )
-            expect(powerdns_manager).to receive(:flush_dns_cache)
 
             expect(template_cache).to receive(:clean_cache!)
           end

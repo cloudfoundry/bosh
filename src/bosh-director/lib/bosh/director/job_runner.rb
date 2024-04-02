@@ -60,7 +60,6 @@ module Bosh::Director
       Config.logger = @task_logger
 
       Config.db.logger = @task_logger
-      Config.dns_db.logger = @task_logger if Config.dns_db
 
       cpi_log = File.join(log_dir, 'cpi')
       Config.cloud_options['properties'] ||= {}

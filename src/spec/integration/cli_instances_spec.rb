@@ -104,34 +104,6 @@ describe 'cli: deployment process', type: :integration do
     expect(first_row).to have_key('ignore')
     expect(output.length).to eq(3)
 
-    output = bosh_runner.run('instances --dns', json: true, deployment_name: 'simple')
-    expect(scrub_random_ids(table(output))).to contain_exactly(
-      {
-        'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
-        'process_state' => 'running',
-        'az' => 'zone-1',
-        'ips' => '192.168.1.2',
-        'deployment' => 'simple',
-        'dns_a_records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n0.foobar.a.simple.bosh",
-      },
-      {
-        'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
-        'process_state' => 'running',
-        'az' => 'zone-2',
-        'ips' => '192.168.2.2',
-        'deployment' => 'simple',
-        'dns_a_records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n1.foobar.a.simple.bosh",
-      },
-      {
-        'instance' => 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
-        'process_state' => 'running',
-        'az' => 'zone-3',
-        'ips' => '192.168.3.2',
-        'deployment' => 'simple',
-        'dns_a_records' => "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.foobar.a.simple.bosh\n2.foobar.a.simple.bosh",
-      },
-    )
-
     output = bosh_runner.run('instances --ps', json: true, deployment_name: 'simple')
     expect(scrub_random_ids(table(output))).to contain_exactly(
       {

@@ -23,10 +23,6 @@ module Bosh::Director
         @task_result ||= Config.result
       end
 
-      def powerdns_manager
-        @powerdns_manager ||= PowerDnsManagerProvider.create
-      end
-
       def dry_run?
         false
       end

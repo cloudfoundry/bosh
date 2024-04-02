@@ -50,7 +50,5 @@ require 'delayed_job_sequel'
 module Bosh::Director
   module Models
     VALID_ID = /^[-0-9A-Za-z_+.]+$/i
-
-    autoload :Dns, 'bosh/director/models/dns'
   end
 end

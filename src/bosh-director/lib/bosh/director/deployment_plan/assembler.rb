@@ -6,14 +6,13 @@ module Bosh::Director
     include IpUtil
 
     def self.create(deployment_plan, variables_interpolator)
-      new(deployment_plan, Api::StemcellManager.new, PowerDnsManagerProvider.create, variables_interpolator)
+      new(deployment_plan, Api::StemcellManager.new, variables_interpolator)
     end
 
-    def initialize(deployment_plan, stemcell_manager, powerdns_manager, variables_interpolator)
+    def initialize(deployment_plan, stemcell_manager, variables_interpolator)
       @deployment_plan = deployment_plan
       @logger = Config.logger
       @stemcell_manager = stemcell_manager
-      @powerdns_manager = powerdns_manager
       @links_manager = Bosh::Director::Links::LinksManager.new(deployment_plan.model.links_serial_id)
       @variables_interpolator = variables_interpolator
     end
@@ -33,8 +32,6 @@ module Bosh::Director
 
       bind_releases
       bind_stemcells
-
-      migrate_legacy_dns_records
 
       states_by_existing_instance = current_states_by_instance(instances, fix)
 
@@ -99,7 +96,6 @@ module Bosh::Director
       bind_instance_networks
       resolve_network_plans_for_create_swap_deleted_instances(desired_instance_groups)
       bind_instance_networks
-      bind_dns
       bind_links if should_bind_links
       generate_variables(stemcell_change) if is_deploy_action
     end
@@ -205,16 +201,6 @@ module Bosh::Director
     def bind_stemcells
       @deployment_plan.stemcells.each do |_, stemcell|
         stemcell.bind_model(@deployment_plan.model)
-      end
-    end
-
-    def bind_dns
-      @powerdns_manager.configure_nameserver
-    end
-
-    def migrate_legacy_dns_records
-      @deployment_plan.instance_models.each do |instance_model|
-        @powerdns_manager.migrate_legacy_records(instance_model)
       end
     end
 

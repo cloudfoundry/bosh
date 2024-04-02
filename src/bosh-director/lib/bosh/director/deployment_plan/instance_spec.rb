@@ -13,7 +13,6 @@ module Bosh::Director
         instance = instance_plan.instance
         deployment_name = instance.deployment_model.name
         instance_group = instance_plan.desired_instance.instance_group
-        powerdns_manager = PowerDnsManagerProvider.create
 
         spec = {
           'deployment' => deployment_name,
@@ -32,7 +31,7 @@ module Bosh::Director
           'packages' => instance_group.package_spec,
           'properties' => instance_group.properties,
           'properties_need_filtering' => true,
-          'dns_domain_name' => powerdns_manager.root_domain,
+          'dns_domain_name' => Config.root_domain,
           'address' => instance_plan.network_address,
           'update' => instance_group.update_spec
         }

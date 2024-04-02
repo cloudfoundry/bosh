@@ -121,7 +121,6 @@ module SpecHelper
           @init_logger,
           db_options,
         )
-        @dns_db_helper = Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_dns", Bosh::Core::Shell.new, @init_logger, db_options)
       when 'mysql'
         require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/mysql', File.dirname(__FILE__))
         db_options[:port] = 3306
@@ -132,19 +131,15 @@ module SpecHelper
           @init_logger,
           db_options,
         )
-        @dns_db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_dns", Bosh::Core::Shell.new, @init_logger, db_options)
       when 'sqlite'
         require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/sqlite', File.dirname(__FILE__))
         @director_db_helper = Bosh::Dev::Sandbox::Sqlite.new(File.join(@temp_dir, "#{@db_name}_director.sqlite"), @init_logger)
-        @dns_db_helper = Bosh::Dev::Sandbox::Sqlite.new(File.join(@temp_dir, "#{@db_name}_dns.sqlite"), @init_logger)
       else
         raise "Unsupported DB value: #{ENV['DB']}"
       end
 
       @director_db_helper.create_db
-      @dns_db_helper.create_db
 
-      @dns_migrations = File.expand_path('../db/migrations/dns', __dir__)
       @director_migrations = File.expand_path('../db/migrations/director', __dir__)
       Sequel.extension :migration
 
@@ -165,11 +160,6 @@ module SpecHelper
       @director_db.loggers << (logger || @init_logger)
       @director_db.log_connection_info = true
       Bosh::Director::Config.db = @director_db
-
-      @dns_db = Sequel.connect(@dns_db_helper.connection_string, db_opts)
-      @dns_db.loggers << (logger || @init_logger)
-      @dns_db.log_connection_info = true
-      Bosh::Director::Config.dns_db = @dns_db
     end
 
     def disconnect_database
@@ -180,18 +170,9 @@ module SpecHelper
         @director_db = nil
         @director_db_helper = nil
       end
-
-      return unless @dns_db
-
-      @dns_db.disconnect
-      @dns_db_helper.drop_db
-
-      @dns_db = nil
-      @dns_db_helper = nil
     end
 
     def run_migrations
-      Sequel::Migrator.apply(@dns_db, @dns_migrations, nil)
       Sequel::Migrator.apply(@director_db, @director_migrations, nil)
     end
 
@@ -205,17 +186,11 @@ module SpecHelper
         c = Delayed::Backend::Sequel.const_get(e)
         c.dataset = @director_db[c.simple_table.gsub(/[`"]/, '').to_sym] if c.is_a?(Class) && c.ancestors.include?(Sequel::Model)
       end
-
-      Bosh::Director::Models::Dns.constants.each do |e|
-        c = Bosh::Director::Models::Dns.const_get(e)
-        c.dataset = @dns_db[c.simple_table.gsub(/[`"]/, '').to_sym] if c.is_a?(Class) && c.ancestors.include?(Sequel::Model)
-      end
     end
 
     def reset(logger)
       Bosh::Director::Config.clear
       Bosh::Director::Config.db = @director_db
-      Bosh::Director::Config.dns_db = @dns_db
       Bosh::Director::Config.logger = logger
       Bosh::Director::Config.trusted_certs = ''
       Bosh::Director::Config.max_threads = 1
@@ -225,7 +200,7 @@ module SpecHelper
       if example.metadata[:truncation] && ENV.fetch('DB', 'sqlite') != 'sqlite'
         example.run
       else
-        Sequel.transaction([@director_db, @dns_db], rollback: :always, auto_savepoint: true) do
+        Sequel.transaction([@director_db], rollback: :always, auto_savepoint: true) do
           example.run
         end
       end
@@ -235,7 +210,6 @@ module SpecHelper
       return unless example.metadata[:truncation]
 
       @director_db_helper.truncate_db
-      @dns_db_helper.truncate_db
     end
   end
 end
