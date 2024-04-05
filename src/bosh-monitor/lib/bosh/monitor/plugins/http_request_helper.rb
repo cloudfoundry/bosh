@@ -49,10 +49,16 @@ module Bosh::Monitor::Plugins
       parsed_uri = URI.parse(uri.to_s)
       response = client.send(method, parsed_uri.path, headers, body)
 
-      logger.debug("#{name} event sent (took #{Time.now - started} seconds): #{response.status}")
-      response
+      # Explicitly read the response stream to ensure the connection fully closes
+      body = response.read
+      status = response.status
+
+      logger.debug("#{name} event sent (took #{Time.now - started} seconds): #{status}")
+      [body, status]
     rescue => e
       logger.error("Failed to send #{name} event: #{e.class} #{e.message}\n#{e.backtrace.join('\n')}")
+    ensure
+      client.close if client
     end
 
     def create_async_client(uri:, proxy:)

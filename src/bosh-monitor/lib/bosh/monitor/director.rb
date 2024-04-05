@@ -6,10 +6,7 @@ module Bosh::Monitor
     end
 
     def deployments
-      response = perform_request(:get, '/deployments?exclude_configs=true&exclude_releases=true&exclude_stemcells=true')
-
-      body   = response.read
-      status = response.status
+      body, status = perform_request(:get, '/deployments?exclude_configs=true&exclude_releases=true&exclude_stemcells=true')
 
       raise DirectorError, "Cannot get deployments from director at #{endpoint}/deployments?exclude_configs=true&exclude_releases=true&exclude_stemcells=true: #{status} #{body}" if status != 200
 
@@ -17,10 +14,7 @@ module Bosh::Monitor
     end
 
     def resurrection_config
-      response = perform_request(:get, '/configs?type=resurrection&latest=true')
-
-      body   = response.read
-      status = response.status
+      body, status = perform_request(:get, '/configs?type=resurrection&latest=true')
 
       raise DirectorError, "Cannot get resurrection config from director at #{endpoint}/configs?type=resurrection&latest=true: #{status} #{body}" if status != 200
 
@@ -28,10 +22,7 @@ module Bosh::Monitor
     end
 
     def get_deployment_instances(name)
-      response = perform_request(:get, "/deployments/#{name}/instances")
-
-      body   = response.read
-      status = response.status
+      body, status = perform_request(:get, "/deployments/#{name}/instances")
 
       raise DirectorError, "Cannot get deployment '#{name}' from director at #{endpoint}/deployments/#{name}/instances: #{status} #{body}" if status != 200
 
@@ -69,18 +60,22 @@ module Bosh::Monitor
         Async::HTTP::Endpoint.parse(endpoint, ssl_context: ssl_context)
       )
 
-      http.send(method.to_sym, target_path, headers)
+      response = http.send(method.to_sym, target_path, headers)
+
+      body   = response.read
+      status = response.status
+
+      [body, status]
     rescue URI::Error
       raise DirectorError, "Invalid URI: #{target_path}"
     rescue => e
       raise DirectorError, "Unable to send #{method} #{target_path} to director: #{e}"
+    ensure
+      http.close if http
     end
 
     def info
-      response = perform_request(:get, '/info', no_login: true)
-
-      body   = response.read
-      status = response.status
+      body, status = perform_request(:get, '/info', no_login: true)
 
       raise DirectorError, "Cannot get status from director at #{http.req.uri}: #{status} #{body}" if status != 200
 
