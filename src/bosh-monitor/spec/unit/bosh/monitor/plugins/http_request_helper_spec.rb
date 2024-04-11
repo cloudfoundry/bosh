@@ -16,11 +16,11 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
         send_http_put_request('http://some-uri/some-path', { body: 'some-request' })
       end
 
-      response = task.wait
+      body, status = task.wait
 
       expect(WebMock).to have_requested(:put, 'http://some-uri/some-path').with(body: 'some-request')
-      expect(response.read).to eq('response')
-      expect(response.status).to eq(200)
+      expect(body).to eq('response')
+      expect(status).to eq(200)
     end
 
     context 'when passed a proxy URI' do
@@ -31,11 +31,11 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
           send_http_put_request('http://some-uri/some-path', { body: 'some-request', proxy: 'https://proxy.local:1234' })
         end
 
-        response = task.wait
+        body, status = task.wait
 
         expect(WebMock).to have_requested(:put, 'http://some-uri/some-path').with(body: 'some-request')
-        expect(response.read).to eq('response')
-        expect(response.status).to eq(200)
+        expect(body).to eq('response')
+        expect(status).to eq(200)
       end
     end
   end
@@ -48,11 +48,11 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
         send_http_post_request('http://some-uri/some-path', { body: 'some-request' })
       end
 
-      response = task.wait
+      body, status = task.wait
 
       expect(WebMock).to have_requested(:post, 'http://some-uri/some-path').with(body: 'some-request')
-      expect(response.read).to eq('response')
-      expect(response.status).to eq(200)
+      expect(body).to eq('response')
+      expect(status).to eq(200)
     end
   end
 
