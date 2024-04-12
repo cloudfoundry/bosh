@@ -414,39 +414,6 @@ describe 'Agent', type: :integration do
       end
     end
 
-    context 'when post-deploy is disabled' do
-      with_reset_sandbox_before_each(enable_post_deploy: false)
-
-      it 'does not call post-deploy' do
-        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
-
-        manifest_hash['instance_groups'][0]['jobs'][0]['properties']['test_property'] = 7
-        output = deploy_simple_manifest(manifest_hash: manifest_hash)
-
-        sent_messages = get_messages_sent_to_agent(output)
-        agent_messages = sent_messages.values[0]
-
-        expect(agent_messages.length).to eq(12)
-
-        expect(agent_messages[0]['method']).to eq('get_state')
-        expect(agent_messages[1]['method']).to eq('prepare')
-        expect(agent_messages[2]['method']).to eq('run_script')
-        expect(agent_messages[2]['arguments']).to eq(['pre-stop', default_pre_stop_env])
-        expect(agent_messages[3]['method']).to eq('drain')
-        expect(agent_messages[4]['method']).to eq('stop')
-        expect(agent_messages[5]['method']).to eq('run_script')
-        expect(agent_messages[5]['arguments']).to eq(['post-stop', {}])
-        expect(agent_messages[6]['method']).to eq('update_settings')
-        expect(agent_messages[7]['method']).to eq('apply')
-        expect(agent_messages[8]['method']).to eq('run_script')
-        expect(agent_messages[8]['arguments']).to eq(['pre-start', {}])
-        expect(agent_messages[9]['method']).to eq('start')
-        expect(agent_messages[10]['method']).to eq('get_state')
-        expect(agent_messages[11]['method']).to eq('run_script')
-        expect(agent_messages[11]['arguments']).to eq(['post-start', {}])
-      end
-    end
-
     describe 'pre-stop lifecycle' do
       let(:vm_delete_pre_stop_env) do
         {

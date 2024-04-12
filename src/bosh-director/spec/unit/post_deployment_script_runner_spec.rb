@@ -24,14 +24,12 @@ module Bosh::Director
       end
 
       it "runs 'post_deploy' on each instance of that deployment after resurrection" do
-        allow(Bosh::Director::Config).to receive(:enable_post_deploy).and_return(true)
         expect(agent).to receive(:run_script).with('post-deploy', {}).ordered
         expect(agent).to receive(:run_script).with('post-deploy', {}).ordered
         described_class.run_post_deploys_after_resurrection({})
       end
 
       it "runs 'post_deploy' on each instance of that deployment after deployment" do
-        allow(Bosh::Director::Config).to receive(:enable_post_deploy).and_return(true)
         expect(agent).to receive(:run_script).twice
         described_class.run_post_deploys_after_deployment(deployment_plan)
       end

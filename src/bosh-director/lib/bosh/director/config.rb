@@ -26,7 +26,6 @@ module Bosh::Director
         :enable_cpi_resize_disk,
         :enable_short_lived_nats_bootstrap_credentials,
         :enable_short_lived_nats_bootstrap_credentials_compilation_vms,
-        :enable_post_deploy,
         :enable_snapshots,
         :enable_virtual_delete_vms,
         :event_log,
@@ -192,7 +191,6 @@ module Bosh::Director
         @ignore_missing_gateway = config['ignore_missing_gateway']
 
         @keep_unreachable_vms = config.fetch('keep_unreachable_vms', false)
-        @enable_post_deploy = config.fetch('enable_post_deploy', true)
         @enable_nats_delivered_templates = config.fetch('enable_nats_delivered_templates', false)
         @enable_short_lived_nats_bootstrap_credentials = config.fetch('enable_short_lived_nats_bootstrap_credentials', true)
         @enable_short_lived_nats_bootstrap_credentials_compilation_vms = config.fetch('enable_short_lived_nats_bootstrap_credentials_compilation_vms', false)
