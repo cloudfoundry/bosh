@@ -10,6 +10,7 @@ require 'bosh/template/manual_link_dns_encoder'
 # Include for backward compatibility within ERB template rendering
 require 'active_support'
 require 'active_support/core_ext/object/blank'
+require 'shellwords'
 
 module Bosh
   module Template
