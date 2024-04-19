@@ -103,9 +103,8 @@ module Bosh::Monitor
         end
 
         Async do
-          smtp = Net::SMTP.new(smtp_options['host'], smtp_options['port'])
-          smtp.enable_starttls if smtp_options['tls']
-
+          starttls_mode = smtp_options['tls'] ? :always : false
+          smtp = Net::SMTP.new(smtp_options['host'], smtp_options['port'], starttls: starttls_mode)
           smtp.start(*smtp_start_params) do |smtp|
             smtp.send_message(formatted_message(headers, body), smtp_options['from'], recipients)
             logger.debug("Email sent (took #{Time.now - started} seconds)")
@@ -128,9 +127,9 @@ module Bosh::Monitor
       end
 
       def formatted_message(headers_hash, body_text)
-        headers_text = headers_hash.map { |key, value| "#{key}: #{value}" }.join('\n')
+        headers_text = headers_hash.map { |key, value| "#{key}: #{value}" }.join("\r\n")
 
-        "#{headers_text}\n\n#{body_text}"
+        "#{headers_text}\r\n\r\n#{body_text}"
       end
     end
   end

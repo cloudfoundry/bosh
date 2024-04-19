@@ -15,7 +15,7 @@ describe Bhm::Plugins::Email do
     }
 
     @options = {
-      'recipients' => ['dude@vmware.com', 'dude2@vmware.com'],
+      'recipients' => ['recipient@example.com', 'recipient2@example.com'],
       'smtp' => @smtp_options,
       'interval' => 0.1,
     }
@@ -51,7 +51,7 @@ describe Bhm::Plugins::Email do
   end
 
   it 'has a list of recipients and smtp options' do
-    expect(@plugin.recipients).to eq(['dude@vmware.com', 'dude2@vmware.com'])
+    expect(@plugin.recipients).to eq(['recipient@example.com', 'recipient2@example.com'])
     expect(@plugin.smtp_options).to eq(@smtp_options)
   end
 
@@ -117,11 +117,32 @@ describe Bhm::Plugins::Email do
     expect(@plugin.queue_size(:heartbeat)).to eq(0)
   end
 
+  it 'correctly formats the email message' do
+    date = Time.utc(2024, 1, 2, 3, 4, 5)
+    headers = @plugin.create_headers('Some subject', date)
+    message = @plugin.formatted_message(headers, "This is the body text")
+
+
+    expected_message = "From: hm@example.com\r\nTo: recipient@example.com, recipient2@example.com\r\nSubject: Some subject\r\nDate: Tue, 2 Jan 2024 03:04:05 +0000\r\nContent-Type: text/plain; charset=\"iso-8859-1\"\r\n\r\nThis is the body text"
+
+    expect(message).to eq(expected_message)
+  end
+
   it 'writes datetime headers compliant with rfc5322' do
     headers = @plugin.create_headers('Some subject', Time.now)
     expect(headers).to be_truthy
     date_value = headers['Date']
     expect(date_value).to be_truthy
     expect(/[[:alpha:]]{3}, \d{1,2} [[:alpha:]]{3} \d{4} \d{2}:\d{2}:\d{2} [\+,\-].+/).to match(date_value)
+  end
+
+  context 'Net::SMTP canary' do
+    # Currently the Health Monitor email plugin does not support direct TLS connections, only
+    # STARTTLS commands during an existing SMTP session. We are relying on TLS being false by
+    # default in the Net::SMTP class.
+    it 'defaults tls to false' do
+      smtp = Net::SMTP.new('example.com', 25)
+      expect(smtp.tls?).to eq(false)
+    end
   end
 end
