@@ -48,7 +48,6 @@ describe 'director.yml.erb' do
         'max_threads' => 32,
         'puma_workers' => 3,
         'enable_snapshots' => true,
-        'enable_post_deploy' => true,
         'enable_nats_delivered_templates' => false,
         'enable_cpi_resize_disk' => false,
         'enable_pre_ruby_3_2_equal_tilde_behavior' => false,

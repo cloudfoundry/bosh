@@ -139,9 +139,6 @@ properties:
   director.debug.keep_unreachable_vms:
     description: When a bosh deploy fails, the failed VM will be kept instead of destroyed
     default: false
-  director.enable_post_deploy:
-    description: When true, all templates will run their post_deploy script once deployment is complete
-    default: true
   director.enable_nats_delivered_templates:
     description: When true, rendered templates will be sent over NATs
     default: false
