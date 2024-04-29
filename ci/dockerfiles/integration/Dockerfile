@@ -1,6 +1,6 @@
 #bosh/integration:main
 #
-FROM ubuntu:latest
+FROM ubuntu:jammy
 
 ENV DEBIAN_FRONTEND "noninteractive"
 ENV RUBY_VERSION "3.2"
