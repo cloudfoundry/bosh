@@ -1,4 +1,5 @@
 require 'bosh/dev'
+require 'fileutils'
 
 module Bosh::Dev::Sandbox
   class Workspace
@@ -27,6 +28,16 @@ module Bosh::Dev::Sandbox
 
       def clean
         FileUtils.rm_rf(base_dir)
+      end
+
+      def start_uaa
+        log_dir = File.join(dir, 'uaa_logs')
+        FileUtils.mkdir_p(log_dir)
+        uaa_log_file = File.open(File.join(log_dir, 'uaa_service.log'), 'w+')
+        logger = Logging.logger(uaa_log_file)
+        uaa_service = UaaService.new(File.join(dir, 'sandbox'), log_dir, logger)
+        uaa_service.start
+        uaa_service
       end
 
       private

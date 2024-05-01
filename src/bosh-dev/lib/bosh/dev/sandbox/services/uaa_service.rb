@@ -1,39 +1,30 @@
-require 'common/retryable'
+require 'yaml'
+require 'json'
+require 'fileutils'
+require 'tmpdir'
+require 'bosh/template/evaluation_context'
+require 'bosh/dev/sandbox/service.rb'
+require 'erb'
 
 module Bosh::Dev::Sandbox
   class UaaService
     attr_reader :port
 
-    TOMCAT_VERSIONED_FILENAME = 'apache-tomcat-8.0.21'.freeze
-    UAA_FILENAME = 'uaa.war'.freeze
-
-    UAA_VERSION = 'cloudfoundry-identity-uaa-3.5.0'.freeze
-
+    COMPILED_UAA_RELEASE_PATH = '/usr/local/uaa.tgz'.freeze
+    UAA_BIN_PATH = '/var/vcap/jobs/uaa/bin/'.freeze
     REPO_ROOT = File.expand_path('../../../../../../', File.dirname(__FILE__))
-    INSTALL_DIR = File.join('tmp', 'integration-uaa', UAA_VERSION)
-    TOMCAT_DIR = File.join(INSTALL_DIR, TOMCAT_VERSIONED_FILENAME)
 
-    WAR_FILE_PATH = File.join(REPO_ROOT, TOMCAT_DIR, 'webapps', UAA_FILENAME)
     # Keys and Certs
     ASSETS_DIR = File.expand_path('bosh-dev/assets/sandbox/ca', REPO_ROOT)
     CERTS_DIR = File.expand_path('certs', ASSETS_DIR)
     ROOT_CERT = File.join(CERTS_DIR, 'rootCA.pem')
+    ROOT_KEY = File.join(CERTS_DIR, 'rootCA.key')
+    SERVER_CERT = File.join(CERTS_DIR, 'server.crt')
+    SERVER_KEY = File.join(CERTS_DIR, 'server.key')
 
-    def initialize(port_provider, sandbox_root, base_log_path, logger)
-      @port = port_provider.get_port(:uaa_http)
-      @server_port = port_provider.get_port(:uaa_server)
-
+    def initialize(sandbox_root, base_log_path, logger)
       @logger = logger
-      @build_mutex = Mutex.new
       @log_location = "#{base_log_path}.uaa.out"
-
-      @connector = HTTPEndpointConnector.new('uaa', 'localhost', @port, '/uaa/login', 'Reset password', @log_location, logger)
-
-      @uaa_webapps_path = File.join(sandbox_root, 'uaa.webapps')
-      unless File.exist? @uaa_webapps_path
-        FileUtils.mkdir_p @uaa_webapps_path
-        FileUtils.cp WAR_FILE_PATH, @uaa_webapps_path
-      end
 
       @config_path = File.join(sandbox_root, 'uaa_config')
       FileUtils.mkdir_p(@config_path)
@@ -43,28 +34,76 @@ module Bosh::Dev::Sandbox
     end
 
     def self.install
-      FileUtils.mkdir_p(TOMCAT_DIR)
+      %w{
+        /var/vcap/sys/run/uaa
+        /var/vcap/sys/log/uaa
+        /var/vcap/data/tmp
+        /var/vcap/data/uaa
+        /var/vcap/data/uaa/cert-cache
+      }.each {|path| FileUtils.mkdir_p path}
 
-      retryable.retryer do
-        `#{File.dirname(__FILE__)}/install_tomcat.sh #{INSTALL_DIR} #{TOMCAT_VERSIONED_FILENAME} 957e88df8a9c3fc6b786321c4014b44c5c775773`
-        $? == 0
+      installed_uaa_job_path = File.join('/', 'var', 'vcap', 'jobs', 'uaa')
+
+      Dir.mktmpdir do |workspace|
+        `tar xzf #{COMPILED_UAA_RELEASE_PATH} -C #{workspace}`
+        uaa_job_path = File.join(workspace, 'uaa')
+        FileUtils.mkdir_p uaa_job_path
+        `tar xzf #{File.join(workspace, 'jobs', 'uaa.tgz')} -C #{uaa_job_path}`
+        uaa_job_spec_path = File.join(uaa_job_path, 'job.MF')
+        job_spec = YAML.load_file(uaa_job_spec_path)
+        job_spec['packages'].each do |package_name|
+          package_path = File.join('/', 'var', 'vcap', 'packages', package_name)
+          FileUtils.mkdir_p(package_path)
+          `tar xzf #{File.join(workspace, 'compiled_packages', "#{package_name}.tgz")} -C #{package_path}`
+        end
+
+        context = {
+          'properties' => {
+            'uaa' => {
+              'sslCertificate' => File.read(SERVER_CERT),
+              'sslPrivateKey' => File.read(SERVER_KEY)
+            }
+          }
+        }
+
+        job_spec['properties'].map do |key, value|
+          next unless value.has_key?('default')
+          keys = key.split('.')
+          hash_segment =context['properties']
+          keys.each_with_index do |key, index|
+            if index == keys.length - 1
+              hash_segment[key] ||= value['default']
+            else
+              hash_segment[key] ||= {}
+            end
+            hash_segment = hash_segment[key]
+          end
+        end
+
+        context['properties'].deep_merge!(YAML.load_file(File.expand_path(File.join('spec','assets','uaa_config', 'asymmetric', 'uaa.yml'), REPO_ROOT)))
+        templates = job_spec['templates']
+        templates.each do |src, dst|
+          src_path = File.join(uaa_job_path, 'templates', src)
+          dest_path = File.join(installed_uaa_job_path, dst)
+          FileUtils.mkdir_p(File.dirname(dest_path))
+
+          evaluation_context = Bosh::Template::EvaluationContext.new(context, nil)
+          template = ERB.new(File.read(src_path), trim_mode: "-")
+          template_result = template.result(evaluation_context.get_binding)
+          File.write(dest_path, template_result)
+        end
       end
 
-      retryable.retryer do
-        `#{File.dirname(__FILE__)}/install_binary.sh #{UAA_VERSION}.war #{WAR_FILE_PATH} 6167d1b5afe3e12c26482fcb45c0056475cb3e1b9ca2996707d9ac9c22f60dc9 bosh-dependencies`
-        $? == 0
-      end
-    end
-
-    def self.retryable
-      Bosh::Retryable.new(tries: 6)
+      `chmod +x #{File.join(installed_uaa_job_path, 'bin', '*')}`
     end
 
     def start
+      system('useradd -ms /bin/bash vcap')
+      system(File.join(UAA_BIN_PATH, 'pre-start')) || raise
       @uaa_process.start
 
       begin
-        @connector.try_to_connect(6000)
+        system(File.join(UAA_BIN_PATH, 'post-start')) || raise
       rescue StandardError
         output_service_log(@uaa_process.description, @uaa_process.stdout_contents, @uaa_process.stderr_contents)
         raise
@@ -81,10 +120,7 @@ module Bosh::Dev::Sandbox
 
     def initialize_uaa_process
       opts = {
-        'uaa.http_port' => @port,
-        'uaa.server_port' => @server_port,
         'uaa.access_log_dir' => File.dirname(@log_location),
-        'uaa.webapps' => @uaa_webapps_path,
         'securerandom.source' => 'file:/dev/urandom',
       }
 
@@ -92,12 +128,16 @@ module Bosh::Dev::Sandbox
       catalina_opts += opts.map { |key, value| "-D#{key}=#{value}" }.join(' ')
 
       Service.new(
-        [executable_path, 'run', '-config', server_xml],
+        [File.join(UAA_BIN_PATH, 'uaa')],
         {
           output: @log_location,
           env: {
             'CATALINA_OPTS' => catalina_opts,
-            'UAA_CONFIG_PATH' => @config_path,
+            'CATALINA_BASE' => '/var/vcap/data/uaa/tomcat',
+            'CATALINA_HOME' => '/var/vcap/data/uaa/tomcat',
+            'CLOUDFOUNDRY_CONFIG_PATH' => '/var/vcap/jobs/uaa/config',
+            'CLOUDFOUNDRY_LOG_PATH' => '/var/vcap/sys/log/uaa',
+            'JAVA_HOME' => ''
           },
         },
         @logger,
@@ -106,14 +146,6 @@ module Bosh::Dev::Sandbox
 
     def working_dir
       File.expand_path('spec/assets/uaa', REPO_ROOT)
-    end
-
-    def executable_path
-      File.join(TOMCAT_DIR, 'bin', 'catalina.sh')
-    end
-
-    def server_xml
-      File.join(REPO_ROOT, 'bosh-dev', 'assets', 'sandbox', 'tomcat-server.xml')
     end
 
     def write_config_path

@@ -69,6 +69,7 @@ namespace :spec do
 
     def run_integration_specs(run_options = {})
       Bosh::Dev::Sandbox::Workspace.clean
+      uaa_service = Bosh::Dev::Sandbox::Workspace.start_uaa
 
       num_processes = ENV['NUM_PROCESSES']
 
@@ -80,6 +81,8 @@ namespace :spec do
 
       puts "Launching parallel execution of #{spec_path}"
       run_in_parallel(spec_path, options)
+    ensure
+      uaa_service.stop if uaa_service
     end
 
     def run_in_parallel(test_path, options = {})
@@ -101,7 +104,7 @@ namespace :spec do
       end
 
       puts command
-      abort unless system(command)
+      raise unless system(command)
     end
 
     def compile_dependencies

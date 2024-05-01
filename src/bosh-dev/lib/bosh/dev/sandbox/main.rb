@@ -12,7 +12,6 @@ require 'bosh/dev/sandbox/director_config'
 require 'bosh/dev/sandbox/port_provider'
 require 'bosh/dev/sandbox/services/director_service'
 require 'bosh/dev/sandbox/services/nginx_service'
-require 'bosh/dev/sandbox/services/uaa_service'
 require 'bosh/dev/sandbox/services/config_server_service'
 require 'bosh/dev/gnatsd_manager'
 require 'cloud/dummy'
@@ -102,9 +101,8 @@ module Bosh::Dev::Sandbox
       @nats_log_path = File.join(@logs_path, 'nats.log')
       setup_nats
 
-      @uaa_service = UaaService.new(@port_provider, sandbox_root, base_log_path, @logger)
       @config_server_service = ConfigServerService.new(@port_provider, base_log_path, @logger, test_env_number)
-      @nginx_service = NginxService.new(sandbox_root, director_port, director_ruby_port, @uaa_service.port, base_log_path, @logger)
+      @nginx_service = NginxService.new(sandbox_root, director_port, director_ruby_port, "8443", base_log_path, @logger)
 
       @db_config = {
         ca_path: File.join(SANDBOX_ASSETS_DIR, 'database', 'rootCA.pem')
@@ -183,7 +181,6 @@ module Bosh::Dev::Sandbox
         load_db_and_populate_blobstore(@test_initial_state)
       end
 
-      @uaa_service.start if @user_authentication == 'uaa'
       @config_server_service.start(@with_config_server_trusted_certs) if @config_server_enabled
 
       dir_config = director_config
@@ -268,7 +265,6 @@ module Bosh::Dev::Sandbox
       @nats_process.stop
 
       @health_monitor_process.stop
-      @uaa_service.stop
 
       @config_server_service.stop
 
@@ -473,7 +469,6 @@ module Bosh::Dev::Sandbox
 
       @director_service.start(director_config)
 
-      @uaa_service.start if @user_authentication == 'uaa'
       @nginx_service.restart_if_needed
 
       write_in_sandbox(EXTERNAL_CPI_CONFIG, load_config_template(EXTERNAL_CPI_CONFIG_TEMPLATE))

@@ -8,6 +8,8 @@ source bosh-src/ci/tasks/utils.sh
 check_param RUBY_VERSION
 check_param DB
 
+curl -o /usr/local/uaa.tgz "https://s3.amazonaws.com/bosh-compiled-release-tarballs/uaa-77.8.0-ubuntu-jammy-1.423-20240430-181143-092389865-20240430181145.tgz"
+
 echo "Starting $DB..."
 case "$DB" in
   mysql)
@@ -52,6 +54,7 @@ max_allowed_packet=6M' >> /etc/mysql/my.cnf
   postgresql)
     export PATH=/usr/lib/postgresql/$DB_VERSION/bin:$PATH
     export DB_PASSWORD="smurf"
+    export PGPASSWORD=${DB_PASSWORD}
 
     if [ ! -d /tmp/postgres ]; then # PostgreSQL hasn't been set up
       mkdir /tmp/postgres
@@ -96,7 +99,8 @@ max_allowed_packet=6M' >> /etc/mysql/my.cnf
         export PATH=/usr/lib/postgresql/$DB_VERSION/bin:$PATH
         export PGLOGS=/tmp/log/postgres
         export PGCLIENTENCODING=UTF8
-        pg_ctl start -l $PGLOGS/server.log -o "-N 400"
+        pg_ctl start -l $PGLOGS/server.log -o "-N 400" --wait
+        createdb -h 127.0.0.1 uaa
       '
     fi
     ;;
