@@ -2,8 +2,8 @@
 set -e
 set -x
 
-PACKAGE_NAME="zulu17.50.19-ca-jre17.0.11-linux_x64.tar.gz"
-PACKAGE_MD5="0b25f460b11f53325ba130283d1d4aad"
+PACKAGE_NAME="zulu17.50.19-ca-jdk17.0.11-linux_x64.tar.gz"
+PACKAGE_MD5="6497ded4396d535611ec401d785d440e"
 PACKAGE_TMP="/tmp/${PACKAGE_NAME}"
 PACKAGE_URL="http://cdn.azul.com/zulu/bin/${PACKAGE_NAME}"
 INSTALL_PREFIX="/usr/lib/jvm"
