@@ -9,14 +9,13 @@ describe 'User authorization with UAA', type: :integration do
       cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
       environment_name: current_sandbox.director_url,
       include_credentials: false,
-      no_login: true,
       env: client_env,
     )
 
     client_env = {'BOSH_CLIENT' => 'production_team', 'BOSH_CLIENT_SECRET' => 'secret'}
     manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['name'] = 'fake-name1'
-    deploy_simple_manifest(environment_name: current_sandbox.director_url, include_credentials: false, no_login: true, env: client_env, manifest_hash: manifest_hash)
+    deploy_simple_manifest(environment_name: current_sandbox.director_url, include_credentials: false, env: client_env, manifest_hash: manifest_hash)
 
     output = bosh_runner.run('deployments', environment_name: current_sandbox.director_url, env: client_env , include_credentials: false)
     expect(output).to match(/1 deployments/)
@@ -33,7 +32,6 @@ describe 'User authorization with UAA', type: :integration do
     client_env = {'BOSH_CLIENT' => 'director-access', 'BOSH_CLIENT_SECRET' => 'secret'}
     prepare_for_deploy(
       cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
-      no_login: true,
       include_credentials: false,
       environment_name: current_sandbox.director_url,
       env: client_env,
@@ -42,7 +40,7 @@ describe 'User authorization with UAA', type: :integration do
     client_env = {'BOSH_CLIENT' => 'production_team', 'BOSH_CLIENT_SECRET' => 'secret'}
     manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['name'] = 'fake-name1'
-    deploy_simple_manifest(no_login: true, environment_name: current_sandbox.director_url, env: client_env , include_credentials: false, manifest_hash: manifest_hash)
+    deploy_simple_manifest(environment_name: current_sandbox.director_url, env: client_env , include_credentials: false, manifest_hash: manifest_hash)
 
     output = bosh_runner.run('delete-deployment', deployment_name: 'simple', environment_name: current_sandbox.director_url, env: client_env , include_credentials: false)
     expect(output).to include("Using deployment 'simple'")
@@ -54,7 +52,6 @@ describe 'User authorization with UAA', type: :integration do
     client_env = {'BOSH_CLIENT' => 'director-access', 'BOSH_CLIENT_SECRET' => 'secret'}
     prepare_for_deploy(
       cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
-      no_login: true,
       environment_name: current_sandbox.director_url,
       env: client_env,
       include_credentials: false,
@@ -63,7 +60,7 @@ describe 'User authorization with UAA', type: :integration do
     client_env = {'BOSH_CLIENT' => 'production_team', 'BOSH_CLIENT_SECRET' => 'secret'}
     manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['name'] = 'fake-name1'
-    deploy_simple_manifest(no_login: true, environment_name: current_sandbox.director_url, env: client_env , include_credentials: false, manifest_hash: manifest_hash)
+    deploy_simple_manifest(environment_name: current_sandbox.director_url, env: client_env , include_credentials: false, manifest_hash: manifest_hash)
 
     output = bosh_runner.run('delete-deployment', deployment_name: 'simple', environment_name: current_sandbox.director_url, env: client_env , include_credentials: false)
     expect(output).to include("Using deployment 'simple'")

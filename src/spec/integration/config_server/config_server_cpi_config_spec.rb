@@ -96,7 +96,7 @@ describe 'cpi config', type: :integration do
 
             task_id = deploy_output.match(/^Task (\d+) done$/)[1]
 
-            debug_output = bosh_runner.run("task --debug --event --cpi --result #{task_id}", no_login: true, include_credentials: false, env: client_env)
+            debug_output = bosh_runner.run("task --debug --event --cpi --result #{task_id}", include_credentials: false, env: client_env)
 
             expect(debug_output).to_not include('some-foo-val-1')
             expect(debug_output).to_not include('some-bar-val-1')

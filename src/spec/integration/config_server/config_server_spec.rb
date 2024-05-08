@@ -53,7 +53,6 @@ describe 'using director with config server', type: :integration do
 
         it 'raises an error, even if a property has a default value in the job spec' do
           output, exit_code = deploy_from_scratch(
-            no_login: true,
             manifest_hash: manifest_hash,
             cloud_config_hash: cloud_config,
             failure_expected: true,
@@ -81,7 +80,6 @@ describe 'using director with config server', type: :integration do
           config_server_helper.put_value(prepend_namespace('my_placeholder'), 'he is colorless')
 
           deploy_output = deploy_from_scratch(
-            no_login: true,
             manifest_hash: manifest_hash,
             cloud_config_hash: cloud_config,
             include_credentials: false,
@@ -93,7 +91,6 @@ describe 'using director with config server', type: :integration do
 
           debug_output = bosh_runner.run(
             "task --debug --event --cpi --result #{task_id}",
-            no_login: true,
             include_credentials: false,
             env: client_env,
           )
@@ -104,7 +101,6 @@ describe 'using director with config server', type: :integration do
           config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
 
           deploy_from_scratch(
-            no_login: true,
             manifest_hash: manifest_hash,
             cloud_config_hash: cloud_config,
             include_credentials: false,
@@ -129,7 +125,6 @@ describe 'using director with config server', type: :integration do
           job_properties['gargamel']['color'] = '((/my_placeholder))'
 
           deploy_from_scratch(
-            no_login: true,
             manifest_hash: manifest_hash,
             cloud_config_hash: cloud_config,
             include_credentials: false,
@@ -150,7 +145,6 @@ describe 'using director with config server', type: :integration do
             config_server_helper.put_value(prepend_namespace('my_placeholder'), 'greenish')
             config_server_helper.put_value(prepend_namespace('smurf_age_placeholder'), 9)
             deploy_from_scratch(
-              no_login: true,
               manifest_hash: manifest_hash,
               cloud_config_hash: cloud_config,
               include_credentials: false,
@@ -194,7 +188,6 @@ describe 'using director with config server', type: :integration do
               config_server_helper.put_value(prepend_namespace('my_placeholder_3'), my_placeholder_value)
 
               output, exit_code = deploy_from_scratch(
-                no_login: true,
                 manifest_hash: manifest_hash,
                 cloud_config_hash: cloud_config,
                 failure_expected: true,
@@ -241,7 +234,6 @@ describe 'using director with config server', type: :integration do
               },
             }
             deploy_from_scratch(
-              no_login: true,
               manifest_hash: manifest_hash,
               cloud_config_hash: cloud_config_hash,
               include_credentials: false,
@@ -275,7 +267,6 @@ describe 'using director with config server', type: :integration do
             }
 
             deploy_from_scratch(
-              no_login: true,
               manifest_hash: manifest_hash,
               cloud_config_hash: cloud_config_hash,
               include_credentials: false,
@@ -305,7 +296,6 @@ describe 'using director with config server', type: :integration do
             }
 
             output, exit_code = deploy_from_scratch(
-              no_login: true,
               manifest_hash: manifest_hash,
               cloud_config_hash: cloud_config_hash,
               failure_expected: true,
@@ -332,7 +322,6 @@ describe 'using director with config server', type: :integration do
             config_server_helper.put_value(prepend_namespace('smurfs_color_placeholder'), 'I am blue')
 
             deploy_from_scratch(
-              no_login: true,
               manifest_hash: manifest_hash,
               cloud_config_hash: cloud_config,
               include_credentials: false,
@@ -366,7 +355,6 @@ describe 'using director with config server', type: :integration do
             config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are very happy')
 
             deploy_from_scratch(
-              no_login: true,
               manifest_hash: manifest_hash,
               cloud_config_hash: cloud_config,
               include_credentials: false,
@@ -393,7 +381,6 @@ describe 'using director with config server', type: :integration do
             config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
 
             deploy_from_scratch(
-              no_login: true,
               manifest_hash: manifest_hash,
               cloud_config_hash: cloud_config,
               include_credentials: false,

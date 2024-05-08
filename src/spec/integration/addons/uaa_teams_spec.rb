@@ -25,7 +25,7 @@ describe 'teams', type: :integration do
 
     # deploy Deployment1
     manifest_hash['name'] = 'dep1'
-    deploy_simple_manifest(manifest_hash: manifest_hash, no_login: true, env: production_team_env, include_credentials: false)
+    deploy_simple_manifest(manifest_hash: manifest_hash, env: production_team_env, include_credentials: false)
 
     foobar_instance = director.instance(
       'foobar', '0',
@@ -40,7 +40,7 @@ describe 'teams', type: :integration do
 
     # deploy Deployment2
     manifest_hash['name'] = 'dep2'
-    deploy_simple_manifest(manifest_hash: manifest_hash, no_login: true, env: dev_team_env, include_credentials: false)
+    deploy_simple_manifest(manifest_hash: manifest_hash, env: dev_team_env, include_credentials: false)
 
     foobar_instance = director.instance(
       'foobar', '0',

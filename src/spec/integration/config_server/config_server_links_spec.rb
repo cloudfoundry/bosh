@@ -341,14 +341,14 @@ describe 'using director with config server and deployments having links', type:
     context 'given a successful provider deployment' do
       before do
         config_server_helper.put_value(prepend_namespace('fibonacci_placeholder'), 'fibonacci_value_1')
-        deploy_simple_manifest(no_login: true, manifest_hash: provider_manifest, include_credentials: false, env: client_env)
+        deploy_simple_manifest(manifest_hash: provider_manifest, include_credentials: false, env: client_env)
       end
 
       context 'when deploying the consumer deployment' do
         let(:expected_consumer_id) { 1 }
 
         before do
-          deploy_simple_manifest(no_login: true, manifest_hash: consumer_manifest, include_credentials: false, env: client_env)
+          deploy_simple_manifest(manifest_hash: consumer_manifest, include_credentials: false, env: client_env)
         end
 
         it 'should successfully use the shared links' do
@@ -371,7 +371,6 @@ describe 'using director with config server and deployments having links', type:
           context 'when re-deploying the provider deployment' do
             before do
               deploy_simple_manifest(
-                no_login: true,
                 manifest_hash: provider_manifest,
                 include_credentials: false,
                 env: client_env,
@@ -386,7 +385,6 @@ describe 'using director with config server and deployments having links', type:
               context 'when re-deploying the consumer deployment' do
                 before do
                   deploy_simple_manifest(
-                    no_login: true,
                     manifest_hash: consumer_manifest,
                     include_credentials: false,
                     env: client_env,
@@ -411,7 +409,6 @@ describe 'using director with config server and deployments having links', type:
                   bosh_runner.run(
                     'recreate',
                     deployment_name: consumer_manifest['name'],
-                    no_login: true,
                     include_credentials: false,
                     env: client_env,
                   )
@@ -511,7 +508,7 @@ describe 'using director with config server and deployments having links', type:
 
       before do
         config_server_helper.put_value(prepend_namespace('fibonacci_placeholder'), 'bosh_is_nice')
-        deploy_simple_manifest(no_login: true, manifest_hash: provider_manifest, include_credentials: false, env: client_env)
+        deploy_simple_manifest(manifest_hash: provider_manifest, include_credentials: false, env: client_env)
       end
 
       it 'should successfully use shared link from provider deployment' do
@@ -523,7 +520,7 @@ describe 'using director with config server and deployments having links', type:
           ),
         ).to include('Succeeded')
 
-        deploy_simple_manifest(no_login: true, manifest_hash: consumer_manifest, include_credentials: false, env: client_env)
+        deploy_simple_manifest(manifest_hash: consumer_manifest, include_credentials: false, env: client_env)
 
         link_instance = director.instance(
           'consumer_deployment_node',
@@ -542,7 +539,7 @@ describe 'using director with config server and deployments having links', type:
         before do
           provider_deployment_instance_group_spec['jobs'][0]['properties']['name_space']['fibonacci'] = '((/fibonacci_variable))'
           config_server_helper.put_value('/fibonacci_variable', 'fibonacci_value_1')
-          deploy_simple_manifest(no_login: true, manifest_hash: provider_manifest, include_credentials: false, env: client_env)
+          deploy_simple_manifest(manifest_hash: provider_manifest, include_credentials: false, env: client_env)
         end
 
         context 'given a consumer deployment which defines a property value with same absolute variable' do
@@ -555,7 +552,7 @@ describe 'using director with config server and deployments having links', type:
           end
 
           it 'versions the 2 variables separately' do
-            deploy_simple_manifest(no_login: true, manifest_hash: consumer_manifest, include_credentials: false, env: client_env)
+            deploy_simple_manifest(manifest_hash: consumer_manifest, include_credentials: false, env: client_env)
             link_instance = director.instance(
               'consumer_deployment_node',
               '0',
@@ -568,7 +565,7 @@ describe 'using director with config server and deployments having links', type:
             expect(template['property_listen_port']).to eq('fibonacci_value_1')
 
             config_server_helper.put_value('/fibonacci_variable', 'fibonacci_value_2')
-            deploy_simple_manifest(no_login: true, manifest_hash: consumer_manifest, include_credentials: false, env: client_env)
+            deploy_simple_manifest(manifest_hash: consumer_manifest, include_credentials: false, env: client_env)
 
             link_instance = director.instance(
               'consumer_deployment_node',
@@ -586,7 +583,6 @@ describe 'using director with config server and deployments having links', type:
             it 'should use the variables it was created with' do
               config_server_helper.put_value('/fibonacci_variable', 'fibonacci_value_2')
               deploy_simple_manifest(
-                no_login: true,
                 manifest_hash: consumer_manifest,
                 include_credentials: false,
                 env: client_env,
@@ -594,7 +590,6 @@ describe 'using director with config server and deployments having links', type:
 
               config_server_helper.put_value('/fibonacci_variable', 'fibonacci_value_3')
               deploy_simple_manifest(
-                no_login: true,
                 manifest_hash: provider_manifest,
                 include_credentials: false,
                 env: client_env,
@@ -679,8 +674,8 @@ describe 'using director with config server and deployments having links', type:
       it 'replaces variables in properties from a cross deployment link' do
         config_server_helper.put_value("/#{director_name}/provider_deployment_name/smurfy-variable", 'some-smurfy-value')
 
-        deploy_simple_manifest(no_login: true, manifest_hash: provider_manifest, include_credentials: false,  env: client_env)
-        deploy_simple_manifest(no_login: true, manifest_hash: consumer_manifest, include_credentials: false,  env: client_env)
+        deploy_simple_manifest(manifest_hash: provider_manifest, include_credentials: false,  env: client_env)
+        deploy_simple_manifest(manifest_hash: consumer_manifest, include_credentials: false,  env: client_env)
 
         run_result = bosh_runner.run(
           'run-errand consumer_deployment_node',

@@ -22,7 +22,6 @@ describe 'using director with config server and a deployment with errands', type
     config_server_helper.put_value(namespaced_key, 'some-smurfy-value')
 
     deploy_from_scratch(
-      no_login: true,
       manifest_hash: errand_manifest,
       cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
       include_credentials: false,
@@ -37,7 +36,6 @@ describe 'using director with config server and a deployment with errands', type
     config_server_helper.put_value(namespaced_key, 'gargamel')
 
     deploy_from_scratch(
-      no_login: true,
       manifest_hash: errand_manifest,
       cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
       include_credentials: false,
@@ -64,7 +62,6 @@ describe 'using director with config server and a deployment with errands', type
 
     it 'displays a error messages at deploy time' do
       output, exit_code = deploy_from_scratch(
-        no_login: true,
         manifest_hash: errand_manifest,
         cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
         include_credentials: false,

@@ -45,7 +45,6 @@ describe 'Logging into a director with UAA authentication', type: :integration d
       client_env = {'BOSH_CLIENT' => 'short-lived-client', 'BOSH_CLIENT_SECRET' => 'short-lived-secret'}
       _, exit_code = deploy_from_scratch(
         environment_name: current_sandbox.director_url,
-        no_login: true,
         env: client_env,
         include_credentials: false,
         return_exit_code: true,
@@ -119,7 +118,6 @@ CERT
         client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
         deploy_from_scratch(
           environment_name: current_sandbox.director_url,
-          no_login: true,
           include_credentials: false,
           env: client_env,
           manifest_hash: Bosh::Spec::Deployments.simple_manifest_with_instance_groups,
@@ -139,7 +137,6 @@ CERT
         client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
         deploy_from_scratch(
           environment_name: current_sandbox.director_url,
-          no_login: true,
           include_credentials: false,
           env: client_env,
           manifest_hash: Bosh::Spec::Deployments.simple_manifest_with_instance_groups,
@@ -161,10 +158,10 @@ CERT
 
     it 'logs in successfully' do
       client_env = {'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret'}
-      output = bosh_runner.run('env', environment_name: current_sandbox.director_url, env: client_env, no_login: true, include_credentials: false)
+      output = bosh_runner.run('env', environment_name: current_sandbox.director_url, env: client_env, include_credentials: false)
       expect(output).to match(/User.*test/)
 
-      _, exit_code = bosh_runner.run('vms', environment_name: current_sandbox.director_url, env: client_env, no_login: true, return_exit_code: true, include_credentials: false)
+      _, exit_code = bosh_runner.run('vms', environment_name: current_sandbox.director_url, env: client_env, return_exit_code: true, include_credentials: false)
       expect(exit_code).to eq(0)
     end
   end

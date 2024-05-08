@@ -68,7 +68,6 @@ describe 'cli: variables', type: :integration do
     config_server_helper.put_value('/phone_password', '11')
 
     deploy_from_scratch(
-      no_login: true,
       manifest_hash: manifest_hash,
       cloud_config_hash: cloud_config,
       include_credentials: false,
@@ -112,7 +111,6 @@ describe 'cli: variables', type: :integration do
     config_server_helper.put_value(prepend_namespace('happiness_level'), '10')
 
     deploy_from_scratch(
-      no_login: true,
       manifest_hash: manifest_hash,
       cloud_config_hash: cloud_config,
       include_credentials: false,
@@ -188,7 +186,6 @@ describe 'cli: variables', type: :integration do
         config_server_helper.put_value(prepend_namespace('other_property'), 'other_prop_now')
 
         deploy_from_scratch(
-          no_login: true,
           manifest_hash: manifest_hash,
           cloud_config_hash: cloud_config,
           include_credentials: false,
@@ -201,7 +198,6 @@ describe 'cli: variables', type: :integration do
         bosh_runner.run(
           "ignore #{instance.instance_group_name}/#{instance.id}",
           deployment_name: 'simple',
-          no_login: true,
           return_exit_code: true,
           include_credentials: false,
           env: client_env,
@@ -211,7 +207,6 @@ describe 'cli: variables', type: :integration do
         config_server_helper.put_value(prepend_namespace('other_property'), 'other_prop2')
 
         deploy_from_scratch(
-          no_login: true,
           manifest_hash: manifest_hash,
           cloud_config_hash: cloud_config,
           include_credentials: false,
@@ -228,7 +223,6 @@ describe 'cli: variables', type: :integration do
         config_server_helper.put_value(prepend_namespace('other_property'), 'other_prop_now')
 
         deploy_from_scratch(
-          no_login: true,
           manifest_hash: manifest_hash,
           cloud_config_hash: cloud_config,
           include_credentials: false,
@@ -241,7 +235,6 @@ describe 'cli: variables', type: :integration do
         bosh_runner.run(
           "stop --hard #{instance.instance_group_name}/#{instance.id}",
           deployment_name: 'simple',
-          no_login: true,
           return_exit_code: true,
           include_credentials: false,
           env: client_env,
@@ -251,7 +244,6 @@ describe 'cli: variables', type: :integration do
         config_server_helper.put_value(prepend_namespace('other_property'), 'other_prop2')
 
         deploy_from_scratch(
-          no_login: true,
           manifest_hash: manifest_hash,
           cloud_config_hash: cloud_config,
           include_credentials: false,
@@ -284,7 +276,6 @@ describe 'cli: variables', type: :integration do
       config_server_helper.put_value('/phone_password', '11')
 
       deploy_from_scratch(
-        no_login: true,
         manifest_hash: manifest_hash,
         cloud_config_hash: cloud_config,
         include_credentials: false,
@@ -308,7 +299,6 @@ describe 'cli: variables', type: :integration do
       expect(variables.size).to eq(3)
 
       deploy_from_scratch(
-        no_login: true,
         manifest_hash: manifest_hash,
         cloud_config_hash: cloud_config,
         include_credentials: false,
@@ -402,7 +392,6 @@ describe 'cli: variables', type: :integration do
           failure_expected: true,
           include_credentials: false,
           manifest_hash: manifest_hash,
-          no_login: true,
         )
       end
 
@@ -424,7 +413,6 @@ describe 'cli: variables', type: :integration do
           deployment: manifest_hash['name'],
           include_credentials: false,
           env: client_env,
-          no_login: true,
         )
         ig1_vm1_template = ig1_vm1.read_job_template('job_with_bad_template', 'config/config.yml')
         expect(ig1_vm1_template).to include('five six')
@@ -435,7 +423,6 @@ describe 'cli: variables', type: :integration do
           deployment: manifest_hash['name'],
           include_credentials: false,
           env: client_env,
-          no_login: true,
         )
         ig2_vm1_template = ig2_vm1.read_job_template('job_with_bad_template', 'config/config.yml')
         expect(ig2_vm1_template).to include('pick up the sticks')
@@ -446,7 +433,6 @@ describe 'cli: variables', type: :integration do
           deployment: manifest_hash['name'],
           include_credentials: false,
           env: client_env,
-          no_login: true,
         )
         ig2_vm2_template = ig2_vm2.read_job_template('job_with_bad_template', 'config/config.yml')
         expect(ig2_vm2_template).to include('shut the door')
@@ -461,7 +447,6 @@ describe 'cli: variables', type: :integration do
         config_server_helper.put_value(prepend_namespace('other_property'), 'lay them straight')
 
         deploy_from_scratch(
-          no_login: true,
           manifest_hash: manifest_hash,
           cloud_config_hash: cloud_config,
           include_credentials: false,
@@ -485,7 +470,6 @@ describe 'cli: variables', type: :integration do
           deployment: manifest_hash['name'],
           include_credentials: false,
           env: client_env,
-          no_login: true,
         )
         ig1_vm1_template = ig1_vm1.read_job_template('job_with_bad_template', 'config/config.yml')
         expect(ig1_vm1_template).to include('seven eight')
@@ -496,7 +480,6 @@ describe 'cli: variables', type: :integration do
           deployment: manifest_hash['name'],
           include_credentials: false,
           env: client_env,
-          no_login: true,
         )
         ig2_vm1_template = ig2_vm1.read_job_template('job_with_bad_template', 'config/config.yml')
         expect(ig2_vm1_template).to include('lay them straight')
@@ -507,7 +490,6 @@ describe 'cli: variables', type: :integration do
           deployment: manifest_hash['name'],
           include_credentials: false,
           env: client_env,
-          no_login: true,
         )
         ig2_vm2_template = ig2_vm2.read_job_template('job_with_bad_template', 'config/config.yml')
         expect(ig2_vm2_template).to include('lay them straight')

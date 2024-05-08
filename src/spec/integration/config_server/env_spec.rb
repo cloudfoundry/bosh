@@ -94,7 +94,7 @@ describe 'env values in instance groups and resource pools', type: :integration 
     end
 
     it 'should interpolate them correctly' do
-      deploy_from_scratch(no_login: true, cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash, include_credentials: false, env: client_env)
+      deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash, include_credentials: false, env: client_env)
       create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
       expect(create_vm_invocations.last.inputs['env']).to match(expected_env_hash)
       deployments = table(bosh_runner.run('deployments', json: true, include_credentials: false, env: client_env))
@@ -107,13 +107,13 @@ describe 'env values in instance groups and resource pools', type: :integration 
     end
 
     it 'should not log interpolated env values in the debug logs and deploy output' do
-      deploy_output = deploy_from_scratch(no_login: true, cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash, include_credentials: false, env: client_env)
+      deploy_output = deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash, include_credentials: false, env: client_env)
       expect(deploy_output).to_not include('lazy smurf')
       expect(deploy_output).to_not include('super_color')
 
       task_id = deploy_output.match(/^Task (\d+)$/)[1]
 
-      debug_output = bosh_runner.run("task --debug --event --cpi --result #{task_id}", no_login: true, include_credentials: false, env: client_env)
+      debug_output = bosh_runner.run("task --debug --event --cpi --result #{task_id}", include_credentials: false, env: client_env)
       expect(debug_output).to_not include('lazy smurf')
       expect(debug_output).to_not include('super_color')
     end
@@ -150,7 +150,7 @@ describe 'env values in instance groups and resource pools', type: :integration 
     end
 
     it 'should send the flag to the agent with interpolated values' do
-      deploy_from_scratch(no_login: true, manifest_hash: simple_manifest, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+      deploy_from_scratch(manifest_hash: simple_manifest, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
 
       invocations = current_sandbox.cpi.invocations_for_method('create_vm')
       expect(invocations[2].inputs).to match('agent_id' => String,
@@ -177,12 +177,12 @@ describe 'env values in instance groups and resource pools', type: :integration 
     end
 
     it 'does not cause a recreate vm on redeploy' do
-      deploy_from_scratch(no_login: true, manifest_hash: simple_manifest, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+      deploy_from_scratch(manifest_hash: simple_manifest, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
 
       invocations = current_sandbox.cpi.invocations_for_method('create_vm')
       expect(invocations.size).to eq(3) # 2 compilation vms and 1 for the one in the instance_group
 
-      deploy_simple_manifest(no_login: true, manifest_hash: simple_manifest, include_credentials: false, env: client_env)
+      deploy_simple_manifest(manifest_hash: simple_manifest, include_credentials: false, env: client_env)
 
       invocations = current_sandbox.cpi.invocations_for_method('create_vm')
       expect(invocations.size).to eq(3) # no vms should have been deleted/created
@@ -201,7 +201,7 @@ describe 'env values in instance groups and resource pools', type: :integration 
     let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config }
 
     it 'should send the flag to the agent with interpolated values' do
-      deploy_from_scratch(no_login: true, manifest_hash: simple_manifest, cloud_config_hash: cloud_config)
+      deploy_from_scratch(manifest_hash: simple_manifest, cloud_config_hash: cloud_config)
 
       invocations = current_sandbox.cpi.invocations_for_method('create_vm')
       expect(invocations[2].inputs['env']['bosh']).to include('job_dir' => { 'tmpfs' => true })

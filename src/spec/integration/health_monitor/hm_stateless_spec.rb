@@ -103,8 +103,8 @@ describe 'health_monitor: 1', type: :integration, hm: true do
       deployment_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
       deployment_hash['instance_groups'][0]['instances'] = 1
 
-      prepare_for_deploy(no_login: true, env: director_client_env, include_credentials: false)
-      deploy_simple_manifest(manifest_hash: deployment_hash, no_login: true, env: team_client_env, include_credentials: false)
+      prepare_for_deploy(env: director_client_env, include_credentials: false)
+      deploy_simple_manifest(manifest_hash: deployment_hash, env: team_client_env, include_credentials: false)
 
       start_time = Time.now
       while Time.now < start_time + 60
@@ -122,7 +122,7 @@ describe 'health_monitor: 1', type: :integration, hm: true do
         break if !heartbeat_hashes.empty?
       end
 
-      instances = director.instances(no_login: true, env: team_client_env, include_credentials: false)
+      instances = director.instances(env: team_client_env, include_credentials: false)
       instance = instances.first
       expected_hash = {
           'kind' => 'heartbeat',

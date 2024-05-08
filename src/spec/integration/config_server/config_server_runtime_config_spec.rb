@@ -74,7 +74,6 @@ describe 'using director with config server', type: :integration do
             cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
             failure_expected: true,
             return_exit_code: true,
-            no_login: true,
             include_credentials: false,
             env: client_env
           )
@@ -110,7 +109,6 @@ describe 'using director with config server', type: :integration do
             upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)
 
             output, exit_code = deploy_simple_manifest(
-              no_login: true,
               manifest_hash: manifest_hash,
               cloud_config_hash: cloud_config,
               failure_expected: true,
@@ -173,7 +171,7 @@ describe 'using director with config server', type: :integration do
         end
 
         it 'interpolates variables in the addons and updates jobs on deploy' do
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
 
           instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
           default_rc_template_hash = YAML.load(instance.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
@@ -185,7 +183,7 @@ describe 'using director with config server', type: :integration do
 
         context 'when variables are updated in the config server after a deploy' do
           before do
-            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
+            deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
 
             config_server_helper.put_value(prepend_namespace('default_rc_placeholder'), 'smurfs have changed to purple')
             config_server_helper.put_value(prepend_namespace('named_rc_placeholder'), 'gargamel has changed blue')
@@ -209,7 +207,7 @@ describe 'using director with config server', type: :integration do
           end
 
           it 'uses original variables versions upon recreate' do
-            bosh_runner.run('recreate', deployment_name: 'simple', no_login: true, include_credentials: false, env: client_env)
+            bosh_runner.run('recreate', deployment_name: 'simple', include_credentials: false, env: client_env)
             instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
             default_rc_template_hash = YAML.load(instance.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
             named_rc_template_hash_ = YAML.load(instance.read_job_template('job_3_with_many_properties', 'properties_displayer.yml'))
@@ -235,7 +233,7 @@ describe 'using director with config server', type: :integration do
           it 'does variable substitution on the initial creation' do
             manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
             manifest_hash['instance_groups'].first['instances'] = 1
-            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
+            deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
 
             set_vm_metadata_invocations = current_sandbox.cpi.invocations.select {|invocation| invocation.method_name == 'set_vm_metadata' && invocation.inputs['metadata']['compiling'].nil? }
             expect(set_vm_metadata_invocations.count).to eq(3)
@@ -279,7 +277,7 @@ describe 'using director with config server', type: :integration do
         end
 
         it 'replaces variables in the manifest' do
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
 
           instance = director.instance('our_instance_group', '0', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
           template_hash = YAML.load(instance.read_job_template('job_2_with_many_properties', 'properties_displayer.yml'))
@@ -372,7 +370,7 @@ describe 'using director with config server', type: :integration do
         it 'generates and saves variables' do
           expect(upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)).to include('Succeeded')
 
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
 
           expect(config_server_helper.get_value('/bob')).to_not be_empty
           expect(config_server_helper.get_value('/joeCA')['certificate']).to include('-----BEGIN CERTIFICATE-----')
@@ -388,7 +386,7 @@ describe 'using director with config server', type: :integration do
             expect(upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)).to include('Succeeded')
             expect(upload_runtime_config(runtime_config_hash: named_runtime_config, include_credentials: false,  env: client_env, name: 'named_runtime_config')).to include('Succeeded')
 
-            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
+            deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
 
             expect(config_server_helper.get_value('/bob')).to_not be_empty
             expect(config_server_helper.get_value('/joeCA')['certificate']).to include('-----BEGIN CERTIFICATE-----')

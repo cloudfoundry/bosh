@@ -47,7 +47,7 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
       config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
 
       manifest_hash['instance_groups'].first['instances'] = 1
-      deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
 
       instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
       template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
@@ -60,7 +60,7 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
       end
 
       it 'updates necessary jobs, picking up new config server values, on bosh redeploy' do
-        output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+        output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
         expect(output).to match(/Updating instance our_instance_group: our_instance_group\/[0-9a-f]{8}-[0-9a-f-]{27} \(0\)/)
 
         new_instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
@@ -134,7 +134,7 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
         bosh_runner.run('stop', deployment_name: 'simple', json: true, include_credentials: false, env: client_env)
 
         manifest_hash['instance_groups'].first['vm_type'] = 'b'
-        deploy_simple_manifest(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+        deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
         instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
         template_hash = YAML.load(instance.read_job_template('job_1_with_many_properties', 'properties_displayer.yml'))
         expect(template_hash['properties_list']['gargamel_color']).to eq('cats are happy')
@@ -178,14 +178,14 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
     before do
       manifest_hash['update']['canaries'] = 1
       config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
-      deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
       config_server_helper.put_value(prepend_namespace('my_placeholder'), 'dogs are more happy')
     end
 
     context 'failure on template rendering' do
       before do
         job_properties['fail_on_template_rendering'] = true
-        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env, failure_expected: true)
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env, failure_expected: true)
       end
 
       it 'should use previous variables set for non failing instance' do
@@ -208,7 +208,7 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
     context 'failure on job start' do
       before do
         job_properties['fail_on_job_start'] = true
-        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env, failure_expected: true)
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env, failure_expected: true)
       end
 
       it 'should use the last successfully deployed variable set on recreate' do
@@ -314,7 +314,6 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
     before do
       config_server_helper.put_value(prepend_namespace('my_placeholder'), 'cats are happy')
       deploy_from_scratch(
-        no_login: true,
         manifest_hash: manifest_hash,
         cloud_config_hash: cloud_config,
         include_credentials: false,
@@ -335,7 +334,6 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
         job_properties['fail_on_job_start'] = true
 
         output, exit_code = deploy_from_scratch(
-          no_login: true,
           manifest_hash: manifest_hash,
           cloud_config_hash: cloud_config,
           include_credentials: false,
@@ -380,7 +378,6 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
 
       it 'correctly uses the latest variable set if the deploy succeeds' do
         _, exit_code = deploy_from_scratch(
-          no_login: true,
           manifest_hash: manifest_hash,
           cloud_config_hash: cloud_config,
           include_credentials: false,

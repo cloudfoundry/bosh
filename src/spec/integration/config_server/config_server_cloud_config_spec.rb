@@ -109,7 +109,7 @@ describe 'using director with config server', type: :integration do
       end
 
       it 'uses the interpolated values for a successful deploy' do
-        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
 
         create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
         expect(create_vm_invocations.last.inputs['cloud_properties']).to eq(
@@ -125,7 +125,7 @@ describe 'using director with config server', type: :integration do
 
       context 'after a successful deployment' do
         before do
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, return_exit_code: true, include_credentials: false, env: client_env)
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, return_exit_code: true, include_credentials: false, env: client_env)
         end
 
         context 'variable values were changed' do
@@ -161,10 +161,10 @@ describe 'using director with config server', type: :integration do
           it 'should use old variable value during hard stop, start' do
             instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
 
-            bosh_runner.run("stop --hard #{instance.instance_group_name}/#{instance.id}", deployment_name: 'simple', no_login: true, include_credentials: false, env: client_env)
+            bosh_runner.run("stop --hard #{instance.instance_group_name}/#{instance.id}", deployment_name: 'simple', include_credentials: false, env: client_env)
             pre_start_invocations_size = current_sandbox.cpi.invocations.size
 
-            bosh_runner.run("start #{instance.instance_group_name}/#{instance.id}", deployment_name: 'simple', no_login: true, include_credentials: false, env: client_env)
+            bosh_runner.run("start #{instance.instance_group_name}/#{instance.id}", deployment_name: 'simple', include_credentials: false, env: client_env)
             invocations = current_sandbox.cpi.invocations.drop(pre_start_invocations_size)
 
             create_vm_invocation = invocations.select { |invocation| invocation.method_name == 'create_vm' }.last
@@ -177,7 +177,7 @@ describe 'using director with config server', type: :integration do
 
           it 'should use the new variable values on redeploy' do
             pre_second_deploy_invocations_size = current_sandbox.cpi.invocations.size
-            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, return_exit_code: true, include_credentials: false, env: client_env)
+            deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, return_exit_code: true, include_credentials: false, env: client_env)
             invocations = current_sandbox.cpi.invocations.drop(pre_second_deploy_invocations_size)
 
             create_vm_invocation = invocations.select { |invocation| invocation.method_name == 'create_vm' }.last
@@ -200,7 +200,7 @@ describe 'using director with config server', type: :integration do
 
           it 'should recreate the VM on redeploy' do
             old_instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
-            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, return_exit_code: true, include_credentials: false, env: client_env)
+            deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, return_exit_code: true, include_credentials: false, env: client_env)
             new_instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false, env: client_env)
 
             expect(old_instance.vm_cid).to_not eq(new_instance.vm_cid)
@@ -208,7 +208,7 @@ describe 'using director with config server', type: :integration do
 
           it 'should use the new variable values on redeploy' do
             pre_second_deploy_invocations_size = current_sandbox.cpi.invocations.size
-            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, return_exit_code: true, include_credentials: false, env: client_env)
+            deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, return_exit_code: true, include_credentials: false, env: client_env)
             invocations = current_sandbox.cpi.invocations.drop(pre_second_deploy_invocations_size)
 
             create_vm_invocation = invocations.select { |invocation| invocation.method_name == 'create_vm' }.last
@@ -232,8 +232,7 @@ describe 'using director with config server', type: :integration do
 
           it 'can redeploy' do
             expect {
-              deploy_simple_manifest(no_login: true,
-                                     manifest_hash: manifest_hash,
+              deploy_simple_manifest(manifest_hash: manifest_hash,
                                      return_exit_code: true,
                                      include_credentials: false,
                                      env: client_env)
@@ -252,8 +251,7 @@ describe 'using director with config server', type: :integration do
 
       it 'errors on deploy' do
         expect {
-          deploy_from_scratch(no_login: true,
-                              manifest_hash: manifest_hash,
+          deploy_from_scratch(manifest_hash: manifest_hash,
                               cloud_config_hash: cloud_config,
                               return_exit_code: true,
                               include_credentials: false,
@@ -270,14 +268,13 @@ describe 'using director with config server', type: :integration do
       it 'does NOT error on update of cloud-config' do
         cloud_config_manifest = yaml_file('cloud_manifest', cloud_config)
         expect {
-          bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}", no_login: true, include_credentials: false, env: client_env)
+          bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}", include_credentials: false, env: client_env)
         }.to_not raise_error
       end
 
       it 'errors on deploy' do
         expect {
-          deploy_from_scratch(no_login: true,
-                              manifest_hash: manifest_hash,
+          deploy_from_scratch(manifest_hash: manifest_hash,
                               cloud_config_hash: cloud_config,
                               return_exit_code: true,
                               include_credentials: false,
@@ -295,19 +292,18 @@ describe 'using director with config server', type: :integration do
     end
 
     it 'does not log interpolated cloud properties in the task logs and deploy output' do
-      deploy_output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+      deploy_output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
       expect(deploy_output).to_not include('super-secret')
 
       task_id = deploy_output.match(/^Task (\d+)$/)[1]
 
-      debug_output = bosh_runner.run("task --debug --event --cpi --result #{task_id}", no_login: true, include_credentials: false, env: client_env)
+      debug_output = bosh_runner.run("task --debug --event --cpi --result #{task_id}", include_credentials: false, env: client_env)
       expect(debug_output).to_not include('super-secret')
     end
 
     context 'after a successful deployment' do
       before do
-        deploy_from_scratch(no_login: true,
-                            manifest_hash: manifest_hash,
+        deploy_from_scratch(manifest_hash: manifest_hash,
                             cloud_config_hash: cloud_config,
                             return_exit_code: true,
                             include_credentials: false,
@@ -407,7 +403,7 @@ describe 'using director with config server', type: :integration do
     end
 
     it 'should not raise an error' do
-      deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, return_exit_code: true, include_credentials: false, env: client_env)
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, return_exit_code: true, include_credentials: false, env: client_env)
 
       manifest = yaml_file('manifest', manifest_hash)
       bosh_runner.run("deploy #{manifest.path}", deployment_name: 'foo-deployment', return_exit_code: true, include_credentials: false, env: client_env)
@@ -507,14 +503,14 @@ describe 'using director with config server', type: :integration do
     context 'when there are changes to variable value on config-server' do
       before do
         config_server_helper.put_value('/smurf_1', 'my_value_1')
-        deploy_from_scratch(no_login: true, manifest_hash: manifest, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+        deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
         config_server_helper.put_value('/smurf_1', 'my_value_2')
       end
 
       it 'should update instances when redeploying' do
         created_instance = director.instances(deployment_name: 'foo-deployment', include_credentials: false, env: client_env)
 
-        output = deploy_from_scratch(no_login: true, manifest_hash: manifest, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+        output = deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
 
         expect(created_instance.count).to eq(2)
         created_instance.each do |instance|
@@ -526,11 +522,11 @@ describe 'using director with config server', type: :integration do
     context 'when there are NO changes to variables value on config-server' do
       before do
         config_server_helper.put_value('/smurf_1', 'my_value_1')
-        deploy_from_scratch(no_login: true, manifest_hash: manifest, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+        deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
       end
 
       it 'should not make any updates when redeploying' do
-        output = deploy_from_scratch(no_login: true, manifest_hash: manifest, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+        output = deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
         task_id = Bosh::Spec::OutputParser.new(output).task_id
         task_output = bosh_runner.run("task #{task_id} --debug", deployment_name: 'foo-deployment', include_credentials: false, env: client_env)
         expect(task_output).to include("No instances to update for 'ig_1'")
@@ -654,7 +650,7 @@ describe 'using director with config server', type: :integration do
       end
 
       it 'interpolates them correctly, sends interpolated values to CPI, records variable as used, and does not write interpolated values to logs' do
-        output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+        output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
         create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
         expect(create_vm_invocations.size).to eq(1)
@@ -668,10 +664,10 @@ describe 'using director with config server', type: :integration do
 
       it 'does not update deployment when variables values do not change before a second deploy' do
         # First Deploy
-        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
         # Second Deploy
-        output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+        output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
         expect(output).to_not include('Updating instance instance_group_1')
 
         task_id = Bosh::Spec::OutputParser.new(output).task_id
@@ -688,12 +684,12 @@ describe 'using director with config server', type: :integration do
 
       context 'when variables value gets updated after deploying' do
         before do
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
           config_server_helper.put_value('/smurf_1_variable', 'cat_2')
         end
 
         it 'updates the deployment with new values when deploying for second time' do
-          output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+          output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
           create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
           expect(create_vm_invocations.size).to eq(2)
@@ -714,7 +710,7 @@ describe 'using director with config server', type: :integration do
       end
 
       it 'interpolates them correctly, sends interpolated values to CPI, records variable as used, and does not write interpolated values to logs' do
-        output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+        output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
         create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
         expect(create_vm_invocations.size).to eq(1)
@@ -728,10 +724,10 @@ describe 'using director with config server', type: :integration do
 
       it 'does not update deployment when variables values do not change before a second deploy' do
         # First Deploy
-        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
         # Second Deploy
-        second_deploy_output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+        second_deploy_output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
         task_id = Bosh::Spec::OutputParser.new(second_deploy_output).task_id
         task_output = bosh_runner.run("task #{task_id} --debug", deployment_name: 'my-dep', include_credentials: false, env: client_env)
@@ -747,12 +743,12 @@ describe 'using director with config server', type: :integration do
 
       context 'when variables value gets updated after deploying' do
         before do
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
           config_server_helper.put_value('/smurf_1_variable', 'cat_2')
         end
 
         it 'updates the deployment with new values when deploying for second time' do
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
           create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
           expect(create_vm_invocations.size).to eq(2)
@@ -771,7 +767,7 @@ describe 'using director with config server', type: :integration do
       end
 
       it 'interpolates them correctly, sends interpolated values to CPI, records variable as used, and does not write interpolated values to logs' do
-        output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+        output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
         create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
         expect(create_vm_invocations.size).to eq(1)
@@ -785,10 +781,10 @@ describe 'using director with config server', type: :integration do
 
       it 'does not update deployment when variables values do not change before a second deploy' do
         # First Deploy
-        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
         # Second Deploy
-        second_deploy_output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+        second_deploy_output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
         task_id = Bosh::Spec::OutputParser.new(second_deploy_output).task_id
         task_output = bosh_runner.run("task #{task_id} --debug", deployment_name: 'my-dep', include_credentials: false, env: client_env)
@@ -804,12 +800,12 @@ describe 'using director with config server', type: :integration do
 
       context 'when variables value gets updated after deploying' do
         before do
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
           config_server_helper.put_value('/smurf_1_variable_vm_extension', 'cat_2_vm_extension')
         end
 
         it 'updates the deployment with new values when deploying for second time' do
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
           create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
           expect(create_vm_invocations.size).to eq(2)
@@ -828,7 +824,7 @@ describe 'using director with config server', type: :integration do
       end
 
       it 'interpolates them correctly, sends interpolated values to CPI, records variable as used, and does not write interpolated values to logs' do
-        output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+        output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
         create_disk_invocations = current_sandbox.cpi.invocations_for_method('create_disk')
         expect(create_disk_invocations.size).to eq(1)
@@ -842,10 +838,10 @@ describe 'using director with config server', type: :integration do
 
       it 'does not update deployment when variables values do not change before a second deploy' do
         # First Deploy
-        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
         # Second Deploy
-        second_deploy_output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+        second_deploy_output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
         task_id = Bosh::Spec::OutputParser.new(second_deploy_output).task_id
         task_output = bosh_runner.run("task #{task_id} --debug", deployment_name: 'my-dep', include_credentials: false, env: client_env)
@@ -861,12 +857,12 @@ describe 'using director with config server', type: :integration do
 
       context 'when variables value gets updated after deploying' do
         before do
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
           config_server_helper.put_value('/smurf_1_variable', 'cat_2_disk')
         end
 
         it 'updates the deployment with new values when deploying for second time' do
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
           create_disk_invocations = current_sandbox.cpi.invocations_for_method('create_disk')
           expect(create_disk_invocations.size).to eq(2)
@@ -907,7 +903,7 @@ describe 'using director with config server', type: :integration do
         end
 
         it 'interpolates them correctly, sends interpolated values to CPI, records variable as used, and does not write interpolated values to logs' do
-          output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+          output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
           create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
           expect(create_vm_invocations.size).to eq(1)
@@ -921,10 +917,10 @@ describe 'using director with config server', type: :integration do
 
         it 'does not update deployment when variables values do not change before a second deploy' do
           # First Deploy
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
           # Second Deploy
-          second_deploy_output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+          second_deploy_output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
           task_id = Bosh::Spec::OutputParser.new(second_deploy_output).task_id
           task_output = bosh_runner.run("task #{task_id} --debug", deployment_name: 'my-dep', include_credentials: false, env: client_env)
@@ -940,12 +936,12 @@ describe 'using director with config server', type: :integration do
 
         context 'when variables value gets updated after deploying' do
           before do
-            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+            deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
             config_server_helper.put_value('/smurf_1_variable_manual_network', 'cat_2_manual_network')
           end
 
           it 'updates the deployment with new values when deploying for second time' do
-            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+            deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
             create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
             expect(create_vm_invocations.size).to eq(2)
@@ -981,7 +977,7 @@ describe 'using director with config server', type: :integration do
         end
 
         it 'interpolates them correctly, sends interpolated values to CPI, records variable as used, and does not write interpolated values to logs' do
-          output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+          output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
           create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
           expect(create_vm_invocations.size).to eq(1)
@@ -995,10 +991,10 @@ describe 'using director with config server', type: :integration do
 
         it 'does not update deployment when variables values do not change before a second deploy' do
           # First Deploy
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
           # Second Deploy
-          second_deploy_output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+          second_deploy_output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
           task_id = Bosh::Spec::OutputParser.new(second_deploy_output).task_id
           task_output = bosh_runner.run("task #{task_id} --debug", deployment_name: 'my-dep', include_credentials: false, env: client_env)
@@ -1014,12 +1010,12 @@ describe 'using director with config server', type: :integration do
 
         context 'when variables value gets updated after deploying' do
           before do
-            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+            deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
             config_server_helper.put_value('/smurf_1_variable_dynamic_network', 'cat_2_dynamic_network')
           end
 
           it 'updates the deployment with new values when deploying for second time' do
-            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+            deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
             create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
             expect(create_vm_invocations.size).to eq(2)
@@ -1073,7 +1069,7 @@ describe 'using director with config server', type: :integration do
         end
 
         it 'interpolates them correctly, sends interpolated values to CPI, records variable as used, and does not write interpolated values to logs' do
-          output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+          output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
           create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
           expect(create_vm_invocations.size).to eq(1)
@@ -1087,10 +1083,10 @@ describe 'using director with config server', type: :integration do
 
         it 'does not update deployment when variables values do not change before a second deploy' do
           # First Deploy
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
           # Second Deploy
-          second_deploy_output = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+          second_deploy_output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
           task_id = Bosh::Spec::OutputParser.new(second_deploy_output).task_id
           task_output = bosh_runner.run("task #{task_id} --debug", deployment_name: 'my-dep', include_credentials: false, env: client_env)
@@ -1106,12 +1102,12 @@ describe 'using director with config server', type: :integration do
 
         context 'when variables value gets updated after deploying' do
           before do
-            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+            deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
             config_server_helper.put_value('/smurf_1_variable_vip_network', 'cat_2_vip_network')
           end
 
           it 'updates the deployment with new values when deploying for second time' do
-            deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
+            deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
             create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
             expect(create_vm_invocations.size).to eq(2)

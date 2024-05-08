@@ -61,7 +61,7 @@ describe 'variable generation with config server', type: :integration do
       end
 
       it 'should generate the variables and record them in events' do
-        deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
 
         var_a = config_server_helper.get_value(prepend_namespace('var_a'))
         var_b = config_server_helper.get_value('/var_b')
@@ -69,7 +69,7 @@ describe 'variable generation with config server', type: :integration do
         expect(var_a).to_not be_empty
         expect(var_b).to_not be_empty
 
-        events_output = bosh_runner.run('events', no_login: true, json: true, include_credentials: false, env: client_env)
+        events_output = bosh_runner.run('events', json: true, include_credentials: false, env: client_env)
         scrubbed_events = scrub_event_time(scrub_random_cids(scrub_random_ids(table(events_output))))
         scrubbed_variables_events = scrubbed_events.select{ | event | event['object_type'] == 'variable'}
 
@@ -104,7 +104,7 @@ describe 'variable generation with config server', type: :integration do
         end
 
         it 'should generate a CA or reference a generated CA' do
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
 
           var_c = config_server_helper.get_value(prepend_namespace('var_c'))
           var_d = config_server_helper.get_value(prepend_namespace('var_d'))
@@ -142,7 +142,7 @@ describe 'variable generation with config server', type: :integration do
             ]
           end
           it 'should throw an error' do
-            output, exit_code =  deploy_from_scratch(no_login: true,
+            output, exit_code =  deploy_from_scratch(
                manifest_hash: manifest_hash,
                cloud_config_hash: cloud_config,
                include_credentials: false,
@@ -167,7 +167,6 @@ describe 'variable generation with config server', type: :integration do
           context 'when the variable options change' do
             it 'regenerates variables' do
               deploy_from_scratch(
-                no_login: true,
                 manifest_hash: manifest_hash,
                 cloud_config_hash: cloud_config,
                 include_credentials: false,
@@ -179,7 +178,6 @@ describe 'variable generation with config server', type: :integration do
               variables[0]['options'] = { 'length' => 24 }
               manifest_hash['variables'] = variables
               deploy_from_scratch(
-                no_login: true,
                 manifest_hash: manifest_hash,
                 cloud_config_hash: cloud_config,
                 include_credentials: false,
@@ -193,7 +191,6 @@ describe 'variable generation with config server', type: :integration do
 
           it 'does NOT re-generate it' do
             deploy_from_scratch(
-              no_login: true,
               manifest_hash: manifest_hash,
               cloud_config_hash: cloud_config,
               include_credentials: false,
@@ -202,7 +199,6 @@ describe 'variable generation with config server', type: :integration do
             var_a1 = config_server_helper.get_value(prepend_namespace('var_a'))
 
             deploy_from_scratch(
-              no_login: true,
               manifest_hash: manifest_hash,
               cloud_config_hash: cloud_config,
               include_credentials: false,
@@ -231,7 +227,6 @@ describe 'variable generation with config server', type: :integration do
 
           it 'always regenerates the credential' do
             deploy_from_scratch(
-              no_login: true,
               manifest_hash: manifest_hash,
               cloud_config_hash: cloud_config,
               include_credentials: false,
@@ -244,7 +239,6 @@ describe 'variable generation with config server', type: :integration do
             variables[1]['options'] = { 'length' => 30 }
             manifest_hash['variables'] = variables
             deploy_from_scratch(
-              no_login: true,
               manifest_hash: manifest_hash,
               cloud_config_hash: cloud_config,
               include_credentials: false,
@@ -262,7 +256,6 @@ describe 'variable generation with config server', type: :integration do
           config_server_helper.put_value(prepend_namespace('var_a'), 'password_a')
 
           deploy_from_scratch(
-            no_login: true,
             manifest_hash: manifest_hash,
             cloud_config_hash: cloud_config,
             include_credentials: false,
@@ -281,7 +274,6 @@ describe 'variable generation with config server', type: :integration do
 
         it 'throws an error' do
           output, exit_code = deploy_from_scratch(
-            no_login: true,
             manifest_hash: manifest_hash,
             cloud_config_hash: cloud_config,
             include_credentials: false,
@@ -308,7 +300,7 @@ describe 'variable generation with config server', type: :integration do
         end
 
         it 'should use the variable generated value' do
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
 
           var_a = config_server_helper.get_value(prepend_namespace('var_a'))
           var_b = config_server_helper.get_value('/var_b')
@@ -321,7 +313,7 @@ describe 'variable generation with config server', type: :integration do
         end
 
         it 'should show changed variables in the diff lines under instance groups' do
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
 
           manifest_hash['instance_groups'][0]['instances'] = 2
           manifest_hash['variables'][2] = {'name' => 'var_c', 'type' => 'password'}
@@ -338,16 +330,16 @@ describe 'variable generation with config server', type: :integration do
         it 'should not regenerate values when calling restart/stop/start/recreate' do
           max_variables_events_count = 2
 
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
-          deploy_events = table(bosh_runner.run('events', no_login: true, json: true, include_credentials: false, env: client_env))
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+          deploy_events = table(bosh_runner.run('events', json: true, include_credentials: false, env: client_env))
           expect(deploy_events.count{ | event | event['object_type'] == 'variable'}).to eq(max_variables_events_count)
 
           var_a = config_server_helper.get_value(prepend_namespace('var_a'))
           var_b = config_server_helper.get_value('/var_b')
 
           ['stop', 'start', 'restart', 'recreate'].each do |command|
-            bosh_runner.run(command, deployment_name: 'simple', no_login: true, include_credentials: false, env: client_env)
-            events = table(bosh_runner.run('events', no_login: true, json: true, include_credentials: false, env: client_env))
+            bosh_runner.run(command, deployment_name: 'simple', include_credentials: false, env: client_env)
+            events = table(bosh_runner.run('events', json: true, include_credentials: false, env: client_env))
             expect(events.count{ | event | event['object_type'] == 'variable'}).to eq(max_variables_events_count)
 
             instance = director.instance('our_instance_group', '0', deployment_name: 'simple', include_credentials: false,  env: client_env)
@@ -382,7 +374,7 @@ describe 'variable generation with config server', type: :integration do
 
           shared_examples_for 'a deployment manifest that has addons section with variables' do
             it 'should deploy successfully' do
-              deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+              deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
 
               var_a = config_server_helper.get_value(prepend_namespace('var_a'))
               var_b = config_server_helper.get_value('/var_b')
@@ -488,7 +480,7 @@ describe 'variable generation with config server', type: :integration do
             it 'should deploy successfully with deployment addons and runtime-config addons' do
               upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)
 
-              deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+              deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
 
               var_a = config_server_helper.get_value(prepend_namespace('var_a'))
               var_b = config_server_helper.get_value('/var_b')
@@ -535,12 +527,12 @@ describe 'variable generation with config server', type: :integration do
         end
 
         it 'only updates variables when a stemcell update being deployed' do
-          deploy_from_scratch(no_login: true, manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
 
-          variables_after_original_deploy = table(bosh_runner.run('variables', deployment_name: manifest_hash['name'], no_login: true, json: true, include_credentials: false, env: client_env))
+          variables_after_original_deploy = table(bosh_runner.run('variables', deployment_name: manifest_hash['name'], json: true, include_credentials: false, env: client_env))
 
           # logs events for both var_a and var_b using latest version
-          events_output = table(bosh_runner.run('events', no_login: true, json: true, include_credentials: false, env: client_env))
+          events_output = table(bosh_runner.run('events', json: true, include_credentials: false, env: client_env))
           variable_events = events_output.select{ | event | event['object_type'] == 'variable'}.first(2)
 
           expect(event_context_for(variable_events, '/var_a')).to match(hash_including({
@@ -557,15 +549,15 @@ describe 'variable generation with config server', type: :integration do
           config_server_helper.put_value('/var_b', 'new-value-b')
 
           # deploy again with no stemcell change
-          deploy_simple_manifest(no_login: true, manifest_hash: manifest_hash, include_credentials: false, env: client_env)
+          deploy_simple_manifest(manifest_hash: manifest_hash, include_credentials: false, env: client_env)
 
           # check that var_a has changed but var_b has not
-          variables_after_updating_values = table(bosh_runner.run('variables', deployment_name: manifest_hash['name'], no_login: true, json: true, include_credentials: false, env: client_env))
+          variables_after_updating_values = table(bosh_runner.run('variables', deployment_name: manifest_hash['name'], json: true, include_credentials: false, env: client_env))
           expect(variables_after_updating_values.find { |v| v['name'] == '/var_a' }['id']).to_not eq(variables_after_original_deploy.find { |v| v['name'] == '/var_a' }['id'])
           expect(variables_after_updating_values.find { |v| v['name'] == '/var_b' }['id']).to eq(variables_after_original_deploy.find { |v| v['name'] == '/var_b' }['id'])
 
           # logs events for var_a using latest version, but var_b not using latest version
-          events_output = table(bosh_runner.run('events', no_login: true, json: true, include_credentials: false, env: client_env))
+          events_output = table(bosh_runner.run('events', json: true, include_credentials: false, env: client_env))
           variable_events = events_output.select{ | event | event['object_type'] == 'variable'}.first(2)
 
           expect(event_context_for(variable_events, '/var_a')).to match(hash_including({
@@ -578,18 +570,18 @@ describe 'variable generation with config server', type: :integration do
           }))
 
           # upload valid_stemcell_v2
-          bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_v2.tgz')}", no_login: true, include_credentials: false, env: client_env)
+          bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_v2.tgz')}", include_credentials: false, env: client_env)
 
           # deploy again using that stemcell
-          deploy_simple_manifest(no_login: true, manifest_hash: manifest_hash, include_credentials: false, env: client_env)
+          deploy_simple_manifest(manifest_hash: manifest_hash, include_credentials: false, env: client_env)
 
           # check that var_b has been changed
-          variables_after_updating_stemcell = table(bosh_runner.run('variables', deployment_name: manifest_hash['name'], no_login: true, json: true, include_credentials: false, env: client_env))
+          variables_after_updating_stemcell = table(bosh_runner.run('variables', deployment_name: manifest_hash['name'], json: true, include_credentials: false, env: client_env))
           expect(variables_after_updating_stemcell.find { |v| v['name'] == '/var_a' }['id']).to eq(variables_after_updating_values.find { |v| v['name'] == '/var_a' }['id'])
           expect(variables_after_updating_stemcell.find { |v| v['name'] == '/var_b' }['id']).to_not eq(variables_after_updating_values.find { |v| v['name'] == '/var_b' }['id'])
 
           # logs events for both var_a and var_b using latest version
-          events_output = table(bosh_runner.run('events', no_login: true, json: true, include_credentials: false, env: client_env))
+          events_output = table(bosh_runner.run('events', json: true, include_credentials: false, env: client_env))
           variable_events = events_output.select{ | event | event['object_type'] == 'variable'}.first(2)
 
           expect(event_context_for(variable_events, '/var_a')).to match(hash_including({

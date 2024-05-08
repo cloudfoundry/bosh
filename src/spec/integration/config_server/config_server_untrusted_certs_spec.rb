@@ -32,7 +32,7 @@ describe 'using director with config server and the certs are not trusted', type
   end
 
   it 'throws certificate validator error' do
-    output, exit_code = deploy_from_scratch(no_login: true, manifest_hash: manifest_hash,
+    output, exit_code = deploy_from_scratch(manifest_hash: manifest_hash,
                                             cloud_config_hash: cloud_config, failure_expected: true,
                                             return_exit_code: true, include_credentials: false, env: client_env)
 
