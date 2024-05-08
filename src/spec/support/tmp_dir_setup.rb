@@ -15,12 +15,12 @@ RSpec.configure do |config|
 
   config.after do |example|
     if example.exception
-      puts "An exception occurred running #{example.class.name}:"
-      puts example.exception.inspect.to_s
-      puts "\nTest directory: #{tmp_dir}"
-      puts "\nSandbox directory: #{Bosh::Dev::Sandbox::Workspace.dir}"
+      puts "An exception occurred running #{example.location}:"
+      puts "\tTest directory:     #{tmp_dir}"
+      puts "\tSandbox directory:  #{Bosh::Dev::Sandbox::Workspace.dir}"
+      puts "\t#{example.exception.inspect}\n"
     else
-      FileUtils.rm_rf(tmp_dir)
+      FileUtils.rm_rf(tmp_dir) unless tmp_dir.nil?
     end
   end
 end
