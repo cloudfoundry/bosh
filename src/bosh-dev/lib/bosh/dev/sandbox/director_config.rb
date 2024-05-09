@@ -1,3 +1,5 @@
+require 'bosh/dev/sandbox/services/uaa_service'
+
 module Bosh::Dev::Sandbox
   class DirectorConfig
     attr_accessor :audit_log_path
@@ -69,7 +71,7 @@ module Bosh::Dev::Sandbox
       @cloud_storage_dir = attrs.fetch(:cloud_storage_dir)
 
       @user_authentication = attrs.fetch(:user_authentication)
-      @uaa_url = "https://localhost:#{port_provider.get_port(:nginx)}/uaa"
+      @uaa_url = "https://127.0.0.1:8443"
 
       @config_server_enabled = attrs.fetch(:config_server_enabled)
       @config_server_url = "https://127.0.0.1:#{port_provider.get_port(:config_server_port)}"

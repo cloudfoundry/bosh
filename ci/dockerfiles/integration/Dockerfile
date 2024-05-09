@@ -111,4 +111,8 @@ RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.
     libmysqlclient-dev \
     postgresql-client-${POSTGRES_MAJOR_VERSION}
 
-
+# Install UAA
+COPY bosh-deployment /usr/local/bosh-deployment/
+RUN \
+  UAA_RELEASE_URL="$(bosh int uaa.yml --path /release=uaa/value/url)" \
+  curl -o /usr/local/uaa.tgz "$UAA_RELEASE_URL"
