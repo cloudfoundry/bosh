@@ -11,7 +11,6 @@ inputs:
 - name: bosh-src
 - name: bosh-cli
 - name: bosh-agent
-- name: bosh-deployment
 
 outputs:
 - name: parallel-runtime-log
