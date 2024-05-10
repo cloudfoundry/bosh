@@ -13,7 +13,9 @@ curl -o /usr/local/uaa.tgz "https://s3.amazonaws.com/bosh-compiled-release-tarba
 echo "Starting $DB..."
 case "$DB" in
   mysql)
+    export DB_USER="root"
     export DB_PASSWORD="password"
+    export DB_PORT="3306"
     if [ ! -d /var/lib/mysql-src ]; then # Set up MySQL if it's the first time
       mv /var/lib/mysql /var/lib/mysql-src
       mkdir -p /var/lib/mysql
@@ -50,10 +52,17 @@ max_allowed_packet=6M' >> /etc/mysql/my.cnf
 
     service mysql start
     sleep 5
+    mysql -h 127.0.0.1 \
+          -P ${DB_PORT} \
+          --user=${DB_USER} \
+          --password=${DB_PASSWORD} \
+          -e 'create database uaa;' > /dev/null 2>&1
     ;;
   postgresql)
     export PATH=/usr/lib/postgresql/$DB_VERSION/bin:$PATH
+    export DB_USER="postgres"
     export DB_PASSWORD="smurf"
+    export DB_PORT="5432"
     export PGPASSWORD=${DB_PASSWORD}
 
     if [ ! -d /tmp/postgres ]; then # PostgreSQL hasn't been set up

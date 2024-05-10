@@ -81,6 +81,25 @@ module Bosh::Dev::Sandbox
         end
 
         context['properties'].deep_merge!(YAML.load_file(File.expand_path(File.join('spec','assets','uaa_config', 'asymmetric', 'uaa.yml'), REPO_ROOT)))
+        context['properties']['uaadb'] = {
+          'address' => '127.0.0.1',
+          'databases' => [
+            {
+              'name' => 'uaa',
+              'tag' => 'uaa'
+            }
+          ],
+          'db_scheme' => ENV.fetch('DB'),
+          'port' => ENV.fetch('DB_PORT'),
+          'roles' => [
+            {
+              'tag' => 'admin',
+              'name' => ENV.fetch('DB_USER'),
+              'password' => ENV.fetch('DB_PASSWORD'),
+            }
+          ],
+          'tls' => 'enabled_skip_all_validation'
+        }
         templates = job_spec['templates']
         templates.each do |src, dst|
           src_path = File.join(uaa_job_path, 'templates', src)

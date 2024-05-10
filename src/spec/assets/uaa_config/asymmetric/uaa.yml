@@ -237,18 +237,6 @@ uaa:
             9bOmvLxNDKLgUW0H+k3H6JsTVGx7o4p5LU3S2nva1D4UPpcHCeC5LTwwXJxWb6lD
             uCvUBYpWllQ0cERmum0ljVcMXG3/z/Cxja76S6nwZjMm0YdNP5w1P+8=
             -----END CERTIFICATE-----
-uaadb:
-  address: 127.0.0.1
-  databases:
-  - name: uaa
-    tag: uaa
-  db_scheme: postgres
-  port: 5432
-  roles:
-  - tag: admin
-    name: postgres
-    password: smurf
-  tls: enabled_skip_all_validation
 encryption:
   encryption_keys:
     - label: onlykey
