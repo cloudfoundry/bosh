@@ -727,10 +727,13 @@ jobs:
     - get: bosh-src-dockerfiles
       trigger: true
     - get: bosh-deployment
+    - task: prepare-container-build-context
+      file: bosh-src-dockerfiles/integration/prepare-container-build-context.yml
+      image: ubuntu-docker-image
     - put: integration-image
       params:
         tag_as_latest: true
-        build: "bosh-src-dockerfiles/ci/dockerfiles/integration"
+        build: docker-build-context
         build_args:
           BRANCH: ((branch_name))
       get_params:
