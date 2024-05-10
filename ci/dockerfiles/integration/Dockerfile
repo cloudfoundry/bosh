@@ -64,6 +64,13 @@ RUN cd /tmp && \
     mv /tmp/bosh-cli-* /usr/local/bin/bosh && \
     chmod +x /usr/local/bin/bosh
 
+# Install UAA
+COPY bosh-deployment /usr/local/bosh-deployment/
+RUN \
+  cd /usr/local && \
+  UAA_RELEASE_URL="$(bosh int bpsh-deployment/uaa.yml --path /release=uaa/value/url)" \
+  curl -o /usr/local/uaa.tgz "$UAA_RELEASE_URL"
+
 RUN cd /tmp && \
     wget -nv "https://github.com/dpb587/metalink/releases/download/v0.5.0/meta4-${METALINK_VERSION}" && \
     ( \
@@ -110,9 +117,3 @@ RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.
     mysql-client \
     libmysqlclient-dev \
     postgresql-client-${POSTGRES_MAJOR_VERSION}
-
-# Install UAA
-COPY bosh-deployment /usr/local/bosh-deployment/
-RUN \
-  UAA_RELEASE_URL="$(bosh int uaa.yml --path /release=uaa/value/url)" \
-  curl -o /usr/local/uaa.tgz "$UAA_RELEASE_URL"
