@@ -68,7 +68,7 @@ RUN cd /tmp && \
 COPY bosh-deployment /usr/local/bosh-deployment/
 RUN \
   cd /usr/local && \
-  UAA_RELEASE_URL="$(bosh int bpsh-deployment/uaa.yml --path /release=uaa/value/url)" \
+  UAA_RELEASE_URL="$(bosh int bosh-deployment/uaa.yml --path /release=uaa/value/url)" \
   curl -o /usr/local/uaa.tgz "$UAA_RELEASE_URL"
 
 RUN cd /tmp && \
