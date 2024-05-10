@@ -5,6 +5,12 @@ port: 8081
 logging:
   level: ERROR
 
+max_tasks: 2000
+tasks_retention_period: 20d
+tasks_deployments_retention_period:
+  - deployment: fake-deployment
+    retention_period: 30d
+
 dir: /tmp/boshdir
 director_certificate_expiry_json_path: /tmp/boshdir/certificate_expiry.json
 db:

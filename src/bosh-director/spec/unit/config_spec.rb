@@ -445,6 +445,15 @@ describe Bosh::Director::Config do
         expect(described_class.nats_config_fingerprint).to eq(Digest::SHA1.hexdigest("client_ca_certificate_pathclient_ca_private_key_pathserver_ca_path"))
       end
     end
+
+    describe 'task remover configurations' do
+      it 'returns the task remover configurations' do
+        described_class.configure(test_config)
+        expect(described_class.max_tasks).to eq(2000)
+        expect(described_class.tasks_retention_period).to eq('20d')
+        expect(described_class.tasks_deployments_retention_period).to eq([{'deployment' => 'fake-deployment', 'retention_period' => '30d'}])
+      end
+    end
   end
 
   describe '#identity_provider' do
