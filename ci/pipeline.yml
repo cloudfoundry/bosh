@@ -726,6 +726,7 @@ jobs:
       trigger: true
     - get: bosh-src-dockerfiles
       trigger: true
+    - get: bosh-deployment
     - put: integration-image
       params:
         tag_as_latest: true
