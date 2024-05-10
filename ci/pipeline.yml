@@ -727,6 +727,7 @@ jobs:
     - get: bosh-src-dockerfiles
       trigger: true
     - get: bosh-deployment
+    - get: ubuntu-docker-image
     - task: prepare-container-build-context
       file: bosh-src-dockerfiles/ci/dockerfiles/integration/prepare-container-build-context.yml
       image: ubuntu-docker-image
