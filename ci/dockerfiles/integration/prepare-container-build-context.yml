@@ -6,7 +6,7 @@ inputs:
   - name: bosh-deployment
 
 run:
-  path: bosh-src-dockerfiles/integration/prepare-container-build-context.sh
+  path: bosh-src-dockerfiles/ci/dockerfiles/integration/prepare-container-build-context.sh
 
 outputs:
   - name: docker-build-context
