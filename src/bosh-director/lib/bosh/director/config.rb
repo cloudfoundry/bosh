@@ -37,6 +37,7 @@ module Bosh::Director
         :logger,
         :max_tasks,
         :tasks_retention_period,
+        :tasks_deployments_retention_period,
         :max_threads,
         :max_vm_create_tries,
         :name,
@@ -132,8 +133,9 @@ module Bosh::Director
         # by default keep only last 2000 tasks of each type in disk
         @max_tasks = config.fetch('max_tasks', 2000).to_i
 
-        # by default keep last 30 days tasks of each type in disk
+        # by default keep all tasks of each type in disk if retention period is not set
         @tasks_retention_period = config.fetch('tasks_retention_period', '')
+        @tasks_deployments_retention_period = config.fetch('tasks_deployments_retention_period', '')
 
         @max_threads = config.fetch('max_threads', 32).to_i
 

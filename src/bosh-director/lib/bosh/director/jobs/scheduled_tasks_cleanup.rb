@@ -14,7 +14,11 @@ module Bosh::Director
       end
 
       def initialize(_param = {})
-        @task_remover = Bosh::Director::Api::TaskRemover.new(Config.max_tasks, Config.tasks_retention_period)
+        @task_remover = Bosh::Director::Api::TaskRemover.new(
+          Config.max_tasks,
+          Config.tasks_retention_period,
+          Config.tasks_deployments_retention_period
+        )
       end
 
       def update_orphaned_tasks_with_state_error(result)
@@ -54,7 +58,6 @@ module Bosh::Director
       def perform
         result = "Deleted tasks and logs for\n"
 
-        Bosh::Director::Config.logger.info("getting type")
         task_types.each do |type|
           tasks_removed = @task_remover.remove(type)
           result << "#{tasks_removed} task(s) of type '#{type}'\n"

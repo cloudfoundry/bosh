@@ -7,10 +7,6 @@ mysqlclient_dir=/var/vcap/packages/mysql
 
 source /var/vcap/packages/director-ruby-3.2/bosh/compile.env
 
-for gemspec in $( find . -maxdepth 2 -name ._*.gemspec ); do
-    rm -f "$gemspec"
-done
-
 for gemspec in $( find . -maxdepth 2 -name *.gemspec ); do
   gem_name="$( basename "$( dirname "$gemspec" )" )"
   gem_spec="$( basename "$gemspec" )"

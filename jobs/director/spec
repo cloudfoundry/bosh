@@ -118,6 +118,9 @@ properties:
   director.tasks_retention_period:
     description: the retention period for tasks and their log files
     default: ''
+  director.tasks_deployments_retention_period:
+    description: the retention period for tasks and their log files of specific deployments
+    default: ''
   director.max_threads:
     description: Max number of director concurrent threads
     default: 32
