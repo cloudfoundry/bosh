@@ -1,0 +1,39 @@
+---
+# This task can be used to test the template rendering for a bosh release. It performs a "--dry-run" bosh deployment
+# so no jobs will actually be run. The bosh director used within the docker image is rebuilt after each release
+# of the bosh director.
+
+# This task must be run as a privileged container.
+
+# The bosh director repository is a required input, as is your release. You may specify an additional "manifests" input
+# for the manifests to deploy or you can use manifests within your release repository. The MANIFESTS_FOLDER param should
+# point to the relative path of your manifests: i.e. "release/tests/manifests"
+
+# If DEV_RELEASE is set to "true" the task will create a dev release and upload that. Otherwise it will simply run
+# "bosh upload-release" which will upload the most recent final release.
+
+# The test manifests do not need to be complete valid deployment manifests, the task will fill in the infrastructure
+# details such as stemcell, vm_types, networks, azs and the update section. They will need to include a single instance
+# group that includes any jobs you want to render templates for.
+
+# Variables can be defined and referenced from the job properties if needed.
+
+platform: linux
+
+image_resource:
+  type: registry-image
+  source:
+    repository: bosh/warden-cpi
+
+inputs:
+- name: bosh
+- name: release
+- name: manifests
+  optional: true
+
+run:
+  path: bosh/ci/tasks/shared/test-release-template-rendering.sh
+
+params:
+  MANIFEST_FOLDER:
+  DEV_RELEASE: false
