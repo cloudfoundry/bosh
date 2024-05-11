@@ -97,7 +97,9 @@ RUN gem update --system \
 # Install UAA
 ADD uaa.yml /tmp/uaa.yml
 RUN export UAA_RELEASE_URL="$(bosh int /tmp/uaa.yml --path /release=uaa/value/url)" \
-    && curl -o /usr/local/uaa.tgz "${UAA_RELEASE_URL}"
+    && curl -o /usr/local/uaa.tgz "${UAA_RELEASE_URL}" \
+    && echo "Clean out ~/.bosh since some tasks expect this not to be present" \
+    && rm -rf "${HOME}/.bosh"
 
 
 # Java to start UAA

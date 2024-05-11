@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-
 set -eu
 
-mv director-state/.bosh $HOME/
+mv director-state/.bosh "${HOME}/"
 mv bosh-cli/alpha-bosh-cli-* /usr/local/bin/bosh-cli
 chmod +x /usr/local/bin/bosh-cli
 
@@ -16,10 +15,13 @@ function get_bosh_environment {
   fi
 }
 
-export BOSH_ENVIRONMENT=`get_bosh_environment`
-export BOSH_CA_CERT=`bosh-cli int director-state/director-creds.yml --path /director_ssl/ca`
-export BOSH_CLIENT=admin
-export BOSH_CLIENT_SECRET=`bosh-cli int director-state/director-creds.yml --path /admin_password`
+export BOSH_CLIENT="admin"
+BOSH_CLIENT_SECRET=$(bosh-cli int director-state/director-creds.yml --path /admin_password)
+BOSH_ENVIRONMENT=$(get_bosh_environment)
+BOSH_CA_CERT=$(bosh-cli int director-state/director-creds.yml --path /director_ssl/ca)
+export BOSH_ENVIRONMENT
+export BOSH_CA_CERT=
+export BOSH_CLIENT_SECRET
 
 set +e
 

@@ -4,19 +4,19 @@ set -e
 
 function cp_artifacts {
   rm -rf director-state/.bosh cache-dot-bosh-dir/.bosh
-  cp -R $HOME/.bosh director-state/
-  cp -R $HOME/.bosh cache-dot-bosh-dir/
+  cp -R "${HOME}/.bosh" director-state/
+  cp -R "${HOME}/.bosh" cache-dot-bosh-dir/
   cp director.yml director-creds.yml director-state.json director-vars.json director-state/
 }
 
 function restore_state {
-  rm -rf $HOME/.bosh
+  rm -rf "${HOME}/.bosh"
   if [[ -e director-state/director-state.json ]]; then
     # restore state from a previous deploy
-    cp -R director-state/.bosh $HOME
+    cp -R director-state/.bosh "${HOME}"
   else
     # concourse task cache if we don't have recent state
-    cp -R cache-dot-bosh-dir/.bosh $HOME
+    cp -R cache-dot-bosh-dir/.bosh "${HOME}"
   fi
   cp director-state/director-* .
 }
@@ -33,16 +33,16 @@ if [[ -e director-state/director-state.json ]]; then
   restore_state
 fi
 
-bosh-src/ci/bats/iaas/$BAT_INFRASTRUCTURE/director-vars > director-vars.json
+"bosh-src/ci/bats/iaas/${BAT_INFRASTRUCTURE}/director-vars" > director-vars.json
 
 bosh-cli interpolate bosh-deployment/bosh.yml \
-  -o bosh-deployment/$BAT_INFRASTRUCTURE/cpi.yml \
+  -o "bosh-deployment/${BAT_INFRASTRUCTURE}/cpi.yml" \
   -o bosh-deployment/jumpbox-user.yml \
   -o bosh-deployment/local-bosh-release-tarball.yml \
   -v director_name=bats-director \
-  -v local_bosh_release=$(realpath bosh-release/*.tgz) \
+  -v local_bosh_release="$(realpath bosh-release/*.tgz)" \
   --vars-file director-vars.json \
-  $DEPLOY_ARGS \
+  "${DEPLOY_ARGS}" \
   > director.yml
 
 bosh-cli create-env \
