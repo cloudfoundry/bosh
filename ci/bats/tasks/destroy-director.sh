@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 set -eu
 
+echo "Removing '${HOME}/.bosh' so it can be paved over with 'director-state/.bosh'"
+rm -rf "${HOME}/.bosh"
 mv director-state/.bosh "${HOME}/"
+
 mv bosh-cli/alpha-bosh-cli-* /usr/local/bin/bosh-cli
 chmod +x /usr/local/bin/bosh-cli
 
@@ -20,7 +23,7 @@ BOSH_CLIENT_SECRET=$(bosh-cli int director-state/director-creds.yml --path /admi
 BOSH_ENVIRONMENT=$(get_bosh_environment)
 BOSH_CA_CERT=$(bosh-cli int director-state/director-creds.yml --path /director_ssl/ca)
 export BOSH_ENVIRONMENT
-export BOSH_CA_CERT=
+export BOSH_CA_CERT
 export BOSH_CLIENT_SECRET
 
 set +e
