@@ -65,11 +65,9 @@ RUN cd /tmp && \
     chmod +x /usr/local/bin/bosh
 
 # Install UAA
-COPY bosh-deployment /usr/local/bosh-deployment/
-RUN \
-  cd /usr/local && \
-  UAA_RELEASE_URL="$(bosh int /usr/local/bosh-deployment/uaa.yml --path /release=uaa/value/url)" \
-  curl -o /usr/local/uaa.tgz "$UAA_RELEASE_URL"
+ADD bosh-deployment/uaa.yml /tmp/uaa.yml
+RUN export UAA_RELEASE_URL="$(bosh int /tmp/uaa.yml --path /release=uaa/value/url)" \
+    && curl -o /usr/local/uaa.tgz "${UAA_RELEASE_URL}"
 
 RUN cd /tmp && \
     wget -nv "https://github.com/dpb587/metalink/releases/download/v0.5.0/meta4-${METALINK_VERSION}" && \
