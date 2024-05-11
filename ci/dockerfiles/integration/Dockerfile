@@ -11,10 +11,14 @@ ENV BOSH_CLI_VERSION 7.2.2-linux-amd64
 ENV BOSH_CLI_SHA256SUM "2b01dbdf5192ade3587ad82df127f8ab9a7256d2be23b3f1c37de39f6750fe34"
 ENV METALINK_VERSION 0.5.0-linux-amd64
 
-ENV JAVA_PACKAGE_NAME="zulu17.50.19-ca-jdk17.0.11-linux_x64.tar.gz"
-ENV JAVA_PACKAGE_MD5="6497ded4396d535611ec401d785d440e"
-ENV JAVA_PACKAGE_URL="http://cdn.azul.com/zulu/bin/${JAVA_PACKAGE_NAME}"
-ENV JAVA_INSTALL_PREFIX="/usr/lib/jvm"
+ENV JAVA_PACKAGE_NAME "zulu17.50.19-ca-jdk17.0.11-linux_x64.tar.gz"
+ENV JAVA_PACKAGE_MD5 "6497ded4396d535611ec401d785d440e"
+ENV JAVA_PACKAGE_URL "http://cdn.azul.com/zulu/bin/${JAVA_PACKAGE_NAME}"
+ENV JAVA_INSTALL_PREFIX "/usr/lib/jvm"
+ENV JAVA_HOME "/usr/lib/jvm"
+
+ENV LANG en_US.UTF-8
+ENV LC_ALL ${LANG}
 
 
 RUN apt-get update -y \
@@ -97,11 +101,8 @@ RUN export UAA_RELEASE_URL="$(bosh int /tmp/uaa.yml --path /release=uaa/value/ur
 
 
 # Java to start UAA
-ENV LANG en_US.UTF-8
-ENV LC_ALL en_US.UTF-8
-RUN locale-gen en_US.UTF-8
-
-RUN export JAVA_PACKAGE_TMP="/tmp/${JAVA_PACKAGE_NAME}" \
+RUN locale-gen ${LANG} \
+    && export JAVA_PACKAGE_TMP="/tmp/${JAVA_PACKAGE_NAME}" \
     && wget -O ${JAVA_PACKAGE_TMP} --continue ${JAVA_PACKAGE_URL} \
     && echo "For checksum, you need two spaces between hash and file name or else it will fail with wrong format" \
     && echo "${JAVA_PACKAGE_MD5}  ${JAVA_PACKAGE_TMP}" | md5sum -c - \
@@ -109,7 +110,6 @@ RUN export JAVA_PACKAGE_TMP="/tmp/${JAVA_PACKAGE_NAME}" \
     && tar xf ${JAVA_PACKAGE_TMP} -C ${JAVA_INSTALL_PREFIX} \
     && mv ${JAVA_INSTALL_PREFIX}/*/* ${JAVA_INSTALL_PREFIX} \
     && rm ${JAVA_PACKAGE_TMP}
-ENV JAVA_HOME /usr/lib/jvm/
 ENV PATH $JAVA_HOME/bin:$PATH
 
 
