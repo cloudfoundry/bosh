@@ -64,11 +64,6 @@ RUN cd /tmp && \
     mv /tmp/bosh-cli-* /usr/local/bin/bosh && \
     chmod +x /usr/local/bin/bosh
 
-# Install UAA
-ADD bosh-deployment/uaa.yml /tmp/uaa.yml
-RUN export UAA_RELEASE_URL="$(bosh int /tmp/uaa.yml --path /release=uaa/value/url)" \
-    && curl -o /usr/local/uaa.tgz "${UAA_RELEASE_URL}"
-
 RUN cd /tmp && \
     wget -nv "https://github.com/dpb587/metalink/releases/download/v0.5.0/meta4-${METALINK_VERSION}" && \
     ( \
@@ -91,8 +86,10 @@ RUN gem update --system \
     && bundle config --global path "${GEM_HOME}" \
     && bundle config --global bin "${GEM_HOME}/bin"
 
-COPY --from=golang:latest /usr/local/go /usr/local/go
-ENV GOROOT=/usr/local/go PATH=/usr/local/go/bin:$PATH
+# Install UAA
+ADD uaa.yml /tmp/uaa.yml
+RUN export UAA_RELEASE_URL="$(bosh int /tmp/uaa.yml --path /release=uaa/value/url)" \
+    && curl -o /usr/local/uaa.tgz "${UAA_RELEASE_URL}"
 
 # Java to start UAA
 ENV LANG en_US.UTF-8
@@ -104,6 +101,12 @@ RUN chmod a+x /tmp/install-java.sh
 RUN cd /tmp && ./install-java.sh && rm install-java.sh
 ENV JAVA_HOME /usr/lib/jvm/
 ENV PATH $JAVA_HOME/bin:$PATH
+
+
+# Add Golang
+COPY --from=golang:latest /usr/local/go /usr/local/go
+ENV GOROOT=/usr/local/go PATH=/usr/local/go/bin:$PATH
+
 
 # Database clients
 RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/psql_org.gpg] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \

@@ -1,8 +1,6 @@
 #!/bin/bash
-
 set -eux
 
-cp -rp bosh-src-dockerfiles/ci/dockerfiles/integration/* docker-build-context
+cp bosh-deployment/uaa.yml bosh-src-dockerfiles/ci/dockerfiles/integration/
 
-mkdir docker-build-context/bosh-deployment
-cp -R bosh-deployment/* docker-build-context/bosh-deployment
+cp -rp bosh-src-dockerfiles/ci/dockerfiles/integration/* docker-build-context
