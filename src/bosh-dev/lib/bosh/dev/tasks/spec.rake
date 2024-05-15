@@ -35,8 +35,6 @@ namespace :spec do
 
           Bosh::Dev::Sandbox::ConfigServerService.install unless ENV['SKIP_CONFIG_SERVER'] == 'true'
 
-          Bosh::Dev::LegacyAgentManager.install unless ENV['SKIP_LEGACY_AGENTS'] == 'true'
-
           Bosh::Dev::VerifyMultidigestManager.install unless ENV['SKIP_VERIFY_MULTIDIGEST'] == 'true'
 
           Bosh::Dev::GnatsdManager.install unless ENV['SKIP_GNATSD'] == 'true'
