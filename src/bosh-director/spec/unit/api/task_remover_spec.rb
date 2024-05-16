@@ -14,7 +14,7 @@ module Bosh::Director::Api
       end
     end
 
-    subject(:remover) { TaskRemover.new(3, '', '') }
+    subject(:remover) { TaskRemover.new(3, nil, nil) }
     let(:default_type) { 'type' }
     let(:inside_retention) { '2024-05-12 15:35:45.834392' }
     let(:outside_retention) { '2023-05-12 15:35:45.834392' }
@@ -138,7 +138,7 @@ module Bosh::Director::Api
       end
 
       context 'when task output is nil' do
-        subject(:remover) { described_class.new(0, '', '') }
+        subject(:remover) { described_class.new(0, nil, nil) }
 
         before do
           Bosh::Director::Models::Task.make(state: 'done', output: nil)
@@ -174,7 +174,7 @@ module Bosh::Director::Api
 
       context 'when there are tasks exceeding the retention period 1 day in the database' do
         subject(:remover) do
-          TaskRemover.new(2000, '1', '')
+          TaskRemover.new(2000, 1, nil)
         end
 
         before do
@@ -194,7 +194,7 @@ module Bosh::Director::Api
 
       context 'when there is task exceeding the retention period 1 day in the database' do
         subject(:remover) do
-            TaskRemover.new(2000, '', [{ 'deployment' => 'deployment1', 'retention_period' => '1' }])
+            TaskRemover.new(2000, nil, [{ 'deployment' => 'deployment1', 'retention_period' => '1' }])
         end
 
         before do

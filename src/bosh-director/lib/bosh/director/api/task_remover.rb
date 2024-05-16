@@ -14,13 +14,13 @@ module Bosh::Director::Api
         tasks_removed += 1
         remove_task(task)
       end
-      unless @retention_period == ''
+      unless @retention_period.nil?
         removal_retention_candidates_dataset(type).paged_each(strategy: :filter, stream: false) do |task|
           tasks_removed += 1
           remove_task(task)
         end
       end
-      unless @deployment_retention_period == ''
+      unless @deployment_retention_period.nil?
         @deployment_retention_period.each do |d|
           removal_deployment_retention_candidates_dataset(type, d).paged_each(strategy: :filter, stream: false) do |task|
             tasks_removed += 1
@@ -67,7 +67,7 @@ module Bosh::Director::Api
     def removal_deployment_retention_candidates_dataset(type, deployment_with_retention_period)
       retention_time = DateTime.now - deployment_with_retention_period['retention_period'].to_i
       Bosh::Director::Models::Task.where(type: type)
-                                  .where(deployment_name: deployment_with_retention_period['deployment'])
+                                  .where(deployment_name: deployment_with_retention_period['deployment_name'])
                                   .where { checkpoint_time < retention_time }
                                   .exclude(state: %w[processing queued])
                                   .select(:id, :output)

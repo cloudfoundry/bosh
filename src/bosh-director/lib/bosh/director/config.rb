@@ -134,8 +134,8 @@ module Bosh::Director
         @max_tasks = config.fetch('max_tasks', 2000).to_i
 
         # by default keep all tasks of each type in disk if retention period is not set
-        @tasks_retention_period = config.fetch('tasks_retention_period', '')
-        @tasks_deployments_retention_period = config.fetch('tasks_deployments_retention_period', '')
+        @tasks_retention_period = config.fetch('tasks_retention_period', nil)
+        @tasks_deployments_retention_period = config.fetch('tasks_deployments_retention_period', nil)
 
         @max_threads = config.fetch('max_threads', 32).to_i
 
