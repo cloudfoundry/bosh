@@ -450,8 +450,8 @@ describe Bosh::Director::Config do
       it 'returns the task remover configurations' do
         described_class.configure(test_config)
         expect(described_class.max_tasks).to eq(2000)
-        expect(described_class.tasks_retention_period).to eq('20d')
-        expect(described_class.tasks_deployments_retention_period).to eq([{'deployment' => 'fake-deployment', 'retention_period' => '30d'}])
+        expect(described_class.tasks_retention_period).to eq(20)
+        expect(described_class.tasks_deployments_retention_period).to eq([{'deployment' => 'fake-deployment', 'retention_period' => 30}])
       end
     end
   end

@@ -57,7 +57,7 @@ module Bosh::Director::Api
     end
 
     def removal_retention_candidates_dataset(type)
-      retention_time = DateTime.now.to_time - convert_to_time_duration(@retention_period)
+      retention_time = DateTime.now - @retention_period.to_i
       Bosh::Director::Models::Task.where(type: type)
                                   .where { checkpoint_time < retention_time }
                                   .exclude(state: %w[processing queued])
@@ -65,21 +65,12 @@ module Bosh::Director::Api
     end
 
     def removal_deployment_retention_candidates_dataset(type, deployment_with_retention_period)
-      retention_time = DateTime.now.to_time - convert_to_time_duration(deployment_with_retention_period['retention_period'])
+      retention_time = DateTime.now - deployment_with_retention_period['retention_period'].to_i
       Bosh::Director::Models::Task.where(type: type)
                                   .where(deployment_name: deployment_with_retention_period['deployment'])
                                   .where { checkpoint_time < retention_time }
                                   .exclude(state: %w[processing queued])
                                   .select(:id, :output)
-    end
-
-    def convert_to_time_duration(string)
-      multipliers = { "d" => 24*60*60, "h" => 60*60, "m" => 60, "s" => 1 }
-      segments = string.scan(/(\d+)([a-z])/)
-
-      segments.inject(0) do |total, (value, unit)|
-        total + value.to_i * multipliers[unit]
-      end
     end
   end
 end

@@ -174,10 +174,7 @@ module Bosh::Director::Api
 
       context 'when there are tasks exceeding the retention period 1 day in the database' do
         subject(:remover) do
-          Timecop.freeze(Time.parse(inside_retention) + 60 * 60) do
-            TaskRemover.new(2000, '1d', '')
-          end
-
+          TaskRemover.new(2000, '1', '')
         end
 
         before do
@@ -186,18 +183,18 @@ module Bosh::Director::Api
         end
 
         it 'it removes the task outside retention' do
+          expect(remover).to_not receive(:remove_task).with(tasks[0])
           expect(remover).to receive(:remove_task).with(tasks[1])
 
-          remover.remove(default_type)
+          Timecop.freeze(Time.parse(inside_retention) + 60 * 60) do
+            remover.remove(default_type)
+          end
         end
       end
 
       context 'when there is task exceeding the retention period 1 day in the database' do
         subject(:remover) do
-          Timecop.freeze(Time.parse(inside_retention) + 60 * 60) do
-            TaskRemover.new(2000, '', [{ 'deployment' => 'deployment1', 'retention_period' => '1d' }])
-          end
-
+            TaskRemover.new(2000, '', [{ 'deployment' => 'deployment1', 'retention_period' => '1' }])
         end
 
         before do
@@ -209,7 +206,9 @@ module Bosh::Director::Api
           expect(remover).to receive(:remove_task).with(tasks[0])
           expect(remover).to_not receive(:remove_task).with(tasks[1])
 
-          remover.remove(default_type)
+          Timecop.freeze(Time.parse(inside_retention) + 60 * 60) do
+            remover.remove(default_type)
+          end
         end
       end
     end
