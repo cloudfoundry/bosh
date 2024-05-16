@@ -9,16 +9,6 @@ end
 describe 'multiple persistent disks', type: :integration do
   with_reset_sandbox_before_each(dummy_cpi_api_version: 2)
 
-  def get_agent_ignored_messages(output)
-    task_id = output.match(/^Task (\d+)$/)[1]
-    task_debug = File.read("#{current_sandbox.sandbox_root}/boshdir/tasks/#{task_id}/debug")
-    ignore_messages = []
-    task_debug.scan(/DirectorJobRunner: Ignoring (.*)$/).each do |match|
-      ignore_messages << match[0]
-    end
-    ignore_messages
-  end
-
   let(:cloud_config_hash) do
     hash = Bosh::Spec::Deployments.simple_cloud_config
     hash['disk_types'] = [
@@ -288,40 +278,6 @@ describe 'multiple persistent disks', type: :integration do
 
       v2_only_disk_settings_file = "#{agent_dir}/bosh/persistent_disk_hints.json"
       expect(File.exist?(v2_only_disk_settings_file)).to be_falsey
-    end
-  end
-
-  context 'when add_persistent_disk action is not supported in agent (legacy agent)' do
-    let(:cloud_properties) do
-      { 'legacy_agent_path' => get_legacy_agent_path('before-registry-removal-20181001') }
-    end
-
-    let(:cloud_config_hash) do
-      hash = Bosh::Spec::Deployments.simple_cloud_config
-      hash['disk_types'] = [
-        {
-          'name' => 'low-performance-disk-type',
-          'disk_size' => low_perf_disk_size,
-          'cloud_properties' => { 'type' => 'gp2' },
-        },
-        {
-          'name' => 'high-performance-disk-type',
-          'disk_size' => high_perf_disk_size,
-          'cloud_properties' => { 'type' => 'io1' },
-        },
-      ]
-
-      hash['vm_types'][0]['cloud_properties'] = cloud_properties
-      hash
-    end
-
-    it 'should get response from agent' do
-      ignored_messages = get_agent_ignored_messages(@deploy_output)
-      expect(ignored_messages).to include(
-        "add_persistent_disk 'unknown message' error from the agent: "\
-        '#<Bosh::Director::RpcRemoteException: unknown message add_persistent_disk>',
-      )
-      expect(ignored_messages.count).to eq(2)
     end
   end
 end

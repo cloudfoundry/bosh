@@ -358,10 +358,6 @@ module IntegrationExampleGroup
     end
   end
 
-  def get_legacy_agent_path(legacy_agent_name)
-    Bosh::Dev::LegacyAgentManager.generate_executable_full_path(legacy_agent_name)
-  end
-
   private
 
   def sub_in_records(output, regex_pattern, replace_pattern)
