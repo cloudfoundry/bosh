@@ -1,6 +1,7 @@
 require File.expand_path('../../spec/shared/spec_helper', __dir__)
 
 require 'async/rspec'
+require 'async/io'
 require 'tempfile'
 require 'bosh/monitor'
 require 'webmock/rspec'
