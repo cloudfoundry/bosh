@@ -192,9 +192,9 @@ module Bosh::Director::Api
         end
       end
 
-      context 'when there is task exceeding the retention period 1 day in the database' do
+      context 'when there is task exceeding the retention period 1 day in the database and the deployment is configured in deployment_retention_period' do
         subject(:remover) do
-            TaskRemover.new(2000, nil, [{ 'deployment' => 'deployment1', 'retention_period' => '1' }])
+            TaskRemover.new(2000, nil, [{ 'deployment_name' => 'deployment1', 'retention_period' => 1 }])
         end
 
         before do
@@ -202,9 +202,50 @@ module Bosh::Director::Api
           make_n_tasks(1, checkpoint_time: outside_retention, deployment: 'deployment2')
         end
 
-        it 'it removes the task outside retention' do
+        it 'it removes the task of specific deployment outside retention' do
           expect(remover).to receive(:remove_task).with(tasks[0])
           expect(remover).to_not receive(:remove_task).with(tasks[1])
+
+          Timecop.freeze(Time.parse(inside_retention) + 60 * 60) do
+            remover.remove(default_type)
+          end
+        end
+      end
+
+      context 'when the deployment configured in deployment_retention_period does not exist' do
+        subject(:remover) do
+          TaskRemover.new(2000, nil, [{ 'deployment_name' => 'deployment3', 'retention_period' => 1 }])
+        end
+
+        before do
+          make_n_tasks(1, checkpoint_time: outside_retention, deployment: 'deployment1')
+          make_n_tasks(1, checkpoint_time: outside_retention, deployment: 'deployment2')
+        end
+
+        it 'it does nothing' do
+          expect(remover).to_not receive(:remove_task)
+
+          Timecop.freeze(Time.parse(inside_retention) + 60 * 60) do
+            remover.remove(default_type)
+          end
+        end
+      end
+
+      context 'when both retention_period and deployment_retention_period configured' do
+        subject(:remover) do
+          TaskRemover.new(2000, 2, [{ 'deployment_name' => 'deployment1', 'retention_period' => 1 }])
+        end
+
+        before do
+          make_n_tasks(1, checkpoint_time: outside_retention, deployment: 'deployment1')
+          make_n_tasks(1, checkpoint_time: outside_retention, deployment: 'deployment2')
+          make_n_tasks(1, checkpoint_time: inside_retention, deployment: 'deployment1')
+        end
+
+        it 'it removes the task outside retention' do
+          expect(remover).to receive(:remove_task).at_least(1).times.with(tasks[0])
+          expect(remover).to receive(:remove_task).with(tasks[1])
+          expect(remover).to_not receive(:remove_task).with(tasks[2])
 
           Timecop.freeze(Time.parse(inside_retention) + 60 * 60) do
             remover.remove(default_type)
