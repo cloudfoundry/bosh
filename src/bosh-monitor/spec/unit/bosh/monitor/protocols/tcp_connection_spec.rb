@@ -57,5 +57,20 @@ describe Bosh::Monitor::TcpConnection do
         end
       end
     end
+    context 'when send_data errors' do
+      let(:tcp_connection) { Bosh::Monitor::TcpConnection.new('connection.tcp', '127.0.0.1', 80, Bhm::TcpConnection::DEFAULT_RETRIES) }
+      it 'creates a new socket and continues transmitting' do
+        endpoint = double('endpoint').as_null_object
+        socket = double('socket').as_null_object
+        expect(endpoint).to receive(:connect).and_return(socket).twice
+        allow(socket).to receive(:write).with('some-data').and_raise("some-error")
+        expect(socket).to receive(:write).with('data-after-initial-socket-was-closed')
+        expect(Async::IO::Endpoint).to receive(:tcp).and_return(endpoint).twice
+
+        tcp_connection.connect
+        expect { tcp_connection.send_data('some-data') }.to_not raise_error
+        tcp_connection.send_data('data-after-initial-socket-was-closed')
+      end
+    end
   end
 end
