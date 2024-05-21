@@ -18,6 +18,8 @@ module Bosh::Monitor
       return unless @connected
 
       @socket.write(data)
+    rescue
+      unbind
     end
 
     def connect
