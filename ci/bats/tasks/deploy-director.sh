@@ -42,7 +42,7 @@ bosh-cli interpolate bosh-deployment/bosh.yml \
   -v director_name=bats-director \
   -v local_bosh_release="$(realpath bosh-release/*.tgz)" \
   --vars-file director-vars.json \
-  "${DEPLOY_ARGS}" \
+  $DEPLOY_ARGS \
   > director.yml
 
 bosh-cli create-env \
