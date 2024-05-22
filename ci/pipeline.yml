@@ -308,7 +308,7 @@ jobs:
           params:
             BAT_INFRASTRUCTURE: gcp
             GCP_JSON_KEY: ((gcp_json_key))
-            DEPLOY_ARGS: |
+            DEPLOY_ARGS: |-
               -o bosh-deployment/external-ip-not-recommended.yml
         - task: prepare-bats-config
           file: bosh-src/ci/bats/iaas/gcp/prepare-bats-config.yml
@@ -368,7 +368,7 @@ jobs:
           params:
             BAT_INFRASTRUCTURE: gcp
             GCP_JSON_KEY: ((gcp_json_key))
-            DEPLOY_ARGS: |
+            DEPLOY_ARGS: |-
               -o bosh-deployment/external-ip-not-recommended.yml
               -o bosh-src/ci/bats/ops/use-custom-stemcell.yml
         - task: prepare-bats-config
@@ -532,7 +532,7 @@ jobs:
         params:
           BAT_INFRASTRUCTURE: gcp
           GCP_JSON_KEY: ((gcp_json_key))
-          DEPLOY_ARGS: |
+          DEPLOY_ARGS: |-
             -o bosh-deployment/external-ip-not-recommended.yml
       - task: deploy-zookeeper
         image: integration-image
@@ -547,7 +547,7 @@ jobs:
         params:
           BAT_INFRASTRUCTURE: gcp
           GCP_JSON_KEY: ((gcp_json_key))
-          DEPLOY_ARGS: |
+          DEPLOY_ARGS: |-
             -o bosh-deployment/external-ip-not-recommended.yml
       - task: sleep-180-seconds
         image: integration-image
