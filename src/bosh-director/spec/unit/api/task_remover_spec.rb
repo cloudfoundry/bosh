@@ -1,7 +1,6 @@
 require 'spec_helper'
 require 'fakefs/spec_helpers'
 require 'bosh/director/api/task_remover'
-require 'pry-byebug'
 
 module Bosh::Director::Api
   describe TaskRemover do
