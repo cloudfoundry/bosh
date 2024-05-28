@@ -106,6 +106,14 @@ params['config_server'] = config_server
 
 params['scheduled_jobs'] = []
 
+if_p('director.tasks_retention_period') do |tasks_retention_period|
+  params['tasks_retention_period'] = tasks_retention_period
+end
+
+if_p('director.tasks_deployments_retention_period') do |tasks_deployments_retention_period|
+  params['tasks_deployments_retention_period'] = tasks_deployments_retention_period
+end
+
 if_p('director.snapshot_schedule') do |snapshot_schedule|
   params['scheduled_jobs'] << {
     'command' => 'SnapshotDeployments',

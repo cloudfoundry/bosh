@@ -6,15 +6,17 @@ module Bosh::Director::Api
   describe TaskRemover do
     include FakeFS::SpecHelpers
 
-    def make_n_tasks(num_tasks, type = default_type)
+    def make_n_tasks(num_tasks, task_type: default_type, checkpoint_time: inside_retention, deployment: 'deployment1')
       num_tasks.times do |i|
-        task = Bosh::Director::Models::Task.make(state: 'done', output: "/director/tasks/#{type}_#{i}", type: type)
+        task = Bosh::Director::Models::Task.make(state: 'done', output: "/director/tasks/#{task_type}_#{i}", checkpoint_time: checkpoint_time, deployment_name: deployment, type: task_type)
         FileUtils.mkpath(task.output)
       end
     end
 
-    subject(:remover) { TaskRemover.new(3) }
+    subject(:remover) { TaskRemover.new(3, nil, nil) }
     let(:default_type) { 'type' }
+    let(:inside_retention) { '2024-05-12 15:35:45.834392' }
+    let(:outside_retention) { '2023-05-12 15:35:45.834392' }
     let(:second_type) { 'type1' }
 
     def tasks
@@ -24,7 +26,7 @@ module Bosh::Director::Api
     describe '#remove' do
       context 'when there are fewer than max_tasks task of the given type in the database' do
         before do
-          make_n_tasks(1, second_type)
+          make_n_tasks(1, task_type: second_type)
           make_n_tasks(2)
         end
 
@@ -37,7 +39,7 @@ module Bosh::Director::Api
 
       context 'when there are =max_tasks of the given type in the database' do
         before do
-          make_n_tasks(1, second_type)
+          make_n_tasks(1, task_type: second_type)
           make_n_tasks(3)
         end
 
@@ -50,7 +52,7 @@ module Bosh::Director::Api
 
       context 'when there is one more than max_tasks tasks of the given type in the database' do
         before do
-          make_n_tasks(1, second_type)
+          make_n_tasks(1, task_type: second_type)
           make_n_tasks(4)
         end
 
@@ -63,7 +65,7 @@ module Bosh::Director::Api
 
       context 'when there are 2 more than max_tasks task of the given type in the database' do
         before do
-          make_n_tasks(1, second_type)
+          make_n_tasks(1, task_type: second_type)
           make_n_tasks(5)
         end
 
@@ -77,7 +79,7 @@ module Bosh::Director::Api
 
       context 'when there are 10 more than max_tasks task of the given type in the database' do
         before do
-          make_n_tasks(1, second_type)
+          make_n_tasks(1, task_type: second_type)
           make_n_tasks(13)
         end
 
@@ -92,7 +94,7 @@ module Bosh::Director::Api
 
       context 'when there are 2 types with more than max_tasks tasks in the database' do
         before do
-          make_n_tasks(4, second_type)
+          make_n_tasks(4, task_type: second_type)
           make_n_tasks(4)
         end
 
@@ -107,7 +109,7 @@ module Bosh::Director::Api
 
       context 'when specific states should be ignored from removal' do
         before do
-          make_n_tasks(1, second_type)
+          make_n_tasks(1, task_type: second_type)
           make_n_tasks(5)
           running_task = tasks[1]
           running_task.update(state: state)
@@ -135,7 +137,7 @@ module Bosh::Director::Api
       end
 
       context 'when task output is nil' do
-        subject(:remover) { described_class.new(0) }
+        subject(:remover) { described_class.new(0, nil, nil) }
 
         before do
           Bosh::Director::Models::Task.make(state: 'done', output: nil)
@@ -166,6 +168,87 @@ module Bosh::Director::Api
           end.to change {
             Bosh::Director::Models::Task.count
           }.from(4).to(3)
+        end
+      end
+
+      context 'when there are tasks exceeding the retention period 1 day in the database' do
+        subject(:remover) do
+          TaskRemover.new(2000, 1, nil)
+        end
+
+        before do
+          make_n_tasks(1, checkpoint_time: inside_retention)
+          make_n_tasks(1, checkpoint_time: outside_retention)
+        end
+
+        it 'it removes the task outside retention' do
+          expect(remover).to_not receive(:remove_task).with(tasks[0])
+          expect(remover).to receive(:remove_task).with(tasks[1])
+
+          Timecop.freeze(Time.parse(inside_retention) + 60 * 60) do
+            remover.remove(default_type)
+          end
+        end
+      end
+
+      context 'when there is task exceeding the retention period 1 day in the database and the deployment is configured in deployment_retention_period' do
+        subject(:remover) do
+            TaskRemover.new(2000, nil, [{ 'deployment_name' => 'deployment1', 'retention_period' => 1 }])
+        end
+
+        before do
+          make_n_tasks(1, checkpoint_time: outside_retention, deployment: 'deployment1')
+          make_n_tasks(1, checkpoint_time: outside_retention, deployment: 'deployment2')
+        end
+
+        it 'it removes the task of specific deployment outside retention' do
+          expect(remover).to receive(:remove_task).with(tasks[0])
+          expect(remover).to_not receive(:remove_task).with(tasks[1])
+
+          Timecop.freeze(Time.parse(inside_retention) + 60 * 60) do
+            remover.remove(default_type)
+          end
+        end
+      end
+
+      context 'when the deployment configured in deployment_retention_period does not exist' do
+        subject(:remover) do
+          TaskRemover.new(2000, nil, [{ 'deployment_name' => 'deployment3', 'retention_period' => 1 }])
+        end
+
+        before do
+          make_n_tasks(1, checkpoint_time: outside_retention, deployment: 'deployment1')
+          make_n_tasks(1, checkpoint_time: outside_retention, deployment: 'deployment2')
+        end
+
+        it 'it does nothing' do
+          expect(remover).to_not receive(:remove_task)
+
+          Timecop.freeze(Time.parse(inside_retention) + 60 * 60) do
+            remover.remove(default_type)
+          end
+        end
+      end
+
+      context 'when both retention_period and deployment_retention_period configured' do
+        subject(:remover) do
+          TaskRemover.new(2000, 2, [{ 'deployment_name' => 'deployment1', 'retention_period' => 1 }])
+        end
+
+        before do
+          make_n_tasks(1, checkpoint_time: outside_retention, deployment: 'deployment1')
+          make_n_tasks(1, checkpoint_time: outside_retention, deployment: 'deployment2')
+          make_n_tasks(1, checkpoint_time: inside_retention, deployment: 'deployment1')
+        end
+
+        it 'it removes the task outside retention' do
+          expect(remover).to receive(:remove_task).at_least(1).times.with(tasks[0])
+          expect(remover).to receive(:remove_task).with(tasks[1])
+          expect(remover).to_not receive(:remove_task).with(tasks[2])
+
+          Timecop.freeze(Time.parse(inside_retention) + 60 * 60) do
+            remover.remove(default_type)
+          end
         end
       end
     end

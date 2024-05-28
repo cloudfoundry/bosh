@@ -1,14 +1,32 @@
+require 'date'
+
 module Bosh::Director::Api
   class TaskRemover
-    def initialize(max_tasks)
+    def initialize(max_tasks, retention_period, deployment_retention_period)
       @max_tasks = max_tasks
+      @retention_period = retention_period
+      @deployment_retention_period = deployment_retention_period
     end
 
     def remove(type)
       tasks_removed = 0
-      removal_candidates_dataset(type).paged_each(strategy: :filter, stream: false) do |task|
+      removal_max_tasks_candidates_dataset(type).paged_each(strategy: :filter, stream: false) do |task|
         tasks_removed += 1
         remove_task(task)
+      end
+      unless @retention_period.nil?
+        removal_retention_candidates_dataset(type).paged_each(strategy: :filter, stream: false) do |task|
+          tasks_removed += 1
+          remove_task(task)
+        end
+      end
+      unless @deployment_retention_period.nil?
+        @deployment_retention_period.each do |d|
+          removal_deployment_retention_candidates_dataset(type, d).paged_each(strategy: :filter, stream: false) do |task|
+            tasks_removed += 1
+            remove_task(task)
+          end
+        end
       end
       tasks_removed
     end
@@ -29,14 +47,30 @@ module Bosh::Director::Api
 
     private
 
-    def removal_candidates_dataset(type)
+    def removal_max_tasks_candidates_dataset(type)
       base_filter = Bosh::Director::Models::Task.where(type: type)
         .exclude(state: %w[processing queued])
         .select(:id, :output).order { Sequel.desc(:id) }
-
       starting_id = base_filter.limit(1, @max_tasks).first&.id || 0
 
       base_filter.where { id <= starting_id }
+    end
+
+    def removal_retention_candidates_dataset(type)
+      retention_time = DateTime.now - @retention_period.to_i
+      Bosh::Director::Models::Task.where(type: type)
+                                  .where { checkpoint_time < retention_time }
+                                  .exclude(state: %w[processing queued])
+                                  .select(:id, :output)
+    end
+
+    def removal_deployment_retention_candidates_dataset(type, deployment_with_retention_period)
+      retention_time = DateTime.now - deployment_with_retention_period['retention_period'].to_i
+      Bosh::Director::Models::Task.where(type: type)
+                                  .where(deployment_name: deployment_with_retention_period['deployment_name'])
+                                  .where { checkpoint_time < retention_time }
+                                  .exclude(state: %w[processing queued])
+                                  .select(:id, :output)
     end
   end
 end

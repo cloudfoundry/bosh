@@ -115,6 +115,13 @@ properties:
   director.max_tasks:
     description: Max number of tasks per each type to keep in disk
     default: 2000
+  director.tasks_retention_period:
+    description: the retention period for tasks and their log files (days)
+  director.tasks_deployments_retention_period:
+    description: the retention period for tasks and their log files of specific deployments (days)
+    example: |
+      - deployment_name: "deployment-name"
+        retention_period: 14
   director.max_threads:
     description: Max number of director concurrent threads
     default: 32

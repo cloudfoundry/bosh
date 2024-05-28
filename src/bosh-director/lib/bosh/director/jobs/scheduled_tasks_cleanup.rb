@@ -14,7 +14,11 @@ module Bosh::Director
       end
 
       def initialize(_param = {})
-        @task_remover = Bosh::Director::Api::TaskRemover.new(Config.max_tasks)
+        @task_remover = Bosh::Director::Api::TaskRemover.new(
+          Config.max_tasks,
+          Config.tasks_retention_period,
+          Config.tasks_deployments_retention_period
+        )
       end
 
       def update_orphaned_tasks_with_state_error(result)
