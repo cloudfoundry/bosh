@@ -15,3 +15,6 @@ files:
 - vendor/cache/*.gem
 - vendor/cache/extensions/**
 - vendor/cache/netaddr-rb-*/**
+
+excluded_files:
+- vendor/cache/{bundle-audit,bundler-audit,coderay}-*.gem # test dependency with GPL license
