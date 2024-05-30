@@ -9,7 +9,7 @@ metadata:
 spec:
   product:
     name: bosh_director
-    version: 280.0.24
+    version: 280.0.25
   indicators:
   - name: bosh_tasks_total
     promql: min_over_time(bosh_tasks_total{state="queued"}[10m])
