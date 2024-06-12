@@ -7,13 +7,18 @@ module Bosh::Director
       include Rack::Test::Methods
 
       subject(:app) { linted_rack_app(described_class.new(config)) }
-      before { allow(Api::ResourceManager).to receive(:new) }
-      let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
+      let(:config) do
+        config = Config.load_hash(SpecHelper.spec_get_director_config)
+        identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)
+        allow(config).to receive(:identity_provider).and_return(identity_provider)
+        config
+      end
 
       let(:release) { Models::Release.make(name: 'fake-release-name') }
       let(:release_version) { Models::ReleaseVersion.make(version: 1, release: release, update_completed: true) }
 
       before do
+        allow(Api::ResourceManager).to receive(:new)
         release_version.save
       end
 
@@ -398,6 +403,101 @@ module Bosh::Director
               expect(last_response.status).to eq(200)
               expect(JSON.parse(last_response.body)).to eq([])
             end
+          end
+        end
+      end
+
+      describe 'GET', '/blobs/:id' do
+        def perform
+          get "/blobs/#{blobstore_id}"
+        end
+
+        let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient, get: nil) }
+        let(:blobstore_id) { 'blobstore-id' }
+
+        before do
+          allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
+
+          allow(blobstore).to receive(:get).with('blobstore-id', instance_of(File)) do |id, file|
+            file.write('FILE CONTENT')
+          end
+        end
+
+        context 'authenticated read-only access' do
+          before { authorize 'reader', 'reader' }
+
+          context 'when the blobstore id is not associated with a package' do
+            let(:blobstore_id) { 'non-existent-blob-id' }
+
+            it 'returns an error' do
+              perform
+              expect(last_response.status).to eq(400)
+              expect(last_response.body).to eq('Package with blobstore id: non-existent-blob-id does not exist')
+            end
+          end
+
+          context 'when the blobstore id is for a package' do
+            before do
+              Models::Package.make(
+                release: release,
+                name: 'fake-pkg1',
+                version: 'fake-pkg1-version',
+                blobstore_id: blobstore_id,
+                sha1: 'fakepkg1sha',
+                fingerprint: 'fake-pkg1-fingerprint',
+              )
+            end
+
+            it 'downloads the blob' do
+              perform
+              expect(last_response.status).to eq(200)
+              expect(last_response.headers['Content-Disposition']).to include('attachment')
+              expect(last_response.body).to include('FILE CONTENT')
+            end
+          end
+
+          context 'when the blobstore id is for a compiled package' do
+            before do
+              package = Models::Package.make(
+                release: release,
+                name: 'fake-pkg1',
+                version: 'fake-pkg1-version',
+                # Explicitly leave out blobstore_id for pre-compiled packages
+                sha1: 'fakepkg1sha',
+                fingerprint: 'fake-pkg1-fingerprint',
+              )
+              Models::CompiledPackage.make(
+                package_id: package.id,
+                blobstore_id: blobstore_id,
+                sha1: 'cpkg1sha1',
+                stemcell_os: 'ubuntu-trusty',
+                stemcell_version: '3000',
+                dependency_key: '[["fake-pkg2","fake-pkg2-version"],["fake-pkg3","fake-pkg3-version"]]',
+              )
+            end
+
+            it 'downloads the blob' do
+              perform
+              expect(last_response.status).to eq(200)
+              expect(last_response.headers['Content-Disposition']).to include('attachment')
+              expect(last_response.body).to include('FILE CONTENT')
+            end
+          end
+        end
+
+        context 'accessing with invalid credentials' do
+          before { authorize 'invalid-user', 'invalid-password' }
+
+          it 'returns 401' do
+            perform
+            expect(last_response.status).to eq(401)
+          end
+        end
+
+        context 'unauthenticated access' do
+          it 'returns 401' do
+            perform
+            expect(last_response.status).to eq(401)
           end
         end
       end

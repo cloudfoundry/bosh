@@ -41,7 +41,36 @@ module Bosh::Director
         json_encode(fingerprints)
       end
 
+      get '/blobs/:id', scope: :read do
+        blobstore_id = params[:id]
+
+        package = find_package_by_blobstore_id(blobstore_id)
+        if package.nil?
+          status(400)
+          body("Package with blobstore id: #{blobstore_id} does not exist")
+          return
+        end
+
+        blobstore_client = App.instance.blobstores.blobstore
+        path = Dir.mktmpdir
+        temp_path = File.join(path, "package-blob-#{blobstore_id}")
+        File.open(temp_path, 'w') do |file|
+          blobstore_client.get(blobstore_id, file)
+        end
+        send_file(temp_path, disposition: 'attachment')
+      end
+
       private
+
+      def find_package_by_blobstore_id(id)
+        package = Models::Package.first(blobstore_id: id)
+
+        if package.nil?
+          package = Models::CompiledPackage.first(blobstore_id: id)
+        end
+
+        return package
+      end
 
       def compiled_package_fingerprints_not_to_be_uploaded(manifest_hash)
         compiled_release_manifest = CompiledRelease::Manifest.new(manifest_hash)
