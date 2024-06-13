@@ -35,6 +35,17 @@ describe Bhm::Plugins::ProcessManager do
   context 'when the event loop is running' do
     include_context Async::RSpec::Reactor
 
+    it 'works' do
+      allow(Dir).to receive(:[]).with('/*/json-plugin/*').and_return(['echo "hello"'])
+      expect(Bosh::Monitor::Plugins::DeferrableChildProcess).to receive(:open).once.with('echo "hello"').and_call_original
+      expect(Open3).to receive(:popen3).with('echo "hello"').and_call_original
+
+      process_manager.start
+
+      # Wait to ensure that the process isn't restarted due to an internal error
+      sleep restart_wait * 2
+    end
+
     it 'starts processes that match the glob' do
       allow(Dir).to receive(:[]).with('/*/json-plugin/*').and_return(['/plugin'])
 
