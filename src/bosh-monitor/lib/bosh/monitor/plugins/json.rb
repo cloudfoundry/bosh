@@ -72,7 +72,10 @@ module Bosh::Monitor::Plugins
 
     def start_process(bin)
       process = Bosh::Monitor::Plugins::DeferrableChildProcess.open(bin)
-      process.errback do
+      process.errback do |exception|
+        if exception
+          @logger.error("JSON Plugin: Unexpected error occurred for #{bin}: #{exception} - #{exception.backtrace.join("\n")}")
+        end
         Async do
           sleep(@restart_wait)
           restart_process bin
@@ -117,12 +120,12 @@ module Bosh::Monitor::Plugins
         status = @wait_thr.value
         unless status.success?
           @errback.each do |errback|
-            errback.call
+            errback.call(nil)
           end
         end
       rescue => e
         @errback.each do |errback|
-          errback.call
+          errback.call(e)
         end
       ensure
         @stdin.close if @stdin
