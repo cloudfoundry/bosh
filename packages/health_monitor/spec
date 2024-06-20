@@ -7,3 +7,6 @@ files:
 - bosh-monitor/**/*
 - vendor/cache/*.gem
 - vendor/cache/extensions/**
+
+excluded_files:
+- vendor/cache/{bundle-audit,bundler-audit,coderay}-*.gem # test dependency with GPL license
