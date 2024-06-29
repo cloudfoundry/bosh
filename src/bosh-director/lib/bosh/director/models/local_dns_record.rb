@@ -3,7 +3,9 @@ module Bosh::Director::Models
     many_to_one :instance
 
     def self.insert_tombstone
-      create(:ip => "#{SecureRandom.uuid}-tombstone")
+      tombstone_record = create(:ip => "#{SecureRandom.uuid}-tombstone")
+      where{id < tombstone_record.id}.where(Sequel.like(:ip, '%-tombstone')).delete
+      tombstone_record
     end
 
     def links=(value)
