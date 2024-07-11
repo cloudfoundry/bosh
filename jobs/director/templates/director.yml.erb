@@ -152,6 +152,11 @@ params['scheduled_jobs'] << {
 }
 
 params['scheduled_jobs'] << {
+  'command' => 'ScheduledDnsTombstoneCleanup',
+  'schedule' => '0 0 0 * * * UTC'
+}
+
+params['scheduled_jobs'] << {
   'command' => 'ScheduledTasksCleanup',
   'schedule' => p('director.tasks_cleanup_schedule')
 }

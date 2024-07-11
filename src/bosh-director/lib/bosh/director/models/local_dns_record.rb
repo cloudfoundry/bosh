@@ -3,9 +3,13 @@ module Bosh::Director::Models
     many_to_one :instance
 
     def self.insert_tombstone
-      tombstone_record = create(:ip => "#{SecureRandom.uuid}-tombstone")
-      where{id < tombstone_record.id}.where(Sequel.like(:ip, '%-tombstone')).delete
-      tombstone_record
+      create(:ip => "#{SecureRandom.uuid}-tombstone")
+    end
+
+    def self.prune_tombstones
+      max_id = max(:id)
+      return 0 unless max_id
+      where{id < max_id}.where(Sequel.like(:ip, '%-tombstone')).delete
     end
 
     def links=(value)
