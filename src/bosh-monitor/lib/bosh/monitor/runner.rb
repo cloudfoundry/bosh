@@ -21,12 +21,12 @@ module Bosh::Monitor
       @logger.info('HealthMonitor starting...')
 
       Sync do
+        start_http_server
         connect_to_mbus
         @director_monitor = DirectorMonitor.new(Bhm)
         @director_monitor.subscribe
         @instance_manager.setup_events
         setup_timers
-        start_http_server
         update_resurrection_config
         @logger.info("BOSH HealthMonitor #{Bhm::VERSION} is running...")
       rescue => e
@@ -177,19 +177,7 @@ module Bosh::Monitor
     end
 
     def fetch_deployments
-      deployments = @director.deployments
-
-      @instance_manager.sync_deployments(deployments)
-
-      deployments.each do |deployment|
-        deployment_name = deployment['name']
-
-        @logger.info("Found deployment '#{deployment_name}'")
-
-        @logger.debug("Fetching instances information for '#{deployment_name}'...")
-        instances_data = @director.get_deployment_instances(deployment_name)
-        @instance_manager.sync_deployment_state(deployment, instances_data)
-      end
+      @instance_manager.fetch_deployments(@director)
     rescue Bhm::DirectorError => e
       log_exception(e)
       alert_director_error(e.message)

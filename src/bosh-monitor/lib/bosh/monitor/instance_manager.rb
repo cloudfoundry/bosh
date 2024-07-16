@@ -3,6 +3,7 @@ module Bosh::Monitor
     attr_reader :heartbeats_received
     attr_reader :alerts_received
     attr_reader :alerts_processed
+    attr_reader :director_initial_deployment_sync_done
 
     attr_accessor :processor
 
@@ -16,8 +17,26 @@ module Bosh::Monitor
       @heartbeats_received = 0
       @alerts_received = 0
       @alerts_processed = 0
+      @director_initial_deployment_sync_done = false
 
       @processor = event_processor
+    end
+
+    def fetch_deployments(director)
+      deployments = director.deployments
+
+      @instance_manager.sync_deployments(deployments)
+
+      deployments.each do |deployment|
+        deployment_name = deployment['name']
+
+        @logger.info("Found deployment '#{deployment_name}'")
+
+        @logger.debug("Fetching instances information for '#{deployment_name}'...")
+        instances_data = director.get_deployment_instances(deployment_name)
+        @instance_manager.sync_deployment_state(deployment, instances_data)
+      end
+      @director_initial_deployment_sync_done = true
     end
 
     # Get a hash of agent id -> agent object for all agents associated with the deployment
