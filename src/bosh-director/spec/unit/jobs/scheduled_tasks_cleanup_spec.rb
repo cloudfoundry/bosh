@@ -39,9 +39,9 @@ module Bosh::Director
           expect(task_remover).to receive(:remove).with('update_stemcell').and_return(1)
 
           output = subject.perform
-          expect(output).to contain("Deleted tasks and logs for\n")
-          expect(output).to contain("1 task(s) of type 'snapshot_deployment'\n")
-          expect(output).to contain("1 task(s) of type 'update_stemcell'\n")
+          expect(output).to include("Deleted tasks and logs for\n")
+          expect(output).to include("1 task(s) of type 'snapshot_deployment'\n")
+          expect(output).to include("1 task(s) of type 'update_stemcell'\n")
           expect(output).to match(/Marked orphaned tasks with ids: \[(9, 13|13, 9)\] as errored. They do not have a worker job backing them/)
 
           Models::Task.select.where(id: [9, 13]).each do |task|
