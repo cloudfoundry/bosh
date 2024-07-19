@@ -65,12 +65,25 @@ describe Bosh::Monitor::ApiController do
     end
     before do
       allow(Bosh::Monitor.instance_manager).to receive(:unresponsive_agents).and_return(unresponsive_agents)
+      allow(Bosh::Monitor.instance_manager).to receive(:director_initial_deployment_sync_done).and_return(true)
     end
 
     it 'renders the unresponsive agents' do
       get '/unresponsive_agents'
       expect(last_response.status).to eq(200)
       expect(last_response.body).to eq(JSON.generate(unresponsive_agents))
+    end
+
+    context 'When director initial deployment sync has not completed' do
+      before do
+        allow(Bosh::Monitor.instance_manager).to receive(:director_initial_deployment_sync_done).and_return(false)
+      end
+
+      it 'returns 503 when /unresponsive_agents is requested' do
+        get '/unresponsive_agents'
+        expect(last_response.status).to eq(503)
+      end
+
     end
   end
 end

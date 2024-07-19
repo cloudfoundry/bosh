@@ -34,7 +34,11 @@ module Bosh::Monitor
     end
 
     get '/unresponsive_agents' do
-      JSON.generate(@instance_manager.unresponsive_agents)
+      if @instance_manager.director_initial_deployment_sync_done
+        JSON.generate(@instance_manager.unresponsive_agents)
+      else
+        status(503)
+      end
     end
   end
 end

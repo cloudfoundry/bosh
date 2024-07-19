@@ -64,9 +64,18 @@ describe 'notifying plugins' do
         reactor.with_timeout(5) do
           loop do
             sleep(0.1)
-            alert = get_alert
             called = true
-            break if alert&.attributes == payload
+
+            get_alerts.each do |a|
+              if a&.attributes == payload
+                alert = a
+                break;
+              end
+            end
+
+            if alert != nil
+              break
+            end
           end
         end
       end.wait
@@ -142,7 +151,12 @@ describe 'notifying plugins' do
   end
 
   def get_alert
+    ret = get_alerts
+    ret.first if ret
+  end
+
+  def get_alerts
     dummy_plugin = Bosh::Monitor.event_processor.plugins[:alert].first
-    return dummy_plugin.events.first if dummy_plugin.events
+    return dummy_plugin.events if dummy_plugin.events
   end
 end
