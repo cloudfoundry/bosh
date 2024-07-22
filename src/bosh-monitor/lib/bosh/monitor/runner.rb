@@ -21,11 +21,11 @@ module Bosh::Monitor
       @logger.info('HealthMonitor starting...')
 
       Sync do
-        start_http_server
         connect_to_mbus
         @director_monitor = DirectorMonitor.new(Bhm)
         @director_monitor.subscribe
         @instance_manager.setup_events
+        start_http_server
         setup_timers
         update_resurrection_config
         @logger.info("BOSH HealthMonitor #{Bhm::VERSION} is running...")
