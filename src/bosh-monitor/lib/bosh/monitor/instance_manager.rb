@@ -25,7 +25,7 @@ module Bosh::Monitor
     def fetch_deployments(director)
       deployments = director.deployments
 
-      @instance_manager.sync_deployments(deployments)
+      sync_deployments(deployments)
 
       deployments.each do |deployment|
         deployment_name = deployment['name']
@@ -34,7 +34,7 @@ module Bosh::Monitor
 
         @logger.debug("Fetching instances information for '#{deployment_name}'...")
         instances_data = director.get_deployment_instances(deployment_name)
-        @instance_manager.sync_deployment_state(deployment, instances_data)
+        sync_deployment_state(deployment, instances_data)
       end
       @director_initial_deployment_sync_done = true
     end
