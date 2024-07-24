@@ -25,7 +25,7 @@ Logs are always helpful! Add logs to help explain your problem.
  - Infrastructure: [e.g. AWS, GCP, etc]
  - BOSH version [e.g. 266.7]
  - BOSH CLI version [e.g. 5.1.1]
- - Stemcell version [e.g. ubuntu-xenial/97.10]
+ - Stemcell version [e.g. ubuntu-<CODE-NAME>/<VERSION>]
  - ... other versions of releases being used (BOSH DNS, Credhub, UAA, BPM, etc)
 
 **Deployment info:**
