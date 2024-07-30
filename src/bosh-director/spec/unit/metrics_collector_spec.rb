@@ -2,19 +2,19 @@ require 'spec_helper'
 
 module Bosh
   module Director
-    describe MetricsCollector do
-      class FakeRufusScheduler
-        attr_reader :interval_duration
-        def interval(interval_duration, &blk)
-          @interval_duration = interval_duration
-          @blk = blk
-        end
-
-        def tick
-          @blk.call
-        end
+    class FakeRufusScheduler
+      attr_reader :interval_duration
+      def interval(interval_duration, &blk)
+        @interval_duration = interval_duration
+        @blk = blk
       end
 
+      def tick
+        @blk.call
+      end
+    end
+
+    describe MetricsCollector do
       let(:scheduler) { FakeRufusScheduler.new }
       let(:metrics_collector) { MetricsCollector.new(Config.load_hash(SpecHelper.spec_get_director_config)) }
       let(:resurrector_manager) { instance_double(Api::ResurrectorManager) }
