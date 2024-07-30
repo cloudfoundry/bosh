@@ -581,7 +581,7 @@ module Bosh::Director
             it 'will not raise an error' do
               expect {
                 subject.get(deployment_name, ig_name, keep_alive, instance_slugs)
-              }.not_to raise_error(RunErrandError)
+              }.to(raise_error { |e| expect(e).not_to be_an_instance_of(RunErrandError) })
             end
           end
         end
