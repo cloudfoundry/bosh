@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'netaddr'
+require 'ipaddr'
 
 module Bosh::Director::DeploymentPlan
   describe IpRepo do
@@ -57,7 +57,7 @@ module Bosh::Director::DeploymentPlan
     before { fake_job }
 
     def cidr_ip(ip)
-      NetAddr::CIDR.create(ip).to_i
+      IPAddr.new(ip).to_i
     end
 
     context :add do

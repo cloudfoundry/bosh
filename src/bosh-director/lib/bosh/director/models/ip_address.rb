@@ -1,5 +1,3 @@
-require 'netaddr'
-
 module Bosh::Director::Models
   class IpAddress < Sequel::Model(Bosh::Director::Config.db)
     many_to_one :instance
@@ -22,13 +20,15 @@ module Bosh::Director::Models
     end
 
     def info
-      instance_info = "#{instance.deployment.name}.#{instance.job}/#{instance.index}"
-      formatted_ip = NetAddr::CIDR.create(address_str.to_i).ip
-      "#{instance_info} - #{network_name} - #{formatted_ip} (#{type})"
+      [
+        "#{instance.deployment.name}.#{instance.job}/#{instance.index}",
+        network_name,
+        "#{Bosh::Director::IpAddrOrCidr.new(address_str.to_i)} (#{type})"
+      ].join(' - ')
     end
 
     def formatted_ip
-      NetAddr::CIDR.create(address).ip
+      Bosh::Director::IpAddrOrCidr.new(address).to_s
     end
 
     def type

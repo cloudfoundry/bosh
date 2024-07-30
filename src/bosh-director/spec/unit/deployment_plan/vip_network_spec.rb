@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'netaddr'
+require 'ipaddr'
 
 describe Bosh::Director::DeploymentPlan::VipNetwork do
   include Bosh::Director::IpUtil
@@ -104,7 +104,7 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
 
     it 'returns the availability zones associated with the given ip' do
       network = BD::DeploymentPlan::VipNetwork.parse(network_spec, azs, logger)
-      az = network.find_az_names_for_ip(NetAddr::CIDR.create('69.69.69.69.').to_i)
+      az = network.find_az_names_for_ip(IPAddr.new('69.69.69.69').to_i)
       expect(az).to include('z1')
     end
   end

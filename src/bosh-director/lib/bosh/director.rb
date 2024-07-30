@@ -17,7 +17,6 @@ require 'tmpdir'
 require 'yaml'
 require 'time'
 require 'zlib'
-require 'ipaddr'
 
 require 'common/exec'
 require 'bosh/template/evaluation_context'

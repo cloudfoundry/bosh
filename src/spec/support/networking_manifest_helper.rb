@@ -26,7 +26,7 @@ module Bosh::Spec
       range_string = opts.fetch(:range, '192.168.1.0/24')
 
       range_ip_addr = IPAddr.new(range_string)
-      ip_range = range_ip_addr.to_range.to_a
+      ip_range = range_ip_addr.to_range.to_a.map(&:to_string)
       ip_range_shift = opts.fetch(:shift_ip_range_by, 0)
       available_ips = opts.fetch(:available_ips)
       raise "not enough IPs, don't be so greedy" if available_ips > ip_range.size

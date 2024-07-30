@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'netaddr'
+require 'ipaddr'
 
 module Bosh::Director::DeploymentPlan
   describe InstanceGroupNetworksParser do
@@ -91,7 +91,7 @@ module Bosh::Director::DeploymentPlan
     RSpec::Matchers.define :be_an_instance_group_network do |expected|
       match do |actual|
         actual.name == expected.name &&
-          actual.static_ips == expected.static_ips.map { |ip_to_i| NetAddr::CIDR.create(ip_to_i) } &&
+          actual.static_ips == expected.static_ips.map { |ip_to_i| IPAddr.new(ip_to_i) } &&
           actual.deployment_network == expected.deployment_network
       end
     end

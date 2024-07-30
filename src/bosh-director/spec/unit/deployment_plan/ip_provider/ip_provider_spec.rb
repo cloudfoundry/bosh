@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'netaddr'
+require 'ipaddr'
 
 module Bosh::Director::DeploymentPlan
   describe IpProvider do
@@ -90,7 +90,7 @@ module Bosh::Director::DeploymentPlan
           allocate_dynamic_ip: ip,
         )
       end
-      let(:ip) { NetAddr::CIDR.create('1.1.1.1') }
+      let(:ip) { Bosh::Director::IpAddrOrCidr.new('1.1.1.1') }
       let(:ip_provider) { IpProvider.new(ip_repo, networks, logger) }
 
       describe :release do
@@ -279,7 +279,7 @@ module Bosh::Director::DeploymentPlan
                   reservation.instance_model.update(availability_zone: 'az-1')
 
                   ip_provider.reserve(reservation)
-                  expect(reservation.ip).to eq(NetAddr::CIDR.create('192.168.1.6').to_i)
+                  expect(reservation.ip).to eq(IPAddr.new('192.168.1.6').to_i)
                 end
 
                 context 'when that IP is now in the reserved range' do
@@ -290,7 +290,7 @@ module Bosh::Director::DeploymentPlan
 
                   it 'raises an error' do
                     reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, manual_network)
-                    reservation.resolve_ip(NetAddr::CIDR.create('192.168.1.11').to_i)
+                    reservation.resolve_ip(IPAddr.new('192.168.1.11').to_i)
                     expect do
                       ip_provider.reserve(reservation)
                     end.to raise_error Bosh::Director::NetworkReservationIpReserved,
@@ -469,7 +469,7 @@ module Bosh::Director::DeploymentPlan
 
               it 'adds the ip address to the ip repository' do
                 ip_provider.reserve(reservation)
-                expect(reservation.ip).to eq(NetAddr::CIDR.create('1.1.1.1').to_i)
+                expect(reservation.ip).to eq(IPAddr.new('1.1.1.1').to_i)
               end
             end
 
@@ -478,7 +478,7 @@ module Bosh::Director::DeploymentPlan
 
               it 'allocates an ip address for the reservation' do
                 ip_provider.reserve(reservation)
-                expect(reservation.ip).to eq(NetAddr::CIDR.create('1.1.1.1').to_i)
+                expect(reservation.ip).to eq(IPAddr.new('1.1.1.1').to_i)
               end
 
               context 'and there are no available vips' do

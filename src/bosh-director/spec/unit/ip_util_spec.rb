@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'netaddr'
+require 'ipaddr'
 
 describe Bosh::Director::IpUtil do
   include Bosh::Director::IpUtil
@@ -14,7 +14,7 @@ describe Bosh::Director::IpUtil do
     it 'should handle single ip' do
       counter = 0
       ip_util_includer.each_ip('1.2.3.4') do |ip|
-        expect(ip).to eql(NetAddr::CIDR.create('1.2.3.4').to_i)
+        expect(ip).to eql(IPAddr.new('1.2.3.4').to_i)
         counter += 1
       end
       expect(counter).to eq(1)
@@ -23,7 +23,7 @@ describe Bosh::Director::IpUtil do
     it 'should handle a range' do
       counter = 0
       ip_util_includer.each_ip('1.0.0.0/24') do |ip|
-        expect(ip).to eql(NetAddr::CIDR.create('1.0.0.0').to_i + counter)
+        expect(ip).to eql(IPAddr.new('1.0.0.0').to_i + counter)
         counter += 1
       end
       expect(counter).to eq(256)
@@ -32,20 +32,20 @@ describe Bosh::Director::IpUtil do
     it 'should handle a differently formatted range' do
       counter = 0
       ip_util_includer.each_ip('1.0.0.0 - 1.0.1.0') do |ip|
-        expect(ip).to eql(NetAddr::CIDR.create('1.0.0.0').to_i + counter)
+        expect(ip).to eql(IPAddr.new('1.0.0.0').to_i + counter)
         counter += 1
       end
       expect(counter).to eq(257)
     end
 
     it 'should not accept invalid input' do
-      expect { ip_util_includer.each_ip('1.2.4') }.to raise_error(Bosh::Director::NetworkInvalidIpRangeFormat, /invalid \(IPv4 requires \(4\) octets\)/)
+      expect { ip_util_includer.each_ip('1.2.4') }.to raise_error(Bosh::Director::NetworkInvalidIpRangeFormat, /invalid address/)
     end
 
     it 'should ignore nil values' do
       counter = 0
       ip_util_includer.each_ip(nil) do |ip|
-        expect(ip).to eql(NetAddr::CIDR.create('1.2.3.4').to_i)
+        expect(ip).to eql(IPAddr.new('1.2.3.4').to_i)
         counter += 1
       end
       expect(counter).to eq(0)
@@ -58,7 +58,7 @@ describe Bosh::Director::IpUtil do
                                                       "Invalid IP range format: #{range}"
       end
 
-      it 'should raise NetAddr::ValidationError' do
+      it 'should raise Bosh::Director::NetworkInvalidIpRangeFormat' do
         range = '192.168.1.1-192.168.1.1/25'
         expect { ip_util_includer.each_ip(range) }.to raise_error Bosh::Director::NetworkInvalidIpRangeFormat,
                                                          "Invalid IP range format: #{range}"

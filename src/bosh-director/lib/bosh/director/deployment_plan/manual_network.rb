@@ -1,5 +1,3 @@
-require 'netaddr'
-
 module Bosh::Director
   module DeploymentPlan
     ##
@@ -48,15 +46,15 @@ module Bosh::Director
                 "Can't generate network settings without an IP"
         end
 
-        ip = ip_to_netaddr(reservation.ip)
+        ip_or_cidr = Bosh::Director::IpAddrOrCidr.new(reservation.ip)
         subnet = find_subnet_containing(reservation.ip)
         unless subnet
-          raise NetworkReservationInvalidIp, "Provided IP '#{ip}' does not belong to any subnet"
+          raise NetworkReservationInvalidIp, "Provided IP '#{ip_or_cidr}' does not belong to any subnet"
         end
 
         config = {
           "type" => "manual",
-          "ip" => ip.ip,
+          "ip" => ip_or_cidr.to_s,
           "netmask" => subnet.netmask,
           "cloud_properties" => subnet.cloud_properties
         }
@@ -66,7 +64,7 @@ module Bosh::Director
         end
 
         config["dns"] = subnet.dns if subnet.dns
-        config["gateway"] = subnet.gateway.ip if subnet.gateway
+        config["gateway"] = subnet.gateway.to_s if subnet.gateway
         config
       end
 
@@ -86,10 +84,10 @@ module Bosh::Director
         true
       end
 
-      # @param [Integer, NetAddr::CIDR, String] ip
+      # @param [Integer, IPAddr, String] ip
       # @yield the subnet that contains the IP.
       def find_subnet_containing(ip)
-        @subnets.find { |subnet| subnet.range.contains?(ip) }
+        @subnets.find { |subnet| subnet.range.include?(ip) }
       end
 
       private

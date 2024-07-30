@@ -50,7 +50,7 @@ module Bosh::Director::DeploymentPlan
         retry
       end
 
-      @logger.debug("Allocated dynamic IP '#{ip_address.ip}' for #{reservation.network.name}")
+      @logger.debug("Allocated dynamic IP '#{ip_address}' for #{reservation.network.name}")
       ip_address.to_i
     end
 
@@ -68,7 +68,7 @@ module Bosh::Director::DeploymentPlan
         retry
       end
 
-      @logger.debug("Allocated vip IP '#{ip_address.ip}' for #{reservation.network.name}")
+      @logger.debug("Allocated vip IP '#{ip_address}' for #{reservation.network.name}")
       ip_address.to_i
     end
 
@@ -77,20 +77,16 @@ module Bosh::Director::DeploymentPlan
     def try_to_allocate_dynamic_ip(reservation, subnet)
       addresses_in_use = Set.new(all_ip_addresses)
 
-      first_range_address = subnet.range.first(Objectify: true).to_i - 1
+      first_range_address = subnet.range.to_range.first.to_i - 1
       addresses_we_cant_allocate = addresses_in_use
       addresses_we_cant_allocate << first_range_address
 
       addresses_we_cant_allocate.merge(subnet.restricted_ips.to_a) unless subnet.restricted_ips.empty?
       addresses_we_cant_allocate.merge(subnet.static_ips.to_a) unless subnet.static_ips.empty?
       addr = find_first_available_address(addresses_we_cant_allocate, first_range_address)
-      if subnet.range.version == 6
-        ip_address = NetAddr::CIDR.create(addr, Version: 6)
-      else
-        ip_address = NetAddr::CIDR.create(addr, Version: 4)
-      end
+      ip_address = Bosh::Director::IpAddrOrCidr.new(addr)
 
-      unless subnet.range == ip_address || subnet.range.contains?(ip_address)
+      unless subnet.range == ip_address || subnet.range.include?(ip_address)
         raise NoMoreIPsAvailableAndStopRetrying
       end
 
@@ -115,7 +111,7 @@ module Bosh::Director::DeploymentPlan
 
       raise NoMoreIPsAvailableAndStopRetrying if available_ips.empty?
 
-      ip_address = NetAddr::CIDR.create(available_ips.first, Version: 4)
+      ip_address = Bosh::Director::IpAddrOrCidr.new(available_ips.first)
 
       save_ip(ip_address, reservation, false)
 

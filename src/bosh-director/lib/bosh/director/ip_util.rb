@@ -1,5 +1,3 @@
-require 'netaddr'
-
 module Bosh::Director
   module IpUtil
     def each_ip(range_string_or_strings)
@@ -8,35 +6,26 @@ module Bosh::Director
           yield ip
         end
       end
-    rescue ArgumentError, NetAddr::ValidationError => e
+    rescue ArgumentError => e
       raise NetworkInvalidIpRangeFormat, e.message
     end
 
     def ip_to_i(ip)
-      unless ip.kind_of?(Integer)
-        unless ip.kind_of?(NetAddr::CIDR)
-          ip = NetAddr::CIDR.create(ip)
-        end
-        ip = ip.to_i
-      end
-      ip
+      to_ipaddr(ip).to_i
     end
 
-    def ip_to_netaddr(ip)
-      unless ip.kind_of?(NetAddr::CIDR)
-        ip = NetAddr::CIDR.create(ip)
-      end
-      ip
+    def to_ipaddr(ip)
+      Bosh::Director::IpAddrOrCidr.new(ip)
     end
 
     # @param [Integer] ip Integer IP representation
     # @return [String] Human-readable IP representation
     def format_ip(ip)
-      ip_to_netaddr(ip).ip
+      to_ipaddr(ip).to_s
     end
 
     def ip_address?(ip)
-      ip_address = IPAddr.new(ip)
+      ip_address = Bosh::Director::IpAddrOrCidr.new(ip)
 
       ip_address.ipv4? || ip_address.ipv6?
     rescue
@@ -53,15 +42,15 @@ module Bosh::Director
       end
 
       if parts.size == 1
-        cidr_range = NetAddr::CIDR.create(parts[0])
-        first_ip = cidr_range.first(:Objectify => true)
-        last_ip = cidr_range.last(:Objectify => true)
+        cidr_range = Bosh::Director::IpAddrOrCidr.new(parts[0]).to_range
+        first_ip = cidr_range.first
+        last_ip = cidr_range.last
 
       elsif parts.size == 2
-        first_ip = NetAddr::CIDR.create(parts[0])
-        last_ip = NetAddr::CIDR.create(parts[1])
+        first_ip = Bosh::Director::IpAddrOrCidr.new(parts[0])
+        last_ip = Bosh::Director::IpAddrOrCidr.new(parts[1])
 
-        unless first_ip.size == 1 && last_ip.size == 1
+        unless first_ip.count == 1 && last_ip.count == 1
           raise NetworkInvalidIpRangeFormat, "Invalid IP range format: #{range_string}"
         end
       end

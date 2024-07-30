@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'netaddr'
 
 module Bosh::Director
   module DeploymentPlan::NetworkParser
@@ -17,7 +16,7 @@ module Bosh::Director
       it "should raise an error if a DNS server isn't specified with as an IP" do
         expect {
           name_servers_parser.parse('network', {'dns' => %w[1.2.3.4 foo.bar]})
-        }.to raise_error(NetAddr::ValidationError, /foo.bar is invalid \(contains invalid characters\)./)
+        }.to raise_error(/invalid address/)
       end
 
       it 'returns an array containing the nameserver address' do

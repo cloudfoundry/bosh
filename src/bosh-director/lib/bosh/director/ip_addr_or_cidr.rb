@@ -3,15 +3,15 @@ require 'ipaddr'
 module Bosh
   module Director
     class IpAddrOrCidr
-      delegate :==, :ipv4?, :ipv6?, :to_i, :to_string, to: :@ipaddr
+      delegate :==, :include?, :ipv4?, :ipv6?, :netmask, :to_i, :to_range, :to_string, to: :@ipaddr
       alias :to_s :to_string
 
       def initialize(ip_or_cidr)
         @ipaddr =
-          if ip_or_cidr.kind_of?(Integer)
+          if ip_or_cidr.kind_of?(IpAddrOrCidr)
+            IPAddr.new(ip_or_cidr.to_s)
+          elsif ip_or_cidr.kind_of?(Integer)
             IPAddr.new(ip_or_cidr, inet_type_for(ip_or_cidr))
-          elsif ip_or_cidr.respond_to?(:ip)
-            IPAddr.new(ip_or_cidr.ip)
           else
             IPAddr.new(ip_or_cidr)
           end
@@ -19,6 +19,10 @@ module Bosh
 
       def count
         (@ipaddr.to_range.last.to_i - @ipaddr.to_range.first.to_i) + 1
+      end
+
+      def to_cidr_s
+        "#{@ipaddr}/#{@ipaddr.prefix}"
       end
 
       private

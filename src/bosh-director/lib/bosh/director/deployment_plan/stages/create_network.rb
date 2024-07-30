@@ -1,5 +1,3 @@
-require 'netaddr'
-
 module Bosh::Director
   module DeploymentPlan
     module Stages
@@ -122,8 +120,8 @@ module Bosh::Director
           network_address_properties = network_create_results[1]
           network_cloud_properties = network_create_results[2]
 
-          range = subnet.range ? subnet.range.to_s : network_address_properties['range']
-          gw = subnet.gateway ? subnet.gateway.ip : network_address_properties['gateway']
+          range = subnet.range ? subnet.range.to_cidr_s : network_address_properties['range']
+          gw = subnet.gateway ? subnet.gateway : network_address_properties['gateway']
 
           reserved_ips = network_address_properties.fetch('reserved', [])
           rollback[network_cid] = cpi
@@ -143,31 +141,29 @@ module Bosh::Director
         def fetch_cpi_input(subnet, az_cloud_props)
           az_cloud_props ||= {}
           cpi_input = {
-            'type': 'manual',
-            'cloud_properties': {},
+            'type' => 'manual',
+            'cloud_properties' => {},
           }
           cpi_input['cloud_properties'] = az_cloud_props.merge(subnet.cloud_properties) if subnet.cloud_properties
-          cpi_input['range'] = subnet.range.to_s if subnet.range
-          cpi_input['gateway'] = subnet.gateway.ip if subnet.gateway
+          cpi_input['range'] = subnet.range.to_cidr_s if subnet.range
+          cpi_input['gateway'] = subnet.gateway.to_s if subnet.gateway
           cpi_input['netmask_bits'] = subnet.netmask_bits if subnet.netmask_bits
           cpi_input
         end
 
         def populate_subnet_properties(subnet, db_subnet)
           subnet.cloud_properties = JSON.parse(db_subnet.cloud_properties)
-          subnet.range = NetAddr::CIDR.create(db_subnet.range)
-          subnet.gateway = NetAddr::CIDR.create(db_subnet.gateway)
-          subnet.netmask = subnet.range.wildcard_mask
-          network_id = subnet.range.network(Objectify: true)
-          broadcast = subnet.range.version == 6 ? subnet.range.last(Objectify: true) : subnet.range.broadcast(Objectify: true)
+          subnet.range = Bosh::Director::IpAddrOrCidr.new(db_subnet.range)
+          subnet.gateway = Bosh::Director::IpAddrOrCidr.new(db_subnet.gateway)
+          subnet.netmask = subnet.range.netmask
+
           subnet.restricted_ips.add(subnet.gateway.to_i) if subnet.gateway
-          subnet.restricted_ips.add(network_id.to_i)
-          subnet.restricted_ips.add(broadcast.to_i)
+          subnet.restricted_ips.add(subnet.range.to_i)
+          subnet.restricted_ips.add(subnet.range.to_range.last.to_i)
           each_ip(JSON.parse(db_subnet.reserved)) do |ip|
-            unless subnet.range.contains?(ip)
+            unless subnet.range.include?(ip)
               raise NetworkReservedIpOutOfRange,
-                    "Reserved IP '#{format_ip(ip)}' is out of " \
-                    "subnet '#{subnet.name}' range"
+                    "Reserved IP '#{to_ipaddr(ip)}' is out of subnet '#{subnet.name}' range"
             end
             subnet.restricted_ips.add(ip)
           end
