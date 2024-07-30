@@ -5,7 +5,6 @@ image_resource:
   type: docker-image
   source:
     repository: ubuntu
-    tag: xenial
 
 inputs:
   - name: bosh-src
