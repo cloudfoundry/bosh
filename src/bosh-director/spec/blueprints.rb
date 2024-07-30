@@ -1,4 +1,5 @@
 require_relative '../../spec/support/deployments'
+require 'netaddr'
 
 Sham.define do
   name             { |index| "name-#{index}" }

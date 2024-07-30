@@ -1,4 +1,5 @@
 require File.expand_path('../../../spec_helper', __FILE__)
+require 'netaddr'
 
 module Bosh::Director
   describe Jobs::VmState do

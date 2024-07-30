@@ -1,3 +1,5 @@
+require 'netaddr'
+
 module Bosh::Director::Models
   class IpAddress < Sequel::Model(Bosh::Director::Config.db)
     many_to_one :instance

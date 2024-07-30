@@ -1,3 +1,5 @@
+require 'netaddr'
+
 module Bosh::Spec
   class NetworkingManifest
     def self.deployment_manifest(opts={})

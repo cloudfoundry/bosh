@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'netaddr'
 
 describe Bosh::Director::IpUtil do
   include Bosh::Director::IpUtil

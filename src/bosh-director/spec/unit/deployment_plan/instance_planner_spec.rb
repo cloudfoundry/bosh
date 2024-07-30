@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'json'
+require 'netaddr'
 
 describe 'BD::DeploymentPlan::InstancePlanner' do
   include BD::IpUtil

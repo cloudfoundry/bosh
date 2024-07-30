@@ -1,3 +1,5 @@
+require 'netaddr'
+
 module Bosh::Director
   module IpUtil
     def each_ip(range_string_or_strings)

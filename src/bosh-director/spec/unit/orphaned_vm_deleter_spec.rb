@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'netaddr'
 
 module Bosh
   module Director

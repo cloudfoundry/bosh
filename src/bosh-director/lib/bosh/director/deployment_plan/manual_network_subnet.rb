@@ -1,3 +1,5 @@
+require 'netaddr'
+
 module Bosh::Director
   module DeploymentPlan
     class ManualNetworkSubnet < Subnet

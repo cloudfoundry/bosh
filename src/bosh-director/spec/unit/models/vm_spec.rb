@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'bosh/director/models/vm'
+require 'netaddr'
 
 module Bosh::Director::Models
   describe Vm do

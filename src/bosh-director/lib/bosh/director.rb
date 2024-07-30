@@ -24,7 +24,6 @@ require 'bosh/template/evaluation_context'
 require 'common/version/release_version_list'
 
 require 'bcrypt'
-require 'netaddr'
 require 'delayed_job'
 require 'sequel'
 require 'sinatra/base'

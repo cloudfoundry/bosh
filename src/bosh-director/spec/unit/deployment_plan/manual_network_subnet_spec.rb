@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'unit/deployment_plan/subnet_spec'
+require 'netaddr'
 
 describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
   before { @network = instance_double('Bosh::Director::DeploymentPlan::Network', :name => 'net_a') }

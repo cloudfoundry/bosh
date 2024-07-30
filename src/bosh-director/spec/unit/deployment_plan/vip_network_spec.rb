@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'netaddr'
 
 describe Bosh::Director::DeploymentPlan::VipNetwork do
   include Bosh::Director::IpUtil

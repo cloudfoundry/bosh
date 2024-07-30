@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'netaddr'
 
 RSpec::Matchers.define :log_dns_change do |expected|
   match do |actual|
