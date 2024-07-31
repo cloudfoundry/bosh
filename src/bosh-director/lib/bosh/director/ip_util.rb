@@ -68,23 +68,5 @@ module Bosh::Director
 
       (first_ip.to_i .. last_ip.to_i)
     end
-
-    class CIDRIP
-      def initialize(ip)
-        if ip.kind_of?(NetAddr::CIDR)
-          @cidr = ip
-        else
-          @cidr = NetAddr::CIDR.create(ip)
-        end
-      end
-
-      def to_i
-        @cidr.to_i
-      end
-
-      def to_s
-        @cidr.ip.to_s
-      end
-    end
   end
 end

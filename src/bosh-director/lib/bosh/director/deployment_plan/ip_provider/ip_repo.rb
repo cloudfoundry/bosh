@@ -9,32 +9,32 @@ module Bosh::Director::DeploymentPlan
     end
 
     def delete(ip)
-      cidr_ip = CIDRIP.new(ip)
+      ip_or_cidr = Bosh::Director::IpAddrOrCidr.new(ip)
 
-      ip_address = Bosh::Director::Models::IpAddress.first(address_str: cidr_ip.to_i.to_s)
+      ip_address = Bosh::Director::Models::IpAddress.first(address_str: ip_or_cidr.to_i.to_s)
 
       if ip_address
-        @logger.debug("Releasing ip '#{cidr_ip}'")
+        @logger.debug("Releasing ip '#{ip_or_cidr}'")
         ip_address.destroy
       else
-        @logger.debug("Skipping releasing ip '#{cidr_ip}': not reserved")
+        @logger.debug("Skipping releasing ip '#{ip_or_cidr}': not reserved")
       end
     end
 
     def add(reservation)
-      cidr_ip = CIDRIP.new(reservation.ip)
+      ip_or_cidr = Bosh::Director::IpAddrOrCidr.new(reservation.ip)
 
-      reservation_type = reservation.network.ip_type(cidr_ip)
+      reservation_type = reservation.network.ip_type(ip_or_cidr)
 
       reserve_with_instance_validation(
         reservation.instance_model,
-        cidr_ip,
+        ip_or_cidr,
         reservation,
         reservation_type.eql?(:static),
       )
 
       reservation.resolve_type(reservation_type)
-      @logger.debug("Reserved ip '#{cidr_ip}' for #{reservation.network.name} as #{reservation_type}")
+      @logger.debug("Reserved ip '#{ip_or_cidr}' for #{reservation.network.name} as #{reservation_type}")
     end
 
     def allocate_dynamic_ip(reservation, subnet)
