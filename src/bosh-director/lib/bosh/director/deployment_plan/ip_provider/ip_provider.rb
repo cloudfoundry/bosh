@@ -71,12 +71,14 @@ module Bosh::Director
               @logger.debug("Reserving dynamic IP '#{format_ip(ip)}' for manual network '#{reservation.network.name}'")
               reservation.resolve_ip(ip)
               reservation.resolve_type(:dynamic)
-              return
+              break
             end
           end
 
-          raise NetworkReservationNotEnoughCapacity,
-            "Failed to reserve IP for '#{reservation.instance_model}' for manual network '#{reservation.network.name}': no more available"
+          if reservation.ip.nil?
+            raise NetworkReservationNotEnoughCapacity,
+              "Failed to reserve IP for '#{reservation.instance_model}' for manual network '#{reservation.network.name}': no more available"
+          end
         else
           ip_string = format_ip(reservation.ip)
           @logger.debug("Reserving #{reservation.desc} for manual network '#{reservation.network.name}'")
