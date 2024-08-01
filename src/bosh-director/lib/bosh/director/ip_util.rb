@@ -1,17 +1,13 @@
 module Bosh::Director
   module IpUtil
-    def each_ip(ranges, &block)
-      if ranges.kind_of?(Array)
-        ranges.each do |range|
-          process_range(range, &block)
+    def each_ip(range_string_or_strings)
+      [range_string_or_strings].flatten.compact.each do |range_string|
+        string_to_range(range_string).each do |ip|
+          yield ip
         end
-      elsif ranges.kind_of?(String)
-        process_range(ranges, &block)
-      elsif !ranges.nil?
-        raise ArgumentError,
-              "Unknown range type, must be list or a string: " +
-              "#{ranges.class} #{ranges}"
       end
+    rescue ArgumentError, NetAddr::ValidationError => e
+      raise NetworkInvalidIpRangeFormat, e.message
     end
 
     def ip_to_i(ip)
@@ -47,32 +43,30 @@ module Bosh::Director
 
     private
 
-    def process_range(range)
-      parts = range.split("-")
-      parts.each { |part| part.strip! }
+    def string_to_range(range_string)
+      parts = range_string.split('-').map { |part| part.strip }
+
+      unless [1,2].include?(parts.length)
+        raise NetworkInvalidIpRangeFormat, "Invalid IP range format: #{range_string}"
+      end
+
       if parts.size == 1
-        range = NetAddr::CIDR.create(parts[0])
-        first_ip = range.first(:Objectify => true).to_i
-        last_ip = range.last(:Objectify => true).to_i
-        (first_ip .. last_ip).each do |ip|
-          yield ip
-        end
+        cidr_range = NetAddr::CIDR.create(parts[0])
+        first_ip = cidr_range.first(:Objectify => true)
+        last_ip = cidr_range.last(:Objectify => true)
+
       elsif parts.size == 2
         first_ip = NetAddr::CIDR.create(parts[0])
         last_ip = NetAddr::CIDR.create(parts[1])
+
         unless first_ip.size == 1 && last_ip.size == 1
-          raise NetworkInvalidIpRangeFormat, "Invalid IP range format: #{range}"
+          raise NetworkInvalidIpRangeFormat, "Invalid IP range format: #{range_string}"
         end
-        (first_ip.to_i .. last_ip.to_i).each do |ip|
-          yield ip
-        end
-      else
-        raise NetworkInvalidIpRangeFormat,
-          "Invalid IP range format: #{range}"
       end
-    rescue ArgumentError, NetAddr::ValidationError => e
-      raise NetworkInvalidIpRangeFormat, e.message
+
+      (first_ip.to_i .. last_ip.to_i)
     end
+
     class CIDRIP
       def initialize(ip)
         if ip.kind_of?(NetAddr::CIDR)
