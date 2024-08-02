@@ -63,8 +63,6 @@ group :development, :test do
   gem 'rubocop'
   gem 'rubocop-git'
 
-  gem 'netaddr', '~>1.5.3.dev.1', git: 'https://github.com/dspinhirne/netaddr-rb', tag: '1.5.3'
-
   # for director
   gem 'machinist', '~>1.0'
   gem 'factory_bot', '~> 6.2'
