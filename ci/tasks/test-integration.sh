@@ -35,18 +35,16 @@ sql-mode="STRICT_TRANS_TABLES"
 skip-log-bin
 max_connections = 1024' >> /etc/mysql/my.cnf
 
-    if [ "$DB_TLS" = true ]; then
-      echo "....... DB TLS enabled ......."
+    echo "....... DB TLS enabled ......."
 
-      export MYSQLDIR=/var/lib/mysql
-      cp bosh-src/src/bosh-dev/assets/sandbox/database/database_server/private_key $MYSQLDIR/server-key.pem
-      cp bosh-src/src/bosh-dev/assets/sandbox/database/database_server/certificate.pem $MYSQLDIR/server-cert.pem
-      echo '
+    export MYSQLDIR=/var/lib/mysql
+    cp bosh-src/src/bosh-dev/assets/sandbox/database/database_server/private_key $MYSQLDIR/server-key.pem
+    cp bosh-src/src/bosh-dev/assets/sandbox/database/database_server/certificate.pem $MYSQLDIR/server-cert.pem
+    echo '
 ssl-cert=server-cert.pem
 ssl-key=server-key.pem
 require_secure_transport=ON
 max_allowed_packet=6M' >> /etc/mysql/my.cnf
-    fi
 
     service mysql start
     sleep 5
@@ -83,24 +81,22 @@ max_allowed_packet=6M' >> /etc/mysql/my.cnf
       echo "max_connections = 1024" >> $PGDATA/postgresql.conf
       echo "shared_buffers = 240MB" >> $PGDATA/postgresql.conf
 
-      if [ "$DB_TLS" = true ]; then
-        echo "....... DB TLS enabled ......."
-        cp bosh-src/src/bosh-dev/assets/sandbox/database/database_server/private_key $PGDATA/server.key
-        cp bosh-src/src/bosh-dev/assets/sandbox/database/database_server/certificate.pem $PGDATA/server.crt
-        chown postgres $PGDATA/server.key
-        chown postgres $PGDATA/server.crt
-        su postgres -c '
-          export PGDATA=/tmp/postgres/data
-          echo "ssl = on" >> $PGDATA/postgresql.conf
-          echo "client_encoding = 'UTF8'" >> $PGDATA/postgresql.conf
-          echo "hostssl all all 127.0.0.1/32 password" > $PGDATA/pg_hba.conf
-          echo "hostssl all all 0.0.0.0/32 password" >> $PGDATA/pg_hba.conf
-          echo "hostssl all all ::1/128 password" >> $PGDATA/pg_hba.conf
-          echo "hostssl all all localhost password" >> $PGDATA/pg_hba.conf
+      echo "....... DB TLS enabled ......."
+      cp bosh-src/src/bosh-dev/assets/sandbox/database/database_server/private_key $PGDATA/server.key
+      cp bosh-src/src/bosh-dev/assets/sandbox/database/database_server/certificate.pem $PGDATA/server.crt
+      chown postgres $PGDATA/server.key
+      chown postgres $PGDATA/server.crt
+      su postgres -c '
+        export PGDATA=/tmp/postgres/data
+        echo "ssl = on" >> $PGDATA/postgresql.conf
+        echo "client_encoding = 'UTF8'" >> $PGDATA/postgresql.conf
+        echo "hostssl all all 127.0.0.1/32 password" > $PGDATA/pg_hba.conf
+        echo "hostssl all all 0.0.0.0/32 password" >> $PGDATA/pg_hba.conf
+        echo "hostssl all all ::1/128 password" >> $PGDATA/pg_hba.conf
+        echo "hostssl all all localhost password" >> $PGDATA/pg_hba.conf
 
-          chmod 600 $PGDATA/server.*
-        '
-      fi
+        chmod 600 $PGDATA/server.*
+      '
 
       su postgres -c '
         export PATH=/usr/lib/postgresql/$DB_VERSION/bin:$PATH
@@ -134,7 +130,7 @@ pushd bosh-src/src
 
   bundle_exit_code=$?
 
-  if [[ "$DB" = "mysql" && "$DB_TLS" = true ]]; then
+  if [[ "$DB" = "mysql" ]]; then
     service mysql stop
   fi
 popd
