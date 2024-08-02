@@ -180,8 +180,7 @@ jobs:
         file: bosh-src/ci/tasks/test-integration.yml
         image: integration-postgres-15-image
         params:
-          DB:           postgresql
-          DB_TLS:       true
+          DB: postgresql
           DB_VERSION: 15
 
   - name: integration-db-tls-postgres-hotswap
@@ -203,10 +202,9 @@ jobs:
         file: bosh-src/ci/tasks/test-integration.yml
         image: integration-postgres-15-image
         params:
-          DB:           postgresql
-          DEFAULT_UPDATE_VM_STRATEGY: create-swap-delete
-          DB_TLS:       true
+          DB: postgresql
           DB_VERSION: 15
+          DEFAULT_UPDATE_VM_STRATEGY: create-swap-delete
 
   - name: integration-db-tls-mysql
     public: true
@@ -227,8 +225,7 @@ jobs:
         file: bosh-src/ci/tasks/test-integration.yml
         image: integration-mysql-8-0-image
         params:
-          DB:           mysql
-          DB_TLS:       true
+          DB: mysql
 
   - name: candidate-release
     plan:

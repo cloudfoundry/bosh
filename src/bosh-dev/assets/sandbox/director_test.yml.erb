@@ -27,10 +27,8 @@ db: &bosh_db
   port: <%= database.port %>
   user: <%= database.username %>
   password: <%= database.password %>
-
-  <% if database.tls_enabled %>
   tls:
-    enabled: <%= database.tls_enabled %>
+    enabled: true
     cert:
       ca: <%= database.ca_path %>
       certificate: "/not-used/path/in/integration/tests"
@@ -38,13 +36,6 @@ db: &bosh_db
     bosh_internal:
       ca_provided: true
       mutual_tls_enabled: false
-
-  <% else %>
-  # Failure to set `sslmode` will produce following error
-  # 'PG::Error: SSL error: decryption failed or bad record mac:'
-  sslmode: "disable"
-  <% end %>
-
   connection_options:
     max_connections: 32
     pool_timeout: 10
