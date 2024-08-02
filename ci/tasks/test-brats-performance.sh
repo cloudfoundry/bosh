@@ -7,7 +7,7 @@ src_dir="${script_dir}/../../.."
 
 export BOSH_DEPLOYMENT_PATH="/usr/local/bosh-deployment"
 
-source ${src_dir}/bosh-src/ci/dockerfiles/docker-cpi/start-bosh.sh
+source "${src_dir}/bosh-src/ci/dockerfiles/docker-cpi/start-bosh.sh"
 source /tmp/local-bosh/director/env
 
 bosh int /tmp/local-bosh/director/creds.yml --path /jumpbox_ssh/private_key > /tmp/jumpbox_ssh_key.pem
@@ -31,13 +31,13 @@ bosh -n update-cloud-config \
   -o "${src_dir}/bosh-src/ci/dockerfiles/docker-cpi/outer-cloud-config-ops.yml" \
   -v network=director_network
 
-bosh -n upload-stemcell $CANDIDATE_STEMCELL_TARBALL_PATH
+bosh -n upload-stemcell "${CANDIDATE_STEMCELL_TARBALL_PATH}"
 bosh upload-release /usr/local/bpm.tgz
 bosh upload-release "$(bosh int ${BOSH_DEPLOYMENT_PATH}/docker/cpi.yml --path /name=cpi/value/url)" \
   --sha1 "$(bosh int ${BOSH_DEPLOYMENT_PATH}/docker/cpi.yml --path /name=cpi/value/sha1)"
 bosh upload-release "$(bosh int ${BOSH_DEPLOYMENT_PATH}/jumpbox-user.yml --path /release=os-conf/value/url)" \
   --sha1 "$(bosh int ${BOSH_DEPLOYMENT_PATH}/jumpbox-user.yml --path /release=os-conf/value/sha1)"
 
-pushd ${src_dir}/bosh-src/src/go/src/github.com/cloudfoundry/bosh-release-acceptance-tests > /dev/null
+pushd "${src_dir}/bosh-src/src/brats" > /dev/null
   go run github.com/onsi/ginkgo/v2/ginkgo --timeout=24h -r --race --nodes 1 performance
 popd > /dev/null

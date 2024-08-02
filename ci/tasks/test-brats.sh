@@ -66,6 +66,4 @@ if [ -d database-metadata ]; then
   export GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY="$(jq -r .gcp_postgres_client_key database-metadata/metadata)"
 fi
 
-pushd bosh-src > /dev/null
-  scripts/test-brats
-popd > /dev/null
+bosh-src/scripts/test-brats

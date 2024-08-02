@@ -1,4 +1,4 @@
-module github.com/cloudfoundry/bosh-release-acceptance-tests
+module brats
 
 go 1.19
 

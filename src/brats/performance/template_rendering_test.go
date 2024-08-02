@@ -2,17 +2,18 @@ package performance_test
 
 import (
 	"fmt"
-	"github.com/onsi/gomega/gmeasure"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
-	bratsutils "github.com/cloudfoundry/bosh-release-acceptance-tests/brats-utils"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
+	"github.com/onsi/gomega/gmeasure"
+
+	"brats/utils"
 )
 
 const deploymentName = "cf"
@@ -23,12 +24,12 @@ var _ = Describe("Template Rendering", Serial, func() {
 	)
 
 	BeforeEach(func() {
-		bratsutils.StartInnerBosh(
-			fmt.Sprintf("-o %s", bratsutils.BoshDeploymentAssetPath("uaa.yml")),
-			fmt.Sprintf("-o %s", bratsutils.BoshDeploymentAssetPath("credhub.yml")),
+		utils.StartInnerBosh(
+			fmt.Sprintf("-o %s", utils.BoshDeploymentAssetPath("uaa.yml")),
+			fmt.Sprintf("-o %s", utils.BoshDeploymentAssetPath("credhub.yml")),
 		)
-		bratsutils.UploadStemcell(bratsutils.AssertEnvExists("CANDIDATE_STEMCELL_TARBALL_PATH"))
-		cfDeploymentPath = bratsutils.AssertEnvExists("CF_DEPLOYMENT_RELEASE_PATH")
+		utils.UploadStemcell(utils.AssertEnvExists("CANDIDATE_STEMCELL_TARBALL_PATH"))
+		cfDeploymentPath = utils.AssertEnvExists("CF_DEPLOYMENT_RELEASE_PATH")
 	})
 
 	It("deploys", func() {
@@ -38,8 +39,8 @@ var _ = Describe("Template Rendering", Serial, func() {
 
 		manifestPath := filepath.Join(cfDeploymentPath, "cf-deployment.yml")
 		compiledReleasesOpsFilePath := filepath.Join(cfDeploymentPath, "operations", "use-compiled-releases.yml")
-		templateRenderingOpsFile := bratsutils.AssetPath("template-rendering-ops-file.yml")
-		session := bratsutils.Bosh("deploy", "-n", "-d", deploymentName, manifestPath,
+		templateRenderingOpsFile := utils.AssetPath("template-rendering-ops-file.yml")
+		session := utils.Bosh("deploy", "-n", "-d", deploymentName, manifestPath,
 			"-o", compiledReleasesOpsFilePath,
 			"-o", templateRenderingOpsFile,
 			"-v", "diego_cell_instances=0",
@@ -53,7 +54,7 @@ var _ = Describe("Template Rendering", Serial, func() {
 		experiment.RecordDuration("initial_deploy_rendering_templates", renderingDuration)
 		stopwatch.Reset()
 
-		session = bratsutils.Bosh("deploy", "-n", "-d", deploymentName, manifestPath,
+		session = utils.Bosh("deploy", "-n", "-d", deploymentName, manifestPath,
 			"-o", compiledReleasesOpsFilePath,
 			"-o", templateRenderingOpsFile,
 			"-v", "diego_cell_instances=800",
