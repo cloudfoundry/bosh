@@ -17,7 +17,7 @@ update:
   update_watch_time: 1000-30000
 
 instance_groups:
-- name: test-brats
+- name: test-acceptance
   instances: 1
   azs: [z1]
   jobs:

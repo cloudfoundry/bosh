@@ -1,21 +1,22 @@
-package brats_test
+package acceptance_test
 
 import (
 	"os/exec"
 	"syscall"
 	"time"
 
-	bratsutils "github.com/cloudfoundry/bosh-release-acceptance-tests/brats-utils"
 	"github.com/creack/pty"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
+
+	"brats/utils"
 )
 
 var _ = Describe("director console", func() {
 	BeforeEach(func() {
-		bratsutils.StartInnerBosh()
+		utils.StartInnerBosh()
 	})
 
 	It("allows a user to launch the director console", func() {
@@ -23,7 +24,7 @@ var _ = Describe("director console", func() {
 		Expect(err).ShouldNot(HaveOccurred())
 		defer ptyF.Close()
 
-		consoleCmd := exec.Command(bratsutils.OuterBoshBinaryPath(), "-d", bratsutils.InnerBoshDirectorName(), "ssh", "bosh")
+		consoleCmd := exec.Command(utils.OuterBoshBinaryPath(), "-d", utils.InnerBoshDirectorName(), "ssh", "bosh")
 		consoleCmd.Stdin = ttyF
 		consoleCmd.Stdout = ttyF
 		consoleCmd.Stderr = ttyF
