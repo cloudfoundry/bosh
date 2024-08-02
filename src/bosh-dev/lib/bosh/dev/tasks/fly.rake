@@ -97,7 +97,6 @@ namespace :fly do
 
   def prepare_env(additional_env = {})
     env = {
-      DB_TLS: ENV.fetch('DB_TLS', true), # specs only ever use TLS, however this value needs to be set
       RUBY_VERSION: ENV['RUBY_VERSION'] || RUBY_VERSION,
     }
     env.merge!(additional_env)

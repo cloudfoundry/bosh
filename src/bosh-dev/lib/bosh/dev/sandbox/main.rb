@@ -66,7 +66,6 @@ module Bosh::Dev::Sandbox
     def self.from_env
       db_opts = {
         type: ENV['DB'] || 'postgresql',
-        tls_enabled: ENV['DB_TLS'] == 'true',
       }
       db_opts[:password] = ENV['DB_PASSWORD'] if ENV['DB_PASSWORD']
 
@@ -108,7 +107,7 @@ module Bosh::Dev::Sandbox
         ca_path: File.join(SANDBOX_ASSETS_DIR, 'database', 'rootCA.pem')
       }.merge(db_opts)
 
-      setup_database(@db_config, nil)
+      setup_database(@db_config)
 
       director_config_path = sandbox_path(DirectorService::DEFAULT_DIRECTOR_CONFIG)
       director_tmp_path = sandbox_path('boshdir')
@@ -342,13 +341,11 @@ module Bosh::Dev::Sandbox
       @agent_wait_timeout = options.fetch(:agent_wait_timeout, 600)
       @keep_unreachable_vms = options.fetch(:keep_unreachable_vms, false)
       @with_incorrect_nats_server_ca = options.fetch(:with_incorrect_nats_server_ca, false)
-      old_tls_enabled_value = @db_config[:tls_enabled]
-      @db_config[:tls_enabled] = options.fetch(:tls_enabled, ENV['DB_TLS'] == 'true')
       @dummy_cpi_api_version = options.fetch(:dummy_cpi_api_version, 1)
       @nats_url = "nats://localhost:#{nats_port}"
       @cpi.options['nats'] = @nats_url
 
-      setup_database(@db_config, old_tls_enabled_value)
+      setup_database(@db_config)
     end
 
     def certificate_path
@@ -513,14 +510,12 @@ module Bosh::Dev::Sandbox
       template.result(binding)
     end
 
-    def setup_database(db_config, old_tls_enabled_value)
-      if !@database || (db_config[:tls_enabled] != old_tls_enabled_value)
+    def setup_database(db_config)
+      unless @database
         if db_config[:type] == 'mysql'
           @database = Mysql.new(@name, Bosh::Core::Shell.new, @logger, db_config)
         else
-          postgres_options = db_config.dup
-
-          @database = Postgresql.new(@name, Bosh::Core::Shell.new, @logger, postgres_options)
+          @database = Postgresql.new(@name, Bosh::Core::Shell.new, @logger, db_config.dup)
         end
       end
     end
