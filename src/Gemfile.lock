@@ -135,7 +135,7 @@ GEM
       traces (>= 0.10)
     async-io (1.43.2)
       async
-    async-pool (0.7.0)
+    async-pool (0.7.1)
       async (>= 1.25)
     async-rspec (1.17.0)
       rspec (~> 3.0)
@@ -189,7 +189,7 @@ GEM
     fugit (1.11.0)
       et-orbi (~> 1, >= 1.2.11)
       raabro (~> 1.4)
-    hashdiff (1.1.0)
+    hashdiff (1.1.1)
     http-accept (1.7.0)
     http-cookie (1.0.6)
       domain_name (~> 0.5)
