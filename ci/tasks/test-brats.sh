@@ -1,24 +1,20 @@
 #!/usr/bin/env bash
-
-set -eu
+set -eu -o pipefail
 
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 src_dir="${script_dir}/../../.."
 
-export OVERRIDDEN_BOSH_DEPLOYMENT=$(realpath "$(dirname $0)/../../../bosh-deployment")
+OVERRIDDEN_BOSH_DEPLOYMENT=$(realpath "$(dirname $0)/../../../bosh-deployment")
+export OVERRIDDEN_BOSH_DEPLOYMENT
 if [[ -e ${OVERRIDDEN_BOSH_DEPLOYMENT}/bosh.yml ]];then
   export BOSH_DEPLOYMENT_PATH=${OVERRIDDEN_BOSH_DEPLOYMENT}
 else
   export BOSH_DEPLOYMENT_PATH="/usr/local/bosh-deployment"
 fi
 
-set +e
-source /tmp/local-bosh/director/env
-set -e
-if ! bosh env; then
+if [ ! -f /tmp/local-bosh/director/env ]; then
   source "${src_dir}/bosh-src/ci/dockerfiles/docker-cpi/start-bosh.sh"
 fi
-
 source /tmp/local-bosh/director/env
 
 bosh int /tmp/local-bosh/director/creds.yml --path /jumpbox_ssh/private_key > /tmp/jumpbox_ssh_key.pem
@@ -48,22 +44,32 @@ bosh -n update-cloud-config \
   -o "${src_dir}/bosh-src/ci/dockerfiles/docker-cpi/outer-cloud-config-ops.yml" \
   -v network=director_network
 
-bosh -n upload-stemcell $CANDIDATE_STEMCELL_TARBALL_PATH
+bosh -n upload-stemcell "${CANDIDATE_STEMCELL_TARBALL_PATH}"
 
 apt-get update
 apt-get install -y mysql-client postgresql-client
 
 if [ -d database-metadata ]; then
-  export RDS_MYSQL_EXTERNAL_DB_HOST="$(jq -r .aws_mysql_endpoint database-metadata/metadata | cut -d':' -f1)"
-  export RDS_POSTGRES_EXTERNAL_DB_HOST="$(jq -r .aws_postgres_endpoint database-metadata/metadata | cut -d':' -f1)"
-  export GCP_MYSQL_EXTERNAL_DB_HOST="$(jq -r .gcp_mysql_endpoint database-metadata/metadata)"
-  export GCP_POSTGRES_EXTERNAL_DB_HOST="$(jq -r .gcp_postgres_endpoint database-metadata/metadata)"
-  export GCP_MYSQL_EXTERNAL_DB_CA="$(jq -r .gcp_mysql_ca database-metadata/metadata)"
-  export GCP_MYSQL_EXTERNAL_DB_CLIENT_CERTIFICATE="$(jq -r .gcp_mysql_client_cert database-metadata/metadata)"
-  export GCP_MYSQL_EXTERNAL_DB_CLIENT_PRIVATE_KEY="$(jq -r .gcp_mysql_client_key database-metadata/metadata)"
-  export GCP_POSTGRES_EXTERNAL_DB_CA="$(jq -r .gcp_postgres_ca database-metadata/metadata)"
-  export GCP_POSTGRES_EXTERNAL_DB_CLIENT_CERTIFICATE="$(jq -r .gcp_postgres_client_cert database-metadata/metadata)"
-  export GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY="$(jq -r .gcp_postgres_client_key database-metadata/metadata)"
+  RDS_MYSQL_EXTERNAL_DB_HOST="$(jq -r .aws_mysql_endpoint database-metadata/metadata | cut -d':' -f1)"
+  export RDS_MYSQL_EXTERNAL_DB_HOST
+  RDS_POSTGRES_EXTERNAL_DB_HOST="$(jq -r .aws_postgres_endpoint database-metadata/metadata | cut -d':' -f1)"
+  export RDS_POSTGRES_EXTERNAL_DB_HOST
+  GCP_MYSQL_EXTERNAL_DB_HOST="$(jq -r .gcp_mysql_endpoint database-metadata/metadata)"
+  export GCP_MYSQL_EXTERNAL_DB_HOST
+  GCP_POSTGRES_EXTERNAL_DB_HOST="$(jq -r .gcp_postgres_endpoint database-metadata/metadata)"
+  export GCP_POSTGRES_EXTERNAL_DB_HOST
+  GCP_MYSQL_EXTERNAL_DB_CA="$(jq -r .gcp_mysql_ca database-metadata/metadata)"
+  export GCP_MYSQL_EXTERNAL_DB_CA
+  GCP_MYSQL_EXTERNAL_DB_CLIENT_CERTIFICATE="$(jq -r .gcp_mysql_client_cert database-metadata/metadata)"
+  export GCP_MYSQL_EXTERNAL_DB_CLIENT_CERTIFICATE
+  GCP_MYSQL_EXTERNAL_DB_CLIENT_PRIVATE_KEY="$(jq -r .gcp_mysql_client_key database-metadata/metadata)"
+  export GCP_MYSQL_EXTERNAL_DB_CLIENT_PRIVATE_KEY
+  GCP_POSTGRES_EXTERNAL_DB_CA="$(jq -r .gcp_postgres_ca database-metadata/metadata)"
+  export GCP_POSTGRES_EXTERNAL_DB_CA
+  GCP_POSTGRES_EXTERNAL_DB_CLIENT_CERTIFICATE="$(jq -r .gcp_postgres_client_cert database-metadata/metadata)"
+  export GCP_POSTGRES_EXTERNAL_DB_CLIENT_CERTIFICATE
+  GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY="$(jq -r .gcp_postgres_client_key database-metadata/metadata)"
+  export GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY
 fi
 
 bosh-src/scripts/test-brats
