@@ -1003,6 +1003,7 @@ jobs:
             options:
               credentials_source: static
               json_key: '((bosh_release_blobs_gcp_credentials_json))'
+        RUBY_VERSION_PATH: src/.ruby-version
     - task: bump-bosh-blobstore-dav
       file: bosh-src/ci/tasks/bump-blobstore-cli.yml
       input_mapping:
