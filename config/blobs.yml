@@ -26,10 +26,10 @@ postgres/postgresql-13.16.tar.gz:
   size: 28320674
   object_id: afb98efa-1fe3-407f-741d-8d27eb378fdf
   sha: sha256:33647543546202825bdf89bfb71523b5aea12b3b0153a689f694a08ed02aa204
-postgres/postgresql-15.7.tar.gz:
-  size: 30332323
-  object_id: 463e3db9-cd65-449a-623b-67a7b64eaaef
-  sha: sha256:619541008e4c38560643a5dcfcfca49f39c7ba7f9b11896a88aaa2fd8eb71931
+postgres/postgresql-15.8.tar.gz:
+  size: 30390113
+  object_id: 90cc0db1-9031-4770-50a8-4470eb91daa1
+  sha: sha256:09fb1b27187962df046e8c0d9a1a2a56f80fd7f8cd4e7f881cac09b7fa3c60e1
 s3cli/s3cli-0.0.310-linux-amd64:
   size: 18762060
   object_id: f00fddec-398d-498b-5f24-74c30e88fa96
