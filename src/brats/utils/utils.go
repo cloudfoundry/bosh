@@ -1,4 +1,4 @@
-package bratsutils
+package utils
 
 import (
 	"crypto/tls"
@@ -14,17 +14,20 @@ import (
 	"strings"
 	"time"
 
-	"github.com/onsi/gomega/gbytes"
-	"github.com/onsi/gomega/gexec"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
+	"github.com/onsi/gomega/gexec"
 )
 
 const (
 	mysqlDBType    = "mysql"
 	postgresDBType = "postgres"
 )
+
+func repoRoot() string {
+	return filepath.Join("..", "..", "..")
+}
 
 type ExternalDBConfig struct {
 	Host     string
@@ -343,7 +346,7 @@ func StartInnerBoshWithExpectation(expectedFailure bool, expectedErrorToMatch st
 	effectiveArgs = append(effectiveArgs, args...)
 
 	cmd := exec.Command(
-		"../../../../../../../ci/dockerfiles/docker-cpi/start-inner-bosh-parallel.sh",
+		filepath.Join(repoRoot(), "ci", "dockerfiles", "docker-cpi", "start-inner-bosh-parallel.sh"),
 		effectiveArgs...,
 	)
 	cmd.Env = os.Environ()
@@ -361,7 +364,7 @@ func StartInnerBoshWithExpectation(expectedFailure bool, expectedErrorToMatch st
 
 func CreateAndUploadBOSHRelease() {
 	cmd := exec.Command(
-		"../../../../../../../ci/dockerfiles/docker-cpi/create-and-upload-release.sh",
+		filepath.Join(repoRoot(), "ci", "dockerfiles", "docker-cpi", "create-and-upload-release.sh"),
 		strconv.Itoa(GinkgoParallelProcess()),
 	)
 	cmd.Env = os.Environ()
@@ -380,7 +383,7 @@ func CreateRelease(path string) {
 func StopInnerBosh() {
 	session, err := gexec.Start(
 		exec.Command(
-			"../../../../../../../ci/dockerfiles/docker-cpi/destroy-inner-bosh.sh",
+			filepath.Join(repoRoot(), "ci", "dockerfiles", "docker-cpi", "destroy-inner-bosh.sh"),
 			strconv.Itoa(GinkgoParallelProcess()),
 		),
 		GinkgoWriter,

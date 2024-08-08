@@ -1,39 +1,39 @@
-package brats_test
+package acceptance_test
 
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 
-	bratsutils "github.com/cloudfoundry/bosh-release-acceptance-tests/brats-utils"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 
-	"fmt"
-	"time"
+	"brats/utils"
 )
 
 var _ = Describe("Blobstore", func() {
 	Context("SSL", func() {
 		testDeployment := func(allowHttp bool, schema string, errorCode int) {
 			By(fmt.Sprintf("specifying blobstore.allow_http (%v) and agent.env.bosh.blobstores (%v)", allowHttp, schema))
-			bratsutils.StartInnerBosh(
-				fmt.Sprintf("-o %s", bratsutils.AssetPath("op-blobstore-https.yml")),
+			utils.StartInnerBosh(
+				fmt.Sprintf("-o %s", utils.AssetPath("op-blobstore-https.yml")),
 				fmt.Sprintf("-v allow_http=%t", allowHttp),
-				fmt.Sprintf("-v agent_blobstore_endpoint=%s://%s:25250", schema, bratsutils.InnerDirectorIP()),
+				fmt.Sprintf("-v agent_blobstore_endpoint=%s://%s:25250", schema, utils.InnerDirectorIP()),
 			)
 
-			bratsutils.UploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
-			bratsutils.UploadStemcell(candidateWardenLinuxStemcellPath)
+			utils.UploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
+			utils.UploadStemcell(candidateWardenLinuxStemcellPath)
 
-			session := bratsutils.Bosh("-n", "deploy", bratsutils.AssetPath("syslog-manifest.yml"),
+			session := utils.Bosh("-n", "deploy", utils.AssetPath("syslog-manifest.yml"),
 				"-d", "syslog-deployment",
-				"-v", fmt.Sprintf("stemcell-os=%s", bratsutils.StemcellOS()),
+				"-v", fmt.Sprintf("stemcell-os=%s", utils.StemcellOS()),
 			)
 			Eventually(session, 10*time.Minute).Should(gexec.Exit(errorCode))
 		}
@@ -82,7 +82,7 @@ var _ = Describe("Blobstore", func() {
 		}
 
 		getCredentials := func(filepath string) (string, string) {
-			session := bratsutils.BoshQuiet(
+			session := utils.BoshQuiet(
 				"-d",
 				"syslog-deployment",
 				"ssh",
@@ -101,17 +101,17 @@ var _ = Describe("Blobstore", func() {
 		}
 
 		It("Uses signed URLs with a stemcell that supports it", func() {
-			bratsutils.StartInnerBosh(
-				fmt.Sprintf("-o %s", bratsutils.BoshDeploymentAssetPath("enable-signed-urls.yml")),
-				fmt.Sprintf("-o %s", bratsutils.AssetPath("ops-enable-signed-urls-cpi.yml")),
+			utils.StartInnerBosh(
+				fmt.Sprintf("-o %s", utils.BoshDeploymentAssetPath("enable-signed-urls.yml")),
+				fmt.Sprintf("-o %s", utils.AssetPath("ops-enable-signed-urls-cpi.yml")),
 			)
-			bratsutils.UploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
-			bratsutils.UploadStemcell(candidateWardenLinuxStemcellPath)
+			utils.UploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
+			utils.UploadStemcell(candidateWardenLinuxStemcellPath)
 
 			By("compiling (by deploying)")
-			session := bratsutils.Bosh("-n", "deploy", bratsutils.AssetPath("syslog-manifest.yml"),
+			session := utils.Bosh("-n", "deploy", utils.AssetPath("syslog-manifest.yml"),
 				"-d", "syslog-deployment",
-				"-v", fmt.Sprintf("stemcell-os=%s", bratsutils.StemcellOS()),
+				"-v", fmt.Sprintf("stemcell-os=%s", utils.StemcellOS()),
 			)
 			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 
@@ -126,11 +126,11 @@ var _ = Describe("Blobstore", func() {
 			Expect(blobstorePassword).To(Equal(""))
 
 			By("fetch logs")
-			session = bratsutils.BoshQuiet("-d", "syslog-deployment", "logs")
+			session = utils.BoshQuiet("-d", "syslog-deployment", "logs")
 			Eventually(session, 30*time.Second).Should(gexec.Exit(0))
 
 			By("validating records.json are updated")
-			session = bratsutils.BoshQuiet("-d", "syslog-deployment", "ssh", "syslog_forwarder/0", "-r", "--json", "-c", "sudo cat /var/vcap/instance/dns/records.json")
+			session = utils.BoshQuiet("-d", "syslog-deployment", "ssh", "syslog_forwarder/0", "-r", "--json", "-c", "sudo cat /var/vcap/instance/dns/records.json")
 			Eventually(session, 30*time.Second).Should(gexec.Exit(0))
 			records := getStdout(session.Out.Contents())
 			Expect(records).To(MatchRegexp("syslog-forwarder")) // presence of anything is shows it has been updated
@@ -143,31 +143,31 @@ var _ = Describe("Blobstore", func() {
 		// Contrasted with removing the blobstore creds from the agent env. A normal "bosh deploy" will
 		//  cause bosh-director to converge to the new agent env configuration.
 		It("Does not strip blobstore credentials from VMs when only the CPI config changes", func() {
-			bratsutils.StartInnerBosh(
-				fmt.Sprintf("-o %s", bratsutils.BoshDeploymentAssetPath("enable-signed-urls.yml")),
+			utils.StartInnerBosh(
+				fmt.Sprintf("-o %s", utils.BoshDeploymentAssetPath("enable-signed-urls.yml")),
 			)
-			bratsutils.UploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
-			bratsutils.UploadStemcell(candidateWardenLinuxStemcellPath)
+			utils.UploadRelease("https://bosh.io/d/github.com/cloudfoundry/syslog-release?v=11")
+			utils.UploadStemcell(candidateWardenLinuxStemcellPath)
 
 			By("compiling (by deploying)")
-			session := bratsutils.Bosh("-n", "deploy", bratsutils.AssetPath("syslog-manifest.yml"),
+			session := utils.Bosh("-n", "deploy", utils.AssetPath("syslog-manifest.yml"),
 				"-d", "syslog-deployment",
-				"-v", fmt.Sprintf("stemcell-os=%s", bratsutils.StemcellOS()),
+				"-v", fmt.Sprintf("stemcell-os=%s", utils.StemcellOS()),
 			)
 			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 
-			bratsutils.StartInnerBosh(
-				fmt.Sprintf("-o %s", bratsutils.BoshDeploymentAssetPath("enable-signed-urls.yml")),
-				fmt.Sprintf("-o %s", bratsutils.AssetPath("ops-enable-signed-urls-cpi.yml")),
+			utils.StartInnerBosh(
+				fmt.Sprintf("-o %s", utils.BoshDeploymentAssetPath("enable-signed-urls.yml")),
+				fmt.Sprintf("-o %s", utils.AssetPath("ops-enable-signed-urls-cpi.yml")),
 			)
-			session = bratsutils.Bosh("-n", "deploy", bratsutils.AssetPath("syslog-manifest.yml"),
+			session = utils.Bosh("-n", "deploy", utils.AssetPath("syslog-manifest.yml"),
 				"-d", "syslog-deployment",
-				"-v", fmt.Sprintf("stemcell-os=%s", bratsutils.StemcellOS()),
+				"-v", fmt.Sprintf("stemcell-os=%s", utils.StemcellOS()),
 			)
 			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 
 			By("ensuring that expected credentials are on disk")
-			session = bratsutils.BoshQuiet("-d", "syslog-deployment", "ssh", "syslog_forwarder/0", "-r", "--json", "-c", "sudo cat /var/vcap/bosh/settings.json")
+			session = utils.BoshQuiet("-d", "syslog-deployment", "ssh", "syslog_forwarder/0", "-r", "--json", "-c", "sudo cat /var/vcap/bosh/settings.json")
 			Eventually(session, 30*time.Second).Should(gexec.Exit(0))
 			c := config{}
 			err := json.Unmarshal(getStdout(session.Out.Contents()), &c)
@@ -176,7 +176,7 @@ var _ = Describe("Blobstore", func() {
 			Expect(c.Env.AgentEnv.BlobstoresConfig[0].Options.Password).To(Equal(""))
 			Expect(c.Env.AgentEnv.BlobstoresConfig[0].Options.User).To(Equal(""))
 
-			session = bratsutils.BoshQuiet("-d", "syslog-deployment", "ssh", "syslog_forwarder/0", "-r", "--json", "-c", "sudo cat /var/vcap/bosh/warden-cpi-agent-env.json")
+			session = utils.BoshQuiet("-d", "syslog-deployment", "ssh", "syslog_forwarder/0", "-r", "--json", "-c", "sudo cat /var/vcap/bosh/warden-cpi-agent-env.json")
 			Eventually(session, 30*time.Second).Should(gexec.Exit(0))
 			c = config{}
 			err = json.Unmarshal(getStdout(session.Out.Contents()), &c)
@@ -191,15 +191,15 @@ var _ = Describe("Blobstore", func() {
 		var tempBlobstoreDir string
 
 		BeforeEach(func() {
-			bratsutils.StartInnerBosh()
+			utils.StartInnerBosh()
 
 			var err error
 			tempBlobstoreDir, err = ioutil.TempDir(os.TempDir(), "blobstore_access")
 			Expect(err).ToNot(HaveOccurred())
 
-			bratsutils.UploadRelease(boshRelease)
+			utils.UploadRelease(boshRelease)
 
-			session := bratsutils.OuterBosh("-d", bratsutils.InnerBoshDirectorName(), "scp", fmt.Sprintf("bosh:%s", BLOBSTORE_ACCESS_LOG), tempBlobstoreDir)
+			session := utils.OuterBosh("-d", utils.InnerBoshDirectorName(), "scp", fmt.Sprintf("bosh:%s", BLOBSTORE_ACCESS_LOG), tempBlobstoreDir)
 			Eventually(session, time.Minute).Should(gexec.Exit(0))
 		})
 
