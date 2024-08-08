@@ -19,13 +19,12 @@ run:
   path: bosh-src/ci/tasks/test-integration.sh
 
 params:
-  RUBY_VERSION:            3.1.2
-  DB:                      postgresql
-  LOG_LEVEL:               ERROR
-  SPEC_PATH:               ~
-  SHA2_MODE:               ~
-  DB_TLS:                  false
+  RUBY_VERSION:               3.2.0
+  DB:                         postgresql
+  DB_VERSION:                 15
+  LOG_LEVEL:                  ERROR
+  SPEC_PATH:                  ~
+  SHA2_MODE:                  ~
   DEFAULT_UPDATE_VM_STRATEGY: "delete-create"
   NUM_PROCESSES:
-  GOOS:                    linux
-  DB_VERSION:   13
+  GOOS:                       linux
