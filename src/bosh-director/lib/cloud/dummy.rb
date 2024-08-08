@@ -2,7 +2,6 @@ require 'digest/sha1'
 require 'fileutils'
 require 'securerandom'
 require 'membrane'
-require 'netaddr'
 require_relative '../cloud/errors'
 
 module Bosh
@@ -74,9 +73,7 @@ module Bosh
         }
       end
 
-      # rubocop:disable ParameterLists
       def create_vm(agent_id, stemcell_id, cloud_properties, networks, disk_cids, env)
-        # rubocop:enable ParameterLists
         @logger.debug('Dummy: create_vm')
         validate_and_record_inputs(CREATE_VM_SCHEMA, __method__, agent_id, stemcell_id, cloud_properties, networks, disk_cids, env)
 
@@ -96,7 +93,7 @@ module Bosh
             elsif cloud_properties['az_name']
               ip_address = cmd.ip_address_for_az(cloud_properties['az_name'])
             else
-              ip_address =  NetAddr::CIDR.create(rand(0..4294967295), Version: 4).ip #collisions?
+              ip_address =  IPAddr.new(rand(0..IPAddr::IN4MASK), Socket::AF_INET).to_string
             end
 
             if ip_address

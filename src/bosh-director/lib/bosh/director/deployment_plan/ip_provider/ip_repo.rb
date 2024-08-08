@@ -9,32 +9,32 @@ module Bosh::Director::DeploymentPlan
     end
 
     def delete(ip)
-      cidr_ip = CIDRIP.new(ip)
+      ip_or_cidr = Bosh::Director::IpAddrOrCidr.new(ip)
 
-      ip_address = Bosh::Director::Models::IpAddress.first(address_str: cidr_ip.to_i.to_s)
+      ip_address = Bosh::Director::Models::IpAddress.first(address_str: ip_or_cidr.to_i.to_s)
 
       if ip_address
-        @logger.debug("Releasing ip '#{cidr_ip}'")
+        @logger.debug("Releasing ip '#{ip_or_cidr}'")
         ip_address.destroy
       else
-        @logger.debug("Skipping releasing ip '#{cidr_ip}': not reserved")
+        @logger.debug("Skipping releasing ip '#{ip_or_cidr}': not reserved")
       end
     end
 
     def add(reservation)
-      cidr_ip = CIDRIP.new(reservation.ip)
+      ip_or_cidr = Bosh::Director::IpAddrOrCidr.new(reservation.ip)
 
-      reservation_type = reservation.network.ip_type(cidr_ip)
+      reservation_type = reservation.network.ip_type(ip_or_cidr)
 
       reserve_with_instance_validation(
         reservation.instance_model,
-        cidr_ip,
+        ip_or_cidr,
         reservation,
         reservation_type.eql?(:static),
       )
 
       reservation.resolve_type(reservation_type)
-      @logger.debug("Reserved ip '#{cidr_ip}' for #{reservation.network.name} as #{reservation_type}")
+      @logger.debug("Reserved ip '#{ip_or_cidr}' for #{reservation.network.name} as #{reservation_type}")
     end
 
     def allocate_dynamic_ip(reservation, subnet)
@@ -50,7 +50,7 @@ module Bosh::Director::DeploymentPlan
         retry
       end
 
-      @logger.debug("Allocated dynamic IP '#{ip_address.ip}' for #{reservation.network.name}")
+      @logger.debug("Allocated dynamic IP '#{ip_address}' for #{reservation.network.name}")
       ip_address.to_i
     end
 
@@ -68,7 +68,7 @@ module Bosh::Director::DeploymentPlan
         retry
       end
 
-      @logger.debug("Allocated vip IP '#{ip_address.ip}' for #{reservation.network.name}")
+      @logger.debug("Allocated vip IP '#{ip_address}' for #{reservation.network.name}")
       ip_address.to_i
     end
 
@@ -77,20 +77,16 @@ module Bosh::Director::DeploymentPlan
     def try_to_allocate_dynamic_ip(reservation, subnet)
       addresses_in_use = Set.new(all_ip_addresses)
 
-      first_range_address = subnet.range.first(Objectify: true).to_i - 1
+      first_range_address = subnet.range.to_range.first.to_i - 1
       addresses_we_cant_allocate = addresses_in_use
       addresses_we_cant_allocate << first_range_address
 
       addresses_we_cant_allocate.merge(subnet.restricted_ips.to_a) unless subnet.restricted_ips.empty?
       addresses_we_cant_allocate.merge(subnet.static_ips.to_a) unless subnet.static_ips.empty?
       addr = find_first_available_address(addresses_we_cant_allocate, first_range_address)
-      if subnet.range.version == 6
-        ip_address = NetAddr::CIDR.create(addr, Version: 6)
-      else
-        ip_address = NetAddr::CIDR.create(addr, Version: 4)
-      end
+      ip_address = Bosh::Director::IpAddrOrCidr.new(addr)
 
-      unless subnet.range == ip_address || subnet.range.contains?(ip_address)
+      unless subnet.range == ip_address || subnet.range.include?(ip_address)
         raise NoMoreIPsAvailableAndStopRetrying
       end
 
@@ -115,7 +111,7 @@ module Bosh::Director::DeploymentPlan
 
       raise NoMoreIPsAvailableAndStopRetrying if available_ips.empty?
 
-      ip_address = NetAddr::CIDR.create(available_ips.first, Version: 4)
+      ip_address = Bosh::Director::IpAddrOrCidr.new(available_ips.first)
 
       save_ip(ip_address, reservation, false)
 

@@ -1,4 +1,5 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require 'spec_helper'
+require 'ipaddr'
 
 module Bosh::Director
   describe DeploymentPlan::CompilationInstancePool do
@@ -52,7 +53,7 @@ module Bosh::Director
     end
 
     let(:subnet) do
-      instance_double('Bosh::Director::DeploymentPlan::ManualNetworkSubnet', range: NetAddr::CIDR.create('192.168.0.0/24'))
+      instance_double('Bosh::Director::DeploymentPlan::ManualNetworkSubnet', range: IPAddr.new('192.168.0.0/24'))
     end
 
     let(:stemcell) do

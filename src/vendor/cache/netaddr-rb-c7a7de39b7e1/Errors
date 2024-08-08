@@ -1,7 +1,0 @@
-=Error Classes
-
- +-Exception
-   +-StandardError
-     +-BoundaryError => CIDR or EUI is out of bounds for a valid address
-     +-ValidationError => CIDR or EUI failed validation checks
-     +-VersionError => CIDR or EUI is of improper version for requested operation

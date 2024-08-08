@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'ipaddr'
 
 module Bosh::Director
   module DeploymentPlan
@@ -43,7 +44,7 @@ module Bosh::Director
         Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.minimal_manifest))
       end
 
-      let(:range) { NetAddr::CIDR.create('192.168.1.1/24') }
+      let(:range) { IPAddr.new('192.168.1.1/24') }
       let(:manual_network_subnet) { ManualNetworkSubnet.new('name-7', range, nil, nil, nil, nil, nil, [], []) }
       let(:network) { BD::DeploymentPlan::ManualNetwork.new('name-7', [manual_network_subnet], logger) }
       let(:ip_repo) { BD::DeploymentPlan::IpRepo.new(logger) }

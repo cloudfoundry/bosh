@@ -14,4 +14,3 @@ files:
 - bosh-template/**/*
 - vendor/cache/*.gem
 - vendor/cache/extensions/**
-- vendor/cache/netaddr-rb-*/**

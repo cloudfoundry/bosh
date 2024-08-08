@@ -1,4 +1,5 @@
 require_relative '../../spec/support/deployments'
+require 'ipaddr'
 
 Sham.define do
   name             { |index| "name-#{index}" }
@@ -110,7 +111,7 @@ module Bosh::Director::Models
   end
 
   IpAddress.blueprint do
-    address_str { NetAddr::CIDR.create(Sham.ip).to_i.to_s }
+    address_str { IPAddr.new(Sham.ip).to_i.to_s }
     vm { nil }
     instance
     static { false }

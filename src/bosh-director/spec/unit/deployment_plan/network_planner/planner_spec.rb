@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'ipaddr'
 
 module Bosh::Director::DeploymentPlan
   describe NetworkPlanner::Planner do
@@ -17,7 +18,7 @@ module Bosh::Director::DeploymentPlan
       [
         ManualNetworkSubnet.new(
           'network_A',
-          NetAddr::CIDR.create('192.168.1.0/24'),
+          IPAddr.new('192.168.1.0/24'),
           nil, nil, nil, nil, ['zone_1'], [],
           ['192.168.1.10', '192.168.1.11', '192.168.1.12', '192.168.1.13', '192.168.1.14']
         ),

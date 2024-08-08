@@ -1,7 +1,5 @@
 module Bosh::Director
   class NetworkReservation
-    include IpUtil
-
     attr_reader :ip, :instance_model, :network, :type
 
     def initialize(instance_model, network)
@@ -21,7 +19,7 @@ module Bosh::Director
     private
 
     def formatted_ip
-      @ip.nil? ? nil : ip_to_netaddr(@ip).ip
+      IpAddrOrCidr.new(@ip).to_s if @ip
     end
   end
 
@@ -30,7 +28,7 @@ module Bosh::Director
 
     def initialize(instance_model, network, ip, network_type)
       super(instance_model, network)
-      @ip = ip_to_i(ip) if ip
+      @ip = IpAddrOrCidr.new(ip).to_i if ip
       @network_type = network_type
       @obsolete = network.instance_of? Bosh::Director::DeploymentPlan::Network
     end
@@ -59,12 +57,12 @@ module Bosh::Director
 
     def initialize(instance_model, network, ip, type)
       super(instance_model, network)
-      @ip = ip_to_i(ip) if ip
+      @ip = IpAddrOrCidr.new(ip).to_i if ip
       @type = type
     end
 
     def resolve_ip(ip)
-      @ip = ip_to_i(ip)
+      @ip = IpAddrOrCidr.new(ip).to_i
     end
 
     def resolve_type(type)

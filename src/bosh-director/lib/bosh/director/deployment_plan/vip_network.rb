@@ -40,13 +40,12 @@ module Bosh::Director
       # @return [Hash] network settings that will be passed to the BOSH Agent
       def network_settings(reservation, default_properties = REQUIRED_DEFAULTS, _availability_zone = nil)
         if default_properties && !default_properties.empty?
-          raise NetworkReservationVipDefaultProvided,
-                "Can't provide any defaults since this is a VIP network"
+          raise NetworkReservationVipDefaultProvided, "Can't provide any defaults since this is a VIP network"
         end
 
         {
           'type' => 'vip',
-          'ip' => ip_to_netaddr(reservation.ip).ip,
+          'ip' => Bosh::Director::IpAddrOrCidr.new(reservation.ip).to_s,
           'cloud_properties' => @cloud_properties,
         }
       end

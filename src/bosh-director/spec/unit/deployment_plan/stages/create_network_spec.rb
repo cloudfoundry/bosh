@@ -67,26 +67,31 @@ module Bosh::Director
             expect(cloud).to receive(:create_network).with(
               hash_including('gateway' => '192.168.10.1'),
             ).and_return(
-              ['12345', {}, { 'name': 'dummy1' }],
+              ['12345', {}, { name: 'dummy1' }],
             )
             expect(cloud).to receive(:create_network).with(
               hash_including('gateway' => '192.168.20.1'),
             ).and_return(
-              ['67890', {}, { 'name': 'dummy2' }],
+              ['67890', {}, { name: 'dummy2' }],
             )
             subject.perform
+
+            expected_subnet_cidrs = network_spec['subnets'].map { |s| s['range'] }
+            actual_subnet_cidrs = Bosh::Director::Models::Network.first(name: 'a').subnets.map(&:range)
+
+            expect(actual_subnet_cidrs).to match_array(expected_subnet_cidrs)
           end
 
-          it 'unorphans the network is the network is orphaned' do
+          it 'un-orphans the network is the network is orphaned' do
             expect(cloud).to receive(:create_network).with(
               hash_including('gateway' => '192.168.10.1'),
             ).and_return(
-              ['12345', {}, { 'name': 'dummy1' }],
+              ['12345', {}, { name: 'dummy1' }],
             )
             expect(cloud).to receive(:create_network).with(
               hash_including('gateway' => '192.168.20.1'),
             ).and_return(
-              ['67890', {}, { 'name': 'dummy2' }],
+              ['67890', {}, { name: 'dummy2' }],
             )
             subject.perform
             nw = Bosh::Director::Models::Network.first(name: 'a')
@@ -97,16 +102,16 @@ module Bosh::Director
             expect(nw.orphaned).to eq(false)
           end
 
-          it 'doesnot create network in iaas if network already exists' do
+          it 'does not create network in iaas if network already exists' do
             expect(cloud).to receive(:create_network).once.with(
               hash_including('gateway' => '192.168.10.1'),
             ).and_return(
-              ['12345', {}, { 'name': 'dummy1' }],
+              ['12345', {}, { name: 'dummy1' }],
             )
             expect(cloud).to receive(:create_network).once.with(
               hash_including('gateway' => '192.168.20.1'),
             ).and_return(
-              ['67890', {}, { 'name': 'dummy2' }],
+              ['67890', {}, { name: 'dummy2' }],
             )
             3.times do
               subject.perform
@@ -117,12 +122,12 @@ module Bosh::Director
             expect(cloud).to receive(:create_network).once.with(
               hash_including('gateway' => '192.168.10.1'),
             ).and_return(
-              ['12345', {}, { 'name': 'dummy1' }],
+              ['12345', {}, { name: 'dummy1' }],
             )
             expect(cloud).to receive(:create_network).once.with(
               hash_including('gateway' => '192.168.20.1'),
             ).and_return(
-              ['67890', {}, { 'name': 'dummy2' }],
+              ['67890', {}, { name: 'dummy2' }],
             )
 
             subject.perform
@@ -138,7 +143,7 @@ module Bosh::Director
             expect(cloud).to receive(:create_network).with(
               hash_including('gateway' => '192.168.10.1'),
             ).and_return(
-              ['12345', {}, { 'name': 'dummy1' }],
+              ['12345', {}, { name: 'dummy1' }],
             )
             expect(cloud).to receive(:create_network).with(
               hash_including('gateway' => '192.168.20.1'),

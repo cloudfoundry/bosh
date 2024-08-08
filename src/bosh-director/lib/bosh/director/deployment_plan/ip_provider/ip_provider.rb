@@ -65,10 +65,8 @@ module Bosh::Director
           @logger.debug("Allocating dynamic ip for manual network '#{reservation.network.name}'")
 
           filter_subnet_by_instance_az(reservation).each do |subnet|
-            ip = @ip_repo.allocate_dynamic_ip(reservation, subnet)
-
-            if ip
-              @logger.debug("Reserving dynamic IP '#{format_ip(ip)}' for manual network '#{reservation.network.name}'")
+            if (ip = @ip_repo.allocate_dynamic_ip(reservation, subnet))
+              @logger.debug("Reserving dynamic IP '#{ip}' for manual network '#{reservation.network.name}'")
               reservation.resolve_ip(ip)
               reservation.resolve_type(:dynamic)
               break
@@ -80,13 +78,11 @@ module Bosh::Director
               "Failed to reserve IP for '#{reservation.instance_model}' for manual network '#{reservation.network.name}': no more available"
           end
         else
-          ip_string = format_ip(reservation.ip)
           @logger.debug("Reserving #{reservation.desc} for manual network '#{reservation.network.name}'")
 
-          subnet = reservation.network.find_subnet_containing(reservation.ip)
-          if subnet
-            if subnet.restricted_ips.include?(reservation.ip.to_i)
-              message = "Failed to reserve IP '#{ip_string}' for network '#{subnet.network_name}': IP belongs to reserved range"
+          if (subnet = reservation.network.find_subnet_containing(reservation.ip))
+            if subnet.restricted_ips.include?(reservation.ip)
+              message = "Failed to reserve IP '#{format_ip(reservation.ip)}' for network '#{subnet.network_name}': IP belongs to reserved range"
               @logger.error(message)
               raise Bosh::Director::NetworkReservationIpReserved, message
             end
@@ -94,7 +90,7 @@ module Bosh::Director
             reserve_manual_with_subnet(reservation, subnet)
           else
             raise NetworkReservationIpOutsideSubnet,
-              "Provided static IP '#{ip_string}' does not belong to any subnet in network '#{reservation.network.name}'"
+              "Provided static IP '#{format_ip(reservation.ip)}' does not belong to any subnet in network '#{reservation.network.name}'"
           end
         end
       end
@@ -103,7 +99,7 @@ module Bosh::Director
         @ip_repo.add(reservation)
 
         subnet_az_names = subnet.availability_zone_names.to_a.join(', ')
-        if subnet.static_ips.include?(reservation.ip.to_i)
+        if subnet.static_ips.include?(reservation.ip)
           reservation.resolve_type(:static)
           @logger.debug("Found subnet with azs '#{subnet_az_names}' for #{format_ip(reservation.ip)}. Reserved as static network reservation.")
         else
