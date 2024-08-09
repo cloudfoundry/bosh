@@ -13,7 +13,7 @@ require 'zlib'
 require 'timecop'
 require 'webmock/rspec'
 
-require 'archive/tar/minitar'
+require 'minitar'
 require 'machinist/sequel'
 require 'factory_bot'
 require 'sham'

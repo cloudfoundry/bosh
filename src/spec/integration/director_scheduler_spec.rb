@@ -1,5 +1,5 @@
 require_relative '../spec_helper'
-require 'archive/tar/minitar'
+require 'minitar'
 require 'zlib'
 
 describe 'director_scheduler', type: :integration do

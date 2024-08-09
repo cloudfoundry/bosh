@@ -1,4 +1,4 @@
-require 'archive/tar/minitar'
+require 'minitar'
 
 module Bosh::Spec
   class TarFileInspector

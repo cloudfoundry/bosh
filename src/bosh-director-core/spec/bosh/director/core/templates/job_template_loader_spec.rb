@@ -1,6 +1,6 @@
 require 'spec_helper'
 require 'bosh/director/core/templates/job_template_loader'
-require 'archive/tar/minitar'
+require 'minitar'
 require 'stringio'
 require 'yaml'
 require 'zlib'
