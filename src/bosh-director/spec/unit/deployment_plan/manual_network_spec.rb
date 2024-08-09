@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'ipaddr'
 
 describe Bosh::Director::DeploymentPlan::ManualNetwork do
   let(:cloud_config_hash) do
@@ -77,7 +78,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
       expect(subnet).to be_an_instance_of BD::DeploymentPlan::ManualNetworkSubnet
       expect(subnet.network_name).to eq(manual_network.name)
       expect(manual_network.managed?).to eq(false)
-      expect(subnet.range).to eq(NetAddr::CIDR.create('192.168.1.0/24'))
+      expect(subnet.range).to eq(IPAddr.new('192.168.1.0/24'))
     end
 
     context 'when network is managed' do
@@ -95,7 +96,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
         subnet = manual_network.subnets.first
         expect(subnet).to be_an_instance_of BD::DeploymentPlan::ManualNetworkSubnet
         expect(subnet.network_name).to eq(manual_network.name)
-        expect(subnet.range).to eq(NetAddr::CIDR.create('192.168.1.0/24'))
+        expect(subnet.range).to eq(IPAddr.new('192.168.1.0/24'))
       end
     end
 

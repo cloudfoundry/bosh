@@ -2,7 +2,6 @@ require 'digest/sha1'
 require 'fileutils'
 require 'securerandom'
 require 'membrane'
-require 'netaddr'
 require_relative '../cloud/errors'
 
 module Bosh

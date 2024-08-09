@@ -25,33 +25,32 @@ module Bosh::Director
         end
 
         if range_property
-          range = NetAddr::CIDR.create(range_property)
+          range = Bosh::Director::IpAddrOrCidr.new(range_property)
 
-          if range.size <= 1
+          if range.count <= 1
             raise NetworkInvalidRange, "Invalid network range '#{range_property}', " \
               'should include at least 2 IPs'
           end
 
-          netmask = range.wildcard_mask
-          network_id = range.network(Objectify: true)
-          broadcast = range.version == 6 ? range.last(Objectify: true) : range.broadcast(Objectify: true)
+          netmask = range.netmask
+          broadcast = range.to_range.last
 
           if gateway_property
-            gateway = NetAddr::CIDR.create(gateway_property)
-            invalid_gateway(network_name, 'must be a single IP') unless gateway.size == 1
-            invalid_gateway(network_name, 'must be inside the range') unless range.contains?(gateway)
-            invalid_gateway(network_name, "can't be the network id") if gateway == network_id
+            gateway = Bosh::Director::IpAddrOrCidr.new(gateway_property)
+            invalid_gateway(network_name, 'must be a single IP') unless gateway.count == 1
+            invalid_gateway(network_name, 'must be inside the range') unless range.include?(gateway)
+            invalid_gateway(network_name, "can't be the network id") if gateway == range
             invalid_gateway(network_name, "can't be the broadcast IP") if gateway == broadcast
           end
 
           static_property = safe_property(subnet_spec, 'static', optional: true)
 
           restricted_ips.add(gateway.to_i) if gateway
-          restricted_ips.add(network_id.to_i)
+          restricted_ips.add(range.to_i)
           restricted_ips.add(broadcast.to_i)
 
           each_ip(reserved_property) do |ip|
-            unless range.contains?(ip)
+            unless range.include?(ip)
               raise NetworkReservedIpOutOfRange, "Reserved IP '#{format_ip(ip)}' is out of " \
                 "network '#{network_name}' range"
             end
@@ -67,11 +66,11 @@ module Bosh::Director
 
           each_ip(static_property) do |ip|
             if restricted_ips.include?(ip)
-              raise NetworkStaticIpOutOfRange, "Static IP '#{format_ip(ip)}' is in network '#{network_name}' reserved range"
+              raise NetworkStaticIpOutOfRange, "Static IP '#{to_ipaddr(ip)}' is in network '#{network_name}' reserved range"
             end
 
-            unless range.contains?(ip)
-              raise NetworkStaticIpOutOfRange, "Static IP '#{format_ip(ip)}' is out of network '#{network_name}' range"
+            unless range.include?(ip)
+              raise NetworkStaticIpOutOfRange, "Static IP '#{to_ipaddr(ip)}' is out of network '#{network_name}' range"
             end
 
             static_ips.add(ip)
@@ -117,16 +116,14 @@ module Bosh::Director
         return false unless range && subnet.range
 
         range == subnet.range ||
-          range.contains?(subnet.range) ||
-          subnet.range.contains?(range)
-      rescue NetAddr::VersionError
+          range.include?(subnet.range) ||
+          subnet.range.include?(range)
+      rescue IPAddr::InvalidAddressError
         false
       end
 
       def is_reservable?(ip)
-        range.contains?(ip) && !restricted_ips.include?(ip.to_i)
-      rescue NetAddr::VersionError
-        false
+        range.include?(ip) && !restricted_ips.include?(ip.to_i)
       end
 
       def self.parse_properties_from_database(network_name, subnet_name)

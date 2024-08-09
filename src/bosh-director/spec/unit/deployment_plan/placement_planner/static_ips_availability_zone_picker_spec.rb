@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'ipaddr'
 
 module Bosh::Director::DeploymentPlan
   describe PlacementPlanner::StaticIpsAvailabilityZonePicker do
@@ -59,7 +60,7 @@ module Bosh::Director::DeploymentPlan
     def make_subnet_spec(range, static_ips, zone_names)
       spec = {
         'range' => range,
-        'gateway' => NetAddr::CIDR.create(range)[1].ip,
+        'gateway' => IPAddr.new(range).to_range.to_a[1].to_string,
         'dns' => ['8.8.8.8'],
         'static' => static_ips,
         'reserved' => [],
@@ -952,7 +953,7 @@ module Bosh::Director::DeploymentPlan
       ips.each do |ip|
         instance.add_ip_address(
           Bosh::Director::Models::IpAddress.make(
-            address_str: NetAddr::CIDR.create(ip).to_i.to_s,
+            address_str: IPAddr.new(ip).to_i.to_s,
             network_name: network_name,
           ),
         )

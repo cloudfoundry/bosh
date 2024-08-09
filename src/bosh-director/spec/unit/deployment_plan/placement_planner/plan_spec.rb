@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'ipaddr'
 
 module Bosh::Director::DeploymentPlan
   describe PlacementPlanner::Plan do
@@ -51,7 +52,7 @@ module Bosh::Director::DeploymentPlan
       [
         ManualNetworkSubnet.new(
           'network_A',
-          NetAddr::CIDR.create('192.168.1.0/24'),
+          IPAddr.new('192.168.1.0/24'),
           nil, nil, nil, nil, ['zone_1'], [],
           %w[
             192.168.1.10
@@ -63,7 +64,7 @@ module Bosh::Director::DeploymentPlan
         ),
         ManualNetworkSubnet.new(
           'network_A',
-          NetAddr::CIDR.create('10.10.1.0/24'),
+          IPAddr.new('10.10.1.0/24'),
           nil, nil, nil, nil, ['zone_2'], [],
           %w[
             10.10.1.10
@@ -75,7 +76,7 @@ module Bosh::Director::DeploymentPlan
         ),
         ManualNetworkSubnet.new(
           'network_A',
-          NetAddr::CIDR.create('10.0.1.0/24'),
+          IPAddr.new('10.0.1.0/24'),
           nil, nil, nil, nil, ['zone_3'], [],
           %w[
             10.0.1.10

@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'ipaddr'
 
 RSpec::Matchers.define :log_dns_change do |expected|
   match do |actual|
@@ -2061,8 +2062,8 @@ module Bosh::Director::DeploymentPlan
 
       let(:network_plans) { [plan1, plan2, plan3, plan4] }
 
-      let(:ip1) { NetAddr::CIDR.create('192.168.1.25').to_i }
-      let(:ip2) { NetAddr::CIDR.create('192.168.1.26').to_i }
+      let(:ip1) { IPAddr.new('192.168.1.25').to_i }
+      let(:ip2) { IPAddr.new('192.168.1.26').to_i }
 
       let(:ip_address1) { Bosh::Director::Models::IpAddress.make(address_str: ip1.to_s) }
       let(:ip_address2) { Bosh::Director::Models::IpAddress.make(address_str: ip2.to_s) }

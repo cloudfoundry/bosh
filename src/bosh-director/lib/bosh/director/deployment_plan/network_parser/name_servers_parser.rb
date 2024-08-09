@@ -12,13 +12,13 @@ module Bosh::Director
           if dns_spec
             servers = []
             dns_spec.each do |dns|
-              dns = NetAddr::CIDR.create(dns)
-              unless dns.size == 1
+               dns = Bosh::Director::IpAddrOrCidr.new(dns)
+              unless dns.count == 1
                 raise NetworkInvalidDns,
                       "Invalid DNS for network '#{network}': must be a single IP"
               end
 
-              servers << dns.ip
+              servers << dns.to_string
             end
           end
 

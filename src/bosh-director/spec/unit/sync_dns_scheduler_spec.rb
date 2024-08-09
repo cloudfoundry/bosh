@@ -1,6 +1,6 @@
 require 'spec_helper'
 require 'db_migrator'
-require_relative '../../lib/bosh/director/sync_dns_scheduler'
+require 'bosh/director/sync_dns_scheduler'
 
 SyncDnsSchedulerSpecModels = Bosh::Director::Models
 module Kernel

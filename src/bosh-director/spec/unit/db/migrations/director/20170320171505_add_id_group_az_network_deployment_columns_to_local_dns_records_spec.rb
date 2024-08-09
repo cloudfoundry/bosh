@@ -1,5 +1,5 @@
 require 'db_spec_helper'
-require 'netaddr'
+
 module Bosh::Director
   describe '20170320171505_add_id_group_az_network_deployment_columns_to_local_dns_records_spec' do
     let(:db) { DBSpecHelper.db }

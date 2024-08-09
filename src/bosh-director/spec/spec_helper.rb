@@ -1,7 +1,7 @@
 $LOAD_PATH << File.expand_path(__dir__)
 
-require File.expand_path('../../spec/shared/spec_helper', __dir__)
-require File.expand_path('../../spec/support/deployments.rb', __dir__)
+require_relative '../../spec/shared/spec_helper'
+require_relative '../../spec/support/deployments'
 
 require 'digest/sha1'
 require 'fileutils'
