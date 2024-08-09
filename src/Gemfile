@@ -1,7 +1,5 @@
 source 'https://rubygems.org'
 
-ruby '~> 3.2.0'
-
 gem 'bosh-core', path: 'bosh-core'
 gem 'bosh-director', path: 'bosh-director'
 gem 'bosh-director-core', path: 'bosh-director-core'
