@@ -1,7 +1,5 @@
 source 'https://rubygems.org'
 
-ruby '~> 3.2.0'
-
 gem 'bosh-core', path: 'bosh-core'
 gem 'bosh-director', path: 'bosh-director'
 gem 'bosh-director-core', path: 'bosh-director-core'
@@ -12,11 +10,7 @@ gem 'bosh_common', path: 'bosh_common'
 
 gem 'rake', '~>13.0.3'
 
-# Bumping to openssl 3.2.0 while we are still on Ruby 3.2. This version
-# implements features necessary to support running on a FIPS stemcell.
-# If this is modified, it will need to be modified in the gemspecs for each
-# gem.
-gem 'openssl', '>=3.2.0'
+gem 'openssl'
 
 # json version is hardcoded in release director and health_monitor
 # when modified needs to be updated there as well

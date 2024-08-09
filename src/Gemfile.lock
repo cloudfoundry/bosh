@@ -9,7 +9,7 @@ PATH
   remote: bosh-core
   specs:
     bosh-core (0.0.0)
-      openssl (>= 3.2.0)
+      openssl
 
 PATH
   remote: bosh-dev
@@ -20,7 +20,7 @@ PATH
       bosh_common
       bundler
       logging
-      openssl (>= 3.2.0)
+      openssl
 
 PATH
   remote: bosh-director-core
@@ -28,7 +28,7 @@ PATH
     bosh-director-core (0.0.0)
       bosh-template (~> 0.0.0)
       bosh_common (~> 0.0.0)
-      openssl (>= 3.2.0)
+      openssl
 
 PATH
   remote: bosh-director
@@ -46,7 +46,7 @@ PATH
       membrane (~> 1.1.0)
       nats-pure
       netaddr (~> 1.5.3.dev.1)
-      openssl (>= 3.2.0)
+      openssl
       prometheus-client (~> 2.1.0)
       puma
       rack-test
@@ -73,7 +73,7 @@ PATH
       logging (~> 2.2.2)
       nats-pure
       net-smtp
-      openssl (>= 3.2.0)
+      openssl
       puma
       riemann-client
       sinatra (~> 2.2.0)
@@ -84,7 +84,7 @@ PATH
     bosh-nats-sync (0.0.0)
       cf-uaa-lib (~> 3.2.1)
       logging (~> 2.2.2)
-      openssl (>= 3.2.0)
+      openssl
       rest-client
       rufus-scheduler
 
@@ -93,7 +93,7 @@ PATH
   specs:
     bosh-template (0.0.0)
       activesupport
-      openssl (>= 3.2.0)
+      openssl
       semi_semantic (~> 1.2.0)
 
 PATH
@@ -101,7 +101,7 @@ PATH
   specs:
     bosh_common (0.0.0)
       logging (~> 2.2.2)
-      openssl (>= 3.2.0)
+      openssl
       semi_semantic (~> 1.2.0)
 
 GEM
@@ -390,7 +390,7 @@ DEPENDENCIES
   nats-pure (~> 2.3)
   net-ssh
   netaddr (~> 1.5.3.dev.1)!
-  openssl (>= 3.2.0)
+  openssl
   parallel_tests (~> 2.0)
   pg
   pry-byebug
@@ -413,8 +413,5 @@ DEPENDENCIES
   unix-crypt
   webmock
 
-RUBY VERSION
-   ruby 3.2.0p0
-
 BUNDLED WITH
-   2.4.22
+   2.5.11
