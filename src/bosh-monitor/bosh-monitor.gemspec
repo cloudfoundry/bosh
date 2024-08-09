@@ -34,4 +34,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'httpclient',  '~>2.8.3'
 
   spec.add_development_dependency 'async-rspec'
+  spec.add_development_dependency 'timecop'
 end
