@@ -20,7 +20,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'cf-uaa-lib',  '~>3.2.1'
   spec.add_dependency 'logging',         '~>2.2.2'
-  spec.add_dependency 'openssl', '>=3.2.0'
+  spec.add_dependency 'openssl'
   spec.add_dependency 'rufus-scheduler'
   spec.add_dependency 'rest-client'
 end
