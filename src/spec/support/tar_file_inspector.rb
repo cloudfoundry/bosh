@@ -21,7 +21,7 @@ module Bosh::Spec
 
       @entries = []
       tar_reader = Zlib::GzipReader.open(@path)
-      Archive::Tar::Minitar.open(tar_reader).each do |entry|
+      Minitar::Reader.open(tar_reader).each do |entry|
         @entries << entry if entry.file?
       end
       @entries

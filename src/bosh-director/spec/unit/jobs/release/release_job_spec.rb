@@ -328,7 +328,7 @@ module Bosh::Director
         manifest['templates'][path] = configuration_file['destination']
       end
 
-      Archive::Tar::Minitar::Writer.open(io) do |tar|
+      Minitar::Writer.open(io) do |tar|
         manifest = options[:manifest] if options[:manifest]
         unless options[:skip_manifest]
           tar.add_file('job.MF', {:mode => '0644', :mtime => 0}) { |os, _| os.write(manifest.to_yaml) }

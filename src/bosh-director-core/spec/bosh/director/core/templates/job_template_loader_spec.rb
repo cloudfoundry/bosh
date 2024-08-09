@@ -18,7 +18,7 @@ end
 def write_tar(configuration_files, manifest, monit, options)
   io = StringIO.new
 
-  Archive::Tar::Minitar::Writer.open(io) do |tar|
+  Minitar::Writer.open(io) do |tar|
     unless options[:skip_manifest]
       string_manifest = manifest.is_a?(String) ? manifest : manifest.to_yaml
       tar.add_file('job.MF', { mode: '0644', mtime: 0 }) { |os, _| os.write(string_manifest) }

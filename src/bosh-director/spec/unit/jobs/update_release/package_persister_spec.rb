@@ -421,7 +421,7 @@ module Bosh::Director
         def create_package(files)
           io = StringIO.new
 
-          Archive::Tar::Minitar::Writer.open(io) do |tar|
+          Minitar::Writer.open(io) do |tar|
             files.each do |key, value|
               tar.add_file(key, mode: '0644', mtime: 0) { |os, _| os.write(value) }
             end
