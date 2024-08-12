@@ -725,15 +725,16 @@ jobs:
       trigger: true
     - get: bosh-deployment
     - get: ubuntu-docker-image
-    - task: prepare-container-build-context
-      file: bosh-src-dockerfiles/ci/dockerfiles/integration/prepare-container-build-context.yml
-      image: ubuntu-docker-image
+    - task: build-docker-args
+      file: bosh-src-dockerfiles/ci/dockerfiles/integration/build-docker-args.yml
     - put: integration-image
+      inputs:
+      - docker-build-args
       params:
         tag_as_latest: true
-        build: docker-build-context
-        build_args:
-          BRANCH: ((branch_name))
+        build_args_file: docker-build-args/docker-build-args.json
+        dockerfile: bosh-src-dockerfiles/ci/dockerfiles/integration/Dockerfile
+        BRANCH: ((branch_name))
       get_params:
         skip_download: true
 
