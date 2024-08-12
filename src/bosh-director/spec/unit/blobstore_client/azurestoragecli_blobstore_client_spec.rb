@@ -16,6 +16,7 @@ module Bosh::Blobstore
         container_name: 'test',
         account_name: 'NAME',
         account_key: 'SECRET',
+        azure_cloud_name: 'foo-cloud',
         azure_storage_cli_path: '/var/vcap/packages/azure-storage-cli/bin/azure-storage-cli',
       }
     end
@@ -37,7 +38,8 @@ module Bosh::Blobstore
         {
           'container_name' => 'test',
           'account_name' => 'NAME',
-          'account_key' => 'SECRET'
+          'account_key' => 'SECRET',
+          'environment' => 'foo-cloud',
         }
       end
       let(:stored_config_file) { File.new(expected_config_file).readlines }
