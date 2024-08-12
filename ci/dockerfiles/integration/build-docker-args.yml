@@ -1,0 +1,21 @@
+---
+platform: linux
+
+image_resource:
+  type: registry-image
+  source:
+    repository: bosh/integration
+
+inputs:
+- name: bosh-deployment
+- name: bosh-src
+
+outputs:
+- name: docker-build-args
+
+run:
+  path: bosh-src-dockerfiles/ci/dockerfiles/integration/build-docker-args.sh
+
+params:
+  BRANCH:
+  GITHUB_ACCESS_TOKEN:
