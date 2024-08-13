@@ -9,9 +9,7 @@ FactoryBot.define do
 
     initialize_with { new(self.alias, name, os, version) }
   end
-end
 
-FactoryBot.define do
   factory :manual_network, class: Bosh::Director::DeploymentPlan::ManualNetwork do
     name { 'manual-network-name' }
     subnets { [] }
@@ -20,9 +18,7 @@ FactoryBot.define do
 
     initialize_with { new(name, subnets, logger, managed) }
   end
-end
 
-FactoryBot.define do
   factory :job_network, class: Bosh::Director::DeploymentPlan::JobNetwork do
     name { 'job-network-name' }
     static_ips { [] }
@@ -31,9 +27,7 @@ FactoryBot.define do
 
     initialize_with { new(name, static_ips, default_for, deployment_network) }
   end
-end
 
-FactoryBot.define do
   factory :instance_group, class: Bosh::Director::DeploymentPlan::InstanceGroup do
     name { 'instance-group-name' }
     logger { Logging::Logger.new('TestLogger') }
