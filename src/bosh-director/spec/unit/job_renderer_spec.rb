@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe JobRenderer do
     let(:instance_group) do
-      DeploymentPlan::InstanceGroup.make(
+      FactoryBot.build(:deployment_plan_instance_group,
         name: 'test-instance-group',
       )
     end

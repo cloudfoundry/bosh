@@ -77,12 +77,12 @@ module Bosh::Director::DeploymentPlan
 
         expect(networks.count).to eq(1)
         expect(networks.first).to be_an_instance_group_network(
-          JobNetwork.make(
-            name: 'a',
-            static_ips: ['192.168.1.1', '192.168.1.2'],
-            default_for: %w[dns gateway],
-            deployment_network: manifest_networks.first,
-          ),
+                                    FactoryBot.build(:deployment_plan_job_network,
+                                                     name: 'a',
+                                                     static_ips: ['192.168.1.1', '192.168.1.2'],
+                                                     default_for: %w[dns gateway],
+                                                     deployment_network: manifest_networks.first,
+                                    ),
         )
         expect(networks.first.static_ips).to eq([ip_to_i('192.168.1.1'), ip_to_i('192.168.1.2')])
       end

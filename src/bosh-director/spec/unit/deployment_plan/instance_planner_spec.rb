@@ -54,7 +54,7 @@ describe 'Bosh::Director::DeploymentPlan::InstancePlanner' do
   end
 
   let(:instance_group) do
-    Bosh::Director::DeploymentPlan::InstanceGroup.make(
+    FactoryBot.build(:deployment_plan_instance_group,
       name: 'foo-instance_group',
       availability_zones: availability_zones,
       instance_states: instance_states,
@@ -382,7 +382,7 @@ describe 'Bosh::Director::DeploymentPlan::InstancePlanner' do
     context 'when vm requirements are given' do
       let(:instance_group) do
         vm_resources = Bosh::Director::DeploymentPlan::VmResources.new('cpu' => 4, 'ram' => 2048, 'ephemeral_disk_size' => 100)
-        Bosh::Director::DeploymentPlan::InstanceGroup.make(
+        FactoryBot.build(:deployment_plan_instance_group,
           name: 'foo-instance_group',
           vm_resources: vm_resources,
           availability_zones: availability_zones,
@@ -563,11 +563,12 @@ describe 'Bosh::Director::DeploymentPlan::InstancePlanner' do
       let(:vip_network) { Bosh::Director::DeploymentPlan::VipNetwork.parse({ 'name' => 'fake-network' }, [], logger) }
 
       before do
-        instance_group_network = Bosh::Director::DeploymentPlan::JobNetwork.make(
-          name: 'fake-network',
-          static_ips: ['68.68.68.68'],
-          deployment_network: vip_network,
-        )
+        instance_group_network =
+          FactoryBot.build(:deployment_plan_job_network,
+                           name: 'fake-network',
+                           static_ips: ['68.68.68.68'],
+                           deployment_network: vip_network,
+          )
         allow(instance_group).to receive(:networks).and_return([instance_group_network])
       end
 
@@ -624,7 +625,7 @@ describe 'Bosh::Director::DeploymentPlan::InstancePlanner' do
         'cloud_properties' => uninterpolated_cloud_properties_hash,
       )
 
-      Bosh::Director::DeploymentPlan::InstanceGroup.make(
+      FactoryBot.build(:deployment_plan_instance_group,
         name: 'foo-instance_group',
         availability_zones: availability_zones,
         env: Bosh::Director::DeploymentPlan::Env.new('env' => 'env-val'),
@@ -781,10 +782,11 @@ describe 'Bosh::Director::DeploymentPlan::InstancePlanner' do
       let(:networks) { [manual_network] }
 
       before do
-        instance_group_network = Bosh::Director::DeploymentPlan::JobNetwork.make(
-          static_ips: nil,
-          deployment_network: manual_network,
-        )
+        instance_group_network =
+          FactoryBot.build(:deployment_plan_job_network,
+                           static_ips: nil,
+                           deployment_network: manual_network,
+          )
         allow(instance_group).to receive(:networks).and_return([instance_group_network])
       end
 

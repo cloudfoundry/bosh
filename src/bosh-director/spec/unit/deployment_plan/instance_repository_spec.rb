@@ -26,7 +26,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
   let(:desired_instance) { Bosh::Director::DeploymentPlan::DesiredInstance.new(instance_group, deployment_plan) }
 
   let(:instance_group) do
-    Bosh::Director::DeploymentPlan::InstanceGroup.make(name: 'job-name')
+    FactoryBot.build(:deployment_plan_instance_group, name: 'job-name')
   end
 
   before do

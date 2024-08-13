@@ -24,7 +24,7 @@ module Bosh::Director
       let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
       let(:deployment_model) { Models::Deployment.make(name: 'deployment_name') }
       let(:job) { instance_double(Bosh::Director::Jobs::UpdateDeployment) }
-      let(:job_network) { Bosh::Director::DeploymentPlan::JobNetwork.make }
+      let(:job_network) { FactoryBot.build(:deployment_plan_job_network) }
       let(:instance_group) { instance_double(Bosh::Director::DeploymentPlan::InstanceGroup) }
       let(:deployment_plan) { instance_double(Bosh::Director::DeploymentPlan::Planner) }
       let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', 'old' => 'value') }

@@ -9,8 +9,8 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   let(:vm_type) { Bosh::Director::DeploymentPlan::VmType.new('name' => 'dea') }
   let(:stemcell) do
     model = Bosh::Director::Models::Stemcell.make(name: 'linux', version: '250.4')
-    new_stemcell = Bosh::Director::DeploymentPlan::Stemcell.make(
-      name: model.name,
+    new_stemcell = FactoryBot.build(:deployment_plan_stemcell,
+                                    name: model.name,
       os: 'linux',
       version: model.version,
     )

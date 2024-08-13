@@ -29,7 +29,7 @@ module Bosh::Director
     end
 
     let(:instance_group) do
-      DeploymentPlan::InstanceGroup.make(
+      FactoryBot.build(:deployment_plan_instance_group,
         name: 'job-name',
         persistent_disk_collection: disk_collection,
       )

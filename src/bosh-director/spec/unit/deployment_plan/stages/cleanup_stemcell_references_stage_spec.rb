@@ -13,7 +13,7 @@ module Bosh::Director
       let(:deployment_model) { Models::Deployment.make }
       let(:deployment_planner) { instance_double(DeploymentPlan::Planner) }
       let(:planner_stemcell) do
-        DeploymentPlan::Stemcell.make(name: stemcell_model.name, version: stemcell_model.version)
+        FactoryBot.build(:deployment_plan_stemcell, name: stemcell_model.name, version: stemcell_model.version)
       end
 
       before do

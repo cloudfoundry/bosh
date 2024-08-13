@@ -14,7 +14,7 @@ module Bosh::Director
 
     let(:instance_plan) { make_instance_plan }
 
-    let(:instance_group) { DeploymentPlan::InstanceGroup.make }
+    let(:instance_group) { FactoryBot.build(:deployment_plan_instance_group) }
 
     def make_instance_plan
       instance_model = Models::Instance.make

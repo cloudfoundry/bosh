@@ -8,7 +8,7 @@ module Bosh::Director
       let(:event_log_stage) { double('event_log_stage') }
       let(:example_release_model) { Models::Release.make }
       let(:example_stemcell) do
-        DeploymentPlan::Stemcell.make(version: '1.2')
+        FactoryBot.build(:deployment_plan_stemcell, version: '1.2')
       end
       let(:exported_from) { [] }
       let(:release) do
@@ -136,7 +136,7 @@ module Bosh::Director
 
       context 'if given a release with exported_from' do
         let(:example_package) { Models::Package.make(release: example_release_model, blobstore_id: nil, sha1: nil) }
-        let(:exported_from) { [DeploymentPlan::Stemcell.make(os: example_stemcell.os, version: '1.0')] }
+        let(:exported_from) { [FactoryBot.build(:deployment_plan_stemcell, os: example_stemcell.os, version: '1.0')] }
 
         context 'when there is a compiled package for exported_from stemcell' do
           let!(:expected_compile_package) do
@@ -173,12 +173,12 @@ module Bosh::Director
 
         context 'when there are multiple exported_froms' do
           let(:second_stemcell) do
-            DeploymentPlan::Stemcell.make(os: 'ubuntu-another', version: '1.2')
+            FactoryBot.build(:deployment_plan_stemcell, os: 'ubuntu-another', version: '1.2')
           end
 
           let(:exported_from) do
             [
-              DeploymentPlan::Stemcell.make(os: example_stemcell.os, version: '1.0'),
+              FactoryBot.build(:deployment_plan_stemcell, os: example_stemcell.os, version: '1.0'),
               second_stemcell,
             ]
           end

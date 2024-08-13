@@ -18,11 +18,11 @@ module Bosh::Director
       let(:networks) { nil }
 
       let(:deployment_instance_group) do
-        DeploymentPlan::InstanceGroup.make(networks: networks)
+        FactoryBot.build(:deployment_plan_instance_group, networks: networks)
       end
 
       let(:errand_instance_group) do
-        DeploymentPlan::InstanceGroup.make(name: 'some-errand-instance-group')
+        FactoryBot.build(:deployment_plan_instance_group, name: 'some-errand-instance-group')
       end
 
       let(:task) { Models::Task.make(id: 42, username: 'user') }

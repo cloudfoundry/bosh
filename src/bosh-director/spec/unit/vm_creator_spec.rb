@@ -39,7 +39,7 @@ module Bosh
         disk = DeploymentPlan::PersistentDiskCollection.new(logger)
         disk.add_by_disk_size(1024)
         instance_group_tags = { 'instance_tag' => 'buzz', 'secondtag' => 'overwritten' }
-        Bosh::Director::DeploymentPlan::InstanceGroup.make(
+        FactoryBot.build(:deployment_plan_instance_group,
           persistent_disk_collection: disk,
           tags: instance_group_tags,
         )

@@ -58,21 +58,21 @@ module Bosh::Director
 
     let(:stemcell) do
       model = Models::Stemcell.make(cid: 'stemcell-cid', name: 'stemcell-name')
-      stemcell = DeploymentPlan::Stemcell.make(name: model.name, version: model.version)
+      stemcell = FactoryBot.build(:deployment_plan_stemcell, name: model.name, version: model.version)
       stemcell.bind_model(deployment_model)
       stemcell
     end
 
     let(:another_stemcell) do
       model = Models::Stemcell.make(cid: 'another-stemcell-cid', name: 'stemcell-name')
-      stemcell = DeploymentPlan::Stemcell.make(name: model.name, version: model.version)
+      stemcell = FactoryBot.build(:deployment_plan_stemcell, name: model.name, version: model.version)
       stemcell.bind_model(deployment_model)
       stemcell
     end
 
     let(:different_stemcell) do
       model = Models::Stemcell.make(cid: 'different-stemcell-cid', name: 'different-stemcell-name')
-      stemcell = DeploymentPlan::Stemcell.make(name: model.name, version: model.version)
+      stemcell = FactoryBot.build(:deployment_plan_stemcell, name: model.name, version: model.version)
       stemcell.bind_model(deployment_model)
       stemcell
     end

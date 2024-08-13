@@ -86,7 +86,7 @@ module Bosh
           end
 
           let(:instance_group) do
-            Bosh::Director::DeploymentPlan::InstanceGroup.make(
+            FactoryBot.build(:deployment_plan_instance_group,
               vm_type: vm_type,
               env: env,
               default_network: { 'gateway' => 'name' },

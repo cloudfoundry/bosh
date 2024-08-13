@@ -74,15 +74,3 @@ FactoryBot.define do
     end
   end
 end
-
-module Bosh::Director
-  module DeploymentPlan
-    [Stemcell, ManualNetwork, JobNetwork, InstanceGroup].each do |klass|
-      klass.class_eval do
-        def self.make(*args)
-          FactoryBot.build(:"deployment_plan_#{name.demodulize.underscore}", *args)
-        end
-      end
-    end
-  end
-end

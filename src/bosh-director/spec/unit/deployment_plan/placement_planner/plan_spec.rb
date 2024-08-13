@@ -28,7 +28,7 @@ module Bosh::Director::DeploymentPlan
     let(:zone_2) { AvailabilityZone.new('zone_2', {}) }
     let(:zone_3) { AvailabilityZone.new('zone_3', {}) }
 
-    let(:instance_group) { InstanceGroup.make }
+    let(:instance_group) { FactoryBot.build(:deployment_plan_instance_group) }
 
     let(:desired) do
       [
@@ -89,7 +89,7 @@ module Bosh::Director::DeploymentPlan
       ]
     end
     let(:job_networks) do
-      [JobNetwork.make(name: 'network_A', static_ips: job_static_ips, deployment_network: deployment_network)]
+      [FactoryBot.build(:deployment_plan_job_network, name: 'network_A', static_ips: job_static_ips, deployment_network: deployment_network)]
     end
 
     before do

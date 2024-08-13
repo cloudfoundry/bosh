@@ -29,7 +29,7 @@ module Bosh::Director::DeploymentPlan
     let(:stemcell) { make_stemcell({ name: 'fake-stemcell-name', version: '1.0', api_version: 3 }) }
     let(:env) { Env.new({ 'bosh' => { 'blobstores' => [{ 'options' => { 'blobstore_option' => 'blobstore_value' } }] } }) }
     let(:instance_group) do
-      InstanceGroup.make(
+      FactoryBot.build(:deployment_plan_instance_group,
         name: 'fake_job',
         env:,
         stemcell:,

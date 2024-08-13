@@ -82,8 +82,8 @@ module Bosh::Director
       end
 
       it 'should bind stemcells' do
-        sc1 = DeploymentPlan::Stemcell.make
-        sc2 = DeploymentPlan::Stemcell.make(os: 'arch-linux')
+        sc1 = FactoryBot.build(:deployment_plan_stemcell)
+        sc2 = FactoryBot.build(:deployment_plan_stemcell, os: 'arch-linux')
         expect(sc2.os).to eq('arch-linux')
 
         expect(deployment_plan).to receive(:stemcells).and_return({'sc1' => sc1, 'sc2' => sc2})
@@ -220,7 +220,7 @@ module Bosh::Director
           job = DeploymentPlan::Job.new(release_version, template_name)
           job.bind_models
 
-          instance_group = DeploymentPlan::InstanceGroup.make(
+          instance_group = FactoryBot.build(:deployment_plan_instance_group,
             name: name,
             jobs: [job],
             networks: [instance_group_network],
@@ -233,7 +233,7 @@ module Bosh::Director
         let(:instance_group_1) { make_instance_group('ig-1', 'fake-instance-group-1') }
         let(:instance_group_2) { make_instance_group('ig-2', 'fake-instance-group-2') }
 
-        let(:instance_group_network) { DeploymentPlan::JobNetwork.make(name: 'my-network-name') }
+        let(:instance_group_network) { FactoryBot.build(:deployment_plan_job_network, name: 'my-network-name') }
 
         before do
           allow(instance_group_network).to receive(:vip?).and_return(false)
