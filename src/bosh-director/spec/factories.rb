@@ -1,7 +1,7 @@
 require 'factory_bot'
 
 FactoryBot.define do
-  factory :stemcell, class: Bosh::Director::DeploymentPlan::Stemcell do
+  factory :deployment_plan_stemcell, class: Bosh::Director::DeploymentPlan::Stemcell do
     add_attribute(:alias) { 'default' }
     name { 'bosh-ubuntu-xenial-with-ruby-agent' }
     os { 'ubuntu-xenial' }
@@ -10,7 +10,7 @@ FactoryBot.define do
     initialize_with { new(self.alias, name, os, version) }
   end
 
-  factory :manual_network, class: Bosh::Director::DeploymentPlan::ManualNetwork do
+  factory :deployment_plan_manual_network, class: Bosh::Director::DeploymentPlan::ManualNetwork do
     name { 'manual-network-name' }
     subnets { [] }
     logger { Logging::Logger.new('TestLogger') }
@@ -19,16 +19,16 @@ FactoryBot.define do
     initialize_with { new(name, subnets, logger, managed) }
   end
 
-  factory :job_network, class: Bosh::Director::DeploymentPlan::JobNetwork do
+  factory :deployment_plan_job_network, class: Bosh::Director::DeploymentPlan::JobNetwork do
     name { 'job-network-name' }
     static_ips { [] }
     default_for { [] }
-    association :deployment_network, factory: :manual_network, strategy: :build
+    association :deployment_network, factory: :deployment_plan_manual_network, strategy: :build
 
     initialize_with { new(name, static_ips, default_for, deployment_network) }
   end
 
-  factory :instance_group, class: Bosh::Director::DeploymentPlan::InstanceGroup do
+  factory :deployment_plan_instance_group, class: Bosh::Director::DeploymentPlan::InstanceGroup do
     name { 'instance-group-name' }
     logger { Logging::Logger.new('TestLogger') }
     canonical_name { 'instance-group-canonical-name' }
@@ -47,7 +47,7 @@ FactoryBot.define do
     state { nil }
     instance_states { {} }
     deployment_name { 'simple' }
-    association :stemcell, factory: :stemcell, strategy: :build
+    association :stemcell, factory: :deployment_plan_stemcell, strategy: :build
 
     initialize_with do
       new(
@@ -80,7 +80,7 @@ module Bosh::Director
     [Stemcell, ManualNetwork, JobNetwork, InstanceGroup].each do |klass|
       klass.class_eval do
         def self.make(*args)
-          FactoryBot.build(name.demodulize.underscore.to_sym, *args)
+          FactoryBot.build(:"deployment_plan_#{name.demodulize.underscore}", *args)
         end
       end
     end
