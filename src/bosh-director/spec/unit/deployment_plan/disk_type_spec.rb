@@ -37,7 +37,7 @@ module Bosh::Director::DeploymentPlan
           it 'raises an error' do
             expect {
               DiskType.parse(valid_spec)
-            }.to raise_error(BD::ValidationMissingField)
+            }.to raise_error(Bosh::Director::ValidationMissingField)
           end
         end
       end
@@ -49,7 +49,7 @@ module Bosh::Director::DeploymentPlan
           it 'raises an error' do
             expect {
               DiskType.parse(valid_spec)
-            }.to raise_error(BD::ValidationMissingField)
+            }.to raise_error(Bosh::Director::ValidationMissingField)
           end
         end
 
@@ -59,7 +59,7 @@ module Bosh::Director::DeploymentPlan
           it 'raises an error' do
             expect {
               DiskType.parse(valid_spec)
-            }.to raise_error(BD::DiskTypeInvalidDiskSize)
+            }.to raise_error(Bosh::Director::DiskTypeInvalidDiskSize)
           end
         end
       end

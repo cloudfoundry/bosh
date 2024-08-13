@@ -82,7 +82,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
 
   describe '#build_instance_from_model' do
     let(:stemcell) { Bosh::Director::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302') }
-    let(:existing_instance) { BD::Models::Instance.make(state: 'started') }
+    let(:existing_instance) { Bosh::Director::Models::Instance.make(state: 'started') }
 
     let(:instance_spec) do
       {

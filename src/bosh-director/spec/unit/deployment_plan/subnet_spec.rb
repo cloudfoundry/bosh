@@ -107,7 +107,7 @@ shared_examples_for 'a subnet' do
         it 'errors' do
           expect do
             described_class.parse_availability_zones(subnet_spec, name, azs)
-          end.to raise_error(BD::ValidationInvalidType)
+          end.to raise_error(Bosh::Director::ValidationInvalidType)
         end
       end
 

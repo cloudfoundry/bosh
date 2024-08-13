@@ -58,14 +58,14 @@ module Bosh::Director
           allow(cloud_factory).to receive(:get).with('', nil).and_return(cloud)
 
           deployment = Bosh::Director::Models::Deployment.make(name: 'test_deployment')
-          is = BD::Models::Instance.make(
+          is = Bosh::Director::Models::Instance.make(
             deployment: deployment,
             job: 'foo-job',
             uuid: 'instance_id',
             index: 0,
             ignore: true,
           )
-          vm = BD::Models::Vm.make(cid: vm_cid, instance_id: is.id)
+          vm = Bosh::Director::Models::Vm.make(cid: vm_cid, instance_id: is.id)
           is.active_vm = vm
           is.save
         end
@@ -101,7 +101,7 @@ module Bosh::Director
         it 'should update instance' do
           expect(cloud).to receive(:delete_vm).with(vm_cid)
           job.perform
-          expect(BD::Models::Instance.all.first.vm_cid).to be_nil
+          expect(Bosh::Director::Models::Instance.all.first.vm_cid).to be_nil
         end
       end
 

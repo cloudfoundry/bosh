@@ -6,21 +6,21 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
   before { @network = instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
 
   def make_subnet(properties, availability_zones)
-    BD::DeploymentPlan::ManualNetworkSubnet.parse(@network.name, properties, availability_zones)
+    Bosh::Director::DeploymentPlan::ManualNetworkSubnet.parse(@network.name, properties, availability_zones)
   end
 
   def make_managed_subnet(properties, availability_zones)
-    BD::DeploymentPlan::ManualNetworkSubnet.parse(@network.name, properties, availability_zones, true)
+    Bosh::Director::DeploymentPlan::ManualNetworkSubnet.parse(@network.name, properties, availability_zones, true)
   end
 
-  let(:instance) { instance_double(BD::DeploymentPlan::Instance, model: BD::Models::Instance.make) }
+  let(:instance) { instance_double(Bosh::Director::DeploymentPlan::Instance, model: Bosh::Director::Models::Instance.make) }
 
   def create_static_reservation(ip)
-    BD::StaticNetworkReservation.new(instance, @network, IPAddr.new(ip))
+    Bosh::Director::StaticNetworkReservation.new(instance, @network, IPAddr.new(ip))
   end
 
   def create_dynamic_reservation(ip)
-    reservation = BD::DynamicNetworkReservation.new(instance, @network)
+    reservation = Bosh::Director::DynamicNetworkReservation.new(instance, @network)
     reservation.resolve_ip(IPAddr.new(ip))
     reservation
   end
@@ -70,7 +70,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
           },
           [],
         )
-      end.to raise_error(BD::ValidationMissingField)
+      end.to raise_error(Bosh::Director::ValidationMissingField)
     end
 
     it 'should create a valid managed subnet with netmask bits' do
@@ -122,7 +122,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
           },
           []
         )
-      }.to raise_error(BD::ValidationMissingField)
+      }.to raise_error(Bosh::Director::ValidationMissingField)
     end
 
     context 'gateway property' do
@@ -134,7 +134,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
               'cloud_properties' => {'foo' => 'bar'},
             }, []
           )
-        }.to raise_error(BD::ValidationMissingField)
+        }.to raise_error(Bosh::Director::ValidationMissingField)
       end
 
       context 'when the gateway is configured to be optional' do
@@ -202,7 +202,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
           },
           []
         )
-      }.to raise_error(BD::NetworkInvalidGateway,
+      }.to raise_error(Bosh::Director::NetworkInvalidGateway,
           /must be a single IP/)
     end
 
@@ -216,7 +216,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
           },
           []
         )
-      }.to raise_error(BD::NetworkInvalidGateway,
+      }.to raise_error(Bosh::Director::NetworkInvalidGateway,
           /must be inside the range/)
     end
 

@@ -238,7 +238,7 @@ module Bosh::Director
         end
 
         before do
-          BD::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
+          Bosh::Director::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
           instance.update(spec: spec)
         end
 

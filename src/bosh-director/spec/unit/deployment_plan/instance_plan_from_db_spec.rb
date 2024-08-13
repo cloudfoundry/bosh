@@ -31,8 +31,8 @@ module Bosh::Director
 
       let(:deployment_manifest) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
       let(:deployment_model) do
-        cloud_config = BD::Models::Config.make(:cloud, content: YAML.dump(cloud_config_manifest))
-        deployment = BD::Models::Deployment.make(
+        cloud_config = Bosh::Director::Models::Config.make(:cloud, content: YAML.dump(cloud_config_manifest))
+        deployment = Bosh::Director::Models::Deployment.make(
           name: deployment_manifest['name'],
           manifest: YAML.dump(deployment_manifest),
         )

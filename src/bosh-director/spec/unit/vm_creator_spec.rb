@@ -11,7 +11,7 @@ module Bosh
       let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
       let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
       let(:availability_zone) do
-        BD::DeploymentPlan::AvailabilityZone.new('az-1', {})
+        Bosh::Director::DeploymentPlan::AvailabilityZone.new('az-1', {})
       end
       let(:dns_encoder) { instance_double(DnsEncoder) }
       let(:ip_provider) { double(:ip_provider) }
@@ -19,11 +19,11 @@ module Bosh
       let(:instance) do
         instance_double(DeploymentPlan::Instance, model: instance_model, vm_created?: false)
       end
-      let(:reservation) { BD::DesiredNetworkReservation.new_dynamic(instance_model, manual_network) }
+      let(:reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, manual_network) }
       let(:instance_plan) do
-        desired_instance = BD::DeploymentPlan::DesiredInstance.new(instance_group)
-        network_plan = BD::DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)
-        BD::DeploymentPlan::InstancePlan.new(
+        desired_instance = Bosh::Director::DeploymentPlan::DesiredInstance.new(instance_group)
+        network_plan = Bosh::Director::DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)
+        Bosh::Director::DeploymentPlan::InstancePlan.new(
           existing_instance: instance_model,
           desired_instance: desired_instance,
           instance: instance,
@@ -39,7 +39,7 @@ module Bosh
         disk = DeploymentPlan::PersistentDiskCollection.new(logger)
         disk.add_by_disk_size(1024)
         instance_group_tags = { 'instance_tag' => 'buzz', 'secondtag' => 'overwritten' }
-        BD::DeploymentPlan::InstanceGroup.make(
+        Bosh::Director::DeploymentPlan::InstanceGroup.make(
           persistent_disk_collection: disk,
           tags: instance_group_tags,
         )
@@ -76,7 +76,7 @@ module Bosh
       let(:manual_network) do
         DeploymentPlan::ManualNetwork.parse(
           manual_network_spec,
-          [BD::DeploymentPlan::AvailabilityZone.new('az-1', {})],
+          [Bosh::Director::DeploymentPlan::AvailabilityZone.new('az-1', {})],
           logger,
         )
       end

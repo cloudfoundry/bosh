@@ -367,7 +367,7 @@ module Bosh::Director
         expect(vm_creator).to receive(:create_for_instance_plan).exactly(11).times
 
         agent_client = instance_double('Bosh::Director::AgentClient')
-        allow(BD::AgentClient).to receive(:with_agent_id).and_return(agent_client)
+        allow(Bosh::Director::AgentClient).to receive(:with_agent_id).and_return(agent_client)
         expect(agent_client).to receive(compilation_method).exactly(11).times do |*args|
           send(compilation_method_stub, args)
         end
@@ -467,7 +467,7 @@ module Bosh::Director
           end
 
           agent_client = instance_double('Bosh::Director::AgentClient')
-          allow(BD::AgentClient).to receive(:with_agent_id).and_return(agent_client)
+          allow(Bosh::Director::AgentClient).to receive(:with_agent_id).and_return(agent_client)
           expect(agent_client).to receive(:compile_package).exactly(6).times do |*args|
             compile_package_stub(args)
           end
@@ -719,8 +719,8 @@ module Bosh::Director
           instance_plan.instance.model.active_vm = Models::Vm.make(cid: instance_plan.instance.model.id, instance: instance_plan.instance.model)
         end
 
-        agent_client = instance_double('BD::AgentClient')
-        allow(BD::AgentClient).to receive(:with_agent_id).and_return(agent_client)
+        agent_client = instance_double('Bosh::Director::AgentClient')
+        allow(Bosh::Director::AgentClient).to receive(:with_agent_id).and_return(agent_client)
 
         expect(agent_client).to receive(:compile_package).exactly(6).times do |*args|
           name = args[2]

@@ -21,7 +21,7 @@ module Bosh::Director::DeploymentPlan
         expect do
           ReleaseVersionExportedFrom.parse('version' => '0.5.2')
         end.to raise_error(
-          BD::ValidationMissingField,
+          Bosh::Director::ValidationMissingField,
           "Required property 'os' was not specified in object ({\"version\"=>\"0.5.2\"})",
         )
       end
@@ -30,7 +30,7 @@ module Bosh::Director::DeploymentPlan
         expect do
           ReleaseVersionExportedFrom.parse('os' => 'stemcell-os')
         end.to raise_error(
-          BD::ValidationMissingField,
+          Bosh::Director::ValidationMissingField,
           "Required property 'version' was not specified in object ({\"os\"=>\"stemcell-os\"})",
         )
       end

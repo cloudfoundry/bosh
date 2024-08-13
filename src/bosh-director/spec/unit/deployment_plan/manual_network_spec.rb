@@ -19,23 +19,23 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
   let(:static_ips) { [] }
   let(:network_spec) { cloud_config_hash['networks'].first }
   let(:planner_factory) do
-    BD::DeploymentPlan::PlannerFactory.create(BD::Config.logger)
+    Bosh::Director::DeploymentPlan::PlannerFactory.create(Bosh::Director::Config.logger)
   end
   let(:deployment_plan) do
     cloud_configs = [Bosh::Director::Models::Config.make(:cloud, content: YAML.dump(cloud_config_hash))]
     planner = planner_factory.create_from_manifest(manifest, cloud_configs, [], {})
-    stemcell = BD::DeploymentPlan::Stemcell.parse(manifest_hash['stemcells'].first)
+    stemcell = Bosh::Director::DeploymentPlan::Stemcell.parse(manifest_hash['stemcells'].first)
     planner.add_stemcell(stemcell)
     planner
   end
-  let(:instance_model) { BD::Models::Instance.make }
+  let(:instance_model) { Bosh::Director::Models::Instance.make }
 
   let(:manual_network) do
-    BD::DeploymentPlan::ManualNetwork.parse(
+    Bosh::Director::DeploymentPlan::ManualNetwork.parse(
       network_spec,
       [
-        BD::DeploymentPlan::AvailabilityZone.new('zone_1', {}),
-        BD::DeploymentPlan::AvailabilityZone.new('zone_2', {}),
+        Bosh::Director::DeploymentPlan::AvailabilityZone.new('zone_1', {}),
+        Bosh::Director::DeploymentPlan::AvailabilityZone.new('zone_2', {}),
       ],
       logger,
     )
@@ -75,7 +75,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     it 'should parse subnets' do
       expect(manual_network.subnets.size).to eq(1)
       subnet = manual_network.subnets.first
-      expect(subnet).to be_an_instance_of BD::DeploymentPlan::ManualNetworkSubnet
+      expect(subnet).to be_an_instance_of Bosh::Director::DeploymentPlan::ManualNetworkSubnet
       expect(subnet.network_name).to eq(manual_network.name)
       expect(manual_network.managed?).to eq(false)
       expect(subnet.range).to eq(IPAddr.new('192.168.1.0/24'))
@@ -94,7 +94,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
         expect(manual_network).to be_managed
         expect(manual_network.subnets.size).to eq(1)
         subnet = manual_network.subnets.first
-        expect(subnet).to be_an_instance_of BD::DeploymentPlan::ManualNetworkSubnet
+        expect(subnet).to be_an_instance_of Bosh::Director::DeploymentPlan::ManualNetworkSubnet
         expect(subnet.network_name).to eq(manual_network.name)
         expect(subnet.range).to eq(IPAddr.new('192.168.1.0/24'))
       end
@@ -125,7 +125,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
       manual_network
     end
     it 'should provide the network settings from the subnet' do
-      reservation = BD::DesiredNetworkReservation.new_static(
+      reservation = Bosh::Director::DesiredNetworkReservation.new_static(
         instance_model,
         manual_network,
         '192.168.1.2',
@@ -143,7 +143,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     end
 
     it 'should set the defaults' do
-      reservation = BD::DesiredNetworkReservation.new_static(
+      reservation = Bosh::Director::DesiredNetworkReservation.new_static(
         instance_model,
         manual_network,
         '192.168.1.2',
@@ -161,7 +161,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     end
 
     it 'should fail when there is no IP' do
-      reservation = BD::DesiredNetworkReservation.new_dynamic(
+      reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(
         instance_model,
         manual_network,
       )

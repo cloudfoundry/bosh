@@ -2,24 +2,24 @@ require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::ReleaseVersion do
   def make(deployment, spec)
-    BD::DeploymentPlan::ReleaseVersion.parse(deployment, spec)
+    Bosh::Director::DeploymentPlan::ReleaseVersion.parse(deployment, spec)
   end
 
   def find_release(name)
-    BD::Models::Release.find(:name => name)
+    Bosh::Director::Models::Release.find(:name => name)
   end
 
   def make_deployment(name)
-    BD::Models::Deployment.make(:name => name)
+    Bosh::Director::Models::Deployment.make(:name => name)
   end
 
   def make_release(name)
-    BD::Models::Release.make(:name => name)
+    Bosh::Director::Models::Release.make(:name => name)
   end
 
   def make_version(name, version)
     release = make_release(name)
-    BD::Models::ReleaseVersion.make(:release => release, :version => version)
+    Bosh::Director::Models::ReleaseVersion.make(:release => release, :version => version)
   end
 
   describe '#parse' do
@@ -69,7 +69,7 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
       expect {
         release = make(deployment, spec)
         release.bind_model
-      }.to raise_error(BD::ReleaseNotFound)
+      }.to raise_error(Bosh::Director::ReleaseNotFound)
     end
 
     it "should fail if release version doesn't exist" do
@@ -80,7 +80,7 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
       expect {
         release = make(deployment, spec)
         release.bind_model
-      }.to raise_error(BD::ReleaseVersionNotFound)
+      }.to raise_error(Bosh::Director::ReleaseVersionNotFound)
     end
 
     it 'binds release versions to the deployment in DB' do
@@ -102,7 +102,7 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
       expect {
         release = make(nil, {'name' => 'foo', 'version' => '42'})
         release.bind_model
-      }.to raise_error(BD::DirectorError,
+      }.to raise_error(Bosh::Director::DirectorError,
                        'Deployment not bound in the deployment plan')
     end
   end
@@ -127,17 +127,17 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
       deployment = make_deployment('mycloud')
       r1 = make_release('foo')
       r2 = make_release('bar')
-      rv1 = BD::Models::ReleaseVersion.make(:release => r1, :version => '42')
-      rv2 = BD::Models::ReleaseVersion.make(:release => r2, :version => '55')
+      rv1 = Bosh::Director::Models::ReleaseVersion.make(:release => r1, :version => '42')
+      rv2 = Bosh::Director::Models::ReleaseVersion.make(:release => r2, :version => '55')
 
-      t1 = BD::Models::Template.make(:release => r1, :name => 'dea')
-      t2 = BD::Models::Template.make(:release => r2, :name => 'stager')
+      t1 = Bosh::Director::Models::Template.make(:release => r1, :name => 'dea')
+      t2 = Bosh::Director::Models::Template.make(:release => r2, :name => 'stager')
       rv1.add_template(t1)
       rv2.add_template(t2)
 
-      p1 = BD::Models::Package.make(:release => r1, :name => 'ruby18')
-      p2 = BD::Models::Package.make(:release => r2, :name => 'ruby19')
-      p3 = BD::Models::Package.make(:release => r2, :name => 'ruby20')
+      p1 = Bosh::Director::Models::Package.make(:release => r1, :name => 'ruby18')
+      p2 = Bosh::Director::Models::Package.make(:release => r2, :name => 'ruby19')
+      p3 = Bosh::Director::Models::Package.make(:release => r2, :name => 'ruby20')
       rv1.add_package(p1)
       rv2.add_package(p2)
       rv2.add_package(p3)
@@ -167,16 +167,16 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
 
       r_bar = make_release('bar')
       bar_42 =
-        BD::Models::ReleaseVersion.make(:release => r_bar, :version => '42')
+        Bosh::Director::Models::ReleaseVersion.make(:release => r_bar, :version => '42')
 
-      t_dea = BD::Models::Template.make(:release => r_bar, :name => 'dea')
+      t_dea = Bosh::Director::Models::Template.make(:release => r_bar, :name => 'dea')
       t_dea.package_names = %w(ruby node)
       t_dea.save
 
       bar_42.add_template(t_dea)
 
-      p_ruby = BD::Models::Package.make(:release => r_bar, :name => 'ruby')
-      p_node = BD::Models::Package.make(:release => r_bar, :name => 'node')
+      p_ruby = Bosh::Director::Models::Package.make(:release => r_bar, :name => 'ruby')
+      p_node = Bosh::Director::Models::Package.make(:release => r_bar, :name => 'node')
       bar_42.add_package(p_ruby)
       bar_42.add_package(p_node)
 
@@ -207,11 +207,11 @@ describe Bosh::Director::DeploymentPlan::ReleaseVersion do
         :spec_json => JSON.generate({'logs' => %w(a b c)})
       }
 
-      t_dea = BD::Models::Template.make(t_attrs)
+      t_dea = Bosh::Director::Models::Template.make(t_attrs)
 
 
       bar_42 =
-        BD::Models::ReleaseVersion.make(:release => r_bar, :version => '42')
+        Bosh::Director::Models::ReleaseVersion.make(:release => r_bar, :version => '42')
       bar_42.add_template(t_dea)
 
       release = make(make_deployment('mycloud'), {'name' => 'bar', 'version' => 42})

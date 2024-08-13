@@ -4,7 +4,7 @@ module Bosh::Director
   describe Jobs::Helpers::StemcellDeleter do
     let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
-    let(:cloud_factory) { instance_double(BD::CloudFactory) }
+    let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
     let(:stemcell_deleter) { Jobs::Helpers::StemcellDeleter.new(logger) }
     let(:stemcell) { Models::Stemcell.make(name: 'test_stemcell', version: 'test_version', cid: 'stemcell_cid') }
 
@@ -104,9 +104,9 @@ module Bosh::Director
     end
 
     describe 'looking up clouds for a stemcell' do
-      let(:cloud_factory) { instance_double(BD::CloudFactory) }
+      let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
       before {
-        allow(BD::CloudFactory).to receive(:create).and_return(cloud_factory)
+        allow(Bosh::Director::CloudFactory).to receive(:create).and_return(cloud_factory)
       }
 
       context 'if no cpi is set on stemcell' do

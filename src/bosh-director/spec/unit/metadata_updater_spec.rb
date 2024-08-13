@@ -7,10 +7,10 @@ describe Bosh::Director::MetadataUpdater do
     {}
   end
   let(:vm) do
-    BD::Models::Vm.make(cid: 'fake-vm-cid', instance_id: instance.id, cpi: 'cpi1')
+    Bosh::Director::Models::Vm.make(cid: 'fake-vm-cid', instance_id: instance.id, cpi: 'cpi1')
   end
   let(:instance) do
-    BD::Models::Instance.make(
+    Bosh::Director::Models::Instance.make(
       deployment: deployment,
       uuid: 'some_instance_id',
       job: 'job-value',
@@ -18,7 +18,7 @@ describe Bosh::Director::MetadataUpdater do
       availability_zone: 'az1',
     )
   end
-  let(:deployment) { BD::Models::Deployment.make(name: 'deployment-value') }
+  let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'deployment-value') }
   let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
 
   before do
@@ -130,7 +130,7 @@ describe Bosh::Director::MetadataUpdater do
   end
 
   describe '#update_disk_metadata' do
-    let(:disk) { BD::Models::PersistentDisk.make(instance: instance, disk_cid: 'fake-disk-cid') }
+    let(:disk) { Bosh::Director::Models::PersistentDisk.make(instance: instance, disk_cid: 'fake-disk-cid') }
     before do
       instance.add_persistent_disk(disk) if disk
     end

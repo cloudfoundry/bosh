@@ -2,11 +2,11 @@ require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::Stemcell do
   def make(spec)
-    BD::DeploymentPlan::Stemcell.parse(spec)
+    Bosh::Director::DeploymentPlan::Stemcell.parse(spec)
   end
 
   def make_stemcell(name, version, os = 'os1', params = {})
-    BD::Models::Stemcell.make({ name: name, operating_system: os, version: version }.merge(params))
+    Bosh::Director::Models::Stemcell.make({ name: name, operating_system: os, version: version }.merge(params))
   end
 
   let(:valid_spec) do
@@ -16,7 +16,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
     }
   end
 
-  let(:deployment) { BD::Models::Deployment.make(name: 'mycloud') }
+  let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'mycloud') }
 
   describe 'creating' do
     it 'parses name and version' do
@@ -29,7 +29,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       valid_spec.delete('version')
       expect do
         make(valid_spec)
-      end.to raise_error(BD::ValidationMissingField,
+      end.to raise_error(Bosh::Director::ValidationMissingField,
                          "Required property 'version' was not specified in object ({\"name\"=>\"stemcell-name\"})")
     end
 
@@ -55,7 +55,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
           valid_spec.delete('name')
           valid_spec.delete('os')
           expect { make(valid_spec) }.to raise_error(
-            BD::ValidationMissingField,
+            Bosh::Director::ValidationMissingField,
             "Required property 'os' or 'name' was not specified in object ({\"version\"=>\"0.5.2\"})",
           )
         end
@@ -161,7 +161,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
           'os' => 'os2',
           'version' => '0.5.5',
         )
-        expect { stemcell.bind_model(deployment) }.to raise_error BD::StemcellNotFound
+        expect { stemcell.bind_model(deployment) }.to raise_error Bosh::Director::StemcellNotFound
       end
 
       it 'returns error out if name and version is not found' do
@@ -172,14 +172,14 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
           'name' => 'stemcell-name3',
           'version' => '0.5.2',
         )
-        expect { stemcell.bind_model(deployment) }.to raise_error BD::StemcellNotFound
+        expect { stemcell.bind_model(deployment) }.to raise_error Bosh::Director::StemcellNotFound
       end
 
       it "fails if stemcell doesn't exist at all" do
         stemcell = make(valid_spec)
         expect do
           stemcell.bind_model(deployment)
-        end.to raise_error(BD::StemcellNotFound)
+        end.to raise_error(Bosh::Director::StemcellNotFound)
       end
     end
 
@@ -214,12 +214,12 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       expect do
         stemcell = make('name' => 'foo', 'version' => '42')
         stemcell.bind_model(nil)
-      end.to raise_error(BD::DirectorError, 'Deployment not bound in the deployment plan')
+      end.to raise_error(Bosh::Director::DirectorError, 'Deployment not bound in the deployment plan')
     end
   end
 
   describe '#model_for_az' do
-    let(:cloud_factory) { instance_double(BD::AZCloudFactory) }
+    let(:cloud_factory) { instance_double(Bosh::Director::AZCloudFactory) }
 
     it 'raises an error if no stemcell model was bound' do
       stemcell = make('name' => 'does-not-exist', 'version' => 'non-existent-version')
@@ -232,7 +232,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       it 'raises an error if no stemcell for the default cpi exists' do
         stemcell = make('name' => 'foo', 'version' => '42-dev')
         stemcell.bind_model(deployment)
-        expect { stemcell.model_for_az(nil, cloud_factory) }.to raise_error BD::StemcellNotFound
+        expect { stemcell.model_for_az(nil, cloud_factory) }.to raise_error Bosh::Director::StemcellNotFound
       end
     end
 
@@ -279,7 +279,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
           let(:cpi_aliases) { ['garbage'] }
 
           it 'raises an error if the required stemcell for the given AZ does not exist' do
-            expect { stemcell.model_for_az('az-example', cloud_factory) }.to raise_error BD::StemcellNotFound
+            expect { stemcell.model_for_az('az-example', cloud_factory) }.to raise_error Bosh::Director::StemcellNotFound
           end
         end
 

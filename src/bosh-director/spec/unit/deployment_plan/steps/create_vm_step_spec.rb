@@ -29,7 +29,7 @@ module Bosh
           let(:expected_group) { 'fake-director-name-deployment-name-fake-job' }
           let(:vm_model) { Models::Vm.make(cid: 'new-vm-cid', instance: instance_model, cpi: 'cpi1') }
           let(:tags) { {} }
-          let(:availability_zone) { BD::DeploymentPlan::AvailabilityZone.new('az-1', {}) }
+          let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('az-1', {}) }
           let(:cloud_properties) { { 'ram' => '2gb' } }
           let(:network_cloud_properties) { { 'bandwidth' => '5mbps' } }
           let(:variable_set) { Bosh::Director::Models::VariableSet.make(deployment: deployment) }
@@ -41,7 +41,7 @@ module Bosh
           end
 
           let(:network_settings) do
-            BD::DeploymentPlan::NetworkSettings.new(
+            Bosh::Director::DeploymentPlan::NetworkSettings.new(
               instance_group.name,
               'deployment_name',
               { 'gateway' => 'name' },
@@ -86,7 +86,7 @@ module Bosh
           end
 
           let(:instance_group) do
-            BD::DeploymentPlan::InstanceGroup.make(
+            Bosh::Director::DeploymentPlan::InstanceGroup.make(
               vm_type: vm_type,
               env: env,
               default_network: { 'gateway' => 'name' },
@@ -119,9 +119,9 @@ module Bosh
           end
 
           let(:instance_plan) do
-            desired_instance = BD::DeploymentPlan::DesiredInstance.new(instance_group)
-            network_plan = BD::DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)
-            BD::DeploymentPlan::InstancePlan.new(
+            desired_instance = Bosh::Director::DeploymentPlan::DesiredInstance.new(instance_group)
+            network_plan = Bosh::Director::DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)
+            Bosh::Director::DeploymentPlan::InstancePlan.new(
               existing_instance: instance_model,
               desired_instance: desired_instance,
               instance: instance,
@@ -146,9 +146,9 @@ module Bosh
           end
 
           let(:reservation) do
-            subnet = BD::DeploymentPlan::DynamicNetworkSubnet.new('dns', network_cloud_properties, ['az-1'])
-            network = BD::DeploymentPlan::DynamicNetwork.new('name', [subnet], logger)
-            reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
+            subnet = Bosh::Director::DeploymentPlan::DynamicNetworkSubnet.new('dns', network_cloud_properties, ['az-1'])
+            network = Bosh::Director::DeploymentPlan::DynamicNetwork.new('name', [subnet], logger)
+            reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network)
             reservation
           end
 

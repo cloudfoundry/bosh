@@ -25,8 +25,8 @@ module Bosh
           describe '#perform' do
             let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
             let(:cloud_factory) { instance_double(CloudFactory) }
-            let(:job) { instance_double(BD::Jobs::BaseJob) }
-            let(:instance_group) { BD::DeploymentPlan::InstanceGroup.make }
+            let(:job) { instance_double(Bosh::Director::Jobs::BaseJob) }
+            let(:instance_group) { Bosh::Director::DeploymentPlan::InstanceGroup.make }
             let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
             let(:instance) do
               instance = DeploymentPlan::Instance.create_from_instance_group(

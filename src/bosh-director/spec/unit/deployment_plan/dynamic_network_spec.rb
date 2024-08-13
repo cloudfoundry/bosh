@@ -9,13 +9,13 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
   describe '.parse' do
     context 'with a manifest using the old format without explicit subnets' do
       it 'parses the spec and creates a subnet from the dns and cloud properties' do
-        network = BD::DeploymentPlan::DynamicNetwork.parse(
+        network = Bosh::Director::DeploymentPlan::DynamicNetwork.parse(
           {
             'name' => 'foo',
             'dns' => %w[1.2.3.4 5.6.7.8],
             'cloud_properties' => {'foz' => 'baz'},
           },
-          [BD::DeploymentPlan::AvailabilityZone.new('foo-zone', {})],
+          [Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-zone', {})],
           logger
         )
 
@@ -27,7 +27,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
       end
 
       it 'defaults cloud properties to empty hash' do
-        network = BD::DeploymentPlan::DynamicNetwork.parse(
+        network = Bosh::Director::DeploymentPlan::DynamicNetwork.parse(
           {
             'name' => 'foo',
           },
@@ -39,7 +39,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
       end
 
       it 'defaults dns to nil' do
-        network = BD::DeploymentPlan::DynamicNetwork.parse(
+        network = Bosh::Director::DeploymentPlan::DynamicNetwork.parse(
           {
             'name' => 'foo',
             'cloud_properties' => {
@@ -54,7 +54,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
       end
 
       it 'defaults availability zone to nil' do
-        network = BD::DeploymentPlan::DynamicNetwork.parse(
+        network = Bosh::Director::DeploymentPlan::DynamicNetwork.parse(
           {
             'name' => 'foo',
             'cloud_properties' => {
@@ -68,7 +68,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
 
       it 'raises error when cloud_properties is NOT a hash' do
         expect {
-          BD::DeploymentPlan::DynamicNetwork.parse(
+          Bosh::Director::DeploymentPlan::DynamicNetwork.parse(
               {
                   'name' => 'foo',
                   'cloud_properties' => 'not_hash',
@@ -81,34 +81,34 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
 
       it "raises error when 'az' is present on the network spec" do
         expect {
-          BD::DeploymentPlan::DynamicNetwork.parse(
+          Bosh::Director::DeploymentPlan::DynamicNetwork.parse(
             {
               'name' => 'foo',
               'az' => 'foo-zone'
             },
-            [BD::DeploymentPlan::AvailabilityZone.new('foo-zone', {})],
+            [Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-zone', {})],
             logger
           )
-        }.to raise_error(BD::NetworkInvalidProperty, "Network 'foo' must not specify 'az'.")
+        }.to raise_error(Bosh::Director::NetworkInvalidProperty, "Network 'foo' must not specify 'az'.")
       end
 
       it "raises error when 'azs' is present on the network spec" do
         expect {
-          BD::DeploymentPlan::DynamicNetwork.parse(
+          Bosh::Director::DeploymentPlan::DynamicNetwork.parse(
             {
               'name' => 'foo',
               'azs' => ['foo-zone']
             },
-            [BD::DeploymentPlan::AvailabilityZone.new('foo-zone', {})],
+            [Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-zone', {})],
             logger
           )
-        }.to raise_error(BD::NetworkInvalidProperty, "Network 'foo' must not specify 'azs'.")
+        }.to raise_error(Bosh::Director::NetworkInvalidProperty, "Network 'foo' must not specify 'azs'.")
       end
     end
 
     context 'with a manifest specifying subnets' do
       it 'should parse spec' do
-        network = BD::DeploymentPlan::DynamicNetwork.parse(
+        network = Bosh::Director::DeploymentPlan::DynamicNetwork.parse(
           {
             'name' => 'foo',
             'subnets' => [
@@ -129,8 +129,8 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
             ]
           },
           [
-            BD::DeploymentPlan::AvailabilityZone.new('foo-zone', {}),
-            BD::DeploymentPlan::AvailabilityZone.new('foz-zone', {}),
+            Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-zone', {}),
+            Bosh::Director::DeploymentPlan::AvailabilityZone.new('foz-zone', {}),
           ],
           logger
         )
@@ -146,7 +146,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
       end
 
       it 'defaults cloud properties to empty hash' do
-        network = BD::DeploymentPlan::DynamicNetwork.parse(
+        network = Bosh::Director::DeploymentPlan::DynamicNetwork.parse(
           {
             'name' => 'foo',
             'subnets' => [
@@ -164,7 +164,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
       end
 
       it 'defaults dns to nil' do
-        network = BD::DeploymentPlan::DynamicNetwork.parse(
+        network = Bosh::Director::DeploymentPlan::DynamicNetwork.parse(
           {
             'name' => 'foo',
             'subnets' => [
@@ -184,7 +184,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
       end
 
       it 'defaults availability zone to nil when not specified' do
-        network = BD::DeploymentPlan::DynamicNetwork.parse(
+        network = Bosh::Director::DeploymentPlan::DynamicNetwork.parse(
           {
             'name' => 'foo',
             'subnets' => [
@@ -204,7 +204,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
 
       it 'does not allow availability zone to be nil' do
         expect {
-          BD::DeploymentPlan::DynamicNetwork.parse(
+          Bosh::Director::DeploymentPlan::DynamicNetwork.parse(
             {
               'name' => 'foo',
               'subnets' => [
@@ -218,12 +218,12 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
             },
             [], logger
           )
-        }.to raise_error(BD::ValidationInvalidType)
+        }.to raise_error(Bosh::Director::ValidationInvalidType)
       end
 
       it 'raises error when cloud_properties is NOT a hash' do
         expect {
-          BD::DeploymentPlan::DynamicNetwork.parse(
+          Bosh::Director::DeploymentPlan::DynamicNetwork.parse(
               {
                   'name' => 'foo',
                   'subnets' => [
@@ -235,7 +235,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
                   ]
               },
               [
-                  BD::DeploymentPlan::AvailabilityZone.new('foz-zone', {}),
+                  Bosh::Director::DeploymentPlan::AvailabilityZone.new('foz-zone', {}),
               ],
               logger
           )
@@ -244,7 +244,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
 
       it 'raises error when dns is present at the top level' do
         expect {
-          BD::DeploymentPlan::DynamicNetwork.parse(
+          Bosh::Director::DeploymentPlan::DynamicNetwork.parse(
             {
               'name' => 'foo',
               'dns' => %w[1.2.3.4 5.6.7.8],
@@ -260,14 +260,14 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
             [],
             logger
           )
-        }.to raise_error(BD::NetworkInvalidProperty,
+        }.to raise_error(Bosh::Director::NetworkInvalidProperty,
             "Network 'foo' must not specify 'dns' when also specifying 'subnets'. " +
               "Instead, 'dns' should be specified on subnet entries.")
       end
 
       it 'raises error when cloud_properties is present at the top level' do
         expect {
-          BD::DeploymentPlan::DynamicNetwork.parse({
+          Bosh::Director::DeploymentPlan::DynamicNetwork.parse({
               'name' => 'foo',
               'cloud_properties' => {
                 'foz' => 'baz'
@@ -283,14 +283,14 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
             [],
             logger
           )
-        }.to raise_error(BD::NetworkInvalidProperty,
+        }.to raise_error(Bosh::Director::NetworkInvalidProperty,
             "Network 'foo' must not specify 'cloud_properties' when also specifying 'subnets'. " +
               "Instead, 'cloud_properties' should be specified on subnet entries.")
       end
 
       it 'validates the az references an existing AZ' do
         expect {
-          BD::DeploymentPlan::DynamicNetwork.parse(
+          Bosh::Director::DeploymentPlan::DynamicNetwork.parse(
             {
               'name' => 'foo',
               'subnets' => [
@@ -301,17 +301,17 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
                 'az' => 'foo-zone',
               ],
             },
-            [BD::DeploymentPlan::AvailabilityZone.new('bar-zone', {})],
+            [Bosh::Director::DeploymentPlan::AvailabilityZone.new('bar-zone', {})],
             logger
           )
-        }.to raise_error(BD::NetworkSubnetUnknownAvailabilityZone)
+        }.to raise_error(Bosh::Director::NetworkSubnetUnknownAvailabilityZone)
       end
     end
   end
 
   describe :network_settings do
     before(:each) do
-      @network = BD::DeploymentPlan::DynamicNetwork.parse({
+      @network = Bosh::Director::DeploymentPlan::DynamicNetwork.parse({
           'name' => 'foo',
           'cloud_properties' => {
             'foz' => 'baz'
@@ -321,7 +321,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
     let(:subnets) { [] }
 
     it 'should provide dynamic network settings' do
-      reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, @network)
+      reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, @network)
       reservation.resolve_ip(4294967295)
       expect(@network.network_settings(reservation,[])).to eq({
             'type' => 'dynamic',
@@ -331,7 +331,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
     end
 
     it 'should set the defaults' do
-      reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, @network)
+      reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, @network)
       reservation.resolve_ip(4294967295)
       expect(@network.network_settings(reservation)).to eq({
             'type' => 'dynamic',
@@ -341,21 +341,21 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
     end
 
     it 'should fail when for static reservation' do
-      reservation = BD::DesiredNetworkReservation.new_static(instance_model, @network, 1)
+      reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, @network, 1)
       expect {
         @network.network_settings(reservation)
-      }.to raise_error BD::NetworkReservationWrongType
+      }.to raise_error Bosh::Director::NetworkReservationWrongType
     end
 
     context 'when availability zone(s) is specified' do
 
       let(:azs) { [az1, az2] }
-      let(:az1) { BD::DeploymentPlan::AvailabilityZone.new('fake-az', {'az_key' => 'az_value'}) }
-      let(:az2) { BD::DeploymentPlan::AvailabilityZone.new('fake-az2', {'az_key' => 'az_value2'}) }
+      let(:az1) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('fake-az', {'az_key' => 'az_value'}) }
+      let(:az2) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('fake-az2', {'az_key' => 'az_value2'}) }
 
       context 'when both azs and az are both specified' do
         let(:network) do
-          BD::DeploymentPlan::DynamicNetwork.parse({
+          Bosh::Director::DeploymentPlan::DynamicNetwork.parse({
               'name' => 'foo',
               'subnets' => [{
                   'az' => 'fake-az',
@@ -372,7 +372,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
 
       context 'when multiple azs are specified on the network' do
         let(:network) do
-          BD::DeploymentPlan::DynamicNetwork.parse({
+          Bosh::Director::DeploymentPlan::DynamicNetwork.parse({
               'name' => 'foo',
               'subnets' => [{
                   'azs' => ['fake-az', 'fake-az2'],
@@ -382,7 +382,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
         end
 
         it 'returns settings from the subnet for both azs' do
-          reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
+          reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network)
 
           expect(network.network_settings(reservation, [], az1)).to eq({
                 'type' => 'dynamic',
@@ -399,7 +399,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
 
         it 'raises an error when an empty azs array is specified' do
           expect {
-            network = BD::DeploymentPlan::DynamicNetwork.parse({
+            network = Bosh::Director::DeploymentPlan::DynamicNetwork.parse({
                 'name' => 'foo',
                 'subnets' => [{
                     'azs' => [],
@@ -411,7 +411,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
 
         it 'raises an error when an unknown az is specified' do
           expect {
-            network = BD::DeploymentPlan::DynamicNetwork.parse({
+            network = Bosh::Director::DeploymentPlan::DynamicNetwork.parse({
                 'name' => 'foo',
                 'subnets' => [{
                     'azs' => ['fake-az', 'say-what'],
@@ -422,7 +422,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
         end
 
         it 'returns first subnet if instance does not have availability zone' do
-          reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
+          reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network)
 
           expect(network.network_settings(reservation, [])).to eq({
                 'type' => 'dynamic',
@@ -434,7 +434,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
 
       context 'when singular az is specified' do
         let(:network) do
-          BD::DeploymentPlan::DynamicNetwork.parse({
+          Bosh::Director::DeploymentPlan::DynamicNetwork.parse({
               'name' => 'foo',
               'subnets' => [{
                   'az' => 'fake-az',
@@ -449,7 +449,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
 
         it 'returns settings from subnet that belongs to specified availability zone' do
 
-          reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
+          reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network)
 
           expect(network.network_settings(reservation, [], az2)).to eq({
                 'type' => 'dynamic',
@@ -459,7 +459,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
         end
 
         it 'returns first subnet if instance does not have availability zone' do
-          reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
+          reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network)
 
           expect(network.network_settings(reservation, [])).to eq({
                 'type' => 'dynamic',
@@ -470,7 +470,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
 
         it 'raises an error when there is no subnet in requested az' do
           network =
-            BD::DeploymentPlan::DynamicNetwork.parse({
+            Bosh::Director::DeploymentPlan::DynamicNetwork.parse({
                 'name' => 'foo',
                 'subnets' => [{
                     'az' => 'fake-az',
@@ -482,12 +482,12 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
                   }]
               }, azs, logger)
 
-          reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
+          reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network)
 
-          unknown_az = BD::DeploymentPlan::AvailabilityZone.new('fake-unknown-az', {})
+          unknown_az = Bosh::Director::DeploymentPlan::AvailabilityZone.new('fake-unknown-az', {})
           expect {
             network.network_settings(reservation, [], unknown_az)
-          }.to raise_error BD::NetworkSubnetInvalidAvailabilityZone, "Network 'foo' has no matching subnet for availability zone 'fake-unknown-az'"
+          }.to raise_error Bosh::Director::NetworkSubnetInvalidAvailabilityZone, "Network 'foo' has no matching subnet for availability zone 'fake-unknown-az'"
         end
       end
     end
@@ -509,11 +509,11 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
     end
 
     let(:network) do
-      BD::DeploymentPlan::DynamicNetwork.parse(
+      Bosh::Director::DeploymentPlan::DynamicNetwork.parse(
         network_spec,
         [
-          BD::DeploymentPlan::AvailabilityZone.new('zone_1', {}),
-          BD::DeploymentPlan::AvailabilityZone.new('zone_2', {}),
+          Bosh::Director::DeploymentPlan::AvailabilityZone.new('zone_1', {}),
+          Bosh::Director::DeploymentPlan::AvailabilityZone.new('zone_2', {}),
         ],
         logger
       )
@@ -537,7 +537,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
 
   describe :validate_reference_from_job do
     it 'returns true if job has a valid network spec' do
-      dynamic_network = BD::DeploymentPlan::DynamicNetwork.new('dynamic', [], logger)
+      dynamic_network = Bosh::Director::DeploymentPlan::DynamicNetwork.new('dynamic', [], logger)
       job_network_spec = {'name' => 'dynamic'}
 
       expect {
@@ -547,7 +547,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
 
     context 'when network is dynamic but job network spec uses static ips' do
       it 'raises StaticIPNotSupportedOnDynamicNetwork' do
-        dynamic_network = BD::DeploymentPlan::DynamicNetwork.new('dynamic', [], logger)
+        dynamic_network = Bosh::Director::DeploymentPlan::DynamicNetwork.new('dynamic', [], logger)
         job_network_spec = {
           'name' => 'dynamic',
           'static_ips' => ['192.168.1.10']
@@ -555,7 +555,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
 
         expect {
           dynamic_network.validate_reference_from_job!(job_network_spec, 'job-name')
-        }.to raise_error BD::JobStaticIPNotSupportedOnDynamicNetwork, "Instance group 'job-name' using dynamic network 'dynamic' cannot specify static IP(s)"
+        }.to raise_error Bosh::Director::JobStaticIPNotSupportedOnDynamicNetwork, "Instance group 'job-name' using dynamic network 'dynamic' cannot specify static IP(s)"
       end
     end
   end

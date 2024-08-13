@@ -23,8 +23,8 @@ module Bosh::Director
       DeploymentPlan::ManualNetwork.parse(
         manual_network_spec,
         [
-          BD::DeploymentPlan::AvailabilityZone.new('az-1', {}),
-          BD::DeploymentPlan::AvailabilityZone.new('az-2', {}),
+          Bosh::Director::DeploymentPlan::AvailabilityZone.new('az-1', {}),
+          Bosh::Director::DeploymentPlan::AvailabilityZone.new('az-2', {}),
         ],
         logger,
       )
@@ -68,8 +68,8 @@ module Bosh::Director
 
         context 'when there is a last VM with IP addresses' do
           before do
-            vm1 = BD::Models::Vm.make(instance: instance_model)
-            vm2 = BD::Models::Vm.make(instance: instance_model)
+            vm1 = Bosh::Director::Models::Vm.make(instance: instance_model)
+            vm2 = Bosh::Director::Models::Vm.make(instance: instance_model)
 
             vm2.add_ip_address(ip_model1)
             vm2.add_ip_address(ip_model2)
@@ -86,7 +86,7 @@ module Bosh::Director
 
         context 'when there are orphaned IP addresses from a failed deploy' do
           before do
-            vm1 = BD::Models::Vm.make(instance: instance_model)
+            vm1 = Bosh::Director::Models::Vm.make(instance: instance_model)
             vm1.add_ip_address(ip_model1)
 
             # Add orphaned IP - not associated with a VM or orphaned VM

@@ -187,10 +187,10 @@ module Bosh::Director
 
     describe '#find_version' do
       before do
-        @release = BD::Models::Release.make(:name => 'fake-release-name')
-        @final_release_version = BD::Models::ReleaseVersion.make(:release => @release, :version => '9')
-        @old_dev_release_version = BD::Models::ReleaseVersion.make(:release => @release, :version => '9.1-dev')
-        @new_dev_release_version = BD::Models::ReleaseVersion.make(:release => @release, :version => '9+dev.2')
+        @release = Bosh::Director::Models::Release.make(:name => 'fake-release-name')
+        @final_release_version = Bosh::Director::Models::ReleaseVersion.make(:release => @release, :version => '9')
+        @old_dev_release_version = Bosh::Director::Models::ReleaseVersion.make(:release => @release, :version => '9.1-dev')
+        @new_dev_release_version = Bosh::Director::Models::ReleaseVersion.make(:release => @release, :version => '9+dev.2')
       end
 
       context 'when version as specified exists in the database' do

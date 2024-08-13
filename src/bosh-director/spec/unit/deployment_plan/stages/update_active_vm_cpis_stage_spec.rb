@@ -20,7 +20,7 @@ module Bosh::Director
         deployment_plan = planner_factory.create_from_model(deployment_model)
 
         agent_client = instance_double('Bosh::Director::AgentClient')
-        allow(BD::AgentClient).to receive(:with_agent_id).and_return(agent_client)
+        allow(Bosh::Director::AgentClient).to receive(:with_agent_id).and_return(agent_client)
         allow(agent_client).to receive(:get_state).and_return({'agent-state' => 'yes'})
 
         deployment_plan

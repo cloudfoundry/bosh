@@ -4,9 +4,9 @@ require 'ipaddr'
 
 module Bosh::Director::Models
   describe Vm do
-    subject(:vm) { BD::Models::Vm.make(instance: instance) }
+    subject(:vm) { Bosh::Director::Models::Vm.make(instance: instance) }
 
-    let!(:instance) { BD::Models::Instance.make }
+    let!(:instance) { Bosh::Director::Models::Instance.make }
 
     it 'has a many-to-one relationship to instances' do
       described_class.make(instance_id: instance.id, id: 1)
@@ -41,8 +41,8 @@ module Bosh::Director::Models
     end
 
     describe '#ips' do
-      let!(:ip_address) { BD::Models::IpAddress.make(vm: vm, address_str: IPAddr.new('1.1.1.1').to_i.to_s) }
-      let!(:ip_address2) { BD::Models::IpAddress.make(vm: vm, address_str: IPAddr.new('1.1.1.2').to_i.to_s) }
+      let!(:ip_address) { Bosh::Director::Models::IpAddress.make(vm: vm, address_str: IPAddr.new('1.1.1.1').to_i.to_s) }
+      let!(:ip_address2) { Bosh::Director::Models::IpAddress.make(vm: vm, address_str: IPAddr.new('1.1.1.2').to_i.to_s) }
 
       before do
         vm.network_spec = { 'some' => { 'ip' => '1.1.1.3' } }

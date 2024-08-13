@@ -302,12 +302,12 @@ module Bosh::Director::Models
     end
 
     it 'has a one-to-many relationship to vms' do
-      vm1 = BD::Models::Vm.make(instance_id: subject.id)
-      vm2 = BD::Models::Vm.make(instance_id: subject.id)
+      vm1 = Bosh::Director::Models::Vm.make(instance_id: subject.id)
+      vm2 = Bosh::Director::Models::Vm.make(instance_id: subject.id)
 
       expect(subject.vms).to contain_exactly(vm1, vm2)
 
-      new_instance = BD::Models::Instance.make
+      new_instance = Bosh::Director::Models::Instance.make
 
       new_instance.add_vm vm1
       subject.refresh
@@ -316,8 +316,8 @@ module Bosh::Director::Models
     end
 
     describe '#active_vm' do
-      let!(:vm1) { BD::Models::Vm.make(instance_id: subject.id) }
-      let!(:vm2) { BD::Models::Vm.make(instance_id: subject.id, active: true) }
+      let!(:vm1) { Bosh::Director::Models::Vm.make(instance_id: subject.id) }
+      let!(:vm2) { Bosh::Director::Models::Vm.make(instance_id: subject.id, active: true) }
 
       it 'returns vm of #vms that is marked active' do
         expect(subject.active_vm).to eq(vm2)
@@ -325,8 +325,8 @@ module Bosh::Director::Models
     end
 
     describe '#active_vm=' do
-      let!(:vm1) { BD::Models::Vm.make(instance_id: subject.id) }
-      let!(:vm2) { BD::Models::Vm.make(instance_id: subject.id, active: true) }
+      let!(:vm1) { Bosh::Director::Models::Vm.make(instance_id: subject.id) }
+      let!(:vm2) { Bosh::Director::Models::Vm.make(instance_id: subject.id, active: true) }
 
       it 'changes what vm is returned for #active_vm' do
         expect(subject.active_vm).to eq(vm2)
@@ -371,7 +371,7 @@ module Bosh::Director::Models
 
     context 'with active vm' do
       before do
-        vm = BD::Models::Vm.make(
+        vm = Bosh::Director::Models::Vm.make(
           agent_id: 'my-agent-id',
           cid: 'my-cid',
           trusted_certs_sha1: 'trusted-sha',
@@ -473,13 +473,13 @@ module Bosh::Director::Models
     end
 
     describe '#has_important_vm?' do
-      let!(:vm) { BD::Models::Vm.make(instance_id: instance_with_important_vm.id, active: true) }
-      let!(:ignored_vm) { BD::Models::Vm.make(instance_id: ignored_instance.id, active: true) }
-      let!(:stopped_vm) { BD::Models::Vm.make(instance_id: stopped_instance.id, active: true) }
-      let(:instance_with_important_vm) { BD::Models::Instance.make(state: 'started', ignore: false) }
-      let(:ignored_instance) { BD::Models::Instance.make(state: 'started', ignore: true) }
-      let(:stopped_instance) { BD::Models::Instance.make(state: 'stopped', ignore: false) }
-      let(:instance_with_no_active_vm) { BD::Models::Instance.make(state: 'started', ignore: false) }
+      let!(:vm) { Bosh::Director::Models::Vm.make(instance_id: instance_with_important_vm.id, active: true) }
+      let!(:ignored_vm) { Bosh::Director::Models::Vm.make(instance_id: ignored_instance.id, active: true) }
+      let!(:stopped_vm) { Bosh::Director::Models::Vm.make(instance_id: stopped_instance.id, active: true) }
+      let(:instance_with_important_vm) { Bosh::Director::Models::Instance.make(state: 'started', ignore: false) }
+      let(:ignored_instance) { Bosh::Director::Models::Instance.make(state: 'started', ignore: true) }
+      let(:stopped_instance) { Bosh::Director::Models::Instance.make(state: 'stopped', ignore: false) }
+      let(:instance_with_no_active_vm) { Bosh::Director::Models::Instance.make(state: 'started', ignore: false) }
 
       it 'only returns true when model has active vm and is not stopped and is not ignored' do
         expect(instance_with_important_vm.has_important_vm?).to eq(true)
@@ -490,12 +490,12 @@ module Bosh::Director::Models
     end
 
     describe '#most_recent_inactive_vm' do
-      let!(:vm) { BD::Models::Vm.make(instance_id: instance.id, active: true) }
-      let(:instance) { BD::Models::Instance.make(state: 'started', ignore: false) }
+      let!(:vm) { Bosh::Director::Models::Vm.make(instance_id: instance.id, active: true) }
+      let(:instance) { Bosh::Director::Models::Instance.make(state: 'started', ignore: false) }
 
       context 'has one active and two inactive vms' do
-        let!(:old_inactive_vm) { BD::Models::Vm.make(instance_id: instance.id, active: false) }
-        let!(:new_inactive_vm) { BD::Models::Vm.make(instance_id: instance.id, active: false) }
+        let!(:old_inactive_vm) { Bosh::Director::Models::Vm.make(instance_id: instance.id, active: false) }
+        let!(:new_inactive_vm) { Bosh::Director::Models::Vm.make(instance_id: instance.id, active: false) }
 
         it 'returns the most recent inactive vm' do
           expect(instance.most_recent_inactive_vm).to eq(new_inactive_vm)

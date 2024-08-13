@@ -217,8 +217,6 @@ end
 
 SpecHelper.init
 
-BD = Bosh::Director
-
 RSpec.configure do |rspec|
   rspec.around(:each) do |example|
     SpecHelper.reset_database(example)

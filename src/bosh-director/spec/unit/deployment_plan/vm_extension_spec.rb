@@ -23,7 +23,7 @@ module Bosh::Director::DeploymentPlan
         before { valid_spec.delete('name') }
 
         it 'raises an error' do
-          expect { VmExtension.new(valid_spec) }.to raise_error(BD::ValidationMissingField)
+          expect { VmExtension.new(valid_spec) }.to raise_error(Bosh::Director::ValidationMissingField)
         end
       end
 

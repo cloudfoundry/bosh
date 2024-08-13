@@ -98,7 +98,7 @@ describe Bosh::Director::Links::LinksParser do
         ]
       end
 
-      let(:deployment_model) { BD::Models::Deployment.make(links_serial_id: serial_id) }
+      let(:deployment_model) { Bosh::Director::Models::Deployment.make(links_serial_id: serial_id) }
       let(:deployment_plan) { instance_double(Bosh::Director::DeploymentPlan::Planner) }
       let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment_model) }
       let(:serial_id) { 1 }
@@ -269,7 +269,7 @@ describe Bosh::Director::Links::LinksParser do
         ]
       end
 
-      let(:deployment_model) { BD::Models::Deployment.make(links_serial_id: serial_id) }
+      let(:deployment_model) { Bosh::Director::Models::Deployment.make(links_serial_id: serial_id) }
       let(:deployment_plan) { instance_double(Bosh::Director::DeploymentPlan::Planner) }
       let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment_model) }
       let(:serial_id) { 1 }

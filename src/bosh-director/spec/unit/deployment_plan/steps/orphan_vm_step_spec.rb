@@ -20,7 +20,7 @@ module Bosh::Director
         end
         let!(:ip_address) { Models::IpAddress.make(instance: instance, vm: vm) }
         let(:report) { double(:report) }
-        let(:job) { instance_double(BD::Jobs::BaseJob, username: 'fake-username', task_id: 'fake-task-id') }
+        let(:job) { instance_double(Bosh::Director::Jobs::BaseJob, username: 'fake-username', task_id: 'fake-task-id') }
         let!(:event_manager) { Api::EventManager.new(true) }
         let(:agent) { instance_double(AgentClient) }
 
