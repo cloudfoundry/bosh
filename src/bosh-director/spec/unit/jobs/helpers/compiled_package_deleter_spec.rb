@@ -8,8 +8,8 @@ module Bosh::Director
 
     describe '#delete' do
       it 'deletes the compiled package' do
-        compiled_package = Models::CompiledPackage.make(
-          package: Models::Package.make(name: 'package-name', version: 'version'),
+        compiled_package = FactoryBot.create(:models_compiled_package,
+          package: FactoryBot.create(:models_package, name: 'package-name', version: 'version'),
           blobstore_id: 'compiled-package-blb-1', stemcell_os: 'linux', stemcell_version: '2.6.11')
 
         expect(blobstore).to receive(:delete).with('compiled-package-blb-1')
@@ -25,8 +25,8 @@ module Bosh::Director
         end
 
         it 'raises an error AND does not delete the compiled package from the database' do
-          compiled_package = Models::CompiledPackage.make(
-            package: Models::Package.make(name: 'package-name', version: 'version'),
+          compiled_package = FactoryBot.create(:models_compiled_package,
+            package: FactoryBot.create(:models_package, name: 'package-name', version: 'version'),
             blobstore_id: 'compiled-package-blb-1', stemcell_os: 'linux', stemcell_version: '2.6.11')
 
           expect{ compiled_package_deleter.delete(compiled_package) }.to raise_error(/Failed to delete/)
@@ -35,8 +35,8 @@ module Bosh::Director
 
         context 'when force is true' do
           it 'deletes the compiled package from the database' do
-            compiled_package = Models::CompiledPackage.make(
-              package: Models::Package.make(name: 'package-name', version: 'version'),
+            compiled_package = FactoryBot.create(:models_compiled_package,
+              package: FactoryBot.create(:models_package, name: 'package-name', version: 'version'),
               blobstore_id: 'compiled-package-blb-1', stemcell_os: 'linux', stemcell_version: '2.6.11')
 
             compiled_package_deleter.delete(compiled_package, true)
@@ -44,8 +44,8 @@ module Bosh::Director
           end
 
           it 'does not raise error' do
-            compiled_package = Models::CompiledPackage.make(
-              package: Models::Package.make(name: 'package-name', version: 'version'),
+            compiled_package = FactoryBot.create(:models_compiled_package,
+              package: FactoryBot.create(:models_package, name: 'package-name', version: 'version'),
               blobstore_id: 'compiled-package-blb-1', stemcell_os: 'linux', stemcell_version: '2.6.11')
 
             expect { compiled_package_deleter.delete(compiled_package, true) }.not_to raise_error

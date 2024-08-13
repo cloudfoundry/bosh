@@ -6,7 +6,7 @@ module Bosh::Director
     let(:root_domain) { 'bosh1.tld' }
 
     describe '#update_for_deployment' do
-      let(:deployment_model) { Models::Deployment.make(name: 'test-deployment') }
+      let(:deployment_model) { FactoryBot.create(:models_deployment, name: 'test-deployment') }
       let!(:ignored_provider_intent1) do
         Models::Links::LinkProviderIntent.make(link_provider: Models::Links::LinkProvider.make(deployment: deployment_model))
       end

@@ -24,7 +24,7 @@ module Bosh::Director
 
     let(:cloud_properties) { { 'cloud' => 'properties' } }
     let(:create_instance_error) { RuntimeError.new('failed to create instance') }
-    let(:deployment_model) { Models::Deployment.make(name: 'mycloud') }
+    let(:deployment_model) { FactoryBot.create(:models_deployment, name: 'mycloud') }
     let(:dns_encoder) { DnsEncoder.new }
     let(:event_manager) { Api::EventManager.new(true) }
     let(:expected_network_settings) { { 'a' => { 'a' => { 'property' => 'settings' } } } }
@@ -57,21 +57,21 @@ module Bosh::Director
     end
 
     let(:stemcell) do
-      model = Models::Stemcell.make(cid: 'stemcell-cid', name: 'stemcell-name')
+      model = FactoryBot.create(:models_stemcell, cid: 'stemcell-cid', name: 'stemcell-name')
       stemcell = FactoryBot.build(:deployment_plan_stemcell, name: model.name, version: model.version)
       stemcell.bind_model(deployment_model)
       stemcell
     end
 
     let(:another_stemcell) do
-      model = Models::Stemcell.make(cid: 'another-stemcell-cid', name: 'stemcell-name')
+      model = FactoryBot.create(:models_stemcell, cid: 'another-stemcell-cid', name: 'stemcell-name')
       stemcell = FactoryBot.build(:deployment_plan_stemcell, name: model.name, version: model.version)
       stemcell.bind_model(deployment_model)
       stemcell
     end
 
     let(:different_stemcell) do
-      model = Models::Stemcell.make(cid: 'different-stemcell-cid', name: 'different-stemcell-name')
+      model = FactoryBot.create(:models_stemcell, cid: 'different-stemcell-cid', name: 'different-stemcell-name')
       stemcell = FactoryBot.build(:deployment_plan_stemcell, name: model.name, version: model.version)
       stemcell.bind_model(deployment_model)
       stemcell
@@ -375,9 +375,9 @@ module Bosh::Director
 
         let(:availability_zone) { DeploymentPlan::AvailabilityZone.new('foo-az', cloud_properties) }
 
-        let(:deployment_model) { Models::Deployment.make(name: 'mycloud', cloud_config: cloud_config) }
+        let(:deployment_model) { FactoryBot.create(:models_deployment, name: 'mycloud', cloud_config: cloud_config) }
         let(:deployment_model) do
-          deployment = Models::Deployment.make(name: 'mycloud')
+          deployment = FactoryBot.create(:models_deployment, name: 'mycloud')
           deployment.cloud_configs = [cloud_config]
           deployment
         end

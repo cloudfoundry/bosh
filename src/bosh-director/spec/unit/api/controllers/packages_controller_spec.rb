@@ -14,8 +14,8 @@ module Bosh::Director
         config
       end
 
-      let(:release) { Models::Release.make(name: 'fake-release-name') }
-      let(:release_version) { Models::ReleaseVersion.make(version: 1, release: release, update_completed: true) }
+      let(:release) { FactoryBot.create(:models_release, name: 'fake-release-name') }
+      let(:release_version) { FactoryBot.create(:models_release_version, version: 1, release: release, update_completed: true) }
 
       before do
         allow(Api::ResourceManager).to receive(:new)
@@ -47,7 +47,7 @@ module Bosh::Director
                   { 'fingerprint' => 'fake-pkg3-fingerprint' },
               ])
 
-              Models::Package.make(
+              FactoryBot.create(:models_package,
                   release: release,
                   name: 'fake-pkg1',
                   version: 'fake-pkg1-version',
@@ -56,7 +56,7 @@ module Bosh::Director
                   fingerprint: 'fake-pkg1-fingerprint',
               )
 
-              Models::Package.make(
+              FactoryBot.create(:models_package,
                   release: release,
                   name: 'fake-pkg3',
                   version: 'fake-pkg3-version',
@@ -85,7 +85,7 @@ module Bosh::Director
 
               context 'when there are packages with same fingerprint in the database' do
                 before do
-                  Models::Package.make(
+                  FactoryBot.create(:models_package,
                     release: release,
                     name: 'fake-pkg1',
                     version: 'fakepkg1sha',
@@ -94,7 +94,7 @@ module Bosh::Director
 
                   # No match for pkg2 in db
 
-                  Models::Package.make(
+                  FactoryBot.create(:models_package,
                     release: release,
                     name: 'fake-pkg3',
                     version: 'fakepkg3sha',
@@ -111,7 +111,7 @@ module Bosh::Director
 
               context 'when there are no packages with same fingerprint in the database' do
                 before do
-                  Models::Package.make(
+                  FactoryBot.create(:models_package,
                     release: release,
                     name: 'fake-pkg5',
                     version: 'fake-pkg5-sha',
@@ -131,7 +131,7 @@ module Bosh::Director
                   release_version.update_completed = false
                   release_version.save
 
-                  Models::Package.make(
+                  FactoryBot.create(:models_package,
                     release: release,
                     name: 'fake-pkg1',
                     version: 'fake-pkg1-sha',
@@ -157,21 +157,21 @@ module Bosh::Director
               end
 
               before do
-                Models::Package.make(
+                FactoryBot.create(:models_package,
                   release: release,
                   name: 'fake-pkg1',
                   version: 'fakepkg1sha',
                   fingerprint: 'fake-pkg1-fingerprint',
                 )
 
-                Models::Package.make(
+                FactoryBot.create(:models_package,
                   release: release,
                   name: 'fake-pkg2',
                   version: 'fakepkg2sha',
                   fingerprint: nil, # set to nil explicitly
                 )
 
-                Models::Package.make(
+                FactoryBot.create(:models_package,
                   release: release,
                   name: 'fake-pkg3',
                   version: 'fakepkg3sha',
@@ -240,7 +240,7 @@ module Bosh::Director
           before do
             authorize 'admin', 'admin'
 
-            package1 = Models::Package.make(
+            package1 = FactoryBot.create(:models_package,
                 release: release,
                 name: 'fake-pkg1',
                 version: 'fake-pkg1-version',
@@ -248,7 +248,7 @@ module Bosh::Director
                 fingerprint: 'fake-pkg1-fingerprint',
             )
 
-            Models::Package.make(
+            FactoryBot.create(:models_package,
                 release: release,
                 name: 'fake-pkg2',
                 version: 'fake-pkg2-version',
@@ -256,7 +256,7 @@ module Bosh::Director
                 fingerprint: 'fake-pkg2-fingerprint',
             )
 
-            Models::Package.make(
+            FactoryBot.create(:models_package,
                 release: release,
                 name: 'fake-pkg3',
                 version: 'fake-pkg3-version',
@@ -264,7 +264,7 @@ module Bosh::Director
                 fingerprint: 'fake-pkg3-fingerprint',
             )
 
-            package4 = Models::Package.make(
+            package4 = FactoryBot.create(:models_package,
                 release: release,
                 name: 'fake-pkg4',
                 version: 'fake-pkg4-version',
@@ -272,7 +272,7 @@ module Bosh::Director
                 fingerprint: 'fake-pkg4-fingerprint',
             )
 
-            Models::CompiledPackage.make(
+            FactoryBot.create(:models_compiled_package,
                 package_id: package1.id,
                 blobstore_id: 'cpkg1_blobstore_id',
                 sha1: 'cpkg1sha1',
@@ -281,7 +281,7 @@ module Bosh::Director
                 dependency_key: '[["fake-pkg2","fake-pkg2-version"],["fake-pkg3","fake-pkg3-version"]]',
             )
 
-            Models::CompiledPackage.make(
+            FactoryBot.create(:models_compiled_package,
                 package_id: package4.id,
                 blobstore_id: 'cpkg4_blobstore_id',
                 sha1: 'cpkg4sha4',
@@ -350,7 +350,7 @@ module Bosh::Director
 
           context 'when there is an existing compiled package for a different stemcell' do
             before do
-              renamed = Models::Package.make(
+              renamed = FactoryBot.create(:models_package,
                 release: release,
                 name: 'renamed-fake-pkg1',
                 version: 'fake-pkg1-version',
@@ -358,7 +358,7 @@ module Bosh::Director
                 fingerprint: 'fake-pkg1-fingerprint',
               )
 
-              Models::CompiledPackage.make(
+              FactoryBot.create(:models_compiled_package,
                 package_id: renamed.id,
                 blobstore_id: 'cpkg1_blobstore_id',
                 sha1: 'cpkg1sha1',
@@ -438,7 +438,7 @@ module Bosh::Director
 
           context 'when the blobstore id is for a package' do
             before do
-              Models::Package.make(
+              FactoryBot.create(:models_package,
                 release: release,
                 name: 'fake-pkg1',
                 version: 'fake-pkg1-version',
@@ -458,7 +458,7 @@ module Bosh::Director
 
           context 'when the blobstore id is for a compiled package' do
             before do
-              package = Models::Package.make(
+              package = FactoryBot.create(:models_package,
                 release: release,
                 name: 'fake-pkg1',
                 version: 'fake-pkg1-version',
@@ -466,7 +466,7 @@ module Bosh::Director
                 sha1: 'fakepkg1sha',
                 fingerprint: 'fake-pkg1-fingerprint',
               )
-              Models::CompiledPackage.make(
+              FactoryBot.create(:models_compiled_package,
                 package_id: package.id,
                 blobstore_id: blobstore_id,
                 sha1: 'cpkg1sha1',

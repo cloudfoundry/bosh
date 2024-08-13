@@ -10,7 +10,7 @@ module Bosh::Director
     let(:logger) { Logging::Logger.new('Log') }
 
     let(:task_db_writer) { TaskDBWriter.new(column_name, task.id) }
-    let(:task) { Bosh::Director::Models::Task.make(id: 42) }
+    let(:task) { FactoryBot.create(:models_task, id: 42) }
     let(:column_name) { :event_output }
 
     before do

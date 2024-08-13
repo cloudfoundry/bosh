@@ -59,7 +59,7 @@ module Bosh::Director
         'update_watch_time' => update_watch_time,
       )
     end
-    let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: 'fake-deployment') }
     let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', 'a' => 'b') }
     let(:instance) do
       DeploymentPlan::Instance.create_from_instance_group(

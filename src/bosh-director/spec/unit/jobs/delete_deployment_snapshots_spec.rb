@@ -4,7 +4,7 @@ module Bosh::Director
   describe Jobs::DeleteDeploymentSnapshots do
     let(:deployment_manager) { instance_double('Bosh::Director::Api::DeploymentManager') }
     let(:deployment_name) { 'deployment' }
-    let(:deployment) { Models::Deployment.make(name: deployment_name) }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: deployment_name) }
     let!(:vm1) { Models::Vm.make(instance_id: instance1.id) }
     let!(:instance1) { Models::Instance.make(deployment: deployment) }
     let!(:disk1) { Models::PersistentDisk.make(:instance_id => instance1.id) }

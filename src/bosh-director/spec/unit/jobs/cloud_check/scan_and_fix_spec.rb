@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Jobs::CloudCheck::ScanAndFix do
-    let!(:deployment) { Models::Deployment.make(name: 'deployment') }
+    let!(:deployment) { FactoryBot.create(:models_deployment, name: 'deployment') }
     let(:jobs) { [%w[job1 job1index0], %w[job1 job1index1], %w[job2 job2index0]] }
     let(:resolutions) do
       { Models::DeploymentProblem.all[0].id.to_s => :recreate_vm, Models::DeploymentProblem.all[1].id.to_s => :recreate_vm }

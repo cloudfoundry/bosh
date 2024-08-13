@@ -143,7 +143,7 @@ module Bosh::Director
 
     describe '#verify_state' do
       before do
-        @deployment = Models::Deployment.make(name: 'foo')
+        @deployment = FactoryBot.create(:models_deployment, name: 'foo')
       end
 
       it 'should do nothing when VM is ok' do

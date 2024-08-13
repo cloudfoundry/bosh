@@ -67,11 +67,11 @@ module Bosh::Director
         end
 
         let!(:deployment_1) do
-          Models::Deployment.make(name: 'test_deployment_1', manifest: deployment_1_manifest.to_yaml)
+          FactoryBot.create(:models_deployment, name: 'test_deployment_1', manifest: deployment_1_manifest.to_yaml)
         end
 
         let!(:deployment_2) do
-          Models::Deployment.make(name: 'test_deployment_2', manifest: deployment_2_manifest.to_yaml)
+          FactoryBot.create(:models_deployment, name: 'test_deployment_2', manifest: deployment_2_manifest.to_yaml)
         end
 
         let!(:deployment_1_variable_set) do

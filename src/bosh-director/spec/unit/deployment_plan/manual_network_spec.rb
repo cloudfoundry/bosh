@@ -59,12 +59,12 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     allow(mock_client).to receive(:interpolate_with_versioning)
       .and_return(interpolated_tags)
 
-    release = Bosh::Director::Models::Release.make(name: 'bosh-release')
-    template = Bosh::Director::Models::Template.make(
+    release = FactoryBot.create(:models_release, name: 'bosh-release')
+    template = FactoryBot.create(:models_template,
       name: 'foobar',
       release: release,
     )
-    release_version = Bosh::Director::Models::ReleaseVersion.make(
+    release_version = FactoryBot.create(:models_release_version,
       version: '0.1-dev',
       release: release,
     )

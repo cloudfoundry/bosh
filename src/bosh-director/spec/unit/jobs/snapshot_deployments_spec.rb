@@ -12,7 +12,7 @@ module Bosh::Director
     end
 
     describe '#perform' do
-      let(:deployments) { [Models::Deployment.make, Models::Deployment.make] }
+      let(:deployments) { [FactoryBot.create(:models_deployment), FactoryBot.create(:models_deployment)] }
       let(:task1) { instance_double('Bosh::Director::Models::Task', id: 43) }
       let(:task2) { instance_double('Bosh::Director::Models::Task', id: 44) }
 

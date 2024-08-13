@@ -142,7 +142,7 @@ module Bosh::Director::DeploymentPlan
     let(:deployment_manifest) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
     let(:deployment_model) do
       cloud_config = Bosh::Director::Models::Config.make(:cloud, content: YAML.dump(cloud_config_manifest))
-      deployment = Bosh::Director::Models::Deployment.make(
+      deployment = FactoryBot.create(:models_deployment,
         name: deployment_manifest['name'],
         manifest: YAML.dump(deployment_manifest),
       )
@@ -163,16 +163,16 @@ module Bosh::Director::DeploymentPlan
       fake_app
       fake_locks
 
-      release_model = Bosh::Director::Models::Release.make(name: deployment_manifest['releases'].first['name'])
-      version = Bosh::Director::Models::ReleaseVersion.make(version: deployment_manifest['releases'].first['version'])
+      release_model = FactoryBot.create(:models_release, name: deployment_manifest['releases'].first['name'])
+      version = FactoryBot.create(:models_release_version, version: deployment_manifest['releases'].first['version'])
       release_model.add_version(version)
 
       deployment_manifest['instance_groups'].first['jobs'].each do |job|
-        template_model = Bosh::Director::Models::Template.make(name: job['name'])
+        template_model = FactoryBot.create(:models_template, name: job['name'])
         version.add_template(template_model)
       end
 
-      Bosh::Director::Models::Stemcell.make(
+      FactoryBot.create(:models_stemcell,
         name: deployment_manifest['stemcells'].first['name'],
         version: deployment_manifest['stemcells'].first['version'],
         operating_system: operating_system,
@@ -1097,7 +1097,7 @@ module Bosh::Director::DeploymentPlan
         end
         let(:availability_zone) { AvailabilityZone.new('foo-az', { 'old' => 'value' }, 'foo-cpi') }
         before do
-          Bosh::Director::Models::Stemcell.make(
+          FactoryBot.create(:models_stemcell,
             name: 'deployed-stemcell',
             operating_system: 'ubuntu', # can't use deployment_manifest['stemcells'].first['os']; it's nil
             version: deployment_manifest['stemcells'].first['version'],
@@ -1228,7 +1228,7 @@ module Bosh::Director::DeploymentPlan
 
     describe 'stemcell_model_for_cpi' do
       before do
-        Bosh::Director::Models::Stemcell.make(
+        FactoryBot.create(:models_stemcell,
           name: 'a-different-name-to-sidestep-uniqueness-constraints',
           version: deployment_manifest['stemcells'].first['version'],
           operating_system: operating_system,
@@ -1257,7 +1257,7 @@ module Bosh::Director::DeploymentPlan
         let(:availability_zone) { AvailabilityZone.new('foo-az', { 'a' => 'b' }, 'foo-cpi') }
         before do
           # A bad model, same as the good model except wrong cpi
-          Bosh::Director::Models::Stemcell.make(
+          FactoryBot.create(:models_stemcell,
             name: deployment_manifest['stemcells'].first['name'],
             version: deployment_manifest['stemcells'].first['version'],
             operating_system: operating_system,
@@ -1266,7 +1266,7 @@ module Bosh::Director::DeploymentPlan
         end
         # which fixes a bug where multi-CPI would erroneously conclude a stemcell change
         it "returns the stemcell model for the appropriate CPI" do
-          good_model = Bosh::Director::Models::Stemcell.make(
+          good_model = FactoryBot.create(:models_stemcell,
             name: deployment_manifest['stemcells'].first['name'],
             version: deployment_manifest['stemcells'].first['version'],
             operating_system: operating_system,
@@ -1657,8 +1657,8 @@ module Bosh::Director::DeploymentPlan
         end
 
         context 'when there is a different order for templates (jobs)' do
-          let(:job1_template) { Bosh::Director::Models::Template.make(name: 'job1') }
-          let(:job2_template) { Bosh::Director::Models::Template.make(name: 'job2') }
+          let(:job1_template) { FactoryBot.create(:models_template, name: 'job1') }
+          let(:job2_template) { FactoryBot.create(:models_template, name: 'job2') }
 
           let(:deployment_manifest) do
             Bosh::Spec::Deployments.simple_manifest_with_instance_groups(

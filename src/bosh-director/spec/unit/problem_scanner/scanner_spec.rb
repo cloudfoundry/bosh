@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe ProblemScanner::Scanner do
-    let(:deployment) { Models::Deployment.make(:name => 'mycloud') }
+    let(:deployment) { FactoryBot.create(:models_deployment, :name => 'mycloud') }
     let(:scanner) { described_class.new(deployment) }
 
     let(:event_logger) do

@@ -25,7 +25,7 @@ module Bosh::Director::DeploymentPlan
       allow(blobstore).to receive(:headers).and_return({})
     end
 
-    let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: 'fake-deployment') }
     let(:stemcell) { make_stemcell({ name: 'fake-stemcell-name', version: '1.0', api_version: 3 }) }
     let(:env) { Env.new({ 'bosh' => { 'blobstores' => [{ 'options' => { 'blobstore_option' => 'blobstore_value' } }] } }) }
     let(:instance_group) do

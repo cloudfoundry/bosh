@@ -10,7 +10,7 @@ module Bosh::Director
       let(:unused_stemcell2) { Bosh::Director::Models::Stemcell.make }
       let(:unused_stemcell3) { Bosh::Director::Models::Stemcell.make }
 
-      let(:deployment_model) { Models::Deployment.make }
+      let(:deployment_model) { FactoryBot.create(:models_deployment) }
       let(:deployment_planner) { instance_double(DeploymentPlan::Planner) }
       let(:planner_stemcell) do
         FactoryBot.build(:deployment_plan_stemcell, name: stemcell_model.name, version: stemcell_model.version)

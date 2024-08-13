@@ -6,7 +6,7 @@ module Bosh::Director
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
     let(:stemcell_deleter) { Jobs::Helpers::StemcellDeleter.new(logger) }
-    let(:stemcell) { Models::Stemcell.make(name: 'test_stemcell', version: 'test_version', cid: 'stemcell_cid') }
+    let(:stemcell) { FactoryBot.create(:models_stemcell, name: 'test_stemcell', version: 'test_version', cid: 'stemcell_cid') }
 
     before do
       fake_locks
@@ -24,9 +24,9 @@ module Bosh::Director
       end
 
       it 'should raise error if the deployments still reference this stemcell' do
-        deployment_1 = Models::Deployment.make(name: 'test-1')
+        deployment_1 = FactoryBot.create(:models_deployment, name: 'test-1')
         deployment_1.add_stemcell(stemcell)
-        deployment_2 = Models::Deployment.make(name: 'test-2')
+        deployment_2 = FactoryBot.create(:models_deployment, name: 'test-2')
         deployment_2.add_stemcell(stemcell)
 
         expect {
@@ -49,7 +49,7 @@ module Bosh::Director
       end
 
       it 'should NOT delete associated compiled packages, but set stemcell_id to nil' do
-        associated_package = Models::CompiledPackage.make(
+        associated_package = FactoryBot.create(:models_compiled_package,
           package: Models::Package.make,
           blobstore_id: 'compiled-package-blb-1',
           stemcell_os: 'Plan 9',
@@ -79,13 +79,13 @@ module Bosh::Director
       end
 
       it 'should NOT delete the associated compiled packages, but set stemcell_id to nil' do
-        associated_package = Models::CompiledPackage.make(
-          package: Models::Package.make(name: 'package-name', version: 'version'),
+        associated_package = FactoryBot.create(:models_compiled_package,
+          package: FactoryBot.create(:models_package, name: 'package-name', version: 'version'),
           blobstore_id: 'compiled-package-blb-1',
           stemcell_os: 'AIX',
           stemcell_version: '7.1'
         )
-        unassociated_package = Models::CompiledPackage.make(
+        unassociated_package = FactoryBot.create(:models_compiled_package,
           package: Models::Package.make,
           blobstore_id: 'compiled-package-blb-2',
           stemcell_os: 'AIX',
@@ -110,7 +110,7 @@ module Bosh::Director
       }
 
       context 'if no cpi is set on stemcell' do
-        let(:stemcell) { Models::Stemcell.make(name: 'test_stemcell', version: 'test_version', cid: 'stemcell_cid', cpi: '') }
+        let(:stemcell) { FactoryBot.create(:models_stemcell, name: 'test_stemcell', version: 'test_version', cid: 'stemcell_cid', cpi: '') }
 
         it 'calls the default cloud' do
           cloud = instance_double(Bosh::Clouds::ExternalCpi)
@@ -121,7 +121,7 @@ module Bosh::Director
       end
 
       context 'if a certain cpi is set on a stemcell' do
-        let(:stemcell) { Models::Stemcell.make(name: 'test_stemcell', version: 'test_version', cid: 'stemcell_cid', cpi: 'cpi1') }
+        let(:stemcell) { FactoryBot.create(:models_stemcell, name: 'test_stemcell', version: 'test_version', cid: 'stemcell_cid', cpi: 'cpi1') }
 
         it 'calls the cloud that cloud factory returns' do
           cloud = instance_double(Bosh::Clouds::ExternalCpi)

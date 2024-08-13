@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe Jobs::DeleteOrphanNetworks do
     let(:event_manager) { Api::EventManager.new(true) }
-    let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
+    let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
     let(:delete_orphan_networks_job) { instance_double(Bosh::Director::Jobs::DeleteOrphanNetworks, username: 'user', task_id: task.id, event_manager: event_manager) }
 
     before { allow(Config).to receive(:current_job).and_return(delete_orphan_networks_job) }

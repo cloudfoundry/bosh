@@ -18,7 +18,7 @@ describe Bosh::Director::MetadataUpdater do
       availability_zone: 'az1',
     )
   end
-  let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'deployment-value') }
+  let(:deployment) { FactoryBot.create(:models_deployment, name: 'deployment-value') }
   let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
 
   before do

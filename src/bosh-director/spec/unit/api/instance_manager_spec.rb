@@ -151,7 +151,7 @@ module Bosh::Director
 
     describe '#find_instances_by_deployment' do
       it 'uses InstanceLookup#by_deployment' do
-        deployment = Models::Deployment.make(name: 'given_deployment')
+        deployment = FactoryBot.create(:models_deployment, name: 'given_deployment')
 
         expect_any_instance_of(Api::InstanceLookup).to receive(:by_deployment).with(deployment)
 

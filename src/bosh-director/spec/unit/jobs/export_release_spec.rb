@@ -9,7 +9,7 @@ module Bosh::Director
     let(:multi_digest) { instance_double(BoshDigest::MultiDigest) }
     let(:sha2) { nil }
 
-    let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
+    let(:task) {FactoryBot.create(:models_task, id: 42, username: 'user')}
     let(:task_result) { Bosh::Director::TaskDBWriter.new(:result_output, task.id) }
     let(:package_compile_step) { instance_double(DeploymentPlan::Stages::PackageCompileStage)}
 
@@ -63,7 +63,7 @@ module Bosh::Director
       let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config }
 
       let!(:deployment_model) do
-        deployment = Models::Deployment.make(
+        deployment = FactoryBot.create(:models_deployment,
           name: deployment_manifest['name'],
           manifest: YAML.dump(deployment_manifest),
         )
@@ -88,7 +88,7 @@ module Bosh::Director
         it 'raises an error' do
           create_stemcell
           release = Bosh::Director::Models::Release.create(name: release_name)
-          release.add_version(:version => '0.2-dev')
+          release.add_version(version: '0.2-dev')
           expect {
             job.perform
           }.to raise_error(Bosh::Director::ReleaseVersionNotFound)
@@ -102,8 +102,8 @@ module Bosh::Director
         it 'raises an error' do
           create_stemcell
           release = Bosh::Director::Models::Release.create(name: release_name)
-          release.add_version(:version => exported_release_version)
-          release.add_version(:version => manifest_release_version)
+          release.add_version(version: exported_release_version)
+          release.add_version(version: manifest_release_version)
           expect {
             job.perform
           }.to raise_error(Bosh::Director::ReleaseNotMatchingManifest)
@@ -113,16 +113,16 @@ module Bosh::Director
       context 'when the requested release and version exist' do
         before do
           release = Bosh::Director::Models::Release.create(name: release_name)
-          release_version = release.add_version(:version => '0.1-dev')
-          release_version.add_package(Bosh::Director::Models::Package.make(name: 'foo'))
-          release_version.add_package(Bosh::Director::Models::Package.make(name: 'bar'))
+          release_version = release.add_version(version: '0.1-dev')
+          release_version.add_package(FactoryBot.create(:models_package, name: 'foo'))
+          release_version.add_package(FactoryBot.create(:models_package, name: 'bar'))
           release_version.add_template(
-            :name => deployment_manifest['instance_groups'].first['jobs'].first['name'],
-            :version => 'template_a_version',
-            :release_id => release.id,
-            :blobstore_id => 'template_a_blobstore_id',
-            :sha1 => 'template_a_sha1',
-            :package_names_json => '["foo", "bar"]')
+            name: deployment_manifest['instance_groups'].first['jobs'].first['name'],
+            version: 'template_a_version',
+            release_id: release.id,
+            blobstore_id: 'template_a_blobstore_id',
+            sha1: 'template_a_sha1',
+            package_names_json: '["foo", "bar"]')
         end
 
         it 'raises an error if the requested stemcell is not found' do
@@ -140,7 +140,7 @@ module Bosh::Director
           end
 
           it 'locks the deployment, release, and selected stemcell' do
-            lock_timeout = {:timeout=>900} # 15 minutes. 15 * 60
+            lock_timeout = { timeout: 900 } # 15 minutes. 15 * 60
             expect(job).to receive(:with_deployment_lock).with(deployment_manifest['name'], lock_timeout).and_yield
 
             job.perform
@@ -209,14 +209,14 @@ module Bosh::Director
               before {
                 allow(DeploymentPlan::PlannerFactory).to receive(:create).and_return(planner_factory)
                 allow(planner_factory).to receive(:create_from_model).and_return(planner)
-                allow(planner).to receive(:model).and_return(Bosh::Director::Models::Deployment.make(name: 'foo'))
+                allow(planner).to receive(:model).and_return(FactoryBot.create(:models_deployment, name: 'foo'))
                 allow(planner).to receive(:release)
                 allow(planner).to receive(:add_instance_group)
                 allow(job).to receive(:create_compilation_instance_group)
               }
 
               it 'skips links binding' do
-                expect(assembler).to receive(:bind_models).with({:should_bind_links => false, :should_bind_properties=>false})
+                expect(assembler).to receive(:bind_models).with({ should_bind_links: false, should_bind_properties: false })
                 job.perform
               end
             end
@@ -236,43 +236,43 @@ module Bosh::Director
         let(:planner) { planner_factory.create_from_model(deployment_model) }
         let(:task_dir) { Dir.mktmpdir }
         let(:release) {Bosh::Director::Models::Release.create(name: release_name)}
-        let(:release_version) {release.add_version(:version => '0.1-dev')}
+        let(:release_version) {release.add_version(version: '0.1-dev')}
 
         before do
           release_version.add_package(
-            Bosh::Director::Models::Package.make(
+            FactoryBot.create(:models_package,
               name: 'foo',
               dependency_set_json: JSON.generate(['postgres']),
             ),
           )
-          release_version.add_package(Bosh::Director::Models::Package.make(name: 'bar'))
+          release_version.add_package(FactoryBot.create(:models_package, name: 'bar'))
 
           release_version.add_template(
-            :name => deployment_manifest['instance_groups'].first['jobs'].first['name'],
-            :version => 'foo_version',
-            :release_id => release.id,
+            name: deployment_manifest['instance_groups'].first['jobs'].first['name'],
+            version: 'foo_version',
+            release_id: release.id,
             fingerprint: 'foobar_fingerprint',
-            :blobstore_id => 'foobar_blobstore_id',
-            :sha1 => 'foo_sha1',
-            :package_names_json => '["foo", "bar"]')
+            blobstore_id: 'foobar_blobstore_id',
+            sha1: 'foo_sha1',
+            package_names_json: '["foo", "bar"]')
 
           release_version.add_template(
-            :name => 'foobaz',
-            :version => 'foo_version',
-            :release_id => release.id,
+            name: 'foobaz',
+            version: 'foo_version',
+            release_id: release.id,
             fingerprint: 'foobaz_fingerprint',
-            :blobstore_id => 'foobaz_blobstore_id',
-            :sha1 => 'foo_sha1',
-            :package_names_json => '["foo", "bar"]')
+            blobstore_id: 'foobaz_blobstore_id',
+            sha1: 'foo_sha1',
+            package_names_json: '["foo", "bar"]')
 
           release_version.add_template(
-            :name => 'foofoo',
-            :version => 'foo_version',
-            :release_id => release.id,
+            name: 'foofoo',
+            version: 'foo_version',
+            release_id: release.id,
             fingerprint: 'foofoo_fingerprint',
-            :blobstore_id => 'foofoo_blobstore_id',
-            :sha1 => 'foo_sha1',
-            :package_names_json => '["foo", "bar"]')
+            blobstore_id: 'foofoo_blobstore_id',
+            sha1: 'foo_sha1',
+            package_names_json: '["foo", "bar"]')
 
           create_stemcell
 

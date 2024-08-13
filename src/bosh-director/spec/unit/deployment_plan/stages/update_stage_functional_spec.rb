@@ -2,8 +2,8 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan::Stages
   describe 'deployment prepare & update', truncation: true, :if => ENV.fetch('DB', 'sqlite') != 'sqlite' do
-    let(:deployment) { Bosh::Director::Models::Deployment.make(name: deployment_manifest['name']) }
-    let!(:stemcell) { Bosh::Director::Models::Stemcell.make('name' => 'ubuntu-stemcell', 'version' => '1') }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: deployment_manifest['name']) }
+    let!(:stemcell) { FactoryBot.create(:models_stemcell, 'name' => 'ubuntu-stemcell', 'version' => '1') }
 
     let(:agent_client) { instance_double(Bosh::Director::AgentClient) }
     let(:dns_encoder) { Bosh::Director::DnsEncoder.new({}) }
@@ -32,16 +32,16 @@ module Bosh::Director::DeploymentPlan::Stages
     end
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpiResponseWrapper) }
 
-    let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
+    let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
     let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
     let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
     let(:blobstore) { instance_double(Bosh::Blobstore::Sha1VerifiableBlobstoreClient) }
 
     before do
-      release = Bosh::Director::Models::Release.make(name: 'bosh-release')
-      release_version = Bosh::Director::Models::ReleaseVersion.make(version: '0.1-dev')
+      release = FactoryBot.create(:models_release, name: 'bosh-release')
+      release_version = FactoryBot.create(:models_release_version, version: '0.1-dev')
       release.add_version(release_version)
-      template = Bosh::Director::Models::Template.make(
+      template = FactoryBot.create(:models_template,
         name: Bosh::Spec::Deployments.simple_instance_group['jobs'].first['name'],
       )
       release_version.add_template(template)

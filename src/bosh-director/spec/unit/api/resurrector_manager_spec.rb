@@ -54,11 +54,11 @@ module Bosh::Director
         end
         context 'when resurrection_paused director attribute is set' do
           it 'returns true' do
-            Models::DirectorAttribute.make(name: 'resurrection_paused', value: 'true')
+            FactoryBot.create(:models_director_attribute, name: 'resurrection_paused', value: 'true')
             expect(resurrection_manager.pause_for_all?).to eq(true)
           end
           it 'returns false' do
-            Models::DirectorAttribute.make(name: 'resurrection_paused', value: 'false')
+            FactoryBot.create(:models_director_attribute, name: 'resurrection_paused', value: 'false')
             expect(resurrection_manager.pause_for_all?).to eq(false)
           end
         end

@@ -85,7 +85,7 @@ module Bosh::Director
       end
 
       context 'put /disks/diskcid/attachments' do
-        let!(:deployment) { Models::Deployment.make(name: 'foo') }
+        let!(:deployment) { FactoryBot.create(:models_deployment, name: 'foo') }
 
         it 'requires auth' do
           put '/vol-af4a3e40/attachments?deployment=foo&job=dea&instance_id=17f01a35'

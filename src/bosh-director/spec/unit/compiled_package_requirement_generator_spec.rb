@@ -17,17 +17,17 @@ module Bosh::Director
       let(:job) { instance_double('Bosh::Director::DeploymentPlan::Job', release: release_version) }
 
       let(:package_a) do
-        Bosh::Director::Models::Package.make(name: 'package_a', dependency_set_json: ['package_b'].to_json)
+        FactoryBot.create(:models_package, name: 'package_a', dependency_set_json: ['package_b'].to_json)
       end
       let(:package_b) do
-        Bosh::Director::Models::Package.make(
+        FactoryBot.create(:models_package,
           name: 'package_b',
           version: '2',
           dependency_set_json: ['package_c'].to_json,
         )
       end
       let(:package_c) do
-        Bosh::Director::Models::Package.make(name: 'package_c', version: '3')
+        FactoryBot.create(:models_package, name: 'package_c', version: '3')
       end
 
       let(:stemcell) { make_stemcell(operating_system: 'chrome-os', version: 'latest') }
@@ -79,7 +79,7 @@ module Bosh::Director
         end
 
         context 'when two packages share a dependency' do
-          let(:package_d) { Bosh::Director::Models::Package.make(name: 'package_d', version: '9') }
+          let(:package_d) { FactoryBot.create(:models_package, name: 'package_d', version: '9') }
 
           before do
             release_version_model.packages << package_d
@@ -132,7 +132,7 @@ module Bosh::Director
 
       context 'when existing compiled packages exist' do
         let!(:compiled_package_c) do
-          Models::CompiledPackage.make(
+          FactoryBot.create(:models_compiled_package,
             package: package_c,
             stemcell_os: stemcell.os,
             stemcell_version: stemcell.version,
@@ -174,9 +174,9 @@ module Bosh::Director
         end
 
         context 'when two packages share a dependency' do
-          let(:package_d) { Bosh::Director::Models::Package.make(name: 'package_d', version: '6') }
+          let(:package_d) { FactoryBot.create(:models_package, name: 'package_d', version: '6') }
           let!(:compiled_package_c) do
-            Models::CompiledPackage.make(
+            FactoryBot.create(:models_compiled_package,
               package: package_c,
               stemcell_os: stemcell.os,
               stemcell_version: stemcell.version,

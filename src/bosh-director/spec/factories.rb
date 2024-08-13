@@ -73,4 +73,74 @@ FactoryBot.define do
       )
     end
   end
+
+  to_create { |instance| instance.save(raise_on_failure: true) }
+
+  factory :models_compiled_package, class: Bosh::Director::Models::CompiledPackage do
+    sequence(:build) { |i| "compiled-package-build-#{i}" }
+    sequence(:blobstore_id) { |i| "compiled-package-blobstore-id-#{i}" }
+    sequence(:sha1) { |i| "compiled-package-sha1-#{i}" }
+    sequence(:stemcell_os) { |i| "compiled-package-stemcell-os-#{i}" }
+    sequence(:stemcell_version) { |i| "compiled-package-stemcell-version-#{i}" }
+    dependency_key { '[]' }
+    association :package, factory: :models_package, strategy: :create
+  end
+
+  factory :models_deployment, class: Bosh::Director::Models::Deployment do
+    sequence(:name) { |i| "deployment-#{i}" }
+    sequence(:manifest) { |i| "manifest-#{i}" }
+  end
+
+  factory :models_director_attribute, class: Bosh::Director::Models::DirectorAttribute do
+    name { 'uuid' }
+    sequence(:value) { |i| "director-uuid-#{i}" }
+  end
+
+  factory :models_package, class: Bosh::Director::Models::Package do
+    sequence(:name) { |i| "package-#{i}" }
+    sequence(:version) { |i| "package-version-#{i}" }
+    sequence(:blobstore_id) { |i| "package-blobstore-id-#{i}" }
+    sequence(:sha1) { |i| "package-sha1-#{i}" }
+    dependency_set_json { '[]' }
+    association :release, factory: :models_release, strategy: :create
+  end
+
+  factory :models_release, class: Bosh::Director::Models::Release do
+    sequence(:name) { |i| "release-#{i}" }
+  end
+
+  factory :models_release_version, class: Bosh::Director::Models::ReleaseVersion do
+    sequence(:version) { |i| "release-version-version-#{i}" }
+    association :release, factory: :models_release, strategy: :create
+  end
+
+  factory :models_stemcell, class: Bosh::Director::Models::Stemcell do
+    sequence(:name) { |i| "stemcell-#{i}" }
+    sequence(:version) { |i| "stemcell-version-#{i}" }
+    sequence(:cid) { |i| "stemcell-cid-#{i}" }
+    sequence(:operating_system) { |i| "stemcell-operating-system-#{i}" }
+  end
+
+  factory :models_stemcell_upload, class: Bosh::Director::Models::StemcellUpload do
+    sequence(:name) { |i| "stemcell-upload-#{i}" }
+    sequence(:version) { |i| "stemcell-upload-version-#{i}" }
+  end
+
+  factory :models_task, class: Bosh::Director::Models::Task do
+    state { 'queued' }
+    timestamp { Time.now }
+    sequence(:type) { |i| "task-type-#{i}" }
+    sequence(:description) { |i| "task-description-#{i}" }
+    traits_for_enum(:state, ['queued', 'processing', 'done', 'cancelling'])
+  end
+
+  factory :models_template, class: Bosh::Director::Models::Template do
+    sequence(:name) { |i| "template-#{i}" }
+    sequence(:version) { |i| "template-version-#{i}" }
+    sequence(:blobstore_id) { |i| "template-blobstore-id-#{i}" }
+    sequence(:sha1) { |i| "template-sha1-#{i}" }
+    sequence(:fingerprint) { |i| "template-fingerprint-#{i}" }
+    package_names_json { '[]' }
+    association :release, factory: :models_release, strategy: :create
+  end
 end

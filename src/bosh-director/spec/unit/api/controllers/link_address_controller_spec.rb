@@ -14,7 +14,7 @@ module Bosh::Director
         config
       end
 
-      let(:deployment) { Models::Deployment.make }
+      let(:deployment) { FactoryBot.create(:models_deployment) }
 
       let(:external_consumer) do
         Bosh::Director::Models::Links::LinkConsumer.create(

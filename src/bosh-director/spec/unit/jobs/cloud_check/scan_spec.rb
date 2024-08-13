@@ -10,7 +10,7 @@ module Bosh::Director
 
     describe 'instance methods' do
       before do
-        deployment = Models::Deployment.make(name: 'deployment')
+        deployment = FactoryBot.create(:models_deployment, name: 'deployment')
         expect(ProblemScanner::Scanner).to receive(:new).with(deployment).and_return(scanner)
       end
 

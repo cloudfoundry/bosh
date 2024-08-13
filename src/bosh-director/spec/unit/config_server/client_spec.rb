@@ -25,7 +25,7 @@ module Bosh::Director::ConfigServer
       result
     end
 
-    let(:deployment_model) { Bosh::Director::Models::Deployment.make(deployment_attrs) }
+    let(:deployment_model) { FactoryBot.create(:models_deployment, deployment_attrs) }
 
     def prepend_namespace(name)
       "/#{director_name}/#{deployment_name}/#{name}"

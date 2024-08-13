@@ -10,7 +10,7 @@ module Bosh::Director
     let(:disk_manager) { DiskManager.new(logger) }
     let(:dns_publisher) { instance_double(BlobstoreDnsPublisher, publish_and_broadcast: nil) }
     let(:local_dns_records_repo) { instance_double(LocalDnsRecordsRepo, delete_for_instance: nil) }
-    let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
+    let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
     let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
     let(:options) { {} }
@@ -65,7 +65,7 @@ module Bosh::Director
       end
 
       describe 'deleting instances' do
-        let(:deployment_model) { Models::Deployment.make(name: 'deployment-name') }
+        let(:deployment_model) { FactoryBot.create(:models_deployment, name: 'deployment-name') }
         let(:vm_deleter) { VmDeleter.new(logger, false, false) }
 
         let(:job_templates_cleaner) do

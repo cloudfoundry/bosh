@@ -13,7 +13,7 @@ module Bosh::Director
     end
     let(:planner_factory) { instance_double(Bosh::Director::DeploymentPlan::PlannerFactory) }
     let(:manifest) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
-    let(:deployment_model) { Models::Deployment.make(name: manifest['name'], manifest: YAML.dump(manifest)) }
+    let(:deployment_model) { FactoryBot.create(:models_deployment, name: manifest['name'], manifest: YAML.dump(manifest)) }
     let!(:local_dns_blob) { Models::LocalDnsBlob.make }
 
     let!(:instance) do
@@ -105,7 +105,7 @@ module Bosh::Director
     describe 'Resolutions:' do
       let(:fake_cloud) { instance_double('Bosh::Clouds::ExternalCpi') }
       let(:fake_new_agent) { double('Bosh::Director::AgentClient') }
-      let!(:stemcell) { Models::Stemcell.make(name: 'ubuntu-stemcell', version: 1) }
+      let!(:stemcell) { FactoryBot.create(:models_stemcell, name: 'ubuntu-stemcell', version: 1) }
 
       before do
         allow(Config).to receive(:uuid).and_return('woof-uuid')
@@ -133,7 +133,7 @@ module Bosh::Director
       end
 
       def expect_vm_to_be_created
-        Bosh::Director::Models::Task.make(id: 42, username: 'user')
+        FactoryBot.create(:models_task, id: 42, username: 'user')
 
         allow(SecureRandom).to receive_messages(uuid: 'agent-222')
         allow(AgentClient).to receive(:with_agent_id).and_return(fake_new_agent)

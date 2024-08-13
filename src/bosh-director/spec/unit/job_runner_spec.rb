@@ -11,7 +11,7 @@ module Bosh::Director
       end
     end
 
-    let(:task) { Models::Task.make(id: 42) }
+    let(:task) { FactoryBot.create(:models_task, id: 42) }
 
     let(:tasks_dir) { Dir.mktmpdir }
     before { allow(Config).to receive(:base_dir).and_return(tasks_dir) }
@@ -52,7 +52,7 @@ module Bosh::Director
     end
 
     context 'when task directory is missing' do
-      let(:task) { Models::Task.make(id: 188) }
+      let(:task) { FactoryBot.create(:models_task, id: 188) }
 
       it 'creates task directory if it is missing' do
         task.save
@@ -155,7 +155,7 @@ module Bosh::Director
   end
 
   describe TaskCheckPointer do
-    before { Models::Task.make(id: 42) }
+    before { FactoryBot.create(:models_task, id: 42) }
 
     it 'updates task checkpoint time' do
       task = Models::Task[42]

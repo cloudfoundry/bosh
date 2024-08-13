@@ -12,7 +12,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
   let(:deployment_plan) do
     ip_repo = Bosh::Director::DeploymentPlan::IpRepo.new(logger)
     ip_provider = Bosh::Director::DeploymentPlan::IpProvider.new(ip_repo, { 'name-7' => network }, logger)
-    model = Bosh::Director::Models::Deployment.make
+    model = FactoryBot.create(:models_deployment)
     Bosh::Director::Models::VariableSet.create(deployment: model)
     instance_double(
       'Bosh::Director::DeploymentPlan::Planner',
@@ -81,7 +81,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
   end
 
   describe '#build_instance_from_model' do
-    let(:stemcell) { Bosh::Director::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302') }
+    let(:stemcell) { FactoryBot.create(:models_stemcell, name: 'stemcell-name', version: '3.0.2', cid: 'sc-302') }
     let(:existing_instance) { Bosh::Director::Models::Instance.make(state: 'started') }
 
     let(:instance_spec) do
@@ -124,7 +124,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
         'key1' => 'value1',
       }
     end
-    let(:stemcell) { Bosh::Director::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302') }
+    let(:stemcell) { FactoryBot.create(:models_stemcell, name: 'stemcell-name', version: '3.0.2', cid: 'sc-302') }
     let(:instance_spec) do
       {
         'vm_type' => {

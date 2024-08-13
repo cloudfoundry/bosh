@@ -5,21 +5,21 @@ module Bosh::Director
   describe CompiledPackageGroup do
     include Support::StemcellHelpers
 
-    let(:release_version) { Models::ReleaseVersion.make(release: release) }
-    let(:release) { Models::Release.make }
+    let(:release_version) { FactoryBot.create(:models_release_version, release: release) }
+    let(:release) { FactoryBot.create(:models_release) }
     let(:stemcell) { make_stemcell(sha1: 'fakestemcellsha1', operating_system: 'chrome-os') }
 
-    let(:package1) { Models::Package.make(release: release, dependency_set_json: ['pkg-2', 'pkg-4'].to_json) }
-    let(:package2) { Models::Package.make(name: 'pkg-2', version: '2', release: release) }
-    let(:package3) { Models::Package.make(name: 'pkg-3', version: '3', release: release) }
-    let(:package4) { Models::Package.make(name: 'pkg-4', version: '4', release: release) }
-    let(:templates) { [Models::Template.make(package_names_json: JSON.generate([package1.name]))] }
+    let(:package1) { FactoryBot.create(:models_package, release: release, dependency_set_json: ['pkg-2', 'pkg-4'].to_json) }
+    let(:package2) { FactoryBot.create(:models_package, name: 'pkg-2', version: '2', release: release) }
+    let(:package3) { FactoryBot.create(:models_package, name: 'pkg-3', version: '3', release: release) }
+    let(:package4) { FactoryBot.create(:models_package, name: 'pkg-4', version: '4', release: release) }
+    let(:templates) { [FactoryBot.create(:models_template, package_names_json: JSON.generate([package1.name]))] }
 
     subject(:package_group) { CompiledPackageGroup.new(release_version, stemcell, templates) }
 
     describe '#compiled_packages' do
       let!(:compiled_package1) do
-        Models::CompiledPackage.make(
+        FactoryBot.create(:models_compiled_package,
           package: package1,
           stemcell_os: stemcell.os,
           stemcell_version: stemcell.version,
@@ -27,7 +27,7 @@ module Bosh::Director
         )
       end
       let!(:compiled_package3) do
-        Models::CompiledPackage.make(
+        FactoryBot.create(:models_compiled_package,
           package: package3,
           stemcell_os: stemcell.os,
           stemcell_version: stemcell.version,
@@ -35,7 +35,7 @@ module Bosh::Director
         )
       end
       let!(:compiled_package4) do
-        Models::CompiledPackage.make(
+        FactoryBot.create(:models_compiled_package,
           package: package4,
           stemcell_os: stemcell.os,
           stemcell_version: stemcell.version,

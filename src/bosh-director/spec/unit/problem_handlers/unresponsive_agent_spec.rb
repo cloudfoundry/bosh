@@ -14,7 +14,7 @@ module Bosh::Director
     let(:planner_factory) { instance_double(Bosh::Director::DeploymentPlan::PlannerFactory) }
     let(:deployment_model) do
       manifest = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
-      Models::Deployment.make(name: manifest['name'], manifest: YAML.dump(manifest))
+      FactoryBot.create(:models_deployment, name: manifest['name'], manifest: YAML.dump(manifest))
     end
     let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
@@ -195,7 +195,7 @@ module Bosh::Director
         let(:fake_new_agent) { double(Bosh::Director::AgentClient) }
 
         before do
-          Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
+          FactoryBot.create(:models_stemcell, name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
           instance.update(spec: spec)
           allow(AgentClient).to receive(:with_agent_id).with('agent-222', anything, anything).and_return(fake_new_agent)
           allow(AgentClient).to receive(:with_agent_id).with('agent-222', anything).and_return(fake_new_agent)

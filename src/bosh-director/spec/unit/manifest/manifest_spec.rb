@@ -23,19 +23,19 @@ module Bosh::Director
     let(:cloud_config) { Models::Config.make(:cloud, content: YAML.dump('azs' => [], 'vm_types' => [], 'disk_types' => [], 'networks' => [], 'vm_extensions' => [])) }
 
     before do
-      release_1 = Models::Release.make(name: 'simple')
-      Models::ReleaseVersion.make(version: 6, release: release_1)
-      Models::ReleaseVersion.make(version: 9, release: release_1)
+      release_1 = FactoryBot.create(:models_release, name: 'simple')
+      FactoryBot.create(:models_release_version, version: 6, release: release_1)
+      FactoryBot.create(:models_release_version, version: 9, release: release_1)
 
-      release_1 = Models::Release.make(name: 'hard')
-      Models::ReleaseVersion.make(version: '1+dev.5', release: release_1)
-      Models::ReleaseVersion.make(version: '1+dev.7', release: release_1)
+      release_1 = FactoryBot.create(:models_release, name: 'hard')
+      FactoryBot.create(:models_release_version, version: '1+dev.5', release: release_1)
+      FactoryBot.create(:models_release_version, version: '1+dev.7', release: release_1)
 
-      Models::Stemcell.make(name: 'simple', version: '3163', operating_system: 'simple-os')
-      Models::Stemcell.make(name: 'simple', version: '3169', operating_system: 'simple-os')
+      FactoryBot.create(:models_stemcell, name: 'simple', version: '3163', operating_system: 'simple-os')
+      FactoryBot.create(:models_stemcell, name: 'simple', version: '3169', operating_system: 'simple-os')
 
-      Models::Stemcell.make(name: 'hard', version: '3146', operating_system: 'hard-os')
-      Models::Stemcell.make(name: 'hard', version: '3146.1', operating_system: 'hard-os')
+      FactoryBot.create(:models_stemcell, name: 'hard', version: '3146', operating_system: 'hard-os')
+      FactoryBot.create(:models_stemcell, name: 'hard', version: '3146.1', operating_system: 'hard-os')
 
       allow(Bosh::Director::ConfigServer::VariablesInterpolator).to receive(:new).and_return(variables_interpolator)
       allow(variables_interpolator).to receive(:interpolate_cloud_manifest) { |cloud_manifest| Bosh::Common::DeepCopy.copy(cloud_manifest) }

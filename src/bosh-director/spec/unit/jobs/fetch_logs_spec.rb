@@ -5,7 +5,7 @@ module Bosh::Director
   describe Jobs::FetchLogs do
     subject(:fetch_logs) { Jobs::FetchLogs.new(instances, 'filters' => 'filter1,filter2') }
     let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
-    let(:task) { Models::Task.make(id: 42) }
+    let(:task) { FactoryBot.create(:models_task, id: 42) }
     let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
     let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
 
@@ -26,7 +26,7 @@ module Bosh::Director
         Models::Instance.make(deployment: deployment, job: 'fake-job-name', index: '42', uuid: 'uuid-1')
       end
 
-      let(:deployment) { Models::Deployment.make }
+      let(:deployment) { FactoryBot.create(:models_deployment) }
 
       context 'when only one instance to get logs' do
         let(:instances) { [instance.id] }

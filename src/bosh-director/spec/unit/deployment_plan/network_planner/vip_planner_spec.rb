@@ -7,7 +7,7 @@ module Bosh::Director
     subject(:planner) { DeploymentPlan::NetworkPlanner::VipPlanner.new(network_planner, logger) }
 
     let(:network_planner) { DeploymentPlan::NetworkPlanner::Planner.new(logger) }
-    let(:deployment_model) { Models::Deployment.make(name: 'my-deployment') }
+    let(:deployment_model) { FactoryBot.create(:models_deployment, name: 'my-deployment') }
     let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
     let(:instance_plans) { [instance_plan] }

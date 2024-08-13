@@ -32,7 +32,7 @@ module Bosh::Director
       allow(thread_pool).to receive(:process).and_yield
     end
 
-    let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
+    let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
     let(:manifest_hash) do
       manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
@@ -69,7 +69,7 @@ module Bosh::Director
 
       describe '#perform' do
         let!(:deployment_model) do
-          deployment = Models::Deployment.make(
+          deployment = FactoryBot.create(:models_deployment,
             name: 'fake-dep-name',
             manifest: YAML.dump(service_errand_manifest_hash),
           )
@@ -157,7 +157,7 @@ module Bosh::Director
       describe '#perform' do
         context 'when deployment exists' do
           let!(:deployment_model) do
-            deployment = Models::Deployment.make(
+            deployment = FactoryBot.create(:models_deployment,
               name: 'fake-dep-name',
               manifest: YAML.dump(manifest_hash),
             )

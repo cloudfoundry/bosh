@@ -7,7 +7,7 @@ module Bosh
       subject { DeploymentPlan::DeploymentRepo.new }
 
       before do
-        Bosh::Director::Models::DirectorAttribute.make(name: 'uuid', value: 'fake-director-uuid')
+        FactoryBot.create(:models_director_attribute, name: 'uuid', value: 'fake-director-uuid')
       end
 
       describe '.find_or_create_by_name' do

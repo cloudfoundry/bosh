@@ -14,10 +14,10 @@ module Bosh
           let(:cloud) { instance_double('Bosh::Clouds::ExternalCpi', :request_cpi_api_version= => nil) }
           let(:cpi_api_version) { 1 }
           let(:cloud_wrapper) { Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud, cpi_api_version) }
-          let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
+          let(:deployment) { FactoryBot.create(:models_deployment, name: 'deployment_name') }
           let(:vm_type) { DeploymentPlan::VmType.new('name' => 'fake-vm-type', 'cloud_properties' => cloud_properties) }
           let(:event_manager) { Api::EventManager.new(true) }
-          let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
+          let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
           let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
           let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
           let(:env) { DeploymentPlan::Env.new({}) }
@@ -37,7 +37,7 @@ module Bosh
           let(:stemcell_api_version) { nil }
 
           let(:stemcell_model) do
-            Models::Stemcell.make(cid: 'stemcell-id', name: 'fake-stemcell', version: '123', api_version: stemcell_api_version)
+            FactoryBot.create(:models_stemcell, cid: 'stemcell-id', name: 'fake-stemcell', version: '123', api_version: stemcell_api_version)
           end
 
           let(:network_settings) do
@@ -203,7 +203,7 @@ module Bosh
             let(:use_existing) { true }
 
             let(:stemcell_model_cpi) do
-              Models::Stemcell.make(cid: 'old-stemcell-id', name: 'fake-stemcell', version: '123', cpi: 'cpi1')
+              FactoryBot.create(:models_stemcell, cid: 'old-stemcell-id', name: 'fake-stemcell', version: '123', cpi: 'cpi1')
             end
 
             let(:stemcell) do
@@ -893,7 +893,7 @@ module Bosh
           context 'when stemcell has api_version' do
             let(:stemcell_api_version) { 25 }
             let(:stemcell_model) do
-              Models::Stemcell.make(cid: 'stemcell-id', name: 'fake-stemcell', version: '123', api_version: stemcell_api_version)
+              FactoryBot.create(:models_stemcell, cid: 'stemcell-id', name: 'fake-stemcell', version: '123', api_version: stemcell_api_version)
             end
 
             before do

@@ -5,7 +5,7 @@ module Bosh::Director
     subject(:package_dependency_manager) { PackageDependenciesManager.new(release_version) }
 
     let(:release) do
-      Models::Release.make(name: 'that-release')
+      FactoryBot.create(:models_release, name: 'that-release')
     end
 
     let(:release_version) do

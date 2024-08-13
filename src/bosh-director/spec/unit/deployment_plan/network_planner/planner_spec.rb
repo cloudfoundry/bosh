@@ -8,7 +8,7 @@ module Bosh::Director::DeploymentPlan
     subject(:planner) { NetworkPlanner::Planner.new(logger) }
     let(:instance_plan) { InstancePlan.new(existing_instance: nil, desired_instance: desired_instance, instance: instance, variables_interpolator: variables_interpolator) }
     let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
-    let(:deployment) { instance_double(Planner, model: Bosh::Director::Models::Deployment.make) }
+    let(:deployment) { instance_double(Planner, model: FactoryBot.create(:models_deployment)) }
     let(:desired_instance) { DesiredInstance.new(instance_group, deployment) }
     let(:instance_model) { Bosh::Director::Models::Instance.make }
     let(:instance_group) { FactoryBot.build(:deployment_plan_instance_group) }

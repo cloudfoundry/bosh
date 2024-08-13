@@ -24,7 +24,7 @@ module Bosh::Director
         define_method(:perform) {}
       end
 
-      task = Models::Task.make(output: task_dir)
+      task = FactoryBot.create(:models_task, output: task_dir)
 
       expect(Bosh::Director::JobRunner).to receive(:new)
         .with(testjob_class, task.id, 'workername1').and_return(job_runner)

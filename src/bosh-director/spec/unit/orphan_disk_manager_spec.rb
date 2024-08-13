@@ -7,7 +7,7 @@ module Bosh::Director
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:cloud_factory) { instance_double(CloudFactory) }
 
-    let(:deployment) { Models::Deployment.make(name: 'test-deployment') }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: 'test-deployment') }
 
     let(:instance) do
       Models::Instance.make(availability_zone: 'az-1', deployment: deployment, job: 'test-instance', uuid: 'test-uuid')
@@ -25,7 +25,7 @@ module Bosh::Director
     end
 
     let(:event_manager) { Api::EventManager.new(true) }
-    let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
+    let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
 
     let(:cleanup_job) do
       instance_double(Bosh::Director::Jobs::CleanupArtifacts, username: 'user', task_id: task.id, event_manager: event_manager)

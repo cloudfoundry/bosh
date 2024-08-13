@@ -26,8 +26,8 @@ module Bosh::Director
     subject(:job) { Jobs::VmState.new(deployment.id, 'full', instance_details) }
 
     let(:instance_details) { false }
-    let(:deployment) { Models::Deployment.make }
-    let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
+    let(:deployment) { FactoryBot.create(:models_deployment) }
+    let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
     let(:time) { Time.now }
     let(:vm) { Models::Vm.make(cid: 'fake-vm-cid', agent_id: 'fake-agent-id', instance_id: instance.id, created_at: time) }
     let(:instance) { Models::Instance.make(deployment: deployment) }

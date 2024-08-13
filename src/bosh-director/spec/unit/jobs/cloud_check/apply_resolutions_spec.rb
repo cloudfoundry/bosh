@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe Jobs::CloudCheck::ApplyResolutions do
     before do
-      Models::Deployment.make(name: 'deployment')
+      FactoryBot.create(:models_deployment, name: 'deployment')
       allow(ProblemResolver).to receive_messages(new: resolver)
     end
 

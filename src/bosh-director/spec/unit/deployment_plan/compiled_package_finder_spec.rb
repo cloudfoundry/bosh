@@ -6,13 +6,13 @@ module Bosh::Director
 
     context '#find_compiled_package' do
       let(:event_log_stage) { double('event_log_stage') }
-      let(:example_release_model) { Models::Release.make }
+      let(:example_release_model) { FactoryBot.create(:models_release) }
       let(:example_stemcell) do
         FactoryBot.build(:deployment_plan_stemcell, version: '1.2')
       end
       let(:exported_from) { [] }
       let(:release) do
-        DeploymentPlan::ReleaseVersion.new(Models::Deployment.make, 'release-name', '42', exported_from)
+        DeploymentPlan::ReleaseVersion.new(FactoryBot.create(:models_deployment), 'release-name', '42', exported_from)
       end
 
       let(:package_dependency_manager) { PackageDependenciesManager.new(example_release_model) }
@@ -31,11 +31,11 @@ module Bosh::Director
       end
 
       context 'if the given package does not have source' do
-        let(:example_package) { Models::Package.make(release: example_release_model, blobstore_id: nil, sha1: nil) }
+        let(:example_package) { FactoryBot.create(:models_package, release: example_release_model, blobstore_id: nil, sha1: nil) }
 
         context 'and there is a compiled package that exactly matches the stemcell version' do
           let!(:exact_compiled_package) do
-            Models::CompiledPackage.make(
+            FactoryBot.create(:models_compiled_package,
               package: example_package,
               stemcell_version: example_stemcell.version,
               stemcell_os: example_stemcell.os,
@@ -57,7 +57,7 @@ module Bosh::Director
 
         context 'and there are packages that match on the major stemcell line' do
           let!(:newer_compiled_package) do
-            Models::CompiledPackage.make(
+            FactoryBot.create(:models_compiled_package,
               package: example_package,
               stemcell_version: '1.3',
               stemcell_os: example_stemcell.os,
@@ -66,7 +66,7 @@ module Bosh::Director
           end
 
           let!(:older_compiled_package) do
-            Models::CompiledPackage.make(
+            FactoryBot.create(:models_compiled_package,
               package: example_package,
               stemcell_version: '1.1',
               stemcell_os: example_stemcell.os,
@@ -89,11 +89,11 @@ module Bosh::Director
       end
 
       context 'if the given package has source' do
-        let(:example_package) { Models::Package.make(release: example_release_model, blobstore_id: 'blobstore-id') }
+        let(:example_package) { FactoryBot.create(:models_package, release: example_release_model, blobstore_id: 'blobstore-id') }
 
         context 'and there is a compiled package that matches the stemcell version exactly' do
           let!(:compiled_package) do
-            Models::CompiledPackage.make(
+            FactoryBot.create(:models_compiled_package,
               package: example_package,
               stemcell_version: example_stemcell.version,
               stemcell_os: example_stemcell.os,
@@ -115,7 +115,7 @@ module Bosh::Director
 
         context 'and there is no compiled package that matches the stemcell version exactly' do
           let!(:newer_compiled_package) do
-            Models::CompiledPackage.make(
+            FactoryBot.create(:models_compiled_package,
               package: example_package,
               stemcell_version: '1.3',
               stemcell_os: example_stemcell.os,
@@ -124,7 +124,7 @@ module Bosh::Director
           end
 
           let!(:older_compiled_package) do
-            Models::CompiledPackage.make(
+            FactoryBot.create(:models_compiled_package,
               package: example_package,
               stemcell_version: '1.1',
               stemcell_os: example_stemcell.os,
@@ -135,12 +135,12 @@ module Bosh::Director
       end
 
       context 'if given a release with exported_from' do
-        let(:example_package) { Models::Package.make(release: example_release_model, blobstore_id: nil, sha1: nil) }
+        let(:example_package) { FactoryBot.create(:models_package, release: example_release_model, blobstore_id: nil, sha1: nil) }
         let(:exported_from) { [FactoryBot.build(:deployment_plan_stemcell, os: example_stemcell.os, version: '1.0')] }
 
         context 'when there is a compiled package for exported_from stemcell' do
           let!(:expected_compile_package) do
-            Models::CompiledPackage.make(
+            FactoryBot.create(:models_compiled_package,
               package: example_package,
               stemcell_version: '1.0',
               stemcell_os: example_stemcell.os,
@@ -150,7 +150,7 @@ module Bosh::Director
 
           before do
             # the decoy package
-            Models::CompiledPackage.make(
+            FactoryBot.create(:models_compiled_package,
               package: example_package,
               stemcell_version: '1.2',
               stemcell_os: example_stemcell.os,
@@ -184,7 +184,7 @@ module Bosh::Director
           end
 
           let!(:expected_compile_package) do
-            Models::CompiledPackage.make(
+            FactoryBot.create(:models_compiled_package,
               package: example_package,
               stemcell_version: '1.2',
               stemcell_os: second_stemcell.os,
@@ -194,7 +194,7 @@ module Bosh::Director
 
           before do
             # the decoy package
-            Models::CompiledPackage.make(
+            FactoryBot.create(:models_compiled_package,
               package: example_package,
               stemcell_version: '1.2',
               stemcell_os: example_stemcell.os,

@@ -7,7 +7,7 @@ module Bosh
 
       let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
       let(:cloud_factory) { instance_double(CloudFactory) }
-      let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
+      let(:deployment) { FactoryBot.create(:models_deployment, name: 'deployment_name') }
       let(:vm_model) { Models::Vm.make(cid: 'vm-cid', instance_id: instance_model.id, cpi: 'cpi1') }
       let(:instance_model) do
         Models::Instance.make(

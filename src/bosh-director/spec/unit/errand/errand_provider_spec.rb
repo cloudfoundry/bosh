@@ -41,7 +41,7 @@ module Bosh::Director
       let(:ip_provider) { instance_double(DeploymentPlan::IpProvider) }
       let(:keep_alive) { false }
       let(:instance_slugs) { [] }
-      let(:deployment_model) { Bosh::Director::Models::Deployment.make }
+      let(:deployment_model) { FactoryBot.create(:models_deployment) }
 
       before do
         allow(deployment_planner_provider).to receive(:get_by_name)

@@ -8,7 +8,7 @@ module Bosh::Director::DeploymentPlan
       let(:desired_instance) { DesiredInstance.new(instance_group) }
       let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
       let(:instance_group) { FactoryBot.build(:deployment_plan_instance_group, name: 'job_name') }
-      let(:deployment_model) { Bosh::Director::Models::Deployment.make(name: 'my-deployment') }
+      let(:deployment_model) { FactoryBot.create(:models_deployment, name: 'my-deployment') }
       let(:bootstrap_az) { AvailabilityZone.new('bootstrap_name', {}) }
       let(:bootstrap_instance) do
         bootstrap_instance = Instance.create_from_instance_group(instance_group, 0, 'started', deployment_model, {}, bootstrap_az, logger, variables_interpolator)

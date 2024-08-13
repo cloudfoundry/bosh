@@ -32,7 +32,7 @@ module Bosh::Director
       instance_double(VmCreator)
     end
 
-    let(:task) { Models::Task.make(id: 42, username: 'user') }
+    let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
     let(:task_writer) { TaskDBWriter.new(:event_output, task.id) }
     let(:event_log) { EventLog::Log.new(task_writer) }
 
@@ -98,7 +98,7 @@ module Bosh::Director
 
     describe '#delete_vms' do
       let(:manifest) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
-      let(:deployment_model) { Models::Deployment.make(manifest: YAML.dump(manifest)) }
+      let(:deployment_model) { FactoryBot.create(:models_deployment, manifest: YAML.dump(manifest)) }
 
       let(:instance1_model) do
         is = Models::Instance.make(deployment: deployment_model, job: 'foo-job', uuid: 'instance_id1', index: 0, ignore: true)

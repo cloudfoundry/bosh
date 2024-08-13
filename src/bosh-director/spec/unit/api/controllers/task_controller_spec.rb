@@ -39,7 +39,7 @@ module Bosh::Director
         context 'when the task does exist' do
           let(:state) { :processing }
           let!(:task) do
-            Models::Task.make(
+            FactoryBot.create(:models_task,
               type: :update_deployment,
               state: state,
             )

@@ -36,15 +36,15 @@ module Bosh::Director
 
     describe '#get_all_releases' do
       it 'gets all releases' do
-        release_1 = Models::Release.make(name: 'release-a')
-        release_2 = Models::Release.make(name: 'release-b')
-        deployment_1 = Models::Deployment.make
-        template_1 = Models::Template.make(name: 'job-1', release: release_1)
-        template_2 = Models::Template.make(name: 'job-2', release: release_2)
-        version_1 = Models::ReleaseVersion.make(version: 1, release: release_1)
+        release_1 = FactoryBot.create(:models_release, name: 'release-a')
+        release_2 = FactoryBot.create(:models_release, name: 'release-b')
+        deployment_1 = FactoryBot.create(:models_deployment)
+        template_1 = FactoryBot.create(:models_template, name: 'job-1', release: release_1)
+        template_2 = FactoryBot.create(:models_template, name: 'job-2', release: release_2)
+        version_1 = FactoryBot.create(:models_release_version, version: 1, release: release_1)
         version_1.add_template(template_1)
         version_1.add_deployment(deployment_1)
-        version_2 = Models::ReleaseVersion.make(version: 2, release: release_2)
+        version_2 = FactoryBot.create(:models_release_version, version: 2, release: release_2)
         version_2.add_template(template_2)
 
         releases = subject.get_all_releases
@@ -71,9 +71,9 @@ module Bosh::Director
       end
 
       it 'orders releases in ascending order of release name' do
-        Models::Release.make(name: 'b')
-        Models::Release.make(name: '1c')
-        Models::Release.make(name: 'a')
+        FactoryBot.create(:models_release, name: 'b')
+        FactoryBot.create(:models_release, name: '1c')
+        FactoryBot.create(:models_release, name: 'a')
 
         releases = subject.get_all_releases
 
@@ -82,10 +82,10 @@ module Bosh::Director
       end
 
       it 'orders releases in ascending order of release version' do
-        release = Models::Release.make(name: 'a')
-        Models::ReleaseVersion.make(version: 3, release: release)
-        Models::ReleaseVersion.make(version: 10, release: release)
-        Models::ReleaseVersion.make(version: 1, release: release)
+        release = FactoryBot.create(:models_release, name: 'a')
+        FactoryBot.create(:models_release_version, version: 3, release: release)
+        FactoryBot.create(:models_release_version, version: 10, release: release)
+        FactoryBot.create(:models_release_version, version: 1, release: release)
 
         releases = subject.get_all_releases
 
@@ -96,13 +96,13 @@ module Bosh::Director
     end
 
     describe '#sorted_release_version' do
-      let(:release) { Models::Release.make(name: 'release-a') }
+      let(:release) { FactoryBot.create(:models_release, name: 'release-a') }
 
       before do
-        Models::ReleaseVersion.make(version: '1', release: release)
-        Models::ReleaseVersion.make(version: '2.1', release: release)
-        Models::ReleaseVersion.make(version: '2.2', release: release)
-        Models::ReleaseVersion.make(version: '2.3', release: release)
+        FactoryBot.create(:models_release_version, version: '1', release: release)
+        FactoryBot.create(:models_release_version, version: '2.1', release: release)
+        FactoryBot.create(:models_release_version, version: '2.2', release: release)
+        FactoryBot.create(:models_release_version, version: '2.3', release: release)
       end
 
       it 'returns a transformed array' do
@@ -187,10 +187,10 @@ module Bosh::Director
 
     describe '#find_version' do
       before do
-        @release = Bosh::Director::Models::Release.make(:name => 'fake-release-name')
-        @final_release_version = Bosh::Director::Models::ReleaseVersion.make(:release => @release, :version => '9')
-        @old_dev_release_version = Bosh::Director::Models::ReleaseVersion.make(:release => @release, :version => '9.1-dev')
-        @new_dev_release_version = Bosh::Director::Models::ReleaseVersion.make(:release => @release, :version => '9+dev.2')
+        @release = FactoryBot.create(:models_release, name: 'fake-release-name')
+        @final_release_version = FactoryBot.create(:models_release_version, release: @release, version: '9')
+        @old_dev_release_version = FactoryBot.create(:models_release_version, release: @release, version: '9.1-dev')
+        @new_dev_release_version = FactoryBot.create(:models_release_version, release: @release, version: '9+dev.2')
       end
 
       context 'when version as specified exists in the database' do

@@ -23,8 +23,8 @@ module Bosh::Director
 
           let(:release_dir) { Test::ReleaseHelper.new.create_release_tarball(manifest) }
           let(:release_version) { '42+dev.6' }
-          let(:release_version_model) { Models::ReleaseVersion.make(version: release_version) }
-          let(:release) { Models::Release.make(name: 'appcloud') }
+          let(:release_version_model) { FactoryBot.create(:models_release_version, version: release_version) }
+          let(:release) { FactoryBot.create(:models_release, name: 'appcloud') }
 
           let(:manifest_jobs) do
             [
@@ -144,15 +144,15 @@ module Bosh::Director
             end
 
             before do
-              other_release = Models::Release.make(name: 'other-release')
-              existing_package = Models::Package.make(
+              other_release = FactoryBot.create(:models_release, name: 'other-release')
+              existing_package = FactoryBot.create(:models_package,
                 release: other_release,
                 sha1: 'sha1-1',
                 name: package_name_1,
                 version: 'fake-version-1',
                 fingerprint: 'same-fingerprint',
               )
-              Models::CompiledPackage.make(
+              FactoryBot.create(:models_compiled_package,
                 package: existing_package,
                 sha1: 'compiled-sha1-1',
                 stemcell_os: 'foo',
@@ -250,7 +250,7 @@ module Bosh::Director
             let(:release_dir) { Dir.mktmpdir }
 
             before do
-              Models::Package.make(
+              FactoryBot.create(:models_package,
                 release: release,
                 sha1: 'sha1-1',
                 name: 'fake-name-1',
@@ -296,7 +296,7 @@ module Bosh::Director
           allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
         end
 
-        let(:release) { Models::Release.make }
+        let(:release) { FactoryBot.create(:models_release) }
 
         let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient', create: true) }
 
@@ -391,7 +391,7 @@ module Bosh::Director
           let(:release_dir) { Dir.mktmpdir }
           after { FileUtils.rm_rf(release_dir) }
 
-          let(:release) { Models::Release.make }
+          let(:release) { FactoryBot.create(:models_release) }
 
           it 'should create simple packages without blobstore_id or sha1' do
             Jobs::UpdateRelease::PackagePersister.create_package(

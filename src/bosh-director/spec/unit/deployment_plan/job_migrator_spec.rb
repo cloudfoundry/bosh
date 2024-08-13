@@ -68,7 +68,7 @@ module Bosh::Director
 
     let(:deployment_model) do
       cloud_config = Models::Config.make(:cloud, content: YAML.dump(cloud_config_manifest))
-      deployment = Models::Deployment.make(
+      deployment = FactoryBot.create(:models_deployment,
         name: deployment_manifest['name'],
         manifest: YAML.dump(deployment_manifest),
       )
@@ -87,11 +87,11 @@ module Bosh::Director
 
       fake_locks
 
-      release_model = Bosh::Director::Models::Release.make(name: deployment_manifest['releases'].first['name'])
-      version = Bosh::Director::Models::ReleaseVersion.make(version: deployment_manifest['releases'].first['version'])
+      release_model = FactoryBot.create(:models_release, name: deployment_manifest['releases'].first['name'])
+      version = FactoryBot.create(:models_release_version, version: deployment_manifest['releases'].first['version'])
       release_model.add_version(version)
 
-      template_model = Bosh::Director::Models::Template.make(
+      template_model = FactoryBot.create(:models_template,
         name: deployment_manifest['instance_groups'].first['jobs'][0]['name'],
       )
       version.add_template(template_model)

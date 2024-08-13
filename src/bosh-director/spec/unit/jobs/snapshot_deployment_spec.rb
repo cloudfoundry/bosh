@@ -4,7 +4,7 @@ module Bosh::Director
   describe Jobs::SnapshotDeployment do
     let(:deployment_manager) { instance_double('Bosh::Director::Api::DeploymentManager') }
     let(:deployment_name) { 'deployment' }
-    let!(:deployment) { Models::Deployment.make(name: deployment_name) }
+    let!(:deployment) { FactoryBot.create(:models_deployment, name: deployment_name) }
     let!(:instance1) do
       is = Models::Instance.make(deployment: deployment)
       vm = Models::Vm.make(instance_id: is.id)

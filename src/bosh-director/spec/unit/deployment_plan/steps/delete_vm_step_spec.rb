@@ -19,7 +19,7 @@ module Bosh
             )
           end
           let(:vm_model) { Models::Vm.make(cid: 'vm-cid', instance_id: instance_model.id, cpi: 'cpi1') }
-          let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
+          let(:deployment) { FactoryBot.create(:models_deployment, name: 'deployment_name') }
           let(:report) { Stages::Report.new.tap { |r| r.vm = vm_model } }
 
           describe '#perform' do

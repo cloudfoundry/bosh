@@ -143,7 +143,7 @@ module Bosh::Director
                     anything,
                     anything,
                     anything,
-                  ).and_return(Models::Task.make)
+                  ).and_return(FactoryBot.create(:models_task))
 
                 post "/?#{URI.encode_www_form(deployment_context)}", spec_asset('test_conf.yaml'), 'CONTENT_TYPE' => 'text/yaml'
                 expect_redirect_to_queued_task(last_response)
@@ -196,7 +196,7 @@ module Bosh::Director
                             anything,
                             anything
                           )
-                          .and_return(Models::Task.make)
+                          .and_return(FactoryBot.create(:models_task))
 
                   response = post "/?#{URI.encode_www_form(deployment_context)}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
 
@@ -262,7 +262,7 @@ module Bosh::Director
                             anything,
                             anything
                           )
-                          .and_return(Models::Task.make)
+                          .and_return(FactoryBot.create(:models_task))
 
                   response = post '/', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
 
@@ -271,7 +271,7 @@ module Bosh::Director
               end
 
               context 'existing team deployment' do
-                let!(:deployment) { Models::Deployment.make(name: 'deployment-name').tap { |d| d.teams = [dev_team] } }
+                let!(:deployment) { FactoryBot.create(:models_deployment, name: 'deployment-name').tap { |d| d.teams = [dev_team] } }
 
                 it 'uses the teams of the existing deployment' do
                   expect_any_instance_of(DeploymentManager)
@@ -285,7 +285,7 @@ module Bosh::Director
                             anything,
                             anything
                           )
-                          .and_return(Models::Task.make)
+                          .and_return(FactoryBot.create(:models_task))
 
                   response = post '/', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
 
@@ -306,14 +306,14 @@ module Bosh::Director
         end
 
         describe 'updating a deployment' do
-          let!(:deployment) { Models::Deployment.create(:name => 'my-test-deployment', :manifest => YAML.dump({'foo' => 'bar'})) }
+          let!(:deployment) { Models::Deployment.create(name: 'my-test-deployment', manifest: YAML.dump({ 'foo' => 'bar' })) }
 
           context 'without the "skip_drain" param' do
             it 'does not skip draining' do
               expect_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
                 .with(anything, anything, anything, anything, anything, hash_excluding('skip_drain'), anything)
-                .and_return(OpenStruct.new(:id => 1))
+                .and_return(OpenStruct.new(id: 1))
               post '/', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
             end
@@ -324,7 +324,7 @@ module Bosh::Director
               expect_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
                 .with(anything, anything, anything, anything, anything, hash_including('skip_drain' => '*'), anything)
-                .and_return(OpenStruct.new(:id => 1))
+                .and_return(OpenStruct.new(id: 1))
               post '/?skip_drain=*', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
             end
@@ -335,7 +335,7 @@ module Bosh::Director
               expect_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
                 .with(anything, anything, anything, anything, anything, hash_including('skip_drain' => 'job_one,job_two'), anything)
-                .and_return(OpenStruct.new(:id => 1))
+                .and_return(OpenStruct.new(id: 1))
               post '/?skip_drain=job_one,job_two', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
             end
@@ -346,7 +346,7 @@ module Bosh::Director
               expect_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
                 .with(anything, anything, anything, anything, anything, hash_including('fix' => true), anything)
-                .and_return(OpenStruct.new(:id => 1))
+                .and_return(OpenStruct.new(id: 1))
               post '/?fix=true', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
               expect(last_response).to be_redirect
             end
@@ -397,7 +397,7 @@ module Bosh::Director
               expect_any_instance_of(DeploymentManager)
                   .to receive(:create_deployment)
                           .with(anything, anything, anything, anything, deployment, hash_excluding('skip_drain'), anything)
-                          .and_return(OpenStruct.new(:id => 1))
+                          .and_return(OpenStruct.new(id: 1))
               post '/', spec_asset('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
             end
@@ -408,7 +408,7 @@ module Bosh::Director
               expect_any_instance_of(DeploymentManager)
                   .to receive(:create_deployment)
                           .with(anything, anything, anything, anything, deployment, hash_including('new' => false), anything)
-                          .and_return(OpenStruct.new(:id => 1))
+                          .and_return(OpenStruct.new(id: 1))
               post '/', spec_asset('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
             end
 
@@ -416,7 +416,7 @@ module Bosh::Director
               expect_any_instance_of(DeploymentManager)
                   .to receive(:create_deployment)
                           .with(anything, anything, anything, anything, anything, hash_including('new' => true), anything)
-                          .and_return(OpenStruct.new(:id => 1))
+                          .and_return(OpenStruct.new(id: 1))
                Models::Deployment.first.delete
               post '/', spec_asset('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
             end
@@ -427,7 +427,7 @@ module Bosh::Director
               expect_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
                       .with(anything, anything, anything, anything, anything, hash_including('force_latest_variables' => true), anything)
-                      .and_return(OpenStruct.new(:id => 1))
+                      .and_return(OpenStruct.new(id: 1))
               post '/?force_latest_variables=true', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
               expect(last_response).to be_redirect
             end
@@ -436,7 +436,7 @@ module Bosh::Director
 
         describe 'deleting deployment' do
           it 'deletes the deployment' do
-            deployment = Models::Deployment.create(:name => 'test_deployment', :manifest => YAML.dump({'foo' => 'bar'}))
+            deployment = Models::Deployment.create(name: 'test_deployment', manifest: YAML.dump({ 'foo' => 'bar' }))
 
             delete '/test_deployment'
             expect_redirect_to_queued_task(last_response)
@@ -444,7 +444,7 @@ module Bosh::Director
 
           it 'accepts a context id' do
             context_id = 'example-context-id'
-            deployment = Models::Deployment.create(:name => 'test_deployment', :manifest => YAML.dump({'foo' => 'bar'}))
+            deployment = Models::Deployment.create(name: 'test_deployment', manifest: YAML.dump({ 'foo' => 'bar' }))
 
             header('X-Bosh-Context-Id', context_id)
             delete '/test_deployment'
@@ -517,7 +517,7 @@ module Bosh::Director
             let!(:other_team) { Models::Team.make(name: 'other') }
 
             let!(:deployment) do
-              Models::Deployment.make(name: 'foo', manifest: YAML.dump({'foo' => 'bar'})).tap { |d| d.teams = [dev_team] }
+              FactoryBot.create(:models_deployment, name: 'foo', manifest: YAML.dump({'foo' => 'bar'})).tap { |d| d.teams = [dev_team] }
             end
 
             let!(:instance) do
@@ -527,7 +527,7 @@ module Bosh::Director
                 index: '2',
                 uuid: '0B949287-CDED-4761-9002-FC4035E11B21',
                 state: 'started',
-                :variable_set => Models::VariableSet.create(deployment: deployment)
+                variable_set: Models::VariableSet.create(deployment: deployment)
               )
             end
 
@@ -541,7 +541,7 @@ module Bosh::Director
                   deployment,
                   anything,
                   anything,
-                ).and_return(Models::Task.make)
+                ).and_return(FactoryBot.create(:models_task))
 
               put '/foo/jobs/*?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect_redirect_to_queued_task(last_response)
@@ -557,7 +557,7 @@ module Bosh::Director
                   deployment,
                   anything,
                   anything,
-                ).and_return(Models::Task.make)
+                ).and_return(FactoryBot.create(:models_task))
 
               put '/foo/jobs/dea/0B949287-CDED-4761-9002-FC4035E11B21?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect_redirect_to_queued_task(last_response)
@@ -573,7 +573,7 @@ module Bosh::Director
                 index: '2',
                 uuid: '0B949287-CDED-4761-9002-FC4035E11B21',
                 state: 'started',
-                :variable_set => Models::VariableSet.create(deployment: deployment)
+                variable_set: Models::VariableSet.create(deployment: deployment)
               )
               Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
               put "#{path}", spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
@@ -634,9 +634,9 @@ module Bosh::Director
 
           it 'allows putting the job instance into different ignore state' do
             instance = Models::Instance.
-                create(:deployment => deployment, :job => 'dea',
-                       :index => '0', :state => 'started', :uuid => '0B949287-CDED-4761-9002-FC4035E11B21',
-                       :variable_set => Models::VariableSet.create(deployment: deployment))
+                create(deployment: deployment, job: 'dea',
+                       index: '0', state: 'started', uuid: '0B949287-CDED-4761-9002-FC4035E11B21',
+                       variable_set: Models::VariableSet.create(deployment: deployment))
             expect(instance.ignore).to be(false)
             put '/foo/instance_groups/dea/0B949287-CDED-4761-9002-FC4035E11B21/ignore', JSON.generate('ignore' => true), { 'CONTENT_TYPE' => 'application/json' }
             expect(last_response.status).to eq(200)
@@ -649,8 +649,8 @@ module Bosh::Director
 
           it 'gives a nice error when uploading non valid manifest' do
             instance = Models::Instance.
-                create(:deployment => deployment, :job => 'dea',
-                       :index => '0', :state => 'started', :variable_set => Models::VariableSet.create(deployment: deployment))
+                create(deployment: deployment, job: 'dea',
+                       index: '0', state: 'started', variable_set: Models::VariableSet.create(deployment: deployment))
 
             put '/foo/jobs/dea', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
 
@@ -661,8 +661,8 @@ module Bosh::Director
 
           it 'should not validate body content when content.length is zero' do
             Models::Instance.
-                create(:deployment => deployment, :job => 'dea',
-                       :index => '0', :state => 'started', :variable_set => Models::VariableSet.create(deployment: deployment))
+                create(deployment: deployment, job: 'dea',
+                       index: '0', state: 'started', variable_set: Models::VariableSet.create(deployment: deployment))
 
             put '/foo/jobs/dea/0?state=started', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml', 'CONTENT_LENGTH' => '0'}
 
@@ -682,7 +682,7 @@ module Bosh::Director
               index: '0',
               uuid: 'fake_uuid',
               state: 'started',
-              :variable_set => Models::VariableSet.create(deployment: deployment)
+              variable_set: Models::VariableSet.create(deployment: deployment)
             )
             Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
 
@@ -752,10 +752,10 @@ module Bosh::Director
             let(:context_id) { '' }
             shared_examples_for 'recreates with configs' do
               it 'recreates with the latest configs if you send a manifest' do
-                cc_old = Models::Config.create(:name => 'cc', :type =>'cloud', :content => YAML.dump({'foo' => 'old-cc'}))
-                cc_new = Models::Config.create(:name => 'cc', :type =>'cloud', :content => YAML.dump({'foo' => 'new-cc'}))
-                runtime_old = Models::Config.create(:name => 'runtime', :type =>'runtime', :content => YAML.dump({'foo' => 'old-runtime'}))
-                runtime_new = Models::Config.create(:name => 'runtime', :type =>'runtime', :content => YAML.dump({'foo' => 'new-runtime'}))
+                cc_old = Models::Config.create(name: 'cc', type: 'cloud', content: YAML.dump({ 'foo' => 'old-cc' }))
+                cc_new = Models::Config.create(name: 'cc', type: 'cloud', content: YAML.dump({ 'foo' => 'new-cc' }))
+                runtime_old = Models::Config.create(name: 'runtime', type: 'runtime', content: YAML.dump({ 'foo' => 'old-runtime' }))
+                runtime_new = Models::Config.create(name: 'runtime', type: 'runtime', content: YAML.dump({ 'foo' => 'new-runtime' }))
 
                 deployment = Models::Deployment.create(name: 'foo', manifest: YAML.dump({'foo' => 'bar'}))
                 deployment.cloud_configs = [cc_old]
@@ -767,7 +767,7 @@ module Bosh::Director
                   index: '2',
                   uuid: '0B949287-CDED-4761-9002-FC4035E11B21',
                   state: 'started',
-                  :variable_set => Models::VariableSet.create(deployment: deployment)
+                  variable_set: Models::VariableSet.create(deployment: deployment)
                 )
                 expect_any_instance_of(DeploymentManager)
                   .to receive(:create_deployment)
@@ -782,10 +782,10 @@ module Bosh::Director
               end
 
               it 'recreates with the previous configs rather than the latest' do
-                cc_old = Models::Config.create(:name => 'cc', :type =>'cloud', :content => YAML.dump({'foo' => 'old-cc'}))
-                cc_new = Models::Config.create(:name => 'cc', :type =>'cloud', :content => YAML.dump({'foo' => 'new-cc'}))
-                runtime_old = Models::Config.create(:name => 'runtime', :type =>'runtime', :content => YAML.dump({'foo' => 'old-runtime'}))
-                runtime_new = Models::Config.create(:name => 'runtime', :type =>'runtime', :content => YAML.dump({'foo' => 'new-runtime'}))
+                cc_old = Models::Config.create(name: 'cc', type: 'cloud', content: YAML.dump({ 'foo' => 'old-cc' }))
+                cc_new = Models::Config.create(name: 'cc', type: 'cloud', content: YAML.dump({ 'foo' => 'new-cc' }))
+                runtime_old = Models::Config.create(name: 'runtime', type: 'runtime', content: YAML.dump({ 'foo' => 'old-runtime' }))
+                runtime_new = Models::Config.create(name: 'runtime', type: 'runtime', content: YAML.dump({ 'foo' => 'new-runtime' }))
 
                 deployment = Models::Deployment.create(name: 'foo', manifest: YAML.dump({'foo' => 'bar'}))
                 deployment.cloud_configs = [cc_old]
@@ -797,7 +797,7 @@ module Bosh::Director
                   index: '2',
                   uuid: '0B949287-CDED-4761-9002-FC4035E11B21',
                   state: 'started',
-                  :variable_set => Models::VariableSet.create(deployment: deployment)
+                  variable_set: Models::VariableSet.create(deployment: deployment)
                 )
                 expect_any_instance_of(DeploymentManager)
                   .to receive(:create_deployment)
@@ -838,8 +838,8 @@ module Bosh::Director
           end
 
           describe 'draining' do
-            let(:deployment) { Models::Deployment.create(:name => 'test_deployment', :manifest => YAML.dump({'foo' => 'bar'})) }
-            let(:instance) { Models::Instance.create(deployment: deployment, job: 'job_name', index: '0', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started', :variable_set => Models::VariableSet.create(deployment: deployment)) }
+            let(:deployment) { Models::Deployment.create(name: 'test_deployment', manifest: YAML.dump({ 'foo' => 'bar' })) }
+            let(:instance) { Models::Instance.create(deployment: deployment, job: 'job_name', index: '0', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started', variable_set: Models::VariableSet.create(deployment: deployment)) }
             before do
               Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
             end
@@ -865,7 +865,7 @@ module Bosh::Director
                   .to receive(:create_deployment)
                   .with(anything, anything, anything, anything, anything,
                         hash_including('skip_drain' => drain_target), anything)
-                  .and_return(OpenStruct.new(:id => 1))
+                  .and_return(OpenStruct.new(id: 1))
 
                 put "#{path + drain_option}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
                 expect(last_response).to be_redirect
@@ -897,13 +897,13 @@ module Bosh::Director
 
         describe 'log management' do
           it 'allows fetching logs from a particular instance' do
-            deployment = Models::Deployment.create(:name => 'foo', :manifest => YAML.dump({'foo' => 'bar'}))
+            deployment = Models::Deployment.create(name: 'foo', manifest: YAML.dump({ 'foo' => 'bar' }))
             instance = Models::Instance.create(
-              :deployment => deployment,
-              :job => 'nats',
-              :index => '0',
-              :state => 'started',
-              :variable_set => Models::VariableSet.create(deployment: deployment)
+              deployment: deployment,
+              job: 'nats',
+              index: '0',
+              state: 'started',
+              variable_set: Models::VariableSet.create(deployment: deployment)
             )
             Models::Vm.make(agent_id: 'random-id', instance_id: instance.id, active: true)
             get '/foo/jobs/nats/0/logs', {}
@@ -911,13 +911,13 @@ module Bosh::Director
           end
 
           it 'allows fetching logs from all instances of particular job' do
-            deployment = Models::Deployment.create(:name => 'foo', :manifest => YAML.dump({'foo' => 'bar'}))
+            deployment = Models::Deployment.create(name: 'foo', manifest: YAML.dump({ 'foo' => 'bar' }))
             instance = Models::Instance.create(
-                :deployment => deployment,
-                :job => 'nats',
-                :index => '0',
-                :state => 'started',
-                :variable_set => Models::VariableSet.create(deployment: deployment)
+              deployment: deployment,
+              job: 'nats',
+              index: '0',
+              state: 'started',
+              variable_set: Models::VariableSet.create(deployment: deployment)
             )
             Models::Vm.make(agent_id: 'random-id', instance_id: instance.id, active: true)
             get '/foo/jobs/nats/*/logs', {}
@@ -925,13 +925,13 @@ module Bosh::Director
           end
 
           it 'allows fetching logs from all instances of particular deployment' do
-            deployment = Models::Deployment.create(:name => 'foo', :manifest => YAML.dump({'foo' => 'bar'}))
+            deployment = Models::Deployment.create(name: 'foo', manifest: YAML.dump({ 'foo' => 'bar' }))
             instance = Models::Instance.create(
-                :deployment => deployment,
-                :job => 'nats',
-                :index => '0',
-                :state => 'started',
-                :variable_set => Models::VariableSet.create(deployment: deployment)
+              deployment: deployment,
+              job: 'nats',
+              index: '0',
+              state: 'started',
+              variable_set: Models::VariableSet.create(deployment: deployment)
             )
             Models::Vm.make(agent_id: 'random-id', instance_id: instance.id, active: true)
             get '/foo/jobs/*/*/logs', {}
@@ -945,24 +945,24 @@ module Bosh::Director
 
           it '404 if no deployment' do
             deployment = Models::Deployment.
-              create(:name => 'bar', :manifest => YAML.dump({'foo' => 'bar'}))
+              create(name: 'bar', manifest: YAML.dump({ 'foo' => 'bar' }))
             get '/bar/jobs/nats/0/logs', {}
             expect(last_response.status).to eq(404)
           end
         end
 
         describe 'listing deployments' do
-          let(:deployment) { Models::Deployment.make(name: 'b') }
+          let(:deployment) { FactoryBot.create(:models_deployment, name: 'b') }
 
           before { basic_authorize 'reader', 'reader' }
 
           context 'with deployment info' do
             before do
-              release_1 = Models::Release.create(:name => 'release-1')
-              release_1_1 = Models::ReleaseVersion.create(:release => release_1, :version => 1)
-              release_1_2 = Models::ReleaseVersion.create(:release => release_1, :version => 2)
-              release_2 = Models::Release.create(:name => 'release-2')
-              release_2_1 = Models::ReleaseVersion.create(:release => release_2, :version => 1)
+              release_1 = Models::Release.create(name: 'release-1')
+              release_1_1 = Models::ReleaseVersion.create(release: release_1, version: 1)
+              release_1_2 = Models::ReleaseVersion.create(release: release_1, version: 2)
+              release_2 = Models::Release.create(name: 'release-2')
+              release_2_1 = Models::ReleaseVersion.create(release: release_2, version: 1)
 
               stemcell_1_1 = Models::Stemcell.create(name: 'stemcell-1', version: 1, cid: 123)
               stemcell_1_2 = Models::Stemcell.create(name: 'stemcell-1', version: 2, cid: 123)
@@ -1249,21 +1249,21 @@ module Bosh::Director
           end
 
           it 'orders the associations' do
-            release2 = Models::Release.make(name: 'r2')
-            release1 = Models::Release.make(name: 'r1')
+            release2 = FactoryBot.create(:models_release, name: 'r2')
+            release1 = FactoryBot.create(:models_release, name: 'r1')
 
-            deployment.add_release_version(Models::ReleaseVersion.make(version: '3', release_id: release1.id))
-            deployment.add_release_version(Models::ReleaseVersion.make(version: '2', release_id: release1.id))
-            deployment.add_release_version(Models::ReleaseVersion.make(version: '1', release_id: release2.id))
+            deployment.add_release_version(FactoryBot.create(:models_release_version, version: '3', release_id: release1.id))
+            deployment.add_release_version(FactoryBot.create(:models_release_version, version: '2', release_id: release1.id))
+            deployment.add_release_version(FactoryBot.create(:models_release_version, version: '1', release_id: release2.id))
 
             deployment.add_team(Models::Team.make(name: 'team2'))
             deployment.add_team(Models::Team.make(name: 'team3'))
             deployment.add_team(Models::Team.make(name: 'team1'))
 
-            deployment.add_stemcell(Models::Stemcell.make(name: 'stemcell2', version: '4'))
-            deployment.add_stemcell(Models::Stemcell.make(name: 'stemcell1', version: '1'))
-            deployment.add_stemcell(Models::Stemcell.make(name: 'stemcell2', version: '3'))
-            deployment.add_stemcell(Models::Stemcell.make(name: 'stemcell3', version: '2'))
+            deployment.add_stemcell(FactoryBot.create(:models_stemcell, name: 'stemcell2', version: '4'))
+            deployment.add_stemcell(FactoryBot.create(:models_stemcell, name: 'stemcell1', version: '1'))
+            deployment.add_stemcell(FactoryBot.create(:models_stemcell, name: 'stemcell2', version: '3'))
+            deployment.add_stemcell(FactoryBot.create(:models_stemcell, name: 'stemcell3', version: '2'))
 
             get '/', {}, {}
             expect(last_response.status).to eq(200)
@@ -1331,8 +1331,8 @@ module Bosh::Director
 
           it 'returns manifest' do
             deployment = Models::Deployment.
-                create(:name => 'test_deployment',
-                       :manifest_text => YAML.dump({'foo' => 'bar'}))
+                create(name: 'test_deployment',
+                       manifest_text: YAML.dump({ 'foo' => 'bar' }))
             get '/test_deployment'
 
             expect(last_response.status).to eq(200)
@@ -1344,7 +1344,7 @@ module Bosh::Director
         describe 'getting deployment vms info' do
           before { basic_authorize 'reader', 'reader' }
 
-          let(:deployment) { Models::Deployment.create(:name => 'test_deployment', :manifest => YAML.dump({'foo' => 'bar'})) }
+          let(:deployment) { Models::Deployment.create(name: 'test_deployment', manifest: YAML.dump({ 'foo' => 'bar' })) }
 
           it 'returns a list of instances with vms (vm_cid != nil)' do
             8.times do |i|
@@ -1409,7 +1409,7 @@ module Bosh::Director
 
             it 'redirects to a delayed job' do
               expect_any_instance_of(Api::InstanceManager).to receive(:fetch_instances_with_vm) do
-                Bosh::Director::Models::Task.make(id: 10002)
+                FactoryBot.create(:models_task, id: 10002)
               end
 
               get '/test_deployment/vms?format=full'
@@ -1598,11 +1598,11 @@ module Bosh::Director
         describe 'getting deployment instances' do
           before do
             basic_authorize 'reader', 'reader'
-            release = Models::Release.create(:name => 'test_release')
-            version = Models::ReleaseVersion.create(:release => release, :version => 1)
-            version.add_template(Models::Template.make(name: 'job_using_pkg_1', release: release))
+            release = Models::Release.create(name: 'test_release')
+            version = Models::ReleaseVersion.create(release: release, version: 1)
+            version.add_template(FactoryBot.create(:models_template, name: 'job_using_pkg_1', release: release))
           end
-          let(:deployment) { Models::Deployment.create(:name => 'test_deployment', :manifest => manifest) }
+          let(:deployment) { Models::Deployment.create(name: 'test_deployment', manifest: manifest) }
           let(:default_manifest) { Bosh::Spec::Deployments.minimal_manifest }
 
           context 'multiple instances' do
@@ -1889,7 +1889,7 @@ module Bosh::Director
           end
 
           before(:each) do
-            Models::Deployment.make(name: 'test_deployment', manifest: '----')
+            FactoryBot.create(:models_deployment, name: 'test_deployment', manifest: '----')
             allow(Bosh::Director::Api::DeploymentCertificateProvider).to receive(:new).and_return(deployment_cert_provider)
             allow(deployment_cert_provider).to receive(:list_certificates_with_expiry).and_return(certificate_list)
           end
@@ -1922,7 +1922,7 @@ module Bosh::Director
         end
 
         describe 'problem management' do
-          let!(:deployment) { Models::Deployment.make(:name => 'mycloud') }
+          let!(:deployment) { FactoryBot.create(:models_deployment, name: 'mycloud') }
           let(:job_class) do
             Class.new(Jobs::CloudCheck::ScanAndFix) do
               define_method :perform do
@@ -1964,7 +1964,7 @@ module Bosh::Director
               expect_any_instance_of(ProblemManager)
                 .to receive(:apply_resolutions)
                 .with(anything, deployment, resolutions, max_in_flight_overrides)
-                .and_return(Models::Task.make)
+                .and_return(FactoryBot.create(:models_task))
             end
 
             it 'should pass resolutions and overrides to the problem manager' do
@@ -1991,11 +1991,11 @@ module Bosh::Director
             let(:problems) do
               [
                 Models::DeploymentProblem.
-                create(:deployment_id => deployment.id, :resource_id => 2,
-                  :type => 'unresponsive_agent', :state => 'open', :data => {}),
+                create(deployment_id: deployment.id, resource_id: 2,
+                       type: 'unresponsive_agent', state: 'open', data: {}),
                 Models::DeploymentProblem.
-                  create(:deployment_id => deployment.id, :resource_id => 3,
-                    :type => 'unresponsive_agent', :state => 'open', :data => {})
+                  create(deployment_id: deployment.id, resource_id: 3,
+                         type: 'unresponsive_agent', state: 'open', data: {})
               ]
             end
             let(:handler) { instance_double(ProblemHandlers::UnresponsiveAgent) }
@@ -2042,7 +2042,7 @@ module Bosh::Director
         end
 
         describe 'resurrection' do
-          let!(:deployment) { Models::Deployment.make(:name => 'mycloud') }
+          let!(:deployment) { FactoryBot.create(:models_deployment, name: 'mycloud') }
 
           def should_not_enqueue_scan_and_fix(expected_status, dep = 'mycloud')
             expect(Bosh::Director::Jobs::DBJob).not_to receive(:new).with(
@@ -2074,7 +2074,7 @@ module Bosh::Director
           end
 
           context 'when global resurrection is set' do
-            before { Models::DirectorAttribute.make(name: 'resurrection_paused', value: resurrection_paused) }
+            before { FactoryBot.create(:models_director_attribute, name: 'resurrection_paused', value: resurrection_paused) }
 
             context 'when global resurrection is on' do
               let(:resurrection_paused) {'false'}
@@ -2111,7 +2111,7 @@ module Bosh::Director
 
         describe 'snapshots' do
           before do
-            deployment = Models::Deployment.make(name: 'mycloud')
+            deployment = FactoryBot.create(:models_deployment, name: 'mycloud')
 
             instance = Models::Instance.make(deployment: deployment, job: 'job', index: 0, uuid: 'abc123')
             disk = Models::PersistentDisk.make(disk_cid: 'disk0', instance: instance, active: true)
@@ -2200,7 +2200,7 @@ module Bosh::Director
             let!(:deployment_model) do
               manifest_hash = manifest_with_errand_hash
               manifest_hash['instance_groups'] << service_errand
-              model = Models::Deployment.make(
+              model = FactoryBot.create(:models_deployment,
                 name: 'fake-dep-name',
                 manifest: YAML.dump(manifest_hash)
               )
@@ -2211,13 +2211,13 @@ module Bosh::Director
             context 'authenticated access' do
               before do
                 authorize 'admin', 'admin'
-                deployment = Models::Deployment.make(name: 'errand')
+                deployment = FactoryBot.create(:models_deployment, name: 'errand')
                 Models::VariableSet.make(deployment_id: deployment.id)
-                release = Models::Release.make(name: 'bosh-release')
-                template1 = Models::Template.make(name: 'foobar', release: release)
-                template2 = Models::Template.make(name: 'errand1', release: release)
-                template3 = Models::Template.make(name: 'job_with_bin_run', release: release, spec: {templates: {'foo' => 'bin/run'}})
-                release_version = Models::ReleaseVersion.make(version: '0.1-dev', release: release)
+                release = FactoryBot.create(:models_release, name: 'bosh-release')
+                template1 = FactoryBot.create(:models_template, name: 'foobar', release: release)
+                template2 = FactoryBot.create(:models_template, name: 'errand1', release: release)
+                template3 = FactoryBot.create(:models_template, name: 'job_with_bin_run', release: release, spec: {templates: {'foo' => 'bin/run'}})
+                release_version = FactoryBot.create(:models_release_version, version: '0.1-dev', release: release)
                 release_version.add_template(template1)
                 release_version.add_template(template2)
                 release_version.add_template(template3)
@@ -2242,7 +2242,7 @@ module Bosh::Director
             before { Config.base_dir = Dir.mktmpdir }
             after { FileUtils.rm_rf(Config.base_dir) }
 
-            let!(:deployment) { Models::Deployment.make(name: 'fake-dep-name')}
+            let!(:deployment) { FactoryBot.create(:models_deployment, name: 'fake-dep-name')}
 
             def perform(post_body)
               post(
@@ -2366,8 +2366,8 @@ module Bosh::Director
 
           before do
             deployment = Models::Deployment.create(
-              :name => 'fake-dep-name',
-              :manifest => YAML.dump({'instance_groups' => [], 'releases' => [{'name' => 'simple', 'version' => 5}]})
+              name: 'fake-dep-name',
+              manifest: YAML.dump({ 'instance_groups' => [], 'releases' => [{ 'name' => 'simple', 'version' => 5 }] })
             )
             deployment.cloud_configs = [cloud_config]
             deployment.runtime_configs = [runtime_config_1, runtime_config_2, runtime_config_3]
@@ -2431,7 +2431,7 @@ module Bosh::Director
 
             context 'existing deployment' do
               let(:deployment) do
-                Models::Deployment.make(name: 'existing-name', manifest: '{}').tap { |d| d.teams = [dev_team] }
+                FactoryBot.create(:models_deployment, name: 'existing-name', manifest: '{}').tap { |d| d.teams = [dev_team] }
               end
 
               it 'provides team-specific runtime and cloud configs in context' do
@@ -2480,7 +2480,7 @@ module Bosh::Director
 
         describe 'variables' do
           let(:deployment_manifest) { { 'name' => 'test_deployment' } }
-          let!(:deployment) { Models::Deployment.make(name: 'test_deployment', manifest: deployment_manifest.to_yaml) }
+          let!(:deployment) { FactoryBot.create(:models_deployment, name: 'test_deployment', manifest: deployment_manifest.to_yaml) }
           let!(:variable_set) { Models::VariableSet.make(id: 1, deployment: deployment) }
 
           before do
@@ -2537,23 +2537,23 @@ module Bosh::Director
 
       describe 'authorization' do
         before do
-          release = Models::Release.make(name: 'bosh-release')
-          template1 = Models::Template.make(name: 'foobar', release: release)
-          template2 = Models::Template.make(name: 'errand1', release: release)
-          release_version = Models::ReleaseVersion.make(version: '0.1-dev', release: release)
+          release = FactoryBot.create(:models_release, name: 'bosh-release')
+          template1 = FactoryBot.create(:models_template, name: 'foobar', release: release)
+          template2 = FactoryBot.create(:models_template, name: 'errand1', release: release)
+          release_version = FactoryBot.create(:models_release_version, version: '0.1-dev', release: release)
           release_version.add_template(template1)
           release_version.add_template(template2)
         end
 
-        let(:dev_team) { Models::Team.create(:name => 'dev') }
-        let(:other_team) { Models::Team.create(:name => 'other') }
-        let!(:owned_deployment) { Models::Deployment.create_with_teams(:name => 'owned_deployment', teams: [dev_team], manifest: manifest_with_errand('owned_deployment'), cloud_configs: [cloud_config]) }
-        let!(:other_deployment) { Models::Deployment.create_with_teams(:name => 'other_deployment', teams: [other_team], manifest: manifest_with_errand('other_deployment'), cloud_configs: [cloud_config]) }
+        let(:dev_team) { Models::Team.create(name: 'dev') }
+        let(:other_team) { Models::Team.create(name: 'other') }
+        let!(:owned_deployment) { Models::Deployment.create_with_teams(name: 'owned_deployment', teams: [dev_team], manifest: manifest_with_errand('owned_deployment'), cloud_configs: [cloud_config]) }
+        let!(:other_deployment) { Models::Deployment.create_with_teams(name: 'other_deployment', teams: [other_team], manifest: manifest_with_errand('other_deployment'), cloud_configs: [cloud_config]) }
         describe 'when a user has dev team admin membership' do
 
           before {
-            instance = Models::Instance.create(:deployment => owned_deployment, :job => 'dea', :index => 0, :state => :started, :uuid => 'F0753566-CA8E-4B28-AD63-7DB3903CD98C', :variable_set => Models::VariableSet.create(deployment: owned_deployment))
-            Models::Instance.create(:deployment => other_deployment, :job => 'dea', :index => 0, :state => :started, :uuid => '72652FAA-1A9C-4803-8423-BBC3630E49C6', :variable_set => Models::VariableSet.create(deployment: other_deployment))
+            instance = Models::Instance.create(deployment: owned_deployment, job: 'dea', index: 0, state: :started, uuid: 'F0753566-CA8E-4B28-AD63-7DB3903CD98C', variable_set: Models::VariableSet.create(deployment: owned_deployment))
+            Models::Instance.create(deployment: other_deployment, job: 'dea', index: 0, state: :started, uuid: '72652FAA-1A9C-4803-8423-BBC3630E49C6', variable_set: Models::VariableSet.create(deployment: other_deployment))
             Models::Vm.make(agent_id: 'random-id', instance_id: instance.id, active: true)
           }
 

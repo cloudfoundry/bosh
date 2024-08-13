@@ -9,7 +9,7 @@ module Bosh::Director
       described_class.new(deployment.id, 'target' => target, 'command' => 'fake-command', 'params' => { 'user' => 'user-ssh' })
     end
 
-    let(:deployment) { Models::Deployment.make(name: 'name-1') }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: 'name-1') }
     let(:variable_set) { Models::VariableSet.make(deployment: deployment) }
     let(:target) do
       { 'job' => 'fake-job', 'indexes' => [1] }
@@ -18,7 +18,7 @@ module Bosh::Director
     let(:config) { double(Config) }
     let(:instance_manager) { Api::InstanceManager.new }
     let(:task_result) { TaskDBWriter.new(:result_output, task.id) }
-    let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
+    let(:task) {FactoryBot.create(:models_task, id: 42, username: 'user')}
 
     describe 'DJ job class expectations' do
       let(:job_type) { :ssh }

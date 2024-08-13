@@ -7,7 +7,7 @@ module Bosh::Director
       subject(:instance_lookup) { InstanceLookup.new }
       let!(:instance) { Models::Instance.make(deployment: deployment, job: job_name, index: job_index) }
       let!(:another_instance) { Models::Instance.make(deployment: deployment, job: job_name, index: another_job_index) }
-      let(:deployment) { Models::Deployment.make(name: 'foobar') }
+      let(:deployment) { FactoryBot.create(:models_deployment, name: 'foobar') }
       let(:job_name) { 'my_job' }
       let(:job_index) { '6' }
       let(:another_job_index) { '0' }
@@ -74,9 +74,9 @@ module Bosh::Director
       describe '#by_deployment' do
         context 'when multiple deployments have instances' do
           before do
-            other_deployment = Models::Deployment.make(name: 'other_deployment')
+            other_deployment = FactoryBot.create(:models_deployment, name: 'other_deployment')
             Models::Instance.make(deployment: other_deployment)
-            @deployment = Models::Deployment.make(name: 'given_deployment')
+            @deployment = FactoryBot.create(:models_deployment, name: 'given_deployment')
             @instance = Models::Instance.make(deployment: @deployment)
           end
 
@@ -87,7 +87,7 @@ module Bosh::Director
 
         context 'when deployment has no instances' do
           it 'finds no instances' do
-            deployment = Models::Deployment.make(name: 'deployment_without_instance')
+            deployment = FactoryBot.create(:models_deployment, name: 'deployment_without_instance')
 
             expect(subject.by_deployment(deployment)).to eq []
           end

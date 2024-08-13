@@ -1,5 +1,6 @@
 require_relative '../../spec/support/deployments'
 require 'ipaddr'
+require 'machinist/sequel'
 
 Sham.define do
   name             { |index| "name-#{index}" }
@@ -50,12 +51,12 @@ module Bosh::Director::Models
   end
 
   ReleaseVersion.blueprint do
-    release { Release.make }
+    release { FactoryBot.create(:models_release) }
     version { Sham.version }
   end
 
   Package.blueprint do
-    release             { Release.make }
+    release             { FactoryBot.create(:models_release) }
     name                { Sham.name }
     version             { Sham.version }
     blobstore_id        { Sham.blobstore_id }
@@ -64,7 +65,7 @@ module Bosh::Director::Models
   end
 
   Template.blueprint do
-    release
+    release             { FactoryBot.create(:models_release) }
     name                { Sham.name }
     version             { Sham.version }
     blobstore_id        { Sham.blobstore_id }

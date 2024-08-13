@@ -159,7 +159,7 @@ module Bosh
 
         describe '#download_blob' do
           let(:template_model) do
-            Bosh::Director::Models::Template.make(name: 'foo', blobstore_id: 'blobstore-id-1', sha1: file_content_sha1)
+            FactoryBot.create(:models_template, name: 'foo', blobstore_id: 'blobstore-id-1', sha1: file_content_sha1)
           end
           let(:instance) { instance_double(Bosh::Director::App, blobstores: blobstores) }
           let(:blobstore) { instance_double(Bosh::Blobstore::RetryableBlobstoreClient) }

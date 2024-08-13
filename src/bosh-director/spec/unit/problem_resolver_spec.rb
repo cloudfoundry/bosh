@@ -6,7 +6,7 @@ module Bosh::Director
     let(:job) { instance_double(Bosh::Director::Jobs::BaseJob, username: 'user', task_id: task.id, event_manager: event_manager) }
     let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
-    let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
+    let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
     let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
     let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
     let(:factory) { double }
@@ -27,7 +27,7 @@ module Bosh::Director
     end
 
     before(:each) do
-      @deployment = Models::Deployment.make(name: 'mycloud')
+      @deployment = FactoryBot.create(:models_deployment, name: 'mycloud')
 
       allow(DeploymentPlan::PlannerFactory).to receive(:create).and_return(factory)
       allow(factory).to receive(:create_from_model).with(@deployment).and_return(deployment_plan)

@@ -17,11 +17,11 @@ module Bosh::Director
     let(:less_than_one_day_ago) { time - one_day_seconds + 1 }
     let!(:orphan_disk_1) { Models::OrphanDisk.make(disk_cid: 'disk-cid-1', created_at: one_day_one_second_ago) }
     let!(:orphan_disk_2) { Models::OrphanDisk.make(disk_cid: 'disk-cid-2', created_at: less_than_one_day_ago) }
-    let(:task) { Models::Task.make(id: 42) }
+    let(:task) { FactoryBot.create(:models_task, id: 42) }
     let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
     let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
     let(:event_manager) { Api::EventManager.new(true) }
-    let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
+    let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
 
     let(:scheduled_orphaned_disk_cleanup_job) do
       instance_double(

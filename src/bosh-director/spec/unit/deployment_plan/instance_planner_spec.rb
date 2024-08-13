@@ -38,7 +38,7 @@ describe 'Bosh::Director::DeploymentPlan::InstancePlanner' do
     )
   end
 
-  let(:deployment_model) { Bosh::Director::Models::Deployment.make }
+  let(:deployment_model) { FactoryBot.create(:models_deployment) }
   let(:variable_set_model) { Bosh::Director::Models::VariableSet.create(deployment: deployment_model) }
   let(:az) do
     Bosh::Director::DeploymentPlan::AvailabilityZone.new(

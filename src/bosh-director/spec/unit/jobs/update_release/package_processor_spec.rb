@@ -96,7 +96,7 @@ module Bosh::Director
             }
           end
 
-          let(:release) { Models::Release.make(name: 'appcloud') }
+          let(:release) { FactoryBot.create(:models_release, name: 'appcloud') }
           let!(:package_model) do
             package_id = Models::Package.insert(
               name: package_name,

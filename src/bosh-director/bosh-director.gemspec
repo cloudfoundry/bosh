@@ -63,4 +63,5 @@ Gem::Specification.new do |spec|
 
   spec.add_development_dependency 'timecop'
   spec.add_development_dependency 'fakefs'
+  spec.add_development_dependency 'factory_bot'
 end

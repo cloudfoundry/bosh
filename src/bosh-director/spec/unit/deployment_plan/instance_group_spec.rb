@@ -4,11 +4,11 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   let(:instance_group) { Bosh::Director::DeploymentPlan::InstanceGroup.parse(plan, spec, event_log, logger, parse_options) }
   let(:parse_options) { {} }
   let(:event_log)  { instance_double('Bosh::Director::EventLog::Log', warn_deprecated: nil) }
-  let(:deployment) { Bosh::Director::Models::Deployment.make }
+  let(:deployment) { FactoryBot.create(:models_deployment) }
   let(:fake_ip_provider) { instance_double(Bosh::Director::DeploymentPlan::IpProvider, reserve: nil, reserve_existing_ips: nil) }
   let(:vm_type) { Bosh::Director::DeploymentPlan::VmType.new('name' => 'dea') }
   let(:stemcell) do
-    model = Bosh::Director::Models::Stemcell.make(name: 'linux', version: '250.4')
+    model = FactoryBot.create(:models_stemcell, name: 'linux', version: '250.4')
     new_stemcell = FactoryBot.build(:deployment_plan_stemcell,
                                     name: model.name,
       os: 'linux',
@@ -81,21 +81,21 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     r.bind_existing_model(release1_foo_job_model)
     r
   end
-  let(:release1_foo_job_model) { Bosh::Director::Models::Template.make(name: 'foo', release: release1_model) }
+  let(:release1_foo_job_model) { FactoryBot.create(:models_template, name: 'foo', release: release1_model) }
 
   let(:release1_bar_job) do
     r = Bosh::Director::DeploymentPlan::Job.new(release1, 'bar')
     r.bind_existing_model(release1_bar_job_model)
     r
   end
-  let(:release1_bar_job_model) { Bosh::Director::Models::Template.make(name: 'bar', release: release1_model) }
+  let(:release1_bar_job_model) { FactoryBot.create(:models_template, name: 'bar', release: release1_model) }
 
   let(:release1_package1_model) do
-    Bosh::Director::Models::Package.make(name: 'same-name', release: release1_model, fingerprint: 'abc123')
+    FactoryBot.create(:models_package, name: 'same-name', release: release1_model, fingerprint: 'abc123')
   end
 
   let(:release1_package1_model2) do
-    Bosh::Director::Models::Package.make(name: 'same-name', release: release1_model, fingerprint: 'c68y74')
+    FactoryBot.create(:models_package, name: 'same-name', release: release1_model, fingerprint: 'c68y74')
   end
 
   let(:release1) do
@@ -106,9 +106,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     )
   end
 
-  let(:release1_model) { Bosh::Director::Models::Release.make(name: 'release1') }
-  let(:release1_version_model) { Bosh::Director::Models::ReleaseVersion.make(version: '1', release: release1_model) }
-  let(:release1_version2_model) { Bosh::Director::Models::ReleaseVersion.make(version: '2', release: release1_model) }
+  let(:release1_model) { FactoryBot.create(:models_release, name: 'release1') }
+  let(:release1_version_model) { FactoryBot.create(:models_release_version, version: '1', release: release1_model) }
+  let(:release1_version2_model) { FactoryBot.create(:models_release_version, version: '2', release: release1_model) }
   let(:update_config) { double(Bosh::Director::DeploymentPlan::UpdateConfig) }
   let(:links_serial_id) { 7 }
 
@@ -328,13 +328,13 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         r.bind_existing_model(release2_bar_job_model)
         r
       end
-      let(:release2_foo_job_model) { Bosh::Director::Models::Template.make(name: 'foo', release: release2_model) }
-      let(:release2_bar_job_model) { Bosh::Director::Models::Template.make(name: 'bar', release: release2_model) }
-      let(:release2_model) { Bosh::Director::Models::Release.make(name: 'release2') }
-      let(:release2_version_model) { Bosh::Director::Models::ReleaseVersion.make(release: release2_model, version: 1) }
-      let(:release2_version2_model) { Bosh::Director::Models::ReleaseVersion.make(release: release2_model, version: 2) }
+      let(:release2_foo_job_model) { FactoryBot.create(:models_template, name: 'foo', release: release2_model) }
+      let(:release2_bar_job_model) { FactoryBot.create(:models_template, name: 'bar', release: release2_model) }
+      let(:release2_model) { FactoryBot.create(:models_release, name: 'release2') }
+      let(:release2_version_model) { FactoryBot.create(:models_release_version, release: release2_model, version: 1) }
+      let(:release2_version2_model) { FactoryBot.create(:models_release_version, release: release2_model, version: 2) }
       let(:release2_package1_model) do
-        Bosh::Director::Models::Package.make(
+        FactoryBot.create(:models_package,
           name: release2_package1_name,
           release: release2_model,
           fingerprint: release2_package1_fingerprint,
@@ -342,7 +342,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         )
       end
       let(:release2_package1_model2) do
-        Bosh::Director::Models::Package.make(
+        FactoryBot.create(:models_package,
           name: release2_package1_name,
           release: release2_model,
           fingerprint: release2_package1_fingerprint2,
@@ -1169,10 +1169,10 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   end
 
   describe 'use_compiled_package' do
-    let(:compiled_package) { Bosh::Director::Models::CompiledPackage.make(package: release1_package1_model) }
-    let(:registered_release_job_model) { Bosh::Director::Models::Template.make(name: 'bar', release: release1_model) }
+    let(:compiled_package) { FactoryBot.create(:models_compiled_package, package: release1_package1_model) }
+    let(:registered_release_job_model) { FactoryBot.create(:models_template, name: 'bar', release: release1_model) }
     let(:deployment_plan_job) { Bosh::Director::DeploymentPlan::Job.new(release1, 'foo') }
-    let(:new_compiled_package) { Bosh::Director::Models::CompiledPackage.make(package: release1_package1_model) }
+    let(:new_compiled_package) { FactoryBot.create(:models_compiled_package, package: release1_package1_model) }
 
     before(:each) do
       spec['jobs'] = []
@@ -1209,9 +1209,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
       end
 
       context 'when the new package is only compile-time dependency' do
-        let(:release1_version_model) { Bosh::Director::Models::ReleaseVersion.make(version: '1', release: release1_model) }
-        let(:compile_time_package) { Bosh::Director::Models::Package.make(name: 'same-name', fingerprint: 'b') }
-        let(:compiled_package_model) { Bosh::Director::Models::CompiledPackage.make(package: compile_time_package) }
+        let(:release1_version_model) { FactoryBot.create(:models_release_version, version: '1', release: release1_model) }
+        let(:compile_time_package) { FactoryBot.create(:models_package, name: 'same-name', fingerprint: 'b') }
+        let(:compiled_package_model) { FactoryBot.create(:models_compiled_package, package: compile_time_package) }
 
         before do
           instance_group.use_compiled_package(compiled_package)

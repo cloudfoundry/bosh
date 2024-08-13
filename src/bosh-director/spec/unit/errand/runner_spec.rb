@@ -7,7 +7,7 @@ module Bosh::Director
     let(:instance_manager) { Bosh::Director::Api::InstanceManager.new }
     let(:logs_fetcher) { instance_double('Bosh::Director::LogsFetcher') }
     let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
-    let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
+    let(:task) {FactoryBot.create(:models_task, id: 42, username: 'user')}
     let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
     let(:task_result) { Bosh::Director::TaskDBWriter.new(:result_output, task.id) }
 
@@ -49,7 +49,7 @@ module Bosh::Director
       end
       let(:template_name) { 'fake-job-name' }
 
-      let(:deployment) { Models::Deployment.make(name: 'fake-dep-name') }
+      let(:deployment) { FactoryBot.create(:models_deployment, name: 'fake-dep-name') }
 
       before do
         allow(AgentClient).to receive(:with_agent_id)

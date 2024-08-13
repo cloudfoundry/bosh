@@ -45,7 +45,7 @@ module Bosh::Director
     let(:domain_name) { 'fake-domain-name' }
     let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
 
-    let(:deployment) { Models::Deployment.make(name: 'test-deployment') }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: 'test-deployment') }
 
     let(:include_index_records) { false }
     let(:instance1) { Models::Instance.make(uuid: 'uuid1', index: 1) }

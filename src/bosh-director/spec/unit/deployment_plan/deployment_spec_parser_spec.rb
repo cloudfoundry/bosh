@@ -26,7 +26,7 @@ module Bosh::Director
         { 'is_deploy_action' => true }
       end
       let(:parsed_deployment) { subject.parse(manifest_hash, options) }
-      let(:deployment_model) { Models::Deployment.make }
+      let(:deployment_model) { FactoryBot.create(:models_deployment) }
       let(:manifest_hash) do
         {
           'name' => 'deployment-name',

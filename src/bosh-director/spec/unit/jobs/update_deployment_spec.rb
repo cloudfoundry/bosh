@@ -25,7 +25,7 @@ module Bosh::Director
         FactoryBot.build(:deployment_plan_instance_group, name: 'some-errand-instance-group')
       end
 
-      let(:task) { Models::Task.make(id: 42, username: 'user') }
+      let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
       let(:availability_zones) { [zone_1, zone_2] }
       let(:zone_1) { DeploymentPlan::AvailabilityZone.new('zone_1', {}) }
       let(:zone_2) { DeploymentPlan::AvailabilityZone.new('zone_2', {}) }
@@ -60,7 +60,7 @@ module Bosh::Director
             create_from_manifest: planner,
           )
         end
-        let(:deployment_model) { Bosh::Director::Models::Deployment.make(name: deployment_name, manifest: '{}') }
+        let(:deployment_model) { FactoryBot.create(:models_deployment, name: deployment_name, manifest: '{}') }
         let(:planner) do
           instance_double(
             DeploymentPlan::Planner,
@@ -631,8 +631,8 @@ module Bosh::Director
           end
 
           context 'stemcell change' do
-            let(:stemcell1) { Bosh::Director::Models::Stemcell.make(name: 'ubuntu-alias', operating_system: 'ubuntu-jammy', version: '1.2', cid: 'cid-1') }
-            let(:stemcell2) { Bosh::Director::Models::Stemcell.make(name: 'windows-alias', operating_system: 'windows2019', version: '3.4', cid: 'cid-2') }
+            let(:stemcell1) { FactoryBot.create(:models_stemcell, name: 'ubuntu-alias', operating_system: 'ubuntu-jammy', version: '1.2', cid: 'cid-1') }
+            let(:stemcell2) { FactoryBot.create(:models_stemcell, name: 'windows-alias', operating_system: 'windows2019', version: '3.4', cid: 'cid-2') }
 
             before do
               deployment_model.add_stemcell(stemcell1)
@@ -809,9 +809,9 @@ module Bosh::Director
 
           context 'when there are releases and stemcells' do
             before do
-              deployment_stemcell = Models::Stemcell.make(name: 'stemcell', version: 'version-1')
-              deployment_release = Models::Release.make(name: 'release')
-              deployment_release_version = Models::ReleaseVersion.make(version: 'version-1')
+              deployment_stemcell = FactoryBot.create(:models_stemcell, name: 'stemcell', version: 'version-1')
+              deployment_release = FactoryBot.create(:models_release, name: 'release')
+              deployment_release_version = FactoryBot.create(:models_release_version, version: 'version-1')
               deployment_release.add_version(deployment_release_version)
               deployment_model.add_stemcell(deployment_stemcell)
               deployment_model.add_release_version(deployment_release_version)

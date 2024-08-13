@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe Errand::ParallelStep do
     subject(:parallel_step) { Errand::ParallelStep.new(4, errand_name, deployment_model, [ errand_step1, errand_step2 ]) }
-    let(:deployment_model) { Bosh::Director::Models::Deployment.make }
+    let(:deployment_model) { FactoryBot.create(:models_deployment) }
     let(:errand_name) { 'errand-name' }
     let(:errand_step1) { instance_double(Errand::LifecycleErrandStep, ignore_cancellation?: false) }
     let(:errand_step2) { instance_double(Errand::LifecycleErrandStep, ignore_cancellation?: false) }

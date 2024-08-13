@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe LocalDnsRecordsRepo do
     subject(:local_dns_records_repo) { LocalDnsRecordsRepo.new(logger, root_domain) }
-    let(:deployment_model) { Models::Deployment.make(name: 'bosh.1') }
+    let(:deployment_model) { FactoryBot.create(:models_deployment, name: 'bosh.1') }
     let(:root_domain) { 'bosh1.tld' }
     let(:instance) { instance_double(Bosh::Director::DeploymentPlan::Instance, model: instance_model) }
     let(:record_0_ip) { '1234' }
@@ -352,7 +352,7 @@ module Bosh::Director
       end
 
       it 'causes the max id to increase when instance deployment changes' do
-        instance_model.update('deployment' => Models::Deployment.make(name: 'bosh.2'))
+        instance_model.update('deployment' => FactoryBot.create(:models_deployment, name: 'bosh.2'))
         expect do
           local_dns_records_repo.update_for_instance(instance_plan)
         end.to change { Models::LocalDnsRecord.max(:id) }.by(1)

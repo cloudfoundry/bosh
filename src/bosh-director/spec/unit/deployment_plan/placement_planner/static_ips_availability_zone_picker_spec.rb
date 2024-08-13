@@ -18,7 +18,7 @@ module Bosh::Director::DeploymentPlan
 
     let(:availability_zones) { instance_group.availability_zones }
     let(:cloud_configs) { [Bosh::Director::Models::Config.make(:cloud, content: YAML.dump(cloud_config_hash))] }
-    let!(:deployment_model) { Bosh::Director::Models::Deployment.make(manifest: YAML.dump(manifest_hash), name: manifest_hash['name']) }
+    let!(:deployment_model) { FactoryBot.create(:models_deployment, manifest: YAML.dump(manifest_hash), name: manifest_hash['name']) }
     let(:deployment_repo) { DeploymentRepo.new }
     let(:desired_instances) { [].tap { |a| desired_instance_count.times { a << new_desired_instance } } }
     let(:desired_instance_count) { 3 }
@@ -124,9 +124,9 @@ module Bosh::Director::DeploymentPlan
       fake_job
 
       Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
-      release = Bosh::Director::Models::Release.make(name: 'bosh-release')
-      template = Bosh::Director::Models::Template.make(name: 'foobar', release: release)
-      release_version = Bosh::Director::Models::ReleaseVersion.make(version: '0.1-dev', release: release)
+      release = FactoryBot.create(:models_release, name: 'bosh-release')
+      template = FactoryBot.create(:models_template, name: 'foobar', release: release)
+      release_version = FactoryBot.create(:models_release_version, version: '0.1-dev', release: release)
       release_version.add_template(template)
     end
 

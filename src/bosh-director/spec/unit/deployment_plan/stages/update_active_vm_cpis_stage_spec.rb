@@ -11,7 +11,7 @@ module Bosh::Director
 
       let!(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
       let(:deployment_model) do
-        deployment = Models::Deployment.make(name: 'fake-deployment', manifest: YAML.dump(deployment_manifest))
+        deployment = FactoryBot.create(:models_deployment, name: 'fake-deployment', manifest: YAML.dump(deployment_manifest))
         deployment.cloud_configs = [cloud_config]
         deployment
       end
@@ -29,7 +29,7 @@ module Bosh::Director
       let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
       let(:deployment_assembler) { DeploymentPlan::Assembler.create(deployment_plan, variables_interpolator) }
 
-      let!(:stemcell) { Models::Stemcell.make(name: 'ubuntu-stemcell', version: '1') }
+      let!(:stemcell) { FactoryBot.create(:models_stemcell, name: 'ubuntu-stemcell', version: '1') }
       let!(:cloud_config) do
         if prior_az_name.nil?
           Models::Config.make(:cloud_with_manifest_v2)

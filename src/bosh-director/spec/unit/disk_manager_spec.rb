@@ -36,7 +36,7 @@ module Bosh::Director
     end
 
     let(:disk_type) { DeploymentPlan::DiskType.new('disk-name', job_persistent_disk_size, cloud_properties) }
-    let(:deployment_model) { Models::Deployment.make(name: 'dep1') }
+    let(:deployment_model) { FactoryBot.create(:models_deployment, name: 'dep1') }
     let(:instance) { DeploymentPlan::Instance.create_from_instance_group(instance_group, 1, 'started', deployment_model, {}, nil, logger, variables_interpolator) }
     let(:instance_model) do
       instance = Models::Instance.make(uuid: 'my-uuid-1', availability_zone: 'az1', variable_set_id: 10)

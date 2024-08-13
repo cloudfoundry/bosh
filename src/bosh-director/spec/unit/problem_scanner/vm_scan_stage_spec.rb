@@ -31,7 +31,7 @@ module Bosh::Director
     end
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:cloud_factory) { instance_double(Bosh::Director::AZCloudFactory) }
-    let(:deployment) { Models::Deployment.make(name: 'fake-deployment') }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: 'fake-deployment') }
     let(:event_logger) { double(:event_logger, begin_stage: nil) }
     before do
       allow(event_logger).to receive(:track_and_log) do |_, &blk|

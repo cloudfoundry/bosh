@@ -10,7 +10,7 @@ module Bosh::Director
     let(:instance_deleter) { instance_double(InstanceDeleter) }
     let(:vm_deleter) { instance_double(VmDeleter) }
     let(:dns_enabled) { false }
-    let(:task) { Models::Task.make(id: 42) }
+    let(:task) { FactoryBot.create(:models_task, id: 42) }
     let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
     let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
 
@@ -18,7 +18,7 @@ module Bosh::Director
       let!(:instance_1) { Models::Instance.make }
       let!(:instance_2) { Models::Instance.make }
 
-      let!(:deployment_model) { Models::Deployment.make(name: 'fake-deployment') }
+      let!(:deployment_model) { FactoryBot.create(:models_deployment, name: 'fake-deployment') }
 
       let!(:deployment_stemcell) { Models::Stemcell.make }
       let!(:deployment_release_version) { Models::ReleaseVersion.make }

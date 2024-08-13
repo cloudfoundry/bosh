@@ -206,16 +206,16 @@ module Bosh::Director
 
     describe '#find_all_stemcells' do
       before do
-        stemcell1 = Models::Stemcell.make(
+        stemcell1 = FactoryBot.create(:models_stemcell,
           name: 'fake-stemcell-1',
           version: 'stemcell_version-1',
           operating_system: 'stemcell_os-1',
           cid: 'cloud-id-1',
           id: 1,
         )
-        stemcell1.add_deployment(Models::Deployment.make(name: 'first'))
-        stemcell1.add_deployment(Models::Deployment.make(name: 'second'))
-        Bosh::Director::Models::Stemcell.make(
+        stemcell1.add_deployment(FactoryBot.create(:models_deployment, name: 'first'))
+        stemcell1.add_deployment(FactoryBot.create(:models_deployment, name: 'second'))
+        FactoryBot.create(:models_stemcell,
           name: 'fake-stemcell-3',
           version: 'stemcell_version-3',
           operating_system: 'stemcell_os-3',
@@ -223,7 +223,7 @@ module Bosh::Director
           cpi: 'cpi3',
           id: 3,
         )
-        Bosh::Director::Models::Stemcell.make(
+        FactoryBot.create(:models_stemcell,
           name: 'fake-stemcell-2',
           version: 'stemcell_version-2',
           operating_system: 'stemcell_os-2',

@@ -11,7 +11,7 @@ module Bosh::Director
     end
     let(:num_dns_blobs_to_keep) { 0 }
     let(:max_blob_age) { 10 }
-    let(:task) { Models::Task.make(id: 42) }
+    let(:task) { FactoryBot.create(:models_task, id: 42) }
     let!(:old_dns_blob) { Models::LocalDnsBlob.make(created_at: Time.now - oldest_dns_blob_age) }
     let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
     let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}

@@ -41,7 +41,7 @@ module Bosh::Director
 
     let(:deployment_model) do
       manifest = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
-      Models::Deployment.make(name: manifest['name'], manifest: YAML.dump(manifest))
+      FactoryBot.create(:models_deployment, name: manifest['name'], manifest: YAML.dump(manifest))
     end
 
     let(:test_problem_handler) { ProblemHandlers::Base.create_by_type(:test_problem_handler, instance.uuid, {}) }
@@ -238,7 +238,7 @@ module Bosh::Director
         end
 
         before do
-          Bosh::Director::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
+          FactoryBot.create(:models_stemcell, name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
           instance.update(spec: spec)
         end
 

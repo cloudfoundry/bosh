@@ -5,10 +5,10 @@ module Bosh::Director
     describe InstanceGroupSpecParser do
       subject(:parser) { described_class.new(deployment_plan, instance_group_spec, event_log, logger) }
       let(:template) do
-        Models::Template.make(name: 'job-name')
+        FactoryBot.create(:models_template, name: 'job-name')
       end
       let(:release) do
-        Models::Release.make(name: 'fake-release').tap do |mock|
+        FactoryBot.create(:models_release, name: 'fake-release').tap do |mock|
           allow(mock).to receive(:templates).and_return [template]
         end
       end
@@ -31,9 +31,9 @@ module Bosh::Director
           properties: {},
         )
       end
-      let(:deployment_model) { Models::Deployment.make }
+      let(:deployment_model) { FactoryBot.create(:models_deployment) }
       let(:network) { ManualNetwork.new('fake-network-name', [], logger) }
-      let(:task) { Models::Task.make(id: 42) }
+      let(:task) { FactoryBot.create(:models_task, id: 42) }
       let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
       let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
 
@@ -234,8 +234,8 @@ module Bosh::Director
             end
 
             context 'when multiple hashes reference different releases' do
-              let(:release_model_1) { Models::Release.make(name: 'release1') }
-              let(:release_model_2) { Models::Release.make(name: 'release2') }
+              let(:release_model_1) { FactoryBot.create(:models_release, name: 'release1') }
+              let(:release_model_2) { FactoryBot.create(:models_release, name: 'release2') }
               let(:fake_manager) do
                 instance_double(Api::ReleaseManager).tap do |mock|
                   allow(mock).to receive(:find_version).and_return(release_model_1, release_model_2)
@@ -244,11 +244,11 @@ module Bosh::Director
               end
 
               before do
-                release_version_model_1 = Models::ReleaseVersion.make(version: '1', release: release_model_1)
-                release_version_model_1.add_template(Models::Template.make(name: 'job-name1', release: release_model_1))
+                release_version_model_1 = FactoryBot.create(:models_release_version, version: '1', release: release_model_1)
+                release_version_model_1.add_template(FactoryBot.create(:models_template, name: 'job-name1', release: release_model_1))
 
-                release_version_model_2 = Models::ReleaseVersion.make(version: '1', release: release_model_2)
-                release_version_model_2.add_template(Models::Template.make(name: 'job-name2', release: release_model_2))
+                release_version_model_2 = FactoryBot.create(:models_release_version, version: '1', release: release_model_2)
+                release_version_model_2.add_template(FactoryBot.create(:models_template, name: 'job-name2', release: release_model_2))
                 allow(deployment_plan).to receive(:releases).and_return(
                   [
                     { 'release1' => release_model_1 },
@@ -339,9 +339,9 @@ module Bosh::Director
                   },
                 ]
 
-                release_model = Models::Release.make(name: 'fake-release1')
-                release_version_model = Models::ReleaseVersion.make(version: '1', release: release_model)
-                release_version_model.add_template(Models::Template.make(name: 'job-name', release: release_model))
+                release_model = FactoryBot.create(:models_release, name: 'fake-release1')
+                release_version_model = FactoryBot.create(:models_release_version, version: '1', release: release_model)
+                release_version_model.add_template(FactoryBot.create(:models_template, name: 'job-name', release: release_model))
               end
 
               it 'assigns those properties to the intended job' do
@@ -378,9 +378,9 @@ module Bosh::Director
                   },
                 ]
 
-                release_model = Models::Release.make(name: 'fake-release1')
-                release_version_model = Models::ReleaseVersion.make(version: '1', release: release_model)
-                release_version_model.add_template(Models::Template.make(name: 'job-name', release: release_model))
+                release_model = FactoryBot.create(:models_release, name: 'fake-release1')
+                release_version_model = FactoryBot.create(:models_release_version, version: '1', release: release_model)
+                release_version_model.add_template(FactoryBot.create(:models_template, name: 'job-name', release: release_model))
               end
 
               context 'and there are instance group level properties' do
@@ -479,10 +479,10 @@ module Bosh::Director
                     'release' => 'fake-release',
                   },
                 ]
-                release_model = Models::Release.make(name: 'fake-release-2')
-                version = Models::ReleaseVersion.make(version: '1', release: release_model)
+                release_model = FactoryBot.create(:models_release, name: 'fake-release-2')
+                version = FactoryBot.create(:models_release_version, version: '1', release: release_model)
                 version.add_template(
-                  Models::Template.make(
+                  FactoryBot.create(:models_template,
                     name: 'job-name',
                     release: release_model,
                     spec: {},
@@ -490,7 +490,7 @@ module Bosh::Director
                 )
                 release_model.add_version(version)
 
-                deployment_model = Models::Deployment.make(name: 'deployment')
+                deployment_model = FactoryBot.create(:models_deployment, name: 'deployment')
                 version.add_deployment(deployment_model)
 
                 allow(deployment_plan).to receive(:release)

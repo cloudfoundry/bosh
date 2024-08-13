@@ -8,7 +8,7 @@ describe Bosh::Director::Links::LinksManager do
 
   let(:serial_id) { 42 }
   let(:event_manager) { Bosh::Director::Api::EventManager.new(true) }
-  let(:task) { Bosh::Director::Models::Task.make(username: 'user') }
+  let(:task) { FactoryBot.create(:models_task, username: 'user') }
   let(:update_job) { instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: task.id, event_manager: event_manager) }
   let(:use_dns_addresses) { true }
   let(:use_link_dns_names) { true }
@@ -2979,7 +2979,7 @@ describe Bosh::Director::Links::LinksManager do
     end
     let!(:provider_from_another_deployment) do
       Bosh::Director::Models::Links::LinkProvider.create(
-        deployment: Bosh::Director::Models::Deployment.make,
+        deployment: FactoryBot.create(:models_deployment),
         instance_group: 'ig1',
         name: 'c1',
         type: 'manual',
@@ -3034,7 +3034,7 @@ describe Bosh::Director::Links::LinksManager do
   end
 
   describe '#update_provider_intents_contents' do
-    let(:deployment_model) { Bosh::Director::Models::Deployment.make(links_serial_id: serial_id) }
+    let(:deployment_model) { FactoryBot.create(:models_deployment, links_serial_id: serial_id) }
     let(:link_providers) { [] }
     let(:deployment_plan) { instance_double(Bosh::Director::DeploymentPlan::Planner) }
 
@@ -3437,7 +3437,7 @@ describe Bosh::Director::Links::LinksManager do
   end
 
   describe '#remove_unused_links' do
-    let(:deployment_model) { Bosh::Director::Models::Deployment.make(links_serial_id: serial_id) }
+    let(:deployment_model) { FactoryBot.create(:models_deployment, links_serial_id: serial_id) }
     let(:link_providers) { [] }
     let(:deployment_plan) { instance_double(Bosh::Director::DeploymentPlan::Planner) }
     let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment_model) }

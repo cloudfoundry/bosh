@@ -12,8 +12,8 @@ describe Bosh::Director::Links::LinksParser do
   end
 
   def create_release(release_name, version, provides: nil, consumes: nil, properties: nil)
-    release_model = Bosh::Director::Models::Release.make(name: release_name)
-    release_version_model = Bosh::Director::Models::ReleaseVersion.make(version: version, release: release_model)
+    release_model = FactoryBot.create(:models_release, name: release_name)
+    release_version_model = FactoryBot.create(:models_release_version, version: version, release: release_model)
 
     release_spec = { properties: {} }
     release_spec[:properties] = properties if properties
@@ -22,7 +22,7 @@ describe Bosh::Director::Links::LinksParser do
 
     # This is creating a job
     release_version_model.add_template(
-      Bosh::Director::Models::Template.make(
+      FactoryBot.create(:models_template,
         name: "#{release_name}_job_name_1",
         release: release_model,
         spec: release_spec,
@@ -39,7 +39,7 @@ describe Bosh::Director::Links::LinksParser do
   end
 
   let(:deployment_model) do
-    Bosh::Director::Models::Deployment.make
+    FactoryBot.create(:models_deployment)
   end
 
   let(:release) do
@@ -98,7 +98,7 @@ describe Bosh::Director::Links::LinksParser do
         ]
       end
 
-      let(:deployment_model) { Bosh::Director::Models::Deployment.make(links_serial_id: serial_id) }
+      let(:deployment_model) { FactoryBot.create(:models_deployment, links_serial_id: serial_id) }
       let(:deployment_plan) { instance_double(Bosh::Director::DeploymentPlan::Planner) }
       let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment_model) }
       let(:serial_id) { 1 }
@@ -269,7 +269,7 @@ describe Bosh::Director::Links::LinksParser do
         ]
       end
 
-      let(:deployment_model) { Bosh::Director::Models::Deployment.make(links_serial_id: serial_id) }
+      let(:deployment_model) { FactoryBot.create(:models_deployment, links_serial_id: serial_id) }
       let(:deployment_plan) { instance_double(Bosh::Director::DeploymentPlan::Planner) }
       let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment_model) }
       let(:serial_id) { 1 }
@@ -1515,7 +1515,7 @@ describe Bosh::Director::Links::LinksParser do
 
           context 'when the provider deployment exists' do
             before do
-              Bosh::Director::Models::Deployment.make(name: 'some-other-deployment')
+              FactoryBot.create(:models_deployment, name: 'some-other-deployment')
             end
 
             it 'will set the from_deployment flag in the metadata to the provider deployment name' do

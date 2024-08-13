@@ -14,7 +14,7 @@ module Bosh::Director
       let(:job) { Jobs::DeleteStemcell.new('test_stemcell', 'test_version', blobstore: blobstore) }
 
       context 'when the stemcell is known' do
-        let!(:stemcell_model) { Models::Stemcell.make(name: 'test_stemcell', version: 'test_version') }
+        let!(:stemcell_model) { FactoryBot.create(:models_stemcell, name: 'test_stemcell', version: 'test_version') }
         let(:stemcell_deleter) { instance_double(Jobs::Helpers::StemcellDeleter, delete: nil) }
 
         before do
@@ -27,7 +27,7 @@ module Bosh::Director
         end
 
         context 'when a stemcell_upload is found for some cpi' do
-          let!(:match) { Models::StemcellUpload.make(name: 'test_stemcell', version: 'test_version', cpi: 'cloudy') }
+          let!(:match) { FactoryBot.create(:models_stemcell_upload, name: 'test_stemcell', version: 'test_version', cpi: 'cloudy') }
           it 'deletes the stemcell match as well' do
             job.perform
             expect(Models::StemcellUpload.all).to be_empty
@@ -41,7 +41,7 @@ module Bosh::Director
         end
 
         context 'when there are stemcell matches' do
-          let!(:match) { Models::StemcellUpload.make(name: 'test_stemcell', version: 'test_version', cpi: 'cloudy') }
+          let!(:match) { FactoryBot.create(:models_stemcell_upload, name: 'test_stemcell', version: 'test_version', cpi: 'cloudy') }
           it 'raises an error but still deletes the stemcell_upload' do
             expect { job.perform }.to raise_exception(StemcellNotFound)
 

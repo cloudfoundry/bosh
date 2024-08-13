@@ -6,7 +6,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
   end
 
   def make_stemcell(name, version, os = 'os1', params = {})
-    Bosh::Director::Models::Stemcell.make({ name: name, operating_system: os, version: version }.merge(params))
+    FactoryBot.create(:models_stemcell, { name: name, operating_system: os, version: version }.merge(params))
   end
 
   let(:valid_spec) do
@@ -16,7 +16,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
     }
   end
 
-  let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'mycloud') }
+  let(:deployment) { FactoryBot.create(:models_deployment, name: 'mycloud') }
 
   describe 'creating' do
     it 'parses name and version' do

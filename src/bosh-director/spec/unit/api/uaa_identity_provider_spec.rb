@@ -5,7 +5,7 @@ module Bosh::Director
   describe Api::UAAIdentityProvider do
 
     before do
-      Bosh::Director::Models::DirectorAttribute.make(name: 'uuid', value: 'fake-director-uuid')
+      FactoryBot.create(:models_director_attribute, name: 'uuid', value: 'fake-director-uuid')
     end
 
     subject(:identity_provider) { Api::UAAIdentityProvider.new(provider_options) }

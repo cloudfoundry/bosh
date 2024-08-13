@@ -9,28 +9,28 @@ module Bosh::Director
     end
     let(:instance) { instance_double(DeploymentPlan::Instance) }
 
-    let!(:stemcell_model) { Models::Stemcell.make(name: 'stemcell-name', version: '1') }
+    let!(:stemcell_model) { FactoryBot.create(:models_stemcell, name: 'stemcell-name', version: '1') }
 
     let(:stemcell) do
       stemcell = FactoryBot.build(:deployment_plan_stemcell, name: stemcell_model.name, version: stemcell_model.version)
-      stemcell.bind_model(Models::Deployment.make)
+      stemcell.bind_model(FactoryBot.create(:models_deployment))
       stemcell
     end
 
     let(:different_stemcell) do
-      model = Models::Stemcell.make(name: 'different-stemcell-name', version: '1')
+      model = FactoryBot.create(:models_stemcell, name: 'different-stemcell-name', version: '1')
       stemcell = FactoryBot.build(:deployment_plan_stemcell, name: model.name, version: model.version)
-      stemcell.bind_model(Models::Deployment.make)
+      stemcell.bind_model(FactoryBot.create(:models_deployment))
       stemcell
     end
 
     let(:stemcell_of_same_name_and_version) do
       stemcell = FactoryBot.build(:deployment_plan_stemcell, name: stemcell_model.name, version: stemcell_model.version)
-      stemcell.bind_model(Models::Deployment.make)
+      stemcell.bind_model(FactoryBot.create(:models_deployment))
       stemcell
     end
 
-    let(:second_stemcell) { Models::Stemcell.make }
+    let(:second_stemcell) { FactoryBot.create(:models_stemcell) }
     let(:second_instance) { Object.new }
 
     describe '#add_in_use_instance' do

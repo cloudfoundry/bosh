@@ -13,7 +13,7 @@ module Bosh::Director
     end
 
     let(:disk_cid) { 'disk_cid' }
-    let(:task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user') }
+    let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
     let(:event_manager) { Bosh::Director::Api::EventManager.new(true) }
     let(:orphan_disk_job) { instance_double(Bosh::Director::Jobs::OrphanDiskJob, username: 'user', task_id: task.id, event_manager: event_manager) }
     let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}

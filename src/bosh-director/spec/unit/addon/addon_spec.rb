@@ -39,7 +39,7 @@ module Bosh::Director
       end
 
       let(:deployment_model) do
-        deployment_model = Models::Deployment.make
+        deployment_model = FactoryBot.create(:models_deployment)
         deployment_model.teams = teams
         deployment_model.cloud_configs = cloud_configs
         deployment_model.save
@@ -93,8 +93,8 @@ module Bosh::Director
           { 'deployments' => [deployment_name] }
         end
 
-        let(:release_model) { Bosh::Director::Models::Release.make(name: 'dummy') }
-        let(:release_version_model) { Bosh::Director::Models::ReleaseVersion.make(version: '0.2-dev', release: release_model) }
+        let(:release_model) { FactoryBot.create(:models_release, name: 'dummy') }
+        let(:release_version_model) { FactoryBot.create(:models_release_version, version: '0.2-dev', release: release_model) }
 
         let(:dummy_template_spec) do
           {
@@ -139,7 +139,7 @@ module Bosh::Director
         end
 
         let(:dummy_with_properties_template) do
-          Bosh::Director::Models::Template.make(
+          FactoryBot.create(:models_template,
             name: 'dummy_with_properties',
             release: release_model,
             spec_json: dummy_with_properties_template_spec.to_json,
@@ -147,12 +147,12 @@ module Bosh::Director
         end
 
         let(:dummy_with_packages_template) do
-          Bosh::Director::Models::Template.make(name: 'dummy_with_package', release: release_model)
+          FactoryBot.create(:models_template, name: 'dummy_with_package', release: release_model)
         end
 
         before do
           release_version_model.add_template(
-            Bosh::Director::Models::Template.make(
+            FactoryBot.create(:models_template,
               name: 'dummy',
               release: release_model,
               spec_json: dummy_template_spec.to_json,
@@ -579,9 +579,9 @@ module Bosh::Director
             let(:exclude_spec) do
               { 'jobs' => [{ 'name' => 'dummy', 'release' => 'dummy' }] }
             end
-            let(:release_model) { Bosh::Director::Models::Release.make(name: 'dummy') }
+            let(:release_model) { FactoryBot.create(:models_release, name: 'dummy') }
             let(:release_version_model) do
-              Bosh::Director::Models::ReleaseVersion.make(
+              FactoryBot.create(:models_release_version,
                 version: '0.2-dev', release: release_model,
               )
             end
@@ -602,9 +602,9 @@ module Bosh::Director
             end
 
             before do
-              release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'dummy', release: release_model))
+              release_version_model.add_template(FactoryBot.create(:models_template, name: 'dummy', release: release_model))
               release_version_model.add_template(
-                Bosh::Director::Models::Template.make(name: 'dummy_with_properties', release: release_model),
+                FactoryBot.create(:models_template, name: 'dummy_with_properties', release: release_model),
               )
 
               release = DeploymentPlan::ReleaseVersion.parse(deployment_model, 'name' => 'dummy', 'version' => '0.2-dev')
@@ -626,16 +626,16 @@ module Bosh::Director
           end
 
           context 'when the addon has availability zones' do
-            let(:release_model) { Bosh::Director::Models::Release.make(name: 'dummy') }
+            let(:release_model) { FactoryBot.create(:models_release, name: 'dummy') }
             let(:release_version_model) do
-              Bosh::Director::Models::ReleaseVersion.make(version: '0.2-dev', release: release_model)
+              FactoryBot.create(:models_release_version, version: '0.2-dev', release: release_model)
             end
             let(:instance_group_spec) do
               jobs = [{ 'name' => 'dummy', 'release' => 'dummy' }]
               Bosh::Spec::Deployments.simple_instance_group(jobs: jobs, azs: ['z1'])
             end
             before do
-              release_version_model.add_template(Bosh::Director::Models::Template.make(name: 'dummy', release: release_model))
+              release_version_model.add_template(FactoryBot.create(:models_template, name: 'dummy', release: release_model))
 
               release = DeploymentPlan::ReleaseVersion.parse(deployment_model, 'name' => 'dummy', 'version' => '0.2-dev')
               deployment.add_release(release)

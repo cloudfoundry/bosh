@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Api::DeploymentManager do
-    let(:deployment) { Models::Deployment.make(name: 'DEPLOYMENT_NAME') }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: 'DEPLOYMENT_NAME') }
     let(:task) { double('Task') }
     let(:username) { 'FAKE_USER' }
     let(:options) do
@@ -67,10 +67,10 @@ module Bosh::Director
 
     context 'list deployments by name' do
       before do
-        release = Models::Release.make
-        deployment = Models::Deployment.make(name: 'b')
+        release = FactoryBot.create(:models_release)
+        deployment = FactoryBot.create(:models_deployment, name: 'b')
         deployment.cloud_configs = [Models::Config.make(:cloud)]
-        release_version = Models::ReleaseVersion.make(release_id: release.id)
+        release_version = FactoryBot.create(:models_release_version, release_id: release.id)
         deployment.add_release_version(release_version)
       end
 
@@ -93,8 +93,8 @@ module Bosh::Director
           end
 
           it 'lists all deployments in alphabetic order' do
-            Models::Deployment.make(name: 'c')
-            Models::Deployment.make(name: 'a')
+            FactoryBot.create(:models_deployment, name: 'c')
+            FactoryBot.create(:models_deployment, name: 'a')
 
             expect(subject.all_by_name_asc_without(deployment_relations).map(&:name)).to eq(%w[a b c])
           end
@@ -155,8 +155,8 @@ module Bosh::Director
           end
 
           it 'lists all deployments in alphabetic order' do
-            Models::Deployment.make(name: 'c')
-            Models::Deployment.make(name: 'a')
+            FactoryBot.create(:models_deployment, name: 'c')
+            FactoryBot.create(:models_deployment, name: 'a')
 
             expect(subject.all_by_name_asc_without(deployment_relations).map(&:name)).to eq(%w[a b c])
           end

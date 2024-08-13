@@ -18,7 +18,7 @@ module Bosh::Director
     let(:problem_register) { instance_double('Bosh::Director::ProblemScanner::ProblemRegister') }
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:cloud_factory) { instance_double(Bosh::Director::AZCloudFactory) }
-    let(:deployment) { Models::Deployment.make(name: 'fake-deployment') }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: 'fake-deployment') }
     let(:event_logger) { double(:event_logger, begin_stage: nil) }
     let(:thread_pool) { double(ThreadPool) }
     let(:thread_limit) { double(5) }

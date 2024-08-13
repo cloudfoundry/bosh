@@ -4,7 +4,7 @@ module Bosh::Director
   describe Addon::Filter do
     subject(:addon_filter) { Addon::Filter.parse(filter_spec, filter_type) }
     let(:deployment_name) { 'dep1' }
-    let(:deployment_model) { Models::Deployment.make(name: deployment_name) }
+    let(:deployment_model) { FactoryBot.create(:models_deployment, name: deployment_name) }
     let(:deployment_plan) do
       planner_attributes = { name: deployment_name, properties: {} }
       cloud_config = Bosh::Spec::Deployments.simple_cloud_config
@@ -17,12 +17,12 @@ module Bosh::Director
         Bosh::Spec::Deployments.simple_runtime_config,
         deployment_model,
       )
-      release1 = Models::Release.make(name: '1')
-      release2 = Models::Release.make(name: '2')
-      release_version1 = Models::ReleaseVersion.make(version: 'v1', release: release1)
-      release_version2 = Models::ReleaseVersion.make(version: 'v2', release: release2)
-      release_version1.add_template(Models::Template.make(name: 'job1', release: release1))
-      release_version2.add_template(Models::Template.make(name: 'job2', release: release2))
+      release1 = FactoryBot.create(:models_release, name: '1')
+      release2 = FactoryBot.create(:models_release, name: '2')
+      release_version1 = FactoryBot.create(:models_release_version, version: 'v1', release: release1)
+      release_version2 = FactoryBot.create(:models_release_version, version: 'v2', release: release2)
+      release_version1.add_template(FactoryBot.create(:models_template, name: 'job1', release: release1))
+      release_version2.add_template(FactoryBot.create(:models_template, name: 'job2', release: release2))
       planner.add_release(DeploymentPlan::ReleaseVersion.parse(deployment_model, 'name' => '1', 'version' => 'v1'))
       planner.add_release(DeploymentPlan::ReleaseVersion.parse(deployment_model, 'name' => '2', 'version' => 'v2'))
 

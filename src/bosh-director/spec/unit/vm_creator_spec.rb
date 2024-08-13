@@ -9,7 +9,7 @@ module Bosh
       let(:vm_deleter) { VmDeleter.new(logger, false, false) }
       let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
       let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
-      let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
+      let(:deployment) { FactoryBot.create(:models_deployment, name: 'deployment_name') }
       let(:availability_zone) do
         Bosh::Director::DeploymentPlan::AvailabilityZone.new('az-1', {})
       end

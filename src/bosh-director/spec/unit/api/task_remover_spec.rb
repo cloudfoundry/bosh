@@ -8,7 +8,7 @@ module Bosh::Director::Api
 
     def make_n_tasks(num_tasks, task_type: default_type, checkpoint_time: inside_retention, deployment: 'deployment1')
       num_tasks.times do |i|
-        task = Bosh::Director::Models::Task.make(state: 'done', output: "/director/tasks/#{task_type}_#{i}", checkpoint_time: checkpoint_time, deployment_name: deployment, type: task_type)
+        task = FactoryBot.create(:models_task, state: 'done', output: "/director/tasks/#{task_type}_#{i}", checkpoint_time: checkpoint_time, deployment_name: deployment, type: task_type)
         FileUtils.mkpath(task.output)
       end
     end
@@ -140,7 +140,7 @@ module Bosh::Director::Api
         subject(:remover) { described_class.new(0, nil, nil) }
 
         before do
-          Bosh::Director::Models::Task.make(state: 'done', output: nil)
+          FactoryBot.create(:models_task, state: 'done', output: nil)
           FakeFS.deactivate!
         end
 

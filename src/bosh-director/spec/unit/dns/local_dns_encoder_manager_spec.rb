@@ -43,7 +43,7 @@ module Bosh::Director
     end
 
     describe '.create_dns_encoder' do
-      let(:deployment) { Models::Deployment.make(name: 'a-deployment') }
+      let(:deployment) { FactoryBot.create(:models_deployment, name: 'a-deployment') }
       let(:encoder) { subject.create_dns_encoder(false) }
       let(:short_dns_encoder) { subject.create_dns_encoder(true) }
 
@@ -130,14 +130,14 @@ module Bosh::Director
 
       before do
         Models::LocalDnsEncodedAz.create(name: 'old-az')
-        deployment = Models::Deployment.make(name: 'old-deployment')
+        deployment = FactoryBot.create(:models_deployment, name: 'old-deployment')
         Models::LocalDnsEncodedGroup.create(
           name: 'some-ig',
           deployment_id: deployment.id,
           type: Models::LocalDnsEncodedGroup::Types::INSTANCE_GROUP,
         )
 
-        deployment2 = Models::Deployment.make(name: 'new-deployment')
+        deployment2 = FactoryBot.create(:models_deployment, name: 'new-deployment')
         allow(plan).to receive(:model).and_return deployment2
         allow(plan).to receive(:links_manager).and_return(links_manager)
       end

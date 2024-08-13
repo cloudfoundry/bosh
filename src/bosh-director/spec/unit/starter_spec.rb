@@ -144,7 +144,7 @@ module Bosh::Director
 
       context 'when the task is cancelled' do
         it 'should stop execution if task was canceled' do
-          t = Bosh::Director::Models::Task.make(id: 42, state: 'cancelling')
+          t = FactoryBot.create(:models_task, id: 42, state: 'cancelling')
           base_job = Jobs::BaseJob.new
           allow(base_job).to receive(:task_id).and_return(t.id)
           allow(Config).to receive(:current_job).and_return(base_job)

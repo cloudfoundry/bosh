@@ -16,7 +16,7 @@ module Bosh::Director
     end
 
     let(:variables) { Bosh::Director::DeploymentPlan::Variables.new(nil) }
-    let(:deployment_model) {Bosh::Director::Models::Deployment.make}
+    let(:deployment_model) {FactoryBot.create(:models_deployment)}
     let(:stemcell_manager) {nil}
     let(:event_log) {Config.event_log}
     let(:links_manager) do
@@ -214,7 +214,7 @@ module Bosh::Director
 
       context 'when there are desired instance_groups' do
         def make_instance_group(name, template_name)
-          template_model = Models::Template.make(name: template_name)
+          template_model = FactoryBot.create(:models_template, name: template_name)
           release_version = instance_double(DeploymentPlan::ReleaseVersion, exported_from: [])
           allow(release_version).to receive(:get_template_model_by_name).and_return(template_model)
           job = DeploymentPlan::Job.new(release_version, template_name)

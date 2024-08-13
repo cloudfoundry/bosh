@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director::Models
   describe CompiledPackage do
     let(:package) { Package.make }
-    let(:stemcell) { Stemcell.make(operating_system: 'chrome-os', version: 'latest') }
+    let(:stemcell) { FactoryBot.create(:models_stemcell, operating_system: 'chrome-os', version: 'latest') }
 
     describe 'self.create_cache_key' do
       let(:package1) { Package.new(name: 'package1', fingerprint: '<package1-fingerprint>') }
@@ -54,7 +54,7 @@ module Bosh::Director::Models
       end
 
       it 'returns 2 if only one compiled package exists for package and stemcell' do
-        CompiledPackage.make(package: package, stemcell_os: 'chrome-os', stemcell_version: 'latest', build: 1)
+        FactoryBot.create(:models_compiled_package, package: package, stemcell_os: 'chrome-os', stemcell_version: 'latest', build: 1)
         expect(CompiledPackage.generate_build_number(package, stemcell.operating_system, stemcell.version)).to eq(2)
       end
 
@@ -74,7 +74,7 @@ module Bosh::Director::Models
 
       context 'when creating new compiled package' do
         it 'generates dependency key sha' do
-          compiled_package = CompiledPackage.make(
+          compiled_package = FactoryBot.create(:models_compiled_package,
             package: package,
             stemcell_os: stemcell.operating_system,
             stemcell_version: stemcell.version,
@@ -87,7 +87,7 @@ module Bosh::Director::Models
 
       context 'when updating existing compiled package' do
         it 'updates dependency key sha' do
-          compiled_package = CompiledPackage.make(
+          compiled_package = FactoryBot.create(:models_compiled_package,
             package: package,
             stemcell_os: stemcell.operating_system,
             stemcell_version: stemcell.version,

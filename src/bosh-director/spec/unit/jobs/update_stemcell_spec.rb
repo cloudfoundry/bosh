@@ -16,7 +16,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
     subject { Bosh::Director::Jobs::UpdateStemcell.new(stemcell_name, stemcell_options) }
 
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
-    let(:task) { Bosh::Director::Models::Task.make(state: 'processing') }
+    let(:task) { FactoryBot.create(:models_task, state: 'processing') }
     let(:event_log) { Bosh::Director::EventLog::Log.new }
     let(:event_log_stage) { instance_double(Bosh::Director::EventLog::Stage) }
     let(:verify_multidigest_exit_status) { instance_double(Process::Status, exitstatus: 0) }
@@ -230,7 +230,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
       context 'when stemcell already exists' do
         before do
-          Bosh::Director::Models::Stemcell.make(name: 'jeos', version: '5', cid: 'old-stemcell-cid')
+          FactoryBot.create(:models_stemcell, name: 'jeos', version: '5', cid: 'old-stemcell-cid')
         end
 
         it 'should quietly ignore duplicate upload and not create a stemcell in the cloud' do
@@ -369,8 +369,8 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
         context 'when the stemcell has already been uploaded' do
           before do
-            Bosh::Director::Models::Stemcell.make(name: 'jeos', version: '5', cpi: 'cloud1')
-            Bosh::Director::Models::StemcellUpload.make(name: 'jeos', version: '5', cpi: 'cloud2')
+            FactoryBot.create(:models_stemcell, name: 'jeos', version: '5', cpi: 'cloud1')
+            FactoryBot.create(:models_stemcell_upload, name: 'jeos', version: '5', cpi: 'cloud2')
           end
 
           it 'creates one stemcell and one stemcell match per cpi' do

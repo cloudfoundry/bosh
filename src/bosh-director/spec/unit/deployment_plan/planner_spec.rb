@@ -23,7 +23,7 @@ module Bosh::Director
       let(:runtime_config_consolidator) { instance_double(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator) }
       let(:manifest_text) { generate_manifest_text }
       let(:deployment_name) { 'mycloud' }
-      let(:deployment_model) { Models::Deployment.make }
+      let(:deployment_model) { FactoryBot.create(:models_deployment) }
 
       def generate_manifest_text
         YAML.dump minimal_manifest
@@ -50,7 +50,7 @@ module Bosh::Director
           )
           planner.cloud_planner = cloud_planner
           allow(Config).to receive_message_chain(:current_job, :username).and_return('username')
-          task = Models::Task.make(state: 'processing')
+          task = FactoryBot.create(:models_task, state: 'processing')
           allow(Config).to receive_message_chain(:current_job, :task_id).and_return(task.id)
         end
 

@@ -32,7 +32,7 @@ module Bosh::Director
 
       context 'with authenticated admin user' do
         let!(:deployment) do
-          Models::Deployment.make(name: deployment_name).tap do |d|
+          FactoryBot.create(:models_deployment, name: deployment_name).tap do |d|
             d.cloud_configs = cloud_configs
             d.runtime_configs = runtime_configs
           end
@@ -84,7 +84,7 @@ module Bosh::Director
 
         context 'when multiple deployment names are given' do
           let!(:other_deployment) do
-            Models::Deployment.make(name: other_deployment_name).tap do |d|
+            FactoryBot.create(:models_deployment, name: other_deployment_name).tap do |d|
               d.cloud_configs = cloud_configs
               d.runtime_configs = runtime_configs
             end
@@ -124,13 +124,13 @@ module Bosh::Director
 
         let!(:dev_team) { Models::Team.make(name: 'dev') }
         let!(:deployment) do
-          Models::Deployment.make(name: deployment_name).tap do |d|
+          FactoryBot.create(:models_deployment, name: deployment_name).tap do |d|
             d.teams = [dev_team]
             d.cloud_configs = cloud_configs
           end
         end
         let!(:other_deployment) do
-          Models::Deployment.make(name: other_deployment_name).tap do |d|
+          FactoryBot.create(:models_deployment, name: other_deployment_name).tap do |d|
             d.cloud_configs = cloud_configs
           end
         end

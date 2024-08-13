@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe ProblemScanner::ProblemRegister do
     subject(:problem_register) { described_class.new(deployment, logger) }
-    let(:deployment) { Models::Deployment.make(name: 'fake-deployment') }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: 'fake-deployment') }
     let(:logger) { double(:logger, info: nil) }
 
     describe '#problem_found' do

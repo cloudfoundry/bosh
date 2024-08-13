@@ -41,7 +41,7 @@ module Bosh::Director
       end
 
       let(:deployment_model) do
-        Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.minimal_manifest))
+        FactoryBot.create(:models_deployment, manifest: YAML.dump(Bosh::Spec::Deployments.minimal_manifest))
       end
 
       let(:range) { IPAddr.new('192.168.1.1/24') }
@@ -100,7 +100,7 @@ module Bosh::Director
       let(:link_provider_intents) { [] }
 
       before do
-        Bosh::Director::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
+        FactoryBot.create(:models_stemcell, name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
         allow(desired_instance).to receive(:instance_group).and_return(instance_group)
         allow(desired_instance).to receive(:index).and_return(1)
         allow(desired_instance).to receive(:index=)

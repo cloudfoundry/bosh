@@ -103,7 +103,7 @@ module Bosh
           end
 
           context 'Planner.new' do
-            let(:deployment_model) { Models::Deployment.make(name: 'simple') }
+            let(:deployment_model) { FactoryBot.create(:models_deployment, name: 'simple') }
             let(:expected_deployment_name) { 'simple' }
             let(:expected_plan_options) do
               {
@@ -434,32 +434,32 @@ module Bosh
         def upload_releases
           manifest_hash['releases'].each do |release_entry|
             instance_group = manifest_hash['instance_groups'].first
-            release = Models::Release.make(name: release_entry['name'])
-            job = Models::Template.make(
+            release = FactoryBot.create(:models_release, name: release_entry['name'])
+            job = FactoryBot.create(:models_template,
               name: instance_group['jobs'].first['name'],
               release: release,
             )
-            job2 = Models::Template.make(
+            job2 = FactoryBot.create(:models_template,
               name: 'provides_job',
               release: release,
               spec: { properties: { 'a' => { default: 'b' } } },
             )
-            release_version = Models::ReleaseVersion.make(release: release, version: release_entry['version'])
+            release_version = FactoryBot.create(:models_release_version, release: release, version: release_entry['version'])
             release_version.add_template(job)
             release_version.add_template(job2)
           end
 
           runtime_config_hash['releases'].each do |release_entry|
-            release = Models::Release.find(name: release_entry['name']) || Models::Release.make(name: release_entry['name'])
-            template = Models::Template.make(name: 'my_template', release: release)
-            release_version = Models::ReleaseVersion.find(release: release, version: release_entry['version']) || Models::ReleaseVersion.make(release: release, version: release_entry['version'])
+            release = Models::Release.find(name: release_entry['name']) || FactoryBot.create(:models_release, name: release_entry['name'])
+            template = FactoryBot.create(:models_template, name: 'my_template', release: release)
+            release_version = Models::ReleaseVersion.find(release: release, version: release_entry['version']) || FactoryBot.create(:models_release_version, release: release, version: release_entry['version'])
             release_version.add_template(template)
           end
         end
 
         def upload_stemcell
           stemcell_entry = manifest_hash['stemcells'].first
-          Models::Stemcell.make(name: stemcell_entry['name'], version: stemcell_entry['version'], operating_system: 'stemcell-os')
+          FactoryBot.create(:models_stemcell, name: stemcell_entry['name'], version: stemcell_entry['version'], operating_system: 'stemcell-os')
         end
       end
     end

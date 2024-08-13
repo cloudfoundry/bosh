@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director::DeploymentPlan
   describe PlacementPlanner::IndexAssigner do
     subject(:assigner) { PlacementPlanner::IndexAssigner.new(deployment_model) }
-    let(:deployment_model) { Bosh::Director::Models::Deployment.make }
+    let(:deployment_model) { FactoryBot.create(:models_deployment) }
 
     describe 'assign_index' do
       context 'when existing instance model is passed in' do

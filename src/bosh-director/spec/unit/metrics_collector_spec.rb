@@ -166,7 +166,7 @@ module Bosh
           end
 
           context 'when there are deployed VMs' do
-            let(:deployment) { Models::Deployment.make }
+            let(:deployment) { FactoryBot.create(:models_deployment) }
             let(:instance) { Models::Instance.make(deployment: deployment) }
             let(:vm) do
               Models::Vm.make(cid: 'fake-vm-cid', agent_id: 'fake-agent-id', instance_id: instance.id, created_at: Time.now)
@@ -293,11 +293,11 @@ module Bosh
         end
 
         describe 'task metrics' do
-          let!(:task1) { Models::Task.make(state: 'queued', type: 'foobar') }
-          let!(:task2) { Models::Task.make(state: 'queued', type: 'foobaz') }
-          let!(:task3) { Models::Task.make(state: 'processing', type: 'foobar') }
-          let!(:task4) { Models::Task.make(state: 'processing', type: 'foobar') }
-          let!(:task5) { Models::Task.make(state: 'processing', type: 'foobaz') }
+          let!(:task1) { FactoryBot.create(:models_task, state: 'queued', type: 'foobar') }
+          let!(:task2) { FactoryBot.create(:models_task, state: 'queued', type: 'foobaz') }
+          let!(:task3) { FactoryBot.create(:models_task, state: 'processing', type: 'foobar') }
+          let!(:task4) { FactoryBot.create(:models_task, state: 'processing', type: 'foobar') }
+          let!(:task5) { FactoryBot.create(:models_task, state: 'processing', type: 'foobaz') }
 
           it 'populates metrics for processing tasks by type' do
             metrics_collector.start

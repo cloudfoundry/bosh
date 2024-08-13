@@ -16,7 +16,7 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
   before(:each) do
     @agent = double('agent')
 
-    deployment = Bosh::Director::Models::Deployment.make(name: 'my-deployment', manifest: YAML.dump(manifest))
+    deployment = FactoryBot.create(:models_deployment, name: 'my-deployment', manifest: YAML.dump(manifest))
     Bosh::Director::Models::VariableSet.make(deployment_id: deployment.id)
 
     @instance = Bosh::Director::Models::Instance.

@@ -21,7 +21,7 @@ module Bosh::Director::DeploymentPlan
     end
     let(:deployment_plan) { instance_double(Bosh::Director::DeploymentPlan::Planner, skip_drain: skip_drain_decider) }
     let(:index_assigner) { PlacementPlanner::IndexAssigner.new(deployment_model) }
-    let(:deployment_model) { Bosh::Director::Models::Deployment.make }
+    let(:deployment_model) { FactoryBot.create(:models_deployment) }
     let(:test_random_tie_strategy) { PlacementPlanner::TieStrategy::RandomWins }
     let(:randomize_az_placement) { false }
     let(:deployment_subnets) do

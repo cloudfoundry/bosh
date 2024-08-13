@@ -45,7 +45,7 @@ module Bosh::Director::DeploymentPlan
       ]
     end
     let(:deployment) { instance_double(Planner, model: deployment_model, skip_drain: SkipDrain.new(true)) }
-    let(:deployment_model) { Bosh::Director::Models::Deployment.make }
+    let(:deployment_model) { FactoryBot.create(:models_deployment) }
 
     let(:deployment_network) { ManualNetwork.new('network_A', deployment_subnets, nil) }
     let(:deployment_subnets) do

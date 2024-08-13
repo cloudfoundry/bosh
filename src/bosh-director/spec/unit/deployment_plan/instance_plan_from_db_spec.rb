@@ -12,7 +12,7 @@ module Bosh::Director
         )
       end
 
-      let(:stemcell) { Bosh::Director::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302') }
+      let(:stemcell) { FactoryBot.create(:models_stemcell, name: 'stemcell-name', version: '3.0.2', cid: 'sc-302') }
       let(:spec) do
         {
           'vm_type' => {
@@ -32,7 +32,7 @@ module Bosh::Director
       let(:deployment_manifest) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
       let(:deployment_model) do
         cloud_config = Bosh::Director::Models::Config.make(:cloud, content: YAML.dump(cloud_config_manifest))
-        deployment = Bosh::Director::Models::Deployment.make(
+        deployment = FactoryBot.create(:models_deployment,
           name: deployment_manifest['name'],
           manifest: YAML.dump(deployment_manifest),
         )
@@ -45,9 +45,9 @@ module Bosh::Director
       end
 
       before do
-        release = Models::Release.make(name: 'bosh-release')
-        release_version = Models::ReleaseVersion.make(version: '0.1-dev', release: release)
-        template1 = Models::Template.make(name: 'foobar', release: release)
+        release = FactoryBot.create(:models_release, name: 'bosh-release')
+        release_version = FactoryBot.create(:models_release_version, version: '0.1-dev', release: release)
+        template1 = FactoryBot.create(:models_template, name: 'foobar', release: release)
         release_version.add_template(template1)
       end
 

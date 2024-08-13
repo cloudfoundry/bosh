@@ -104,7 +104,7 @@ module Bosh::Director::DeploymentPlan
     let(:stemcell) { make_stemcell(name: 'fake-stemcell-name', version: '1.0') }
     let(:env) { Env.new('key' => 'value') }
     let(:deployment_name) { 'fake-deployment' }
-    let(:deployment) { Bosh::Director::Models::Deployment.make(name: deployment_name) }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: deployment_name) }
     let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment, bootstrap: true, uuid: 'uuid-1') }
     let(:instance_plan) do
       InstancePlan.new(

@@ -8,7 +8,7 @@ module Bosh::Director
     let(:username) { 'username-1' }
     let(:time) { Time.now.utc.to_s }
 
-    let(:deployment) { Models::Deployment.make(name: 'deployment') }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: 'deployment') }
     let(:job_queue) { instance_double('Bosh::Director::JobQueue') }
     let(:options) do
       { foo: 'bar' }

@@ -17,7 +17,7 @@ module Bosh::Director
 
       context 'when a cpi is missing the stemcell' do
         before do
-          Bosh::Director::Models::StemcellUpload.make(
+          FactoryBot.create(:models_stemcell_upload,
             cpi: cpi_config['cpis'][0]['name'],
             name: 'bosh-stemcell',
             version: '1234',
@@ -35,12 +35,12 @@ module Bosh::Director
       context 'when a cpi already references an existing stemcell' do
         context 'multiple cpis' do
           before do
-            Bosh::Director::Models::StemcellUpload.make(
+            FactoryBot.create(:models_stemcell_upload,
               cpi: cpi_config['cpis'][0]['name'],
               name: 'bosh-stemcell',
               version: '1234',
             )
-            Bosh::Director::Models::StemcellUpload.make(
+            FactoryBot.create(:models_stemcell_upload,
               cpi: cpi_config['cpis'][1]['name'],
               name: 'bosh-stemcell',
               version: '1234',
@@ -67,7 +67,7 @@ module Bosh::Director
           end
 
           before do
-            Bosh::Director::Models::StemcellUpload.make(
+            FactoryBot.create(:models_stemcell_upload,
               cpi: cpi_config['cpis'][0]['name'],
               name: 'bosh-stemcell',
               version: '1234',
@@ -96,7 +96,7 @@ module Bosh::Director
           end
 
           before do
-            Bosh::Director::Models::StemcellUpload.make(
+            FactoryBot.create(:models_stemcell_upload,
               cpi: '',
               name: 'bosh-stemcell',
               version: '1234',

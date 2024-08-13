@@ -7,7 +7,7 @@ module Bosh::Director
       { 'tags' => { 'mytag' => 'myvalue' } }
     end
     let(:deployment) do
-      deployment = Models::Deployment.make(name: deployment_name, manifest: YAML.dump(manifest))
+      deployment = FactoryBot.create(:models_deployment, name: deployment_name, manifest: YAML.dump(manifest))
       Models::VariableSet.make(deployment_id: deployment.id)
       deployment
     end

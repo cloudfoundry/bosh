@@ -8,7 +8,7 @@ module Bosh::Director::Models
       end
 
       let(:release) do
-        Release.make(name: 'that-release')
+        FactoryBot.create(:models_release, name: 'that-release')
       end
 
       subject(:release_version) do
