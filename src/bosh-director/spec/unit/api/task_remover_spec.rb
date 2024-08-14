@@ -156,7 +156,7 @@ module Bosh::Director::Api
       context 'when a task has teams' do
         before do
           make_n_tasks(4)
-          team = Bosh::Director::Models::Team.make(name: 'ateam')
+          team = FactoryBot.create(:models_team, name: 'ateam')
           task = Bosh::Director::Models::Task.first
           task.add_team(team)
         end

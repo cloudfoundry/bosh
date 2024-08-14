@@ -122,7 +122,7 @@ module Bosh::Director
           authorize('dev-team-member', 'dev-team-member')
         end
 
-        let!(:dev_team) { Models::Team.make(name: 'dev') }
+        let!(:dev_team) { FactoryBot.create(:models_team, name: 'dev') }
         let!(:deployment) do
           FactoryBot.create(:models_deployment, name: deployment_name).tap do |d|
             d.teams = [dev_team]

@@ -697,7 +697,7 @@ module Bosh::Director
         end
 
         context 'that is not applicable to the deployment by defined team' do
-          let(:non_eligable_team) { Models::Team.make(name: 'non-eligable-team') }
+          let(:non_eligable_team) { FactoryBot.create(:models_team, name: 'non-eligable-team') }
           before do
             runtime_config_hash['addons'][0]['exclude'] = {
               'teams' => [

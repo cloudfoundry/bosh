@@ -13,8 +13,8 @@ module Bosh::Director
       let(:deployment_name_1) { 'deployment1' }
       let(:deployment_name_2) { 'deployment2' }
       let(:deployment_name_3) { 'deployment3' }
-      let(:team_rocket) { Models::Team.make(name: 'team-rocket') }
-      let(:dev) { Models::Team.make(name: 'dev') }
+      let(:team_rocket) { FactoryBot.create(:models_team, name: 'team-rocket') }
+      let(:dev) { FactoryBot.create(:models_team, name: 'dev') }
 
       let(:config) do
         config = Config.load_hash(SpecHelper.spec_get_director_config)
@@ -195,7 +195,7 @@ module Bosh::Director
 
           context 'when user has readonly access' do
             before do
-              team_a = Models::Team.make(name: 'team_a')
+              team_a = FactoryBot.create(:models_team, name: 'team_a')
               (1..20).map do |i|
                 make_task_with_team(
                   type: :update_deployment,
@@ -264,7 +264,7 @@ module Bosh::Director
             end
 
             context 'when task has a deployment associated with it and the deployment has already been deleted' do
-              let(:prod) { Models::Team.make(name: 'prod') }
+              let(:prod) { FactoryBot.create(:models_team, name: 'prod') }
               it 'should show up in the response' do
                 make_task_with_team(type: 'update_deployment', deployment_name: 'deleted_deployment', teams: [team_rocket, prod])
                 make_task_with_team(type: 'delete_deployment', deployment_name: 'deleted_deployment', teams: [team_rocket, dev])

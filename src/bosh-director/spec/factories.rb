@@ -88,7 +88,7 @@ FactoryBot.define do
 
   factory :models_deployment, class: Bosh::Director::Models::Deployment do
     sequence(:name) { |i| "deployment-#{i}" }
-    sequence(:manifest) { |i| "manifest-#{i}" }
+    sequence(:manifest) { |i| "deployment-manifest-#{i}" }
   end
 
   factory :models_director_attribute, class: Bosh::Director::Models::DirectorAttribute do
@@ -98,7 +98,7 @@ FactoryBot.define do
 
   factory :models_package, class: Bosh::Director::Models::Package do
     sequence(:name) { |i| "package-#{i}" }
-    sequence(:version) { |i| "package-version-#{i}" }
+    sequence(:version) { |i| "package-v#{i}" }
     sequence(:blobstore_id) { |i| "package-blobstore-id-#{i}" }
     sequence(:sha1) { |i| "package-sha1-#{i}" }
     dependency_set_json { '[]' }
@@ -110,20 +110,20 @@ FactoryBot.define do
   end
 
   factory :models_release_version, class: Bosh::Director::Models::ReleaseVersion do
-    sequence(:version) { |i| "release-version-version-#{i}" }
+    sequence(:version) { |i| "release-version-v#{i}" }
     association :release, factory: :models_release, strategy: :create
   end
 
   factory :models_stemcell, class: Bosh::Director::Models::Stemcell do
     sequence(:name) { |i| "stemcell-#{i}" }
-    sequence(:version) { |i| "stemcell-version-#{i}" }
+    sequence(:version) { |i| "stemcell-v#{i}" }
     sequence(:cid) { |i| "stemcell-cid-#{i}" }
     sequence(:operating_system) { |i| "stemcell-operating-system-#{i}" }
   end
 
   factory :models_stemcell_upload, class: Bosh::Director::Models::StemcellUpload do
     sequence(:name) { |i| "stemcell-upload-#{i}" }
-    sequence(:version) { |i| "stemcell-upload-version-#{i}" }
+    sequence(:version) { |i| "stemcell-upload-v#{i}" }
   end
 
   factory :models_task, class: Bosh::Director::Models::Task do
@@ -134,9 +134,13 @@ FactoryBot.define do
     traits_for_enum(:state, ['queued', 'processing', 'done', 'cancelling'])
   end
 
+  factory :models_team, class: Bosh::Director::Models::Team do
+    sequence(:name) { |i| "team-#{i}" }
+  end
+
   factory :models_template, class: Bosh::Director::Models::Template do
     sequence(:name) { |i| "template-#{i}" }
-    sequence(:version) { |i| "template-version-#{i}" }
+    sequence(:version) { |i| "template-v#{i}" }
     sequence(:blobstore_id) { |i| "template-blobstore-id-#{i}" }
     sequence(:sha1) { |i| "template-sha1-#{i}" }
     sequence(:fingerprint) { |i| "template-fingerprint-#{i}" }

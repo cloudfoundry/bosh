@@ -22,7 +22,7 @@ module Bosh::Director
 
     let(:deployment_name) { 'deployment-name' }
     let(:teams) do
-      [Models::Team.make(name: 'security'), Models::Team.make(name: 'spies')]
+      [FactoryBot.create(:models_team, name: 'security'), FactoryBot.create(:models_team, name: 'spies')]
     end
     let(:deployment) { Models::Deployment.create_with_teams(name: deployment_name, teams: teams) }
 

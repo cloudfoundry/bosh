@@ -104,7 +104,7 @@ module Bosh::Director::Models
     end
 
     describe '#to_hash' do
-      let(:red_team) { Team.make(name: 'red') }
+      let(:red_team) { FactoryBot.create(:models_team, name: 'red') }
       let(:red_team_cloud_config) do
         Config.make(type: 'cloud', name: 'red-cloud-config', team_id: red_team.id, content: 'foo')
       end
@@ -123,8 +123,8 @@ module Bosh::Director::Models
     end
 
     describe '#latest_set_for_teams' do
-      let!(:red_team) { Bosh::Director::Models::Team.make(name: 'red') }
-      let!(:blue_team) { Bosh::Director::Models::Team.make(name: 'blue') }
+      let!(:red_team) { FactoryBot.create(:models_team, name: 'red') }
+      let!(:blue_team) { FactoryBot.create(:models_team, name: 'blue') }
       let!(:global_cloud_config) { Bosh::Director::Models::Config.make(type: 'cloud', name: 'default') }
       let!(:global_runtime_config) { Bosh::Director::Models::Config.make(type: 'runtime', name: 'default') }
       let!(:red_team_cloud_config) { Bosh::Director::Models::Config.make(type: 'cloud', name: 'red-cloud-config', team_id: red_team.id) }
@@ -171,8 +171,8 @@ module Bosh::Director::Models
     end
 
     describe '#find_by_ids_for_teams' do
-      let!(:red_team) { Bosh::Director::Models::Team.make(name: 'red') }
-      let!(:blue_team) { Bosh::Director::Models::Team.make(name: 'blue') }
+      let!(:red_team) { FactoryBot.create(:models_team, name: 'red') }
+      let!(:blue_team) { FactoryBot.create(:models_team, name: 'blue') }
       let!(:global_cloud_config) { Bosh::Director::Models::Config.make(type: 'cloud', name: 'default') }
       let!(:global_runtime_config) { Bosh::Director::Models::Config.make(type: 'runtime', name: 'default') }
       let!(:red_team_cloud_config) { Bosh::Director::Models::Config.make(type: 'cloud', name: 'red-cloud-config', team_id: red_team.id) }

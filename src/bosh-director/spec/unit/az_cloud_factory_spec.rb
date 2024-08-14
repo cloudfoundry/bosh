@@ -72,8 +72,8 @@ module Bosh::Director
         end
 
         context 'when deployment has teams' do
-          let(:footeam) { Models::Team.make(name: 'footeam') }
-          let(:barteam) { Models::Team.make(name: 'barteam') }
+          let(:footeam) { FactoryBot.create(:models_team, name: 'footeam') }
+          let(:barteam) { FactoryBot.create(:models_team, name: 'barteam') }
 
           let!(:footeam_config) { Models::Config.make(:cloud, team_id: footeam.id, content: '--- {"key": "value"}') }
           let!(:barteam_config) { Models::Config.make(:cloud, team_id: barteam.id, content: '--- {"key": "value"}') }

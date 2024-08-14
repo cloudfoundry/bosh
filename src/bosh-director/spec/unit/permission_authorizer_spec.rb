@@ -341,7 +341,7 @@ module Bosh::Director
 
       describe 'task' do
         describe 'deployment-specific' do
-          let(:teams) { [Models::Team.make(name: 'security')] }
+          let(:teams) { [FactoryBot.create(:models_team, name: 'security')] }
           let(:acl_subject) do
             task = FactoryBot.create(:models_task, id: 1, deployment_name: 'test-deployment')
             task.teams = teams
@@ -407,7 +407,7 @@ module Bosh::Director
       end
 
       describe 'deployment' do
-        let(:teams) { [Models::Team.make(name: 'security'), Models::Team.make(name: 'bosh')] }
+        let(:teams) { [FactoryBot.create(:models_team, name: 'security'), FactoryBot.create(:models_team, name: 'bosh')] }
         let(:acl_subject) do
           deployment = FactoryBot.create(:models_deployment, name: 'favorite')
           deployment.teams = teams
@@ -489,7 +489,7 @@ module Bosh::Director
 
       describe 'config' do
         let(:acl_subject) do
-          team = Models::Team.make(name: 'security')
+          team = FactoryBot.create(:models_team, name: 'security')
 
           Models::Config.make(
             content: 'some-yaml',

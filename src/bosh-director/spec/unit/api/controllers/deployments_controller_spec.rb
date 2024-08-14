@@ -157,8 +157,8 @@ module Bosh::Director
                 let(:runtime_config_3) { Models::Config.make(type: 'runtime', raw_manifest: {'addons' => []}, name: 'smurf') }
                 let(:cloud_config) { Models::Config.make(:cloud, raw_manifest: {'azs' => []}) }
 
-                let(:dev_team) { Models::Team.make(name: 'dev') }
-                let(:other_team) { Models::Team.make(name: 'other') }
+                let(:dev_team) { FactoryBot.create(:models_team, name: 'dev') }
+                let(:other_team) { FactoryBot.create(:models_team, name: 'other') }
 
                 let!(:dev_runtime_config) { Models::Config.make(name: 'dev-runtime', type: 'runtime', team_id: dev_team.id) }
                 let!(:other_runtime_config) { Models::Config.make(name: 'other-runtime', type: 'runtime', team_id: other_team.id) }
@@ -238,8 +238,8 @@ module Bosh::Director
               let(:runtime_config_3) { Models::Config.make(type: 'runtime', raw_manifest: {'addons' => []}, name: 'smurf') }
               let(:cloud_config) { Models::Config.make(:cloud, raw_manifest: {'azs' => []}) }
 
-              let(:dev_team) { Models::Team.make(name: 'dev') }
-              let(:other_team) { Models::Team.make(name: 'other') }
+              let(:dev_team) { FactoryBot.create(:models_team, name: 'dev') }
+              let(:other_team) { FactoryBot.create(:models_team, name: 'other') }
 
               let!(:dev_runtime_config) { Models::Config.make(name: 'dev-runtime', type: 'runtime', team_id: dev_team.id) }
               let!(:other_runtime_config) { Models::Config.make(name: 'other-runtime', type: 'runtime', team_id: other_team.id) }
@@ -511,10 +511,10 @@ module Bosh::Director
             let!(:runtime_config) { Models::Config.make(type: 'runtime', raw_manifest: {'addons' => []}) }
             let!(:cloud_config) { Models::Config.make(:cloud, raw_manifest: {'azs' => []}) }
 
-            let!(:dev_team) { Models::Team.make(name: 'dev') }
+            let!(:dev_team) { FactoryBot.create(:models_team, name: 'dev') }
             let!(:dev_runtime_config) { Models::Config.make(name: 'dev-runtime', type: 'runtime', team_id: dev_team.id) }
             let!(:dev_cloud_config) { Models::Config.make(name: 'dev-cloud', type: 'cloud', team_id: dev_team.id) }
-            let!(:other_team) { Models::Team.make(name: 'other') }
+            let!(:other_team) { FactoryBot.create(:models_team, name: 'other') }
 
             let!(:deployment) do
               FactoryBot.create(:models_deployment, name: 'foo', manifest: YAML.dump({'foo' => 'bar'})).tap { |d| d.teams = [dev_team] }
@@ -1256,9 +1256,9 @@ module Bosh::Director
             deployment.add_release_version(FactoryBot.create(:models_release_version, version: '2', release_id: release1.id))
             deployment.add_release_version(FactoryBot.create(:models_release_version, version: '1', release_id: release2.id))
 
-            deployment.add_team(Models::Team.make(name: 'team2'))
-            deployment.add_team(Models::Team.make(name: 'team3'))
-            deployment.add_team(Models::Team.make(name: 'team1'))
+            deployment.add_team(FactoryBot.create(:models_team, name: 'team2'))
+            deployment.add_team(FactoryBot.create(:models_team, name: 'team3'))
+            deployment.add_team(FactoryBot.create(:models_team, name: 'team1'))
 
             deployment.add_stemcell(FactoryBot.create(:models_stemcell, name: 'stemcell2', version: '4'))
             deployment.add_stemcell(FactoryBot.create(:models_stemcell, name: 'stemcell1', version: '1'))
@@ -1296,8 +1296,8 @@ module Bosh::Director
                 deployment.cloud_configs = [other_cloud_config]
               end
             end
-            let(:other_team) { Models::Team.make(name: 'footeam') }
-            let(:dev_team) { Models::Team.make(name: 'dev') }
+            let(:other_team) { FactoryBot.create(:models_team, name: 'footeam') }
+            let(:dev_team) { FactoryBot.create(:models_team, name: 'dev') }
             let(:dev_cloud_config) do
               Models::Config.make(name: 'dev-team-config', type: 'cloud', raw_manifest: {}, team_id: dev_team.id)
             end
@@ -2380,8 +2380,8 @@ module Bosh::Director
               { 'instance_groups' => [], 'releases' => [{ 'name' => 'simple', 'version' => 5 }] }
             end
 
-            let(:dev_team) { Models::Team.make(name: 'dev') }
-            let(:other_team) { Models::Team.make(name: 'other') }
+            let(:dev_team) { FactoryBot.create(:models_team, name: 'dev') }
+            let(:other_team) { FactoryBot.create(:models_team, name: 'other') }
 
             let!(:dev_runtime_config) { Models::Config.make(name: 'dev-runtime', type: 'runtime', team_id: dev_team.id) }
             let!(:other_runtime_config) { Models::Config.make(name: 'other-runtime', type: 'runtime', team_id: other_team.id) }

@@ -121,8 +121,8 @@ module Bosh::Director
 
         context 'with a user with team permissions' do
           before do
-            deployment_1.teams = [Models::Team.make(name: 'dev')]
-            deployment_2.teams = [Models::Team.make(name: 'TheEvilTeam')]
+            deployment_1.teams = [FactoryBot.create(:models_team, name: 'dev')]
+            deployment_2.teams = [FactoryBot.create(:models_team, name: 'TheEvilTeam')]
             basic_authorize 'dev-team-member', 'dev-team-member'
           end
 

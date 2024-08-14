@@ -43,8 +43,8 @@ module Bosh
 
         context 'when scopes are provided' do
           context 'and there is an existing deployment with the same name' do
-            let(:prod_team) { [ Models::Team.make(name: 'production') ] }
-            let(:prod_dev_teams) { [ Models::Team.make(name: 'production'), Models::Team.make(name: 'dev') ] }
+            let(:prod_team) { [ FactoryBot.create(:models_team, name: 'production') ] }
+            let(:prod_dev_teams) { [ FactoryBot.create(:models_team, name: 'production'), FactoryBot.create(:models_team, name: 'dev') ] }
 
             context 'and there is at least one scope in common between the existing deployment and provided scopes' do
               it 'should not create a new deployment' do
