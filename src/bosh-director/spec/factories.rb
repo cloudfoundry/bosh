@@ -91,6 +91,12 @@ FactoryBot.define do
     sequence(:manifest) { |i| "deployment-manifest-#{i}" }
   end
 
+  factory :models_deployment_property, class: Bosh::Director::Models::DeploymentProperty do
+    sequence(:name) { |i| "deployment-property-#{i}" }
+    sequence(:value) { |i| "deployment-property-value-#{i}" }
+    association :deployment, factory: :models_deployment, strategy: :create
+  end
+
   factory :models_director_attribute, class: Bosh::Director::Models::DirectorAttribute do
     name { 'uuid' }
     sequence(:value) { |i| "director-uuid-#{i}" }

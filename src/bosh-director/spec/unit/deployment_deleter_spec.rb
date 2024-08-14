@@ -28,7 +28,7 @@ module Bosh::Director
 
         deployment_model.add_stemcell(deployment_stemcell)
         deployment_model.add_release_version(deployment_release_version)
-        deployment_model.add_property(Models::DeploymentProperty.make)
+        deployment_model.add_property(FactoryBot.create(:models_deployment_property))
 
         allow(instance_deleter).to receive(:delete_instance_plans)
         allow(deployment_model).to receive(:destroy)
