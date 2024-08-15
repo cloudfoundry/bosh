@@ -3,14 +3,14 @@ package performance_test
 import (
 	"fmt"
 	"strings"
+	"testing"
 	"time"
 
-	bratsutils "github.com/cloudfoundry/bosh-release-acceptance-tests/brats-utils"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 
-	"testing"
+	"brats/utils"
 )
 
 func TestPerformance(t *testing.T) {
@@ -24,29 +24,29 @@ var (
 )
 
 var _ = SynchronizedBeforeSuite(func() {
-	bratsutils.Bootstrap()
-	bratsutils.OuterBosh("upload-release", bratsutils.AssertEnvExists("BOSH_DIRECTOR_TARBALL_PATH"))
-	directorReleasePath := bratsutils.AssertEnvExists("BOSH_DIRECTOR_RELEASE_PATH")
-	session := bratsutils.OuterBosh("create-release", "--dir", directorReleasePath)
+	utils.Bootstrap()
+	utils.OuterBosh("upload-release", utils.AssertEnvExists("BOSH_DIRECTOR_TARBALL_PATH"))
+	directorReleasePath := utils.AssertEnvExists("BOSH_DIRECTOR_RELEASE_PATH")
+	session := utils.OuterBosh("create-release", "--dir", directorReleasePath)
 	Eventually(session, 1*time.Minute).Should(gexec.Exit())
-	session = bratsutils.OuterBosh("upload-release", "--dir", directorReleasePath, "--rebase")
+	session = utils.OuterBosh("upload-release", "--dir", directorReleasePath, "--rebase")
 	Eventually(session, 1*time.Minute).Should(gexec.Exit())
 }, func() {
-	bratsutils.Bootstrap()
-	candidateWardenLinuxStemcellPath = bratsutils.AssertEnvExists("CANDIDATE_STEMCELL_TARBALL_PATH")
+	utils.Bootstrap()
+	candidateWardenLinuxStemcellPath = utils.AssertEnvExists("CANDIDATE_STEMCELL_TARBALL_PATH")
 })
 
 var _ = AfterSuite(func() {
-	bratsutils.StopInnerBosh()
+	utils.StopInnerBosh()
 })
 
 var _ = AfterEach(func() {
-	if !bratsutils.InnerBoshExists() {
+	if !utils.InnerBoshExists() {
 		return
 	}
 
 	By("cleaning up deployments")
-	session := bratsutils.Bosh("deployments", "--column=name")
+	session := utils.Bosh("deployments", "--column=name")
 	Eventually(session, 1*time.Minute).Should(gexec.Exit())
 	deployments := strings.Fields(string(session.Out.Contents()))
 
@@ -55,7 +55,7 @@ var _ = AfterEach(func() {
 		if deploymentName == "" {
 			continue
 		}
-		session := bratsutils.Bosh("delete-deployment", "-n", "-d", deploymentName)
+		session := utils.Bosh("delete-deployment", "-n", "-d", deploymentName)
 		Eventually(session, 5*time.Minute).Should(gexec.Exit())
 	}
 })
