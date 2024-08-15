@@ -723,10 +723,13 @@ jobs:
       trigger: true
     - get: bosh-src-dockerfiles
       trigger: true
+    - get: bosh-src
     - get: bosh-deployment
     - get: ubuntu-docker-image
     - task: build-docker-args
       file: bosh-src-dockerfiles/ci/dockerfiles/integration/build-docker-args.yml
+      params:
+        GITHUB_ACCESS_TOKEN: ((github_public_repo_token))
     - put: integration-image
       inputs:
       - docker-build-args
@@ -734,7 +737,6 @@ jobs:
         tag_as_latest: true
         build_args_file: docker-build-args/docker-build-args.json
         dockerfile: bosh-src-dockerfiles/ci/dockerfiles/integration/Dockerfile
-        BRANCH: ((branch_name))
       get_params:
         skip_download: true
 
