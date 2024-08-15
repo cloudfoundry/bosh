@@ -47,7 +47,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'logging',          '~>2.2.2'
   spec.add_dependency 'membrane',         '~>1.1.0'
   spec.add_dependency 'nats-pure'
-  spec.add_dependency 'openssl', '>=3.2.0'
+  spec.add_dependency 'openssl'
   spec.add_dependency 'prometheus-client','~>2.1.0'
   spec.add_dependency 'puma'
   spec.add_dependency 'rack-test'
