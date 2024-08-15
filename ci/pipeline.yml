@@ -721,22 +721,27 @@ jobs:
       trigger: true
     - get: golang-docker-image
       trigger: true
+    - get: ubuntu-docker-image
+      trigger: true
     - get: bosh-src-dockerfiles
       trigger: true
     - get: bosh-src
     - get: bosh-deployment
-    - get: ubuntu-docker-image
+      params:
+        depth: 1
     - task: build-docker-args
       file: bosh-src-dockerfiles/ci/dockerfiles/integration/build-docker-args.yml
       params:
         GITHUB_ACCESS_TOKEN: ((github_public_repo_token))
     - put: integration-image
       inputs:
+      - bosh-src-dockerfiles
       - docker-build-args
       params:
-        tag_as_latest: true
+        build: .
         build_args_file: docker-build-args/docker-build-args.json
         dockerfile: bosh-src-dockerfiles/ci/dockerfiles/integration/Dockerfile
+        tag_as_latest: true
       get_params:
         skip_download: true
 
