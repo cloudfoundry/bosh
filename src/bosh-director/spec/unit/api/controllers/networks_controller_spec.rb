@@ -17,21 +17,21 @@ module Bosh::Director
 
       context 'orphan networks' do
         before do
-          Models::Network.make(
+          FactoryBot.create(:models_network,
             name: 'nw-1',
             type: 'manual',
             created_at: created_at,
             orphaned_at: orphaned_at,
             orphaned: true,
           )
-          Models::Network.make(
+          FactoryBot.create(:models_network,
             name: 'nw-2',
             type: 'manual',
             created_at: created_at - 10,
             orphaned_at: orphaned_at - 10,
             orphaned: true,
           )
-          Models::Network.make(
+          FactoryBot.create(:models_network,
             name: 'nw-3',
             type: 'manual',
             created_at: created_at - 20,

@@ -102,6 +102,14 @@ FactoryBot.define do
     sequence(:value) { |i| "director-uuid-#{i}" }
   end
 
+  factory :models_network, class: Bosh::Director::Models::Network do
+    sequence(:name) { |i| "network-#{i}" }
+    type { 'manual' }
+    created_at { Time.now }
+    orphaned { false }
+    orphaned_at { nil }
+  end
+
   factory :models_package, class: Bosh::Director::Models::Package do
     sequence(:name) { |i| "package-#{i}" }
     sequence(:version) { |i| "package-v#{i}" }

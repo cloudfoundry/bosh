@@ -13,22 +13,22 @@ module Bosh::Director
 
       it 'enqueues a DeleteOrphanNetworks job' do
         fake_orphan_networks_names = ['nw-1', 'nw-2']
-        Models::Network.make(name: 'nw-1', orphaned: true)
-        Models::Network.make(name: 'nw-2', orphaned: true)
+        FactoryBot.create(:models_network, name: 'nw-1', orphaned: true)
+        FactoryBot.create(:models_network, name: 'nw-2', orphaned: true)
         expect(job_queue).to receive(:enqueue)
           .with('fake-username', Jobs::DeleteOrphanNetworks, 'delete orphan networks', [fake_orphan_networks_names])
         Jobs::DeleteOrphanNetworks.enqueue('fake-username', fake_orphan_networks_names, job_queue)
       end
 
       it 'errors if network is not orphaned' do
-        Models::Network.make(name: 'nw-2', orphaned: false)
+        FactoryBot.create(:models_network, name: 'nw-2', orphaned: false)
         expect do
           Jobs::DeleteOrphanNetworks.enqueue(nil, ['nw-2'], JobQueue.new)
         end.to raise_error(NetworkDeletingUnorphanedError)
       end
 
       it 'errors if network doesnot exist' do
-        Models::Network.make(name: 'nw-2', orphaned: false)
+        FactoryBot.create(:models_network, name: 'nw-2', orphaned: false)
         expect do
           Jobs::DeleteOrphanNetworks.enqueue(nil, ['nw-4'], JobQueue.new)
         end.to raise_error(NetworkNotFoundError)
@@ -41,8 +41,8 @@ module Bosh::Director
       let(:orphan_network_manager) { instance_double(OrphanNetworkManager) }
 
       before do
-        Bosh::Director::Models::Network.make(name: 'nw-1', orphaned: true)
-        Bosh::Director::Models::Network.make(name: 'nw-2', orphaned: true)
+        FactoryBot.create(:models_network, name: 'nw-1', orphaned: true)
+        FactoryBot.create(:models_network, name: 'nw-2', orphaned: true)
 
         allow(Config).to receive(:event_log).and_return(event_log)
         allow(event_log).to receive(:begin_stage).and_return(event_log_stage)

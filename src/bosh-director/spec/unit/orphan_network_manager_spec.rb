@@ -10,7 +10,7 @@ module Bosh::Director
     let(:deployment) { FactoryBot.create(:models_deployment, name: 'test-deployment') }
 
     let(:network) do
-      Models::Network.make(
+      FactoryBot.create(:models_network,
         name: 'dummy-network',
         type: 'manual',
         orphaned: false,
@@ -41,7 +41,7 @@ module Bosh::Director
 
     describe '#unorphan_network' do
       let(:orphan_network) do
-        Models::Network.make(
+        FactoryBot.create(:models_network,
           name: 'dummy-network',
           type: 'manual',
           orphaned: true,
@@ -65,14 +65,14 @@ module Bosh::Director
         created_at = Time.now.utc - 10
         orphaned_at = Time.now.utc
         other_orphaned_at = Time.now.utc
-        Models::Network.make(
+        FactoryBot.create(:models_network,
           name: 'dummy-network-1',
           type: 'manual',
           created_at: created_at,
           orphaned: true,
           orphaned_at: orphaned_at,
         )
-        Models::Network.make(
+        FactoryBot.create(:models_network,
           name: 'dummy-network-2',
           type: 'manual',
           created_at: created_at,
@@ -106,7 +106,7 @@ module Bosh::Director
       let(:stage) { instance_double(EventLog::Stage) }
 
       let(:orphan_network_1) do
-        Models::Network.make(name: 'network-1', created_at: ten_seconds_ago, orphaned: true, orphaned_at: time)
+        FactoryBot.create(:models_network, name: 'network-1', created_at: ten_seconds_ago, orphaned: true, orphaned_at: time)
       end
 
       let(:subnet_1) do
