@@ -8,6 +8,7 @@ image_resource:
 
 inputs:
 - name: bosh-deployment
+- name: bosh-src
 - name: bosh-src-dockerfiles
 
 outputs:
