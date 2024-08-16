@@ -169,7 +169,7 @@ export BOSH_CLIENT=admin
 export BOSH_CLIENT_SECRET=`bosh int ~/workspace/bosh-deployment/vbox/creds.yml --path /admin_password`
 export BOSH_CA_CERT=`bosh int ~/workspace/bosh-deployment/vbox/creds.yml --path /director_ssl/ca`
 export BOSH_ENVIRONMENT='vbox'
-ginkgo -r src/go/src/github.com/cloudfoundry/bosh-release-acceptance-tests
+ginkgo -r src/brats
 ```
 
 ## Determining which tests suites to run

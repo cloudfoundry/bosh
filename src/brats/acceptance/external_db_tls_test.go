@@ -1,38 +1,37 @@
-package brats_test
+package acceptance_test
 
 import (
-	"os"
-
 	"io/ioutil"
-
-	bratsutils "github.com/cloudfoundry/bosh-release-acceptance-tests/brats-utils"
+	"os"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"brats/utils"
 )
 
 var _ = Describe("Director external database TLS connections", func() {
 	testDBConnectionOverTLS := func(databaseType string, mutualTLSEnabled bool, useIncorrectCA bool) {
 		tmpCertDir, err := ioutil.TempDir("", "db_tls")
 		Expect(err).ToNot(HaveOccurred())
-		dbConfig := bratsutils.LoadExternalDBConfig(databaseType, mutualTLSEnabled, tmpCertDir)
-		bratsutils.CreateDB(dbConfig)
+		dbConfig := utils.LoadExternalDBConfig(databaseType, mutualTLSEnabled, tmpCertDir)
+		utils.CreateDB(dbConfig)
 		defer os.RemoveAll(tmpCertDir)
-		defer bratsutils.DeleteDB(dbConfig)
+		defer utils.DeleteDB(dbConfig)
 
 		realCACertPath := dbConfig.CACertPath
 		if useIncorrectCA {
-			dbConfig.CACertPath = bratsutils.AssetPath("external_db/invalid_ca_cert.pem")
+			dbConfig.CACertPath = utils.AssetPath("external_db/invalid_ca_cert.pem")
 		}
 
-		startInnerBoshArgs := bratsutils.InnerBoshWithExternalDBOptions(dbConfig)
+		startInnerBoshArgs := utils.InnerBoshWithExternalDBOptions(dbConfig)
 
 		if useIncorrectCA {
-			bratsutils.StartInnerBoshWithExpectation(true, "Error: 'bosh/[0-9a-f]{8}-[0-9a-f-]{27} \\(0\\)' is not running after update", startInnerBoshArgs...)
+			utils.StartInnerBoshWithExpectation(true, "Error: 'bosh/[0-9a-f]{8}-[0-9a-f-]{27} \\(0\\)' is not running after update", startInnerBoshArgs...)
 			dbConfig.CACertPath = realCACertPath
 		} else {
-			defer bratsutils.StopInnerBosh()
-			bratsutils.StartInnerBosh(startInnerBoshArgs...)
+			defer utils.StopInnerBosh()
+			utils.StartInnerBosh(startInnerBoshArgs...)
 		}
 	}
 

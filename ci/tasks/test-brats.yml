@@ -20,7 +20,7 @@ run:
   path: bosh-src/ci/tasks/test-brats.sh
 
 params:
-  FOCUS_SPEC: ""
+  FOCUS_SPEC:
   RDS_MYSQL_EXTERNAL_DB_USER: replace-me
   RDS_MYSQL_EXTERNAL_DB_PASSWORD: replace-me
   RDS_MYSQL_EXTERNAL_DB_NAME: replace-me
