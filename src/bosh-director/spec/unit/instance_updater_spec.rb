@@ -13,7 +13,7 @@ module Bosh::Director
     let(:template_blob_cache) { instance_double(Core::Templates::TemplateBlobCache) }
     let(:instance_plan_changed) { false }
     let(:needs_shutting_down) { false }
-    let(:event) { Models::Event.make }
+    let(:event) { FactoryBot.create(:models_event) }
     let(:link_provider_intents) { [] }
     let(:updater) do
       InstanceUpdater.new_instance_updater(

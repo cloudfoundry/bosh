@@ -102,6 +102,14 @@ FactoryBot.define do
     sequence(:value) { |i| "director-uuid-#{i}" }
   end
 
+  factory :models_event, class: Bosh::Director::Models::Event do
+    action      { 'create' }
+    object_type { 'deployment' }
+    sequence(:object_name) { |i| "event-object-name-#{i}" }
+    sequence(:user) { |i| "event-user-#{i}" }
+    timestamp   { Time.now }
+  end
+
   factory :models_log_bundle, class: Bosh::Director::Models::LogBundle do
     sequence(:blobstore_id) { |i| "log-bundle-blobstore-id-#{i}" }
     timestamp { Time.now }

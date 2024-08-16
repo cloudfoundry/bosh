@@ -12,7 +12,7 @@ module Bosh::Director
 
     def make_n_events(num_events)
       num_events.times do |i|
-        Bosh::Director::Models::Event.make
+        FactoryBot.create(:models_event)
       end
     end
 
