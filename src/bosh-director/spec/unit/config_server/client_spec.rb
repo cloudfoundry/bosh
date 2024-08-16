@@ -2142,7 +2142,7 @@ module Bosh::Director::ConfigServer
               FactoryBot.create(:models_local_dns_encoded_network, name: 'net-a')
               Bosh::Director::Models::Links::Link.create(
                 name: 'foo',
-                link_provider_intent: Bosh::Director::Models::Links::LinkProviderIntent.make(name: 'foo', type: 'something'),
+                link_provider_intent: FactoryBot.create(:models_links_link_provider_intent, name: 'foo', type: 'something'),
                 link_consumer_intent_id: consumer_intent.id,
                 link_content: {
                   deployment_name: deployment_name,

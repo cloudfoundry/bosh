@@ -33,11 +33,11 @@ module Bosh::Director::Models::Links
     end
 
     describe '#group_name' do
-      subject(:link) { Link.make }
+      subject(:link) { FactoryBot.create(:models_links_link) }
 
       context 'when provider intent has a name and a type' do
         before do
-          link.link_provider_intent = LinkProviderIntent.make(name: 'test-name', type: 'test-type')
+          link.link_provider_intent = FactoryBot.create(:models_links_link_provider_intent, name: 'test-name', type: 'test-type')
           link.save
         end
 

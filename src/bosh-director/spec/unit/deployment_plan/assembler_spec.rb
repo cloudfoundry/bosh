@@ -255,7 +255,7 @@ module Bosh::Director
           end
 
           let(:provider) do
-            Models::Links::LinkProvider.make(
+            FactoryBot.create(:models_links_link_provider,
               deployment: deployment_model,
               instance_group: 'foo-ig',
               name: 'foo-provider',
@@ -264,15 +264,15 @@ module Bosh::Director
           end
 
           let(:provider_intent) do
-            Models::Links::LinkProviderIntent.make(
-              :link_provider => provider,
-              :original_name => 'link_original_name_1',
-              :name => 'link_name_1',
-              :type => 'link_type_1',
-              :shared => true,
-              :consumable => true,
-              :content => '{}',
-              :metadata => {'mapped_properties' => {'a' => 'foo'}}.to_json
+            FactoryBot.create(:models_links_link_provider_intent,
+                              link_provider: provider,
+                              original_name: 'link_original_name_1',
+                              name: 'link_name_1',
+                              type: 'link_type_1',
+                              shared: true,
+                              consumable: true,
+                              content: '{}',
+                              metadata: { 'mapped_properties' => { 'a' => 'foo' } }.to_json
             )
           end
 
@@ -296,7 +296,7 @@ module Bosh::Director
             expect(links_manager).to_not receive(:update_provider_intents_contents)
             expect(links_manager).to_not receive(:resolve_deployment_links)
 
-            assembler.bind_models({:should_bind_links => false})
+            assembler.bind_models({ should_bind_links: false })
           end
 
           context 'when the links are stale' do
@@ -389,13 +389,13 @@ module Bosh::Director
             expect(instance_group_1).to_not receive(:bind_properties)
             expect(instance_group_2).to_not receive(:bind_properties)
 
-            assembler.bind_models({:should_bind_properties => false})
+            assembler.bind_models({ should_bind_properties: false })
           end
         end
 
         context 'variable sets binding' do
           before do
-            deployment_plan.model.add_variable_set(:created_at => Time.now, :writable => true)
+            deployment_plan.model.add_variable_set(created_at: Time.now, writable: true)
           end
 
           context 'when should_bind_new_variable_set flag is false' do
@@ -407,7 +407,7 @@ module Bosh::Director
               expect(instance_group_1).to_not receive(:bind_new_variable_set).with(current_deployment_variable_set)
               expect(instance_group_2).to_not receive(:bind_new_variable_set).with(current_deployment_variable_set)
 
-              assembler.bind_models({:should_bind_new_variable_set => should_bind_new_variable_set})
+              assembler.bind_models({ should_bind_new_variable_set: should_bind_new_variable_set })
             end
           end
 
@@ -420,7 +420,7 @@ module Bosh::Director
               expect(instance_group_1).to receive(:bind_new_variable_set).with(current_deployment_variable_set)
               expect(instance_group_2).to receive(:bind_new_variable_set).with(current_deployment_variable_set)
 
-              assembler.bind_models({:should_bind_new_variable_set => should_bind_new_variable_set})
+              assembler.bind_models({ should_bind_new_variable_set: should_bind_new_variable_set })
             end
           end
 

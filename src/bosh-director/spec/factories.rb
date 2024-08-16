@@ -120,6 +120,39 @@ FactoryBot.define do
     timestamp { Time.now }
   end
 
+  factory :models_links_link, class: Bosh::Director::Models::Links::Link do
+    sequence(:name) { |i| "link-#{i}" }
+    link_content { '{}' }
+    association :link_consumer_intent, factory: :models_links_link_consumer_intent, strategy: :create
+  end
+
+  factory :models_links_link_consumer, class: Bosh::Director::Models::Links::LinkConsumer do
+    sequence(:name) { |i| "link-consumer-#{i}" }
+    sequence(:type) { |i| "link-consumer-type-#{i}" }
+    association :deployment, factory: :models_deployment, strategy: :create
+  end
+
+  factory :models_links_link_consumer_intent, class: Bosh::Director::Models::Links::LinkConsumerIntent do
+    sequence(:name) { |i| "link-consumer-intent-#{i}" }
+    sequence(:original_name) { |i| "link-consumer-intent-original-name-#{i}" }
+    sequence(:type) { |i| "link-consumer-intent-type-#{i}" }
+    association :link_consumer, factory: :models_links_link_consumer, strategy: :create
+  end
+
+  factory :models_links_link_provider, class: Bosh::Director::Models::Links::LinkProvider do
+    sequence(:name) { |i| "link-provider-#{i}" }
+    sequence(:type) { |i| "link-provider-type-#{i}" }
+    sequence(:instance_group) { |i| "link-provider-instance-group-#{i}" }
+    association :deployment, factory: :models_deployment, strategy: :create
+  end
+
+  factory :models_links_link_provider_intent, class: Bosh::Director::Models::Links::LinkProviderIntent do
+    sequence(:name) { |i| "link-provider-intent-#{i}" }
+    sequence(:original_name) { |i| "link-provider-intent-original-name-#{i}" }
+    sequence(:type) { |i| "link-provider-intent-type-#{i}" }
+    association :link_provider, factory: :models_links_link_provider, strategy: :create
+  end
+
   factory :models_log_bundle, class: Bosh::Director::Models::LogBundle do
     sequence(:blobstore_id) { |i| "log-bundle-blobstore-id-#{i}" }
     timestamp { Time.now }

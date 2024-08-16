@@ -103,7 +103,7 @@ describe Bosh::Director::Links::LinksParser do
       let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment_model) }
       let(:serial_id) { 1 }
       let!(:provider_1) do
-        Bosh::Director::Models::Links::LinkProvider.make(
+        FactoryBot.create(:models_links_link_provider,
           deployment: deployment_model,
           instance_group: 'old-ig1',
           name: 'release1_job_name_1',
@@ -113,7 +113,7 @@ describe Bosh::Director::Links::LinksParser do
       end
 
       let!(:provider_1_intent) do
-        Bosh::Director::Models::Links::LinkProviderIntent.make(
+        FactoryBot.create(:models_links_link_provider_intent,
           link_provider: provider_1,
           original_name: 'chocolate',
           name: 'chocolate',
@@ -274,7 +274,7 @@ describe Bosh::Director::Links::LinksParser do
       let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment_model) }
       let(:serial_id) { 1 }
       let!(:consumer) do
-        Bosh::Director::Models::Links::LinkConsumer.make(
+        FactoryBot.create(:models_links_link_consumer,
           deployment: deployment_model,
           instance_group: 'old-ig1',
           name: 'foobar',
@@ -284,7 +284,7 @@ describe Bosh::Director::Links::LinksParser do
       end
 
       let!(:consumer_intent) do
-        Bosh::Director::Models::Links::LinkConsumerIntent.make(
+        FactoryBot.create(:models_links_link_consumer_intent,
           link_consumer: consumer,
           original_name: 'chocolate',
           name: 'chocolate',

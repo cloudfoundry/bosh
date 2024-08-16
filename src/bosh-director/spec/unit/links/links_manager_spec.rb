@@ -3040,7 +3040,7 @@ describe Bosh::Director::Links::LinksManager do
 
     context 'when the provider type is a job' do
       let(:provider_1) do
-        Bosh::Director::Models::Links::LinkProvider.make(
+        FactoryBot.create(:models_links_link_provider,
           deployment: deployment_model,
           instance_group: 'foo-ig',
           name: 'foo-provider',
@@ -3050,7 +3050,7 @@ describe Bosh::Director::Links::LinksManager do
       end
 
       let(:provider_1_intent_1) do
-        Bosh::Director::Models::Links::LinkProviderIntent.make(
+        FactoryBot.create(:models_links_link_provider_intent,
           link_provider: provider_1,
           original_name: 'link_original_name_1',
           name: 'link_name_1',
@@ -3064,7 +3064,7 @@ describe Bosh::Director::Links::LinksManager do
       end
 
       let(:provider_1_intent_2) do
-        Bosh::Director::Models::Links::LinkProviderIntent.make(
+        FactoryBot.create(:models_links_link_provider_intent,
           link_provider: provider_1,
           original_name: 'link_original_name_2',
           name: 'link_name_2',
@@ -3078,7 +3078,7 @@ describe Bosh::Director::Links::LinksManager do
       end
 
       let(:provider_2) do
-        Bosh::Director::Models::Links::LinkProvider.make(
+        FactoryBot.create(:models_links_link_provider,
           deployment: deployment_model,
           instance_group: 'foo-ig',
           name: 'foo-provider-2',
@@ -3088,7 +3088,7 @@ describe Bosh::Director::Links::LinksManager do
       end
 
       let(:provider_2_intent_1) do
-        Bosh::Director::Models::Links::LinkProviderIntent.make(
+        FactoryBot.create(:models_links_link_provider_intent,
           link_provider: provider_2,
           original_name: 'link_original_name_3',
           name: 'link_name_3',
@@ -3102,7 +3102,7 @@ describe Bosh::Director::Links::LinksManager do
       end
 
       let(:provider_2_intent_2) do
-        Bosh::Director::Models::Links::LinkProviderIntent.make(
+        FactoryBot.create(:models_links_link_provider_intent,
           link_provider: provider_2,
           original_name: 'link_original_name_4',
           name: 'link_name_4',
@@ -3116,7 +3116,7 @@ describe Bosh::Director::Links::LinksManager do
       end
 
       let(:provider_2_intent_3) do
-        Bosh::Director::Models::Links::LinkProviderIntent.make(
+        FactoryBot.create(:models_links_link_provider_intent,
           link_provider: provider_2,
           original_name: 'link_original_name_5',
           name: 'link_name_5',
@@ -3177,7 +3177,7 @@ describe Bosh::Director::Links::LinksManager do
         allow(deployment_plan).to receive(:use_dns_addresses?).and_return(use_dns_addresses)
         allow(deployment_plan).to receive(:use_link_dns_names?).and_return(use_link_dns_names)
 
-        consumer = Bosh::Director::Models::Links::LinkConsumer.make(
+        consumer = FactoryBot.create(:models_links_link_consumer,
           deployment: deployment_model,
           instance_group: 'foo-ig',
           name: 'foobar-consumer',
@@ -3185,7 +3185,7 @@ describe Bosh::Director::Links::LinksManager do
           serial_id: serial_id,
         )
 
-        Bosh::Director::Models::Links::LinkConsumerIntent.make(
+        FactoryBot.create(:models_links_link_consumer_intent,
           link_consumer: consumer,
           original_name: 'link_original_name_1',
           name: 'link_name_1',
@@ -3195,7 +3195,7 @@ describe Bosh::Director::Links::LinksManager do
           serial_id: serial_id, # different from current deployment links_serial_id
         )
 
-        Bosh::Director::Models::Links::LinkConsumerIntent.make(
+        FactoryBot.create(:models_links_link_consumer_intent,
           link_consumer: consumer,
           original_name: 'link_original_name_2',
           name: 'link_name_2',
@@ -3206,7 +3206,7 @@ describe Bosh::Director::Links::LinksManager do
         )
 
         # # This is intentially commented out to be clear that this consumer intent is not defined
-        # Bosh::Director::Models::Links::LinkConsumerIntent.make(
+        # FactoryBot.create(:models_links_link_consumer_intent,
         #   :link_consumer => consumer,
         #   :original_name => 'link_original_name_3',
         #   :name => 'link_name_3',
@@ -3216,7 +3216,7 @@ describe Bosh::Director::Links::LinksManager do
         #   :serial_id => serial_id # different from current deployment links_serial_id
         # )
 
-        Bosh::Director::Models::Links::LinkConsumerIntent.make(
+        FactoryBot.create(:models_links_link_consumer_intent,
           link_consumer: consumer,
           original_name: 'link_original_name_4',
           name: 'link_name_4',
@@ -3226,7 +3226,7 @@ describe Bosh::Director::Links::LinksManager do
           serial_id: serial_id, # different from current deployment links_serial_id
         )
 
-        Bosh::Director::Models::Links::LinkConsumerIntent.make(
+        FactoryBot.create(:models_links_link_consumer_intent,
           link_consumer: consumer,
           original_name: 'link_original_name_5',
           name: 'link_name_5',
@@ -3385,7 +3385,7 @@ describe Bosh::Director::Links::LinksManager do
       end
 
       let(:provider) do
-        Bosh::Director::Models::Links::LinkProvider.make(
+        FactoryBot.create(:models_links_link_provider,
           deployment: deployment_model,
           instance_group: 'ig',
           name: 'some-provider',
@@ -3394,7 +3394,7 @@ describe Bosh::Director::Links::LinksManager do
       end
 
       let(:provider_intent) do
-        Bosh::Director::Models::Links::LinkProviderIntent.make(
+        FactoryBot.create(:models_links_link_provider_intent,
           link_provider: provider,
           original_name: 'link_original_name_1',
           name: 'link_name_1',
@@ -3444,7 +3444,7 @@ describe Bosh::Director::Links::LinksManager do
 
     context 'cleanup providers' do
       let(:provider_1) do
-        Bosh::Director::Models::Links::LinkProvider.make(
+        FactoryBot.create(:models_links_link_provider,
           deployment: deployment_model,
           instance_group: 'foo-ig',
           name: 'foo-provider',
@@ -3454,7 +3454,7 @@ describe Bosh::Director::Links::LinksManager do
       end
 
       let(:provider_1_intent_1) do
-        Bosh::Director::Models::Links::LinkProviderIntent.make(
+        FactoryBot.create(:models_links_link_provider_intent,
           link_provider: provider_1,
           original_name: 'link_original_name_1',
           name: 'link_name_1',
@@ -3467,7 +3467,7 @@ describe Bosh::Director::Links::LinksManager do
         )
       end
       let(:provider_1_intent_2) do
-        Bosh::Director::Models::Links::LinkProviderIntent.make(
+        FactoryBot.create(:models_links_link_provider_intent,
           link_provider: provider_1,
           original_name: 'link_original_name_2',
           name: 'link_name_2',
@@ -3481,7 +3481,7 @@ describe Bosh::Director::Links::LinksManager do
       end
 
       let(:provider_2) do
-        Bosh::Director::Models::Links::LinkProvider.make(
+        FactoryBot.create(:models_links_link_provider,
           deployment: deployment_model,
           instance_group: 'foo-ig',
           name: 'foo-provider-2',
@@ -3491,7 +3491,7 @@ describe Bosh::Director::Links::LinksManager do
       end
 
       let(:provider_2_intent_1) do
-        Bosh::Director::Models::Links::LinkProviderIntent.make(
+        FactoryBot.create(:models_links_link_provider_intent,
           link_provider: provider_2,
           original_name: 'link_original_name_3',
           name: 'link_name_3',
@@ -3504,7 +3504,7 @@ describe Bosh::Director::Links::LinksManager do
         )
       end
       let(:provider_2_intent_2) do
-        Bosh::Director::Models::Links::LinkProviderIntent.make(
+        FactoryBot.create(:models_links_link_provider_intent,
           link_provider: provider_2,
           original_name: 'link_original_name_4',
           name: 'link_name_4',
@@ -3517,7 +3517,7 @@ describe Bosh::Director::Links::LinksManager do
         )
       end
       let(:provider_2_intent_3) do
-        Bosh::Director::Models::Links::LinkProviderIntent.make(
+        FactoryBot.create(:models_links_link_provider_intent,
           link_provider: provider_2,
           original_name: 'link_original_name_5',
           name: 'link_name_5',
@@ -3588,7 +3588,7 @@ describe Bosh::Director::Links::LinksManager do
 
       context 'when a disk link has an unused provider' do
         let(:provider_1) do
-          Bosh::Director::Models::Links::LinkProvider.make(
+          FactoryBot.create(:models_links_link_provider,
             deployment: deployment_model,
             instance_group: 'foo-ig',
             name: 'foo-provider',
@@ -3598,7 +3598,7 @@ describe Bosh::Director::Links::LinksManager do
         end
 
         let(:provider_1_intent_1) do
-          Bosh::Director::Models::Links::LinkProviderIntent.make(
+          FactoryBot.create(:models_links_link_provider_intent,
             link_provider: provider_1,
             original_name: 'link_original_name_1',
             name: 'link_name_1',
