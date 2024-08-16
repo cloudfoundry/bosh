@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director::Models
   describe CompiledPackage do
-    let(:package) { Package.make }
+    let(:package) { FactoryBot.create(:models_package) }
     let(:stemcell) { FactoryBot.create(:models_stemcell, operating_system: 'chrome-os', version: 'latest') }
 
     describe 'self.create_cache_key' do
@@ -60,8 +60,8 @@ module Bosh::Director::Models
 
       it 'will return 1 for new, unique combinations of packages and stemcells' do
         5.times do
-          package = Package.make
-          stemcell = Stemcell.make
+          package = FactoryBot.create(:models_package)
+          stemcell = FactoryBot.create(:models_stemcell)
 
           expect(CompiledPackage.generate_build_number(package, stemcell.operating_system, stemcell.version)).to eq(1)
         end

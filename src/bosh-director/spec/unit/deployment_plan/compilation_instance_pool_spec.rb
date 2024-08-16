@@ -171,7 +171,7 @@ module Bosh::Director
       director_config = SpecHelper.spec_get_director_config
       allow(Config).to receive(:nats_client_ca_private_key_path).and_return(director_config['nats']['client_ca_private_key_path'])
       allow(Config).to receive(:nats_client_ca_certificate_path).and_return(director_config['nats']['client_ca_certificate_path'])
-      allow(deployment_model).to receive(:current_variable_set).and_return(Models::VariableSet.make)
+      allow(deployment_model).to receive(:current_variable_set).and_return(FactoryBot.create(:models_variable_set))
       allow(MetadataUpdater).to receive(:new).and_return(metadata_updater)
       allow(metadata_updater).to receive(:update_vm_metadata)
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)

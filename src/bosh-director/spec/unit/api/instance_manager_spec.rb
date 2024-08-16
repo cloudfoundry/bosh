@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Api::InstanceManager do
-    let(:deployment) { Models:: Deployment.make(name: deployment_name) }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: deployment_name) }
     let(:active_vm) { true }
     let!(:vm) { Models::Vm.make(agent_id: 'random-id', instance_id: instance.id, active: active_vm) }
     let(:instance) { Models::Instance.make(uuid: 'fakeId123', deployment: deployment, job: job) }

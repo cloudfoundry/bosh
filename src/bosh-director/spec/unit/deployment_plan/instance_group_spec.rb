@@ -126,7 +126,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
 
     allow(release1_foo_job).to receive(:add_properties)
     allow(release1_bar_job).to receive(:add_properties)
-    allow(deployment).to receive(:current_variable_set).and_return(Bosh::Director::Models::VariableSet.make)
+    allow(deployment).to receive(:current_variable_set).and_return(FactoryBot.create(:models_variable_set))
 
     release1_version_model.add_template(release1_foo_job_model)
     release1_version_model.add_template(release1_bar_job_model)

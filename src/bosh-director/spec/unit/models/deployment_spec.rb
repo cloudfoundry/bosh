@@ -3,7 +3,7 @@ require 'bosh/director/models/deployment'
 
 module Bosh::Director::Models
   describe Deployment do
-    subject(:deployment) { described_class.make(manifest: manifest, name: 'dep1') }
+    subject(:deployment) { FactoryBot.create(:models_deployment, manifest: manifest, name: 'dep1') }
     let(:db_is_mysql) { ENV['DB'] == 'mysql' }
     let(:deadlock_exception) { Sequel::DatabaseError.new('Mysql2::Error: Deadlock found when trying to get lock') }
 
@@ -157,9 +157,9 @@ module Bosh::Director::Models
     end
 
     describe '#variables' do
-      let(:deployment_1) { Deployment.make(manifest: 'test') }
-      let(:deployment_2) { Deployment.make(manifest: 'vroom') }
-      let(:deployment_3) { Deployment.make(manifest: 'hello') }
+      let(:deployment_1) { FactoryBot.create(:models_deployment, manifest: 'test') }
+      let(:deployment_2) { FactoryBot.create(:models_deployment, manifest: 'vroom') }
+      let(:deployment_3) { FactoryBot.create(:models_deployment, manifest: 'hello') }
       let(:variable_set_1) { FactoryBot.create(:models_variable_set, id: 1, deployment: deployment_1) }
       let(:variable_set_2) { FactoryBot.create(:models_variable_set, id: 2, deployment: deployment_1) }
       let(:variable_set_3) { FactoryBot.create(:models_variable_set, id: 12, deployment: deployment_2) }
@@ -186,8 +186,8 @@ module Bosh::Director::Models
     end
 
     describe '#current_variable_set' do
-      let(:deployment_1) { Deployment.make(manifest: 'test') }
-      let(:deployment_2) { Deployment.make(manifest: 'vroom') }
+      let(:deployment_1) { FactoryBot.create(:models_deployment, manifest: 'test') }
+      let(:deployment_2) { FactoryBot.create(:models_deployment, manifest: 'vroom') }
 
       before do
         time = Time.now
@@ -203,8 +203,8 @@ module Bosh::Director::Models
     end
 
     describe '#last_successful_variable_set' do
-      let(:deployment_1) { Deployment.make(manifest: 'test') }
-      let(:deployment_2) { Deployment.make(manifest: 'vroom') }
+      let(:deployment_1) { FactoryBot.create(:models_deployment, manifest: 'test') }
+      let(:deployment_2) { FactoryBot.create(:models_deployment, manifest: 'vroom') }
 
       before do
         time = Time.now
@@ -223,8 +223,8 @@ module Bosh::Director::Models
     end
 
     describe '#previous_variable_set' do
-      let(:deployment_1) { Deployment.make(manifest: 'test') }
-      let(:deployment_2) { Deployment.make(manifest: 'vroom') }
+      let(:deployment_1) { FactoryBot.create(:models_deployment, manifest: 'test') }
+      let(:deployment_2) { FactoryBot.create(:models_deployment, manifest: 'vroom') }
 
       before do
         time = Time.now
@@ -243,8 +243,8 @@ module Bosh::Director::Models
     end
 
     describe '#cleanup_variable_sets' do
-      let(:deployment_1) { Deployment.make(manifest: 'test') }
-      let(:deployment_2) { Deployment.make(manifest: 'vroom') }
+      let(:deployment_1) { FactoryBot.create(:models_deployment, manifest: 'test') }
+      let(:deployment_2) { FactoryBot.create(:models_deployment, manifest: 'vroom') }
       let(:time) { Time.now }
 
       it 'deletes variable sets not referenced in the list provided' do

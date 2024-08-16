@@ -3,7 +3,7 @@ require 'bosh/director/models/variable'
 
 module Bosh::Director::Models
   describe Variable do
-    let(:deployment) { Deployment.make(manifest: '') }
+    let(:deployment) { FactoryBot.create(:models_deployment, manifest: '') }
     let(:variable_set_1) { FactoryBot.create(:models_variable_set, id: 1, deployment: deployment) }
     let(:variable_set_2) { FactoryBot.create(:models_variable_set, id: 999, deployment: deployment) }
 

@@ -10,7 +10,7 @@ module Bosh::Director::Models
       d
     end
     let(:config) { Config.make(type: 'fake-config') }
-    let(:deployment) { Deployment.make(name: 'fake-deployment') }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: 'fake-deployment') }
 
     it 'can create a deployment config' do
       expect(deployment_config.config).to eq(config)
@@ -18,7 +18,7 @@ module Bosh::Director::Models
     end
 
     describe '#deployments_and_configs' do
-      let(:other_deployment) { Deployment.make(name: 'other-deployment') }
+      let(:other_deployment) { FactoryBot.create(:models_deployment, name: 'other-deployment') }
       let!(:other_deployment_config) do
         d = described_class.new
         d.config = config

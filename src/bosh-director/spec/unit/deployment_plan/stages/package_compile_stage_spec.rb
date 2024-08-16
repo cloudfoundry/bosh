@@ -627,7 +627,7 @@ module Bosh::Director
     end
 
     context 'when the deploy is cancelled' do
-      let(:release_version_model) { Models::ReleaseVersion.make }
+      let(:release_version_model) { FactoryBot.create(:models_release_version) }
       let(:stemcell) { make_stemcell }
       let(:instance_groups_to_compile) { [instance_group] }
 
@@ -783,7 +783,7 @@ module Bosh::Director
     end
 
     it 'should make sure a parallel deployment did not compile a package already' do
-      package = Models::Package.make
+      package = FactoryBot.create(:models_package)
       stemcell = make_stemcell
 
       requirement = CompiledPackageRequirement.new(
@@ -805,7 +805,7 @@ module Bosh::Director
     end
 
     describe '#prepare_vm' do
-      let(:package) { Models::Package.make }
+      let(:package) { FactoryBot.create(:models_package) }
       let(:number_of_workers) { 2 }
       let(:plan) do
         deployment_model = FactoryBot.create(:models_deployment)

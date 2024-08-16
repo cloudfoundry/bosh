@@ -90,7 +90,7 @@ module Bosh::Director
 
     describe 'adding dependencies' do
       it 'works both ways' do
-        stemcell = Models::Stemcell.make
+        stemcell = FactoryBot.create(:models_stemcell)
         foo = FactoryBot.create(:models_package, name: 'foo')
         bar = FactoryBot.create(:models_package, name: 'bar')
         baz = FactoryBot.create(:models_package, name: 'baz')
@@ -116,8 +116,8 @@ module Bosh::Director
       let(:instance_group) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup') }
 
       it 'registers compiled package with instance_group' do
-        package = Models::Package.make
-        stemcell = Models::Stemcell.make
+        package = FactoryBot.create(:models_package)
+        stemcell = FactoryBot.create(:models_stemcell)
 
         cp = FactoryBot.create(:models_compiled_package, stemcell_os: 'firefox_os', stemcell_version: '2')
         cp2 = FactoryBot.create(:models_compiled_package, stemcell_os: 'firefox_os', stemcell_version: '2')
@@ -144,7 +144,7 @@ module Bosh::Director
 
     describe 'generating dependency spec' do
       it 'generates dependency spec' do
-        stemcell = Models::Stemcell.make
+        stemcell = FactoryBot.create(:models_stemcell)
         foo = FactoryBot.create(:models_package, name: 'foo')
         bar = FactoryBot.create(:models_package, name: 'bar', version: '42')
         cp = FactoryBot.create(:models_compiled_package, package: bar, build: 152, sha1: 'deadbeef', blobstore_id: 'deadcafe', stemcell_os: 'linux', stemcell_version: '2.6.11')
@@ -171,7 +171,7 @@ module Bosh::Director
       end
 
       it "doesn't include nested dependencies" do
-        stemcell = Models::Stemcell.make
+        stemcell = FactoryBot.create(:models_stemcell)
         foo = FactoryBot.create(:models_package, name:  'foo')
         bar = FactoryBot.create(:models_package, name:  'bar', version: '42')
         baz = FactoryBot.create(:models_package, name:  'baz', version: '17')

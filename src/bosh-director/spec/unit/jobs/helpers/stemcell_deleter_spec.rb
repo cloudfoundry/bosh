@@ -50,7 +50,7 @@ module Bosh::Director
 
       it 'should NOT delete associated compiled packages, but set stemcell_id to nil' do
         associated_package = FactoryBot.create(:models_compiled_package,
-          package: Models::Package.make,
+          package: FactoryBot.create(:models_package),
           blobstore_id: 'compiled-package-blb-1',
           stemcell_os: 'Plan 9',
           stemcell_version: '9'
@@ -86,7 +86,7 @@ module Bosh::Director
           stemcell_version: '7.1'
         )
         unassociated_package = FactoryBot.create(:models_compiled_package,
-          package: Models::Package.make,
+          package: FactoryBot.create(:models_package),
           blobstore_id: 'compiled-package-blb-2',
           stemcell_os: 'AIX',
           stemcell_version: '7.2'

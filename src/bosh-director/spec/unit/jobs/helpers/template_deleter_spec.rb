@@ -5,7 +5,7 @@ module Bosh::Director
     describe TemplateDeleter do
       subject(:template_deleter) { TemplateDeleter.new(blobstore, logger) }
       let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
-      let(:release_version) { Models::ReleaseVersion.make }
+      let(:release_version) { FactoryBot.create(:models_release_version) }
       let(:template) { FactoryBot.create(:models_template, blobstore_id: 'template-blob-id') }
 
       before do

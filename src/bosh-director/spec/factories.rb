@@ -110,24 +110,6 @@ FactoryBot.define do
     orphaned_at { nil }
   end
 
-  factory :models_package, class: Bosh::Director::Models::Package do
-    sequence(:name) { |i| "package-#{i}" }
-    sequence(:version) { |i| "package-v#{i}" }
-    sequence(:blobstore_id) { |i| "package-blobstore-id-#{i}" }
-    sequence(:sha1) { |i| "package-sha1-#{i}" }
-    dependency_set_json { '[]' }
-    association :release, factory: :models_release, strategy: :create
-  end
-
-  factory :models_release, class: Bosh::Director::Models::Release do
-    sequence(:name) { |i| "release-#{i}" }
-  end
-
-  factory :models_release_version, class: Bosh::Director::Models::ReleaseVersion do
-    sequence(:version) { |i| "release-version-v#{i}" }
-    association :release, factory: :models_release, strategy: :create
-  end
-
   factory :models_orphaned_vm, class: Bosh::Director::Models::OrphanedVm do
     sequence(:cid) { |i| "orphaned-vm-cid-#{i}" }
     sequence(:deployment_name) { |i| "orphaned-vm-deployment-name-#{i}" }
@@ -146,6 +128,24 @@ FactoryBot.define do
     sequence(:snapshot_cid) { |i| "orphan-snapshot-cid-#{i}" }
     snapshot_created_at { Time.now }
     association :orphan_disk, factory: :models_orphan_disk, strategy: :create
+  end
+
+  factory :models_package, class: Bosh::Director::Models::Package do
+    sequence(:name) { |i| "package-#{i}" }
+    sequence(:version) { |i| "package-v#{i}" }
+    sequence(:blobstore_id) { |i| "package-blobstore-id-#{i}" }
+    sequence(:sha1) { |i| "package-sha1-#{i}" }
+    dependency_set_json { '[]' }
+    association :release, factory: :models_release, strategy: :create
+  end
+
+  factory :models_release, class: Bosh::Director::Models::Release do
+    sequence(:name) { |i| "release-#{i}" }
+  end
+
+  factory :models_release_version, class: Bosh::Director::Models::ReleaseVersion do
+    sequence(:version) { |i| "release-version-v#{i}" }
+    association :release, factory: :models_release, strategy: :create
   end
 
   factory :models_stemcell, class: Bosh::Director::Models::Stemcell do

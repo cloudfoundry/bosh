@@ -3,9 +3,9 @@ require 'bosh/director/models/variable_set'
 
 module Bosh::Director::Models
   describe VariableSet do
-    let(:deployment) { Deployment.make(manifest: '') }
-    let(:variable_set_1) { described_class.make(id: 1, deployment: deployment) }
-    let(:variable_set_2) { described_class.make(id: 999, deployment: deployment) }
+    let(:deployment) { FactoryBot.create(:models_deployment, manifest: '') }
+    let(:variable_set_1) { FactoryBot.create(:models_variable_set, id: 1, deployment: deployment) }
+    let(:variable_set_2) { FactoryBot.create(:models_variable_set, id: 999, deployment: deployment) }
 
     describe '#variables' do
       it 'returns variables associated with variable set' do

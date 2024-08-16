@@ -8,7 +8,7 @@ module Bosh::Director
     describe '#generate!' do
       subject(:generator) { described_class.new(logger, event_log, compiled_package_finder) }
 
-      let(:release_version_model) { Models::ReleaseVersion.make }
+      let(:release_version_model) { FactoryBot.create(:models_release_version) }
       let(:release_version) do
         instance_double('Bosh::Director::DeploymentPlan::ReleaseVersion', model: release_version_model, exported_from: [])
       end

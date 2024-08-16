@@ -20,8 +20,8 @@ module Bosh::Director
 
       let!(:deployment_model) { FactoryBot.create(:models_deployment, name: 'fake-deployment') }
 
-      let!(:deployment_stemcell) { Models::Stemcell.make }
-      let!(:deployment_release_version) { Models::ReleaseVersion.make }
+      let!(:deployment_stemcell) { FactoryBot.create(:models_stemcell) }
+      let!(:deployment_release_version) { FactoryBot.create(:models_release_version) }
       before do
         deployment_model.add_instance(instance_1)
         deployment_model.add_instance(instance_2)

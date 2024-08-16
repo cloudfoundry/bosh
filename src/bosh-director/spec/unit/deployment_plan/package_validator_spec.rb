@@ -37,7 +37,7 @@ module Bosh::Director
 
       context 'when there are packages without sha and blobstore' do
         let(:invalid_package) { FactoryBot.create(:models_package, sha1: nil, blobstore_id: nil) }
-        let(:valid_package) { Models::Package.make }
+        let(:valid_package) { FactoryBot.create(:models_package) }
 
         before do
           release_version_model.add_package(invalid_package)
@@ -81,7 +81,7 @@ module Bosh::Director
         end
 
         context 'when packages are not compiled' do
-          let(:package) { Models::Package.make }
+          let(:package) { FactoryBot.create(:models_package) }
 
           it 'creates a fault' do
             release_version_model.add_package(package)

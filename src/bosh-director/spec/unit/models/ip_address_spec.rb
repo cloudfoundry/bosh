@@ -15,7 +15,7 @@ module Bosh::Director::Models
     end
     let(:instance) {Instance.make(job: 'foojob', index: 1, deployment: deployment)}
     let(:vm) { Vm.make(instance: instance) }
-    let(:deployment) {Deployment.make(name: 'foodeployment')}
+    let(:deployment) {FactoryBot.create(:models_deployment, name: 'foodeployment')}
 
     context '#info' do
       it 'should display debugging information (job, index, network name and ip address)' do

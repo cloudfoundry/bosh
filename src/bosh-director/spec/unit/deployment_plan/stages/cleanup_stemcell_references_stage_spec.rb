@@ -5,10 +5,10 @@ module Bosh::Director
     describe CleanupStemcellReferencesStage do
       subject { CleanupStemcellReferencesStage.new(deployment_planner) }
 
-      let!(:stemcell_model) { Bosh::Director::Models::Stemcell.make }
-      let(:unused_stemcell) { Bosh::Director::Models::Stemcell.make }
-      let(:unused_stemcell2) { Bosh::Director::Models::Stemcell.make }
-      let(:unused_stemcell3) { Bosh::Director::Models::Stemcell.make }
+      let!(:stemcell_model) { FactoryBot.create(:models_stemcell) }
+      let(:unused_stemcell) { FactoryBot.create(:models_stemcell) }
+      let(:unused_stemcell2) { FactoryBot.create(:models_stemcell) }
+      let(:unused_stemcell3) { FactoryBot.create(:models_stemcell) }
 
       let(:deployment_model) { FactoryBot.create(:models_deployment) }
       let(:deployment_planner) { instance_double(DeploymentPlan::Planner) }
