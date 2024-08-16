@@ -36,10 +36,10 @@ module Bosh::Director
         let(:lock_uid) { SecureRandom.uuid }
 
         before do
-          Models::Lock.make(name: 'lock:deployment:test-deployment', expired_at: lock_timeout, task_id: '1')
-          Models::Lock.make(name: 'lock:stemcells:test-stemcell', expired_at: lock_timeout, task_id: '2')
-          Models::Lock.make(name: 'lock:release:test-release', expired_at: lock_timeout, task_id: '3')
-          Models::Lock.make(name: 'lock:compile:test-package:test-stemcell', expired_at: lock_timeout, task_id: '4')
+          FactoryBot.create(:models_lock, name: 'lock:deployment:test-deployment', expired_at: lock_timeout, task_id: '1')
+          FactoryBot.create(:models_lock, name: 'lock:stemcells:test-stemcell', expired_at: lock_timeout, task_id: '2')
+          FactoryBot.create(:models_lock, name: 'lock:release:test-release', expired_at: lock_timeout, task_id: '3')
+          FactoryBot.create(:models_lock, name: 'lock:compile:test-package:test-stemcell', expired_at: lock_timeout, task_id: '4')
         end
 
         it 'should list the current locks' do
@@ -61,10 +61,10 @@ module Bosh::Director
         let(:lock_uid) { SecureRandom.uuid }
 
         before do
-          Models::Lock.make(name: 'lock:deployment:test-deployment', expired_at: Time.now - 1.day, task_id: '1')
-          Models::Lock.make(name: 'lock:stemcells:test-stemcell', expired_at: Time.now - 1.second, task_id: '2')
-          Models::Lock.make(name: 'lock:release:test-release', expired_at: Time.now - 1.minute, task_id: '3')
-          Models::Lock.make(name: 'lock:compile:test-package:test-stemcell', expired_at: Time.now - 2.minutes, task_id: '4')
+          FactoryBot.create(:models_lock, name: 'lock:deployment:test-deployment', expired_at: Time.now - 1.day, task_id: '1')
+          FactoryBot.create(:models_lock, name: 'lock:stemcells:test-stemcell', expired_at: Time.now - 1.second, task_id: '2')
+          FactoryBot.create(:models_lock, name: 'lock:release:test-release', expired_at: Time.now - 1.minute, task_id: '3')
+          FactoryBot.create(:models_lock, name: 'lock:compile:test-package:test-stemcell', expired_at: Time.now - 2.minutes, task_id: '4')
         end
 
         it 'should delete all locks that have expired more than a minute ago from the database' do

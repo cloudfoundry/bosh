@@ -41,7 +41,7 @@ module Bosh::Director
           let(:agent) { instance_double('Bosh::Director::AgentClient', fetch_logs: {'blobstore_id' => 'new-fake-blobstore-id'}) }
 
           it 'cleans old log bundles' do
-            old_log_bundle = Models::LogBundle.make(timestamp: Time.now - 12*24*60*60, blobstore_id: 'previous-fake-blobstore-id') # 12 days
+            old_log_bundle = FactoryBot.create(:models_log_bundle, timestamp: Time.now - 12*24*60*60, blobstore_id: 'previous-fake-blobstore-id') # 12 days
             expect(blobstore).to receive(:delete).with('previous-fake-blobstore-id')
 
             fetch_logs.perform
@@ -51,7 +51,7 @@ module Bosh::Director
 
           context 'when deleting blob from blobstore fails' do
             it 'cleans the old log bundle if it was not found in the blobstore' do
-              old_log_bundle = Models::LogBundle.make(timestamp: Time.now - 12*24*60*60, blobstore_id: 'previous-fake-blobstore-id') # 12 days
+              old_log_bundle = FactoryBot.create(:models_log_bundle, timestamp: Time.now - 12*24*60*60, blobstore_id: 'previous-fake-blobstore-id') # 12 days
               expect(blobstore).to receive(:delete).with('previous-fake-blobstore-id').and_raise(Bosh::Blobstore::NotFound)
 
               fetch_logs.perform
@@ -60,7 +60,7 @@ module Bosh::Director
             end
 
             it 'does not clean the old log bundle if any other error is returned' do
-              old_log_bundle = Models::LogBundle.make(timestamp: Time.now - 12*24*60*60, blobstore_id: 'previous-fake-blobstore-id') # 12 days
+              old_log_bundle = FactoryBot.create(:models_log_bundle, timestamp: Time.now - 12*24*60*60, blobstore_id: 'previous-fake-blobstore-id') # 12 days
               expect(blobstore).to receive(:delete).with('previous-fake-blobstore-id').and_raise(Bosh::Blobstore::NotImplemented)
 
               fetch_logs.perform

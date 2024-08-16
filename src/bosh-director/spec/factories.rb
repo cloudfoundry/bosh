@@ -102,6 +102,17 @@ FactoryBot.define do
     sequence(:value) { |i| "director-uuid-#{i}" }
   end
 
+  factory :models_log_bundle, class: Bosh::Director::Models::LogBundle do
+    sequence(:blobstore_id) { |i| "log-bundle-blobstore-id-#{i}" }
+    timestamp { Time.now }
+  end
+
+  factory :models_lock, class: Bosh::Director::Models::Lock do
+    sequence(:name) { |i| "lock-#{i}" }
+    sequence(:uid) { |i| "lock-uid-#{i}" }
+    expired_at { Time.now }
+  end
+
   factory :models_network, class: Bosh::Director::Models::Network do
     sequence(:name) { |i| "network-#{i}" }
     type { 'manual' }
