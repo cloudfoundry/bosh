@@ -140,6 +140,17 @@ FactoryBot.define do
     sequence(:version) { |i| "stemcell-upload-v#{i}" }
   end
 
+  factory :models_subnet, class: Bosh::Director::Models::Subnet do
+    sequence(:name) { |i| "subnet-#{i}" }
+    sequence(:cid) { |i| "subnet-cid-#{i}" }
+    range { '192.168.10.0/24' }
+    gateway { '192.168.10.1' }
+    reserved { '[]' }
+    cloud_properties { '{}' }
+    cpi { '' }
+    association :network, factory: :models_network, strategy: :create
+  end
+
   factory :models_task, class: Bosh::Director::Models::Task do
     state { 'queued' }
     timestamp { Time.now }

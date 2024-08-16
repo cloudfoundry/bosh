@@ -110,7 +110,7 @@ module Bosh::Director
       end
 
       let(:subnet_1) do
-        Models::Subnet.make(
+        FactoryBot.create(:models_subnet,
           cid: '12345',
           name: 'subnet-1',
           range: '192.168.10.0/24',
@@ -121,7 +121,7 @@ module Bosh::Director
       end
 
       let(:subnet_2) do
-        Models::Subnet.make(
+        FactoryBot.create(:models_subnet,
           cid: '67890',
           name: 'subnet-2',
           range: '192.168.20.0/24',
