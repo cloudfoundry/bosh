@@ -72,14 +72,6 @@ module Bosh::Director
         expect(result.runtime_config_hash).to eq('my_runtime' => 'foo_value')
       end
 
-      it 'ignores cloud config when ignore_cloud_config is true' do
-        result = Manifest.load_from_model(deployment_model, ignore_cloud_config: true)
-        expect(result.manifest_hash).to eq('name' => 'a_deployment', 'name-1' => 'my-name-1')
-        expect(result.manifest_text).to eq(manifest_text)
-        expect(result.cloud_config_hash).to eq(nil)
-        expect(result.runtime_config_hash).to eq('my_runtime' => 'foo_value')
-      end
-
       context 'when empty manifests exist' do
         before do
           allow(deployment_model).to receive(:manifest).and_return(nil)
@@ -87,18 +79,10 @@ module Bosh::Director
           allow(deployment_model).to receive(:cloud_configs).and_return([cloud_config])
           allow(deployment_model).to receive(:runtime_configs).and_return([])
           allow(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator).to receive(:new).with([]).and_return(consolidated_runtime_config)
-          args = []
+
           allow(consolidated_runtime_config).to receive(:raw_manifest).and_return({})
           allow(consolidated_runtime_config).to receive(:interpolate_manifest_for_deployment).and_return({})
           allow(variables_interpolator).to receive(:interpolate_deployment_manifest).and_return({})
-        end
-
-        it 'creates a manifest object from a manifest, a cloud config, and a runtime config correctly' do
-          result =  Manifest.load_from_model(deployment_model, ignore_cloud_config: false)
-          expect(result.manifest_hash).to eq({})
-          expect(result.manifest_text).to eq('{}')
-          expect(result.cloud_config_hash).to eq(cloud_config.raw_manifest)
-          expect(result.runtime_config_hash).to eq({})
         end
       end
 
@@ -164,13 +148,6 @@ module Bosh::Director
         expect(
           Manifest.load_from_hash(manifest_hash, manifest_text, [cloud_config], runtime_configs).to_yaml,
         ).to eq(manifest_object.to_yaml)
-      end
-
-      it 'ignores cloud config when ignore_cloud_config is true' do
-        result = Manifest.load_from_hash(manifest_hash, YAML.dump(manifest_hash), [cloud_config], runtime_configs, ignore_cloud_config: true)
-        expect(result.manifest_hash).to eq({})
-        expect(result.cloud_config_hash).to eq(nil)
-        expect(result.runtime_config_hash).to eq(runtime_config_hash)
       end
 
       context 'when resolving manifest' do
