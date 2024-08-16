@@ -1933,7 +1933,7 @@ module Bosh::Director::DeploymentPlan
 
         describe 'when the local dns record has changed' do
           before do
-            Bosh::Director::Models::LocalDnsRecord.make(instance_id: instance_model.id, ip: 'dummy-ip')
+            FactoryBot.create(:models_local_dns_record, instance_id: instance_model.id, ip: 'dummy-ip')
             allow(Bosh::Director::Config).to receive(:local_dns_enabled?).and_return(true)
             allow(logger).to receive(:debug)
           end

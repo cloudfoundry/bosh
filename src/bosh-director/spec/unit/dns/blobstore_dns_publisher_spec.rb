@@ -51,9 +51,9 @@ module Bosh::Director
     let(:instance1) { Models::Instance.make(uuid: 'uuid1', index: 1) }
 
     before do
-      Models::LocalDnsEncodedNetwork.make(id: 1, name: 'net-name1')
-      Models::LocalDnsEncodedNetwork.make(id: 2, name: 'net-name2')
-      Models::LocalDnsEncodedNetwork.make(id: 3, name: 'net-name3')
+      FactoryBot.create(:models_local_dns_encoded_network, id: 1, name: 'net-name1')
+      FactoryBot.create(:models_local_dns_encoded_network, id: 2, name: 'net-name2')
+      FactoryBot.create(:models_local_dns_encoded_network, id: 3, name: 'net-name3')
       allow(Config).to receive(:root_domain).and_return(domain_name)
       allow(Config).to receive(:local_dns_include_index?).and_return(false)
       allow(agent_broadcaster).to receive(:sync_dns)
@@ -62,7 +62,7 @@ module Bosh::Director
     end
 
     describe 'publish and broadcast' do
-      let!(:original_local_dns_blob) { Models::LocalDnsBlob.make }
+      let!(:original_local_dns_blob) { FactoryBot.create(:models_local_dns_blob) }
 
       let(:instance2) do
         Models::Instance.make(
@@ -72,7 +72,7 @@ module Bosh::Director
       end
 
       before do
-        Bosh::Director::Models::LocalDnsRecord.make(
+        FactoryBot.create(:models_local_dns_record,
           instance_id: instance1.id,
           ip: '192.0.2.101',
           deployment: 'test-deployment',
@@ -83,7 +83,7 @@ module Bosh::Director
           domain: 'fake-domain-name',
         )
 
-        Bosh::Director::Models::LocalDnsRecord.make(
+        FactoryBot.create(:models_local_dns_record,
           instance_id: instance1.id,
           ip: '192.0.3.101',
           deployment: 'test-deployment',
@@ -94,7 +94,7 @@ module Bosh::Director
           domain: 'fake-domain-name',
         )
 
-        Bosh::Director::Models::LocalDnsRecord.make(
+        FactoryBot.create(:models_local_dns_record,
           instance_id: instance2.id,
           ip: '192.0.2.102',
           deployment: 'test-deployment',
@@ -106,7 +106,7 @@ module Bosh::Director
           links: [{ name: 'link-1' }],
         )
 
-        Bosh::Director::Models::LocalDnsRecord.make(instance_id: nil, ip: 'tombstone')
+        FactoryBot.create(:models_local_dns_record, instance_id: nil, ip: 'tombstone')
       end
 
       context 'when local_dns is not enabled' do
@@ -260,7 +260,7 @@ module Bosh::Director
           end
 
           before do
-            Bosh::Director::Models::LocalDnsRecord.make(
+            FactoryBot.create(:models_local_dns_record,
               instance_id: instance3.id,
               ip: '192.0.2.104',
               deployment: 'test-deployment',
@@ -527,7 +527,7 @@ module Bosh::Director
     end
 
     describe 'publish_and_send_to_instance' do
-      let!(:original_local_dns_blob) { Models::LocalDnsBlob.make }
+      let!(:original_local_dns_blob) { FactoryBot.create(:models_local_dns_blob) }
 
       let(:instance2) do
         Models::Instance.make(
@@ -537,7 +537,7 @@ module Bosh::Director
       end
 
       before do
-        Bosh::Director::Models::LocalDnsRecord.make(
+        FactoryBot.create(:models_local_dns_record,
           instance_id: instance1.id,
           ip: '192.0.2.101',
           deployment: 'test-deployment',
@@ -548,7 +548,7 @@ module Bosh::Director
           domain: 'fake-domain-name',
         )
 
-        Bosh::Director::Models::LocalDnsRecord.make(
+        FactoryBot.create(:models_local_dns_record,
           instance_id: instance1.id,
           ip: '192.0.3.101',
           deployment: 'test-deployment',
@@ -559,7 +559,7 @@ module Bosh::Director
           domain: 'fake-domain-name',
         )
 
-        Bosh::Director::Models::LocalDnsRecord.make(
+        FactoryBot.create(:models_local_dns_record,
           instance_id: instance2.id,
           ip: '192.0.2.102',
           deployment: 'test-deployment',
@@ -571,7 +571,7 @@ module Bosh::Director
           links: [{ name: 'link-1' }],
         )
 
-        Bosh::Director::Models::LocalDnsRecord.make(instance_id: nil, ip: 'tombstone')
+        FactoryBot.create(:models_local_dns_record, instance_id: nil, ip: 'tombstone')
       end
 
       context 'when local_dns is not enabled' do

@@ -20,25 +20,25 @@ module Bosh::Director
 
       describe '/:name' do
         before do
-          Models::Variable.make(
+          FactoryBot.create(:models_variable,
             id: 1,
             variable_id: 'var_id_1',
             variable_name: '/Test Director/test_deployment/var_name_1',
             variable_set_id: deployment_1_variable_set.id,
           )
-          Models::Variable.make(
+          FactoryBot.create(:models_variable,
             id: 2,
             variable_id: 'var_id_2',
             variable_name: '/Test Director/test_deployment/var_name_2',
             variable_set_id: deployment_1_variable_set.id,
           )
-          Models::Variable.make(
+          FactoryBot.create(:models_variable,
             id: 3,
             variable_id: 'var_id_1',
             variable_name: '/Test Director/test_deployment/var_name_1',
             variable_set_id: deployment_2_variable_set.id,
           )
-          Models::Variable.make(
+          FactoryBot.create(:models_variable,
             id: 5,
             variable_id: 'var_id_3',
             variable_name: '/Test Director/test_deployment/var_name_3',

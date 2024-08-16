@@ -12,7 +12,7 @@ module Bosh::Director
     let(:num_dns_blobs_to_keep) { 0 }
     let(:max_blob_age) { 10 }
     let(:task) { FactoryBot.create(:models_task, id: 42) }
-    let!(:old_dns_blob) { Models::LocalDnsBlob.make(created_at: Time.now - oldest_dns_blob_age) }
+    let!(:old_dns_blob) { FactoryBot.create(:models_local_dns_blob, created_at: Time.now - oldest_dns_blob_age) }
     let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
     let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
     let(:oldest_dns_blob_age) { 5 }
@@ -90,7 +90,7 @@ module Bosh::Director
 
       context 'when deleting all old blobs would reduce number of blobs to less than num_dns_blobs_to_keep' do
         let(:oldest_dns_blob_age) { max_blob_age + 2 }
-        let!(:recent_blob) { Models::LocalDnsBlob.make(created_at: Time.now - (oldest_dns_blob_age - 1)) }
+        let!(:recent_blob) { FactoryBot.create(:models_local_dns_blob, created_at: Time.now - (oldest_dns_blob_age - 1)) }
         let(:num_dns_blobs_to_keep) { 1 }
 
         it 'only deletes oldest blobs until num_dns_blobs_to_keep remain' do

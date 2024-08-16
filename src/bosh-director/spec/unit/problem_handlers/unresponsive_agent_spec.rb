@@ -76,7 +76,7 @@ module Bosh::Director
       allow(deployment_model).to receive(:last_successful_variable_set).and_return(variable_set)
     end
 
-    let!(:local_dns_blob) { Models::LocalDnsBlob.make }
+    let!(:local_dns_blob) { FactoryBot.create(:models_local_dns_blob) }
     let(:event_manager) { Bosh::Director::Api::EventManager.new(true) }
     let(:job) { instance_double(Bosh::Director::Jobs::BaseJob, username: 'user', task_id: 42, event_manager: event_manager) }
 

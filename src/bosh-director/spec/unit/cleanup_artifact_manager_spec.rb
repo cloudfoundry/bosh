@@ -25,7 +25,7 @@ module Bosh::Director
         FactoryBot.create(:models_orphan_disk, disk_cid: 'fake-cid-2')
         FactoryBot.create(:models_orphaned_vm, deployment_name: 'dep1', orphaned_at: time, availability_zone: 'az1', instance_name: 'sad-vm', cid: 'vm-cid-1')
         dns_blob = Bosh::Director::Models::Blob.new(blobstore_id: 'dns_blob1', sha1: 'smurf3', type: 'dns').save
-        Models::LocalDnsBlob.make(created_at: Time.now - 100, blob: dns_blob)
+        FactoryBot.create(:models_local_dns_blob, created_at: Time.now - 100, blob: dns_blob)
 
         blobstore = instance_double(Bosh::Blobstore::BaseClient, delete: nil)
         allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)

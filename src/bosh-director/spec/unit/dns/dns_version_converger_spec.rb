@@ -11,13 +11,13 @@ module Bosh::Director
     let(:blob_sha1) { ::Digest::SHA1.hexdigest('dns-records') }
     let(:logger) { double(Logger)}
     let(:blob) do
-      Models::Blob.make(
+      FactoryBot.create(:models_blob,
         blobstore_id: 'blob-id',
         sha1: blob_sha1,
       )
     end
     let!(:local_dns_blob) do
-      Models::LocalDnsBlob.make(
+      FactoryBot.create(:models_local_dns_blob,
         blob: blob,
         version: 2,
         created_at: Time.new)

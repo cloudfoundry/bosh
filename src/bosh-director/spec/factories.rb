@@ -73,8 +73,16 @@ FactoryBot.define do
       )
     end
   end
+end
 
+FactoryBot.define do
   to_create { |instance| instance.save(raise_on_failure: true) }
+
+  factory :models_blob, class: Bosh::Director::Models::Blob do
+    sequence(:blobstore_id) { |i| "blob-blobstore-id-#{i}" }
+    sequence(:sha1) { |i| "blob-sha1-#{i}" }
+    created_at { Time.now }
+  end
 
   factory :models_compiled_package, class: Bosh::Director::Models::CompiledPackage do
     sequence(:build) { |i| "compiled-package-build-#{i}" }
@@ -105,16 +113,31 @@ FactoryBot.define do
   factory :models_errand_run, class: Bosh::Director::Models::ErrandRun
 
   factory :models_event, class: Bosh::Director::Models::Event do
-    action      { 'create' }
+    action { 'create' }
     object_type { 'deployment' }
     sequence(:object_name) { |i| "event-object-name-#{i}" }
     sequence(:user) { |i| "event-user-#{i}" }
-    timestamp   { Time.now }
+    timestamp { Time.now }
   end
 
   factory :models_log_bundle, class: Bosh::Director::Models::LogBundle do
     sequence(:blobstore_id) { |i| "log-bundle-blobstore-id-#{i}" }
     timestamp { Time.now }
+  end
+
+  factory :models_local_dns_blob, class: Bosh::Director::Models::LocalDnsBlob do
+    version { 1 }
+    created_at { Time.now }
+    association :blob, factory: :models_blob, strategy: :create
+  end
+
+  factory :models_local_dns_encoded_network, class: Bosh::Director::Models::LocalDnsEncodedNetwork do
+    sequence(:name) { |i| "local-dns-encoded-network-#{i}" }
+  end
+
+  factory :models_local_dns_record, class: Bosh::Director::Models::LocalDnsRecord do
+    sequence(:ip) { |i| "#{i % 255}.#{i % 255}.#{i % 255}.#{i % 255}" }
+    sequence(:instance_id) { |i| "local-dns-record-instance-id-#{i}" }
   end
 
   factory :models_lock, class: Bosh::Director::Models::Lock do
@@ -203,6 +226,8 @@ FactoryBot.define do
   factory :models_team, class: Bosh::Director::Models::Team do
     sequence(:name) { |i| "team-#{i}" }
   end
+
+  factory :models_variable, class: Bosh::Director::Models::Variable
 
   factory :models_variable_set, class: Bosh::Director::Models::VariableSet do
     writable { false }

@@ -255,8 +255,8 @@ module Bosh::Director
         end
 
         context 'when there is at least one deployment' do
-          let!(:blob1) { Bosh::Director::Models::LocalDnsBlob.make(created_at: Time.now - 4000) }
-          let!(:most_recent_blob) { Bosh::Director::Models::LocalDnsBlob.make(created_at: Time.now - 1) }
+          let!(:blob1) { FactoryBot.create(:models_local_dns_blob, created_at: Time.now - 4000) }
+          let!(:most_recent_blob) { FactoryBot.create(:models_local_dns_blob, created_at: Time.now - 1) }
 
           before do
             FactoryBot.create(:models_deployment)
@@ -273,8 +273,8 @@ module Bosh::Director
 
         context 'when there are no deployments' do
           before do
-            blob1 = Bosh::Director::Models::LocalDnsBlob.make(created_at: Time.now - 4000)
-            blob2 = Bosh::Director::Models::LocalDnsBlob.make(created_at: Time.now - 1)
+            blob1 = FactoryBot.create(:models_local_dns_blob, created_at: Time.now - 4000)
+            blob2 = FactoryBot.create(:models_local_dns_blob, created_at: Time.now - 1)
 
             allow(blobstore).to receive(:delete).with(blob1.blob.blobstore_id)
             allow(blobstore).to receive(:delete).with(blob2.blob.blobstore_id)
@@ -417,10 +417,10 @@ module Bosh::Director
         end
 
         context 'when there are dns blobs' do
-          let!(:old_dns_blob) { Bosh::Director::Models::LocalDnsBlob.make(created_at: Time.now - 4000) }
+          let!(:old_dns_blob) { FactoryBot.create(:models_local_dns_blob, created_at: Time.now - 4000) }
           let!(:recent_dns_blobs) do
             recent_blobs = []
-            10.times { recent_blobs << Bosh::Director::Models::LocalDnsBlob.make(created_at: Time.now) }
+            10.times { recent_blobs << FactoryBot.create(:models_local_dns_blob, created_at: Time.now) }
             recent_blobs
           end
 

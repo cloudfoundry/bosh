@@ -2139,7 +2139,7 @@ module Bosh::Director::ConfigServer
             end
 
             before do
-              Bosh::Director::Models::LocalDnsEncodedNetwork.make(name: 'net-a')
+              FactoryBot.create(:models_local_dns_encoded_network, name: 'net-a')
               Bosh::Director::Models::Links::Link.create(
                 name: 'foo',
                 link_provider_intent: Bosh::Director::Models::Links::LinkProviderIntent.make(name: 'foo', type: 'something'),
@@ -2192,7 +2192,7 @@ module Bosh::Director::ConfigServer
               )
             end
             let!(:on_stemcell_change_variable) do
-              Bosh::Director::Models::Variable.make(
+              FactoryBot.create(:models_variable,
                 variable_id: 'some_id99',
                 variable_name: '/smurf_director_name/deployment_name/placeholder_b',
                 variable_set: previous_variable_set,

@@ -77,7 +77,7 @@ module Bosh::Director
 
     let(:ip_provider) { instance_double(Bosh::Director::DeploymentPlan::IpProvider) }
     let(:planner_factory) { instance_double(Bosh::Director::DeploymentPlan::PlannerFactory) }
-    let!(:local_dns_blob) { Models::LocalDnsBlob.make }
+    let!(:local_dns_blob) { FactoryBot.create(:models_local_dns_blob) }
 
     before do
       allow(AgentClient).to receive(:with_agent_id).with(instance.agent_id, instance.name, anything).and_return(agent_client)
