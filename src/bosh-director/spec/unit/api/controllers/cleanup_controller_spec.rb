@@ -24,7 +24,7 @@ module Bosh::Director
 
       context 'when asking to see artfacts that will be cleaned' do
         before :each do
-          Models::OrphanDisk.make(disk_cid: 'fake-cid-2')
+          FactoryBot.create(:models_orphan_disk, disk_cid: 'fake-cid-2')
         end
         context 'without specifying remove all' do
           it 'returns json hiding some elements' do

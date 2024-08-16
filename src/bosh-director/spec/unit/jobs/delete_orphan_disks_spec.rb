@@ -33,8 +33,8 @@ module Bosh::Director
       let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
 
       before do
-        Bosh::Director::Models::OrphanDisk.make(disk_cid: 'fake-cid-1')
-        Bosh::Director::Models::OrphanDisk.make(disk_cid: 'fake-cid-2')
+        FactoryBot.create(:models_orphan_disk, disk_cid: 'fake-cid-1')
+        FactoryBot.create(:models_orphan_disk, disk_cid: 'fake-cid-2')
 
         allow(Config).to receive(:event_log).and_return(event_log)
         allow(event_log).to receive(:begin_stage).and_return(event_log_stage)

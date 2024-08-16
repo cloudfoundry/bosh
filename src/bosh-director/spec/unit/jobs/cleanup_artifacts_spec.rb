@@ -118,8 +118,8 @@ module Bosh::Director
 
         context 'when there are orphaned disks' do
           before do
-            Models::OrphanDisk.make(disk_cid: 'fake-cid-1')
-            Models::OrphanDisk.make(disk_cid: 'fake-cid-2')
+            FactoryBot.create(:models_orphan_disk, disk_cid: 'fake-cid-1')
+            FactoryBot.create(:models_orphan_disk, disk_cid: 'fake-cid-2')
             allow(blobstore).to receive(:delete).with('package_blob_id_1')
             allow(event_log).to receive(:begin_stage).and_return(stage)
           end
@@ -144,8 +144,8 @@ module Bosh::Director
         end
 
         context 'when there are orphaned vms' do
-          let(:orphaned_vm_1) { Models::OrphanedVm.make(cid: 'fake-cid-1') }
-          let(:orphaned_vm_2) { Models::OrphanedVm.make(cid: 'fake-cid-2') }
+          let(:orphaned_vm_1) { FactoryBot.create(:models_orphaned_vm, cid: 'fake-cid-1') }
+          let(:orphaned_vm_2) { FactoryBot.create(:models_orphaned_vm, cid: 'fake-cid-2') }
           before do
             allow(event_log).to receive(:begin_stage).and_return(stage)
           end
@@ -450,8 +450,8 @@ module Bosh::Director
         end
 
         before do
-          Models::OrphanDisk.make(disk_cid: 'fake-cid-1')
-          Models::OrphanDisk.make(disk_cid: 'fake-cid-2')
+          FactoryBot.create(:models_orphan_disk, disk_cid: 'fake-cid-1')
+          FactoryBot.create(:models_orphan_disk, disk_cid: 'fake-cid-2')
           expect(blobstore).to receive(:delete).with('compiled-package-1')
         end
 
@@ -471,7 +471,7 @@ module Bosh::Director
 
         before do
           allow(blobstore).to receive(:delete).and_raise('nope')
-          Models::OrphanDisk.make(disk_cid: 'fake-cid-1')
+          FactoryBot.create(:models_orphan_disk, disk_cid: 'fake-cid-1')
           Models::Blob.new(type: 'exported-release', blobstore_id: 'ephemeral_blob_id_1', sha1: 'smurf1').save
         end
 

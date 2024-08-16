@@ -128,6 +128,26 @@ FactoryBot.define do
     association :release, factory: :models_release, strategy: :create
   end
 
+  factory :models_orphaned_vm, class: Bosh::Director::Models::OrphanedVm do
+    sequence(:cid) { |i| "orphaned-vm-cid-#{i}" }
+    sequence(:deployment_name) { |i| "orphaned-vm-deployment-name-#{i}" }
+    sequence(:instance_name) { |i| "orphaned-vm-instance-name-#{i}" }
+    sequence(:availability_zone) { |i| "orphaned-vm-availability-zone-#{i}" }
+    orphaned_at { Time.now }
+  end
+
+  factory :models_orphan_disk, class: Bosh::Director::Models::OrphanDisk do
+    sequence(:deployment_name) { |i| "orphan-disk-deployment-name-#{i}" }
+    sequence(:disk_cid) { |i| "orphan-disk-disk-cid-#{i}" }
+    sequence(:instance_name) { |i| "orphan-disk-instance-name-#{i}" }
+  end
+
+  factory :models_orphan_snapshot, class: Bosh::Director::Models::OrphanSnapshot do
+    sequence(:snapshot_cid) { |i| "orphan-snapshot-cid-#{i}" }
+    snapshot_created_at { Time.now }
+    association :orphan_disk, factory: :models_orphan_disk, strategy: :create
+  end
+
   factory :models_stemcell, class: Bosh::Director::Models::Stemcell do
     sequence(:name) { |i| "stemcell-#{i}" }
     sequence(:version) { |i| "stemcell-v#{i}" }

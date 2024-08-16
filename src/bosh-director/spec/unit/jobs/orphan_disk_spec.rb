@@ -58,8 +58,8 @@ module Bosh::Director
       it 'should raise error' do
         persistent_disk = Models::PersistentDisk.make(disk_cid: 'disk_cid', cloud_properties: {'cloud' => 'properties'}, size: 2048, active: true)
 
-        conflicting_orphan_disk = Models::OrphanDisk.make
-        conflicting_orphan_snapshot = Models::OrphanSnapshot.make(
+        conflicting_orphan_disk = FactoryBot.create(:models_orphan_disk)
+        conflicting_orphan_snapshot = FactoryBot.create(:models_orphan_snapshot,
           orphan_disk: conflicting_orphan_disk,
           snapshot_cid: 'existing_cid',
           snapshot_created_at: Time.now

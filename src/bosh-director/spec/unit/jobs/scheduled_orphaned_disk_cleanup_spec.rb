@@ -15,8 +15,8 @@ module Bosh::Director
     let(:one_day_seconds) { 24 * 60 * 60 }
     let(:one_day_one_second_ago) { time - one_day_seconds - 1 }
     let(:less_than_one_day_ago) { time - one_day_seconds + 1 }
-    let!(:orphan_disk_1) { Models::OrphanDisk.make(disk_cid: 'disk-cid-1', created_at: one_day_one_second_ago) }
-    let!(:orphan_disk_2) { Models::OrphanDisk.make(disk_cid: 'disk-cid-2', created_at: less_than_one_day_ago) }
+    let!(:orphan_disk_1) { FactoryBot.create(:models_orphan_disk, disk_cid: 'disk-cid-1', created_at: one_day_one_second_ago) }
+    let!(:orphan_disk_2) { FactoryBot.create(:models_orphan_disk, disk_cid: 'disk-cid-2', created_at: less_than_one_day_ago) }
     let(:task) { FactoryBot.create(:models_task, id: 42) }
     let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
     let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
@@ -78,7 +78,7 @@ module Bosh::Director
         end
 
         context 'and multiple orphan disks' do
-          let(:orphan_disk_2) { Models::OrphanDisk.make(disk_cid: 'disk-cid-2', created_at: one_day_one_second_ago) }
+          let(:orphan_disk_2) { FactoryBot.create(:models_orphan_disk, disk_cid: 'disk-cid-2', created_at: one_day_one_second_ago) }
 
           it 'cleans all disks and raises the error thrown by the CPI' do
             allow(orphan_disk_manager)

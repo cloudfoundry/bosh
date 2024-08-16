@@ -58,8 +58,8 @@ module Bosh::Director
       end
 
       it 'should transactionally move orphan disks and snapshots' do
-        conflicting_orphan_disk = Models::OrphanDisk.make
-        conflicting_orphan_snapshot = Models::OrphanSnapshot.make(
+        conflicting_orphan_disk = FactoryBot.create(:models_orphan_disk)
+        conflicting_orphan_snapshot = FactoryBot.create(:models_orphan_snapshot,
           orphan_disk: conflicting_orphan_disk,
           snapshot_cid: 'existing_cid',
           snapshot_created_at: Time.now,
@@ -113,7 +113,7 @@ module Bosh::Director
     describe '#unorphan_disk' do
       let(:instance) { Models::Instance.make(id: 123, availability_zone: 'az1') }
       let(:orphan_disk) do
-        Models::OrphanDisk.make(
+        FactoryBot.create(:models_orphan_disk,
           disk_cid: 'disk456',
           size: 2048,
           availability_zone: 'az1',
@@ -123,7 +123,7 @@ module Bosh::Director
       end
 
       it 'unorphans disks and snapshots' do
-        snapshot = Models::OrphanSnapshot.make(orphan_disk: orphan_disk)
+        snapshot = FactoryBot.create(:models_orphan_snapshot, orphan_disk: orphan_disk)
 
         returned_disk = disk_manager.unorphan_disk(orphan_disk, instance.id)
         persistent_disk = Models::PersistentDisk.first
@@ -145,14 +145,14 @@ module Bosh::Director
       it 'returns an array of orphaned disks as hashes' do
         orphaned_at = Time.now.utc
         other_orphaned_at = Time.now.utc
-        Models::OrphanDisk.make(
+        FactoryBot.create(:models_orphan_disk,
           disk_cid: 'random-disk-cid-1',
           instance_name: 'fake-name-1',
           size: 10,
           deployment_name: 'fake-deployment',
           created_at: orphaned_at,
         )
-        Models::OrphanDisk.make(
+        FactoryBot.create(:models_orphan_disk,
           disk_cid: 'random-disk-cid-2',
           instance_name: 'fake-name-2',
           availability_zone: 'az2',
@@ -197,26 +197,26 @@ module Bosh::Director
       let(:stage) { instance_double(EventLog::Stage) }
 
       let(:orphan_disk_1) do
-        Models::OrphanDisk.make(disk_cid: 'disk-cid-1', created_at: ten_seconds_ago, availability_zone: 'az1')
+        FactoryBot.create(:models_orphan_disk, disk_cid: 'disk-cid-1', created_at: ten_seconds_ago, availability_zone: 'az1')
       end
 
       let(:orphan_disk_2) do
-        Models::OrphanDisk.make(disk_cid: 'disk-cid-2', created_at: five_seconds_ago, availability_zone: 'az2')
+        FactoryBot.create(:models_orphan_disk, disk_cid: 'disk-cid-2', created_at: five_seconds_ago, availability_zone: 'az2')
       end
 
       let(:orphan_disk_cid_1) { orphan_disk_1.disk_cid }
       let(:orphan_disk_cid_2) { orphan_disk_2.disk_cid }
 
       let!(:orphan_disk_snapshot_1a) do
-        Models::OrphanSnapshot.make(orphan_disk: orphan_disk_1, created_at: Time.now, snapshot_cid: 'snap-cid-a')
+        FactoryBot.create(:models_orphan_snapshot, orphan_disk: orphan_disk_1, created_at: Time.now, snapshot_cid: 'snap-cid-a')
       end
 
       let!(:orphan_disk_snapshot_1b) do
-        Models::OrphanSnapshot.make(orphan_disk: orphan_disk_1, created_at: Time.now, snapshot_cid: 'snap-cid-b')
+        FactoryBot.create(:models_orphan_snapshot, orphan_disk: orphan_disk_1, created_at: Time.now, snapshot_cid: 'snap-cid-b')
       end
 
       let!(:orphan_disk_snapshot_2) do
-        Models::OrphanSnapshot.make(orphan_disk: orphan_disk_2, created_at: Time.now, snapshot_cid: 'snap-cid-2')
+        FactoryBot.create(:models_orphan_snapshot, orphan_disk: orphan_disk_2, created_at: Time.now, snapshot_cid: 'snap-cid-2')
       end
 
       before do

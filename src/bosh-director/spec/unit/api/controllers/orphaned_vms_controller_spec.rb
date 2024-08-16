@@ -14,8 +14,8 @@ module Bosh::Director
       end
 
       context '/orphaned_vms' do
-        let!(:orphaned_vm1) { Models::OrphanedVm.make }
-        let!(:orphaned_vm2) { Models::OrphanedVm.make }
+        let!(:orphaned_vm1) { FactoryBot.create(:models_orphaned_vm) }
+        let!(:orphaned_vm2) { FactoryBot.create(:models_orphaned_vm) }
 
         before do
           basic_authorize 'admin', 'admin'

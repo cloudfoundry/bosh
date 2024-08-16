@@ -21,9 +21,9 @@ module Bosh::Director
           stemcell_version: stemcell1.version,
           blobstore_id: 'compiled-package-1',
         )
-        Models::OrphanDisk.make(disk_cid: 'fake-cid-1')
-        Models::OrphanDisk.make(disk_cid: 'fake-cid-2')
-        Models::OrphanedVm.make(deployment_name: 'dep1', orphaned_at: time, availability_zone: 'az1', instance_name: 'sad-vm', cid: 'vm-cid-1')
+        FactoryBot.create(:models_orphan_disk, disk_cid: 'fake-cid-1')
+        FactoryBot.create(:models_orphan_disk, disk_cid: 'fake-cid-2')
+        FactoryBot.create(:models_orphaned_vm, deployment_name: 'dep1', orphaned_at: time, availability_zone: 'az1', instance_name: 'sad-vm', cid: 'vm-cid-1')
         dns_blob = Bosh::Director::Models::Blob.new(blobstore_id: 'dns_blob1', sha1: 'smurf3', type: 'dns').save
         Models::LocalDnsBlob.make(created_at: Time.now - 100, blob: dns_blob)
 

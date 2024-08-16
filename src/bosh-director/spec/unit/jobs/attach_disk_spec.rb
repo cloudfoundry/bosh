@@ -164,7 +164,7 @@ module Bosh::Director
           end
 
           let!(:orphan_disk) do
-            Models::OrphanDisk.make(
+            FactoryBot.create(:models_orphan_disk,
                 disk_cid: 'orphan-disk-cid',
                 instance_name: 'fake-instance',
                 availability_zone: 'o-zone',
@@ -180,7 +180,7 @@ module Bosh::Director
           end
 
           let!(:orphan_disk_snapshot) do
-            Models::OrphanSnapshot.make(
+            FactoryBot.create(:models_orphan_snapshot,
                 orphan_disk: orphan_disk,
                 clean: false,
                 snapshot_cid: orphan_disk.disk_cid,
