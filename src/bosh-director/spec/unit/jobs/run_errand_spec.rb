@@ -385,7 +385,7 @@ module Bosh::Director
                   let(:instance_model) { Models::Instance.make }
                   context 'when errand has been run before' do
                     let!(:errand_model) do
-                      Models::ErrandRun.make(
+                      FactoryBot.create(:models_errand_run,
                         deployment: deployment_model,
                         errand_name: errand_name,
                         successful_state_hash: successful_state_hash,

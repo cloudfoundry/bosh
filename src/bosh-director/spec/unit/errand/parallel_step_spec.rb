@@ -74,7 +74,7 @@ module Bosh::Director
 
       context 'when there is a record of previous successful run' do
         let!(:errand_run) do
-          Models::ErrandRun.make(
+          FactoryBot.create(:models_errand_run,
             deployment: deployment_model,
             errand_name: errand_name,
             successful_state_hash: 'someotherstate')
@@ -140,7 +140,7 @@ module Bosh::Director
       context 'when there is a previous run' do
         context 'when the last run hash matches the current hash' do
           before do
-            Models::ErrandRun.make(
+            FactoryBot.create(:models_errand_run,
               deployment: deployment_model,
               errand_name: errand_name,
               successful_state_hash: good_state_hash
@@ -154,7 +154,7 @@ module Bosh::Director
 
         context 'when the last run hash does not match the current hash' do
           before do
-            Models::ErrandRun.make(
+            FactoryBot.create(:models_errand_run,
               deployment: deployment_model,
               errand_name: errand_name,
               successful_state_hash: ::Digest::SHA1.hexdigest('pastramideadbeef')

@@ -102,6 +102,8 @@ FactoryBot.define do
     sequence(:value) { |i| "director-uuid-#{i}" }
   end
 
+  factory :models_errand_run, class: Bosh::Director::Models::ErrandRun
+
   factory :models_event, class: Bosh::Director::Models::Event do
     action      { 'create' }
     object_type { 'deployment' }
