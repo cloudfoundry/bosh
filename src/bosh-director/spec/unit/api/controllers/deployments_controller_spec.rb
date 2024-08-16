@@ -2212,7 +2212,7 @@ module Bosh::Director
               before do
                 authorize 'admin', 'admin'
                 deployment = FactoryBot.create(:models_deployment, name: 'errand')
-                Models::VariableSet.make(deployment_id: deployment.id)
+                FactoryBot.create(:models_variable_set, deployment_id: deployment.id)
                 release = FactoryBot.create(:models_release, name: 'bosh-release')
                 template1 = FactoryBot.create(:models_template, name: 'foobar', release: release)
                 template2 = FactoryBot.create(:models_template, name: 'errand1', release: release)
@@ -2481,7 +2481,7 @@ module Bosh::Director
         describe 'variables' do
           let(:deployment_manifest) { { 'name' => 'test_deployment' } }
           let!(:deployment) { FactoryBot.create(:models_deployment, name: 'test_deployment', manifest: deployment_manifest.to_yaml) }
-          let!(:variable_set) { Models::VariableSet.make(id: 1, deployment: deployment) }
+          let!(:variable_set) { FactoryBot.create(:models_variable_set, id: 1, deployment: deployment) }
 
           before do
             basic_authorize 'admin', 'admin'

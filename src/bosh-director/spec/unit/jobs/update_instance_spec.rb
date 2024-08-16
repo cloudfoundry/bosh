@@ -64,7 +64,7 @@ module Bosh::Director
     end
 
     before do
-      Models::VariableSet.make(deployment: deployment)
+      FactoryBot.create(:models_variable_set, deployment: deployment)
       deployment.add_cloud_config(cloud_config)
       release = FactoryBot.create(:models_release, name: 'bosh-release')
       release_version = FactoryBot.create(:models_release_version, version: '0.1-dev', release: release)

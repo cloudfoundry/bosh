@@ -123,7 +123,7 @@ module Bosh::Director::DeploymentPlan
     before do
       fake_job
 
-      Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
+      FactoryBot.create(:models_variable_set, deployment: deployment_model)
       release = FactoryBot.create(:models_release, name: 'bosh-release')
       template = FactoryBot.create(:models_template, name: 'foobar', release: release)
       release_version = FactoryBot.create(:models_release_version, version: '0.1-dev', release: release)

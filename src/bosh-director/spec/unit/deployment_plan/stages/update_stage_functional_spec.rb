@@ -63,7 +63,7 @@ module Bosh::Director::DeploymentPlan::Stages
       allow(agent_client).to receive(:update_settings)
       allow(agent_client).to receive(:get_state)
 
-      Bosh::Director::Models::VariableSet.make(deployment: deployment)
+      FactoryBot.create(:models_variable_set, deployment: deployment)
       allow(base_job).to receive(:task_id).and_return(task.id)
       allow(Bosh::Director::Config).to receive(:current_job).and_return(base_job)
       allow(Bosh::Director::Config).to receive(:record_events).and_return(true)

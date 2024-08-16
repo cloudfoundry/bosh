@@ -38,7 +38,7 @@ module Bosh::Director::Models
 
     describe '#before_create' do
       it 'should set created_at' do
-        variable_set = VariableSet.make(deployment: deployment)
+        variable_set = FactoryBot.create(:models_variable_set, deployment: deployment)
         expect(variable_set.created_at).to_not be_nil
       end
     end

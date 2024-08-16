@@ -152,6 +152,11 @@ FactoryBot.define do
     sequence(:name) { |i| "team-#{i}" }
   end
 
+  factory :models_variable_set, class: Bosh::Director::Models::VariableSet do
+    writable { false }
+    association :deployment, factory: :models_deployment, strategy: :create
+  end
+
   factory :models_template, class: Bosh::Director::Models::Template do
     sequence(:name) { |i| "template-#{i}" }
     sequence(:version) { |i| "template-v#{i}" }

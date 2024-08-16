@@ -32,7 +32,7 @@ module Bosh::Director::ConfigServer
     end
 
     before do
-      Bosh::Director::Models::VariableSet.make(id: variables_set_id, deployment: deployment_model, writable: true)
+      FactoryBot.create(:models_variable_set, id: variables_set_id, deployment: deployment_model, writable: true)
 
       allow(logger).to receive(:info)
       allow(Bosh::Director::Config).to receive(:current_job).and_return(update_job)
@@ -2184,7 +2184,7 @@ module Bosh::Director::ConfigServer
               ]
             end
             let(:previous_variable_set) do
-              Bosh::Director::Models::VariableSet.make(
+              FactoryBot.create(:models_variable_set,
                 deployment: deployment_model,
                 deployed_successfully: false,
                 writable: false,
@@ -2378,11 +2378,11 @@ module Bosh::Director::ConfigServer
 
     describe '#interpolated_versioned_variables_changed?' do
       let(:previous_variable_set) do
-        Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
+        FactoryBot.create(:models_variable_set, deployment: deployment_model)
       end
 
       let(:next_variable_set) do
-        Bosh::Director::Models::VariableSet.make(deployment: deployment_model, writable: true)
+        FactoryBot.create(:models_variable_set, deployment: deployment_model, writable: true)
       end
 
       let(:tasty_response) do

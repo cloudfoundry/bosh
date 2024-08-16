@@ -9,7 +9,7 @@ module Bosh::Director
       end
       let(:base_job) { Bosh::Director::Jobs::BaseJob.new }
 
-      let!(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+      let!(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
       let(:deployment_model) do
         deployment = FactoryBot.create(:models_deployment, name: 'fake-deployment', manifest: YAML.dump(deployment_manifest))
         deployment.cloud_configs = [cloud_config]

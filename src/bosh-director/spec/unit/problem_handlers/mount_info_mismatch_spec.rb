@@ -17,7 +17,7 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
     @agent = double('agent')
 
     deployment = FactoryBot.create(:models_deployment, name: 'my-deployment', manifest: YAML.dump(manifest))
-    Bosh::Director::Models::VariableSet.make(deployment_id: deployment.id)
+    FactoryBot.create(:models_variable_set, deployment_id: deployment.id)
 
     @instance = Bosh::Director::Models::Instance.
       make(:job => 'mysql_node', :index => 3, availability_zone: 'az1')

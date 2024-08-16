@@ -131,7 +131,7 @@ module Bosh::Director
     let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
 
     before do
-      Bosh::Director::Models::VariableSet.make(deployment: deployment)
+      FactoryBot.create(:models_variable_set, deployment: deployment)
 
       allow(ThreadPool).to receive_messages(new: thread_pool) # Using threads for real, even accidentally, makes debugging a nightmare
 
@@ -809,7 +809,7 @@ module Bosh::Director
       let(:number_of_workers) { 2 }
       let(:plan) do
         deployment_model = FactoryBot.create(:models_deployment)
-        Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
+        FactoryBot.create(:models_variable_set, deployment: deployment_model)
 
         instance_double('Bosh::Director::DeploymentPlan::Planner',
                         compilation: compilation_config,

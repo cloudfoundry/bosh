@@ -10,7 +10,7 @@ module Bosh::Director
     end
 
     let(:deployment) { FactoryBot.create(:models_deployment, name: 'name-1') }
-    let(:variable_set) { Models::VariableSet.make(deployment: deployment) }
+    let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment) }
     let(:target) do
       { 'job' => 'fake-job', 'indexes' => [1] }
     end

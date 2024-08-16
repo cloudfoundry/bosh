@@ -75,11 +75,11 @@ module Bosh::Director
         end
 
         let!(:deployment_1_variable_set) do
-          Models::VariableSet.make(id: 1, deployment: deployment_1, deployed_successfully: true)
+          FactoryBot.create(:models_variable_set, id: 1, deployment: deployment_1, deployed_successfully: true)
         end
 
         let!(:deployment_2_variable_set) do
-          Models::VariableSet.make(id: 2, deployment: deployment_2, deployed_successfully: true)
+          FactoryBot.create(:models_variable_set, id: 2, deployment: deployment_2, deployed_successfully: true)
         end
 
         it 'returns an empty array if there are no matching deployments' do

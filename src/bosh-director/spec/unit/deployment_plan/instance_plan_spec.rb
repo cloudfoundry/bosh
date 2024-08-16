@@ -64,7 +64,7 @@ module Bosh::Director::DeploymentPlan
     let(:desired_deployment_plan_jobs) { [] }
     let(:link_provider_intents) { [] }
 
-    let!(:variable_set_model) { Bosh::Director::Models::VariableSet.make(deployment: deployment_model) }
+    let!(:variable_set_model) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
     let(:instance_model) do
       instance_model = Bosh::Director::Models::Instance.make(
         uuid: 'fake-uuid-1',

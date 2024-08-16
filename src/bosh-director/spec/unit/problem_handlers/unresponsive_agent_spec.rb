@@ -16,7 +16,7 @@ module Bosh::Director
       manifest = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
       FactoryBot.create(:models_deployment, name: manifest['name'], manifest: YAML.dump(manifest))
     end
-    let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+    let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:agent) { double(Bosh::Director::AgentClient) }
     let(:instance) do

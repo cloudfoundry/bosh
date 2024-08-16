@@ -26,7 +26,7 @@ module Bosh::Director
           'networks' => {},
         }
       end
-      let(:variable_set_model) { Models::VariableSet.make(deployment: deployment_model) }
+      let(:variable_set_model) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
       let(:cloud_config_manifest) { Bosh::Spec::Deployments.simple_cloud_config }
 
       let(:deployment_manifest) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }

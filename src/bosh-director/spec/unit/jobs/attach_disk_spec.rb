@@ -8,7 +8,7 @@ module Bosh::Director
     end
     let(:deployment) do
       deployment = FactoryBot.create(:models_deployment, name: deployment_name, manifest: YAML.dump(manifest))
-      Models::VariableSet.make(deployment_id: deployment.id)
+      FactoryBot.create(:models_variable_set, deployment_id: deployment.id)
       deployment
     end
     let(:deployment_name) { 'fake_deployment_name' }

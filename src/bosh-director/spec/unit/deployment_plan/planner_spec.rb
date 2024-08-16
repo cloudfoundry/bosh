@@ -39,7 +39,7 @@ module Bosh::Director
 
         before do
           deployment_model.add_stemcell(stemcell_model)
-          deployment_model.add_variable_set(Models::VariableSet.make(deployment: deployment_model))
+          deployment_model.add_variable_set(FactoryBot.create(:models_variable_set, deployment: deployment_model))
           cloud_planner = CloudPlanner.new(
             networks: [Network.new('default', logger)],
             disk_types: [],

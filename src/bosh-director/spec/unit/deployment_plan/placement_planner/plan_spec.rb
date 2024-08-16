@@ -93,7 +93,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     before do
-      Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
+      FactoryBot.create(:models_variable_set, deployment: deployment_model)
     end
 
     context 'when job networks include static IPs' do

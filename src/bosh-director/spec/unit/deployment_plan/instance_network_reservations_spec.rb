@@ -41,7 +41,7 @@ module Bosh::Director
       }
     end
     let(:instance_model) { Models::Instance.make(deployment: deployment_model) }
-    let!(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+    let!(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
     let(:ip_provider) do
       DeploymentPlan::IpProvider.new(DeploymentPlan::IpRepo.new(logger), { 'fake-network' => network }, logger)
     end

@@ -76,7 +76,7 @@ module Bosh::Director
           )
         end
         let(:assembler) { instance_double(DeploymentPlan::Assembler, bind_models: nil) }
-        let(:variable_set) { Bosh::Director::Models::VariableSet.make(deployment: deployment_model) }
+        let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
 
         before do
           allow(LocalDnsEncoderManager).to receive(:new_encoder_with_updated_index).with(planner).and_return(dns_encoder)
@@ -178,7 +178,7 @@ module Bosh::Director
             end
 
             it 'cleans up old VariableSets' do
-              another_variable_set =  Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
+              another_variable_set =  FactoryBot.create(:models_variable_set, deployment: deployment_model)
               allow(deployment_instance_group).to receive(:referenced_variable_sets).and_return([variable_set, another_variable_set])
 
               expect(deployment_model).to receive(:cleanup_variable_sets).with([variable_set, another_variable_set])
@@ -349,7 +349,7 @@ module Bosh::Director
             end
 
             it 'does not fail if cleaning up old VariableSets raises an error' do
-              another_variable_set =  Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
+              another_variable_set =  FactoryBot.create(:models_variable_set, deployment: deployment_model)
               allow(deployment_instance_group).to receive(:referenced_variable_sets).and_return([variable_set, another_variable_set])
               allow(deployment_model).to receive(:cleanup_variable_sets).with([variable_set, another_variable_set]).and_raise(Sequel::ForeignKeyConstraintViolation.new)
 

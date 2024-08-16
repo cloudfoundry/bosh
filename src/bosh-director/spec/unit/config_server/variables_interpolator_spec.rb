@@ -79,7 +79,7 @@ describe Bosh::Director::ConfigServer::VariablesInterpolator do
 
     it 'interpolates using the variable set passed in' do
       deployment_model = FactoryBot.create(:models_deployment, id: 1, name: deployment_name)
-      variable_set = Bosh::Director::Models::VariableSet.make(id: 42, deployment: deployment_model)
+      variable_set = FactoryBot.create(:models_variable_set, id: 42, deployment: deployment_model)
       expect(config_server_client).to receive(:interpolate_with_versioning).with(job_1_properties, variable_set).and_return(interpolated_job_1_properties)
       expect(config_server_client).to receive(:interpolate_with_versioning).with(job_2_properties, variable_set).and_return(interpolated_job_2_properties)
 

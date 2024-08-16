@@ -4,7 +4,7 @@ module Bosh::Director
   describe DeploymentPlan::JobMigrator do
     subject(:job_migrator) { described_class.new(deployment_plan, logger) }
 
-    let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+    let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
 
     let(:etcd_instance_group) do
       DeploymentPlan::InstanceGroup.parse(deployment_plan, instance_group_spec, Config.event_log, logger)
@@ -83,7 +83,7 @@ module Bosh::Director
     end
 
     before do
-      Models::VariableSet.make(deployment: deployment_model)
+      FactoryBot.create(:models_variable_set, deployment: deployment_model)
 
       fake_locks
 

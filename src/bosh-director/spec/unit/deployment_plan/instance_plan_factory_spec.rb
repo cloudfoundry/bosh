@@ -140,7 +140,7 @@ module Bosh::Director
 
           context 'when passed as TRUE in the options' do
             let(:options) { { 'use_dns_addresses' => true } }
-            let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+            let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
 
             it 'provides the instance_plan with the correct use_dns_addresses' do
               expect(InstancePlan).to receive(:new).with(
@@ -180,7 +180,7 @@ module Bosh::Director
 
           context 'when passed as FALSE in the options' do
             let(:options) { { 'use_dns_addresses' => false } }
-            let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+            let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
 
             it 'provides the instance_plan with the correct use_dns_addresses' do
               expect(InstancePlan).to receive(:new).with(
@@ -213,7 +213,7 @@ module Bosh::Director
             instance_model
           end
 
-          let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+          let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
 
           context 'when passed as TRUE in the options' do
             let(:options) { { 'randomize_az_placement' => true } }
@@ -306,7 +306,7 @@ module Bosh::Director
 
           context 'when passed as TRUE in the options' do
             let(:options) { { 'use_dns_addresses' => true } }
-            let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+            let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
 
             it 'provides the instance_plan with the correct use_dns_addresses' do
               expect(InstancePlan).to receive(:new).with(
@@ -348,7 +348,7 @@ module Bosh::Director
 
           context 'when passed as FALSE in the options' do
             let(:options) { { 'use_dns_addresses' => false } }
-            let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+            let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
 
             it 'provides the instance_plan with the correct use_dns_addresses' do
               expect(InstancePlan).to receive(:new).with(
@@ -421,7 +421,7 @@ module Bosh::Director
 
           context 'when passed as TRUE in the options' do
             let(:options) { { 'use_dns_addresses' => true } }
-            let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+            let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
 
             it 'provides the instance_plan with the correct use_dns_addresses' do
               expect(InstancePlan).to receive(:new).with(
@@ -462,7 +462,7 @@ module Bosh::Director
 
           context 'when passed as FALSE in the options' do
             let(:options) { { 'use_dns_addresses' => false } }
-            let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+            let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
 
             it 'provides the instance_plan with the correct use_dns_addresses' do
               expect(InstancePlan).to receive(:new).with(

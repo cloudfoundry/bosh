@@ -46,7 +46,7 @@ module Bosh::Director
         deployment_model
       end
 
-      let!(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+      let!(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
 
       let(:deployment_name) { 'dep1' }
       let(:instance_group) do

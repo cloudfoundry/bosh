@@ -52,7 +52,7 @@ module Bosh::Director
     let(:networks) do
       { 'a' => { 'ip' => '192.168.1.2' } }
     end
-    let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+    let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
 
     before do
       allow(Bosh::Director::DeploymentPlan::PlannerFactory).to receive(:create).with(logger).and_return(planner_factory)

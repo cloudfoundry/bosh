@@ -4,12 +4,12 @@ require 'bosh/director/models/variable'
 module Bosh::Director::Models
   describe Variable do
     let(:deployment) { Deployment.make(manifest: '') }
-    let(:variable_set_1) { VariableSet.make(id: 1, deployment: deployment) }
-    let(:variable_set_2) { VariableSet.make(id: 999, deployment: deployment) }
+    let(:variable_set_1) { FactoryBot.create(:models_variable_set, id: 1, deployment: deployment) }
+    let(:variable_set_2) { FactoryBot.create(:models_variable_set, id: 999, deployment: deployment) }
 
     describe '#variable_set' do
       it 'return variable_set' do
-        variable_set = VariableSet.make(id: 2, deployment: deployment)
+        variable_set = FactoryBot.create(:models_variable_set, id: 2, deployment: deployment)
         variable = Variable.make(id: 1, variable_id: 'var_id_1', variable_name: 'var_name_1', variable_set_id: variable_set.id)
         expect(variable.variable_set).to eq(variable_set)
       end

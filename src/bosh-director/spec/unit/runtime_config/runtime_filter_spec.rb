@@ -36,7 +36,7 @@ module Bosh::Director
     end
 
     before do
-      deployment_model.add_variable_set(Models::VariableSet.make(deployment: deployment_model))
+      deployment_model.add_variable_set(FactoryBot.create(:models_variable_set, deployment: deployment_model))
     end
 
     let(:instance_group1) do

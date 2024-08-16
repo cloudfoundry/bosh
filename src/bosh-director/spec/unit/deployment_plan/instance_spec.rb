@@ -12,7 +12,7 @@ module Bosh::Director::DeploymentPlan
     let(:index) { 0 }
     let(:state) { 'started' }
     let(:variables_interpolator) { Bosh::Director::ConfigServer::VariablesInterpolator.new }
-    let(:deployment_variable_set) { Bosh::Director::Models::VariableSet.make(deployment:) }
+    let(:deployment_variable_set) { FactoryBot.create(:models_variable_set, deployment:) }
     let(:cert_generator) { instance_double Bosh::Director::NatsClientCertGenerator }
 
     before do
@@ -73,7 +73,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       it 'sets the previous and desired variable sets correctly' do
-        variable_set_model = Bosh::Director::Models::VariableSet.make(deployment:)
+        variable_set_model = FactoryBot.create(:models_variable_set, deployment:)
         instance_model.variable_set = variable_set_model
         instance.bind_existing_instance_model(instance_model)
 
@@ -88,7 +88,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'sets the desired variable set to the current variable set' do
-          variable_set_model = Bosh::Director::Models::VariableSet.make(deployment:)
+          variable_set_model = FactoryBot.create(:models_variable_set, deployment:)
           instance_model.variable_set = variable_set_model
           instance.bind_existing_instance_model(instance_model)
 
@@ -689,9 +689,9 @@ module Bosh::Director::DeploymentPlan
       let(:fixed_time) { Time.now }
 
       it 'updates the instance model variable set to the desired_variable_set on the instance object' do
-        Bosh::Director::Models::VariableSet.make(deployment:, created_at: fixed_time + 1)
-        selected_variable_set = Bosh::Director::Models::VariableSet.make(deployment:, created_at: fixed_time)
-        Bosh::Director::Models::VariableSet.make(deployment:, created_at: fixed_time - 1)
+        FactoryBot.create(:models_variable_set, deployment:, created_at: fixed_time + 1)
+        selected_variable_set = FactoryBot.create(:models_variable_set, deployment:, created_at: fixed_time)
+        FactoryBot.create(:models_variable_set, deployment:, created_at: fixed_time - 1)
 
         instance = Instance.create_from_instance_group(instance_group, index, state, deployment, current_state, az, logger,
                                                        variables_interpolator)

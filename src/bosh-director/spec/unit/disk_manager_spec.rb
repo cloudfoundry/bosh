@@ -57,7 +57,7 @@ module Bosh::Director
     let(:update_job) { instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: task_id, event_manager: event_manager) }
     let(:step_report) { instance_double(Bosh::Director::DeploymentPlan::Stages::Report) }
     let(:disk_hint) { '/dev/sdc' }
-    let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+    let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
 
     before do
       allow(deployment_model).to receive(:last_successful_variable_set).and_return(variable_set)
@@ -155,7 +155,7 @@ module Bosh::Director
       end
 
       it 'passes correct variable sets for comparing disks' do
-        desired_variable_set = Models::VariableSet.make(deployment: deployment_model)
+        desired_variable_set = FactoryBot.create(:models_variable_set, deployment: deployment_model)
         instance_plan.instance.desired_variable_set = desired_variable_set
 
         expect(Bosh::Director::DeploymentPlan::PersistentDiskCollection).to receive(:changed_disk_pairs).with(
