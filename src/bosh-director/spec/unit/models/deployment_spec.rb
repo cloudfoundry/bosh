@@ -96,11 +96,10 @@ module Bosh::Director::Models
 
             context 'runtime configs provide tags' do
               before do
-                runtime_config = Config.make(
-                  type: 'runtime',
-                  name: 'default',
-                  content: '--- {releases: [], tags: {runtime-key: runtime-value}}',
-                )
+                runtime_config =
+                  FactoryBot.create(:models_config_runtime,
+                                    content: '--- {releases: [], tags: {runtime-key: runtime-value}}',
+                  )
                 deployment.add_runtime_config(runtime_config)
                 allow(mock_client).to receive(:interpolate_with_versioning)
                   .with(runtime_config.raw_manifest, anything, anything)
@@ -135,11 +134,10 @@ module Bosh::Director::Models
 
           context 'runtime configs provide tags' do
             before do
-              runtime_config = Config.make(
-                type: 'runtime',
-                name: 'default',
-                content: '--- {releases: [], tags: {runtime-key: runtime-value}}',
-              )
+              runtime_config =
+                FactoryBot.create(:models_config_runtime,
+                                  content: '--- {releases: [], tags: {runtime-key: runtime-value}}',
+                )
               deployment.add_runtime_config(runtime_config)
               allow(mock_client).to receive(:interpolate_with_versioning)
                 .with(runtime_config.raw_manifest, anything, anything)

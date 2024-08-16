@@ -29,7 +29,7 @@ module Bosh::Director
 
         it 'creates a new cloud config when one exists with different content' do
           content = YAML.dump(Bosh::Spec::Deployments.simple_cloud_config)
-          Models::Config.make(:cloud, content: content+"123")
+          FactoryBot.create(:models_config_cloud, content: content+"123")
 
           expect {
             post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
@@ -40,7 +40,7 @@ module Bosh::Director
 
         it 'ignores cloud config when config already exists' do
           content = YAML.dump(Bosh::Spec::Deployments.simple_cloud_config)
-          Models::Config.make(:cloud, content: content)
+          FactoryBot.create(:models_config_cloud, content: content)
 
           expect {
             post '/', content, {'CONTENT_TYPE' => 'text/yaml'}
@@ -145,7 +145,7 @@ module Bosh::Director
         end
 
         it 'ignores named cloud config when config already exists' do
-          Models::Config.make(:cloud, content: content, name: 'smurf')
+          FactoryBot.create(:models_config_cloud, content: content, name: 'smurf')
 
           expect do
             post path, content, 'CONTENT_TYPE' => 'text/yaml'
@@ -172,27 +172,23 @@ module Bosh::Director
       it "returns the number of cloud configs specified by ?limit and only considers 'default' names" do
         authorize('admin', 'admin')
 
-        Models::Config.make(
-          :cloud,
+        FactoryBot.create(:models_config_cloud,
           content: 'config_from_time_immortal',
           created_at: Time.now - 4,
           name: 'not-default'
         )
-        Models::Config.make(
-          :cloud,
+        FactoryBot.create(:models_config_cloud,
           content: 'config_from_second_last_year',
           created_at: Time.now - 3,
           name: 'default'
         )
-        Models::Config.make(
-          :cloud,
+        FactoryBot.create(:models_config_cloud,
           content: 'config_from_last_year',
           created_at: Time.now - 2,
           name: 'not-default'
         )
         newer_cloud_config_content = "---\nsuper_shiny: new_config"
-        Models::Config.make(
-          :cloud,
+        FactoryBot.create(:models_config_cloud,
           content: newer_cloud_config_content,
           created_at: Time.now - 1,
           name: 'default'
@@ -209,21 +205,18 @@ module Bosh::Director
       it "returns the cloud configs specified by name" do
         authorize('admin', 'admin')
 
-        Models::Config.make(
-          :cloud,
+        FactoryBot.create(:models_config_cloud,
           content: 'config_from_second_last_year',
           created_at: Time.now - 3,
           name: 'not-default'
         )
-        Models::Config.make(
-          :cloud,
+        FactoryBot.create(:models_config_cloud,
           content: 'config_from_last_year',
           created_at: Time.now - 2,
           name: 'not-default'
         )
         newer_cloud_config_content = "---\nsuper_shiny: new_config"
-        Models::Config.make(
-          :cloud,
+        FactoryBot.create(:models_config_cloud,
           content: newer_cloud_config_content,
           created_at: Time.now - 1,
           name: 'default'
@@ -300,7 +293,7 @@ module Bosh::Director
 
         context 'when there is a previous cloud config' do
           before do
-            Models::Config.make(:cloud, content: YAML.dump(cloud_config_hash_with_two_azs))
+            FactoryBot.create(:models_config_cloud, content: YAML.dump(cloud_config_hash_with_two_azs))
           end
 
           context 'when uploading an empty cloud config' do
@@ -370,8 +363,8 @@ module Bosh::Director
 
         context 'when there are two previous cloud config' do
           before do
-            Models::Config.make(:cloud, name: 'foo',content: YAML.dump(cloud_config_hash_with_one_az))
-            Models::Config.make(:cloud, content: YAML.dump(cloud_config_hash_with_two_azs))
+            FactoryBot.create(:models_config_cloud, name: 'foo',content: YAML.dump(cloud_config_hash_with_one_az))
+            FactoryBot.create(:models_config_cloud, content: YAML.dump(cloud_config_hash_with_two_azs))
           end
           it 'always diffs against the default-named cloud config' do
             post(
@@ -385,8 +378,8 @@ module Bosh::Director
 
         context 'when a config name is provided' do
           before do
-            Models::Config.make(:cloud, name: 'foo',content: YAML.dump(cloud_config_hash_with_one_az))
-            Models::Config.make(:cloud, content: YAML.dump(cloud_config_hash_with_two_azs))
+            FactoryBot.create(:models_config_cloud, name: 'foo',content: YAML.dump(cloud_config_hash_with_one_az))
+            FactoryBot.create(:models_config_cloud, content: YAML.dump(cloud_config_hash_with_two_azs))
           end
           it 'always diffs against the named cloud config' do
             post(
@@ -411,7 +404,7 @@ module Bosh::Director
 
           context 'when previous cloud config is nil' do
             before do
-              Models::Config.make(:cloud)
+              FactoryBot.create(:models_config_cloud)
             end
 
             it 'returns the diff' do

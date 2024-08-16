@@ -8,7 +8,7 @@ module Bosh::Director
 
       subject(:app) { linted_rack_app(described_class.new(config)) }
       let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
-      let(:cpi_config) { Bosh::Director::Models::Config.make(:cpi_with_manifest).raw_manifest }
+      let(:cpi_config) { FactoryBot.create(:models_config_cpi, :with_manifest).raw_manifest }
 
       before do
         App.new(config)
@@ -72,7 +72,7 @@ module Bosh::Director
               name: 'bosh-stemcell',
               version: '1234',
             )
-            Models::Config.make(:cpi, content: migrated_from_cpi.to_yaml)
+            FactoryBot.create(:models_config_cpi, content: migrated_from_cpi.to_yaml)
           end
 
           it 'returns that stemcell is not needed' do
@@ -101,7 +101,7 @@ module Bosh::Director
               name: 'bosh-stemcell',
               version: '1234',
             )
-            Models::Config.make(:cpi, content: migrated_from_cpi.to_yaml)
+            FactoryBot.create(:models_config_cpi, content: migrated_from_cpi.to_yaml)
           end
 
           it 'returns that stemcell is not needed' do

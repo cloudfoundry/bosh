@@ -4,8 +4,8 @@ require 'ipaddr'
 module Bosh::Director
   describe DeploymentPlan::InstanceNetworkReservations do
     let(:deployment_model) { FactoryBot.create(:models_deployment, name: 'foo-deployment') }
-    let(:cloud_config) { Models::Config.make(:cloud_with_manifest_v2) }
-    let(:runtime_config) { Models::Config.make(type: 'runtime') }
+    let(:cloud_config) { FactoryBot.create(:models_config_cloud, :with_manifest) }
+    let(:runtime_config) { FactoryBot.create(:models_config_runtime) }
     let(:cloud_planner) { instance_double(DeploymentPlan::CloudPlanner) }
     let(:deployment) do
       deployment = DeploymentPlan::Planner.new(

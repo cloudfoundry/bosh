@@ -35,15 +35,15 @@ describe Bosh::Director::Api::CpiConfigManager do
     before(:each) do
       days = 24*60*60
 
-      @oldest_cpi_config = Bosh::Director::Models::Config.make(:cpi,
+      @oldest_cpi_config = FactoryBot.create(:models_config_cpi,
                                           content: 'config_from_time_immortal',
                                           created_at: Time.now - 3*days,
                                           )
-      @older_cpi_config = Bosh::Director::Models::Config.make(:cpi,
+      @older_cpi_config = FactoryBot.create(:models_config_cpi,
                                                              content: 'config_from_last_year',
                                                              created_at: Time.now - 2*days,
                                                              )
-      @newer_cpi_config = Bosh::Director::Models::Config.make(:cpi,
+      @newer_cpi_config = FactoryBot.create(:models_config_cpi,
                                                              content: "---\nsuper_shiny: new_config",
                                                              created_at: Time.now - 1*days,
                                                              )
@@ -58,8 +58,8 @@ describe Bosh::Director::Api::CpiConfigManager do
     end
 
     it 'returns only configs of type `cpi` and name `default`' do
-      Bosh::Director::Models::Config.make(:cpi, name: 'non-default')
-      Bosh::Director::Models::Config.make(:cloud)
+      FactoryBot.create(:models_config_cpi, name: 'non-default')
+      FactoryBot.create(:models_config_cloud)
 
       cpi_configs = manager.list(4)
 
@@ -86,11 +86,11 @@ describe Bosh::Director::Api::CpiConfigManager do
     it 'returns the latest' do
       days = 24*60*60
 
-      Bosh::Director::Models::Config.make(:cpi,
+      FactoryBot.create(:models_config_cpi,
           content: 'config_from_last_year',
           created_at: Time.now - 2*days,
       ).save
-      newer_cpi_config = Bosh::Director::Models::Config.make(:cpi,
+      newer_cpi_config = FactoryBot.create(:models_config_cpi,
           content: "---\nsuper_shiny: new_config",
           created_at: Time.now - 1*days,
       ).save

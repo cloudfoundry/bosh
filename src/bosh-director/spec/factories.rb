@@ -94,6 +94,45 @@ FactoryBot.define do
     association :package, factory: :models_package, strategy: :create
   end
 
+  factory :models_config, class: Bosh::Director::Models::Config do
+    sequence(:name) { |i| "config-#{i}" }
+    sequence(:type) { |i| "config-type-#{i}" }
+    content { '--- {}' }
+    created_at { Time.now }
+    transient do
+      raw_manifest { nil }
+    end
+
+    after(:build) do |config, evaluator|
+      config.tap do |c|
+        c.raw_manifest = evaluator.raw_manifest if evaluator.raw_manifest
+      end
+    end
+
+    factory :models_config_cloud do
+      name { 'default' }
+      type { 'cloud' }
+
+      trait :with_manifest do
+        content { YAML.dump(Bosh::Spec::Deployments.simple_cloud_config) }
+      end
+    end
+
+    factory :models_config_cpi do
+      name { 'default' }
+      type { 'cpi' }
+
+      trait :with_manifest do
+        content { YAML.dump(Bosh::Spec::Deployments.multi_cpi_config) }
+      end
+    end
+
+    factory :models_config_runtime do
+      name { 'default' }
+      type { 'runtime' }
+    end
+  end
+
   factory :models_deployment, class: Bosh::Director::Models::Deployment do
     sequence(:name) { |i| "deployment-#{i}" }
     sequence(:manifest) { |i| "deployment-manifest-#{i}" }

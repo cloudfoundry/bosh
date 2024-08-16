@@ -42,23 +42,20 @@ describe Bosh::Director::Api::CloudConfigManager do
 
   describe '#list' do
     before(:each) do
-      days = 24*60*60
+      days = 24 * 60 * 60
 
-      @oldest_cloud_config = Bosh::Director::Models::Config.make(
-          :cloud,
-          content: 'config_from_time_immortal',
-          created_at: Time.now - 3*days,
-          ).save
-      @older_cloud_config = Bosh::Director::Models::Config.make(
-          :cloud,
-          content: 'config_from_last_year',
-          created_at: Time.now - 2*days,
-          ).save
-      @newer_cloud_config = Bosh::Director::Models::Config.make(
-          :cloud,
-          content: "---\nsuper_shiny: new_config",
-          created_at: Time.now - 1*days,
-          ).save
+      @oldest_cloud_config =
+        FactoryBot.create(:models_config_cloud,
+                          content: 'config_from_time_immortal',
+                          created_at: Time.now - (3 * days))
+      @older_cloud_config =
+        FactoryBot.create(:models_config_cloud,
+                          content: 'config_from_last_year',
+                          created_at: Time.now - (2 * days))
+      @newer_cloud_config =
+        FactoryBot.create(:models_config_cloud,
+                          content: "---\nsuper_shiny: new_config",
+                          created_at: Time.now - (1 * days))
     end
 
     it 'returns the specified number of cloud configs (most recent first)' do
@@ -102,7 +99,7 @@ describe Bosh::Director::Api::CloudConfigManager do
   end
 
   describe '.interpolated_manifest' do
-    let(:cloud_configs) { [Bosh::Director::Models::Config.make(:cloud_with_manifest_v2, content: YAML.dump(raw_manifest))] }
+    let(:cloud_configs) { [FactoryBot.create(:models_config_cloud, content: YAML.dump(raw_manifest))] }
     let(:raw_manifest) do
       { 'azs' => [{ name: '((az_name))' }], 'vm_types' => [], 'disk_types' => [], 'networks' => [], 'vm_extensions' => [] }
     end

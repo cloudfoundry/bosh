@@ -2,11 +2,12 @@ require 'spec_helper'
 
 module Bosh::Director::Models
   describe Config do
-    let(:config_model) { Config.make(content: "---\n{key : value}") }
+    let(:config_name) { 'some-name' }
+    let(:config_model) { FactoryBot.create(:models_config, name: config_name, content: "---\n{key : value}") }
 
     describe '#raw_manifest' do
       it 'returns raw content as parsed yaml' do
-        expect(config_model.name).to eq('some-name')
+        expect(config_model.name).to eq(config_name)
         expect(config_model.raw_manifest.fetch('key')).to eq('value')
       end
     end
@@ -92,9 +93,9 @@ module Bosh::Director::Models
     end
 
     describe '#current?' do
-      let!(:config1) { Config.make(type: 'cloud', name: 'bob') }
-      let!(:config2) { Config.make(type: 'cloud', name: 'bob') }
-      let!(:config3) { Config.make(type: 'cloud', name: 'bob', deleted: true) }
+      let!(:config1) { FactoryBot.create(:models_config_cloud, name: 'bob') }
+      let!(:config2) { FactoryBot.create(:models_config_cloud, name: 'bob') }
+      let!(:config3) { FactoryBot.create(:models_config_cloud, name: 'bob', deleted: true) }
 
       it 'knows whether it is the highest-id config for its type and name' do
         expect(config1.current?).to be false
@@ -106,7 +107,7 @@ module Bosh::Director::Models
     describe '#to_hash' do
       let(:red_team) { FactoryBot.create(:models_team, name: 'red') }
       let(:red_team_cloud_config) do
-        Config.make(type: 'cloud', name: 'red-cloud-config', team_id: red_team.id, content: 'foo')
+        FactoryBot.create(:models_config_cloud, name: 'red-cloud-config', team_id: red_team.id, content: 'foo')
       end
 
       it 'serializes to a hash' do
@@ -125,13 +126,13 @@ module Bosh::Director::Models
     describe '#latest_set_for_teams' do
       let!(:red_team) { FactoryBot.create(:models_team, name: 'red') }
       let!(:blue_team) { FactoryBot.create(:models_team, name: 'blue') }
-      let!(:global_cloud_config) { Bosh::Director::Models::Config.make(type: 'cloud', name: 'default') }
-      let!(:global_runtime_config) { Bosh::Director::Models::Config.make(type: 'runtime', name: 'default') }
-      let!(:red_team_cloud_config) { Bosh::Director::Models::Config.make(type: 'cloud', name: 'red-cloud-config', team_id: red_team.id) }
-      let!(:red_team_cloud_config2) { Bosh::Director::Models::Config.make(type: 'cloud', name: 'red-cloud-config', team_id: red_team.id) }
-      let!(:red_team_runtime_config) { Bosh::Director::Models::Config.make(type: 'runtime', name: 'red-runtime-config', team_id: red_team.id) }
-      let!(:blue_team_cloud_config) { Bosh::Director::Models::Config.make(type: 'cloud', name: 'blue-config', team_id: blue_team.id) }
-      let!(:blue_team_runtime_config) { Bosh::Director::Models::Config.make(type: 'runtime', name: 'blue-runtime-config', team_id: blue_team.id) }
+      let!(:global_cloud_config) { FactoryBot.create(:models_config_cloud) }
+      let!(:global_runtime_config) { FactoryBot.create(:models_config_runtime) }
+      let!(:red_team_cloud_config) { FactoryBot.create(:models_config_cloud, name: 'red-cloud-config', team_id: red_team.id) }
+      let!(:red_team_cloud_config2) { FactoryBot.create(:models_config_cloud, name: 'red-cloud-config', team_id: red_team.id) }
+      let!(:red_team_runtime_config) { FactoryBot.create(:models_config_runtime, name: 'red-runtime-config', team_id: red_team.id) }
+      let!(:blue_team_cloud_config) { FactoryBot.create(:models_config_cloud, name: 'blue-config', team_id: blue_team.id) }
+      let!(:blue_team_runtime_config) { FactoryBot.create(:models_config_runtime, name: 'blue-runtime-config', team_id: blue_team.id) }
 
       it 'returns team-specific configs for a given type grouped by name' do
         latest = Bosh::Director::Models::Config.latest_set_for_teams('cloud', red_team)
@@ -149,7 +150,7 @@ module Bosh::Director::Models
 
       context 'deleted config name' do
         before do
-          Bosh::Director::Models::Config.make(type: 'cloud', name: 'blue-config', team_id: blue_team.id, deleted: true)
+          FactoryBot.create(:models_config_cloud, name: 'blue-config', team_id: blue_team.id, deleted: true)
         end
 
         it 'the prior version of the config of that type with that name appears in latest' do
@@ -159,7 +160,7 @@ module Bosh::Director::Models
 
         context 'resurrected a named config' do
           let!(:blue_team_cloud_config_resurrected) do
-            Bosh::Director::Models::Config.make(type: 'cloud', name: 'blue-config', team_id: blue_team.id)
+            FactoryBot.create(:models_config_cloud, name: 'blue-config', team_id: blue_team.id)
           end
 
           it 'is enumerated in latest' do
@@ -173,13 +174,13 @@ module Bosh::Director::Models
     describe '#find_by_ids_for_teams' do
       let!(:red_team) { FactoryBot.create(:models_team, name: 'red') }
       let!(:blue_team) { FactoryBot.create(:models_team, name: 'blue') }
-      let!(:global_cloud_config) { Bosh::Director::Models::Config.make(type: 'cloud', name: 'default') }
-      let!(:global_runtime_config) { Bosh::Director::Models::Config.make(type: 'runtime', name: 'default') }
-      let!(:red_team_cloud_config) { Bosh::Director::Models::Config.make(type: 'cloud', name: 'red-cloud-config', team_id: red_team.id) }
-      let!(:red_team_runtime_config) { Bosh::Director::Models::Config.make(type: 'runtime', name: 'red-runtime-config', team_id: red_team.id) }
-      let!(:blue_team_cloud_config) { Bosh::Director::Models::Config.make(type: 'cloud', name: 'blue-config', team_id: blue_team.id) }
-      let!(:blue_team_runtime_config) { Bosh::Director::Models::Config.make(type: 'runtime', name: 'blue-runtime-config', team_id: blue_team.id) }
-      let!(:deleted_blue_team_runtime_config) { Bosh::Director::Models::Config.make(type: 'runtime', name: 'blue-runtime-config', team_id: blue_team.id, deleted: true) }
+      let!(:global_cloud_config) { FactoryBot.create(:models_config_cloud) }
+      let!(:global_runtime_config) { FactoryBot.create(:models_config_runtime, name: 'default') }
+      let!(:red_team_cloud_config) { FactoryBot.create(:models_config_cloud, name: 'red-cloud-config', team_id: red_team.id) }
+      let!(:red_team_runtime_config) { FactoryBot.create(:models_config_runtime, name: 'red-runtime-config', team_id: red_team.id) }
+      let!(:blue_team_cloud_config) { FactoryBot.create(:models_config_cloud, name: 'blue-config', team_id: blue_team.id) }
+      let!(:blue_team_runtime_config) { FactoryBot.create(:models_config_runtime, name: 'blue-runtime-config', team_id: blue_team.id) }
+      let!(:deleted_blue_team_runtime_config) { FactoryBot.create(:models_config_runtime, name: 'blue-runtime-config', team_id: blue_team.id, deleted: true) }
 
       it 'returns team-specific configs for given ids' do
         latest = Bosh::Director::Models::Config.find_by_ids_for_teams([global_cloud_config.id, red_team_cloud_config.id], red_team)

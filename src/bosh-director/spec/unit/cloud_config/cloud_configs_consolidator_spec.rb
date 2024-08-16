@@ -4,13 +4,13 @@ module Bosh::Director
   describe CloudConfig::CloudConfigsConsolidator do
     subject(:consolidator) { described_class.new(cloud_configs) }
     let(:cc_model_1) do
-      Bosh::Director::Models::Config.make(id: 1, content: cloud_config_1.to_yaml, raw_manifest: cloud_config_1)
+      FactoryBot.create(:models_config, id: 1, content: cloud_config_1.to_yaml, raw_manifest: cloud_config_1)
     end
     let(:cc_model_2) do
-      Bosh::Director::Models::Config.make(id: 21, content: cloud_config_2.to_yaml, raw_manifest: cloud_config_2)
+      FactoryBot.create(:models_config, id: 21, content: cloud_config_2.to_yaml, raw_manifest: cloud_config_2)
     end
     let(:cc_model_3) do
-      Bosh::Director::Models::Config.make(id: 65, content: cloud_config_3.to_yaml, raw_manifest: cloud_config_3)
+      FactoryBot.create(:models_config, id: 65, content: cloud_config_3.to_yaml, raw_manifest: cloud_config_3)
     end
     let(:cloud_configs) { [cc_model_1, cc_model_2, cc_model_3] }
     let(:cloud_config_1) do
@@ -258,7 +258,7 @@ module Bosh::Director
       end
 
       context 'when cloud configs are empty' do
-        let(:cloud_configs) { [Bosh::Director::Models::Config.make] }
+        let(:cloud_configs) { [FactoryBot.create(:models_config)] }
 
         it 'returns false' do
           expect(described_class.have_cloud_configs?(cloud_configs)).to be_falsy

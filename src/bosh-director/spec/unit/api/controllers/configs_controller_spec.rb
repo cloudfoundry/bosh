@@ -14,6 +14,9 @@ module Bosh::Director
       config
     end
 
+    let(:config_name) { 'my-name' }
+    let(:config_type) { 'some-type' }
+
     describe 'GET', '/' do
       context 'with authenticated admin user' do
         before(:each) do
@@ -23,20 +26,24 @@ module Bosh::Director
         it 'returns all matching' do
           newest_config = 'new_config'
 
-          Models::Config.make(
-            content: 'some-yaml',
-            created_at: Time.now - 3.days,
+          FactoryBot.create(:models_config,
+                            name: config_name,
+                            type: config_type,
+                            content: 'some-yaml',
+                            created_at: Time.now - 3.days,
           )
 
-          Models::Config.make(
-            content: 'some-other-yaml',
-            created_at: Time.now - 2.days,
+          FactoryBot.create(:models_config,
+                            name: config_name,
+                            type: config_type,
+                            content: 'some-other-yaml',
+                            created_at: Time.now - 2.days,
           )
 
-          Models::Config.make(
-            name: 'my-config',
-            content: newest_config,
-            created_at: Time.now - 1.days,
+          FactoryBot.create(:models_config,
+                            type: config_type,
+                            content: newest_config,
+                            created_at: Time.now - 1.days,
           )
 
           get '/?&limit=1'
@@ -48,24 +55,29 @@ module Bosh::Director
 
         context 'when name is given' do
           it 'returns the latest config with that name' do
-            Models::Config.make(
-              content: 'some-yaml',
-              created_at: Time.now - 3.days,
+            FactoryBot.create(:models_config,
+                              name: config_name,
+                              type: config_type,
+                              content: 'some-yaml',
+                              created_at: Time.now - 3.days,
             )
 
-            Models::Config.make(
-              content: 'some-other-yaml',
-              created_at: Time.now - 2.days,
+            FactoryBot.create(:models_config,
+                              name: config_name,
+                              type: config_type,
+                              content: 'some-other-yaml',
+                              created_at: Time.now - 2.days,
             )
 
             newest_config = 'new_config'
-            Models::Config.make(
-              name: 'my-config',
-              content: newest_config,
-              created_at: Time.now - 1.days,
+            FactoryBot.create(:models_config,
+                              name: config_name,
+                              type: config_type,
+                              content: newest_config,
+                              created_at: Time.now - 1.days,
             )
 
-            get '/?type=my-type&name=my-config&limit=1'
+            get "/?type=#{config_type}&name=#{config_name}&limit=1"
             expect(last_response.status).to eq(200)
             expect(JSON.parse(last_response.body).count).to eq(1)
             expect(JSON.parse(last_response.body).first['content']).to eq(newest_config)
@@ -73,23 +85,29 @@ module Bosh::Director
         end
 
         it 'returns the latest config' do
-          Models::Config.make(
-            content: 'some-yaml',
-            created_at: Time.now - 3.days,
+          FactoryBot.create(:models_config,
+                            name: config_name,
+                            type: config_type,
+                            content: 'some-yaml',
+                            created_at: Time.now - 3.days,
           )
 
-          Models::Config.make(
-            content: 'some-other-yaml',
-            created_at: Time.now - 2.days,
+          FactoryBot.create(:models_config,
+                            name: config_name,
+                            type: config_type,
+                            content: 'some-other-yaml',
+                            created_at: Time.now - 2.days,
           )
 
           newest_config = 'new_config'
-          Models::Config.make(
-            content: newest_config,
-            created_at: Time.now - 1.days,
+          FactoryBot.create(:models_config,
+                            name: config_name,
+                            type: config_type,
+                            content: newest_config,
+                            created_at: Time.now - 1.days,
           )
 
-          get '/?type=my-type&limit=1'
+          get "/?type=#{config_type}&limit=1"
           expect(last_response.status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(1)
           expect(JSON.parse(last_response.body).first['content']).to eq(newest_config)
@@ -97,7 +115,7 @@ module Bosh::Director
 
         context 'when no records match the filters' do
           it 'returns empty' do
-            get '/?type=my-type&name=notExisting&limit=1'
+            get "/?type=#{config_type}&name=notExisting&limit=1"
 
             expect(last_response.status).to eq(200)
 
@@ -109,10 +127,10 @@ module Bosh::Director
 
         context 'when no type is given' do
           it 'does not filter by type' do
-            Models::Config.make(content: 'some-other-yaml')
+            FactoryBot.create(:models_config, name: config_name, type: config_type,content: 'some-other-yaml')
 
             newest_config = 'new_config'
-            Models::Config.make(content: newest_config)
+            FactoryBot.create(:models_config, name: config_name, type: config_type,content: newest_config)
 
             get '/?limit=1'
 
@@ -123,9 +141,9 @@ module Bosh::Director
 
         context 'when no limit param is given' do
           it 'defaults to 1' do
-            Models::Config.make
-            Models::Config.make(content: 'newest_config')
-            get '/?type=my-type&name=some-name'
+            FactoryBot.create(:models_config, name: config_name, type: config_type)
+            FactoryBot.create(:models_config, name: config_name, type: config_type, content: 'newest_config')
+            get "/?type=#{config_type}&name=#{config_name}"
 
             expect(last_response.status).to eq(200)
             expect(JSON.parse(last_response.body).count).to eq(1)
@@ -134,9 +152,9 @@ module Bosh::Director
 
           context 'when latest is set to true' do
             it 'defaults to 1' do
-              Models::Config.make
-              Models::Config.make(content: 'newest_config')
-              get '/?type=my-type&name=some-name&latest=true'
+              FactoryBot.create(:models_config, name: config_name, type: config_type)
+              FactoryBot.create(:models_config, name: config_name, type: config_type, content: 'newest_config')
+              get "/?type=#{config_type}&name=#{config_name}&latest=true"
 
               expect(last_response.status).to eq(200)
               expect(JSON.parse(last_response.body).count).to eq(1)
@@ -146,33 +164,25 @@ module Bosh::Director
 
           context 'when latest is set to false' do
             it 'returns the history of all matching configs' do
-              config1 = Models::Config.make
-              Models::Config.make
+              configs = [
+                FactoryBot.create(:models_config, type: config_type),
+                FactoryBot.create(:models_config, type: config_type),
+              ]
 
-              get '/?type=my-type&latest=false'
+              get "/?type=#{config_type}&latest=false"
 
               expect(last_response.status).to eq(200)
 
-              result = JSON.parse(last_response.body)
-              expect(result.class).to be(Array)
-              expect(result.size).to eq(2)
-              expect(result).to include(
-                'content' => config1.content,
-                'id' => config1.id.to_s,
-                'type' => config1.type,
-                'name' => config1.name,
-                'created_at' => config1.created_at.to_s,
-                'team' => nil,
-                'current' => false,
-              )
+              result = JSON.parse(last_response.body, symbolize_names: true)
+              expect(result).to match_array(configs.map(&:to_hash))
             end
           end
 
           context 'when latest is not set' do
             it 'defaults to 1' do
-              Models::Config.make
-              Models::Config.make(content: 'newest_config')
-              get '/?type=my-type&name=some-name'
+              FactoryBot.create(:models_config, name: config_name, type: config_type)
+              FactoryBot.create(:models_config, name: config_name, type: config_type, content: 'newest_config')
+              get "/?type=#{config_type}&name=#{config_name}"
 
               expect(last_response.status).to eq(200)
               expect(JSON.parse(last_response.body).count).to eq(1)
@@ -182,7 +192,7 @@ module Bosh::Director
 
           context 'when latest param is given and has wrong value' do
             it 'return 400' do
-              get '/?type=my-type&name=some-name&latest=foo'
+              get "/?type=#{config_type}&name=#{config_name}&latest=foo"
 
               expect(last_response.status).to eq(400)
               expect(JSON.parse(last_response.body)['code']).to eq(440_010)
@@ -193,9 +203,9 @@ module Bosh::Director
 
         context 'when latest and limit are given' do
           it 'takes value of limit' do
-            Models::Config.make
-            Models::Config.make(content: 'newest_config')
-            get '/?type=my-type&name=some-name&latest=false&limit=1'
+            FactoryBot.create(:models_config, name: config_name, type: config_type)
+            FactoryBot.create(:models_config, name: config_name, type: config_type, content: 'newest_config')
+            get "/?type=#{config_type}&name=#{config_name}&latest=false&limit=1"
 
             expect(last_response.status).to eq(200)
             expect(JSON.parse(last_response.body).count).to eq(1)
@@ -205,7 +215,7 @@ module Bosh::Director
 
         context 'when limit param is given and has wrong value' do
           it 'return 400' do
-            get '/?type=my-type&name=some-name&limit=foo'
+            get "/?type=#{config_type}&name=#{config_name}&limit=foo"
 
             expect(last_response.status).to eq(400)
             expect(JSON.parse(last_response.body)['code']).to eq(440_010)
@@ -222,13 +232,13 @@ module Bosh::Director
         end
 
         context 'when limit is greater one' do
-          let!(:config1) { Models::Config.make(type: 'my-type', name: 'bob') }
-          let!(:config2) { Models::Config.make(type: 'my-type', name: 'bob') }
+          let!(:config1) { FactoryBot.create(:models_config, type: config_type, name: 'bob') }
+          let!(:config2) { FactoryBot.create(:models_config, type: config_type, name: 'bob') }
 
           let(:result) { JSON.parse(last_response.body) }
 
           before do
-            get '/?type=my-type&limit=2'
+            get "/?type=#{config_type}&limit=2"
           end
 
           it 'returns the history of all matching configs' do
@@ -263,7 +273,7 @@ module Bosh::Director
     describe 'POST', '/' do
       let(:config_data) { 'a: 1' }
       let(:request_body) do
-        JSON.generate('name' => 'my-name', 'type' => 'my-type', 'content' => config_data, 'expected_latest_id' => '0')
+        JSON.generate('name' => config_name, 'type' => config_type, 'content' => config_data, 'expected_latest_id' => '0')
       end
 
       describe 'when user has admin access' do
@@ -279,8 +289,8 @@ module Bosh::Director
           config = Bosh::Director::Models::Config.first
           expect(JSON.parse(last_response.body)).to eq(
             'id' => config.id.to_s,
-            'type' => 'my-type',
-            'name' => 'my-name',
+            'type' => config_type,
+            'name' => config_name,
             'content' => 'a: 1',
             'created_at' => config.created_at.to_s,
             'team' => nil,
@@ -290,17 +300,17 @@ module Bosh::Director
 
         context 'when config exists with different content' do
           it 'creates a new config if expected latest id is not specified' do
-            Models::Config.make(
-              name: 'my-name',
-              type: 'my-type',
+            FactoryBot.create(:models_config,
+              name: config_name,
+              type: config_type,
               content: 'a: 123',
             )
             expect do
               post(
                 '/',
                 JSON.generate(
-                  'name' => 'my-name',
-                  'type' => 'my-type',
+                  'name' => config_name,
+                  'type' => config_type,
                   'content' => 'b: 12345',
                 ),
                 'CONTENT_TYPE' => 'application/json',
@@ -310,22 +320,22 @@ module Bosh::Director
           end
 
           it 'does not create a new config if expected latest id is not latest id' do
-            config1 = Models::Config.make(
-              name: 'my-name',
-              type: 'my-type',
+            config1 = FactoryBot.create(:models_config,
+              name: config_name,
+              type: config_type,
               content: 'a: 123',
             )
-            config2 = Models::Config.make(
-              name: 'my-name',
-              type: 'my-type',
+            config2 = FactoryBot.create(:models_config,
+              name: config_name,
+              type: config_type,
               content: 'a: 456',
             )
             expect do
               post(
                 '/',
                 JSON.generate(
-                  'name' => 'my-name',
-                  'type' => 'my-type',
+                  'name' => config_name,
+                  'type' => config_type,
                   'content' => 'b: 789',
                   'expected_latest_id' => config1.id,
                 ),
@@ -344,8 +354,8 @@ module Bosh::Director
               post(
                 '/',
                 JSON.generate(
-                  'name' => 'my-name',
-                  'type' => 'my-type',
+                  'name' => config_name,
+                  'type' => config_type,
                   'content' => 'b: 789',
                   'expected_latest_id' => '123',
                 ),
@@ -360,22 +370,22 @@ module Bosh::Director
           end
 
           it 'creates a new config if expected latest id matches latest id' do
-            Models::Config.make(
-              name: 'my-name',
-              type: 'my-type',
+            FactoryBot.create(:models_config,
+              name: config_name,
+              type: config_type,
               content: 'a: 123',
             )
-            config2 = Models::Config.make(
-              name: 'my-name',
-              type: 'my-type',
+            config2 = FactoryBot.create(:models_config,
+              name: config_name,
+              type: config_type,
               content: 'a: 456',
             )
             expect do
               post(
                 '/',
                 JSON.generate(
-                  'name' => 'my-name',
-                  'type' => 'my-type',
+                  'name' => config_name,
+                  'type' => config_type,
                   'content' => 'b: 12345',
                   'expected_latest_id' => config2.id,
                 ),
@@ -387,16 +397,16 @@ module Bosh::Director
         end
 
         it 'ignores config when config already exists' do
-          Models::Config.make(
-            name: 'my-name',
-            type: 'my-type',
+          FactoryBot.create(:models_config,
+            name: config_name,
+            type: config_type,
             content: 'a: 123',
           )
 
           expect do
             post '/', JSON.generate(
-              'name' => 'my-name',
-              'type' => 'my-type',
+              'name' => config_name,
+              'type' => config_type,
               'content' => 'a: 123',
             ), 'CONTENT_TYPE' => 'application/json'
           end.to_not change(Models::Config, :count)
@@ -414,7 +424,7 @@ module Bosh::Director
 
         context 'when type is runtime' do
           let(:request_body) do
-            JSON.generate('name' => 'my-name', 'type' => 'runtime', 'content' => config_data, 'expected_latest_id' => '0')
+            JSON.generate('name' => config_name, 'type' => 'runtime', 'content' => config_data, 'expected_latest_id' => '0')
           end
 
           context 'when version field is an integer' do
@@ -481,8 +491,8 @@ module Bosh::Director
             post '/', request_body, 'CONTENT_TYPE' => 'application/json'
           end.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
           event = Bosh::Director::Models::Event.first
-          expect(event.object_type).to eq('config/my-type')
-          expect(event.object_name).to eq('my-name')
+          expect(event.object_type).to eq("config/#{config_type}")
+          expect(event.object_name).to eq(config_name)
           expect(event.action).to eq('create')
           expect(event.user).to eq('admin')
         end
@@ -501,7 +511,7 @@ module Bosh::Director
 
         context 'when `type` argument is missing' do
           let(:request_body) do
-            JSON.generate('name' => 'my-name', 'content' => '{}', 'expected_latest_id' => '0')
+            JSON.generate('name' => config_name, 'content' => '{}', 'expected_latest_id' => '0')
           end
 
           it 'creates a new event and return 400' do
@@ -509,7 +519,7 @@ module Bosh::Director
 
             event = Bosh::Director::Models::Event.first
             expect(event.object_type).to eq('config/')
-            expect(event.object_name).to eq('my-name')
+            expect(event.object_name).to eq(config_name)
             expect(event.action).to eq('create')
             expect(event.user).to eq('admin')
             expect(event.error).to eq("'type' is required")
@@ -522,14 +532,14 @@ module Bosh::Director
 
         context 'when `name` argument is missing' do
           let(:request_body) do
-            JSON.generate('type' => 'my-type', 'content' => '{}', 'expected_latest_id' => '0')
+            JSON.generate('type' => config_type, 'content' => '{}', 'expected_latest_id' => '0')
           end
 
           it 'creates a new event and return 400' do
             post '/', request_body, 'CONTENT_TYPE' => 'application/json'
 
             event = Bosh::Director::Models::Event.first
-            expect(event.object_type).to eq('config/my-type')
+            expect(event.object_type).to eq("config/#{config_type}")
             expect(event.object_name).to eq(nil)
             expect(event.action).to eq('create')
             expect(event.user).to eq('admin')
@@ -549,16 +559,16 @@ module Bosh::Director
         context 'when type and name are given' do
           context 'when config exists' do
             before do
-              Models::Config.make(
-                type: 'my-type',
-                name: 'my-name',
+              FactoryBot.create(:models_config,
+                type: config_type,
+                name: config_name,
               )
             end
 
             it 'deletes the config' do
-              expect(delete('/?type=my-type&name=my-name').status).to eq(204)
+              expect(delete("/?type=#{config_type}&name=#{config_name}").status).to eq(204)
 
-              configs = JSON.parse(get('/?type=my-type&name=my-name&limit=10').body)
+              configs = JSON.parse(get("/?type=#{config_type}&name=#{config_name}&limit=10").body)
 
               expect(configs.count).to eq(0)
             end
@@ -566,14 +576,14 @@ module Bosh::Director
 
           context "when there is no config matching given 'type' and 'name'" do
             it 'responds with 404' do
-              expect(delete('/?type=my-type&name=my-name').status).to eq(404)
+              expect(delete("/?type=#{config_type}&name=#{config_name}").status).to eq(404)
             end
           end
         end
 
         context "when 'type' parameter is missing" do
           it 'responds with 400' do
-            response = delete('/?name=my-name')
+            response = delete("/?name=#{config_name}")
 
             expect(response.status).to eq(400)
             expect(JSON.parse(response.body)['description']).to eq("'type' is required")
@@ -582,7 +592,7 @@ module Bosh::Director
 
         context "when 'name' parameter is missing" do
           it 'responds with 400' do
-            response = delete('/?type=my-type')
+            response = delete("/?type=#{config_type}")
 
             expect(response.status).to eq(400)
             expect(JSON.parse(response.body)['description']).to eq("'name' is required")
@@ -596,7 +606,7 @@ module Bosh::Director
         before { authorize('admin', 'admin') }
 
         context 'when config exists' do
-          let(:config_id) { Models::Config.make.id }
+          let(:config_id) { FactoryBot.create(:models_config).id }
 
           it 'deletes the config specified by id' do
             expect(delete("/#{config_id}").status).to eq(204)
@@ -1065,26 +1075,28 @@ module Bosh::Director
 
     describe 'authorization' do
       let(:request_body) do
-        JSON.generate('type' => 'my-type', 'content' => '{}')
+        JSON.generate('type' => config_type, 'content' => '{}')
       end
 
       let(:dev_team) { Models::Team.create(name: 'dev') }
       let(:other_team) { Models::Team.create(name: 'other') }
       let!(:dev_config) do
-        Models::Config.make(
-          content: 'some-yaml',
-          name: 'dev_config',
-          created_at: Time.now - 3.days,
-          team_id: dev_team.id,
+        FactoryBot.create(:models_config,
+                          type: config_type,
+                          content: 'some-yaml',
+                          name: 'dev_config',
+                          created_at: Time.now - 3.days,
+                          team_id: dev_team.id,
         )
       end
 
       let!(:other_config) do
-        Models::Config.make(
-          content: 'some-other-yaml',
-          name: 'other_config',
-          created_at: Time.now - 2.days,
-          team_id: other_team.id,
+        FactoryBot.create(:models_config,
+                          type: config_type,
+                          content: 'some-other-yaml',
+                          name: 'other_config',
+                          created_at: Time.now - 2.days,
+                          team_id: other_team.id,
         )
       end
 
@@ -1098,7 +1110,7 @@ module Bosh::Director
         end
 
         it 'does not permit delete the config' do
-          expect(delete('/?type=my-type&name=dev_config').status).to eq(401)
+          expect(delete("/?type=#{config_type}&name=dev_config").status).to eq(401)
         end
       end
 
@@ -1106,8 +1118,8 @@ module Bosh::Director
         before { basic_authorize 'dev-team-member', 'dev-team-member' }
 
         it 'returns team configs' do
-          get '/?type=my-type&latest=false'
-          expect(get('/?type=my-type&latest=false').status).to eq(200)
+          get "/?type=#{config_type}&latest=false"
+          expect(get("/?type=#{config_type}&latest=false").status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(1)
           expect(JSON.parse(last_response.body)).to include(include('content' => 'some-yaml'))
           expect(JSON.parse(last_response.body).first['team']).to eq('dev')
@@ -1117,7 +1129,7 @@ module Bosh::Director
           expect do
             post(
               '/',
-              JSON.generate('name' => 'my-name', 'type' => 'my-type', 'content' => 'a: 123'),
+              JSON.generate('name' => config_name, 'type' => config_type, 'content' => 'a: 123'),
               'CONTENT_TYPE' => 'application/json',
             )
           end.to change(Bosh::Director::Models::Config, :count).from(2).to(3)
@@ -1125,8 +1137,8 @@ module Bosh::Director
         end
 
         it 'deletes the config' do
-          expect(delete('/?type=my-type&name=dev_config').status).to eq(204)
-          configs = JSON.parse(get('/?type=my-type&name=dev_config&latest=false').body)
+          expect(delete("/?type=#{config_type}&name=dev_config").status).to eq(204)
+          configs = JSON.parse(get("/?type=#{config_type}&name=dev_config&latest=false").body)
           expect(configs.count).to eq(0)
         end
 
@@ -1134,14 +1146,14 @@ module Bosh::Director
           expect(
             post(
               '/',
-              JSON.generate('name' => 'other_config', 'type' => 'my-type', 'content' => 'a: 123'),
+              JSON.generate('name' => 'other_config', 'type' => config_type, 'content' => 'a: 123'),
               'CONTENT_TYPE' => 'application/json',
             ).status,
           ).to eq(401)
         end
 
         it "cannot delete another team's config" do
-          expect(delete('/?type=my-type&name=other_config').status).to eq(401)
+          expect(delete("/?type=#{config_type}&name=other_config").status).to eq(401)
         end
 
         it "cannot delete another team's config by id" do
@@ -1153,8 +1165,8 @@ module Bosh::Director
         before { basic_authorize 'dev-team-read-member', 'dev-team-read-member' }
 
         it 'permits read access to the teams config' do
-          get '/?type=my-type&latest=false'
-          expect(get('/?type=my-type&latest=false').status).to eq(200)
+          get "/?type=#{config_type}&latest=false"
+          expect(get("/?type=#{config_type}&latest=false").status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(1)
           expect(JSON.parse(last_response.body)).to include(include('content' => 'some-yaml'))
         end
@@ -1164,12 +1176,12 @@ module Bosh::Director
         end
 
         it 'does not permit delete the config' do
-          expect(delete('/?type=my-type&name=dev_config').status).to eq(401)
+          expect(delete("/?type=#{config_type}&name=dev_config").status).to eq(401)
         end
 
         it 'returns team configs' do
-          get '/?type=my-type&latest=false'
-          expect(get('/?type=my-type&latest=false').status).to eq(200)
+          get "/?type=#{config_type}&latest=false"
+          expect(get("/?type=#{config_type}&latest=false").status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(1)
           expect(JSON.parse(last_response.body).first['team']).to eq('dev')
         end
@@ -1179,7 +1191,7 @@ module Bosh::Director
         before { basic_authorize('admin', 'admin') }
 
         it 'permits read access to all configs' do
-          expect(get('/?type=my-type&latest=false').status).to eq(200)
+          expect(get("/?type=#{config_type}&latest=false").status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(2)
         end
 
@@ -1187,21 +1199,21 @@ module Bosh::Director
           expect do
             post(
               '/',
-              JSON.generate('name' => 'my-name', 'type' => 'my-type', 'content' => 'a: 123'),
+              JSON.generate('name' => config_name, 'type' => config_type, 'content' => 'a: 123'),
               'CONTENT_TYPE' => 'application/json',
             )
           end.to change(Bosh::Director::Models::Config, :count).from(2).to(3)
         end
 
         it 'deletes the config' do
-          expect(delete('/?type=my-type&name=dev_config').status).to eq(204)
-          configs = JSON.parse(get('/?type=my-type&name=dev_config&latest=false').body)
+          expect(delete("/?type=#{config_type}&name=dev_config").status).to eq(204)
+          configs = JSON.parse(get("/?type=#{config_type}&name=dev_config&latest=false").body)
           expect(configs.count).to eq(0)
         end
 
         it 'returns teams value' do
-          get '/?type=my-type&latest=false'
-          expect(get('/?type=my-type&latest=false').status).to eq(200)
+          get "/?type=#{config_type}&latest=false"
+          expect(get("/?type=#{config_type}&latest=false").status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(2)
           expect(JSON.parse(last_response.body).map { |x| x['team'] }).to contain_exactly('dev', 'other')
         end
@@ -1211,7 +1223,7 @@ module Bosh::Director
         before { basic_authorize('reader', 'reader') }
 
         it 'permits read access to all configs' do
-          expect(get('/?type=my-type&latest=false').status).to eq(200)
+          expect(get("/?type=#{config_type}&latest=false").status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(2)
         end
 
@@ -1220,12 +1232,12 @@ module Bosh::Director
         end
 
         it 'does not permit delete the config' do
-          expect(delete('/?type=my-type&name=dev_config').status).to eq(401)
+          expect(delete("/?type=#{config_type}&name=dev_config").status).to eq(401)
         end
 
         it 'returns all configs' do
-          get '/?type=my-type&latest=false'
-          expect(get('/?type=my-type&latest=false').status).to eq(200)
+          get "/?type=#{config_type}&latest=false"
+          expect(get("/?type=#{config_type}&latest=false").status).to eq(200)
           expect(JSON.parse(last_response.body).count).to eq(2)
           expect(JSON.parse(last_response.body).first['team']).to eq('dev')
           expect(JSON.parse(last_response.body)[1]['team']).to eq('other')
@@ -1234,7 +1246,7 @@ module Bosh::Director
     end
 
     describe 'id' do
-      let!(:config_example) { Bosh::Director::Models::Config.make(id: 123, type: 'my-type', name: 'default', content: '1') }
+      let!(:config_example) { FactoryBot.create(:models_config, id: 123, type: config_type, name: 'default', content: '1') }
 
       context 'with authenticated admin user' do
         before(:each) do
@@ -1247,7 +1259,7 @@ module Bosh::Director
           expect(last_response.status).to eq(200)
           expect(JSON.parse(last_response.body)).to eq(
             'id' => '123',
-            'type' => 'my-type',
+            'type' => config_type,
             'name' => 'default',
             'content' => '1',
             'created_at' => config_example.created_at.to_s,

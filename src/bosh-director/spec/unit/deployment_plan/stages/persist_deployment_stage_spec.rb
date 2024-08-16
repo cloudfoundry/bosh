@@ -14,8 +14,8 @@ module Bosh::Director
           - name: appcloud
             version: "0.1")
       end
-      let(:cloud_config) { Models::Config.make(:cloud)}
-      let(:runtime_configs) { [Models::Config.make(:runtime), Models::Config.make(:runtime), Models::Config.make(:runtime), Models::Config.make(:runtime)] }
+      let(:cloud_config) { FactoryBot.create(:models_config_cloud)}
+      let(:runtime_configs) { [FactoryBot.create(:models_config_runtime), FactoryBot.create(:models_config_runtime), FactoryBot.create(:models_config_runtime), FactoryBot.create(:models_config_runtime)] }
       let(:link_spec) do
         {
           'instance_group' => {

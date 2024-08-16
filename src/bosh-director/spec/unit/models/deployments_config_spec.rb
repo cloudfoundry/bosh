@@ -9,7 +9,7 @@ module Bosh::Director::Models
       d.save
       d
     end
-    let(:config) { Config.make(type: 'fake-config') }
+    let(:config) { FactoryBot.create(:models_config, type: 'fake-config') }
     let(:deployment) { FactoryBot.create(:models_deployment, name: 'fake-deployment') }
 
     it 'can create a deployment config' do

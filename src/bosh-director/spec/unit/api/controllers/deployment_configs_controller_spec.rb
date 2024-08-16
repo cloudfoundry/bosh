@@ -24,8 +24,8 @@ module Bosh::Director
     end
 
     describe 'GET', '/' do
-      let(:cloud_config) { Models::Config.make(:cloud) }
-      let(:named_cloud_config) { Models::Config.make(:cloud, name: 'custom-name') }
+      let(:cloud_config) { FactoryBot.create(:models_config_cloud) }
+      let(:named_cloud_config) { FactoryBot.create(:models_config_cloud, name: 'custom-name') }
       let(:cloud_configs) { [cloud_config, named_cloud_config] }
       let(:deployment_name) { 'fake-dep-name' }
       let(:other_deployment_name) { 'other-dep-name' }
@@ -67,7 +67,7 @@ module Bosh::Director
           end
 
           context 'when cloud and runtime configs exist' do
-            let(:runtime_config) { Models::Config.make(:runtime) }
+            let(:runtime_config) { FactoryBot.create(:models_config_runtime) }
             let(:runtime_configs) { [runtime_config] }
 
             it 'returns all configs for the deployment' do

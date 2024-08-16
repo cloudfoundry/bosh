@@ -71,7 +71,7 @@ module Bosh::Director
       end
 
       context 'when there are cpi configs' do
-        let(:cpi_config) { Models::Config.make(:cpi) }
+        let(:cpi_config) { FactoryBot.create(:models_config_cpi) }
 
         before do
           allow(cpi_config).to receive(:raw_manifest).and_return({})

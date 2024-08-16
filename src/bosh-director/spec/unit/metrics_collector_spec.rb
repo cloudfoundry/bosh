@@ -128,7 +128,7 @@ module Bosh
           let(:az) { { 'name' => 'az-1' } }
 
           before do
-            Models::Config.make(:cloud, name: 'some-cloud-config', content: YAML.dump(
+            FactoryBot.create(:models_config_cloud, name: 'some-cloud-config', content: YAML.dump(
               'azs' => [az],
               'vm_types' => [],
               'disk_types' => [],
@@ -137,7 +137,7 @@ module Bosh
               'compilation' => { 'az' => 'az-1', 'network' => manual_network_spec['name'], 'workers' => 3 },
             ))
 
-            Models::Config.make(:cloud, name: 'some-cloud-config', content: YAML.dump(
+            FactoryBot.create(:models_config_cloud, name: 'some-cloud-config', content: YAML.dump(
               'azs' => [az],
               'vm_types' => [],
               'disk_types' => [],
@@ -210,7 +210,7 @@ module Bosh
           context 'missing values' do
             context 'there are empty values defined in some cloud-config' do
               before do
-                Models::Config.make(:cloud, name: 'yacc', content: YAML.dump(
+                FactoryBot.create(:models_config_cloud, name: 'yacc', content: YAML.dump(
                   'azs' => [],
                   'vm_types' => [],
                   'disk_types' => [],
@@ -228,7 +228,7 @@ module Bosh
 
             context 'there are no fields defined in some cloud-config' do
               before do
-                Models::Config.make(:cloud, name: 'yacc', content: YAML.dump({}))
+                FactoryBot.create(:models_config_cloud, name: 'yacc', content: YAML.dump({}))
               end
 
               it 'can still get metrics without errors' do

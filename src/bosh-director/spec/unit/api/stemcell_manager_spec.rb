@@ -135,7 +135,7 @@ module Bosh::Director
         { 'cpis' => [{ 'name' => 'cpi1', 'type' => 'cpi' }] }
       end
       before do
-        Models::Config.make(:cpi, content: cpi_config.to_yaml)
+        FactoryBot.create(:models_config_cpi, content: cpi_config.to_yaml)
         Bosh::Director::Models::Stemcell.create(
             name: 'my-stemcell-with-a-name',
             version: 'stemcell_version',
@@ -162,7 +162,7 @@ module Bosh::Director
         end
 
         before do
-          Models::Config.make(:cpi, content: migrated_from.to_yaml)
+          FactoryBot.create(:models_config_cpi, content: migrated_from.to_yaml)
         end
 
         it 'returns the existing stemcell' do

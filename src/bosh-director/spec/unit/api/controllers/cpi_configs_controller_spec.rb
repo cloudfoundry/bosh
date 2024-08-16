@@ -29,7 +29,7 @@ module Bosh::Director
 
         it 'creates a new cpi config when one exists with different content' do
           content = YAML.dump(Bosh::Spec::Deployments.multi_cpi_config)
-          Models::Config.make(:cpi, content: content + '123')
+          FactoryBot.create(:models_config_cpi, content: content + '123')
 
           expect do
             post '/', content, 'CONTENT_TYPE' => 'text/yaml'
@@ -40,7 +40,7 @@ module Bosh::Director
 
         it 'ignores cpi config when config already exists' do
           content = YAML.dump(Bosh::Spec::Deployments.multi_cpi_config)
-          Models::Config.make(:cpi, content: content)
+          FactoryBot.create(:models_config_cpi, content: content)
 
           expect do
             post '/', content, 'CONTENT_TYPE' => 'text/yaml'
@@ -129,7 +129,7 @@ module Bosh::Director
 
         describe 'when previous cpi config is nil' do
           before do
-            Bosh::Director::Models::Config.make(:cpi, raw_manifest: nil)
+            FactoryBot.create(:models_config_cpi, raw_manifest: nil)
           end
 
           it "shows a full 'added' diff" do
@@ -177,14 +177,14 @@ module Bosh::Director
         before { authorize('admin', 'admin') }
 
         it 'returns the number of cpi configs specified by ?limit' do
-          Bosh::Director::Models::Config.make(:cpi,
+          FactoryBot.create(:models_config_cpi,
                                               content: 'config_from_time_immortal',
                                               created_at: Time.now - 3)
-          Bosh::Director::Models::Config.make(:cpi,
+          FactoryBot.create(:models_config_cpi,
                                               content: 'config_from_last_year',
                                               created_at: Time.now - 2)
           newer_cpi_config_properties = "---\nsuper_shiny: new_config"
-          Bosh::Director::Models::Config.make(:cpi,
+          FactoryBot.create(:models_config_cpi,
                                               content: newer_cpi_config_properties,
                                               created_at: Time.now - 1)
 
@@ -213,7 +213,7 @@ module Bosh::Director
       describe 'when user has readonly access' do
         before { basic_authorize 'reader', 'reader' }
         before do
-          Bosh::Director::Models::Config.make(content: '{}')
+          FactoryBot.create(:models_config, content: '{}')
         end
 
         it 'denies access' do
@@ -289,7 +289,7 @@ module Bosh::Director
             end
 
             it 'returns the delta' do
-              Bosh::Director::Models::Config.make(:cpi,
+              FactoryBot.create(:models_config_cpi,
                                                   content: YAML.dump(old_cpi_config),
                                                   created_at: Time.now - 3)
 

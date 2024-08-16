@@ -72,7 +72,7 @@ module Bosh::Director
           FactoryBot.create(:models_release_version, version: 10, release: release1)
           FactoryBot.create(:models_release_version, version: 9, release: release1)
           FactoryBot.create(:models_release_version, version: 8, release: release1)
-          Models::Config.make(type: 'runtime', name: 'jim')
+          FactoryBot.create(:models_config_runtime, name: 'jim')
 
           allow(RuntimeConfig::RuntimeManifestParser).to receive(:new).and_return(runtime_parser)
           allow(runtime_parser).to receive(:parse).and_return(runtime_config)

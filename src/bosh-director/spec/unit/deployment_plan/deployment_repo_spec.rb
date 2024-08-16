@@ -114,8 +114,8 @@ module Bosh
 
         context 'when cloud configs and runtime configs are given' do
           it 'should persist these associations' do
-            cloud_configs = [Models::Config.make(:cloud)]
-            runtime_configs = [Models::Config.make(type: 'runtime'), Models::Config.make(type: 'runtime'), Models::Config.make(type: 'runtime')]
+            cloud_configs = [FactoryBot.create(:models_config_cloud)]
+            runtime_configs = [FactoryBot.create(:models_config_runtime), FactoryBot.create(:models_config_runtime), FactoryBot.create(:models_config_runtime)]
             deployment = subject.find_or_create_by_name('foo', { 'cloud_configs' => cloud_configs,
                                                                  'runtime_configs' => runtime_configs })
             expect(deployment.cloud_configs).to eq(cloud_configs)

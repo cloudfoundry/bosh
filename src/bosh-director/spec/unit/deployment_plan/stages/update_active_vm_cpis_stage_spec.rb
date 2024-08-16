@@ -32,7 +32,7 @@ module Bosh::Director
       let!(:stemcell) { FactoryBot.create(:models_stemcell, name: 'ubuntu-stemcell', version: '1') }
       let!(:cloud_config) do
         if prior_az_name.nil?
-          Models::Config.make(:cloud_with_manifest_v2)
+          FactoryBot.create(:models_config_cloud, :with_manifest)
         else
           raw_manifest = Bosh::Spec::Deployments.simple_cloud_config.merge(
             'azs' => [
@@ -45,11 +45,11 @@ module Bosh::Director
           raw_manifest['networks'][0]['subnets'][0]['azs'] = [prior_az_name]
           raw_manifest['compilation']['az'] = prior_az_name
 
-          Models::Config.make(:cloud, content: YAML.dump(raw_manifest))
+          FactoryBot.create(:models_config_cloud, content: YAML.dump(raw_manifest))
         end
       end
       let(:prior_az_name) { 'z2' }
-      let!(:cpi_config) { Models::Config.make(:cpi_with_manifest) }
+      let!(:cpi_config) { FactoryBot.create(:models_config_cpi, :with_manifest) }
       let(:deployment_manifest) do
         manifest = {
           'name' => 'fake-deployment',

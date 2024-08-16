@@ -22,7 +22,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     Bosh::Director::DeploymentPlan::PlannerFactory.create(Bosh::Director::Config.logger)
   end
   let(:deployment_plan) do
-    cloud_configs = [Bosh::Director::Models::Config.make(:cloud, content: YAML.dump(cloud_config_hash))]
+    cloud_configs = [FactoryBot.create(:models_config_cloud, content: YAML.dump(cloud_config_hash))]
     planner = planner_factory.create_from_manifest(manifest, cloud_configs, [], {})
     stemcell = Bosh::Director::DeploymentPlan::Stemcell.parse(manifest_hash['stemcells'].first)
     planner.add_stemcell(stemcell)

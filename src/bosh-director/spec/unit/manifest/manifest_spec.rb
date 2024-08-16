@@ -20,7 +20,7 @@ module Bosh::Director
     let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
     let(:consolidated_runtime_config) { instance_double(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator) }
-    let(:cloud_config) { Models::Config.make(:cloud, content: YAML.dump('azs' => [], 'vm_types' => [], 'disk_types' => [], 'networks' => [], 'vm_extensions' => [])) }
+    let(:cloud_config) { FactoryBot.create(:models_config_cloud, content: YAML.dump('azs' => [], 'vm_types' => [], 'disk_types' => [], 'networks' => [], 'vm_extensions' => [])) }
 
     before do
       release_1 = FactoryBot.create(:models_release, name: 'simple')
@@ -43,7 +43,7 @@ module Bosh::Director
 
     describe '.load_from_model' do
       let(:deployment_model) { instance_double(Bosh::Director::Models::Deployment) }
-      let(:runtime_configs) { [Models::Config.make(type: 'runtime'), Models::Config.make(type: 'runtime')] }
+      let(:runtime_configs) { [FactoryBot.create(:models_config_runtime), FactoryBot.create(:models_config_runtime)] }
       let(:manifest_hash) do
         { 'name' => 'a_deployment', 'name-1' => 'my-name-1' }
       end
@@ -116,13 +116,13 @@ module Bosh::Director
 
     describe '.load_from_hash' do
       let(:cloud_config) do
-        Models::Config.make(:cloud, content: YAML.dump('azs' => ['my-az'],
+        FactoryBot.create(:models_config_cloud, content: YAML.dump('azs' => ['my-az'],
                                                        'vm_types' => ['my-vm-type'],
                                                        'disk_types' => ['my-disk-type'],
                                                        'networks' => ['my-net'],
                                                        'vm_extensions' => ['my-extension']))
       end
-      let(:runtime_configs) { [Models::Config.make(type: 'runtime'), Models::Config.make(type: 'runtime')] }
+      let(:runtime_configs) { [FactoryBot.create(:models_config_runtime), FactoryBot.create(:models_config_runtime)] }
 
       let(:runtime_config_hash) do
         { 'raw_runtime' => '((foo))' }

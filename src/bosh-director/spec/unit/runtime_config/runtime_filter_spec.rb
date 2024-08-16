@@ -13,7 +13,7 @@ module Bosh::Director
         planner_attributes,
         manifest,
         YAML.dump(manifest),
-        [Models::Config.make(:cloud, content: YAML.dump(cloud_config))],
+        [FactoryBot.create(:models_config_cloud, content: YAML.dump(cloud_config))],
         Bosh::Spec::Deployments.simple_runtime_config,
         deployment_model,
       )

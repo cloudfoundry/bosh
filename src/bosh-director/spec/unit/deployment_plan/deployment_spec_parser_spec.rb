@@ -18,8 +18,8 @@ module Bosh::Director
       {}
     end
     let(:event_log) { Config.event_log }
-    let(:cloud_config) { Models::Config.make(:cloud) }
-    let(:runtime_configs) { [Models::Config.make(:runtime)] }
+    let(:cloud_config) { FactoryBot.create(:models_config_cloud) }
+    let(:runtime_configs) { [FactoryBot.create(:models_config_runtime)] }
 
     describe '#parse' do
       let(:options) do

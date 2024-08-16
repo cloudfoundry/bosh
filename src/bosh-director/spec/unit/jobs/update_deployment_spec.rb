@@ -460,7 +460,7 @@ module Bosh::Director
 
             let(:cloud_config_id) { ['cloud_config_id'] }
             let(:cloud_configs) do
-              [Models::Config.make(:cloud, content: YAML.dump('azs' => ['my-az'],
+              [FactoryBot.create(:models_config_cloud, content: YAML.dump('azs' => ['my-az'],
                                                              'vm_types' => ['my-vm-type'],
                                                              'disk_types' => ['my-disk-type'],
                                                              'networks' => ['my-net'],
@@ -468,7 +468,7 @@ module Bosh::Director
             end
 
             let(:runtime_config_ids) { ['runtime_config_id'] }
-            let(:runtime_configs) { [Models::Config.make(type: 'runtime')] }
+            let(:runtime_configs) { [FactoryBot.create(:models_config_runtime)] }
 
 
             it 'should be successfully loaded' do
@@ -599,7 +599,7 @@ module Bosh::Director
           end
 
           context 'when a cloud_config is passed in' do
-            let(:cloud_config)     { Models::Config.make(:cloud) }
+            let(:cloud_config)     { FactoryBot.create(:models_config_cloud) }
             let(:cloud_config_id)  { cloud_config.id }
 
             it 'uses the cloud config' do
@@ -613,7 +613,7 @@ module Bosh::Director
           end
 
           context 'when a runtime_config is passed in' do
-            let(:runtime_config)     { Models::Config.make(:runtime) }
+            let(:runtime_config)     { FactoryBot.create(:models_config_runtime) }
             let(:runtime_config_ids) { [runtime_config.id] }
 
             before do

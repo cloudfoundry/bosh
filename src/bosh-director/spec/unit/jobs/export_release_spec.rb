@@ -67,7 +67,7 @@ module Bosh::Director
           name: deployment_manifest['name'],
           manifest: YAML.dump(deployment_manifest),
         )
-        deployment.cloud_configs = [Models::Config.make(:cloud, content: YAML.dump(cloud_config))]
+        deployment.cloud_configs = [FactoryBot.create(:models_config_cloud, content: YAML.dump(cloud_config))]
         deployment
       end
 

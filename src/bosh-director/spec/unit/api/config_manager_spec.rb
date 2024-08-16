@@ -21,20 +21,20 @@ describe Bosh::Director::Api::ConfigManager do
 
   describe '#find' do
     before do
-      Bosh::Director::Models::Config.make(type: '4total-4names', name: 'b', content: '1')
-      Bosh::Director::Models::Config.make(type: '4total-4names', name: 'e', content: '2')
-      Bosh::Director::Models::Config.make(type: '3total-2names', name: 'default', content: '3')
-      Bosh::Director::Models::Config.make(type: '4total-4names', name: 'default', content: '4')
-      Bosh::Director::Models::Config.make(type: '4total-4names', name: 'a', content: '5')
-      Bosh::Director::Models::Config.make(type: '3total-2names', name: 'a', content: '6')
-      Bosh::Director::Models::Config.make(type: '3total-2names', name: 'a', content: '7')
+      FactoryBot.create(:models_config, type: '4total-4names', name: 'b', content: '1')
+      FactoryBot.create(:models_config, type: '4total-4names', name: 'e', content: '2')
+      FactoryBot.create(:models_config, type: '3total-2names', name: 'default', content: '3')
+      FactoryBot.create(:models_config, type: '4total-4names', name: 'default', content: '4')
+      FactoryBot.create(:models_config, type: '4total-4names', name: 'a', content: '5')
+      FactoryBot.create(:models_config, type: '3total-2names', name: 'a', content: '6')
+      FactoryBot.create(:models_config, type: '3total-2names', name: 'a', content: '7')
     end
 
     context 'when limit is greater one' do
       before do
-        Bosh::Director::Models::Config.make(type: '3total-1name', name: 'a', content: '9')
-        Bosh::Director::Models::Config.make(type: '3total-1name', name: 'a', content: '10')
-        Bosh::Director::Models::Config.make(type: '3total-1name', name: 'a', content: '11')
+        FactoryBot.create(:models_config, type: '3total-1name', name: 'a', content: '9')
+        FactoryBot.create(:models_config, type: '3total-1name', name: 'a', content: '10')
+        FactoryBot.create(:models_config, type: '3total-1name', name: 'a', content: '11')
       end
 
       context 'when no filtering' do
@@ -137,7 +137,7 @@ describe Bosh::Director::Api::ConfigManager do
 
       context 'when configs have been deleted' do
         it 'returns only not deleted configs' do
-          Bosh::Director::Models::Config.make(type: '4total-4names', name: 'a', deleted: true)
+          FactoryBot.create(:models_config, type: '4total-4names', name: 'a', deleted: true)
 
           configs = manager.find(type: '4total-4names', name: 'a', limit: 999)
 
@@ -148,9 +148,9 @@ describe Bosh::Director::Api::ConfigManager do
   end
 
   describe '#find_max_id' do
-    let!(:config) { Bosh::Director::Models::Config.make(id: 1) }
-    let!(:config) { Bosh::Director::Models::Config.make(id: 2) }
-    let!(:config) { Bosh::Director::Models::Config.make(id: 5) }
+    let!(:config) { FactoryBot.create(:models_config, id: 1) }
+    let!(:config) { FactoryBot.create(:models_config, id: 2) }
+    let!(:config) { FactoryBot.create(:models_config, id: 5) }
 
     it 'returns the max ID' do
       result = manager.find_max_id
@@ -170,7 +170,7 @@ describe Bosh::Director::Api::ConfigManager do
   end
 
   describe '#find_by_Id' do
-    let!(:config) { Bosh::Director::Models::Config.make(id: 123, type: '4total-4names', name: 'b', content: '1') }
+    let!(:config) { FactoryBot.create(:models_config, id: 123, type: '4total-4names', name: 'b', content: '1') }
 
     it 'returns config with specified id' do
       result = manager.find_by_id(123)
@@ -178,7 +178,7 @@ describe Bosh::Director::Api::ConfigManager do
     end
 
     context 'when config is deleted' do
-      let!(:config) { Bosh::Director::Models::Config.make(id: 12345, deleted: true) }
+      let!(:config) { FactoryBot.create(:models_config, id: 12345, deleted: true) }
 
       it 'raises ConfigNotFound' do
         expect do
@@ -199,7 +199,7 @@ describe Bosh::Director::Api::ConfigManager do
   describe '#delete' do
     context 'when config entry exists' do
       it "sets deleted to 'true'" do
-        Bosh::Director::Models::Config.make(type: 'my-type', name: 'my-name')
+        FactoryBot.create(:models_config, type: 'my-type', name: 'my-name')
 
         count = manager.delete('my-type', 'my-name')
 
@@ -214,9 +214,9 @@ describe Bosh::Director::Api::ConfigManager do
 
     context 'when multiple config entries exist' do
       it "sets deleted to all matching configs to 'true'" do
-        Bosh::Director::Models::Config.make(type: 'my-type', name: 'my-name')
-        Bosh::Director::Models::Config.make(type: 'my-type', name: 'my-name')
-        Bosh::Director::Models::Config.make(type: 'other-type', name: 'other-name')
+        FactoryBot.create(:models_config, type: 'my-type', name: 'my-name')
+        FactoryBot.create(:models_config, type: 'my-type', name: 'my-name')
+        FactoryBot.create(:models_config, type: 'other-type', name: 'other-name')
 
         count = manager.delete('my-type', 'my-name')
 
@@ -232,8 +232,8 @@ describe Bosh::Director::Api::ConfigManager do
       end
 
       it 'does not delete a deleted config again' do
-        Bosh::Director::Models::Config.make(type: 'my-type', name: 'my-name', deleted: true)
-        Bosh::Director::Models::Config.make(type: 'my-type', name: 'my-name')
+        FactoryBot.create(:models_config, type: 'my-type', name: 'my-name', deleted: true)
+        FactoryBot.create(:models_config, type: 'my-type', name: 'my-name')
 
         count = manager.delete('my-type', 'my-name')
 
@@ -252,7 +252,7 @@ describe Bosh::Director::Api::ConfigManager do
 
   describe '#delete_by_id' do
     context 'when config entry exists for given id' do
-      let!(:config_id) { Bosh::Director::Models::Config.make(type: 'my-type', name: 'my-name').id }
+      let!(:config_id) { FactoryBot.create(:models_config, type: 'my-type', name: 'my-name').id }
 
       it "sets deleted to 'true'" do
 
@@ -264,7 +264,7 @@ describe Bosh::Director::Api::ConfigManager do
     end
 
     context 'when config is deleted for given id' do
-      let!(:config_id) { Bosh::Director::Models::Config.make(deleted: true).id }
+      let!(:config_id) { FactoryBot.create(:models_config, deleted: true).id }
 
       it "does not update any entry" do
         count = manager.delete_by_id(config_id)
@@ -290,7 +290,7 @@ describe Bosh::Director::Api::ConfigManager do
     end
 
     context 'when config of type deploy exists' do
-      let!(:config_id) { Bosh::Director::Models::Config.make(type: 'deploy', name: 'my-name') }
+      let!(:config_id) { FactoryBot.create(:models_config, type: 'deploy', name: 'my-name') }
 
       it "returns 'true'" do
         expect(manager.deploy_config_enabled?).to eq(true)

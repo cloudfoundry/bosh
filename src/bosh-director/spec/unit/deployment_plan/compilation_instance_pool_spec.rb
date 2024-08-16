@@ -382,8 +382,7 @@ module Bosh::Director
           deployment
         end
         let(:cloud_config) do
-          Models::Config.make(
-            :cloud,
+          FactoryBot.create(:models_config_cloud,
             raw_manifest: Bosh::Spec::Deployments.simple_cloud_config.merge(
               'azs' => [{ 'name' => 'foo-az' }],
             ),

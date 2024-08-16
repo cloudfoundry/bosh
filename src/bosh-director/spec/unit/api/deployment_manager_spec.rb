@@ -14,10 +14,10 @@ module Bosh::Director
     end
 
     describe '#create_deployment' do
-      let(:runtime_configs) { [Models::Config.make(type: 'runtime'), Models::Config.make(type: 'runtime')] }
+      let(:runtime_configs) { [FactoryBot.create(:models_config, type: 'runtime'), FactoryBot.create(:models_config, type: 'runtime')] }
 
       it 'enqueues a DJ job' do
-        cloud_configs = [Models::Config.make(:cloud)]
+        cloud_configs = [FactoryBot.create(:models_config_cloud)]
 
         create_task = subject.create_deployment(username, 'manifest', cloud_configs, runtime_configs, deployment, options)
 
@@ -36,7 +36,7 @@ module Bosh::Director
       end
 
       it 'passes context id' do
-        cloud_configs = [Models::Config.make(:cloud)]
+        cloud_configs = [FactoryBot.create(:models_config_cloud)]
         context_id = 'example-context-id'
         create_task = subject.create_deployment(username, 'manifest', cloud_configs, runtime_configs, deployment, options, context_id)
 
@@ -69,7 +69,7 @@ module Bosh::Director
       before do
         release = FactoryBot.create(:models_release)
         deployment = FactoryBot.create(:models_deployment, name: 'b')
-        deployment.cloud_configs = [Models::Config.make(:cloud)]
+        deployment.cloud_configs = [FactoryBot.create(:models_config_cloud)]
         release_version = FactoryBot.create(:models_release_version, release_id: release.id)
         deployment.add_release_version(release_version)
       end

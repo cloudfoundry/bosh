@@ -30,7 +30,7 @@ module Bosh::Director
         { 'echo_value' => 'addon_prop_value' }
       end
 
-      let(:cloud_configs) { [Models::Config.make(:cloud_with_manifest_v2)] }
+      let(:cloud_configs) { [FactoryBot.create(:models_config_cloud, :with_manifest)] }
 
       let(:teams) do
         Bosh::Director::Models::Team.transform_admin_team_scope_to_teams(

@@ -491,7 +491,7 @@ module Bosh::Director
         let(:acl_subject) do
           team = FactoryBot.create(:models_team, name: 'security')
 
-          Models::Config.make(
+          FactoryBot.create(:models_config,
             content: 'some-yaml',
             created_at: Time.now - 3.days,
             team_id: team.id.to_s,

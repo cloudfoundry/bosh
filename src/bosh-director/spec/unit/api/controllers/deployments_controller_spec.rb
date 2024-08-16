@@ -35,8 +35,8 @@ module Bosh::Director
         YAML.dump(manifest_with_errand_hash(deployment_name))
       end
 
-      let(:cloud_config) { Models::Config.make(:cloud_with_manifest) }
-      let(:time) {Time.now}
+      let(:cloud_config) { FactoryBot.create(:models_config_cloud, :with_manifest) }
+      let(:time) { Time.now }
 
       before do
         App.new(config)
@@ -118,12 +118,12 @@ module Bosh::Director
 
             context 'when provided cloud configs and runtime configs context to work within' do
               it 'should use the provided context instead of using the latest runtime and cloud config' do
-                cloud_config = Models::Config.make(:cloud_with_manifest)
-                runtime_config1 = Models::Config.make(type: 'runtime')
-                runtime_config2 = Models::Config.make(type: 'runtime')
+                cloud_config = FactoryBot.create(:models_config_cloud, :with_manifest)
+                runtime_config1 = FactoryBot.create(:models_config_runtime)
+                runtime_config2 = FactoryBot.create(:models_config_runtime)
 
-                Models::Config.make(:cloud_with_manifest)
-                Models::Config.make(type: 'runtime')
+                FactoryBot.create(:models_config_cloud, :with_manifest)
+                FactoryBot.create(:models_config, type: 'runtime')
 
                 deployment_context = [[
                   'context',
@@ -152,19 +152,19 @@ module Bosh::Director
               context 'with an authorized team' do
                 before { basic_authorize 'dev-team-member', 'dev-team-member' }
 
-                let(:runtime_config_1) { Models::Config.make(type: 'runtime', raw_manifest: {'addons' => []}) }
-                let(:runtime_config_2) { Models::Config.make(type: 'runtime', raw_manifest: {'addons' => []}) }
-                let(:runtime_config_3) { Models::Config.make(type: 'runtime', raw_manifest: {'addons' => []}, name: 'smurf') }
-                let(:cloud_config) { Models::Config.make(:cloud, raw_manifest: {'azs' => []}) }
+                let(:runtime_config_1) { FactoryBot.create(:models_config_runtime, raw_manifest: {'addons' => []}) }
+                let(:runtime_config_2) { FactoryBot.create(:models_config_runtime, raw_manifest: {'addons' => []}) }
+                let(:runtime_config_3) { FactoryBot.create(:models_config_runtime, raw_manifest: {'addons' => []}, name: 'smurf') }
+                let(:cloud_config) { FactoryBot.create(:models_config_cloud, raw_manifest: {'azs' => []}) }
 
                 let(:dev_team) { FactoryBot.create(:models_team, name: 'dev') }
                 let(:other_team) { FactoryBot.create(:models_team, name: 'other') }
 
-                let!(:dev_runtime_config) { Models::Config.make(name: 'dev-runtime', type: 'runtime', team_id: dev_team.id) }
-                let!(:other_runtime_config) { Models::Config.make(name: 'other-runtime', type: 'runtime', team_id: other_team.id) }
+                let!(:dev_runtime_config) { FactoryBot.create(:models_config_runtime, name: 'dev-runtime', team_id: dev_team.id) }
+                let!(:other_runtime_config) { FactoryBot.create(:models_config_runtime, name: 'other-runtime', team_id: other_team.id) }
 
-                let!(:dev_cloud_config) { Models::Config.make(name: 'dev-cloud', type: 'cloud', team_id: dev_team.id) }
-                let!(:other_cloud_config) { Models::Config.make(name: 'other-cloud', type: 'cloud', team_id: other_team.id) }
+                let!(:dev_cloud_config) { FactoryBot.create(:models_config_cloud, name: 'dev-cloud', team_id: dev_team.id) }
+                let!(:other_cloud_config) { FactoryBot.create(:models_config_cloud, name: 'other-cloud', team_id: other_team.id) }
 
                 it 'should error if the user references a cloud config from another team' do
                   deployment_context = [['context', JSON.dump({'cloud_config_ids' => [dev_cloud_config.id, other_cloud_config.id], 'runtime_config_ids' => []})]]
@@ -207,8 +207,8 @@ module Bosh::Director
 
             context 'when using cloud config and runtime config' do
               it 'should persist these relations when persisting the deployment' do
-                cloud_config = Models::Config.make(:cloud_with_manifest)
-                runtime_config = Models::Config.make(type: 'runtime')
+                cloud_config = FactoryBot.create(:models_config_cloud, :with_manifest)
+                runtime_config = FactoryBot.create(:models_config_runtime)
 
                 post '/', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
 
@@ -233,19 +233,19 @@ module Bosh::Director
             end
 
             context 'no existing context provided' do
-              let(:runtime_config_1) { Models::Config.make(type: 'runtime', raw_manifest: {'addons' => []}) }
-              let(:runtime_config_2) { Models::Config.make(type: 'runtime', raw_manifest: {'addons' => []}) }
-              let(:runtime_config_3) { Models::Config.make(type: 'runtime', raw_manifest: {'addons' => []}, name: 'smurf') }
-              let(:cloud_config) { Models::Config.make(:cloud, raw_manifest: {'azs' => []}) }
+              let(:runtime_config_1) { FactoryBot.create(:models_config_runtime, raw_manifest: {'addons' => []}) }
+              let(:runtime_config_2) { FactoryBot.create(:models_config_runtime, raw_manifest: {'addons' => []}) }
+              let(:runtime_config_3) { FactoryBot.create(:models_config_runtime, raw_manifest: {'addons' => []}, name: 'smurf') }
+              let(:cloud_config) { FactoryBot.create(:models_config_cloud, raw_manifest: {'azs' => []}) }
 
               let(:dev_team) { FactoryBot.create(:models_team, name: 'dev') }
               let(:other_team) { FactoryBot.create(:models_team, name: 'other') }
 
-              let!(:dev_runtime_config) { Models::Config.make(name: 'dev-runtime', type: 'runtime', team_id: dev_team.id) }
-              let!(:other_runtime_config) { Models::Config.make(name: 'other-runtime', type: 'runtime', team_id: other_team.id) }
+              let!(:dev_runtime_config) { FactoryBot.create(:models_config_runtime, name: 'dev-runtime', team_id: dev_team.id) }
+              let!(:other_runtime_config) { FactoryBot.create(:models_config_runtime, name: 'other-runtime', team_id: other_team.id) }
 
-              let!(:dev_cloud_config) { Models::Config.make(name: 'dev-cloud', type: 'cloud', team_id: dev_team.id) }
-              let!(:other_cloud_config) { Models::Config.make(name: 'other-cloud', type: 'cloud', team_id: other_team.id) }
+              let!(:dev_cloud_config) { FactoryBot.create(:models_config_cloud, name: 'dev-cloud', team_id: dev_team.id) }
+              let!(:other_cloud_config) { FactoryBot.create(:models_config_cloud, name: 'other-cloud', team_id: other_team.id) }
 
               context 'with team-specific user' do
                 before { basic_authorize 'dev-team-member', 'dev-team-member' }
@@ -436,7 +436,7 @@ module Bosh::Director
 
         describe 'deleting deployment' do
           it 'deletes the deployment' do
-            deployment = Models::Deployment.create(name: 'test_deployment', manifest: YAML.dump({ 'foo' => 'bar' }))
+            Models::Deployment.create(name: 'test_deployment', manifest: YAML.dump({ 'foo' => 'bar' }))
 
             delete '/test_deployment'
             expect_redirect_to_queued_task(last_response)
@@ -444,7 +444,7 @@ module Bosh::Director
 
           it 'accepts a context id' do
             context_id = 'example-context-id'
-            deployment = Models::Deployment.create(name: 'test_deployment', manifest: YAML.dump({ 'foo' => 'bar' }))
+            Models::Deployment.create(name: 'test_deployment', manifest: YAML.dump({ 'foo' => 'bar' }))
 
             header('X-Bosh-Context-Id', context_id)
             delete '/test_deployment'
@@ -503,17 +503,17 @@ module Bosh::Director
           context 'when team-authorized' do
             before do
               basic_authorize 'dev-team-member', 'dev-team-member'
-              Models::Config.make(name: 'other-runtime', type: 'runtime', team_id: other_team.id)
-              Models::Config.make(name: 'other-cloud', type: 'cloud', team_id: other_team.id)
+              FactoryBot.create(:models_config_runtime, name: 'other-runtime', team_id: other_team.id)
+              FactoryBot.create(:models_config_cloud, name: 'other-cloud', team_id: other_team.id)
               Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
             end
 
-            let!(:runtime_config) { Models::Config.make(type: 'runtime', raw_manifest: {'addons' => []}) }
-            let!(:cloud_config) { Models::Config.make(:cloud, raw_manifest: {'azs' => []}) }
+            let!(:runtime_config) { FactoryBot.create(:models_config_runtime, raw_manifest: {'addons' => []}) }
+            let!(:cloud_config) { FactoryBot.create(:models_config_cloud, raw_manifest: {'azs' => []}) }
 
             let!(:dev_team) { FactoryBot.create(:models_team, name: 'dev') }
-            let!(:dev_runtime_config) { Models::Config.make(name: 'dev-runtime', type: 'runtime', team_id: dev_team.id) }
-            let!(:dev_cloud_config) { Models::Config.make(name: 'dev-cloud', type: 'cloud', team_id: dev_team.id) }
+            let!(:dev_runtime_config) { FactoryBot.create(:models_config_runtime, name: 'dev-runtime', team_id: dev_team.id) }
+            let!(:dev_cloud_config) { FactoryBot.create(:models_config_cloud, name: 'dev-cloud', team_id: dev_team.id) }
             let!(:other_team) { FactoryBot.create(:models_team, name: 'other') }
 
             let!(:deployment) do
@@ -968,9 +968,9 @@ module Bosh::Director
               stemcell_1_2 = Models::Stemcell.create(name: 'stemcell-1', version: 2, cid: 123)
               stemcell_2_1 = Models::Stemcell.create(name: 'stemcell-2', version: 1, cid: 124)
 
-              old_cloud_config = Models::Config.make(:cloud, raw_manifest: {}, created_at: Time.now - 60)
-              new_cloud_config = Models::Config.make(:cloud, raw_manifest: {})
-              new_other_cloud_config = Models::Config.make(:cloud, name: 'other-config', raw_manifest: {})
+              old_cloud_config = FactoryBot.create(:models_config_cloud, raw_manifest: {}, created_at: Time.now - 60)
+              new_cloud_config = FactoryBot.create(:models_config_cloud, raw_manifest: {})
+              new_other_cloud_config = FactoryBot.create(:models_config_cloud, name: 'other-config', raw_manifest: {})
 
               good_team = Models::Team.create(name: 'dabest')
               bad_team = Models::Team.create(name: 'daworst')
@@ -1008,8 +1008,8 @@ module Bosh::Director
 
             context 'with cloud configs' do
               it 'excludes non-cloud configs' do
-                old_runtime = Models::Config.make(:runtime, name: 'runtime-config', raw_manifest: {})
-                Models::Config.make(:runtime, name: 'runtime-config', raw_manifest: {})
+                old_runtime = FactoryBot.create(:models_config_runtime, name: 'runtime-config', raw_manifest: {})
+                FactoryBot.create(:models_config_runtime, name: 'runtime-config', raw_manifest: {})
                 Models::Deployment.create(
                   name: 'deployment-4',
                 ).tap do |deployment|
@@ -1071,7 +1071,7 @@ module Bosh::Director
               end
 
               it 'mark cloud-config outdated if it references a deleted config' do
-                deleted_cloud_config = Models::Config.make(:cloud, raw_manifest: {}, deleted: true)
+                deleted_cloud_config = FactoryBot.create(:models_config_cloud, raw_manifest: {}, deleted: true)
                 Models::Deployment.create(
                   name: 'deployment-4',
                 ).tap do |deployment|
@@ -1299,10 +1299,10 @@ module Bosh::Director
             let(:other_team) { FactoryBot.create(:models_team, name: 'footeam') }
             let(:dev_team) { FactoryBot.create(:models_team, name: 'dev') }
             let(:dev_cloud_config) do
-              Models::Config.make(name: 'dev-team-config', type: 'cloud', raw_manifest: {}, team_id: dev_team.id)
+              FactoryBot.create(:models_config_cloud, name: 'dev-team-config', raw_manifest: {}, team_id: dev_team.id)
             end
             let(:other_cloud_config) do
-              Models::Config.make(name: 'other-team-config', type: 'cloud', raw_manifest: {}, team_id: other_team.id)
+              FactoryBot.create(:models_config_cloud, name: 'other-team-config', raw_manifest: {}, team_id: other_team.id)
             end
 
             before { basic_authorize 'dev-team-member', 'dev-team-member' }
@@ -2183,7 +2183,7 @@ module Bosh::Director
               )
             end
 
-            let(:cloud_config) { Models::Config.make(:cloud, content: YAML.dump(Bosh::Spec::Deployments.simple_cloud_config)) }
+            let(:cloud_config) { FactoryBot.create(:models_config_cloud, content: YAML.dump(Bosh::Spec::Deployments.simple_cloud_config)) }
 
             let(:service_errand) do
               {
@@ -2359,10 +2359,10 @@ module Bosh::Director
               { 'CONTENT_TYPE' => 'text/yaml' },
             )
           end
-          let(:runtime_config_1) { Models::Config.make(type: 'runtime', raw_manifest: {'addons' => []}) }
-          let(:runtime_config_2) { Models::Config.make(type: 'runtime', raw_manifest: {'addons' => []}) }
-          let(:runtime_config_3) { Models::Config.make(type: 'runtime', raw_manifest: {'addons' => []}, name: 'smurf') }
-          let(:cloud_config) { Models::Config.make(:cloud, raw_manifest: {'azs' => []}) }
+          let(:runtime_config_1) { FactoryBot.create(:models_config_runtime, raw_manifest: {'addons' => []}) }
+          let(:runtime_config_2) { FactoryBot.create(:models_config_runtime, raw_manifest: {'addons' => []}) }
+          let(:runtime_config_3) { FactoryBot.create(:models_config_runtime, raw_manifest: {'addons' => []}, name: 'smurf') }
+          let(:cloud_config) { FactoryBot.create(:models_config_cloud, raw_manifest: {'azs' => []}) }
 
           before do
             deployment = Models::Deployment.create(
@@ -2383,11 +2383,11 @@ module Bosh::Director
             let(:dev_team) { FactoryBot.create(:models_team, name: 'dev') }
             let(:other_team) { FactoryBot.create(:models_team, name: 'other') }
 
-            let!(:dev_runtime_config) { Models::Config.make(name: 'dev-runtime', type: 'runtime', team_id: dev_team.id) }
-            let!(:other_runtime_config) { Models::Config.make(name: 'other-runtime', type: 'runtime', team_id: other_team.id) }
+            let!(:dev_runtime_config) { FactoryBot.create(:models_config_runtime, name: 'dev-runtime', team_id: dev_team.id) }
+            let!(:other_runtime_config) { FactoryBot.create(:models_config_runtime, name: 'other-runtime', team_id: other_team.id) }
 
-            let!(:dev_cloud_config) { Models::Config.make(name: 'dev-cloud', type: 'cloud', team_id: dev_team.id) }
-            let!(:other_cloud_config) { Models::Config.make(name: 'other-cloud', type: 'cloud', team_id: other_team.id) }
+            let!(:dev_cloud_config) { FactoryBot.create(:models_config_cloud, name: 'dev-cloud', team_id: dev_team.id) }
+            let!(:other_cloud_config) { FactoryBot.create(:models_config_cloud, name: 'other-cloud', team_id: other_team.id) }
 
             it 'returns diff with resolved aliases' do
               perform
@@ -2815,7 +2815,7 @@ module Bosh::Director
 
           context 'GET /:deployment/errands' do
 
-            let(:cloud_config) { Models::Config.make(:cloud, content: YAML.dump(Bosh::Spec::Deployments.simple_cloud_config)) }
+            let(:cloud_config) { FactoryBot.create(:models_config_cloud, content: YAML.dump(Bosh::Spec::Deployments.simple_cloud_config)) }
 
             it 'allows access to owned deployment' do
               expect(get('/owned_deployment/errands').status).to eq(200)

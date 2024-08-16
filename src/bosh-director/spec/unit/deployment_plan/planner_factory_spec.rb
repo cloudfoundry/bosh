@@ -9,8 +9,8 @@ module Bosh
         let(:deployment_name) { 'simple' }
         let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
         let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new }
-        let(:cloud_configs) { [Models::Config.make(:cloud, content: YAML.dump(cloud_config_hash))] }
-        let(:runtime_config_models) { [Bosh::Director::Models::Config.make(:runtime, content: runtime_config_hash.to_yaml)] }
+        let(:cloud_configs) { [FactoryBot.create(:models_config_cloud, content: YAML.dump(cloud_config_hash))] }
+        let(:runtime_config_models) { [FactoryBot.create(:models_config_runtime, content: runtime_config_hash.to_yaml)] }
         let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
         let(:runtime_config_hash) { Bosh::Spec::Deployments.simple_runtime_config }
 

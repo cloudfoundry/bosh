@@ -17,7 +17,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     let(:availability_zones) { instance_group.availability_zones }
-    let(:cloud_configs) { [Bosh::Director::Models::Config.make(:cloud, content: YAML.dump(cloud_config_hash))] }
+    let(:cloud_configs) { [FactoryBot.create(:models_config_cloud, content: YAML.dump(cloud_config_hash))] }
     let!(:deployment_model) { FactoryBot.create(:models_deployment, manifest: YAML.dump(manifest_hash), name: manifest_hash['name']) }
     let(:deployment_repo) { DeploymentRepo.new }
     let(:desired_instances) { [].tap { |a| desired_instance_count.times { a << new_desired_instance } } }

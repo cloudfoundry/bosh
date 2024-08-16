@@ -137,7 +137,7 @@ module Bosh::Director
         let(:assembler) { instance_double(DeploymentPlan::Assembler, bind_models: nil) }
 
         let(:errand_job) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'errand1', runs_as_errand?: true) }
-        let(:cloud_config) { Models::Config.make(:cloud) }
+        let(:cloud_config) { FactoryBot.create(:models_config_cloud) }
         let(:runner) { instance_double('Bosh::Director::Errand::Runner') }
         let(:errand_result) { Errand::Result.new(instance, errand_name, 0, nil, nil, nil) }
 
@@ -197,7 +197,7 @@ module Bosh::Director
             )
           end
           let(:compile_packages_step) { instance_double(DeploymentPlan::Stages::PackageCompileStage, perform: nil) }
-          let(:cloud_config) { Models::Config.make(:cloud) }
+          let(:cloud_config) { FactoryBot.create(:models_config_cloud) }
           let(:runner) { instance_double('Bosh::Director::Errand::Runner') }
 
           before do
