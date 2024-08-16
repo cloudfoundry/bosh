@@ -2444,7 +2444,7 @@ module Bosh::Director
                   :manifest => YAML.dump(manifest_hash)
                 )
 
-                Models::Config.make(:cloud, raw_manifest: {'networks'=>[{'name'=>'very-cloudy-network'}]})
+                Models::Config.make(:cloud, content: YAML.dump({'networks'=>[{'name'=>'very-cloudy-network'}]}))
 
                 manifest_hash['networks'] = [{'name'=> 'network2'}]
                 diff = post '/fake-dep-name-no-cloud-conf/diff', YAML.dump(manifest_hash), {'CONTENT_TYPE' => 'text/yaml'}
