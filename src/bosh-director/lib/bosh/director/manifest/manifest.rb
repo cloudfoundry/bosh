@@ -88,9 +88,6 @@ module Bosh::Director
 
     def self.load_manifest(manifest_hash, manifest_text, cloud_config, runtime_config, options = {})
       resolve_interpolation = options.fetch(:resolve_interpolation, true)
-      ignore_cloud_config = options.fetch(:ignore_cloud_config, false)
-
-      cloud_config = nil if ignore_cloud_config
 
       cloud_config_hash = cloud_config.raw_manifest if cloud_config
       runtime_config_hash = runtime_config.raw_manifest
