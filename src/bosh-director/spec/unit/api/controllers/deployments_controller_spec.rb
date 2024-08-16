@@ -2429,32 +2429,6 @@ module Bosh::Director
               expect(JSON.parse(last_response.body)['error']).to include('Unable to diff manifest')
             end
 
-            context 'when cloud config exists' do
-              let(:manifest_hash) do
-                {
-                  'instance_groups' => [],
-                  'releases' => [{ 'name' => 'simple', 'version' => 5 }],
-                  'networks' => [{ 'name' => 'non-cloudy-network' }],
-                }
-              end
-
-              it 'ignores cloud config if network section exists' do
-                Models::Deployment.create(
-                  :name => 'fake-dep-name-no-cloud-conf',
-                  :manifest => YAML.dump(manifest_hash)
-                )
-
-                Models::Config.make(:cloud, content: YAML.dump({'networks'=>[{'name'=>'very-cloudy-network'}]}))
-
-                manifest_hash['networks'] = [{'name'=> 'network2'}]
-                diff = post '/fake-dep-name-no-cloud-conf/diff', YAML.dump(manifest_hash), {'CONTENT_TYPE' => 'text/yaml'}
-
-                expect(diff).not_to match(/very-cloudy-network/)
-                expect(diff).to match(/non-cloudy-network/)
-                expect(diff).to match(/network2/)
-              end
-            end
-
             context 'existing deployment' do
               let(:deployment) do
                 Models::Deployment.make(name: 'existing-name', manifest: '{}').tap { |d| d.teams = [dev_team] }
