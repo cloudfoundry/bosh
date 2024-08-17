@@ -14,7 +14,7 @@ module Bosh::Director
     end
 
     let(:persistent_disk) do
-      Models::PersistentDisk.make(
+      FactoryBot.create(:models_persistent_disk,
         instance: instance,
         disk_cid: 'disk123',
         size: 2048,

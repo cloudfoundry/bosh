@@ -43,7 +43,7 @@ module Bosh::Director
       let(:disk_state) { true }
 
       let!(:disk) do
-        Models::PersistentDisk.make(active: disk_state, instance_id: instance.id, disk_cid: 'fake-disk-cid')
+        FactoryBot.create(:models_persistent_disk, active: disk_state, instance_id: instance.id, disk_cid: 'fake-disk-cid')
       end
       let!(:vm) { FactoryBot.create(:models_vm, cid: 'fake-vm-cid', instance_id: instance.id) }
       let!(:instance) { FactoryBot.create(:models_instance, deployment: deployment, job: 'fake-job', index: 0, availability_zone: 'az1') }

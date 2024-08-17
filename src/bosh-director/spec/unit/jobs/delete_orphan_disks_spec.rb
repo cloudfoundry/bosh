@@ -19,7 +19,7 @@ module Bosh::Director
       end
 
       it 'errors if disk is not orphaned' do
-        persistent_disk_cid = Models::PersistentDisk.make.disk_cid
+        persistent_disk_cid = FactoryBot.create(:models_persistent_disk).disk_cid
         expect do
           Jobs::DeleteOrphanDisks.enqueue(nil, [persistent_disk_cid], JobQueue.new)
         end.to raise_error(DeletingPersistentDiskError)

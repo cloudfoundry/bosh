@@ -32,7 +32,7 @@ module Bosh::Director
             deployment_name: 'fake-deployment',
             created_at: orphaned_at,
           )
-          Models::PersistentDisk.make(disk_cid: 'disk123', size: 2048, cloud_properties: {'cloud' => 'properties'}, active: true)
+          FactoryBot.create(:models_persistent_disk, disk_cid: 'disk123', size: 2048, cloud_properties: {'cloud' => 'properties'}, active: true)
 
           basic_authorize 'admin', 'admin'
         end

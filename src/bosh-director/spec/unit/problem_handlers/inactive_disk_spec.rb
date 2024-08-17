@@ -21,9 +21,9 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
     @vm = FactoryBot.create(:models_vm, instance_id: @instance.id, stemcell_api_version: 25)
     @instance.active_vm = @vm
 
-    @disk = Bosh::Director::Models::PersistentDisk.
-      make(:disk_cid => 'disk-cid', :instance_id => @instance.id,
-           :size => 300, :active => false)
+    @disk =
+      FactoryBot.create(:models_persistent_disk,
+                        disk_cid: 'disk-cid', instance_id: @instance.id, size: 300, active: false)
 
     @handler = make_handler(@disk.id)
     allow(@handler).to receive(:cloud).and_return(cloud)
@@ -59,7 +59,7 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
     end
 
     it 'is invalid if disk is active' do
-      @disk.update(:active => true)
+      @disk.update(active: true)
       expect {
         make_handler(@disk.id)
       }.to raise_error("Disk 'disk-cid' is no longer inactive")
@@ -75,8 +75,7 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
     end
 
     it 'fails if instance has another persistent disk according to DB' do
-      Bosh::Director::Models::PersistentDisk.
-        make(:instance_id => @instance.id, :active => true)
+      FactoryBot.create(:models_persistent_disk, instance_id: @instance.id, active: true)
 
       expect(@agent).to receive(:list_disk).and_return(['disk-cid'])
 

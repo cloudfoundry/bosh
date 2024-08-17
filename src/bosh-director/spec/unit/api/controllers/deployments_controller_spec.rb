@@ -2115,11 +2115,11 @@ module Bosh::Director
             deployment = FactoryBot.create(:models_deployment, name: 'mycloud')
 
             instance = FactoryBot.create(:models_instance, deployment: deployment, job: 'job', index: 0, uuid: 'abc123')
-            disk = Models::PersistentDisk.make(disk_cid: 'disk0', instance: instance, active: true)
+            disk = FactoryBot.create(:models_persistent_disk, disk_cid: 'disk0', instance: instance, active: true)
             Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap0a')
 
             instance = FactoryBot.create(:models_instance, deployment: deployment, job: 'job', index: 1)
-            disk = Models::PersistentDisk.make(disk_cid: 'disk1', instance: instance, active: true)
+            disk = FactoryBot.create(:models_persistent_disk, disk_cid: 'disk1', instance: instance, active: true)
             Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap1a')
             Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap1b')
           end
@@ -2681,7 +2681,7 @@ module Bosh::Director
           context 'DELETE /:deployment/snapshots/:cid' do
             before do
               instance = FactoryBot.create(:models_instance, deployment: owned_deployment)
-              persistent_disk = Models::PersistentDisk.make(instance: instance)
+              persistent_disk = FactoryBot.create(:models_persistent_disk, instance: instance)
               Models::Snapshot.make(persistent_disk: persistent_disk, snapshot_cid: 'cid-1')
             end
 

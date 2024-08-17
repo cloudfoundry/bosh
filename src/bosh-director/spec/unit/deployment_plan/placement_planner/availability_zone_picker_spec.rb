@@ -346,7 +346,7 @@ module Bosh::Director::DeploymentPlan
         describe 'when existing instances have no az, and desired have no azs' do
           let(:desired_azs) { [] }
           it 'should not recreate the instances' do
-            existing_0 = existing_instance_with_az(0, nil, [Bosh::Director::Models::PersistentDisk.make])
+            existing_0 = existing_instance_with_az(0, nil, [FactoryBot.create(:models_persistent_disk)])
             unmatched_desired_instances = [desired_instance, desired_instance]
             results = zone_picker.place_and_match_in(unmatched_desired_instances, [existing_0])
             expect(results.select(&:new?).map(&:desired_instance)).to eq([unmatched_desired_instances[1]])
@@ -364,8 +364,8 @@ module Bosh::Director::DeploymentPlan
           let(:desired_azs) { [az1, az2] }
 
           it 'should not move existing instances' do
-            existing_zone1_0 = existing_instance_with_az(0, '1', [Bosh::Director::Models::PersistentDisk.make])
-            existing_zone1_1 = existing_instance_with_az(1, '1', [Bosh::Director::Models::PersistentDisk.make])
+            existing_zone1_0 = existing_instance_with_az(0, '1', [FactoryBot.create(:models_persistent_disk)])
+            existing_zone1_1 = existing_instance_with_az(1, '1', [FactoryBot.create(:models_persistent_disk)])
 
             desired_instances = [desired_instance, desired_instance]
             results = zone_picker.place_and_match_in(desired_instances, [existing_zone1_0, existing_zone1_1])
@@ -408,8 +408,8 @@ module Bosh::Director::DeploymentPlan
           let(:desired_azs) { [az1, az2] }
 
           it 'should not destroy/remove/re-balance them, should do nothing' do
-            existing_zone1_0 = existing_instance_with_az(0, '1', [Bosh::Director::Models::PersistentDisk.make(active: false)])
-            existing_zone1_1 = existing_instance_with_az(1, '1', [Bosh::Director::Models::PersistentDisk.make(active: false)])
+            existing_zone1_0 = existing_instance_with_az(0, '1', [FactoryBot.create(:models_persistent_disk, active: false)])
+            existing_zone1_1 = existing_instance_with_az(1, '1', [FactoryBot.create(:models_persistent_disk, active: false)])
 
             unmatched_desired_instances = [desired_instance, desired_instance]
             results = zone_picker.place_and_match_in(unmatched_desired_instances, [existing_zone1_0, existing_zone1_1])
@@ -431,7 +431,7 @@ module Bosh::Director::DeploymentPlan
 
           it 'should re-balance the instance that never had persistent disk' do
             existing_zone1_0 = existing_instance_with_az(0, '1')
-            existing_zone1_1 = existing_instance_with_az(1, '1', [Bosh::Director::Models::PersistentDisk.make(active: false)])
+            existing_zone1_1 = existing_instance_with_az(1, '1', [FactoryBot.create(:models_persistent_disk, active: false)])
 
             unmatched_desired_instances = [desired_instance, desired_instance]
             results = zone_picker.place_and_match_in(unmatched_desired_instances, [existing_zone1_0, existing_zone1_1])
@@ -450,8 +450,8 @@ module Bosh::Director::DeploymentPlan
           let(:desired_azs) { [az1] }
 
           it 'should eliminate one of the instances' do
-            existing_zone1_0 = existing_instance_with_az(0, '1', [Bosh::Director::Models::PersistentDisk.make(active: true)])
-            existing_zone1_1 = existing_instance_with_az(1, '1', [Bosh::Director::Models::PersistentDisk.make(active: false)])
+            existing_zone1_0 = existing_instance_with_az(0, '1', [FactoryBot.create(:models_persistent_disk, active: true)])
+            existing_zone1_1 = existing_instance_with_az(1, '1', [FactoryBot.create(:models_persistent_disk, active: false)])
 
             unmatched_desired_instances = [desired_instance]
             unmatched_existing_instances = [existing_zone1_0, existing_zone1_1]
@@ -472,12 +472,12 @@ module Bosh::Director::DeploymentPlan
           let(:desired_azs) { [az1, az2] }
 
           it 'should re-balance the instances across the remaining azs' do
-            existing_zone1_0 = existing_instance_with_az(0, '1', [Bosh::Director::Models::PersistentDisk.make])
-            existing_zone1_1 = existing_instance_with_az(1, '1', [Bosh::Director::Models::PersistentDisk.make])
-            existing_zone2_2 = existing_instance_with_az(2, '2', [Bosh::Director::Models::PersistentDisk.make])
-            existing_zone2_3 = existing_instance_with_az(3, '2', [Bosh::Director::Models::PersistentDisk.make])
-            existing_zone3_4 = existing_instance_with_az(4, '3', [Bosh::Director::Models::PersistentDisk.make])
-            existing_zone3_5 = existing_instance_with_az(5, '3', [Bosh::Director::Models::PersistentDisk.make])
+            existing_zone1_0 = existing_instance_with_az(0, '1', [FactoryBot.create(:models_persistent_disk)])
+            existing_zone1_1 = existing_instance_with_az(1, '1', [FactoryBot.create(:models_persistent_disk)])
+            existing_zone2_2 = existing_instance_with_az(2, '2', [FactoryBot.create(:models_persistent_disk)])
+            existing_zone2_3 = existing_instance_with_az(3, '2', [FactoryBot.create(:models_persistent_disk)])
+            existing_zone3_4 = existing_instance_with_az(4, '3', [FactoryBot.create(:models_persistent_disk)])
+            existing_zone3_5 = existing_instance_with_az(5, '3', [FactoryBot.create(:models_persistent_disk)])
 
             unmatched_desired_instances = [desired_instance, desired_instance, desired_instance, desired_instance, desired_instance, desired_instance]
             unmatched_existing_instances = [existing_zone1_0, existing_zone1_1, existing_zone2_2, existing_zone2_3, existing_zone3_4, existing_zone3_5]

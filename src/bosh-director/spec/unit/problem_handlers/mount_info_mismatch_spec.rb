@@ -26,7 +26,7 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
     deployment.add_instance(@instance)
 
     @disk =
-      Bosh::Director::Models::PersistentDisk.make(
+      FactoryBot.create(:models_persistent_disk,
         disk_cid: 'disk-cid', instance_id: @instance.id, size: 300, active: false
       )
 

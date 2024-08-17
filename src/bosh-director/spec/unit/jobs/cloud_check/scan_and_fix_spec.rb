@@ -22,7 +22,7 @@ module Bosh::Director
 
       instance = FactoryBot.create(:models_instance, deployment: deployment, job: 'job2', index: 1, uuid: 'job2index1')
       Models::DeploymentProblem.make(deployment: deployment, resource_id: instance.id, type: 'missing_vm')
-      Models::PersistentDisk.make(instance: instance)
+      FactoryBot.create(:models_persistent_disk, instance: instance)
 
       instance = FactoryBot.create(:models_instance, deployment: deployment, job: 'job2', index: 2, uuid: 'job2index2', ignore: true)
       Models::DeploymentProblem.make(deployment: deployment, resource_id: instance.id, type: 'unresponsive_agent')

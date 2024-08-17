@@ -264,6 +264,12 @@ FactoryBot.define do
     association :release, factory: :models_release, strategy: :create
   end
 
+  factory :models_persistent_disk, class: Bosh::Director::Models::PersistentDisk do
+    active { true }
+    sequence(:disk_cid) { |i| "persistent-disk-cid-#{i}" }
+    association :instance, factory: :models_instance, strategy: :create
+  end
+
   factory :models_release, class: Bosh::Director::Models::Release do
     sequence(:name) { |i| "release-#{i}" }
   end

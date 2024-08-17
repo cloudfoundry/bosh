@@ -8,8 +8,8 @@ module Bosh::Director
 
         let(:instance) { FactoryBot.create(:models_instance) }
         let!(:vm) { FactoryBot.create(:models_vm, instance: instance, active: true, cpi: 'vm-cpi') }
-        let!(:disk1) { Models::PersistentDisk.make(instance: instance, name: '') }
-        let!(:disk2) { Models::PersistentDisk.make(instance: instance, name: 'unmanaged') }
+        let!(:disk1) { FactoryBot.create(:models_persistent_disk, instance: instance, name: '') }
+        let!(:disk2) { FactoryBot.create(:models_persistent_disk, instance: instance, name: 'unmanaged') }
         let(:tags) do
           { 'mytag' => 'myvalue' }
         end

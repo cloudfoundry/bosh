@@ -45,7 +45,7 @@ module Bosh::Director
       end.reload
     end
 
-    let(:persistent_disk) { Models::PersistentDisk.make(disk_cid: 'disk123', size: 2048, name: disk_name, cloud_properties: cloud_properties, active: true, cpi: 'my-cpi') }
+    let(:persistent_disk) { FactoryBot.create(:models_persistent_disk, disk_cid: 'disk123', size: 2048, name: disk_name, cloud_properties: cloud_properties, active: true, cpi: 'my-cpi') }
     let(:cloud_properties) do
       { 'cloud' => 'properties' }
     end
@@ -333,7 +333,7 @@ module Bosh::Director
 
       context 'when the agent reports a disk cid consistent with the model' do
         let!(:inactive_disk) do
-          Models::PersistentDisk.make(
+          FactoryBot.create(:models_persistent_disk,
             disk_cid: 'inactive-disk',
             active: false,
             instance: instance_model,

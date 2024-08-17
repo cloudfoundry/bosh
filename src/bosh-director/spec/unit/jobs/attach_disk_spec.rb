@@ -50,7 +50,7 @@ module Bosh::Director
         let(:instance_state) {'detached'}
 
         let!(:original_disk) do
-          Models::PersistentDisk.make(
+          FactoryBot.create(:models_persistent_disk,
             disk_cid: 'original-disk-cid',
             instance_id: instance_model.id,
             active: true,
@@ -154,7 +154,7 @@ module Bosh::Director
 
         context 'when orphaned disk is attached' do
           let!(:original_disk) do
-            Models::PersistentDisk.make(
+            FactoryBot.create(:models_persistent_disk,
                 disk_cid: 'original-disk-cid',
                 instance_id: instance_model.id,
                 active: true,
@@ -278,7 +278,7 @@ module Bosh::Director
         let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
 
         let!(:original_disk) do
-          Models::PersistentDisk.make(
+          FactoryBot.create(:models_persistent_disk,
               disk_cid: 'original-disk-cid',
               instance_id: instance_model.id,
               active: true,

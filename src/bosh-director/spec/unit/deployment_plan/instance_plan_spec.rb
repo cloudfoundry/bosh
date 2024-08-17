@@ -1465,7 +1465,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         before do
-          persistent_disk = Bosh::Director::Models::PersistentDisk.make(size: 42, cloud_properties: { 'new' => 'properties' })
+          persistent_disk = FactoryBot.create(:models_persistent_disk, size: 42, cloud_properties: { 'new' => 'properties' })
           instance_plan.instance.model.add_persistent_disk(persistent_disk)
         end
 
@@ -1524,7 +1524,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should return true if instance had a persistent disk' do
-          persistent_disk = Bosh::Director::Models::PersistentDisk.make(active: true, size: 2)
+          persistent_disk = FactoryBot.create(:models_persistent_disk, active: true, size: 2)
           obsolete_instance_plan.existing_instance.add_persistent_disk(persistent_disk)
 
           expect(obsolete_instance_plan.persistent_disk_changed?).to be_truthy

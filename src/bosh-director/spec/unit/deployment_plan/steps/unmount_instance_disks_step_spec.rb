@@ -8,8 +8,8 @@ module Bosh::Director
 
         let(:instance) { FactoryBot.create(:models_instance) }
         let!(:vm) { FactoryBot.create(:models_vm, instance: instance, active: true) }
-        let(:disk1) { Models::PersistentDisk.make(instance: instance, name: '') }
-        let(:disk2) { Models::PersistentDisk.make(instance: instance, name: 'unmanaged') }
+        let(:disk1) { FactoryBot.create(:models_persistent_disk, instance: instance, name: '') }
+        let(:disk2) { FactoryBot.create(:models_persistent_disk, instance: instance, name: 'unmanaged') }
         let(:unmount_disk1) { instance_double(UnmountDiskStep) }
         let(:unmount_disk2) { instance_double(UnmountDiskStep) }
         let(:report) { Stages::Report.new }

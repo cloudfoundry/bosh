@@ -155,7 +155,7 @@ module Bosh::Director
           let(:instance_plan_changes) { [:tags] }
           let(:tags) { { 'tag' => 'value' } }
           let(:active_vm) { FactoryBot.create(:models_vm) }
-          let(:persistent_disk) { Models::PersistentDisk.make }
+          let(:persistent_disk) { FactoryBot.create(:models_persistent_disk) }
 
           it 'updates VM and disk metadata without doing anything else' do
             allow(instance_plan).to receive(:already_detached?) { raise 'Should never get here!' }
@@ -174,7 +174,7 @@ module Bosh::Director
           let(:tags) { { 'tag' => 'value' } }
           let(:dns_changed?) { true }
           let(:active_vm) { FactoryBot.create(:models_vm) }
-          let(:persistent_disk) { Models::PersistentDisk.make }
+          let(:persistent_disk) { FactoryBot.create(:models_persistent_disk) }
 
           it 'updates metadata and DNS without doing anything else' do
             allow(instance_plan).to receive(:already_detached?) { raise 'Should never get here!' }
@@ -429,7 +429,7 @@ module Bosh::Director
               end
 
               context 'and there is a disk' do
-                let(:persistent_disk) { Bosh::Director::Models::PersistentDisk.make }
+                let(:persistent_disk) { FactoryBot.create(:models_persistent_disk) }
 
                 it 'updates tags for VM and disk' do
                   expect(metadata_updater).to have_received(:update_vm_metadata)

@@ -367,7 +367,7 @@ module Bosh::Director
       before { allow(AgentClient).to receive(:with_agent_id).with(instance.agent_id, instance.name, anything).and_return(agent) }
 
       before do
-        Models::PersistentDisk.make(instance_id: instance.id, active: true, disk_cid: 'fake-disk-cid')
+        FactoryBot.create(:models_persistent_disk, instance_id: instance.id, active: true, disk_cid: 'fake-disk-cid')
       end
 
       before do

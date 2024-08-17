@@ -272,7 +272,7 @@ module Bosh::Director
         before do
           allow(instance_plan).to receive(:needs_shutting_down?).and_return(false)
           allow(instance_plan).to receive(:persistent_disk_changed?).and_return(true)
-          instance_plan.existing_instance.add_persistent_disk(Models::PersistentDisk.make)
+          instance_plan.existing_instance.add_persistent_disk(FactoryBot.create(:models_persistent_disk))
         end
 
         it 'drains with shutdown' do

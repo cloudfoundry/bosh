@@ -8,7 +8,7 @@ module Bosh::Director
 
         let!(:vm) { FactoryBot.create(:models_vm, active: true, instance: instance, stemcell_api_version: 25) }
         let(:instance) { FactoryBot.create(:models_instance) }
-        let!(:disk) { Models::PersistentDisk.make(instance: instance, name: '') }
+        let!(:disk) { FactoryBot.create(:models_persistent_disk, instance: instance, name: '') }
         let(:cloud_factory) { instance_double(CloudFactory) }
         let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
         let(:report) { Stages::Report.new }

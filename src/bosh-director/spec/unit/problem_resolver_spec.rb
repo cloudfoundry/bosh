@@ -251,7 +251,7 @@ module Bosh::Director
         context 'when instance group contains disk problems' do
           let(:agent) { double('agent') }
           let(:disk_1) do
-            Models::PersistentDisk.make(
+            FactoryBot.create(:models_persistent_disk,
               active: false,
               instance: FactoryBot.create(:models_vm,
                 :active,
@@ -266,7 +266,7 @@ module Bosh::Director
                                            state: 'open')
           end
           let(:disk_2) do
-            Models::PersistentDisk.make(
+            FactoryBot.create(:models_persistent_disk,
               active: false,
               instance: FactoryBot.create(:models_vm,
                 :active,
@@ -289,7 +289,7 @@ module Bosh::Director
             allow(deployment_plan).to receive(:instance_groups).and_return(disk_igs)
 
             expect(problem_resolver).to receive(:track_and_log).with(
-              %r{Disk 'disk-cid-\d+' \(0M\) for instance 'disk-ig-\d+\/instance-uuid-\d+ \(\d+\)' is inactive \(.*\): .*},
+              %r{Disk 'persistent-disk-cid-\d+' \(0M\) for instance 'disk-ig-\d+\/instance-uuid-\d+ \(\d+\)' is inactive \(.*\): .*},
             ).twice.and_call_original
             expect(
               problem_resolver.apply_resolutions(
@@ -307,7 +307,7 @@ module Bosh::Director
           problem =
             Models::DeploymentProblem.make(
               deployment_id: deployment.id,
-              resource_id: Models::PersistentDisk.make.id,
+              resource_id: FactoryBot.create(:models_persistent_disk).id,
               type: 'inactive_disk',
               state: 'resolved',
             )
@@ -330,7 +330,7 @@ module Bosh::Director
 
       context 'when problem resolution fails' do
         let(:backtrace) { anything }
-        let(:disk) { Models::PersistentDisk.make(active: false) }
+        let(:disk) { FactoryBot.create(:models_persistent_disk, active: false) }
         let(:problem) do
           Models::DeploymentProblem.make(deployment_id: deployment.id,
                                          resource_id: disk.id,

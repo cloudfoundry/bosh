@@ -21,7 +21,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
   end
 
   let!(:disk) do
-    Bosh::Director::Models::PersistentDisk.make(
+    FactoryBot.create(:models_persistent_disk,
       disk_cid: 'disk-cid', instance_id: instance.id, size: 300, active: false,
     )
   end

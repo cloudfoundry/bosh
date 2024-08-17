@@ -28,7 +28,7 @@ module Bosh::Director
       end
 
       it 'should orphan disk' do
-        persistent_disk = Models::PersistentDisk.make(disk_cid: 'disk_cid', size: 2048, cloud_properties: {'cloud' => 'properties'}, active: true)
+        persistent_disk = FactoryBot.create(:models_persistent_disk, disk_cid: 'disk_cid', size: 2048, cloud_properties: {'cloud' => 'properties'}, active: true)
         snapshot = Models::Snapshot.make(persistent_disk: persistent_disk)
         expect(Bosh::Director::CloudFactory).to_not receive(:new)
 
@@ -48,7 +48,7 @@ module Bosh::Director
       end
 
       it 'should not raise error' do
-        Models::PersistentDisk.make(disk_cid: 'disk_cid_2', size: 2048, cloud_properties: {'cloud' => 'properties'}, active: true)
+        FactoryBot.create(:models_persistent_disk, disk_cid: 'disk_cid_2', size: 2048, cloud_properties: {'cloud' => 'properties'}, active: true)
         expect(logger).to receive(:info).with("disk disk_cid does not exist")
         expect(stage).to receive(:advance_and_track).with('disk_cid')
         expect(event_log).to receive(:warn).with('Disk disk_cid does not exist. Orphaning is skipped')
@@ -56,7 +56,7 @@ module Bosh::Director
       end
 
       it 'should raise error' do
-        persistent_disk = Models::PersistentDisk.make(disk_cid: 'disk_cid', cloud_properties: {'cloud' => 'properties'}, size: 2048, active: true)
+        persistent_disk = FactoryBot.create(:models_persistent_disk, disk_cid: 'disk_cid', cloud_properties: {'cloud' => 'properties'}, size: 2048, active: true)
 
         conflicting_orphan_disk = FactoryBot.create(:models_orphan_disk)
         conflicting_orphan_snapshot = FactoryBot.create(:models_orphan_snapshot,
