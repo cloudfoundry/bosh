@@ -376,7 +376,7 @@ module Bosh::Director
             release_version = Models::ReleaseVersion.find(version: '1')
 
             dummy_template = FactoryBot.create(:models_template,
-              release_id: 1,
+              release_id: release.id,
               name: 'dummy_template',
               version: '2',
               blobstore_id: '123',

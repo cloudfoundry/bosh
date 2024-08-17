@@ -85,7 +85,7 @@ FactoryBot.define do
   end
 
   factory :models_compiled_package, class: Bosh::Director::Models::CompiledPackage do
-    sequence(:build) { |i| "compiled-package-build-#{i}" }
+    sequence(:build) { |i| i }
     sequence(:blobstore_id) { |i| "compiled-package-blobstore-id-#{i}" }
     sequence(:sha1) { |i| "compiled-package-sha1-#{i}" }
     sequence(:stemcell_os) { |i| "compiled-package-stemcell-os-#{i}" }
