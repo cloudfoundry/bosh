@@ -114,7 +114,7 @@ module Bosh::Director
           )
         end
 
-        let(:instance_model) { Models::Instance.make(job: 'errand1', uuid: 'instance-uuid') }
+        let(:instance_model) { FactoryBot.create(:models_instance, job: 'errand1', uuid: 'instance-uuid') }
         let(:errand_instance_group) do
           instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
                           instances: [instance],
@@ -222,7 +222,7 @@ module Bosh::Director
 
               context 'when instance group has at least 1 instance' do
                 before { allow(deployment_instance_group).to receive(:instances).with(no_args).and_return([instance]) }
-                let(:instance_model) { Models::Instance.make(job: 'foo-job', uuid: 'instance-uuid') }
+                let(:instance_model) { FactoryBot.create(:models_instance, job: 'foo-job', uuid: 'instance-uuid') }
                 let(:instance) do
                   instance_double(
                     'Bosh::Director::DeploymentPlan::Instance',
@@ -382,7 +382,7 @@ module Bosh::Director
                   end
 
                   let(:when_changed) { true }
-                  let(:instance_model) { Models::Instance.make }
+                  let(:instance_model) { FactoryBot.create(:models_instance) }
                   context 'when errand has been run before' do
                     let!(:errand_model) do
                       FactoryBot.create(:models_errand_run,

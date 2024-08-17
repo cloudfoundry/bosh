@@ -7,7 +7,7 @@ module Bosh::Director::DeploymentPlan
 
     describe :reconcile do
       let(:network_planner) { NetworkPlanner::ReservationReconciler.new(instance_plan, logger) }
-      let(:instance_model) { Bosh::Director::Models::Instance.make(availability_zone: initial_az) }
+      let(:instance_model) { FactoryBot.create(:models_instance, availability_zone: initial_az) }
       let(:instance) { instance_double(Instance, model: instance_model) }
       let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
       let(:network) { ManualNetwork.new('my-network', subnets, logger) }

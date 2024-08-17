@@ -37,7 +37,7 @@ module Bosh::Director
           model: instance_model,
         )
       end
-      let!(:instance_model) { Models::Instance.make(deployment: deployment_model, uuid: 'instance-uuid') }
+      let!(:instance_model) { FactoryBot.create(:models_instance, deployment: deployment_model, uuid: 'instance-uuid') }
       let(:ip_provider) { instance_double(DeploymentPlan::IpProvider) }
       let(:keep_alive) { false }
       let(:instance_slugs) { [] }
@@ -80,7 +80,7 @@ module Bosh::Director
           let(:service_group_name) { 'service-group-name' }
           let(:errand_group_name) { 'errand-group-name' }
 
-          let(:instance1_model) { Models::Instance.make(deployment: deployment_model, job: service_group_name) }
+          let(:instance1_model) { FactoryBot.create(:models_instance, deployment: deployment_model, job: service_group_name) }
           let(:instance1) do
             instance_double(
               DeploymentPlan::Instance,
@@ -92,7 +92,7 @@ module Bosh::Director
             )
           end
 
-          let(:instance2_model) { Models::Instance.make(deployment: deployment_model, job: service_group_name) }
+          let(:instance2_model) { FactoryBot.create(:models_instance, deployment: deployment_model, job: service_group_name) }
           let(:instance2) do
             instance_double(
               DeploymentPlan::Instance,
@@ -104,7 +104,7 @@ module Bosh::Director
             )
           end
 
-          let(:instance3_model) { Models::Instance.make(deployment: deployment_model, job: errand_group_name) }
+          let(:instance3_model) { FactoryBot.create(:models_instance, deployment: deployment_model, job: errand_group_name) }
           let(:instance3) do
             instance_double(
               DeploymentPlan::Instance,
@@ -154,7 +154,7 @@ module Bosh::Director
             let(:instance_groups) { [instance_group1, non_errand_ig] }
             let(:non_errand_job) { instance_double(DeploymentPlan::Job, name: 'errand-job-name', runs_as_errand?: false) }
             let(:non_errand_step) { instance_double(Errand::LifecycleServiceStep) }
-            let(:non_errand_instance_model) { Models::Instance.make(deployment: deployment_model, job: errand_group_name) }
+            let(:non_errand_instance_model) { FactoryBot.create(:models_instance, deployment: deployment_model, job: errand_group_name) }
             let(:non_errand_instance) do
               instance_double(
                 DeploymentPlan::Instance,
@@ -559,7 +559,7 @@ module Bosh::Director
                             needed_instance_plans: needed_instance_plans,
                             bind_instances: nil)
           end
-          let!(:instance_model) { Models::Instance.make(deployment: deployment_model, uuid: 'instance-uuid', state: 'stopped') }
+          let!(:instance_model) { FactoryBot.create(:models_instance, deployment: deployment_model, uuid: 'instance-uuid', state: 'stopped') }
 
           before do
             allow(Config).to receive(:allow_errands_on_stopped_instances).and_return(false)

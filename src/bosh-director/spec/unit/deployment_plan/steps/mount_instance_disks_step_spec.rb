@@ -6,7 +6,7 @@ module Bosh::Director
       describe MountInstanceDisksStep do
         subject(:step) { MountInstanceDisksStep.new(instance) }
 
-        let(:instance) { Models::Instance.make }
+        let(:instance) { FactoryBot.create(:models_instance) }
         let!(:managed_disk) { Models::PersistentDisk.make(instance: instance, name: '') }
         let!(:unmanaged_disk) { Models::PersistentDisk.make(instance: instance, name: 'disk-name-me') }
         let(:mount_disk_step) { instance_double(MountDiskStep) }

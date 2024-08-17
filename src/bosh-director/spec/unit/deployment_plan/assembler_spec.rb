@@ -32,7 +32,7 @@ module Bosh::Director
     end
 
     describe '#bind_models' do
-      let(:instance_model) { Models::Instance.make(job: 'old-name') }
+      let(:instance_model) { FactoryBot.create(:models_instance, job: 'old-name') }
 
       before do
         allow(deployment_plan).to receive(:instance_models).and_return([instance_model])
@@ -449,7 +449,7 @@ module Bosh::Director
           let(:instance_planner) { double(DeploymentPlan::InstancePlanner) }
           let(:existing_network_plan1) { DeploymentPlan::NetworkPlanner::Plan.new(reservation: anything, existing: true) }
           let(:existing_network_plan2) { DeploymentPlan::NetworkPlanner::Plan.new(reservation: anything, existing: true) }
-          let(:instance_model) { Bosh::Director::Models::Instance.make(ignore: false) }
+          let(:instance_model) { FactoryBot.create(:models_instance, ignore: false) }
           let(:create_swap_delete_instance) do
             instance_double(DeploymentPlan::Instance, model: instance_model).tap do |instance|
               expect(instance).to receive(:is_deploy_action=)

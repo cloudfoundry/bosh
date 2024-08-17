@@ -10,7 +10,7 @@ module Bosh
           let(:force) { false }
           let(:allow_virtual) { false }
           let(:instance_model) do
-            Models::Instance.make(
+            FactoryBot.create(:models_instance,
               uuid: SecureRandom.uuid,
               index: 5,
               job: 'fake-job',

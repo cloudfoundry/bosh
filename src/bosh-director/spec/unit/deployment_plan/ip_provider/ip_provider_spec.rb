@@ -3,7 +3,7 @@ require 'ipaddr'
 
 module Bosh::Director::DeploymentPlan
   describe IpProvider do
-    let(:instance_model) { Bosh::Director::Models::Instance.make }
+    let(:instance_model) { FactoryBot.create(:models_instance) }
     let(:deployment_plan) { instance_double(Planner, name: 'fake-deployment') }
     let(:networks) do
       { 'my-manual-network' => manual_network }

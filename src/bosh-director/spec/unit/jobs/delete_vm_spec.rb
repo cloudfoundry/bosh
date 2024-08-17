@@ -58,7 +58,7 @@ module Bosh::Director
           allow(cloud_factory).to receive(:get).with('', nil).and_return(cloud)
 
           deployment = FactoryBot.create(:models_deployment, name: 'test_deployment')
-          is = Bosh::Director::Models::Instance.make(
+          is = FactoryBot.create(:models_instance, 
             deployment: deployment,
             job: 'foo-job',
             uuid: 'instance_id',

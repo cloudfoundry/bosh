@@ -31,7 +31,7 @@ module Bosh::Director
     shared_examples_for 'generic converger' do
       it 'no-ops when there are no local dns blobs' do
         Models::LocalDnsBlob.all.each { |local_blob| local_blob.delete }
-        is = Models::Instance.make
+        is = FactoryBot.create(:models_instance)
         Models::Vm.make(agent_id: 'abc', cid: 'vm-cid', instance_id: is.id)
         expect(agent_broadcaster).to_not receive(:sync_dns)
 
@@ -46,8 +46,8 @@ module Bosh::Director
       end
 
       it 'only acts upon instances with an active vm' do
-        inactive_vm_instance = Models::Instance.make
-        active_vm_instance = Models::Instance.make
+        inactive_vm_instance = FactoryBot.create(:models_instance)
+        active_vm_instance = FactoryBot.create(:models_instance)
         Models::Vm.make(agent_id: 'abc', instance_id: inactive_vm_instance.id)
         Models::Vm.make(agent_id: 'abc-123', instance_id: active_vm_instance.id, active: true)
         expect(AgentClient).to_not receive(:with_agent_id)
@@ -57,7 +57,7 @@ module Bosh::Director
       end
 
       it 'logs progress to the provided logger' do
-        instance = Models::Instance.make
+        instance = FactoryBot.create(:models_instance)
         vm = Models::Vm.make(agent_id: 'abc', cid: 'vm-cid', instance_id: instance.id)
         instance.active_vm = vm
         Models::AgentDnsVersion.create(agent_id: 'abc', dns_version: 1)
@@ -73,7 +73,7 @@ module Bosh::Director
       it_behaves_like 'generic converger'
 
       it 'should not update instances that already have current dns records' do
-        instance = Models::Instance.make
+        instance = FactoryBot.create(:models_instance)
         Models::Vm.make(agent_id: 'abc', cid: 'vm-cid', instance_id: instance.id, active: true)
         Models::AgentDnsVersion.create(agent_id: 'abc', dns_version: 2)
         expect(agent_broadcaster).to_not receive(:sync_dns)
@@ -82,7 +82,7 @@ module Bosh::Director
       end
 
       it 'does not update compilation vms' do
-        instance = Models::Instance.make(compilation: true)
+        instance = FactoryBot.create(:models_instance, compilation: true)
         Models::Vm.make(agent_id: 'abc', cid: 'vm-cid', instance_id: instance.id, active: true)
         expect(agent_broadcaster).to_not receive(:sync_dns)
 
@@ -95,7 +95,7 @@ module Bosh::Director
 
       it 'updates all non-compilation instances, even if they are up to date' do
         dns_version_converger_with_selector = DnsVersionConverger.new(agent_broadcaster, logger, 32, DnsVersionConverger::ALL_INSTANCES_WITH_VMS_SELECTOR)
-        instance = Models::Instance.make
+        instance = FactoryBot.create(:models_instance)
         Models::Vm.make(agent_id: 'abc', cid: 'vm-cid', instance_id: instance.id, active: true)
         Models::AgentDnsVersion.create(agent_id: 'abc', dns_version: 2)
         expect(agent_broadcaster).to receive(:sync_dns).with([instance], 'blob-id', blob_sha1, 2)
@@ -106,7 +106,7 @@ module Bosh::Director
       it 'does not update compilation vms' do
         dns_version_converger_with_selector = DnsVersionConverger.new(agent_broadcaster, logger, 32, DnsVersionConverger::ALL_INSTANCES_WITH_VMS_SELECTOR)
 
-        instance = Models::Instance.make(compilation: true)
+        instance = FactoryBot.create(:models_instance, compilation: true)
         Models::Vm.make(agent_id: 'abc', cid: 'vm-cid', instance_id: instance.id, active: true)
         expect(agent_broadcaster).to_not receive(:sync_dns)
 

@@ -25,7 +25,7 @@ module Bosh::Director
     end
 
     let(:deployment_model) { FactoryBot.create(:models_deployment, name: 'fake-deployment') }
-    let(:instance_model) { Models::Instance.make(deployment: deployment_model) }
+    let(:instance_model) { FactoryBot.create(:models_instance, deployment: deployment_model) }
     let(:link_provider_intents) { [] }
 
     before do

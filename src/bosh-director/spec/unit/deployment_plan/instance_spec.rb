@@ -42,8 +42,8 @@ module Bosh::Director::DeploymentPlan
     let(:az) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', 'a' => 'b') }
 
     let(:instance_model) do
-      instance = Bosh::Director::Models::Instance.make(deployment:, bootstrap: true, uuid: 'uuid-1')
-      Bosh::Director::Models::Vm.make(instance:, active: true)
+      instance = FactoryBot.create(:models_instance, deployment: deployment, bootstrap: true, uuid: 'uuid-1')
+      Bosh::Director::Models::Vm.make(instance: instance, active: true)
       instance
     end
 
@@ -53,7 +53,7 @@ module Bosh::Director::DeploymentPlan
     let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient, validate!: nil) }
 
     describe '#bind_existing_instance_model' do
-      let(:instance_model) { Bosh::Director::Models::Instance.make(bootstrap: true) }
+      let(:instance_model) { FactoryBot.create(:models_instance, bootstrap: true) }
 
       before do
         allow(deployment).to receive(:last_successful_variable_set).and_return(deployment_variable_set)
@@ -320,7 +320,7 @@ module Bosh::Director::DeploymentPlan
 
     describe '#cloud_properties_changed?' do
       let(:instance_model) do
-        model = Bosh::Director::Models::Instance.make(deployment:)
+        model = FactoryBot.create(:models_instance, deployment: deployment)
         model.cloud_properties_hash = { 'a' => 'b' }
         model
       end
@@ -401,7 +401,7 @@ module Bosh::Director::DeploymentPlan
         describe 'when there is no availability zone' do
           let(:az) { nil }
           let(:instance_model) do
-            model = Bosh::Director::Models::Instance.make(deployment:)
+            model = FactoryBot.create(:models_instance, deployment: deployment)
             model.cloud_properties_hash = {}
             model
           end

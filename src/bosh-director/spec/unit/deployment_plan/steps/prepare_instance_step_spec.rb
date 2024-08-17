@@ -6,7 +6,7 @@ module Bosh::Director
       describe PrepareInstanceStep do
         subject(:step) { PrepareInstanceStep.new(instance_plan, use_active_vm:) }
 
-        let(:instance) { Models::Instance.make }
+        let(:instance) { FactoryBot.create(:models_instance) }
         let(:deployment_instance) { instance_double(Instance, model: instance) }
         let(:instance_plan) { instance_double(InstancePlan, instance: deployment_instance) }
         let(:spec) { instance_double(InstanceSpec, as_apply_spec: apply_spec, as_jobless_apply_spec: jobless_apply_spec) }

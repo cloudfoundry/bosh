@@ -642,7 +642,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     it 'allocates a VM to all non obsolete instances if they are not already bound to a VM' do
       az = Bosh::Director::DeploymentPlan::AvailabilityZone.new('az', {})
       instance0 = Bosh::Director::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', deployment, {}, az, logger, variables_interpolator)
-      instance0.bind_existing_instance_model(Bosh::Director::Models::Instance.make(bootstrap: true))
+      instance0.bind_existing_instance_model(FactoryBot.create(:models_instance, bootstrap: true))
       instance1 = Bosh::Director::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', deployment, {}, az, logger, variables_interpolator)
       instance_plan0 = Bosh::Director::DeploymentPlan::InstancePlan.new(
         desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance),
@@ -666,7 +666,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     it 'makes sure theres a model and binds instance networks' do
       az = Bosh::Director::DeploymentPlan::AvailabilityZone.new('az', {})
       instance0 = Bosh::Director::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', deployment, {}, az, logger, variables_interpolator)
-      instance0.bind_existing_instance_model(Bosh::Director::Models::Instance.make(bootstrap: true))
+      instance0.bind_existing_instance_model(FactoryBot.create(:models_instance, bootstrap: true))
       instance1 = Bosh::Director::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', deployment, {}, az, logger, variables_interpolator)
       instance0_reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance0.model, network)
       instance0_obsolete_reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance0.model, network)

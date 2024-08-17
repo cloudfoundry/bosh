@@ -38,9 +38,9 @@ module Bosh::Director::DeploymentPlan
     # we don't care about instances in this test, it is hard to make them, because they need deployment plan
     let(:instance_repo) do
       instance_double(InstanceRepository,
-        fetch_existing: instance_double(Instance, uuid: 'existing-uuid', update_description: nil, model: Bosh::Director::Models::Instance.make),
-        fetch_obsolete_existing: instance_double(Instance, update_description: nil, model: Bosh::Director::Models::Instance.make),
-        create: instance_double(Instance, uuid: 'create-uuid', model: Bosh::Director::Models::Instance.make)
+        fetch_existing: instance_double(Instance, uuid: 'existing-uuid', update_description: nil, model: FactoryBot.create(:models_instance)),
+        fetch_obsolete_existing: instance_double(Instance, update_description: nil, model: FactoryBot.create(:models_instance)),
+        create: instance_double(Instance, uuid: 'create-uuid', model: FactoryBot.create(:models_instance))
       )
     end
     let(:az1) { AvailabilityZone.new('1', {}) }
@@ -55,7 +55,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     def existing_instance_with_az(index, az, persistent_disks=[])
-      instance_model = Bosh::Director::Models::Instance.make(index: index, availability_zone: az, deployment: deployment_model)
+      instance_model = FactoryBot.create(:models_instance, index: index, availability_zone: az, deployment: deployment_model)
       allow(instance_model).to receive(:persistent_disks).and_return(persistent_disks)
       instance_model
     end

@@ -5,8 +5,8 @@ module Bosh::Director
   module Api
     describe InstanceLookup do
       subject(:instance_lookup) { InstanceLookup.new }
-      let!(:instance) { Models::Instance.make(deployment: deployment, job: job_name, index: job_index) }
-      let!(:another_instance) { Models::Instance.make(deployment: deployment, job: job_name, index: another_job_index) }
+      let!(:instance) { FactoryBot.create(:models_instance, deployment: deployment, job: job_name, index: job_index) }
+      let!(:another_instance) { FactoryBot.create(:models_instance, deployment: deployment, job: job_name, index: another_job_index) }
       let(:deployment) { FactoryBot.create(:models_deployment, name: 'foobar') }
       let(:job_name) { 'my_job' }
       let(:job_index) { '6' }
@@ -73,15 +73,14 @@ module Bosh::Director
 
       describe '#by_deployment' do
         context 'when multiple deployments have instances' do
-          before do
-            other_deployment = FactoryBot.create(:models_deployment, name: 'other_deployment')
-            Models::Instance.make(deployment: other_deployment)
-            @deployment = FactoryBot.create(:models_deployment, name: 'given_deployment')
-            @instance = Models::Instance.make(deployment: @deployment)
-          end
+          let!(:deployment_one) { FactoryBot.create(:models_deployment) }
+          let!(:instance_one) { FactoryBot.create(:models_instance, deployment: deployment_one) }
+          let!(:deployment_two) { FactoryBot.create(:models_deployment) }
+          let!(:instance_two) { FactoryBot.create(:models_instance, deployment: deployment_two) }
 
           it 'finds only the instance from given deployment' do
-            expect(subject.by_deployment(@deployment)).to eq [@instance]
+            expect(subject.by_deployment(deployment_one)).to eq [instance_one]
+            expect(subject.by_deployment(deployment_two)).to eq [instance_two]
           end
         end
 

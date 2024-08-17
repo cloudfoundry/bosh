@@ -101,13 +101,13 @@ module Bosh::Director
       let(:deployment_model) { FactoryBot.create(:models_deployment, manifest: YAML.dump(manifest)) }
 
       let(:instance1_model) do
-        is = Models::Instance.make(deployment: deployment_model, job: 'foo-job', uuid: 'instance_id1', index: 0, ignore: true)
+        is = FactoryBot.create(:models_instance, deployment: deployment_model, job: 'foo-job', uuid: 'instance_id1', index: 0, ignore: true)
         vm1_model = Models::Vm.make(cid: 'vm_cid1', instance_id: is.id)
         is.active_vm = vm1_model
         is
       end
       let(:instance2_model) do
-        Models::Instance.make(deployment: deployment_model, job: 'foo-job', uuid: 'instance_id2', index: 1, ignore: true,
+        FactoryBot.create(:models_instance, deployment: deployment_model, job: 'foo-job', uuid: 'instance_id2', index: 1, ignore: true,
                               state: 'detached')
       end
 

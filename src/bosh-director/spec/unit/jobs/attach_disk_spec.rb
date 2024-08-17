@@ -37,7 +37,7 @@ module Bosh::Director
 
     describe '#perform' do
       let(:vm) { Models::Vm.make(cid: vm_cid, instance_id: instance_model.id) }
-      let!(:instance_model) { Models::Instance.make(uuid: instance_id, job: job_name, state: instance_state) }
+      let!(:instance_model) { FactoryBot.create(:models_instance, uuid: instance_id, job: job_name, state: instance_state) }
 
       before {
         instance_model.active_vm = vm

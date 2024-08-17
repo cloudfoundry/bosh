@@ -100,7 +100,7 @@ describe Bosh::Director::Links::LinksParser do
 
       let(:deployment_model) { FactoryBot.create(:models_deployment, links_serial_id: serial_id) }
       let(:deployment_plan) { instance_double(Bosh::Director::DeploymentPlan::Planner) }
-      let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment_model) }
+      let(:instance_model) { FactoryBot.create(:models_instance, deployment: deployment_model) }
       let(:serial_id) { 1 }
       let!(:provider_1) do
         FactoryBot.create(:models_links_link_provider,
@@ -271,7 +271,7 @@ describe Bosh::Director::Links::LinksParser do
 
       let(:deployment_model) { FactoryBot.create(:models_deployment, links_serial_id: serial_id) }
       let(:deployment_plan) { instance_double(Bosh::Director::DeploymentPlan::Planner) }
-      let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment_model) }
+      let(:instance_model) { FactoryBot.create(:models_instance, deployment: deployment_model) }
       let(:serial_id) { 1 }
       let!(:consumer) do
         FactoryBot.create(:models_links_link_consumer,

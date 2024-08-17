@@ -456,7 +456,7 @@ module Bosh::Director
 
         describe 'stopping an instance in isolation' do
           let!(:deployment) { Models::Deployment.create(name: 'test-deployment', manifest: YAML.dump('foo' => 'bar')) }
-          let!(:instance) { Models::Instance.make(deployment: deployment, job: 'dea', index: '2') }
+          let!(:instance) { FactoryBot.create(:models_instance, deployment: deployment, job: 'dea', index: '2') }
 
           context 'for a generic soft stop request' do
             let(:task) { instance_double('Bosh::Director::Models::Task', id: 1) }
@@ -521,7 +521,7 @@ module Bosh::Director
             end
 
             let!(:instance) do
-              Models::Instance.make(
+              FactoryBot.create(:models_instance,
                 deployment: deployment,
                 job: 'dea',
                 index: '2',
@@ -2068,7 +2068,7 @@ module Bosh::Director
 
           context 'when global resurrection is not set' do
             it 'scans and fixes problems' do
-              Models::Instance.make(deployment: deployment, job: 'job', index: 0)
+              FactoryBot.create(:models_instance, deployment: deployment, job: 'job', index: 0)
               should_enqueue_scan_and_fix
             end
           end
@@ -2080,7 +2080,7 @@ module Bosh::Director
               let(:resurrection_paused) {'false'}
 
               it 'runs scan_and_fix task' do
-                Models::Instance.make(deployment: deployment, job: 'job', index: 0)
+                FactoryBot.create(:models_instance, deployment: deployment, job: 'job', index: 0)
                 should_enqueue_scan_and_fix
               end
             end
@@ -2089,7 +2089,7 @@ module Bosh::Director
               let(:resurrection_paused) {'true'}
 
               it 'does not run scan_and_fix task' do
-                Models::Instance.make(deployment: deployment, job: 'job', index: 0)
+                FactoryBot.create(:models_instance, deployment: deployment, job: 'job', index: 0)
                 should_not_enqueue_scan_and_fix(400)
               end
             end
@@ -2097,7 +2097,7 @@ module Bosh::Director
 
           context 'when there are only ignored vms' do
             it 'does not call the resurrector' do
-              Models::Instance.make(deployment: deployment, job: 'job', index: 0, ignore: true)
+              FactoryBot.create(:models_instance, deployment: deployment, job: 'job', index: 0, ignore: true)
               should_not_enqueue_scan_and_fix(404)
             end
           end
@@ -2113,11 +2113,11 @@ module Bosh::Director
           before do
             deployment = FactoryBot.create(:models_deployment, name: 'mycloud')
 
-            instance = Models::Instance.make(deployment: deployment, job: 'job', index: 0, uuid: 'abc123')
+            instance = FactoryBot.create(:models_instance, deployment: deployment, job: 'job', index: 0, uuid: 'abc123')
             disk = Models::PersistentDisk.make(disk_cid: 'disk0', instance: instance, active: true)
             Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap0a')
 
-            instance = Models::Instance.make(deployment: deployment, job: 'job', index: 1)
+            instance = FactoryBot.create(:models_instance, deployment: deployment, job: 'job', index: 1)
             disk = Models::PersistentDisk.make(disk_cid: 'disk1', instance: instance, active: true)
             Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap1a')
             Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap1b')
@@ -2679,7 +2679,7 @@ module Bosh::Director
 
           context 'DELETE /:deployment/snapshots/:cid' do
             before do
-              instance = Models::Instance.make(deployment: owned_deployment)
+              instance = FactoryBot.create(:models_instance, deployment: owned_deployment)
               persistent_disk = Models::PersistentDisk.make(instance: instance)
               Models::Snapshot.make(persistent_disk: persistent_disk, snapshot_cid: 'cid-1')
             end

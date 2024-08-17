@@ -36,7 +36,7 @@ module Bosh::Director
 
       before { allow(instance).to receive(:model).with(no_args).and_return(instance_model) }
       let(:instance_model) do
-        is = Models::Instance.make(
+        is = FactoryBot.create(:models_instance,
           job: 'fake-job-name',
           index: 0,
           deployment: deployment,

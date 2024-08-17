@@ -6,7 +6,7 @@ module Bosh::Director
       describe UnmountDiskStep do
         subject(:step) { UnmountDiskStep.new(disk) }
 
-        let(:instance) { Models::Instance.make }
+        let(:instance) { FactoryBot.create(:models_instance) }
         let(:vm) { Models::Vm.make(instance: instance, active: true) }
         let!(:disk) { Models::PersistentDisk.make(instance: instance, name: '') }
         let(:agent_client) do

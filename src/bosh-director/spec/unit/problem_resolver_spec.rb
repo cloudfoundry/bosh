@@ -56,7 +56,7 @@ module Bosh::Director
       problem_resolutions = {}
       (1..num_problem_instance_groups).each do |n|
         problems_per_instance_group.times do
-          instance = Models::Instance.make(job: "ig-#{n}", deployment_id: @deployment.id)
+          instance = FactoryBot.create(:models_instance, job: "ig-#{n}", deployment_id: @deployment.id)
           problem = Models::DeploymentProblem.make(
             deployment_id: @deployment.id,
             resource_id: instance.id,
@@ -206,13 +206,13 @@ module Bosh::Director
             allow(AgentClient).to receive(:with_agent_id).and_return(agent)
 
             allow(deployment_plan).to receive(:instance_groups).and_return(disk_igs)
-            allow(Models::Instance).to receive(:make).and_return(
-              Models::Instance.make(job: 'disk-ig-1', deployment_id: @deployment.id),
-              Models::Instance.make(job: 'disk-ig-1', deployment_id: @deployment.id),
-            )
 
             2.times do
-              disk = Models::PersistentDisk.make(active: false)
+              disk =
+                Models::PersistentDisk.make(
+                  active: false,
+                  instance: Models::Vm.make(:active, instance: FactoryBot.create(:models_instance, job: 'disk-ig-1', deployment_id: @deployment.id)).instance,
+                )
               disks << disk
               problem = inactive_disk(disk.id)
               problems << problem
@@ -221,7 +221,7 @@ module Bosh::Director
             resolver = make_resolver(@deployment)
 
             expect(resolver).to receive(:track_and_log).with(
-              %r{Disk 'disk-cid-\d+' \(0M\) for instance 'disk-ig-\d+\/uuid-\d+ \(\d+\)' is inactive \(.*\): .*},
+              %r{Disk 'disk-cid-\d+' \(0M\) for instance 'disk-ig-\d+\/instance-uuid-\d+ \(\d+\)' is inactive \(.*\): .*},
             ).twice.and_call_original
             expect(
               resolver.apply_resolutions(

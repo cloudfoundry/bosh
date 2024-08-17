@@ -38,7 +38,7 @@ module Bosh::Director
     end
 
     let(:instance_model) do
-      instance = Models::Instance.make(
+      instance = FactoryBot.create(:models_instance,
         deployment: deployment,
         job: 'foobar',
         uuid: 'test-uuid',
@@ -106,7 +106,7 @@ module Bosh::Director
     describe 'validation' do
       context 'when the instance is ignored' do
         let(:instance_model) do
-          Models::Instance.make(
+          FactoryBot.create(:models_instance,
             deployment: deployment,
             job: 'foobar',
             uuid: 'test-uuid',
@@ -131,7 +131,7 @@ module Bosh::Director
 
       context 'when the instance does not belong to the deployment' do
         let(:instance_model) do
-          Models::Instance.make(
+          FactoryBot.create(:models_instance,
             deployment: deployment,
             job: 'foobar',
             uuid: 'test-uuid',
@@ -424,7 +424,7 @@ module Bosh::Director
 
       context 'when the instance is already soft stopped' do
         let(:instance_model) do
-          Models::Instance.make(deployment: deployment, job: 'foobar', state: 'stopped', spec_json: instance_spec.to_json)
+          FactoryBot.create(:models_instance, deployment: deployment, job: 'foobar', state: 'stopped', spec_json: instance_spec.to_json)
         end
 
         it 'detaches the vm if --hard is specified' do
@@ -446,7 +446,7 @@ module Bosh::Director
       end
 
       context 'when the instance is already hard stopped' do
-        let(:instance_model) { Models::Instance.make(deployment: deployment, job: 'foobar', state: 'detached') }
+        let(:instance_model) { FactoryBot.create(:models_instance, deployment: deployment, job: 'foobar', state: 'detached') }
 
         it 'does nothing' do
           job = Jobs::UpdateInstance.new(deployment.name, instance_model.id, 'stop', 'hard' => true)

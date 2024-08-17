@@ -23,7 +23,7 @@ module Bosh::Director
 
     describe '#perform' do
       let(:instance) do
-        Models::Instance.make(deployment: deployment, job: 'fake-job-name', index: '42', uuid: 'uuid-1')
+        FactoryBot.create(:models_instance, deployment: deployment, job: 'fake-job-name', index: '42', uuid: 'uuid-1')
       end
 
       let(:deployment) { FactoryBot.create(:models_deployment) }
@@ -116,13 +116,13 @@ module Bosh::Director
 
       context 'when several isntances to get logs' do
         let(:instance_1) do
-          is = Models::Instance.make(deployment: deployment, job: 'fake-job-name', index: '44', uuid: 'uuid-2')
+          is = FactoryBot.create(:models_instance, deployment: deployment, job: 'fake-job-name', index: '44', uuid: 'uuid-2')
           vm = Models::Vm.make(cid: 'vm-1', instance_id: is.id)
           is.active_vm = vm
           is.save
         end
         let(:instance_2) do
-          is = Models::Instance.make(deployment: deployment, job: 'fake-job-name', index: '43', uuid: 'uuid-3')
+          is = FactoryBot.create(:models_instance, deployment: deployment, job: 'fake-job-name', index: '43', uuid: 'uuid-3')
           vm = Models::Vm.make(cid: 'vm-2', instance_id: is.id)
           is.active_vm = vm
           is.save

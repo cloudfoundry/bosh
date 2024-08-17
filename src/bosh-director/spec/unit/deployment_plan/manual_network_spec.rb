@@ -28,7 +28,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     planner.add_stemcell(stemcell)
     planner
   end
-  let(:instance_model) { Bosh::Director::Models::Instance.make }
+  let(:instance_model) { FactoryBot.create(:models_instance) }
 
   let(:manual_network) do
     Bosh::Director::DeploymentPlan::ManualNetwork.parse(

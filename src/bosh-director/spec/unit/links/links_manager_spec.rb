@@ -2300,7 +2300,7 @@ describe Bosh::Director::Links::LinksManager do
 
   describe '#bind_links_to_instance' do
     let(:instance_model) do
-      Bosh::Director::Models::Instance.make(deployment: deployment_model)
+      FactoryBot.create(:models_instance, deployment: deployment_model)
     end
 
     let(:instance) do
@@ -2780,7 +2780,7 @@ describe Bosh::Director::Links::LinksManager do
 
   describe '#get_links_for_instance' do
     let(:instance_model) do
-      Bosh::Director::Models::Instance.make(deployment: deployment_model)
+      FactoryBot.create(:models_instance, deployment: deployment_model)
     end
 
     let(:is_deploying) do
@@ -3440,7 +3440,7 @@ describe Bosh::Director::Links::LinksManager do
     let(:deployment_model) { FactoryBot.create(:models_deployment, links_serial_id: serial_id) }
     let(:link_providers) { [] }
     let(:deployment_plan) { instance_double(Bosh::Director::DeploymentPlan::Planner) }
-    let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment_model) }
+    let(:instance_model) { FactoryBot.create(:models_instance, deployment: deployment_model) }
 
     context 'cleanup providers' do
       let(:provider_1) do

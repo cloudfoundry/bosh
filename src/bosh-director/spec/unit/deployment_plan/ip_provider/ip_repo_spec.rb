@@ -4,7 +4,7 @@ require 'ipaddr'
 module Bosh::Director::DeploymentPlan
   describe IpRepo do
     let(:ip_repo) { IpRepo.new(logger) }
-    let(:instance_model) { Bosh::Director::Models::Instance.make }
+    let(:instance_model) { FactoryBot.create(:models_instance) }
     let(:network_spec) do
       {
         'name' => 'my-manual-network',
@@ -181,7 +181,7 @@ module Bosh::Director::DeploymentPlan
         it 'should fail if it reserved by a different instance' do
           network_spec['subnets'].first['static'] = ['192.168.1.5']
 
-          other_instance_model = Bosh::Director::Models::Instance.make(availability_zone: 'az-2')
+          other_instance_model = FactoryBot.create(:models_instance, availability_zone: 'az-2')
           original_static_network_reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, network, '192.168.1.5')
           new_static_network_reservation = Bosh::Director::DesiredNetworkReservation.new_static(other_instance_model, network, '192.168.1.5')
 
@@ -195,7 +195,7 @@ module Bosh::Director::DeploymentPlan
         it 'should fail if the reserved instance does not exist' do
           network_spec['subnets'].first['static'] = ['192.168.1.5']
 
-          other_instance_model = Bosh::Director::Models::Instance.make(availability_zone: 'az-2')
+          other_instance_model = FactoryBot.create(:models_instance, availability_zone: 'az-2')
           original_static_network_reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, network, '192.168.1.5')
           new_static_network_reservation = Bosh::Director::DesiredNetworkReservation.new_static(other_instance_model, network, '192.168.1.5')
 

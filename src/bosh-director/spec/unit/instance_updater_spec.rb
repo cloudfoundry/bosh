@@ -7,7 +7,7 @@ module Bosh::Director
     let(:blobstore_client) { instance_double(Bosh::Blobstore::Client) }
     let(:deployment_model) { FactoryBot.create(:models_deployment) }
     let(:dns_encoder) { instance_double(DnsEncoder) }
-    let(:instance_model) { Models::Instance.make }
+    let(:instance_model) { FactoryBot.create(:models_instance) }
     let(:ip_provider) { DeploymentPlan::IpProvider.new(ip_repo, [], logger) }
     let(:ip_repo) { DeploymentPlan::IpRepo.new(logger) }
     let(:template_blob_cache) { instance_double(Core::Templates::TemplateBlobCache) }

@@ -94,7 +94,7 @@ module Bosh::Director
           end
         end
 
-        let(:instance_model) { Bosh::Director::Models::Instance.make }
+        let(:instance_model) { FactoryBot.create(:models_instance) }
 
         before do
           allow(needed_instance).to receive(:instance_group_name).and_return('instance-group-name')
@@ -250,7 +250,7 @@ module Bosh::Director
           plan = DeploymentPlan::InstancePlan.new(
             instance: changed_instance,
             desired_instance: DeploymentPlan::DesiredInstance.new,
-            existing_instance: Models::Instance.make,
+            existing_instance: FactoryBot.create(:models_instance),
             variables_interpolator: variables_interpolator,
           )
           allow(plan).to receive(:changed?) { true }
@@ -262,7 +262,7 @@ module Bosh::Director
           plan = DeploymentPlan::InstancePlan.new(
             instance: unchanged_instance,
             desired_instance: DeploymentPlan::DesiredInstance.new,
-            existing_instance: Models::Instance.make,
+            existing_instance: FactoryBot.create(:models_instance),
             variables_interpolator: variables_interpolator,
           )
           allow(plan).to receive(:changed?) { false }
@@ -273,7 +273,7 @@ module Bosh::Director
           plan
         end
 
-        let(:instance_model) { Bosh::Director::Models::Instance.make }
+        let(:instance_model) { FactoryBot.create(:models_instance) }
 
         let(:needed_instance_plans) { [canary_plan, changed_instance_plan, unchanged_instance_plan] }
 
@@ -402,7 +402,7 @@ module Bosh::Director
           plan = DeploymentPlan::InstancePlan.new(
             instance: changed_instance_1,
             desired_instance: DeploymentPlan::DesiredInstance.new,
-            existing_instance: Models::Instance.make,
+            existing_instance: FactoryBot.create(:models_instance),
             variables_interpolator: variables_interpolator,
           )
           allow(plan).to receive(:changed?) { true }
@@ -414,7 +414,7 @@ module Bosh::Director
           plan = DeploymentPlan::InstancePlan.new(
             instance: changed_instance_2,
             desired_instance: DeploymentPlan::DesiredInstance.new,
-            existing_instance: Models::Instance.make,
+            existing_instance: FactoryBot.create(:models_instance),
             variables_interpolator: variables_interpolator,
           )
           allow(plan).to receive(:changed?) { true }
@@ -426,7 +426,7 @@ module Bosh::Director
           plan = DeploymentPlan::InstancePlan.new(
             instance: changed_instance_3,
             desired_instance: DeploymentPlan::DesiredInstance.new,
-            existing_instance: Models::Instance.make,
+            existing_instance: FactoryBot.create(:models_instance),
             variables_interpolator: variables_interpolator,
           )
           allow(plan).to receive(:changed?) { true }

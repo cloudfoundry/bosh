@@ -4,7 +4,7 @@ module Bosh::Director
   module DeploymentPlan
     describe InstancePlanFromDB do
       let(:instance_model) do
-        Models::Instance.make(
+        FactoryBot.create(:models_instance,
           deployment: deployment_model,
           spec: spec,
           variable_set: variable_set_model,

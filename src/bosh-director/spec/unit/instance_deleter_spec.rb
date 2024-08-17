@@ -31,7 +31,7 @@ module Bosh::Director
       let(:existing_vm) { Models::Vm.make(cid: 'fake-vm-cid', instance_id: existing_instance.id, stemcell_api_version: 25) }
 
       let(:existing_instance) do
-        Models::Instance.make(deployment: deployment_model, uuid: 'my-uuid-1', job: 'fake-job-name', index: 5)
+        FactoryBot.create(:models_instance, deployment: deployment_model, uuid: 'my-uuid-1', job: 'fake-job-name', index: 5)
       end
 
       let(:instance_plan) do

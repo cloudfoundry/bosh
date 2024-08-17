@@ -16,7 +16,7 @@ module Bosh::Director
 
     before do
       # instance 1: one disk with two snapshots
-      @instance = Models::Instance.make(deployment: deployment, job: 'job', index: 0, uuid: '12abdc456', availability_zone: 'az1')
+      @instance = FactoryBot.create(:models_instance, deployment: deployment, job: 'job', index: 0, uuid: '12abdc456', availability_zone: 'az1')
       @vm = Models::Vm.make(cid: 'vm-cid0', agent_id: 'agent0', instance: @instance, active: true)
 
       @disk = Models::PersistentDisk.make(disk_cid: 'disk0', instance: @instance, active: true)
@@ -24,14 +24,14 @@ module Bosh::Director
       Models::Snapshot.make(persistent_disk: @disk, snapshot_cid: 'snap0b', created_at: time)
 
       # instance 2: 1 disk
-      instance = Models::Instance.make(deployment: deployment, job: 'job', index: 1, uuid: '12xyz456', availability_zone: 'az2')
+      instance = FactoryBot.create(:models_instance, deployment: deployment, job: 'job', index: 1, uuid: '12xyz456', availability_zone: 'az2')
       vm = Models::Vm.make(cid: 'vm-cid1', agent_id: 'agent1', instance: instance, active: true)
 
       disk = Models::PersistentDisk.make(disk_cid: 'disk1', instance: instance, active: true)
       Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap1a', created_at: time)
 
       # instance 3: no disks
-      @instance2 = Models::Instance.make(deployment: deployment, job: 'job2', index: 0, uuid: '12def456', availability_zone: 'az3')
+      @instance2 = FactoryBot.create(:models_instance, deployment: deployment, job: 'job2', index: 0, uuid: '12def456', availability_zone: 'az3')
       @vm2 = Models::Vm.make(cid: 'vm-cid2', agent_id: 'agent2', instance: @instance2, active: true)
 
       # snapshot from another deployment

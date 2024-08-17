@@ -39,10 +39,10 @@ module Bosh::Director
     let(:deployment_model) { FactoryBot.create(:models_deployment, name: 'dep1') }
     let(:instance) { DeploymentPlan::Instance.create_from_instance_group(instance_group, 1, 'started', deployment_model, {}, nil, logger, variables_interpolator) }
     let(:instance_model) do
-      instance = Models::Instance.make(uuid: 'my-uuid-1', availability_zone: 'az1', variable_set_id: 10)
-      Models::Vm.make(cid: 'vm234', instance_id: instance.id, active: true, cpi: 'my-cpi')
-      instance.add_persistent_disk(persistent_disk) if persistent_disk
-      instance
+      FactoryBot.create(:models_instance, uuid: 'my-uuid-1', availability_zone: 'az1', variable_set_id: variable_set.id).tap do |i|
+        Models::Vm.make(cid: 'vm234', instance_id: i.id, active: true, cpi: 'my-cpi')
+        i.add_persistent_disk(persistent_disk) if persistent_disk
+      end.reload
     end
 
     let(:persistent_disk) { Models::PersistentDisk.make(disk_cid: 'disk123', size: 2048, name: disk_name, cloud_properties: cloud_properties, active: true, cpi: 'my-cpi') }

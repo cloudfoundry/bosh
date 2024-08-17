@@ -13,7 +13,7 @@ module Bosh::Director::Models
         vm: vm
       )
     end
-    let(:instance) {Instance.make(job: 'foojob', index: 1, deployment: deployment)}
+    let(:instance) {FactoryBot.create(:models_instance, job: 'foojob', index: 1, deployment: deployment)}
     let(:vm) { Vm.make(instance: instance) }
     let(:deployment) {FactoryBot.create(:models_deployment, name: 'foodeployment')}
 

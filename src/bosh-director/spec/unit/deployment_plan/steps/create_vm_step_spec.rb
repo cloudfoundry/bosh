@@ -66,7 +66,7 @@ module Bosh
           end
 
           let(:instance_model) do
-            Models::Instance.make(
+            FactoryBot.create(:models_instance,
               uuid: SecureRandom.uuid,
               index: 5,
               job: 'fake-job',
@@ -228,7 +228,7 @@ module Bosh
             end
 
             context 'when cloud-config/azs are not used' do
-              let(:instance_model) { Models::Instance.make(uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment, availability_zone: '') }
+              let(:instance_model) { FactoryBot.create(:models_instance, uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment, availability_zone: '') }
               let(:vm_model) { Models::Vm.make(cid: 'new-vm-cid', instance: instance_model, cpi: '') }
 
               it 'uses any cloud config if availability zones are not used, even though requested' do

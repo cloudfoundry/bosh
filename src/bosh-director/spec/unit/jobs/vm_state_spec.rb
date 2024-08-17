@@ -30,7 +30,7 @@ module Bosh::Director
     let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
     let(:time) { Time.now }
     let(:vm) { Models::Vm.make(cid: 'fake-vm-cid', agent_id: 'fake-agent-id', instance_id: instance.id, created_at: time) }
-    let(:instance) { Models::Instance.make(deployment: deployment) }
+    let(:instance) { FactoryBot.create(:models_instance, deployment: deployment) }
 
     before do
       allow(Config).to receive(:dns).and_return('domain_name' => 'microbosh')

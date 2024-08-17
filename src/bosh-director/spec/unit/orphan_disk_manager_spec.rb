@@ -10,7 +10,7 @@ module Bosh::Director
     let(:deployment) { FactoryBot.create(:models_deployment, name: 'test-deployment') }
 
     let(:instance) do
-      Models::Instance.make(availability_zone: 'az-1', deployment: deployment, job: 'test-instance', uuid: 'test-uuid')
+      FactoryBot.create(:models_instance, availability_zone: 'az-1', deployment: deployment, job: 'test-instance', uuid: 'test-uuid')
     end
 
     let(:persistent_disk) do
@@ -111,7 +111,7 @@ module Bosh::Director
     end
 
     describe '#unorphan_disk' do
-      let(:instance) { Models::Instance.make(id: 123, availability_zone: 'az1') }
+      let(:instance) { FactoryBot.create(:models_instance, id: 123, availability_zone: 'az1') }
       let(:orphan_disk) do
         FactoryBot.create(:models_orphan_disk,
           disk_cid: 'disk456',

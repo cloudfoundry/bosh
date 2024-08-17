@@ -6,7 +6,7 @@ module Bosh::Director::Models
   describe Vm do
     subject(:vm) { Bosh::Director::Models::Vm.make(instance: instance) }
 
-    let!(:instance) { Bosh::Director::Models::Instance.make }
+    let!(:instance) { FactoryBot.create(:models_instance) }
 
     it 'has a many-to-one relationship to instances' do
       described_class.make(instance_id: instance.id, id: 1)

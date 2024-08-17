@@ -6,21 +6,14 @@ module Bosh::Director
 
     let(:ip_addresses) { ['10.0.0.1'] }
     let(:instance1) do
-      instance = Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, index: 1, job: 'fake-job-1')
-      Bosh::Director::Models::Vm.make(
-        id: 1,
-        agent_id: 'agent-1',
-        cid: 'id-1',
-        instance_id: instance.id,
-        active: true,
-        stemcell_api_version: 3,
-      )
-      instance
+      FactoryBot.create(:models_instance, uuid: SecureRandom.uuid, index: 1, job: 'fake-job-1').tap do |i|
+        Models::Vm.make(id: 1, agent_id: 'agent-1', cid: 'id-1', instance_id: i.id, active: true, stemcell_api_version: 3)
+      end.reload
     end
     let(:instance2) do
-      instance = Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, index: 2, job: 'fake-job-1')
-      Bosh::Director::Models::Vm.make(id: 2, agent_id: 'agent-2', cid: 'id-2', instance_id: instance.id, active: true)
-      instance
+      FactoryBot.create(:models_instance, uuid: SecureRandom.uuid, index: 2, job: 'fake-job-1').tap do |i|
+        Models::Vm.make(id: 2, agent_id: 'agent-2', cid: 'id-2', instance_id: i.id, active: true)
+      end.reload
     end
     let(:agent) { instance_double(AgentClient, wait_until_ready: nil, delete_arp_entries: nil) }
     let(:agent2) { instance_double(AgentClient, wait_until_ready: nil, delete_arp_entries: nil) }
@@ -35,10 +28,10 @@ module Bosh::Director
     describe '#filter_instances' do
       it 'excludes the VM being created' do
         3.times do |i|
-          Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, index: i, job: "fake-job-#{i}")
+          FactoryBot.create(:models_instance, uuid: SecureRandom.uuid, index: i, job: "fake-job-#{i}")
         end
 
-        instance = Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, index: 0, job: 'fake-job-0')
+        instance = FactoryBot.create(:models_instance, uuid: SecureRandom.uuid, index: 0, job: 'fake-job-0')
         vm_being_created = Bosh::Director::Models::Vm.make(id: 11, cid: 'fake-cid-0', instance_id: instance.id, active: true)
 
         agent_broadcast = AgentBroadcaster.new
@@ -49,7 +42,7 @@ module Bosh::Director
 
       it 'excludes instances where the vm is nil' do
         3.times do |i|
-          Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, index: i, job: "fake-job-#{i}")
+          FactoryBot.create(:models_instance, uuid: SecureRandom.uuid, index: i, job: "fake-job-#{i}")
         end
         vm_being_created_cid = 'fake-cid-99'
 
@@ -60,7 +53,7 @@ module Bosh::Director
       end
 
       it 'excludes compilation VMs' do
-        instance = Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, index: 0, job: 'fake-job-0', compilation: true)
+        instance = FactoryBot.create(:models_instance, uuid: SecureRandom.uuid, index: 0, job: 'fake-job-0', compilation: true)
         active_vm = Bosh::Director::Models::Vm.make(id: 11, cid: 'fake-cid-0', instance:, active: true)
         vm_being_created_cid = 'fake-cid-99'
 
@@ -71,7 +64,7 @@ module Bosh::Director
       end
 
       it 'includes VMs that need flushing' do
-        instance = Bosh::Director::Models::Instance.make(uuid: SecureRandom.uuid, index: 0, job: 'fake-job-0')
+        instance = FactoryBot.create(:models_instance, uuid: SecureRandom.uuid, index: 0, job: 'fake-job-0')
         active_vm = Bosh::Director::Models::Vm.make(id: 11, cid: 'fake-cid-0', instance:, active: true)
         vm_being_created_cid = 'fake-cid-99'
 

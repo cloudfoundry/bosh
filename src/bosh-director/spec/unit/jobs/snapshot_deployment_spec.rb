@@ -6,25 +6,25 @@ module Bosh::Director
     let(:deployment_name) { 'deployment' }
     let!(:deployment) { FactoryBot.create(:models_deployment, name: deployment_name) }
     let!(:instance1) do
-      is = Models::Instance.make(deployment: deployment)
+      is = FactoryBot.create(:models_instance, deployment: deployment)
       vm = Models::Vm.make(instance_id: is.id)
       is.active_vm = vm
       is
     end
     let!(:instance2) do
-      is = Models::Instance.make(deployment: deployment)
+      is = FactoryBot.create(:models_instance, deployment: deployment)
       vm = Models::Vm.make(instance_id: is.id)
       is.active_vm = vm
       is
     end
     let!(:instance3) do
-      is = Models::Instance.make(deployment: deployment)
+      is = FactoryBot.create(:models_instance, deployment: deployment)
       vm = Models::Vm.make(instance_id: is.id)
       is.active_vm = vm
       is
     end
     let!(:instance4) do
-      is = Models::Instance.make
+      is = FactoryBot.create(:models_instance)
       vm = Models::Vm.make(instance_id: is.id)
       is.active_vm = vm
       is
@@ -57,7 +57,7 @@ module Bosh::Director
       end
 
       context 'when vm is not attached' do
-        let!(:instance5) { Models::Instance.make(deployment: deployment, active_vm: nil) }
+        let!(:instance5) { FactoryBot.create(:models_instance, deployment: deployment, active_vm: nil) }
 
         it 'should snapshot all instance that have a vms attached' do
           expect(Api::SnapshotManager).to receive(:take_snapshot).with(instance1, {})

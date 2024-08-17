@@ -947,7 +947,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     def existing_instance_with_az_and_ips(az, ips, network_name = 'a')
-      instance = Bosh::Director::Models::Instance.make(
+      instance = FactoryBot.create(:models_instance, 
         availability_zone: az, deployment: deployment_model, job: instance_group.name,
       )
       ips.each do |ip|

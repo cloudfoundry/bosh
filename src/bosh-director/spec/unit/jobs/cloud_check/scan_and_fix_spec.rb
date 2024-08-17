@@ -11,20 +11,20 @@ module Bosh::Director
     let(:scan_and_fix) { described_class.new('deployment', jobs, fix_stateful_jobs) }
 
     before do
-      instance = Models::Instance.make(deployment: deployment, job: 'job1', index: 0, uuid: 'job1index0')
+      instance = FactoryBot.create(:models_instance, deployment: deployment, job: 'job1', index: 0, uuid: 'job1index0')
       Models::DeploymentProblem.make(deployment: deployment, resource_id: instance.id, type: 'unresponsive_agent')
 
-      instance = Models::Instance.make(deployment: deployment, job: 'job1', index: 1, uuid: 'job1index1')
+      instance = FactoryBot.create(:models_instance, deployment: deployment, job: 'job1', index: 1, uuid: 'job1index1')
       Models::DeploymentProblem.make(deployment: deployment, resource_id: instance.id, type: 'missing_vm')
 
-      instance = Models::Instance.make(deployment: deployment, job: 'job2', index: 0, uuid: 'job2index0')
+      instance = FactoryBot.create(:models_instance, deployment: deployment, job: 'job2', index: 0, uuid: 'job2index0')
       Models::DeploymentProblem.make(deployment: deployment, resource_id: instance.id, type: 'unbound')
 
-      instance = Models::Instance.make(deployment: deployment, job: 'job2', index: 1, uuid: 'job2index1')
+      instance = FactoryBot.create(:models_instance, deployment: deployment, job: 'job2', index: 1, uuid: 'job2index1')
       Models::DeploymentProblem.make(deployment: deployment, resource_id: instance.id, type: 'missing_vm')
       Models::PersistentDisk.make(instance: instance)
 
-      instance = Models::Instance.make(deployment: deployment, job: 'job2', index: 2, uuid: 'job2index2', ignore: true)
+      instance = FactoryBot.create(:models_instance, deployment: deployment, job: 'job2', index: 2, uuid: 'job2index2', ignore: true)
       Models::DeploymentProblem.make(deployment: deployment, resource_id: instance.id, type: 'unresponsive_agent')
     end
 

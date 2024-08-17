@@ -6,7 +6,7 @@ module Bosh::Director
       describe UnmountInstanceDisksStep do
         subject(:step) { UnmountInstanceDisksStep.new(instance) }
 
-        let(:instance) { Models::Instance.make }
+        let(:instance) { FactoryBot.create(:models_instance) }
         let!(:vm) { Models::Vm.make(instance: instance, active: true) }
         let(:disk1) { Models::PersistentDisk.make(instance: instance, name: '') }
         let(:disk2) { Models::PersistentDisk.make(instance: instance, name: 'unmanaged') }

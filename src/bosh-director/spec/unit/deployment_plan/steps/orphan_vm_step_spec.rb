@@ -7,7 +7,7 @@ module Bosh::Director
         subject(:step) { described_class.new(vm) }
 
         let(:deployment) { FactoryBot.create(:models_deployment, name: 'fake-name-1') }
-        let(:instance) { Models::Instance.make(deployment: deployment, job: 'fake-job-1', uuid: 'fake-uuid-1') }
+        let(:instance) { FactoryBot.create(:models_instance, deployment: deployment, job: 'fake-job-1', uuid: 'fake-uuid-1') }
         let!(:vm) do
           Models::Vm.make(
             instance: instance,

@@ -40,7 +40,7 @@ module Bosh::Director
         ],
       }
     end
-    let(:instance_model) { Models::Instance.make(deployment: deployment_model) }
+    let(:instance_model) { FactoryBot.create(:models_instance, deployment: deployment_model) }
     let!(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
     let(:ip_provider) do
       DeploymentPlan::IpProvider.new(DeploymentPlan::IpRepo.new(logger), { 'fake-network' => network }, logger)
@@ -197,7 +197,7 @@ module Bosh::Director
       end
 
       context 'when instance has dynamic networks in spec' do
-        let(:instance_model) { Models::Instance.make(deployment: deployment_model, spec: instance_spec) }
+        let(:instance_model) { FactoryBot.create(:models_instance, deployment: deployment_model, spec: instance_spec) }
         let(:instance_spec) do
           {
             'networks' => {

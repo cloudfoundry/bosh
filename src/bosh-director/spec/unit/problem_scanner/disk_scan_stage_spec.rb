@@ -46,7 +46,7 @@ module Bosh::Director
         Models::PersistentDisk.make(active: disk_state, instance_id: instance.id, disk_cid: 'fake-disk-cid')
       end
       let!(:vm) { Models::Vm.make(cid: 'fake-vm-cid', instance_id: instance.id) }
-      let!(:instance) { Models::Instance.make(deployment: deployment, job: 'fake-job', index: 0, availability_zone: 'az1') }
+      let!(:instance) { FactoryBot.create(:models_instance, deployment: deployment, job: 'fake-job', index: 0, availability_zone: 'az1') }
       let(:disk_owners) do
         { 'fake-disk-cid' => ['fake-vm-cid'] }
       end
@@ -67,7 +67,7 @@ module Bosh::Director
       end
 
       context 'when instance is ignored' do
-        let!(:instance) { Models::Instance.make(deployment: deployment, job: 'fake-job', index: 1, availability_zone: 'az1', ignore: true) }
+        let!(:instance) { FactoryBot.create(:models_instance, deployment: deployment, job: 'fake-job', index: 1, availability_zone: 'az1', ignore: true) }
         let(:disk_count) { 0 }
 
         it 'does not register missing disk problem' do

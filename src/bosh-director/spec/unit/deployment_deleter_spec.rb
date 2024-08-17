@@ -15,8 +15,8 @@ module Bosh::Director
     let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
 
     describe '#delete' do
-      let!(:instance_1) { Models::Instance.make }
-      let!(:instance_2) { Models::Instance.make }
+      let!(:instance_1) { FactoryBot.create(:models_instance) }
+      let!(:instance_2) { FactoryBot.create(:models_instance) }
 
       let!(:deployment_model) { FactoryBot.create(:models_deployment, name: 'fake-deployment') }
 

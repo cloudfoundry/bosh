@@ -13,7 +13,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
     Bosh::Director::DeploymentPlan::ManualNetworkSubnet.parse(@network.name, properties, availability_zones, true)
   end
 
-  let(:instance) { instance_double(Bosh::Director::DeploymentPlan::Instance, model: Bosh::Director::Models::Instance.make) }
+  let(:instance) { instance_double(Bosh::Director::DeploymentPlan::Instance, model: FactoryBot.create(:models_instance)) }
 
   def create_static_reservation(ip)
     Bosh::Director::StaticNetworkReservation.new(instance, @network, IPAddr.new(ip))

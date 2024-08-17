@@ -89,7 +89,7 @@ module Bosh::Director::DeploymentPlan::Stages
 
     context 'the director database contains an instance with a static ip but no vm assigned (due to deploy failure)' do
       let(:instance_model) do
-        instance = Bosh::Director::Models::Instance.make(deployment: deployment)
+        instance = FactoryBot.create(:models_instance, deployment: deployment)
         Bosh::Director::Models::Vm.make(cid: 'vm-cid-1', instance: instance, active: true)
         instance
       end

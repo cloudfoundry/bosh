@@ -96,7 +96,7 @@ module Bosh::Director
       describe '#perform' do
         context 'with instances in the deployment' do
           let(:existing_instance) do
-            Models::Instance.make(
+            FactoryBot.create(:models_instance,
               deployment: deployment_model,
               job: 'fake-instance-group',
               index: 0,

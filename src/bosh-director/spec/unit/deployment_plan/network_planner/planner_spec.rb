@@ -10,7 +10,7 @@ module Bosh::Director::DeploymentPlan
     let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
     let(:deployment) { instance_double(Planner, model: FactoryBot.create(:models_deployment)) }
     let(:desired_instance) { DesiredInstance.new(instance_group, deployment) }
-    let(:instance_model) { Bosh::Director::Models::Instance.make }
+    let(:instance_model) { FactoryBot.create(:models_instance) }
     let(:instance_group) { FactoryBot.build(:deployment_plan_instance_group) }
     let(:instance_repository) { InstanceRepository.new(logger, variables_interpolator) }
     let(:instance) { instance_repository.fetch_existing(instance_model, {}, desired_instance) }

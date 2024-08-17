@@ -5,9 +5,9 @@ module Bosh::Director
     let(:deployment) { FactoryBot.create(:models_deployment, name: deployment_name) }
     let(:active_vm) { true }
     let!(:vm) { Models::Vm.make(agent_id: 'random-id', instance_id: instance.id, active: active_vm) }
-    let(:instance) { Models::Instance.make(uuid: 'fakeId123', deployment: deployment, job: job) }
+    let(:instance) { FactoryBot.create(:models_instance, uuid: 'fakeId123', deployment: deployment, job: job) }
     let!(:vm_1) { Models::Vm.make(agent_id: 'random-id1', instance_id: instance_1.id, active: active_vm) }
-    let(:instance_1) { Models::Instance.make(uuid: 'fakeId124', deployment: deployment, job: job) }
+    let(:instance_1) { FactoryBot.create(:models_instance, uuid: 'fakeId124', deployment: deployment, job: job) }
     let(:task) { double('Task') }
     let(:username) { 'FAKE_USER' }
     let(:instance_lookup) { Api::InstanceLookup.new }
@@ -77,7 +77,7 @@ module Bosh::Director
           let(:active_vm) { false }
 
           it 'enqueues a job' do
-            instance_2 = Models::Instance.make(uuid: 'fakeId125', deployment: deployment, job: job)
+            instance_2 = FactoryBot.create(:models_instance, uuid: 'fakeId125', deployment: deployment, job: job)
             Models::Vm.make(agent_id: 'random-id2', instance_id: instance_2.id, active: true)
 
             expect(job_queue).to receive(:enqueue).with(
@@ -89,7 +89,7 @@ module Bosh::Director
 
       context 'when development is provided' do
         let!(:instance_2) do
-          instance = Models::Instance.make(uuid: 'fakeId125', deployment: deployment, job: job_2)
+          instance = FactoryBot.create(:models_instance, uuid: 'fakeId125', deployment: deployment, job: job_2)
           Models::Vm.make(agent_id: 'random-id2', instance_id: instance.id, active: active_vm)
           instance
         end
@@ -114,7 +114,7 @@ module Bosh::Director
           let(:job_3) { 'FAKE_JOB_3' }
 
           it 'enqueues a job' do
-            instance_2 = Models::Instance.make(uuid: 'fakeId126', deployment: deployment, job: job_3)
+            instance_2 = FactoryBot.create(:models_instance, uuid: 'fakeId126', deployment: deployment, job: job_3)
             Models::Vm.make(agent_id: 'random-id3', instance_id: instance_2.id, active: true)
 
             expect(job_queue).to receive(:enqueue).with(

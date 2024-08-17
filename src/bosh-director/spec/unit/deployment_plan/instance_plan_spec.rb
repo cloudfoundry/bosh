@@ -66,7 +66,7 @@ module Bosh::Director::DeploymentPlan
 
     let!(:variable_set_model) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
     let(:instance_model) do
-      instance_model = Bosh::Director::Models::Instance.make(
+      instance_model = FactoryBot.create(:models_instance,
         uuid: 'fake-uuid-1',
         bootstrap: true,
         deployment: deployment_model,
@@ -1750,7 +1750,7 @@ module Bosh::Director::DeploymentPlan
     describe '#packages_changed?' do
       describe 'when packages have changed' do
         let(:instance_model) do
-          instance_model = Bosh::Director::Models::Instance.make(
+          instance_model = FactoryBot.create(:models_instance,
             bootstrap: true,
             deployment: deployment_model,
             uuid: 'uuid-1',

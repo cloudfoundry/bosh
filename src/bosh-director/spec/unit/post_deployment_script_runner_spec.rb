@@ -11,7 +11,7 @@ module Bosh::Director
       let(:agent) { instance_double('Bosh::Director::AgentClient') }
 
       let(:instance) do
-        instance = Models::Instance.make(state: 'started')
+        instance = FactoryBot.create(:models_instance, state: 'started')
         vm = Models::Vm.make(instance_id: instance.id)
         instance.active_vm = vm
         instance

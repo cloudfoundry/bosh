@@ -125,7 +125,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     def existing_instance_with_az(index, az)
-      Bosh::Director::Models::Instance.make(index: index, availability_zone: az)
+      FactoryBot.create(:models_instance, index: index, availability_zone: az)
     end
 
     def desired_instance(zone = nil)

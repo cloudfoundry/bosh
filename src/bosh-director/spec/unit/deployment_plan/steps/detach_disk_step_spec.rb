@@ -7,7 +7,7 @@ module Bosh::Director
         subject(:step) { DetachDiskStep.new(disk) }
 
         let!(:vm) { Models::Vm.make(active: true, instance: instance, stemcell_api_version: 25) }
-        let(:instance) { Models::Instance.make }
+        let(:instance) { FactoryBot.create(:models_instance) }
         let!(:disk) { Models::PersistentDisk.make(instance: instance, name: '') }
         let(:cloud_factory) { instance_double(CloudFactory) }
         let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }

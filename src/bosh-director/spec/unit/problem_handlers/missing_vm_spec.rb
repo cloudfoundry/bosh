@@ -17,7 +17,7 @@ module Bosh::Director
     let!(:local_dns_blob) { FactoryBot.create(:models_local_dns_blob) }
 
     let!(:instance) do
-      instance = Models::Instance.make(
+      instance = FactoryBot.create(:models_instance,
         job: manifest['instance_groups'].first['name'],
         index: 0,
         uuid: '1234-5678',

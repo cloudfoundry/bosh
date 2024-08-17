@@ -6,7 +6,7 @@ module Bosh::Director
       describe ElectActiveVmStep do
         subject(:step) { described_class.new }
 
-        let(:instance) { Models::Instance.make }
+        let(:instance) { FactoryBot.create(:models_instance) }
         let!(:vm) { Models::Vm.make(instance: instance, active: false, cpi: 'vm-cpi') }
         let(:report) { Stages::Report.new.tap { |r| r.vm = vm } }
 

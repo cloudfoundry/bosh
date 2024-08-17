@@ -48,7 +48,7 @@ module Bosh::Director
     let(:deployment) { FactoryBot.create(:models_deployment, name: 'test-deployment') }
 
     let(:include_index_records) { false }
-    let(:instance1) { Models::Instance.make(uuid: 'uuid1', index: 1) }
+    let(:instance1) { FactoryBot.create(:models_instance, uuid: 'uuid1', index: 1) }
 
     before do
       FactoryBot.create(:models_local_dns_encoded_network, id: 1, name: 'net-name1')
@@ -65,7 +65,7 @@ module Bosh::Director
       let!(:original_local_dns_blob) { FactoryBot.create(:models_local_dns_blob) }
 
       let(:instance2) do
-        Models::Instance.make(
+        FactoryBot.create(:models_instance,
           uuid: 'uuid2',
           index: 2,
         )
@@ -253,7 +253,7 @@ module Bosh::Director
 
         context 'when the root_domain is empty' do
           let!(:instance3) do
-            Models::Instance.make(
+            FactoryBot.create(:models_instance,
               uuid: 'uuid3',
               index: 3,
             )
@@ -530,7 +530,7 @@ module Bosh::Director
       let!(:original_local_dns_blob) { FactoryBot.create(:models_local_dns_blob) }
 
       let(:instance2) do
-        Models::Instance.make(
+        FactoryBot.create(:models_instance,
           uuid: 'uuid2',
           index: 2,
         )

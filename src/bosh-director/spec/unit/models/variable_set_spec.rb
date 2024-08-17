@@ -28,9 +28,9 @@ module Bosh::Director::Models
 
     describe '#instances' do
       it 'returns instances associated with variable set' do
-        instance_1 = Instance.make(job: 'job-1', variable_set: variable_set_1)
-        instance_2 = Instance.make(job: 'job-2', variable_set: variable_set_1)
-        Instance.make(job: 'job-3', variable_set: variable_set_2)
+        instance_1 = FactoryBot.create(:models_instance, job: 'job-1', variable_set: variable_set_1)
+        instance_2 = FactoryBot.create(:models_instance, job: 'job-2', variable_set: variable_set_1)
+        FactoryBot.create(:models_instance, job: 'job-3', variable_set: variable_set_2)
 
         expect(variable_set_1.instances).to match_array([instance_1, instance_2])
       end

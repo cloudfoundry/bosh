@@ -4,7 +4,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
 
   let(:logger) { Logging::Logger.new('TestLogger') }
   let(:instance) { instance_double(Bosh::Director::DeploymentPlan::Instance, model: instance_model) }
-  let(:instance_model) { Bosh::Director::Models::Instance.make }
+  let(:instance_model) { FactoryBot.create(:models_instance) }
 
   describe '.parse' do
     context 'with a manifest using the old format without explicit subnets' do

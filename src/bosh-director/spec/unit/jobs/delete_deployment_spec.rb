@@ -36,7 +36,7 @@ module Bosh::Director
 
     it 'fails when ignored instances exist in the to-be-deleted deployment' do
       deployment = FactoryBot.create(:models_deployment, name: 'test_deployment')
-      Bosh::Director::Models::Instance.make(deployment: deployment, job: 'foo-job', index: 0, ignore: true)
+      FactoryBot.create(:models_instance, deployment: deployment, job: 'foo-job', index: 0, ignore: true)
       expect do
         job.perform
       end.to raise_exception DeploymentIgnoredInstancesDeletion, "You are trying to delete deployment 'test_deployment', " \

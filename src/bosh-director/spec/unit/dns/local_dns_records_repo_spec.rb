@@ -9,7 +9,7 @@ module Bosh::Director
     let(:record_0_ip) { '1234' }
 
     let(:instance_model) do
-      Models::Instance.make(
+      FactoryBot.create(:models_instance,
         uuid: 'uuid',
         index: 1,
         deployment: deployment_model,
@@ -578,7 +578,7 @@ module Bosh::Director
     context 'delete for instance' do
       context 'when an instance has records' do
         let(:instance_model_too) do
-          Models::Instance.make(
+          FactoryBot.create(:models_instance,
             uuid: 'uuidtoo',
             index: 2,
             deployment: deployment_model,

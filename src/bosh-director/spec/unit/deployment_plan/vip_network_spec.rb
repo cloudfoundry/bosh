@@ -5,7 +5,7 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
   include Bosh::Director::IpUtil
 
   before { @deployment_plan = instance_double('Bosh::Director::DeploymentPlan::Planner') }
-  let(:instance_model) { Bosh::Director::Models::Instance.make }
+  let(:instance_model) { FactoryBot.create(:models_instance) }
   let(:network_spec) do
     {
       'name' => 'foo',

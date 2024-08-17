@@ -59,7 +59,7 @@ module Bosh::Director
 
     before(:each) do
       FactoryBot.create(:models_local_dns_encoded_network, id: default_network_id, name: default_network)
-      Models::Instance.make(id: 1, uuid: 'uuid-1')
+      FactoryBot.create(:models_instance, id: 1, uuid: 'uuid-1')
     end
 
     describe '#encode_link' do
@@ -326,7 +326,7 @@ module Bosh::Director
 
     describe '#num_for_uuid' do
       before(:each) do
-        Models::Instance.make(id: 2, uuid: 'uuid-2')
+        FactoryBot.create(:models_instance, id: 2, uuid: 'uuid-2')
       end
 
       it 'matches if found' do

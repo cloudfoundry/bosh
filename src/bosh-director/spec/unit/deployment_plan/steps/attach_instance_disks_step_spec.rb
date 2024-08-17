@@ -6,7 +6,7 @@ module Bosh::Director
       describe AttachInstanceDisksStep do
         subject(:step) { AttachInstanceDisksStep.new(instance, tags) }
 
-        let(:instance) { Models::Instance.make }
+        let(:instance) { FactoryBot.create(:models_instance) }
         let!(:vm) { Models::Vm.make(instance: instance, active: true, cpi: 'vm-cpi') }
         let!(:disk1) { Models::PersistentDisk.make(instance: instance, name: '') }
         let!(:disk2) { Models::PersistentDisk.make(instance: instance, name: 'unmanaged') }

@@ -105,7 +105,7 @@ module Bosh::Director::DeploymentPlan
     let(:env) { Env.new('key' => 'value') }
     let(:deployment_name) { 'fake-deployment' }
     let(:deployment) { FactoryBot.create(:models_deployment, name: deployment_name) }
-    let(:instance_model) { Bosh::Director::Models::Instance.make(deployment: deployment, bootstrap: true, uuid: 'uuid-1') }
+    let(:instance_model) { FactoryBot.create(:models_instance, deployment: deployment, bootstrap: true, uuid: 'uuid-1') }
     let(:instance_plan) do
       InstancePlan.new(
         existing_instance: nil,

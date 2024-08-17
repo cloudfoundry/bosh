@@ -22,7 +22,7 @@ module Bosh::Director
     end
 
     let(:instance) do
-      instance = Models::Instance.make(
+      instance = FactoryBot.create(:models_instance,
         deployment: deployment_model,
         job: 'mysql_node',
         index: 0,

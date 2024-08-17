@@ -55,7 +55,7 @@ module Bosh::Director
           type: Models::LocalDnsEncodedGroup::Types::INSTANCE_GROUP,
         )
         Models::LocalDnsEncodedNetwork.create(name: 'my-network')
-        Models::Instance.make(deployment: deployment, id: 7654321, uuid: 'my-uuid')
+        FactoryBot.create(:models_instance, deployment: deployment, id: 7654321, uuid: 'my-uuid')
 
         # ensure we are efficiently loading deployments in the same query, not later queries
         expect(Bosh::Director::Models::LocalDnsEncodedGroup).to receive(:inner_join).at_least(:once).and_call_original

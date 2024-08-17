@@ -73,7 +73,7 @@ module Bosh::Director
         variables_interpolator,
       )
     end
-    let(:instance_model) { Models::Instance.make(deployment: deployment, state: instance_model_state, uuid: 'uuid-1') }
+    let(:instance_model) { FactoryBot.create(:models_instance, deployment: deployment, state: instance_model_state, uuid: 'uuid-1') }
     let(:blobstore) { instance_double(Bosh::Blobstore::Client) }
     let(:agent_client) { instance_double(AgentClient) }
     let(:rendered_job_templates_cleaner) { instance_double(RenderedJobTemplatesCleaner) }

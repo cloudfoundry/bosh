@@ -20,7 +20,7 @@ module Bosh::Director
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:agent) { double(Bosh::Director::AgentClient) }
     let(:instance) do
-      Models::Instance.make(
+      FactoryBot.create(:models_instance,
         job: 'mysql_node',
         index: 0,
         uuid: 'uuid-1',

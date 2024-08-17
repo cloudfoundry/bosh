@@ -46,7 +46,7 @@ module Bosh
       end
 
       let(:instance_model) do
-        Models::Instance.make(
+        FactoryBot.create(:models_instance,
           index: 5,
           deployment: deployment,
           job: 'fake-job',

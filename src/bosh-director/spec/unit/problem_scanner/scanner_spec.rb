@@ -34,8 +34,8 @@ module Bosh::Director
 
       context 'when reseting a specific list of job instances' do
         it 'only marks the specific job instances that are open as closed' do
-          instance1 = Models::Instance.make(deployment: deployment, job: 'job1', index: 0)
-          instance2 = Models::Instance.make(deployment: deployment, job: 'job1', index: 1)
+          instance1 = FactoryBot.create(:models_instance, deployment: deployment, job: 'job1', index: 0)
+          instance2 = FactoryBot.create(:models_instance, deployment: deployment, job: 'job1', index: 1)
 
           problem1 = Models::DeploymentProblem.make(counter: 1,
                                                     type: 'inactive_disk',

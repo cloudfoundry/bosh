@@ -76,7 +76,7 @@ FactoryBot.define do
 end
 
 FactoryBot.define do
-  to_create { |instance| instance.save(raise_on_failure: true) }
+  to_create { |model| model.save(raise_on_failure: true) }
 
   factory :models_blob, class: Bosh::Director::Models::Blob do
     sequence(:blobstore_id) { |i| "blob-blobstore-id-#{i}" }
@@ -216,6 +216,15 @@ FactoryBot.define do
     sequence(:name) { |i| "lock-#{i}" }
     sequence(:uid) { |i| "lock-uid-#{i}" }
     expired_at { Time.now }
+  end
+
+  factory :models_instance, class: Bosh::Director::Models::Instance do
+    sequence(:job) { |i| "instance-job-#{i}" }
+    sequence(:index) { |i| i }
+    state { 'started' }
+    sequence(:uuid) { |i| "instance-uuid-#{i}" }
+    association :deployment, factory: :models_deployment, strategy: :create
+    association :variable_set, factory: :models_variable_set, strategy: :create
   end
 
   factory :models_network, class: Bosh::Director::Models::Network do

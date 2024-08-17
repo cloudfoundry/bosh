@@ -167,7 +167,7 @@ module Bosh
 
           context 'when there are deployed VMs' do
             let(:deployment) { FactoryBot.create(:models_deployment) }
-            let(:instance) { Models::Instance.make(deployment: deployment) }
+            let(:instance) { FactoryBot.create(:models_instance, deployment: deployment) }
             let(:vm) do
               Models::Vm.make(cid: 'fake-vm-cid', agent_id: 'fake-agent-id', instance_id: instance.id, created_at: Time.now)
             end

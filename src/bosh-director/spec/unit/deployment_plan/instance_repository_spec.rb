@@ -34,7 +34,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
   end
 
   let(:existing_instance) do
-    Bosh::Director::Models::Instance.make(spec: instance_spec)
+    FactoryBot.create(:models_instance, spec: instance_spec)
   end
 
   describe '#fetch_existing' do
@@ -82,7 +82,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
 
   describe '#build_instance_from_model' do
     let(:stemcell) { FactoryBot.create(:models_stemcell, name: 'stemcell-name', version: '3.0.2', cid: 'sc-302') }
-    let(:existing_instance) { Bosh::Director::Models::Instance.make(state: 'started') }
+    let(:existing_instance) { FactoryBot.create(:models_instance, state: 'started') }
 
     let(:instance_spec) do
       {
@@ -145,6 +145,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
     context 'when existing instances has VMs' do
       before do
         existing_instance.active_vm = Bosh::Director::Models::Vm.make(agent_id: 'scool', instance_id: existing_instance.id)
+        existing_instance.reload
       end
 
       it 'returns an instance with a bound Models::Instance' do
