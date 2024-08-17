@@ -7,7 +7,7 @@ module Bosh::Director
         subject(:step) { AttachInstanceDisksStep.new(instance, tags) }
 
         let(:instance) { FactoryBot.create(:models_instance) }
-        let!(:vm) { Models::Vm.make(instance: instance, active: true, cpi: 'vm-cpi') }
+        let!(:vm) { FactoryBot.create(:models_vm, instance: instance, active: true, cpi: 'vm-cpi') }
         let!(:disk1) { Models::PersistentDisk.make(instance: instance, name: '') }
         let!(:disk2) { Models::PersistentDisk.make(instance: instance, name: 'unmanaged') }
         let(:tags) do

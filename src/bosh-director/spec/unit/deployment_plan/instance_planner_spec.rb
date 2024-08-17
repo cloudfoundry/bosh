@@ -70,7 +70,7 @@ describe 'Bosh::Director::DeploymentPlan::InstancePlanner' do
   end
 
   def make_instance(idx = 0)
-    instance = Bosh::Director::DeploymentPlan::Instance.create_from_instance_group(
+    Bosh::Director::DeploymentPlan::Instance.create_from_instance_group(
       instance_group,
       idx,
       'started',
@@ -79,15 +79,24 @@ describe 'Bosh::Director::DeploymentPlan::InstancePlanner' do
       az,
       logger,
       variables_interpolator,
-    )
-    instance.bind_new_instance_model
-    instance
+    ).tap do |i|
+      i.bind_new_instance_model
+    end
   end
 
   def make_instance_with_existing_model(existing_instance_model)
-    instance = Bosh::Director::DeploymentPlan::Instance.create_from_instance_group(instance_group, existing_instance_model.index, 'started', deployment_model, {}, az, logger, variables_interpolator)
-    instance.bind_existing_instance_model(existing_instance_model)
-    instance
+    Bosh::Director::DeploymentPlan::Instance.create_from_instance_group(
+      instance_group,
+      existing_instance_model.index,
+      'started',
+      deployment_model,
+      {},
+      az,
+      logger,
+      variables_interpolator,
+    ).tap do |i|
+      i.bind_existing_instance_model(existing_instance_model)
+    end
   end
 
   describe 'plan_instance_group_instances' do
@@ -119,12 +128,13 @@ describe 'Bosh::Director::DeploymentPlan::InstancePlanner' do
       expect(instance_plans.count).to eq(1)
       existing_instance_plan = instance_plans.first
 
-      expected_desired_instance = Bosh::Director::DeploymentPlan::DesiredInstance.new(
-        instance_group,
-        deployment,
-        az,
-        0,
-      )
+      expected_desired_instance =
+        Bosh::Director::DeploymentPlan::DesiredInstance.new(
+          instance_group,
+          deployment,
+          az,
+          0,
+        )
       expect(existing_instance_plan.new?).to eq(false)
       expect(existing_instance_plan.obsolete?).to eq(false)
 
@@ -324,9 +334,11 @@ describe 'Bosh::Director::DeploymentPlan::InstancePlanner' do
     context 'logging active vm presence' do
       context 'when instance has active vm' do
         it 'logs that theres is a vm' do
-          existing_instance_model = FactoryBot.create(:models_instance, job: 'foo-instance_group', index: 0, availability_zone: az.name)
-          vm = Bosh::Director::Models::Vm.make(instance: existing_instance_model)
-          existing_instance_model.active_vm = vm
+          existing_instance_model =
+            FactoryBot.create(:models_instance, job: 'foo-instance_group', index: 0, availability_zone: az.name).tap do |i|
+              i.active_vm = FactoryBot.create(:models_vm, instance: i)
+            end
+
 
           expect(logger).to receive(:info).with("Existing desired instance '#{existing_instance_model.job}/#{existing_instance_model.index}' in az '#{az.name}' with active vm")
           instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_resources_cache)
@@ -664,7 +676,7 @@ describe 'Bosh::Director::DeploymentPlan::InstancePlanner' do
     end
 
     it 'does NOT orphan active vms' do
-      vm = Bosh::Director::Models::Vm.make(
+      vm = FactoryBot.create(:models_vm,
         instance: existing_instance_model,
         active: true,
       )
@@ -674,11 +686,11 @@ describe 'Bosh::Director::DeploymentPlan::InstancePlanner' do
     end
 
     it 'does not orphan vms that match the instance plan' do
-      vm = Bosh::Director::Models::Vm.make(
+      vm = FactoryBot.create(:models_vm,
         instance: existing_instance_model,
         active: true,
       )
-      usable_vm = Bosh::Director::Models::Vm.make(instance: existing_instance_model)
+      usable_vm = FactoryBot.create(:models_vm, instance: existing_instance_model)
 
       allow(instance_plan).to receive(:vm_matches_plan?).with(usable_vm).and_return true
 
@@ -690,7 +702,7 @@ describe 'Bosh::Director::DeploymentPlan::InstancePlanner' do
 
     it 'short circuits when detecting a matching instance plan for each vm' do
       instance_plan2 = instance_double(Bosh::Director::DeploymentPlan::InstancePlan, obsolete?: false)
-      unusable_vm = Bosh::Director::Models::Vm.make(
+      unusable_vm = FactoryBot.create(:models_vm,
         instance: existing_instance_model,
         active: false,
         agent_id: 'fake-agent-id',
@@ -705,11 +717,11 @@ describe 'Bosh::Director::DeploymentPlan::InstancePlanner' do
     end
 
     it 'orphans VMs that do not match' do
-      vm = Bosh::Director::Models::Vm.make(
+      vm = FactoryBot.create(:models_vm,
         instance: existing_instance_model,
         active: true,
       )
-      unusable_vm = Bosh::Director::Models::Vm.make(
+      unusable_vm = FactoryBot.create(:models_vm,
         instance: existing_instance_model,
         active: false,
         agent_id: 'fake-agent-id',

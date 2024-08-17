@@ -20,7 +20,7 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
 
     @instance =
       FactoryBot.create(:models_instance, job: 'mysql_node', index: 3, availability_zone: 'az1').tap do |i|
-        i.active_vm = Bosh::Director::Models::Vm.make(instance_id: i.id, cpi: 'cpi1', stemcell_api_version: 25)
+        i.active_vm = FactoryBot.create(:models_vm, instance_id: i.id, cpi: 'cpi1', stemcell_api_version: 25)
         i.save
       end
     deployment.add_instance(@instance)

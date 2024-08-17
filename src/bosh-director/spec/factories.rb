@@ -324,4 +324,15 @@ FactoryBot.define do
     package_names_json { '[]' }
     association :release, factory: :models_release, strategy: :create
   end
+
+  factory :models_vm, class: Bosh::Director::Models::Vm do
+    sequence(:cid) { |i| "vm-cid-#{i}" }
+    sequence(:agent_id) { |i| "vm-agent-id-#{i}" }
+    created_at { Time.now }
+    association :instance, factory: :models_instance, strategy: :create
+
+    trait :active do
+      active { true }
+    end
+  end
 end

@@ -27,7 +27,7 @@ module Bosh
           let(:report) { Stages::Report.new }
           let(:delete_vm_step) { instance_double(DeleteVmStep) }
           let(:expected_group) { 'fake-director-name-deployment-name-fake-job' }
-          let(:vm_model) { Models::Vm.make(cid: 'new-vm-cid', instance: instance_model, cpi: 'cpi1') }
+          let(:vm_model) { FactoryBot.create(:models_vm, cid: 'new-vm-cid', instance: instance_model, cpi: 'cpi1') }
           let(:tags) { {} }
           let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('az-1', {}) }
           let(:cloud_properties) { { 'ram' => '2gb' } }
@@ -229,7 +229,7 @@ module Bosh
 
             context 'when cloud-config/azs are not used' do
               let(:instance_model) { FactoryBot.create(:models_instance, uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment, availability_zone: '') }
-              let(:vm_model) { Models::Vm.make(cid: 'new-vm-cid', instance: instance_model, cpi: '') }
+              let(:vm_model) { FactoryBot.create(:models_vm, cid: 'new-vm-cid', instance: instance_model, cpi: '') }
 
               it 'uses any cloud config if availability zones are not used, even though requested' do
                 expect(non_default_cloud_factory).to receive(:get_name_for_az).at_least(:once).and_return ''

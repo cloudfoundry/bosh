@@ -108,7 +108,7 @@ module Bosh::Director
           context 'with no AZ name (legacy-style manifest)' do
             let(:prior_az_name) { '' }
             before {
-              existing_instance.active_vm = Models::Vm.make(cpi: 'anything', instance: existing_instance)
+              existing_instance.active_vm = FactoryBot.create(:models_vm, cpi: 'anything', instance: existing_instance)
               existing_instance.save
             }
 
@@ -122,7 +122,7 @@ module Bosh::Director
           context 'with nil azs (key not specified in manifest)' do
             let(:prior_az_name) { nil }
             before {
-              existing_instance.active_vm = Models::Vm.make(cpi: 'anything', instance: existing_instance)
+              existing_instance.active_vm = FactoryBot.create(:models_vm, cpi: 'anything', instance: existing_instance)
               existing_instance.save
             }
 
@@ -145,7 +145,7 @@ module Bosh::Director
             end
 
             context 'with a VM for the instance' do
-              before { existing_instance.active_vm = Models::Vm.make(cpi: prior_cpi_name, instance: existing_instance) }
+              before { existing_instance.active_vm = FactoryBot.create(:models_vm, cpi: prior_cpi_name, instance: existing_instance) }
 
               context 'which has an outdated cpi name' do
                 let(:prior_cpi_name) { 'cpi-old' }
@@ -199,7 +199,7 @@ module Bosh::Director
                 }
               end
 
-              before { existing_instance.active_vm = Models::Vm.make(cpi: 'old-cpi', instance: existing_instance) }
+              before { existing_instance.active_vm = FactoryBot.create(:models_vm, cpi: 'old-cpi', instance: existing_instance) }
               it 'updates the cpi' do
                 subject.perform
 

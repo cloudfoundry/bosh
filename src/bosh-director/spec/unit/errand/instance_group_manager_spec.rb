@@ -102,7 +102,7 @@ module Bosh::Director
 
       let(:instance1_model) do
         is = FactoryBot.create(:models_instance, deployment: deployment_model, job: 'foo-job', uuid: 'instance_id1', index: 0, ignore: true)
-        vm1_model = Models::Vm.make(cid: 'vm_cid1', instance_id: is.id)
+        vm1_model = FactoryBot.create(:models_vm, cid: 'vm_cid1', instance_id: is.id)
         is.active_vm = vm1_model
         is
       end

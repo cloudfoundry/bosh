@@ -18,7 +18,7 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
       availability_zone: 'az1'
     )
 
-    @vm = Bosh::Director::Models::Vm.make(instance_id: @instance.id, stemcell_api_version: 25)
+    @vm = FactoryBot.create(:models_vm, instance_id: @instance.id, stemcell_api_version: 25)
     @instance.active_vm = @vm
 
     @disk = Bosh::Director::Models::PersistentDisk.

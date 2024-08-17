@@ -33,7 +33,7 @@ module Bosh::Director
     end
 
     let!(:active_vm) do
-      Models::Vm.make(
+      FactoryBot.create(:models_vm,
         agent_id: 'some-agent-id',
         instance: instance_model,
         active: true,

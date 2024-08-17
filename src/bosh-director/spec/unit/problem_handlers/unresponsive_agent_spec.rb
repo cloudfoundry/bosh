@@ -30,7 +30,7 @@ module Bosh::Director
       )
     end
     let(:vm) do
-      Models::Vm.make(
+      FactoryBot.create(:models_vm,
         cid: 'vm-cid',
         agent_id: 'agent-007',
         instance_id: instance.id,

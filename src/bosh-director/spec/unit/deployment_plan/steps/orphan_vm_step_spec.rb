@@ -9,7 +9,7 @@ module Bosh::Director
         let(:deployment) { FactoryBot.create(:models_deployment, name: 'fake-name-1') }
         let(:instance) { FactoryBot.create(:models_instance, deployment: deployment, job: 'fake-job-1', uuid: 'fake-uuid-1') }
         let!(:vm) do
-          Models::Vm.make(
+          FactoryBot.create(:models_vm,
             instance: instance,
             active: false,
             cpi: 'vm-cpi',

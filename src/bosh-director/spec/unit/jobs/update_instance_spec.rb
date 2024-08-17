@@ -47,7 +47,7 @@ module Bosh::Director
         spec_json: instance_spec.to_json,
       )
       Models::PersistentDisk.make(instance: instance, disk_cid: 'disk-cid')
-      Models::Vm.make(instance: instance, active: true, cid: 'test-vm-cid')
+      FactoryBot.create(:models_vm, instance: instance, active: true, cid: 'test-vm-cid')
       instance
     end
 

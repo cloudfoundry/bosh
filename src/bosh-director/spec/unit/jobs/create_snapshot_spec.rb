@@ -4,7 +4,7 @@ module Bosh::Director
   describe Jobs::CreateSnapshot do
     let(:instance) do
       is = FactoryBot.create(:models_instance)
-      vm = Models::Vm.make(instance_id: is.id)
+      vm = FactoryBot.create(:models_vm, instance_id: is.id)
       is.active_vm = vm
       is
     end

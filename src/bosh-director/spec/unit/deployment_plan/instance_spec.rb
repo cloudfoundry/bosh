@@ -43,7 +43,7 @@ module Bosh::Director::DeploymentPlan
 
     let(:instance_model) do
       instance = FactoryBot.create(:models_instance, deployment: deployment, bootstrap: true, uuid: 'uuid-1')
-      Bosh::Director::Models::Vm.make(instance: instance, active: true)
+      FactoryBot.create(:models_vm, instance: instance, active: true)
       instance
     end
 

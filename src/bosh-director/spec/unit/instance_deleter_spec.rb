@@ -28,7 +28,7 @@ module Bosh::Director
 
     describe '#delete_instance_plans' do
       let(:network_plan) { DeploymentPlan::NetworkPlanner::Plan.new(reservation: instance_double(DesiredNetworkReservation)) }
-      let(:existing_vm) { Models::Vm.make(cid: 'fake-vm-cid', instance_id: existing_instance.id, stemcell_api_version: 25) }
+      let(:existing_vm) { FactoryBot.create(:models_vm, cid: 'fake-vm-cid', instance_id: existing_instance.id, stemcell_api_version: 25) }
 
       let(:existing_instance) do
         FactoryBot.create(:models_instance, deployment: deployment_model, uuid: 'my-uuid-1', job: 'fake-job-name', index: 5)

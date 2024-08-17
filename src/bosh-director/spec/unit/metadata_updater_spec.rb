@@ -7,7 +7,7 @@ describe Bosh::Director::MetadataUpdater do
     {}
   end
   let(:vm) do
-    Bosh::Director::Models::Vm.make(cid: 'fake-vm-cid', instance_id: instance.id, cpi: 'cpi1')
+    FactoryBot.create(:models_vm, cid: 'fake-vm-cid', instance_id: instance.id, cpi: 'cpi1')
   end
   let(:instance) do
     FactoryBot.create(:models_instance, 

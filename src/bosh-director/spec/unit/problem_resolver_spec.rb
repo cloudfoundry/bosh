@@ -25,7 +25,7 @@ module Bosh::Director
     let(:disk_igs) do
       [instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'disk-ig-1', update: parallel_update_config)]
     end
-    let(:deployment) { FactoryBot.create(:models_deployment, name: 'mycloud') }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: 'my-cloud') }
 
     before(:each) do
       allow(DeploymentPlan::PlannerFactory).to receive(:create).and_return(factory)
@@ -253,7 +253,7 @@ module Bosh::Director
           let(:disk_1) do
             Models::PersistentDisk.make(
               active: false,
-              instance: Models::Vm.make(
+              instance: FactoryBot.create(:models_vm,
                 :active,
                 instance: FactoryBot.create(:models_instance, job: 'disk-ig-1', deployment_id: deployment.id)
               ).instance
@@ -268,7 +268,7 @@ module Bosh::Director
           let(:disk_2) do
             Models::PersistentDisk.make(
               active: false,
-              instance: Models::Vm.make(
+              instance: FactoryBot.create(:models_vm,
                 :active,
                 instance: FactoryBot.create(:models_instance, job: 'disk-ig-1', deployment_id: deployment.id)
               ).instance

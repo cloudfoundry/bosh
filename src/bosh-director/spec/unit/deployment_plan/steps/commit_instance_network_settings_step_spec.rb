@@ -26,7 +26,7 @@ module Bosh::Director
         let!(:obsolete_ip_address) { Models::IpAddress.make(address_str: obsolete_ip_address_string) }
         let!(:desired_ip_address) { Models::IpAddress.make(address_str: desired_ip_address_string) }
 
-        let(:vm) { Models::Vm.make }
+        let(:vm) { FactoryBot.create(:models_vm) }
 
         before { report.network_plans = network_plans }
 

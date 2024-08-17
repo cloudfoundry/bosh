@@ -5,7 +5,7 @@ module Bosh::Director
     let(:agent_state_migrator) { described_class.new(Config.logger) }
     let(:client) { instance_double(AgentClient) }
 
-    let!(:vm_model) { Models::Vm.make(agent_id: 'agent-1', instance: instance_model, active: true) }
+    let!(:vm_model) { FactoryBot.create(:models_vm, agent_id: 'agent-1', instance: instance_model, active: true) }
     let(:instance_model) { FactoryBot.create(:models_instance) }
 
     describe '#get_state' do

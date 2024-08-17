@@ -18,7 +18,7 @@ module Bosh
               availability_zone: 'az1',
             )
           end
-          let(:vm_model) { Models::Vm.make(cid: 'vm-cid', instance_id: instance_model.id, cpi: 'cpi1') }
+          let(:vm_model) { FactoryBot.create(:models_vm, cid: 'vm-cid', instance_id: instance_model.id, cpi: 'cpi1') }
           let(:deployment) { FactoryBot.create(:models_deployment, name: 'deployment_name') }
           let(:report) { Stages::Report.new.tap { |r| r.vm = vm_model } }
 
@@ -121,7 +121,7 @@ module Bosh
 
             context 'when VM has a stemcell API version' do
               let(:vm_model) do
-                Models::Vm.make(
+                FactoryBot.create(:models_vm,
                   cid: 'vm-cid',
                   instance_id: instance_model.id,
                   cpi: 'cpi1',

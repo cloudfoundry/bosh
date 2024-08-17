@@ -633,10 +633,10 @@ module Bosh::Director
           end
 
           it 'allows putting the job instance into different ignore state' do
-            instance = Models::Instance.
-                create(deployment: deployment, job: 'dea',
-                       index: '0', state: 'started', uuid: '0B949287-CDED-4761-9002-FC4035E11B21',
-                       variable_set: Models::VariableSet.create(deployment: deployment))
+            instance =
+              Models::Instance.create(deployment: deployment, job: 'dea',
+                                      index: '0', state: 'started', uuid: '0B949287-CDED-4761-9002-FC4035E11B21',
+                                      variable_set: Models::VariableSet.create(deployment: deployment))
             expect(instance.ignore).to be(false)
             put '/foo/instance_groups/dea/0B949287-CDED-4761-9002-FC4035E11B21/ignore', JSON.generate('ignore' => true), { 'CONTENT_TYPE' => 'application/json' }
             expect(last_response.status).to eq(200)
@@ -648,9 +648,9 @@ module Bosh::Director
           end
 
           it 'gives a nice error when uploading non valid manifest' do
-            instance = Models::Instance.
-                create(deployment: deployment, job: 'dea',
-                       index: '0', state: 'started', variable_set: Models::VariableSet.create(deployment: deployment))
+            Models::Instance.create(deployment: deployment, job: 'dea',
+                                    index: '0', state: 'started',
+                                    variable_set: Models::VariableSet.create(deployment: deployment))
 
             put '/foo/jobs/dea', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml'}
 
@@ -660,9 +660,9 @@ module Bosh::Director
           end
 
           it 'should not validate body content when content.length is zero' do
-            Models::Instance.
-                create(deployment: deployment, job: 'dea',
-                       index: '0', state: 'started', variable_set: Models::VariableSet.create(deployment: deployment))
+            Models::Instance.create(deployment: deployment, job: 'dea',
+                                    index: '0', state: 'started',
+                                    variable_set: Models::VariableSet.create(deployment: deployment))
 
             put '/foo/jobs/dea/0?state=started', "}}}i'm not really yaml, hah!", {'CONTENT_TYPE' => 'text/yaml', 'CONTENT_LENGTH' => '0'}
 
@@ -840,6 +840,7 @@ module Bosh::Director
           describe 'draining' do
             let(:deployment) { Models::Deployment.create(name: 'test_deployment', manifest: YAML.dump({ 'foo' => 'bar' })) }
             let(:instance) { Models::Instance.create(deployment: deployment, job: 'job_name', index: '0', uuid: '0B949287-CDED-4761-9002-FC4035E11B21', state: 'started', variable_set: Models::VariableSet.create(deployment: deployment)) }
+
             before do
               Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
             end
@@ -905,7 +906,7 @@ module Bosh::Director
               state: 'started',
               variable_set: Models::VariableSet.create(deployment: deployment)
             )
-            Models::Vm.make(agent_id: 'random-id', instance_id: instance.id, active: true)
+            FactoryBot.create(:models_vm, agent_id: 'random-id', instance_id: instance.id, active: true)
             get '/foo/jobs/nats/0/logs', {}
             expect_redirect_to_queued_task(last_response)
           end
@@ -919,7 +920,7 @@ module Bosh::Director
               state: 'started',
               variable_set: Models::VariableSet.create(deployment: deployment)
             )
-            Models::Vm.make(agent_id: 'random-id', instance_id: instance.id, active: true)
+            FactoryBot.create(:models_vm, agent_id: 'random-id', instance_id: instance.id, active: true)
             get '/foo/jobs/nats/*/logs', {}
             expect_redirect_to_queued_task(last_response)
           end
@@ -933,7 +934,7 @@ module Bosh::Director
               state: 'started',
               variable_set: Models::VariableSet.create(deployment: deployment)
             )
-            Models::Vm.make(agent_id: 'random-id', instance_id: instance.id, active: true)
+            FactoryBot.create(:models_vm, agent_id: 'random-id', instance_id: instance.id, active: true)
             get '/foo/jobs/*/*/logs', {}
             expect_redirect_to_queued_task(last_response)
           end
@@ -2554,7 +2555,7 @@ module Bosh::Director
           before {
             instance = Models::Instance.create(deployment: owned_deployment, job: 'dea', index: 0, state: :started, uuid: 'F0753566-CA8E-4B28-AD63-7DB3903CD98C', variable_set: Models::VariableSet.create(deployment: owned_deployment))
             Models::Instance.create(deployment: other_deployment, job: 'dea', index: 0, state: :started, uuid: '72652FAA-1A9C-4803-8423-BBC3630E49C6', variable_set: Models::VariableSet.create(deployment: other_deployment))
-            Models::Vm.make(agent_id: 'random-id', instance_id: instance.id, active: true)
+            FactoryBot.create(:models_vm, agent_id: 'random-id', instance_id: instance.id, active: true)
           }
 
           # dev-team-member has scopes ['bosh.teams.dev.admin']

@@ -7,12 +7,12 @@ module Bosh::Director
     let(:ip_addresses) { ['10.0.0.1'] }
     let(:instance1) do
       FactoryBot.create(:models_instance, uuid: SecureRandom.uuid, index: 1, job: 'fake-job-1').tap do |i|
-        Models::Vm.make(id: 1, agent_id: 'agent-1', cid: 'id-1', instance_id: i.id, active: true, stemcell_api_version: 3)
+        FactoryBot.create(:models_vm, id: 1, agent_id: 'agent-1', cid: 'id-1', instance_id: i.id, active: true, stemcell_api_version: 3)
       end.reload
     end
     let(:instance2) do
       FactoryBot.create(:models_instance, uuid: SecureRandom.uuid, index: 2, job: 'fake-job-1').tap do |i|
-        Models::Vm.make(id: 2, agent_id: 'agent-2', cid: 'id-2', instance_id: i.id, active: true)
+        FactoryBot.create(:models_vm, id: 2, agent_id: 'agent-2', cid: 'id-2', instance_id: i.id, active: true)
       end.reload
     end
     let(:agent) { instance_double(AgentClient, wait_until_ready: nil, delete_arp_entries: nil) }
@@ -32,7 +32,7 @@ module Bosh::Director
         end
 
         instance = FactoryBot.create(:models_instance, uuid: SecureRandom.uuid, index: 0, job: 'fake-job-0')
-        vm_being_created = Bosh::Director::Models::Vm.make(id: 11, cid: 'fake-cid-0', instance_id: instance.id, active: true)
+        vm_being_created = FactoryBot.create(:models_vm, id: 11, cid: 'fake-cid-0', instance_id: instance.id, active: true)
 
         agent_broadcast = AgentBroadcaster.new
         instances = agent_broadcast.filter_instances(vm_being_created.cid)
@@ -54,7 +54,7 @@ module Bosh::Director
 
       it 'excludes compilation VMs' do
         instance = FactoryBot.create(:models_instance, uuid: SecureRandom.uuid, index: 0, job: 'fake-job-0', compilation: true)
-        active_vm = Bosh::Director::Models::Vm.make(id: 11, cid: 'fake-cid-0', instance:, active: true)
+        active_vm = FactoryBot.create(:models_vm, id: 11, cid: 'fake-cid-0', instance:, active: true)
         vm_being_created_cid = 'fake-cid-99'
 
         agent_broadcast = AgentBroadcaster.new
@@ -65,7 +65,7 @@ module Bosh::Director
 
       it 'includes VMs that need flushing' do
         instance = FactoryBot.create(:models_instance, uuid: SecureRandom.uuid, index: 0, job: 'fake-job-0')
-        active_vm = Bosh::Director::Models::Vm.make(id: 11, cid: 'fake-cid-0', instance:, active: true)
+        active_vm = FactoryBot.create(:models_vm, id: 11, cid: 'fake-cid-0', instance:, active: true)
         vm_being_created_cid = 'fake-cid-99'
 
         agent_broadcast = AgentBroadcaster.new

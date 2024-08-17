@@ -29,7 +29,7 @@ module Bosh::Director
     let(:deployment) { FactoryBot.create(:models_deployment) }
     let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
     let(:time) { Time.now }
-    let(:vm) { Models::Vm.make(cid: 'fake-vm-cid', agent_id: 'fake-agent-id', instance_id: instance.id, created_at: time) }
+    let(:vm) { FactoryBot.create(:models_vm, cid: 'fake-vm-cid', agent_id: 'fake-agent-id', instance_id: instance.id, created_at: time) }
     let(:instance) { FactoryBot.create(:models_instance, deployment: deployment) }
 
     before do
@@ -405,7 +405,7 @@ module Bosh::Director
 
       context 'when instance has multiple vms' do
         let!(:inactive_vm) do
-          Models::Vm.make(instance: instance, active: false, agent_id: 'other_agent_id', cid: 'fake-vm-cid-2')
+          FactoryBot.create(:models_vm, instance: instance, active: false, agent_id: 'other_agent_id', cid: 'fake-vm-cid-2')
         end
         let(:lazy_agent) { instance_double('Bosh::Director::AgentClient') }
         let(:lazy_agent_state) do

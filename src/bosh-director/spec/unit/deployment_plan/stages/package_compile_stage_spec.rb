@@ -463,7 +463,7 @@ module Bosh::Director
 
           expect(vm_creator).to receive(:create_for_instance_plan).exactly(6).times do |instance_plan|
             # metadata_updater is called for every package compilation, and it expects there to be an active_vm
-            instance_plan.instance.model.active_vm = Models::Vm.make(cid: instance_plan.instance.model.id, instance: instance_plan.instance.model)
+            instance_plan.instance.model.active_vm = FactoryBot.create(:models_vm, cid: instance_plan.instance.model.id, instance: instance_plan.instance.model)
           end
 
           agent_client = instance_double('Bosh::Director::AgentClient')
@@ -716,7 +716,7 @@ module Bosh::Director
 
         expect(vm_creator).to receive(:create_for_instance_plan).exactly(1).times do |instance_plan|
           # metadata_updater is called for every package compilation, and it expects there to be an active_vm
-          instance_plan.instance.model.active_vm = Models::Vm.make(cid: instance_plan.instance.model.id, instance: instance_plan.instance.model)
+          instance_plan.instance.model.active_vm = FactoryBot.create(:models_vm, cid: instance_plan.instance.model.id, instance: instance_plan.instance.model)
         end
 
         agent_client = instance_double('Bosh::Director::AgentClient')

@@ -4,7 +4,7 @@ require 'bosh/director/stopper'
 module Bosh::Director
   describe Stopper do
     subject(:stopper) { described_class }
-    let(:vm_model) { Models::Vm.make(cid: 'vm-cid', instance_id: instance_model.id) }
+    let(:vm_model) { FactoryBot.create(:models_vm, cid: 'vm-cid', instance_id: instance_model.id) }
     let(:instance_model) { FactoryBot.create(:models_instance, spec: spec) }
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:task) { instance_double('Bosh::Director::EventLog::Task') }

@@ -68,8 +68,8 @@ module Bosh::Director
 
         context 'when there is a last VM with IP addresses' do
           before do
-            vm1 = Bosh::Director::Models::Vm.make(instance: instance_model)
-            vm2 = Bosh::Director::Models::Vm.make(instance: instance_model)
+            vm1 = FactoryBot.create(:models_vm, instance: instance_model)
+            vm2 = FactoryBot.create(:models_vm, instance: instance_model)
 
             vm2.add_ip_address(ip_model1)
             vm2.add_ip_address(ip_model2)
@@ -86,7 +86,7 @@ module Bosh::Director
 
         context 'when there are orphaned IP addresses from a failed deploy' do
           before do
-            vm1 = Bosh::Director::Models::Vm.make(instance: instance_model)
+            vm1 = FactoryBot.create(:models_vm, instance: instance_model)
             vm1.add_ip_address(ip_model1)
 
             # Add orphaned IP - not associated with a VM or orphaned VM

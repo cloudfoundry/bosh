@@ -7,7 +7,7 @@ module Bosh::Director
         subject(:step) { UnmountDiskStep.new(disk) }
 
         let(:instance) { FactoryBot.create(:models_instance) }
-        let(:vm) { Models::Vm.make(instance: instance, active: true) }
+        let(:vm) { FactoryBot.create(:models_vm, instance: instance, active: true) }
         let!(:disk) { Models::PersistentDisk.make(instance: instance, name: '') }
         let(:agent_client) do
           instance_double(AgentClient, list_disk: [disk&.disk_cid], unmount_disk: nil)

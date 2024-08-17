@@ -25,7 +25,7 @@ module Bosh::Director
         cloud_properties_hash: { 'foo' => 'bar' },
         spec: spec.merge(env: { 'key1' => 'value1' }),
       )
-      vm = Models::Vm.make(
+      vm = FactoryBot.create(:models_vm,
         agent_id: 'agent-007',
         cid: vm_cid,
         instance_id: instance.id,

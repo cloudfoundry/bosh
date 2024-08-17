@@ -17,7 +17,7 @@ module Bosh::Director
       job_name = "job-#{i}"
       instance = FactoryBot.create(:models_instance, deployment: deployment, job: job_name, index: i, state: options[:state], ignore: options[:ignore], spec_json: JSON.dump({lifecycle: options[:lifecycle]}))
       unless options[:no_vm]
-        vm = Models::Vm.make(cid: "vm-cid-#{i}", agent_id: "agent-#{i}", instance_id: instance.id)
+        vm = FactoryBot.create(:models_vm, cid: "vm-cid-#{i}", agent_id: "agent-#{i}", instance_id: instance.id)
         instance.refresh
         instance.active_vm = vm
       end

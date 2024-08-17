@@ -74,7 +74,7 @@ module Bosh::Director::DeploymentPlan
         variable_set: variable_set_model,
         job: 'instance-group-name',
       )
-      Bosh::Director::Models::Vm.make(instance: instance_model, active: true, agent_id: 'active-vm-agent-id')
+      FactoryBot.create(:models_vm, instance: instance_model, active: true, agent_id: 'active-vm-agent-id')
       instance_model
     end
 
@@ -763,7 +763,7 @@ module Bosh::Director::DeploymentPlan
       it 'should match if all properties are the same' do
         expect(
           simple_instance_plan.vm_matches_plan?(
-            Bosh::Director::Models::Vm.make(
+            FactoryBot.create(:models_vm,
               instance: existing_instance,
               stemcell_name: 'ubuntu-stemcell',
               stemcell_version: '1',
@@ -778,7 +778,7 @@ module Bosh::Director::DeploymentPlan
       it 'should not match if cloud_properties are nil' do
         expect(
           simple_instance_plan.vm_matches_plan?(
-            Bosh::Director::Models::Vm.make(
+            FactoryBot.create(:models_vm,
               instance: existing_instance,
               stemcell_name: 'ubuntu-stemcell',
               stemcell_version: '1',
@@ -793,7 +793,7 @@ module Bosh::Director::DeploymentPlan
       it 'should not match if stemcell differs' do
         expect(
           simple_instance_plan.vm_matches_plan?(
-            Bosh::Director::Models::Vm.make(
+            FactoryBot.create(:models_vm,
               instance: existing_instance,
               stemcell_name: 'other-stemcell',
               stemcell_version: '1',
@@ -806,7 +806,7 @@ module Bosh::Director::DeploymentPlan
 
         expect(
           simple_instance_plan.vm_matches_plan?(
-            Bosh::Director::Models::Vm.make(
+            FactoryBot.create(:models_vm,
               instance: existing_instance,
               stemcell_name: 'ubuntu-stemcell',
               stemcell_version: '5',
@@ -821,7 +821,7 @@ module Bosh::Director::DeploymentPlan
       it 'should not match if env properties differ' do
         expect(
           simple_instance_plan.vm_matches_plan?(
-            Bosh::Director::Models::Vm.make(
+            FactoryBot.create(:models_vm,
               instance: existing_instance,
               stemcell_name: 'ubuntu-stemcell',
               stemcell_version: '1',
@@ -834,7 +834,7 @@ module Bosh::Director::DeploymentPlan
 
         expect(
           simple_instance_plan.vm_matches_plan?(
-            Bosh::Director::Models::Vm.make(
+            FactoryBot.create(:models_vm,
               instance: existing_instance,
               stemcell_name: 'ubuntu-stemcell',
               stemcell_version: '1',
@@ -854,7 +854,7 @@ module Bosh::Director::DeploymentPlan
         it 'should not match' do
           expect(
             simple_instance_plan.vm_matches_plan?(
-              Bosh::Director::Models::Vm.make(
+              FactoryBot.create(:models_vm,
                 instance: existing_instance,
                 stemcell_name: 'ubuntu-stemcell',
                 stemcell_version: '1',

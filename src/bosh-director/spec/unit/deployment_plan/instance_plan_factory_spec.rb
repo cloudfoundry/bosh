@@ -11,14 +11,14 @@ module Bosh::Director
       let(:skip_drain) { SkipDrain.new(true) }
       let(:index_assigner) { instance_double('Bosh::Director::DeploymentPlan::PlacementPlanner::IndexAssigner') }
       let(:existing_instance_model) do
-        instance_model = FactoryBot.create(:models_instance,
-          deployment: deployment_model,
-          job: 'foobar',
-          index: 0,
-          spec: spec,
-        )
-        Models::Vm.make(cid: 'vm-cid', instance: instance_model, active: true)
-        instance_model
+        FactoryBot.create(:models_instance,
+                          deployment: deployment_model,
+                          job: 'foobar',
+                          index: 0,
+                          spec: spec,
+        ).tap do |i|
+          FactoryBot.create(:models_vm, cid: 'vm-cid', instance: i, active: true)
+        end
       end
 
       let(:spec) do
@@ -127,15 +127,15 @@ module Bosh::Director
 
         context 'use_dns_addresses' do
           let(:existing_instance_model) do
-            instance_model = FactoryBot.create(:models_instance,
-              deployment: deployment_model,
-              job: 'foobar',
-              index: 0,
-              spec: spec,
-              variable_set: variable_set,
-            )
-            Models::Vm.make(cid: 'vm-cid', instance: instance_model, active: true)
-            instance_model
+            FactoryBot.create(:models_instance,
+                              deployment: deployment_model,
+                              job: 'foobar',
+                              index: 0,
+                              spec: spec,
+                              variable_set: variable_set,
+            ).tap do |i|
+              FactoryBot.create(:models_vm, cid: 'vm-cid', instance: i, active: true)
+            end
           end
 
           context 'when passed as TRUE in the options' do
@@ -202,15 +202,15 @@ module Bosh::Director
 
         context 'randomize_az_placement' do
           let(:existing_instance_model) do
-            instance_model = FactoryBot.create(:models_instance,
-              deployment: deployment_model,
-              job: 'foobar',
-              index: 0,
-              spec: spec,
-              variable_set: variable_set,
-            )
-            Models::Vm.make(cid: 'vm-cid', instance: instance_model, active: true)
-            instance_model
+            FactoryBot.create(:models_instance,
+                              deployment: deployment_model,
+                              job: 'foobar',
+                              index: 0,
+                              spec: spec,
+                              variable_set: variable_set,
+            ).tap do |i|
+              FactoryBot.create(:models_vm, cid: 'vm-cid', instance: i, active: true)
+            end
           end
 
           let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
@@ -293,15 +293,15 @@ module Bosh::Director
 
         context 'use_dns_addresses' do
           let(:existing_instance_model) do
-            instance_model = FactoryBot.create(:models_instance,
-              deployment: deployment_model,
-              job: 'foobar',
-              index: 0,
-              spec: spec,
-              variable_set: variable_set,
-            )
-            Models::Vm.make(cid: 'vm-cid', instance: instance_model, active: true)
-            instance_model
+            FactoryBot.create(:models_instance,
+                              deployment: deployment_model,
+                              job: 'foobar',
+                              index: 0,
+                              spec: spec,
+                              variable_set: variable_set,
+            ).tap do |i|
+              FactoryBot.create(:models_vm, cid: 'vm-cid', instance: i, active: true)
+            end
           end
 
           context 'when passed as TRUE in the options' do
@@ -408,15 +408,15 @@ module Bosh::Director
 
         context 'use_dns_addresses' do
           let(:existing_instance_model) do
-            instance_model = FactoryBot.create(:models_instance,
-              deployment: deployment_model,
-              job: 'foobar',
-              index: 0,
-              spec: spec,
-              variable_set: variable_set,
-            )
-            Models::Vm.make(cid: 'vm-cid', instance: instance_model, active: true)
-            instance_model
+            FactoryBot.create(:models_instance,
+                              deployment: deployment_model,
+                              job: 'foobar',
+                              index: 0,
+                              spec: spec,
+                              variable_set: variable_set,
+            ).tap do |i|
+              FactoryBot.create(:models_vm, cid: 'vm-cid', instance: i, active: true)
+            end
           end
 
           context 'when passed as TRUE in the options' do

@@ -38,8 +38,8 @@ module Bosh::Director
             let(:lazy_agent) { instance_double(AgentClient) }
 
             before do
-              active = Models::Vm.make(instance:, agent_id: 'active-agent', active: true, stemcell_api_version: 3)
-              Models::Vm.make(instance:, agent_id: 'lazy-agent', active: false, stemcell_api_version: 3)
+              active = FactoryBot.create(:models_vm, instance:, agent_id: 'active-agent', active: true, stemcell_api_version: 3)
+              FactoryBot.create(:models_vm, instance:, agent_id: 'lazy-agent', active: false, stemcell_api_version: 3)
               allow(AgentClient).to receive(:with_agent_id).with('active-agent', instance.name).and_return(active_agent)
               allow(AgentClient).to receive(:with_agent_id).with('lazy-agent', instance.name).and_return(lazy_agent)
               allow(instance).to receive(:active_vm).and_return(active)
@@ -68,7 +68,7 @@ module Bosh::Director
             let(:old_agent) { instance_double(AgentClient) }
 
             before do
-              active = Models::Vm.make(instance:, agent_id: 'old-agent', active: true, stemcell_api_version: 3)
+              active = FactoryBot.create(:models_vm, instance:, agent_id: 'old-agent', active: true, stemcell_api_version: 3)
               allow(AgentClient).to receive(:with_agent_id).with('old-agent', instance.name).and_return(old_agent)
               allow(instance).to receive(:active_vm).and_return(active)
             end
@@ -95,7 +95,7 @@ module Bosh::Director
             let(:new_agent) { instance_double(AgentClient) }
 
             before do
-              Models::Vm.make(instance:, agent_id: 'new-agent', active: false, stemcell_api_version: 3)
+              FactoryBot.create(:models_vm, instance:, agent_id: 'new-agent', active: false, stemcell_api_version: 3)
               allow(AgentClient).to receive(:with_agent_id).with('new-agent', instance.name).and_return(new_agent)
             end
 

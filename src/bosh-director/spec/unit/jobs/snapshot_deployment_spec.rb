@@ -7,25 +7,25 @@ module Bosh::Director
     let!(:deployment) { FactoryBot.create(:models_deployment, name: deployment_name) }
     let!(:instance1) do
       is = FactoryBot.create(:models_instance, deployment: deployment)
-      vm = Models::Vm.make(instance_id: is.id)
+      vm = FactoryBot.create(:models_vm, instance_id: is.id)
       is.active_vm = vm
       is
     end
     let!(:instance2) do
       is = FactoryBot.create(:models_instance, deployment: deployment)
-      vm = Models::Vm.make(instance_id: is.id)
+      vm = FactoryBot.create(:models_vm, instance_id: is.id)
       is.active_vm = vm
       is
     end
     let!(:instance3) do
       is = FactoryBot.create(:models_instance, deployment: deployment)
-      vm = Models::Vm.make(instance_id: is.id)
+      vm = FactoryBot.create(:models_vm, instance_id: is.id)
       is.active_vm = vm
       is
     end
     let!(:instance4) do
       is = FactoryBot.create(:models_instance)
-      vm = Models::Vm.make(instance_id: is.id)
+      vm = FactoryBot.create(:models_vm, instance_id: is.id)
       is.active_vm = vm
       is
     end

@@ -65,7 +65,7 @@ module Bosh::Director
             index: 0,
             ignore: true,
           )
-          vm = Bosh::Director::Models::Vm.make(cid: vm_cid, instance_id: is.id)
+          vm = FactoryBot.create(:models_vm, cid: vm_cid, instance_id: is.id)
           is.active_vm = vm
           is.save
         end

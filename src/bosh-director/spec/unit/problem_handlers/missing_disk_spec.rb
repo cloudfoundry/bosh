@@ -15,7 +15,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
 
   let(:instance) do
     FactoryBot.create(:models_instance, job: 'mysql_node', index: 3, uuid: "uuid-42", availability_zone: 'az1').tap do |i|
-      i.active_vm = Bosh::Director::Models::Vm.make(cid: 'vm-cid', instance_id: i.id, stemcell_api_version: 25)
+      i.active_vm = FactoryBot.create(:models_vm, cid: 'vm-cid', instance_id: i.id, stemcell_api_version: 25)
       i.save
     end.reload
   end

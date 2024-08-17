@@ -96,7 +96,7 @@ module Bosh::Director
       describe '#by_vm_cid' do
         context 'when vm with cid is active vm for instance' do
           before do
-            vm = Models::Vm.make(cid: 'vm-cid', instance: instance, active: true)
+            vm = FactoryBot.create(:models_vm, cid: 'vm-cid', instance: instance, active: true)
             vm.save
           end
 
@@ -107,7 +107,7 @@ module Bosh::Director
 
         context 'when the vm is not found as active on instance' do
           before do
-            vm = Models::Vm.make(cid: 'vm-cid', instance: instance, active: false)
+            vm = FactoryBot.create(:models_vm, cid: 'vm-cid', instance: instance, active: false)
             vm.save
           end
 

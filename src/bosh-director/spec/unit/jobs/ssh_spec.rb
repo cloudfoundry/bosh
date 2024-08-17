@@ -28,7 +28,7 @@ module Bosh::Director
 
     before do
       is = FactoryBot.create(:models_instance, job: 'fake-job', index: 1, variable_set: variable_set, deployment: deployment, uuid: 'fake-uuid-1')
-      vm = Models::Vm.make(cid: 'cid', instance_id: is.id)
+      vm = FactoryBot.create(:models_vm, cid: 'cid', instance_id: is.id)
       is.active_vm = vm
       FactoryBot.create(:models_instance, job: 'fake-job', index: 2, variable_set: variable_set, deployment: deployment, uuid: 'fake-uuid-2')
       allow(Api::InstanceManager).to receive(:new).and_return(instance_manager)

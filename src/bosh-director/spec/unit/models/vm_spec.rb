@@ -4,16 +4,16 @@ require 'ipaddr'
 
 module Bosh::Director::Models
   describe Vm do
-    subject(:vm) { Bosh::Director::Models::Vm.make(instance: instance) }
+    subject(:vm) { FactoryBot.create(:models_vm, instance: instance) }
 
     let!(:instance) { FactoryBot.create(:models_instance) }
 
     it 'has a many-to-one relationship to instances' do
-      described_class.make(instance_id: instance.id, id: 1)
-      described_class.make(instance_id: instance.id, id: 2)
+      FactoryBot.create(:models_vm, instance_id: instance.id, id: 1)
+      FactoryBot.create(:models_vm, instance_id: instance.id, id: 2)
 
-      expect(described_class.find(id: 1).instance).to eq(instance)
-      expect(described_class.find(id: 2).instance).to eq(instance)
+      expect(Vm.find(id: 1).instance).to eq(instance)
+      expect(Vm.find(id: 2).instance).to eq(instance)
     end
 
     describe '#network_spec' do

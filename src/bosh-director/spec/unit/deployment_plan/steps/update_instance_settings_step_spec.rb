@@ -15,7 +15,7 @@ module Bosh::Director
         let(:trusted_certs) { 'fake-cert' }
         let(:old_trusted_certs_sha1) { 'old-fake-cert' }
         let!(:vm) do
-          Models::Vm.make(
+          FactoryBot.create(:models_vm,
             instance: instance_model,
             trusted_certs_sha1: old_trusted_certs_sha1,
             active: false,

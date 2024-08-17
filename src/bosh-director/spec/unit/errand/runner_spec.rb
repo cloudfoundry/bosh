@@ -34,34 +34,37 @@ module Bosh::Director
         )
       end
 
-      before { allow(instance).to receive(:model).with(no_args).and_return(instance_model) }
       let(:instance_model) do
-        is = FactoryBot.create(:models_instance,
+        FactoryBot.create(:models_instance,
           job: 'fake-job-name',
           index: 0,
           deployment: deployment,
-        )
-        vm_model = Models::Vm.make(agent_id: 'agent-id', instance_id: is.id)
-        is.add_vm vm_model
-        is.active_vm = vm_model
-        is.spec = { 'job' => { 'template' => template_name} }
-        is
+        ).tap do |i|
+          vm = FactoryBot.create(:models_vm, agent_id: 'agent-id', instance_id: i.id)
+          i.add_vm vm
+          i.active_vm = vm
+          i.spec = { 'job' => { 'template' => template_name} }
+        end
       end
       let(:template_name) { 'fake-job-name' }
 
       let(:deployment) { FactoryBot.create(:models_deployment, name: 'fake-dep-name') }
 
+      let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
+
       before do
+        allow(instance).to receive(:model).with(no_args).and_return(instance_model)
+
         allow(AgentClient).to receive(:with_agent_id)
           .with(instance_model.agent_id, instance_model.name).and_return(agent_client)
       end
-      let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
 
       describe '#run' do
         let(:event_log_stage) { instance_double('Bosh::Director::EventLog::Stage') }
-        before { allow(Config.event_log).to receive(:begin_stage).and_return(event_log_stage) }
-
-        before { allow(event_log_stage).to receive(:advance_and_track).and_yield }
+        before do
+          allow(Config.event_log).to receive(:begin_stage).and_return(event_log_stage)
+          allow(event_log_stage).to receive(:advance_and_track).and_yield
+        end
 
         context 'when agent is able to run errands' do
           let(:exit_code) { 0 }
@@ -92,8 +95,13 @@ module Bosh::Director
             let(:fake_block) { Proc.new {} }
 
             before do
-              allow(agent_client).to receive(:info).
-                and_return({'api_version' => 0})
+              allow(agent_client).to receive(:info).and_return({'api_version' => 0})
+            end
+
+            it 'returns an error' do
+              expect{
+                subject.run(instance, &fake_block)
+              }.to raise_error(DirectorError, 'Multiple jobs are configured on an older stemcell, and "fake-job-name" is not the first job')
             end
 
             context 'user pass in instance group name' do
@@ -102,10 +110,6 @@ module Bosh::Director
               it 'should not error' do
                 subject.run(instance, &fake_block)
               end
-            end
-
-            it 'returns an error' do
-              expect{ subject.run(instance, &fake_block) }.to raise_error(DirectorError, 'Multiple jobs are configured on an older stemcell, and "fake-job-name" is not the first job')
             end
           end
 
@@ -245,6 +249,7 @@ module Bosh::Director
 
           context 'when the errand name matches the instance group name' do
             let(:errand_is_job_name) { false }
+
             it 'runs the errand without errand name' do
               checkpoint_executed = false
 
@@ -323,11 +328,12 @@ module Bosh::Director
         end
 
         context 'when agent does not support run_errand command' do
+          let(:error) { RpcRemoteException.new('unknown message {"method"=>"run_errand", "error"=>"details"}') }
+
           before do
             allow(agent_client).to receive(:run_errand).with('fake-job-name').and_raise(error)
             allow(agent_client).to receive(:info).and_return({ 'api_version' => 0 })
           end
-          let(:error) { RpcRemoteException.new('unknown message {"method"=>"run_errand", "error"=>"details"}') }
 
           it 'raises an error' do
             expect { subject.run(instance) }.to raise_error(error)
@@ -335,21 +341,26 @@ module Bosh::Director
 
           it 'does write run_errand agent response to result file because we did not run errand' do
             expect(task_result).to_not receive(:write)
-            expect { subject.run(instance) }.to raise_error(Bosh::Director::RpcRemoteException, /unknown message {"method"=>"run_errand", "error"=>"details"}/)
+            expect {
+              subject.run(instance)
+            }.to raise_error(Bosh::Director::RpcRemoteException, /unknown message {"method"=>"run_errand", "error"=>"details"}/)
           end
 
           it 'does not try to fetch logs from the agent because we did not run errand' do
             expect(logs_fetcher).to_not receive(:fetch)
-            expect { subject.run(instance) }.to raise_error(Bosh::Director::RpcRemoteException, /unknown message {"method"=>"run_errand", "error"=>"details"}/)
+            expect {
+              subject.run(instance)
+            }.to raise_error(Bosh::Director::RpcRemoteException, /unknown message {"method"=>"run_errand", "error"=>"details"}/)
           end
         end
 
         context 'when agent times out responding to start errand task status check' do
+          let(:error) { RpcRemoteException.new('timeout') }
+
           before do
             allow(agent_client).to receive(:run_errand).with('fake-job-name').and_raise(error)
             allow(agent_client).to receive(:info).and_return({ 'api_version' => 0 })
           end
-          let(:error) { RpcRemoteException.new('timeout') }
 
           it 'raises original timeout error' do
             expect { subject.run(instance) }.to raise_error(error)
@@ -370,7 +381,9 @@ module Bosh::Director
           before { instance_model.active_vm = nil }
 
           it 'raises an error' do
-            expect { subject.run(instance) }.to raise_error(InstanceVmMissing, "'fake-job-name/#{instance_model.uuid} (#{instance_model.index})' doesn't reference a VM")
+            expect {
+              subject.run(instance)
+            }.to raise_error(InstanceVmMissing, "'fake-job-name/#{instance_model.uuid} (#{instance_model.index})' doesn't reference a VM")
           end
         end
       end

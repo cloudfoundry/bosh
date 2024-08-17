@@ -7,7 +7,7 @@ module Bosh::Director
         subject(:step) { AttachDiskStep.new(disk, tags) }
 
         let(:stemcell_api_version) { 2 }
-        let!(:vm) { Models::Vm.make(active: true, instance: instance, stemcell_api_version: stemcell_api_version) }
+        let!(:vm) { FactoryBot.create(:models_vm, active: true, instance: instance, stemcell_api_version: stemcell_api_version) }
         let(:instance) { FactoryBot.create(:models_instance) }
         let!(:disk) { Models::PersistentDisk.make(instance: instance, name: '', cpi: 'my-cpi') }
         let(:cloud_factory) { instance_double(CloudFactory) }

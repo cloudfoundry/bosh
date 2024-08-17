@@ -36,7 +36,7 @@ module Bosh::Director
     let(:attach_disk_job) { Jobs::AttachDisk.new(deployment_name, job_name, instance_id, disk_cid, disk_properties) }
 
     describe '#perform' do
-      let(:vm) { Models::Vm.make(cid: vm_cid, instance_id: instance_model.id) }
+      let(:vm) { FactoryBot.create(:models_vm, cid: vm_cid, instance_id: instance_model.id) }
       let!(:instance_model) { FactoryBot.create(:models_instance, uuid: instance_id, job: job_name, state: instance_state) }
 
       before {

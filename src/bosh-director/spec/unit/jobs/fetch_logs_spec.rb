@@ -33,7 +33,7 @@ module Bosh::Director
 
         context 'when instance is associated with a vm' do
           before do
-            vm = Models::Vm.make(cid: 'vm-1', instance_id: instance.id)
+            vm = FactoryBot.create(:models_vm, cid: 'vm-1', instance_id: instance.id)
             instance.active_vm = vm
           end
 
@@ -117,13 +117,13 @@ module Bosh::Director
       context 'when several isntances to get logs' do
         let(:instance_1) do
           is = FactoryBot.create(:models_instance, deployment: deployment, job: 'fake-job-name', index: '44', uuid: 'uuid-2')
-          vm = Models::Vm.make(cid: 'vm-1', instance_id: is.id)
+          vm = FactoryBot.create(:models_vm, cid: 'vm-1', instance_id: is.id)
           is.active_vm = vm
           is.save
         end
         let(:instance_2) do
           is = FactoryBot.create(:models_instance, deployment: deployment, job: 'fake-job-name', index: '43', uuid: 'uuid-3')
-          vm = Models::Vm.make(cid: 'vm-2', instance_id: is.id)
+          vm = FactoryBot.create(:models_vm, cid: 'vm-2', instance_id: is.id)
           is.active_vm = vm
           is.save
         end

@@ -169,7 +169,7 @@ module Bosh
             let(:deployment) { FactoryBot.create(:models_deployment) }
             let(:instance) { FactoryBot.create(:models_instance, deployment: deployment) }
             let(:vm) do
-              Models::Vm.make(cid: 'fake-vm-cid', agent_id: 'fake-agent-id', instance_id: instance.id, created_at: Time.now)
+              FactoryBot.create(:models_vm, cid: 'fake-vm-cid', agent_id: 'fake-agent-id', instance_id: instance.id, created_at: Time.now)
             end
 
             before do

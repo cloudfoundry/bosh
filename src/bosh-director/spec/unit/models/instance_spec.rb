@@ -302,8 +302,8 @@ module Bosh::Director::Models
     end
 
     it 'has a one-to-many relationship to vms' do
-      vm1 = Bosh::Director::Models::Vm.make(instance_id: subject.id)
-      vm2 = Bosh::Director::Models::Vm.make(instance_id: subject.id)
+      vm1 = FactoryBot.create(:models_vm, instance_id: subject.id)
+      vm2 = FactoryBot.create(:models_vm, instance_id: subject.id)
 
       subject.reload
       expect(subject.vms).to contain_exactly(vm1, vm2)
@@ -320,8 +320,8 @@ module Bosh::Director::Models
     end
 
     describe '#active_vm' do
-      let!(:vm1) { Bosh::Director::Models::Vm.make(instance_id: subject.id) }
-      let!(:vm2) { Bosh::Director::Models::Vm.make(instance_id: subject.id, active: true) }
+      let!(:vm1) { FactoryBot.create(:models_vm, instance_id: subject.id) }
+      let!(:vm2) { FactoryBot.create(:models_vm, instance_id: subject.id, active: true) }
 
       it 'returns vm of #vms that is marked active' do
         expect(subject.active_vm).to eq(vm2)
@@ -329,8 +329,8 @@ module Bosh::Director::Models
     end
 
     describe '#active_vm=' do
-      let!(:vm1) { Bosh::Director::Models::Vm.make(instance_id: subject.id) }
-      let!(:vm2) { Bosh::Director::Models::Vm.make(instance_id: subject.id, active: true) }
+      let!(:vm1) { FactoryBot.create(:models_vm, instance_id: subject.id) }
+      let!(:vm2) { FactoryBot.create(:models_vm, instance_id: subject.id, active: true) }
 
       it 'changes what vm is returned for #active_vm' do
         expect(subject.active_vm).to eq(vm2)
@@ -375,7 +375,7 @@ module Bosh::Director::Models
 
     context 'with active vm' do
       before do
-        vm = Bosh::Director::Models::Vm.make(
+        vm = FactoryBot.create(:models_vm,
           agent_id: 'my-agent-id',
           cid: 'my-cid',
           trusted_certs_sha1: 'trusted-sha',
@@ -477,9 +477,9 @@ module Bosh::Director::Models
     end
 
     describe '#has_important_vm?' do
-      let!(:vm) { Bosh::Director::Models::Vm.make(instance_id: instance_with_important_vm.id, active: true) }
-      let!(:ignored_vm) { Bosh::Director::Models::Vm.make(instance_id: ignored_instance.id, active: true) }
-      let!(:stopped_vm) { Bosh::Director::Models::Vm.make(instance_id: stopped_instance.id, active: true) }
+      let!(:vm) { FactoryBot.create(:models_vm, instance_id: instance_with_important_vm.id, active: true) }
+      let!(:ignored_vm) { FactoryBot.create(:models_vm, instance_id: ignored_instance.id, active: true) }
+      let!(:stopped_vm) { FactoryBot.create(:models_vm, instance_id: stopped_instance.id, active: true) }
       let(:instance_with_important_vm) { FactoryBot.create(:models_instance, state: 'started', ignore: false) }
       let(:ignored_instance) { FactoryBot.create(:models_instance, state: 'started', ignore: true) }
       let(:stopped_instance) { FactoryBot.create(:models_instance, state: 'stopped', ignore: false) }
@@ -494,12 +494,12 @@ module Bosh::Director::Models
     end
 
     describe '#most_recent_inactive_vm' do
-      let!(:vm) { Bosh::Director::Models::Vm.make(instance_id: instance.id, active: true) }
+      let!(:vm) { FactoryBot.create(:models_vm, instance_id: instance.id, active: true) }
       let(:instance) { FactoryBot.create(:models_instance, state: 'started', ignore: false) }
 
       context 'has one active and two inactive vms' do
-        let!(:old_inactive_vm) { Bosh::Director::Models::Vm.make(instance_id: instance.id, active: false) }
-        let!(:new_inactive_vm) { Bosh::Director::Models::Vm.make(instance_id: instance.id, active: false) }
+        let!(:old_inactive_vm) { FactoryBot.create(:models_vm, instance_id: instance.id, active: false) }
+        let!(:new_inactive_vm) { FactoryBot.create(:models_vm, instance_id: instance.id, active: false) }
 
         it 'returns the most recent inactive vm' do
           instance.reload
