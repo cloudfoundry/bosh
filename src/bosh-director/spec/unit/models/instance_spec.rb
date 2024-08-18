@@ -82,7 +82,7 @@ module Bosh::Director::Models
 
       context 'when instance model has multiple associated rendered templates archives' do
         let!(:latest) do
-          RenderedTemplatesArchive.make(
+          FactoryBot.create(:models_rendered_templates_archive,
             blobstore_id: 'fake-latest-blob-id',
             instance: subject,
             created_at: Time.new(2013, 2, 1),
@@ -90,7 +90,7 @@ module Bosh::Director::Models
         end
 
         let!(:not_latest) do
-          RenderedTemplatesArchive.make(
+          FactoryBot.create(:models_rendered_templates_archive,
             blobstore_id: 'fake-stale-blob-id',
             instance: subject,
             created_at: Time.new(2013, 1, 1),
@@ -102,7 +102,7 @@ module Bosh::Director::Models
         end
 
         it 'does not account for archives for other instances' do
-          RenderedTemplatesArchive.make(
+          FactoryBot.create(:models_rendered_templates_archive,
             blobstore_id: 'fake-non-associated-latest-blob-id',
             instance: FactoryBot.create(:models_instance),
             created_at: latest.created_at + 10_000,
@@ -126,7 +126,7 @@ module Bosh::Director::Models
 
       context 'when instance model has multiple associated rendered templates archives' do
         let!(:latest) do
-          RenderedTemplatesArchive.make(
+          FactoryBot.create(:models_rendered_templates_archive,
             blobstore_id: 'fake-latest-blob-id',
             instance: subject,
             created_at: Time.new(2013, 2, 1),
@@ -134,7 +134,7 @@ module Bosh::Director::Models
         end
 
         let!(:not_latest) do
-          RenderedTemplatesArchive.make(
+          FactoryBot.create(:models_rendered_templates_archive,
             blobstore_id: 'fake-stale-blob-id',
             instance: subject,
             created_at: Time.new(2013, 1, 1),
@@ -146,7 +146,7 @@ module Bosh::Director::Models
         end
 
         it 'does not include archives for other instances' do
-          RenderedTemplatesArchive.make(
+          FactoryBot.create(:models_rendered_templates_archive,
             blobstore_id: 'fake-non-associated-latest-blob-id',
             instance: FactoryBot.create(:models_instance),
             created_at: not_latest.created_at - 10_000,

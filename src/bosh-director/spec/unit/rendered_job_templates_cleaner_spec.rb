@@ -13,7 +13,7 @@ module Bosh::Director
       end
 
       let(:stale_archive) do
-        Models::RenderedTemplatesArchive.make(
+        FactoryBot.create(:models_rendered_templates_archive,
           blobstore_id: 'fake-blob-id',
           instance: instance_model,
           created_at: Time.new(2013, 0o2, 0o1),
@@ -44,7 +44,7 @@ module Bosh::Director
       end
 
       let(:stale_archive) do
-        Models::RenderedTemplatesArchive.make(
+        FactoryBot.create(:models_rendered_templates_archive,
           blobstore_id: 'fake-blob-id',
           instance: instance_model,
           created_at: Time.new(2013, 0o2, 0o1),

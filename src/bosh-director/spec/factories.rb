@@ -287,6 +287,14 @@ FactoryBot.define do
     association :release, factory: :models_release, strategy: :create
   end
 
+  factory :models_rendered_templates_archive, class: Bosh::Director::Models::RenderedTemplatesArchive do
+    sequence(:blobstore_id) { |i| "rendered-templates-archive-blobstore-id-#{i}" }
+    sequence(:sha1) { |i| "rendered-templates-archive-sha1-#{i}" }
+    sequence(:content_sha1) { |i| "rendered-templates-archive-content-sha1-#{i}" }
+    created_at { Time.now }
+    association :instance, factory: :models_instance, strategy: :create
+  end
+
   factory :models_snapshot, class: Bosh::Director::Models::Snapshot do
     sequence(:snapshot_cid) { |i| "snapshot-cid-#{i}" }
     association :persistent_disk, factory: :models_persistent_disk, strategy: :create
