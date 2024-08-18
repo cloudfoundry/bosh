@@ -21,7 +21,7 @@ module Bosh::Director
 
     describe 'reset' do
       it 'should mark all open problems as closed' do
-        problem = Models::DeploymentProblem.make(counter: 1,
+        problem = FactoryBot.create(:models_deployment_problem, counter: 1,
                                                  type: 'inactive_disk',
                                                  deployment: deployment,
                                                  state: 'open')
@@ -37,12 +37,12 @@ module Bosh::Director
           instance1 = FactoryBot.create(:models_instance, deployment: deployment, job: 'job1', index: 0)
           instance2 = FactoryBot.create(:models_instance, deployment: deployment, job: 'job1', index: 1)
 
-          problem1 = Models::DeploymentProblem.make(counter: 1,
+          problem1 = FactoryBot.create(:models_deployment_problem, counter: 1,
                                                     type: 'inactive_disk',
                                                     deployment: deployment,
                                                     state: 'open',
                                                     resource_id: instance1.id)
-          problem2 = Models::DeploymentProblem.make(counter: 1,
+          problem2 = FactoryBot.create(:models_deployment_problem, counter: 1,
                                                     type: 'inactive_disk',
                                                     deployment: deployment,
                                                     state: 'open',

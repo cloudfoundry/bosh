@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Jobs::DeleteSnapshots do
-    let(:snapshots) { [Models::Snapshot.make(snapshot_cid: 'snap0'), Models::Snapshot.make(snapshot_cid: 'snap1')] }
+    let(:snapshots) { [FactoryBot.create(:models_snapshot, snapshot_cid: 'snap0'), FactoryBot.create(:models_snapshot, snapshot_cid: 'snap1')] }
 
     subject(:job) { described_class.new(%w(snap0 snap1)) }
 

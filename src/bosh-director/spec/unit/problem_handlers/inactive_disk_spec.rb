@@ -97,7 +97,7 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
     let(:event_manager) {Bosh::Director::Api::EventManager.new(true)}
     let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager)}
     before do
-      @disk.add_snapshot(Bosh::Director::Models::Snapshot.make)
+      @disk.add_snapshot(FactoryBot.create(:models_snapshot))
       allow(Bosh::Director::Config).to receive(:current_job).and_return(update_job)
     end
 

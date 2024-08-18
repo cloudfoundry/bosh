@@ -8,19 +8,19 @@ module Bosh::Director
     let!(:vm1) { FactoryBot.create(:models_vm, instance_id: instance1.id) }
     let!(:instance1) { FactoryBot.create(:models_instance, deployment: deployment) }
     let!(:disk1) { FactoryBot.create(:models_persistent_disk, :instance_id => instance1.id) }
-    let!(:snap1a) { Models::Snapshot.make(snapshot_cid: "snap1a", persistent_disk_id: disk1.id) }
-    let!(:snap1b) { Models::Snapshot.make(snapshot_cid: "snap1b", persistent_disk_id: disk1.id) }
+    let!(:snap1a) { FactoryBot.create(:models_snapshot, snapshot_cid: "snap1a", persistent_disk_id: disk1.id) }
+    let!(:snap1b) { FactoryBot.create(:models_snapshot, snapshot_cid: "snap1b", persistent_disk_id: disk1.id) }
     let!(:vm2) { FactoryBot.create(:models_vm, instance_id: instance2.id) }
     let!(:instance2) { FactoryBot.create(:models_instance, deployment: deployment) }
     let!(:disk2) { FactoryBot.create(:models_persistent_disk, :instance_id => instance2.id) }
-    let!(:snap2a) { Models::Snapshot.make(snapshot_cid: "snap2a", persistent_disk_id: disk2.id) }
+    let!(:snap2a) { FactoryBot.create(:models_snapshot, snapshot_cid: "snap2a", persistent_disk_id: disk2.id) }
     let!(:vm3) { FactoryBot.create(:models_vm, instance_id: instance3.id) }
     let!(:instance3) { FactoryBot.create(:models_instance, deployment: deployment) }
     let!(:disk3) { FactoryBot.create(:models_persistent_disk, :instance_id => instance3.id) }
     let!(:vm4) { FactoryBot.create(:models_vm, instance_id: instance4.id) }
     let!(:instance4) { FactoryBot.create(:models_instance) }
     let!(:disk4) { FactoryBot.create(:models_persistent_disk, :instance_id => instance4.id) }
-    let!(:snap4a) { Models::Snapshot.make(snapshot_cid: "snap4a", persistent_disk_id: disk4.id) }
+    let!(:snap4a) { FactoryBot.create(:models_snapshot, snapshot_cid: "snap4a", persistent_disk_id: disk4.id) }
 
     subject { described_class.new(deployment_name) }
 

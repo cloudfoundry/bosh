@@ -51,7 +51,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
       let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager)}
 
       before do
-        Bosh::Director::Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snapshot-cid')
+        FactoryBot.create(:models_snapshot, persistent_disk: disk, snapshot_cid: 'snapshot-cid')
         allow(agent_client).to receive(:list_disk).and_return({})
         allow(Bosh::Director::Config).to receive(:current_job).and_return(update_job)
       end

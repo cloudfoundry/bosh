@@ -79,7 +79,7 @@ module Bosh::Director
 
         let(:persistent_disks) do
           disk = FactoryBot.create(:models_persistent_disk, disk_cid: 'fake-disk-cid-1')
-          Models::Snapshot.make(persistent_disk: disk)
+          FactoryBot.create(:models_snapshot, persistent_disk: disk)
           [FactoryBot.create(:models_persistent_disk, disk_cid: 'instance-disk-cid'), disk]
         end
 

@@ -20,22 +20,22 @@ module Bosh::Director
       @vm = FactoryBot.create(:models_vm, cid: 'vm-cid0', agent_id: 'agent0', instance: @instance, active: true)
 
       @disk = FactoryBot.create(:models_persistent_disk, disk_cid: 'disk0', instance: @instance, active: true)
-      Models::Snapshot.make(persistent_disk: @disk, snapshot_cid: 'snap0a', created_at: time, clean: true)
-      Models::Snapshot.make(persistent_disk: @disk, snapshot_cid: 'snap0b', created_at: time)
+      FactoryBot.create(:models_snapshot, persistent_disk: @disk, snapshot_cid: 'snap0a', created_at: time, clean: true)
+      FactoryBot.create(:models_snapshot, persistent_disk: @disk, snapshot_cid: 'snap0b', created_at: time)
 
       # instance 2: 1 disk
       instance = FactoryBot.create(:models_instance, deployment: deployment, job: 'job', index: 1, uuid: '12xyz456', availability_zone: 'az2')
       vm = FactoryBot.create(:models_vm, cid: 'vm-cid1', agent_id: 'agent1', instance: instance, active: true)
 
       disk = FactoryBot.create(:models_persistent_disk, disk_cid: 'disk1', instance: instance, active: true)
-      Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap1a', created_at: time)
+      FactoryBot.create(:models_snapshot, persistent_disk: disk, snapshot_cid: 'snap1a', created_at: time)
 
       # instance 3: no disks
       @instance2 = FactoryBot.create(:models_instance, deployment: deployment, job: 'job2', index: 0, uuid: '12def456', availability_zone: 'az3')
       @vm2 = FactoryBot.create(:models_vm, cid: 'vm-cid2', agent_id: 'agent2', instance: @instance2, active: true)
 
       # snapshot from another deployment
-      Models::Snapshot.make
+      FactoryBot.create(:models_snapshot)
 
       allow(JobQueue).to receive(:new).and_return(job_queue)
       allow(Bosh::Director::AZCloudFactory)

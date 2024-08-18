@@ -29,7 +29,7 @@ module Bosh::Director
 
       it 'should orphan disk' do
         persistent_disk = FactoryBot.create(:models_persistent_disk, disk_cid: 'disk_cid', size: 2048, cloud_properties: {'cloud' => 'properties'}, active: true)
-        snapshot = Models::Snapshot.make(persistent_disk: persistent_disk)
+        snapshot = FactoryBot.create(:models_snapshot, persistent_disk: persistent_disk)
         expect(Bosh::Director::CloudFactory).to_not receive(:new)
 
         expect(event_log).to receive(:begin_stage).with('Orphan disk', 1).and_return(stage)
@@ -65,7 +65,7 @@ module Bosh::Director
           snapshot_created_at: Time.now
         )
 
-        Models::Snapshot.make(
+        FactoryBot.create(:models_snapshot,
           snapshot_cid: 'existing_cid',
           persistent_disk: persistent_disk
         )

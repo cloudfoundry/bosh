@@ -138,6 +138,14 @@ FactoryBot.define do
     sequence(:manifest) { |i| "deployment-manifest-#{i}" }
   end
 
+  factory :models_deployment_problem, class: Bosh::Director::Models::DeploymentProblem do
+    data_json   { '{}' }
+    state       { 'open' }
+    type        { 'inactive_disk' }
+    resource_id { FactoryBot.create(:models_persistent_disk).id }
+    association :deployment, factory: :models_deployment, strategy: :create
+  end
+
   factory :models_deployment_property, class: Bosh::Director::Models::DeploymentProperty do
     sequence(:name) { |i| "deployment-property-#{i}" }
     sequence(:value) { |i| "deployment-property-value-#{i}" }
@@ -277,6 +285,11 @@ FactoryBot.define do
   factory :models_release_version, class: Bosh::Director::Models::ReleaseVersion do
     sequence(:version) { |i| "release-version-v#{i}" }
     association :release, factory: :models_release, strategy: :create
+  end
+
+  factory :models_snapshot, class: Bosh::Director::Models::Snapshot do
+    sequence(:snapshot_cid) { |i| "snapshot-cid-#{i}" }
+    association :persistent_disk, factory: :models_persistent_disk, strategy: :create
   end
 
   factory :models_stemcell, class: Bosh::Director::Models::Stemcell do

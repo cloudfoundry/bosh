@@ -173,7 +173,7 @@ module Bosh::Director
           end
 
           let!(:snapshot) do
-            Models::Snapshot.make(
+            FactoryBot.create(:models_snapshot,
                 persistent_disk: original_disk,
                 clean: true,
                 snapshot_cid: original_disk.disk_cid)

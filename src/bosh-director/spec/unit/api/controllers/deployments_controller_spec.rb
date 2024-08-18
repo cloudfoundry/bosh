@@ -2116,12 +2116,12 @@ module Bosh::Director
 
             instance = FactoryBot.create(:models_instance, deployment: deployment, job: 'job', index: 0, uuid: 'abc123')
             disk = FactoryBot.create(:models_persistent_disk, disk_cid: 'disk0', instance: instance, active: true)
-            Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap0a')
+            FactoryBot.create(:models_snapshot, persistent_disk: disk, snapshot_cid: 'snap0a')
 
             instance = FactoryBot.create(:models_instance, deployment: deployment, job: 'job', index: 1)
             disk = FactoryBot.create(:models_persistent_disk, disk_cid: 'disk1', instance: instance, active: true)
-            Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap1a')
-            Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snap1b')
+            FactoryBot.create(:models_snapshot, persistent_disk: disk, snapshot_cid: 'snap1a')
+            FactoryBot.create(:models_snapshot, persistent_disk: disk, snapshot_cid: 'snap1b')
           end
 
           describe 'creating' do
@@ -2153,7 +2153,7 @@ module Bosh::Director
             end
 
             it 'should raise an error if the snapshot belongs to a different deployment' do
-              snap = Models::Snapshot.make(snapshot_cid: 'snap2b')
+              snap = FactoryBot.create(:models_snapshot, snapshot_cid: 'snap2b')
               delete "/#{snap.persistent_disk.instance.deployment.name}/snapshots/snap2a"
               expect(last_response.status).to eq(400)
             end
@@ -2682,7 +2682,7 @@ module Bosh::Director
             before do
               instance = FactoryBot.create(:models_instance, deployment: owned_deployment)
               persistent_disk = FactoryBot.create(:models_persistent_disk, instance: instance)
-              Models::Snapshot.make(persistent_disk: persistent_disk, snapshot_cid: 'cid-1')
+              FactoryBot.create(:models_snapshot, persistent_disk: persistent_disk, snapshot_cid: 'cid-1')
             end
 
             it 'allows access to owned deployment' do

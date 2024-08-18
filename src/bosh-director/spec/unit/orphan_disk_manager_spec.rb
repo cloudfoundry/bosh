@@ -35,7 +35,7 @@ module Bosh::Director
 
     describe '#orphan_disk' do
       it 'orphans disks and snapshots' do
-        snapshot = Models::Snapshot.make(persistent_disk: persistent_disk)
+        snapshot = FactoryBot.create(:models_snapshot, persistent_disk: persistent_disk)
 
         disk_manager.orphan_disk(persistent_disk)
         orphan_disk = Models::OrphanDisk.first
@@ -65,7 +65,7 @@ module Bosh::Director
           snapshot_created_at: Time.now,
         )
 
-        Models::Snapshot.make(
+        FactoryBot.create(:models_snapshot,
           snapshot_cid: 'existing_cid',
           persistent_disk: persistent_disk,
         )
@@ -82,7 +82,7 @@ module Bosh::Director
       end
 
       it 'should store event' do
-        Models::Snapshot.make(persistent_disk: persistent_disk)
+        FactoryBot.create(:models_snapshot, persistent_disk: persistent_disk)
         expect do
           disk_manager.orphan_disk(persistent_disk)
         end.to change { Bosh::Director::Models::Event.count }.from(0).to(2)

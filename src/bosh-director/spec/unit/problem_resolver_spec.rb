@@ -45,7 +45,7 @@ module Bosh::Director
       (1..problematic_instance_groups).each_with_object({}) do |n, problem_resolutions|
         problems_per_instance_group.times do
           problem =
-            Models::DeploymentProblem.make(
+            FactoryBot.create(:models_deployment_problem,
               deployment_id: deployment.id,
               resource_id: FactoryBot.create(:models_instance, job: "ig-#{n}", deployment_id: deployment.id).id,
               type: 'missing_vm',
@@ -260,7 +260,7 @@ module Bosh::Director
             )
           end
           let(:problem_1) do
-            Models::DeploymentProblem.make(deployment_id: deployment.id,
+            FactoryBot.create(:models_deployment_problem, deployment_id: deployment.id,
                                            resource_id: disk_1.id,
                                            type: 'inactive_disk',
                                            state: 'open')
@@ -275,7 +275,7 @@ module Bosh::Director
             )
           end
           let(:problem_2) do
-            Models::DeploymentProblem.make(deployment_id: deployment.id,
+            FactoryBot.create(:models_deployment_problem, deployment_id: deployment.id,
                                            resource_id: disk_2.id,
                                            type: 'inactive_disk',
                                            state: 'open')
@@ -305,7 +305,7 @@ module Bosh::Director
 
         it 'logs already resolved problem' do
           problem =
-            Models::DeploymentProblem.make(
+            FactoryBot.create(:models_deployment_problem,
               deployment_id: deployment.id,
               resource_id: FactoryBot.create(:models_persistent_disk).id,
               type: 'inactive_disk',
@@ -332,7 +332,7 @@ module Bosh::Director
         let(:backtrace) { anything }
         let(:disk) { FactoryBot.create(:models_persistent_disk, active: false) }
         let(:problem) do
-          Models::DeploymentProblem.make(deployment_id: deployment.id,
+          FactoryBot.create(:models_deployment_problem, deployment_id: deployment.id,
                                          resource_id: disk.id,
                                          type: 'inactive_disk',
                                          state: 'open')

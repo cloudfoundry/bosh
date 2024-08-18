@@ -25,7 +25,7 @@ module Bosh::Director
 
       context 'when there is the same deployment problem' do
         before do
-          Bosh::Director::Models::DeploymentProblem.make(
+          FactoryBot.create(:models_deployment_problem,
             deployment_id: deployment.id,
             type: 'fake-problem-type',
             resource_id: 123,
@@ -51,7 +51,7 @@ module Bosh::Director
       context 'when there are more than 1 similar deployment problems' do
         before do
           2.times do
-            Bosh::Director::Models::DeploymentProblem.make(
+            FactoryBot.create(:models_deployment_problem,
               deployment_id: deployment.id,
               type: 'fake-problem-type',
               resource_id: 123,

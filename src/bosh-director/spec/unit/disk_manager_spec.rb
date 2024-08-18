@@ -470,7 +470,7 @@ module Bosh::Director
                   end
 
                   context 'when switching active disk succeeds' do
-                    let(:snapshot) { Models::Snapshot.make }
+                    let(:snapshot) { FactoryBot.create(:models_snapshot) }
                     before do
                       persistent_disk.add_snapshot(snapshot)
                       allow(agent_client).to receive(:unmount_disk).with('disk123')
@@ -647,7 +647,7 @@ module Bosh::Director
     end
 
     describe '#delete_persistent_disks' do
-      let(:snapshot) { Models::Snapshot.make(persistent_disk: persistent_disk) }
+      let(:snapshot) { FactoryBot.create(:models_snapshot, persistent_disk: persistent_disk) }
       before { persistent_disk.add_snapshot(snapshot) }
 
       it 'deletes snapshots' do

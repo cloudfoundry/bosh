@@ -12,20 +12,20 @@ module Bosh::Director
 
     before do
       instance = FactoryBot.create(:models_instance, deployment: deployment, job: 'job1', index: 0, uuid: 'job1index0')
-      Models::DeploymentProblem.make(deployment: deployment, resource_id: instance.id, type: 'unresponsive_agent')
+      FactoryBot.create(:models_deployment_problem, deployment: deployment, resource_id: instance.id, type: 'unresponsive_agent')
 
       instance = FactoryBot.create(:models_instance, deployment: deployment, job: 'job1', index: 1, uuid: 'job1index1')
-      Models::DeploymentProblem.make(deployment: deployment, resource_id: instance.id, type: 'missing_vm')
+      FactoryBot.create(:models_deployment_problem, deployment: deployment, resource_id: instance.id, type: 'missing_vm')
 
       instance = FactoryBot.create(:models_instance, deployment: deployment, job: 'job2', index: 0, uuid: 'job2index0')
-      Models::DeploymentProblem.make(deployment: deployment, resource_id: instance.id, type: 'unbound')
+      FactoryBot.create(:models_deployment_problem, deployment: deployment, resource_id: instance.id, type: 'unbound')
 
       instance = FactoryBot.create(:models_instance, deployment: deployment, job: 'job2', index: 1, uuid: 'job2index1')
-      Models::DeploymentProblem.make(deployment: deployment, resource_id: instance.id, type: 'missing_vm')
+      FactoryBot.create(:models_deployment_problem, deployment: deployment, resource_id: instance.id, type: 'missing_vm')
       FactoryBot.create(:models_persistent_disk, instance: instance)
 
       instance = FactoryBot.create(:models_instance, deployment: deployment, job: 'job2', index: 2, uuid: 'job2index2', ignore: true)
-      Models::DeploymentProblem.make(deployment: deployment, resource_id: instance.id, type: 'unresponsive_agent')
+      FactoryBot.create(:models_deployment_problem, deployment: deployment, resource_id: instance.id, type: 'unresponsive_agent')
     end
 
     describe 'DJ job class expectations' do
