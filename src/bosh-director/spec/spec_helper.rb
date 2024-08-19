@@ -42,7 +42,6 @@ module SpecHelper
 
       init_database
 
-      require 'blueprints'
       require 'factories'
     end
 
