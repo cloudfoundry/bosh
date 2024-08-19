@@ -1,0 +1,55 @@
+name: Run Specs
+on: [push, pull_request]
+
+jobs:
+  unit_specs:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        sub_project:
+        - common
+        - core
+        - dev
+        - director-core
+        - monitor
+        - nats-sync
+        - template
+    steps:
+    - uses: actions/checkout@v4
+      with: { lfs: true}
+    - uses: ruby/setup-ruby@v1
+      with: { working-directory: src/ }
+    - run: bundle install
+      working-directory: src/
+    - run: bundle exec rake spec:unit:${{matrix.sub_project}}:parallel
+      working-directory: src/
+
+  unit_specs-director:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        db:
+        - mysql
+        - postgresql
+    steps:
+    - uses: actions/checkout@v4
+      with: { lfs: true}
+    - uses: ruby/setup-ruby@v1
+      with: { working-directory: src/ }
+
+    - if: ${{ matrix.db == 'mysql' }}
+      run: |
+        sudo systemctl start mysql.service
+        mysql --user=root --password=root -e "CREATE USER '$(whoami)'@'localhost' IDENTIFIED BY '$(whoami)';"
+        mysql --user=root --password=root -e "GRANT ALL PRIVILEGES ON *.* TO '$(whoami)'@'localhost';"
+
+    - if: ${{ matrix.db == 'postgresql' }}
+      run: |
+        sudo systemctl start postgresql.service
+        sudo -u postgres createuser --superuser $(whoami)
+        sudo -u postgres psql --command "alter user $(whoami) with encrypted password '$(whoami)'"
+
+    - run: bundle
+      working-directory: src/
+    - run: DB=${{matrix.db}} DB_USER=$(whoami) DB_PASSWORD=$(whoami) bundle exec rake spec:unit:director:parallel
+      working-directory: src/
