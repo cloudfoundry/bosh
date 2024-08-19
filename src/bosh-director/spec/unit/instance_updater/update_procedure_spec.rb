@@ -24,7 +24,6 @@ module Bosh::Director
 
       let(:active_vm) { nil }
       let(:agent) { nil }
-      let(:agent_id) { Sham.uuid }
       let(:already_detached?) { false }
       let(:blobstore) { nil }
       let(:delete_vm_step) { instance_double(Steps::DeleteVmStep, perform: nil) }
@@ -87,7 +86,7 @@ module Bosh::Director
           Models::Instance,
           state: instance_model_state,
           active_vm: active_vm,
-          agent_id: agent_id,
+          agent_id: 'fake-agent-id',
           name: instance_name,
           vms: instance_vms,
           managed_persistent_disk: persistent_disk,

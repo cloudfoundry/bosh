@@ -16,7 +16,6 @@ require 'webmock/rspec'
 require 'minitar'
 require 'active_support' # TODO: remove once factory_bot > 6.4.6 is released
 require 'factory_bot'
-require 'sham'
 require 'support/buffered_logger'
 
 Dir.glob(File.expand_path('support/**/*.rb', __dir__)).each { |f| require(f) }

@@ -5,14 +5,12 @@ module Bosh::Director
     describe InstanceUpdater::RecreateHandler do
       describe '#perform' do
         let(:cids) { ['bobcid'] }
-        let(:ip_address) { Sham.ip }
+        let(:ip_address) { FactoryBot.create(:models_ip_address) }
         let(:active_vm) do
           double(
             Models::Vm,
             id: 1,
-            ip_addresses: [
-              double(Models::IpAddress, address_str: ip_address),
-            ],
+            ip_addresses: [ip_address],
           )
         end
         let(:inactive_vm) { double(Models::Vm, id: 2) }
@@ -104,7 +102,7 @@ module Bosh::Director
 
             it 'orphans' do
               expect(orphan_step).to have_received(:perform).with(instance_report)
-              expect(instance_plan).to have_received(:remove_obsolete_network_plans_for_ips).with([ip_address])
+              expect(instance_plan).to have_received(:remove_obsolete_network_plans_for_ips).with([ip_address.address_str])
             end
 
             it 'updates instance settings' do
