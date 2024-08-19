@@ -373,7 +373,7 @@ DEPENDENCIES
   bosh_common!
   bosh_cpi
   bundle-audit
-  factory_bot (~> 6.2)
+  factory_bot
   fakefs
   httpclient
   json (~> 2)
