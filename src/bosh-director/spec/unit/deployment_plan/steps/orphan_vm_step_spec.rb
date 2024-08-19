@@ -18,7 +18,7 @@ module Bosh::Director
             agent_id: 'fake-agent-id',
           )
         end
-        let!(:ip_address) { Models::IpAddress.make(instance: instance, vm: vm) }
+        let!(:ip_address) { FactoryBot.create(:models_ip_address, instance: instance, vm: vm) }
         let(:report) { double(:report) }
         let(:job) { instance_double(Bosh::Director::Jobs::BaseJob, username: 'fake-username', task_id: 'fake-task-id') }
         let!(:event_manager) { Api::EventManager.new(true) }
@@ -65,8 +65,8 @@ module Bosh::Director
         end
 
         it 'moves ips over to the orphaned vm' do
-          ip1 = Models::IpAddress.make(vm: vm, address_str: '1.1.1.1')
-          ip2 = Models::IpAddress.make(vm: vm, address_str: '2.2.2.2')
+          ip1 = FactoryBot.create(:models_ip_address, vm: vm, address_str: '1.1.1.1')
+          ip2 = FactoryBot.create(:models_ip_address, vm: vm, address_str: '2.2.2.2')
           expect(vm.ip_addresses.count).to eq 3
           step.perform(report)
           orphaned_vm = Models::OrphanedVm.last

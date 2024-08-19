@@ -748,7 +748,7 @@ describe 'Bosh::Director::DeploymentPlan::InstancePlanner' do
     end
 
     before do
-      Bosh::Director::Models::IpAddress.make(
+      FactoryBot.create(:models_ip_address,
         address_str: ip_to_i('192.168.1.5').to_s,
         network_name: 'fake-network',
         instance: existing_instance_model,

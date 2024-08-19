@@ -952,7 +952,7 @@ module Bosh::Director::DeploymentPlan
       )
       ips.each do |ip|
         instance.add_ip_address(
-          Bosh::Director::Models::IpAddress.make(
+          FactoryBot.create(:models_ip_address,
             address_str: IPAddr.new(ip).to_i.to_s,
             network_name: network_name,
           ),

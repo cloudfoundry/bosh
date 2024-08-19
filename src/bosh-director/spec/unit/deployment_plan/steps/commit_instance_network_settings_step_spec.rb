@@ -22,9 +22,9 @@ module Bosh::Director
         let(:obsolete_reservation) { instance_double(NetworkReservation, ip: obsolete_ip_address_string) }
         let(:desired_reservation) { instance_double(NetworkReservation, ip: desired_ip_address_string) }
 
-        let!(:existing_ip_address) { Models::IpAddress.make(address_str: existing_ip_address_string) }
-        let!(:obsolete_ip_address) { Models::IpAddress.make(address_str: obsolete_ip_address_string) }
-        let!(:desired_ip_address) { Models::IpAddress.make(address_str: desired_ip_address_string) }
+        let!(:existing_ip_address) { FactoryBot.create(:models_ip_address, address_str: existing_ip_address_string) }
+        let!(:obsolete_ip_address) { FactoryBot.create(:models_ip_address, address_str: obsolete_ip_address_string) }
+        let!(:desired_ip_address) { FactoryBot.create(:models_ip_address, address_str: desired_ip_address_string) }
 
         let(:vm) { FactoryBot.create(:models_vm) }
 

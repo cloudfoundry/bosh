@@ -52,7 +52,7 @@ module Bosh::Director::Models
 
         context 'when there are static ips' do
           before do
-            subject.ip_addresses << IpAddress.make(static: true)
+            subject.ip_addresses << FactoryBot.create(:models_ip_address, static: true)
           end
 
           it 'is not orphanable ' do

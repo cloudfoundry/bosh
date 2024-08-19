@@ -173,7 +173,7 @@ module Bosh
             end
 
             before do
-              Models::IpAddress.make(
+              FactoryBot.create(:models_ip_address,
                 instance_id: instance.id,
                 vm_id: vm.id,
                 address_str: IPAddr.new('192.168.1.5').to_i.to_s,
@@ -190,7 +190,7 @@ module Bosh
 
             context 'when deployed VMs are using static ips' do
               before do
-                Models::IpAddress.make(
+                FactoryBot.create(:models_ip_address,
                   instance_id: instance.id,
                   vm_id: vm.id,
                   address_str: IPAddr.new('192.168.1.4').to_i.to_s,

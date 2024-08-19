@@ -32,7 +32,7 @@ module Bosh::Director
       instance
     end
 
-    let!(:ip_address) { Models::IpAddress.make(instance: instance, address_str: ip_to_i('192.1.3.4').to_s) }
+    let!(:ip_address) { FactoryBot.create(:models_ip_address, instance: instance, address_str: ip_to_i('192.1.3.4').to_s) }
     let!(:vm) { FactoryBot.create(:models_vm, instance: instance, active: true) }
 
     let(:spec) do

@@ -71,11 +71,11 @@ module Bosh
 
             context 'when the vm has manual network IPs' do
             let!(:ip_address_model) do
-              ip = Models::IpAddress.make
-              ip.vm = vm_model
-              ip.instance = instance_model
-              ip.save
-              ip
+              FactoryBot.create(:models_ip_address).tap do |ip|
+                ip.vm = vm_model
+                ip.instance = instance_model
+                ip.save
+              end
             end
 
               it 'disassociates the ip from the vm' do
@@ -85,7 +85,6 @@ module Bosh
                 subject.perform(report)
 
                 expect(ip_address_model.reload.vm).to be_nil
-
               end
             end
 

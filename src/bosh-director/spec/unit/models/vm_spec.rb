@@ -41,8 +41,8 @@ module Bosh::Director::Models
     end
 
     describe '#ips' do
-      let!(:ip_address) { Bosh::Director::Models::IpAddress.make(vm: vm, address_str: IPAddr.new('1.1.1.1').to_i.to_s) }
-      let!(:ip_address2) { Bosh::Director::Models::IpAddress.make(vm: vm, address_str: IPAddr.new('1.1.1.2').to_i.to_s) }
+      let!(:ip_address) { FactoryBot.create(:models_ip_address, vm: vm, address_str: IPAddr.new('1.1.1.1').to_i.to_s) }
+      let!(:ip_address2) { FactoryBot.create(:models_ip_address, vm: vm, address_str: IPAddr.new('1.1.1.2').to_i.to_s) }
 
       before do
         vm.network_spec = { 'some' => { 'ip' => '1.1.1.3' } }

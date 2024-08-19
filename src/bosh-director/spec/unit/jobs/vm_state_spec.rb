@@ -53,7 +53,7 @@ module Bosh::Director
       let(:agent) { instance_double('Bosh::Director::AgentClient') }
 
       it 'parses agent info into vm_state WITHOUT vitals' do
-        Models::IpAddress.make(
+        FactoryBot.create(:models_ip_address,
           instance_id: instance.id,
           vm_id: vm.id,
           address_str: IPAddr.new('1.1.1.1').to_i.to_s,
@@ -80,13 +80,13 @@ module Bosh::Director
 
       context 'when there are two networks' do
         before do
-          Models::IpAddress.make(
+          FactoryBot.create(:models_ip_address,
             instance_id: instance.id,
             vm_id: vm.id,
             address_str: IPAddr.new('1.1.1.1').to_i.to_s,
             task_id: '12345',
           )
-          Models::IpAddress.make(
+          FactoryBot.create(:models_ip_address,
             instance_id: instance.id,
             vm_id: vm.id,
             address_str: IPAddr.new('2.2.2.2').to_i.to_s,
@@ -123,13 +123,13 @@ module Bosh::Director
 
       context 'when there are manual ip addresses and networks' do
         before do
-          Models::IpAddress.make(
+          FactoryBot.create(:models_ip_address,
             instance_id: instance.id,
             vm_id: vm.id,
             address_str: IPAddr.new('1.1.1.1').to_i.to_s,
             task_id: '12345',
           )
-          Models::IpAddress.make(
+          FactoryBot.create(:models_ip_address,
             instance_id: instance.id,
             vm_id: vm.id,
             address_str: IPAddr.new('2.2.2.2').to_i.to_s,
@@ -166,7 +166,7 @@ module Bosh::Director
       end
 
       it 'parses agent info into vm_state WITH vitals' do
-        Models::IpAddress.make(
+        FactoryBot.create(:models_ip_address,
           instance_id: instance.id,
           vm_id: vm.id,
           address_str: IPAddr.new('1.1.1.1').to_i.to_s,
@@ -357,7 +357,7 @@ module Bosh::Director
       end
 
       it 'should return processes info' do
-        Models::IpAddress.make(
+        FactoryBot.create(:models_ip_address,
           instance_id: instance.id,
           vm_id: vm.id,
           address_str: IPAddr.new('1.1.1.1').to_i.to_s,
@@ -438,13 +438,13 @@ module Bosh::Director
         end
 
         before do
-          Models::IpAddress.make(
+          FactoryBot.create(:models_ip_address,
             instance_id: instance.id,
             vm_id: vm.id,
             address_str: IPAddr.new('1.1.1.1').to_i.to_s,
             task_id: '12345',
           )
-          Models::IpAddress.make(
+          FactoryBot.create(:models_ip_address,
             instance_id: instance.id,
             vm_id: inactive_vm.id,
             address_str: IPAddr.new('1.1.1.2').to_i.to_s,

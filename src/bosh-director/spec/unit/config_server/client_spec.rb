@@ -5,9 +5,6 @@ module Bosh::Director::ConfigServer
     subject(:client) { ConfigServerClient.new(http_client, director_name, logger) }
     let(:director_name) { 'smurf_director_name' }
     let(:deployment_name) { 'deployment_name' }
-    let(:deployment_attrs) do
-      { id: 1, name: deployment_name }
-    end
     let(:logger) { double('Logging::Logger') }
     let(:variables_set_id) { 2000 }
     let(:success_post_response) do
@@ -25,7 +22,7 @@ module Bosh::Director::ConfigServer
       result
     end
 
-    let(:deployment_model) { FactoryBot.create(:models_deployment, deployment_attrs) }
+    let(:deployment_model) { FactoryBot.create(:models_deployment, name: deployment_name) }
 
     def prepend_namespace(name)
       "/#{director_name}/#{deployment_name}/#{name}"
@@ -244,7 +241,6 @@ module Bosh::Director::ConfigServer
 
                 { 'response' => '{"data" : [{"name" : "name1", "value" : "x"}]}',
                   'message' => '- Failed to fetch variable \'/bad\' from config server: Expected data[0] to have key \'id\'' },
-
               ].each do |entry|
                 it 'raises an error' do
                   allow(http_client).to receive(:get).with('/bad').and_return(generate_success_response(entry['response']))
@@ -270,10 +266,10 @@ module Bosh::Director::ConfigServer
 
                 expect do
                   client.interpolate(manifest_hash)
-                end.to raise_error { |error|
+                end.to(raise_error { |error|
                   expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
                   expect(error.message).to include("- Failed to find variable '/missing_placeholder' from config server: HTTP Code '404', Error: 'Name not found'")
-                }
+                })
               end
             end
 
@@ -320,11 +316,11 @@ module Bosh::Director::ConfigServer
                 it 'fails to find all values and throws formatting error' do
                   expect do
                     client.interpolate(raw_hash)
-                  end.to raise_error { |error|
+                  end.to(raise_error { |error|
                     expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
                     expect(error.message).to include("- Failed to fetch variable '/hash_placeholder' from config server: Expected parent '/hash_placeholder.ca' hash to have key 'level_n'")
                     expect(error.message).to include("- Failed to fetch variable '/hash_placeholder' from config server: Expected parent '/hash_placeholder.ca' hash to have key 'level_m'")
-                  }
+                  })
                 end
               end
 
@@ -336,10 +332,10 @@ module Bosh::Director::ConfigServer
                 it 'fails to find value and throws formatting error' do
                   expect do
                     client.interpolate(raw_hash)
-                  end.to raise_error { |error|
+                  end.to(raise_error { |error|
                     expect(error).to be_a(Bosh::Director::ConfigServerIncorrectNameSyntax)
                     expect(error.message).to include("Variable name 'hash_placeholder.ca...level_1' syntax error: Must not contain consecutive dots")
-                  }
+                  })
                 end
               end
 
@@ -347,9 +343,9 @@ module Bosh::Director::ConfigServer
                 raw_hash['properties']['some-new-relative-key'] = '((some-relative-var))'
                 expect do
                   client.interpolate(raw_hash)
-                end.to raise_error { |error|
+                end.to(raise_error { |error|
                   expect(error.message).to eq("Relative paths are not allowed in this context. The following must be be switched to use absolute paths: 'some-relative-var'")
-                }
+                })
               end
             end
           end
@@ -500,11 +496,11 @@ module Bosh::Director::ConfigServer
             it 'fails to find all values and throws formatting error' do
               expect do
                 client.interpolate_with_versioning(raw_hash, variable_set_model)
-              end.to raise_error { |error|
+              end.to(raise_error { |error|
                 expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
                 expect(error.message).to include("- Failed to fetch variable '/smurf_director_name/my_deployment_name/hash_placeholder' from config server: Expected parent '/smurf_director_name/my_deployment_name/hash_placeholder.ca' hash to have key 'level_n'")
                 expect(error.message).to include("- Failed to fetch variable '/smurf_director_name/my_deployment_name/hash_placeholder' from config server: Expected parent '/smurf_director_name/my_deployment_name/hash_placeholder.ca' hash to have key 'level_m'")
-              }
+              })
             end
           end
 
@@ -516,10 +512,10 @@ module Bosh::Director::ConfigServer
             it 'fails to find value and throws formatting error' do
               expect do
                 client.interpolate_with_versioning(raw_hash, variable_set_model)
-              end.to raise_error { |error|
+              end.to(raise_error { |error|
                 expect(error).to be_a(Bosh::Director::ConfigServerIncorrectNameSyntax)
                 expect(error.message).to include("Variable name 'hash_placeholder.ca...level_1' syntax error: Must not contain consecutive dots")
-              }
+              })
             end
           end
 
@@ -527,9 +523,9 @@ module Bosh::Director::ConfigServer
             it 'returns an error for non absolute path placeholders' do
               expect do
                 client.interpolate_with_versioning(raw_hash, variable_set_model, must_be_absolute_name: true)
-              end.to raise_error { |error|
+              end.to(raise_error { |error|
                 expect(error.message).to eq("Relative paths are not allowed in this context. The following must be be switched to use absolute paths: 'integer_placeholder', 'nil_placeholder', 'empty_placeholder', 'string_placeholder', 'hash_placeholder', 'hash_placeholder.private_key'")
-              }
+              })
             end
           end
         end
@@ -686,9 +682,9 @@ module Bosh::Director::ConfigServer
 
                   expect do
                     client.interpolate_with_versioning(raw_hash, variable_set_model)
-                  end.to raise_error { |e|
+                  end.to(raise_error { |e|
                     expect(e.message).to eq(expected_error_msg)
-                  }
+                  })
                 end
               end
 
@@ -712,9 +708,9 @@ module Bosh::Director::ConfigServer
 
                   expect do
                     client.interpolate_with_versioning(raw_hash, variable_set_model)
-                  end.to raise_error { |e|
+                  end.to(raise_error { |e|
                     expect(e.message).to eq(expected_error_msg)
-                  }
+                  })
                 end
               end
 
@@ -827,11 +823,11 @@ module Bosh::Director::ConfigServer
                   it 'fails to find all values and throws formatting error' do
                     expect do
                       client.interpolate_with_versioning(raw_hash, variable_set_model)
-                    end.to raise_error { |error|
+                    end.to(raise_error { |error|
                       expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
                       expect(error.message).to include("- Failed to fetch variable '/smurf_director_name/my_deployment_name/hash_placeholder' from config server: Expected parent '/smurf_director_name/my_deployment_name/hash_placeholder.ca' hash to have key 'level_n'")
                       expect(error.message).to include("- Failed to fetch variable '/smurf_director_name/my_deployment_name/hash_placeholder' from config server: Expected parent '/smurf_director_name/my_deployment_name/hash_placeholder.ca' hash to have key 'level_m'")
-                    }
+                    })
                   end
                 end
 
@@ -843,10 +839,10 @@ module Bosh::Director::ConfigServer
                   it 'fails to find value and throws formatting error' do
                     expect do
                       client.interpolate_with_versioning(raw_hash, variable_set_model)
-                    end.to raise_error { |error|
+                    end.to(raise_error { |error|
                       expect(error).to be_a(Bosh::Director::ConfigServerIncorrectNameSyntax)
                       expect(error.message).to include("Variable name 'hash_placeholder.ca...level_1' syntax error: Must not contain consecutive dots")
-                    }
+                    })
                   end
                 end
 
@@ -854,9 +850,9 @@ module Bosh::Director::ConfigServer
                   it 'returns an error for non absolute path placeholders' do
                     expect do
                       client.interpolate_with_versioning(raw_hash, variable_set_model, must_be_absolute_name: true)
-                    end.to raise_error { |error|
+                    end.to(raise_error { |error|
                       expect(error.message).to eq("Relative paths are not allowed in this context. The following must be be switched to use absolute paths: 'integer_placeholder', 'nil_placeholder', 'empty_placeholder', 'string_placeholder', 'hash_placeholder', 'hash_placeholder.private_key'")
-                    }
+                    })
                   end
                 end
               end
@@ -896,10 +892,10 @@ module Bosh::Director::ConfigServer
 
                     expect do
                       client.interpolate_with_versioning(raw_hash, variable_set_model)
-                    end.to raise_error { |error|
+                    end.to(raise_error { |error|
                       expect(error).to be_a(Bosh::Director::ConfigServerFetchError)
                       expect(error.message).to include(entry['message'])
-                    }
+                    })
                   end
                 end
               end
@@ -968,10 +964,10 @@ module Bosh::Director::ConfigServer
                 it 'should raise an error' do
                   expect do
                     client.interpolate_with_versioning(raw_hash, variable_set_model)
-                  end.to raise_error { |error|
+                  end.to(raise_error { |error|
                     expect(error).to be_a(Bosh::Director::ConfigServerInconsistentVariableState)
                     expect(error.message).to include("Expected variable '/smurf_director_name/my_deployment_name/integer_placeholder' to be already versioned in deployment 'my_deployment_name'")
-                  }
+                  })
                 end
               end
             end
@@ -1210,9 +1206,9 @@ module Bosh::Director::ConfigServer
 
               expect do
                 client.interpolate_cross_deployment_link(links_properties_spec, consumer_variable_set, provider_variable_set)
-              end.to raise_error { |e|
+              end.to(raise_error { |e|
                 expect(e.message).to eq(expected_error_msg)
-              }
+              })
             end
           end
         end
@@ -1240,9 +1236,9 @@ module Bosh::Director::ConfigServer
 
               expect do
                 client.interpolate_cross_deployment_link(links_properties_spec, consumer_variable_set, provider_variable_set)
-              end.to raise_error { |e|
+              end.to(raise_error { |e|
                 expect(e.message).to eq(expected_error_msg)
-              }
+              })
             end
           end
 
@@ -1318,10 +1314,10 @@ module Bosh::Director::ConfigServer
                 EXPECTED
 
                 expect do
-                  client.interpolate_cross_deployment_link(links_properties_spec, consumer_variable_set, provider_variable_set)
-                end.to raise_error { |e|
-                  expect(e.message).to eq(expected_error_msg)
-                }
+                  client.interpolate_cross_deployment_link(links_properties_spec,
+                                                           consumer_variable_set,
+                                                           provider_variable_set)
+                end.to(raise_error { |e| expect(e.message).to eq(expected_error_msg) })
               end
             end
           end
@@ -1378,7 +1374,7 @@ module Bosh::Director::ConfigServer
             ).ordered.and_return(
               generate_success_response(
                 {
-                  "id": 'some_id1',
+                  id: 'some_id1',
                 }.to_json,
               ),
             )
@@ -1391,7 +1387,7 @@ module Bosh::Director::ConfigServer
             ).ordered.and_return(
               generate_success_response(
                 {
-                  "id": 'some_id2',
+                  id: 'some_id2',
                 }.to_json,
               ),
             )
@@ -1404,7 +1400,7 @@ module Bosh::Director::ConfigServer
             ).ordered.and_return(
               generate_success_response(
                 {
-                  "id": 'some_id3',
+                  id: 'some_id3',
                 }.to_json,
               ),
             )
@@ -1417,7 +1413,7 @@ module Bosh::Director::ConfigServer
             ).ordered.and_return(
               generate_success_response(
                 {
-                  "id": 'some_id4',
+                  id: 'some_id4',
                 }.to_json,
               ),
             )
@@ -1427,9 +1423,9 @@ module Bosh::Director::ConfigServer
 
           it 'should save generated variables to variable table with correct associations' do
             allow(http_client).to receive(:post).and_return(
-              generate_success_response({ 'id': 'some_id1' }.to_json),
-              generate_success_response({ 'id': 'some_id2' }.to_json),
-              generate_success_response({ 'id': 'some_id3' }.to_json),
+              generate_success_response({ id: 'some_id1' }.to_json),
+              generate_success_response({ id: 'some_id2' }.to_json),
+              generate_success_response({ id: 'some_id3' }.to_json),
             )
 
             expect(Bosh::Director::Models::Variable[variable_id: 'some_id1', variable_name: prepend_namespace('placeholder_a'), variable_set_id: variables_set_id]).to be_nil
@@ -1565,11 +1561,10 @@ module Bosh::Director::ConfigServer
                   ]
                 end
 
-                let(:deployment_attrs) do
-                  { id: 1, name: deployment_name, links_serial_id: link_serial_id }
-                end
-
                 let(:link_serial_id) { 8080 }
+                let(:deployment_model) do
+                  FactoryBot.create(:models_deployment, name: deployment_name, links_serial_id: link_serial_id)
+                end
 
                 let(:consumer) do
                   Bosh::Director::Models::Links::LinkConsumer.create(
@@ -1634,7 +1629,7 @@ module Bosh::Director::ConfigServer
                   ).ordered.and_return(
                     generate_success_response(
                       {
-                        "id": 'some_id2',
+                        id: 'some_id2',
                       }.to_json,
                     ),
                   )
@@ -1676,7 +1671,7 @@ module Bosh::Director::ConfigServer
                     ).ordered.and_return(
                       generate_success_response(
                         {
-                          'id': 'some_id2',
+                          id: 'some_id2',
                         }.to_json,
                       ),
                     )
@@ -1734,7 +1729,7 @@ module Bosh::Director::ConfigServer
                     ).ordered.and_return(
                       generate_success_response(
                         {
-                          'id': 'some_id2',
+                          id: 'some_id2',
                         }.to_json,
                       ),
                     )
@@ -1775,7 +1770,7 @@ module Bosh::Director::ConfigServer
                       ).ordered.and_return(
                         generate_success_response(
                           {
-                            'id': 'some_id2',
+                            id: 'some_id2',
                           }.to_json,
                         ),
                       )
@@ -1834,7 +1829,7 @@ module Bosh::Director::ConfigServer
                       ).ordered.and_return(
                         generate_success_response(
                           {
-                            'id': 'some_id2',
+                            id: 'some_id2',
                           }.to_json,
                         ),
                       )
@@ -1870,7 +1865,7 @@ module Bosh::Director::ConfigServer
                 ).ordered.and_return(
                   generate_success_response(
                     {
-                      'id': 'some_id2',
+                      id: 'some_id2',
                     }.to_json,
                   ),
                 )
@@ -1908,7 +1903,7 @@ module Bosh::Director::ConfigServer
                       'alternative_names' => %w[a.bosh.io b.bosh.io],
                     },
                     'mode' => 'no-overwrite', }
-                ).ordered.and_return(generate_success_response({ 'id': 'some_id2' }.to_json))
+                ).ordered.and_return(generate_success_response({ id: 'some_id2' }.to_json))
 
                 client.generate_values(variables_obj, deployment_name)
               end
@@ -1934,7 +1929,7 @@ module Bosh::Director::ConfigServer
                 ).ordered.and_return(
                   generate_success_response(
                     {
-                      "id": 'some_id1',
+                      id: 'some_id1',
                     }.to_json,
                   ),
                 )
@@ -2050,7 +2045,7 @@ module Bosh::Director::ConfigServer
               ).ordered.and_return(
                 generate_success_response(
                   {
-                    "id": 'some_id1',
+                    id: 'some_id1',
                   }.to_json,
                 ),
               )
@@ -2062,7 +2057,7 @@ module Bosh::Director::ConfigServer
               ).ordered.and_return(
                 generate_success_response(
                   {
-                    "id": 'some_id2',
+                    id: 'some_id2',
                   }.to_json,
                 ),
               )
@@ -2089,11 +2084,10 @@ module Bosh::Director::ConfigServer
               ]
             end
 
-            let(:deployment_attrs) do
-              { id: 2, name: deployment_name, links_serial_id: link_serial_id }
-            end
-
             let(:link_serial_id) { 8080 }
+            let(:deployment_model) do
+              FactoryBot.create(:models_deployment, name: deployment_name, links_serial_id: link_serial_id)
+            end
 
             let(:consumer) do
               Bosh::Director::Models::Links::LinkConsumer.create(
@@ -2167,7 +2161,7 @@ module Bosh::Director::ConfigServer
               ).ordered.and_return(
                 generate_success_response(
                   {
-                    "id": 'some_id2',
+                    id: 'some_id2',
                   }.to_json,
                 ),
               )
@@ -2208,9 +2202,9 @@ module Bosh::Director::ConfigServer
               ).ordered.and_return(
                 generate_success_response(
                   {
-                    "id": 'some_id1',
-                    "name": '/smurf_director_name/deployment_name/placeholder_a',
-                    "value": 'abc',
+                    id: 'some_id1',
+                    name: '/smurf_director_name/deployment_name/placeholder_a',
+                    value: 'abc',
                   }.to_json,
                   ),
                 )
@@ -2250,7 +2244,7 @@ module Bosh::Director::ConfigServer
                   ).ordered.and_return(
                     generate_success_response(
                       {
-                        "id": 'some_id2',
+                        id: 'some_id2',
                       }.to_json,
                       ),
                     )
@@ -2270,7 +2264,7 @@ module Bosh::Director::ConfigServer
                   ).ordered.and_return(
                     generate_success_response(
                       {
-                        "id": 'some_id2',
+                        id: 'some_id2',
                       }.to_json,
                       ),
                     )
@@ -2345,7 +2339,7 @@ module Bosh::Director::ConfigServer
                 ).ordered.and_return(
                   generate_success_response(
                     {
-                      "id": 'some_id2',
+                      id: 'some_id2',
                     }.to_json,
                   ),
                 )

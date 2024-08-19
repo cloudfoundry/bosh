@@ -2065,8 +2065,8 @@ module Bosh::Director::DeploymentPlan
       let(:ip1) { IPAddr.new('192.168.1.25').to_i }
       let(:ip2) { IPAddr.new('192.168.1.26').to_i }
 
-      let(:ip_address1) { Bosh::Director::Models::IpAddress.make(address_str: ip1.to_s) }
-      let(:ip_address2) { Bosh::Director::Models::IpAddress.make(address_str: ip2.to_s) }
+      let(:ip_address1) { FactoryBot.create(:models_ip_address, address_str: ip1.to_s) }
+      let(:ip_address2) { FactoryBot.create(:models_ip_address, address_str: ip2.to_s) }
 
       describe 'when there are ips specified' do
         it 'releases obsolete network plans of the specified ips' do
