@@ -100,6 +100,7 @@ RUN cd /tmp  \
     && gem update --system \
     && bundle config --global path "${GEM_HOME}" \
     && bundle config --global bin "${GEM_HOME}/bin"
+ENV PATH=${GEM_HOME}/bin:${PATH}
 
 
 # Add Golang
