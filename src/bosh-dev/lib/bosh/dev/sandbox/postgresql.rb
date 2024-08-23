@@ -19,18 +19,15 @@ module Bosh::Dev::Sandbox
       @ca_path = options.fetch(:ca_path, nil)
     end
 
-    def connection_string
-      "postgres://#{@username}:#{@password}@#{@host}:#{@port}/#{@db_name}"
+    def connection_string(this_db_name = @db_name)
+      "postgres://#{@username}:#{@password}@#{@host}:#{@port}/#{this_db_name}"
     end
 
     # Assumption is that user running tests can
     # login via psql without entering password.
     def create_db
       @logger.info("Creating postgres database #{db_name}")
-      @runner.run(
-        "echo #{Shellwords.escape(%(CREATE DATABASE "#{db_name}";))} | " \
-        "psql #{connection_string.gsub(/#{@db_name}$/, 'postgres')} > /dev/null",
-      )
+      execute_sql(%(CREATE DATABASE "#{db_name}";), connection_string('postgres'))
     end
 
     def kill_connections
@@ -51,10 +48,7 @@ module Bosh::Dev::Sandbox
         REVOKE CONNECT ON DATABASE "#{db_name}" FROM public;
         DROP DATABASE "#{db_name}";
       )
-      @runner.run(
-        "echo #{Shellwords.escape(sql)} | " \
-        "psql #{connection_string.gsub(@db_name, 'postgres')} > /dev/null",
-      )
+      execute_sql(sql, connection_string('postgres'))
     end
 
     def dump_db
@@ -64,7 +58,7 @@ module Bosh::Dev::Sandbox
 
     def describe_db
       @logger.info("Describing postgres database tables for #{db_name}")
-      @runner.run(%(psql #{connection_string} -c '\\d+ public.*'))
+      execute_sql("\\d+ public.*")
     end
 
     def load_db_initial_state(initial_state_assets_dir)
@@ -78,14 +72,12 @@ module Bosh::Dev::Sandbox
     end
 
     def current_tasks
-      tasks_list_cmd = %(
-      psql #{connection_string} -c "
+      tasks_list_cmd = %{
         SELECT description, output
         FROM tasks
         WHERE state='processing';
-      "
-      )
-      task_lines = `#{tasks_list_cmd}`.lines.to_a[2...-2] || []
+      }
+      task_lines = sql_results_for(tasks_list_cmd)
 
       result = []
       task_lines.each do |task_line|
@@ -97,20 +89,37 @@ module Bosh::Dev::Sandbox
     end
 
     def current_locked_jobs
-      jobs_cmd = %(
-      psql #{connection_string} -c "
+      jobs_cmd = %{
         SELECT *
         FROM delayed_jobs
         WHERE locked_by IS NOT NULL;
-      "
-      )
-      `#{jobs_cmd}`.lines.to_a[2...-2] || []
+      }
+      sql_results_for(jobs_cmd)
     end
 
     def truncate_db
       @logger.info("Truncating postgres database #{db_name}")
 
-      drop_constraints_cmds_cmd = %{psql #{connection_string} -c "
+      cmds = drop_constraints_cmds + clear_table_cmds + add_constraints_cmds
+      execute_sql(cmds.join(';'))
+    end
+
+    private
+
+    def execute_sql(sql, this_connection_string = connection_string)
+      @runner.run(%{#{sql_cmd(sql, this_connection_string)} > /dev/null})
+    end
+
+    def sql_results_for(sql, this_connection_string = connection_string)
+      %x{#{sql_cmd(sql, this_connection_string)}}.lines.to_a[2...-2] || []
+    end
+
+    def sql_cmd(sql, this_connection_string = connection_string)
+      %{echo #{Shellwords.escape(sql)} | psql #{this_connection_string}}
+    end
+
+    def drop_constraints_cmds
+      drop_constraints_cmds_cmd = %{
         SELECT
           CONCAT('ALTER TABLE ',nspname,'.',relname,' DROP CONSTRAINT ',conname,';')
         FROM pg_constraint
@@ -118,11 +127,14 @@ module Bosh::Dev::Sandbox
           INNER JOIN pg_namespace ON pg_namespace.oid=pg_class.relnamespace
         WHERE nspname != 'pg_catalog'
         ORDER BY CASE WHEN contype='f' THEN 0 ELSE 1 END,contype,nspname,relname,conname
-      "}
+      }
+      sql_results_for(drop_constraints_cmds_cmd)
+    end
 
-      clear_table_cmds_cmd = %{psql #{connection_string} -c "
+    def clear_table_cmds
+      clear_table_cmds_cmd = %{
         SELECT
-          CONCAT('DELETE FROM \\"', tablename, '\\"')
+          CONCAT('DELETE FROM \"', tablename, '\"')
         FROM pg_tables
         WHERE
           schemaname = 'public' AND
@@ -133,9 +145,12 @@ module Bosh::Dev::Sandbox
         FROM pg_class
         WHERE
           relkind = 'S'
-      "}
+      }
+      sql_results_for(clear_table_cmds_cmd)
+    end
 
-      add_constraints_cmds_cmd = %{psql #{connection_string} -c "
+    def add_constraints_cmds
+      add_constraints_cmds_cmd = %{
         SELECT
           'ALTER TABLE '||nspname||'.'||relname||' ADD CONSTRAINT '||conname||' '|| pg_get_constraintdef(pg_constraint.oid)||';'
         FROM pg_constraint
@@ -143,25 +158,8 @@ module Bosh::Dev::Sandbox
           INNER JOIN pg_namespace ON pg_namespace.oid=pg_class.relnamespace
         WHERE nspname != 'pg_catalog'
         ORDER BY CASE WHEN contype='f' THEN 0 ELSE 1 END DESC,contype DESC,nspname DESC,relname DESC,conname DESC;
-      "}
-
-      drop_constraints_cmds = `#{drop_constraints_cmds_cmd}`.lines.to_a[2...-2] || []
-      clear_table_cmds = `#{clear_table_cmds_cmd}`.lines.to_a[2...-2] || []
-      add_constraints_cmds = `#{add_constraints_cmds_cmd}`.lines.to_a[2...-2] || []
-
-      cmds = drop_constraints_cmds + clear_table_cmds + add_constraints_cmds
-      @runner.run(
-        "psql #{connection_string} -c '#{cmds.join(';')}' > /dev/null 2>&1",
-      )
-    end
-
-    private
-
-    def execute_sql(statements)
-      @runner.run(
-        "echo #{Shellwords.escape(statements)} | " \
-        "psql #{connection_string} > /dev/null",
-      )
+      }
+      sql_results_for(add_constraints_cmds_cmd)
     end
   end
 end

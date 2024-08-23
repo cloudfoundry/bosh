@@ -24,12 +24,12 @@ module Bosh::Dev::Sandbox
 
     def create_db
       @logger.info("Creating mysql database #{db_name}")
-      @runner.run(%Q{mysql -h #{@host} -P #{@port} --user=#{@username} --password=#{@password} -e 'create database `#{db_name}`;' > /dev/null 2>&1}, redact: [@password])
+      execute_sql(%{CREATE DATABASE `#{db_name}`;}, nil)
     end
 
     def drop_db
       @logger.info("Dropping mysql database #{db_name}")
-      @runner.run(%Q{mysql -h #{@host} -P #{@port} --user=#{@username} --password=#{@password} -e 'drop database `#{db_name}`;' > /dev/null 2>&1}, redact: [@password])
+      execute_sql(%{DROP DATABASE `#{db_name}`;}, nil)
     end
 
     def load_db_initial_state(initial_state_assets_dir)
@@ -39,12 +39,11 @@ module Bosh::Dev::Sandbox
 
     def load_db(dump_file_path)
       @logger.info("Loading dump '#{dump_file_path}' into mysql database #{db_name}")
-      @runner.run(%Q{mysql -h #{@host} -P #{@port} --user=#{@username} --password=#{@password} #{db_name} < #{dump_file_path} > /dev/null 2>&1}, redact: [@password])
+      run_quietly_redacted(%Q{#{mysql_cmd} #{db_name} < #{dump_file_path} > /dev/null 2>&1})
     end
 
     def current_tasks
-      tasks_list_cmd = %Q{mysql -h #{@host} -P #{@port} --user=#{@username} --password=#{@password} -e "select description, output from tasks where state='processing';" #{db_name} 2> /dev/null}
-      task_lines = `#{tasks_list_cmd}`.lines.to_a[1..-1] || []
+      task_lines = sql_results_for(%{SELECT description, output FROM TASKS WHERE state='processing';})
 
       result = []
       task_lines.each do |task_line|
@@ -56,17 +55,39 @@ module Bosh::Dev::Sandbox
     end
 
     def current_locked_jobs
-      jobs_cmd = %Q{mysql -h #{@host} -P #{@port} --user=#{@username} --password=#{@password} -e "select * from delayed_jobs where locked_by is not null;" #{db_name} 2> /dev/null}
-      `#{jobs_cmd}`.lines.to_a[1..-1] || []
+      sql_results_for(%{SELECT * FROM delayed_jobs WHERE locked_by IS NOT NULL;})
     end
 
     def truncate_db
       @logger.info("Truncating mysql database #{db_name}")
-      table_name_cmd = %Q{mysql -h #{@host} -P #{@port} --user=#{@username} --password=#{@password} -e "show tables;" #{db_name} 2>/dev/null}
-      table_names = `#{table_name_cmd}`.lines.to_a[1..-1].map(&:strip)
-      table_names.reject!{|name| name == "schema_migrations" }
-      truncates = table_names.map{|name| 'truncate table `' + name + '`' }.join(';')
-      @runner.run(%Q{mysql -h #{@host} -P #{@port} --user=#{@username} --password=#{@password} -e 'SET FOREIGN_KEY_CHECKS=0; #{truncates}; SET FOREIGN_KEY_CHECKS=1;' #{db_name} > /dev/null 2>&1}, redact: [@password])
+      table_names = sql_results_for(%{SHOW TABLES})
+      table_names.reject! { |name| name == 'schema_migrations' }
+      truncate_cmds = table_names.map { |name| %{TRUNCATE TABLE '#{name.strip}'} }
+
+      execute_sql(%{SET FOREIGN_KEY_CHECKS=0; #{truncate_cmds.join(';')}; SET FOREIGN_KEY_CHECKS=1;})
+    end
+
+    private
+
+    def run_quietly_redacted(cmd)
+      redacted = [@password] unless @password.blank?
+      @runner.run(%{#{cmd} > /dev/null 2>&1}, redact: redacted)
+    end
+
+    def execute_sql(sql, this_db_name = db_name)
+      run_quietly_redacted(%{#{sql_cmd(sql, this_db_name)} > /dev/null 2>&1})
+    end
+
+    def sql_results_for(sql, this_db_name = db_name)
+      %x{#{sql_cmd(sql, this_db_name)} 2> /dev/null}.lines.to_a[1..-1] || []
+    end
+
+    def sql_cmd(sql, this_db_name)
+      %{#{mysql_cmd} -e '#{sql.strip}' #{this_db_name}}
+    end
+
+    def mysql_cmd
+      %{mysql -h #{@host} -P #{@port} --user=#{@username} --password=#{@password}}
     end
   end
 end
