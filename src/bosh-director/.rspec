@@ -1,9 +1,2 @@
 --color
 --format progress
---tag ~nginx
---tag ~general_s3
---tag ~aws_frankfurt_s3
---tag ~aws_s3
---tag ~general_gcs
---tag ~davcli_integration
---tag ~local_blobstore_integration
