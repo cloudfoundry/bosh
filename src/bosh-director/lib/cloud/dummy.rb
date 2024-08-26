@@ -285,6 +285,19 @@ module Bosh
         File.write(disk_info_file, JSON.generate(disk_info))
       end
 
+      UPDATE_DISK_SCHEMA = Membrane::SchemaParser.parse { {disk_id: String, size: Integer, cloud_properties: Hash} }
+      def update_disk(disk_id, new_size, cloud_properties)
+        validate_and_record_inputs(UPDATE_DISK_SCHEMA, __method__, disk_id, new_size, cloud_properties)
+
+        raise Bosh::Clouds::NotImplemented, 'Bosh::Clouds::NotImplemented' if commands.raise_update_disk_not_implemented
+
+        disk_info_file = disk_file(disk_id)
+        disk_info = JSON.parse(File.read(disk_info_file))
+        disk_info['size'] = new_size
+        disk_info['cloud_properties'] = cloud_properties
+        File.write(disk_info_file, JSON.generate(disk_info))
+      end
+
       SET_VM_METADATA_SCHEMA = Membrane::SchemaParser.parse { {vm_cid: String, metadata: Hash} }
       def set_vm_metadata(vm_cid, metadata)
         raise 'Set VM metadata failed!!!' if commands.set_vm_metadata_should_fail?
@@ -768,6 +781,17 @@ module Bosh
           File.exist?(raise_resize_disk_not_implemented_path)
         end
 
+        def make_update_disk_to_raise_not_implemented
+          @logger.info('Making update_disk method to raise NotImplemented exception')
+          FileUtils.mkdir_p(File.dirname(raise_update_disk_not_implemented_path))
+          FileUtils.touch(raise_update_disk_not_implemented_path)
+        end
+
+        def raise_update_disk_not_implemented
+          @logger.info('Reading update_disk_not_implemented')
+          File.exist?(raise_update_disk_not_implemented_path)
+        end
+
         private
 
         def azs_path
@@ -808,6 +832,10 @@ module Bosh
 
         def raise_resize_disk_not_implemented_path
           File.join(@cpi_commands, 'resize_disk', 'not_implemented')
+        end
+
+        def raise_update_disk_not_implemented_path
+          File.join(@cpi_commands, 'update_disk', 'not_implemented')
         end
       end
 

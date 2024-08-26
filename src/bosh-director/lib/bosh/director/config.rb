@@ -24,6 +24,7 @@ module Bosh::Director
         :default_update_vm_strategy,
         :dns,
         :enable_cpi_resize_disk,
+        :enable_cpi_update_disk,
         :enable_short_lived_nats_bootstrap_credentials,
         :enable_short_lived_nats_bootstrap_credentials_compilation_vms,
         :enable_snapshots,
@@ -226,6 +227,7 @@ module Bosh::Director
         end
         @verify_multidigest_path = config['verify_multidigest_path']
         @enable_cpi_resize_disk = config.fetch('enable_cpi_resize_disk', false)
+        @enable_cpi_update_disk = config.fetch('enable_cpi_update_disk', false)
         @default_update_vm_strategy = config.fetch('default_update_vm_strategy', nil)
         @parallel_problem_resolution = config.fetch('parallel_problem_resolution', true)
 
