@@ -205,6 +205,7 @@ module Bosh::Dev::Sandbox
         director_ips: @director_ips,
         dns_enabled: @dns_enabled,
         enable_cpi_resize_disk: @enable_cpi_resize_disk,
+        enable_cpi_update_disk: @enable_cpi_update_disk,
         enable_nats_delivered_templates: @enable_nats_delivered_templates,
         enable_short_lived_nats_bootstrap_credentials: @enable_short_lived_nats_bootstrap_credentials,
         enable_short_lived_nats_bootstrap_credentials_compilation_vms: @enable_short_lived_nats_bootstrap_credentials_compilation_vms,
@@ -334,6 +335,7 @@ module Bosh::Dev::Sandbox
         false,
       )
       @enable_cpi_resize_disk = options.fetch(:enable_cpi_resize_disk, false)
+      @enable_cpi_update_disk = options.fetch(:enable_cpi_update_disk, false)
       @default_update_vm_strategy = options.fetch(:default_update_vm_strategy, ENV['DEFAULT_UPDATE_VM_STRATEGY'])
       @generate_vm_passwords = options.fetch(:generate_vm_passwords, false)
       @remove_dev_tools = options.fetch(:remove_dev_tools, false)
