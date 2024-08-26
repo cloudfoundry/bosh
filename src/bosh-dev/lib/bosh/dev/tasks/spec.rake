@@ -122,7 +122,7 @@ namespace :spec do
   end
 
   desc 'Run template test unit tests (i.e. Bosh::Template::Test)'
-  task :template_test_unit do
+  task :template_test_unit do # TODO _why?_ this is run as part of `spec:unit:template:parallel`
     puts 'Template test unit tests (ERB templates)'
     sh('rspec bosh-template/spec/assets/template-test-release/src/spec/config.erb_spec.rb')
   end
