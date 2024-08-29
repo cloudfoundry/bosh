@@ -8,7 +8,7 @@ module Bosh::Director
       subject { PreCleanupStage.new(logger, deployment_plan) }
       let(:event_log) { Config.event_log }
       let(:ip_provider) { instance_double('Bosh::Director::DeploymentPlan::IpProvider') }
-      let(:existing_instance) { Models::Instance.make }
+      let(:existing_instance) { FactoryBot.create(:models_instance) }
       let(:existing_instance_plan) { instance_double(DeploymentPlan::InstancePlan, existing_instance: existing_instance) }
       let(:event_log_stage) { instance_double('Bosh::Director::EventLog::Stage') }
       let(:instance_deleter) { instance_double('Bosh::Director::InstanceDeleter') }

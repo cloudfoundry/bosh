@@ -12,7 +12,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
   let(:deployment_plan) do
     ip_repo = Bosh::Director::DeploymentPlan::IpRepo.new(logger)
     ip_provider = Bosh::Director::DeploymentPlan::IpProvider.new(ip_repo, { 'name-7' => network }, logger)
-    model = Bosh::Director::Models::Deployment.make
+    model = FactoryBot.create(:models_deployment)
     Bosh::Director::Models::VariableSet.create(deployment: model)
     instance_double(
       'Bosh::Director::DeploymentPlan::Planner',
@@ -26,7 +26,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
   let(:desired_instance) { Bosh::Director::DeploymentPlan::DesiredInstance.new(instance_group, deployment_plan) }
 
   let(:instance_group) do
-    Bosh::Director::DeploymentPlan::InstanceGroup.make(name: 'job-name')
+    FactoryBot.build(:deployment_plan_instance_group, name: 'job-name')
   end
 
   before do
@@ -34,7 +34,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
   end
 
   let(:existing_instance) do
-    Bosh::Director::Models::Instance.make(spec: instance_spec)
+    FactoryBot.create(:models_instance, spec: instance_spec)
   end
 
   describe '#fetch_existing' do
@@ -69,7 +69,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
     describe 'binding existing reservations' do
       context 'when instance has reservations in db' do
         before do
-          existing_instance.add_ip_address(Bosh::Director::Models::IpAddress.make(address_str: '123'))
+          existing_instance.add_ip_address(FactoryBot.create(:models_ip_address, address_str: '123'))
         end
 
         it 'is using reservation from database' do
@@ -81,8 +81,8 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
   end
 
   describe '#build_instance_from_model' do
-    let(:stemcell) { Bosh::Director::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302') }
-    let(:existing_instance) { BD::Models::Instance.make(state: 'started') }
+    let(:stemcell) { FactoryBot.create(:models_stemcell, name: 'stemcell-name', version: '3.0.2', cid: 'sc-302') }
+    let(:existing_instance) { FactoryBot.create(:models_instance, state: 'started') }
 
     let(:instance_spec) do
       {
@@ -124,7 +124,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
         'key1' => 'value1',
       }
     end
-    let(:stemcell) { Bosh::Director::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302') }
+    let(:stemcell) { FactoryBot.create(:models_stemcell, name: 'stemcell-name', version: '3.0.2', cid: 'sc-302') }
     let(:instance_spec) do
       {
         'vm_type' => {
@@ -144,7 +144,8 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
 
     context 'when existing instances has VMs' do
       before do
-        existing_instance.active_vm = Bosh::Director::Models::Vm.make(agent_id: 'scool', instance_id: existing_instance.id)
+        existing_instance.active_vm = FactoryBot.create(:models_vm, agent_id: 'scool', instance_id: existing_instance.id)
+        existing_instance.reload
       end
 
       it 'returns an instance with a bound Models::Instance' do
@@ -200,7 +201,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
     context 'binding existing reservations' do
       context 'when instance has reservations in db' do
         before do
-          existing_instance.add_ip_address(Bosh::Director::Models::IpAddress.make(address_str: '123'))
+          existing_instance.add_ip_address(FactoryBot.create(:models_ip_address, address_str: '123'))
         end
 
         it 'is using reservation from database' do

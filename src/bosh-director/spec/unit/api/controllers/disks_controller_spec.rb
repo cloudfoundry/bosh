@@ -17,7 +17,7 @@ module Bosh::Director
 
       context 'orphan disks' do
         before do
-          Models::OrphanDisk.make(
+          FactoryBot.create(:models_orphan_disk,
             disk_cid: 'random-disk-cid-1',
             instance_name: 'fake-name-1',
             size: 10,
@@ -26,13 +26,13 @@ module Bosh::Director
             created_at: orphaned_at,
             cloud_properties: {'cloud' => 'properties'}
           )
-          Models::OrphanDisk.make(
+          FactoryBot.create(:models_orphan_disk,
             disk_cid: 'random-disk-cid-2',
             instance_name: 'fake-name-2',
             deployment_name: 'fake-deployment',
             created_at: orphaned_at,
           )
-          Models::PersistentDisk.make(disk_cid: 'disk123', size: 2048, cloud_properties: {'cloud' => 'properties'}, active: true)
+          FactoryBot.create(:models_persistent_disk, disk_cid: 'disk123', size: 2048, cloud_properties: {'cloud' => 'properties'}, active: true)
 
           basic_authorize 'admin', 'admin'
         end
@@ -85,7 +85,7 @@ module Bosh::Director
       end
 
       context 'put /disks/diskcid/attachments' do
-        let!(:deployment) { Models::Deployment.make(name: 'foo') }
+        let!(:deployment) { FactoryBot.create(:models_deployment, name: 'foo') }
 
         it 'requires auth' do
           put '/vol-af4a3e40/attachments?deployment=foo&job=dea&instance_id=17f01a35'

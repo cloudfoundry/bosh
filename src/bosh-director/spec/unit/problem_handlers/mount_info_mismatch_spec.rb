@@ -1,7 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
-
   def make_handler(disk_id, data = {})
     Bosh::Director::ProblemHandlers::MountInfoMismatch.new(disk_id, data)
   end
@@ -16,20 +15,20 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
   before(:each) do
     @agent = double('agent')
 
-    deployment = Bosh::Director::Models::Deployment.make(name: 'my-deployment', manifest: YAML.dump(manifest))
-    Bosh::Director::Models::VariableSet.make(deployment_id: deployment.id)
+    deployment = FactoryBot.create(:models_deployment, name: 'my-deployment', manifest: YAML.dump(manifest))
+    FactoryBot.create(:models_variable_set, deployment_id: deployment.id)
 
-    @instance = Bosh::Director::Models::Instance.
-      make(:job => 'mysql_node', :index => 3, availability_zone: 'az1')
-    @vm = Bosh::Director::Models::Vm.make(instance_id: @instance.id, cpi: 'cpi1', stemcell_api_version: 25)
-
-    @instance.active_vm = @vm
-    @instance.save
+    @instance =
+      FactoryBot.create(:models_instance, job: 'mysql_node', index: 3, availability_zone: 'az1').tap do |i|
+        i.active_vm = FactoryBot.create(:models_vm, instance_id: i.id, cpi: 'cpi1', stemcell_api_version: 25)
+        i.save
+      end
     deployment.add_instance(@instance)
 
-    @disk = Bosh::Director::Models::PersistentDisk.
-      make(:disk_cid => 'disk-cid', :instance_id => @instance.id,
-           :size => 300, :active => false)
+    @disk =
+      FactoryBot.create(:models_persistent_disk,
+        disk_cid: 'disk-cid', instance_id: @instance.id, size: 300, active: false
+      )
 
     @handler = make_handler(@disk.id, 'owner_vms' => []) # Not mounted
     allow(@handler).to receive(:cloud).and_return(@cloud)

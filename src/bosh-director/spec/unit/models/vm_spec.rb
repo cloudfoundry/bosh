@@ -4,16 +4,16 @@ require 'ipaddr'
 
 module Bosh::Director::Models
   describe Vm do
-    subject(:vm) { BD::Models::Vm.make(instance: instance) }
+    subject(:vm) { FactoryBot.create(:models_vm, instance: instance) }
 
-    let!(:instance) { BD::Models::Instance.make }
+    let!(:instance) { FactoryBot.create(:models_instance) }
 
     it 'has a many-to-one relationship to instances' do
-      described_class.make(instance_id: instance.id, id: 1)
-      described_class.make(instance_id: instance.id, id: 2)
+      FactoryBot.create(:models_vm, instance_id: instance.id, id: 1)
+      FactoryBot.create(:models_vm, instance_id: instance.id, id: 2)
 
-      expect(described_class.find(id: 1).instance).to eq(instance)
-      expect(described_class.find(id: 2).instance).to eq(instance)
+      expect(Vm.find(id: 1).instance).to eq(instance)
+      expect(Vm.find(id: 2).instance).to eq(instance)
     end
 
     describe '#network_spec' do
@@ -41,8 +41,8 @@ module Bosh::Director::Models
     end
 
     describe '#ips' do
-      let!(:ip_address) { BD::Models::IpAddress.make(vm: vm, address_str: IPAddr.new('1.1.1.1').to_i.to_s) }
-      let!(:ip_address2) { BD::Models::IpAddress.make(vm: vm, address_str: IPAddr.new('1.1.1.2').to_i.to_s) }
+      let!(:ip_address) { FactoryBot.create(:models_ip_address, vm: vm, address_str: IPAddr.new('1.1.1.1').to_i.to_s) }
+      let!(:ip_address2) { FactoryBot.create(:models_ip_address, vm: vm, address_str: IPAddr.new('1.1.1.2').to_i.to_s) }
 
       before do
         vm.network_spec = { 'some' => { 'ip' => '1.1.1.3' } }

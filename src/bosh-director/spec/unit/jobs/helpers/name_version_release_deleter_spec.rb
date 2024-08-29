@@ -13,17 +13,17 @@ module Bosh::Director
       let(:compiled_package_deleter) { CompiledPackageDeleter.new(blobstore, logger) }
       let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
 
-      let(:release) { Models::Release.make(name: 'release-1') }
-      let!(:release_version_1) { Models::ReleaseVersion.make(version: 1, release: release) }
-      let!(:release_version_2) { Models::ReleaseVersion.make(version: 2, release: release) }
-      let!(:package_1) { Models::Package.make(release: release, blobstore_id: 'package-blob-id-1') }
-      let!(:package_2) { Models::Package.make(release: release, blobstore_id: 'package-blob-id-2') }
-      let!(:template_1) { Models::Template.make(release: release, blobstore_id: 'template-blob-id-1') }
-      let!(:template_2) { Models::Template.make(release: release, blobstore_id: 'template-blob-id-2') }
+      let(:release) { FactoryBot.create(:models_release, name: 'release-1') }
+      let!(:release_version_1) { FactoryBot.create(:models_release_version, version: 1, release: release) }
+      let!(:release_version_2) { FactoryBot.create(:models_release_version, version: 2, release: release) }
+      let!(:package_1) { FactoryBot.create(:models_package, release: release, blobstore_id: 'package-blob-id-1') }
+      let!(:package_2) { FactoryBot.create(:models_package, release: release, blobstore_id: 'package-blob-id-2') }
+      let!(:template_1) { FactoryBot.create(:models_template, release: release, blobstore_id: 'template-blob-id-1') }
+      let!(:template_2) { FactoryBot.create(:models_template, release: release, blobstore_id: 'template-blob-id-2') }
       let(:release_name) { release.name }
       let(:act) { name_version_release_deleter.find_and_delete_release(release_name, version, force) }
       let(:force) { false }
-      let(:task) { Models::Task.make(id: 42) }
+      let(:task) { FactoryBot.create(:models_task, id: 42) }
       let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
       let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
 

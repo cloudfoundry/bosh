@@ -8,15 +8,15 @@ module Bosh::Director
       let(:compiled_package_deleter) { CompiledPackageDeleter.new(blobstore, logger) }
       let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
       before { allow(blobstore).to receive(:delete) }
-      let(:release_version_1) { Models::ReleaseVersion.make }
-      let(:release_version_2) { Models::ReleaseVersion.make }
-      let(:package) { Models::Package.make(blobstore_id: 'package_blobstore_id') }
+      let(:release_version_1) { FactoryBot.create(:models_release_version) }
+      let(:release_version_2) { FactoryBot.create(:models_release_version) }
+      let(:package) { FactoryBot.create(:models_package, blobstore_id: 'package_blobstore_id') }
 
       before do
         package.add_release_version(release_version_1)
         package.add_release_version(release_version_2)
-        Models::CompiledPackage.make(package: package, blobstore_id: 'compiled_package_blobstore_id', stemcell_os: 'Darwin', stemcell_version: 'X')
-        Models::CompiledPackage.make(package: package, stemcell_os: 'Darwin', stemcell_version: 'Y')
+        FactoryBot.create(:models_compiled_package, package: package, blobstore_id: 'compiled_package_blobstore_id', stemcell_os: 'Darwin', stemcell_version: 'X')
+        FactoryBot.create(:models_compiled_package, package: package, stemcell_os: 'Darwin', stemcell_version: 'Y')
       end
 
       describe '#delete' do

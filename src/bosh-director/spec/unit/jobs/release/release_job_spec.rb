@@ -7,7 +7,7 @@ module Bosh::Director
       subject(:release_job) { described_class.new(job_meta, release_model, release_dir, double(:logger).as_null_object) }
       let(:release_dir) { Dir.mktmpdir }
       after { FileUtils.rm_rf(release_dir) }
-      let(:release_model) { Models::Release.make }
+      let(:release_model) { FactoryBot.create(:models_release) }
       let(:job_meta) do
         { 'name' => 'foo-job', 'version' => '1', 'sha1' => 'deadbeef', 'fingerprint' => 'bar' }
       end
@@ -23,7 +23,7 @@ module Bosh::Director
 
       context 'when a template already exists' do
         before do
-          Models::Template.make(
+          FactoryBot.create(:models_template,
             blobstore_id: 'original-blobstore-id',
             name: 'foo-job',
             version: '1',

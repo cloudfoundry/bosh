@@ -20,7 +20,7 @@ module Bosh::Director::DeploymentPlan
       it 'raises JobUnknownNetwork' do
         expect do
           instance_group_networks_parser.parse(instance_group_spec, 'instance-group-name', manifest_networks)
-        end.to raise_error BD::JobUnknownNetwork, "Instance group 'instance-group-name' references an unknown network 'a'"
+        end.to raise_error Bosh::Director::JobUnknownNetwork, "Instance group 'instance-group-name' references an unknown network 'a'"
       end
     end
 
@@ -34,12 +34,12 @@ module Bosh::Director::DeploymentPlan
       it 'raises JobMissingNetwork' do
         expect do
           instance_group_networks_parser.parse(instance_group_spec, 'instance-group-name', manifest_networks)
-        end.to raise_error BD::JobMissingNetwork, "Instance group 'instance-group-name' must specify at least one network"
+        end.to raise_error Bosh::Director::JobMissingNetwork, "Instance group 'instance-group-name' must specify at least one network"
       end
     end
 
     context 'when instance group network spec references dynamic network with static IPs' do
-      let(:dynamic_network) { BD::DeploymentPlan::DynamicNetwork.new('a', [], logger) }
+      let(:dynamic_network) { Bosh::Director::DeploymentPlan::DynamicNetwork.new('a', [], logger) }
       let(:instance_group_spec) do
         instance_group = Bosh::Spec::Deployments.simple_manifest_with_instance_groups['instance_groups'].first
         instance_group['networks'] = [{
@@ -52,7 +52,7 @@ module Bosh::Director::DeploymentPlan
       it 'raises JobStaticIPNotSupportedOnDynamicNetwork' do
         expect do
           instance_group_networks_parser.parse(instance_group_spec, 'instance-group-name', [dynamic_network])
-        end.to raise_error BD::JobStaticIPNotSupportedOnDynamicNetwork, "Instance group 'instance-group-name' using dynamic network 'a' cannot specify static IP(s)"
+        end.to raise_error Bosh::Director::JobStaticIPNotSupportedOnDynamicNetwork, "Instance group 'instance-group-name' using dynamic network 'a' cannot specify static IP(s)"
       end
     end
 
@@ -67,7 +67,7 @@ module Bosh::Director::DeploymentPlan
       it 'raises an error' do
         expect do
           instance_group_networks_parser.parse(instance_group_spec, 'instance-group-name', manifest_networks)
-        end.to raise_error BD::JobInvalidStaticIPs, "Instance group 'instance-group-name' specifies static IP '192.168.1.2' more than once"
+        end.to raise_error Bosh::Director::JobInvalidStaticIPs, "Instance group 'instance-group-name' specifies static IP '192.168.1.2' more than once"
       end
     end
 
@@ -77,12 +77,12 @@ module Bosh::Director::DeploymentPlan
 
         expect(networks.count).to eq(1)
         expect(networks.first).to be_an_instance_group_network(
-          JobNetwork.make(
-            name: 'a',
-            static_ips: ['192.168.1.1', '192.168.1.2'],
-            default_for: %w[dns gateway],
-            deployment_network: manifest_networks.first,
-          ),
+                                    FactoryBot.build(:deployment_plan_job_network,
+                                                     name: 'a',
+                                                     static_ips: ['192.168.1.1', '192.168.1.2'],
+                                                     default_for: %w[dns gateway],
+                                                     deployment_network: manifest_networks.first,
+                                    ),
         )
         expect(networks.first.static_ips).to eq([ip_to_i('192.168.1.1'), ip_to_i('192.168.1.2')])
       end

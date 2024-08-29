@@ -7,7 +7,7 @@ module Bosh
       subject { DeploymentPlan::DeploymentRepo.new }
 
       before do
-        Bosh::Director::Models::DirectorAttribute.make(name: 'uuid', value: 'fake-director-uuid')
+        FactoryBot.create(:models_director_attribute, name: 'uuid', value: 'fake-director-uuid')
       end
 
       describe '.find_or_create_by_name' do
@@ -43,8 +43,8 @@ module Bosh
 
         context 'when scopes are provided' do
           context 'and there is an existing deployment with the same name' do
-            let(:prod_team) { [ Models::Team.make(name: 'production') ] }
-            let(:prod_dev_teams) { [ Models::Team.make(name: 'production'), Models::Team.make(name: 'dev') ] }
+            let(:prod_team) { [ FactoryBot.create(:models_team, name: 'production') ] }
+            let(:prod_dev_teams) { [ FactoryBot.create(:models_team, name: 'production'), FactoryBot.create(:models_team, name: 'dev') ] }
 
             context 'and there is at least one scope in common between the existing deployment and provided scopes' do
               it 'should not create a new deployment' do
@@ -114,8 +114,8 @@ module Bosh
 
         context 'when cloud configs and runtime configs are given' do
           it 'should persist these associations' do
-            cloud_configs = [Models::Config.make(:cloud)]
-            runtime_configs = [Models::Config.make(type: 'runtime'), Models::Config.make(type: 'runtime'), Models::Config.make(type: 'runtime')]
+            cloud_configs = [FactoryBot.create(:models_config_cloud)]
+            runtime_configs = [FactoryBot.create(:models_config_runtime), FactoryBot.create(:models_config_runtime), FactoryBot.create(:models_config_runtime)]
             deployment = subject.find_or_create_by_name('foo', { 'cloud_configs' => cloud_configs,
                                                                  'runtime_configs' => runtime_configs })
             expect(deployment.cloud_configs).to eq(cloud_configs)

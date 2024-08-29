@@ -3,12 +3,12 @@ require 'bosh/director/models/deployment'
 
 module Bosh::Director::Models
   describe Deployment do
-    subject(:deployment) { described_class.make(manifest: manifest, name: 'dep1') }
+    subject(:deployment) { FactoryBot.create(:models_deployment, manifest: manifest, name: 'dep1') }
     let(:db_is_mysql) { ENV['DB'] == 'mysql' }
     let(:deadlock_exception) { Sequel::DatabaseError.new('Mysql2::Error: Deadlock found when trying to get lock') }
 
     describe '#tags' do
-      before { VariableSet.make(deployed_successfully: true, deployment: deployment) }
+      before { FactoryBot.create(:models_variable_set, deployed_successfully: true, deployment: deployment) }
 
       context 'when manifest is nil' do
         let(:manifest) { nil }
@@ -96,11 +96,10 @@ module Bosh::Director::Models
 
             context 'runtime configs provide tags' do
               before do
-                runtime_config = Config.make(
-                  type: 'runtime',
-                  name: 'default',
-                  content: '--- {releases: [], tags: {runtime-key: runtime-value}}',
-                )
+                runtime_config =
+                  FactoryBot.create(:models_config_runtime,
+                                    content: '--- {releases: [], tags: {runtime-key: runtime-value}}',
+                  )
                 deployment.add_runtime_config(runtime_config)
                 allow(mock_client).to receive(:interpolate_with_versioning)
                   .with(runtime_config.raw_manifest, anything, anything)
@@ -135,11 +134,10 @@ module Bosh::Director::Models
 
           context 'runtime configs provide tags' do
             before do
-              runtime_config = Config.make(
-                type: 'runtime',
-                name: 'default',
-                content: '--- {releases: [], tags: {runtime-key: runtime-value}}',
-              )
+              runtime_config =
+                FactoryBot.create(:models_config_runtime,
+                                  content: '--- {releases: [], tags: {runtime-key: runtime-value}}',
+                )
               deployment.add_runtime_config(runtime_config)
               allow(mock_client).to receive(:interpolate_with_versioning)
                 .with(runtime_config.raw_manifest, anything, anything)
@@ -157,26 +155,26 @@ module Bosh::Director::Models
     end
 
     describe '#variables' do
-      let(:deployment_1) { Deployment.make(manifest: 'test') }
-      let(:deployment_2) { Deployment.make(manifest: 'vroom') }
-      let(:deployment_3) { Deployment.make(manifest: 'hello') }
-      let(:variable_set_1) { VariableSet.make(id: 1, deployment: deployment_1) }
-      let(:variable_set_2) { VariableSet.make(id: 2, deployment: deployment_1) }
-      let(:variable_set_3) { VariableSet.make(id: 12, deployment: deployment_2) }
-      let(:variable_set_4) { VariableSet.make(id: 13, deployment: deployment_2) }
+      let(:deployment_1) { FactoryBot.create(:models_deployment, manifest: 'test') }
+      let(:deployment_2) { FactoryBot.create(:models_deployment, manifest: 'vroom') }
+      let(:deployment_3) { FactoryBot.create(:models_deployment, manifest: 'hello') }
+      let(:variable_set_1) { FactoryBot.create(:models_variable_set, id: 1, deployment: deployment_1) }
+      let(:variable_set_2) { FactoryBot.create(:models_variable_set, id: 2, deployment: deployment_1) }
+      let(:variable_set_3) { FactoryBot.create(:models_variable_set, id: 12, deployment: deployment_2) }
+      let(:variable_set_4) { FactoryBot.create(:models_variable_set, id: 13, deployment: deployment_2) }
 
       it 'returns the variables associated with a deployment' do
         dep_1_variables = [
-          Variable.make(id: 1, variable_id: 'var_id_1', variable_name: 'var_name_1', variable_set_id: variable_set_1.id),
-          Variable.make(id: 2, variable_id: 'var_id_2', variable_name: 'var_name_2', variable_set_id: variable_set_1.id),
-          Variable.make(id: 3, variable_id: 'var_id_3', variable_name: 'var_name_3', variable_set_id: variable_set_2.id)
+          FactoryBot.create(:models_variable, id: 1, variable_id: 'var_id_1', variable_name: 'var_name_1', variable_set_id: variable_set_1.id),
+          FactoryBot.create(:models_variable, id: 2, variable_id: 'var_id_2', variable_name: 'var_name_2', variable_set_id: variable_set_1.id),
+          FactoryBot.create(:models_variable, id: 3, variable_id: 'var_id_3', variable_name: 'var_name_3', variable_set_id: variable_set_2.id)
         ]
 
         dep_2_variables = [
-          Variable.make(id: 4, variable_id: 'var_id_1', variable_name: 'var_name_1', variable_set_id: variable_set_3.id),
-          Variable.make(id: 5, variable_id: 'var_id_2', variable_name: 'var_name_2', variable_set_id: variable_set_3.id),
-          Variable.make(id: 6, variable_id: 'var_id_3', variable_name: 'var_name_3', variable_set_id: variable_set_4.id),
-          Variable.make(id: 7, variable_id: 'var_id_4', variable_name: 'var_name_4', variable_set_id: variable_set_4.id)
+          FactoryBot.create(:models_variable, id: 4, variable_id: 'var_id_1', variable_name: 'var_name_1', variable_set_id: variable_set_3.id),
+          FactoryBot.create(:models_variable, id: 5, variable_id: 'var_id_2', variable_name: 'var_name_2', variable_set_id: variable_set_3.id),
+          FactoryBot.create(:models_variable, id: 6, variable_id: 'var_id_3', variable_name: 'var_name_3', variable_set_id: variable_set_4.id),
+          FactoryBot.create(:models_variable, id: 7, variable_id: 'var_id_4', variable_name: 'var_name_4', variable_set_id: variable_set_4.id)
         ]
 
         expect(deployment_1.variables).to match_array(dep_1_variables)
@@ -186,14 +184,14 @@ module Bosh::Director::Models
     end
 
     describe '#current_variable_set' do
-      let(:deployment_1) { Deployment.make(manifest: 'test') }
-      let(:deployment_2) { Deployment.make(manifest: 'vroom') }
+      let(:deployment_1) { FactoryBot.create(:models_deployment, manifest: 'test') }
+      let(:deployment_2) { FactoryBot.create(:models_deployment, manifest: 'vroom') }
 
       before do
         time = Time.now
-        VariableSet.make(id: 1, deployment: deployment_1, created_at: time + 1)
-        VariableSet.make(id: 2, deployment: deployment_1, created_at: time + 2)
-        VariableSet.make(id: 3, deployment: deployment_1, created_at: time + 3)
+        FactoryBot.create(:models_variable_set, id: 1, deployment: deployment_1, created_at: time + 1)
+        FactoryBot.create(:models_variable_set, id: 2, deployment: deployment_1, created_at: time + 2)
+        FactoryBot.create(:models_variable_set, id: 3, deployment: deployment_1, created_at: time + 3)
       end
 
       it 'returns the deployment current variable set' do
@@ -203,17 +201,17 @@ module Bosh::Director::Models
     end
 
     describe '#last_successful_variable_set' do
-      let(:deployment_1) { Deployment.make(manifest: 'test') }
-      let(:deployment_2) { Deployment.make(manifest: 'vroom') }
+      let(:deployment_1) { FactoryBot.create(:models_deployment, manifest: 'test') }
+      let(:deployment_2) { FactoryBot.create(:models_deployment, manifest: 'vroom') }
 
       before do
         time = Time.now
-        VariableSet.make(id: 1, deployment: deployment_1, created_at: time + 1, deployed_successfully: true)
-        VariableSet.make(id: 2, deployment: deployment_1, created_at: time + 2, deployed_successfully: true)
-        VariableSet.make(id: 3, deployment: deployment_1, created_at: time + 3, deployed_successfully: true)
-        VariableSet.make(id: 4, deployment: deployment_1, created_at: time + 4, deployed_successfully: true)
-        VariableSet.make(id: 5, deployment: deployment_1, created_at: time + 5, deployed_successfully: false)
-        VariableSet.make(id: 6, deployment: deployment_1, created_at: time + 6, deployed_successfully: false)
+        FactoryBot.create(:models_variable_set, id: 1, deployment: deployment_1, created_at: time + 1, deployed_successfully: true)
+        FactoryBot.create(:models_variable_set, id: 2, deployment: deployment_1, created_at: time + 2, deployed_successfully: true)
+        FactoryBot.create(:models_variable_set, id: 3, deployment: deployment_1, created_at: time + 3, deployed_successfully: true)
+        FactoryBot.create(:models_variable_set, id: 4, deployment: deployment_1, created_at: time + 4, deployed_successfully: true)
+        FactoryBot.create(:models_variable_set, id: 5, deployment: deployment_1, created_at: time + 5, deployed_successfully: false)
+        FactoryBot.create(:models_variable_set, id: 6, deployment: deployment_1, created_at: time + 6, deployed_successfully: false)
       end
 
       it 'returns the deployment last successful variable set' do
@@ -223,17 +221,17 @@ module Bosh::Director::Models
     end
 
     describe '#previous_variable_set' do
-      let(:deployment_1) { Deployment.make(manifest: 'test') }
-      let(:deployment_2) { Deployment.make(manifest: 'vroom') }
+      let(:deployment_1) { FactoryBot.create(:models_deployment, manifest: 'test') }
+      let(:deployment_2) { FactoryBot.create(:models_deployment, manifest: 'vroom') }
 
       before do
         time = Time.now
-        VariableSet.make(id: 1, deployment: deployment_1, created_at: time + 1, deployed_successfully: true)
-        VariableSet.make(id: 2, deployment: deployment_1, created_at: time + 2, deployed_successfully: true)
-        VariableSet.make(id: 3, deployment: deployment_1, created_at: time + 3, deployed_successfully: true)
-        VariableSet.make(id: 4, deployment: deployment_1, created_at: time + 4, deployed_successfully: true)
-        VariableSet.make(id: 5, deployment: deployment_1, created_at: time + 5, deployed_successfully: false)
-        VariableSet.make(id: 6, deployment: deployment_1, created_at: time + 6, deployed_successfully: false)
+        FactoryBot.create(:models_variable_set, id: 1, deployment: deployment_1, created_at: time + 1, deployed_successfully: true)
+        FactoryBot.create(:models_variable_set, id: 2, deployment: deployment_1, created_at: time + 2, deployed_successfully: true)
+        FactoryBot.create(:models_variable_set, id: 3, deployment: deployment_1, created_at: time + 3, deployed_successfully: true)
+        FactoryBot.create(:models_variable_set, id: 4, deployment: deployment_1, created_at: time + 4, deployed_successfully: true)
+        FactoryBot.create(:models_variable_set, id: 5, deployment: deployment_1, created_at: time + 5, deployed_successfully: false)
+        FactoryBot.create(:models_variable_set, id: 6, deployment: deployment_1, created_at: time + 6, deployed_successfully: false)
       end
 
       it 'returns the deployment previous variable set, regardless of whether it was deployed_successfully' do
@@ -243,32 +241,32 @@ module Bosh::Director::Models
     end
 
     describe '#cleanup_variable_sets' do
-      let(:deployment_1) { Deployment.make(manifest: 'test') }
-      let(:deployment_2) { Deployment.make(manifest: 'vroom') }
+      let(:deployment_1) { FactoryBot.create(:models_deployment, manifest: 'test') }
+      let(:deployment_2) { FactoryBot.create(:models_deployment, manifest: 'vroom') }
       let(:time) { Time.now }
 
       it 'deletes variable sets not referenced in the list provided' do
         time = Time.now
 
         dep_1_variable_sets_to_keep = [
-          VariableSet.make(id: 1, deployment: deployment_1, created_at: time + 1, deployed_successfully: true),
-          VariableSet.make(id: 2, deployment: deployment_1, created_at: time + 2, deployed_successfully: true),
-          VariableSet.make(id: 3, deployment: deployment_1, created_at: time + 3, deployed_successfully: true),
-          VariableSet.make(id: 4, deployment: deployment_1, created_at: time + 4, deployed_successfully: true),
-          VariableSet.make(id: 5, deployment: deployment_1, created_at: time + 5, deployed_successfully: false)
+          FactoryBot.create(:models_variable_set, id: 1, deployment: deployment_1, created_at: time + 1, deployed_successfully: true),
+          FactoryBot.create(:models_variable_set, id: 2, deployment: deployment_1, created_at: time + 2, deployed_successfully: true),
+          FactoryBot.create(:models_variable_set, id: 3, deployment: deployment_1, created_at: time + 3, deployed_successfully: true),
+          FactoryBot.create(:models_variable_set, id: 4, deployment: deployment_1, created_at: time + 4, deployed_successfully: true),
+          FactoryBot.create(:models_variable_set, id: 5, deployment: deployment_1, created_at: time + 5, deployed_successfully: false)
         ]
 
         dep_1_variable_sets_to_be_deleted = [
-          VariableSet.make(id: 6, deployment: deployment_1, created_at: time + 6, deployed_successfully: true),
-          VariableSet.make(id: 7, deployment: deployment_1, created_at: time + 7, deployed_successfully: true),
-          VariableSet.make(id: 8, deployment: deployment_1, created_at: time + 8, deployed_successfully: true),
-          VariableSet.make(id: 9, deployment: deployment_1, created_at: time + 9, deployed_successfully: false)
+          FactoryBot.create(:models_variable_set, id: 6, deployment: deployment_1, created_at: time + 6, deployed_successfully: true),
+          FactoryBot.create(:models_variable_set, id: 7, deployment: deployment_1, created_at: time + 7, deployed_successfully: true),
+          FactoryBot.create(:models_variable_set, id: 8, deployment: deployment_1, created_at: time + 8, deployed_successfully: true),
+          FactoryBot.create(:models_variable_set, id: 9, deployment: deployment_1, created_at: time + 9, deployed_successfully: false)
         ]
 
         dep_2_control_variable_sets = [
-          VariableSet.make(id: 10, deployment: deployment_2, created_at: time + 10, deployed_successfully: false),
-          VariableSet.make(id: 11, deployment: deployment_2, created_at: time + 11, deployed_successfully: true),
-          VariableSet.make(id: 12, deployment: deployment_2, created_at: time + 12, deployed_successfully: false)
+          FactoryBot.create(:models_variable_set, id: 10, deployment: deployment_2, created_at: time + 10, deployed_successfully: false),
+          FactoryBot.create(:models_variable_set, id: 11, deployment: deployment_2, created_at: time + 11, deployed_successfully: true),
+          FactoryBot.create(:models_variable_set, id: 12, deployment: deployment_2, created_at: time + 12, deployed_successfully: false)
         ]
 
         expect(VariableSet.all).to match_array(dep_1_variable_sets_to_keep + dep_1_variable_sets_to_be_deleted + dep_2_control_variable_sets)

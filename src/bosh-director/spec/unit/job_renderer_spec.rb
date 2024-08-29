@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe JobRenderer do
     let(:instance_group) do
-      DeploymentPlan::InstanceGroup.make(
+      FactoryBot.build(:deployment_plan_instance_group,
         name: 'test-instance-group',
       )
     end
@@ -24,8 +24,8 @@ module Bosh::Director
       DeploymentPlan::Instance.create_from_instance_group(instance_group, 5, 'started', deployment, {}, availability_zone, logger, variables_interpolator)
     end
 
-    let(:deployment_model) { Models::Deployment.make(name: 'fake-deployment') }
-    let(:instance_model) { Models::Instance.make(deployment: deployment_model) }
+    let(:deployment_model) { FactoryBot.create(:models_deployment, name: 'fake-deployment') }
+    let(:instance_model) { FactoryBot.create(:models_instance, deployment: deployment_model) }
     let(:link_provider_intents) { [] }
 
     before do
@@ -43,7 +43,7 @@ module Bosh::Director
         release_version = DeploymentPlan::ReleaseVersion.parse(deployment_model, 'name' => 'fake-release', 'version' => '123')
 
         job1 = DeploymentPlan::Job.new(release_version, 'dummy')
-        job1.bind_existing_model(Models::Template.make(
+        job1.bind_existing_model(FactoryBot.create(:models_template,
           name: 'dummy',
           spec_json: '{ "templates": { "ctl.erb": "bin/dummy_ctl" } }',
           blobstore_id: 'my-blobstore-id',
@@ -51,7 +51,7 @@ module Bosh::Director
         ))
 
         job2 = DeploymentPlan::Job.new(release_version, 'dummy')
-        job2.bind_existing_model(Models::Template.make(
+        job2.bind_existing_model(FactoryBot.create(:models_template,
           name: 'dummy',
           spec_json: '{ "templates": { "ctl.erb": "bin/dummy_ctl" } }',
           blobstore_id: 'my-blobstore-id')

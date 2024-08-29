@@ -27,31 +27,31 @@ module Bosh::Director
 
         def make_events(count)
           (1..count).each do |i|
-            Models::Event.make(timestamp: timestamp + (i * 1.second))
+            FactoryBot.create(:models_event, timestamp: timestamp + (i * 1.second))
           end
         end
 
         context 'events' do
           let!(:event1) do
-            Models::Event.make(
-              'timestamp' => timestamp,
-              'user' => 'test',
-              'action' => 'create',
-              'object_type' => 'deployment',
-              'object_name' => 'depl1',
-              'task' => '1',
+            FactoryBot.create(:models_event,
+              timestamp: timestamp,
+              user: 'test',
+              action: 'create',
+              object_type: 'deployment',
+              object_name: 'depl1',
+              task: '1',
             )
           end
 
           let!(:event2) do
-            Models::Event.make(
-              'parent_id' => event1.id,
-              'timestamp' => timestamp,
-              'user' => 'test',
-              'action' => 'create',
-              'object_type' => 'deployment',
-              'object_name' => 'depl1',
-              'task' => '2',
+            FactoryBot.create(:models_event,
+              parent_id: event1.id,
+              timestamp: timestamp,
+              user: 'test',
+              action: 'create',
+              object_type: 'deployment',
+              object_name: 'depl1',
+              task: '2',
             )
           end
 
@@ -113,25 +113,25 @@ module Bosh::Director
 
         context 'event' do
           let!(:event1) do
-            Models::Event.make(
-              'timestamp' => timestamp,
-              'user' => 'test',
-              'action' => 'create',
-              'object_type' => 'deployment',
-              'object_name' => 'depl1',
-              'task' => '1',
+            FactoryBot.create(:models_event,
+              timestamp: timestamp,
+              user: 'test',
+              action: 'create',
+              object_type: 'deployment',
+              object_name: 'depl1',
+              task: '1',
             )
           end
 
           let!(:event2) do
-            Models::Event.make(
-              'parent_id' => event1.id,
-              'timestamp' => timestamp,
-              'user' => 'test',
-              'action' => 'create',
-              'object_type' => 'deployment',
-              'object_name' => 'depl1',
-              'task' => '2',
+            FactoryBot.create(:models_event,
+              parent_id: event1.id,
+              timestamp: timestamp,
+              user: 'test',
+              action: 'create',
+              object_type: 'deployment',
+              object_name: 'depl1',
+              task: '2',
             )
           end
 
@@ -166,8 +166,8 @@ module Bosh::Director
         context 'when deployment is specified' do
           before do
             basic_authorize 'admin', 'admin'
-            Models::Event.make('deployment' => 'name')
-            Models::Event.make('deployment' => 'not the droid we are looking for')
+            FactoryBot.create(:models_event, deployment: 'name')
+            FactoryBot.create(:models_event, deployment: 'not the droid we are looking for')
           end
 
           it 'returns a filtered list of events' do
@@ -181,8 +181,8 @@ module Bosh::Director
         context 'when task is specified' do
           before do
             basic_authorize 'admin', 'admin'
-            Models::Event.make('task' => 4)
-            Models::Event.make('task' => 5)
+            FactoryBot.create(:models_event, task: 4)
+            FactoryBot.create(:models_event, task: 5)
           end
 
           it 'returns a filtered list of events' do
@@ -196,8 +196,8 @@ module Bosh::Director
         context 'when instance is specified' do
           before do
             basic_authorize 'admin', 'admin'
-            Models::Event.make('instance' => 'job/4')
-            Models::Event.make('instance' => 'job/5')
+            FactoryBot.create(:models_event, instance: 'job/4')
+            FactoryBot.create(:models_event, instance: 'job/5')
           end
 
           it 'returns a filtered list of events' do
@@ -211,8 +211,8 @@ module Bosh::Director
         context 'when user is specified' do
           before do
             basic_authorize 'admin', 'admin'
-            Models::Event.make('user' => 'admin')
-            Models::Event.make('user' => 'user')
+            FactoryBot.create(:models_event, user: 'admin')
+            FactoryBot.create(:models_event, user: 'user')
           end
 
           it 'returns a filtered list of events' do
@@ -226,8 +226,8 @@ module Bosh::Director
         context 'when action is specified' do
           before do
             basic_authorize 'admin', 'admin'
-            Models::Event.make('action' => 'delete')
-            Models::Event.make('action' => 'update')
+            FactoryBot.create(:models_event, action: 'delete')
+            FactoryBot.create(:models_event, action: 'update')
           end
 
           it 'returns a filtered list of events' do
@@ -241,8 +241,8 @@ module Bosh::Director
         context 'when object_type is specified' do
           before do
             basic_authorize 'admin', 'admin'
-            Models::Event.make('object_type' => 'deployment')
-            Models::Event.make('object_type' => 'instance')
+            FactoryBot.create(:models_event, object_type: 'deployment')
+            FactoryBot.create(:models_event, object_type: 'instance')
           end
 
           it 'returns a filtered list of events' do
@@ -256,8 +256,8 @@ module Bosh::Director
         context 'when object_name is specified' do
           before do
             basic_authorize 'admin', 'admin'
-            Models::Event.make('object_name' => 'fake_name')
-            Models::Event.make('object_name' => 'another_name')
+            FactoryBot.create(:models_event, object_name: 'fake_name')
+            FactoryBot.create(:models_event, object_name: 'another_name')
           end
 
           it 'returns a filtered list of events' do
@@ -274,10 +274,10 @@ module Bosh::Director
           end
 
           context 'when before_id, instance, deployment and task are specified' do
-            let!(:event1) { Models::Event.make('instance' => 'job/4') }
-            let!(:event2) { Models::Event.make('instance' => 'job/5', 'task' => 4, 'deployment' => 'name') }
-            let!(:event3) { Models::Event.make('task' => 5) }
-            let!(:event4) { Models::Event.make('deployment' => 'not the droid we are looking for') }
+            let!(:event1) { FactoryBot.create(:models_event, instance: 'job/4') }
+            let!(:event2) { FactoryBot.create(:models_event, instance: 'job/5', task: 4, deployment: 'name') }
+            let!(:event3) { FactoryBot.create(:models_event, task: 5) }
+            let!(:event4) { FactoryBot.create(:models_event, deployment: 'not the droid we are looking for') }
 
             it 'returns the anded results' do
               get "?instance=job/5&task=4&deployment=name&before_id=#{event2.id + 1}"
@@ -291,11 +291,11 @@ module Bosh::Director
 
           context 'when user, action, object_name and object_type are specified' do
             before do
-              Models::Event.make('user' => 'admin')
-              Models::Event.make('user' => 'admin', 'action' => 'update', 'object_name' => 'test', 'object_type' => 'deployment')
-              Models::Event.make('user' => 'admin', 'action' => 'update', 'object_name' => 'test', 'object_type' => 'deployment1')
-              Models::Event.make('object_name' => 'something')
-              Models::Event.make('object_type' => 'deployment')
+              FactoryBot.create(:models_event, user: 'admin')
+              FactoryBot.create(:models_event, user: 'admin', action: 'update', object_name: 'test', object_type: 'deployment')
+              FactoryBot.create(:models_event, user: 'admin', action: 'update', object_name: 'test', object_type: 'deployment1')
+              FactoryBot.create(:models_event, object_name: 'something')
+              FactoryBot.create(:models_event, object_type: 'deployment')
             end
 
             it 'returns the ended results' do

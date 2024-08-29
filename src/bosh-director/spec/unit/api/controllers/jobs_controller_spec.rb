@@ -17,8 +17,8 @@ module Bosh::Director
       before { App.new(config) }
 
       before do
-        release = Models::Release.make(:name => 'test-release')
-        Models::Template.make(
+        release = FactoryBot.create(:models_release, name: 'test-release')
+        FactoryBot.create(:models_template,
           name: 'test-job',
           release: release,
           fingerprint: 'deadbeef',

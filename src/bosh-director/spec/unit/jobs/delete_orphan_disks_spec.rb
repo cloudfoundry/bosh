@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe Jobs::DeleteOrphanDisks do
     let(:event_manager) {Api::EventManager.new(true)}
-    let(:task) { Bosh::Director::Models::Task.make(:id => 42, :username => 'user') }
+    let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
     let(:delete_orphan_disks_job) {instance_double(Bosh::Director::Jobs::DeleteOrphanDisks, username: 'user', task_id: task.id, event_manager: event_manager)}
 
     before { allow(Config).to receive(:current_job).and_return(delete_orphan_disks_job) }
@@ -19,7 +19,7 @@ module Bosh::Director
       end
 
       it 'errors if disk is not orphaned' do
-        persistent_disk_cid = Models::PersistentDisk.make.disk_cid
+        persistent_disk_cid = FactoryBot.create(:models_persistent_disk).disk_cid
         expect do
           Jobs::DeleteOrphanDisks.enqueue(nil, [persistent_disk_cid], JobQueue.new)
         end.to raise_error(DeletingPersistentDiskError)
@@ -33,8 +33,8 @@ module Bosh::Director
       let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
 
       before do
-        Bosh::Director::Models::OrphanDisk.make(disk_cid: 'fake-cid-1')
-        Bosh::Director::Models::OrphanDisk.make(disk_cid: 'fake-cid-2')
+        FactoryBot.create(:models_orphan_disk, disk_cid: 'fake-cid-1')
+        FactoryBot.create(:models_orphan_disk, disk_cid: 'fake-cid-2')
 
         allow(Config).to receive(:event_log).and_return(event_log)
         allow(event_log).to receive(:begin_stage).and_return(event_log_stage)

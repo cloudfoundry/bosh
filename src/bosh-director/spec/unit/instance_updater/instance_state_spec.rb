@@ -5,10 +5,10 @@ module Bosh::Director
     subject(:instance_state) { described_class }
 
     describe 'with_instance_update' do
-      let(:instance_model) { Models::Instance.make(uuid: 'fake-uuid') }
+      let(:instance_model) { FactoryBot.create(:models_instance, uuid: 'fake-uuid') }
 
       context 'when block execution fails' do
-        let(:instance_model) { Models::Instance.make(uuid: 'fake-uuid', update_completed: true) }
+        let(:instance_model) { FactoryBot.create(:models_instance, uuid: 'fake-uuid', update_completed: true) }
 
         it 'marks instances as dirty' do
           expect {
@@ -22,7 +22,7 @@ module Bosh::Director
       end
 
       context 'when block execution succeeds' do
-        let(:instance_model) { Models::Instance.make(uuid: 'fake-uuid', update_completed: true) }
+        let(:instance_model) { FactoryBot.create(:models_instance, uuid: 'fake-uuid', update_completed: true) }
 
         it 'marks instances as updated' do
           expect {

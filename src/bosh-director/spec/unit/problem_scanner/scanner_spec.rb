@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe ProblemScanner::Scanner do
-    let(:deployment) { Models::Deployment.make(:name => 'mycloud') }
+    let(:deployment) { FactoryBot.create(:models_deployment, :name => 'mycloud') }
     let(:scanner) { described_class.new(deployment) }
 
     let(:event_logger) do
@@ -21,7 +21,7 @@ module Bosh::Director
 
     describe 'reset' do
       it 'should mark all open problems as closed' do
-        problem = Models::DeploymentProblem.make(counter: 1,
+        problem = FactoryBot.create(:models_deployment_problem, counter: 1,
                                                  type: 'inactive_disk',
                                                  deployment: deployment,
                                                  state: 'open')
@@ -34,15 +34,15 @@ module Bosh::Director
 
       context 'when reseting a specific list of job instances' do
         it 'only marks the specific job instances that are open as closed' do
-          instance1 = Models::Instance.make(deployment: deployment, job: 'job1', index: 0)
-          instance2 = Models::Instance.make(deployment: deployment, job: 'job1', index: 1)
+          instance1 = FactoryBot.create(:models_instance, deployment: deployment, job: 'job1', index: 0)
+          instance2 = FactoryBot.create(:models_instance, deployment: deployment, job: 'job1', index: 1)
 
-          problem1 = Models::DeploymentProblem.make(counter: 1,
+          problem1 = FactoryBot.create(:models_deployment_problem, counter: 1,
                                                     type: 'inactive_disk',
                                                     deployment: deployment,
                                                     state: 'open',
                                                     resource_id: instance1.id)
-          problem2 = Models::DeploymentProblem.make(counter: 1,
+          problem2 = FactoryBot.create(:models_deployment_problem, counter: 1,
                                                     type: 'inactive_disk',
                                                     deployment: deployment,
                                                     state: 'open',

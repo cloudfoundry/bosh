@@ -4,7 +4,7 @@ module Bosh::Director
   module DeploymentPlan::Stages
     describe PersistDeploymentStage do
       subject { described_class.new(deployment_planner) }
-      let(:deployment_model) { Models::Deployment.make }
+      let(:deployment_model) { FactoryBot.create(:models_deployment) }
       let(:deployment_planner) { instance_double(DeploymentPlan::Planner) }
       let(:minimal_manifest) { Bosh::Spec::Deployments.minimal_manifest }
       let(:raw_manifest_text) do
@@ -14,8 +14,8 @@ module Bosh::Director
           - name: appcloud
             version: "0.1")
       end
-      let(:cloud_config) { Models::Config.make(:cloud)}
-      let(:runtime_configs) { [Models::Config.make(:runtime), Models::Config.make(:runtime), Models::Config.make(:runtime), Models::Config.make(:runtime)] }
+      let(:cloud_config) { FactoryBot.create(:models_config_cloud)}
+      let(:runtime_configs) { [FactoryBot.create(:models_config_runtime), FactoryBot.create(:models_config_runtime), FactoryBot.create(:models_config_runtime), FactoryBot.create(:models_config_runtime)] }
       let(:link_spec) do
         {
           'instance_group' => {

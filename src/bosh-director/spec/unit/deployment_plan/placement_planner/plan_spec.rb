@@ -28,7 +28,7 @@ module Bosh::Director::DeploymentPlan
     let(:zone_2) { AvailabilityZone.new('zone_2', {}) }
     let(:zone_3) { AvailabilityZone.new('zone_3', {}) }
 
-    let(:instance_group) { InstanceGroup.make }
+    let(:instance_group) { FactoryBot.build(:deployment_plan_instance_group) }
 
     let(:desired) do
       [
@@ -45,7 +45,7 @@ module Bosh::Director::DeploymentPlan
       ]
     end
     let(:deployment) { instance_double(Planner, model: deployment_model, skip_drain: SkipDrain.new(true)) }
-    let(:deployment_model) { Bosh::Director::Models::Deployment.make }
+    let(:deployment_model) { FactoryBot.create(:models_deployment) }
 
     let(:deployment_network) { ManualNetwork.new('network_A', deployment_subnets, nil) }
     let(:deployment_subnets) do
@@ -89,11 +89,11 @@ module Bosh::Director::DeploymentPlan
       ]
     end
     let(:job_networks) do
-      [JobNetwork.make(name: 'network_A', static_ips: job_static_ips, deployment_network: deployment_network)]
+      [FactoryBot.build(:deployment_plan_job_network, name: 'network_A', static_ips: job_static_ips, deployment_network: deployment_network)]
     end
 
     before do
-      Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
+      FactoryBot.create(:models_variable_set, deployment: deployment_model)
     end
 
     context 'when job networks include static IPs' do
@@ -125,7 +125,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     def existing_instance_with_az(index, az)
-      Bosh::Director::Models::Instance.make(index: index, availability_zone: az)
+      FactoryBot.create(:models_instance, index: index, availability_zone: az)
     end
 
     def desired_instance(zone = nil)

@@ -464,7 +464,7 @@ module Bosh::Director
 
     describe 'ping <=> pong' do
       let(:stemcell) do
-        Models::Stemcell.make(cid: 'stemcell-id')
+        FactoryBot.create(:models_stemcell, cid: 'stemcell-id')
       end
 
       let(:network_settings) do
@@ -632,7 +632,7 @@ module Bosh::Director
         client = AgentClient.new('get_state', 'bar', 'foo_instance/1', client_opts)
 
         task_id = 1
-        Models::Task.make(id: task_id, state: 'cancelling')
+        FactoryBot.create(:models_task, id: task_id, state: 'cancelling')
         job = Jobs::BaseJob.new
         job.task_id = task_id
         Config.instance_variable_set(:@current_job, job)

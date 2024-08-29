@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe PermissionAuthorizer do
     before do
-      Bosh::Director::Models::DirectorAttribute.make(name: 'uuid', value: 'fake-director-uuid')
+      FactoryBot.create(:models_director_attribute, name: 'uuid', value: 'fake-director-uuid')
     end
     let(:config) { double(:config, uuid: 'fake-director-uuid') }
     subject(:app) { Bosh::Director::PermissionAuthorizer.new(Api::DirectorUUIDProvider.new(config)) }
@@ -341,9 +341,9 @@ module Bosh::Director
 
       describe 'task' do
         describe 'deployment-specific' do
-          let(:teams) { [Models::Team.make(name: 'security')] }
+          let(:teams) { [FactoryBot.create(:models_team, name: 'security')] }
           let(:acl_subject) do
-            task = Models::Task.make(id: 1, deployment_name: 'test-deployment')
+            task = FactoryBot.create(:models_task, id: 1, deployment_name: 'test-deployment')
             task.teams = teams
             task
           end
@@ -407,9 +407,9 @@ module Bosh::Director
       end
 
       describe 'deployment' do
-        let(:teams) { [Models::Team.make(name: 'security'), Models::Team.make(name: 'bosh')] }
+        let(:teams) { [FactoryBot.create(:models_team, name: 'security'), FactoryBot.create(:models_team, name: 'bosh')] }
         let(:acl_subject) do
-          deployment = Models::Deployment.make(name: 'favorite')
+          deployment = FactoryBot.create(:models_deployment, name: 'favorite')
           deployment.teams = teams
           deployment
         end
@@ -489,9 +489,9 @@ module Bosh::Director
 
       describe 'config' do
         let(:acl_subject) do
-          team = Models::Team.make(name: 'security')
+          team = FactoryBot.create(:models_team, name: 'security')
 
-          Models::Config.make(
+          FactoryBot.create(:models_config,
             content: 'some-yaml',
             created_at: Time.now - 3.days,
             team_id: team.id.to_s,

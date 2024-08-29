@@ -57,23 +57,23 @@ module Bosh::Director
       describe '#select' do
         let(:state) { :queued }
         let!(:tasks_queued) do
-          [Models::Task.make(
+          [FactoryBot.create(:models_task,
             type: :update_deployment,
             state: state,
           ),
-           Models::Task.make(
+           FactoryBot.create(:models_task,
              type: :cck_scan_and_fix,
              state: state,
              deployment_name: 'dummy',
            )]
         end
         let!(:tasks_processing) do
-          [Models::Task.make(
+          [FactoryBot.create(:models_task,
             type: :update_deployment,
             state: :processing,
             deployment_name: 'not-dummy',
           ),
-           Models::Task.make(
+           FactoryBot.create(:models_task,
              type: :ssh,
              state: :processing,
              deployment_name: 'dummy',
@@ -189,7 +189,7 @@ module Bosh::Director
       describe '#cancel' do
         let(:state) { :processing }
         let!(:task) do
-          Models::Task.make(
+          FactoryBot.create(:models_task,
             type: :update_deployment,
             state: state,
           )
@@ -218,13 +218,13 @@ module Bosh::Director
 
       describe '#cancel_tasks' do
         let!(:non_cancellable_task) do
-          Models::Task.make(
+          FactoryBot.create(:models_task,
             type: :update_deployment,
             state: :timeout,
           )
         end
         let!(:cancellable_task) do
-          Models::Task.make(
+          FactoryBot.create(:models_task,
             type: :update_deployment,
             state: :processing,
           )
@@ -243,7 +243,7 @@ module Bosh::Director
 
       describe '#task_to_hash' do
         let!(:finished_task) do
-          Models::Task.make(
+          FactoryBot.create(:models_task,
             type: :update_deployment,
             state: :timeout,
             started_at: Time.now,
@@ -251,7 +251,7 @@ module Bosh::Director
           )
         end
         let!(:unfinished_task) do
-          Models::Task.make(
+          FactoryBot.create(:models_task,
             type: :update_deployment,
             state: :processing,
             started_at: Time.now,

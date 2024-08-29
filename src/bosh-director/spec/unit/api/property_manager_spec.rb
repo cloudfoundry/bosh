@@ -4,7 +4,7 @@ module Bosh::Director
   describe Api::PropertyManager do
     subject(:property_manager) { Api::PropertyManager.new }
 
-    let(:deployment) { Models::Deployment.make(name: 'mycloud') }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: 'mycloud') }
 
     it 'creates/reads properties' do
       property_manager.create_property(deployment, 'foo', 'bar')

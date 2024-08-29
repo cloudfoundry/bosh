@@ -7,7 +7,7 @@ module Bosh::Director
       instance_double(
         Bosh::Director::DeploymentPlan::Planner,
         name: 'simple',
-        skip_drain: BD::DeploymentPlan::AlwaysSkipDrain.new,
+        skip_drain: Bosh::Director::DeploymentPlan::AlwaysSkipDrain.new,
         recreate: false,
         model: deployment_model,
         variables: variables,
@@ -16,7 +16,7 @@ module Bosh::Director
     end
 
     let(:variables) { Bosh::Director::DeploymentPlan::Variables.new(nil) }
-    let(:deployment_model) {Bosh::Director::Models::Deployment.make}
+    let(:deployment_model) {FactoryBot.create(:models_deployment)}
     let(:stemcell_manager) {nil}
     let(:event_log) {Config.event_log}
     let(:links_manager) do
@@ -32,7 +32,7 @@ module Bosh::Director
     end
 
     describe '#bind_models' do
-      let(:instance_model) { Models::Instance.make(job: 'old-name') }
+      let(:instance_model) { FactoryBot.create(:models_instance, job: 'old-name') }
 
       before do
         allow(deployment_plan).to receive(:instance_models).and_return([instance_model])
@@ -82,8 +82,8 @@ module Bosh::Director
       end
 
       it 'should bind stemcells' do
-        sc1 = DeploymentPlan::Stemcell.make
-        sc2 = DeploymentPlan::Stemcell.make(os: 'arch-linux')
+        sc1 = FactoryBot.build(:deployment_plan_stemcell)
+        sc2 = FactoryBot.build(:deployment_plan_stemcell, os: 'arch-linux')
         expect(sc2.os).to eq('arch-linux')
 
         expect(deployment_plan).to receive(:stemcells).and_return({'sc1' => sc1, 'sc2' => sc2})
@@ -214,13 +214,13 @@ module Bosh::Director
 
       context 'when there are desired instance_groups' do
         def make_instance_group(name, template_name)
-          template_model = Models::Template.make(name: template_name)
+          template_model = FactoryBot.create(:models_template, name: template_name)
           release_version = instance_double(DeploymentPlan::ReleaseVersion, exported_from: [])
           allow(release_version).to receive(:get_template_model_by_name).and_return(template_model)
           job = DeploymentPlan::Job.new(release_version, template_name)
           job.bind_models
 
-          instance_group = DeploymentPlan::InstanceGroup.make(
+          instance_group = FactoryBot.build(:deployment_plan_instance_group,
             name: name,
             jobs: [job],
             networks: [instance_group_network],
@@ -233,7 +233,7 @@ module Bosh::Director
         let(:instance_group_1) { make_instance_group('ig-1', 'fake-instance-group-1') }
         let(:instance_group_2) { make_instance_group('ig-2', 'fake-instance-group-2') }
 
-        let(:instance_group_network) { DeploymentPlan::JobNetwork.make(name: 'my-network-name') }
+        let(:instance_group_network) { FactoryBot.build(:deployment_plan_job_network, name: 'my-network-name') }
 
         before do
           allow(instance_group_network).to receive(:vip?).and_return(false)
@@ -255,7 +255,7 @@ module Bosh::Director
           end
 
           let(:provider) do
-            Models::Links::LinkProvider.make(
+            FactoryBot.create(:models_links_link_provider,
               deployment: deployment_model,
               instance_group: 'foo-ig',
               name: 'foo-provider',
@@ -264,15 +264,15 @@ module Bosh::Director
           end
 
           let(:provider_intent) do
-            Models::Links::LinkProviderIntent.make(
-              :link_provider => provider,
-              :original_name => 'link_original_name_1',
-              :name => 'link_name_1',
-              :type => 'link_type_1',
-              :shared => true,
-              :consumable => true,
-              :content => '{}',
-              :metadata => {'mapped_properties' => {'a' => 'foo'}}.to_json
+            FactoryBot.create(:models_links_link_provider_intent,
+                              link_provider: provider,
+                              original_name: 'link_original_name_1',
+                              name: 'link_name_1',
+                              type: 'link_type_1',
+                              shared: true,
+                              consumable: true,
+                              content: '{}',
+                              metadata: { 'mapped_properties' => { 'a' => 'foo' } }.to_json
             )
           end
 
@@ -296,7 +296,7 @@ module Bosh::Director
             expect(links_manager).to_not receive(:update_provider_intents_contents)
             expect(links_manager).to_not receive(:resolve_deployment_links)
 
-            assembler.bind_models({:should_bind_links => false})
+            assembler.bind_models({ should_bind_links: false })
           end
 
           context 'when the links are stale' do
@@ -389,13 +389,13 @@ module Bosh::Director
             expect(instance_group_1).to_not receive(:bind_properties)
             expect(instance_group_2).to_not receive(:bind_properties)
 
-            assembler.bind_models({:should_bind_properties => false})
+            assembler.bind_models({ should_bind_properties: false })
           end
         end
 
         context 'variable sets binding' do
           before do
-            deployment_plan.model.add_variable_set(:created_at => Time.now, :writable => true)
+            deployment_plan.model.add_variable_set(created_at: Time.now, writable: true)
           end
 
           context 'when should_bind_new_variable_set flag is false' do
@@ -407,7 +407,7 @@ module Bosh::Director
               expect(instance_group_1).to_not receive(:bind_new_variable_set).with(current_deployment_variable_set)
               expect(instance_group_2).to_not receive(:bind_new_variable_set).with(current_deployment_variable_set)
 
-              assembler.bind_models({:should_bind_new_variable_set => should_bind_new_variable_set})
+              assembler.bind_models({ should_bind_new_variable_set: should_bind_new_variable_set })
             end
           end
 
@@ -420,7 +420,7 @@ module Bosh::Director
               expect(instance_group_1).to receive(:bind_new_variable_set).with(current_deployment_variable_set)
               expect(instance_group_2).to receive(:bind_new_variable_set).with(current_deployment_variable_set)
 
-              assembler.bind_models({:should_bind_new_variable_set => should_bind_new_variable_set})
+              assembler.bind_models({ should_bind_new_variable_set: should_bind_new_variable_set })
             end
           end
 
@@ -449,7 +449,7 @@ module Bosh::Director
           let(:instance_planner) { double(DeploymentPlan::InstancePlanner) }
           let(:existing_network_plan1) { DeploymentPlan::NetworkPlanner::Plan.new(reservation: anything, existing: true) }
           let(:existing_network_plan2) { DeploymentPlan::NetworkPlanner::Plan.new(reservation: anything, existing: true) }
-          let(:instance_model) { Bosh::Director::Models::Instance.make(ignore: false) }
+          let(:instance_model) { FactoryBot.create(:models_instance, ignore: false) }
           let(:create_swap_delete_instance) do
             instance_double(DeploymentPlan::Instance, model: instance_model).tap do |instance|
               expect(instance).to receive(:is_deploy_action=)

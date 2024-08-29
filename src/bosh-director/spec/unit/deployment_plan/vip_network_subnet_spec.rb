@@ -24,7 +24,7 @@ describe Bosh::Director::DeploymentPlan::VipNetworkSubnet do
 
   describe :parse do
     it 'parses the static ips from the list of requested ips' do
-      vip_subnet = BD::DeploymentPlan::VipNetworkSubnet.parse(subnet_spec, network_name, azs)
+      vip_subnet = Bosh::Director::DeploymentPlan::VipNetworkSubnet.parse(subnet_spec, network_name, azs)
       expect(vip_subnet.static_ips.size).to eq(5)
 
       vip_static_ips = vip_subnet.static_ips.map do |static_ip|
@@ -40,7 +40,7 @@ describe Bosh::Director::DeploymentPlan::VipNetworkSubnet do
     end
 
     it 'checks the availability zones for their validity' do
-      vip_subnet = BD::DeploymentPlan::VipNetworkSubnet.parse(subnet_spec, network_name, azs)
+      vip_subnet = Bosh::Director::DeploymentPlan::VipNetworkSubnet.parse(subnet_spec, network_name, azs)
       expect(vip_subnet.availability_zone_names).to eq(%w[z1 z2])
     end
   end

@@ -14,17 +14,16 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
   let(:agent_client) { instance_double('Bosh::Director::AgentClient', unmount_disk: nil) }
 
   let(:instance) do
-    instance = Bosh::Director::Models::Instance.
-      make(job: 'mysql_node', index: 3, uuid: "uuid-42", availability_zone: 'az1')
-    vm = Bosh::Director::Models::Vm.make(cid: 'vm-cid', instance_id: instance.id, stemcell_api_version: 25)
-    instance.active_vm = vm
-    instance.save
+    FactoryBot.create(:models_instance, job: 'mysql_node', index: 3, uuid: "uuid-42", availability_zone: 'az1').tap do |i|
+      i.active_vm = FactoryBot.create(:models_vm, cid: 'vm-cid', instance_id: i.id, stemcell_api_version: 25)
+      i.save
+    end.reload
   end
 
   let!(:disk) do
-    Bosh::Director::Models::PersistentDisk.
-      make(disk_cid: 'disk-cid', instance_id: instance.id,
-      size: 300, active: false)
+    FactoryBot.create(:models_persistent_disk,
+      disk_cid: 'disk-cid', instance_id: instance.id, size: 300, active: false,
+    )
   end
 
   it 'registers under missing_disk type' do
@@ -52,7 +51,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
       let(:update_job) {instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: 42, event_manager: event_manager)}
 
       before do
-        Bosh::Director::Models::Snapshot.make(persistent_disk: disk, snapshot_cid: 'snapshot-cid')
+        FactoryBot.create(:models_snapshot, persistent_disk: disk, snapshot_cid: 'snapshot-cid')
         allow(agent_client).to receive(:list_disk).and_return({})
         allow(Bosh::Director::Config).to receive(:current_job).and_return(update_job)
       end

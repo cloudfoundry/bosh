@@ -10,7 +10,7 @@ module Bosh::Director
     let(:disk_manager) { DiskManager.new(logger) }
     let(:dns_publisher) { instance_double(BlobstoreDnsPublisher, publish_and_broadcast: nil) }
     let(:local_dns_records_repo) { instance_double(LocalDnsRecordsRepo, delete_for_instance: nil) }
-    let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
+    let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
     let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
     let(:options) { {} }
@@ -28,10 +28,10 @@ module Bosh::Director
 
     describe '#delete_instance_plans' do
       let(:network_plan) { DeploymentPlan::NetworkPlanner::Plan.new(reservation: instance_double(DesiredNetworkReservation)) }
-      let(:existing_vm) { Models::Vm.make(cid: 'fake-vm-cid', instance_id: existing_instance.id, stemcell_api_version: 25) }
+      let(:existing_vm) { FactoryBot.create(:models_vm, cid: 'fake-vm-cid', instance_id: existing_instance.id, stemcell_api_version: 25) }
 
       let(:existing_instance) do
-        Models::Instance.make(deployment: deployment_model, uuid: 'my-uuid-1', job: 'fake-job-name', index: 5)
+        FactoryBot.create(:models_instance, deployment: deployment_model, uuid: 'my-uuid-1', job: 'fake-job-name', index: 5)
       end
 
       let(:instance_plan) do
@@ -65,7 +65,7 @@ module Bosh::Director
       end
 
       describe 'deleting instances' do
-        let(:deployment_model) { Models::Deployment.make(name: 'deployment-name') }
+        let(:deployment_model) { FactoryBot.create(:models_deployment, name: 'deployment-name') }
         let(:vm_deleter) { VmDeleter.new(logger, false, false) }
 
         let(:job_templates_cleaner) do
@@ -78,9 +78,9 @@ module Bosh::Director
         end
 
         let(:persistent_disks) do
-          disk = Models::PersistentDisk.make(disk_cid: 'fake-disk-cid-1')
-          Models::Snapshot.make(persistent_disk: disk)
-          [Models::PersistentDisk.make(disk_cid: 'instance-disk-cid'), disk]
+          disk = FactoryBot.create(:models_persistent_disk, disk_cid: 'fake-disk-cid-1')
+          FactoryBot.create(:models_snapshot, persistent_disk: disk)
+          [FactoryBot.create(:models_persistent_disk, disk_cid: 'instance-disk-cid'), disk]
         end
 
         before do

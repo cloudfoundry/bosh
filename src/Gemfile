@@ -58,8 +58,7 @@ group :development, :test do
   gem 'rubocop-git'
 
   # for director
-  gem 'machinist', '~>1.0'
-  gem 'factory_bot', '~> 6.2'
+  gem 'factory_bot'
 
   # for root level specs
   gem 'nats-pure', '~>2.3'

@@ -20,25 +20,25 @@ module Bosh::Director
 
       describe '/:name' do
         before do
-          Models::Variable.make(
+          FactoryBot.create(:models_variable,
             id: 1,
             variable_id: 'var_id_1',
             variable_name: '/Test Director/test_deployment/var_name_1',
             variable_set_id: deployment_1_variable_set.id,
           )
-          Models::Variable.make(
+          FactoryBot.create(:models_variable,
             id: 2,
             variable_id: 'var_id_2',
             variable_name: '/Test Director/test_deployment/var_name_2',
             variable_set_id: deployment_1_variable_set.id,
           )
-          Models::Variable.make(
+          FactoryBot.create(:models_variable,
             id: 3,
             variable_id: 'var_id_1',
             variable_name: '/Test Director/test_deployment/var_name_1',
             variable_set_id: deployment_2_variable_set.id,
           )
-          Models::Variable.make(
+          FactoryBot.create(:models_variable,
             id: 5,
             variable_id: 'var_id_3',
             variable_name: '/Test Director/test_deployment/var_name_3',
@@ -67,19 +67,19 @@ module Bosh::Director
         end
 
         let!(:deployment_1) do
-          Models::Deployment.make(name: 'test_deployment_1', manifest: deployment_1_manifest.to_yaml)
+          FactoryBot.create(:models_deployment, name: 'test_deployment_1', manifest: deployment_1_manifest.to_yaml)
         end
 
         let!(:deployment_2) do
-          Models::Deployment.make(name: 'test_deployment_2', manifest: deployment_2_manifest.to_yaml)
+          FactoryBot.create(:models_deployment, name: 'test_deployment_2', manifest: deployment_2_manifest.to_yaml)
         end
 
         let!(:deployment_1_variable_set) do
-          Models::VariableSet.make(id: 1, deployment: deployment_1, deployed_successfully: true)
+          FactoryBot.create(:models_variable_set, id: 1, deployment: deployment_1, deployed_successfully: true)
         end
 
         let!(:deployment_2_variable_set) do
-          Models::VariableSet.make(id: 2, deployment: deployment_2, deployed_successfully: true)
+          FactoryBot.create(:models_variable_set, id: 2, deployment: deployment_2, deployed_successfully: true)
         end
 
         it 'returns an empty array if there are no matching deployments' do
@@ -121,8 +121,8 @@ module Bosh::Director
 
         context 'with a user with team permissions' do
           before do
-            deployment_1.teams = [Models::Team.make(name: 'dev')]
-            deployment_2.teams = [Models::Team.make(name: 'TheEvilTeam')]
+            deployment_1.teams = [FactoryBot.create(:models_team, name: 'dev')]
+            deployment_2.teams = [FactoryBot.create(:models_team, name: 'TheEvilTeam')]
             basic_authorize 'dev-team-member', 'dev-team-member'
           end
 

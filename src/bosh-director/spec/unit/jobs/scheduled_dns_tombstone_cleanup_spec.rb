@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe Jobs::ScheduledDnsTombstoneCleanup do
     subject { described_class.new }
-    let(:task) { Models::Task.make(id: 42) }
+    let(:task) { FactoryBot.create(:models_task, id: 42) }
     let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
     let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
 

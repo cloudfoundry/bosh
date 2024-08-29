@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director::Models
   describe OrphanDisk do
-    subject(:orphan_disk) { described_class.make }
+    subject(:orphan_disk) { described_class.new }
 
     describe 'cloud_properties' do
       let(:disk_cloud_properties) do

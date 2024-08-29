@@ -4,7 +4,7 @@ require 'bosh/director/rendered_job_templates_cleaner'
 module Bosh::Director
   describe RenderedJobTemplatesCleaner do
     subject(:rendered_job_templates) { described_class.new(instance_model, blobstore, logger) }
-    let(:instance_model) { Models::Instance.make }
+    let(:instance_model) { FactoryBot.create(:models_instance) }
     let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
 
     describe '#clean' do
@@ -13,7 +13,7 @@ module Bosh::Director
       end
 
       let(:stale_archive) do
-        Models::RenderedTemplatesArchive.make(
+        FactoryBot.create(:models_rendered_templates_archive,
           blobstore_id: 'fake-blob-id',
           instance: instance_model,
           created_at: Time.new(2013, 0o2, 0o1),
@@ -44,7 +44,7 @@ module Bosh::Director
       end
 
       let(:stale_archive) do
-        Models::RenderedTemplatesArchive.make(
+        FactoryBot.create(:models_rendered_templates_archive,
           blobstore_id: 'fake-blob-id',
           instance: instance_model,
           created_at: Time.new(2013, 0o2, 0o1),

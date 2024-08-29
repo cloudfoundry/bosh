@@ -31,7 +31,7 @@ module Bosh::Director::DeploymentPlan
           end
 
           it 'raises error' do
-            expect { AvailabilityZone.parse(availability_zone_spec) }.to raise_error(BD::ValidationMissingField)
+            expect { AvailabilityZone.parse(availability_zone_spec) }.to raise_error(Bosh::Director::ValidationMissingField)
           end
         end
 
@@ -41,7 +41,7 @@ module Bosh::Director::DeploymentPlan
           end
 
           it 'raises error' do
-            expect { AvailabilityZone.parse(availability_zone_spec) }.to raise_error(BD::ValidationInvalidType)
+            expect { AvailabilityZone.parse(availability_zone_spec) }.to raise_error(Bosh::Director::ValidationInvalidType)
           end
         end
       end
@@ -82,7 +82,7 @@ module Bosh::Director::DeploymentPlan
           end
 
           it 'raises error' do
-            expect { AvailabilityZone.parse(availability_zone_spec) }.to raise_error(BD::ValidationInvalidType)
+            expect { AvailabilityZone.parse(availability_zone_spec) }.to raise_error(Bosh::Director::ValidationInvalidType)
           end
         end
       end
@@ -94,7 +94,7 @@ module Bosh::Director::DeploymentPlan
           end
 
           it 'raises error' do
-            expect { AvailabilityZone.parse(availability_zone_spec) }.to raise_error(BD::ValidationInvalidType)
+            expect { AvailabilityZone.parse(availability_zone_spec) }.to raise_error(Bosh::Director::ValidationInvalidType)
           end
         end
       end

@@ -23,7 +23,7 @@ module Bosh::Director
       let(:runtime_config_consolidator) { instance_double(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator) }
       let(:manifest_text) { generate_manifest_text }
       let(:deployment_name) { 'mycloud' }
-      let(:deployment_model) { Models::Deployment.make }
+      let(:deployment_model) { FactoryBot.create(:models_deployment) }
 
       def generate_manifest_text
         YAML.dump minimal_manifest
@@ -39,7 +39,7 @@ module Bosh::Director
 
         before do
           deployment_model.add_stemcell(stemcell_model)
-          deployment_model.add_variable_set(Models::VariableSet.make(deployment: deployment_model))
+          deployment_model.add_variable_set(FactoryBot.create(:models_variable_set, deployment: deployment_model))
           cloud_planner = CloudPlanner.new(
             networks: [Network.new('default', logger)],
             disk_types: [],
@@ -50,7 +50,7 @@ module Bosh::Director
           )
           planner.cloud_planner = cloud_planner
           allow(Config).to receive_message_chain(:current_job, :username).and_return('username')
-          task = Models::Task.make(state: 'processing')
+          task = FactoryBot.create(:models_task, state: 'processing')
           allow(Config).to receive_message_chain(:current_job, :task_id).and_return(task.id)
         end
 

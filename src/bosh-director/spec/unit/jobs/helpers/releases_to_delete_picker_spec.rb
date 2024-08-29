@@ -3,21 +3,21 @@ require 'spec_helper'
 module Bosh::Director
   describe Jobs::Helpers::ReleasesToDeletePicker do
     subject(:releases_to_delete_picker) { Jobs::Helpers::ReleasesToDeletePicker.new(Api::ReleaseManager.new) }
-    let(:release1) { Models::Release.make(name: 'release-1') }
-    let(:release2) { Models::Release.make(name: 'release-2') }
+    let(:release1) { FactoryBot.create(:models_release, name: 'release-1') }
+    let(:release2) { FactoryBot.create(:models_release, name: 'release-2') }
 
     describe '#pick' do
       before do
-        deployment1 = Models::Deployment.make(name: 'first')
-        deployment2 = Models::Deployment.make(name: 'second')
+        deployment1 = FactoryBot.create(:models_deployment, name: 'first')
+        deployment2 = FactoryBot.create(:models_deployment, name: 'second')
 
-        release_version_with_deployment1 = Models::ReleaseVersion.make(version: 1, release: release1)
+        release_version_with_deployment1 = FactoryBot.create(:models_release_version, version: 1, release: release1)
         release_version_with_deployment1.add_deployment(deployment1)
 
-        release_version_with_deployment2 = Models::ReleaseVersion.make(version: 2, release: release2)
+        release_version_with_deployment2 = FactoryBot.create(:models_release_version, version: 2, release: release2)
         release_version_with_deployment2.add_deployment(deployment2)
 
-        Models::ReleaseVersion.make(version: 5, release: release2)
+        FactoryBot.create(:models_release_version, version: 5, release: release2)
       end
 
       context 'when removing all releases' do
@@ -32,10 +32,10 @@ module Bosh::Director
 
       context 'when removing all except the latest two releases' do
         before do
-          Models::ReleaseVersion.make(version: 10, release: release1)
-          Models::ReleaseVersion.make(version: 9, release: release1)
-          Models::ReleaseVersion.make(version: 10, release: release2)
-          Models::ReleaseVersion.make(version: 9, release: release2)
+          FactoryBot.create(:models_release_version, version: 10, release: release1)
+          FactoryBot.create(:models_release_version, version: 9, release: release1)
+          FactoryBot.create(:models_release_version, version: 10, release: release2)
+          FactoryBot.create(:models_release_version, version: 9, release: release2)
         end
 
         it 'leaves out the latest two versions of each release' do
@@ -49,9 +49,9 @@ module Bosh::Director
 
       context 'when removing multiple versions' do
         before do
-          Models::ReleaseVersion.make(version: 10, release: release1)
-          Models::ReleaseVersion.make(version: 9, release: release1)
-          Models::ReleaseVersion.make(version: 8, release: release1)
+          FactoryBot.create(:models_release_version, version: 10, release: release1)
+          FactoryBot.create(:models_release_version, version: 9, release: release1)
+          FactoryBot.create(:models_release_version, version: 8, release: release1)
         end
 
         it 'leaves out the latest two versions of each release' do
@@ -69,10 +69,10 @@ module Bosh::Director
         let(:runtime_config) { RuntimeConfig::ParsedRuntimeConfig.new([runtime_config_release], [], []) }
 
         before do
-          Models::ReleaseVersion.make(version: 10, release: release1)
-          Models::ReleaseVersion.make(version: 9, release: release1)
-          Models::ReleaseVersion.make(version: 8, release: release1)
-          Models::Config.make(type: 'runtime', name: 'jim')
+          FactoryBot.create(:models_release_version, version: 10, release: release1)
+          FactoryBot.create(:models_release_version, version: 9, release: release1)
+          FactoryBot.create(:models_release_version, version: 8, release: release1)
+          FactoryBot.create(:models_config_runtime, name: 'jim')
 
           allow(RuntimeConfig::RuntimeManifestParser).to receive(:new).and_return(runtime_parser)
           allow(runtime_parser).to receive(:parse).and_return(runtime_config)

@@ -26,11 +26,11 @@ module Bosh::Director
     subject(:job) { Jobs::VmState.new(deployment.id, 'full', instance_details) }
 
     let(:instance_details) { false }
-    let(:deployment) { Models::Deployment.make }
-    let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
+    let(:deployment) { FactoryBot.create(:models_deployment) }
+    let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
     let(:time) { Time.now }
-    let(:vm) { Models::Vm.make(cid: 'fake-vm-cid', agent_id: 'fake-agent-id', instance_id: instance.id, created_at: time) }
-    let(:instance) { Models::Instance.make(deployment: deployment) }
+    let(:vm) { FactoryBot.create(:models_vm, cid: 'fake-vm-cid', agent_id: 'fake-agent-id', instance_id: instance.id, created_at: time) }
+    let(:instance) { FactoryBot.create(:models_instance, deployment: deployment) }
 
     before do
       allow(Config).to receive(:dns).and_return('domain_name' => 'microbosh')
@@ -53,7 +53,7 @@ module Bosh::Director
       let(:agent) { instance_double('Bosh::Director::AgentClient') }
 
       it 'parses agent info into vm_state WITHOUT vitals' do
-        Models::IpAddress.make(
+        FactoryBot.create(:models_ip_address,
           instance_id: instance.id,
           vm_id: vm.id,
           address_str: IPAddr.new('1.1.1.1').to_i.to_s,
@@ -80,13 +80,13 @@ module Bosh::Director
 
       context 'when there are two networks' do
         before do
-          Models::IpAddress.make(
+          FactoryBot.create(:models_ip_address,
             instance_id: instance.id,
             vm_id: vm.id,
             address_str: IPAddr.new('1.1.1.1').to_i.to_s,
             task_id: '12345',
           )
-          Models::IpAddress.make(
+          FactoryBot.create(:models_ip_address,
             instance_id: instance.id,
             vm_id: vm.id,
             address_str: IPAddr.new('2.2.2.2').to_i.to_s,
@@ -123,13 +123,13 @@ module Bosh::Director
 
       context 'when there are manual ip addresses and networks' do
         before do
-          Models::IpAddress.make(
+          FactoryBot.create(:models_ip_address,
             instance_id: instance.id,
             vm_id: vm.id,
             address_str: IPAddr.new('1.1.1.1').to_i.to_s,
             task_id: '12345',
           )
-          Models::IpAddress.make(
+          FactoryBot.create(:models_ip_address,
             instance_id: instance.id,
             vm_id: vm.id,
             address_str: IPAddr.new('2.2.2.2').to_i.to_s,
@@ -166,7 +166,7 @@ module Bosh::Director
       end
 
       it 'parses agent info into vm_state WITH vitals' do
-        Models::IpAddress.make(
+        FactoryBot.create(:models_ip_address,
           instance_id: instance.id,
           vm_id: vm.id,
           address_str: IPAddr.new('1.1.1.1').to_i.to_s,
@@ -357,7 +357,7 @@ module Bosh::Director
       end
 
       it 'should return processes info' do
-        Models::IpAddress.make(
+        FactoryBot.create(:models_ip_address,
           instance_id: instance.id,
           vm_id: vm.id,
           address_str: IPAddr.new('1.1.1.1').to_i.to_s,
@@ -405,7 +405,7 @@ module Bosh::Director
 
       context 'when instance has multiple vms' do
         let!(:inactive_vm) do
-          Models::Vm.make(instance: instance, active: false, agent_id: 'other_agent_id', cid: 'fake-vm-cid-2')
+          FactoryBot.create(:models_vm, instance: instance, active: false, agent_id: 'other_agent_id', cid: 'fake-vm-cid-2')
         end
         let(:lazy_agent) { instance_double('Bosh::Director::AgentClient') }
         let(:lazy_agent_state) do
@@ -438,13 +438,13 @@ module Bosh::Director
         end
 
         before do
-          Models::IpAddress.make(
+          FactoryBot.create(:models_ip_address,
             instance_id: instance.id,
             vm_id: vm.id,
             address_str: IPAddr.new('1.1.1.1').to_i.to_s,
             task_id: '12345',
           )
-          Models::IpAddress.make(
+          FactoryBot.create(:models_ip_address,
             instance_id: instance.id,
             vm_id: inactive_vm.id,
             address_str: IPAddr.new('1.1.1.2').to_i.to_s,

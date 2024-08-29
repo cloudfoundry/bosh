@@ -8,7 +8,7 @@ module Bosh::Director
 
       subject(:app) { linted_rack_app(described_class.new(config)) }
       let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
-      let(:cpi_config) { BD::Models::Config.make(:cpi_with_manifest).raw_manifest }
+      let(:cpi_config) { FactoryBot.create(:models_config_cpi, :with_manifest).raw_manifest }
 
       before do
         App.new(config)
@@ -17,7 +17,7 @@ module Bosh::Director
 
       context 'when a cpi is missing the stemcell' do
         before do
-          BD::Models::StemcellUpload.make(
+          FactoryBot.create(:models_stemcell_upload,
             cpi: cpi_config['cpis'][0]['name'],
             name: 'bosh-stemcell',
             version: '1234',
@@ -35,12 +35,12 @@ module Bosh::Director
       context 'when a cpi already references an existing stemcell' do
         context 'multiple cpis' do
           before do
-            BD::Models::StemcellUpload.make(
+            FactoryBot.create(:models_stemcell_upload,
               cpi: cpi_config['cpis'][0]['name'],
               name: 'bosh-stemcell',
               version: '1234',
             )
-            BD::Models::StemcellUpload.make(
+            FactoryBot.create(:models_stemcell_upload,
               cpi: cpi_config['cpis'][1]['name'],
               name: 'bosh-stemcell',
               version: '1234',
@@ -67,12 +67,12 @@ module Bosh::Director
           end
 
           before do
-            BD::Models::StemcellUpload.make(
+            FactoryBot.create(:models_stemcell_upload,
               cpi: cpi_config['cpis'][0]['name'],
               name: 'bosh-stemcell',
               version: '1234',
             )
-            Models::Config.make(:cpi, content: migrated_from_cpi.to_yaml)
+            FactoryBot.create(:models_config_cpi, content: migrated_from_cpi.to_yaml)
           end
 
           it 'returns that stemcell is not needed' do
@@ -96,12 +96,12 @@ module Bosh::Director
           end
 
           before do
-            BD::Models::StemcellUpload.make(
+            FactoryBot.create(:models_stemcell_upload,
               cpi: '',
               name: 'bosh-stemcell',
               version: '1234',
             )
-            Models::Config.make(:cpi, content: migrated_from_cpi.to_yaml)
+            FactoryBot.create(:models_config_cpi, content: migrated_from_cpi.to_yaml)
           end
 
           it 'returns that stemcell is not needed' do

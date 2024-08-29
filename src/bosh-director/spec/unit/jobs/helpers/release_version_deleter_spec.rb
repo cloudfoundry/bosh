@@ -9,17 +9,17 @@ module Bosh::Director
       let(:package_deleter) { PackageDeleter.new(compiled_package_deleter, blobstore, logger) }
       let(:template_deleter) { TemplateDeleter.new(blobstore, logger) }
       let(:logger) { Logging::Logger.new('/dev/null') }
-      let(:task) { Models::Task.make(id: 42) }
+      let(:task) { FactoryBot.create(:models_task, id: 42) }
       let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
       let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
 
       subject { described_class.new(release_deleter, package_deleter, template_deleter, logger, event_log) }
 
       describe '#delete' do
-        let(:release) { Models::Release.make(name: 'test_release') }
-        let(:release_version) { Models::ReleaseVersion.make(version: 1, release: release) }
-        let(:package) { Models::Package.make(name: 'test_package', release: release) }
-        let(:template) { Models::Template.make(name: 'test_template', release: release) }
+        let(:release) { FactoryBot.create(:models_release, name: 'test_release') }
+        let(:release_version) { FactoryBot.create(:models_release_version, version: 1, release: release) }
+        let(:package) { FactoryBot.create(:models_package, name: 'test_package', release: release) }
+        let(:template) { FactoryBot.create(:models_template, name: 'test_template', release: release) }
 
         before {
           package.add_release_version(release_version)
@@ -29,7 +29,7 @@ module Bosh::Director
         context 'when force is false' do
           let(:force) { false }
           context 'when used by existing deployment' do
-            let(:deployment) { Models::Deployment.make(name: 'test_deployment')}
+            let(:deployment) { FactoryBot.create(:models_deployment, name: 'test_deployment')}
             before { deployment.add_release_version(release_version) }
 
             it 'does not delete the version' do
@@ -41,7 +41,7 @@ module Bosh::Director
 
           context 'when not used by existing deployment' do
             context 'when package is used by another version' do
-              let(:release_version2) { Models::ReleaseVersion.make(version:2, release:release)}
+              let(:release_version2) { FactoryBot.create(:models_release_version, version:2, release:release)}
 
               before {
                 package.add_release_version(release_version2)
@@ -65,7 +65,7 @@ module Bosh::Director
 
             context 'when package is not used by another version' do
               context 'when template is used by another version' do
-                let(:release_version2) { Models::ReleaseVersion.make(version:2, release:release)}
+                let(:release_version2) { FactoryBot.create(:models_release_version, version:2, release:release)}
 
                 before {
                   template.add_release_version(release_version2)
@@ -97,9 +97,9 @@ module Bosh::Director
 
                 context 'when another release versions exist' do
                   before {
-                    version2 = Models::ReleaseVersion.make(version: 2, release: release)
-                    Models::Package.make(name: 'test_package', release: release).add_release_version(version2)
-                    Models::Template.make(name: 'test_template', release: release).add_release_version(version2)
+                    version2 = FactoryBot.create(:models_release_version, version: 2, release: release)
+                    FactoryBot.create(:models_package, name: 'test_package', release: release).add_release_version(version2)
+                    FactoryBot.create(:models_template, name: 'test_template', release: release).add_release_version(version2)
                   }
 
                   it 'does not delete the release db row' do

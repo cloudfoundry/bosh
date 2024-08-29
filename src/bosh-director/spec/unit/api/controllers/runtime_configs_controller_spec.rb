@@ -282,7 +282,7 @@ module Bosh::Director
 
         it 'creates a new runtime config when one exists with different content' do
           content = YAML.dump(Bosh::Spec::Deployments.simple_runtime_config)
-          Models::Config.make(:runtime, content: content + '123')
+          FactoryBot.create(:models_config_runtime, content: content + '123')
 
           expect do
             post '/', content, 'CONTENT_TYPE' => 'text/yaml'
@@ -293,7 +293,7 @@ module Bosh::Director
 
         it 'ignores runtime config when config already exists' do
           content = YAML.dump(Bosh::Spec::Deployments.simple_runtime_config)
-          Models::Config.make(:runtime, content: content)
+          FactoryBot.create(:models_config_runtime, content: content)
 
           expect do
             post '/', content, 'CONTENT_TYPE' => 'text/yaml'
@@ -404,7 +404,7 @@ module Bosh::Director
           end
 
           it 'ignores named runtime config when config already exists' do
-            Models::Config.make(:runtime, content: content, name: 'smurf')
+            FactoryBot.create(:models_config_runtime, content: content, name: 'smurf')
 
             expect do
               post path, content, 'CONTENT_TYPE' => 'text/yaml'
@@ -485,7 +485,7 @@ module Bosh::Director
       describe 'when user has readonly access' do
         before do
           basic_authorize('reader', 'reader')
-          Bosh::Director::Models::Config.make(content: '{}')
+          FactoryBot.create(:models_config, content: '{}')
         end
 
         it 'allows access' do

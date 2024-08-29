@@ -17,7 +17,7 @@ module Bosh::Director
     let(:less_than_one_day_ago) { time - one_day_seconds + 1 }
 
     let!(:orphan_network_1) do
-      Models::Network.make(
+      FactoryBot.create(:models_network,
         name: 'nw-1',
         orphaned: true,
         orphaned_at: one_day_one_second_ago,
@@ -26,7 +26,7 @@ module Bosh::Director
     end
 
     let!(:orphan_network_2) do
-      Models::Network.make(
+      FactoryBot.create(:models_network,
         name: 'nw-2',
         orphaned: true,
         orphaned_at: less_than_one_day_ago,
@@ -35,7 +35,7 @@ module Bosh::Director
     end
 
     let!(:network_3) do
-      Models::Network.make(
+      FactoryBot.create(:models_network,
         name: 'nw-3',
         orphaned: false,
         orphaned_at: one_day_one_second_ago,
@@ -43,11 +43,11 @@ module Bosh::Director
       )
     end
 
-    let(:task) { Models::Task.make(id: 42) }
+    let(:task) { FactoryBot.create(:models_task, id: 42) }
     let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
     let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
     let(:event_manager) { Api::EventManager.new(true) }
-    let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
+    let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
 
     let(:scheduled_orphaned_network_cleanup_job) do
       instance_double(
@@ -100,7 +100,7 @@ module Bosh::Director
 
         context 'and multiple orphan networks' do
           let(:orphan_network_2) do
-            Models::Network.make(
+            FactoryBot.create(:models_network,
               name: 'nw-2',
               orphaned: true,
               orphaned_at: one_day_one_second_ago,

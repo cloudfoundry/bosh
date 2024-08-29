@@ -18,15 +18,15 @@ module Bosh::Director
       {}
     end
     let(:event_log) { Config.event_log }
-    let(:cloud_config) { Models::Config.make(:cloud) }
-    let(:runtime_configs) { [Models::Config.make(:runtime)] }
+    let(:cloud_config) { FactoryBot.create(:models_config_cloud) }
+    let(:runtime_configs) { [FactoryBot.create(:models_config_runtime)] }
 
     describe '#parse' do
       let(:options) do
         { 'is_deploy_action' => true }
       end
       let(:parsed_deployment) { subject.parse(manifest_hash, options) }
-      let(:deployment_model) { Models::Deployment.make }
+      let(:deployment_model) { FactoryBot.create(:models_deployment) }
       let(:manifest_hash) do
         {
           'name' => 'deployment-name',

@@ -4,23 +4,23 @@ module Bosh::Director
   describe Jobs::DeleteDeploymentSnapshots do
     let(:deployment_manager) { instance_double('Bosh::Director::Api::DeploymentManager') }
     let(:deployment_name) { 'deployment' }
-    let(:deployment) { Models::Deployment.make(name: deployment_name) }
-    let!(:vm1) { Models::Vm.make(instance_id: instance1.id) }
-    let!(:instance1) { Models::Instance.make(deployment: deployment) }
-    let!(:disk1) { Models::PersistentDisk.make(:instance_id => instance1.id) }
-    let!(:snap1a) { Models::Snapshot.make(snapshot_cid: "snap1a", persistent_disk_id: disk1.id) }
-    let!(:snap1b) { Models::Snapshot.make(snapshot_cid: "snap1b", persistent_disk_id: disk1.id) }
-    let!(:vm2) { Models::Vm.make(instance_id: instance2.id) }
-    let!(:instance2) { Models::Instance.make(deployment: deployment) }
-    let!(:disk2) { Models::PersistentDisk.make(:instance_id => instance2.id) }
-    let!(:snap2a) { Models::Snapshot.make(snapshot_cid: "snap2a", persistent_disk_id: disk2.id) }
-    let!(:vm3) { Models::Vm.make(instance_id: instance3.id) }
-    let!(:instance3) { Models::Instance.make(deployment: deployment) }
-    let!(:disk3) { Models::PersistentDisk.make(:instance_id => instance3.id) }
-    let!(:vm4) { Models::Vm.make(instance_id: instance4.id) }
-    let!(:instance4) { Models::Instance.make }
-    let!(:disk4) { Models::PersistentDisk.make(:instance_id => instance4.id) }
-    let!(:snap4a) { Models::Snapshot.make(snapshot_cid: "snap4a", persistent_disk_id: disk4.id) }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: deployment_name) }
+    let!(:vm1) { FactoryBot.create(:models_vm, instance_id: instance1.id) }
+    let!(:instance1) { FactoryBot.create(:models_instance, deployment: deployment) }
+    let!(:disk1) { FactoryBot.create(:models_persistent_disk, :instance_id => instance1.id) }
+    let!(:snap1a) { FactoryBot.create(:models_snapshot, snapshot_cid: "snap1a", persistent_disk_id: disk1.id) }
+    let!(:snap1b) { FactoryBot.create(:models_snapshot, snapshot_cid: "snap1b", persistent_disk_id: disk1.id) }
+    let!(:vm2) { FactoryBot.create(:models_vm, instance_id: instance2.id) }
+    let!(:instance2) { FactoryBot.create(:models_instance, deployment: deployment) }
+    let!(:disk2) { FactoryBot.create(:models_persistent_disk, :instance_id => instance2.id) }
+    let!(:snap2a) { FactoryBot.create(:models_snapshot, snapshot_cid: "snap2a", persistent_disk_id: disk2.id) }
+    let!(:vm3) { FactoryBot.create(:models_vm, instance_id: instance3.id) }
+    let!(:instance3) { FactoryBot.create(:models_instance, deployment: deployment) }
+    let!(:disk3) { FactoryBot.create(:models_persistent_disk, :instance_id => instance3.id) }
+    let!(:vm4) { FactoryBot.create(:models_vm, instance_id: instance4.id) }
+    let!(:instance4) { FactoryBot.create(:models_instance) }
+    let!(:disk4) { FactoryBot.create(:models_persistent_disk, :instance_id => instance4.id) }
+    let!(:snap4a) { FactoryBot.create(:models_snapshot, snapshot_cid: "snap4a", persistent_disk_id: disk4.id) }
 
     subject { described_class.new(deployment_name) }
 

@@ -2,12 +2,12 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Api::InstanceManager do
-    let(:deployment) { Models:: Deployment.make(name: deployment_name) }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: deployment_name) }
     let(:active_vm) { true }
-    let!(:vm) { Models::Vm.make(agent_id: 'random-id', instance_id: instance.id, active: active_vm) }
-    let(:instance) { Models::Instance.make(uuid: 'fakeId123', deployment: deployment, job: job) }
-    let!(:vm_1) { Models::Vm.make(agent_id: 'random-id1', instance_id: instance_1.id, active: active_vm) }
-    let(:instance_1) { Models::Instance.make(uuid: 'fakeId124', deployment: deployment, job: job) }
+    let!(:vm) { FactoryBot.create(:models_vm, agent_id: 'random-id', instance_id: instance.id, active: active_vm) }
+    let(:instance) { FactoryBot.create(:models_instance, uuid: 'fakeId123', deployment: deployment, job: job) }
+    let!(:vm_1) { FactoryBot.create(:models_vm, agent_id: 'random-id1', instance_id: instance_1.id, active: active_vm) }
+    let(:instance_1) { FactoryBot.create(:models_instance, uuid: 'fakeId124', deployment: deployment, job: job) }
     let(:task) { double('Task') }
     let(:username) { 'FAKE_USER' }
     let(:instance_lookup) { Api::InstanceLookup.new }
@@ -77,8 +77,8 @@ module Bosh::Director
           let(:active_vm) { false }
 
           it 'enqueues a job' do
-            instance_2 = Models::Instance.make(uuid: 'fakeId125', deployment: deployment, job: job)
-            Models::Vm.make(agent_id: 'random-id2', instance_id: instance_2.id, active: true)
+            instance_2 = FactoryBot.create(:models_instance, uuid: 'fakeId125', deployment: deployment, job: job)
+            FactoryBot.create(:models_vm, agent_id: 'random-id2', instance_id: instance_2.id, active: true)
 
             expect(job_queue).to receive(:enqueue).with(
               username, Jobs::FetchLogs, 'fetch logs', [[instance_2.id], options], deployment).and_return(task)
@@ -89,9 +89,9 @@ module Bosh::Director
 
       context 'when development is provided' do
         let!(:instance_2) do
-          instance = Models::Instance.make(uuid: 'fakeId125', deployment: deployment, job: job_2)
-          Models::Vm.make(agent_id: 'random-id2', instance_id: instance.id, active: active_vm)
-          instance
+          FactoryBot.create(:models_instance, uuid: 'fakeId125', deployment: deployment, job: job_2).tap do |i|
+            FactoryBot.create(:models_vm, agent_id: 'random-id2', instance_id: i.id, active: active_vm)
+          end
         end
         let(:job_2) { 'FAKE_JOB_2' }
 
@@ -114,8 +114,8 @@ module Bosh::Director
           let(:job_3) { 'FAKE_JOB_3' }
 
           it 'enqueues a job' do
-            instance_2 = Models::Instance.make(uuid: 'fakeId126', deployment: deployment, job: job_3)
-            Models::Vm.make(agent_id: 'random-id3', instance_id: instance_2.id, active: true)
+            instance_2 = FactoryBot.create(:models_instance, uuid: 'fakeId126', deployment: deployment, job: job_3)
+            FactoryBot.create(:models_vm, agent_id: 'random-id3', instance_id: instance_2.id, active: true)
 
             expect(job_queue).to receive(:enqueue).with(
               username, Jobs::FetchLogs, 'fetch logs', [[instance_2.id], options], deployment).and_return(task)
@@ -151,7 +151,7 @@ module Bosh::Director
 
     describe '#find_instances_by_deployment' do
       it 'uses InstanceLookup#by_deployment' do
-        deployment = Models::Deployment.make(name: 'given_deployment')
+        deployment = FactoryBot.create(:models_deployment, name: 'given_deployment')
 
         expect_any_instance_of(Api::InstanceLookup).to receive(:by_deployment).with(deployment)
 
@@ -237,7 +237,7 @@ module Bosh::Director
     end
 
     describe '#vms_by_instances_for_deployment' do
-      let!(:inactive_vm) { Models::Vm.make(instance: instance, active: false) }
+      let!(:inactive_vm) { FactoryBot.create(:models_vm, instance: instance, active: false) }
 
       it 'reports all vms in that deployment and their associated instances' do
         results = subject.vms_by_instances_for_deployment(deployment)

@@ -36,7 +36,7 @@ module Bosh
         config = Bosh::Director::Config.load_file(config_file)
         Bosh::Director::App.new(config)
 
-        context.instance_eval { include BD::Models }
+        context.instance_eval { include Bosh::Director::Models }
         require_ruby_debug
 
         puts "=> Welcome to BOSH Director console\n=> You can use 'app' to access REST API"
@@ -56,14 +56,12 @@ module Bosh
   end
 end
 
-BD = Bosh::Director
-
 def app
-  BD::TestApplication.new
+  Bosh::Director::TestApplication.new
 end
 
 def config
-  BD::Config
+  Bosh::Director::Config
 end
 
 [:blobstore, :nats, :cloud].each do |helper|
@@ -72,4 +70,4 @@ end
   end
 end
 
-BD::Console.new.start(self, config_file)
+Bosh::Director::Console.new.start(self, config_file)

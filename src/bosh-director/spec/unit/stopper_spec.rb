@@ -4,8 +4,8 @@ require 'bosh/director/stopper'
 module Bosh::Director
   describe Stopper do
     subject(:stopper) { described_class }
-    let(:vm_model) { Models::Vm.make(cid: 'vm-cid', instance_id: instance_model.id) }
-    let(:instance_model) { Models::Instance.make(spec: spec) }
+    let(:vm_model) { FactoryBot.create(:models_vm, cid: 'vm-cid', instance_id: instance_model.id) }
+    let(:instance_model) { FactoryBot.create(:models_instance, spec: spec) }
     let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
     let(:task) { instance_double('Bosh::Director::EventLog::Task') }
     let(:target_state) { 'fake-target-state' }
@@ -272,7 +272,7 @@ module Bosh::Director
         before do
           allow(instance_plan).to receive(:needs_shutting_down?).and_return(false)
           allow(instance_plan).to receive(:persistent_disk_changed?).and_return(true)
-          instance_plan.existing_instance.add_persistent_disk(Models::PersistentDisk.make)
+          instance_plan.existing_instance.add_persistent_disk(FactoryBot.create(:models_persistent_disk))
         end
 
         it 'drains with shutdown' do

@@ -6,8 +6,8 @@ module Bosh::Director
       describe ElectActiveVmStep do
         subject(:step) { described_class.new }
 
-        let(:instance) { Models::Instance.make }
-        let!(:vm) { Models::Vm.make(instance: instance, active: false, cpi: 'vm-cpi') }
+        let(:instance) { FactoryBot.create(:models_instance) }
+        let!(:vm) { FactoryBot.create(:models_vm, instance: instance, active: false, cpi: 'vm-cpi') }
         let(:report) { Stages::Report.new.tap { |r| r.vm = vm } }
 
         it 'marks the new vm as active' do
@@ -16,7 +16,7 @@ module Bosh::Director
         end
 
         context 'when there is already an active vm' do
-          let!(:active_vm) { Models::Vm.make(instance: instance, active: true, cpi: 'vm-cpi') }
+          let!(:active_vm) { FactoryBot.create(:models_vm, instance: instance, active: true, cpi: 'vm-cpi') }
           it 'marks the old vm as inactive' do
             step.perform(report)
             expect(active_vm.reload.active).to eq false

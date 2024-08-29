@@ -9,7 +9,7 @@ module Bosh::Director
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
     end
     let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient', create: true) }
-    let(:task) { Models::Task.make(id: 42) }
+    let(:task) { FactoryBot.create(:models_task, id: 42) }
     let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
     let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
 
@@ -29,7 +29,7 @@ module Bosh::Director
       let(:release_dir) { Test::ReleaseHelper.new.create_release_tarball(manifest) }
       let(:release_path) { File.join(release_dir, 'release.tgz') }
       let(:release_version) { '42+dev.6' }
-      let(:release) { Models::Release.make(name: 'appcloud') }
+      let(:release) { FactoryBot.create(:models_release, name: 'appcloud') }
 
       let(:manifest_jobs) do
         [
@@ -115,7 +115,7 @@ module Bosh::Director
         }
       end
       let(:release_version) { '42+dev.6' }
-      let(:release) { Models::Release.make(name: 'appcloud') }
+      let(:release) { FactoryBot.create(:models_release, name: 'appcloud') }
       let(:manifest_packages) { nil }
       let(:manifest_jobs) { nil }
       let(:status) { instance_double(Process::Status, exitstatus: 0) }
@@ -275,7 +275,7 @@ module Bosh::Director
       end
 
       context 'release already exists' do
-        let!(:release_version_model) { Models::ReleaseVersion.make(release: release, version: '42+dev.6', commit_hash: '12345678', uncommitted_changes: true) }
+        let!(:release_version_model) { FactoryBot.create(:models_release_version, release: release, version: '42+dev.6', commit_hash: '12345678', uncommitted_changes: true) }
 
         context 'when rebase is passed' do
           let(:job_options) do
@@ -343,7 +343,7 @@ module Bosh::Director
 
       context 'when the same release is uploaded with different commit hash' do
         let!(:previous_release_version) do
-          Models::ReleaseVersion.make(release: release, version: '42+dev.6', commit_hash: 'bad123', uncommitted_changes: true)
+          FactoryBot.create(:models_release_version, release: release, version: '42+dev.6', commit_hash: 'bad123', uncommitted_changes: true)
         end
 
         it 'fails with a ReleaseVersionCommitHashMismatch exception' do
@@ -389,12 +389,12 @@ module Bosh::Director
         end
 
         before do
-          Models::Package.make(release: release, name: 'fake-name-1', version: 'fake-version-1', fingerprint: 'fake-fingerprint-1')
+          FactoryBot.create(:models_package, release: release, name: 'fake-name-1', version: 'fake-version-1', fingerprint: 'fake-fingerprint-1')
         end
 
         it 'raises an error if a different fingerprint was detected for an already existing package' do
-          pkg = Models::Package.make(release: release, name: 'fake-name-2', version: 'fake-version-2', fingerprint: 'different-finger-print', sha1: 'fakesha2')
-          release_version = Models::ReleaseVersion.make(release: release, version: '42+dev.6', commit_hash: '12345678', uncommitted_changes: true)
+          pkg = FactoryBot.create(:models_package, release: release, name: 'fake-name-2', version: 'fake-version-2', fingerprint: 'different-finger-print', sha1: 'fakesha2')
+          release_version = FactoryBot.create(:models_release_version, release: release, version: '42+dev.6', commit_hash: '12345678', uncommitted_changes: true)
           release_version.add_package(pkg)
 
           expect do
@@ -442,14 +442,14 @@ module Bosh::Director
         end
 
         it 'raises an error if a different fingerprint was detected for an already existing job' do
-          corrupted_job = Models::Template.make(
+          corrupted_job = FactoryBot.create(:models_template,
             release: release,
             name: 'fake-job-1',
             version: 'fake-version-1',
             fingerprint: 'different-finger-print',
             sha1: 'fakesha11',
           )
-          release_version = Models::ReleaseVersion.make(
+          release_version = FactoryBot.create(:models_release_version,
             release: release,
             version: '42+dev.6',
             commit_hash: '12345678',
@@ -468,7 +468,7 @@ module Bosh::Director
         end
 
         it "creates jobs that don't already exist" do
-          Models::Template.make(
+          FactoryBot.create(:models_template,
             release: release,
             name: 'fake-job-1',
             version: 'fake-version-1',
@@ -536,16 +536,16 @@ module Bosh::Director
         end
 
         it 'process packages should include all packages from the manifest in the packages array, even previously existing ones' do
-          pkg_foo = Models::Package.make(release: release, name: 'foo', version: '2.33-dev',
+          pkg_foo = FactoryBot.create(:models_package, release: release, name: 'foo', version: '2.33-dev',
                                          fingerprint: 'package-fingerprint-1', sha1: 'packagesha11',
                                          blobstore_id: 'bs1')
-          pkg_bar = Models::Package.make(release: release, name: 'bar', version: '3.14-dev',
+          pkg_bar = FactoryBot.create(:models_package, release: release, name: 'bar', version: '3.14-dev',
                                          fingerprint: 'package-fingerprint-2', sha1: 'packagesha12',
                                          blobstore_id: 'bs2')
-          pkg_zbb = Models::Package.make(release: release, name: 'zbb', version: '333',
+          pkg_zbb = FactoryBot.create(:models_package, release: release, name: 'zbb', version: '333',
                                          fingerprint: 'package-fingerprint-3', sha1: 'packagesha13',
                                          blobstore_id: 'bs3')
-          release_version = Models::ReleaseVersion.make(release: release, version: '42+dev.6', commit_hash: '12345678',
+          release_version = FactoryBot.create(:models_release_version, release: release, version: '42+dev.6', commit_hash: '12345678',
                                                         uncommitted_changes: true, update_completed: true)
           release_version.add_package(pkg_foo)
           release_version.add_package(pkg_bar)
@@ -622,14 +622,14 @@ module Bosh::Director
 
         @job = Jobs::UpdateRelease.new(@release_path, 'rebase' => true)
 
-        @release = Models::Release.make(name: 'appcloud')
-        @rv = Models::ReleaseVersion.make(release: @release, version: '37')
+        @release = FactoryBot.create(:models_release, name: 'appcloud')
+        @rv = FactoryBot.create(:models_release_version, release: @release, version: '37')
 
-        Models::Package.make(release: @release, name: 'foo', version: '2.7-dev')
-        Models::Package.make(release: @release, name: 'bar', version: '42')
+        FactoryBot.create(:models_package, release: @release, name: 'foo', version: '2.7-dev')
+        FactoryBot.create(:models_package, release: @release, name: 'bar', version: '42')
 
-        Models::Template.make(release: @release, name: 'baz', version: '33.7-dev')
-        Models::Template.make(release: @release, name: 'zaz', version: '17')
+        FactoryBot.create(:models_template, release: @release, name: 'baz', version: '33.7-dev')
+        FactoryBot.create(:models_template, release: @release, name: 'zaz', version: '17')
 
         # create up to 6 new blobs (3*job + 3*package)
         allow(blobstore).to receive(:create).at_most(6).and_return('b1', 'b2', 'b3', 'b4', 'b5', 'b6')
@@ -650,7 +650,7 @@ module Bosh::Director
 
       context 'when the package fingerprint matches one in the database' do
         before do
-          Models::Package.make(
+          FactoryBot.create(:models_package,
             release: @release,
             name: 'zbb',
             version: '25',
@@ -688,8 +688,8 @@ module Bosh::Director
 
       context 'when the package fingerprint matches multiple in the database' do
         before do
-          Models::Package.make(release: @release, name: 'zbb', version: '25', fingerprint: 'package-fingerprint-3', sha1: 'packagesha125')
-          Models::Package.make(release: @release, name: 'zbb', version: '26', fingerprint: 'package-fingerprint-3', sha1: 'packagesha126')
+          FactoryBot.create(:models_package, release: @release, name: 'zbb', version: '25', fingerprint: 'package-fingerprint-3', sha1: 'packagesha125')
+          FactoryBot.create(:models_package, release: @release, name: 'zbb', version: '26', fingerprint: 'package-fingerprint-3', sha1: 'packagesha126')
         end
 
         it 'creates new package (version) with copied blob (sha1)' do
@@ -721,7 +721,7 @@ module Bosh::Director
 
       context 'when the package fingerprint is new' do
         before do
-          Models::Package.make(release: @release, name: 'zbb', version: '25', fingerprint: 'package-fingerprint-old', sha1: 'packagesha125')
+          FactoryBot.create(:models_package, release: @release, name: 'zbb', version: '25', fingerprint: 'package-fingerprint-old', sha1: 'packagesha125')
         end
 
         it 'creates new package (version) with new blob (sha1)' do
@@ -753,7 +753,7 @@ module Bosh::Director
 
       context 'when the job fingerprint matches one in the database' do
         before do
-          Models::Template.make(release: @release, name: 'zbz', version: '28', fingerprint: 'job-fingerprint-3')
+          FactoryBot.create(:models_template, release: @release, name: 'zbz', version: '28', fingerprint: 'job-fingerprint-3')
         end
 
         it 'uses the new job blob' do
@@ -772,7 +772,7 @@ module Bosh::Director
 
       context 'when the job fingerprint is new' do
         before do
-          Models::Template.make(release: @release, name: 'zbz', version: '28', fingerprint: 'job-fingerprint-old')
+          FactoryBot.create(:models_template, release: @release, name: 'zbz', version: '28', fingerprint: 'job-fingerprint-old')
         end
 
         it 'uses the new job blob' do
@@ -816,7 +816,7 @@ module Bosh::Director
 
       it 'performs the rebase if same release is being rebased twice', if: ENV.fetch('DB', 'sqlite') != 'sqlite' do
         allow(Config).to receive_message_chain(:current_job, :username).and_return('username')
-        task = Models::Task.make(state: 'processing')
+        task = FactoryBot.create(:models_task, state: 'processing')
         allow(Config).to receive_message_chain(:current_job, :task_id).and_return(task.id)
 
         Config.configure(SpecHelper.spec_get_director_config)
@@ -839,10 +839,10 @@ module Bosh::Director
       subject(:job) { Jobs::UpdateRelease.new(release_path, 'fix' => true) }
       let(:release_dir) { Test::ReleaseHelper.new.create_release_tarball(manifest) }
       let(:release_path) { File.join(release_dir, 'release.tgz') }
-      let!(:release) { Models::Release.make(name: 'appcloud') }
+      let!(:release) { FactoryBot.create(:models_release, name: 'appcloud') }
 
       let!(:release_version_model) do
-        Models::ReleaseVersion.make(
+        FactoryBot.create(:models_release_version,
           release: release,
           version: '42+dev.1',
           commit_hash: '12345678',
@@ -893,7 +893,7 @@ module Bosh::Director
 
         context 'when release already exists' do
           let!(:package) do
-            package = Models::Package.make(
+            package = FactoryBot.create(:models_package,
               release: release,
               name: 'fake-name-1',
               version: 'fake-version-1',
@@ -906,7 +906,7 @@ module Bosh::Director
           end
 
           let!(:template) do
-            template = Models::Template.make(
+            template = FactoryBot.create(:models_template,
               release: release,
               name: 'fake-name-2',
               version: 'fake-version-2',
@@ -937,9 +937,9 @@ module Bosh::Director
         end
 
         context 'when there are existing packages from another release' do
-          let!(:another_release) { Models::Release.make(name: 'foocloud') }
+          let!(:another_release) { FactoryBot.create(:models_release, name: 'foocloud') }
           let!(:old_release_version_model) do
-            Models::ReleaseVersion.make(
+            FactoryBot.create(:models_release_version,
               release: another_release,
               version: '41+dev.1',
               commit_hash: '23456789',
@@ -948,14 +948,14 @@ module Bosh::Director
           end
 
           let!(:existing_pkg) do
-            package = Models::Package.make(
+            package = FactoryBot.create(:models_package,
               release: another_release,
               name: 'fake-name-1',
               version: 'fake-version-1',
               fingerprint: 'fake-fingerprint-1',
               blobstore_id: 'existing-fake-blobstore-id-1',
               sha1: 'existing-fakesha1',
-            ).save
+            )
 
             old_release_version_model.add_package(package)
             package
@@ -973,7 +973,7 @@ module Bosh::Director
 
         context 'eliminates compiled packages' do
           let!(:package) do
-            package = Models::Package.make(
+            package = FactoryBot.create(:models_package,
               release: release,
               name: 'fake-name-1',
               version: 'fake-version-1',
@@ -985,7 +985,7 @@ module Bosh::Director
             package
           end
           let!(:compiled_package) do
-            Models::CompiledPackage.make(
+            FactoryBot.create(:models_compiled_package,
               package: package,
               sha1: 'fakecompiledsha1',
               blobstore_id: 'fake-compiled-pkg-blobstore-id-1',
@@ -1037,7 +1037,7 @@ module Bosh::Director
 
         context 'when release already exists' do
           let!(:package) do
-            package = Models::Package.make(
+            package = FactoryBot.create(:models_package,
               release: release,
               name: 'fake-name-1',
               version: 'fake-version-1',
@@ -1047,7 +1047,7 @@ module Bosh::Director
             package
           end
           let!(:existing_compiled_package_with_different_dependencies) do
-            compiled_package = Models::CompiledPackage.make(
+            compiled_package = FactoryBot.build(:models_compiled_package,
               blobstore_id: 'fake-compiled-blobstore-id-2',
               dependency_key: 'blarg',
               sha1: 'fakecompiledsha1',
@@ -1058,7 +1058,7 @@ module Bosh::Director
             compiled_package
           end
           let!(:compiled_package) do
-            compiled_package = Models::CompiledPackage.make(
+            compiled_package = FactoryBot.build(:models_compiled_package,
               blobstore_id: 'fake-compiled-blobstore-id-1',
               dependency_key: '[]',
               sha1: 'fakecompiledsha1',
@@ -1083,9 +1083,9 @@ module Bosh::Director
         end
 
         context 'when re-using existing compiled packages from other releases' do
-          let!(:another_release) { Models::Release.make(name: 'foocloud') }
+          let!(:another_release) { FactoryBot.create(:models_release, name: 'foocloud') }
           let!(:old_release_version_model) do
-            Models::ReleaseVersion.make(
+            FactoryBot.create(:models_release_version,
               release: another_release,
               version: '41+dev.1',
               commit_hash: '23456789',
@@ -1093,29 +1093,30 @@ module Bosh::Director
             )
           end
           let!(:existing_package) do
-            package = Models::Package.make(
+            package = FactoryBot.create(:models_package,
               release: another_release,
               name: 'fake-name-1',
               version: 'fake-version-1',
               fingerprint: 'fake-fingerprint-1',
-            ).save
+            )
 
             old_release_version_model.add_package(package)
             package
           end
           let!(:existing_package_with_same_fingerprint) do
-            package = Models::Package.make(
+            package = FactoryBot.create(:models_package,
               release: another_release,
               name: 'fake-name-1',
               version: 'fake-version-2',
               fingerprint: 'fake-fingerprint-1',
-            ).save
+            )
 
             old_release_version_model.add_package(package)
             package
           end
+
           let!(:existing_compiled_package_with_different_dependencies) do
-            existing_compiled_package = Models::CompiledPackage.make(
+            existing_compiled_package = FactoryBot.create(:models_compiled_package,
               blobstore_id: 'fake-existing-compiled-blobstore-id-2',
               dependency_key: 'fake-existing-compiled-dependency-key-1-other',
               sha1: 'fakeexistingcompiledsha1',
@@ -1127,7 +1128,7 @@ module Bosh::Director
           end
 
           let!(:existing_compiled_package) do
-            Models::CompiledPackage.make(
+            FactoryBot.build(:models_compiled_package,
               blobstore_id: 'fake-existing-compiled-blobstore-id-1',
               dependency_key: '[]',
               sha1: 'fakeexistingcompiledsha1',
@@ -1137,7 +1138,7 @@ module Bosh::Director
           end
 
           let!(:matching_existing_compiled_package_from_same_release_version) do
-            Models::CompiledPackage.make(
+            FactoryBot.build(:models_compiled_package,
               blobstore_id: 'fake-existing-compiled-blobstore-id-A',
               dependency_key: '[]',
               sha1: 'fakeexistingcompiledsha1',
@@ -1145,6 +1146,7 @@ module Bosh::Director
               stemcell_version: '7.1',
             ).tap { |c| existing_package_with_same_fingerprint.add_compiled_package(c) }
           end
+
           it 'replaces existing compiled packages and copy blobs' do
             expect(BlobUtil).to receive(:delete_blob).with('fake-existing-compiled-blobstore-id-1')
             expect(BlobUtil).to receive(:delete_blob).with('fake-existing-compiled-blobstore-id-A')
@@ -1205,7 +1207,7 @@ module Bosh::Director
         }
       end
       let(:release_version) { '42+dev.6' }
-      let(:release) { Models::Release.make(name: 'appcloud') }
+      let(:release) { FactoryBot.create(:models_release, name: 'appcloud') }
       let(:manifest_packages) { nil }
       let(:manifest_jobs) { nil }
       let(:extracted_release_dir) { job.extract_release }
@@ -1233,7 +1235,7 @@ module Bosh::Director
 
         context 'on an already uploaded release' do
           before do
-            Models::ReleaseVersion.make(release: release, version: '42+dev.6', commit_hash: '12345678',
+            FactoryBot.create(:models_release_version, release: release, version: '42+dev.6', commit_hash: '12345678',
                                         update_completed: true)
           end
 
@@ -1242,7 +1244,7 @@ module Bosh::Director
 
         context 'on an already uploaded but uncompleted release' do
           it 'fixes the release' do
-            Models::ReleaseVersion.make(release: release, version: '42+dev.6', commit_hash: '12345678',
+            FactoryBot.create(:models_release_version, release: release, version: '42+dev.6', commit_hash: '12345678',
                                         update_completed: false)
 
             job.process_release(extracted_release_dir)
@@ -1283,10 +1285,10 @@ module Bosh::Director
       let(:release_dir) { Test::ReleaseHelper.new.create_release_tarball(manifest, skip_packages: true) }
       let(:release_path) { File.join(release_dir, 'release.tgz') }
       let(:release_version) { '42+dev.6' }
-      let(:release) { Models::Release.make(name: 'appcloud') }
-      let(:other_release) { Models::Release.make(name: 'other-release') }
+      let(:release) { FactoryBot.create(:models_release, name: 'appcloud') }
+      let(:other_release) { FactoryBot.create(:models_release, name: 'other-release') }
       let(:release_version_model) do
-        Models::ReleaseVersion.make(
+        FactoryBot.create(:models_release_version,
           release: release,
           version: release_version,
           commit_hash: '12345678',
@@ -1296,7 +1298,7 @@ module Bosh::Director
       end
 
       let!(:existing_package_without_source) do
-        Models::Package.make(
+        FactoryBot.create(:models_package,
           fingerprint: 'fake-fingerprint-1',
           name: 'fake-name-1',
           version: 'fake-version-1',
@@ -1307,7 +1309,7 @@ module Bosh::Director
       end
 
       let!(:existing_package_with_source_and_different_release) do
-        Models::Package.make(
+        FactoryBot.create(:models_package,
           fingerprint: 'fake-fingerprint-1',
           name: 'fake-name-1',
           version: 'fake-version-1',

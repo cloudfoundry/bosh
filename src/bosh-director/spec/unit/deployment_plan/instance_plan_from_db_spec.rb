@@ -4,7 +4,7 @@ module Bosh::Director
   module DeploymentPlan
     describe InstancePlanFromDB do
       let(:instance_model) do
-        Models::Instance.make(
+        FactoryBot.create(:models_instance,
           deployment: deployment_model,
           spec: spec,
           variable_set: variable_set_model,
@@ -12,7 +12,7 @@ module Bosh::Director
         )
       end
 
-      let(:stemcell) { Bosh::Director::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302') }
+      let(:stemcell) { FactoryBot.create(:models_stemcell, name: 'stemcell-name', version: '3.0.2', cid: 'sc-302') }
       let(:spec) do
         {
           'vm_type' => {
@@ -26,13 +26,13 @@ module Bosh::Director
           'networks' => {},
         }
       end
-      let(:variable_set_model) { Models::VariableSet.make(deployment: deployment_model) }
+      let(:variable_set_model) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
       let(:cloud_config_manifest) { Bosh::Spec::Deployments.simple_cloud_config }
 
       let(:deployment_manifest) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
       let(:deployment_model) do
-        cloud_config = BD::Models::Config.make(:cloud, content: YAML.dump(cloud_config_manifest))
-        deployment = BD::Models::Deployment.make(
+        cloud_config = FactoryBot.create(:models_config_cloud, content: YAML.dump(cloud_config_manifest))
+        deployment = FactoryBot.create(:models_deployment,
           name: deployment_manifest['name'],
           manifest: YAML.dump(deployment_manifest),
         )
@@ -45,9 +45,9 @@ module Bosh::Director
       end
 
       before do
-        release = Models::Release.make(name: 'bosh-release')
-        release_version = Models::ReleaseVersion.make(version: '0.1-dev', release: release)
-        template1 = Models::Template.make(name: 'foobar', release: release)
+        release = FactoryBot.create(:models_release, name: 'bosh-release')
+        release_version = FactoryBot.create(:models_release_version, version: '0.1-dev', release: release)
+        template1 = FactoryBot.create(:models_template, name: 'foobar', release: release)
         release_version.add_template(template1)
       end
 

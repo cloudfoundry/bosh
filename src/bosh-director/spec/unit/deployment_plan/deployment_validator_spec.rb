@@ -4,8 +4,8 @@ module Bosh::Director
   describe DeploymentPlan::DeploymentValidator do
     describe '#validate' do
       let(:deployment_validator) { DeploymentPlan::DeploymentValidator.new }
-      let(:cloud_config) { Models::Config.make(:cloud) }
-      let(:deployment_model) { Bosh::Director::Models::Deployment.make }
+      let(:cloud_config) { FactoryBot.create(:models_config_cloud) }
+      let(:deployment_model) { FactoryBot.create(:models_deployment) }
       let(:deployment) do
         instance_double(DeploymentPlan::Planner,
                         stemcells: stemcells,

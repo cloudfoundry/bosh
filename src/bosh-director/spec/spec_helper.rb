@@ -14,10 +14,8 @@ require 'timecop'
 require 'webmock/rspec'
 
 require 'minitar'
-require 'machinist/sequel'
 require 'active_support' # TODO: remove once factory_bot > 6.4.6 is released
 require 'factory_bot'
-require 'sham'
 require 'support/buffered_logger'
 
 Dir.glob(File.expand_path('support/**/*.rb', __dir__)).each { |f| require(f) }
@@ -44,7 +42,6 @@ module SpecHelper
 
       init_database
 
-      require 'blueprints'
       require 'factories'
     end
 
@@ -216,8 +213,6 @@ module SpecHelper
 end
 
 SpecHelper.init
-
-BD = Bosh::Director
 
 RSpec.configure do |rspec|
   rspec.around(:each) do |example|

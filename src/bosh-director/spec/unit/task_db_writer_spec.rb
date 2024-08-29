@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe TaskDBWriter do
     subject(:task_db_writer) { TaskDBWriter.new(column_name, task.id) }
-    let(:task) { Bosh::Director::Models::Task.make(id: 42) }
+    let(:task) { FactoryBot.create(:models_task, id: 42) }
     let(:column_name) { :result_output }
 
     describe '#write' do

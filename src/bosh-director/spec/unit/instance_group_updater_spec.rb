@@ -30,7 +30,7 @@ module Bosh::Director
               link_provider_intents, kind_of(Bosh::Director::EventLog::Task))
         .and_return(canary_updater, changed_updater, unchanged_updater)
 
-      Models::Deployment.make(name: 'test-deployment', manifest: manifest)
+      FactoryBot.create(:models_deployment, name: 'test-deployment', manifest: manifest)
     end
 
     let(:instance_group) do
@@ -58,7 +58,7 @@ module Bosh::Director
       let(:needed_instance_plans) { [] }
       let(:update_error) { RuntimeError.new('update failed') }
       let(:instance_deleter) { instance_double('Bosh::Director::InstanceDeleter') }
-      let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
+      let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
       let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
       let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
 
@@ -71,7 +71,7 @@ module Bosh::Director
 
       context 'when instance_group is up to date' do
         let(:serial_id) { 64 }
-        let(:deployment_model) { Bosh::Director::Models::Deployment.make(links_serial_id: serial_id) }
+        let(:deployment_model) { FactoryBot.create(:models_deployment, links_serial_id: serial_id) }
         let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
         let(:needed_instance) { instance_double(DeploymentPlan::Instance) }
         let(:needed_instance_plans) do
@@ -94,7 +94,7 @@ module Bosh::Director
           end
         end
 
-        let(:instance_model) { Bosh::Director::Models::Instance.make }
+        let(:instance_model) { FactoryBot.create(:models_instance) }
 
         before do
           allow(needed_instance).to receive(:instance_group_name).and_return('instance-group-name')
@@ -218,7 +218,7 @@ module Bosh::Director
 
       context 'when instance_group needs to be updated' do
         let(:serial_id) { 64 }
-        let(:deployment_model) { Bosh::Director::Models::Deployment.make(links_serial_id: serial_id) }
+        let(:deployment_model) { FactoryBot.create(:models_deployment, links_serial_id: serial_id) }
         let(:canary_model) { instance_double('Bosh::Director::Models::Instance', to_s: 'instance_group_name/fake_uuid (1)') }
         let(:changed_instance_model) do
           instance_double('Bosh::Director::Models::Instance', to_s: 'instance_group_name/fake_uuid (2)')
@@ -250,7 +250,7 @@ module Bosh::Director
           plan = DeploymentPlan::InstancePlan.new(
             instance: changed_instance,
             desired_instance: DeploymentPlan::DesiredInstance.new,
-            existing_instance: Models::Instance.make,
+            existing_instance: FactoryBot.create(:models_instance),
             variables_interpolator: variables_interpolator,
           )
           allow(plan).to receive(:changed?) { true }
@@ -262,7 +262,7 @@ module Bosh::Director
           plan = DeploymentPlan::InstancePlan.new(
             instance: unchanged_instance,
             desired_instance: DeploymentPlan::DesiredInstance.new,
-            existing_instance: Models::Instance.make,
+            existing_instance: FactoryBot.create(:models_instance),
             variables_interpolator: variables_interpolator,
           )
           allow(plan).to receive(:changed?) { false }
@@ -273,7 +273,7 @@ module Bosh::Director
           plan
         end
 
-        let(:instance_model) { Bosh::Director::Models::Instance.make }
+        let(:instance_model) { FactoryBot.create(:models_instance) }
 
         let(:needed_instance_plans) { [canary_plan, changed_instance_plan, unchanged_instance_plan] }
 
@@ -402,7 +402,7 @@ module Bosh::Director
           plan = DeploymentPlan::InstancePlan.new(
             instance: changed_instance_1,
             desired_instance: DeploymentPlan::DesiredInstance.new,
-            existing_instance: Models::Instance.make,
+            existing_instance: FactoryBot.create(:models_instance),
             variables_interpolator: variables_interpolator,
           )
           allow(plan).to receive(:changed?) { true }
@@ -414,7 +414,7 @@ module Bosh::Director
           plan = DeploymentPlan::InstancePlan.new(
             instance: changed_instance_2,
             desired_instance: DeploymentPlan::DesiredInstance.new,
-            existing_instance: Models::Instance.make,
+            existing_instance: FactoryBot.create(:models_instance),
             variables_interpolator: variables_interpolator,
           )
           allow(plan).to receive(:changed?) { true }
@@ -426,7 +426,7 @@ module Bosh::Director
           plan = DeploymentPlan::InstancePlan.new(
             instance: changed_instance_3,
             desired_instance: DeploymentPlan::DesiredInstance.new,
-            existing_instance: Models::Instance.make,
+            existing_instance: FactoryBot.create(:models_instance),
             variables_interpolator: variables_interpolator,
           )
           allow(plan).to receive(:changed?) { true }

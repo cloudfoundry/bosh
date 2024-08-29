@@ -22,7 +22,7 @@ module Bosh::Director
     end
 
     let(:instance) do
-      instance = Models::Instance.make(
+      instance = FactoryBot.create(:models_instance,
         deployment: deployment_model,
         job: 'mysql_node',
         index: 0,
@@ -32,8 +32,8 @@ module Bosh::Director
       instance
     end
 
-    let!(:ip_address) { Models::IpAddress.make(instance: instance, address_str: ip_to_i('192.1.3.4').to_s) }
-    let!(:vm) { Models::Vm.make(instance: instance, active: true) }
+    let!(:ip_address) { FactoryBot.create(:models_ip_address, instance: instance, address_str: ip_to_i('192.1.3.4').to_s) }
+    let!(:vm) { FactoryBot.create(:models_vm, instance: instance, active: true) }
 
     let(:spec) do
       { 'apply' => 'spec', 'env' => { 'vm_env' => 'json' } }
@@ -41,7 +41,7 @@ module Bosh::Director
 
     let(:deployment_model) do
       manifest = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
-      Models::Deployment.make(name: manifest['name'], manifest: YAML.dump(manifest))
+      FactoryBot.create(:models_deployment, name: manifest['name'], manifest: YAML.dump(manifest))
     end
 
     let(:test_problem_handler) { ProblemHandlers::Base.create_by_type(:test_problem_handler, instance.uuid, {}) }
@@ -77,7 +77,7 @@ module Bosh::Director
 
     let(:ip_provider) { instance_double(Bosh::Director::DeploymentPlan::IpProvider) }
     let(:planner_factory) { instance_double(Bosh::Director::DeploymentPlan::PlannerFactory) }
-    let!(:local_dns_blob) { Models::LocalDnsBlob.make }
+    let!(:local_dns_blob) { FactoryBot.create(:models_local_dns_blob) }
 
     before do
       allow(AgentClient).to receive(:with_agent_id).with(instance.agent_id, instance.name, anything).and_return(agent_client)
@@ -238,7 +238,7 @@ module Bosh::Director
         end
 
         before do
-          BD::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
+          FactoryBot.create(:models_stemcell, name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
           instance.update(spec: spec)
         end
 

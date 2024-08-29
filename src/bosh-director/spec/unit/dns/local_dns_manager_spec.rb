@@ -6,7 +6,7 @@ module Bosh::Director
       LocalDnsManager.new(Config.root_domain, local_dns_records_repo, blobstore_dns_publisher, logger)
     end
 
-    let(:instance_model) { Models::Instance.make }
+    let(:instance_model) { FactoryBot.create(:models_instance) }
     let(:instance_plan) { instance_double(DeploymentPlan::InstancePlan, instance: deployment_instance) }
     let(:deployment_instance) { instance_double(DeploymentPlan::Instance, model: instance_model) }
     let(:local_dns_records_repo) { instance_double(LocalDnsRecordsRepo) }

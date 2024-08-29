@@ -6,9 +6,9 @@ module Bosh::Director
       describe MountDiskStep do
         subject(:step) { MountDiskStep.new(disk) }
 
-        let(:instance) { Models::Instance.make }
-        let(:vm) { Models::Vm.make(instance: instance, active: true) }
-        let!(:disk) { Models::PersistentDisk.make(instance: instance, name: '') }
+        let(:instance) { FactoryBot.create(:models_instance) }
+        let(:vm) { FactoryBot.create(:models_vm, instance: instance, active: true) }
+        let!(:disk) { FactoryBot.create(:models_persistent_disk, instance: instance, name: '') }
         let(:agent_client) do
           instance_double(AgentClient, list_disk: [disk&.disk_cid], mount_disk: nil)
         end

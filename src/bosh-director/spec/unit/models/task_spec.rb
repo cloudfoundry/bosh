@@ -1,29 +1,38 @@
 require 'spec_helper'
-require 'logger'
 require 'bosh/director/models/task'
 
 module Bosh::Director::Models
   describe Task do
-    let(:state) { :processing }
-    let!(:task) do
-      Bosh::Director::Models::Task.make(
-        type: :update_deployment,
-        state: state,
-      )
-    end
-
     describe '#cancellable?' do
-      %w[processing queued].each do |state|
-        context "when state is #{state}" do
-          let(:state) { :processing }
-          it 'returns true' do
-            expect(task.cancellable?).to eq(true)
-          end
+      subject(:task) { Task.new(state: state) }
+
+      context "when state is processing" do
+        let(:state) { :processing }
+
+        it 'returns true' do
+          expect(task.cancellable?).to eq(true)
         end
       end
 
-      context 'when state is not processing or queued' do
+      context "when state is queued" do
+        let(:state) { :queued }
+
+        it 'returns true' do
+          expect(task.cancellable?).to eq(true)
+        end
+      end
+
+      context 'when state is cancelling' do
         let(:state) { :cancelling }
+
+        it 'returns false' do
+          expect(task.cancellable?).to eq(false)
+        end
+      end
+
+      context 'when state is done' do
+        let(:state) { :done }
+
         it 'returns false' do
           expect(task.cancellable?).to eq(false)
         end

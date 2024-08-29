@@ -54,9 +54,9 @@ module Bosh::Director
     end
 
     describe 'compilation readiness' do
-      let(:package) { Models::Package.make(name: 'foo') }
-      let(:stemcell) { Models::Stemcell.make(operating_system: 'chrome-os', version: 'latest') }
-      let(:compiled_package) { Models::CompiledPackage.make(package: package, stemcell_os: 'chrome-os', stemcell_version: 'latest') }
+      let(:package) { FactoryBot.create(:models_package, name: 'foo') }
+      let(:stemcell) { FactoryBot.create(:models_stemcell, operating_system: 'chrome-os', version: 'latest') }
+      let(:compiled_package) { FactoryBot.create(:models_compiled_package, package: package, stemcell_os: 'chrome-os', stemcell_version: 'latest') }
 
       it 'can tell if compiled' do
         requirement = make(package, stemcell)
@@ -69,8 +69,8 @@ module Bosh::Director
       end
 
       it 'is ready to compile when all dependencies are compiled' do
-        dep1 = Models::Package.make(name: 'bar')
-        dep2 = Models::Package.make(name: 'baz')
+        dep1 = FactoryBot.create(:models_package, name: 'bar')
+        dep2 = FactoryBot.create(:models_package, name: 'baz')
 
         requirement = make(package, stemcell)
         dep1_requirement = make(dep1, stemcell)
@@ -90,10 +90,10 @@ module Bosh::Director
 
     describe 'adding dependencies' do
       it 'works both ways' do
-        stemcell = Models::Stemcell.make
-        foo = Models::Package.make(name: 'foo')
-        bar = Models::Package.make(name: 'bar')
-        baz = Models::Package.make(name: 'baz')
+        stemcell = FactoryBot.create(:models_stemcell)
+        foo = FactoryBot.create(:models_package, name: 'foo')
+        bar = FactoryBot.create(:models_package, name: 'bar')
+        baz = FactoryBot.create(:models_package, name: 'baz')
 
         foo_requirement = make(foo, stemcell)
         bar_requirement = make(bar, stemcell)
@@ -116,11 +116,11 @@ module Bosh::Director
       let(:instance_group) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup') }
 
       it 'registers compiled package with instance_group' do
-        package = Models::Package.make
-        stemcell = Models::Stemcell.make
+        package = FactoryBot.create(:models_package)
+        stemcell = FactoryBot.create(:models_stemcell)
 
-        cp = Models::CompiledPackage.make(stemcell_os: 'firefox_os', stemcell_version: '2')
-        cp2 = Models::CompiledPackage.make(stemcell_os: 'firefox_os', stemcell_version: '2')
+        cp = FactoryBot.create(:models_compiled_package, stemcell_os: 'firefox_os', stemcell_version: '2')
+        cp2 = FactoryBot.create(:models_compiled_package, stemcell_os: 'firefox_os', stemcell_version: '2')
 
         requirement = make(package, stemcell)
 
@@ -144,10 +144,10 @@ module Bosh::Director
 
     describe 'generating dependency spec' do
       it 'generates dependency spec' do
-        stemcell = Models::Stemcell.make
-        foo = Models::Package.make(name: 'foo')
-        bar = Models::Package.make(name: 'bar', version: '42')
-        cp = Models::CompiledPackage.make(package: bar, build: 152, sha1: 'deadbeef', blobstore_id: 'deadcafe', stemcell_os: 'linux', stemcell_version: '2.6.11')
+        stemcell = FactoryBot.create(:models_stemcell)
+        foo = FactoryBot.create(:models_package, name: 'foo')
+        bar = FactoryBot.create(:models_package, name: 'bar', version: '42')
+        cp = FactoryBot.create(:models_compiled_package, package: bar, build: 152, sha1: 'deadbeef', blobstore_id: 'deadcafe', stemcell_os: 'linux', stemcell_version: '2.6.11')
 
         foo_requirement = make(foo, stemcell)
         bar_requirement = make(bar, stemcell)
@@ -171,12 +171,12 @@ module Bosh::Director
       end
 
       it "doesn't include nested dependencies" do
-        stemcell = Models::Stemcell.make
-        foo = Models::Package.make(name:  'foo')
-        bar = Models::Package.make(name:  'bar', version: '42')
-        baz = Models::Package.make(name:  'baz', version: '17')
+        stemcell = FactoryBot.create(:models_stemcell)
+        foo = FactoryBot.create(:models_package, name:  'foo')
+        bar = FactoryBot.create(:models_package, name:  'bar', version: '42')
+        baz = FactoryBot.create(:models_package, name:  'baz', version: '17')
 
-        cp_bar = Models::CompiledPackage.make(package: bar, build: 152, sha1: 'deadbeef', blobstore_id: 'deadcafe', stemcell_os: 'chrome-os', stemcell_version: 'latest')
+        cp_bar = FactoryBot.create(:models_compiled_package, package: bar, build: 152, sha1: 'deadbeef', blobstore_id: 'deadcafe', stemcell_os: 'chrome-os', stemcell_version: 'latest')
 
         foo_requirement = make(foo, stemcell)
         bar_requirement = make(bar, stemcell)

@@ -14,10 +14,10 @@ module Bosh
           let(:cloud) { instance_double('Bosh::Clouds::ExternalCpi', :request_cpi_api_version= => nil) }
           let(:cpi_api_version) { 1 }
           let(:cloud_wrapper) { Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud, cpi_api_version) }
-          let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
+          let(:deployment) { FactoryBot.create(:models_deployment, name: 'deployment_name') }
           let(:vm_type) { DeploymentPlan::VmType.new('name' => 'fake-vm-type', 'cloud_properties' => cloud_properties) }
           let(:event_manager) { Api::EventManager.new(true) }
-          let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
+          let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
           let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
           let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
           let(:env) { DeploymentPlan::Env.new({}) }
@@ -27,21 +27,21 @@ module Bosh
           let(:report) { Stages::Report.new }
           let(:delete_vm_step) { instance_double(DeleteVmStep) }
           let(:expected_group) { 'fake-director-name-deployment-name-fake-job' }
-          let(:vm_model) { Models::Vm.make(cid: 'new-vm-cid', instance: instance_model, cpi: 'cpi1') }
+          let(:vm_model) { FactoryBot.create(:models_vm, cid: 'new-vm-cid', instance: instance_model, cpi: 'cpi1') }
           let(:tags) { {} }
-          let(:availability_zone) { BD::DeploymentPlan::AvailabilityZone.new('az-1', {}) }
+          let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('az-1', {}) }
           let(:cloud_properties) { { 'ram' => '2gb' } }
           let(:network_cloud_properties) { { 'bandwidth' => '5mbps' } }
-          let(:variable_set) { Bosh::Director::Models::VariableSet.make(deployment: deployment) }
+          let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment) }
           let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
           let(:stemcell_api_version) { nil }
 
           let(:stemcell_model) do
-            Models::Stemcell.make(cid: 'stemcell-id', name: 'fake-stemcell', version: '123', api_version: stemcell_api_version)
+            FactoryBot.create(:models_stemcell, cid: 'stemcell-id', name: 'fake-stemcell', version: '123', api_version: stemcell_api_version)
           end
 
           let(:network_settings) do
-            BD::DeploymentPlan::NetworkSettings.new(
+            Bosh::Director::DeploymentPlan::NetworkSettings.new(
               instance_group.name,
               'deployment_name',
               { 'gateway' => 'name' },
@@ -66,7 +66,7 @@ module Bosh
           end
 
           let(:instance_model) do
-            Models::Instance.make(
+            FactoryBot.create(:models_instance,
               uuid: SecureRandom.uuid,
               index: 5,
               job: 'fake-job',
@@ -86,7 +86,7 @@ module Bosh
           end
 
           let(:instance_group) do
-            BD::DeploymentPlan::InstanceGroup.make(
+            FactoryBot.build(:deployment_plan_instance_group,
               vm_type: vm_type,
               env: env,
               default_network: { 'gateway' => 'name' },
@@ -119,9 +119,9 @@ module Bosh
           end
 
           let(:instance_plan) do
-            desired_instance = BD::DeploymentPlan::DesiredInstance.new(instance_group)
-            network_plan = BD::DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)
-            BD::DeploymentPlan::InstancePlan.new(
+            desired_instance = Bosh::Director::DeploymentPlan::DesiredInstance.new(instance_group)
+            network_plan = Bosh::Director::DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)
+            Bosh::Director::DeploymentPlan::InstancePlan.new(
               existing_instance: instance_model,
               desired_instance: desired_instance,
               instance: instance,
@@ -146,9 +146,9 @@ module Bosh
           end
 
           let(:reservation) do
-            subnet = BD::DeploymentPlan::DynamicNetworkSubnet.new('dns', network_cloud_properties, ['az-1'])
-            network = BD::DeploymentPlan::DynamicNetwork.new('name', [subnet], logger)
-            reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
+            subnet = Bosh::Director::DeploymentPlan::DynamicNetworkSubnet.new('dns', network_cloud_properties, ['az-1'])
+            network = Bosh::Director::DeploymentPlan::DynamicNetwork.new('name', [subnet], logger)
+            reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network)
             reservation
           end
 
@@ -203,7 +203,7 @@ module Bosh
             let(:use_existing) { true }
 
             let(:stemcell_model_cpi) do
-              Models::Stemcell.make(cid: 'old-stemcell-id', name: 'fake-stemcell', version: '123', cpi: 'cpi1')
+              FactoryBot.create(:models_stemcell, cid: 'old-stemcell-id', name: 'fake-stemcell', version: '123', cpi: 'cpi1')
             end
 
             let(:stemcell) do
@@ -228,8 +228,8 @@ module Bosh
             end
 
             context 'when cloud-config/azs are not used' do
-              let(:instance_model) { Models::Instance.make(uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment, availability_zone: '') }
-              let(:vm_model) { Models::Vm.make(cid: 'new-vm-cid', instance: instance_model, cpi: '') }
+              let(:instance_model) { FactoryBot.create(:models_instance, uuid: SecureRandom.uuid, index: 5, job: 'fake-job', deployment: deployment, availability_zone: '') }
+              let(:vm_model) { FactoryBot.create(:models_vm, cid: 'new-vm-cid', instance: instance_model, cpi: '') }
 
               it 'uses any cloud config if availability zones are not used, even though requested' do
                 expect(non_default_cloud_factory).to receive(:get_name_for_az).at_least(:once).and_return ''
@@ -893,7 +893,7 @@ module Bosh
           context 'when stemcell has api_version' do
             let(:stemcell_api_version) { 25 }
             let(:stemcell_model) do
-              Models::Stemcell.make(cid: 'stemcell-id', name: 'fake-stemcell', version: '123', api_version: stemcell_api_version)
+              FactoryBot.create(:models_stemcell, cid: 'stemcell-id', name: 'fake-stemcell', version: '123', api_version: stemcell_api_version)
             end
 
             before do

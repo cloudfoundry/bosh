@@ -18,7 +18,7 @@ module Bosh::Director
     let(:problem_register) { instance_double('Bosh::Director::ProblemScanner::ProblemRegister') }
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:cloud_factory) { instance_double(Bosh::Director::AZCloudFactory) }
-    let(:deployment) { Models::Deployment.make(name: 'fake-deployment') }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: 'fake-deployment') }
     let(:event_logger) { double(:event_logger, begin_stage: nil) }
     let(:thread_pool) { double(ThreadPool) }
     let(:thread_limit) { double(5) }
@@ -43,10 +43,10 @@ module Bosh::Director
       let(:disk_state) { true }
 
       let!(:disk) do
-        Models::PersistentDisk.make(active: disk_state, instance_id: instance.id, disk_cid: 'fake-disk-cid')
+        FactoryBot.create(:models_persistent_disk, active: disk_state, instance_id: instance.id, disk_cid: 'fake-disk-cid')
       end
-      let!(:vm) { Models::Vm.make(cid: 'fake-vm-cid', instance_id: instance.id) }
-      let!(:instance) { Models::Instance.make(deployment: deployment, job: 'fake-job', index: 0, availability_zone: 'az1') }
+      let!(:vm) { FactoryBot.create(:models_vm, cid: 'fake-vm-cid', instance_id: instance.id) }
+      let!(:instance) { FactoryBot.create(:models_instance, deployment: deployment, job: 'fake-job', index: 0, availability_zone: 'az1') }
       let(:disk_owners) do
         { 'fake-disk-cid' => ['fake-vm-cid'] }
       end
@@ -67,7 +67,7 @@ module Bosh::Director
       end
 
       context 'when instance is ignored' do
-        let!(:instance) { Models::Instance.make(deployment: deployment, job: 'fake-job', index: 1, availability_zone: 'az1', ignore: true) }
+        let!(:instance) { FactoryBot.create(:models_instance, deployment: deployment, job: 'fake-job', index: 1, availability_zone: 'az1', ignore: true) }
         let(:disk_count) { 0 }
 
         it 'does not register missing disk problem' do

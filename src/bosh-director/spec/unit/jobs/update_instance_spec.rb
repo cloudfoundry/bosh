@@ -7,12 +7,12 @@ module Bosh::Director
     before { fake_locks }
 
     let(:blobstore) { instance_double(Bosh::Blobstore::Client) }
-    let(:cloud_config) { Models::Config.make(:cloud_with_manifest_v2) }
-    let(:deployment) { Models::Deployment.make(name: 'simple', manifest: YAML.dump(manifest)) }
+    let(:cloud_config) { FactoryBot.create(:models_config_cloud, :with_manifest) }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: 'simple', manifest: YAML.dump(manifest)) }
     let(:instance_state) { 'started' }
     let(:local_dns_manager) { instance_double(LocalDnsManager, update_dns_record_for_instance: nil) }
     let(:manifest) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
-    let(:stemcell) { Bosh::Director::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302') }
+    let(:stemcell) { FactoryBot.create(:models_stemcell, name: 'stemcell-name', version: '3.0.2', cid: 'sc-302') }
     let(:variables_interpolator) { ConfigServer::VariablesInterpolator.new }
 
     let(:delete_vm_step) { instance_double(DeploymentPlan::Steps::DeleteVmStep, perform: nil) }
@@ -22,7 +22,7 @@ module Bosh::Director
     let(:state_applier) { instance_double(InstanceUpdater::StateApplier, apply: nil) }
     let(:template_persister) { instance_double(RenderedTemplatesPersister, persist: nil) }
 
-    let(:task) { Models::Task.make(username: 'user') }
+    let(:task) { FactoryBot.create(:models_task, username: 'user') }
     let(:task_writer) { TaskDBWriter.new(:event_output, task.id) }
     let(:event_log_stage) { instance_double('Bosh::Director::EventLog::Stage') }
     let(:task_manager) { instance_double(Api::TaskManager, find_task: task) }
@@ -38,7 +38,7 @@ module Bosh::Director
     end
 
     let(:instance_model) do
-      instance = Models::Instance.make(
+      instance = FactoryBot.create(:models_instance,
         deployment: deployment,
         job: 'foobar',
         uuid: 'test-uuid',
@@ -46,8 +46,8 @@ module Bosh::Director
         state: instance_state,
         spec_json: instance_spec.to_json,
       )
-      Models::PersistentDisk.make(instance: instance, disk_cid: 'disk-cid')
-      Models::Vm.make(instance: instance, active: true, cid: 'test-vm-cid')
+      FactoryBot.create(:models_persistent_disk, instance: instance, disk_cid: 'disk-cid')
+      FactoryBot.create(:models_vm, instance: instance, active: true, cid: 'test-vm-cid')
       instance
     end
 
@@ -64,11 +64,11 @@ module Bosh::Director
     end
 
     before do
-      Models::VariableSet.make(deployment: deployment)
+      FactoryBot.create(:models_variable_set, deployment: deployment)
       deployment.add_cloud_config(cloud_config)
-      release = Models::Release.make(name: 'bosh-release')
-      release_version = Models::ReleaseVersion.make(version: '0.1-dev', release: release)
-      template1 = Models::Template.make(name: 'foobar', release: release)
+      release = FactoryBot.create(:models_release, name: 'bosh-release')
+      release_version = FactoryBot.create(:models_release_version, version: '0.1-dev', release: release)
+      template1 = FactoryBot.create(:models_template, name: 'foobar', release: release)
       release_version.add_template(template1)
 
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
@@ -106,7 +106,7 @@ module Bosh::Director
     describe 'validation' do
       context 'when the instance is ignored' do
         let(:instance_model) do
-          Models::Instance.make(
+          FactoryBot.create(:models_instance,
             deployment: deployment,
             job: 'foobar',
             uuid: 'test-uuid',
@@ -131,7 +131,7 @@ module Bosh::Director
 
       context 'when the instance does not belong to the deployment' do
         let(:instance_model) do
-          Models::Instance.make(
+          FactoryBot.create(:models_instance,
             deployment: deployment,
             job: 'foobar',
             uuid: 'test-uuid',
@@ -139,7 +139,7 @@ module Bosh::Director
             state: 'stopped',
           )
         end
-        let(:other_deployment) { Models::Deployment.make(name: 'other', manifest: YAML.dump(manifest)) }
+        let(:other_deployment) { FactoryBot.create(:models_deployment, name: 'other', manifest: YAML.dump(manifest)) }
 
         it 'raises an InstanceNotFound error' do
           job = Jobs::UpdateInstance.new(other_deployment.name, instance_model.id, 'start', {})
@@ -424,7 +424,7 @@ module Bosh::Director
 
       context 'when the instance is already soft stopped' do
         let(:instance_model) do
-          Models::Instance.make(deployment: deployment, job: 'foobar', state: 'stopped', spec_json: instance_spec.to_json)
+          FactoryBot.create(:models_instance, deployment: deployment, job: 'foobar', state: 'stopped', spec_json: instance_spec.to_json)
         end
 
         it 'detaches the vm if --hard is specified' do
@@ -446,7 +446,7 @@ module Bosh::Director
       end
 
       context 'when the instance is already hard stopped' do
-        let(:instance_model) { Models::Instance.make(deployment: deployment, job: 'foobar', state: 'detached') }
+        let(:instance_model) { FactoryBot.create(:models_instance, deployment: deployment, job: 'foobar', state: 'detached') }
 
         it 'does nothing' do
           job = Jobs::UpdateInstance.new(deployment.name, instance_model.id, 'stop', 'hard' => true)

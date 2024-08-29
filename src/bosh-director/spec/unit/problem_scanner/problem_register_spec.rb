@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe ProblemScanner::ProblemRegister do
     subject(:problem_register) { described_class.new(deployment, logger) }
-    let(:deployment) { Models::Deployment.make(name: 'fake-deployment') }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: 'fake-deployment') }
     let(:logger) { double(:logger, info: nil) }
 
     describe '#problem_found' do
@@ -25,7 +25,7 @@ module Bosh::Director
 
       context 'when there is the same deployment problem' do
         before do
-          Bosh::Director::Models::DeploymentProblem.make(
+          FactoryBot.create(:models_deployment_problem,
             deployment_id: deployment.id,
             type: 'fake-problem-type',
             resource_id: 123,
@@ -51,7 +51,7 @@ module Bosh::Director
       context 'when there are more than 1 similar deployment problems' do
         before do
           2.times do
-            Bosh::Director::Models::DeploymentProblem.make(
+            FactoryBot.create(:models_deployment_problem,
               deployment_id: deployment.id,
               type: 'fake-problem-type',
               resource_id: 123,

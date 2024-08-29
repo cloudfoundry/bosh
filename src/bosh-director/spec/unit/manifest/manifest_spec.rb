@@ -20,22 +20,22 @@ module Bosh::Director
     let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
     let(:consolidated_runtime_config) { instance_double(Bosh::Director::RuntimeConfig::RuntimeConfigsConsolidator) }
-    let(:cloud_config) { Models::Config.make(:cloud, content: YAML.dump('azs' => [], 'vm_types' => [], 'disk_types' => [], 'networks' => [], 'vm_extensions' => [])) }
+    let(:cloud_config) { FactoryBot.create(:models_config_cloud, content: YAML.dump('azs' => [], 'vm_types' => [], 'disk_types' => [], 'networks' => [], 'vm_extensions' => [])) }
 
     before do
-      release_1 = Models::Release.make(name: 'simple')
-      Models::ReleaseVersion.make(version: 6, release: release_1)
-      Models::ReleaseVersion.make(version: 9, release: release_1)
+      release_1 = FactoryBot.create(:models_release, name: 'simple')
+      FactoryBot.create(:models_release_version, version: 6, release: release_1)
+      FactoryBot.create(:models_release_version, version: 9, release: release_1)
 
-      release_1 = Models::Release.make(name: 'hard')
-      Models::ReleaseVersion.make(version: '1+dev.5', release: release_1)
-      Models::ReleaseVersion.make(version: '1+dev.7', release: release_1)
+      release_1 = FactoryBot.create(:models_release, name: 'hard')
+      FactoryBot.create(:models_release_version, version: '1+dev.5', release: release_1)
+      FactoryBot.create(:models_release_version, version: '1+dev.7', release: release_1)
 
-      Models::Stemcell.make(name: 'simple', version: '3163', operating_system: 'simple-os')
-      Models::Stemcell.make(name: 'simple', version: '3169', operating_system: 'simple-os')
+      FactoryBot.create(:models_stemcell, name: 'simple', version: '3163', operating_system: 'simple-os')
+      FactoryBot.create(:models_stemcell, name: 'simple', version: '3169', operating_system: 'simple-os')
 
-      Models::Stemcell.make(name: 'hard', version: '3146', operating_system: 'hard-os')
-      Models::Stemcell.make(name: 'hard', version: '3146.1', operating_system: 'hard-os')
+      FactoryBot.create(:models_stemcell, name: 'hard', version: '3146', operating_system: 'hard-os')
+      FactoryBot.create(:models_stemcell, name: 'hard', version: '3146.1', operating_system: 'hard-os')
 
       allow(Bosh::Director::ConfigServer::VariablesInterpolator).to receive(:new).and_return(variables_interpolator)
       allow(variables_interpolator).to receive(:interpolate_cloud_manifest) { |cloud_manifest| Bosh::Common::DeepCopy.copy(cloud_manifest) }
@@ -43,7 +43,7 @@ module Bosh::Director
 
     describe '.load_from_model' do
       let(:deployment_model) { instance_double(Bosh::Director::Models::Deployment) }
-      let(:runtime_configs) { [Models::Config.make(type: 'runtime'), Models::Config.make(type: 'runtime')] }
+      let(:runtime_configs) { [FactoryBot.create(:models_config_runtime), FactoryBot.create(:models_config_runtime)] }
       let(:manifest_hash) do
         { 'name' => 'a_deployment', 'name-1' => 'my-name-1' }
       end
@@ -116,13 +116,13 @@ module Bosh::Director
 
     describe '.load_from_hash' do
       let(:cloud_config) do
-        Models::Config.make(:cloud, content: YAML.dump('azs' => ['my-az'],
+        FactoryBot.create(:models_config_cloud, content: YAML.dump('azs' => ['my-az'],
                                                        'vm_types' => ['my-vm-type'],
                                                        'disk_types' => ['my-disk-type'],
                                                        'networks' => ['my-net'],
                                                        'vm_extensions' => ['my-extension']))
       end
-      let(:runtime_configs) { [Models::Config.make(type: 'runtime'), Models::Config.make(type: 'runtime')] }
+      let(:runtime_configs) { [FactoryBot.create(:models_config_runtime), FactoryBot.create(:models_config_runtime)] }
 
       let(:runtime_config_hash) do
         { 'raw_runtime' => '((foo))' }
@@ -697,7 +697,7 @@ module Bosh::Director
         end
 
         context 'that is not applicable to the deployment by defined team' do
-          let(:non_eligable_team) { Models::Team.make(name: 'non-eligable-team') }
+          let(:non_eligable_team) { FactoryBot.create(:models_team, name: 'non-eligable-team') }
           before do
             runtime_config_hash['addons'][0]['exclude'] = {
               'teams' => [

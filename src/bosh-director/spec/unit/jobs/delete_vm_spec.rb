@@ -16,7 +16,7 @@ module Bosh::Director
     end
 
     let(:vm_cid) { 'vm_cid' }
-    let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
+    let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
     let(:event_manager) { Bosh::Director::Api::EventManager.new(true) }
     let(:delete_vm_job) do
       instance_double(Bosh::Director::Jobs::DeleteVm, username: 'user', task_id: task.id, event_manager: event_manager)
@@ -57,15 +57,15 @@ module Bosh::Director
         before do
           allow(cloud_factory).to receive(:get).with('', nil).and_return(cloud)
 
-          deployment = Bosh::Director::Models::Deployment.make(name: 'test_deployment')
-          is = BD::Models::Instance.make(
+          deployment = FactoryBot.create(:models_deployment, name: 'test_deployment')
+          is = FactoryBot.create(:models_instance, 
             deployment: deployment,
             job: 'foo-job',
             uuid: 'instance_id',
             index: 0,
             ignore: true,
           )
-          vm = BD::Models::Vm.make(cid: vm_cid, instance_id: is.id)
+          vm = FactoryBot.create(:models_vm, cid: vm_cid, instance_id: is.id)
           is.active_vm = vm
           is.save
         end
@@ -101,7 +101,7 @@ module Bosh::Director
         it 'should update instance' do
           expect(cloud).to receive(:delete_vm).with(vm_cid)
           job.perform
-          expect(BD::Models::Instance.all.first.vm_cid).to be_nil
+          expect(Bosh::Director::Models::Instance.all.first.vm_cid).to be_nil
         end
       end
 

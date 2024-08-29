@@ -24,7 +24,6 @@ module Bosh::Director
 
       let(:active_vm) { nil }
       let(:agent) { nil }
-      let(:agent_id) { Sham.uuid }
       let(:already_detached?) { false }
       let(:blobstore) { nil }
       let(:delete_vm_step) { instance_double(Steps::DeleteVmStep, perform: nil) }
@@ -87,7 +86,7 @@ module Bosh::Director
           Models::Instance,
           state: instance_model_state,
           active_vm: active_vm,
-          agent_id: agent_id,
+          agent_id: 'fake-agent-id',
           name: instance_name,
           vms: instance_vms,
           managed_persistent_disk: persistent_disk,
@@ -154,8 +153,8 @@ module Bosh::Director
         context 'when the only changes are tags' do
           let(:instance_plan_changes) { [:tags] }
           let(:tags) { { 'tag' => 'value' } }
-          let(:active_vm) { Models::Vm.make }
-          let(:persistent_disk) { Models::PersistentDisk.make }
+          let(:active_vm) { FactoryBot.create(:models_vm) }
+          let(:persistent_disk) { FactoryBot.create(:models_persistent_disk) }
 
           it 'updates VM and disk metadata without doing anything else' do
             allow(instance_plan).to receive(:already_detached?) { raise 'Should never get here!' }
@@ -173,8 +172,8 @@ module Bosh::Director
           let(:instance_plan_changes) { %i[tags dns] }
           let(:tags) { { 'tag' => 'value' } }
           let(:dns_changed?) { true }
-          let(:active_vm) { Models::Vm.make }
-          let(:persistent_disk) { Models::PersistentDisk.make }
+          let(:active_vm) { FactoryBot.create(:models_vm) }
+          let(:persistent_disk) { FactoryBot.create(:models_persistent_disk) }
 
           it 'updates metadata and DNS without doing anything else' do
             allow(instance_plan).to receive(:already_detached?) { raise 'Should never get here!' }
@@ -413,7 +412,7 @@ module Bosh::Director
           end
 
           context 'when the instance state is not detached' do
-            let(:active_vm) { Models::Vm.make }
+            let(:active_vm) { FactoryBot.create(:models_vm) }
 
             it 'updates the instance report vm and persistent disks' do
               expect(instance_report).to have_received(:vm=).with(active_vm)
@@ -429,7 +428,7 @@ module Bosh::Director
               end
 
               context 'and there is a disk' do
-                let(:persistent_disk) { Bosh::Director::Models::PersistentDisk.make }
+                let(:persistent_disk) { FactoryBot.create(:models_persistent_disk) }
 
                 it 'updates tags for VM and disk' do
                   expect(metadata_updater).to have_received(:update_vm_metadata)
@@ -451,7 +450,7 @@ module Bosh::Director
               context 'because the instance plan indicates a recreate is necessary' do
                 let(:needs_recreate) { false }
                 let(:should_create_swap_delete?) { true }
-                let(:instance_vms) { [active_vm, Models::Vm.make] }
+                let(:instance_vms) { [active_vm, FactoryBot.create(:models_vm)] }
 
                 it 'recreates the vm' do
                   expect(recreate_handler).to have_received(:perform)

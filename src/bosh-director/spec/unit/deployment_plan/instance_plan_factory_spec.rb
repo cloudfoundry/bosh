@@ -6,19 +6,19 @@ module Bosh::Director
     describe InstancePlanFactory do
       include Bosh::Director::IpUtil
 
-      let(:instance_repo) { BD::DeploymentPlan::InstanceRepository.new(logger, variables_interpolator) }
+      let(:instance_repo) { Bosh::Director::DeploymentPlan::InstanceRepository.new(logger, variables_interpolator) }
       let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
       let(:skip_drain) { SkipDrain.new(true) }
       let(:index_assigner) { instance_double('Bosh::Director::DeploymentPlan::PlacementPlanner::IndexAssigner') }
       let(:existing_instance_model) do
-        instance_model = Models::Instance.make(
-          deployment: deployment_model,
-          job: 'foobar',
-          index: 0,
-          spec: spec,
-        )
-        Models::Vm.make(cid: 'vm-cid', instance: instance_model, active: true)
-        instance_model
+        FactoryBot.create(:models_instance,
+                          deployment: deployment_model,
+                          job: 'foobar',
+                          index: 0,
+                          spec: spec,
+        ).tap do |i|
+          FactoryBot.create(:models_vm, cid: 'vm-cid', instance: i, active: true)
+        end
       end
 
       let(:spec) do
@@ -41,19 +41,19 @@ module Bosh::Director
       end
 
       let(:deployment_model) do
-        Models::Deployment.make(manifest: YAML.dump(Bosh::Spec::Deployments.minimal_manifest))
+        FactoryBot.create(:models_deployment, manifest: YAML.dump(Bosh::Spec::Deployments.minimal_manifest))
       end
 
       let(:range) { IPAddr.new('192.168.1.1/24') }
       let(:manual_network_subnet) { ManualNetworkSubnet.new('name-7', range, nil, nil, nil, nil, nil, [], []) }
-      let(:network) { BD::DeploymentPlan::ManualNetwork.new('name-7', [manual_network_subnet], logger) }
-      let(:ip_repo) { BD::DeploymentPlan::IpRepo.new(logger) }
+      let(:network) { Bosh::Director::DeploymentPlan::ManualNetwork.new('name-7', [manual_network_subnet], logger) }
+      let(:ip_repo) { Bosh::Director::DeploymentPlan::IpRepo.new(logger) }
       let(:deployment_plan) do
         instance_double(
           Planner,
           network: network,
           networks: [network],
-          ip_provider: BD::DeploymentPlan::IpProvider.new(ip_repo, { 'name-7' => network }, logger),
+          ip_provider: Bosh::Director::DeploymentPlan::IpProvider.new(ip_repo, { 'name-7' => network }, logger),
           model: deployment_model,
           skip_drain: skip_drain,
         )
@@ -100,7 +100,7 @@ module Bosh::Director
       let(:link_provider_intents) { [] }
 
       before do
-        BD::Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
+        FactoryBot.create(:models_stemcell, name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
         allow(desired_instance).to receive(:instance_group).and_return(instance_group)
         allow(desired_instance).to receive(:index).and_return(1)
         allow(desired_instance).to receive(:index=)
@@ -127,20 +127,20 @@ module Bosh::Director
 
         context 'use_dns_addresses' do
           let(:existing_instance_model) do
-            instance_model = Models::Instance.make(
-              deployment: deployment_model,
-              job: 'foobar',
-              index: 0,
-              spec: spec,
-              variable_set: variable_set,
-            )
-            Models::Vm.make(cid: 'vm-cid', instance: instance_model, active: true)
-            instance_model
+            FactoryBot.create(:models_instance,
+                              deployment: deployment_model,
+                              job: 'foobar',
+                              index: 0,
+                              spec: spec,
+                              variable_set: variable_set,
+            ).tap do |i|
+              FactoryBot.create(:models_vm, cid: 'vm-cid', instance: i, active: true)
+            end
           end
 
           context 'when passed as TRUE in the options' do
             let(:options) { { 'use_dns_addresses' => true } }
-            let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+            let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
 
             it 'provides the instance_plan with the correct use_dns_addresses' do
               expect(InstancePlan).to receive(:new).with(
@@ -180,7 +180,7 @@ module Bosh::Director
 
           context 'when passed as FALSE in the options' do
             let(:options) { { 'use_dns_addresses' => false } }
-            let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+            let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
 
             it 'provides the instance_plan with the correct use_dns_addresses' do
               expect(InstancePlan).to receive(:new).with(
@@ -202,18 +202,18 @@ module Bosh::Director
 
         context 'randomize_az_placement' do
           let(:existing_instance_model) do
-            instance_model = Models::Instance.make(
-              deployment: deployment_model,
-              job: 'foobar',
-              index: 0,
-              spec: spec,
-              variable_set: variable_set,
-            )
-            Models::Vm.make(cid: 'vm-cid', instance: instance_model, active: true)
-            instance_model
+            FactoryBot.create(:models_instance,
+                              deployment: deployment_model,
+                              job: 'foobar',
+                              index: 0,
+                              spec: spec,
+                              variable_set: variable_set,
+            ).tap do |i|
+              FactoryBot.create(:models_vm, cid: 'vm-cid', instance: i, active: true)
+            end
           end
 
-          let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+          let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
 
           context 'when passed as TRUE in the options' do
             let(:options) { { 'randomize_az_placement' => true } }
@@ -293,20 +293,20 @@ module Bosh::Director
 
         context 'use_dns_addresses' do
           let(:existing_instance_model) do
-            instance_model = Models::Instance.make(
-              deployment: deployment_model,
-              job: 'foobar',
-              index: 0,
-              spec: spec,
-              variable_set: variable_set,
-            )
-            Models::Vm.make(cid: 'vm-cid', instance: instance_model, active: true)
-            instance_model
+            FactoryBot.create(:models_instance,
+                              deployment: deployment_model,
+                              job: 'foobar',
+                              index: 0,
+                              spec: spec,
+                              variable_set: variable_set,
+            ).tap do |i|
+              FactoryBot.create(:models_vm, cid: 'vm-cid', instance: i, active: true)
+            end
           end
 
           context 'when passed as TRUE in the options' do
             let(:options) { { 'use_dns_addresses' => true } }
-            let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+            let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
 
             it 'provides the instance_plan with the correct use_dns_addresses' do
               expect(InstancePlan).to receive(:new).with(
@@ -348,7 +348,7 @@ module Bosh::Director
 
           context 'when passed as FALSE in the options' do
             let(:options) { { 'use_dns_addresses' => false } }
-            let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+            let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
 
             it 'provides the instance_plan with the correct use_dns_addresses' do
               expect(InstancePlan).to receive(:new).with(
@@ -408,20 +408,20 @@ module Bosh::Director
 
         context 'use_dns_addresses' do
           let(:existing_instance_model) do
-            instance_model = Models::Instance.make(
-              deployment: deployment_model,
-              job: 'foobar',
-              index: 0,
-              spec: spec,
-              variable_set: variable_set,
-            )
-            Models::Vm.make(cid: 'vm-cid', instance: instance_model, active: true)
-            instance_model
+            FactoryBot.create(:models_instance,
+                              deployment: deployment_model,
+                              job: 'foobar',
+                              index: 0,
+                              spec: spec,
+                              variable_set: variable_set,
+            ).tap do |i|
+              FactoryBot.create(:models_vm, cid: 'vm-cid', instance: i, active: true)
+            end
           end
 
           context 'when passed as TRUE in the options' do
             let(:options) { { 'use_dns_addresses' => true } }
-            let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+            let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
 
             it 'provides the instance_plan with the correct use_dns_addresses' do
               expect(InstancePlan).to receive(:new).with(
@@ -462,7 +462,7 @@ module Bosh::Director
 
           context 'when passed as FALSE in the options' do
             let(:options) { { 'use_dns_addresses' => false } }
-            let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+            let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
 
             it 'provides the instance_plan with the correct use_dns_addresses' do
               expect(InstancePlan).to receive(:new).with(

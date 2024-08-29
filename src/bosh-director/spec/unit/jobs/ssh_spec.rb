@@ -9,8 +9,8 @@ module Bosh::Director
       described_class.new(deployment.id, 'target' => target, 'command' => 'fake-command', 'params' => { 'user' => 'user-ssh' })
     end
 
-    let(:deployment) { Models::Deployment.make(name: 'name-1') }
-    let(:variable_set) { Models::VariableSet.make(deployment: deployment) }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: 'name-1') }
+    let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment) }
     let(:target) do
       { 'job' => 'fake-job', 'indexes' => [1] }
     end
@@ -18,7 +18,7 @@ module Bosh::Director
     let(:config) { double(Config) }
     let(:instance_manager) { Api::InstanceManager.new }
     let(:task_result) { TaskDBWriter.new(:result_output, task.id) }
-    let(:task) {Bosh::Director::Models::Task.make(:id => 42, :username => 'user')}
+    let(:task) {FactoryBot.create(:models_task, id: 42, username: 'user')}
 
     describe 'DJ job class expectations' do
       let(:job_type) { :ssh }
@@ -27,10 +27,10 @@ module Bosh::Director
     end
 
     before do
-      is = Models::Instance.make(job: 'fake-job', index: 1, variable_set: variable_set, deployment: deployment, uuid: 'fake-uuid-1')
-      vm = Models::Vm.make(cid: 'cid', instance_id: is.id)
+      is = FactoryBot.create(:models_instance, job: 'fake-job', index: 1, variable_set: variable_set, deployment: deployment, uuid: 'fake-uuid-1')
+      vm = FactoryBot.create(:models_vm, cid: 'cid', instance_id: is.id)
       is.active_vm = vm
-      Models::Instance.make(job: 'fake-job', index: 2, variable_set: variable_set, deployment: deployment, uuid: 'fake-uuid-2')
+      FactoryBot.create(:models_instance, job: 'fake-job', index: 2, variable_set: variable_set, deployment: deployment, uuid: 'fake-uuid-2')
       allow(Api::InstanceManager).to receive(:new).and_return(instance_manager)
       allow(instance_manager).to receive(:agent_client_for).and_return(agent)
       allow(agent).to receive(:ssh).and_return({})

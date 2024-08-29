@@ -6,9 +6,9 @@ module Bosh::Director
       describe DetachDiskStep do
         subject(:step) { DetachDiskStep.new(disk) }
 
-        let!(:vm) { Models::Vm.make(active: true, instance: instance, stemcell_api_version: 25) }
-        let(:instance) { Models::Instance.make }
-        let!(:disk) { Models::PersistentDisk.make(instance: instance, name: '') }
+        let!(:vm) { FactoryBot.create(:models_vm, active: true, instance: instance, stemcell_api_version: 25) }
+        let(:instance) { FactoryBot.create(:models_instance) }
+        let!(:disk) { FactoryBot.create(:models_persistent_disk, instance: instance, name: '') }
         let(:cloud_factory) { instance_double(CloudFactory) }
         let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
         let(:report) { Stages::Report.new }

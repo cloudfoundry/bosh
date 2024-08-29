@@ -84,7 +84,7 @@ module Bosh::Director
           let(:release_model) { double(id: release.id) }
 
           let!(:release_version_model) do
-            release.add_version(Models::ReleaseVersion.make)
+            release.add_version(FactoryBot.create(:models_release_version))
           end
 
           let(:new_package_metadata) do
@@ -96,7 +96,7 @@ module Bosh::Director
             }
           end
 
-          let(:release) { Models::Release.make(name: 'appcloud') }
+          let(:release) { FactoryBot.create(:models_release, name: 'appcloud') }
           let!(:package_model) do
             package_id = Models::Package.insert(
               name: package_name,

@@ -128,7 +128,7 @@ module Bosh
           let(:az) { { 'name' => 'az-1' } }
 
           before do
-            Models::Config.make(:cloud, name: 'some-cloud-config', content: YAML.dump(
+            FactoryBot.create(:models_config_cloud, name: 'some-cloud-config', content: YAML.dump(
               'azs' => [az],
               'vm_types' => [],
               'disk_types' => [],
@@ -137,7 +137,7 @@ module Bosh
               'compilation' => { 'az' => 'az-1', 'network' => manual_network_spec['name'], 'workers' => 3 },
             ))
 
-            Models::Config.make(:cloud, name: 'some-cloud-config', content: YAML.dump(
+            FactoryBot.create(:models_config_cloud, name: 'some-cloud-config', content: YAML.dump(
               'azs' => [az],
               'vm_types' => [],
               'disk_types' => [],
@@ -166,14 +166,14 @@ module Bosh
           end
 
           context 'when there are deployed VMs' do
-            let(:deployment) { Models::Deployment.make }
-            let(:instance) { Models::Instance.make(deployment: deployment) }
+            let(:deployment) { FactoryBot.create(:models_deployment) }
+            let(:instance) { FactoryBot.create(:models_instance, deployment: deployment) }
             let(:vm) do
-              Models::Vm.make(cid: 'fake-vm-cid', agent_id: 'fake-agent-id', instance_id: instance.id, created_at: Time.now)
+              FactoryBot.create(:models_vm, cid: 'fake-vm-cid', agent_id: 'fake-agent-id', instance_id: instance.id, created_at: Time.now)
             end
 
             before do
-              Models::IpAddress.make(
+              FactoryBot.create(:models_ip_address,
                 instance_id: instance.id,
                 vm_id: vm.id,
                 address_str: IPAddr.new('192.168.1.5').to_i.to_s,
@@ -190,7 +190,7 @@ module Bosh
 
             context 'when deployed VMs are using static ips' do
               before do
-                Models::IpAddress.make(
+                FactoryBot.create(:models_ip_address,
                   instance_id: instance.id,
                   vm_id: vm.id,
                   address_str: IPAddr.new('192.168.1.4').to_i.to_s,
@@ -210,7 +210,7 @@ module Bosh
           context 'missing values' do
             context 'there are empty values defined in some cloud-config' do
               before do
-                Models::Config.make(:cloud, name: 'yacc', content: YAML.dump(
+                FactoryBot.create(:models_config_cloud, name: 'yacc', content: YAML.dump(
                   'azs' => [],
                   'vm_types' => [],
                   'disk_types' => [],
@@ -228,7 +228,7 @@ module Bosh
 
             context 'there are no fields defined in some cloud-config' do
               before do
-                Models::Config.make(:cloud, name: 'yacc', content: YAML.dump({}))
+                FactoryBot.create(:models_config_cloud, name: 'yacc', content: YAML.dump({}))
               end
 
               it 'can still get metrics without errors' do
@@ -293,11 +293,11 @@ module Bosh
         end
 
         describe 'task metrics' do
-          let!(:task1) { Models::Task.make(state: 'queued', type: 'foobar') }
-          let!(:task2) { Models::Task.make(state: 'queued', type: 'foobaz') }
-          let!(:task3) { Models::Task.make(state: 'processing', type: 'foobar') }
-          let!(:task4) { Models::Task.make(state: 'processing', type: 'foobar') }
-          let!(:task5) { Models::Task.make(state: 'processing', type: 'foobaz') }
+          let!(:task1) { FactoryBot.create(:models_task, state: 'queued', type: 'foobar') }
+          let!(:task2) { FactoryBot.create(:models_task, state: 'queued', type: 'foobaz') }
+          let!(:task3) { FactoryBot.create(:models_task, state: 'processing', type: 'foobar') }
+          let!(:task4) { FactoryBot.create(:models_task, state: 'processing', type: 'foobar') }
+          let!(:task5) { FactoryBot.create(:models_task, state: 'processing', type: 'foobaz') }
 
           it 'populates metrics for processing tasks by type' do
             metrics_collector.start

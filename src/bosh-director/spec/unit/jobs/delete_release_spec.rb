@@ -10,8 +10,8 @@ module Bosh::Director
       it_behaves_like 'a DJ job'
     end
 
-    let(:release) { Models::Release.make(name: 'test_release') }
-    let(:task) { Models::Task.make(id: 42) }
+    let(:release) { FactoryBot.create(:models_release, name: 'test_release') }
+    let(:task) { FactoryBot.create(:models_task, id: 42) }
     let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
     let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
 
@@ -22,8 +22,8 @@ module Bosh::Director
     describe 'perform' do
       context 'when blobstore fails to delete compiled package' do
         it 'should fail to delete release' do
-          package = Models::Package.make(release: release)
-          Models::CompiledPackage.make(package: package, blobstore_id: 'compiled-package-1', stemcell_os: 'FreeBSD', stemcell_version: '10.1')
+          package = FactoryBot.create(:models_package, release: release)
+          FactoryBot.create(:models_compiled_package, package: package, blobstore_id: 'compiled-package-1', stemcell_os: 'FreeBSD', stemcell_version: '10.1')
 
           expect(blobstore).to receive(:delete).with('compiled-package-1').and_raise('Oh noes!')
 
@@ -42,8 +42,8 @@ module Bosh::Director
       end
 
       it 'should fail if the deployments still reference this release' do
-        version = Models::ReleaseVersion.make(release: release, version: '42-dev')
-        deployment = Models::Deployment.make(name: 'test_release')
+        version = FactoryBot.create(:models_release_version, release: release, version: '42-dev')
+        deployment = FactoryBot.create(:models_deployment, name: 'test_release')
 
         deployment.add_release_version(version)
 
@@ -54,8 +54,8 @@ module Bosh::Director
       end
 
       it 'should support deleting a particular release version' do
-        rv1 = Models::ReleaseVersion.make(release: release, version: '1')
-        Models::ReleaseVersion.make(release: release, version: '2')
+        rv1 = FactoryBot.create(:models_release_version, release: release, version: '1')
+        FactoryBot.create(:models_release_version, release: release, version: '2')
 
         job = Jobs::DeleteRelease.new('test_release', 'version' => rv1.version, blobstore: blobstore)
         expect(job).to receive(:with_release_lock).
@@ -65,12 +65,12 @@ module Bosh::Director
 
       it 'should fail deleting version if there is a deployment which ' +
            'uses that version' do
-        rv1 = Models::ReleaseVersion.make(release: release, version: '1')
-        rv2 = Models::ReleaseVersion.make(release: release, version: '2')
+        rv1 = FactoryBot.create(:models_release_version, release: release, version: '1')
+        rv2 = FactoryBot.create(:models_release_version, release: release, version: '2')
 
         manifest = YAML.dump('release' => {'name' => 'test_release', 'version' => '2'})
 
-        deployment = Models::Deployment.make(name: 'test_deployment', manifest: manifest)
+        deployment = FactoryBot.create(:models_deployment, name: 'test_deployment', manifest: manifest)
         deployment.add_release_version(rv2)
 
         job1 = Jobs::DeleteRelease.new('test_release', 'version' => '2', blobstore: blobstore)
@@ -88,22 +88,22 @@ module Bosh::Director
 
     describe 'delete release version' do
       before(:each) do
-        @rv1 = Models::ReleaseVersion.make(release: release)
-        @rv2 = Models::ReleaseVersion.make(release: release)
+        @rv1 = FactoryBot.create(:models_release_version, release: release)
+        @rv2 = FactoryBot.create(:models_release_version, release: release)
 
-        @pkg1 = Models::Package.make(release: release, blobstore_id: 'pkg1')
-        @pkg2 = Models::Package.make(release: release, blobstore_id: 'pkg2')
-        @pkg3 = Models::Package.make(release: release, blobstore_id: 'pkg3')
+        @pkg1 = FactoryBot.create(:models_package, release: release, blobstore_id: 'pkg1')
+        @pkg2 = FactoryBot.create(:models_package, release: release, blobstore_id: 'pkg2')
+        @pkg3 = FactoryBot.create(:models_package, release: release, blobstore_id: 'pkg3')
 
-        @tmpl1 = Models::Template.make(release: release, blobstore_id: 'template1')
-        @tmpl2 = Models::Template.make(release: release, blobstore_id: 'template2')
-        @tmpl3 = Models::Template.make(release: release, blobstore_id: 'template3')
+        @tmpl1 = FactoryBot.create(:models_template, release: release, blobstore_id: 'template1')
+        @tmpl2 = FactoryBot.create(:models_template, release: release, blobstore_id: 'template2')
+        @tmpl3 = FactoryBot.create(:models_template, release: release, blobstore_id: 'template3')
 
-        @stemcell = Models::Stemcell.make(operating_system: 'linux', version: '3.11')
+        @stemcell = FactoryBot.create(:models_stemcell, operating_system: 'linux', version: '3.11')
 
-        @cpkg1 = Models::CompiledPackage.make(package: @pkg1, blobstore_id: 'deadbeef', stemcell_os: @stemcell.operating_system, stemcell_version: @stemcell.version)
-        @cpkg2 = Models::CompiledPackage.make(package: @pkg2, blobstore_id: 'badcafe', stemcell_os: @stemcell.operating_system, stemcell_version: @stemcell.version)
-        @cpkg3 = Models::CompiledPackage.make(package: @pkg3, blobstore_id: 'feeddead', stemcell_os: @stemcell.operating_system, stemcell_version: @stemcell.version)
+        @cpkg1 = FactoryBot.create(:models_compiled_package, package: @pkg1, blobstore_id: 'deadbeef', stemcell_os: @stemcell.operating_system, stemcell_version: @stemcell.version)
+        @cpkg2 = FactoryBot.create(:models_compiled_package, package: @pkg2, blobstore_id: 'badcafe', stemcell_os: @stemcell.operating_system, stemcell_version: @stemcell.version)
+        @cpkg3 = FactoryBot.create(:models_compiled_package, package: @pkg3, blobstore_id: 'feeddead', stemcell_os: @stemcell.operating_system, stemcell_version: @stemcell.version)
 
         @rv1.add_package(@pkg1)
         @rv1.add_package(@pkg2)

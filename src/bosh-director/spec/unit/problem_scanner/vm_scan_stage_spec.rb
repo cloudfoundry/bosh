@@ -15,9 +15,9 @@ module Bosh::Director
     def create_vm(i, options = {})
       options = {state: 'started', lifecycle: 'service', ignore: false}.merge(options)
       job_name = "job-#{i}"
-      instance = Models::Instance.make(deployment: deployment, job: job_name, index: i, state: options[:state], ignore: options[:ignore], spec_json: JSON.dump({lifecycle: options[:lifecycle]}))
+      instance = FactoryBot.create(:models_instance, deployment: deployment, job: job_name, index: i, state: options[:state], ignore: options[:ignore], spec_json: JSON.dump({lifecycle: options[:lifecycle]}))
       unless options[:no_vm]
-        vm = Models::Vm.make(cid: "vm-cid-#{i}", agent_id: "agent-#{i}", instance_id: instance.id)
+        vm = FactoryBot.create(:models_vm, cid: "vm-cid-#{i}", agent_id: "agent-#{i}", instance_id: instance.id)
         instance.refresh
         instance.active_vm = vm
       end
@@ -31,7 +31,7 @@ module Bosh::Director
     end
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:cloud_factory) { instance_double(Bosh::Director::AZCloudFactory) }
-    let(:deployment) { Models::Deployment.make(name: 'fake-deployment') }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: 'fake-deployment') }
     let(:event_logger) { double(:event_logger, begin_stage: nil) }
     before do
       allow(event_logger).to receive(:track_and_log) do |_, &blk|
@@ -367,7 +367,7 @@ module Bosh::Director
       before { allow(AgentClient).to receive(:with_agent_id).with(instance.agent_id, instance.name, anything).and_return(agent) }
 
       before do
-        Models::PersistentDisk.make(instance_id: instance.id, active: true, disk_cid: 'fake-disk-cid')
+        FactoryBot.create(:models_persistent_disk, instance_id: instance.id, active: true, disk_cid: 'fake-disk-cid')
       end
 
       before do

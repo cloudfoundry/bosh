@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Jobs::CloudCheck::ScanAndFix do
-    let!(:deployment) { Models::Deployment.make(name: 'deployment') }
+    let!(:deployment) { FactoryBot.create(:models_deployment, name: 'deployment') }
     let(:jobs) { [%w[job1 job1index0], %w[job1 job1index1], %w[job2 job2index0]] }
     let(:resolutions) do
       { Models::DeploymentProblem.all[0].id.to_s => :recreate_vm, Models::DeploymentProblem.all[1].id.to_s => :recreate_vm }
@@ -11,21 +11,21 @@ module Bosh::Director
     let(:scan_and_fix) { described_class.new('deployment', jobs, fix_stateful_jobs) }
 
     before do
-      instance = Models::Instance.make(deployment: deployment, job: 'job1', index: 0, uuid: 'job1index0')
-      Models::DeploymentProblem.make(deployment: deployment, resource_id: instance.id, type: 'unresponsive_agent')
+      instance = FactoryBot.create(:models_instance, deployment: deployment, job: 'job1', index: 0, uuid: 'job1index0')
+      FactoryBot.create(:models_deployment_problem, deployment: deployment, resource_id: instance.id, type: 'unresponsive_agent')
 
-      instance = Models::Instance.make(deployment: deployment, job: 'job1', index: 1, uuid: 'job1index1')
-      Models::DeploymentProblem.make(deployment: deployment, resource_id: instance.id, type: 'missing_vm')
+      instance = FactoryBot.create(:models_instance, deployment: deployment, job: 'job1', index: 1, uuid: 'job1index1')
+      FactoryBot.create(:models_deployment_problem, deployment: deployment, resource_id: instance.id, type: 'missing_vm')
 
-      instance = Models::Instance.make(deployment: deployment, job: 'job2', index: 0, uuid: 'job2index0')
-      Models::DeploymentProblem.make(deployment: deployment, resource_id: instance.id, type: 'unbound')
+      instance = FactoryBot.create(:models_instance, deployment: deployment, job: 'job2', index: 0, uuid: 'job2index0')
+      FactoryBot.create(:models_deployment_problem, deployment: deployment, resource_id: instance.id, type: 'unbound')
 
-      instance = Models::Instance.make(deployment: deployment, job: 'job2', index: 1, uuid: 'job2index1')
-      Models::DeploymentProblem.make(deployment: deployment, resource_id: instance.id, type: 'missing_vm')
-      Models::PersistentDisk.make(instance: instance)
+      instance = FactoryBot.create(:models_instance, deployment: deployment, job: 'job2', index: 1, uuid: 'job2index1')
+      FactoryBot.create(:models_deployment_problem, deployment: deployment, resource_id: instance.id, type: 'missing_vm')
+      FactoryBot.create(:models_persistent_disk, instance: instance)
 
-      instance = Models::Instance.make(deployment: deployment, job: 'job2', index: 2, uuid: 'job2index2', ignore: true)
-      Models::DeploymentProblem.make(deployment: deployment, resource_id: instance.id, type: 'unresponsive_agent')
+      instance = FactoryBot.create(:models_instance, deployment: deployment, job: 'job2', index: 2, uuid: 'job2index2', ignore: true)
+      FactoryBot.create(:models_deployment_problem, deployment: deployment, resource_id: instance.id, type: 'unresponsive_agent')
     end
 
     describe 'DJ job class expectations' do

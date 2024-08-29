@@ -2,9 +2,9 @@ require 'spec_helper'
 
 module Bosh::Director
   describe KeyGenerator do
-    let(:release) { Models::Release.make(name: 'release-1') }
+    let(:release) { FactoryBot.create(:models_release, name: 'release-1') }
     let(:release_version) do
-      Models::ReleaseVersion.make(release: release)
+      FactoryBot.create(:models_release_version, release: release)
     end
     let(:key_generator) { KeyGenerator.new }
 
@@ -125,7 +125,7 @@ module Bosh::Director
     context 'when generating from Models::Package' do
       context 'when package has no dependencies' do
         let(:package) do
-          Models::Package.make(name: 'pkg-1', version: '1.1', release: release)
+          FactoryBot.create(:models_package, name: 'pkg-1', version: '1.1', release: release)
         end
 
         before do
@@ -140,12 +140,12 @@ module Bosh::Director
       context 'when package has 1-level deep transitive dependencies' do
         context 'there is a single release version for a release' do
           let(:package) do
-            Models::Package.make(name: 'pkg-1', version: '1.1', release: release, dependency_set_json: ['pkg-2', 'pkg-3'].to_json)
+            FactoryBot.create(:models_package, name: 'pkg-1', version: '1.1', release: release, dependency_set_json: ['pkg-2', 'pkg-3'].to_json)
           end
 
           before do
-            package_2 = Models::Package.make(name: 'pkg-2', version: '1.4', release: release)
-            package_3 = Models::Package.make(name: 'pkg-3', version: '1.7', release: release)
+            package_2 = FactoryBot.create(:models_package, name: 'pkg-2', version: '1.4', release: release)
+            package_3 = FactoryBot.create(:models_package, name: 'pkg-3', version: '1.7', release: release)
 
             [package, package_2, package_3].each { |p| release_version.packages << p }
           end
@@ -157,18 +157,18 @@ module Bosh::Director
 
         context 'there are multiple release versions for the same release' do
           let(:package) do
-            Models::Package.make(name: 'pkg-1', version: '1.1', release: release, dependency_set_json: ['pkg-2', 'pkg-3'].to_json)
+            FactoryBot.create(:models_package, name: 'pkg-1', version: '1.1', release: release, dependency_set_json: ['pkg-2', 'pkg-3'].to_json)
           end
 
           let(:release_version_2) do
-            Models::ReleaseVersion.make(release: release, version: 'favourite-version')
+            FactoryBot.create(:models_release_version, release: release, version: 'favourite-version')
           end
 
           before do
-            package_2 = Models::Package.make(name: 'pkg-2', version: '1.4', release: release)
-            new_package_2 = Models::Package.make(name: 'pkg-2', version: '1.5', release: release)
-            package_3 = Models::Package.make(name: 'pkg-3', version: '1.7', release: release)
-            new_package_3 = Models::Package.make(name: 'pkg-3', version: '1.8', release: release)
+            package_2 = FactoryBot.create(:models_package, name: 'pkg-2', version: '1.4', release: release)
+            new_package_2 = FactoryBot.create(:models_package, name: 'pkg-2', version: '1.5', release: release)
+            package_3 = FactoryBot.create(:models_package, name: 'pkg-3', version: '1.7', release: release)
+            new_package_3 = FactoryBot.create(:models_package, name: 'pkg-3', version: '1.8', release: release)
 
             [package, package_2, package_3].each { |p| release_version.packages << p }
             [package, new_package_2, new_package_3].each { |p| release_version_2.packages << p }
@@ -180,22 +180,22 @@ module Bosh::Director
         end
 
         context 'there multiple releases using the same packages' do
-          let(:new_release) { Models::Release.make(name: 'new-release') }
+          let(:new_release) { FactoryBot.create(:models_release, name: 'new-release') }
 
           let(:package) do
-            Models::Package.make(name: 'pkg-1', version: '1.1', release: new_release, dependency_set_json: ['pkg-2'].to_json)
+            FactoryBot.create(:models_package, name: 'pkg-1', version: '1.1', release: new_release, dependency_set_json: ['pkg-2'].to_json)
           end
 
           let(:new_release_version) do
-            Models::ReleaseVersion.make(release: new_release, version: 'favourite-version')
+            FactoryBot.create(:models_release_version, release: new_release, version: 'favourite-version')
           end
 
           before do
-            Models::Package.make(name: 'pkg-1', version: '1.1', release: release, dependency_set_json: ['pkg-2', 'pkg-3'].to_json)
+            FactoryBot.create(:models_package, name: 'pkg-1', version: '1.1', release: release, dependency_set_json: ['pkg-2', 'pkg-3'].to_json)
 
-            package_2 = Models::Package.make(name: 'pkg-2', version: '1.4', release: release)
-            new_package_2 = Models::Package.make(name: 'pkg-2', version: '1.5', release: new_release)
-            package_3 = Models::Package.make(name: 'pkg-3', version: '1.7', release: release)
+            package_2 = FactoryBot.create(:models_package, name: 'pkg-2', version: '1.4', release: release)
+            new_package_2 = FactoryBot.create(:models_package, name: 'pkg-2', version: '1.5', release: new_release)
+            package_3 = FactoryBot.create(:models_package, name: 'pkg-3', version: '1.7', release: release)
 
             [package, package_2, package_3].each { |p| release_version.packages << p }
             [package, new_package_2].each { |p| new_release_version.packages << p }
@@ -210,13 +210,13 @@ module Bosh::Director
       context 'when package model has more than 1 level deep transitive dependencies' do
         context 'there is a single release version for a release' do
           let(:package) do
-            Models::Package.make(name: 'pkg-1', version: '1.1', release: release, dependency_set_json: ['pkg-2', 'pkg-3'].to_json)
+            FactoryBot.create(:models_package, name: 'pkg-1', version: '1.1', release: release, dependency_set_json: ['pkg-2', 'pkg-3'].to_json)
           end
 
           before do
-            package_2 = Models::Package.make(name: 'pkg-2', version: '1.4', release: release, dependency_set_json: ['pkg-4'].to_json)
-            package_3 = Models::Package.make(name: 'pkg-3', version: '1.7', release: release)
-            package_4 = Models::Package.make(name: 'pkg-4', version: '3.7', release: release)
+            package_2 = FactoryBot.create(:models_package, name: 'pkg-2', version: '1.4', release: release, dependency_set_json: ['pkg-4'].to_json)
+            package_3 = FactoryBot.create(:models_package, name: 'pkg-3', version: '1.7', release: release)
+            package_4 = FactoryBot.create(:models_package, name: 'pkg-4', version: '3.7', release: release)
 
             [package, package_2, package_3, package_4].each { |p| release_version.packages << p }
           end
@@ -230,19 +230,19 @@ module Bosh::Director
 
     context 'when comparing dependency keys from the release manifest and Models::Package' do
       let(:package) do
-        package_d = Models::Package.make(name: 'd', version: '1.4', release: release)
-        package_b = Models::Package.make(
+        package_d = FactoryBot.create(:models_package, name: 'd', version: '1.4', release: release)
+        package_b = FactoryBot.create(:models_package,
           name: 'b',
           version: '1.7',
           release: release,
           dependency_set_json: %w[d z].shuffle.to_json,
         )
-        package_x = Models::Package.make(name: 'x', version: '1.7', release: release)
-        package_z = Models::Package.make(name: 'z', version: '1.7', release: release)
+        package_x = FactoryBot.create(:models_package, name: 'x', version: '1.7', release: release)
+        package_z = FactoryBot.create(:models_package, name: 'z', version: '1.7', release: release)
 
         [package_x, package_b, package_d, package_z].shuffle.each { |p| release_version.packages << p }
 
-        Models::Package.make(name: 'parent', version: '1.1', release: release, dependency_set_json: %w[b x].shuffle.to_json)
+        FactoryBot.create(:models_package, name: 'parent', version: '1.1', release: release, dependency_set_json: %w[b x].shuffle.to_json)
       end
 
       let(:compiled_packages) do

@@ -24,7 +24,7 @@ module Bosh::Director
 
     let(:cloud_properties) { { 'cloud' => 'properties' } }
     let(:create_instance_error) { RuntimeError.new('failed to create instance') }
-    let(:deployment_model) { Models::Deployment.make(name: 'mycloud') }
+    let(:deployment_model) { FactoryBot.create(:models_deployment, name: 'mycloud') }
     let(:dns_encoder) { DnsEncoder.new }
     let(:event_manager) { Api::EventManager.new(true) }
     let(:expected_network_settings) { { 'a' => { 'a' => { 'property' => 'settings' } } } }
@@ -57,22 +57,22 @@ module Bosh::Director
     end
 
     let(:stemcell) do
-      model = Models::Stemcell.make(cid: 'stemcell-cid', name: 'stemcell-name')
-      stemcell = DeploymentPlan::Stemcell.make(name: model.name, version: model.version)
+      model = FactoryBot.create(:models_stemcell, cid: 'stemcell-cid', name: 'stemcell-name')
+      stemcell = FactoryBot.build(:deployment_plan_stemcell, name: model.name, version: model.version)
       stemcell.bind_model(deployment_model)
       stemcell
     end
 
     let(:another_stemcell) do
-      model = Models::Stemcell.make(cid: 'another-stemcell-cid', name: 'stemcell-name')
-      stemcell = DeploymentPlan::Stemcell.make(name: model.name, version: model.version)
+      model = FactoryBot.create(:models_stemcell, cid: 'another-stemcell-cid', name: 'stemcell-name')
+      stemcell = FactoryBot.build(:deployment_plan_stemcell, name: model.name, version: model.version)
       stemcell.bind_model(deployment_model)
       stemcell
     end
 
     let(:different_stemcell) do
-      model = Models::Stemcell.make(cid: 'different-stemcell-cid', name: 'different-stemcell-name')
-      stemcell = DeploymentPlan::Stemcell.make(name: model.name, version: model.version)
+      model = FactoryBot.create(:models_stemcell, cid: 'different-stemcell-cid', name: 'different-stemcell-name')
+      stemcell = FactoryBot.build(:deployment_plan_stemcell, name: model.name, version: model.version)
       stemcell.bind_model(deployment_model)
       stemcell
     end
@@ -171,7 +171,7 @@ module Bosh::Director
       director_config = SpecHelper.spec_get_director_config
       allow(Config).to receive(:nats_client_ca_private_key_path).and_return(director_config['nats']['client_ca_private_key_path'])
       allow(Config).to receive(:nats_client_ca_certificate_path).and_return(director_config['nats']['client_ca_certificate_path'])
-      allow(deployment_model).to receive(:current_variable_set).and_return(Models::VariableSet.make)
+      allow(deployment_model).to receive(:current_variable_set).and_return(FactoryBot.create(:models_variable_set))
       allow(MetadataUpdater).to receive(:new).and_return(metadata_updater)
       allow(metadata_updater).to receive(:update_vm_metadata)
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
@@ -375,15 +375,14 @@ module Bosh::Director
 
         let(:availability_zone) { DeploymentPlan::AvailabilityZone.new('foo-az', cloud_properties) }
 
-        let(:deployment_model) { Models::Deployment.make(name: 'mycloud', cloud_config: cloud_config) }
+        let(:deployment_model) { FactoryBot.create(:models_deployment, name: 'mycloud', cloud_config: cloud_config) }
         let(:deployment_model) do
-          deployment = Models::Deployment.make(name: 'mycloud')
+          deployment = FactoryBot.create(:models_deployment, name: 'mycloud')
           deployment.cloud_configs = [cloud_config]
           deployment
         end
         let(:cloud_config) do
-          Models::Config.make(
-            :cloud,
+          FactoryBot.create(:models_config_cloud,
             raw_manifest: Bosh::Spec::Deployments.simple_cloud_config.merge(
               'azs' => [{ 'name' => 'foo-az' }],
             ),

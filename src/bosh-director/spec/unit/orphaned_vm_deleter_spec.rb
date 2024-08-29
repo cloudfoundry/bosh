@@ -46,7 +46,7 @@ module Bosh
         let(:vm_deleter) { instance_double(Bosh::Director::VmDeleter, delete_vm_by_cid: true) }
         let(:db_ip_repo) { Bosh::Director::DeploymentPlan::IpRepo.new(fake_logger) }
         let(:fake_logger) { instance_double(Logger, debug: true) }
-        let(:task) { Models::Task.make(id: 42, username: 'foo') }
+        let(:task) { FactoryBot.create(:models_task, id: 42, username: 'foo') }
         let(:event_manager) { Api::EventManager.new(true) }
         let(:cleanup_job) do
           instance_double(

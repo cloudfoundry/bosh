@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe Jobs::CleanupArtifacts do
     let(:event_manager) { Api::EventManager.new(true) }
-    let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
+    let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
 
     let(:update_job) do
       instance_double(
@@ -43,8 +43,8 @@ module Bosh::Director
       let(:stage) { instance_double(Bosh::Director::EventLog::Stage) }
       let(:event_log) { EventLog::Log.new }
       let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient, delete: nil) }
-      let(:release1) { Models::Release.make(name: 'release-1') }
-      let(:release2) { Models::Release.make(name: 'release-2') }
+      let(:release1) { FactoryBot.create(:models_release, name: 'release-1') }
+      let(:release2) { FactoryBot.create(:models_release, name: 'release-2') }
       let(:thread_pool) { ThreadPool.new }
       let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
       let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
@@ -52,8 +52,8 @@ module Bosh::Director
       subject(:cleanup_artifacts) { Jobs::CleanupArtifacts.new(config) }
 
       def make_stemcell(name:, version:, operating_system: '', id: 1)
-        Models::StemcellUpload.make(name: name, version: version)
-        Models::Stemcell.make(name: name, version: version, operating_system: operating_system, id: id)
+        FactoryBot.create(:models_stemcell_upload, name: name, version: version)
+        FactoryBot.create(:models_stemcell, name: name, version: version, operating_system: operating_system, id: id)
       end
 
       before do
@@ -62,12 +62,12 @@ module Bosh::Director
         stemcell1 = make_stemcell(name: 'stemcell-a', operating_system: 'gentoo_linux', version: '1', id: 1)
         make_stemcell(name: 'stemcell-b', version: '2', id: 2)
 
-        release_version1 = Models::ReleaseVersion.make(version: 1, release: release1)
-        Models::ReleaseVersion.make(version: 2, release: release2)
+        release_version1 = FactoryBot.create(:models_release_version, version: 1, release: release1)
+        FactoryBot.create(:models_release_version, version: 2, release: release2)
 
-        package = Models::Package.make(release: release1, blobstore_id: 'package_blob_id_1')
+        package = FactoryBot.create(:models_package, release: release1, blobstore_id: 'package_blob_id_1')
         package.add_release_version(release_version1)
-        Models::CompiledPackage.make(
+        FactoryBot.create(:models_compiled_package,
           package: package,
           stemcell_os: stemcell1.operating_system,
           stemcell_version: stemcell1.version,
@@ -118,8 +118,8 @@ module Bosh::Director
 
         context 'when there are orphaned disks' do
           before do
-            Models::OrphanDisk.make(disk_cid: 'fake-cid-1')
-            Models::OrphanDisk.make(disk_cid: 'fake-cid-2')
+            FactoryBot.create(:models_orphan_disk, disk_cid: 'fake-cid-1')
+            FactoryBot.create(:models_orphan_disk, disk_cid: 'fake-cid-2')
             allow(blobstore).to receive(:delete).with('package_blob_id_1')
             allow(event_log).to receive(:begin_stage).and_return(stage)
           end
@@ -144,8 +144,8 @@ module Bosh::Director
         end
 
         context 'when there are orphaned vms' do
-          let(:orphaned_vm_1) { Models::OrphanedVm.make(cid: 'fake-cid-1') }
-          let(:orphaned_vm_2) { Models::OrphanedVm.make(cid: 'fake-cid-2') }
+          let(:orphaned_vm_1) { FactoryBot.create(:models_orphaned_vm, cid: 'fake-cid-1') }
+          let(:orphaned_vm_2) { FactoryBot.create(:models_orphaned_vm, cid: 'fake-cid-2') }
           before do
             allow(event_log).to receive(:begin_stage).and_return(stage)
           end
@@ -177,8 +177,8 @@ module Bosh::Director
           let(:releases_deleter) { instance_double(Jobs::Helpers::NameVersionReleaseDeleter, find_and_delete_release: nil) }
           let(:compiled_package_deleter) { instance_double(Jobs::Helpers::CompiledPackageDeleter, delete: nil) }
           let(:orphaned_compiled_package) do
-            package = Models::Package.make(release: release1, blobstore_id: 'package_blob_id_1')
-            Models::CompiledPackage.make(
+            package = FactoryBot.create(:models_package, release: release1, blobstore_id: 'package_blob_id_1')
+            FactoryBot.create(:models_compiled_package,
               package: package,
               stemcell_os: 'windows',
               stemcell_version: '3.1',
@@ -209,8 +209,8 @@ module Bosh::Director
               make_stemcell(name: 'stemcell-a', version: '10', id: 3)
               make_stemcell(name: 'stemcell-b', version: '10', id: 4)
 
-              Models::ReleaseVersion.make(version: 10, release: release1)
-              Models::ReleaseVersion.make(version: 10, release: release2)
+              FactoryBot.create(:models_release_version, version: 10, release: release1)
+              FactoryBot.create(:models_release_version, version: 10, release: release2)
 
               expect(event_log).to receive(:begin_stage).with('Deleting stemcells', 4)
               expect(event_log).to receive(:begin_stage).with('Deleting releases', 4)
@@ -232,8 +232,8 @@ module Bosh::Director
 
         context 'when deleting multiple versions of the same release' do
           it 'removes them in sequence' do
-            Models::ReleaseVersion.make(version: 10, release: release1)
-            Models::ReleaseVersion.make(version: 9, release: release1)
+            FactoryBot.create(:models_release_version, version: 10, release: release1)
+            FactoryBot.create(:models_release_version, version: 9, release: release1)
 
             locks_acquired = []
             allow(Bosh::Director::Lock).to receive(:new) do |name, *_args|
@@ -255,11 +255,11 @@ module Bosh::Director
         end
 
         context 'when there is at least one deployment' do
-          let!(:blob1) { Bosh::Director::Models::LocalDnsBlob.make(created_at: Time.now - 4000) }
-          let!(:most_recent_blob) { Bosh::Director::Models::LocalDnsBlob.make(created_at: Time.now - 1) }
+          let!(:blob1) { FactoryBot.create(:models_local_dns_blob, created_at: Time.now - 4000) }
+          let!(:most_recent_blob) { FactoryBot.create(:models_local_dns_blob, created_at: Time.now - 1) }
 
           before do
-            Models::Deployment.make
+            FactoryBot.create(:models_deployment)
             allow(blobstore).to receive(:delete).with(blob1.blob.blobstore_id)
           end
 
@@ -273,8 +273,8 @@ module Bosh::Director
 
         context 'when there are no deployments' do
           before do
-            blob1 = Bosh::Director::Models::LocalDnsBlob.make(created_at: Time.now - 4000)
-            blob2 = Bosh::Director::Models::LocalDnsBlob.make(created_at: Time.now - 1)
+            blob1 = FactoryBot.create(:models_local_dns_blob, created_at: Time.now - 4000)
+            blob2 = FactoryBot.create(:models_local_dns_blob, created_at: Time.now - 1)
 
             allow(blobstore).to receive(:delete).with(blob1.blob.blobstore_id)
             allow(blobstore).to receive(:delete).with(blob2.blob.blobstore_id)
@@ -336,10 +336,10 @@ module Bosh::Director
           it 'keeps the last 2 most recently used releases' do
             expect(blobstore).to receive(:delete).with('compiled-package-1')
 
-            Models::ReleaseVersion.make(version: 10, release: release1)
-            Models::ReleaseVersion.make(version: 10, release: release2)
-            Models::ReleaseVersion.make(version: 9, release: release1)
-            Models::ReleaseVersion.make(version: 9, release: release2)
+            FactoryBot.create(:models_release_version, version: 10, release: release1)
+            FactoryBot.create(:models_release_version, version: 10, release: release2)
+            FactoryBot.create(:models_release_version, version: 9, release: release1)
+            FactoryBot.create(:models_release_version, version: 9, release: release2)
 
             expect(event_log).to receive(:begin_stage).with('Deleting stemcells', 0)
             expect(event_log).to receive(:begin_stage).with('Deleting releases', 2)
@@ -359,19 +359,19 @@ module Bosh::Director
 
         context 'when there are stemcells and releases in use' do
           before do
-            deployment1 = Models::Deployment.make(name: 'first')
-            deployment2 = Models::Deployment.make(name: 'second')
+            deployment1 = FactoryBot.create(:models_deployment, name: 'first')
+            deployment2 = FactoryBot.create(:models_deployment, name: 'second')
 
-            stemcell_with_deployment1 = Models::Stemcell.make(name: 'stemcell-c', id: 3)
+            stemcell_with_deployment1 = FactoryBot.create(:models_stemcell, name: 'stemcell-c', id: 3)
             stemcell_with_deployment1.add_deployment(deployment1)
 
-            stemcell_with_deployment2 = Models::Stemcell.make(name: 'stemcell-d', id: 4)
+            stemcell_with_deployment2 = FactoryBot.create(:models_stemcell, name: 'stemcell-d', id: 4)
             stemcell_with_deployment2.add_deployment(deployment2)
 
-            release1 = Models::Release.make(name: 'release-c')
-            release2 = Models::Release.make(name: 'release-d')
-            version1 = Models::ReleaseVersion.make(version: 1, release: release1)
-            version2 = Models::ReleaseVersion.make(version: 2, release: release2)
+            release1 = FactoryBot.create(:models_release, name: 'release-c')
+            release2 = FactoryBot.create(:models_release, name: 'release-d')
+            version1 = FactoryBot.create(:models_release_version, version: 1, release: release1)
+            version2 = FactoryBot.create(:models_release_version, version: 2, release: release2)
 
             version1.add_deployment(deployment1)
             version2.add_deployment(deployment2)
@@ -417,10 +417,10 @@ module Bosh::Director
         end
 
         context 'when there are dns blobs' do
-          let!(:old_dns_blob) { Bosh::Director::Models::LocalDnsBlob.make(created_at: Time.now - 4000) }
+          let!(:old_dns_blob) { FactoryBot.create(:models_local_dns_blob, created_at: Time.now - 4000) }
           let!(:recent_dns_blobs) do
             recent_blobs = []
-            10.times { recent_blobs << Bosh::Director::Models::LocalDnsBlob.make(created_at: Time.now) }
+            10.times { recent_blobs << FactoryBot.create(:models_local_dns_blob, created_at: Time.now) }
             recent_blobs
           end
 
@@ -450,8 +450,8 @@ module Bosh::Director
         end
 
         before do
-          Models::OrphanDisk.make(disk_cid: 'fake-cid-1')
-          Models::OrphanDisk.make(disk_cid: 'fake-cid-2')
+          FactoryBot.create(:models_orphan_disk, disk_cid: 'fake-cid-1')
+          FactoryBot.create(:models_orphan_disk, disk_cid: 'fake-cid-2')
           expect(blobstore).to receive(:delete).with('compiled-package-1')
         end
 
@@ -471,7 +471,7 @@ module Bosh::Director
 
         before do
           allow(blobstore).to receive(:delete).and_raise('nope')
-          Models::OrphanDisk.make(disk_cid: 'fake-cid-1')
+          FactoryBot.create(:models_orphan_disk, disk_cid: 'fake-cid-1')
           Models::Blob.new(type: 'exported-release', blobstore_id: 'ephemeral_blob_id_1', sha1: 'smurf1').save
         end
 

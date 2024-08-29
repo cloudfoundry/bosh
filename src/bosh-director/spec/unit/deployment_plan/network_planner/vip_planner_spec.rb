@@ -7,17 +7,17 @@ module Bosh::Director
     subject(:planner) { DeploymentPlan::NetworkPlanner::VipPlanner.new(network_planner, logger) }
 
     let(:network_planner) { DeploymentPlan::NetworkPlanner::Planner.new(logger) }
-    let(:deployment_model) { Models::Deployment.make(name: 'my-deployment') }
+    let(:deployment_model) { FactoryBot.create(:models_deployment, name: 'my-deployment') }
     let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
     let(:instance_plans) { [instance_plan] }
 
     let(:instance_plan) { make_instance_plan }
 
-    let(:instance_group) { DeploymentPlan::InstanceGroup.make }
+    let(:instance_group) { FactoryBot.build(:deployment_plan_instance_group) }
 
     def make_instance_plan
-      instance_model = Models::Instance.make
+      instance_model = FactoryBot.create(:models_instance)
       instance = DeploymentPlan::Instance.create_from_instance_group(
         instance_group,
         instance_model.index,
@@ -86,13 +86,13 @@ module Bosh::Director
         context 'when instance already has vip networks' do
           context 'when existing instance IPs can be reused' do
             before do
-              Models::IpAddress.make(
+              FactoryBot.create(:models_ip_address,
                 address_str: ip_to_i('69.69.69.69').to_s,
                 network_name: 'fake-network-1',
                 instance: instance_plan.existing_instance,
               )
 
-              Models::IpAddress.make(
+              FactoryBot.create(:models_ip_address,
                 address_str: ip_to_i('79.79.79.79').to_s,
                 network_name: 'fake-network-2',
                 instance: instance_plan.existing_instance,
@@ -111,13 +111,13 @@ module Bosh::Director
 
           context 'when existing instance static IP is no longer in the list of IPs' do
             before do
-              Models::IpAddress.make(
+              FactoryBot.create(:models_ip_address,
                 address_str: ip_to_i('65.65.65.65').to_s,
                 network_name: 'fake-network-1',
                 instance: instance_plan.existing_instance,
               )
 
-              Models::IpAddress.make(
+              FactoryBot.create(:models_ip_address,
                 address_str: ip_to_i('79.79.79.79').to_s,
                 network_name: 'fake-network-2',
                 instance: instance_plan.existing_instance,
@@ -141,13 +141,13 @@ module Bosh::Director
             end
 
             before do
-              Models::IpAddress.make(
+              FactoryBot.create(:models_ip_address,
                 address_str: ip_to_i('68.68.68.68').to_s,
                 network_name: 'fake-network-1',
                 instance: instance_plans[1].existing_instance,
               )
 
-              Models::IpAddress.make(
+              FactoryBot.create(:models_ip_address,
                 address_str: ip_to_i('77.77.77.77').to_s,
                 network_name: 'fake-network-2',
                 instance: instance_plans[1].existing_instance,

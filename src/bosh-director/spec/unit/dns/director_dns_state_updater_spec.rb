@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe DirectorDnsStateUpdater do
     subject { described_class.new }
-    let(:instance) { Models::Instance.make }
+    let(:instance) { FactoryBot.create(:models_instance) }
     let(:instance_plan) do
       instance_double(Bosh::Director::DeploymentPlan::InstancePlan, instance: deployment_plan_instance)
     end

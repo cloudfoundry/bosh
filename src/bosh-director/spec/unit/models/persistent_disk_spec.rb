@@ -1,12 +1,10 @@
 require 'spec_helper'
 
 module Bosh::Director::Models
-
   describe PersistentDisk do
-    subject(:persistent_disk) {described_class.make(cpi:cpi)}
-    let(:cpi) { 'my_cpi' }
-
     describe 'cloud_properties' do
+      subject(:persistent_disk) { PersistentDisk.new }
+
       let(:disk_cloud_properties) do
         { 'fake-cloud-property-key' => 'fake-cloud-property-value' }
       end
@@ -17,23 +15,28 @@ module Bosh::Director::Models
         expect(persistent_disk.cloud_properties).to eq(disk_cloud_properties)
       end
     end
+
     describe 'CPI' do
+      subject(:persistent_disk) { PersistentDisk.new(cpi: cpi, instance: instance) }
+
+      let(:cpi) { 'persistent-disc-cpi' }
+      let(:instance) { FactoryBot.create(:models_instance) }
 
       it 'return CPI' do
-        expect(persistent_disk.cpi).to eq('my_cpi')
+        expect(persistent_disk.cpi).to eq(cpi)
       end
 
       context 'when CPI is nil' do
         let(:cpi) { nil }
-        let(:instance) { instance_double(Instance, cpi: 'instance_cpi')}
+        let(:vm_cpi) { 'vm-cpi' }
+
         before do
-          allow(persistent_disk).to receive(:instance).and_return(instance)
-          persistent_disk.cpi = nil
+          FactoryBot.create(:models_vm, :active, instance: instance, cpi: vm_cpi)
         end
 
         it 'return CPI of active VM' do
-          expect(persistent_disk.cpi).to_not be_nil
-          expect(persistent_disk.cpi).to eq(persistent_disk.instance.cpi)
+          expect(persistent_disk.instance.cpi).to eq(vm_cpi)
+          expect(persistent_disk.cpi).to eq(vm_cpi)
         end
       end
     end

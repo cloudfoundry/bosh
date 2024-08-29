@@ -24,13 +24,13 @@ module Bosh::Director
         Delayed::Job.enqueue Bosh::Director::Jobs::DBJob.new(Bosh::Director::Jobs::VmState, 8, {})
       end
       let!(:tasks) do
-        Models::Task.make(id: 4, type: 'vms', state: 'processing')
-        Models::Task.make(id: 8, type: 'deployment', state: 'processing')
-        Models::Task.make(id: 9, timestamp: five_minutes_ago, type: 'deployment', state: 'queued')
-        Models::Task.make(id: 10, timestamp: DateTime.now.to_time, type: 'deployment', state: 'queued')
-        Models::Task.make(id: 11, timestamp: five_minutes_ago, type: 'snapshot_deployment', state: 'done')
-        Models::Task.make(id: 12, timestamp: DateTime.now.to_time, type: 'update_stemcell', state: 'done')
-        Models::Task.make(id: 13, timestamp: five_minutes_ago, type: 'deployment', state: 'queued')
+        FactoryBot.create(:models_task, id: 4, type: 'vms', state: 'processing')
+        FactoryBot.create(:models_task, id: 8, type: 'deployment', state: 'processing')
+        FactoryBot.create(:models_task, id: 9, timestamp: five_minutes_ago, type: 'deployment', state: 'queued')
+        FactoryBot.create(:models_task, id: 10, timestamp: DateTime.now.to_time, type: 'deployment', state: 'queued')
+        FactoryBot.create(:models_task, id: 11, timestamp: five_minutes_ago, type: 'snapshot_deployment', state: 'done')
+        FactoryBot.create(:models_task, id: 12, timestamp: DateTime.now.to_time, type: 'update_stemcell', state: 'done')
+        FactoryBot.create(:models_task, id: 13, timestamp: five_minutes_ago, type: 'deployment', state: 'queued')
       end
 
       describe '#perform' do
@@ -60,18 +60,18 @@ module Bosh::Director
         Delayed::Job.enqueue Bosh::Director::Jobs::DBJob.new(Bosh::Director::Jobs::VmState, 10, {})
       end
       let!(:tasks) do
-        Models::Task.make(id: 1, type: 'vms', state: 'done')
-        Models::Task.make(id: 2, type: 'vms', state: 'done')
-        Models::Task.make(id: 3, type: 'vms', state: 'done')
-        Models::Task.make(id: 4, type: 'vms', state: 'processing')
-        Models::Task.make(id: 5, type: 'deployment', state: 'done')
-        Models::Task.make(id: 6, type: 'deployment', state: 'done')
-        Models::Task.make(id: 7, type: 'deployment', state: 'done')
-        Models::Task.make(id: 8, type: 'deployment', state: 'processing')
-        Models::Task.make(id: 9, type: 'deployment', state: 'queued')
-        Models::Task.make(id: 10, type: 'deployment', state: 'queued')
-        Models::Task.make(id: 11, type: 'snapshot_deployment', state: 'done')
-        Models::Task.make(id: 12, type: 'update_stemcell', state: 'done')
+        FactoryBot.create(:models_task, id: 1, type: 'vms', state: 'done')
+        FactoryBot.create(:models_task, id: 2, type: 'vms', state: 'done')
+        FactoryBot.create(:models_task, id: 3, type: 'vms', state: 'done')
+        FactoryBot.create(:models_task, id: 4, type: 'vms', state: 'processing')
+        FactoryBot.create(:models_task, id: 5, type: 'deployment', state: 'done')
+        FactoryBot.create(:models_task, id: 6, type: 'deployment', state: 'done')
+        FactoryBot.create(:models_task, id: 7, type: 'deployment', state: 'done')
+        FactoryBot.create(:models_task, id: 8, type: 'deployment', state: 'processing')
+        FactoryBot.create(:models_task, id: 9, type: 'deployment', state: 'queued')
+        FactoryBot.create(:models_task, id: 10, type: 'deployment', state: 'queued')
+        FactoryBot.create(:models_task, id: 11, type: 'snapshot_deployment', state: 'done')
+        FactoryBot.create(:models_task, id: 12, type: 'update_stemcell', state: 'done')
       end
 
       describe '.schedule_message' do

@@ -58,8 +58,8 @@ module Bosh::Director
     end
 
     before(:each) do
-      Models::LocalDnsEncodedNetwork.make(id: default_network_id, name: default_network)
-      Models::Instance.make(id: 1, uuid: 'uuid-1')
+      FactoryBot.create(:models_local_dns_encoded_network, id: default_network_id, name: default_network)
+      FactoryBot.create(:models_instance, id: 1, uuid: 'uuid-1')
     end
 
     describe '#encode_link' do
@@ -237,7 +237,7 @@ module Bosh::Director
           let(:default_network) { 'network1' }
           let(:default_network_id) { 4 }
           before(:each) do
-            Models::LocalDnsEncodedNetwork.make(id: 3, name: 'network2')
+            FactoryBot.create(:models_local_dns_encoded_network, id: 3, name: 'network2')
           end
 
           context 'default_network is set' do
@@ -326,7 +326,7 @@ module Bosh::Director
 
     describe '#num_for_uuid' do
       before(:each) do
-        Models::Instance.make(id: 2, uuid: 'uuid-2')
+        FactoryBot.create(:models_instance, id: 2, uuid: 'uuid-2')
       end
 
       it 'matches if found' do
@@ -368,8 +368,8 @@ module Bosh::Director
 
     describe '#id_for_network' do
       before(:each) do
-        Models::LocalDnsEncodedNetwork.make(id: 10, name: 'nw1')
-        Models::LocalDnsEncodedNetwork.make(id: 20, name: 'nw2')
+        FactoryBot.create(:models_local_dns_encoded_network, id: 10, name: 'nw1')
+        FactoryBot.create(:models_local_dns_encoded_network, id: 20, name: 'nw2')
       end
 
       it 'matches if found' do

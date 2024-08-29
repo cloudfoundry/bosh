@@ -9,9 +9,9 @@ module Bosh::Director
       end
       let(:base_job) { Bosh::Director::Jobs::BaseJob.new }
 
-      let!(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+      let!(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
       let(:deployment_model) do
-        deployment = Models::Deployment.make(name: 'fake-deployment', manifest: YAML.dump(deployment_manifest))
+        deployment = FactoryBot.create(:models_deployment, name: 'fake-deployment', manifest: YAML.dump(deployment_manifest))
         deployment.cloud_configs = [cloud_config]
         deployment
       end
@@ -20,7 +20,7 @@ module Bosh::Director
         deployment_plan = planner_factory.create_from_model(deployment_model)
 
         agent_client = instance_double('Bosh::Director::AgentClient')
-        allow(BD::AgentClient).to receive(:with_agent_id).and_return(agent_client)
+        allow(Bosh::Director::AgentClient).to receive(:with_agent_id).and_return(agent_client)
         allow(agent_client).to receive(:get_state).and_return({'agent-state' => 'yes'})
 
         deployment_plan
@@ -29,10 +29,10 @@ module Bosh::Director
       let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
       let(:deployment_assembler) { DeploymentPlan::Assembler.create(deployment_plan, variables_interpolator) }
 
-      let!(:stemcell) { Models::Stemcell.make(name: 'ubuntu-stemcell', version: '1') }
+      let!(:stemcell) { FactoryBot.create(:models_stemcell, name: 'ubuntu-stemcell', version: '1') }
       let!(:cloud_config) do
         if prior_az_name.nil?
-          Models::Config.make(:cloud_with_manifest_v2)
+          FactoryBot.create(:models_config_cloud, :with_manifest)
         else
           raw_manifest = Bosh::Spec::Deployments.simple_cloud_config.merge(
             'azs' => [
@@ -45,11 +45,11 @@ module Bosh::Director
           raw_manifest['networks'][0]['subnets'][0]['azs'] = [prior_az_name]
           raw_manifest['compilation']['az'] = prior_az_name
 
-          Models::Config.make(:cloud, content: YAML.dump(raw_manifest))
+          FactoryBot.create(:models_config_cloud, content: YAML.dump(raw_manifest))
         end
       end
       let(:prior_az_name) { 'z2' }
-      let!(:cpi_config) { Models::Config.make(:cpi_with_manifest) }
+      let!(:cpi_config) { FactoryBot.create(:models_config_cpi, :with_manifest) }
       let(:deployment_manifest) do
         manifest = {
           'name' => 'fake-deployment',
@@ -96,7 +96,7 @@ module Bosh::Director
       describe '#perform' do
         context 'with instances in the deployment' do
           let(:existing_instance) do
-            Models::Instance.make(
+            FactoryBot.create(:models_instance,
               deployment: deployment_model,
               job: 'fake-instance-group',
               index: 0,
@@ -108,7 +108,7 @@ module Bosh::Director
           context 'with no AZ name (legacy-style manifest)' do
             let(:prior_az_name) { '' }
             before {
-              existing_instance.active_vm = Models::Vm.make(cpi: 'anything', instance: existing_instance)
+              existing_instance.active_vm = FactoryBot.create(:models_vm, cpi: 'anything', instance: existing_instance)
               existing_instance.save
             }
 
@@ -122,7 +122,7 @@ module Bosh::Director
           context 'with nil azs (key not specified in manifest)' do
             let(:prior_az_name) { nil }
             before {
-              existing_instance.active_vm = Models::Vm.make(cpi: 'anything', instance: existing_instance)
+              existing_instance.active_vm = FactoryBot.create(:models_vm, cpi: 'anything', instance: existing_instance)
               existing_instance.save
             }
 
@@ -145,7 +145,7 @@ module Bosh::Director
             end
 
             context 'with a VM for the instance' do
-              before { existing_instance.active_vm = Models::Vm.make(cpi: prior_cpi_name, instance: existing_instance) }
+              before { existing_instance.active_vm = FactoryBot.create(:models_vm, cpi: prior_cpi_name, instance: existing_instance) }
 
               context 'which has an outdated cpi name' do
                 let(:prior_cpi_name) { 'cpi-old' }
@@ -199,7 +199,7 @@ module Bosh::Director
                 }
               end
 
-              before { existing_instance.active_vm = Models::Vm.make(cpi: 'old-cpi', instance: existing_instance) }
+              before { existing_instance.active_vm = FactoryBot.create(:models_vm, cpi: 'old-cpi', instance: existing_instance) }
               it 'updates the cpi' do
                 subject.perform
 

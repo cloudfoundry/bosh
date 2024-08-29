@@ -17,7 +17,7 @@ module Bosh::Director
 
       def make_task_with_team(attributes)
         teams = attributes.delete(:teams)
-        task = Models::Task.make(attributes)
+        task = FactoryBot.create(:models_task, attributes)
         task.teams = teams
         task
       end

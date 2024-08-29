@@ -9,7 +9,7 @@ module Bosh::Director
     let(:job_options) do
       {}
     end
-    let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
+    let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
     let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
     let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
 
@@ -35,8 +35,8 @@ module Bosh::Director
     end
 
     it 'fails when ignored instances exist in the to-be-deleted deployment' do
-      deployment = Bosh::Director::Models::Deployment.make(name: 'test_deployment')
-      BD::Models::Instance.make(deployment: deployment, job: 'foo-job', index: 0, ignore: true)
+      deployment = FactoryBot.create(:models_deployment, name: 'test_deployment')
+      FactoryBot.create(:models_instance, deployment: deployment, job: 'foo-job', index: 0, ignore: true)
       expect do
         job.perform
       end.to raise_exception DeploymentIgnoredInstancesDeletion, "You are trying to delete deployment 'test_deployment', " \
@@ -44,7 +44,7 @@ module Bosh::Director
     end
 
     it 'should store new events' do
-      Bosh::Director::Models::Deployment.make(name: 'test_deployment')
+      FactoryBot.create(:models_deployment, name: 'test_deployment')
       expect do
         job.perform
       end.to change { Bosh::Director::Models::Event.count }.from(0).to(2)

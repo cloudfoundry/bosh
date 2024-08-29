@@ -5,17 +5,17 @@ module Bosh::Director
     include Support::StemcellHelpers
 
     subject(:package_validator) { described_class.new(Config.logger) }
-    let(:release) { Models::Release.make(name: 'release1') }
-    let(:release_version_model) { Models::ReleaseVersion.make(release: release, version: 'version1') }
+    let(:release) { FactoryBot.create(:models_release, name: 'release1') }
+    let(:release_version_model) { FactoryBot.create(:models_release_version, release: release, version: 'version1') }
 
     describe '#validate' do
       let(:stemcell) { make_stemcell(operating_system: 'ubuntu', version: '3567.4') }
 
       context 'when there are valid compiled packages' do
-        let(:package) { Models::Package.make(sha1: nil, blobstore_id: nil) }
+        let(:package) { FactoryBot.create(:models_package, sha1: nil, blobstore_id: nil) }
 
         it 'does not fault if they have the exact stemcell version number' do
-          compiled_package = Models::CompiledPackage.make(package: package, stemcell_os: 'ubuntu', stemcell_version: '3567.4')
+          compiled_package = FactoryBot.create(:models_compiled_package, package: package, stemcell_os: 'ubuntu', stemcell_version: '3567.4')
           compiled_package.save
           release_version_model.add_package(package)
           package_validator.validate(release_version_model, stemcell, [nil], [])
@@ -25,7 +25,7 @@ module Bosh::Director
         end
 
         it 'does not fault if the stemcell version number differs only in patch number' do
-          compiled_package = Models::CompiledPackage.make(package: package, stemcell_os: 'ubuntu', stemcell_version: '3567.5')
+          compiled_package = FactoryBot.create(:models_compiled_package, package: package, stemcell_os: 'ubuntu', stemcell_version: '3567.5')
           compiled_package.save
           release_version_model.add_package(package)
           package_validator.validate(release_version_model, stemcell, [nil], [])
@@ -36,8 +36,8 @@ module Bosh::Director
       end
 
       context 'when there are packages without sha and blobstore' do
-        let(:invalid_package) { Models::Package.make(sha1: nil, blobstore_id: nil) }
-        let(:valid_package) { Models::Package.make }
+        let(:invalid_package) { FactoryBot.create(:models_package, sha1: nil, blobstore_id: nil) }
+        let(:valid_package) { FactoryBot.create(:models_package) }
 
         before do
           release_version_model.add_package(invalid_package)
@@ -55,12 +55,12 @@ module Bosh::Director
       end
 
       context 'when there is exported_from' do
-        let(:package) { Models::Package.make(sha1: nil, blobstore_id: nil) }
+        let(:package) { FactoryBot.create(:models_package, sha1: nil, blobstore_id: nil) }
         let(:exported_from) { [DeploymentPlan::ReleaseVersionExportedFrom.new('ubuntu', '3567.1')] }
 
         context 'when there is a valid compiled package' do
           it 'does not fault if there is an exact match' do
-            compiled_package = Models::CompiledPackage.make(package: package, stemcell_os: 'ubuntu', stemcell_version: '3567.1')
+            compiled_package = FactoryBot.create(:models_compiled_package, package: package, stemcell_os: 'ubuntu', stemcell_version: '3567.1')
             compiled_package.save
             release_version_model.add_package(package)
             package_validator.validate(release_version_model, stemcell, [package.name], exported_from)
@@ -70,7 +70,7 @@ module Bosh::Director
           end
 
           it 'creates a fault if there is a difference in patch version' do
-            compiled_package = Models::CompiledPackage.make(package: package, stemcell_os: 'ubuntu', stemcell_version: '3567.4')
+            compiled_package = FactoryBot.create(:models_compiled_package, package: package, stemcell_os: 'ubuntu', stemcell_version: '3567.4')
             compiled_package.save
             release_version_model.add_package(package)
             package_validator.validate(release_version_model, stemcell, [package.name], exported_from)
@@ -81,7 +81,7 @@ module Bosh::Director
         end
 
         context 'when packages are not compiled' do
-          let(:package) { Models::Package.make }
+          let(:package) { FactoryBot.create(:models_package) }
 
           it 'creates a fault' do
             release_version_model.add_package(package)
@@ -103,7 +103,7 @@ module Bosh::Director
 
           context 'and there is a match' do
             before do
-              Models::CompiledPackage.make(package: package, stemcell_os: 'ubuntu-xenial', stemcell_version: '250.17').save
+              FactoryBot.create(:models_compiled_package, package: package, stemcell_os: 'ubuntu-xenial', stemcell_version: '250.17').save
             end
 
             it 'should find a compiled package' do
@@ -135,8 +135,8 @@ Packages must be exported from stemcell 'ubuntu-xenial\/250.17', but some packag
       let(:stemcell1) { make_stemcell(name: 'stemcell1', version: 1) }
       let(:stemcell2) { make_stemcell(name: 'stemcell2', version: 2) }
 
-      let(:invalid_package1) { Models::Package.make(sha1: nil, blobstore_id: nil, name: 'package1', version: 1) }
-      let(:invalid_package2) { Models::Package.make(sha1: nil, blobstore_id: nil, name: 'package2', version: 2) }
+      let(:invalid_package1) { FactoryBot.create(:models_package, sha1: nil, blobstore_id: nil, name: 'package1', version: 1) }
+      let(:invalid_package2) { FactoryBot.create(:models_package, sha1: nil, blobstore_id: nil, name: 'package2', version: 2) }
 
       let(:job_packages) { %w[package1 package2] }
 

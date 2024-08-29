@@ -21,7 +21,7 @@ module Bosh::Director::DeploymentPlan
     end
     let(:deployment_plan) { instance_double(Bosh::Director::DeploymentPlan::Planner, skip_drain: skip_drain_decider) }
     let(:index_assigner) { PlacementPlanner::IndexAssigner.new(deployment_model) }
-    let(:deployment_model) { Bosh::Director::Models::Deployment.make }
+    let(:deployment_model) { FactoryBot.create(:models_deployment) }
     let(:test_random_tie_strategy) { PlacementPlanner::TieStrategy::RandomWins }
     let(:randomize_az_placement) { false }
     let(:deployment_subnets) do
@@ -33,14 +33,14 @@ module Bosh::Director::DeploymentPlan
           ['192.168.1.10', '192.168.1.11', '192.168.1.12', '192.168.1.13', '192.168.1.14'])
       ]
     end
-    let(:job_networks) { [JobNetwork.make(name: 'network_A')] }
+    let(:job_networks) { [FactoryBot.build(:deployment_plan_job_network, name: 'network_A')] }
 
     # we don't care about instances in this test, it is hard to make them, because they need deployment plan
     let(:instance_repo) do
       instance_double(InstanceRepository,
-        fetch_existing: instance_double(Instance, uuid: 'existing-uuid', update_description: nil, model: Bosh::Director::Models::Instance.make),
-        fetch_obsolete_existing: instance_double(Instance, update_description: nil, model: Bosh::Director::Models::Instance.make),
-        create: instance_double(Instance, uuid: 'create-uuid', model: Bosh::Director::Models::Instance.make)
+        fetch_existing: instance_double(Instance, uuid: 'existing-uuid', update_description: nil, model: FactoryBot.create(:models_instance)),
+        fetch_obsolete_existing: instance_double(Instance, update_description: nil, model: FactoryBot.create(:models_instance)),
+        create: instance_double(Instance, uuid: 'create-uuid', model: FactoryBot.create(:models_instance))
       )
     end
     let(:az1) { AvailabilityZone.new('1', {}) }
@@ -55,7 +55,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     def existing_instance_with_az(index, az, persistent_disks=[])
-      instance_model = Bosh::Director::Models::Instance.make(index: index, availability_zone: az, deployment: deployment_model)
+      instance_model = FactoryBot.create(:models_instance, index: index, availability_zone: az, deployment: deployment_model)
       allow(instance_model).to receive(:persistent_disks).and_return(persistent_disks)
       instance_model
     end
@@ -346,7 +346,7 @@ module Bosh::Director::DeploymentPlan
         describe 'when existing instances have no az, and desired have no azs' do
           let(:desired_azs) { [] }
           it 'should not recreate the instances' do
-            existing_0 = existing_instance_with_az(0, nil, [Bosh::Director::Models::PersistentDisk.make])
+            existing_0 = existing_instance_with_az(0, nil, [FactoryBot.create(:models_persistent_disk)])
             unmatched_desired_instances = [desired_instance, desired_instance]
             results = zone_picker.place_and_match_in(unmatched_desired_instances, [existing_0])
             expect(results.select(&:new?).map(&:desired_instance)).to eq([unmatched_desired_instances[1]])
@@ -364,8 +364,8 @@ module Bosh::Director::DeploymentPlan
           let(:desired_azs) { [az1, az2] }
 
           it 'should not move existing instances' do
-            existing_zone1_0 = existing_instance_with_az(0, '1', [Bosh::Director::Models::PersistentDisk.make])
-            existing_zone1_1 = existing_instance_with_az(1, '1', [Bosh::Director::Models::PersistentDisk.make])
+            existing_zone1_0 = existing_instance_with_az(0, '1', [FactoryBot.create(:models_persistent_disk)])
+            existing_zone1_1 = existing_instance_with_az(1, '1', [FactoryBot.create(:models_persistent_disk)])
 
             desired_instances = [desired_instance, desired_instance]
             results = zone_picker.place_and_match_in(desired_instances, [existing_zone1_0, existing_zone1_1])
@@ -408,8 +408,8 @@ module Bosh::Director::DeploymentPlan
           let(:desired_azs) { [az1, az2] }
 
           it 'should not destroy/remove/re-balance them, should do nothing' do
-            existing_zone1_0 = existing_instance_with_az(0, '1', [Bosh::Director::Models::PersistentDisk.make(active: false)])
-            existing_zone1_1 = existing_instance_with_az(1, '1', [Bosh::Director::Models::PersistentDisk.make(active: false)])
+            existing_zone1_0 = existing_instance_with_az(0, '1', [FactoryBot.create(:models_persistent_disk, active: false)])
+            existing_zone1_1 = existing_instance_with_az(1, '1', [FactoryBot.create(:models_persistent_disk, active: false)])
 
             unmatched_desired_instances = [desired_instance, desired_instance]
             results = zone_picker.place_and_match_in(unmatched_desired_instances, [existing_zone1_0, existing_zone1_1])
@@ -431,7 +431,7 @@ module Bosh::Director::DeploymentPlan
 
           it 'should re-balance the instance that never had persistent disk' do
             existing_zone1_0 = existing_instance_with_az(0, '1')
-            existing_zone1_1 = existing_instance_with_az(1, '1', [Bosh::Director::Models::PersistentDisk.make(active: false)])
+            existing_zone1_1 = existing_instance_with_az(1, '1', [FactoryBot.create(:models_persistent_disk, active: false)])
 
             unmatched_desired_instances = [desired_instance, desired_instance]
             results = zone_picker.place_and_match_in(unmatched_desired_instances, [existing_zone1_0, existing_zone1_1])
@@ -450,8 +450,8 @@ module Bosh::Director::DeploymentPlan
           let(:desired_azs) { [az1] }
 
           it 'should eliminate one of the instances' do
-            existing_zone1_0 = existing_instance_with_az(0, '1', [Bosh::Director::Models::PersistentDisk.make(active: true)])
-            existing_zone1_1 = existing_instance_with_az(1, '1', [Bosh::Director::Models::PersistentDisk.make(active: false)])
+            existing_zone1_0 = existing_instance_with_az(0, '1', [FactoryBot.create(:models_persistent_disk, active: true)])
+            existing_zone1_1 = existing_instance_with_az(1, '1', [FactoryBot.create(:models_persistent_disk, active: false)])
 
             unmatched_desired_instances = [desired_instance]
             unmatched_existing_instances = [existing_zone1_0, existing_zone1_1]
@@ -472,12 +472,12 @@ module Bosh::Director::DeploymentPlan
           let(:desired_azs) { [az1, az2] }
 
           it 'should re-balance the instances across the remaining azs' do
-            existing_zone1_0 = existing_instance_with_az(0, '1', [Bosh::Director::Models::PersistentDisk.make])
-            existing_zone1_1 = existing_instance_with_az(1, '1', [Bosh::Director::Models::PersistentDisk.make])
-            existing_zone2_2 = existing_instance_with_az(2, '2', [Bosh::Director::Models::PersistentDisk.make])
-            existing_zone2_3 = existing_instance_with_az(3, '2', [Bosh::Director::Models::PersistentDisk.make])
-            existing_zone3_4 = existing_instance_with_az(4, '3', [Bosh::Director::Models::PersistentDisk.make])
-            existing_zone3_5 = existing_instance_with_az(5, '3', [Bosh::Director::Models::PersistentDisk.make])
+            existing_zone1_0 = existing_instance_with_az(0, '1', [FactoryBot.create(:models_persistent_disk)])
+            existing_zone1_1 = existing_instance_with_az(1, '1', [FactoryBot.create(:models_persistent_disk)])
+            existing_zone2_2 = existing_instance_with_az(2, '2', [FactoryBot.create(:models_persistent_disk)])
+            existing_zone2_3 = existing_instance_with_az(3, '2', [FactoryBot.create(:models_persistent_disk)])
+            existing_zone3_4 = existing_instance_with_az(4, '3', [FactoryBot.create(:models_persistent_disk)])
+            existing_zone3_5 = existing_instance_with_az(5, '3', [FactoryBot.create(:models_persistent_disk)])
 
             unmatched_desired_instances = [desired_instance, desired_instance, desired_instance, desired_instance, desired_instance, desired_instance]
             unmatched_existing_instances = [existing_zone1_0, existing_zone1_1, existing_zone2_2, existing_zone2_3, existing_zone3_4, existing_zone3_5]
@@ -525,7 +525,7 @@ module Bosh::Director::DeploymentPlan
 
           it 'should raise' do
             existing_0 = existing_instance_with_az(0, az1.name, [])
-            Bosh::Director::Models::IpAddress.make(instance_id: existing_0.id, task_id: "my-ip-address-task-id", address_str: "1234567890", network_name: "network_A")
+            FactoryBot.create(:models_ip_address, instance_id: existing_0.id, task_id: "my-ip-address-task-id", address_str: "1234567890", network_name: "network_A")
             existing_0.update(ignore: true)
             expect {
               zone_picker.place_and_match_in([desired_instance], [existing_0])
@@ -536,7 +536,7 @@ module Bosh::Director::DeploymentPlan
         describe 'when adding/removing networks for instance groups with ignored vms' do
           it 'should raise' do
             existing_0 = existing_instance_with_az(0, az1.name, [])
-            Bosh::Director::Models::IpAddress.make(instance_id: existing_0.id, task_id: "my-ip-address-task-id", address_str: "1234567890", network_name: "old-network")
+            FactoryBot.create(:models_ip_address, instance_id: existing_0.id, task_id: "my-ip-address-task-id", address_str: "1234567890", network_name: "old-network")
             existing_0.update(ignore: true)
             expect {
               zone_picker.place_and_match_in([desired_instance], [existing_0])
@@ -550,7 +550,7 @@ module Bosh::Director::DeploymentPlan
           it 'should place and match existing instances' do
             existing_0 = existing_instance_with_az(0, nil, [])
             existing_0.update(ignore: true)
-            Bosh::Director::Models::IpAddress.make(instance_id: existing_0.id, task_id: "my-ip-address-task-id", address_str: "1234567890", network_name: "network_A")
+            FactoryBot.create(:models_ip_address, instance_id: existing_0.id, task_id: "my-ip-address-task-id", address_str: "1234567890", network_name: "network_A")
             results = zone_picker.place_and_match_in([desired_instance], [existing_0])
 
             existing = results.select(&:existing?)
@@ -567,7 +567,7 @@ module Bosh::Director::DeploymentPlan
           it 'should raise' do
             existing_0 = existing_instance_with_az(0, nil, [])
             existing_0.update(ignore: true)
-            Bosh::Director::Models::IpAddress.make(instance_id: existing_0.id, task_id: "my-ip-address-task-id", address_str: "1234567890", network_name: "network_A")
+            FactoryBot.create(:models_ip_address, instance_id: existing_0.id, task_id: "my-ip-address-task-id", address_str: "1234567890", network_name: "network_A")
 
             desired_instances = []
             expect {
@@ -586,8 +586,8 @@ module Bosh::Director::DeploymentPlan
             existing_zone2_2 = existing_instance_with_az(2, '2')
             existing_zone2_3 = existing_instance_with_az(3, '2')
 
-            Bosh::Director::Models::IpAddress.make(instance_id: existing_zone1_0.id, task_id: "my-ip-address-task-id", address_str: "1234567890", network_name: "network_A")
-            Bosh::Director::Models::IpAddress.make(instance_id: existing_zone1_1.id, task_id: "my-ip-address-task-id", address_str: "1234567891", network_name: "network_A")
+            FactoryBot.create(:models_ip_address, instance_id: existing_zone1_0.id, task_id: "my-ip-address-task-id", address_str: "1234567890", network_name: "network_A")
+            FactoryBot.create(:models_ip_address, instance_id: existing_zone1_1.id, task_id: "my-ip-address-task-id", address_str: "1234567891", network_name: "network_A")
 
             existing_zone1_0.update(ignore: true)
             existing_zone1_1.update(ignore: true)
@@ -614,8 +614,8 @@ module Bosh::Director::DeploymentPlan
             existing_zone1_3 = existing_instance_with_az(3, nil)
             ignored_existing_zone1_4 = existing_instance_with_az(4, nil)
 
-            Bosh::Director::Models::IpAddress.make(instance_id: ignored_existing_zone1_0.id, task_id: "my-ip-address-task-id", address_str: "1234567890", network_name: "network_A")
-            Bosh::Director::Models::IpAddress.make(instance_id: ignored_existing_zone1_4.id, task_id: "my-ip-address-task-id", address_str: "1234567891", network_name: "network_A")
+            FactoryBot.create(:models_ip_address, instance_id: ignored_existing_zone1_0.id, task_id: "my-ip-address-task-id", address_str: "1234567890", network_name: "network_A")
+            FactoryBot.create(:models_ip_address, instance_id: ignored_existing_zone1_4.id, task_id: "my-ip-address-task-id", address_str: "1234567891", network_name: "network_A")
 
             ignored_existing_zone1_0.update(ignore: true)
             ignored_existing_zone1_4.update(ignore: true)

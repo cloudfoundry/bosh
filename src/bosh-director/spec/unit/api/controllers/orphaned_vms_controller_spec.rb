@@ -14,14 +14,14 @@ module Bosh::Director
       end
 
       context '/orphaned_vms' do
-        let!(:orphaned_vm1) { Models::OrphanedVm.make }
-        let!(:orphaned_vm2) { Models::OrphanedVm.make }
+        let!(:orphaned_vm1) { FactoryBot.create(:models_orphaned_vm) }
+        let!(:orphaned_vm2) { FactoryBot.create(:models_orphaned_vm) }
 
         before do
           basic_authorize 'admin', 'admin'
 
-          Models::IpAddress.make(instance: nil, orphaned_vm: orphaned_vm1)
-          Models::IpAddress.make(instance: nil, orphaned_vm: orphaned_vm1)
+          FactoryBot.create(:models_ip_address, instance: nil, orphaned_vm: orphaned_vm1)
+          FactoryBot.create(:models_ip_address, instance: nil, orphaned_vm: orphaned_vm1)
         end
 
         it 'returns a list of orphaned vms' do

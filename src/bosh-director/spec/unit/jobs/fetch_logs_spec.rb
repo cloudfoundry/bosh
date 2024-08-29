@@ -5,7 +5,7 @@ module Bosh::Director
   describe Jobs::FetchLogs do
     subject(:fetch_logs) { Jobs::FetchLogs.new(instances, 'filters' => 'filter1,filter2') }
     let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
-    let(:task) { Models::Task.make(id: 42) }
+    let(:task) { FactoryBot.create(:models_task, id: 42) }
     let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
     let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
 
@@ -23,17 +23,17 @@ module Bosh::Director
 
     describe '#perform' do
       let(:instance) do
-        Models::Instance.make(deployment: deployment, job: 'fake-job-name', index: '42', uuid: 'uuid-1')
+        FactoryBot.create(:models_instance, deployment: deployment, job: 'fake-job-name', index: '42', uuid: 'uuid-1')
       end
 
-      let(:deployment) { Models::Deployment.make }
+      let(:deployment) { FactoryBot.create(:models_deployment) }
 
       context 'when only one instance to get logs' do
         let(:instances) { [instance.id] }
 
         context 'when instance is associated with a vm' do
           before do
-            vm = Models::Vm.make(cid: 'vm-1', instance_id: instance.id)
+            vm = FactoryBot.create(:models_vm, cid: 'vm-1', instance_id: instance.id)
             instance.active_vm = vm
           end
 
@@ -41,7 +41,7 @@ module Bosh::Director
           let(:agent) { instance_double('Bosh::Director::AgentClient', fetch_logs: {'blobstore_id' => 'new-fake-blobstore-id'}) }
 
           it 'cleans old log bundles' do
-            old_log_bundle = Models::LogBundle.make(timestamp: Time.now - 12*24*60*60, blobstore_id: 'previous-fake-blobstore-id') # 12 days
+            old_log_bundle = FactoryBot.create(:models_log_bundle, timestamp: Time.now - 12*24*60*60, blobstore_id: 'previous-fake-blobstore-id') # 12 days
             expect(blobstore).to receive(:delete).with('previous-fake-blobstore-id')
 
             fetch_logs.perform
@@ -51,7 +51,7 @@ module Bosh::Director
 
           context 'when deleting blob from blobstore fails' do
             it 'cleans the old log bundle if it was not found in the blobstore' do
-              old_log_bundle = Models::LogBundle.make(timestamp: Time.now - 12*24*60*60, blobstore_id: 'previous-fake-blobstore-id') # 12 days
+              old_log_bundle = FactoryBot.create(:models_log_bundle, timestamp: Time.now - 12*24*60*60, blobstore_id: 'previous-fake-blobstore-id') # 12 days
               expect(blobstore).to receive(:delete).with('previous-fake-blobstore-id').and_raise(Bosh::Blobstore::NotFound)
 
               fetch_logs.perform
@@ -60,7 +60,7 @@ module Bosh::Director
             end
 
             it 'does not clean the old log bundle if any other error is returned' do
-              old_log_bundle = Models::LogBundle.make(timestamp: Time.now - 12*24*60*60, blobstore_id: 'previous-fake-blobstore-id') # 12 days
+              old_log_bundle = FactoryBot.create(:models_log_bundle, timestamp: Time.now - 12*24*60*60, blobstore_id: 'previous-fake-blobstore-id') # 12 days
               expect(blobstore).to receive(:delete).with('previous-fake-blobstore-id').and_raise(Bosh::Blobstore::NotImplemented)
 
               fetch_logs.perform
@@ -116,14 +116,14 @@ module Bosh::Director
 
       context 'when several isntances to get logs' do
         let(:instance_1) do
-          is = Models::Instance.make(deployment: deployment, job: 'fake-job-name', index: '44', uuid: 'uuid-2')
-          vm = Models::Vm.make(cid: 'vm-1', instance_id: is.id)
+          is = FactoryBot.create(:models_instance, deployment: deployment, job: 'fake-job-name', index: '44', uuid: 'uuid-2')
+          vm = FactoryBot.create(:models_vm, cid: 'vm-1', instance_id: is.id)
           is.active_vm = vm
           is.save
         end
         let(:instance_2) do
-          is = Models::Instance.make(deployment: deployment, job: 'fake-job-name', index: '43', uuid: 'uuid-3')
-          vm = Models::Vm.make(cid: 'vm-2', instance_id: is.id)
+          is = FactoryBot.create(:models_instance, deployment: deployment, job: 'fake-job-name', index: '43', uuid: 'uuid-3')
+          vm = FactoryBot.create(:models_vm, cid: 'vm-2', instance_id: is.id)
           is.active_vm = vm
           is.save
         end

@@ -6,7 +6,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
     context 'when availability zone is specified' do
       let(:az1) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('az1', {}) }
       it 'should parse the basic properties' do
-        config = BD::DeploymentPlan::CompilationConfig.new({
+        config = Bosh::Director::DeploymentPlan::CompilationConfig.new({
             'workers' => 2,
             'network' => 'foo',
             'az' => 'az1'
@@ -16,7 +16,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
       end
 
       it 'should raise CompilationConfigInvalidAvailabilityZone when availability zone does not exist' do
-        expect{BD::DeploymentPlan::CompilationConfig.new({
+        expect{Bosh::Director::DeploymentPlan::CompilationConfig.new({
             'workers' => 2,
             'network' => 'foo',
             'az' => 'az2'
@@ -25,7 +25,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
       end
 
       it 'should raise CompilationConfigInvalidAvailabilityZone when availability zone not in deployment' do
-        expect{BD::DeploymentPlan::CompilationConfig.new({
+        expect{Bosh::Director::DeploymentPlan::CompilationConfig.new({
             'workers' => 2,
             'network' => 'foo',
             'az' => 'az2'
@@ -46,7 +46,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
       end
 
       it 'should parse the property' do
-        config = BD::DeploymentPlan::CompilationConfig.new(compilation_config, {}, [])
+        config = Bosh::Director::DeploymentPlan::CompilationConfig.new(compilation_config, {}, [])
         expect(config.cloud_properties).to eq({'instance_type' => 'super-large'})
       end
 
@@ -55,17 +55,17 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
 
         it 'should raise an error' do
           expect {
-            BD::DeploymentPlan::CompilationConfig.new(compilation_config, {}, [])
+            Bosh::Director::DeploymentPlan::CompilationConfig.new(compilation_config, {}, [])
           }.to raise_error(Bosh::Director::ValidationInvalidType)
         end
       end
     end
 
     context 'when vm_type is configured' do
-      let(:vm_type) { BD::DeploymentPlan::VmType.new({'name' => 'my-foo-compilation'}) }
+      let(:vm_type) { Bosh::Director::DeploymentPlan::VmType.new({'name' => 'my-foo-compilation'}) }
 
       it 'should parse the property' do
-        config = BD::DeploymentPlan::CompilationConfig.new(
+        config = Bosh::Director::DeploymentPlan::CompilationConfig.new(
           {
             'workers' => 2,
             'network' => 'foo',
@@ -80,7 +80,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
 
       it 'it should error if the vm_type is not actually configured' do
         expect {
-          BD::DeploymentPlan::CompilationConfig.new(
+          Bosh::Director::DeploymentPlan::CompilationConfig.new(
             {
               'workers' => 2,
               'network' => 'foo',
@@ -89,13 +89,13 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
             {},
             [vm_type]
           )
-        }.to raise_error BD::CompilationConfigInvalidVmType,
+        }.to raise_error Bosh::Director::CompilationConfigInvalidVmType,
           "Compilation config references unknown vm type 'undefined-vm'. Known vm types are: my-foo-compilation"
       end
 
       it 'it should error if both vm_type and cloud_properties are configured' do
         expect {
-          BD::DeploymentPlan::CompilationConfig.new(
+          Bosh::Director::DeploymentPlan::CompilationConfig.new(
             {
               'workers' => 2,
               'network' => 'foo',
@@ -107,14 +107,14 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
             {},
             [vm_type]
           )
-        }.to raise_error BD::CompilationConfigBadVmConfiguration,
+        }.to raise_error Bosh::Director::CompilationConfigBadVmConfiguration,
           "Compilation config specifies more than one of 'vm_type', 'vm_resources', or 'cloud_properties', only one is allowed."
       end
 
       context 'when vm_resources is configured' do
         it 'raises an error' do
           expect {
-            BD::DeploymentPlan::CompilationConfig.new(
+            Bosh::Director::DeploymentPlan::CompilationConfig.new(
               {
                 'workers' => 2,
                 'network' => 'foo',
@@ -128,16 +128,16 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
               {},
               [vm_type]
             )
-          }.to raise_error(BD::CompilationConfigBadVmConfiguration, "Compilation config specifies more than one of 'vm_type', 'vm_resources', or 'cloud_properties', only one is allowed.")
+          }.to raise_error(Bosh::Director::CompilationConfigBadVmConfiguration, "Compilation config specifies more than one of 'vm_type', 'vm_resources', or 'cloud_properties', only one is allowed.")
         end
       end
 
       context 'when vm_extensions are configured' do
-        let(:vm_extension_1) {BD::DeploymentPlan::VmExtension.new({'name' => 'my-foo-compilation-extension'})}
+        let(:vm_extension_1) {Bosh::Director::DeploymentPlan::VmExtension.new({'name' => 'my-foo-compilation-extension'})}
         let(:vm_extensions) { [vm_extension_1] }
 
         it 'should parse the property' do
-          config = BD::DeploymentPlan::CompilationConfig.new(
+          config = Bosh::Director::DeploymentPlan::CompilationConfig.new(
               {
                   'workers' => 2,
                   'network' => 'foo',
@@ -154,7 +154,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
 
         it 'it should error if the vm_extension is not actually configured' do
           expect {
-            BD::DeploymentPlan::CompilationConfig.new(
+            Bosh::Director::DeploymentPlan::CompilationConfig.new(
                 {
                     'workers' => 2,
                     'network' => 'foo',
@@ -165,7 +165,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
                 [vm_type],
                 [vm_extension_1]
             )
-          }.to raise_error BD::CompilationConfigInvalidVmExtension,
+          }.to raise_error Bosh::Director::CompilationConfigInvalidVmExtension,
             "Compilation config references unknown vm extension 'undefined-vm'. Known vm extensions are: my-foo-compilation-extension"
         end
       end
@@ -174,12 +174,12 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
     context 'when vm_type is not configured' do
       context 'when vm_resources are not configured' do
         context 'when vm_extensions are configured' do
-          let(:vm_extension_1) {BD::DeploymentPlan::VmExtension.new({'name' => 'my-foo-compilation-extension'})}
+          let(:vm_extension_1) {Bosh::Director::DeploymentPlan::VmExtension.new({'name' => 'my-foo-compilation-extension'})}
           let(:vm_extensions) {[vm_extension_1]}
 
           it 'raises an error' do
             expect {
-              BD::DeploymentPlan::CompilationConfig.new(
+              Bosh::Director::DeploymentPlan::CompilationConfig.new(
                 {
                   'workers' => 2,
                   'network' => 'foo',
@@ -189,7 +189,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
                 {},
                 [],
                 vm_extensions
-              )}.to raise_error BD::CompilationConfigBadVmConfiguration,
+              )}.to raise_error Bosh::Director::CompilationConfigBadVmConfiguration,
               "Compilation config is using vm extension 'my-foo-compilation-extension' and must configure a vm type or vm_resources block."
           end
         end
@@ -197,7 +197,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
 
       context 'when vm_resources is configured' do
         it 'should parse the property' do
-          config = BD::DeploymentPlan::CompilationConfig.new({
+          config = Bosh::Director::DeploymentPlan::CompilationConfig.new({
             'workers' => 2,
             'network' => 'foo',
             'vm_resources' => {
@@ -213,11 +213,11 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
         end
 
         context 'when vm_extensions are configured' do
-          let(:vm_extension_1) {BD::DeploymentPlan::VmExtension.new({'name' => 'my-foo-compilation-extension'})}
+          let(:vm_extension_1) {Bosh::Director::DeploymentPlan::VmExtension.new({'name' => 'my-foo-compilation-extension'})}
           let(:vm_extensions) {[vm_extension_1]}
 
           it 'should parse the property' do
-            config = BD::DeploymentPlan::CompilationConfig.new(
+            config = Bosh::Director::DeploymentPlan::CompilationConfig.new(
               {
                 'workers' => 2,
                 'network' => 'foo',
@@ -241,7 +241,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
 
           it 'raises an error' do
             expect {
-              BD::DeploymentPlan::CompilationConfig.new({
+              Bosh::Director::DeploymentPlan::CompilationConfig.new({
                 'workers' => 2,
                 'network' => 'foo',
                 'vm_resources' => {
@@ -253,7 +253,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
                   'some' => 'value'
                 }
               }, {})
-            }.to raise_error(BD::CompilationConfigBadVmConfiguration, "Compilation config specifies more than one of 'vm_type', 'vm_resources', or 'cloud_properties', only one is allowed.")
+            }.to raise_error(Bosh::Director::CompilationConfigBadVmConfiguration, "Compilation config specifies more than one of 'vm_type', 'vm_resources', or 'cloud_properties', only one is allowed.")
           end
         end
       end
@@ -261,7 +261,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
 
     context 'when availability zone is not specified' do
       it 'should parse the basic properties' do
-        config = BD::DeploymentPlan::CompilationConfig.new({
+        config = Bosh::Director::DeploymentPlan::CompilationConfig.new({
             'workers' => 2,
             'network' => 'foo',
             'cloud_properties' => {
@@ -276,40 +276,40 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
 
       it 'should require workers to be specified' do
         expect {
-          BD::DeploymentPlan::CompilationConfig.new({
+          Bosh::Director::DeploymentPlan::CompilationConfig.new({
               'network' => 'foo',
               'cloud_properties' => {
                 'foo' => 'bar'
               }
             }, {})
-        }.to raise_error(BD::ValidationMissingField)
+        }.to raise_error(Bosh::Director::ValidationMissingField)
       end
 
       it 'should require there to be at least 1 worker' do
         expect {
-          BD::DeploymentPlan::CompilationConfig.new({
+          Bosh::Director::DeploymentPlan::CompilationConfig.new({
               'workers' => 0,
               'network' => 'foo',
               'cloud_properties' => {
                 'foo' => 'bar'
               }
             }, {})
-        }.to raise_error(BD::ValidationViolatedMin)
+        }.to raise_error(Bosh::Director::ValidationViolatedMin)
       end
 
       it 'should require a network to be specified' do
         expect {
-          BD::DeploymentPlan::CompilationConfig.new({
+          Bosh::Director::DeploymentPlan::CompilationConfig.new({
               'workers' => 1,
               'cloud_properties' => {
                 'foo' => 'bar'
               }
             }, {})
-        }.to raise_error(BD::ValidationMissingField)
+        }.to raise_error(Bosh::Director::ValidationMissingField)
       end
 
       it 'defaults resource pool cloud properties to empty hash' do
-        config = BD::DeploymentPlan::CompilationConfig.new({
+        config = Bosh::Director::DeploymentPlan::CompilationConfig.new({
             'workers' => 1,
             'network' => 'foo'
           }, {})
@@ -317,7 +317,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
       end
 
       it 'should allow an optional environment to be set' do
-        config = BD::DeploymentPlan::CompilationConfig.new({
+        config = Bosh::Director::DeploymentPlan::CompilationConfig.new({
             'workers' => 1,
             'network' => 'foo',
             'cloud_properties' => {
@@ -331,7 +331,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
       end
 
       it 'should allow reuse_compilation_vms to be set' do
-        config = BD::DeploymentPlan::CompilationConfig.new({
+        config = Bosh::Director::DeploymentPlan::CompilationConfig.new({
             'workers' => 1,
             'network' => 'foo',
             'cloud_properties' => {
@@ -344,7 +344,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
 
       it 'should throw an error when a boolean property isnt boolean' do
         expect {
-          BD::DeploymentPlan::CompilationConfig.new({
+          Bosh::Director::DeploymentPlan::CompilationConfig.new({
               'workers' => 1,
               'network' => 'foo',
               'cloud_properties' => {
@@ -360,7 +360,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
 
     describe 'orphan_workers' do
       it 'allows orphan_workers to be set' do
-        config = BD::DeploymentPlan::CompilationConfig.new({
+        config = Bosh::Director::DeploymentPlan::CompilationConfig.new({
           'workers' => 1,
           'network' => 'foo',
           'orphan_workers' => true,
@@ -369,7 +369,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
       end
 
       it 'defaults to false' do
-        config = BD::DeploymentPlan::CompilationConfig.new({
+        config = Bosh::Director::DeploymentPlan::CompilationConfig.new({
           'workers' => 1,
           'network' => 'foo',
         }, {})
@@ -378,7 +378,7 @@ describe Bosh::Director::DeploymentPlan::CompilationConfig do
 
       it 'should throw an error when a boolean property isnt boolean' do
         expect do
-          BD::DeploymentPlan::CompilationConfig.new({
+          Bosh::Director::DeploymentPlan::CompilationConfig.new({
             'workers' => 1,
             'network' => 'foo',
             'orphan_workers' => 1,

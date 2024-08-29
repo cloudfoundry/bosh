@@ -24,15 +24,15 @@ module Bosh::Director
     end
 
     describe 'GET', '/' do
-      let(:cloud_config) { Models::Config.make(:cloud) }
-      let(:named_cloud_config) { Models::Config.make(:cloud, name: 'custom-name') }
+      let(:cloud_config) { FactoryBot.create(:models_config_cloud) }
+      let(:named_cloud_config) { FactoryBot.create(:models_config_cloud, name: 'custom-name') }
       let(:cloud_configs) { [cloud_config, named_cloud_config] }
       let(:deployment_name) { 'fake-dep-name' }
       let(:other_deployment_name) { 'other-dep-name' }
 
       context 'with authenticated admin user' do
         let!(:deployment) do
-          Models::Deployment.make(name: deployment_name).tap do |d|
+          FactoryBot.create(:models_deployment, name: deployment_name).tap do |d|
             d.cloud_configs = cloud_configs
             d.runtime_configs = runtime_configs
           end
@@ -67,7 +67,7 @@ module Bosh::Director
           end
 
           context 'when cloud and runtime configs exist' do
-            let(:runtime_config) { Models::Config.make(:runtime) }
+            let(:runtime_config) { FactoryBot.create(:models_config_runtime) }
             let(:runtime_configs) { [runtime_config] }
 
             it 'returns all configs for the deployment' do
@@ -84,7 +84,7 @@ module Bosh::Director
 
         context 'when multiple deployment names are given' do
           let!(:other_deployment) do
-            Models::Deployment.make(name: other_deployment_name).tap do |d|
+            FactoryBot.create(:models_deployment, name: other_deployment_name).tap do |d|
               d.cloud_configs = cloud_configs
               d.runtime_configs = runtime_configs
             end
@@ -122,15 +122,15 @@ module Bosh::Director
           authorize('dev-team-member', 'dev-team-member')
         end
 
-        let!(:dev_team) { Models::Team.make(name: 'dev') }
+        let!(:dev_team) { FactoryBot.create(:models_team, name: 'dev') }
         let!(:deployment) do
-          Models::Deployment.make(name: deployment_name).tap do |d|
+          FactoryBot.create(:models_deployment, name: deployment_name).tap do |d|
             d.teams = [dev_team]
             d.cloud_configs = cloud_configs
           end
         end
         let!(:other_deployment) do
-          Models::Deployment.make(name: other_deployment_name).tap do |d|
+          FactoryBot.create(:models_deployment, name: other_deployment_name).tap do |d|
             d.cloud_configs = cloud_configs
           end
         end

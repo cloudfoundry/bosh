@@ -178,7 +178,7 @@ describe Bosh::Director::Links::LinksErrorBuilder do
   describe '#build_link_error' do
     context 'when consumer is a variable' do
       let(:deployment) do
-        Bosh::Director::Models::Deployment.make(name: 'my_deployment')
+        FactoryBot.create(:models_deployment, name: 'my_deployment')
       end
 
       let(:link_consumer) do
@@ -210,7 +210,7 @@ describe Bosh::Director::Links::LinksErrorBuilder do
 
     context 'when consumer is a job' do
       let(:deployment) do
-        Bosh::Director::Models::Deployment.make(name: 'my_deployment')
+        FactoryBot.create(:models_deployment, name: 'my_deployment')
       end
 
       let(:link_consumer) do

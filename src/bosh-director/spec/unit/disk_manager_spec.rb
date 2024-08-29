@@ -29,23 +29,23 @@ module Bosh::Director
     end
 
     let(:instance_group) do
-      DeploymentPlan::InstanceGroup.make(
+      FactoryBot.build(:deployment_plan_instance_group,
         name: 'job-name',
         persistent_disk_collection: disk_collection,
       )
     end
 
     let(:disk_type) { DeploymentPlan::DiskType.new('disk-name', job_persistent_disk_size, cloud_properties) }
-    let(:deployment_model) { Models::Deployment.make(name: 'dep1') }
+    let(:deployment_model) { FactoryBot.create(:models_deployment, name: 'dep1') }
     let(:instance) { DeploymentPlan::Instance.create_from_instance_group(instance_group, 1, 'started', deployment_model, {}, nil, logger, variables_interpolator) }
     let(:instance_model) do
-      instance = Models::Instance.make(uuid: 'my-uuid-1', availability_zone: 'az1', variable_set_id: 10)
-      Models::Vm.make(cid: 'vm234', instance_id: instance.id, active: true, cpi: 'my-cpi')
-      instance.add_persistent_disk(persistent_disk) if persistent_disk
-      instance
+      FactoryBot.create(:models_instance, uuid: 'my-uuid-1', availability_zone: 'az1', variable_set_id: variable_set.id).tap do |i|
+        FactoryBot.create(:models_vm, cid: 'vm234', instance_id: i.id, active: true, cpi: 'my-cpi')
+        i.add_persistent_disk(persistent_disk) if persistent_disk
+      end.reload
     end
 
-    let(:persistent_disk) { Models::PersistentDisk.make(disk_cid: 'disk123', size: 2048, name: disk_name, cloud_properties: cloud_properties, active: true, cpi: 'my-cpi') }
+    let(:persistent_disk) { FactoryBot.create(:models_persistent_disk, disk_cid: 'disk123', size: 2048, name: disk_name, cloud_properties: cloud_properties, active: true, cpi: 'my-cpi') }
     let(:cloud_properties) do
       { 'cloud' => 'properties' }
     end
@@ -57,7 +57,7 @@ module Bosh::Director
     let(:update_job) { instance_double(Bosh::Director::Jobs::UpdateDeployment, username: 'user', task_id: task_id, event_manager: event_manager) }
     let(:step_report) { instance_double(Bosh::Director::DeploymentPlan::Stages::Report) }
     let(:disk_hint) { '/dev/sdc' }
-    let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+    let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
 
     before do
       allow(deployment_model).to receive(:last_successful_variable_set).and_return(variable_set)
@@ -155,7 +155,7 @@ module Bosh::Director
       end
 
       it 'passes correct variable sets for comparing disks' do
-        desired_variable_set = Models::VariableSet.make(deployment: deployment_model)
+        desired_variable_set = FactoryBot.create(:models_variable_set, deployment: deployment_model)
         instance_plan.instance.desired_variable_set = desired_variable_set
 
         expect(Bosh::Director::DeploymentPlan::PersistentDiskCollection).to receive(:changed_disk_pairs).with(
@@ -333,7 +333,7 @@ module Bosh::Director
 
       context 'when the agent reports a disk cid consistent with the model' do
         let!(:inactive_disk) do
-          Models::PersistentDisk.make(
+          FactoryBot.create(:models_persistent_disk,
             disk_cid: 'inactive-disk',
             active: false,
             instance: instance_model,
@@ -470,7 +470,7 @@ module Bosh::Director
                   end
 
                   context 'when switching active disk succeeds' do
-                    let(:snapshot) { Models::Snapshot.make }
+                    let(:snapshot) { FactoryBot.create(:models_snapshot) }
                     before do
                       persistent_disk.add_snapshot(snapshot)
                       allow(agent_client).to receive(:unmount_disk).with('disk123')
@@ -647,7 +647,7 @@ module Bosh::Director
     end
 
     describe '#delete_persistent_disks' do
-      let(:snapshot) { Models::Snapshot.make(persistent_disk: persistent_disk) }
+      let(:snapshot) { FactoryBot.create(:models_snapshot, persistent_disk: persistent_disk) }
       before { persistent_disk.add_snapshot(snapshot) }
 
       it 'deletes snapshots' do

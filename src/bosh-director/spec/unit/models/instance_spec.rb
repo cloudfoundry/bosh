@@ -3,7 +3,7 @@ require 'bosh/director/models/instance'
 
 module Bosh::Director::Models
   describe Instance do
-    subject { described_class.make(job: 'test-job') }
+    subject { FactoryBot.create(:models_instance, job: 'test-job') }
 
     describe '#cloud_properties_hash' do
       context 'when the cloud_properties are not nil' do
@@ -52,7 +52,7 @@ module Bosh::Director::Models
 
         context 'when there are static ips' do
           before do
-            subject.ip_addresses << IpAddress.make(static: true)
+            subject.ip_addresses << FactoryBot.create(:models_ip_address, static: true)
           end
 
           it 'is not orphanable ' do
@@ -82,7 +82,7 @@ module Bosh::Director::Models
 
       context 'when instance model has multiple associated rendered templates archives' do
         let!(:latest) do
-          RenderedTemplatesArchive.make(
+          FactoryBot.create(:models_rendered_templates_archive,
             blobstore_id: 'fake-latest-blob-id',
             instance: subject,
             created_at: Time.new(2013, 2, 1),
@@ -90,7 +90,7 @@ module Bosh::Director::Models
         end
 
         let!(:not_latest) do
-          RenderedTemplatesArchive.make(
+          FactoryBot.create(:models_rendered_templates_archive,
             blobstore_id: 'fake-stale-blob-id',
             instance: subject,
             created_at: Time.new(2013, 1, 1),
@@ -102,9 +102,9 @@ module Bosh::Director::Models
         end
 
         it 'does not account for archives for other instances' do
-          RenderedTemplatesArchive.make(
+          FactoryBot.create(:models_rendered_templates_archive,
             blobstore_id: 'fake-non-associated-latest-blob-id',
-            instance: described_class.make,
+            instance: FactoryBot.create(:models_instance),
             created_at: latest.created_at + 10_000,
           )
 
@@ -126,7 +126,7 @@ module Bosh::Director::Models
 
       context 'when instance model has multiple associated rendered templates archives' do
         let!(:latest) do
-          RenderedTemplatesArchive.make(
+          FactoryBot.create(:models_rendered_templates_archive,
             blobstore_id: 'fake-latest-blob-id',
             instance: subject,
             created_at: Time.new(2013, 2, 1),
@@ -134,7 +134,7 @@ module Bosh::Director::Models
         end
 
         let!(:not_latest) do
-          RenderedTemplatesArchive.make(
+          FactoryBot.create(:models_rendered_templates_archive,
             blobstore_id: 'fake-stale-blob-id',
             instance: subject,
             created_at: Time.new(2013, 1, 1),
@@ -146,9 +146,9 @@ module Bosh::Director::Models
         end
 
         it 'does not include archives for other instances' do
-          RenderedTemplatesArchive.make(
+          FactoryBot.create(:models_rendered_templates_archive,
             blobstore_id: 'fake-non-associated-latest-blob-id',
-            instance: described_class.make,
+            instance: FactoryBot.create(:models_instance),
             created_at: not_latest.created_at - 10_000,
           )
 
@@ -302,22 +302,26 @@ module Bosh::Director::Models
     end
 
     it 'has a one-to-many relationship to vms' do
-      vm1 = BD::Models::Vm.make(instance_id: subject.id)
-      vm2 = BD::Models::Vm.make(instance_id: subject.id)
+      vm1 = FactoryBot.create(:models_vm, instance_id: subject.id)
+      vm2 = FactoryBot.create(:models_vm, instance_id: subject.id)
 
+      subject.reload
       expect(subject.vms).to contain_exactly(vm1, vm2)
 
-      new_instance = BD::Models::Instance.make
+      new_instance =
+        FactoryBot.create(:models_instance).tap do |i|
+          i.add_vm vm1
+          i.save
+        end
 
-      new_instance.add_vm vm1
-      subject.refresh
+      subject.reload
       expect(subject.vms).to contain_exactly(vm2)
       expect(new_instance.vms).to contain_exactly(vm1)
     end
 
     describe '#active_vm' do
-      let!(:vm1) { BD::Models::Vm.make(instance_id: subject.id) }
-      let!(:vm2) { BD::Models::Vm.make(instance_id: subject.id, active: true) }
+      let!(:vm1) { FactoryBot.create(:models_vm, instance_id: subject.id) }
+      let!(:vm2) { FactoryBot.create(:models_vm, instance_id: subject.id, active: true) }
 
       it 'returns vm of #vms that is marked active' do
         expect(subject.active_vm).to eq(vm2)
@@ -325,8 +329,8 @@ module Bosh::Director::Models
     end
 
     describe '#active_vm=' do
-      let!(:vm1) { BD::Models::Vm.make(instance_id: subject.id) }
-      let!(:vm2) { BD::Models::Vm.make(instance_id: subject.id, active: true) }
+      let!(:vm1) { FactoryBot.create(:models_vm, instance_id: subject.id) }
+      let!(:vm2) { FactoryBot.create(:models_vm, instance_id: subject.id, active: true) }
 
       it 'changes what vm is returned for #active_vm' do
         expect(subject.active_vm).to eq(vm2)
@@ -371,7 +375,7 @@ module Bosh::Director::Models
 
     context 'with active vm' do
       before do
-        vm = BD::Models::Vm.make(
+        vm = FactoryBot.create(:models_vm,
           agent_id: 'my-agent-id',
           cid: 'my-cid',
           trusted_certs_sha1: 'trusted-sha',
@@ -473,13 +477,13 @@ module Bosh::Director::Models
     end
 
     describe '#has_important_vm?' do
-      let!(:vm) { BD::Models::Vm.make(instance_id: instance_with_important_vm.id, active: true) }
-      let!(:ignored_vm) { BD::Models::Vm.make(instance_id: ignored_instance.id, active: true) }
-      let!(:stopped_vm) { BD::Models::Vm.make(instance_id: stopped_instance.id, active: true) }
-      let(:instance_with_important_vm) { BD::Models::Instance.make(state: 'started', ignore: false) }
-      let(:ignored_instance) { BD::Models::Instance.make(state: 'started', ignore: true) }
-      let(:stopped_instance) { BD::Models::Instance.make(state: 'stopped', ignore: false) }
-      let(:instance_with_no_active_vm) { BD::Models::Instance.make(state: 'started', ignore: false) }
+      let!(:vm) { FactoryBot.create(:models_vm, instance_id: instance_with_important_vm.id, active: true) }
+      let!(:ignored_vm) { FactoryBot.create(:models_vm, instance_id: ignored_instance.id, active: true) }
+      let!(:stopped_vm) { FactoryBot.create(:models_vm, instance_id: stopped_instance.id, active: true) }
+      let(:instance_with_important_vm) { FactoryBot.create(:models_instance, state: 'started', ignore: false) }
+      let(:ignored_instance) { FactoryBot.create(:models_instance, state: 'started', ignore: true) }
+      let(:stopped_instance) { FactoryBot.create(:models_instance, state: 'stopped', ignore: false) }
+      let(:instance_with_no_active_vm) { FactoryBot.create(:models_instance, state: 'started', ignore: false) }
 
       it 'only returns true when model has active vm and is not stopped and is not ignored' do
         expect(instance_with_important_vm.has_important_vm?).to eq(true)
@@ -490,14 +494,15 @@ module Bosh::Director::Models
     end
 
     describe '#most_recent_inactive_vm' do
-      let!(:vm) { BD::Models::Vm.make(instance_id: instance.id, active: true) }
-      let(:instance) { BD::Models::Instance.make(state: 'started', ignore: false) }
+      let!(:vm) { FactoryBot.create(:models_vm, instance_id: instance.id, active: true) }
+      let(:instance) { FactoryBot.create(:models_instance, state: 'started', ignore: false) }
 
       context 'has one active and two inactive vms' do
-        let!(:old_inactive_vm) { BD::Models::Vm.make(instance_id: instance.id, active: false) }
-        let!(:new_inactive_vm) { BD::Models::Vm.make(instance_id: instance.id, active: false) }
+        let!(:old_inactive_vm) { FactoryBot.create(:models_vm, instance_id: instance.id, active: false) }
+        let!(:new_inactive_vm) { FactoryBot.create(:models_vm, instance_id: instance.id, active: false) }
 
         it 'returns the most recent inactive vm' do
+          instance.reload
           expect(instance.most_recent_inactive_vm).to eq(new_inactive_vm)
         end
       end

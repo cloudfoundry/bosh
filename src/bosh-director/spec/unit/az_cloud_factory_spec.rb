@@ -24,8 +24,8 @@ module Bosh::Director
     end
 
     context 'factory methods' do
-      let(:cpi_config) { Models::Config.make(:cpi) }
-      let(:cloud_config) { Models::Config.make(:cloud, content: '--- {"key": "value"}') }
+      let(:cpi_config) { FactoryBot.create(:models_config_cpi) }
+      let(:cloud_config) { FactoryBot.create(:models_config_cloud, content: '--- {"key": "value"}') }
       let(:deployment) { instance_double(Models::Deployment, teams: []) }
       let(:cpi_manifest_parser) { instance_double(CpiConfig::CpiManifestParser) }
       let(:cloud_manifest_parser) { instance_double(DeploymentPlan::CloudManifestParser) }
@@ -49,7 +49,7 @@ module Bosh::Director
         end
 
         context 'when no cloud config is provided' do
-          let(:cloud_config) { Models::Config.make(:cloud, content: '--- {}') }
+          let(:cloud_config) { FactoryBot.create(:models_config_cloud, content: '--- {}') }
 
           it 'constructs a cloud factory without azs' do
             expect(described_class).to receive(:new).with(parsed_cpi_config, nil)
@@ -72,11 +72,11 @@ module Bosh::Director
         end
 
         context 'when deployment has teams' do
-          let(:footeam) { Models::Team.make(name: 'footeam') }
-          let(:barteam) { Models::Team.make(name: 'barteam') }
+          let(:footeam) { FactoryBot.create(:models_team, name: 'footeam') }
+          let(:barteam) { FactoryBot.create(:models_team, name: 'barteam') }
 
-          let!(:footeam_config) { Models::Config.make(:cloud, team_id: footeam.id, content: '--- {"key": "value"}') }
-          let!(:barteam_config) { Models::Config.make(:cloud, team_id: barteam.id, content: '--- {"key": "value"}') }
+          let!(:footeam_config) { FactoryBot.create(:models_config_cloud, team_id: footeam.id, content: '--- {"key": "value"}') }
+          let!(:barteam_config) { FactoryBot.create(:models_config_cloud, team_id: barteam.id, content: '--- {"key": "value"}') }
           let(:deployment) { instance_double(Models::Deployment, teams: [footeam]) }
 
           before do

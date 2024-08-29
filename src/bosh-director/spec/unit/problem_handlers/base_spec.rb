@@ -67,12 +67,12 @@ describe Bosh::Director::ProblemHandlers::Base do
     expect(bar_handler.resolution_plan(:baz)).to eq("bar baz goodbye")
     expect(bar_handler.resolution_plan(:zb)).to eq("bar zb goodbye")
 
-    expect(foo_handler.resolutions).to eq([ { :name => "baz", :plan => "foo baz hello" } ])
+    expect(foo_handler.resolutions).to eq([ { name: "baz", plan: "foo baz hello" } ])
 
     expect(bar_handler.resolutions).to eq(
       [
-       { :name => "baz", :plan => "bar baz goodbye" },
-       { :name => "zb", :plan => "bar zb goodbye"}
+       { name: "baz", plan: "bar baz goodbye" },
+       { name: "zb", plan: "bar zb goodbye" }
       ]
     )
 
@@ -97,11 +97,13 @@ describe Bosh::Director::ProblemHandlers::Base do
   end
 
   it "can be queried from the model" do
-    problem = Bosh::Director::Models::DeploymentProblem.
-      make(:type => "foo", :resource_id => 1, :data_json => JSON.generate("message" => "hello"))
+    problem = FactoryBot.create(:models_deployment_problem,
+                                type: "foo",
+                                resource_id: 1,
+                                data_json: JSON.generate("message" => "hello"))
 
     expect(problem.description).to eq("hello")
-    expect(problem.resolutions).to eq([ { :name => "baz", :plan => "foo baz hello" } ])
+    expect(problem.resolutions).to eq([ { name: "baz", plan: "foo baz hello" } ])
   end
 
 end

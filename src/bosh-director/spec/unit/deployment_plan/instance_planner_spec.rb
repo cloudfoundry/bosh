@@ -2,13 +2,13 @@ require 'spec_helper'
 require 'json'
 require 'ipaddr'
 
-describe 'BD::DeploymentPlan::InstancePlanner' do
-  include BD::IpUtil
+describe 'Bosh::Director::DeploymentPlan::InstancePlanner' do
+  include Bosh::Director::IpUtil
 
-  subject(:instance_planner) { BD::DeploymentPlan::InstancePlanner.new(instance_plan_factory, logger) }
+  subject(:instance_planner) { Bosh::Director::DeploymentPlan::InstancePlanner.new(instance_plan_factory, logger) }
 
   let(:instance_plan_factory) do
-    BD::DeploymentPlan::InstancePlanFactory.new(
+    Bosh::Director::DeploymentPlan::InstancePlanFactory.new(
       instance_repo,
       {},
       deployment,
@@ -19,58 +19,58 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     )
   end
 
-  let(:index_assigner) { BD::DeploymentPlan::PlacementPlanner::IndexAssigner.new(deployment_model) }
+  let(:index_assigner) { Bosh::Director::DeploymentPlan::PlacementPlanner::IndexAssigner.new(deployment_model) }
   let(:options) { {} }
-  let(:skip_drain_decider) { BD::DeploymentPlan::AlwaysSkipDrain.new }
+  let(:skip_drain_decider) { Bosh::Director::DeploymentPlan::AlwaysSkipDrain.new }
   let(:logger) { instance_double(Logger, debug: nil, info: nil) }
   let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
-  let(:instance_repo) { BD::DeploymentPlan::InstanceRepository.new(logger, variables_interpolator) }
+  let(:instance_repo) { Bosh::Director::DeploymentPlan::InstanceRepository.new(logger, variables_interpolator) }
   let(:networks) { [] }
   let(:instance_states) { {} }
   let(:availability_zones) { [az] }
 
   let(:deployment) do
     instance_double(
-      BD::DeploymentPlan::Planner,
+      Bosh::Director::DeploymentPlan::Planner,
       model: deployment_model,
       networks: networks,
       skip_drain: skip_drain_decider,
     )
   end
 
-  let(:deployment_model) { BD::Models::Deployment.make }
-  let(:variable_set_model) { BD::Models::VariableSet.create(deployment: deployment_model) }
+  let(:deployment_model) { FactoryBot.create(:models_deployment) }
+  let(:variable_set_model) { Bosh::Director::Models::VariableSet.create(deployment: deployment_model) }
   let(:az) do
-    BD::DeploymentPlan::AvailabilityZone.new(
+    Bosh::Director::DeploymentPlan::AvailabilityZone.new(
       'foo-az',
       'some-cloud-property' => 'foo',
     )
   end
   let(:undesired_az) do
-    BD::DeploymentPlan::AvailabilityZone.new(
+    Bosh::Director::DeploymentPlan::AvailabilityZone.new(
       'old-az',
       'some-cloud-property' => 'foo',
     )
   end
 
   let(:instance_group) do
-    BD::DeploymentPlan::InstanceGroup.make(
+    FactoryBot.build(:deployment_plan_instance_group,
       name: 'foo-instance_group',
       availability_zones: availability_zones,
       instance_states: instance_states,
     )
   end
 
-  let(:desired_instance) { BD::DeploymentPlan::DesiredInstance.new(instance_group, deployment) }
+  let(:desired_instance) { Bosh::Director::DeploymentPlan::DesiredInstance.new(instance_group, deployment) }
   let(:tracer_instance) { make_instance }
-  let(:vm_resources_cache) { instance_double(BD::DeploymentPlan::VmResourcesCache) }
+  let(:vm_resources_cache) { instance_double(Bosh::Director::DeploymentPlan::VmResourcesCache) }
 
   before do
     allow(deployment_model).to receive(:current_variable_set).and_return(variable_set_model)
   end
 
   def make_instance(idx = 0)
-    instance = BD::DeploymentPlan::Instance.create_from_instance_group(
+    Bosh::Director::DeploymentPlan::Instance.create_from_instance_group(
       instance_group,
       idx,
       'started',
@@ -79,15 +79,24 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       az,
       logger,
       variables_interpolator,
-    )
-    instance.bind_new_instance_model
-    instance
+    ).tap do |i|
+      i.bind_new_instance_model
+    end
   end
 
   def make_instance_with_existing_model(existing_instance_model)
-    instance = BD::DeploymentPlan::Instance.create_from_instance_group(instance_group, existing_instance_model.index, 'started', deployment_model, {}, az, logger, variables_interpolator)
-    instance.bind_existing_instance_model(existing_instance_model)
-    instance
+    Bosh::Director::DeploymentPlan::Instance.create_from_instance_group(
+      instance_group,
+      existing_instance_model.index,
+      'started',
+      deployment_model,
+      {},
+      az,
+      logger,
+      variables_interpolator,
+    ).tap do |i|
+      i.bind_existing_instance_model(existing_instance_model)
+    end
   end
 
   describe 'plan_instance_group_instances' do
@@ -96,7 +105,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     end
 
     it 'creates instance plans for existing instances' do
-      existing_instance_model = BD::Models::Instance.make(
+      existing_instance_model = FactoryBot.create(:models_instance,
         job: 'foo-instance_group',
         index: 0,
         availability_zone: az.name,
@@ -119,12 +128,13 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       expect(instance_plans.count).to eq(1)
       existing_instance_plan = instance_plans.first
 
-      expected_desired_instance = BD::DeploymentPlan::DesiredInstance.new(
-        instance_group,
-        deployment,
-        az,
-        0,
-      )
+      expected_desired_instance =
+        Bosh::Director::DeploymentPlan::DesiredInstance.new(
+          instance_group,
+          deployment,
+          az,
+          0,
+        )
       expect(existing_instance_plan.new?).to eq(false)
       expect(existing_instance_plan.obsolete?).to eq(false)
 
@@ -138,7 +148,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     end
 
     it 'updates descriptions for existing instances' do
-      existing_instance_model = BD::Models::Instance.make(
+      existing_instance_model = FactoryBot.create(:models_instance,
         job: 'foo-instance_group',
         index: 0,
         availability_zone: az.name,
@@ -185,14 +195,14 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       out_of_typical_range_index = 77
       auto_picked_index = 0
 
-      desired_existing_instance_model = BD::Models::Instance.make(
+      desired_existing_instance_model = FactoryBot.create(:models_instance,
         job: 'foo-instance_group',
         index: out_of_typical_range_index,
         availability_zone: az.name,
         variable_set: variable_set_model,
       )
 
-      other_desired_instance = BD::DeploymentPlan::DesiredInstance.new(
+      other_desired_instance = Bosh::Director::DeploymentPlan::DesiredInstance.new(
         instance_group,
         deployment,
         az,
@@ -204,7 +214,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
         other_desired_instance,
       ]
 
-      undesired_existing_instance_model = BD::Models::Instance.make(
+      undesired_existing_instance_model = FactoryBot.create(:models_instance,
         job: 'foo-instance_group',
         index: auto_picked_index,
         availability_zone: undesired_az.name,
@@ -246,10 +256,10 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     end
 
     context 'when instance should skip running drain script' do
-      let(:skip_drain_decider) { BD::DeploymentPlan::SkipDrain.new('*') }
+      let(:skip_drain_decider) { Bosh::Director::DeploymentPlan::SkipDrain.new('*') }
 
       it 'should set "skip_drain" on the instance plan' do
-        existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, availability_zone: az.name)
+        existing_instance_model = FactoryBot.create(:models_instance, job: 'foo-instance_group', index: 0, availability_zone: az.name)
         instance_plans = instance_planner.plan_instance_group_instances(
           instance_group,
           [desired_instance],
@@ -266,7 +276,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       end
 
       it 'should return instance plans with "recreate" option set on them' do
-        existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, availability_zone: az.name)
+        existing_instance_model = FactoryBot.create(:models_instance, job: 'foo-instance_group', index: 0, availability_zone: az.name)
 
         instance_plans = instance_planner.plan_instance_group_instances(
           instance_group,
@@ -283,7 +293,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       let(:instance_states) { { '0' => 'stopped' } }
 
       it 'fails if specifically changing the state of ignored vms' do
-        existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, ignore: true)
+        existing_instance_model = FactoryBot.create(:models_instance, job: 'foo-instance_group', index: 0, ignore: true)
         expect do
           instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_resources_cache)
         end.to raise_error(
@@ -298,7 +308,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       let(:availability_zones) { [] }
 
       it 'creates instance plans for new instances with no az' do
-        existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0)
+        existing_instance_model = FactoryBot.create(:models_instance, job: 'foo-instance_group', index: 0)
 
         allow(instance_repo).to receive(:fetch_existing).with(existing_instance_model, nil, desired_instance) { tracer_instance }
 
@@ -307,7 +317,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
         expect(instance_plans.count).to eq(1)
         existing_instance_plan = instance_plans.first
 
-        expected_desired_instance = BD::DeploymentPlan::DesiredInstance.new(instance_group, deployment)
+        expected_desired_instance = Bosh::Director::DeploymentPlan::DesiredInstance.new(instance_group, deployment)
         expect(existing_instance_plan.new?).to eq(false)
         expect(existing_instance_plan.obsolete?).to eq(false)
 
@@ -324,9 +334,11 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     context 'logging active vm presence' do
       context 'when instance has active vm' do
         it 'logs that theres is a vm' do
-          existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, availability_zone: az.name)
-          vm = BD::Models::Vm.make(instance: existing_instance_model)
-          existing_instance_model.active_vm = vm
+          existing_instance_model =
+            FactoryBot.create(:models_instance, job: 'foo-instance_group', index: 0, availability_zone: az.name).tap do |i|
+              i.active_vm = FactoryBot.create(:models_vm, instance: i)
+            end
+
 
           expect(logger).to receive(:info).with("Existing desired instance '#{existing_instance_model.job}/#{existing_instance_model.index}' in az '#{az.name}' with active vm")
           instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_resources_cache)
@@ -335,7 +347,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
       context 'when instance has active vm' do
         it 'logs that theres is no active vm' do
-          existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, availability_zone: az.name)
+          existing_instance_model = FactoryBot.create(:models_instance, job: 'foo-instance_group', index: 0, availability_zone: az.name)
 
           expect(logger).to receive(:info).with("Existing desired instance '#{existing_instance_model.job}/#{existing_instance_model.index}' in az '#{az.name}' with no active vm")
           instance_planner.plan_instance_group_instances(instance_group, [desired_instance], [existing_instance_model], vm_resources_cache)
@@ -345,14 +357,14 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
     context 'moving an instance to a different az' do
       it "should not attempt to reuse the existing instance's index" do
-        existing_instance_model = BD::Models::Instance.make(
+        existing_instance_model = FactoryBot.create(:models_instance,
           job: 'foo-instance_group',
           index: 0,
           availability_zone: undesired_az.name,
           deployment: deployment_model,
           variable_set: variable_set_model,
         )
-        another_existing_instance_model = BD::Models::Instance.make(
+        another_existing_instance_model = FactoryBot.create(:models_instance,
           job: 'foo-instance_group',
           index: 1,
           availability_zone: undesired_az.name,
@@ -381,8 +393,8 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
     context 'when vm requirements are given' do
       let(:instance_group) do
-        vm_resources = BD::DeploymentPlan::VmResources.new('cpu' => 4, 'ram' => 2048, 'ephemeral_disk_size' => 100)
-        BD::DeploymentPlan::InstanceGroup.make(
+        vm_resources = Bosh::Director::DeploymentPlan::VmResources.new('cpu' => 4, 'ram' => 2048, 'ephemeral_disk_size' => 100)
+        FactoryBot.build(:deployment_plan_instance_group,
           name: 'foo-instance_group',
           vm_resources: vm_resources,
           availability_zones: availability_zones,
@@ -401,7 +413,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       end
 
       it 'does not update the cloud properties if planned instance is obsolete' do
-        existing_instances = [BD::Models::Instance.make(job: 'foo-instance-group', index: 0)]
+        existing_instances = [FactoryBot.create(:models_instance, job: 'foo-instance-group', index: 0)]
         desired_instances = []
         allow(instance_repo).to receive(:create).with(desired_instance, 0) { tracer_instance }
         allow(vm_resources_cache).to receive(:get_vm_cloud_properties).and_return('vm_resources' => 'foo')
@@ -416,7 +428,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     context 'resolving bootstrap nodes' do
       context 'when existing instance is marked as bootstrap' do
         it 'keeps bootstrap node' do
-          existing_instance_model = BD::Models::Instance.make(
+          existing_instance_model = FactoryBot.create(:models_instance,
             job: 'foo-instance_group',
             index: 0,
             bootstrap: true,
@@ -447,7 +459,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
       context 'when obsolete instance is marked as bootstrap' do
         it 'picks the lowest indexed instance as new bootstrap instance' do
-          existing_instance_model = BD::Models::Instance.make(
+          existing_instance_model = FactoryBot.create(:models_instance,
             job: 'foo-instance_group',
             index: 0,
             bootstrap: true,
@@ -455,14 +467,14 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
             deployment: deployment_model,
             variable_set: variable_set_model,
           )
-          another_existing_instance_model = BD::Models::Instance.make(
+          another_existing_instance_model = FactoryBot.create(:models_instance,
             job: 'foo-instance_group',
             index: 1,
             availability_zone: az.name,
             deployment: deployment_model,
             variable_set: variable_set_model,
           )
-          another_desired_instance = BD::DeploymentPlan::DesiredInstance.new(instance_group, deployment, az, 1)
+          another_desired_instance = Bosh::Director::DeploymentPlan::DesiredInstance.new(instance_group, deployment, az, 1)
 
           existing_tracer_instance = make_instance_with_existing_model(existing_instance_model)
           allow(instance_repo).to receive(:fetch_existing)
@@ -485,23 +497,23 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
       context 'when several existing instances are marked as bootstrap' do
         it 'picks the lowest indexed instance as new bootstrap instance' do
-          existing_instance_model1 = BD::Models::Instance.make(
+          existing_instance_model1 = FactoryBot.create(:models_instance,
             job: 'foo-instance_group-z1',
             index: 0,
             bootstrap: true,
             availability_zone: az.name,
             variable_set: variable_set_model,
           )
-          desired_instance1 = BD::DeploymentPlan::DesiredInstance.new(instance_group, deployment, az, 0)
+          desired_instance1 = Bosh::Director::DeploymentPlan::DesiredInstance.new(instance_group, deployment, az, 0)
 
-          existing_instance_model2 = BD::Models::Instance.make(
+          existing_instance_model2 = FactoryBot.create(:models_instance, 
             job: 'foo-instance_group-z2',
             index: 0,
             bootstrap: true,
             availability_zone: az.name,
             variable_set: variable_set_model,
           )
-          desired_instance2 = BD::DeploymentPlan::DesiredInstance.new(instance_group, deployment, az, 1)
+          desired_instance2 = Bosh::Director::DeploymentPlan::DesiredInstance.new(instance_group, deployment, az, 1)
 
           allow(instance_repo).to receive(:fetch_existing)
             .with(existing_instance_model1, nil, desired_instance1) { make_instance(0) }
@@ -525,7 +537,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       context 'when there are no bootstrap instances' do
         it 'assigns the instance with the lowest index as bootstrap instance' do
           existing_instances = []
-          another_desired_instance = BD::DeploymentPlan::DesiredInstance.new(instance_group)
+          another_desired_instance = Bosh::Director::DeploymentPlan::DesiredInstance.new(instance_group)
 
           allow(instance_repo).to receive(:create).with(desired_instance, 0) { tracer_instance }
 
@@ -545,9 +557,9 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
       context 'when all instances are obsolete' do
         it 'should not mark any instance as bootstrap instance' do
-          existing_instance_model = BD::Models::Instance.make(job: 'foo-instance_group', index: 0, bootstrap: true, availability_zone: undesired_az.name)
+          existing_instance_model = FactoryBot.create(:models_instance, job: 'foo-instance_group', index: 0, bootstrap: true, availability_zone: undesired_az.name)
 
-          obsolete_instance = instance_double(BD::DeploymentPlan::Instance, update_description: nil)
+          obsolete_instance = instance_double(Bosh::Director::DeploymentPlan::Instance, update_description: nil)
 
           instance_plans = instance_planner.plan_instance_group_instances(instance_group, [], [existing_instance_model], vm_resources_cache)
 
@@ -560,14 +572,15 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     end
 
     context 'when instance has vip networks' do
-      let(:vip_network) { BD::DeploymentPlan::VipNetwork.parse({ 'name' => 'fake-network' }, [], logger) }
+      let(:vip_network) { Bosh::Director::DeploymentPlan::VipNetwork.parse({ 'name' => 'fake-network' }, [], logger) }
 
       before do
-        instance_group_network = BD::DeploymentPlan::JobNetwork.make(
-          name: 'fake-network',
-          static_ips: ['68.68.68.68'],
-          deployment_network: vip_network,
-        )
+        instance_group_network =
+          FactoryBot.build(:deployment_plan_job_network,
+                           name: 'fake-network',
+                           static_ips: ['68.68.68.68'],
+                           deployment_network: vip_network,
+          )
         allow(instance_group).to receive(:networks).and_return([instance_group_network])
       end
 
@@ -586,8 +599,8 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
   describe '#plan_obsolete_instance_groups' do
     it 'returns instance plans for each instance_group' do
-      existing_instance_thats_desired = BD::Models::Instance.make(job: 'foo-instance_group', index: 0)
-      existing_instance_thats_obsolete = BD::Models::Instance.make(job: 'bar-instance_group', index: 1)
+      existing_instance_thats_desired = FactoryBot.create(:models_instance, job: 'foo-instance_group', index: 0)
+      existing_instance_thats_obsolete = FactoryBot.create(:models_instance, job: 'bar-instance_group', index: 1)
 
       existing_instances = [existing_instance_thats_desired, existing_instance_thats_obsolete]
       instance_plans = instance_planner.plan_obsolete_instance_groups([instance_group], existing_instances)
@@ -602,8 +615,8 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     end
 
     it 'fails when trying to delete instance groups with ignored instances' do
-      existing_instance_thats_desired = BD::Models::Instance.make(job: 'foo-instance-group', index: 0)
-      existing_instance_thats_obsolete = BD::Models::Instance.make(job: 'bar-instance-group', index: 1, ignore: true)
+      existing_instance_thats_desired = FactoryBot.create(:models_instance, job: 'foo-instance-group', index: 0)
+      existing_instance_thats_obsolete = FactoryBot.create(:models_instance, job: 'bar-instance-group', index: 1, ignore: true)
 
       existing_instances = [existing_instance_thats_desired, existing_instance_thats_obsolete]
 
@@ -619,15 +632,15 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
   describe 'orphan_unreusable_vms' do
     let(:instance_group) do
-      vm_type = BD::DeploymentPlan::VmType.new(
+      vm_type = Bosh::Director::DeploymentPlan::VmType.new(
         'name' => 'a',
         'cloud_properties' => uninterpolated_cloud_properties_hash,
       )
 
-      BD::DeploymentPlan::InstanceGroup.make(
+      FactoryBot.build(:deployment_plan_instance_group,
         name: 'foo-instance_group',
         availability_zones: availability_zones,
-        env: BD::DeploymentPlan::Env.new('env' => 'env-val'),
+        env: Bosh::Director::DeploymentPlan::Env.new('env' => 'env-val'),
         vm_type: vm_type,
       )
     end
@@ -637,7 +650,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     end
 
     let(:existing_instance_model) do
-      BD::Models::Instance.make(
+      FactoryBot.create(:models_instance, 
         job: 'foo-instance_group',
         index: 0,
         availability_zone: az.name,
@@ -663,7 +676,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     end
 
     it 'does NOT orphan active vms' do
-      vm = BD::Models::Vm.make(
+      vm = FactoryBot.create(:models_vm,
         instance: existing_instance_model,
         active: true,
       )
@@ -673,11 +686,11 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     end
 
     it 'does not orphan vms that match the instance plan' do
-      vm = BD::Models::Vm.make(
+      vm = FactoryBot.create(:models_vm,
         instance: existing_instance_model,
         active: true,
       )
-      usable_vm = BD::Models::Vm.make(instance: existing_instance_model)
+      usable_vm = FactoryBot.create(:models_vm, instance: existing_instance_model)
 
       allow(instance_plan).to receive(:vm_matches_plan?).with(usable_vm).and_return true
 
@@ -689,7 +702,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
     it 'short circuits when detecting a matching instance plan for each vm' do
       instance_plan2 = instance_double(Bosh::Director::DeploymentPlan::InstancePlan, obsolete?: false)
-      unusable_vm = BD::Models::Vm.make(
+      unusable_vm = FactoryBot.create(:models_vm,
         instance: existing_instance_model,
         active: false,
         agent_id: 'fake-agent-id',
@@ -704,11 +717,11 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     end
 
     it 'orphans VMs that do not match' do
-      vm = BD::Models::Vm.make(
+      vm = FactoryBot.create(:models_vm,
         instance: existing_instance_model,
         active: true,
       )
-      unusable_vm = BD::Models::Vm.make(
+      unusable_vm = FactoryBot.create(:models_vm,
         instance: existing_instance_model,
         active: false,
         agent_id: 'fake-agent-id',
@@ -726,7 +739,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
   describe 'reconcile_network_plans' do
     let(:existing_instance) { make_instance_with_existing_model(existing_instance_model) }
     let(:existing_instance_model) do
-      BD::Models::Instance.make(
+      FactoryBot.create(:models_instance, 
         job: 'foo-instance_group',
         index: 0,
         bootstrap: true,
@@ -735,7 +748,7 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
     end
 
     before do
-      BD::Models::IpAddress.make(
+      FactoryBot.create(:models_ip_address,
         address_str: ip_to_i('192.168.1.5').to_s,
         network_name: 'fake-network',
         instance: existing_instance_model,
@@ -743,8 +756,8 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
 
       allow(deployment).to receive(:network).with('fake-network') { manual_network }
 
-      ip_repo = BD::DeploymentPlan::IpRepo.new(logger)
-      ip_provider = BD::DeploymentPlan::IpProvider.new(
+      ip_repo = Bosh::Director::DeploymentPlan::IpRepo.new(logger)
+      ip_provider = Bosh::Director::DeploymentPlan::IpProvider.new(
         ip_repo,
         { 'fake-network' => manual_network },
         logger,
@@ -753,9 +766,9 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       fake_job
     end
 
-    let(:manual_network) { BD::DeploymentPlan::ManualNetwork.new('fake-network', [subnet], logger) }
+    let(:manual_network) { Bosh::Director::DeploymentPlan::ManualNetwork.new('fake-network', [subnet], logger) }
     let(:subnet) do
-      BD::DeploymentPlan::ManualNetworkSubnet.new(
+      Bosh::Director::DeploymentPlan::ManualNetworkSubnet.new(
         'fake-network',
         IPAddr.new('192.168.1.0/24'),
         nil, nil, nil, nil, ['foo-az'], [],
@@ -781,10 +794,11 @@ describe 'BD::DeploymentPlan::InstancePlanner' do
       let(:networks) { [manual_network] }
 
       before do
-        instance_group_network = BD::DeploymentPlan::JobNetwork.make(
-          static_ips: nil,
-          deployment_network: manual_network,
-        )
+        instance_group_network =
+          FactoryBot.build(:deployment_plan_job_network,
+                           static_ips: nil,
+                           deployment_network: manual_network,
+          )
         allow(instance_group).to receive(:networks).and_return([instance_group_network])
       end
 

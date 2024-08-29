@@ -6,10 +6,10 @@ module Bosh::Director
       describe UnmountInstanceDisksStep do
         subject(:step) { UnmountInstanceDisksStep.new(instance) }
 
-        let(:instance) { Models::Instance.make }
-        let!(:vm) { Models::Vm.make(instance: instance, active: true) }
-        let(:disk1) { Models::PersistentDisk.make(instance: instance, name: '') }
-        let(:disk2) { Models::PersistentDisk.make(instance: instance, name: 'unmanaged') }
+        let(:instance) { FactoryBot.create(:models_instance) }
+        let!(:vm) { FactoryBot.create(:models_vm, instance: instance, active: true) }
+        let(:disk1) { FactoryBot.create(:models_persistent_disk, instance: instance, name: '') }
+        let(:disk2) { FactoryBot.create(:models_persistent_disk, instance: instance, name: 'unmanaged') }
         let(:unmount_disk1) { instance_double(UnmountDiskStep) }
         let(:unmount_disk2) { instance_double(UnmountDiskStep) }
         let(:report) { Stages::Report.new }

@@ -12,7 +12,7 @@ module Bosh::Director::DeploymentPlan
     let(:index) { 0 }
     let(:state) { 'started' }
     let(:variables_interpolator) { Bosh::Director::ConfigServer::VariablesInterpolator.new }
-    let(:deployment_variable_set) { Bosh::Director::Models::VariableSet.make(deployment:) }
+    let(:deployment_variable_set) { FactoryBot.create(:models_variable_set, deployment:) }
     let(:cert_generator) { instance_double Bosh::Director::NatsClientCertGenerator }
 
     before do
@@ -25,11 +25,11 @@ module Bosh::Director::DeploymentPlan
       allow(blobstore).to receive(:headers).and_return({})
     end
 
-    let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: 'fake-deployment') }
     let(:stemcell) { make_stemcell({ name: 'fake-stemcell-name', version: '1.0', api_version: 3 }) }
     let(:env) { Env.new({ 'bosh' => { 'blobstores' => [{ 'options' => { 'blobstore_option' => 'blobstore_value' } }] } }) }
     let(:instance_group) do
-      InstanceGroup.make(
+      FactoryBot.build(:deployment_plan_instance_group,
         name: 'fake_job',
         env:,
         stemcell:,
@@ -42,8 +42,8 @@ module Bosh::Director::DeploymentPlan
     let(:az) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', 'a' => 'b') }
 
     let(:instance_model) do
-      instance = Bosh::Director::Models::Instance.make(deployment:, bootstrap: true, uuid: 'uuid-1')
-      Bosh::Director::Models::Vm.make(instance:, active: true)
+      instance = FactoryBot.create(:models_instance, deployment: deployment, bootstrap: true, uuid: 'uuid-1')
+      FactoryBot.create(:models_vm, instance: instance, active: true)
       instance
     end
 
@@ -53,7 +53,7 @@ module Bosh::Director::DeploymentPlan
     let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient, validate!: nil) }
 
     describe '#bind_existing_instance_model' do
-      let(:instance_model) { Bosh::Director::Models::Instance.make(bootstrap: true) }
+      let(:instance_model) { FactoryBot.create(:models_instance, bootstrap: true) }
 
       before do
         allow(deployment).to receive(:last_successful_variable_set).and_return(deployment_variable_set)
@@ -73,7 +73,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       it 'sets the previous and desired variable sets correctly' do
-        variable_set_model = Bosh::Director::Models::VariableSet.make(deployment:)
+        variable_set_model = FactoryBot.create(:models_variable_set, deployment:)
         instance_model.variable_set = variable_set_model
         instance.bind_existing_instance_model(instance_model)
 
@@ -88,7 +88,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'sets the desired variable set to the current variable set' do
-          variable_set_model = Bosh::Director::Models::VariableSet.make(deployment:)
+          variable_set_model = FactoryBot.create(:models_variable_set, deployment:)
           instance_model.variable_set = variable_set_model
           instance.bind_existing_instance_model(instance_model)
 
@@ -124,7 +124,7 @@ module Bosh::Director::DeploymentPlan
       let(:agent_client) { instance_double('Bosh::Director::AgentClient') }
 
       before do
-        allow(BD::AgentClient).to receive(:with_agent_id)
+        allow(Bosh::Director::AgentClient).to receive(:with_agent_id)
           .with(instance_model.agent_id, instance_model.name).and_return(agent_client)
         instance.bind_existing_instance_model(instance_model)
       end
@@ -320,7 +320,7 @@ module Bosh::Director::DeploymentPlan
 
     describe '#cloud_properties_changed?' do
       let(:instance_model) do
-        model = Bosh::Director::Models::Instance.make(deployment:)
+        model = FactoryBot.create(:models_instance, deployment: deployment)
         model.cloud_properties_hash = { 'a' => 'b' }
         model
       end
@@ -401,7 +401,7 @@ module Bosh::Director::DeploymentPlan
         describe 'when there is no availability zone' do
           let(:az) { nil }
           let(:instance_model) do
-            model = Bosh::Director::Models::Instance.make(deployment:)
+            model = FactoryBot.create(:models_instance, deployment: deployment)
             model.cloud_properties_hash = {}
             model
           end
@@ -689,9 +689,9 @@ module Bosh::Director::DeploymentPlan
       let(:fixed_time) { Time.now }
 
       it 'updates the instance model variable set to the desired_variable_set on the instance object' do
-        Bosh::Director::Models::VariableSet.make(deployment:, created_at: fixed_time + 1)
-        selected_variable_set = Bosh::Director::Models::VariableSet.make(deployment:, created_at: fixed_time)
-        Bosh::Director::Models::VariableSet.make(deployment:, created_at: fixed_time - 1)
+        FactoryBot.create(:models_variable_set, deployment:, created_at: fixed_time + 1)
+        selected_variable_set = FactoryBot.create(:models_variable_set, deployment:, created_at: fixed_time)
+        FactoryBot.create(:models_variable_set, deployment:, created_at: fixed_time - 1)
 
         instance = Instance.create_from_instance_group(instance_group, index, state, deployment, current_state, az, logger,
                                                        variables_interpolator)

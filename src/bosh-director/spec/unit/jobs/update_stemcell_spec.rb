@@ -16,7 +16,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
     subject { Bosh::Director::Jobs::UpdateStemcell.new(stemcell_name, stemcell_options) }
 
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
-    let(:task) { Bosh::Director::Models::Task.make(state: 'processing') }
+    let(:task) { FactoryBot.create(:models_task, state: 'processing') }
     let(:event_log) { Bosh::Director::EventLog::Log.new }
     let(:event_log_stage) { instance_double(Bosh::Director::EventLog::Stage) }
     let(:verify_multidigest_exit_status) { instance_double(Process::Status, exitstatus: 0) }
@@ -230,7 +230,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
       context 'when stemcell already exists' do
         before do
-          Bosh::Director::Models::Stemcell.make(name: 'jeos', version: '5', cid: 'old-stemcell-cid')
+          FactoryBot.create(:models_stemcell, name: 'jeos', version: '5', cid: 'old-stemcell-cid')
         end
 
         it 'should quietly ignore duplicate upload and not create a stemcell in the cloud' do
@@ -288,13 +288,13 @@ describe Bosh::Director::Jobs::UpdateStemcell do
       end
 
       context 'when having multiple cpis' do
-        let(:cloud_factory) { instance_double(BD::CloudFactory) }
+        let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
         let(:cloud1) { cloud }
         let(:cloud2) { cloud }
         let(:cloud3) { cloud }
 
         before do
-          allow(BD::CloudFactory).to receive(:create).and_return(cloud_factory)
+          allow(Bosh::Director::CloudFactory).to receive(:create).and_return(cloud_factory)
           allow(cloud_factory).to receive(:get_cpi_aliases).with('cloud1').and_return(['cloud1'])
           allow(cloud_factory).to receive(:get_cpi_aliases).with('cloud2').and_return(['cloud2'])
           allow(cloud_factory).to receive(:get_cpi_aliases).with('cloud3').and_return(['cloud3'])
@@ -364,13 +364,13 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
           expect { subject.perform }.to raise_error 'I am flaky'
 
-          expect(BD::Models::StemcellUpload.all.count).to eq(0)
+          expect(Bosh::Director::Models::StemcellUpload.all.count).to eq(0)
         end
 
         context 'when the stemcell has already been uploaded' do
           before do
-            BD::Models::Stemcell.make(name: 'jeos', version: '5', cpi: 'cloud1')
-            BD::Models::StemcellUpload.make(name: 'jeos', version: '5', cpi: 'cloud2')
+            FactoryBot.create(:models_stemcell, name: 'jeos', version: '5', cpi: 'cloud1')
+            FactoryBot.create(:models_stemcell_upload, name: 'jeos', version: '5', cpi: 'cloud2')
           end
 
           it 'creates one stemcell and one stemcell match per cpi' do
@@ -385,19 +385,19 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
             expect(cloud3).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }).and_return('stemcell-cid3')
 
-            expect(BD::Models::Stemcell.all.count).to eq(1)
-            expect(BD::Models::StemcellUpload.all.count).to eq(1)
+            expect(Bosh::Director::Models::Stemcell.all.count).to eq(1)
+            expect(Bosh::Director::Models::StemcellUpload.all.count).to eq(1)
 
             subject.perform
 
-            expect(BD::Models::Stemcell.all.map do |s|
+            expect(Bosh::Director::Models::Stemcell.all.map do |s|
               { name: s.name, version: s.version, cpi: s.cpi }
             end).to contain_exactly(
               { name: 'jeos', version: '5', cpi: 'cloud1' },
               { name: 'jeos', version: '5', cpi: 'cloud3' },
             )
 
-            expect(BD::Models::StemcellUpload.all.map do |s|
+            expect(Bosh::Director::Models::StemcellUpload.all.map do |s|
               { name: s.name, version: s.version, cpi: s.cpi }
             end).to contain_exactly(
               { name: 'jeos', version: '5', cpi: 'cloud1' },

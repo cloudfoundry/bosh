@@ -5,15 +5,15 @@ module Bosh::Director
     let(:updater) { InstanceUpdater.new_instance_updater(ip_provider, template_blob_cache, dns_encoder) }
 
     let(:blobstore_client) { instance_double(Bosh::Blobstore::Client) }
-    let(:deployment_model) { Models::Deployment.make }
+    let(:deployment_model) { FactoryBot.create(:models_deployment) }
     let(:dns_encoder) { instance_double(DnsEncoder) }
-    let(:instance_model) { Models::Instance.make }
+    let(:instance_model) { FactoryBot.create(:models_instance) }
     let(:ip_provider) { DeploymentPlan::IpProvider.new(ip_repo, [], logger) }
     let(:ip_repo) { DeploymentPlan::IpRepo.new(logger) }
     let(:template_blob_cache) { instance_double(Core::Templates::TemplateBlobCache) }
     let(:instance_plan_changed) { false }
     let(:needs_shutting_down) { false }
-    let(:event) { Models::Event.make }
+    let(:event) { FactoryBot.create(:models_event) }
     let(:link_provider_intents) { [] }
     let(:updater) do
       InstanceUpdater.new_instance_updater(

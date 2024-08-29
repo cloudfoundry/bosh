@@ -6,7 +6,7 @@ module Bosh::Director
       describe UpdateInstanceSettingsStep do
         subject(:step) { UpdateInstanceSettingsStep.new(instance_plan) }
 
-        let(:instance_model) { Models::Instance.make(cloud_properties: '{}') }
+        let(:instance_model) { FactoryBot.create(:models_instance, cloud_properties: '{}') }
         let(:cloud_props) do
           { 'prop1' => 'value1' }
         end
@@ -15,7 +15,7 @@ module Bosh::Director
         let(:trusted_certs) { 'fake-cert' }
         let(:old_trusted_certs_sha1) { 'old-fake-cert' }
         let!(:vm) do
-          Models::Vm.make(
+          FactoryBot.create(:models_vm,
             instance: instance_model,
             trusted_certs_sha1: old_trusted_certs_sha1,
             active: false,

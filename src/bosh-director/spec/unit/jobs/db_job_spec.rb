@@ -21,7 +21,7 @@ module Bosh::Director
         @queue = :normal
       end
     end
-    let(:task) { Models::Task.make(id: 42, checkpoint_time: '2017-01-01 00:00:00') }
+    let(:task) { FactoryBot.create(:models_task, id: 42, checkpoint_time: '2017-01-01 00:00:00') }
     let(:process_status) { instance_double(Process::Status, :signaled? => signaled) }
     let(:signaled) { false }
     let(:task_dataset) { instance_double(Sequel::Dataset) }

@@ -44,7 +44,7 @@ module Bosh::Director
 
     before(:each) do
       network_name_hash.each do |name, id|
-        Models::LocalDnsEncodedNetwork.make(id: id, name: name)
+        FactoryBot.create(:models_local_dns_encoded_network, id: id, name: name)
       end
     end
 

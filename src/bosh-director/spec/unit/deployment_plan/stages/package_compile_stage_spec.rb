@@ -13,7 +13,7 @@ module Bosh::Director
       VmCreator.new(Config.logger, template_blob_cache, dns_encoder, agent_broadcaster, plan.link_provider_intents)
     end
     let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
-    let(:release_version_model) { Models::ReleaseVersion.make(version: 'new') }
+    let(:release_version_model) { FactoryBot.create(:models_release_version, version: 'new') }
     let(:reuse_compilation_vms) { false }
     let(:number_of_workers) { 3 }
     let(:compilation_config) do
@@ -27,7 +27,7 @@ module Bosh::Director
       }
       DeploymentPlan::CompilationConfig.new(compilation_spec, {}, [])
     end
-    let(:deployment) { Models::Deployment.make(name: 'mycloud') }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: 'mycloud') }
     let(:plan) do
       instance_double(
         'Bosh::Director::DeploymentPlan::Planner',
@@ -71,7 +71,7 @@ module Bosh::Director
       { 'default' => { network_name: { property: 'settings' } } }
     end
     let(:event_manager) { Api::EventManager.new(true) }
-    let(:job_task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
+    let(:job_task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
     let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, job_task.id) }
     let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
     let(:update_job) do
@@ -131,7 +131,7 @@ module Bosh::Director
     let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
 
     before do
-      Bosh::Director::Models::VariableSet.make(deployment: deployment)
+      FactoryBot.create(:models_variable_set, deployment: deployment)
 
       allow(ThreadPool).to receive_messages(new: thread_pool) # Using threads for real, even accidentally, makes debugging a nightmare
 
@@ -161,7 +161,7 @@ module Bosh::Director
     end
 
     def make_package(name, deps = [], version = '0.1-dev')
-      package = Models::Package.make(name: name, version: version)
+      package = FactoryBot.create(:models_package, name: name, version: version)
       package.dependency_set = deps
       package.save
       @all_packages << package
@@ -171,7 +171,7 @@ module Bosh::Director
     def make_compiled(release_version_model, package, stemcell, sha1 = 'deadbeef', blobstore_id = 'deadcafe')
       package_dependency_key = KeyGenerator.new.dependency_key_from_models(package, release_version_model)
 
-      Models::CompiledPackage.make(package: package,
+      FactoryBot.create(:models_compiled_package, package: package,
                                    dependency_key: package_dependency_key,
                                    stemcell_os: stemcell.operating_system,
                                    stemcell_version: stemcell.version,
@@ -188,7 +188,7 @@ module Bosh::Director
         version: 'new',
         exported_from: [],
       )
-      @release_model = Bosh::Director::Models::Release.make(name: @release.name)
+      @release_model = FactoryBot.create(:models_release, name: @release.name)
       @release_model.add_version(release_version_model)
       @stemcell_a = make_stemcell(operating_system: 'chrome-os', version: '3146.1', api_version: 3)
       @stemcell_b = make_stemcell(operating_system: 'chrome-os', version: '3146.2', api_version: 3)
@@ -367,7 +367,7 @@ module Bosh::Director
         expect(vm_creator).to receive(:create_for_instance_plan).exactly(11).times
 
         agent_client = instance_double('Bosh::Director::AgentClient')
-        allow(BD::AgentClient).to receive(:with_agent_id).and_return(agent_client)
+        allow(Bosh::Director::AgentClient).to receive(:with_agent_id).and_return(agent_client)
         expect(agent_client).to receive(compilation_method).exactly(11).times do |*args|
           send(compilation_method_stub, args)
         end
@@ -463,11 +463,11 @@ module Bosh::Director
 
           expect(vm_creator).to receive(:create_for_instance_plan).exactly(6).times do |instance_plan|
             # metadata_updater is called for every package compilation, and it expects there to be an active_vm
-            instance_plan.instance.model.active_vm = Models::Vm.make(cid: instance_plan.instance.model.id, instance: instance_plan.instance.model)
+            instance_plan.instance.model.active_vm = FactoryBot.create(:models_vm, cid: instance_plan.instance.model.id, instance: instance_plan.instance.model)
           end
 
           agent_client = instance_double('Bosh::Director::AgentClient')
-          allow(BD::AgentClient).to receive(:with_agent_id).and_return(agent_client)
+          allow(Bosh::Director::AgentClient).to receive(:with_agent_id).and_return(agent_client)
           expect(agent_client).to receive(:compile_package).exactly(6).times do |*args|
             compile_package_stub(args)
           end
@@ -518,7 +518,7 @@ module Bosh::Director
     end
 
     context 'when there are compiled packages that do not have a blobstore id and compiled against a different stemcell version' do
-      let(:invalid_package) { Models::Package.make(sha1: nil, blobstore_id: nil) }
+      let(:invalid_package) { FactoryBot.create(:models_package, sha1: nil, blobstore_id: nil) }
 
       before do
         prepare_samples
@@ -627,7 +627,7 @@ module Bosh::Director
     end
 
     context 'when the deploy is cancelled' do
-      let(:release_version_model) { Models::ReleaseVersion.make }
+      let(:release_version_model) { FactoryBot.create(:models_release_version) }
       let(:stemcell) { make_stemcell }
       let(:instance_groups_to_compile) { [instance_group] }
 
@@ -651,9 +651,9 @@ module Bosh::Director
 
       before do
         allow(SecureRandom).to receive(:uuid).and_return('deadbeef')
-        release = Models::Release.make(name: release_version.name)
+        release = FactoryBot.create(:models_release, name: release_version.name)
         release.add_version(release_version_model)
-        package_model = Models::Package.make(name: 'foobarbaz', dependency_set: [], fingerprint: 'deadbeef', blobstore_id: 'fake_id')
+        package_model = FactoryBot.create(:models_package, name: 'foobarbaz', dependency_set: [], fingerprint: 'deadbeef', blobstore_id: 'fake_id')
         job = instance_double('Bosh::Director::DeploymentPlan::Job', release: release_version, package_models: [package_model], name: 'fake_template')
         allow(instance_group).to receive_messages(jobs: [job])
       end
@@ -716,11 +716,11 @@ module Bosh::Director
 
         expect(vm_creator).to receive(:create_for_instance_plan).exactly(1).times do |instance_plan|
           # metadata_updater is called for every package compilation, and it expects there to be an active_vm
-          instance_plan.instance.model.active_vm = Models::Vm.make(cid: instance_plan.instance.model.id, instance: instance_plan.instance.model)
+          instance_plan.instance.model.active_vm = FactoryBot.create(:models_vm, cid: instance_plan.instance.model.id, instance: instance_plan.instance.model)
         end
 
-        agent_client = instance_double('BD::AgentClient')
-        allow(BD::AgentClient).to receive(:with_agent_id).and_return(agent_client)
+        agent_client = instance_double('Bosh::Director::AgentClient')
+        allow(Bosh::Director::AgentClient).to receive(:with_agent_id).and_return(agent_client)
 
         expect(agent_client).to receive(:compile_package).exactly(6).times do |*args|
           name = args[2]
@@ -783,7 +783,7 @@ module Bosh::Director
     end
 
     it 'should make sure a parallel deployment did not compile a package already' do
-      package = Models::Package.make
+      package = FactoryBot.create(:models_package)
       stemcell = make_stemcell
 
       requirement = CompiledPackageRequirement.new(
@@ -805,11 +805,11 @@ module Bosh::Director
     end
 
     describe '#prepare_vm' do
-      let(:package) { Models::Package.make }
+      let(:package) { FactoryBot.create(:models_package) }
       let(:number_of_workers) { 2 }
       let(:plan) do
-        deployment_model = Models::Deployment.make
-        Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
+        deployment_model = FactoryBot.create(:models_deployment)
+        FactoryBot.create(:models_variable_set, deployment: deployment_model)
 
         instance_double('Bosh::Director::DeploymentPlan::Planner',
                         compilation: compilation_config,

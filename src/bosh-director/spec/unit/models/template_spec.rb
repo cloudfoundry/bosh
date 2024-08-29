@@ -4,7 +4,7 @@ require 'bosh/director/models/package'
 
 module Bosh::Director::Models
   describe Template do
-    subject!(:template) { described_class.make }
+    subject!(:template) { FactoryBot.create(:models_template) }
 
     describe '#find_or_init_from_release_meta' do
       context 'when the template exists' do
@@ -55,7 +55,7 @@ module Bosh::Director::Models
       end
 
       context 'when the template does not exist' do
-        let(:release) { Release.make }
+        let(:release) { FactoryBot.create(:models_release) }
         let(:new_template) do
           Template.find_or_init_from_release_meta(
             release: release,
@@ -104,7 +104,7 @@ module Bosh::Director::Models
       end
 
       context 'when unknown keys are present in the release_metadata' do
-        let(:release) { Release.make }
+        let(:release) { FactoryBot.create(:models_release) }
         let(:new_template) do
           Template.find_or_init_from_release_meta(
             release: release,

@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Lock, truncation: true, if: ENV.fetch('DB', 'sqlite') != 'sqlite' do
-    let!(:task) { Models::Task.make(state: 'processing', description: 'fake-description') }
+    let!(:task) { FactoryBot.create(:models_task, state: 'processing', description: 'fake-description') }
     before do
       allow(Config).to receive_message_chain(:current_job, :username).and_return('current-user')
       allow(Config).to receive_message_chain(:current_job, :task_id).and_return(task.id)

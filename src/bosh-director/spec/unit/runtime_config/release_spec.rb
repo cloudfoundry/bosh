@@ -69,7 +69,7 @@ module Bosh::Director
 
       describe '#add_to_deployment' do
         let(:deployment) { instance_double(DeploymentPlan::Planner) }
-        let(:deployment_model) { Models::Deployment.make }
+        let(:deployment_model) { FactoryBot.create(:models_deployment) }
         let(:new_release_version) { instance_double(DeploymentPlan::ReleaseVersion) }
 
         context 'when the deployment already has the release' do

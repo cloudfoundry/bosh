@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe Errand::ParallelStep do
     subject(:parallel_step) { Errand::ParallelStep.new(4, errand_name, deployment_model, [ errand_step1, errand_step2 ]) }
-    let(:deployment_model) { Bosh::Director::Models::Deployment.make }
+    let(:deployment_model) { FactoryBot.create(:models_deployment) }
     let(:errand_name) { 'errand-name' }
     let(:errand_step1) { instance_double(Errand::LifecycleErrandStep, ignore_cancellation?: false) }
     let(:errand_step2) { instance_double(Errand::LifecycleErrandStep, ignore_cancellation?: false) }
@@ -74,7 +74,7 @@ module Bosh::Director
 
       context 'when there is a record of previous successful run' do
         let!(:errand_run) do
-          Models::ErrandRun.make(
+          FactoryBot.create(:models_errand_run,
             deployment: deployment_model,
             errand_name: errand_name,
             successful_state_hash: 'someotherstate')
@@ -140,7 +140,7 @@ module Bosh::Director
       context 'when there is a previous run' do
         context 'when the last run hash matches the current hash' do
           before do
-            Models::ErrandRun.make(
+            FactoryBot.create(:models_errand_run,
               deployment: deployment_model,
               errand_name: errand_name,
               successful_state_hash: good_state_hash
@@ -154,7 +154,7 @@ module Bosh::Director
 
         context 'when the last run hash does not match the current hash' do
           before do
-            Models::ErrandRun.make(
+            FactoryBot.create(:models_errand_run,
               deployment: deployment_model,
               errand_name: errand_name,
               successful_state_hash: ::Digest::SHA1.hexdigest('pastramideadbeef')

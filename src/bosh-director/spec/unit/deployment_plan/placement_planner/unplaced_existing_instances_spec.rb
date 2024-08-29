@@ -5,11 +5,11 @@ module Bosh::Director::DeploymentPlan
   describe PlacementPlanner::UnplacedExistingInstances do
     subject { PlacementPlanner::UnplacedExistingInstances.new([instance1, instance2, instance3, instance4, instance5]) }
 
-    let(:instance1) { Bosh::Director::Models::Instance.make(availability_zone: '1') }
-    let(:instance2) { Bosh::Director::Models::Instance.make(availability_zone: '2') }
-    let(:instance3) { Bosh::Director::Models::Instance.make(availability_zone: '3') }
-    let(:instance4) { Bosh::Director::Models::Instance.make(availability_zone: '2') }
-    let(:instance5) { Bosh::Director::Models::Instance.make(availability_zone: nil) }
+    let(:instance1) { FactoryBot.create(:models_instance, availability_zone: '1') }
+    let(:instance2) { FactoryBot.create(:models_instance, availability_zone: '2') }
+    let(:instance3) { FactoryBot.create(:models_instance, availability_zone: '3') }
+    let(:instance4) { FactoryBot.create(:models_instance, availability_zone: '2') }
+    let(:instance5) { FactoryBot.create(:models_instance, availability_zone: nil) }
 
     describe 'azs' do
       it 'should return an un-de-duped list of azs, decreasing when they are claimed, stripping nil azs' do

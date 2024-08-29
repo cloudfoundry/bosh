@@ -18,14 +18,14 @@ module Bosh::Director
       let(:networks) { nil }
 
       let(:deployment_instance_group) do
-        DeploymentPlan::InstanceGroup.make(networks: networks)
+        FactoryBot.build(:deployment_plan_instance_group, networks: networks)
       end
 
       let(:errand_instance_group) do
-        DeploymentPlan::InstanceGroup.make(name: 'some-errand-instance-group')
+        FactoryBot.build(:deployment_plan_instance_group, name: 'some-errand-instance-group')
       end
 
-      let(:task) { Models::Task.make(id: 42, username: 'user') }
+      let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
       let(:availability_zones) { [zone_1, zone_2] }
       let(:zone_1) { DeploymentPlan::AvailabilityZone.new('zone_1', {}) }
       let(:zone_2) { DeploymentPlan::AvailabilityZone.new('zone_2', {}) }
@@ -60,7 +60,7 @@ module Bosh::Director
             create_from_manifest: planner,
           )
         end
-        let(:deployment_model) { Bosh::Director::Models::Deployment.make(name: deployment_name, manifest: '{}') }
+        let(:deployment_model) { FactoryBot.create(:models_deployment, name: deployment_name, manifest: '{}') }
         let(:planner) do
           instance_double(
             DeploymentPlan::Planner,
@@ -76,7 +76,7 @@ module Bosh::Director
           )
         end
         let(:assembler) { instance_double(DeploymentPlan::Assembler, bind_models: nil) }
-        let(:variable_set) { Bosh::Director::Models::VariableSet.make(deployment: deployment_model) }
+        let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
 
         before do
           allow(LocalDnsEncoderManager).to receive(:new_encoder_with_updated_index).with(planner).and_return(dns_encoder)
@@ -178,7 +178,7 @@ module Bosh::Director
             end
 
             it 'cleans up old VariableSets' do
-              another_variable_set =  Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
+              another_variable_set =  FactoryBot.create(:models_variable_set, deployment: deployment_model)
               allow(deployment_instance_group).to receive(:referenced_variable_sets).and_return([variable_set, another_variable_set])
 
               expect(deployment_model).to receive(:cleanup_variable_sets).with([variable_set, another_variable_set])
@@ -349,7 +349,7 @@ module Bosh::Director
             end
 
             it 'does not fail if cleaning up old VariableSets raises an error' do
-              another_variable_set =  Bosh::Director::Models::VariableSet.make(deployment: deployment_model)
+              another_variable_set =  FactoryBot.create(:models_variable_set, deployment: deployment_model)
               allow(deployment_instance_group).to receive(:referenced_variable_sets).and_return([variable_set, another_variable_set])
               allow(deployment_model).to receive(:cleanup_variable_sets).with([variable_set, another_variable_set]).and_raise(Sequel::ForeignKeyConstraintViolation.new)
 
@@ -460,7 +460,7 @@ module Bosh::Director
 
             let(:cloud_config_id) { ['cloud_config_id'] }
             let(:cloud_configs) do
-              [Models::Config.make(:cloud, content: YAML.dump('azs' => ['my-az'],
+              [FactoryBot.create(:models_config_cloud, content: YAML.dump('azs' => ['my-az'],
                                                              'vm_types' => ['my-vm-type'],
                                                              'disk_types' => ['my-disk-type'],
                                                              'networks' => ['my-net'],
@@ -468,7 +468,7 @@ module Bosh::Director
             end
 
             let(:runtime_config_ids) { ['runtime_config_id'] }
-            let(:runtime_configs) { [Models::Config.make(type: 'runtime')] }
+            let(:runtime_configs) { [FactoryBot.create(:models_config_runtime)] }
 
 
             it 'should be successfully loaded' do
@@ -599,7 +599,7 @@ module Bosh::Director
           end
 
           context 'when a cloud_config is passed in' do
-            let(:cloud_config)     { Models::Config.make(:cloud) }
+            let(:cloud_config)     { FactoryBot.create(:models_config_cloud) }
             let(:cloud_config_id)  { cloud_config.id }
 
             it 'uses the cloud config' do
@@ -613,7 +613,7 @@ module Bosh::Director
           end
 
           context 'when a runtime_config is passed in' do
-            let(:runtime_config)     { Models::Config.make(:runtime) }
+            let(:runtime_config)     { FactoryBot.create(:models_config_runtime) }
             let(:runtime_config_ids) { [runtime_config.id] }
 
             before do
@@ -631,8 +631,8 @@ module Bosh::Director
           end
 
           context 'stemcell change' do
-            let(:stemcell1) { Bosh::Director::Models::Stemcell.make(name: 'ubuntu-alias', operating_system: 'ubuntu-jammy', version: '1.2', cid: 'cid-1') }
-            let(:stemcell2) { Bosh::Director::Models::Stemcell.make(name: 'windows-alias', operating_system: 'windows2019', version: '3.4', cid: 'cid-2') }
+            let(:stemcell1) { FactoryBot.create(:models_stemcell, name: 'ubuntu-alias', operating_system: 'ubuntu-jammy', version: '1.2', cid: 'cid-1') }
+            let(:stemcell2) { FactoryBot.create(:models_stemcell, name: 'windows-alias', operating_system: 'windows2019', version: '3.4', cid: 'cid-2') }
 
             before do
               deployment_model.add_stemcell(stemcell1)
@@ -809,9 +809,9 @@ module Bosh::Director
 
           context 'when there are releases and stemcells' do
             before do
-              deployment_stemcell = Models::Stemcell.make(name: 'stemcell', version: 'version-1')
-              deployment_release = Models::Release.make(name: 'release')
-              deployment_release_version = Models::ReleaseVersion.make(version: 'version-1')
+              deployment_stemcell = FactoryBot.create(:models_stemcell, name: 'stemcell', version: 'version-1')
+              deployment_release = FactoryBot.create(:models_release, name: 'release')
+              deployment_release_version = FactoryBot.create(:models_release_version, version: 'version-1')
               deployment_release.add_version(deployment_release_version)
               deployment_model.add_stemcell(deployment_stemcell)
               deployment_model.add_release_version(deployment_release_version)

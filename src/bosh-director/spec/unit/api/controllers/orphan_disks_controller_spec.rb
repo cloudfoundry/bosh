@@ -17,7 +17,7 @@ module Bosh::Director
 
       context 'orphan disks' do
         before do
-          Models::OrphanDisk.make(
+          FactoryBot.create(:models_orphan_disk,
             disk_cid: 'random-disk-cid-1',
             instance_name: 'fake-name-1',
             size: 10,
@@ -26,7 +26,7 @@ module Bosh::Director
             created_at: orphaned_at,
             cloud_properties: { 'cloud' => 'properties' },
           )
-          Models::OrphanDisk.make(
+          FactoryBot.create(:models_orphan_disk,
             disk_cid: 'random-disk-cid-2',
             instance_name: 'fake-name-2',
             deployment_name: 'fake-deployment',

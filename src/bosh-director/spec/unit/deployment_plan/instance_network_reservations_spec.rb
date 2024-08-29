@@ -3,9 +3,9 @@ require 'ipaddr'
 
 module Bosh::Director
   describe DeploymentPlan::InstanceNetworkReservations do
-    let(:deployment_model) { Models::Deployment.make(name: 'foo-deployment') }
-    let(:cloud_config) { Models::Config.make(:cloud_with_manifest_v2) }
-    let(:runtime_config) { Models::Config.make(type: 'runtime') }
+    let(:deployment_model) { FactoryBot.create(:models_deployment, name: 'foo-deployment') }
+    let(:cloud_config) { FactoryBot.create(:models_config_cloud, :with_manifest) }
+    let(:runtime_config) { FactoryBot.create(:models_config_runtime) }
     let(:cloud_planner) { instance_double(DeploymentPlan::CloudPlanner) }
     let(:deployment) do
       deployment = DeploymentPlan::Planner.new(
@@ -23,8 +23,8 @@ module Bosh::Director
       DeploymentPlan::ManualNetwork.parse(
         manual_network_spec,
         [
-          BD::DeploymentPlan::AvailabilityZone.new('az-1', {}),
-          BD::DeploymentPlan::AvailabilityZone.new('az-2', {}),
+          Bosh::Director::DeploymentPlan::AvailabilityZone.new('az-1', {}),
+          Bosh::Director::DeploymentPlan::AvailabilityZone.new('az-2', {}),
         ],
         logger,
       )
@@ -40,8 +40,8 @@ module Bosh::Director
         ],
       }
     end
-    let(:instance_model) { Models::Instance.make(deployment: deployment_model) }
-    let!(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+    let(:instance_model) { FactoryBot.create(:models_instance, deployment: deployment_model) }
+    let!(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
     let(:ip_provider) do
       DeploymentPlan::IpProvider.new(DeploymentPlan::IpRepo.new(logger), { 'fake-network' => network }, logger)
     end
@@ -59,17 +59,17 @@ module Bosh::Director
         let(:ip2) { IPAddr.new('192.168.0.2').to_i }
 
         let(:ip_model1) do
-          Models::IpAddress.make(address_str: ip1.to_s, instance: instance_model, network_name: 'fake-network')
+          FactoryBot.create(:models_ip_address, address_str: ip1.to_s, instance: instance_model, network_name: 'fake-network')
         end
 
         let(:ip_model2) do
-          Models::IpAddress.make(address_str: ip2.to_s, instance: instance_model, network_name: 'fake-network')
+          FactoryBot.create(:models_ip_address, address_str: ip2.to_s, instance: instance_model, network_name: 'fake-network')
         end
 
         context 'when there is a last VM with IP addresses' do
           before do
-            vm1 = BD::Models::Vm.make(instance: instance_model)
-            vm2 = BD::Models::Vm.make(instance: instance_model)
+            vm1 = FactoryBot.create(:models_vm, instance: instance_model)
+            vm2 = FactoryBot.create(:models_vm, instance: instance_model)
 
             vm2.add_ip_address(ip_model1)
             vm2.add_ip_address(ip_model2)
@@ -86,7 +86,7 @@ module Bosh::Director
 
         context 'when there are orphaned IP addresses from a failed deploy' do
           before do
-            vm1 = BD::Models::Vm.make(instance: instance_model)
+            vm1 = FactoryBot.create(:models_vm, instance: instance_model)
             vm1.add_ip_address(ip_model1)
 
             # Add orphaned IP - not associated with a VM or orphaned VM
@@ -197,7 +197,7 @@ module Bosh::Director
       end
 
       context 'when instance has dynamic networks in spec' do
-        let(:instance_model) { Models::Instance.make(deployment: deployment_model, spec: instance_spec) }
+        let(:instance_model) { FactoryBot.create(:models_instance, deployment: deployment_model, spec: instance_spec) }
         let(:instance_spec) do
           {
             'networks' => {

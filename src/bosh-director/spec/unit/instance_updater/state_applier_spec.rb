@@ -59,7 +59,7 @@ module Bosh::Director
         'update_watch_time' => update_watch_time,
       )
     end
-    let(:deployment) { Bosh::Director::Models::Deployment.make(name: 'fake-deployment') }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: 'fake-deployment') }
     let(:availability_zone) { Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-az', 'a' => 'b') }
     let(:instance) do
       DeploymentPlan::Instance.create_from_instance_group(
@@ -73,7 +73,7 @@ module Bosh::Director
         variables_interpolator,
       )
     end
-    let(:instance_model) { Models::Instance.make(deployment: deployment, state: instance_model_state, uuid: 'uuid-1') }
+    let(:instance_model) { FactoryBot.create(:models_instance, deployment: deployment, state: instance_model_state, uuid: 'uuid-1') }
     let(:blobstore) { instance_double(Bosh::Blobstore::Client) }
     let(:agent_client) { instance_double(AgentClient) }
     let(:rendered_job_templates_cleaner) { instance_double(RenderedJobTemplatesCleaner) }

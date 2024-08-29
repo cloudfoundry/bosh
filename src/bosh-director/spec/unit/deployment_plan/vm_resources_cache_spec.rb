@@ -18,7 +18,7 @@ module Bosh::Director::DeploymentPlan
       }
     end
 
-    let(:cpi_config) { Bosh::Director::Models::Config.make(:cpi_with_manifest) }
+    let(:cpi_config) { FactoryBot.create(:models_config_cpi, :with_manifest) }
 
     let(:vm_cloud_properties1) do
       { vm_cloud_properties: 1 }
@@ -29,7 +29,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     before do
-      Bosh::Director::Models::Config.make(type: 'cloud', name: 'default', content: YAML.dump(cloud_config))
+      FactoryBot.create(:models_config_cloud, content: YAML.dump(cloud_config))
 
       allow(cloud_factory).to receive(:get).with('cpi-name1').and_return(fake_cpi1)
       allow(cloud_factory).to receive(:get).with('cpi-name2').and_return(fake_cpi2)

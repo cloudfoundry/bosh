@@ -61,7 +61,7 @@ describe Bosh::Director::Api::EventManager do
 
   describe '#event_to_hash' do
     it 'should not pass values are equal to nil' do
-      Bosh::Director::Models::Event.make(
+      FactoryBot.create(:models_event,
         'user' => 'test',
         'action' => 'create',
         'object_type' => 'deployment',
@@ -77,7 +77,7 @@ describe Bosh::Director::Api::EventManager do
     end
 
     it 'should pass ids as String' do
-      event = Bosh::Director::Models::Event.make(
+      event = FactoryBot.create(:models_event,
         'parent_id' => 2,
         'user' => 'test',
         'action' => 'create',
@@ -91,7 +91,7 @@ describe Bosh::Director::Api::EventManager do
   describe '#remove_old_events' do
     def make_n_events(num_events)
       num_events.times do |_i|
-        Bosh::Director::Models::Event.make
+        FactoryBot.create(:models_event)
       end
     end
 
@@ -158,7 +158,7 @@ describe Bosh::Director::Api::EventManager do
       let(:parent_id) { Bosh::Director::Models::Event.last.id - 5 }
       before do
         make_n_events(10)
-        Bosh::Director::Models::Event.make(parent_id: parent_id, action: 'action', object_type: 'type')
+        FactoryBot.create(:models_event, parent_id: parent_id, action: 'action', object_type: 'type')
         make_n_events(2)
       end
 

@@ -7,9 +7,9 @@ module Bosh::Director
         subject(:step) { AttachDiskStep.new(disk, tags) }
 
         let(:stemcell_api_version) { 2 }
-        let!(:vm) { Models::Vm.make(active: true, instance: instance, stemcell_api_version: stemcell_api_version) }
-        let(:instance) { Models::Instance.make }
-        let!(:disk) { Models::PersistentDisk.make(instance: instance, name: '', cpi: 'my-cpi') }
+        let!(:vm) { FactoryBot.create(:models_vm, active: true, instance: instance, stemcell_api_version: stemcell_api_version) }
+        let(:instance) { FactoryBot.create(:models_instance) }
+        let!(:disk) { FactoryBot.create(:models_persistent_disk, instance: instance, name: '', cpi: 'my-cpi') }
         let(:cloud_factory) { instance_double(CloudFactory) }
         let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
         let(:metadata_updater_cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
@@ -105,8 +105,8 @@ module Bosh::Director
 
         context 'when given disk with an instance that has no active vm' do
           let(:step) { AttachDiskStep.new(disk_without_vm, tags) }
-          let(:instance_without_vm) { Models::Instance.make }
-          let!(:disk_without_vm) { Models::PersistentDisk.make(instance: instance_without_vm, name: 'no vm for me') }
+          let(:instance_without_vm) { FactoryBot.create(:models_instance) }
+          let!(:disk_without_vm) { FactoryBot.create(:models_persistent_disk, instance: instance_without_vm, name: 'no vm for me') }
 
           it 'does not perform any cloud actions' do
             expect(cloud).to_not receive(:attach_disk)

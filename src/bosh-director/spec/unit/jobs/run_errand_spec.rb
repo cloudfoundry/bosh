@@ -32,7 +32,7 @@ module Bosh::Director
       allow(thread_pool).to receive(:process).and_yield
     end
 
-    let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
+    let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
     let(:manifest_hash) do
       manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
@@ -69,7 +69,7 @@ module Bosh::Director
 
       describe '#perform' do
         let!(:deployment_model) do
-          deployment = Models::Deployment.make(
+          deployment = FactoryBot.create(:models_deployment,
             name: 'fake-dep-name',
             manifest: YAML.dump(service_errand_manifest_hash),
           )
@@ -114,7 +114,7 @@ module Bosh::Director
           )
         end
 
-        let(:instance_model) { Models::Instance.make(job: 'errand1', uuid: 'instance-uuid') }
+        let(:instance_model) { FactoryBot.create(:models_instance, job: 'errand1', uuid: 'instance-uuid') }
         let(:errand_instance_group) do
           instance_double('Bosh::Director::DeploymentPlan::InstanceGroup',
                           instances: [instance],
@@ -137,7 +137,7 @@ module Bosh::Director
         let(:assembler) { instance_double(DeploymentPlan::Assembler, bind_models: nil) }
 
         let(:errand_job) { instance_double('Bosh::Director::DeploymentPlan::Job', name: 'errand1', runs_as_errand?: true) }
-        let(:cloud_config) { Models::Config.make(:cloud) }
+        let(:cloud_config) { FactoryBot.create(:models_config_cloud) }
         let(:runner) { instance_double('Bosh::Director::Errand::Runner') }
         let(:errand_result) { Errand::Result.new(instance, errand_name, 0, nil, nil, nil) }
 
@@ -157,7 +157,7 @@ module Bosh::Director
       describe '#perform' do
         context 'when deployment exists' do
           let!(:deployment_model) do
-            deployment = Models::Deployment.make(
+            deployment = FactoryBot.create(:models_deployment,
               name: 'fake-dep-name',
               manifest: YAML.dump(manifest_hash),
             )
@@ -197,7 +197,7 @@ module Bosh::Director
             )
           end
           let(:compile_packages_step) { instance_double(DeploymentPlan::Stages::PackageCompileStage, perform: nil) }
-          let(:cloud_config) { Models::Config.make(:cloud) }
+          let(:cloud_config) { FactoryBot.create(:models_config_cloud) }
           let(:runner) { instance_double('Bosh::Director::Errand::Runner') }
 
           before do
@@ -222,7 +222,7 @@ module Bosh::Director
 
               context 'when instance group has at least 1 instance' do
                 before { allow(deployment_instance_group).to receive(:instances).with(no_args).and_return([instance]) }
-                let(:instance_model) { Models::Instance.make(job: 'foo-job', uuid: 'instance-uuid') }
+                let(:instance_model) { FactoryBot.create(:models_instance, job: 'foo-job', uuid: 'instance-uuid') }
                 let(:instance) do
                   instance_double(
                     'Bosh::Director::DeploymentPlan::Instance',
@@ -382,10 +382,10 @@ module Bosh::Director
                   end
 
                   let(:when_changed) { true }
-                  let(:instance_model) { Models::Instance.make }
+                  let(:instance_model) { FactoryBot.create(:models_instance) }
                   context 'when errand has been run before' do
                     let!(:errand_model) do
-                      Models::ErrandRun.make(
+                      FactoryBot.create(:models_errand_run,
                         deployment: deployment_model,
                         errand_name: errand_name,
                         successful_state_hash: successful_state_hash,

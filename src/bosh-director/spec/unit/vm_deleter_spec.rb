@@ -7,10 +7,10 @@ module Bosh
 
       let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
       let(:cloud_factory) { instance_double(CloudFactory) }
-      let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
-      let(:vm_model) { Models::Vm.make(cid: 'vm-cid', instance_id: instance_model.id, cpi: 'cpi1') }
+      let(:deployment) { FactoryBot.create(:models_deployment, name: 'deployment_name') }
+      let(:vm_model) { FactoryBot.create(:models_vm, cid: 'vm-cid', instance_id: instance_model.id, cpi: 'cpi1') }
       let(:instance_model) do
-        Models::Instance.make(
+        FactoryBot.create(:models_instance,
           uuid: SecureRandom.uuid,
           index: 5,
           job: 'fake-job',
@@ -26,6 +26,7 @@ module Bosh
 
       before do
         instance_model.active_vm = vm_model
+        instance_model.reload
 
         allow(CloudFactory).to receive(:create).and_return(cloud_factory)
         allow(cloud_factory).to receive(:get).with(nil, nil).and_return(cloud)
@@ -33,7 +34,7 @@ module Bosh
 
       describe '#delete_for_instance' do
         context 'when there are vms' do
-          let(:vm_model2) { Models::Vm.make(cid: 'vm-cid2', instance_id: instance_model.id, cpi: 'cpi1') }
+          let(:vm_model2) { FactoryBot.create(:models_vm, cid: 'vm-cid2', instance_id: instance_model.id, cpi: 'cpi1') }
 
           before do
             vm_model.update(active: true)

@@ -7,8 +7,8 @@ module Bosh::Director
       { 'tags' => { 'mytag' => 'myvalue' } }
     end
     let(:deployment) do
-      deployment = Models::Deployment.make(name: deployment_name, manifest: YAML.dump(manifest))
-      Models::VariableSet.make(deployment_id: deployment.id)
+      deployment = FactoryBot.create(:models_deployment, name: deployment_name, manifest: YAML.dump(manifest))
+      FactoryBot.create(:models_variable_set, deployment_id: deployment.id)
       deployment
     end
     let(:deployment_name) { 'fake_deployment_name' }
@@ -36,8 +36,8 @@ module Bosh::Director
     let(:attach_disk_job) { Jobs::AttachDisk.new(deployment_name, job_name, instance_id, disk_cid, disk_properties) }
 
     describe '#perform' do
-      let(:vm) { Models::Vm.make(cid: vm_cid, instance_id: instance_model.id) }
-      let!(:instance_model) { Models::Instance.make(uuid: instance_id, job: job_name, state: instance_state) }
+      let(:vm) { FactoryBot.create(:models_vm, cid: vm_cid, instance_id: instance_model.id) }
+      let!(:instance_model) { FactoryBot.create(:models_instance, uuid: instance_id, job: job_name, state: instance_state) }
 
       before {
         instance_model.active_vm = vm
@@ -50,7 +50,7 @@ module Bosh::Director
         let(:instance_state) {'detached'}
 
         let!(:original_disk) do
-          Models::PersistentDisk.make(
+          FactoryBot.create(:models_persistent_disk,
             disk_cid: 'original-disk-cid',
             instance_id: instance_model.id,
             active: true,
@@ -154,7 +154,7 @@ module Bosh::Director
 
         context 'when orphaned disk is attached' do
           let!(:original_disk) do
-            Models::PersistentDisk.make(
+            FactoryBot.create(:models_persistent_disk,
                 disk_cid: 'original-disk-cid',
                 instance_id: instance_model.id,
                 active: true,
@@ -164,7 +164,7 @@ module Bosh::Director
           end
 
           let!(:orphan_disk) do
-            Models::OrphanDisk.make(
+            FactoryBot.create(:models_orphan_disk,
                 disk_cid: 'orphan-disk-cid',
                 instance_name: 'fake-instance',
                 availability_zone: 'o-zone',
@@ -173,14 +173,14 @@ module Bosh::Director
           end
 
           let!(:snapshot) do
-            Models::Snapshot.make(
+            FactoryBot.create(:models_snapshot,
                 persistent_disk: original_disk,
                 clean: true,
                 snapshot_cid: original_disk.disk_cid)
           end
 
           let!(:orphan_disk_snapshot) do
-            Models::OrphanSnapshot.make(
+            FactoryBot.create(:models_orphan_snapshot,
                 orphan_disk: orphan_disk,
                 clean: false,
                 snapshot_cid: orphan_disk.disk_cid,
@@ -278,7 +278,7 @@ module Bosh::Director
         let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
 
         let!(:original_disk) do
-          Models::PersistentDisk.make(
+          FactoryBot.create(:models_persistent_disk,
               disk_cid: 'original-disk-cid',
               instance_id: instance_model.id,
               active: true,

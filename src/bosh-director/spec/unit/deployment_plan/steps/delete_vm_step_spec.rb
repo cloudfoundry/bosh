@@ -10,7 +10,7 @@ module Bosh
           let(:force) { false }
           let(:allow_virtual) { false }
           let(:instance_model) do
-            Models::Instance.make(
+            FactoryBot.create(:models_instance,
               uuid: SecureRandom.uuid,
               index: 5,
               job: 'fake-job',
@@ -18,15 +18,15 @@ module Bosh
               availability_zone: 'az1',
             )
           end
-          let(:vm_model) { Models::Vm.make(cid: 'vm-cid', instance_id: instance_model.id, cpi: 'cpi1') }
-          let(:deployment) { Models::Deployment.make(name: 'deployment_name') }
+          let(:vm_model) { FactoryBot.create(:models_vm, cid: 'vm-cid', instance_id: instance_model.id, cpi: 'cpi1') }
+          let(:deployment) { FactoryBot.create(:models_deployment, name: 'deployment_name') }
           let(:report) { Stages::Report.new.tap { |r| r.vm = vm_model } }
 
           describe '#perform' do
             let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
             let(:cloud_factory) { instance_double(CloudFactory) }
-            let(:job) { instance_double(BD::Jobs::BaseJob) }
-            let(:instance_group) { BD::DeploymentPlan::InstanceGroup.make }
+            let(:job) { instance_double(Bosh::Director::Jobs::BaseJob) }
+            let(:instance_group) { FactoryBot.build(:deployment_plan_instance_group) }
             let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
             let(:instance) do
               instance = DeploymentPlan::Instance.create_from_instance_group(
@@ -71,11 +71,11 @@ module Bosh
 
             context 'when the vm has manual network IPs' do
             let!(:ip_address_model) do
-              ip = Models::IpAddress.make
-              ip.vm = vm_model
-              ip.instance = instance_model
-              ip.save
-              ip
+              FactoryBot.create(:models_ip_address).tap do |ip|
+                ip.vm = vm_model
+                ip.instance = instance_model
+                ip.save
+              end
             end
 
               it 'disassociates the ip from the vm' do
@@ -85,7 +85,6 @@ module Bosh
                 subject.perform(report)
 
                 expect(ip_address_model.reload.vm).to be_nil
-
               end
             end
 
@@ -121,7 +120,7 @@ module Bosh
 
             context 'when VM has a stemcell API version' do
               let(:vm_model) do
-                Models::Vm.make(
+                FactoryBot.create(:models_vm,
                   cid: 'vm-cid',
                   instance_id: instance_model.id,
                   cpi: 'cpi1',

@@ -7,10 +7,10 @@ module Bosh::Director
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:cloud_factory) { instance_double(CloudFactory) }
 
-    let(:deployment) { Models::Deployment.make(name: 'test-deployment') }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: 'test-deployment') }
 
     let(:network) do
-      Models::Network.make(
+      FactoryBot.create(:models_network,
         name: 'dummy-network',
         type: 'manual',
         orphaned: false,
@@ -18,7 +18,7 @@ module Bosh::Director
     end
 
     let(:event_manager) { Api::EventManager.new(true) }
-    let(:task) { Bosh::Director::Models::Task.make(id: 42, username: 'user') }
+    let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
 
     let(:cleanup_job) do
       instance_double(Bosh::Director::Jobs::CleanupArtifacts, username: 'user', task_id: task.id, event_manager: event_manager)
@@ -41,7 +41,7 @@ module Bosh::Director
 
     describe '#unorphan_network' do
       let(:orphan_network) do
-        Models::Network.make(
+        FactoryBot.create(:models_network,
           name: 'dummy-network',
           type: 'manual',
           orphaned: true,
@@ -65,14 +65,14 @@ module Bosh::Director
         created_at = Time.now.utc - 10
         orphaned_at = Time.now.utc
         other_orphaned_at = Time.now.utc
-        Models::Network.make(
+        FactoryBot.create(:models_network,
           name: 'dummy-network-1',
           type: 'manual',
           created_at: created_at,
           orphaned: true,
           orphaned_at: orphaned_at,
         )
-        Models::Network.make(
+        FactoryBot.create(:models_network,
           name: 'dummy-network-2',
           type: 'manual',
           created_at: created_at,
@@ -106,11 +106,11 @@ module Bosh::Director
       let(:stage) { instance_double(EventLog::Stage) }
 
       let(:orphan_network_1) do
-        Models::Network.make(name: 'network-1', created_at: ten_seconds_ago, orphaned: true, orphaned_at: time)
+        FactoryBot.create(:models_network, name: 'network-1', created_at: ten_seconds_ago, orphaned: true, orphaned_at: time)
       end
 
       let(:subnet_1) do
-        Models::Subnet.make(
+        FactoryBot.create(:models_subnet,
           cid: '12345',
           name: 'subnet-1',
           range: '192.168.10.0/24',
@@ -121,7 +121,7 @@ module Bosh::Director
       end
 
       let(:subnet_2) do
-        Models::Subnet.make(
+        FactoryBot.create(:models_subnet,
           cid: '67890',
           name: 'subnet-2',
           range: '192.168.20.0/24',

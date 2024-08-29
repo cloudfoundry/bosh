@@ -13,8 +13,8 @@ module Bosh::Director
       let(:deployment_name_1) { 'deployment1' }
       let(:deployment_name_2) { 'deployment2' }
       let(:deployment_name_3) { 'deployment3' }
-      let(:team_rocket) { Models::Team.make(name: 'team-rocket') }
-      let(:dev) { Models::Team.make(name: 'dev') }
+      let(:team_rocket) { FactoryBot.create(:models_team, name: 'team-rocket') }
+      let(:dev) { FactoryBot.create(:models_team, name: 'dev') }
 
       let(:config) do
         config = Config.load_hash(SpecHelper.spec_get_director_config)
@@ -67,12 +67,12 @@ module Bosh::Director
                 make_task_with_team(type: 'run_errand', deployment_name: deployment_name_2, teams: [team_rocket])
                 make_task_with_team(type: 'snapshot_deployment', deployment_name: deployment_name_1, teams: [team_rocket, dev])
                 make_task_with_team(type: 'update_deployment', deployment_name: deployment_name_2, teams: [team_rocket])
-                Models::Task.make(type: 'create_snapshot')
-                Models::Task.make(type: 'delete_release')
-                Models::Task.make(type: 'delete_snapshot')
-                Models::Task.make(type: 'delete_stemcell')
-                Models::Task.make(type: 'update_release')
-                Models::Task.make(type: 'update_stemcell')
+                FactoryBot.create(:models_task, type: 'create_snapshot')
+                FactoryBot.create(:models_task, type: 'delete_release')
+                FactoryBot.create(:models_task, type: 'delete_snapshot')
+                FactoryBot.create(:models_task, type: 'delete_stemcell')
+                FactoryBot.create(:models_task, type: 'update_release')
+                FactoryBot.create(:models_task, type: 'update_stemcell')
               end
 
               context 'when deployment name 1 is used as a query parameter' do
@@ -87,10 +87,10 @@ module Bosh::Director
 
             context 'when a state is passed' do
               it 'filters all but tasks with that state' do
-                expected_task = Models::Task.make(
+                expected_task = FactoryBot.create(:models_task,
                   type: :update_deployment, state: :queued,
                 )
-                filtered_task = Models::Task.make(
+                filtered_task = FactoryBot.create(:models_task,
                   type: :update_deployment, state: :processing,
                 )
                 get '/?state=queued'
@@ -104,7 +104,7 @@ module Bosh::Director
             context 'when a limit is passed' do
               before do
                 (1..20).map do |_i|
-                  Models::Task.make(
+                  FactoryBot.create(:models_task,
                     type: :update_deployment,
                     state: :queued,
                   )
@@ -156,7 +156,7 @@ module Bosh::Director
                   memo << klass if klass.ancestors.include?(Bosh::Director::Jobs::BaseJob)
                 end - [Bosh::Director::Jobs::BaseJob, Bosh::Director::Jobs::UpdateInstance]
               ).map(&:job_type).map do |job_type|
-                  Models::Task.make(type: job_type)
+                  FactoryBot.create(:models_task, type: job_type)
                 end
               end
 
@@ -195,7 +195,7 @@ module Bosh::Director
 
           context 'when user has readonly access' do
             before do
-              team_a = Models::Team.make(name: 'team_a')
+              team_a = FactoryBot.create(:models_team, name: 'team_a')
               (1..20).map do |i|
                 make_task_with_team(
                   type: :update_deployment,
@@ -217,7 +217,7 @@ module Bosh::Director
 
           context 'when user has team admin permissions' do
             before do
-              Models::Task.make(type: 'update_stemcell', deployment_name: nil, teams: nil)
+              FactoryBot.create(:models_task, type: 'update_stemcell', deployment_name: nil, teams: nil)
               make_task_with_team(type: 'attach_disk', deployment_name: deployment_name_1, teams: [team_rocket, dev])
             end
 
@@ -264,7 +264,7 @@ module Bosh::Director
             end
 
             context 'when task has a deployment associated with it and the deployment has already been deleted' do
-              let(:prod) { Models::Team.make(name: 'prod') }
+              let(:prod) { FactoryBot.create(:models_team, name: 'prod') }
               it 'should show up in the response' do
                 make_task_with_team(type: 'update_deployment', deployment_name: 'deleted_deployment', teams: [team_rocket, prod])
                 make_task_with_team(type: 'delete_deployment', deployment_name: 'deleted_deployment', teams: [team_rocket, dev])
@@ -278,10 +278,10 @@ module Bosh::Director
 
           context 'when context id is passed' do
             before do
-              Models::Task.make(type: 'create_snapshot', context_id: 'example-context-id')
-              Models::Task.make(type: 'delete_release', context_id: 'example-context-id')
-              Models::Task.make(type: 'delete_snapshot')
-              Models::Task.make(type: 'delete_stemcell', context_id: 'some-other-context-id')
+              FactoryBot.create(:models_task, type: 'create_snapshot', context_id: 'example-context-id')
+              FactoryBot.create(:models_task, type: 'delete_release', context_id: 'example-context-id')
+              FactoryBot.create(:models_task, type: 'delete_snapshot')
+              FactoryBot.create(:models_task, type: 'delete_stemcell', context_id: 'some-other-context-id')
             end
 
             before do
@@ -299,7 +299,7 @@ module Bosh::Director
         end
 
         describe 'get task by id' do
-          let(:task) { Models::Task.make(state: 'queued', description: 'fake-description') }
+          let(:task) { FactoryBot.create(:models_task, state: 'queued', description: 'fake-description') }
 
           context 'user has readonly access' do
             before(:each) { basic_authorize 'reader', 'reader' }
@@ -314,7 +314,7 @@ module Bosh::Director
             before(:each) { basic_authorize 'admin', 'admin' }
 
             it 'has API call that return task status' do
-              task = Models::Task.make(state: 'queued', description: 'fake-description')
+              task = FactoryBot.create(:models_task, state: 'queued', description: 'fake-description')
 
               get "/#{task.id}"
               expect(last_response.status).to eq(200)
@@ -337,7 +337,7 @@ module Bosh::Director
             context 'when the task has a context id' do
               it 'has API call that returns task context id' do
                 context_id = 'example-context-id'
-                task = Models::Task.make(context_id: context_id)
+                task = FactoryBot.create(:models_task, context_id: context_id)
 
                 get "/#{task.id}"
                 expect(last_response.status).to eq(200)
@@ -397,13 +397,13 @@ module Bosh::Director
           context 'user has admin access' do
             before(:each) { basic_authorize 'admin', 'admin' }
 
-            let(:task) { Models::Task.make(output: temp_dir) }
+            let(:task) { FactoryBot.create(:models_task, output: temp_dir) }
             it 'has API call that return task output and task output with ranges' do
               output_file = File.new(File.join(temp_dir, 'debug'), 'w+')
               output_file.print('Test output')
               output_file.close
 
-              task = Models::Task.make(output: temp_dir)
+              task = FactoryBot.create(:models_task, output: temp_dir)
 
               get "/#{task.id}/output"
               expect(last_response.status).to eq(200)
@@ -431,7 +431,7 @@ module Bosh::Director
             end
 
             it 'has API call that return task output from db with ranges' do
-              task1 = Models::Task.make(state: 'queued', description: 'fake-description',
+              task1 = FactoryBot.create(:models_task, state: 'queued', description: 'fake-description',
                                         event_output: 'Test output', output: 'something')
 
               # Range test
@@ -495,7 +495,7 @@ module Bosh::Director
             end
 
             context "task's deployment doesn't exist" do
-              let(:task) { Models::Task.make(output: temp_dir, deployment_name: 'deleted') }
+              let(:task) { FactoryBot.create(:models_task, output: temp_dir, deployment_name: 'deleted') }
               it 'gets task output' do
                 get "/#{task.id}/output"
                 expect(last_response.status).to eq(204)
@@ -512,7 +512,7 @@ module Bosh::Director
           context 'user has readonly access' do
             before(:each) { basic_authorize 'reader', 'reader' }
 
-            let(:task) { Models::Task.make(state: 'queued', description: 'fake-description', event_output: 'Test output') }
+            let(:task) { FactoryBot.create(:models_task, state: 'queued', description: 'fake-description', event_output: 'Test output') }
 
             it 'returns 401 for empty output type' do
               get "/#{task.id}/output"
@@ -558,10 +558,10 @@ module Bosh::Director
               )
             end
             let(:task_deleted) do
-              Models::Task.make(type: :update_deployment, state: :queued, deployment_name: 'deleted')
+              FactoryBot.create(:models_task, type: :update_deployment, state: :queued, deployment_name: 'deleted')
             end
 
-            let(:task_no_deployment) { Models::Task.make(type: :update_deployment, state: :queued) }
+            let(:task_no_deployment) { FactoryBot.create(:models_task, type: :update_deployment, state: :queued) }
 
             before(:each) do
               Models::Deployment.create_with_teams(name: deployment_name_1,
@@ -623,17 +623,17 @@ module Bosh::Director
         describe 'POST /cancel' do
           let(:state) { :queued }
           let!(:tasks_queued) do
-            [Models::Task.make(
+            [FactoryBot.create(:models_task,
               type: :update_deployment,
               state: state,
             ),
-             Models::Task.make(
+             FactoryBot.create(:models_task,
                type: :cck_scan_and_fix,
                state: state,
              )]
           end
           let!(:task_processing) do
-            Models::Task.make(
+            FactoryBot.create(:models_task,
               type: :update_deployment,
               state: :processing,
             )

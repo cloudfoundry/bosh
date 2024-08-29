@@ -335,7 +335,7 @@ module Bosh::Director
       context 'when link id is valid' do
         context 'when link is external' do
           let(:deployment) do
-            Bosh::Director::Models::Deployment.make
+            FactoryBot.create(:models_deployment)
           end
 
           let(:external_consumer) do

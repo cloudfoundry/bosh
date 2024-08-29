@@ -313,7 +313,7 @@ module Bosh::Director
       describe 'DELETE', '/<id>' do
         before do
           release = Models::Release.create(name: 'test_release')
-          release.add_version(Models::ReleaseVersion.make(version: '1'))
+          release.add_version(FactoryBot.create(:models_release_version, version: '1'))
           release.save
         end
 
@@ -356,7 +356,7 @@ module Bosh::Director
         let!(:release) do
           release = Models::Release.create(name: 'test_release')
           (1..10).map do |i|
-            release.add_version(Models::ReleaseVersion.make(version: i))
+            release.add_version(FactoryBot.create(:models_release_version, version: i))
           end
           release.save
         end
@@ -375,8 +375,8 @@ module Bosh::Director
           it 'satisfies inspect release calls' do
             release_version = Models::ReleaseVersion.find(version: '1')
 
-            dummy_template = Models::Template.make(
-              release_id: 1,
+            dummy_template = FactoryBot.create(:models_template,
+              release_id: release.id,
               name: 'dummy_template',
               version: '2',
               blobstore_id: '123',

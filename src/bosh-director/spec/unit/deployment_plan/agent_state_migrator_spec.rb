@@ -5,8 +5,8 @@ module Bosh::Director
     let(:agent_state_migrator) { described_class.new(Config.logger) }
     let(:client) { instance_double(AgentClient) }
 
-    let!(:vm_model) { Models::Vm.make(agent_id: 'agent-1', instance: instance_model, active: true) }
-    let(:instance_model) { Models::Instance.make }
+    let!(:vm_model) { FactoryBot.create(:models_vm, agent_id: 'agent-1', instance: instance_model, active: true) }
+    let(:instance_model) { FactoryBot.create(:models_instance) }
 
     describe '#get_state' do
       before do
@@ -143,7 +143,7 @@ module Bosh::Director
 
     describe '#verify_state' do
       before do
-        @deployment = Models::Deployment.make(name: 'foo')
+        @deployment = FactoryBot.create(:models_deployment, name: 'foo')
       end
 
       it 'should do nothing when VM is ok' do
@@ -151,7 +151,7 @@ module Bosh::Director
       end
 
       it 'should do nothing when instance is ok' do
-        instance = Models::Instance.make(deployment: @deployment, job: 'bar', index: 11)
+        instance = FactoryBot.create(:models_instance, deployment: @deployment, job: 'bar', index: 11)
         instance.add_vm(vm_model)
         instance.active_vm = vm_model
         agent_state_migrator.verify_state(instance_model,

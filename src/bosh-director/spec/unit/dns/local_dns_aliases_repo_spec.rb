@@ -6,22 +6,22 @@ module Bosh::Director
     let(:root_domain) { 'bosh1.tld' }
 
     describe '#update_for_deployment' do
-      let(:deployment_model) { Models::Deployment.make(name: 'test-deployment') }
+      let(:deployment_model) { FactoryBot.create(:models_deployment, name: 'test-deployment') }
       let!(:ignored_provider_intent1) do
-        Models::Links::LinkProviderIntent.make(link_provider: Models::Links::LinkProvider.make(deployment: deployment_model))
+        FactoryBot.create(:models_links_link_provider_intent, link_provider: FactoryBot.create(:models_links_link_provider, deployment: deployment_model))
       end
       let!(:ignored_provider_intent2) do
-        Models::Links::LinkProviderIntent.make(
-          link_provider: Models::Links::LinkProvider.make(deployment: deployment_model),
+        FactoryBot.create(:models_links_link_provider_intent,
+          link_provider: FactoryBot.create(:models_links_link_provider, deployment: deployment_model),
           metadata: {}.to_json,
         )
       end
       let!(:ignored_provider_intent3) do
-        Models::Links::LinkProviderIntent.make(metadata: { dns_aliases: [{ domain: 'foo.bar' }] }.to_json)
+        FactoryBot.create(:models_links_link_provider_intent, metadata: { dns_aliases: [{ domain: 'foo.bar' }] }.to_json)
       end
       let!(:provider_intent1) do
-        Models::Links::LinkProviderIntent.make(
-          link_provider: Models::Links::LinkProvider.make(deployment: deployment_model),
+        FactoryBot.create(:models_links_link_provider_intent,
+          link_provider: FactoryBot.create(:models_links_link_provider, deployment: deployment_model),
           metadata: {
             dns_aliases: [
               {

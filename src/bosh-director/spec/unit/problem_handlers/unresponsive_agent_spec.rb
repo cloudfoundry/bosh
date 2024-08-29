@@ -14,13 +14,13 @@ module Bosh::Director
     let(:planner_factory) { instance_double(Bosh::Director::DeploymentPlan::PlannerFactory) }
     let(:deployment_model) do
       manifest = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
-      Models::Deployment.make(name: manifest['name'], manifest: YAML.dump(manifest))
+      FactoryBot.create(:models_deployment, name: manifest['name'], manifest: YAML.dump(manifest))
     end
-    let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+    let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:agent) { double(Bosh::Director::AgentClient) }
     let(:instance) do
-      Models::Instance.make(
+      FactoryBot.create(:models_instance,
         job: 'mysql_node',
         index: 0,
         uuid: 'uuid-1',
@@ -30,7 +30,7 @@ module Bosh::Director
       )
     end
     let(:vm) do
-      Models::Vm.make(
+      FactoryBot.create(:models_vm,
         cid: 'vm-cid',
         agent_id: 'agent-007',
         instance_id: instance.id,
@@ -76,7 +76,7 @@ module Bosh::Director
       allow(deployment_model).to receive(:last_successful_variable_set).and_return(variable_set)
     end
 
-    let!(:local_dns_blob) { Models::LocalDnsBlob.make }
+    let!(:local_dns_blob) { FactoryBot.create(:models_local_dns_blob) }
     let(:event_manager) { Bosh::Director::Api::EventManager.new(true) }
     let(:job) { instance_double(Bosh::Director::Jobs::BaseJob, username: 'user', task_id: 42, event_manager: event_manager) }
 
@@ -195,7 +195,7 @@ module Bosh::Director
         let(:fake_new_agent) { double(Bosh::Director::AgentClient) }
 
         before do
-          Models::Stemcell.make(name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
+          FactoryBot.create(:models_stemcell, name: 'stemcell-name', version: '3.0.2', cid: 'sc-302')
           instance.update(spec: spec)
           allow(AgentClient).to receive(:with_agent_id).with('agent-222', anything, anything).and_return(fake_new_agent)
           allow(AgentClient).to receive(:with_agent_id).with('agent-222', anything).and_return(fake_new_agent)

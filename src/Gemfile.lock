@@ -199,7 +199,6 @@ GEM
     logging (2.2.2)
       little-plugger (~> 1.1)
       multi_json (~> 1.10)
-    machinist (1.0.6)
     membrane (1.1.0)
     method_source (1.1.0)
     mime-types (3.5.2)
@@ -374,11 +373,10 @@ DEPENDENCIES
   bosh_common!
   bosh_cpi
   bundle-audit
-  factory_bot (~> 6.2)
+  factory_bot
   fakefs
   httpclient
   json (~> 2)
-  machinist (~> 1.0)
   minitar
   mysql2
   nats-pure (~> 2.3)

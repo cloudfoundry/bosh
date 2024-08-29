@@ -56,7 +56,7 @@ module Bosh::Director::DeploymentPlan
 
     let(:variables_interpolator) { Bosh::Director::ConfigServer::VariablesInterpolator.new }
     let(:instance_group) do
-      ig = InstanceGroup.parse(deployment_plan, instance_group_spec, BD::Config.event_log, logger)
+      ig = InstanceGroup.parse(deployment_plan, instance_group_spec, Bosh::Director::Config.event_log, logger)
       allow(ig).to receive(:jobs).and_return(desired_deployment_plan_jobs)
       ig
     end
@@ -64,9 +64,9 @@ module Bosh::Director::DeploymentPlan
     let(:desired_deployment_plan_jobs) { [] }
     let(:link_provider_intents) { [] }
 
-    let!(:variable_set_model) { BD::Models::VariableSet.make(deployment: deployment_model) }
+    let!(:variable_set_model) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
     let(:instance_model) do
-      instance_model = BD::Models::Instance.make(
+      instance_model = FactoryBot.create(:models_instance,
         uuid: 'fake-uuid-1',
         bootstrap: true,
         deployment: deployment_model,
@@ -74,7 +74,7 @@ module Bosh::Director::DeploymentPlan
         variable_set: variable_set_model,
         job: 'instance-group-name',
       )
-      BD::Models::Vm.make(instance: instance_model, active: true, agent_id: 'active-vm-agent-id')
+      FactoryBot.create(:models_vm, instance: instance_model, active: true, agent_id: 'active-vm-agent-id')
       instance_model
     end
 
@@ -120,7 +120,7 @@ module Bosh::Director::DeploymentPlan
     let(:instance_state) { 'started' }
     let(:network) { ManualNetwork.parse(network_spec, [availability_zone], logger) }
     let(:reservation) do
-      reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
+      reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network)
       reservation.resolve_ip('192.168.1.3')
       reservation
     end
@@ -141,8 +141,8 @@ module Bosh::Director::DeploymentPlan
     let(:cloud_config_manifest) { Bosh::Spec::Deployments.simple_cloud_config }
     let(:deployment_manifest) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
     let(:deployment_model) do
-      cloud_config = BD::Models::Config.make(:cloud, content: YAML.dump(cloud_config_manifest))
-      deployment = BD::Models::Deployment.make(
+      cloud_config = FactoryBot.create(:models_config_cloud, content: YAML.dump(cloud_config_manifest))
+      deployment = FactoryBot.create(:models_deployment,
         name: deployment_manifest['name'],
         manifest: YAML.dump(deployment_manifest),
       )
@@ -163,16 +163,16 @@ module Bosh::Director::DeploymentPlan
       fake_app
       fake_locks
 
-      release_model = Bosh::Director::Models::Release.make(name: deployment_manifest['releases'].first['name'])
-      version = Bosh::Director::Models::ReleaseVersion.make(version: deployment_manifest['releases'].first['version'])
+      release_model = FactoryBot.create(:models_release, name: deployment_manifest['releases'].first['name'])
+      version = FactoryBot.create(:models_release_version, version: deployment_manifest['releases'].first['version'])
       release_model.add_version(version)
 
       deployment_manifest['instance_groups'].first['jobs'].each do |job|
-        template_model = Bosh::Director::Models::Template.make(name: job['name'])
+        template_model = FactoryBot.create(:models_template, name: job['name'])
         version.add_template(template_model)
       end
 
-      Bosh::Director::Models::Stemcell.make(
+      FactoryBot.create(:models_stemcell,
         name: deployment_manifest['stemcells'].first['name'],
         version: deployment_manifest['stemcells'].first['version'],
         operating_system: operating_system,
@@ -208,7 +208,7 @@ module Bosh::Director::DeploymentPlan
       context 'when the instance plan has desired network plans' do
         let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
         let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], logger) }
-        let(:existing_reservation) { BD::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
+        let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
         let(:network_plans) do
           [
             NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true),
@@ -287,7 +287,7 @@ module Bosh::Director::DeploymentPlan
             ]
           end
           let(:existing_reservation) do
-            reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, existing_network)
+            reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, existing_network)
             reservation.resolve_ip('10.0.0.5')
             reservation
           end
@@ -309,7 +309,7 @@ module Bosh::Director::DeploymentPlan
             ]
           end
           let(:desired_reservation) do
-            reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, existing_network)
+            reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, existing_network)
             reservation.resolve_ip('10.0.0.5')
             reservation
           end
@@ -338,7 +338,7 @@ module Bosh::Director::DeploymentPlan
       context 'when the instance plan has desired network plans' do
         let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
         let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], logger) }
-        let(:existing_reservation) { BD::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
+        let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
         let(:network_plans) do
           [
             NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true),
@@ -520,7 +520,7 @@ module Bosh::Director::DeploymentPlan
       context 'when the vm type name has changed' do
         let(:subnet) { DynamicNetworkSubnet.new(['10.0.0.1'], {}, ['foo-az']) }
         let(:existing_network) { DynamicNetwork.new('a', [subnet], logger) }
-        let(:existing_reservation) { BD::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
+        let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
 
         let(:network_plans) { [NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true)] }
 
@@ -563,7 +563,7 @@ module Bosh::Director::DeploymentPlan
         let(:availability_zone) { AvailabilityZone.new('foo-az', 'old' => 'value') }
         let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
         let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], logger) }
-        let(:existing_reservation) { BD::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
+        let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
 
         let(:network_plans) do
           [
@@ -763,7 +763,7 @@ module Bosh::Director::DeploymentPlan
       it 'should match if all properties are the same' do
         expect(
           simple_instance_plan.vm_matches_plan?(
-            BD::Models::Vm.make(
+            FactoryBot.create(:models_vm,
               instance: existing_instance,
               stemcell_name: 'ubuntu-stemcell',
               stemcell_version: '1',
@@ -778,7 +778,7 @@ module Bosh::Director::DeploymentPlan
       it 'should not match if cloud_properties are nil' do
         expect(
           simple_instance_plan.vm_matches_plan?(
-            BD::Models::Vm.make(
+            FactoryBot.create(:models_vm,
               instance: existing_instance,
               stemcell_name: 'ubuntu-stemcell',
               stemcell_version: '1',
@@ -793,7 +793,7 @@ module Bosh::Director::DeploymentPlan
       it 'should not match if stemcell differs' do
         expect(
           simple_instance_plan.vm_matches_plan?(
-            BD::Models::Vm.make(
+            FactoryBot.create(:models_vm,
               instance: existing_instance,
               stemcell_name: 'other-stemcell',
               stemcell_version: '1',
@@ -806,7 +806,7 @@ module Bosh::Director::DeploymentPlan
 
         expect(
           simple_instance_plan.vm_matches_plan?(
-            BD::Models::Vm.make(
+            FactoryBot.create(:models_vm,
               instance: existing_instance,
               stemcell_name: 'ubuntu-stemcell',
               stemcell_version: '5',
@@ -821,7 +821,7 @@ module Bosh::Director::DeploymentPlan
       it 'should not match if env properties differ' do
         expect(
           simple_instance_plan.vm_matches_plan?(
-            BD::Models::Vm.make(
+            FactoryBot.create(:models_vm,
               instance: existing_instance,
               stemcell_name: 'ubuntu-stemcell',
               stemcell_version: '1',
@@ -834,7 +834,7 @@ module Bosh::Director::DeploymentPlan
 
         expect(
           simple_instance_plan.vm_matches_plan?(
-            BD::Models::Vm.make(
+            FactoryBot.create(:models_vm,
               instance: existing_instance,
               stemcell_name: 'ubuntu-stemcell',
               stemcell_version: '1',
@@ -854,7 +854,7 @@ module Bosh::Director::DeploymentPlan
         it 'should not match' do
           expect(
             simple_instance_plan.vm_matches_plan?(
-              BD::Models::Vm.make(
+              FactoryBot.create(:models_vm,
                 instance: existing_instance,
                 stemcell_name: 'ubuntu-stemcell',
                 stemcell_version: '1',
@@ -894,7 +894,7 @@ module Bosh::Director::DeploymentPlan
       context 'when the vm type name has changed' do
         let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
         let(:existing_network) { DynamicNetwork.new('a', [subnet], logger) }
-        let(:existing_reservation) { BD::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
+        let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
 
         let(:network_plans) { [NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true)] }
 
@@ -937,7 +937,7 @@ module Bosh::Director::DeploymentPlan
         let(:availability_zone) { AvailabilityZone.new('foo-az', 'old' => 'value') }
         let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
         let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], logger) }
-        let(:existing_reservation) { BD::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
+        let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
 
         let(:network_plans) do
           [
@@ -1042,7 +1042,7 @@ module Bosh::Director::DeploymentPlan
       context 'when the vm type name has changed' do
         let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
         let(:existing_network) { DynamicNetwork.new('a', [subnet], logger) }
-        let(:existing_reservation) { BD::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
+        let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
 
         let(:network_plans) { [NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true)] }
 
@@ -1097,7 +1097,7 @@ module Bosh::Director::DeploymentPlan
         end
         let(:availability_zone) { AvailabilityZone.new('foo-az', { 'old' => 'value' }, 'foo-cpi') }
         before do
-          Bosh::Director::Models::Stemcell.make(
+          FactoryBot.create(:models_stemcell,
             name: 'deployed-stemcell',
             operating_system: 'ubuntu', # can't use deployment_manifest['stemcells'].first['os']; it's nil
             version: deployment_manifest['stemcells'].first['version'],
@@ -1126,7 +1126,7 @@ module Bosh::Director::DeploymentPlan
         let(:availability_zone) { AvailabilityZone.new('foo-az', 'old' => 'value') }
         let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
         let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], logger) }
-        let(:existing_reservation) { BD::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
+        let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
 
         let(:network_plans) do
           [
@@ -1228,7 +1228,7 @@ module Bosh::Director::DeploymentPlan
 
     describe 'stemcell_model_for_cpi' do
       before do
-        Bosh::Director::Models::Stemcell.make(
+        FactoryBot.create(:models_stemcell,
           name: 'a-different-name-to-sidestep-uniqueness-constraints',
           version: deployment_manifest['stemcells'].first['version'],
           operating_system: operating_system,
@@ -1257,7 +1257,7 @@ module Bosh::Director::DeploymentPlan
         let(:availability_zone) { AvailabilityZone.new('foo-az', { 'a' => 'b' }, 'foo-cpi') }
         before do
           # A bad model, same as the good model except wrong cpi
-          Bosh::Director::Models::Stemcell.make(
+          FactoryBot.create(:models_stemcell,
             name: deployment_manifest['stemcells'].first['name'],
             version: deployment_manifest['stemcells'].first['version'],
             operating_system: operating_system,
@@ -1266,7 +1266,7 @@ module Bosh::Director::DeploymentPlan
         end
         # which fixes a bug where multi-CPI would erroneously conclude a stemcell change
         it "returns the stemcell model for the appropriate CPI" do
-          good_model = Bosh::Director::Models::Stemcell.make(
+          good_model = FactoryBot.create(:models_stemcell,
             name: deployment_manifest['stemcells'].first['name'],
             version: deployment_manifest['stemcells'].first['version'],
             operating_system: operating_system,
@@ -1280,7 +1280,7 @@ module Bosh::Director::DeploymentPlan
     describe '#persist_current_spec' do
       let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
       let(:existing_network) { DynamicNetwork.new('a', [subnet], logger) }
-      let(:existing_reservation) { BD::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
+      let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
 
       let(:network_plans) do
         [
@@ -1465,7 +1465,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         before do
-          persistent_disk = BD::Models::PersistentDisk.make(size: 42, cloud_properties: { 'new' => 'properties' })
+          persistent_disk = FactoryBot.create(:models_persistent_disk, size: 42, cloud_properties: { 'new' => 'properties' })
           instance_plan.instance.model.add_persistent_disk(persistent_disk)
         end
 
@@ -1494,14 +1494,14 @@ module Bosh::Director::DeploymentPlan
         end
 
         context 'variables interpolation' do
-          let(:desired_variable_set) { instance_double(BD::Models::VariableSet) }
+          let(:desired_variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
 
           before do
             instance.desired_variable_set = desired_variable_set
           end
 
           it 'should create PersistentDiskCollection with the correct variable sets' do
-            expect(BD::DeploymentPlan::PersistentDiskCollection).to receive(:changed_disk_pairs).with(
+            expect(Bosh::Director::DeploymentPlan::PersistentDiskCollection).to receive(:changed_disk_pairs).with(
               anything,
               instance.model.variable_set,
               anything,
@@ -1524,7 +1524,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should return true if instance had a persistent disk' do
-          persistent_disk = BD::Models::PersistentDisk.make(active: true, size: 2)
+          persistent_disk = FactoryBot.create(:models_persistent_disk, active: true, size: 2)
           obsolete_instance_plan.existing_instance.add_persistent_disk(persistent_disk)
 
           expect(obsolete_instance_plan.persistent_disk_changed?).to be_truthy
@@ -1657,8 +1657,8 @@ module Bosh::Director::DeploymentPlan
         end
 
         context 'when there is a different order for templates (jobs)' do
-          let(:job1_template) { Bosh::Director::Models::Template.make(name: 'job1') }
-          let(:job2_template) { Bosh::Director::Models::Template.make(name: 'job2') }
+          let(:job1_template) { FactoryBot.create(:models_template, name: 'job1') }
+          let(:job2_template) { FactoryBot.create(:models_template, name: 'job2') }
 
           let(:deployment_manifest) do
             Bosh::Spec::Deployments.simple_manifest_with_instance_groups(
@@ -1750,7 +1750,7 @@ module Bosh::Director::DeploymentPlan
     describe '#packages_changed?' do
       describe 'when packages have changed' do
         let(:instance_model) do
-          instance_model = BD::Models::Instance.make(
+          instance_model = FactoryBot.create(:models_instance,
             bootstrap: true,
             deployment: deployment_model,
             uuid: 'uuid-1',
@@ -1909,7 +1909,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         describe 'when the index dns record for the instance is not found' do
-          let(:changed_instance) { BD::Models::Instance.all.last }
+          let(:changed_instance) { Bosh::Director::Models::Instance.all.last }
 
           it '#dns_changed? should return true' do
             expect(instance_plan.dns_changed?).to be(true)
@@ -1933,8 +1933,8 @@ module Bosh::Director::DeploymentPlan
 
         describe 'when the local dns record has changed' do
           before do
-            Bosh::Director::Models::LocalDnsRecord.make(instance_id: instance_model.id, ip: 'dummy-ip')
-            allow(BD::Config).to receive(:local_dns_enabled?).and_return(true)
+            FactoryBot.create(:models_local_dns_record, instance_id: instance_model.id, ip: 'dummy-ip')
+            allow(Bosh::Director::Config).to receive(:local_dns_enabled?).and_return(true)
             allow(logger).to receive(:debug)
           end
 
@@ -1987,12 +1987,12 @@ module Bosh::Director::DeploymentPlan
         let(:link_provider_intents) do
           [
             instance_double(
-              BD::Models::Links::LinkProviderIntent,
+              Bosh::Director::Models::Links::LinkProviderIntent,
               link_provider: provider1,
               group_name: 'desired-link-2-desired-link-type-2',
             ),
             instance_double(
-              BD::Models::Links::LinkProviderIntent,
+              Bosh::Director::Models::Links::LinkProviderIntent,
               link_provider: provider1,
               group_name: 'desired-link-1-desired-link-type-1',
             ),
@@ -2033,28 +2033,28 @@ module Bosh::Director::DeploymentPlan
 
     describe '#remove_network_plans_for_ips' do
       let(:plan1) do
-        reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
+        reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network)
         reservation.resolve_ip('192.168.1.25')
 
         NetworkPlanner::Plan.new(reservation: reservation, existing: false, obsolete: true)
       end
 
       let(:plan2) do
-        reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
+        reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network)
         reservation.resolve_ip('192.168.1.26')
 
         NetworkPlanner::Plan.new(reservation: reservation, existing: false, obsolete: true)
       end
 
       let(:plan3) do
-        reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
+        reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network)
         reservation.resolve_ip('192.168.1.4')
 
         NetworkPlanner::Plan.new(reservation: reservation, existing: true)
       end
 
       let(:plan4) do
-        reservation = BD::DesiredNetworkReservation.new_dynamic(instance_model, network)
+        reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network)
         reservation.resolve_ip('10.0.0.1')
 
         NetworkPlanner::Plan.new(reservation: reservation, existing: false, obsolete: true)
@@ -2065,8 +2065,8 @@ module Bosh::Director::DeploymentPlan
       let(:ip1) { IPAddr.new('192.168.1.25').to_i }
       let(:ip2) { IPAddr.new('192.168.1.26').to_i }
 
-      let(:ip_address1) { Bosh::Director::Models::IpAddress.make(address_str: ip1.to_s) }
-      let(:ip_address2) { Bosh::Director::Models::IpAddress.make(address_str: ip2.to_s) }
+      let(:ip_address1) { FactoryBot.create(:models_ip_address, address_str: ip1.to_s) }
+      let(:ip_address2) { FactoryBot.create(:models_ip_address, address_str: ip2.to_s) }
 
       describe 'when there are ips specified' do
         it 'releases obsolete network plans of the specified ips' do

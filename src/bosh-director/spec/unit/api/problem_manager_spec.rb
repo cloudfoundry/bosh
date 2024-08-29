@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe Api::ProblemManager do
     let(:task) { double('Task') }
-    let(:deployment) { Models:: Deployment.make(name: 'mycloud') }
+    let(:deployment) { FactoryBot.create(:models_deployment, name: 'mycloud') }
     let(:username) { 'username-1' }
     let(:job_queue) { instance_double('Bosh::Director::JobQueue') }
 

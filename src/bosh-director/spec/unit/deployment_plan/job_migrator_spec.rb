@@ -4,7 +4,7 @@ module Bosh::Director
   describe DeploymentPlan::JobMigrator do
     subject(:job_migrator) { described_class.new(deployment_plan, logger) }
 
-    let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+    let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
 
     let(:etcd_instance_group) do
       DeploymentPlan::InstanceGroup.parse(deployment_plan, instance_group_spec, Config.event_log, logger)
@@ -67,8 +67,8 @@ module Bosh::Director
     end
 
     let(:deployment_model) do
-      cloud_config = Models::Config.make(:cloud, content: YAML.dump(cloud_config_manifest))
-      deployment = Models::Deployment.make(
+      cloud_config = FactoryBot.create(:models_config_cloud, content: YAML.dump(cloud_config_manifest))
+      deployment = FactoryBot.create(:models_deployment,
         name: deployment_manifest['name'],
         manifest: YAML.dump(deployment_manifest),
       )
@@ -83,15 +83,15 @@ module Bosh::Director
     end
 
     before do
-      Models::VariableSet.make(deployment: deployment_model)
+      FactoryBot.create(:models_variable_set, deployment: deployment_model)
 
       fake_locks
 
-      release_model = Bosh::Director::Models::Release.make(name: deployment_manifest['releases'].first['name'])
-      version = Bosh::Director::Models::ReleaseVersion.make(version: deployment_manifest['releases'].first['version'])
+      release_model = FactoryBot.create(:models_release, name: deployment_manifest['releases'].first['name'])
+      version = FactoryBot.create(:models_release_version, version: deployment_manifest['releases'].first['version'])
       release_model.add_version(version)
 
-      template_model = Bosh::Director::Models::Template.make(
+      template_model = FactoryBot.create(:models_template,
         name: deployment_manifest['instance_groups'].first['jobs'][0]['name'],
       )
       version.add_template(template_model)
@@ -115,11 +115,11 @@ module Bosh::Director
           context 'when migrating_to instance group does not have existing instances' do
             let!(:migrated_job_instances) do
               instances = []
-              instances << Models::Instance.make(job: 'etcd_z1', index: 0, deployment: deployment_model, uuid: 'uuid-1', variable_set: variable_set)
-              instances << Models::Instance.make(job: 'etcd_z1', index: 1, deployment: deployment_model, uuid: 'uuid-2', variable_set: variable_set)
-              instances << Models::Instance.make(job: 'etcd_z1', index: 2, deployment: deployment_model, uuid: 'uuid-3', variable_set: variable_set)
-              instances << Models::Instance.make(job: 'etcd_z2', index: 0, deployment: deployment_model, uuid: 'uuid-4', variable_set: variable_set)
-              instances << Models::Instance.make(job: 'etcd_z2', index: 1, deployment: deployment_model, uuid: 'uuid-5', variable_set: variable_set)
+              instances << FactoryBot.create(:models_instance, job: 'etcd_z1', index: 0, deployment: deployment_model, uuid: 'uuid-1', variable_set: variable_set)
+              instances << FactoryBot.create(:models_instance, job: 'etcd_z1', index: 1, deployment: deployment_model, uuid: 'uuid-2', variable_set: variable_set)
+              instances << FactoryBot.create(:models_instance, job: 'etcd_z1', index: 2, deployment: deployment_model, uuid: 'uuid-3', variable_set: variable_set)
+              instances << FactoryBot.create(:models_instance, job: 'etcd_z2', index: 0, deployment: deployment_model, uuid: 'uuid-4', variable_set: variable_set)
+              instances << FactoryBot.create(:models_instance, job: 'etcd_z2', index: 1, deployment: deployment_model, uuid: 'uuid-5', variable_set: variable_set)
               instances
             end
 
@@ -147,19 +147,19 @@ module Bosh::Director
           context 'when migrating_to instance group already has existing instances' do
             let!(:existing_job_instances) do
               job_instances = []
-              job_instances << Models::Instance.make(job: 'etcd', deployment: deployment_model, index: 0, bootstrap: true, uuid: 'uuid-7', variable_set: variable_set)
-              job_instances << Models::Instance.make(job: 'etcd', deployment: deployment_model, index: 1, uuid: 'uuid-8', variable_set: variable_set)
+              job_instances << FactoryBot.create(:models_instance, job: 'etcd', deployment: deployment_model, index: 0, bootstrap: true, uuid: 'uuid-7', variable_set: variable_set)
+              job_instances << FactoryBot.create(:models_instance, job: 'etcd', deployment: deployment_model, index: 1, uuid: 'uuid-8', variable_set: variable_set)
               job_instances
             end
 
             let!(:migrated_job_instances) do
               instances = []
-              instances << Models::Instance.make(job: 'etcd_z1', index: 0, deployment: deployment_model, uuid: 'uuid-1', variable_set: variable_set)
-              instances << Models::Instance.make(job: 'etcd_z1', index: 1, deployment: deployment_model, uuid: 'uuid-2', variable_set: variable_set)
-              instances << Models::Instance.make(job: 'etcd_z1', index: 2, deployment: deployment_model, uuid: 'uuid-3', variable_set: variable_set)
-              instances << Models::Instance.make(job: 'etcd_z2', index: 0, deployment: deployment_model, uuid: 'uuid-4', variable_set: variable_set)
-              instances << Models::Instance.make(job: 'etcd_z2', index: 1, deployment: deployment_model, uuid: 'uuid-5', variable_set: variable_set)
-              instances << Models::Instance.make(job: 'etcd_z2', index: 2, deployment: deployment_model, uuid: 'uuid-6', variable_set: variable_set)
+              instances << FactoryBot.create(:models_instance, job: 'etcd_z1', index: 0, deployment: deployment_model, uuid: 'uuid-1', variable_set: variable_set)
+              instances << FactoryBot.create(:models_instance, job: 'etcd_z1', index: 1, deployment: deployment_model, uuid: 'uuid-2', variable_set: variable_set)
+              instances << FactoryBot.create(:models_instance, job: 'etcd_z1', index: 2, deployment: deployment_model, uuid: 'uuid-3', variable_set: variable_set)
+              instances << FactoryBot.create(:models_instance, job: 'etcd_z2', index: 0, deployment: deployment_model, uuid: 'uuid-4', variable_set: variable_set)
+              instances << FactoryBot.create(:models_instance, job: 'etcd_z2', index: 1, deployment: deployment_model, uuid: 'uuid-5', variable_set: variable_set)
+              instances << FactoryBot.create(:models_instance, job: 'etcd_z2', index: 2, deployment: deployment_model, uuid: 'uuid-6', variable_set: variable_set)
 
               instances
             end
@@ -229,7 +229,7 @@ module Bosh::Director
           end
 
           it 'returns one instance of the original job' do
-            Models::Instance.make(job: 'etcd', index: 0, deployment: deployment_model, uuid: 'uuid-1', variable_set: variable_set)
+            FactoryBot.create(:models_instance, job: 'etcd', index: 0, deployment: deployment_model, uuid: 'uuid-1', variable_set: variable_set)
             expect(job_migrator.find_existing_instances(etcd_instance_group).count).to eq(1)
           end
         end
@@ -259,7 +259,7 @@ module Bosh::Director
 
         context 'when migrated from section contains availability zone and instance models have different az' do
           before do
-            Models::Instance.make(job: 'etcd_z1', index: 0, deployment: deployment_model, availability_zone: 'z10', variable_set: variable_set)
+            FactoryBot.create(:models_instance, job: 'etcd_z1', index: 0, deployment: deployment_model, availability_zone: 'z10', variable_set: variable_set)
           end
 
           it 'raises an error' do
@@ -274,7 +274,7 @@ module Bosh::Director
 
         context 'when migrated from section contains availability zone and instance models do not have az (legacy instances)' do
           before do
-            Models::Instance.make(job: 'etcd_z1', index: 0, deployment: deployment_model, availability_zone: nil, variable_set: variable_set)
+            FactoryBot.create(:models_instance, job: 'etcd_z1', index: 0, deployment: deployment_model, availability_zone: nil, variable_set: variable_set)
           end
 
           it 'updates instance az' do
@@ -296,7 +296,7 @@ module Bosh::Director
             end
 
             before do
-              Models::Instance.make(job: 'etcd_z1', index: 0, deployment: deployment_model, availability_zone: nil, variable_set: variable_set)
+              FactoryBot.create(:models_instance, job: 'etcd_z1', index: 0, deployment: deployment_model, availability_zone: nil, variable_set: variable_set)
             end
 
             it 'raises an error' do
@@ -318,7 +318,7 @@ module Bosh::Director
             end
 
             before do
-              Models::Instance.make(job: 'etcd_z1', index: 0, deployment: deployment_model, availability_zone: nil, variable_set: variable_set)
+              FactoryBot.create(:models_instance, job: 'etcd_z1', index: 0, deployment: deployment_model, availability_zone: nil, variable_set: variable_set)
             end
 
             it 'succeeds' do
@@ -333,8 +333,8 @@ module Bosh::Director
       context 'when instance group does not need to be migrated' do
         let!(:existing_job_instances) do
           job_instances = []
-          job_instances << Models::Instance.make(job: 'etcd', deployment: deployment_model, variable_set: variable_set)
-          job_instances << Models::Instance.make(job: 'etcd', deployment: deployment_model, variable_set: variable_set)
+          job_instances << FactoryBot.create(:models_instance, job: 'etcd', deployment: deployment_model, variable_set: variable_set)
+          job_instances << FactoryBot.create(:models_instance, job: 'etcd', deployment: deployment_model, variable_set: variable_set)
           job_instances
         end
 

@@ -13,11 +13,11 @@ module Bosh::Director
     end
     let(:planner_factory) { instance_double(Bosh::Director::DeploymentPlan::PlannerFactory) }
     let(:manifest) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
-    let(:deployment_model) { Models::Deployment.make(name: manifest['name'], manifest: YAML.dump(manifest)) }
-    let!(:local_dns_blob) { Models::LocalDnsBlob.make }
+    let(:deployment_model) { FactoryBot.create(:models_deployment, name: manifest['name'], manifest: YAML.dump(manifest)) }
+    let!(:local_dns_blob) { FactoryBot.create(:models_local_dns_blob) }
 
     let!(:instance) do
-      instance = Models::Instance.make(
+      instance = FactoryBot.create(:models_instance,
         job: manifest['instance_groups'].first['name'],
         index: 0,
         uuid: '1234-5678',
@@ -25,7 +25,7 @@ module Bosh::Director
         cloud_properties_hash: { 'foo' => 'bar' },
         spec: spec.merge(env: { 'key1' => 'value1' }),
       )
-      vm = Models::Vm.make(
+      vm = FactoryBot.create(:models_vm,
         agent_id: 'agent-007',
         cid: vm_cid,
         instance_id: instance.id,
@@ -52,7 +52,7 @@ module Bosh::Director
     let(:networks) do
       { 'a' => { 'ip' => '192.168.1.2' } }
     end
-    let(:variable_set) { Models::VariableSet.make(deployment: deployment_model) }
+    let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
 
     before do
       allow(Bosh::Director::DeploymentPlan::PlannerFactory).to receive(:create).with(logger).and_return(planner_factory)
@@ -105,7 +105,7 @@ module Bosh::Director
     describe 'Resolutions:' do
       let(:fake_cloud) { instance_double('Bosh::Clouds::ExternalCpi') }
       let(:fake_new_agent) { double('Bosh::Director::AgentClient') }
-      let!(:stemcell) { Models::Stemcell.make(name: 'ubuntu-stemcell', version: 1) }
+      let!(:stemcell) { FactoryBot.create(:models_stemcell, name: 'ubuntu-stemcell', version: 1) }
 
       before do
         allow(Config).to receive(:uuid).and_return('woof-uuid')
@@ -133,7 +133,7 @@ module Bosh::Director
       end
 
       def expect_vm_to_be_created
-        Bosh::Director::Models::Task.make(id: 42, username: 'user')
+        FactoryBot.create(:models_task, id: 42, username: 'user')
 
         allow(SecureRandom).to receive_messages(uuid: 'agent-222')
         allow(AgentClient).to receive(:with_agent_id).and_return(fake_new_agent)
