@@ -31,6 +31,7 @@ case "$DB" in
     mkdir /tmp/postgres/data
     chown postgres:postgres /tmp/postgres/data
 
+    # shellcheck disable=SC2016
     su  -m postgres -c '
       export PATH=/usr/lib/postgresql/$DB_VERSION/bin:$PATH
       export PGDATA=/tmp/postgres/data
