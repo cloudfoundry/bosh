@@ -57,36 +57,148 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
   end
 
   describe '#send_http_get_request' do
-    it 'sends a get request' do
-      uri = 'http://some-uri'
-      expect(logger).to receive(:debug).with("Sending GET request to #{uri}")
+    let(:some_uri) { 'https://send-http-get-request.example.com/some-path' }
+    let(:some_uri_response) { 'hello send_http_get_request' }
 
-      ssl_config = double('HTTPClient::SSLConfig')
+    describe 'configuring the http client' do
+      let(:ssl_config) { double(HTTPClient::SSLConfig) }
+      let(:http_client) { instance_double(HTTPClient) }
+      let(:proxy_uri) { nil }
 
-      httpclient = instance_double(HTTPClient)
-      expect(HTTPClient).to receive(:new).and_return(httpclient)
-      expect(httpclient).to receive(:ssl_config).and_return(ssl_config)
-      expect(ssl_config).to receive(:verify_mode=).with(OpenSSL::SSL::VERIFY_NONE)
-      expect(httpclient).to receive(:get).with(uri)
-      send_http_get_request(uri)
+      before do
+        allow(HTTPClient).to receive(:new).and_return(http_client)
+        allow(http_client).to receive(:ssl_config).and_return(ssl_config)
+        allow(http_client).to receive(:proxy=)
+
+        parsed_uri = instance_double(URI::Generic)
+        allow(parsed_uri).to receive(:find_proxy).and_return(proxy_uri)
+        allow(URI).to receive(:parse).with(some_uri.to_s).and_return(parsed_uri)
+
+        allow(ssl_config).to receive(:verify_mode=)
+        allow(http_client).to receive(:get)
+      end
+
+      it 'configures the SSL Verify mode' do
+        send_http_get_request(some_uri)
+
+        expect(http_client).to have_received(:get).with(some_uri)
+        expect(ssl_config).to have_received(:verify_mode=).with(OpenSSL::SSL::VERIFY_NONE)
+      end
+
+      context 'when URI#finx_proxy is nil' do
+        it 'does not set any proxy value on the client' do
+          send_http_get_request(some_uri)
+
+          expect(http_client).to_not have_received(:proxy=)
+        end
+      end
+
+      context 'when URI#finx_proxy is NOT nil' do
+        let(:proxy_uri) { 'https://proxy-user:proxy-pass@proxy.example.com:8080/proxy-path' }
+
+        it 'sets proxy values on the client' do
+          send_http_get_request(some_uri)
+
+          expect(http_client).to have_received(:proxy=).with(proxy_uri)
+        end
+      end
+    end
+
+    context 'making the request' do
+      before do
+        stub_request(:get, some_uri)
+          .to_return(status: 200, body: some_uri_response)
+
+        allow(logger).to receive(:debug)
+      end
+
+      it 'sends a get request' do
+        response = send_http_get_request(some_uri)
+
+        expect(response.status_code).to eq(200)
+        expect(response.body).to eq(some_uri_response)
+      end
+
+      it 'logs the request' do
+        send_http_get_request(some_uri)
+
+        expect(logger).to have_received(:debug).with("Sending GET request to #{some_uri}")
+      end
     end
   end
 
   describe '#send_http_post_sync_request' do
+    let(:some_uri) { 'https://send-http-post-sync-request.example.com/some-path' }
+    let(:some_uri_response) { 'hello send_http_post_sync_request' }
     let(:request) do
-      { body: 'some-request-body', proxy: nil }
+      { body: 'send_http_post_sync_request request body', proxy: nil }
     end
 
-    it 'sends a sync post request' do
-      ssl_config = double('HTTPClient::SSLConfig')
-      httpclient = instance_double(HTTPClient)
+    describe 'configuring the http client' do
+      let(:ssl_config) { double(HTTPClient::SSLConfig) }
+      let(:http_client) { instance_double(HTTPClient) }
+      let(:proxy_uri) { nil }
 
-      expect(HTTPClient).to receive(:new).and_return(httpclient)
-      expect(httpclient).to receive(:ssl_config).and_return(ssl_config)
-      expect(ssl_config).to receive(:verify_mode=).with(OpenSSL::SSL::VERIFY_PEER)
-      expect(httpclient).to receive(:post).with('http://some-uri', 'some-request-body')
+      before do
+        allow(HTTPClient).to receive(:new).and_return(http_client)
+        allow(http_client).to receive(:ssl_config).and_return(ssl_config)
+        allow(http_client).to receive(:proxy=)
 
-      send_http_post_sync_request('http://some-uri', request)
+        parsed_uri = instance_double(URI::Generic)
+        allow(parsed_uri).to receive(:find_proxy).and_return(proxy_uri)
+        allow(URI).to receive(:parse).with(some_uri.to_s).and_return(parsed_uri)
+
+        allow(ssl_config).to receive(:verify_mode=)
+        allow(http_client).to receive(:post)
+      end
+
+      it 'configures the SSL Verify mode' do
+        send_http_post_sync_request(some_uri, request)
+
+        expect(http_client).to have_received(:post).with(some_uri, request[:body])
+        expect(ssl_config).to have_received(:verify_mode=).with(OpenSSL::SSL::VERIFY_PEER)
+      end
+
+      context 'when URI#finx_proxy is nil' do
+        it 'does not set any proxy value on the client' do
+          send_http_post_sync_request(some_uri, request)
+
+          expect(http_client).to_not have_received(:proxy=)
+        end
+      end
+
+      context 'when URI#finx_proxy is nil' do
+        it 'does not set any proxy value on the client' do
+          send_http_post_sync_request(some_uri, request)
+
+          expect(http_client).to_not have_received(:proxy=)
+        end
+      end
+
+      context 'when URI#finx_proxy is NOT nil' do
+        let(:proxy_uri) { 'https://proxy-user:proxy-pass@proxy.example.com:8080/proxy-path' }
+
+        it 'sets proxy values on the client' do
+          send_http_post_sync_request(some_uri, request)
+
+          expect(http_client).to have_received(:proxy=).with(proxy_uri)
+        end
+      end
+    end
+
+    context 'making the request' do
+      before do
+        stub_request(:post, some_uri)
+          .with(body: { 'send_http_post_sync_request request body' => nil })
+          .to_return(status: 200, body: some_uri_response)
+      end
+
+      it 'sends a get request' do
+        response = send_http_post_sync_request(some_uri, request)
+
+        expect(response.status_code).to eq(200)
+        expect(response.body).to eq(some_uri_response)
+      end
     end
   end
 end
