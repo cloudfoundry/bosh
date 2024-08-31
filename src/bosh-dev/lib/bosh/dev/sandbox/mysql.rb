@@ -62,7 +62,7 @@ module Bosh::Dev::Sandbox
       @logger.info("Truncating mysql database #{db_name}")
       table_names = sql_results_for(%{SHOW TABLES})
       table_names.reject! { |name| name == 'schema_migrations' }
-      truncate_cmds = table_names.map { |name| %{TRUNCATE TABLE '#{name.strip}'} }
+      truncate_cmds = table_names.map { |name| %{TRUNCATE TABLE `#{name.strip}`} }
 
       execute_sql(%{SET FOREIGN_KEY_CHECKS=0; #{truncate_cmds.join(';')}; SET FOREIGN_KEY_CHECKS=1;})
     end
