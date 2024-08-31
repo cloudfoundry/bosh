@@ -105,24 +105,59 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
     end
 
     context 'making the request' do
+      let(:custom_headers) { {} }
+
       before do
         stub_request(:get, some_uri)
+          .with { |request_signature|
+            expect(request_signature.headers['Accept']).to eq('*/*')
+            expect(request_signature.headers['Date']).to match(/#{Time.now.getutc.strftime('%a, %d %b %Y')} \d\d:\d\d:\d\d GMT/)
+            expect(request_signature.headers['User-Agent']).to match(/ruby/)
+
+            custom_headers.each do |h, v|
+              expect(request_signature.headers[h]).to eq(v)
+            end
+          }
           .to_return(status: 200, body: some_uri_response)
 
         allow(logger).to receive(:debug)
       end
 
-      it 'sends a get request' do
-        response = send_http_get_request(some_uri)
+      context 'when headers are NOT specified' do
+        it 'sends a get request' do
+          response = send_http_get_request(some_uri)
 
-        expect(response.status_code).to eq(200)
-        expect(response.body).to eq(some_uri_response)
+          expect(response.status_code).to eq(200)
+          expect(response.body).to eq(some_uri_response)
+        end
+
+        it 'logs the request' do
+          send_http_get_request(some_uri)
+
+          expect(logger).to have_received(:debug).with("Sending GET request to #{some_uri}")
+        end
       end
 
-      it 'logs the request' do
-        send_http_get_request(some_uri)
+      context 'when headers are specified' do
+        let(:custom_headers) do
+          {
+            'Authorization' => 'FAKE_AUTH_HEADER',
+            'Content-Type' => 'application/json',
+          }
+        end
 
-        expect(logger).to have_received(:debug).with("Sending GET request to #{some_uri}")
+        it 'sends a get request with custom headers' do
+          response = send_http_get_request(some_uri, custom_headers)
+
+          expect(response.status_code).to eq(200)
+          expect(response.body).to eq(some_uri_response)
+        end
+
+        it 'logs the request' do
+          send_http_get_request(some_uri, custom_headers)
+
+          expect(logger).to have_received(:debug).with("Sending GET request to #{some_uri}")
+        end
       end
     end
   end
