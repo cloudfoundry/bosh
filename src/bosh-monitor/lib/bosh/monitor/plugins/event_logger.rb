@@ -80,7 +80,7 @@ module Bosh::Monitor
 
         director_info_url = @url.dup
         director_info_url.path = '/info'
-        body, status = send_http_get_request(director_info_url.to_s)
+        body, status = send_http_get_request_synchronous(director_info_url.to_s)
         return nil if status != 200
 
         @director_info = JSON.parse(body)
