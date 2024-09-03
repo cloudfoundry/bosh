@@ -34,6 +34,11 @@ module Bosh::Monitor
 
         request[:proxy] = options['http_proxy'] if options['http_proxy']
 
+        # Note this appears to be the only use of `#send_http_post_request_synchronous_with_tls_verify_peer` from git
+        # history it appears that the previous asynchronous implementation (EventMachine) was not able to use
+        # TLS-proxies, so a synchronous call was made from asynchronously.
+        # This should probably be re-implemented to use the asynchronous `HttpRequestHelper#send_http_post_request`
+        # method _however_ that method should be updated to use `OpenSSL::SSL::VERIFY_PEER`.
         Async do
           send_http_post_request_synchronous_with_tls_verify_peer(API_URI, request)
         rescue StandardError => e
