@@ -4,6 +4,7 @@ groups:
     jobs:
       - gate
       - bump-deps
+      - bump-golang-deps
       - bump-packages
       - unit-common
       - unit-core
@@ -1080,6 +1081,31 @@ jobs:
         repository: bosh-src-out
         rebase: true
 
+  - name: bump-golang-deps
+    public: true
+    plan:
+    - get: weekly
+      trigger: true
+    - get: bosh-src
+    - get: golang-release
+    - get: integration-image
+    - task: bump-deps
+      file: golang-release/ci/tasks/shared/bump-deps.yml
+      input_mapping:
+        input_repo: bosh-src
+      output_mapping:
+        output_repo: bosh-src-out
+      params:
+        SOURCE_PATH: bosh-src/src/brats/
+    - task: lint-brats
+      input_mapping:
+        bosh-src: bosh-src-out
+      file: bosh-src/ci/tasks/lint-brats.yml
+# TODO: uncomment after verifying that this task does what we expect
+#    - put: bosh-src
+#      params:
+#        repository: bosh-src-out
+
   - name: bump-packages
     serial: true
     plan:
@@ -1559,6 +1585,12 @@ resources:
     source:
       branch: main
       uri: https://github.com/cloudfoundry/bosh-package-nginx-release.git
+
+  - name: golang-release
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh-package-golang-release.git
+      branch: main
 
   - name: ruby-release
     type: git
