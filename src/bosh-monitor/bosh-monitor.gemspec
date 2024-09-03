@@ -32,7 +32,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'dogapi',    '~> 1.45.0'
   spec.add_dependency 'riemann-client'
   spec.add_dependency 'cf-uaa-lib',  '~>3.2.1'
-  spec.add_dependency 'httpclient',  '~>2.8.3'
 
   spec.add_development_dependency 'async-rspec'
   spec.add_development_dependency 'timecop'

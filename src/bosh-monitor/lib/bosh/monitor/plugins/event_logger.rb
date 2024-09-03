@@ -78,12 +78,12 @@ module Bosh::Monitor
       def director_info
         return @director_info if @director_info
 
-        director_info_url      = @url.dup
+        director_info_url = @url.dup
         director_info_url.path = '/info'
-        response               = send_http_get_request(director_info_url.to_s)
-        return nil if response.status_code != 200
+        body, status = send_http_get_request(director_info_url.to_s)
+        return nil if status != 200
 
-        @director_info = JSON.parse(response.body)
+        @director_info = JSON.parse(body)
       end
     end
   end

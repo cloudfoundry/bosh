@@ -34,7 +34,6 @@ PATH
       bosh_common (~> 0.0.0)
       bosh_cpi
       cf-uaa-lib (~> 3.2.1)
-      httpclient (~> 2.8.3)
       logging
       membrane (~> 1.1.0)
       nats-pure
@@ -62,7 +61,6 @@ PATH
       async-io
       cf-uaa-lib (~> 3.2.1)
       dogapi (~> 1.45.0)
-      httpclient (~> 2.8.3)
       logging
       nats-pure
       net-smtp
@@ -380,7 +378,6 @@ DEPENDENCIES
   bundle-audit
   factory_bot
   fakefs
-  httpclient
   io-stream (<= 0.4.0)
   json (~> 2)
   minitar

@@ -1,5 +1,5 @@
 require 'uaa'
-require 'httpclient'
+require 'net/http'
 
 module Bosh::Director::ConfigServer
   class UAAAuthProvider
@@ -55,9 +55,8 @@ module Bosh::Director::ConfigServer
           Errno::ETIMEDOUT,
           Errno::ECONNRESET,
           ::Timeout::Error,
-          ::HTTPClient::TimeoutError,
-          ::HTTPClient::KeepAliveDisconnected,
-          OpenSSL::SSL::SSLError
+          Net::HTTPRetriableError,
+          OpenSSL::SSL::SSLError,
       ]
       Bosh::Retryable.new({sleep: 0, tries: 3, on: handled_exceptions})
     end

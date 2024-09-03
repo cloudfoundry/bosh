@@ -116,15 +116,15 @@ module Bosh::Monitor
           'Content-Type' => 'application/json',
         }
         url.query = URI.encode_www_form({ deployment: deployment_name, state: 'queued,processing', verbose: 2 })
-        tasks_response = send_http_get_request(url.to_s, headers)
+        body, status = send_http_get_request(url.to_s, headers)
 
         # Getting the current tasks may fail. In a situation where the director is already dealing with lots of scan and fix tasks,
         # we may want to postpone adding another one to the queue to give the director time to deal with the currently scheduled tasks.
         # In the case of the tasks endpoint misbehaving ( status != 200 ) we can safely skip scheduling the the scan and fix in the current iteration.
         # The alerts about missing healthchecks will trigger again some time later (when the director is under less pressure).
-        return true if tasks_response.status != 200
+        return true if status != 200
 
-        queued_scan_and_fix = JSON.parse(tasks_response.body).select do |task|
+        queued_scan_and_fix = JSON.parse(body).select do |task|
           task['description'] == 'scan and fix'
         end
 
@@ -142,10 +142,10 @@ module Bosh::Monitor
 
         url = @uri.dup
         url.path = '/info'
-        response = send_http_get_request(url.to_s)
-        return nil if response.status_code != 200
+        body, status = send_http_get_request(url.to_s)
+        return nil if status != 200
 
-        @director_info = JSON.parse(response.body)
+        @director_info = JSON.parse(body)
       end
 
       def pretty_str(jobs_to_instances)

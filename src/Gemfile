@@ -28,7 +28,6 @@ group :production do
 end
 
 group :bat do
-  gem 'httpclient'
   gem 'minitar'
   gem 'net-ssh'
 end
