@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'httpclient'
+
 module Bosh::Director::ConfigServer
 
   describe 'compatibility of Enabled and Disabled versions of ConfigServer HTTP Clients' do

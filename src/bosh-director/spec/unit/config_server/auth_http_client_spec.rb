@@ -1,6 +1,5 @@
 require 'spec_helper'
 require 'rack/test'
-require 'httpclient'
 
 describe Bosh::Director::ConfigServer::AuthHTTPClient do
   subject { Bosh::Director::ConfigServer::AuthHTTPClient.new }
