@@ -56,7 +56,7 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
     end
   end
 
-  describe '#send_http_get_request' do
+  describe '#send_http_get_request_synchronous' do
     let(:some_uri) { URI.parse('https://send-http-get-request.example.com/some-path') }
     let(:some_uri_response) { 'hello send_http_get_request' }
 
@@ -100,7 +100,7 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
       end
 
       it 'configures the SSL Verify mode' do
-        send_http_get_request(some_uri)
+        send_http_get_request_synchronous(some_uri)
 
         expect(Net::HTTP).to have_received(:new).with(some_uri.host, some_uri.port)
         expect(http_client).to have_received(:use_ssl=).with(true)
@@ -109,7 +109,7 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
 
       context 'when URI#find_proxy is nil' do
         it 'does not set any proxy value on the client' do
-          send_http_get_request(some_uri)
+          send_http_get_request_synchronous(some_uri)
 
           expect(http_client).to_not have_received(:proxy_address=)
           expect(http_client).to_not have_received(:proxy_port=)
@@ -122,7 +122,7 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
         let(:proxy_uri) { URI.parse('https://proxy-user:proxy-pass@proxy.example.com:8080/proxy-path') }
 
         it 'sets proxy values on the client' do
-          send_http_get_request(some_uri)
+          send_http_get_request_synchronous(some_uri)
 
           expect(http_client).to have_received(:proxy_address=).with(proxy_uri.host)
           expect(http_client).to have_received(:proxy_port=).with(proxy_uri.port)
@@ -135,14 +135,14 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
     context 'making the request' do
       context 'when headers are NOT specified' do
         it 'sends a get request' do
-          body, status = send_http_get_request(some_uri)
+          body, status = send_http_get_request_synchronous(some_uri)
 
           expect(status).to eq(200)
           expect(body).to eq(some_uri_response)
         end
 
         it 'logs the request' do
-          send_http_get_request(some_uri)
+          send_http_get_request_synchronous(some_uri)
 
           expect(logger).to have_received(:debug).with("Sending GET request to #{some_uri}")
         end
@@ -157,14 +157,14 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
         end
 
         it 'sends a get request with custom headers' do
-          body, status = send_http_get_request(some_uri, custom_headers)
+          body, status = send_http_get_request_synchronous(some_uri, custom_headers)
 
           expect(status).to eq(200)
           expect(body).to eq(some_uri_response)
         end
 
         it 'logs the request' do
-          send_http_get_request(some_uri, custom_headers)
+          send_http_get_request_synchronous(some_uri, custom_headers)
 
           expect(logger).to have_received(:debug).with("Sending GET request to #{some_uri}")
         end
@@ -172,7 +172,7 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
     end
   end
 
-  describe '#send_http_post_sync_request' do
+  describe '#send_http_post_request_synchronous_with_tls_verify_peer' do
     let(:some_uri) { URI.parse('https://send-http-post-sync-request.example.com/some-path') }
     let(:some_uri_response) { 'hello send_http_post_sync_request' }
     let(:request) do
@@ -208,7 +208,7 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
       end
 
       it 'configures the SSL Verify mode' do
-        send_http_post_sync_request(some_uri, request)
+        send_http_post_request_synchronous_with_tls_verify_peer(some_uri, request)
 
         expect(Net::HTTP).to have_received(:new).with(some_uri.host, some_uri.port)
         expect(http_client).to have_received(:use_ssl=).with(true)
@@ -217,7 +217,7 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
 
       context 'when URI#find_proxy is nil' do
         it 'does not set any proxy value on the client' do
-          send_http_post_sync_request(some_uri, request)
+          send_http_post_request_synchronous_with_tls_verify_peer(some_uri, request)
 
           expect(http_client).to_not have_received(:proxy_address=)
           expect(http_client).to_not have_received(:proxy_port=)
@@ -230,7 +230,7 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
         let(:proxy_uri) { URI.parse('https://proxy-user:proxy-pass@proxy.example.com:8080/proxy-path') }
 
         it 'sets proxy values on the client' do
-          send_http_post_sync_request(some_uri, request)
+          send_http_post_request_synchronous_with_tls_verify_peer(some_uri, request)
 
           expect(http_client).to have_received(:proxy_address=).with(proxy_uri.host)
           expect(http_client).to have_received(:proxy_port=).with(proxy_uri.port)
@@ -242,7 +242,7 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
 
     context 'making the request' do
       it 'sends a get request' do
-        body, status = send_http_post_sync_request(some_uri, request)
+        body, status = send_http_post_request_synchronous_with_tls_verify_peer(some_uri, request)
 
         expect(status).to eq(200)
         expect(body).to eq(some_uri_response)

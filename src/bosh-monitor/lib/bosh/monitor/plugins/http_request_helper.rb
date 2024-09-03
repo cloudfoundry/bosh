@@ -14,7 +14,7 @@ module Bosh::Monitor::Plugins
       process_async_http_request(method: :post, uri: uri, headers: request.fetch(:head, {}), body: request.fetch(:body, nil), proxy: request.fetch(:proxy, nil))
     end
 
-    def send_http_get_request(uri, headers = nil)
+    def send_http_get_request_synchronous(uri, headers = nil)
       parsed_uri = URI.parse(uri.to_s)
 
       # we are interested in response, so send sync request
@@ -27,7 +27,7 @@ module Bosh::Monitor::Plugins
       [response.body, response.code.to_i]
     end
 
-    def send_http_post_sync_request(uri, request)
+    def send_http_post_request_synchronous_with_tls_verify_peer(uri, request)
       parsed_uri = URI.parse(uri.to_s)
 
       net_http = sync_client(parsed_uri, OpenSSL::SSL::VERIFY_PEER)

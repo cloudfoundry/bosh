@@ -59,8 +59,8 @@ describe Bhm::Plugins::Pagerduty do
     Sync do
       @plugin.run
 
-      expect(@plugin).to receive(:send_http_post_sync_request).with(uri, alert_request)
-      expect(@plugin).to receive(:send_http_post_sync_request).with(uri, heartbeat_request)
+      expect(@plugin).to receive(:send_http_post_request_synchronous_with_tls_verify_peer).with(uri, alert_request)
+      expect(@plugin).to receive(:send_http_post_request_synchronous_with_tls_verify_peer).with(uri, heartbeat_request)
 
       @plugin.process(alert)
       @plugin.process(heartbeat)
