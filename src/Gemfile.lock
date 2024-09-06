@@ -39,6 +39,7 @@ PATH
       membrane (~> 1.1.0)
       nats-pure
       openssl
+      ostruct
       prometheus-client (~> 2.1.0)
       puma
       rack-test
@@ -66,6 +67,7 @@ PATH
       nats-pure
       net-smtp
       openssl
+      ostruct
       puma
       riemann-client
       sinatra (~> 2.2.0)
@@ -86,6 +88,7 @@ PATH
     bosh-template (0.0.0)
       activesupport
       openssl
+      ostruct
       semi_semantic (~> 1.2.0)
 
 PATH
@@ -225,6 +228,7 @@ GEM
     netrc (0.11.0)
     nio4r (2.7.3)
     openssl (3.2.0)
+    ostruct (0.6.0)
     parallel (1.26.3)
     parallel_tests (2.32.0)
       parallel

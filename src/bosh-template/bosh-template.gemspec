@@ -23,4 +23,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'semi_semantic', '~>1.2.0'
   spec.add_dependency 'activesupport'
   spec.add_dependency 'openssl'
+  spec.add_dependency 'ostruct'
 end
