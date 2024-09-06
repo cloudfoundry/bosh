@@ -5,16 +5,6 @@ set -e
 source bosh-src/ci/tasks/utils.sh
 check_param RUBY_VERSION
 
-cleanup() {
-  echo "Cleaning up"
-
-  if [ "$DB" = "mysql" ]; then
-    service mysql stop
-  fi
-}
-
-trap cleanup EXIT
-
 echo "Starting $DB..."
 case "$DB" in
   mysql)
