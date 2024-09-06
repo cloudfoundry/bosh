@@ -9,9 +9,9 @@ groups:
       - unit-mysql
       - unit-postgres
       - run-bundle-audit
-      - integration-db-tls-postgres
-      - integration-db-tls-postgres-hotswap
-      - integration-db-tls-mysql
+      - integration-postgres
+      - integration-postgres-hotswap
+      - integration-mysql
       - candidate-release
       - compile-bosh-dev-release-jammy
       - bats-ubuntu-jammy
@@ -44,9 +44,9 @@ groups:
 jobs:
   - name: gate
     serial_groups:
-      - integration-db-tls-mysql
-      - integration-db-tls-postgres
-      - integration-db-tls-postgres-hotswap
+      - integration-mysql
+      - integration-postgres
+      - integration-postgres-hotswap
       - unit
       - unit-mysql
       - unit-postgres
@@ -161,10 +161,11 @@ jobs:
                 bundle exec bundle-audit update;
                 bundle exec bundle-audit check --ignore 'CVE-2019-17383';
 
-  - name: integration-db-tls-postgres
+  - name: integration-postgres
+    old_name: integration-db-tls-postgres
     public: true
     serial: true
-    serial_groups: [integration-db-tls-postgres]
+    serial_groups: [integration-postgres]
     build_logs_to_retain: 250
     plan:
       - in_parallel:
@@ -183,10 +184,11 @@ jobs:
           DB: postgresql
           DB_VERSION: 15
 
-  - name: integration-db-tls-postgres-hotswap
+  - name: integration-postgres-hotswap
+    old_name: integration-db-tls-postgres-hotswap
     public: true
     serial: true
-    serial_groups: [integration-db-tls-postgres-hotswap]
+    serial_groups: [integration-postgres-hotswap]
     build_logs_to_retain: 250
     plan:
       - in_parallel:
@@ -206,10 +208,11 @@ jobs:
           DB_VERSION: 15
           DEFAULT_UPDATE_VM_STRATEGY: create-swap-delete
 
-  - name: integration-db-tls-mysql
+  - name: integration-mysql
+    old_name: integration-db-tls-mysql
     public: true
     serial: true
-    serial_groups: [integration-db-tls-mysql]
+    serial_groups: [integration-mysql]
     build_logs_to_retain: 250
     plan:
       - in_parallel:
@@ -235,9 +238,9 @@ jobs:
       - unit
       - unit-mysql
       - unit-postgres
-      - integration-db-tls-mysql
-      - integration-db-tls-postgres
-      - integration-db-tls-postgres-hotswap
+      - integration-mysql
+      - integration-postgres
+      - integration-postgres-hotswap
       - run-bundle-audit
     - get: bosh-cli
     - get: integration-image
