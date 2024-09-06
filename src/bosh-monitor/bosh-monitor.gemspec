@@ -26,6 +26,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'nats-pure'
   spec.add_dependency 'net-smtp'
   spec.add_dependency 'openssl'
+  spec.add_dependency 'ostruct'
   spec.add_dependency 'puma'
   spec.add_dependency 'sinatra',   '~>2.2.0'
   spec.add_dependency 'dogapi',    '~> 1.45.0'
