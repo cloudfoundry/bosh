@@ -3,11 +3,8 @@
 ## Assumptions
 
 * We include examples using Homebrew here. Replace with your package manager of choice.
-* You have cloned the project to $HOME/workspace/bosh
-* You have installed Ruby `3.0.2` or later
-
-## Version manager
-If you are not using a version manager that supports fuzzy matching in `.ruby-version` like [rvm](https://github.com/rvm/rvm) or [chruby](https://github.com/postmodern/chruby), note that you might have to change `.ruby-version` to include full version (e.g. change `3.2` to `3.2.2`).
+* You have cloned the project to `${HOME}/workspace/bosh/`
+* You have installed the ruby version matching `.ruby-version`
 
 ## Steps
 
@@ -17,11 +14,18 @@ If you are not using a version manager that supports fuzzy matching in `.ruby-ve
 
 2. Install mysql (needed by the mysql2 gem)
 
-  `brew install mysql`
+     ```bash
+     brew install mysql
+     brew services start mysql
+     ```
 
-3. Setup & Start mysql (required for running integration tests with mysql)
-    - start mysql as root
-    - create mysql user: root/password
+3. Start and setup mysql (required for running integration tests with mysql)
+
+     ```bash
+     brew services start mysql
+     ```
+
+    - create mysql user: `root/password`
       i.e.: `alter user 'root'@'localhost' identified by 'password';`
 
 4. Install postgresql (needed by the pg gem)
@@ -34,89 +38,51 @@ If you are not using a version manager that supports fuzzy matching in `.ruby-ve
 
     * start postgres
 
+        ```bash
+        brew services start postgresql
         ```
-        ln -sfv /usr/local/opt/postgresql/*.plist ~/Library/LaunchAgents
-        launchctl load ~/Library/LaunchAgents/homebrew.mxcl.postgresql.plist
+
+    * create postgres user: `$USER/<no-password>` and a postgres DB for that user
+
+        ```bash
+        createuser -U $USER --superuser postgres
+        createdb -U $USER
         ```
-
-    * create postgres user: $USER/\<no-password\>
-
-        `createuser -U $USER --superuser postgres`
-
-    * create postgres database
-
-        `createdb -U $USER`
 
     * increase `max_connections` setting
 
-        ```sh
+        ```bash
         echo 'ALTER SYSTEM SET max_connections = 250' | psql
-        # Restart postgres
-        ## If you're using brew services to start and stop postgres
         brew services restart postgresql
-        ## Otherwise, you can use launchctl directly
-        launchctl stop homebrew.mxcl.postgresql
-        launchctl start homebrew.mxcl.postgresql
         ```
 
-6. Get Golang dependencies
-
-    Install golint
-    * `go install golang.org/x/lint/golint`
-
-    Optional: Install direnv to keep your GOPATH correct when working with the bosh-agent submodule
-    * `brew install direnv`
-    * `cd <<bosh base dir>>`
-    * direnv allow
-
-7. Install Bundler gem
+6. Install the `bundler` gem
 
     `gem install bundler`
 
-8. Install Java 8
-
-    For certain components a java runtime is required. Currently java 8 is required, versions 9 and 10 are not supported at the moment.
-    On MacOS you can do something like
-
-    ```sh
-    brew tap caskroom/versions
-    brew cask install java8
-    export JAVA_HOME=`/usr/libexec/java_home -v 1.8`
-    ```
-
-9. Bundle BOSH
+7. Install the gems needed to run BOSH
 
     ```bash
     cd ~/workspace/bosh/src
     bundle install
     ```
 
-    If ever you hit some linker issues like “_ld: library not found
-    for -lssl_” when installing the `mysql2` Gem, try installing it manually
-    with the following linker flags:
+8. Download `bosh-agent` dependency:
+   ```
+   cd ~/workspace/bosh/src
+   bundle exec rake spec:integration:download_bosh_agent
+   ```
+
+9. Install Java - required for some components in the BOSH ecosystem
 
     ```bash
-    gem install mysql2 -v '0.5.3' -- --with-ldflags="-L/usr/local/opt/openssl@1.1/lib"
-    ```
-
-    If you ever hit "ld: library not found for -lzstd" when installing the
-    `mysql2` gem, try the [following](https://stackoverflow.com/questions/67840691/ld-library-not-found-for-lzstd-while-bundle-install-for-mysql2-gem-ruby-on-mac/67877734#67877734):
-
-    ```bash
-    bundle config --local build.mysql2 "--with-opt-dir="$(brew --prefix zstd)""
-    bundle
-    ```
-
-10. Download `bosh-agent` dependency:
-    ```
-    cd ~/workspace/bosh/src
-    bundle exec rake spec:integration:download_bosh_agent
+    brew install temurin@17
     ```
 
 ## Issues
 
-If you have trouble bundling, you may have to install pg gem manually by specifying your architecture:
+If you have trouble bundling, specifying an architecture has helped int he past
 
 ```
-(sudo) env ARCHFLAGS="-arch x86_64" gem install pg -v '0.15.1'
+(sudo) env ARCHFLAGS="-arch $ARCH" gem install pg -v "${$VERSION_FROM_Gemfile.lock}
 ```
