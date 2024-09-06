@@ -22,18 +22,16 @@ case "$DB" in
     chown postgres:postgres /tmp/postgres/data
 
     # shellcheck disable=SC2016
-    su  -m postgres -c '
+    su -m postgres -c '
       export PATH=/usr/lib/postgresql/$DB_VERSION/bin:$PATH
       export PGDATA=/tmp/postgres/data
       export PGLOGS=/tmp/log/postgres
       mkdir -p $PGLOGS
       initdb -U postgres -D $PGDATA
 
-      if [[ $DB_VERSION != "9.3" ]] && [[ $DB_VERSION != "9.4" ]]; then
-        echo "checkpoint_timeout=1h" >> $PGDATA/postgresql.conf
-        echo "min_wal_size=300MB" >> $PGDATA/postgresql.conf
-        echo "max_wal_size=300MB" >> $PGDATA/postgresql.conf
-      fi
+      echo "checkpoint_timeout=1h" >> $PGDATA/postgresql.conf
+      echo "min_wal_size=300MB" >> $PGDATA/postgresql.conf
+      echo "max_wal_size=300MB" >> $PGDATA/postgresql.conf
 
       pg_lsclusters
       pg_ctlcluster $DB_VERSION main start
