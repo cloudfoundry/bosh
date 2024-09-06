@@ -162,7 +162,6 @@ jobs:
                 bundle exec bundle-audit check --ignore 'CVE-2019-17383';
 
   - name: integration-postgres
-    old_name: integration-db-tls-postgres
     public: true
     serial: true
     serial_groups: [integration-postgres]
@@ -185,7 +184,6 @@ jobs:
           DB_VERSION: 15
 
   - name: integration-postgres-hotswap
-    old_name: integration-db-tls-postgres-hotswap
     public: true
     serial: true
     serial_groups: [integration-postgres-hotswap]
@@ -209,7 +207,6 @@ jobs:
           DEFAULT_UPDATE_VM_STRATEGY: create-swap-delete
 
   - name: integration-mysql
-    old_name: integration-db-tls-mysql
     public: true
     serial: true
     serial_groups: [integration-mysql]
