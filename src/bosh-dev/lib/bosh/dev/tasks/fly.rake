@@ -71,7 +71,7 @@ namespace :fly do
       end
 
     when 'integration'
-      "--inputs-from bosh-director/#{test_type}-db-tls-#{db_short_name(db)}"
+      "--inputs-from bosh-director/#{test_type}-#{db_short_name(db)}"
 
     else
       fail "invalid test_type: '#{test_type}'"
