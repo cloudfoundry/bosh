@@ -125,7 +125,10 @@ module Bosh::Director
           end
 
           password = env.fetch('bosh', {}).fetch('password', "")
-          if Config.generate_vm_passwords && password == ""
+          if !cloud_properties.dig('vcap_password').nil?
+            env['bosh'] ||= {}
+            env['bosh']['password'] = cloud_properties['vcap_password']
+          elsif Config.generate_vm_passwords && password == ""
             env['bosh'] ||= {}
             env['bosh']['password'] = sha512_hashed_password
           end
