@@ -4,7 +4,7 @@ namespace :fly do
   # bundle exec rake fly:unit
   desc 'Fly unit specs'
   task :unit do
-    db, db_version = fetch_db_and_version
+    db, db_version = fetch_db_and_version('sqlite')
 
     execute('test-unit', command_opts('unit', db, db_version),
             DB: db, DB_VERSION: db_version,
@@ -14,7 +14,7 @@ namespace :fly do
   # bundle exec rake fly:integration
   desc 'Fly integration specs'
   task :integration, [:cli_dir] do |_, args|
-    db, db_version = fetch_db_and_version
+    db, db_version = fetch_db_and_version('postgresql')
 
     command_opts = command_opts('integration', db, db_version)
     command_opts += " --input bosh-cli=#{args[:cli_dir]}" if args[:cli_dir]
@@ -32,8 +32,8 @@ namespace :fly do
 
   private
 
-  def fetch_db_and_version
-    db = ENV.fetch('DB', 'postgresql')
+  def fetch_db_and_version(default_db)
+    db = ENV.fetch('DB', default_db)
 
     case db
     when 'postgresql'
