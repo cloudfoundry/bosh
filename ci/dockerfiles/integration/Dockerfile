@@ -3,6 +3,7 @@ FROM ubuntu:jammy
 
 ARG BOSH_CLI_URL
 ARG META4_CLI_URL
+ARG YQ_CLI_URL
 
 ARG RUBY_INSTALL_URL
 ARG GEM_HOME
@@ -82,6 +83,11 @@ RUN meta4_cli_path="/usr/local/bin/meta4" \
     && curl --show-error -sL "${META4_CLI_URL}" \
       > "${meta4_cli_path}" \
     && chmod +x "${meta4_cli_path}"
+
+RUN yq_cli_path="/usr/local/bin/meta4" \
+    && curl --show-error -sL "${YQ_CLI_URL}" \
+      > "${yq_cli_path}" \
+    && chmod +x "${yq_cli_path}"
 
 
 ENV CC="/usr/bin/clang" CXX="/usr/bin/clang++"
