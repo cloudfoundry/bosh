@@ -146,14 +146,18 @@ namespace :spec do
       desc "Run unit tests for the #{build} component"
       task build.sub(/^bosh[_-]/, '').intern do
         trap('INT') { exit }
-        runner.unit_exec(build)
+        Dir.chdir build do
+          sh("#{runner.unit_cmd(build)}")
+        end
       end
 
       namespace build.sub(/^bosh[_-]/, '').intern do
         desc "Run parallel unit tests for the #{build} component"
         task :parallel do
           trap('INT') { exit }
-          runner.unit_exec(build, parallel: true)
+          Dir.chdir build do
+            sh("#{runner.unit_parallel(build)}")
+          end
         end
       end
     end
