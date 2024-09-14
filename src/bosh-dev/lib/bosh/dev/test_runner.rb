@@ -31,6 +31,30 @@ module Bosh::Dev
       end
     end
 
+    def unit_cmd(log_file = nil)
+      "".tap do |cmd|
+        cmd << 'rspec --tty --backtrace -c -f p spec'
+        cmd << " > #{log_file} 2>&1" if log_file
+      end
+    end
+
+    def unit_parallel(build_name, log_file = nil)
+      cmd = "parallel_test --test-options '--no-fail-fast' --type rspec --runtime-log /tmp/bosh_#{build_name}_parallel_runtime_rspec.log spec"
+      cmd << " > #{log_file} 2>&1" if log_file
+      cmd
+    end
+
+    def unit_builds
+      @unit_builds ||= begin
+                         builds = Dir['*'].select do |f|
+                           File.directory?(f) && File.exist?("#{f}/spec")
+                         end.sort
+                         builds -= %w(bat)
+                       end
+    end
+
+    private
+
     def unit_exec(build, log_file: nil, parallel: false)
       lines = []
       command = parallel ? unit_parallel(build, log_file) : unit_cmd(log_file)
@@ -53,28 +77,6 @@ module Bosh::Dev
 
         {:lines => lines, :error => true}
       end
-    end
-
-    def unit_cmd(log_file = nil)
-      "".tap do |cmd|
-        cmd << 'rspec --tty --backtrace -c -f p spec'
-        cmd << " > #{log_file} 2>&1" if log_file
-      end
-    end
-
-    def unit_parallel(build_name, log_file = nil)
-      cmd = "parallel_test --test-options '--no-fail-fast' --type rspec --runtime-log /tmp/bosh_#{build_name}_parallel_runtime_rspec.log spec"
-      cmd << " > #{log_file} 2>&1" if log_file
-      cmd
-    end
-
-    def unit_builds
-      @unit_builds ||= begin
-                         builds = Dir['*'].select do |f|
-                           File.directory?(f) && File.exist?("#{f}/spec")
-                         end.sort
-                         builds -= %w(bat)
-                       end
     end
   end
 end

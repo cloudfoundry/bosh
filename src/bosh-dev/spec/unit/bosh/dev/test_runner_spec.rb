@@ -58,13 +58,13 @@ module Bosh::Dev
 
       it 'changes directory to the build and shells out to #unit_cmd' do
         expect(Kernel).to receive(:system).with({ 'BOSH_BUILD_NAME' => build }, "cd #{build} && #{runner.unit_cmd}")
-        runner.unit_exec(build)
+        runner.send(:unit_exec, build)
       end
 
       it 'signals failure if the command fails' do
         allow(Kernel).to receive(:system).and_return(false)
 
-        retval = runner.unit_exec(build)
+        retval = runner.send(:unit_exec, build)
         expect(retval[:error]).to equal(true)
       end
     end
