@@ -194,7 +194,7 @@ start_db() {
 
         chown -R postgres:postgres "${PGDATA}" "${PGLOGS}"
 
-        run_as postgres "$(which pg_ctl)" start --log="${PGLOGS}/server.log" --options='-N 400' --wait
+        run_as postgres "$(which pg_ctl)" start --log="${PGLOGS}/server.log" --wait
         run_as postgres "$(which createdb)" -h 127.0.0.1 uaa
       fi
       ;;
