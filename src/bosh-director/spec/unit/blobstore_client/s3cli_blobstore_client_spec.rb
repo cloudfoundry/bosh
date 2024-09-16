@@ -109,6 +109,30 @@ module Bosh::Blobstore
           expect(File.exist?(File.join(s3cli_config_path, 'blobstore-config'))).to eq(true)
         end
       end
+
+      context 'when swift_auth_account is provided' do
+        it 'adds it to the config file' do
+          described_class.new(options.merge(
+            {
+              swift_auth_account: 'the_swift_auth_account',
+            })
+          )
+
+          expect(JSON.parse(stored_config_file[0])['swift_auth_account']).to eq('the_swift_auth_account')
+        end
+      end
+
+      context 'when swift_auth_account is provided' do
+        it 'adds it to the config file' do
+          described_class.new(options.merge(
+            {
+              swift_temp_url_key: 'the_swift_temp_url_key',
+            })
+          )
+
+          expect(JSON.parse(stored_config_file[0])['swift_temp_url_key']).to eq('the_swift_temp_url_key')
+        end
+      end
     end
 
     describe '#delete' do

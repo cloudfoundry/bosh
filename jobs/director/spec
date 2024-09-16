@@ -420,6 +420,10 @@ properties:
     description: container_name of azure storage account
   blobstore.account_key:
     description: account_key of azure storage account
+  blobstore.swift_auth_account:
+    description: swift_auth_account of swift storage account
+  blobstore.swift_temp_url_key:
+    description: swift_temp_url_key of swift storage account
 
   director.ignore_missing_gateway:
     description: Allow gateway to be omitted from subnet configuration. Boshlite vms(containers) do not require gateway.
