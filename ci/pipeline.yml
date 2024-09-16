@@ -5,9 +5,19 @@ groups:
       - gate
       - bump-deps
       - bump-packages
-      - unit
-      - unit-mysql
-      - unit-postgres
+      - unit-common
+      - unit-core
+      - unit-dev
+      - unit-director-core
+      - unit-monitor
+      - unit-nats-sync
+      - unit-template
+      - unit-release
+      - unit-director-sqlite
+      - unit-director-mysql-8
+      - unit-director-postgres-10
+      - unit-director-postgres-13
+      - unit-director-postgres-15
       - run-bundle-audit
       - integration-postgres
       - integration-postgres-hotswap
@@ -47,88 +57,255 @@ jobs:
       - integration-mysql
       - integration-postgres
       - integration-postgres-hotswap
-      - unit
-      - unit-mysql
-      - unit-postgres
+      - unit-common
+      - unit-core
+      - unit-dev
+      - unit-director-core
+      - unit-monitor
+      - unit-nats-sync
+      - unit-template
+      - unit-release
+      - unit-director-sqlite
+      - unit-director-mysql-8
+      - unit-director-postgres-10
+      - unit-director-postgres-13
+      - unit-director-postgres-15
       - run-bundle-audit
     plan:
     - get: bosh-src
       trigger: true
 
-  - name: unit
+  - name: unit-common
     public: true
     serial: true
-    serial_groups: [unit]
+    serial_groups: [unit-common]
     build_logs_to_retain: 250
     plan:
+    - get: bosh-src
+      trigger: true
+      passed: [gate]
+    - get: integration-image
+    - task: test-rake-task
+      timeout: 2h
+      file: bosh-src/ci/tasks/test-rake-task.yml
+      image: integration-image
+      params:
+        RAKE_TASK: spec:unit:common
+
+  - name: unit-core
+    public: true
+    serial: true
+    serial_groups: [unit-core]
+    build_logs_to_retain: 250
+    plan:
+    - get: bosh-src
+      trigger: true
+      passed: [gate]
+    - get: integration-image
+    - task: test-rake-task
+      timeout: 2h
+      file: bosh-src/ci/tasks/test-rake-task.yml
+      image: integration-image
+      params:
+        RAKE_TASK: spec:unit:core
+
+  - name: unit-dev
+    public: true
+    serial: true
+    serial_groups: [unit-dev]
+    build_logs_to_retain: 250
+    plan:
+    - get: bosh-src
+      trigger: true
+      passed: [gate]
+    - get: integration-image
+    - task: test-rake-task
+      timeout: 2h
+      file: bosh-src/ci/tasks/test-rake-task.yml
+      image: integration-image
+      params:
+        RAKE_TASK: spec:unit:dev
+
+  - name: unit-director-core
+    public: true
+    serial: true
+    serial_groups: [unit-director-core]
+    build_logs_to_retain: 250
+    plan:
+    - get: bosh-src
+      trigger: true
+      passed: [gate]
+    - get: integration-image
+    - task: test-rake-task
+      timeout: 2h
+      file: bosh-src/ci/tasks/test-rake-task.yml
+      image: integration-image
+      params:
+        RAKE_TASK: spec:unit:director-core
+
+  - name: unit-monitor
+    public: true
+    serial: true
+    serial_groups: [unit-monitor]
+    build_logs_to_retain: 250
+    plan:
+    - get: bosh-src
+      trigger: true
+      passed: [gate]
+    - get: integration-image
+    - task: test-rake-task
+      timeout: 2h
+      file: bosh-src/ci/tasks/test-rake-task.yml
+      image: integration-image
+      params:
+        RAKE_TASK: spec:unit:monitor
+
+  - name: unit-nats-sync
+    public: true
+    serial: true
+    serial_groups: [unit-nats-sync]
+    build_logs_to_retain: 250
+    plan:
+    - get: bosh-src
+      trigger: true
+      passed: [gate]
+    - get: integration-image
+    - task: test-rake-task
+      timeout: 2h
+      file: bosh-src/ci/tasks/test-rake-task.yml
+      image: integration-image
+      params:
+        RAKE_TASK: spec:unit:nats-sync
+
+  - name: unit-template
+    public: true
+    serial: true
+    serial_groups: [unit-template]
+    build_logs_to_retain: 250
+    plan:
+    - get: bosh-src
+      trigger: true
+      passed: [gate]
+    - get: integration-image
+    - task: test-rake-task
+      timeout: 2h
+      file: bosh-src/ci/tasks/test-rake-task.yml
+      image: integration-image
+      params:
+        RAKE_TASK: spec:unit:template
+
+  - name: unit-release
+    public: true
+    serial: true
+    serial_groups: [unit-release]
+    build_logs_to_retain: 250
+    plan:
+    - get: bosh-src
+      trigger: true
+      passed: [gate]
+    - get: integration-image
+    - task: test-rake-task
+      timeout: 2h
+      file: bosh-src/ci/tasks/test-rake-task.yml
+      image: integration-image
+      params:
+        RAKE_TASK: spec:unit:release
+
+  - name: unit-director-sqlite
+    public: true
+    serial: true
+    serial_groups: [unit-director-sqlite]
+    build_logs_to_retain: 250
+    plan:
+    - get: bosh-src
+      trigger: true
+      passed: [gate]
+    - get: integration-image
+    - task: test-rake-task
+      timeout: 2h
+      file: bosh-src/ci/tasks/test-rake-task.yml
+      image: integration-image
+      params:
+        RAKE_TASK: spec:unit:director
+
+  - name: unit-director-mysql-8
+    public: true
+    serial: true
+    serial_groups: [unit-director-mysql-8]
+    build_logs_to_retain: 250
+    plan:
+    - in_parallel:
       - get: bosh-src
-        trigger: true
         passed: [gate]
-      - get: integration-image
-      - task: test
-        timeout: 2h
-        file: bosh-src/ci/tasks/test-unit.yml
-        image: integration-image
-        params:
-          DB: sqlite
+        trigger: true
+      - get: integration-mysql-8-0-image
+    - task: test-rake-task
+      timeout: 2h
+      file: bosh-src/ci/tasks/test-rake-task.yml
+      image: integration-image
+      params:
+        RAKE_TASK: spec:unit:release
+        DB: mysql
 
-  - name: unit-mysql
+  - name: unit-director-postgres-10
     public: true
-    serial: true
-    serial_groups: [unit-mysql]
-    build_logs_to_retain: 250
-    plan:
-      - in_parallel:
-        - get: bosh-src
-          passed: [gate]
-          trigger: true
-        - get: integration-mysql-8-0-image
-      - task: test-mysql-8.0
-        timeout: 2h
-        privileged: true
-        file: bosh-src/ci/tasks/test-unit.yml
-        image: integration-mysql-8-0-image
-        params:
-          DB: mysql
-
-  - name: unit-postgres
-    public: true
-    serial_groups: [unit-postgres]
+    serial_groups: [unit-director-postgres-10]
     serial: true
     build_logs_to_retain: 250
     plan:
-      - in_parallel:
-        - get: bosh-src
-          passed: [gate]
-          trigger: true
-        - get: integration-postgres-10-image
-        - get: integration-postgres-13-image
-        - get: integration-postgres-15-image
-      - in_parallel:
-        - task: test-postgres-10
-          timeout: 2h
-          privileged: true
-          file: bosh-src/ci/tasks/test-unit.yml
-          image: integration-postgres-10-image
-          params:
-            DB: postgresql
-            DB_VERSION: 10
-        - task: test-postgres-13
-          timeout: 2h
-          privileged: true
-          file: bosh-src/ci/tasks/test-unit.yml
-          image: integration-postgres-13-image
-          params:
-            DB: postgresql
-            DB_VERSION: 13
-        - task: test-postgres-15
-          timeout: 2h
-          privileged: true
-          file: bosh-src/ci/tasks/test-unit.yml
-          image: integration-postgres-15-image
-          params:
-            DB: postgresql
-            DB_VERSION: 15
+    - in_parallel:
+      - get: bosh-src
+        passed: [gate]
+        trigger: true
+      - get: integration-postgres-10-image
+    - task: test-rake-task
+      timeout: 2h
+      privileged: true
+      file: bosh-src/ci/tasks/test-rake-task.yml
+      image: integration-postgres-10-image
+      params:
+        DB: postgresql
+        RAKE_TASK: spec:unit:director
+
+  - name: unit-director-postgres-13
+    public: true
+    serial_groups: [unit-director-postgres-13]
+    serial: true
+    build_logs_to_retain: 250
+    plan:
+    - in_parallel:
+      - get: bosh-src
+        passed: [gate]
+        trigger: true
+      - get: integration-postgres-13-image
+    - task: test-rake-task
+      timeout: 2h
+      privileged: true
+      file: bosh-src/ci/tasks/test-rake-task.yml
+      image: integration-postgres-13-image
+      params:
+        DB: postgresql
+        RAKE_TASK: spec:unit:director
+
+  - name: unit-director-postgres-15
+    public: true
+    serial_groups: [unit-director-postgres-15]
+    serial: true
+    build_logs_to_retain: 250
+    plan:
+    - in_parallel:
+      - get: bosh-src
+        passed: [gate]
+        trigger: true
+      - get: integration-postgres-15-image
+    - task: test-rake-task
+      timeout: 2h
+      privileged: true
+      file: bosh-src/ci/tasks/test-rake-task.yml
+      image: integration-postgres-15-image
+      params:
+        DB: postgresql
+        RAKE_TASK: spec:unit:director
 
   - name: run-bundle-audit
     public: true
@@ -232,9 +409,19 @@ jobs:
     - get: bosh-src
       trigger: true
       passed:
-      - unit
-      - unit-mysql
-      - unit-postgres
+      - unit-common
+      - unit-core
+      - unit-dev
+      - unit-director-core
+      - unit-monitor
+      - unit-nats-sync
+      - unit-template
+      - unit-release
+      - unit-director-sqlite
+      - unit-director-mysql-8
+      - unit-director-postgres-10
+      - unit-director-postgres-13
+      - unit-director-postgres-15
       - integration-mysql
       - integration-postgres
       - integration-postgres-hotswap
