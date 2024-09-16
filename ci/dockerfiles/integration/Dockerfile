@@ -84,7 +84,7 @@ RUN meta4_cli_path="/usr/local/bin/meta4" \
       > "${meta4_cli_path}" \
     && chmod +x "${meta4_cli_path}"
 
-RUN yq_cli_path="/usr/local/bin/meta4" \
+RUN yq_cli_path="/usr/local/bin/yq" \
     && curl --show-error -sL "${YQ_CLI_URL}" \
       > "${yq_cli_path}" \
     && chmod +x "${yq_cli_path}"
