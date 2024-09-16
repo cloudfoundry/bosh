@@ -241,16 +241,17 @@ jobs:
       - get: integration-mysql-8-0-image
     - task: test-rake-task
       timeout: 2h
+      privileged: true
       file: bosh-src/ci/tasks/test-rake-task.yml
-      image: integration-image
+      image: integration-mysql-8-0-image
       params:
-        RAKE_TASK: spec:unit:release
         DB: mysql
+        RAKE_TASK: spec:unit:director
 
   - name: unit-director-postgres-10
     public: true
-    serial_groups: [unit-director-postgres-10]
     serial: true
+    serial_groups: [unit-director-postgres-10]
     build_logs_to_retain: 250
     plan:
     - in_parallel:
@@ -269,8 +270,8 @@ jobs:
 
   - name: unit-director-postgres-13
     public: true
-    serial_groups: [unit-director-postgres-13]
     serial: true
+    serial_groups: [unit-director-postgres-13]
     build_logs_to_retain: 250
     plan:
     - in_parallel:
@@ -289,8 +290,8 @@ jobs:
 
   - name: unit-director-postgres-15
     public: true
-    serial_groups: [unit-director-postgres-15]
     serial: true
+    serial_groups: [unit-director-postgres-15]
     build_logs_to_retain: 250
     plan:
     - in_parallel:
