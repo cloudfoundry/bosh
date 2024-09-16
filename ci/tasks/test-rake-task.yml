@@ -10,7 +10,7 @@ inputs:
   - name: bosh-src
 
 run:
-  path: bosh-src/ci/tasks/test-unit.sh
+  path: bosh-src/ci/tasks/test-rake-task.sh
 
 params:
   COVERAGE:     true
