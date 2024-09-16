@@ -115,9 +115,6 @@ namespace :spec do
     run_integration_specs(spec_path: 'spec/integration')
   end
 
-  desc 'Run all release unit tests (ERB templates)'
-  task release_unit: ['spec:unit:release']
-
   desc 'Run template test unit tests (i.e. Bosh::Template::Test)'
   task :template_test_unit do # TODO _why?_ this is run as part of `spec:unit:template:parallel`
     puts 'Template test unit tests (ERB templates)'
@@ -175,11 +172,11 @@ namespace :spec do
     end
 
     desc 'Run all unit tests in parallel'
-    task parallel: %w[spec:release_unit spec:unit:ruby_parallel spec:template_test_unit]
+    task parallel: %w[spec:unit:release spec:unit:ruby_parallel spec:template_test_unit]
   end
 
   desc 'Run all unit tests'
-  task unit: %w[spec:release_unit spec:unit:ruby spec:template_test_unit]
+  task unit: %w[spec:unit:release spec:unit:ruby spec:template_test_unit]
 end
 
 desc 'Run unit and integration specs'
