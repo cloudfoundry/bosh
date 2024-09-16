@@ -7,13 +7,14 @@ jobs:
     strategy:
       matrix:
         sub_project:
-        - common
-        - core
-        - dev
-        - director-core
-        - monitor
-        - nats-sync
-        - template
+        - common:parallel
+        - core:parallel
+        - dev:parallel
+        - director-core:parallel
+        - monitor:parallel
+        - nats-sync:parallel
+        - template:parallel
+        - release
     steps:
     - uses: actions/checkout@v4
       with: { lfs: true}
@@ -21,7 +22,7 @@ jobs:
       with: { working-directory: src/ }
     - run: bundle install
       working-directory: src/
-    - run: bundle exec rake spec:unit:${{matrix.sub_project}}:parallel
+    - run: bundle exec rake spec:unit:${{matrix.sub_project}}
       working-directory: src/
 
   unit_specs-director:

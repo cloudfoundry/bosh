@@ -116,10 +116,7 @@ namespace :spec do
   end
 
   desc 'Run all release unit tests (ERB templates)'
-  task :release_unit do
-    puts 'Release unit tests (ERB templates)'
-    sh('cd .. && rspec --tty --backtrace -c -f p spec/')
-  end
+  task release_unit: ['spec:unit:release']
 
   desc 'Run template test unit tests (i.e. Bosh::Template::Test)'
   task :template_test_unit do # TODO _why?_ this is run as part of `spec:unit:template:parallel`
@@ -140,6 +137,14 @@ namespace :spec do
     task :ruby_parallel do
       trap('INT') { exit }
       runner.ruby(parallel: true)
+    end
+
+    desc 'Run all release unit tests (ERB templates)'
+    task :release do
+      puts 'Run unit tests for the release (ERB templates)'
+      Dir.chdir '..' do
+        sh(runner.unit_cmd)
+      end
     end
 
     runner.unit_builds.each do |build|
