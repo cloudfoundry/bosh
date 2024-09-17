@@ -381,6 +381,7 @@ DEPENDENCIES
   factory_bot
   fakefs
   httpclient
+  io-stream (<= 0.4.0)
   json (~> 2)
   minitar
   mysql2
