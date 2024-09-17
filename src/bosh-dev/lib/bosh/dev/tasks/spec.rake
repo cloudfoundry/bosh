@@ -149,7 +149,7 @@ namespace :spec do
       task build.sub(/^bosh[_-]/, '').intern do
         trap('INT') { exit }
         Dir.chdir build do
-          sh("#{runner.unit_cmd(build)}")
+          sh("#{runner.unit_cmd}")
         end
       end
 
