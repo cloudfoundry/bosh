@@ -43,7 +43,7 @@ PATH
       prometheus-client (~> 2.1.0)
       puma
       rack-test
-      rake (~> 13.0.3)
+      rake
       rufus-scheduler (~> 3.0)
       semi_semantic (~> 1.2.0)
       sequel (~> 5.29.0)

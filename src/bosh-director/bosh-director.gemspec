@@ -52,7 +52,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'prometheus-client','~>2.1.0'
   spec.add_dependency 'puma'
   spec.add_dependency 'rack-test'
-  spec.add_dependency 'rake',             '~> 13.0.3'
+  spec.add_dependency 'rake'
   spec.add_dependency 'rufus-scheduler',  '~>3.0'
   spec.add_dependency 'semi_semantic',    '~>1.2.0'
   spec.add_dependency 'sequel',           '~>5.29.0'
