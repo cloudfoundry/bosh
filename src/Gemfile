@@ -8,7 +8,7 @@ gem 'bosh-nats-sync', path: 'bosh-nats-sync'
 gem 'bosh-template', path: 'bosh-template'
 gem 'bosh_common', path: 'bosh_common'
 
-gem 'rake', '~>13.0.3'
+gem 'rake'
 
 gem 'openssl'
 
@@ -43,7 +43,7 @@ group :development, :test do
   gem 'async-rspec'
 
   gem 'fakefs'
-  gem 'parallel_tests', '~> 2.0'
+  gem 'parallel_tests'
   gem 'rack-test'
   gem 'sinatra', '>= 2.2.0'
   gem 'sinatra-contrib', '>= 2.2.0'
