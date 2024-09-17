@@ -24,12 +24,12 @@ module Bosh::Dev::Sandbox
 
     def create_db
       @logger.info("Creating mysql database #{db_name}")
-      execute_sql(%{CREATE DATABASE `#{db_name}`;}, nil)
+      execute_sql(%Q(CREATE DATABASE `#{db_name}`;), nil)
     end
 
     def drop_db
       @logger.info("Dropping mysql database #{db_name}")
-      execute_sql(%{DROP DATABASE `#{db_name}`;}, nil)
+      execute_sql(%Q(DROP DATABASE `#{db_name}`;), nil)
     end
 
     def load_db_initial_state(initial_state_assets_dir)
@@ -39,11 +39,11 @@ module Bosh::Dev::Sandbox
 
     def load_db(dump_file_path)
       @logger.info("Loading dump '#{dump_file_path}' into mysql database #{db_name}")
-      run_quietly_redacted(%Q{#{mysql_cmd} #{db_name} < #{dump_file_path} > /dev/null 2>&1})
+      run_quietly_redacted(%Q(#{mysql_cmd} #{db_name} < #{dump_file_path}))
     end
 
     def current_tasks
-      task_lines = sql_results_for(%{SELECT description, output FROM TASKS WHERE state='processing';})
+      task_lines = sql_results_for(%Q(SELECT description, output FROM TASKS WHERE state='processing';))
 
       result = []
       task_lines.each do |task_line|
@@ -55,27 +55,27 @@ module Bosh::Dev::Sandbox
     end
 
     def current_locked_jobs
-      sql_results_for(%{SELECT * FROM delayed_jobs WHERE locked_by IS NOT NULL;})
+      sql_results_for(%Q(SELECT * FROM delayed_jobs WHERE locked_by IS NOT NULL;))
     end
 
     def truncate_db
       @logger.info("Truncating mysql database #{db_name}")
-      table_names = sql_results_for(%{SHOW TABLES})
-      table_names.reject! { |name| name == 'schema_migrations' }
-      truncate_cmds = table_names.map { |name| %{TRUNCATE TABLE `#{name.strip}`} }
+      table_names = sql_results_for(%Q(SHOW TABLES))
+      table_names.reject! { |name| name =~ /schema_migrations/ }
+      truncate_cmds = table_names.map { |name| %Q(TRUNCATE TABLE `#{name.strip}`;) }
 
-      execute_sql(%{SET FOREIGN_KEY_CHECKS=0; #{truncate_cmds.join(';')}; SET FOREIGN_KEY_CHECKS=1;})
+      execute_sql(%Q(SET FOREIGN_KEY_CHECKS=0; #{truncate_cmds.join(' ')}; SET FOREIGN_KEY_CHECKS=1;))
     end
 
     private
 
     def run_quietly_redacted(cmd)
       redacted = [@password] unless @password.blank?
-      @runner.run(%{#{cmd} > /dev/null 2>&1}, redact: redacted)
+      @runner.run(%Q(#{cmd} > /dev/null 2>&1), redact: redacted)
     end
 
     def execute_sql(sql, this_db_name = db_name)
-      run_quietly_redacted(%{#{sql_cmd(sql, this_db_name)} > /dev/null 2>&1})
+      run_quietly_redacted(%Q(#{sql_cmd(sql, this_db_name)}))
     end
 
     def sql_results_for(sql, this_db_name = db_name)
@@ -83,11 +83,11 @@ module Bosh::Dev::Sandbox
     end
 
     def sql_cmd(sql, this_db_name)
-      %{#{mysql_cmd} -e '#{sql.strip}' #{this_db_name}}
+      %Q(#{mysql_cmd} -e '#{sql.strip}' #{this_db_name})
     end
 
     def mysql_cmd
-      %{mysql -h #{@host} -P #{@port} --user=#{@username} --password=#{@password}}
+      %Q(mysql -h #{@host} -P #{@port} --user=#{@username} --password=#{@password})
     end
   end
 end
