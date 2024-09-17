@@ -144,6 +144,15 @@ namespace :spec do
       end
     end
 
+    namespace :release do
+      task :parallel do
+        puts 'Run unit tests for the release (ERB templates)'
+        Dir.chdir '..' do
+          sh(runner.unit_parallel('release'))
+        end
+      end
+    end
+
     runner.unit_builds.each do |component_subdir|
       component_symbol = component_subdir.sub(/^bosh[_-]/, '').to_sym
 
@@ -175,7 +184,7 @@ namespace :spec do
     end
 
     desc 'Run all unit tests in parallel'
-    task parallel: %w[spec:unit:release spec:unit:ruby_parallel spec:template_test_unit]
+    task parallel: %w[spec:unit:release:parallel spec:unit:ruby_parallel spec:template_test_unit]
   end
 
   desc 'Run all unit tests'

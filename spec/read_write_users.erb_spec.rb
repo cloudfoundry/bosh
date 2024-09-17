@@ -1,8 +1,7 @@
-require 'bosh/template/evaluation_context'
-require_relative './template_example_group'
+require 'spec_helper'
 
-shared_examples 'rendered *_users.erb' do
-  let(:release) { Bosh::Template::Test::ReleaseDir.new(File.join(File.dirname(__FILE__), '..')) }
+RSpec.shared_examples 'rendered *_users.erb' do
+  let(:release) { Bosh::Template::Test::ReleaseDir.new(RELEASE_ROOT) }
   let(:job) { release.job('blobstore') }
   let(:template) { job.template(rendered_erb_file_name) }
 
@@ -107,14 +106,16 @@ shared_examples 'rendered *_users.erb' do
   end
 end
 
-describe 'read_users.erb' do
-  it_should_behave_like 'rendered *_users.erb' do
-    let(:rendered_erb_file_name) { 'config/read_users' }
+RSpec.describe 'rendering users templates' do
+  describe 'read_users.erb' do
+    it_should_behave_like 'rendered *_users.erb' do
+      let(:rendered_erb_file_name) { 'config/read_users' }
+    end
   end
-end
 
-describe 'write_users.erb' do
-  it_should_behave_like 'rendered *_users.erb' do
-    let(:rendered_erb_file_name) { 'config/write_users' }
+  describe 'write_users.erb' do
+    it_should_behave_like 'rendered *_users.erb' do
+      let(:rendered_erb_file_name) { 'config/write_users' }
+    end
   end
 end

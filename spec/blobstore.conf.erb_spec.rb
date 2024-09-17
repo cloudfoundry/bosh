@@ -1,11 +1,7 @@
-require 'rspec'
-require 'yaml'
-require 'json'
-require 'bosh/template/evaluation_context'
-require_relative './template_example_group'
+require 'spec_helper'
 
-describe 'blobstore.conf.erb' do
-  let(:spec_yaml) { YAML.load_file(File.join(File.dirname(__FILE__), '../jobs/blobstore/spec')) }
+RSpec.describe 'blobstore.conf.erb' do
+  let(:spec_yaml) { YAML.load_file(File.join(RELEASE_ROOT, 'jobs/blobstore/spec')) }
 
   context 'when nginx.enable_metrics_endpoint is not set' do
     it 'it defaults to false' do
@@ -15,7 +11,7 @@ describe 'blobstore.conf.erb' do
 
   context 'nginx.enable_metrics_endpoint is true' do
     it_should_behave_like 'a rendered file' do
-      let(:file_name) { '../jobs/blobstore/templates/blobstore.conf.erb' }
+      let(:file_name) { 'jobs/blobstore/templates/blobstore.conf.erb' }
       let(:properties) do
         {
           'properties' => {
@@ -109,7 +105,7 @@ server {
 
   context 'allow_http is true' do
     it_should_behave_like 'a rendered file' do
-      let(:file_name) { '../jobs/blobstore/templates/blobstore.conf.erb' }
+      let(:file_name) { 'jobs/blobstore/templates/blobstore.conf.erb' }
       let(:properties) do
         {
           'properties' => {
@@ -194,7 +190,7 @@ server {
 
   context 'allow_http is false' do
     it_should_behave_like 'a rendered file' do
-      let(:file_name) { '../jobs/blobstore/templates/blobstore.conf.erb' }
+      let(:file_name) { 'jobs/blobstore/templates/blobstore.conf.erb' }
       let(:properties) do
         {
           'properties' => {
@@ -277,7 +273,7 @@ server {
 
   context 'ipv6_listen is true' do
     it_should_behave_like 'a rendered file' do
-      let(:file_name) { '../jobs/blobstore/templates/blobstore.conf.erb' }
+      let(:file_name) { 'jobs/blobstore/templates/blobstore.conf.erb' }
       let(:properties) do
         {
           'properties' => {
@@ -362,7 +358,7 @@ server {
 
   context 'ipv6_listen is false' do
     it_should_behave_like 'a rendered file' do
-      let(:file_name) { '../jobs/blobstore/templates/blobstore.conf.erb' }
+      let(:file_name) { 'jobs/blobstore/templates/blobstore.conf.erb' }
       let(:properties) do
         {
           'properties' => {
@@ -446,7 +442,7 @@ server {
   end
 
   context 'enable_signed_urls is false' do
-    let(:file_name) { '../jobs/blobstore/templates/blobstore.conf.erb' }
+    let(:file_name) { 'jobs/blobstore/templates/blobstore.conf.erb' }
     let(:properties) do
       {
         'properties' => {
@@ -469,7 +465,7 @@ server {
       }
     end
 
-    let(:template) { File.read(File.join(File.dirname(__FILE__), file_name)) }
+    let(:template) { File.read(File.join(RELEASE_ROOT, file_name)) }
 
     let(:rendered_template) do
       binding = Bosh::Template::EvaluationContext.new(properties, nil).get_binding
@@ -483,7 +479,7 @@ server {
   end
 
   context 'enable_signed_urls is true' do
-    let(:file_name) { '../jobs/blobstore/templates/blobstore.conf.erb' }
+    let(:file_name) { 'jobs/blobstore/templates/blobstore.conf.erb' }
     let(:properties) do
       {
         'properties' => {
@@ -507,7 +503,7 @@ server {
       }
     end
 
-    let(:template) { File.read(File.join(File.dirname(__FILE__), file_name)) }
+    let(:template) { File.read(File.join(RELEASE_ROOT, file_name)) }
 
     let(:rendered_template) do
       binding = Bosh::Template::EvaluationContext.new(properties, nil).get_binding
@@ -551,7 +547,7 @@ end
 describe 'server_tls_cert.pem.erb' do
   context 'should render the pem file' do
     it_should_behave_like 'a rendered file' do
-      let(:file_name) { '../jobs/blobstore/templates/server_tls_cert.pem.erb' }
+      let(:file_name) { 'jobs/blobstore/templates/server_tls_cert.pem.erb' }
       let(:properties) do
         {
           'properties' => {
@@ -579,7 +575,7 @@ end
 describe 'server_tls_private_key.pem.erb' do
   context 'should render the pem file' do
     it_should_behave_like 'a rendered file' do
-      let(:file_name) { '../jobs/blobstore/templates/server_tls_private_key.pem.erb' }
+      let(:file_name) { 'jobs/blobstore/templates/server_tls_private_key.pem.erb' }
       let(:properties) do
         {
           'properties' => {
@@ -607,7 +603,7 @@ end
 describe 'ngnix.conf.erb' do
   context 'should updated number of ngnix workers to user provided value' do
     it_should_behave_like 'a rendered file' do
-      let(:file_name) { '../jobs/blobstore/templates/nginx.conf.erb' }
+      let(:file_name) { 'jobs/blobstore/templates/nginx.conf.erb' }
       let(:properties) do
         {
           'properties' => {

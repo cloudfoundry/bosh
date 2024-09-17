@@ -1,12 +1,7 @@
-require 'rspec'
-require 'json'
-require 'bosh/template/test'
-require 'bosh/template/evaluation_context'
-require 'openssl'
-require_relative './template_example_group'
+require 'spec_helper'
 
-describe 'director templates' do
-  let(:release) { Bosh::Template::Test::ReleaseDir.new(File.join(File.dirname(__FILE__), '..')) }
+RSpec.describe 'director templates' do
+  let(:release) { Bosh::Template::Test::ReleaseDir.new(RELEASE_ROOT) }
   let(:job) { release.job('director') }
   let(:properties) { default_properties }
   let(:default_properties) do
@@ -40,7 +35,7 @@ describe 'director templates' do
     describe 'nats related templates' do
       describe 'nats_client_certificate.pem.erb' do
         it_should_behave_like 'a rendered file' do
-          let(:file_name) { '../jobs/director/templates/nats_client_certificate.pem.erb' }
+          let(:file_name) { 'jobs/director/templates/nats_client_certificate.pem.erb' }
           let(:properties) do
             {
               'properties' => {
@@ -59,7 +54,7 @@ describe 'director templates' do
 
       describe 'nats_client_private_key.erb' do
         it_should_behave_like 'a rendered file' do
-          let(:file_name) { '../jobs/director/templates/nats_client_private_key.erb' }
+          let(:file_name) { 'jobs/director/templates/nats_client_private_key.erb' }
           let(:properties) do
             {
               'properties' => {
@@ -78,7 +73,7 @@ describe 'director templates' do
 
       describe 'nats_client_ca_certificate.pem.erb' do
         it_should_behave_like 'a rendered file' do
-          let(:file_name) { '../jobs/director/templates/nats_client_ca_certificate.pem.erb' }
+          let(:file_name) { 'jobs/director/templates/nats_client_ca_certificate.pem.erb' }
           let(:properties) do
             {
               'properties' => {
@@ -97,7 +92,7 @@ describe 'director templates' do
 
       describe 'nats_client_ca_private_key.erb' do
         it_should_behave_like 'a rendered file' do
-          let(:file_name) { '../jobs/director/templates/nats_client_ca_private_key.erb' }
+          let(:file_name) { 'jobs/director/templates/nats_client_ca_private_key.erb' }
           let(:properties) do
             {
               'properties' => {
@@ -118,7 +113,7 @@ describe 'director templates' do
     describe 'database related templates' do
       describe 'db_ca.pem.erb' do
         it_should_behave_like 'a rendered file' do
-          let(:file_name) { '../jobs/director/templates/db_ca.pem.erb' }
+          let(:file_name) { 'jobs/director/templates/db_ca.pem.erb' }
           let(:properties) do
             {
               'properties' => {
@@ -138,7 +133,7 @@ describe 'director templates' do
 
         context 'when cert property is not provided' do
           it_should_behave_like 'a rendered file' do
-            let(:file_name) { '../jobs/director/templates/db_ca.pem.erb' }
+            let(:file_name) { 'jobs/director/templates/db_ca.pem.erb' }
             let(:expected_content) { "\n" }
             let(:properties) do
               {
@@ -159,7 +154,7 @@ describe 'director templates' do
 
       describe 'db_client_certificate.pem.erb' do
         it_should_behave_like 'a rendered file' do
-          let(:file_name) { '../jobs/director/templates/db_client_certificate.pem.erb' }
+          let(:file_name) { 'jobs/director/templates/db_client_certificate.pem.erb' }
           let(:properties) do
             {
               'properties' => {
@@ -179,7 +174,7 @@ describe 'director templates' do
 
         context 'when certificate property is not provided' do
           it_should_behave_like 'a rendered file' do
-            let(:file_name) { '../jobs/director/templates/db_client_certificate.pem.erb' }
+            let(:file_name) { 'jobs/director/templates/db_client_certificate.pem.erb' }
             let(:expected_content) { "\n" }
             let(:properties) do
               {
@@ -200,7 +195,7 @@ describe 'director templates' do
 
       describe 'db_client_private_key.pem.erb' do
         it_should_behave_like 'a rendered file' do
-          let(:file_name) { '../jobs/director/templates/db_client_private_key.key.erb' }
+          let(:file_name) { 'jobs/director/templates/db_client_private_key.key.erb' }
           let(:properties) do
             {
               'properties' => {
@@ -220,7 +215,7 @@ describe 'director templates' do
 
         context 'when private_key property is not provided' do
           it_should_behave_like 'a rendered file' do
-            let(:file_name) { '../jobs/director/templates/db_client_private_key.key.erb' }
+            let(:file_name) { 'jobs/director/templates/db_client_private_key.key.erb' }
             let(:expected_content) { "\n" }
             let(:properties) do
               {
@@ -381,7 +376,7 @@ describe 'director templates' do
       end
 
       it_should_behave_like 'a rendered file' do
-        let(:file_name) { '../jobs/director/templates/certificate_expiry.json.erb' }
+        let(:file_name) { 'jobs/director/templates/certificate_expiry.json.erb' }
         let(:properties) do
           {
             'properties' => {
