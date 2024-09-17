@@ -6,8 +6,9 @@ namespace :fly do
   task :unit do
     db, db_version = fetch_db_and_version('sqlite')
 
-    execute('test-unit', command_opts('unit', db, db_version),
-            DB: db, DB_VERSION: db_version,
+    execute('test-rake-task', command_opts('unit', db, db_version),
+            RAKE_TASK: ENV.fetch('RAKE_TASK', 'spec:unit'),
+            DB: db,
             COVERAGE: ENV.fetch('COVERAGE', false))
   end
 
@@ -20,7 +21,7 @@ namespace :fly do
     command_opts += " --input bosh-cli=#{args[:cli_dir]}" if args[:cli_dir]
 
     execute('test-integration', command_opts,
-            DB: db, DB_VERSION: db_version,
+            DB: db,
             SPEC_PATH: ENV.fetch('SPEC_PATH', nil))
   end
 
@@ -52,7 +53,7 @@ namespace :fly do
   def command_opts(test_type, db, db_version)
     [
       "--privileged",
-      input_from(test_type, db),
+      input_from(test_type, db, db_version),
       image(db, db_version)
     ].join(' ')
   end
@@ -61,13 +62,17 @@ namespace :fly do
     db == 'postgresql' ? 'postgres' : db
   end
 
-  def input_from(test_type, db)
+  def db_short_version(db_version)
+    db_version.split('.').first
+  end
+
+  def input_from(test_type, db, db_version)
     case test_type
     when 'unit'
       if db == 'sqlite'
-        '--inputs-from bosh-director/unit'
+        "--inputs-from bosh-director/#{test_type}-director-#{db_short_name(db)}"
       else
-        "--inputs-from bosh-director/#{test_type}-#{db_short_name(db)}"
+        "--inputs-from bosh-director/#{test_type}-director-#{db_short_name(db)}-#{db_short_version(db_version)}"
       end
 
     when 'integration'
@@ -97,7 +102,6 @@ namespace :fly do
 
   def prepare_env(additional_env = {})
     env = {
-      RUBY_VERSION: ENV['RUBY_VERSION'] || RUBY_VERSION,
     }
     env.merge!(additional_env)
 
