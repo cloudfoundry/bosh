@@ -1,9 +1,7 @@
-require 'yaml'
-require 'bosh/template/evaluation_context'
-require_relative './template_example_group'
+require 'spec_helper'
 
-shared_examples 'rendered postgres* bpm.yml' do
-  let(:release) { Bosh::Template::Test::ReleaseDir.new(File.join(File.dirname(__FILE__), '..')) }
+RSpec.shared_examples 'rendered postgres* bpm.yml' do
+  let(:release) { Bosh::Template::Test::ReleaseDir.new(RELEASE_ROOT) }
   let(:template) { job.template('config/bpm.yml') }
 
   subject(:rendered_template) do
@@ -30,14 +28,16 @@ shared_examples 'rendered postgres* bpm.yml' do
   end
 end
 
-describe 'postgres job' do
-  it_should_behave_like 'rendered postgres* bpm.yml' do
-    let(:job) { release.job('postgres') }
+RSpec.describe 'postgres job rendering' do
+  describe 'postgres job' do
+    it_should_behave_like 'rendered postgres* bpm.yml' do
+      let(:job) { release.job('postgres') }
+    end
   end
-end
 
-describe 'postgres-10 job' do
-  it_should_behave_like 'rendered postgres* bpm.yml' do
-    let(:job) { release.job('postgres-10') }
+  describe 'postgres-10 job' do
+    it_should_behave_like 'rendered postgres* bpm.yml' do
+      let(:job) { release.job('postgres-10') }
+    end
   end
 end

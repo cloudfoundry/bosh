@@ -1,10 +1,6 @@
-require 'rspec'
-require 'yaml'
-require 'bosh/template/evaluation_context'
-require 'json'
-require_relative './template_example_group'
+require 'spec_helper'
 
-describe 'health_monitor.yml.erb' do
+RSpec.describe 'health_monitor.yml.erb' do
   let(:deployment_manifest_fragment) do
     {
       'properties' => {
@@ -52,7 +48,7 @@ describe 'health_monitor.yml.erb' do
     }
   end
 
-  let(:erb_yaml) { File.read(File.join(File.dirname(__FILE__), '../jobs/health_monitor/templates/health_monitor.yml.erb')) }
+  let(:erb_yaml) { File.read(File.join(RELEASE_ROOT, 'jobs/health_monitor/templates/health_monitor.yml.erb')) }
 
   subject(:parsed_yaml) do
     binding = Bosh::Template::EvaluationContext.new(deployment_manifest_fragment, nil).get_binding
@@ -321,7 +317,7 @@ end
 describe 'tls' do
   describe 'nats_server_ca.pem.erb' do
     it_should_behave_like 'a rendered file' do
-      let(:file_name) { '../jobs/health_monitor/templates/nats_server_ca.pem.erb' }
+      let(:file_name) { 'jobs/health_monitor/templates/nats_server_ca.pem.erb' }
       let(:properties) do
         {
           'properties' => {
@@ -338,7 +334,7 @@ describe 'tls' do
 
   describe 'nats_client_certificate.pem.erb' do
     it_should_behave_like 'a rendered file' do
-      let(:file_name) { '../jobs/health_monitor/templates/nats_client_certificate.pem.erb' }
+      let(:file_name) { 'jobs/health_monitor/templates/nats_client_certificate.pem.erb' }
       let(:properties) do
         {
           'properties' => {
@@ -357,7 +353,7 @@ describe 'tls' do
 
   describe 'nats_client_private_key.erb' do
     it_should_behave_like 'a rendered file' do
-      let(:file_name) { '../jobs/health_monitor/templates/nats_client_private_key.erb' }
+      let(:file_name) { 'jobs/health_monitor/templates/nats_client_private_key.erb' }
       let(:properties) do
         {
           'properties' => {

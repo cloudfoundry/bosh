@@ -1,14 +1,8 @@
-# frozen_string_literal: true
+require 'spec_helper'
 
-require 'rspec'
-require 'yaml'
-require 'json'
-require 'bosh/template/evaluation_context'
-require_relative './template_example_group'
-
-describe 'bosh_nats_sync_config.yml.erb' do
+RSpec.describe 'bosh_nats_sync_config.yml.erb' do
   it_should_behave_like 'a rendered file' do
-    let(:file_name) { '../jobs/nats/templates/bosh_nats_sync_config.yml.erb' }
+    let(:file_name) { 'jobs/nats/templates/bosh_nats_sync_config.yml.erb' }
     let(:properties) do
       {
         'properties' => {
@@ -60,7 +54,7 @@ end
 
 describe 'nats.cfg.erb' do
   it_should_behave_like 'a rendered file' do
-    let(:file_name) { '../jobs/nats/templates/nats.cfg.erb' }
+    let(:file_name) { 'jobs/nats/templates/nats.cfg.erb' }
     let(:properties) do
       {
         'properties' => {
@@ -134,7 +128,7 @@ end
 
 describe 'nats_client_ca.pem.erb' do
   it_should_behave_like 'a rendered file' do
-    let(:file_name) { '../jobs/nats/templates/nats_client_ca.pem.erb' }
+    let(:file_name) { 'jobs/nats/templates/nats_client_ca.pem.erb' }
     let(:properties) do
       {
         'properties' => {
@@ -151,7 +145,7 @@ end
 
 describe 'nats_director_client_certificate.pem.erb' do
   it_should_behave_like 'a rendered file' do
-    let(:file_name) { '../jobs/nats/templates/nats_director_client_certificate.pem.erb' }
+    let(:file_name) { 'jobs/nats/templates/nats_director_client_certificate.pem.erb' }
     let(:properties) do
       {
         'properties' => {
@@ -170,7 +164,7 @@ end
 
 describe 'nats_hm_client_certificate.pem.erb' do
   it_should_behave_like 'a rendered file' do
-    let(:file_name) { '../jobs/nats/templates/nats_hm_client_certificate.pem.erb' }
+    let(:file_name) { 'jobs/nats/templates/nats_hm_client_certificate.pem.erb' }
     let(:properties) do
       {
         'properties' => {
@@ -189,7 +183,7 @@ end
 
 describe 'nats_server_certificate.pem.erb' do
   it_should_behave_like 'a rendered file' do
-    let(:file_name) { '../jobs/nats/templates/nats_server_certificate.pem.erb' }
+    let(:file_name) { 'jobs/nats/templates/nats_server_certificate.pem.erb' }
     let(:properties) do
       {
         'properties' => {
@@ -208,7 +202,7 @@ end
 
 describe 'nats_server_private_key.erb' do
   it_should_behave_like 'a rendered file' do
-    let(:file_name) { '../jobs/nats/templates/nats_server_private_key.erb' }
+    let(:file_name) { 'jobs/nats/templates/nats_server_private_key.erb' }
     let(:properties) do
       {
         'properties' => {

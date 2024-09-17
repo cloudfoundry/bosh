@@ -2,7 +2,7 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-source $DIR/../jobs/director/templates/ps_utils.sh
+source "${DIR}/../../jobs/director/templates/ps_utils.sh"
 
 function test_pid_exists {
   echo "an existing PID should exist"
