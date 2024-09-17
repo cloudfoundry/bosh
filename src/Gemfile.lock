@@ -387,12 +387,12 @@ DEPENDENCIES
   nats-pure (~> 2.3)
   net-ssh
   openssl
-  parallel_tests (~> 2.0)
+  parallel_tests
   pg
   pry-byebug
   pry-remote
   rack-test
-  rake (~> 13.0.3)
+  rake
   rest-client
   rspec
   rspec-instafail
