@@ -7,7 +7,7 @@ namespace :fly do
     db, db_version = fetch_db_and_version('sqlite')
 
     execute('test-rake-task', command_opts('unit', db, db_version),
-            RAKE_TASK: ENV.fetch('RAKE_TASK', 'spec:unit'),
+            RAKE_TASK: ENV.fetch('RAKE_TASK', 'spec:unit:parallel'),
             DB: db,
             COVERAGE: ENV.fetch('COVERAGE', false))
   end

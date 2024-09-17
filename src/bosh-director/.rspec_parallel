@@ -1,2 +1,0 @@
---format progress
---format ParallelTests::RSpec::RuntimeLogger --out /tmp/bosh_director_parallel_runtime_rspec.log
