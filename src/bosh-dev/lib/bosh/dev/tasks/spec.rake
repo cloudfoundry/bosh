@@ -144,21 +144,23 @@ namespace :spec do
       end
     end
 
-    runner.unit_builds.each do |build|
-      desc "Run unit tests for the #{build} component"
-      task build.sub(/^bosh[_-]/, '').intern do
+    runner.unit_builds.each do |component_subdir|
+      component_symbol = component_subdir.sub(/^bosh[_-]/, '').to_sym
+
+      desc "Run unit tests for the #{component_subdir} component"
+      task component_symbol do
         trap('INT') { exit }
-        Dir.chdir build do
-          sh("#{runner.unit_cmd}")
+        Dir.chdir component_subdir do
+          sh(runner.unit_cmd)
         end
       end
 
-      namespace build.sub(/^bosh[_-]/, '').intern do
-        desc "Run parallel unit tests for the #{build} component"
+      namespace component_symbol do
+        desc "Run parallel unit tests for the #{component_subdir} component"
         task :parallel do
           trap('INT') { exit }
-          Dir.chdir build do
-            sh("#{runner.unit_parallel(build)}")
+          Dir.chdir component_subdir do
+            sh(runner.unit_parallel(component_subdir))
           end
         end
       end
@@ -167,8 +169,9 @@ namespace :spec do
     desc 'Run all migrations tests'
     task :migrations do
       trap('INT') { exit }
-      cmd = 'rspec --tty --backtrace -c -f p ./spec/unit/db/migrations/'
-      sh("cd bosh-director && #{cmd}")
+      Dir.chdir 'bosh-director' do
+        sh('rspec --tty --backtrace -c -f p spec/unit/db/migrations/')
+      end
     end
 
     desc 'Run all unit tests in parallel'
