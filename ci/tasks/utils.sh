@@ -92,7 +92,7 @@ run_as() {
   echo "Running '${*}' as '${user}'"
 
   # shellcheck disable=SC2068
-  sudo --preserve-env -u "${user}" ${@}
+  sudo --preserve-env --set-home -u "${user}" ${@}
 }
 
 start_db() {
