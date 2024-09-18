@@ -106,14 +106,16 @@ func LoadExternalDBConfig(DBaaS string, mutualTLSEnabled bool, tmpCertDir string
 		clientCertContents := AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_CLIENT_CERTIFICATE", strings.ToUpper(DBaaS)))
 		clientKeyContents := AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_CLIENT_PRIVATE_KEY", strings.ToUpper(DBaaS)))
 
-		clientCertFile, err := os.CreateTemp(tmpCertDir, "client_cert")
+		var clientCertFile *os.File
+		clientCertFile, err = os.CreateTemp(tmpCertDir, "client_cert")
 		Expect(err).ToNot(HaveOccurred())
 
 		defer clientCertFile.Close()
 		_, err = clientCertFile.Write([]byte(clientCertContents))
 		Expect(err).ToNot(HaveOccurred())
 
-		clientKeyFile, err := os.CreateTemp(tmpCertDir, "client_key")
+		var clientKeyFile *os.File
+		clientKeyFile, err = os.CreateTemp(tmpCertDir, "client_key")
 		Expect(err).ToNot(HaveOccurred())
 
 		defer clientKeyFile.Close()
