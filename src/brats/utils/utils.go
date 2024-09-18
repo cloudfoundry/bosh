@@ -69,9 +69,9 @@ func Bootstrap() {
 	AssertEnvExists("BOSH_DEPLOYMENT_PATH")
 }
 
-func LoadExternalDBConfig(DBaaS string, mutualTLSEnabled bool, tmpCertDir string) *ExternalDBConfig {
+func LoadExternalDBConfig(iaasAndDbName string, mutualTLSEnabled bool, tmpCertDir string) *ExternalDBConfig {
 	var databaseType string
-	if strings.HasSuffix(DBaaS, mysqlDBType) {
+	if strings.HasSuffix(iaasAndDbName, mysqlDBType) {
 		databaseType = mysqlDBType
 	} else {
 		databaseType = postgresDBType
@@ -79,15 +79,15 @@ func LoadExternalDBConfig(DBaaS string, mutualTLSEnabled bool, tmpCertDir string
 
 	config := ExternalDBConfig{
 		Type:                  databaseType,
-		Host:                  AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_HOST", strings.ToUpper(DBaaS))),
-		User:                  AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_USER", strings.ToUpper(DBaaS))),
-		Password:              AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_PASSWORD", strings.ToUpper(DBaaS))),
+		Host:                  AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_HOST", strings.ToUpper(iaasAndDbName))),
+		User:                  AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_USER", strings.ToUpper(iaasAndDbName))),
+		Password:              AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_PASSWORD", strings.ToUpper(iaasAndDbName))),
 		DBName:                fmt.Sprintf("db_%s_%d", databaseType, GinkgoParallelProcess()),
-		ConnectionVarFile:     fmt.Sprintf("external_db/%s.yml", DBaaS),
-		ConnectionOptionsFile: fmt.Sprintf("external_db/%s_connection_options.yml", DBaaS),
+		ConnectionVarFile:     fmt.Sprintf("external_db/%s.yml", iaasAndDbName),
+		ConnectionOptionsFile: fmt.Sprintf("external_db/%s_connection_options.yml", iaasAndDbName),
 	}
 
-	caContents := []byte(os.Getenv(fmt.Sprintf("%s_EXTERNAL_DB_CA", strings.ToUpper(DBaaS))))
+	caContents := []byte(os.Getenv(fmt.Sprintf("%s_EXTERNAL_DB_CA", strings.ToUpper(iaasAndDbName))))
 	if len(caContents) == 0 {
 		var err error
 		caContents, err = exec.Command(outerBoshBinaryPath, "int", AssetPath(config.ConnectionVarFile), "--path", "/db_ca").Output()
@@ -103,8 +103,8 @@ func LoadExternalDBConfig(DBaaS string, mutualTLSEnabled bool, tmpCertDir string
 	config.CACertPath = caFile.Name()
 
 	if mutualTLSEnabled {
-		clientCertContents := AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_CLIENT_CERTIFICATE", strings.ToUpper(DBaaS)))
-		clientKeyContents := AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_CLIENT_PRIVATE_KEY", strings.ToUpper(DBaaS)))
+		clientCertContents := AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_CLIENT_CERTIFICATE", strings.ToUpper(iaasAndDbName)))
+		clientKeyContents := AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_CLIENT_PRIVATE_KEY", strings.ToUpper(iaasAndDbName)))
 
 		var clientCertFile *os.File
 		clientCertFile, err = os.CreateTemp(tmpCertDir, "client_cert")
@@ -147,7 +147,7 @@ func MetricsServerHTTPClient() *http.Client {
 	privateKeyData, err := cmd.Output()
 	Expect(err).NotTo(HaveOccurred())
 
-	certificate, err := tls.X509KeyPair([]byte(certificateData), []byte(privateKeyData))
+	certificate, err := tls.X509KeyPair(certificateData, privateKeyData)
 	Expect(err).NotTo(HaveOccurred())
 
 	tlsConfig := &tls.Config{
