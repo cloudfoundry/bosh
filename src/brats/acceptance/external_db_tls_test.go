@@ -1,7 +1,6 @@
 package acceptance_test
 
 import (
-	"io/ioutil"
 	"os"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -12,7 +11,7 @@ import (
 
 var _ = Describe("Director external database TLS connections", func() {
 	testDBConnectionOverTLS := func(databaseType string, mutualTLSEnabled bool, useIncorrectCA bool) {
-		tmpCertDir, err := ioutil.TempDir("", "db_tls")
+		tmpCertDir, err := os.MkdirTemp("", "db_tls")
 		Expect(err).ToNot(HaveOccurred())
 		dbConfig := utils.LoadExternalDBConfig(databaseType, mutualTLSEnabled, tmpCertDir)
 		utils.CreateDB(dbConfig)

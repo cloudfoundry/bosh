@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -72,7 +71,7 @@ var _ = Describe("Blobstore", func() {
 			jq := exec.Command("jq", ".Tables[0].Rows[0].stdout", "-r")
 			si, err := jq.StdinPipe()
 			Expect(err).ToNot(HaveOccurred())
-			jqSession, err := gexec.Start(jq, ioutil.Discard, ioutil.Discard)
+			jqSession, err := gexec.Start(jq, io.Discard, io.Discard)
 			Expect(err).ToNot(HaveOccurred())
 			_, err = io.Copy(si, bytes.NewReader(boshCmdOutput))
 			Expect(err).ToNot(HaveOccurred())
@@ -194,7 +193,7 @@ var _ = Describe("Blobstore", func() {
 			utils.StartInnerBosh()
 
 			var err error
-			tempBlobstoreDir, err = ioutil.TempDir(os.TempDir(), "blobstore_access")
+			tempBlobstoreDir, err = os.MkdirTemp(os.TempDir(), "blobstore_access")
 			Expect(err).ToNot(HaveOccurred())
 
 			utils.UploadRelease(boshRelease)
@@ -204,7 +203,7 @@ var _ = Describe("Blobstore", func() {
 		})
 
 		It("Should log in correct format", func() {
-			accessContent, err := ioutil.ReadFile(filepath.Join(tempBlobstoreDir, "blobstore_access.log"))
+			accessContent, err := os.ReadFile(filepath.Join(tempBlobstoreDir, "blobstore_access.log"))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(string(accessContent)).To(ContainSubstring("CEF:0|CloudFoundry|BOSH|-|blobstore_api|"))
 		})

@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -94,7 +93,7 @@ func LoadExternalDBConfig(DBaaS string, mutualTLSEnabled bool, tmpCertDir string
 		caContents, err = exec.Command(outerBoshBinaryPath, "int", AssetPath(config.ConnectionVarFile), "--path", "/db_ca").Output()
 		Expect(err).ToNot(HaveOccurred())
 	}
-	caFile, err := ioutil.TempFile(tmpCertDir, "db_ca")
+	caFile, err := os.CreateTemp(tmpCertDir, "db_ca")
 	Expect(err).ToNot(HaveOccurred())
 
 	defer caFile.Close()
@@ -107,14 +106,14 @@ func LoadExternalDBConfig(DBaaS string, mutualTLSEnabled bool, tmpCertDir string
 		clientCertContents := AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_CLIENT_CERTIFICATE", strings.ToUpper(DBaaS)))
 		clientKeyContents := AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_CLIENT_PRIVATE_KEY", strings.ToUpper(DBaaS)))
 
-		clientCertFile, err := ioutil.TempFile(tmpCertDir, "client_cert")
+		clientCertFile, err := os.CreateTemp(tmpCertDir, "client_cert")
 		Expect(err).ToNot(HaveOccurred())
 
 		defer clientCertFile.Close()
 		_, err = clientCertFile.Write([]byte(clientCertContents))
 		Expect(err).ToNot(HaveOccurred())
 
-		clientKeyFile, err := ioutil.TempFile(tmpCertDir, "client_key")
+		clientKeyFile, err := os.CreateTemp(tmpCertDir, "client_key")
 		Expect(err).ToNot(HaveOccurred())
 
 		defer clientKeyFile.Close()
@@ -150,10 +149,9 @@ func MetricsServerHTTPClient() *http.Client {
 	Expect(err).NotTo(HaveOccurred())
 
 	tlsConfig := &tls.Config{
-		MinVersion:               tls.VersionTLS12,
-		PreferServerCipherSuites: true,
-		RootCAs:                  caCertPool,
-		Certificates:             []tls.Certificate{certificate},
+		MinVersion:   tls.VersionTLS12,
+		RootCAs:      caCertPool,
+		Certificates: []tls.Certificate{certificate},
 		CipherSuites: []uint16{
 			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
 			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
@@ -322,7 +320,7 @@ func ExecCommand(binaryPath string, args ...string) *gexec.Session {
 }
 
 func ExecCommandQuiet(binaryPath string, args ...string) *gexec.Session {
-	return execCommand(ioutil.Discard, ioutil.Discard, binaryPath, args...)
+	return execCommand(io.Discard, io.Discard, binaryPath, args...)
 }
 
 func execCommand(stdout, stderr io.Writer, binaryPath string, args ...string) *gexec.Session {
