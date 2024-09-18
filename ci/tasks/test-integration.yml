@@ -12,9 +12,6 @@ inputs:
 - name: bosh-cli
 - name: bosh-agent
 
-outputs:
-- name: parallel-runtime-log
-
 run:
   path: bosh-src/ci/tasks/test-integration.sh
 

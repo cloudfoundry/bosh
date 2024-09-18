@@ -22,13 +22,5 @@ pushd bosh-src/src
   gem install -f bundler
   bundle install --local
   
-  set +e
   bundle exec rake --trace spec:integration
-
-  bundle_exit_code=$?
 popd
-
-mkdir -p parallel-runtime-log
-cp bosh-src/src/parallel_runtime_rspec.log parallel-runtime-log/parallel_runtime_rspec.log
-
-exit $bundle_exit_code
