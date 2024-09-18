@@ -33,21 +33,23 @@ var _ = Describe("Director external database TLS connections", func() {
 			utils.StartInnerBosh(startInnerBoshArgs...)
 		}
 	}
+	var mutualTLSEnabled bool
+	var useIncorrectCA bool
 
 	Context("RDS", func() {
-		var mutualTLSEnabled = false
-		var useIncorrectCA = false
+		mutualTLSEnabled = false
+		useIncorrectCA = false
 
 		DescribeTable("Regular TLS", testDBConnectionOverTLS,
-			Entry("allows TLS connections to POSTGRES", "rds_postgres", mutualTLSEnabled, useIncorrectCA),
 			Entry("allows TLS connections to MYSQL", "rds_mysql", mutualTLSEnabled, useIncorrectCA),
+			Entry("allows TLS connections to POSTGRES", "rds_postgres", mutualTLSEnabled, useIncorrectCA),
 		)
 	})
 
 	Context("GCP", func() {
 		Context("Mutual TLS", func() {
-			var mutualTLSEnabled = true
-			var useIncorrectCA = false
+			mutualTLSEnabled = true
+			useIncorrectCA = false
 
 			DescribeTable("DB Connections", testDBConnectionOverTLS,
 				Entry("allows TLS connections to MYSQL", "gcp_mysql", mutualTLSEnabled, useIncorrectCA),
@@ -56,8 +58,8 @@ var _ = Describe("Director external database TLS connections", func() {
 		})
 
 		Context("With Incorrect CA", func() {
-			var mutualTLSEnabled = true
-			var useIncorrectCA = true
+			mutualTLSEnabled = true
+			useIncorrectCA = true
 
 			DescribeTable("DB Connections", testDBConnectionOverTLS,
 				// Pending https://www.pivotaltracker.com/story/show/153421636/comments/185372185

@@ -18,10 +18,7 @@ func TestPerformance(t *testing.T) {
 	RunSpecs(t, "Performance Suite")
 }
 
-var (
-	boshRelease,
-	candidateWardenLinuxStemcellPath string
-)
+var candidateWardenLinuxStemcellPath string
 
 var _ = SynchronizedBeforeSuite(func() {
 	utils.Bootstrap()
