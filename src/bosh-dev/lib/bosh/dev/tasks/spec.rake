@@ -80,14 +80,19 @@ namespace :spec do
 
     def run_in_parallel(test_path, options = {})
       spec_path = ENV.fetch('SPEC_PATH', '').split(',')
-      count = " -n #{options[:count]}" unless options[:count].to_s.empty?
-      tag = "SPEC_OPTS='--tag #{options[:tags]}'" unless options[:tags].nil?
+      count_flag = "-n #{options[:count]}" unless options[:count].to_s.empty?
+
+      rspec_options = '--format documentation '
+      rspec_options += "--tag #{options[:tags]} " unless options[:tags].nil?
+      spec_opts = "SPEC_OPTS='#{rspec_options}'"
+
+      cmd_prefix = "#{spec_opts} https_proxy= http_proxy= bundle exec"
 
       command = begin
         if !spec_path.empty?
-          "#{tag} https_proxy= http_proxy= bundle exec rspec #{spec_path.join(' ')}"
+          "#{cmd_prefix} rspec #{spec_path.join(' ')}"
         else
-          "#{tag} https_proxy= http_proxy= bundle exec parallel_rspec --multiply-processes 0.5 '#{test_path}' #{count}"
+          "#{cmd_prefix} parallel_rspec #{count_flag} --multiply-processes 0.5 '#{test_path}'"
         end
       end
 
