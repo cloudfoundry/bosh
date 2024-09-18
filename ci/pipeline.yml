@@ -1069,12 +1069,12 @@ jobs:
         VENDOR_PATH: vendor/cache
     - task: test
       timeout: 2h
-      file: bosh-src/ci/tasks/test-unit.yml
+      file: bosh-src/ci/tasks/test-rake-task.yml
       image: integration-image
       input_mapping:
         bosh-src: bosh-src-out
       params:
-        DB: sqlite
+        RAKE_TASK: spec:unit:parallel
     - put: bosh-src
       params:
         repository: bosh-src-out
