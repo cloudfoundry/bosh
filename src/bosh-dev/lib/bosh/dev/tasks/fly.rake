@@ -1,7 +1,6 @@
 require 'rspec'
 
 namespace :fly do
-  # bundle exec rake fly:unit
   desc 'Fly unit specs'
   task :unit do
     db, db_version = fetch_db_and_version('sqlite')
@@ -12,7 +11,6 @@ namespace :fly do
             COVERAGE: ENV.fetch('COVERAGE', false))
   end
 
-  # bundle exec rake fly:integration
   desc 'Fly integration specs'
   task :integration, [:cli_dir] do |_, args|
     db, db_version = fetch_db_and_version('postgresql')
@@ -23,12 +21,6 @@ namespace :fly do
     execute('test-integration', command_opts,
             DB: db,
             SPEC_PATH: ENV.fetch('SPEC_PATH', nil))
-  end
-
-  # bundle exec rake fly:run["pwd ; ls -al"]
-  task :run, [:command] do |_, args|
-    execute('run', '--privileged',
-            COMMAND: %(\"#{args[:command]}\"))
   end
 
   private
@@ -52,7 +44,7 @@ namespace :fly do
 
   def command_opts(test_type, db, db_version)
     [
-      "--privileged",
+      '--privileged',
       input_from(test_type, db, db_version),
       image(db, db_version)
     ].join(' ')
