@@ -230,6 +230,14 @@ if p('blobstore.provider') == 's3'
   if_p('blobstore.sse_kms_key_id') do |sse_kms_key_id|
      blobstore_options['sse_kms_key_id'] = sse_kms_key_id
   end
+
+  if_p('blobstore.swift_auth_account') do |swift_auth_account|
+     blobstore_options['swift_auth_account'] = swift_auth_account
+  end
+
+  if_p('blobstore.swift_temp_url_key') do |swift_temp_url_key|
+     blobstore_options['swift_temp_url_key'] = swift_temp_url_key
+  end
 elsif p('blobstore.provider') == 'gcs'
     blobstore_options = {
     'bucket_name' => p('blobstore.bucket_name'),
