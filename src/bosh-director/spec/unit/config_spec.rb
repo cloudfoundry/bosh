@@ -1046,7 +1046,6 @@ describe Bosh::Director::Config do
               'port' => 3306,
               'ssl_mode' => 'verify_identity',
               'sslca' => '/path/to/root/ca',
-              'sslverify' => true,
             }
           end
         end
@@ -1073,7 +1072,6 @@ describe Bosh::Director::Config do
                 'connection_options' => {
                   'ssl_mode' => 'something-custom',
                   'sslca' => '/some/unknow/path',
-                  'sslverify' => false,
                 },
               }
             end
@@ -1085,7 +1083,6 @@ describe Bosh::Director::Config do
                 'port' => 3306,
                 'ssl_mode' => 'something-custom',
                 'sslca' => '/some/unknow/path',
-                'sslverify' => false,
               }
             end
           end
@@ -1119,7 +1116,6 @@ describe Bosh::Director::Config do
                 'host' => '127.0.0.1',
                 'port' => 3306,
                 'ssl_mode' => 'verify_identity',
-                'sslverify' => true,
               }
             end
           end
@@ -1154,7 +1150,6 @@ describe Bosh::Director::Config do
                 'port' => 3306,
                 'ssl_mode' => 'verify_identity',
                 'sslca' => '/path/to/root/ca',
-                'sslverify' => true,
                 'sslcert' =>  '/path/to/client/certificate',
                 'sslkey' => '/path/to/client/private_key',
               }
@@ -1192,7 +1187,6 @@ describe Bosh::Director::Config do
                 'port' => 3306,
                 'ssl_mode' => 'verify_ca',
                 'sslca' => '/path/to/root/ca',
-                'sslverify' => true,
                 'sslcert' =>  '/path/to/client/certificate',
                 'sslkey' => '/path/to/client/private_key',
               }
