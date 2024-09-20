@@ -1,5 +1,5 @@
 resource "google_sql_database_instance" "mysql-master" {
-  database_version    = "MYSQL_5_7"
+  database_version    = "MYSQL_8_0"
   region              = "us-central1"
   deletion_protection = false
   settings {
