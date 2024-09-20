@@ -22,6 +22,9 @@ import (
 const (
 	mysqlDBType    = "mysql"
 	postgresDBType = "postgres"
+
+	mysqlDbCmd    = "mysql"
+	postgresDBCmd = "psql"
 )
 
 func repoRoot() string {
@@ -93,37 +96,26 @@ func LoadExternalDBConfig(iaasAndDbName string, mutualTLSEnabled bool, tmpCertDi
 		caContents, err = exec.Command(outerBoshBinaryPath, "int", AssetPath(config.ConnectionVarFile), "--path", "/db_ca").Output()
 		Expect(err).ToNot(HaveOccurred())
 	}
-	caFile, err := os.CreateTemp(tmpCertDir, "db_ca")
+	caCertFilepath := filepath.Join(tmpCertDir, "db_ca")
+	err := os.WriteFile(caCertFilepath, caContents, 0644)
 	Expect(err).ToNot(HaveOccurred())
 
-	defer caFile.Close()
-	_, err = caFile.Write(caContents)
-	Expect(err).ToNot(HaveOccurred())
-
-	config.CACertPath = caFile.Name()
+	config.CACertPath = caCertFilepath
 
 	if mutualTLSEnabled {
 		clientCertContents := AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_CLIENT_CERTIFICATE", strings.ToUpper(iaasAndDbName)))
 		clientKeyContents := AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_CLIENT_PRIVATE_KEY", strings.ToUpper(iaasAndDbName)))
 
-		var clientCertFile *os.File
-		clientCertFile, err = os.CreateTemp(tmpCertDir, "client_cert")
+		clientCertFilePath := filepath.Join(tmpCertDir, "client_cert")
+		err = os.WriteFile(clientCertFilePath, []byte(clientCertContents), 0644)
 		Expect(err).ToNot(HaveOccurred())
 
-		defer clientCertFile.Close()
-		_, err = clientCertFile.Write([]byte(clientCertContents))
+		clientKeyFilePath := filepath.Join(tmpCertDir, "client_key")
+		err = os.WriteFile(clientKeyFilePath, []byte(clientKeyContents), 0600)
 		Expect(err).ToNot(HaveOccurred())
 
-		var clientKeyFile *os.File
-		clientKeyFile, err = os.CreateTemp(tmpCertDir, "client_key")
-		Expect(err).ToNot(HaveOccurred())
-
-		defer clientKeyFile.Close()
-		_, err = clientKeyFile.Write([]byte(clientKeyContents))
-		Expect(err).ToNot(HaveOccurred())
-
-		config.ClientCertPath = clientCertFile.Name()
-		config.ClientKeyPath = clientKeyFile.Name()
+		config.ClientCertPath = clientCertFilePath
+		config.ClientKeyPath = clientKeyFilePath
 	}
 
 	return &config
@@ -178,54 +170,19 @@ func DeleteDB(dbConfig *ExternalDBConfig) {
 }
 
 func deleteMySQL(dbConfig *ExternalDBConfig) {
-	args := []string{
-		"-h",
-		dbConfig.Host,
-		fmt.Sprintf("--user=%s", dbConfig.User),
-		fmt.Sprintf("--password=%s", dbConfig.Password),
-		"-e",
+	dropArgs := GenerateMySQLCommand(
 		fmt.Sprintf("drop database if exists %s;", dbConfig.DBName),
-		fmt.Sprintf("--ssl-ca=%s", dbConfig.CACertPath),
-	}
+		dbConfig,
+	)
 
-	if dbConfig.ClientCertPath != "" || dbConfig.ClientKeyPath != "" {
-		args = append(args,
-			fmt.Sprintf("--ssl-cert=%s", dbConfig.ClientCertPath),
-			fmt.Sprintf("--ssl-key=%s", dbConfig.ClientKeyPath),
-			"--ssl-mode=VERIFY_CA",
-		)
-	} else {
-		args = append(args, "--ssl-mode=VERIFY_IDENTITY")
-	}
-
-	session := ExecCommand(mysqlDBType, args...)
+	session := ExecCommand(mysqlDbCmd, dropArgs...)
 	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
 }
 
 func deletePostgres(dbConfig *ExternalDBConfig) {
-	connstring := fmt.Sprintf("dbname=postgres host=%s user=%s password=%s sslrootcert=%s ",
-		dbConfig.Host,
-		dbConfig.User,
-		dbConfig.Password,
-		dbConfig.CACertPath,
-	)
+	dropArgs := GeneratePSQLCommand(fmt.Sprintf("drop database if exists %s;", dbConfig.DBName), dbConfig)
 
-	if dbConfig.ClientCertPath != "" || dbConfig.ClientKeyPath != "" {
-		connstring += fmt.Sprintf("sslcert=%s sslkey=%s sslmode=verify-ca ",
-			dbConfig.ClientCertPath,
-			dbConfig.ClientKeyPath,
-		)
-	} else {
-		connstring += "sslmode=verify-full "
-	}
-
-	args := []string{
-		connstring,
-		"-c",
-		fmt.Sprintf("drop database if exists %s;", dbConfig.DBName),
-	}
-
-	session := ExecCommand("psql", args...)
+	session := ExecCommand(postgresDBCmd, dropArgs...)
 	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
 }
 
@@ -242,13 +199,34 @@ func CreateDB(dbConfig *ExternalDBConfig) {
 }
 
 func createMySQL(dbConfig *ExternalDBConfig) {
+	args := GenerateMySQLCommand(
+		fmt.Sprintf("drop database if exists %s; create database %s;", dbConfig.DBName, dbConfig.DBName),
+		dbConfig,
+	)
+
+	session := ExecCommand(mysqlDbCmd, args...)
+	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+}
+
+func createPostgres(dbConfig *ExternalDBConfig) {
+	dropArgs := GeneratePSQLCommand(fmt.Sprintf("drop database if exists %s;", dbConfig.DBName), dbConfig)
+
+	session := ExecCommand(postgresDBCmd, dropArgs...)
+	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+
+	createArgs := GeneratePSQLCommand(fmt.Sprintf("create database %s;", dbConfig.DBName), dbConfig)
+
+	session = ExecCommand(postgresDBCmd, createArgs...)
+	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+}
+
+func GenerateMySQLCommand(sqlToExecute string, dbConfig *ExternalDBConfig) []string {
 	args := []string{
 		"-h",
 		dbConfig.Host,
 		fmt.Sprintf("--user=%s", dbConfig.User),
 		fmt.Sprintf("--password=%s", dbConfig.Password),
-		"-e",
-		fmt.Sprintf("drop database if exists %s; create database %s;", dbConfig.DBName, dbConfig.DBName),
+		"-e", sqlToExecute,
 		fmt.Sprintf("--ssl-ca=%s", dbConfig.CACertPath),
 	}
 
@@ -262,12 +240,11 @@ func createMySQL(dbConfig *ExternalDBConfig) {
 		args = append(args, "--ssl-mode=VERIFY_IDENTITY")
 	}
 
-	session := ExecCommand(mysqlDBType, args...)
-	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+	return args
 }
 
-func createPostgres(dbConfig *ExternalDBConfig) {
-	connstring := fmt.Sprintf("dbname=postgres host=%s user=%s password=%s sslrootcert=%s ",
+func GeneratePSQLCommand(sqlToExecute string, dbConfig *ExternalDBConfig) []string {
+	connectionStr := fmt.Sprintf("dbname=postgres host=%s user=%s password=%s sslrootcert=%s ",
 		dbConfig.Host,
 		dbConfig.User,
 		dbConfig.Password,
@@ -275,31 +252,21 @@ func createPostgres(dbConfig *ExternalDBConfig) {
 	)
 
 	if dbConfig.ClientCertPath != "" || dbConfig.ClientKeyPath != "" {
-		connstring += fmt.Sprintf("sslcert=%s sslkey=%s sslmode=verify-ca ",
+		connectionStr += fmt.Sprintf("sslcert=%s sslkey=%s sslmode=verify-ca ",
 			dbConfig.ClientCertPath,
 			dbConfig.ClientKeyPath,
 		)
 	} else {
-		connstring += "sslmode=verify-full "
+		connectionStr += "sslmode=verify-full "
 	}
 
 	args := []string{
-		connstring,
+		connectionStr,
 		"-c",
-		fmt.Sprintf("drop database if exists %s;", dbConfig.DBName),
+		sqlToExecute,
 	}
 
-	session := ExecCommand("psql", args...)
-	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
-
-	args = []string{
-		connstring,
-		"-c",
-		fmt.Sprintf("create database %s;", dbConfig.DBName),
-	}
-
-	session = ExecCommand("psql", args...)
-	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+	return args
 }
 
 func AssertEnvExists(envName string) string {
