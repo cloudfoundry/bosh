@@ -120,13 +120,13 @@ GEM
       console (~> 1.26)
       fiber-annotation
       io-event (~> 1.6, >= 1.6.5)
-    async-http (0.76.0)
+    async-http (0.77.0)
       async (>= 2.10.2)
       async-pool (~> 0.7)
       io-endpoint (~> 0.11)
       io-stream (~> 0.4)
-      protocol-http (~> 0.34)
-      protocol-http1 (~> 0.20)
+      protocol-http (~> 0.37)
+      protocol-http1 (~> 0.25)
       protocol-http2 (~> 0.18)
       traces (>= 0.10)
     async-io (1.43.2)
@@ -239,8 +239,8 @@ GEM
     pg (1.5.8)
     prometheus-client (2.1.0)
     protocol-hpack (1.5.1)
-    protocol-http (0.36.0)
-    protocol-http1 (0.23.0)
+    protocol-http (0.37.0)
+    protocol-http1 (0.25.0)
       protocol-http (~> 0.22)
     protocol-http2 (0.18.0)
       protocol-hpack (~> 1.4)
@@ -255,7 +255,7 @@ GEM
       pry (~> 0.9)
       slop (~> 3.0)
     public_suffix (6.0.1)
-    puma (6.4.2)
+    puma (6.4.3)
       nio4r (~> 2.0)
     raabro (1.4.0)
     racc (1.8.1)
@@ -411,4 +411,4 @@ DEPENDENCIES
   webmock
 
 BUNDLED WITH
-   2.5.18
+   2.5.19
