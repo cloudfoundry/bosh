@@ -17,6 +17,10 @@ var _ = Describe("Utils", func() {
 	var dbPass string
 	var dbName string
 
+	var iaasAndDbName string
+	var connectionVarsFile string
+	var connectionOptionsFile string
+
 	var certTmpDir string
 
 	BeforeEach(func() {
@@ -28,11 +32,7 @@ var _ = Describe("Utils", func() {
 	})
 
 	Context("LoadExternalDBConfig", func() {
-		var iaasAndDbName string
 		var mTlsEnabled bool
-
-		var connectionVarsFile string
-		var connectionOptionsFile string
 
 		Context("when IaaS and DB is 'gcp_mysql'", func() {
 			BeforeEach(func() {
@@ -316,6 +316,48 @@ var _ = Describe("Utils", func() {
 
 				Expect(utils.GeneratePSQLCommand(sqlToExecute, externalDBConfig)).To(Equal(expectedAgs))
 			})
+		})
+	})
+
+	Context("InnerBoshWithExternalDBOptions", func() {
+		var externalDBConfig *utils.ExternalDBConfig
+
+		BeforeEach(func() {
+			connectionVarsFile = "external_db/fake.yml"
+			connectionOptionsFile = "external_db/fake_connection_options.yml"
+
+			externalDBConfig = &utils.ExternalDBConfig{
+				Type:                  "mysql",
+				Host:                  dbHost,
+				User:                  dbUser,
+				Password:              dbPass,
+				DBName:                dbName,
+				ConnectionVarFile:     connectionVarsFile,
+				ConnectionOptionsFile: connectionOptionsFile,
+				CACertPath:            filepath.Join(certTmpDir, "db_ca"),
+				ClientCertPath:        filepath.Join(certTmpDir, "client_cert"),
+				ClientKeyPath:         filepath.Join(certTmpDir, "client_key"),
+			}
+		})
+
+		It("generates the expected args", func() {
+			expectedAgs := []string{
+				"-o", utils.BoshDeploymentAssetPath("misc/external-db.yml"),
+				"-o", utils.BoshDeploymentAssetPath("experimental/db-enable-tls.yml"),
+				"-o", utils.AssetPath(connectionOptionsFile),
+				"--vars-file", utils.AssetPath(connectionVarsFile),
+				fmt.Sprintf("--var=db_ca=%s", filepath.Join(certTmpDir, "db_ca")),
+				"-v", fmt.Sprintf("external_db_host=%s", dbHost),
+				"-v", fmt.Sprintf("external_db_user=%s", dbUser),
+				"-v", fmt.Sprintf("external_db_password=%s", dbPass),
+				"-v", fmt.Sprintf("external_db_name=%s", dbName),
+				fmt.Sprintf("-o %s", utils.BoshDeploymentAssetPath("experimental/db-enable-mutual-tls.yml")),
+				fmt.Sprintf("-o %s", utils.AssetPath("tls-skip-host-verify.yml")),
+				fmt.Sprintf("--var=db_client_certificate=%s", filepath.Join(certTmpDir, "client_cert")),
+				fmt.Sprintf("--var=db_client_private_key=%s", filepath.Join(certTmpDir, "client_key")),
+			}
+
+			Expect(utils.InnerBoshWithExternalDBOptions(externalDBConfig)).To(Equal(expectedAgs))
 		})
 	})
 })
