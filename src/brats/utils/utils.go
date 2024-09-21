@@ -416,7 +416,7 @@ func InnerBoshWithExternalDBOptions(dbConfig *ExternalDBConfig) []string {
 		"-o", BoshDeploymentAssetPath("experimental/db-enable-tls.yml"),
 		"-o", AssetPath(dbConfig.ConnectionOptionsFile),
 		"--vars-file", AssetPath(dbConfig.ConnectionVarFile),
-		fmt.Sprintf("--var-file=db_ca=%s", dbConfig.CACertPath),
+		fmt.Sprintf("--var=db_ca=%s", dbConfig.CACertPath),
 		"-v", fmt.Sprintf("external_db_host=%s", dbConfig.Host),
 		"-v", fmt.Sprintf("external_db_user=%s", dbConfig.User),
 		"-v", fmt.Sprintf("external_db_password=%s", dbConfig.Password),
@@ -427,8 +427,8 @@ func InnerBoshWithExternalDBOptions(dbConfig *ExternalDBConfig) []string {
 		options = append(options,
 			fmt.Sprintf("-o %s", BoshDeploymentAssetPath("experimental/db-enable-mutual-tls.yml")),
 			fmt.Sprintf("-o %s", AssetPath("tls-skip-host-verify.yml")),
-			fmt.Sprintf("--var-file=db_client_certificate=%s", dbConfig.ClientCertPath),
-			fmt.Sprintf("--var-file=db_client_private_key=%s", dbConfig.ClientKeyPath),
+			fmt.Sprintf("--var=db_client_certificate=%s", dbConfig.ClientCertPath),
+			fmt.Sprintf("--var=db_client_private_key=%s", dbConfig.ClientKeyPath),
 		)
 	}
 
