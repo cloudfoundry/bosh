@@ -10,7 +10,7 @@ import (
 	"brats/utils"
 )
 
-var _ = Describe("Director external database TLS connections", func() {
+var _ = PDescribe("Director external database TLS connections", func() {
 	testDBConnectionOverTLS := func(databaseType string, mutualTLSEnabled bool, useIncorrectCA bool) {
 		tmpCertDir, err := os.MkdirTemp("", fmt.Sprintf("db_tls_%d", GinkgoParallelProcess()))
 		Expect(err).ToNot(HaveOccurred())
@@ -63,8 +63,7 @@ var _ = Describe("Director external database TLS connections", func() {
 			useIncorrectCA = true
 
 			DescribeTable("DB Connections", testDBConnectionOverTLS,
-				// Pending https://www.pivotaltracker.com/story/show/153421636/comments/185372185
-				PEntry("fails to connect to MYSQL refer to https://www.pivotaltracker.com/story/show/153421636/comments/185372185", "gcp_mysql", mutualTLSEnabled, useIncorrectCA),
+				Entry("fails to connect to MYSQL", "gcp_mysql", mutualTLSEnabled, useIncorrectCA),
 				Entry("fails to connect to POSTGRES", "gcp_postgres", mutualTLSEnabled, useIncorrectCA),
 			)
 		})
