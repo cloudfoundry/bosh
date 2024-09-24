@@ -3,6 +3,7 @@ FROM ubuntu:jammy
 
 ARG BOSH_CLI_URL
 ARG META4_CLI_URL
+ARG GOLANGCI_LINT_INSTALL_URL
 ARG YQ_CLI_URL
 
 ARG RUBY_INSTALL_URL
@@ -83,6 +84,14 @@ RUN meta4_cli_path="/usr/local/bin/meta4" \
     && curl --show-error -sL "${META4_CLI_URL}" \
       > "${meta4_cli_path}" \
     && chmod +x "${meta4_cli_path}"
+
+RUN cd /tmp \
+    && golangci_lint_path="/usr/local/bin/golangci-lint" \
+    && curl --show-error -sL "${GOLANGCI_LINT_INSTALL_URL}" \
+      | tar -xzf - \
+    && mv golangci-lint-*-linux-amd64/golangci-lint "${golangci_lint_path}" \
+    && rm -rf golangci-lint-*-linux-amd64 \
+    && chmod +x "${golangci_lint_path}"
 
 RUN yq_cli_path="/usr/local/bin/yq" \
     && curl --show-error -sL "${YQ_CLI_URL}" \
