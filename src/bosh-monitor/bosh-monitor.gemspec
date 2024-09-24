@@ -22,7 +22,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'async'
   spec.add_dependency 'async-http'
   spec.add_dependency 'async-io'
-  spec.add_dependency 'logging',         '~>2.2.2'
+  spec.add_dependency 'logging'
   spec.add_dependency 'nats-pure'
   spec.add_dependency 'net-smtp'
   spec.add_dependency 'openssl'

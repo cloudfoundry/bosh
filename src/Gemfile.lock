@@ -35,7 +35,7 @@ PATH
       bosh_cpi
       cf-uaa-lib (~> 3.2.1)
       httpclient (~> 2.8.3)
-      logging (~> 2.2.2)
+      logging
       membrane (~> 1.1.0)
       nats-pure
       openssl
@@ -63,7 +63,7 @@ PATH
       cf-uaa-lib (~> 3.2.1)
       dogapi (~> 1.45.0)
       httpclient (~> 2.8.3)
-      logging (~> 2.2.2)
+      logging
       nats-pure
       net-smtp
       openssl
@@ -77,7 +77,7 @@ PATH
   specs:
     bosh-nats-sync (0.0.0)
       cf-uaa-lib (~> 3.2.1)
-      logging (~> 2.2.2)
+      logging
       openssl
       rest-client
       rufus-scheduler
@@ -95,7 +95,7 @@ PATH
   remote: bosh_common
   specs:
     bosh_common (0.0.0)
-      logging (~> 2.2.2)
+      logging
       openssl
       semi_semantic (~> 1.2.0)
 
