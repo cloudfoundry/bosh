@@ -33,7 +33,7 @@ PATH
       bosh-template (~> 0.0.0)
       bosh_common (~> 0.0.0)
       bosh_cpi
-      cf-uaa-lib (~> 3.2.1)
+      cf-uaa-lib
       logging
       membrane (~> 1.1.0)
       nats-pure
@@ -59,7 +59,7 @@ PATH
       async
       async-http
       async-io
-      cf-uaa-lib (~> 3.2.1)
+      cf-uaa-lib
       dogapi (~> 1.45.0)
       logging
       nats-pure
@@ -74,7 +74,7 @@ PATH
   remote: bosh-nats-sync
   specs:
     bosh-nats-sync (0.0.0)
-      cf-uaa-lib (~> 3.2.1)
+      cf-uaa-lib
       logging
       openssl
       rest-client
