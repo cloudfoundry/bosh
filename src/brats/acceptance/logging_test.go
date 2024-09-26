@@ -2,7 +2,7 @@ package acceptance_test
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -29,7 +29,7 @@ var _ = Describe("logging", func() {
 		configPath := utils.AssetPath("cpi-config.yml")
 		redactable := "password: c1oudc0w"
 
-		content, err := ioutil.ReadFile(configPath)
+		content, err := os.ReadFile(configPath)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(string(content)).To(ContainSubstring(redactable))
 

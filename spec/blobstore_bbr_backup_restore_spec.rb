@@ -1,9 +1,7 @@
-require 'rspec'
-require 'tempfile'
-require 'bosh/template/test'
+require 'spec_helper'
 
-describe 'blobstore' do
-  let(:release) { Bosh::Template::Test::ReleaseDir.new(File.join(File.dirname(__FILE__), '..')) }
+RSpec.describe 'blobstore' do
+  let(:release) { Bosh::Template::Test::ReleaseDir.new(RELEASE_ROOT) }
   let(:job) { release.job('blobstore') }
   let(:rendered) { template.render(properties) }
   let(:tempfile) { Tempfile.new('bbr_backup') }

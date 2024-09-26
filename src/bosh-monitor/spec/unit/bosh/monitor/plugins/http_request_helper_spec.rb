@@ -56,83 +56,93 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
     end
   end
 
-  describe '#send_http_get_request' do
-    let(:some_uri) { 'https://send-http-get-request.example.com/some-path' }
+  describe '#send_http_get_request_synchronous' do
+    let(:some_uri) { URI.parse('https://send-http-get-request.example.com/some-path') }
     let(:some_uri_response) { 'hello send_http_get_request' }
 
+    let(:custom_headers) { {} }
+
+    before do
+      stub_request(:get, some_uri)
+        .with { |request_signature|
+          expect(request_signature.headers['Accept']).to eq('*/*')
+          expect(request_signature.headers['User-Agent']).to match(/ruby/i)
+
+          custom_headers.each do |h, v|
+            expect(request_signature.headers[h]).to eq(v)
+          end
+        }
+        .to_return(status: 200, body: some_uri_response)
+
+      allow(logger).to receive(:debug)
+    end
+
     describe 'configuring the http client' do
-      let(:ssl_config) { double(HTTPClient::SSLConfig) }
-      let(:http_client) { instance_double(HTTPClient) }
+      let(:http_client) { Net::HTTP.new(some_uri.host, some_uri.port) }
       let(:proxy_uri) { nil }
 
       before do
-        allow(HTTPClient).to receive(:new).and_return(http_client)
-        allow(http_client).to receive(:ssl_config).and_return(ssl_config)
-        allow(http_client).to receive(:proxy=)
+        allow(ENV).to receive(:[]).and_wrap_original do |method, arg|
+          if proxy_uri && arg == "#{some_uri.scheme}_proxy"
+            proxy_uri.to_s
+          else
+            method.call(arg)
+          end
+        end
 
-        parsed_uri = instance_double(URI::Generic)
-        allow(parsed_uri).to receive(:find_proxy).and_return(proxy_uri)
-        allow(URI).to receive(:parse).with(some_uri.to_s).and_return(parsed_uri)
-
-        allow(ssl_config).to receive(:verify_mode=)
-        allow(http_client).to receive(:get)
+        allow(Net::HTTP).to receive(:new).and_return(http_client)
+        allow(http_client).to receive(:use_ssl=).and_call_original
+        allow(http_client).to receive(:verify_mode=).and_call_original
+        allow(http_client).to receive(:proxy_address=)
+        allow(http_client).to receive(:proxy_port=)
+        allow(http_client).to receive(:proxy_user=)
+        allow(http_client).to receive(:proxy_pass=)
       end
 
       it 'configures the SSL Verify mode' do
-        send_http_get_request(some_uri)
+        send_http_get_request_synchronous(some_uri)
 
-        expect(http_client).to have_received(:get).with(some_uri)
-        expect(ssl_config).to have_received(:verify_mode=).with(OpenSSL::SSL::VERIFY_NONE)
+        expect(Net::HTTP).to have_received(:new).with(some_uri.host, some_uri.port)
+        expect(http_client).to have_received(:use_ssl=).with(true)
+        expect(http_client).to have_received(:verify_mode=).with(OpenSSL::SSL::VERIFY_NONE)
       end
 
-      context 'when URI#finx_proxy is nil' do
+      context 'when URI#find_proxy is nil' do
         it 'does not set any proxy value on the client' do
-          send_http_get_request(some_uri)
+          send_http_get_request_synchronous(some_uri)
 
-          expect(http_client).to_not have_received(:proxy=)
+          expect(http_client).to_not have_received(:proxy_address=)
+          expect(http_client).to_not have_received(:proxy_port=)
+          expect(http_client).to_not have_received(:proxy_user=)
+          expect(http_client).to_not have_received(:proxy_pass=)
         end
       end
 
-      context 'when URI#finx_proxy is NOT nil' do
-        let(:proxy_uri) { 'https://proxy-user:proxy-pass@proxy.example.com:8080/proxy-path' }
+      context 'when URI#find_proxy is NOT nil' do
+        let(:proxy_uri) { URI.parse('https://proxy-user:proxy-pass@proxy.example.com:8080/proxy-path') }
 
         it 'sets proxy values on the client' do
-          send_http_get_request(some_uri)
+          send_http_get_request_synchronous(some_uri)
 
-          expect(http_client).to have_received(:proxy=).with(proxy_uri)
+          expect(http_client).to have_received(:proxy_address=).with(proxy_uri.host)
+          expect(http_client).to have_received(:proxy_port=).with(proxy_uri.port)
+          expect(http_client).to have_received(:proxy_user=).with(proxy_uri.user)
+          expect(http_client).to have_received(:proxy_pass=).with(proxy_uri.password)
         end
       end
     end
 
     context 'making the request' do
-      let(:custom_headers) { {} }
-
-      before do
-        stub_request(:get, some_uri)
-          .with { |request_signature|
-            expect(request_signature.headers['Accept']).to eq('*/*')
-            expect(request_signature.headers['Date']).to match(/#{Time.now.getutc.strftime('%a, %d %b %Y')} \d\d:\d\d:\d\d GMT/)
-            expect(request_signature.headers['User-Agent']).to match(/ruby/)
-
-            custom_headers.each do |h, v|
-              expect(request_signature.headers[h]).to eq(v)
-            end
-          }
-          .to_return(status: 200, body: some_uri_response)
-
-        allow(logger).to receive(:debug)
-      end
-
       context 'when headers are NOT specified' do
         it 'sends a get request' do
-          response = send_http_get_request(some_uri)
+          body, status = send_http_get_request_synchronous(some_uri)
 
-          expect(response.status_code).to eq(200)
-          expect(response.body).to eq(some_uri_response)
+          expect(status).to eq(200)
+          expect(body).to eq(some_uri_response)
         end
 
         it 'logs the request' do
-          send_http_get_request(some_uri)
+          send_http_get_request_synchronous(some_uri)
 
           expect(logger).to have_received(:debug).with("Sending GET request to #{some_uri}")
         end
@@ -147,14 +157,14 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
         end
 
         it 'sends a get request with custom headers' do
-          response = send_http_get_request(some_uri, custom_headers)
+          body, status = send_http_get_request_synchronous(some_uri, custom_headers)
 
-          expect(response.status_code).to eq(200)
-          expect(response.body).to eq(some_uri_response)
+          expect(status).to eq(200)
+          expect(body).to eq(some_uri_response)
         end
 
         it 'logs the request' do
-          send_http_get_request(some_uri, custom_headers)
+          send_http_get_request_synchronous(some_uri, custom_headers)
 
           expect(logger).to have_received(:debug).with("Sending GET request to #{some_uri}")
         end
@@ -162,77 +172,80 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
     end
   end
 
-  describe '#send_http_post_sync_request' do
-    let(:some_uri) { 'https://send-http-post-sync-request.example.com/some-path' }
+  describe '#send_http_post_request_synchronous_with_tls_verify_peer' do
+    let(:some_uri) { URI.parse('https://send-http-post-sync-request.example.com/some-path') }
     let(:some_uri_response) { 'hello send_http_post_sync_request' }
     let(:request) do
       { body: 'send_http_post_sync_request request body', proxy: nil }
     end
 
+    before do
+      stub_request(:post, some_uri)
+        .with(body: { 'send_http_post_sync_request request body' => nil })
+        .to_return(status: 200, body: some_uri_response)
+    end
+
     describe 'configuring the http client' do
-      let(:ssl_config) { double(HTTPClient::SSLConfig) }
-      let(:http_client) { instance_double(HTTPClient) }
+      let(:http_client) { Net::HTTP.new(some_uri.host, some_uri.port) }
       let(:proxy_uri) { nil }
 
       before do
-        allow(HTTPClient).to receive(:new).and_return(http_client)
-        allow(http_client).to receive(:ssl_config).and_return(ssl_config)
-        allow(http_client).to receive(:proxy=)
+        allow(ENV).to receive(:[]).and_wrap_original do |method, arg|
+          if proxy_uri && arg == "#{some_uri.scheme}_proxy"
+            proxy_uri.to_s
+          else
+            method.call(arg)
+          end
+        end
 
-        parsed_uri = instance_double(URI::Generic)
-        allow(parsed_uri).to receive(:find_proxy).and_return(proxy_uri)
-        allow(URI).to receive(:parse).with(some_uri.to_s).and_return(parsed_uri)
-
-        allow(ssl_config).to receive(:verify_mode=)
-        allow(http_client).to receive(:post)
+        allow(Net::HTTP).to receive(:new).and_return(http_client)
+        allow(http_client).to receive(:use_ssl=).and_call_original
+        allow(http_client).to receive(:verify_mode=).and_call_original
+        allow(http_client).to receive(:proxy_address=)
+        allow(http_client).to receive(:proxy_port=)
+        allow(http_client).to receive(:proxy_user=)
+        allow(http_client).to receive(:proxy_pass=)
       end
 
       it 'configures the SSL Verify mode' do
-        send_http_post_sync_request(some_uri, request)
+        send_http_post_request_synchronous_with_tls_verify_peer(some_uri, request)
 
-        expect(http_client).to have_received(:post).with(some_uri, request[:body])
-        expect(ssl_config).to have_received(:verify_mode=).with(OpenSSL::SSL::VERIFY_PEER)
+        expect(Net::HTTP).to have_received(:new).with(some_uri.host, some_uri.port)
+        expect(http_client).to have_received(:use_ssl=).with(true)
+        expect(http_client).to have_received(:verify_mode=).with(OpenSSL::SSL::VERIFY_PEER)
       end
 
-      context 'when URI#finx_proxy is nil' do
+      context 'when URI#find_proxy is nil' do
         it 'does not set any proxy value on the client' do
-          send_http_post_sync_request(some_uri, request)
+          send_http_post_request_synchronous_with_tls_verify_peer(some_uri, request)
 
-          expect(http_client).to_not have_received(:proxy=)
+          expect(http_client).to_not have_received(:proxy_address=)
+          expect(http_client).to_not have_received(:proxy_port=)
+          expect(http_client).to_not have_received(:proxy_user=)
+          expect(http_client).to_not have_received(:proxy_pass=)
         end
       end
 
-      context 'when URI#finx_proxy is nil' do
-        it 'does not set any proxy value on the client' do
-          send_http_post_sync_request(some_uri, request)
-
-          expect(http_client).to_not have_received(:proxy=)
-        end
-      end
-
-      context 'when URI#finx_proxy is NOT nil' do
-        let(:proxy_uri) { 'https://proxy-user:proxy-pass@proxy.example.com:8080/proxy-path' }
+      context 'when URI#find_proxy is NOT nil' do
+        let(:proxy_uri) { URI.parse('https://proxy-user:proxy-pass@proxy.example.com:8080/proxy-path') }
 
         it 'sets proxy values on the client' do
-          send_http_post_sync_request(some_uri, request)
+          send_http_post_request_synchronous_with_tls_verify_peer(some_uri, request)
 
-          expect(http_client).to have_received(:proxy=).with(proxy_uri)
+          expect(http_client).to have_received(:proxy_address=).with(proxy_uri.host)
+          expect(http_client).to have_received(:proxy_port=).with(proxy_uri.port)
+          expect(http_client).to have_received(:proxy_user=).with(proxy_uri.user)
+          expect(http_client).to have_received(:proxy_pass=).with(proxy_uri.password)
         end
       end
     end
 
     context 'making the request' do
-      before do
-        stub_request(:post, some_uri)
-          .with(body: { 'send_http_post_sync_request request body' => nil })
-          .to_return(status: 200, body: some_uri_response)
-      end
-
       it 'sends a get request' do
-        response = send_http_post_sync_request(some_uri, request)
+        body, status = send_http_post_request_synchronous_with_tls_verify_peer(some_uri, request)
 
-        expect(response.status_code).to eq(200)
-        expect(response.body).to eq(some_uri_response)
+        expect(status).to eq(200)
+        expect(body).to eq(some_uri_response)
       end
     end
   end

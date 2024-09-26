@@ -9,7 +9,6 @@ require 'bosh/dev/sandbox/services/uaa_service'
 require 'bosh/dev/sandbox/services/config_server_service'
 require 'bosh/dev/verify_multidigest_manager'
 require 'bosh/dev/gnatsd_manager'
-require 'bosh/dev/test_runner'
 require 'parallel_tests/tasks'
 require 'fileutils'
 
@@ -23,12 +22,9 @@ namespace :spec do
     desc 'Install BOSH integration test dependencies (currently Nginx, UAA, and Config Server)'
     task :install_dependencies do
       FileUtils.mkdir_p('tmp')
-      File.open('tmp/compilation.log', 'w') do |compilation_log|
+      File.open('tmp/compilation.log', 'w') do |log|
         unless ENV['SKIP_DEPS'] == 'true'
-          unless ENV['SKIP_NGINX'] == 'true'
-            nginx = Bosh::Dev::Sandbox::Nginx.new(Bosh::Core::Shell.new(compilation_log))
-            install_with_retries(nginx)
-          end
+          install_with_retries(Bosh::Dev::Sandbox::Nginx.new(Bosh::Core::Shell.new(log))) unless ENV['SKIP_NGINX'] == 'true'
 
           Bosh::Dev::Sandbox::UaaService.install unless ENV['SKIP_UAA'] == 'true'
 
@@ -84,19 +80,19 @@ namespace :spec do
 
     def run_in_parallel(test_path, options = {})
       spec_path = ENV.fetch('SPEC_PATH', '').split(',')
-      count = " -n #{options[:count]}" unless options[:count].to_s.empty?
-      tag = "SPEC_OPTS='--tag #{options[:tags]}'" unless options[:tags].nil?
+      count_flag = "-n #{options[:count]}" unless options[:count].to_s.empty?
+
+      rspec_options = '--format documentation '
+      rspec_options += "--tag #{options[:tags]} " unless options[:tags].nil?
+      spec_opts = "SPEC_OPTS='#{rspec_options}'"
+
+      cmd_prefix = "#{spec_opts} https_proxy= http_proxy= bundle exec"
 
       command = begin
         if !spec_path.empty?
-          "#{tag} https_proxy= http_proxy= bundle exec rspec #{spec_path.join(' ')}"
+          "#{cmd_prefix} rspec #{spec_path.join(' ')}"
         else
-          <<-BASH
-          #{tag} https_proxy= http_proxy= bundle exec parallel_test \
-            --runtime-log parallel_runtime_rspec.log \
-            -m 0.5 \
-            '#{test_path}'#{count} --type rspec
-          BASH
+          "#{cmd_prefix} parallel_rspec #{count_flag} --multiply-processes 0.5 '#{test_path}'"
         end
       end
 
@@ -115,45 +111,50 @@ namespace :spec do
     run_integration_specs(spec_path: 'spec/integration')
   end
 
-  desc 'Run all release unit tests (ERB templates)'
-  task :release_unit do
-    puts 'Release unit tests (ERB templates)'
-    sh('cd .. && rspec --tty --backtrace -c -f p spec/')
-  end
-
   desc 'Run template test unit tests (i.e. Bosh::Template::Test)'
   task :template_test_unit do # TODO _why?_ this is run as part of `spec:unit:template:parallel`
     puts 'Template test unit tests (ERB templates)'
-    sh('rspec bosh-template/spec/assets/template-test-release/src/spec/config.erb_spec.rb')
+    sh('cd bosh-template/spec/assets/template-test-release/src && rspec')
+  end
+
+  def component_spec_dirs
+    @component_spec_dirs ||= Dir['*/spec']
+  end
+
+  def component_dir(component_spec_dir)
+    File.dirname(component_spec_dir)
+  end
+
+  def component_symbol(component_spec_dir)
+    component_dir(component_spec_dir).sub(/^bosh[_-]/, '').to_sym
   end
 
   namespace :unit do
-    runner = Bosh::Dev::TestRunner.new
-
-    desc 'Run all unit tests for ruby components'
-    task :ruby do
-      trap('INT') { exit }
-      runner.ruby
+    desc 'Run all release unit tests (ERB templates)'
+    task :release do
+      puts 'Run unit tests for the release (ERB templates)'
+      sh("cd #{File.expand_path('..')} && rspec")
     end
 
-    desc 'Run all unit tests for ruby components in parallel'
-    task :ruby_parallel do
-      trap('INT') { exit }
-      runner.ruby(parallel: true)
+    namespace :release do
+      task :parallel do
+        puts 'Run unit tests for the release (ERB templates)'
+        sh("cd #{File.expand_path('..')} && parallel_rspec spec")
+      end
     end
 
-    runner.unit_builds.each do |build|
-      desc "Run unit tests for the #{build} component"
-      task build.sub(/^bosh[_-]/, '').intern do
+    component_spec_dirs.each do |component_spec_dir|
+      desc "Run unit tests for the #{component_dir(component_spec_dir)} component"
+      task component_symbol(component_spec_dir) do
         trap('INT') { exit }
-        runner.unit_exec(build)
+        sh("cd #{File.expand_path(component_dir(component_spec_dir))} && rspec")
       end
 
-      namespace build.sub(/^bosh[_-]/, '').intern do
-        desc "Run parallel unit tests for the #{build} component"
+      namespace component_symbol(component_spec_dir) do
+        desc "Run parallel unit tests for the #{component_dir(component_spec_dir)} component"
         task :parallel do
           trap('INT') { exit }
-          runner.unit_exec(build, parallel: true)
+          sh("cd #{File.expand_path(component_dir(component_spec_dir))} && parallel_rspec spec")
         end
       end
     end
@@ -161,16 +162,17 @@ namespace :spec do
     desc 'Run all migrations tests'
     task :migrations do
       trap('INT') { exit }
-      cmd = 'rspec --tty --backtrace -c -f p ./spec/unit/db/migrations/'
-      sh("cd bosh-director && #{cmd}")
+      sh("cd #{File.expand_path('bosh-director')} && rspec spec/unit/db/migrations/")
     end
 
     desc 'Run all unit tests in parallel'
-    task parallel: %w[spec:release_unit spec:unit:ruby_parallel spec:template_test_unit]
+    multitask parallel: %w[spec:unit:release:parallel] + component_spec_dirs.map{|d| "spec:unit:#{component_symbol(d)}:parallel" } do
+      trap('INT') { exit }
+    end
   end
 
   desc 'Run all unit tests'
-  task unit: %w[spec:release_unit spec:unit:ruby spec:template_test_unit]
+  task unit: %w[spec:unit:release] + component_spec_dirs.map{|d| "spec:unit:#{component_symbol(d)}" }
 end
 
 desc 'Run unit and integration specs'

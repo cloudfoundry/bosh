@@ -128,6 +128,9 @@ properties:
   director.enable_cpi_resize_disk:
     description: Enable/Disable native CPI disk resizing (true|false)
     default: false
+  director.enable_cpi_update_disk:
+    description: Enable/Disable native CPI disk update (true|false)
+    default: false
   director.enable_snapshots:
     description: Enable/Disable snapshots for persistent disks (true|false)
     default: false
@@ -423,6 +426,10 @@ properties:
   blobstore.azure_cloud_name:
     description: Name of the Azure Cloud
     default: AzureCloud
+  blobstore.swift_auth_account:
+    description: swift_auth_account of swift storage account
+  blobstore.swift_temp_url_key:
+    description: swift_temp_url_key of swift storage account
 
   director.ignore_missing_gateway:
     description: Allow gateway to be omitted from subnet configuration. Boshlite vms(containers) do not require gateway.

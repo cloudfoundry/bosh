@@ -22,15 +22,12 @@ require 'rspec/its'
 # Useful to see that tests are using expected version of Ruby in CI
 puts "Using #{RUBY_DESCRIPTION}"
 
-Dir.glob(File.expand_path('support/**/*.rb', __dir__)).each { |f| require(f) }
-
 RSpec.configure do |config|
-  # config.deprecation_stream = StringIO.new
-
   config.mock_with :rspec do |mocks|
     mocks.verify_partial_doubles = true
     mocks.verify_doubled_constant_names = true
   end
 end
 
+Dir.glob(File.expand_path('support/**/*.rb', __dir__)).each { |f| require(f) }
 # It must stay minimal!

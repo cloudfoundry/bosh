@@ -2,7 +2,7 @@ package acceptance_test
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -40,18 +40,18 @@ var _ = Describe("nginx with ngx_http_stub_status_module compiled", func() {
 		Expect(err).NotTo(HaveOccurred())
 		defer resp.Body.Close()
 
-		contents, err := ioutil.ReadAll(resp.Body)
+		contents, err := io.ReadAll(resp.Body)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(string(contents)).To(ContainSubstring("bosh_resurrection_enabled"))
 		Expect(string(contents)).To(ContainSubstring("bosh_tasks_total"))
 		Expect(string(contents)).To(ContainSubstring("bosh_networks_dynamic_ips_total"))
 		Expect(string(contents)).To(ContainSubstring("bosh_networks_dynamic_free_ips_total"))
 
-		api_metrics_resp, err := metricsClient.Get(fmt.Sprintf("https://%s:9091/api_metrics", utils.InnerDirectorIP()))
+		apiMetricsResp, err := metricsClient.Get(fmt.Sprintf("https://%s:9091/api_metrics", utils.InnerDirectorIP()))
 		Expect(err).NotTo(HaveOccurred())
-		defer api_metrics_resp.Body.Close()
+		defer apiMetricsResp.Body.Close()
 
-		contents, err = ioutil.ReadAll(api_metrics_resp.Body)
+		contents, err = io.ReadAll(apiMetricsResp.Body)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(string(contents)).To(ContainSubstring("http_server_requests_total"))
 		Expect(string(contents)).To(ContainSubstring("http_server_request_duration_seconds"))

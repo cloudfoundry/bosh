@@ -42,6 +42,8 @@ module Bosh::Blobstore
         server_side_encryption: @options[:server_side_encryption],
         sse_kms_key_id: @options[:sse_kms_key_id],
         assume_role_arn: @options[:assume_role_arn],
+        swift_auth_account: @options[:swift_auth_account],
+        swift_temp_url_key: @options[:swift_temp_url_key],
       }
 
       @s3cli_options.reject! { |_k, v| v.nil? }

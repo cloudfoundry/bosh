@@ -10,10 +10,9 @@ inputs:
   - name: bosh-src
 
 run:
-  path: bosh-src/ci/tasks/test-unit.sh
+  path: bosh-src/ci/tasks/test-rake-task.sh
 
 params:
-  RUBY_VERSION: 3.2.0
-  DB:           replace-me
-  DB_VERSION:   replace-me
   COVERAGE:     true
+  DB:           sqlite
+  RAKE_TASK:

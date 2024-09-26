@@ -5,12 +5,13 @@ script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 src_dir="${script_dir}/../../.."
 
 OVERRIDDEN_BOSH_DEPLOYMENT=$(realpath "$(dirname $0)/../../../bosh-deployment")
-export OVERRIDDEN_BOSH_DEPLOYMENT
-if [[ -e ${OVERRIDDEN_BOSH_DEPLOYMENT}/bosh.yml ]];then
-  export BOSH_DEPLOYMENT_PATH=${OVERRIDDEN_BOSH_DEPLOYMENT}
+
+if [[ -e "${OVERRIDDEN_BOSH_DEPLOYMENT}/bosh.yml" ]];then
+  BOSH_DEPLOYMENT_PATH=${OVERRIDDEN_BOSH_DEPLOYMENT}
 else
-  export BOSH_DEPLOYMENT_PATH="/usr/local/bosh-deployment"
+  BOSH_DEPLOYMENT_PATH="/usr/local/bosh-deployment"
 fi
+export BOSH_DEPLOYMENT_PATH
 
 if [ ! -f /tmp/local-bosh/director/env ]; then
   source "${src_dir}/bosh-src/ci/dockerfiles/docker-cpi/start-bosh.sh"
@@ -71,5 +72,44 @@ if [ -d database-metadata ]; then
   GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY="$(jq -r .gcp_postgres_client_key database-metadata/metadata)"
   export GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY
 fi
+
+brats_env_file="${PWD}/brats-env.sh"
+{
+  echo "export OUTER_BOSH_ENV_PATH=\"${OUTER_BOSH_ENV_PATH}\""
+  echo "export DOCKER_CERTS=\"${DOCKER_CERTS}\""
+  echo "export DOCKER_HOST=\"${DOCKER_HOST}\""
+
+  echo "export BOSH_BINARY_PATH=\"${BOSH_BINARY_PATH}\""
+
+  echo "export BOSH_DIRECTOR_IP=\"${BOSH_DIRECTOR_IP}\""
+
+  echo "export BOSH_DEPLOYMENT_PATH=\"${BOSH_DEPLOYMENT_PATH}\""
+  echo "export BOSH_RELEASE=\"${BOSH_RELEASE}\""
+  echo "export BOSH_DIRECTOR_RELEASE_PATH=\"${BOSH_DIRECTOR_RELEASE_PATH}\""
+  echo "export DNS_RELEASE_PATH=\"${DNS_RELEASE_PATH}\""
+  echo "export CANDIDATE_STEMCELL_TARBALL_PATH=\"${CANDIDATE_STEMCELL_TARBALL_PATH}\""
+
+  echo "export BOSH_DNS_ADDON_OPS_FILE_PATH=\"${BOSH_DNS_ADDON_OPS_FILE_PATH}\""
+
+  echo "export RDS_MYSQL_EXTERNAL_DB_HOST=\"${RDS_MYSQL_EXTERNAL_DB_HOST}\""
+
+  echo "export RDS_POSTGRES_EXTERNAL_DB_HOST=\"${RDS_POSTGRES_EXTERNAL_DB_HOST}\""
+
+  echo "export GCP_MYSQL_EXTERNAL_DB_HOST=\"${GCP_MYSQL_EXTERNAL_DB_HOST}\""
+  echo "export GCP_MYSQL_EXTERNAL_DB_CA=\"${GCP_MYSQL_EXTERNAL_DB_CA}\""
+  echo "export GCP_MYSQL_EXTERNAL_DB_CLIENT_CERTIFICATE=\"${GCP_MYSQL_EXTERNAL_DB_CLIENT_CERTIFICATE}\""
+  echo "export GCP_MYSQL_EXTERNAL_DB_CLIENT_PRIVATE_KEY=\"${GCP_MYSQL_EXTERNAL_DB_CLIENT_PRIVATE_KEY}\""
+
+  echo "export GCP_POSTGRES_EXTERNAL_DB_HOST=\"${GCP_POSTGRES_EXTERNAL_DB_HOST}\""
+  echo "export GCP_POSTGRES_EXTERNAL_DB_CA=\"${GCP_POSTGRES_EXTERNAL_DB_CA}\""
+  echo "export GCP_POSTGRES_EXTERNAL_DB_CLIENT_CERTIFICATE=\"${GCP_POSTGRES_EXTERNAL_DB_CLIENT_CERTIFICATE}\""
+  echo "export GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY=\"${GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY}\""
+
+  echo "# load outer-bosh env"
+  echo "source "${OUTER_BOSH_ENV_PATH}
+} > "${brats_env_file}"
+
+echo "# The required BRATS environment can be loaded by running the following:"
+echo "# 'source ${brats_env_file}'"
 
 bosh-src/scripts/test-brats

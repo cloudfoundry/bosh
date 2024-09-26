@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'httpclient'
 
 describe Bosh::Director::ConfigServer::RetryableHTTPClient do
   subject { Bosh::Director::ConfigServer::RetryableHTTPClient.new(http_client) }
@@ -14,8 +13,7 @@ describe Bosh::Director::ConfigServer::RetryableHTTPClient do
       Errno::ETIMEDOUT,
       Errno::ECONNRESET,
       Timeout::Error,
-      HTTPClient::TimeoutError,
-      HTTPClient::KeepAliveDisconnected,
+      Net::HTTPRetriableError,
       OpenSSL::SSL::SSLError,
     ]
   end

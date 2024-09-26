@@ -8,7 +8,7 @@ gem 'bosh-nats-sync', path: 'bosh-nats-sync'
 gem 'bosh-template', path: 'bosh-template'
 gem 'bosh_common', path: 'bosh_common'
 
-gem 'rake', '~>13.0.3'
+gem 'rake'
 
 gem 'openssl'
 
@@ -20,13 +20,14 @@ gem 'talentbox-delayed_job_sequel', '~>4.3'
 
 gem 'ruby-prof'
 
+gem 'io-stream', '<= 0.4.0' # TODO unpin; v0.4.1 caused "expected `[#<Socket:(closed)>].empty?` to be truthy, got false"
+
 group :production do
   gem 'mysql2'
   gem 'pg'
 end
 
 group :bat do
-  gem 'httpclient'
   gem 'minitar'
   gem 'net-ssh'
 end
@@ -43,7 +44,7 @@ group :development, :test do
   gem 'async-rspec'
 
   gem 'fakefs'
-  gem 'parallel_tests', '~> 2.0'
+  gem 'parallel_tests'
   gem 'rack-test'
   gem 'sinatra', '>= 2.2.0'
   gem 'sinatra-contrib', '>= 2.2.0'

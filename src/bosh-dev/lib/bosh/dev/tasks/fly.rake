@@ -1,39 +1,32 @@
 require 'rspec'
 
 namespace :fly do
-  # bundle exec rake fly:unit
   desc 'Fly unit specs'
   task :unit do
-    db, db_version = fetch_db_and_version
+    db, db_version = fetch_db_and_version('sqlite')
 
-    execute('test-unit', command_opts('unit', db, db_version),
-            DB: db, DB_VERSION: db_version,
+    execute('test-rake-task', command_opts('unit', db, db_version),
+            RAKE_TASK: ENV.fetch('RAKE_TASK', 'spec:unit:parallel'),
+            DB: db,
             COVERAGE: ENV.fetch('COVERAGE', false))
   end
 
-  # bundle exec rake fly:integration
   desc 'Fly integration specs'
   task :integration, [:cli_dir] do |_, args|
-    db, db_version = fetch_db_and_version
+    db, db_version = fetch_db_and_version('postgresql')
 
     command_opts = command_opts('integration', db, db_version)
     command_opts += " --input bosh-cli=#{args[:cli_dir]}" if args[:cli_dir]
 
     execute('test-integration', command_opts,
-            DB: db, DB_VERSION: db_version,
+            DB: db,
             SPEC_PATH: ENV.fetch('SPEC_PATH', nil))
-  end
-
-  # bundle exec rake fly:run["pwd ; ls -al"]
-  task :run, [:command] do |_, args|
-    execute('run', '--privileged',
-            COMMAND: %(\"#{args[:command]}\"))
   end
 
   private
 
-  def fetch_db_and_version
-    db = ENV.fetch('DB', 'postgresql')
+  def fetch_db_and_version(default_db)
+    db = ENV.fetch('DB', default_db)
 
     case db
     when 'postgresql'
@@ -51,8 +44,8 @@ namespace :fly do
 
   def command_opts(test_type, db, db_version)
     [
-      "--privileged",
-      input_from(test_type, db),
+      '--privileged',
+      input_from(test_type, db, db_version),
       image(db, db_version)
     ].join(' ')
   end
@@ -61,13 +54,17 @@ namespace :fly do
     db == 'postgresql' ? 'postgres' : db
   end
 
-  def input_from(test_type, db)
+  def db_short_version(db_version)
+    db_version.split('.').first
+  end
+
+  def input_from(test_type, db, db_version)
     case test_type
     when 'unit'
       if db == 'sqlite'
-        '--inputs-from bosh-director/unit'
+        "--inputs-from bosh-director/#{test_type}-director-#{db_short_name(db)}"
       else
-        "--inputs-from bosh-director/#{test_type}-#{db_short_name(db)}"
+        "--inputs-from bosh-director/#{test_type}-director-#{db_short_name(db)}-#{db_short_version(db_version)}"
       end
 
     when 'integration'
@@ -97,7 +94,6 @@ namespace :fly do
 
   def prepare_env(additional_env = {})
     env = {
-      RUBY_VERSION: ENV['RUBY_VERSION'] || RUBY_VERSION,
     }
     env.merge!(additional_env)
 

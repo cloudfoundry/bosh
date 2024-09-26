@@ -1,23 +1,23 @@
-azure-storage-cli/azure-storage-cli-0.0.113-linux-amd64:
-  size: 9431597
-  object_id: 818a3679-a084-4cae-5ac9-1fb6428d63cb
-  sha: sha256:4700d55a4391b4b31d90b743c706ee39d5daf788f4a55700b81354afa4e918fc
-bosh-gcscli/bosh-gcscli-0.0.248-linux-amd64:
-  size: 22828523
-  object_id: b4aa1ac6-ab2e-48da-6b4e-de8545b20c56
-  sha: sha256:764ee8e117ecd574a2def9cc3785fc61f8e977a37a4e29410599e9c3e2001a38
-davcli/davcli-0.0.365-linux-amd64:
+azure-storage-cli/azure-storage-cli-0.0.115-linux-amd64:
+  size: 9461764
+  object_id: 4d1e9f5f-ebb6-4248-4dfd-7bb625c16c14
+  sha: sha256:08f5a9b0d65879dbc790ea2c1fb7f4efb7a79e7e969e49bf76a07b68a1a7e3da
+bosh-gcscli/bosh-gcscli-0.0.250-linux-amd64:
+  size: 22743068
+  object_id: f6c4ac5b-137e-4719-5712-cc71c14992ab
+  sha: sha256:7e4ee64e1e37a212e807cf67ab9265b4bc91151d1a7be53759cabe107afcd5bb
+davcli/davcli-0.0.367-linux-amd64:
   size: 9319721
-  object_id: 72b7dfcc-4e6a-450c-4fc3-c607674f7d5e
-  sha: sha256:840edae6b018a5f9a036228d1b0a0b37829df5fca8e2704d503341753732f850
+  object_id: ac153b29-5727-4e51-5c5d-410fb18840ce
+  sha: sha256:9599d949df7e15ef42e9406abc50c8e828aca56994384f9c9584389b9af5c398
 mysql/mariadb-connector-c-3.4.1-src.tar.gz:
   size: 1423524
   object_id: 13079304-3e81-445f-485a-bf0b74587ff7
   sha: sha256:0a7f2522a44a7369c1dda89676e43485037596a7b1534898448175178aedeb4d
-nats/nats-server-v2.10.20-linux-amd64.tar.gz:
-  size: 5729565
-  object_id: b586cd8e-4bd7-4fc6-62d6-959b30991a57
-  sha: sha256:979c6e633fb03987771b8f7baf99041b574638486ead35acdb868f6a7187a164
+nats/nats-server-v2.10.21-linux-amd64.tar.gz:
+  size: 5737263
+  object_id: 80ebd1b5-1e2a-4709-6300-f31b87fdcde2
+  sha: sha256:004ddf97c3396511e3e6d356e9bc8760ad9c19e73443fd790a44fbf3ca63bb23
 postgres/postgresql-10.23.tar.gz:
   size: 25493839
   object_id: 1549746f-1e8d-4ce5-5585-36eca41ab528
@@ -30,11 +30,11 @@ postgres/postgresql-15.8.tar.gz:
   size: 30390113
   object_id: 90cc0db1-9031-4770-50a8-4470eb91daa1
   sha: sha256:09fb1b27187962df046e8c0d9a1a2a56f80fd7f8cd4e7f881cac09b7fa3c60e1
-s3cli/s3cli-0.0.316-linux-amd64:
+s3cli/s3cli-0.0.319-linux-amd64:
   size: 16431544
-  object_id: 832c59ce-c4b7-42f9-6bc7-c1a0b7b99a4d
-  sha: sha256:41880b8496d75cd36395c81ded553b4625ea88cd9dcc3017e1664b9c5ee2570b
-verify-multidigest/verify-multidigest-0.0.495-linux-amd64:
+  object_id: 818ea474-4f71-4b7e-7613-62d483547c1b
+  sha: sha256:23198cf0280326337e939193a323f752fe79e8ba3bf27625bbc94781ed1d2dbf
+verify-multidigest/verify-multidigest-0.0.496-linux-amd64:
   size: 3537894
-  object_id: 11d21cd6-f90f-4f55-48c2-5c9d138cc3e0
-  sha: sha256:0c00643358a10516c15a1f9d969bd642ba4ae8ad8b03c6e8a6b45a9cd6064362
+  object_id: 86995a31-2fd6-4283-6ecf-7d87418468aa
+  sha: sha256:33174a97a346fbbb3f4f4a0d43cda6c3adbe5423712517bab88efb94f61aed04

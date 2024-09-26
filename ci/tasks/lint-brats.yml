@@ -1,0 +1,13 @@
+---
+platform: linux
+
+image_resource:
+  type: registry-image
+  source:
+    repository: bosh/integration
+
+inputs:
+- name: bosh-src
+
+run:
+  path: bosh-src/ci/tasks/lint-brats.sh

@@ -1,13 +1,11 @@
 ---
 # We need to override the ssl_mode to verify_ca (instead of verify_identity)
 # because GCP MYSQL server does not contain the server FQDN in its certificate CN.
-# Also sslverify is set to false because of this bug: https://www.pivotaltracker.com/story/show/154927488
 
 - type: replace
   path: /instance_groups/name=bosh/properties/director/db/connection_options?
   value:
     ssl_mode: verify_ca
-    sslverify: false
     read_timeout: 120
     write_timeout: 120
     connect_timeout: 120

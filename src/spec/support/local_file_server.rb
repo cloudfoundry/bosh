@@ -9,25 +9,27 @@ module Bosh::Spec
       @port = port
       @logger = logger
 
-      builder = ::Puma::Rack::Builder.app do
-        use Rack::CommonLogger
-        use Rack::ShowExceptions
-        run Rack::Directory.new(directory)
+      builder =
+        Puma::Rack::Builder.app do
+          use Rack::CommonLogger
+          use Rack::ShowExceptions
+          run Rack::Directory.new(directory)
 
-        map '/redirect/to' do
-          run Proc.new { |env| [302, {'Location' => env['QUERY_STRING']}, []] }
+          map '/redirect/to' do
+            run Proc.new { |env| [302, { 'Location' => env['QUERY_STRING'] }, []] }
+          end
         end
-      end
+
+      puma_configuration =
+        Puma::Configuration.new do |user_config|
+          user_config.tag 'local-file-server'
+          user_config.bind "tcp://localhost:#{port}"
+          user_config.app builder
+        end
 
       @server_thread = Thread.new do
         begin
-          puma_configuration = ::Puma::Configuration.new do |user_config|
-            user_config.tag 'local-file-server'
-            user_config.bind "tcp://localhost:#{port}"
-            user_config.app builder
-          end
-          puma_launcher = ::Puma::Launcher.new(puma_configuration)
-          puma_launcher.run
+          Puma::Launcher.new(puma_configuration, log_writer: Puma::LogWriter.null).run
         rescue Interrupt
           # that's ok, the spec is done with us...
         end

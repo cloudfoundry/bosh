@@ -97,6 +97,7 @@ module SpecHelper
           username: ENV['DB_USER'],
           password: ENV['DB_PASSWORD'],
           host: ENV['DB_HOST'] || '127.0.0.1',
+          port: ENV['DB_PORT'],
         }.compact)
       else
         uri = URI.parse(connection_string)
@@ -121,7 +122,7 @@ module SpecHelper
         )
       when 'mysql'
         require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/mysql', File.dirname(__FILE__))
-        db_options[:port] = 3306
+        db_options[:port] ||= 3306
 
         @director_db_helper = Bosh::Dev::Sandbox::Mysql.new(
           "#{@db_name}_director",

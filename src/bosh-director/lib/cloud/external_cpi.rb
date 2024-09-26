@@ -91,6 +91,7 @@ module Bosh::Clouds
     def snapshot_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def delete_snapshot(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def resize_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
+    def update_disk(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def get_disks(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def ping(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def calculate_vm_cloud_properties(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end

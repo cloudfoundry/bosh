@@ -1,6 +1,5 @@
 require 'spec_helper'
 require 'rack/test'
-require 'httpclient'
 
 describe Bosh::Director::ConfigServer::UAAAuthProvider do
   include Support::UaaHelpers
@@ -145,9 +144,8 @@ describe Bosh::Director::ConfigServer::UAAAuthProvider do
           Errno::ETIMEDOUT,
           Errno::ECONNRESET,
           Timeout::Error,
-          HTTPClient::TimeoutError,
-          HTTPClient::KeepAliveDisconnected,
-          OpenSSL::SSL::SSLError
+          Net::HTTPRetriableError,
+          OpenSSL::SSL::SSLError,
       ]
 
       retryable = double("Bosh::Retryable")

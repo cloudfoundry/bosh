@@ -26,17 +26,21 @@ module Bosh::Director
         end
 
         context 'when asked for certificate expiry for the director' do
+          let(:config_file) { Config.director_certificate_expiry_json_path }
+
+          before { FileUtils.mkdir_p(File.dirname(config_file)) }
+          after { FileUtils.rm_f(config_file) }
+
           context 'when queried as admin' do
             before { authorize('admin', 'admin') }
 
             it 'it responds with the expiry date and days left' do
-              not_after = Time.now + 24 * 60 * 60 * 365
+              not_after = Time.now + (24 * 60 * 60 * 365)
               json = {
                 'director.abc.certificate': not_after.utc.iso8601,
                 'director.abc.ca': '0',
               }.to_json
 
-              config_file = Config.director_certificate_expiry_json_path
               File.open(config_file, 'w') { |f| f.write(json) }
 
               expected = [{
@@ -47,7 +51,6 @@ module Bosh::Director
 
               get '/certificate_expiry'
 
-              File.delete(config_file)
               expect(JSON.parse(last_response.body)).to eq(expected)
             end
           end
@@ -56,13 +59,12 @@ module Bosh::Director
             before { authorize('reader', 'reader') }
 
             it 'it responds with the expiry date and days left' do
-              not_after = Time.now + 24 * 60 * 60 * 365
+              not_after = Time.now + (24 * 60 * 60 * 365)
               json = {
                 'director.abc.certificate': not_after.utc.iso8601,
                 'director.abc.ca': '0',
               }.to_json
 
-              config_file = Config.director_certificate_expiry_json_path
               File.open(config_file, 'w') { |f| f.write(json) }
 
               expected = [{
@@ -73,7 +75,6 @@ module Bosh::Director
 
               get '/certificate_expiry'
 
-              File.delete(config_file)
               expect(JSON.parse(last_response.body)).to eq(expected)
             end
 
@@ -85,12 +86,10 @@ module Bosh::Director
 
             it 'returns an error if the list is corrupt' do
               json = [].to_yaml
-              config_file = Config.director_certificate_expiry_json_path
               File.open(config_file, 'w') { |f| f.write(json) }
 
               get '/certificate_expiry'
 
-              File.delete(config_file)
               expect(last_response.status).to eq(500)
             end
           end

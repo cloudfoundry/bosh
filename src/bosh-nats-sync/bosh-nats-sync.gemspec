@@ -19,7 +19,7 @@ Gem::Specification.new do |spec|
   spec.executables << 'bosh-nats-sync'
 
   spec.add_dependency 'cf-uaa-lib',  '~>3.2.1'
-  spec.add_dependency 'logging',         '~>2.2.2'
+  spec.add_dependency 'logging'
   spec.add_dependency 'openssl'
   spec.add_dependency 'rufus-scheduler'
   spec.add_dependency 'rest-client'

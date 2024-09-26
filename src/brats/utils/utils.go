@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -23,6 +22,9 @@ import (
 const (
 	mysqlDBType    = "mysql"
 	postgresDBType = "postgres"
+
+	mysqlDbCmd    = "mysql"
+	postgresDBCmd = "psql"
 )
 
 func repoRoot() string {
@@ -70,9 +72,9 @@ func Bootstrap() {
 	AssertEnvExists("BOSH_DEPLOYMENT_PATH")
 }
 
-func LoadExternalDBConfig(DBaaS string, mutualTLSEnabled bool, tmpCertDir string) *ExternalDBConfig {
+func LoadExternalDBConfig(iaasAndDbName string, mutualTLSEnabled bool, tmpCertDir string) *ExternalDBConfig {
 	var databaseType string
-	if strings.HasSuffix(DBaaS, mysqlDBType) {
+	if strings.HasSuffix(iaasAndDbName, mysqlDBType) {
 		databaseType = mysqlDBType
 	} else {
 		databaseType = postgresDBType
@@ -80,49 +82,40 @@ func LoadExternalDBConfig(DBaaS string, mutualTLSEnabled bool, tmpCertDir string
 
 	config := ExternalDBConfig{
 		Type:                  databaseType,
-		Host:                  AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_HOST", strings.ToUpper(DBaaS))),
-		User:                  AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_USER", strings.ToUpper(DBaaS))),
-		Password:              AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_PASSWORD", strings.ToUpper(DBaaS))),
+		Host:                  AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_HOST", strings.ToUpper(iaasAndDbName))),
+		User:                  AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_USER", strings.ToUpper(iaasAndDbName))),
+		Password:              AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_PASSWORD", strings.ToUpper(iaasAndDbName))),
 		DBName:                fmt.Sprintf("db_%s_%d", databaseType, GinkgoParallelProcess()),
-		ConnectionVarFile:     fmt.Sprintf("external_db/%s.yml", DBaaS),
-		ConnectionOptionsFile: fmt.Sprintf("external_db/%s_connection_options.yml", DBaaS),
+		ConnectionVarFile:     fmt.Sprintf("external_db/%s.yml", iaasAndDbName),
+		ConnectionOptionsFile: fmt.Sprintf("external_db/%s_connection_options.yml", iaasAndDbName),
 	}
 
-	caContents := []byte(os.Getenv(fmt.Sprintf("%s_EXTERNAL_DB_CA", strings.ToUpper(DBaaS))))
+	caContents := []byte(os.Getenv(fmt.Sprintf("%s_EXTERNAL_DB_CA", strings.ToUpper(iaasAndDbName))))
 	if len(caContents) == 0 {
 		var err error
 		caContents, err = exec.Command(outerBoshBinaryPath, "int", AssetPath(config.ConnectionVarFile), "--path", "/db_ca").Output()
 		Expect(err).ToNot(HaveOccurred())
 	}
-	caFile, err := ioutil.TempFile(tmpCertDir, "db_ca")
+	caCertFilepath := filepath.Join(tmpCertDir, "db_ca")
+	err := os.WriteFile(caCertFilepath, caContents, 0644)
 	Expect(err).ToNot(HaveOccurred())
 
-	defer caFile.Close()
-	_, err = caFile.Write(caContents)
-	Expect(err).ToNot(HaveOccurred())
-
-	config.CACertPath = caFile.Name()
+	config.CACertPath = caCertFilepath
 
 	if mutualTLSEnabled {
-		clientCertContents := AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_CLIENT_CERTIFICATE", strings.ToUpper(DBaaS)))
-		clientKeyContents := AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_CLIENT_PRIVATE_KEY", strings.ToUpper(DBaaS)))
+		clientCertContents := AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_CLIENT_CERTIFICATE", strings.ToUpper(iaasAndDbName)))
+		clientKeyContents := AssertEnvExists(fmt.Sprintf("%s_EXTERNAL_DB_CLIENT_PRIVATE_KEY", strings.ToUpper(iaasAndDbName)))
 
-		clientCertFile, err := ioutil.TempFile(tmpCertDir, "client_cert")
+		clientCertFilePath := filepath.Join(tmpCertDir, "client_cert")
+		err = os.WriteFile(clientCertFilePath, []byte(clientCertContents), 0644)
 		Expect(err).ToNot(HaveOccurred())
 
-		defer clientCertFile.Close()
-		_, err = clientCertFile.Write([]byte(clientCertContents))
+		clientKeyFilePath := filepath.Join(tmpCertDir, "client_key")
+		err = os.WriteFile(clientKeyFilePath, []byte(clientKeyContents), 0600)
 		Expect(err).ToNot(HaveOccurred())
 
-		clientKeyFile, err := ioutil.TempFile(tmpCertDir, "client_key")
-		Expect(err).ToNot(HaveOccurred())
-
-		defer clientKeyFile.Close()
-		_, err = clientKeyFile.Write([]byte(clientKeyContents))
-		Expect(err).ToNot(HaveOccurred())
-
-		config.ClientCertPath = clientCertFile.Name()
-		config.ClientKeyPath = clientKeyFile.Name()
+		config.ClientCertPath = clientCertFilePath
+		config.ClientKeyPath = clientKeyFilePath
 	}
 
 	return &config
@@ -146,14 +139,13 @@ func MetricsServerHTTPClient() *http.Client {
 	privateKeyData, err := cmd.Output()
 	Expect(err).NotTo(HaveOccurred())
 
-	certificate, err := tls.X509KeyPair([]byte(certificateData), []byte(privateKeyData))
+	certificate, err := tls.X509KeyPair(certificateData, privateKeyData)
 	Expect(err).NotTo(HaveOccurred())
 
 	tlsConfig := &tls.Config{
-		MinVersion:               tls.VersionTLS12,
-		PreferServerCipherSuites: true,
-		RootCAs:                  caCertPool,
-		Certificates:             []tls.Certificate{certificate},
+		MinVersion:   tls.VersionTLS12,
+		RootCAs:      caCertPool,
+		Certificates: []tls.Certificate{certificate},
 		CipherSuites: []uint16{
 			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
 			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
@@ -178,54 +170,19 @@ func DeleteDB(dbConfig *ExternalDBConfig) {
 }
 
 func deleteMySQL(dbConfig *ExternalDBConfig) {
-	args := []string{
-		"-h",
-		dbConfig.Host,
-		fmt.Sprintf("--user=%s", dbConfig.User),
-		fmt.Sprintf("--password=%s", dbConfig.Password),
-		"-e",
+	dropArgs := GenerateMySQLCommand(
 		fmt.Sprintf("drop database if exists %s;", dbConfig.DBName),
-		fmt.Sprintf("--ssl-ca=%s", dbConfig.CACertPath),
-	}
+		dbConfig,
+	)
 
-	if dbConfig.ClientCertPath != "" || dbConfig.ClientKeyPath != "" {
-		args = append(args,
-			fmt.Sprintf("--ssl-cert=%s", dbConfig.ClientCertPath),
-			fmt.Sprintf("--ssl-key=%s", dbConfig.ClientKeyPath),
-			"--ssl-mode=VERIFY_CA",
-		)
-	} else {
-		args = append(args, "--ssl-mode=VERIFY_IDENTITY")
-	}
-
-	session := ExecCommand(mysqlDBType, args...)
+	session := ExecCommand(mysqlDbCmd, dropArgs...)
 	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
 }
 
 func deletePostgres(dbConfig *ExternalDBConfig) {
-	connstring := fmt.Sprintf("dbname=postgres host=%s user=%s password=%s sslrootcert=%s ",
-		dbConfig.Host,
-		dbConfig.User,
-		dbConfig.Password,
-		dbConfig.CACertPath,
-	)
+	dropArgs := GeneratePSQLCommand(fmt.Sprintf("drop database if exists %s;", dbConfig.DBName), dbConfig)
 
-	if dbConfig.ClientCertPath != "" || dbConfig.ClientKeyPath != "" {
-		connstring += fmt.Sprintf("sslcert=%s sslkey=%s sslmode=verify-ca ",
-			dbConfig.ClientCertPath,
-			dbConfig.ClientKeyPath,
-		)
-	} else {
-		connstring += "sslmode=verify-full "
-	}
-
-	args := []string{
-		connstring,
-		"-c",
-		fmt.Sprintf("drop database if exists %s;", dbConfig.DBName),
-	}
-
-	session := ExecCommand("psql", args...)
+	session := ExecCommand(postgresDBCmd, dropArgs...)
 	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
 }
 
@@ -242,13 +199,34 @@ func CreateDB(dbConfig *ExternalDBConfig) {
 }
 
 func createMySQL(dbConfig *ExternalDBConfig) {
+	args := GenerateMySQLCommand(
+		fmt.Sprintf("drop database if exists %s; create database %s;", dbConfig.DBName, dbConfig.DBName),
+		dbConfig,
+	)
+
+	session := ExecCommand(mysqlDbCmd, args...)
+	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+}
+
+func createPostgres(dbConfig *ExternalDBConfig) {
+	dropArgs := GeneratePSQLCommand(fmt.Sprintf("drop database if exists %s;", dbConfig.DBName), dbConfig)
+
+	session := ExecCommand(postgresDBCmd, dropArgs...)
+	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+
+	createArgs := GeneratePSQLCommand(fmt.Sprintf("create database %s;", dbConfig.DBName), dbConfig)
+
+	session = ExecCommand(postgresDBCmd, createArgs...)
+	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+}
+
+func GenerateMySQLCommand(sqlToExecute string, dbConfig *ExternalDBConfig) []string {
 	args := []string{
 		"-h",
 		dbConfig.Host,
 		fmt.Sprintf("--user=%s", dbConfig.User),
 		fmt.Sprintf("--password=%s", dbConfig.Password),
-		"-e",
-		fmt.Sprintf("drop database if exists %s; create database %s;", dbConfig.DBName, dbConfig.DBName),
+		"-e", sqlToExecute,
 		fmt.Sprintf("--ssl-ca=%s", dbConfig.CACertPath),
 	}
 
@@ -262,12 +240,11 @@ func createMySQL(dbConfig *ExternalDBConfig) {
 		args = append(args, "--ssl-mode=VERIFY_IDENTITY")
 	}
 
-	session := ExecCommand(mysqlDBType, args...)
-	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+	return args
 }
 
-func createPostgres(dbConfig *ExternalDBConfig) {
-	connstring := fmt.Sprintf("dbname=postgres host=%s user=%s password=%s sslrootcert=%s ",
+func GeneratePSQLCommand(sqlToExecute string, dbConfig *ExternalDBConfig) []string {
+	connectionStr := fmt.Sprintf("dbname=postgres host=%s user=%s password=%s sslrootcert=%s ",
 		dbConfig.Host,
 		dbConfig.User,
 		dbConfig.Password,
@@ -275,31 +252,21 @@ func createPostgres(dbConfig *ExternalDBConfig) {
 	)
 
 	if dbConfig.ClientCertPath != "" || dbConfig.ClientKeyPath != "" {
-		connstring += fmt.Sprintf("sslcert=%s sslkey=%s sslmode=verify-ca ",
+		connectionStr += fmt.Sprintf("sslcert=%s sslkey=%s sslmode=verify-ca ",
 			dbConfig.ClientCertPath,
 			dbConfig.ClientKeyPath,
 		)
 	} else {
-		connstring += "sslmode=verify-full "
+		connectionStr += "sslmode=verify-full "
 	}
 
 	args := []string{
-		connstring,
+		connectionStr,
 		"-c",
-		fmt.Sprintf("drop database if exists %s;", dbConfig.DBName),
+		sqlToExecute,
 	}
 
-	session := ExecCommand("psql", args...)
-	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
-
-	args = []string{
-		connstring,
-		"-c",
-		fmt.Sprintf("create database %s;", dbConfig.DBName),
-	}
-
-	session = ExecCommand("psql", args...)
-	Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
+	return args
 }
 
 func AssertEnvExists(envName string) string {
@@ -322,7 +289,7 @@ func ExecCommand(binaryPath string, args ...string) *gexec.Session {
 }
 
 func ExecCommandQuiet(binaryPath string, args ...string) *gexec.Session {
-	return execCommand(ioutil.Discard, ioutil.Discard, binaryPath, args...)
+	return execCommand(io.Discard, io.Discard, binaryPath, args...)
 }
 
 func execCommand(stdout, stderr io.Writer, binaryPath string, args ...string) *gexec.Session {
@@ -449,7 +416,7 @@ func InnerBoshWithExternalDBOptions(dbConfig *ExternalDBConfig) []string {
 		"-o", BoshDeploymentAssetPath("experimental/db-enable-tls.yml"),
 		"-o", AssetPath(dbConfig.ConnectionOptionsFile),
 		"--vars-file", AssetPath(dbConfig.ConnectionVarFile),
-		fmt.Sprintf("--var-file=db_ca=%s", dbConfig.CACertPath),
+		fmt.Sprintf("--var=db_ca=%s", dbConfig.CACertPath),
 		"-v", fmt.Sprintf("external_db_host=%s", dbConfig.Host),
 		"-v", fmt.Sprintf("external_db_user=%s", dbConfig.User),
 		"-v", fmt.Sprintf("external_db_password=%s", dbConfig.Password),
@@ -460,8 +427,8 @@ func InnerBoshWithExternalDBOptions(dbConfig *ExternalDBConfig) []string {
 		options = append(options,
 			fmt.Sprintf("-o %s", BoshDeploymentAssetPath("experimental/db-enable-mutual-tls.yml")),
 			fmt.Sprintf("-o %s", AssetPath("tls-skip-host-verify.yml")),
-			fmt.Sprintf("--var-file=db_client_certificate=%s", dbConfig.ClientCertPath),
-			fmt.Sprintf("--var-file=db_client_private_key=%s", dbConfig.ClientKeyPath),
+			fmt.Sprintf("--var=db_client_certificate=%s", dbConfig.ClientCertPath),
+			fmt.Sprintf("--var=db_client_private_key=%s", dbConfig.ClientKeyPath),
 		)
 	}
 

@@ -1,11 +1,6 @@
-require 'rspec'
-require 'yaml'
-require 'json'
-require 'bosh/template/test'
-require 'bosh/template/evaluation_context'
-require_relative './template_example_group'
+require 'spec_helper'
 
-describe 'director.yml.erb' do
+RSpec.describe 'director.yml.erb' do
   let(:merged_manifest_properties) do
     {
       'agent' => {
@@ -50,6 +45,7 @@ describe 'director.yml.erb' do
         'enable_snapshots' => true,
         'enable_nats_delivered_templates' => false,
         'enable_cpi_resize_disk' => false,
+        'enable_cpi_update_disk' => false,
         'enable_pre_ruby_3_2_equal_tilde_behavior' => false,
         'allow_errands_on_stopped_instances' => false,
         'generate_vm_passwords' => false,
@@ -507,7 +503,7 @@ describe 'director.yml.erb' do
       end
 
       it 'should contain the version' do
-        expect(parsed_yaml['version']).to eq('280.1.5')
+        expect(parsed_yaml['version']).to eq('280.1.6')
       end
 
       it 'should contain the audit log path' do
@@ -603,7 +599,7 @@ describe 'director.yml.erb' do
 
   describe Bosh::Template::Test do
     subject(:parsed_yaml) do
-      release = Bosh::Template::Test::ReleaseDir.new(File.join(File.dirname(__FILE__), '../'))
+      release = Bosh::Template::Test::ReleaseDir.new(RELEASE_ROOT)
       job = release.job('director')
       template = job.template('config/director.yml')
       YAML.load(template.render(merged_manifest_properties))
@@ -613,7 +609,7 @@ describe 'director.yml.erb' do
   end
 
   describe Bosh::Template::EvaluationContext do
-    let(:erb_yaml) { File.read(File.join(File.dirname(__FILE__), '../jobs/director/templates/director.yml.erb')) }
+    let(:erb_yaml) { File.read(File.join(RELEASE_ROOT, 'jobs/director/templates/director.yml.erb')) }
 
     subject(:parsed_yaml) do
       binding = Bosh::Template::EvaluationContext.new(
@@ -630,7 +626,7 @@ describe 'director.yml.erb' do
   describe 'director' do
     describe 'nats_client_certificate.pem.erb' do
       it_should_behave_like 'a rendered file' do
-        let(:file_name) { '../jobs/director/templates/nats_client_certificate.pem.erb' }
+        let(:file_name) { 'jobs/director/templates/nats_client_certificate.pem.erb' }
         let(:properties) do
           {
             'properties' => {
@@ -649,7 +645,7 @@ describe 'director.yml.erb' do
 
     describe 'nats_client_private_key.erb' do
       it_should_behave_like 'a rendered file' do
-        let(:file_name) { '../jobs/director/templates/nats_client_private_key.erb' }
+        let(:file_name) { 'jobs/director/templates/nats_client_private_key.erb' }
         let(:properties) do
           {
             'properties' => {
@@ -668,7 +664,7 @@ describe 'director.yml.erb' do
 
     describe 'db_ca.pem.erb' do
       it_should_behave_like 'a rendered file' do
-        let(:file_name) { '../jobs/director/templates/db_ca.pem.erb' }
+        let(:file_name) { 'jobs/director/templates/db_ca.pem.erb' }
         let(:properties) do
           {
             'properties' => {
@@ -689,7 +685,7 @@ describe 'director.yml.erb' do
 
     context 'director.cpi.preferred_api_version' do
       subject(:parsed_yaml) do
-        release = Bosh::Template::Test::ReleaseDir.new(File.join(File.dirname(__FILE__), '../'))
+        release = Bosh::Template::Test::ReleaseDir.new(RELEASE_ROOT)
         job = release.job('director')
         template = job.template('config/director.yml')
         YAML.load(template.render(merged_manifest_properties))
@@ -752,7 +748,7 @@ describe 'director.yml.erb' do
   describe 'client ca' do
     describe 'nats_client_ca_certificate.pem.erb' do
       it_should_behave_like 'a rendered file' do
-        let(:file_name) { '../jobs/director/templates/nats_client_ca_certificate.pem.erb' }
+        let(:file_name) { 'jobs/director/templates/nats_client_ca_certificate.pem.erb' }
         let(:properties) do
           {
             'properties' => {
@@ -771,7 +767,7 @@ describe 'director.yml.erb' do
 
     describe 'nats_client_ca_private_key.erb' do
       it_should_behave_like 'a rendered file' do
-        let(:file_name) { '../jobs/director/templates/nats_client_ca_private_key.erb' }
+        let(:file_name) { 'jobs/director/templates/nats_client_ca_private_key.erb' }
         let(:properties) do
           {
             'properties' => {

@@ -1,3 +1,5 @@
+require 'net/http'
+
 module Bosh::Director::ConfigServer
   class RetryableHTTPClient
     def initialize(http_client)
@@ -25,8 +27,7 @@ module Bosh::Director::ConfigServer
           Errno::ETIMEDOUT,
           Errno::ECONNRESET,
           ::Timeout::Error,
-          ::HTTPClient::TimeoutError,
-          ::HTTPClient::KeepAliveDisconnected,
+          Net::HTTPRetriableError,
           OpenSSL::SSL::SSLError,
       ]
       Bosh::Retryable.new({sleep: 0, tries: 3, on: handled_exceptions})

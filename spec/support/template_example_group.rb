@@ -1,4 +1,4 @@
-shared_examples_for "a rendered file" do
+RSpec.shared_examples_for 'a rendered file' do
   let(:content) { 'file content' }
   let(:expected_content) { "file content\n" }
   let(:file_name) do
@@ -9,7 +9,7 @@ shared_examples_for "a rendered file" do
     raise 'Override this for binding properties'
   end
 
-  let(:template) { File.read(File.join(File.dirname(__FILE__), file_name)) }
+  let(:template) { File.read(template_file(file_name)) }
 
   subject(:rendered_template) do
     binding = Bosh::Template::EvaluationContext.new(properties, nil).get_binding

@@ -1,6 +1,6 @@
-require 'httpclient'
 require 'async/http'
 require 'async/http/proxy'
+require 'net/http'
 
 module Bosh::Monitor::Plugins
   module HttpRequestHelper
@@ -14,31 +14,45 @@ module Bosh::Monitor::Plugins
       process_async_http_request(method: :post, uri: uri, headers: request.fetch(:head, {}), body: request.fetch(:body, nil), proxy: request.fetch(:proxy, nil))
     end
 
-    def send_http_get_request(uri, headers = nil)
+    def send_http_get_request_synchronous(uri, headers = nil)
+      parsed_uri = URI.parse(uri.to_s)
+
       # we are interested in response, so send sync request
-      logger.debug("Sending GET request to #{uri}")
-      cli = sync_client(OpenSSL::SSL::VERIFY_NONE)
-      env_proxy = URI.parse(uri.to_s).find_proxy
-      cli.proxy = env_proxy unless env_proxy.nil?
+      logger.debug("Sending GET request to #{parsed_uri}")
 
-      return cli.get(uri) if headers.nil?
+      net_http = sync_client(parsed_uri, OpenSSL::SSL::VERIFY_NONE)
 
-      cli.get(uri, nil, headers)
+      response = net_http.get(parsed_uri.request_uri, headers)
+
+      [response.body, response.code.to_i]
     end
 
-    def send_http_post_sync_request(uri, request)
-      cli = sync_client
-      env_proxy = URI.parse(uri.to_s).find_proxy
-      cli.proxy = env_proxy unless env_proxy.nil?
-      cli.post(uri, request[:body])
+    def send_http_post_request_synchronous_with_tls_verify_peer(uri, request)
+      parsed_uri = URI.parse(uri.to_s)
+
+      net_http = sync_client(parsed_uri, OpenSSL::SSL::VERIFY_PEER)
+
+      response = net_http.post(parsed_uri.request_uri, request[:body])
+
+      [response.body, response.code.to_i]
     end
 
     private
 
-    def sync_client(ssl_verify_mode = OpenSSL::SSL::VERIFY_PEER)
-      client = HTTPClient.new
-      client.ssl_config.verify_mode = ssl_verify_mode
-      client
+    def sync_client(parsed_uri, ssl_verify_mode)
+      net_http = Net::HTTP.new(parsed_uri.host, parsed_uri.port)
+      net_http.use_ssl = (parsed_uri.scheme == 'https')
+      net_http.verify_mode = ssl_verify_mode
+
+      env_proxy = parsed_uri.find_proxy
+      unless env_proxy.nil?
+        net_http.proxy_address = env_proxy.host
+        net_http.proxy_port = env_proxy.port
+        net_http.proxy_user = env_proxy.user
+        net_http.proxy_pass = env_proxy.password
+      end
+
+      net_http
     end
 
     def process_async_http_request(method:, uri:, headers: {}, body: nil, proxy: nil)

@@ -24,6 +24,7 @@ module Bosh::Director
         :default_update_vm_strategy,
         :dns,
         :enable_cpi_resize_disk,
+        :enable_cpi_update_disk,
         :enable_short_lived_nats_bootstrap_credentials,
         :enable_short_lived_nats_bootstrap_credentials_compilation_vms,
         :enable_snapshots,
@@ -226,6 +227,7 @@ module Bosh::Director
         end
         @verify_multidigest_path = config['verify_multidigest_path']
         @enable_cpi_resize_disk = config.fetch('enable_cpi_resize_disk', false)
+        @enable_cpi_update_disk = config.fetch('enable_cpi_update_disk', false)
         @default_update_vm_strategy = config.fetch('default_update_vm_strategy', nil)
         @parallel_problem_resolution = config.fetch('parallel_problem_resolution', true)
 
@@ -312,7 +314,6 @@ module Bosh::Director
             when 'mysql2'
               # http://sequel.jeremyevans.net/rdoc/files/doc/opening_databases_rdoc.html#label-mysql+
               connection_config['ssl_mode'] = tls_options.fetch('skip_host_verify', false) ? 'verify_ca' : 'verify_identity'
-              connection_config['sslverify'] = true
               connection_config['sslca'] = db_ca_path if db_ca_provided
               connection_config['sslcert'] = db_client_cert_path if mutual_tls_enabled
               connection_config['sslkey'] = db_client_private_key_path if mutual_tls_enabled
