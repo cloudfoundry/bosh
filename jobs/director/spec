@@ -424,6 +424,9 @@ properties:
     description: swift_auth_account of swift storage account
   blobstore.swift_temp_url_key:
     description: swift_temp_url_key of swift storage account
+  blobstore.openstack_blobstore_type:
+    description: openstack storage account type (Optional - "swift"|"ceph", defaults to "swift")
+
 
   director.ignore_missing_gateway:
     description: Allow gateway to be omitted from subnet configuration. Boshlite vms(containers) do not require gateway.

@@ -122,7 +122,7 @@ module Bosh::Blobstore
         end
       end
 
-      context 'when swift_auth_account is provided' do
+      context 'when swift_temp_url_key is provided' do
         it 'adds it to the config file' do
           described_class.new(options.merge(
             {
@@ -131,6 +131,18 @@ module Bosh::Blobstore
           )
 
           expect(JSON.parse(stored_config_file[0])['swift_temp_url_key']).to eq('the_swift_temp_url_key')
+        end
+      end
+
+      context 'when openstack_blobstore_type is provided' do
+        it 'adds it to the config file' do
+          described_class.new(options.merge(
+            {
+              openstack_blobstore_type: 'the_openstack_blobstore_type',
+            })
+          )
+
+          expect(JSON.parse(stored_config_file[0])['openstack_blobstore_type']).to eq('the_openstack_blobstore_type')
         end
       end
     end

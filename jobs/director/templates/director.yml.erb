@@ -238,6 +238,10 @@ if p('blobstore.provider') == 's3'
   if_p('blobstore.swift_temp_url_key') do |swift_temp_url_key|
      blobstore_options['swift_temp_url_key'] = swift_temp_url_key
   end
+
+  if_p('blobstore.openstack_blobstore_type') do |openstack_blobstore_type|
+     blobstore_options['openstack_blobstore_type'] = openstack_blobstore_type
+  end
 elsif p('blobstore.provider') == 'gcs'
     blobstore_options = {
     'bucket_name' => p('blobstore.bucket_name'),
