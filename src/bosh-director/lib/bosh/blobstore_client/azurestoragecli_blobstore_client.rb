@@ -13,6 +13,8 @@ module Bosh::Blobstore
     #   key that is applied before the object is sent to azure storage account
     # @option options [Symbol, optional] account_key
     # @option options [Symbol, optional] container_name
+    # @option options [Symbol, optional] azure_cloud_name
+    #   Azure Cloud Name to use for azure storage account
     # @option options [Symbol] azure_storage_cli_path
     #   path to azure-storage-cli binary
     # @option options [Symbol, optional] azure_storage_cli_config_path
@@ -29,7 +31,8 @@ module Bosh::Blobstore
       @azure_storage_cli_options = {
         "account_name": @options[:account_name],
         "container_name": @options[:container_name],
-        "account_key": @options[:account_key]
+        "account_key": @options[:account_key],
+        "environment": @options[:azure_cloud_name]
       }
 
       @azure_storage_cli_options.reject! { |_k, v| v.nil? }

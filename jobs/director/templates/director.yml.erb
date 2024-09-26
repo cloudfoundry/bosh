@@ -256,6 +256,7 @@ elsif p('blobstore.provider') == 'gcs'
   end
 elsif p('blobstore.provider') == 'azure-storage'
   blobstore_options = {
+    'azure_cloud_name' => p('blobstore.azure_cloud_name'),
     'account_name' => p('blobstore.account_name'),
     'container_name' => p('blobstore.container_name'),
     'account_key' => p('blobstore.account_key'),

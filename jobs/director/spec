@@ -423,6 +423,9 @@ properties:
     description: container_name of azure storage account
   blobstore.account_key:
     description: account_key of azure storage account
+  blobstore.azure_cloud_name:
+    description: Name of the Azure Cloud
+    default: AzureCloud
   blobstore.swift_auth_account:
     description: swift_auth_account of swift storage account
   blobstore.swift_temp_url_key:
