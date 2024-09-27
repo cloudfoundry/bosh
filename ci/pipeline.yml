@@ -1101,10 +1101,9 @@ jobs:
       input_mapping:
         bosh-src: bosh-src-out
       file: bosh-src/ci/tasks/lint-brats.yml
-# TODO: uncomment after verifying that this task does what we expect
-#    - put: bosh-src
-#      params:
-#        repository: bosh-src-out
+    - put: bosh-src
+      params:
+        repository: bosh-src-out
 
   - name: bump-packages
     serial: true
