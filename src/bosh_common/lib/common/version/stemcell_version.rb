@@ -1,4 +1,5 @@
 require 'common/version/semi_semantic_version'
+require 'common/version/parse_error'
 
 module Bosh::Common
   module Version
@@ -12,6 +13,8 @@ module Bosh::Common
         version = version.gsub('_', '.')
 
         self.new(SemiSemantic::Version.parse(version))
+      rescue SemiSemantic::ParseError => e
+        raise ParseError.new(e)
       end
 
       def self.match(str_a, str_b)

@@ -31,6 +31,14 @@ module Bosh::Common::Version
       it 'ignores anything after a space' do
         expect(described_class.parse('12.1 (some information)').to_s).to eq('12.1')
       end
+
+      context 'with an invalid version' do
+        let(:invalid_version_string) { '&' }
+
+        it 'raises a Bosh::Common::Version::ParseError' do
+          expect { described_class.parse(invalid_version_string) }.to raise_error(Bosh::Common::Version::ParseError)
+        end
+      end
     end
 
     describe '#default_post_release' do

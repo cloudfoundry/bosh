@@ -46,7 +46,7 @@ module Bosh::Director
         end
 
         compiled_package_fuzzy_matches.max_by do |compiled_package_model|
-          SemiSemantic::Version.parse(compiled_package_model.stemcell_version).release.components[1] || 0
+          Bosh::Common::Version::ReleaseVersion.parse(compiled_package_model.stemcell_version).version.release.components[1] || 0
         end
       end
     end

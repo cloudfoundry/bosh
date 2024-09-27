@@ -44,7 +44,6 @@ PATH
       rack-test
       rake
       rufus-scheduler (~> 3.0)
-      semi_semantic (~> 1.2.0)
       sequel (~> 5.29.0)
       sinatra (~> 2.2.0)
       sys-filesystem (~> 1.4.1)
@@ -87,7 +86,6 @@ PATH
       activesupport
       openssl
       ostruct
-      semi_semantic (~> 1.2.0)
 
 PATH
   remote: bosh_common
@@ -95,7 +93,7 @@ PATH
     bosh_common (0.0.0)
       logging
       openssl
-      semi_semantic (~> 1.2.0)
+      semi_semantic
 
 GEM
   remote: https://rubygems.org/

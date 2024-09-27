@@ -16,7 +16,7 @@ Gem::Specification.new do |spec|
   spec.files        = Dir['lib/**/*'].select{ |f| File.file? f }
   spec.require_path = 'lib'
 
-  spec.add_dependency 'semi_semantic', '~>1.2.0'
+  spec.add_dependency 'semi_semantic'
   spec.add_dependency 'logging'
   spec.add_dependency 'openssl'
 end

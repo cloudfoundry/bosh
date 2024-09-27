@@ -35,6 +35,14 @@ module Bosh::Common::Version
         expect(described_class.parse('1.2-dev').to_s).to eq('1+dev.2')
         expect(described_class.parse('1.2-dev.1').to_s).to eq('1.2-dev.1')
       end
+
+      context 'with an invalid version' do
+        let(:invalid_version_string) { '&' }
+
+        it 'raises a Bosh::Common::Version::ParseError' do
+          expect { described_class.parse(invalid_version_string) }.to raise_error(Bosh::Common::Version::ParseError)
+        end
+      end
     end
 
     describe 'to_old_format' do

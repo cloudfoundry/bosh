@@ -5,9 +5,6 @@ source 'https://rubygems.org'
 gem 'rake'
 gem 'bundler'
 
-group :production do
-end
-
 group :development, :test do
   gem 'bosh-template', path: '../../../..'
   gem 'rspec'

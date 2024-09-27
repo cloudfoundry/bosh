@@ -23,6 +23,14 @@ module Bosh::Common::Version
         model = double(:fake_version, to_s: '1.0.1')
         expect(described_class.parse(model).to_s).to eq('1.0.1')
       end
+
+      context 'with an invalid version' do
+        let(:invalid_version_string) { '&' }
+
+        it 'raises a Bosh::Common::Version::ParseError' do
+          expect { described_class.parse(invalid_version_string) }.to raise_error(Bosh::Common::Version::ParseError)
+        end
+      end
     end
 
     describe 'described_class.parse_and_compare' do

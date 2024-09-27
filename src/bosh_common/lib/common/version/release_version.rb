@@ -1,4 +1,5 @@
 require 'common/version/semi_semantic_version'
+require 'common/version/parse_error'
 
 module Bosh::Common
   module Version
@@ -17,6 +18,8 @@ module Bosh::Common
         end
 
         self.new(SemiSemantic::Version.parse(version))
+      rescue SemiSemantic::ParseError => e
+        raise ParseError.new(e)
       end
 
       def to_old_format

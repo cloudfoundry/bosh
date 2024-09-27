@@ -1,4 +1,5 @@
 require 'semi_semantic/version'
+require 'common/version/parse_error'
 
 module Bosh::Common
   module Version
@@ -16,6 +17,8 @@ module Bosh::Common
         version = version.to_s
 
         self.new(SemiSemantic::Version.parse(version))
+      rescue SemiSemantic::ParseError => e
+        raise ParseError.new(e)
       end
 
       def self.parse_and_compare(a, b)

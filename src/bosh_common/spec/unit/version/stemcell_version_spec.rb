@@ -32,6 +32,14 @@ module Bosh::Common::Version
         expect(described_class.parse('12_1').to_s).to eq('12.1')
         expect(described_class.parse('1.2_2-alpha_1').to_s).to eq('1.2.2-alpha.1')
       end
+
+      context 'with an invalid version' do
+        let(:invalid_version_string) { '&' }
+
+        it 'raises a Bosh::Common::Version::ParseError' do
+          expect { described_class.parse(invalid_version_string) }.to raise_error(Bosh::Common::Version::ParseError)
+        end
+      end
     end
 
     describe '#default_post_release' do

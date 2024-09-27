@@ -54,7 +54,7 @@ module Bosh::Director
         if release_version.nil?
           begin
             new_formatted_version = Bosh::Common::Version::ReleaseVersion.parse(version)
-          rescue SemiSemantic::ParseError
+          rescue Bosh::Common::Version::ParseError
             raise ReleaseVersionInvalid, "Release version invalid: #{version}"
           end
           if version == new_formatted_version.to_s

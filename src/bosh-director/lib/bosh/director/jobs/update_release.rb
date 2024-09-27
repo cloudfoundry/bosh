@@ -100,7 +100,7 @@ module Bosh::Director
         begin
           @version = Bosh::Common::Version::ReleaseVersion.parse(@manifest['version'])
           logger.info("Formatted version '#{@manifest['version']}' => '#{@version}'") unless @version.to_s == @manifest['version']
-        rescue SemiSemantic::ParseError
+        rescue Bosh::Common::Version::ParseError
           raise ReleaseVersionInvalid, "Release version invalid: #{@manifest['version']}"
         end
 
