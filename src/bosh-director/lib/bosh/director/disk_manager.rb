@@ -30,12 +30,10 @@ module Bosh::Director
         new_disk = disk_pair[:new]
         old_disk = disk_pair[:old]
 
+        @logger.info("CPI resize disk enabled: #{Config.enable_cpi_resize_disk}")
+
         if use_iaas_native_disk_resize?(old_disk, new_disk)
-          @logger.info("CPI is using native disk resize")
           resize_disk(instance_plan, new_disk, old_disk)
-        elsif use_iaas_native_disk_update?(old_disk, new_disk)
-          @logger.info("CPI is using native disk update")
-          update_disk_cpi(instance_plan, new_disk, old_disk)
         else
           update_disk(instance_plan, new_disk, old_disk)
         end
@@ -92,14 +90,6 @@ module Bosh::Director
         new_disk.managed? &&
         new_disk.size_diff_only?(old_disk) &&
         new_disk.is_bigger_than?(old_disk)
-    end
-
-    def use_iaas_native_disk_update?(old_disk, new_disk)
-      Config.enable_cpi_update_disk &&
-        new_disk &&
-        old_disk &&
-        new_disk.managed? &&
-        old_disk.managed?
     end
 
     def add_event(action, deployment_name, instance_name, object_name = nil, parent_id = nil, error = nil)
@@ -235,35 +225,6 @@ module Bosh::Director
       end
 
       disk_model
-    end
-
-    def update_disk_cpi(instance_plan, new_disk, old_disk)
-      old_disk_model = old_disk&.model
-      if old_disk_model.nil?
-        @logger.info("Perform disk create or update, as disk was not found.")
-        update_disk(instance_plan, new_disk, old_disk)
-        return
-      end
-
-      @logger.info("Starting IaaS native update of disk '#{old_disk_model.disk_cid}' with new size '#{new_disk.size}' and cloud properties '#{new_disk.cloud_properties}'")
-      detach_disk(old_disk_model)
-
-      begin
-        cloud = cloud_for_cpi(old_disk_model.instance.active_vm.cpi)
-        cloud.update_disk(old_disk_model.disk_cid, new_disk.size, new_disk.cloud_properties)
-      rescue Bosh::Clouds::NotImplemented, Bosh::Clouds::NotSupported => e
-        @logger.info("IaaS native update not possible for disk #{old_disk_model.disk_cid}. Falling back to creating new disk.\n#{e.message}")
-        attach_disk(old_disk_model, instance_plan.tags)
-        update_disk(instance_plan, new_disk, old_disk)
-
-        return
-      end
-
-      attach_disk(old_disk_model, instance_plan.tags)
-
-      old_disk_model.update(size: new_disk.size)
-      old_disk_model.update(cloud_properties: new_disk.cloud_properties)
-      @logger.info("Finished IaaS native update of disk '#{old_disk_model.disk_cid}'")
     end
 
     def update_disk(instance_plan, new_disk, old_disk)
