@@ -1096,7 +1096,7 @@ jobs:
       output_mapping:
         output_repo: bosh-src-out
       params:
-        SOURCE_PATH: bosh-src/src/brats/
+        SOURCE_PATH: src/brats/
     - task: lint-brats
       input_mapping:
         bosh-src: bosh-src-out
