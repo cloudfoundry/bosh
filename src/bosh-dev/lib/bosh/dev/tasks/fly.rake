@@ -89,7 +89,7 @@ namespace :fly do
   end
 
   def concourse_target
-    "--target #{ENV.fetch('CONCOURSE_TARGET', 'director')}"
+    "--target #{ENV.fetch('CONCOURSE_TARGET', 'bosh')}"
   end
 
   def prepare_env(additional_env = {})
