@@ -6,7 +6,6 @@ module Bosh::Director
 
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:enable_cpi_resize_disk) { false }
-    let(:enable_cpi_update_disk) { false }
     let(:cloud_factory) { instance_double(CloudFactory) }
     let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
     let(:instance_plan) do
@@ -67,7 +66,6 @@ module Bosh::Director
       allow(agent_client).to receive(:list_disk).and_return(['disk123'])
       allow(cloud).to receive(:create_disk).and_return('new-disk-cid')
       allow(cloud).to receive(:resize_disk)
-      allow(cloud).to receive(:update_disk)
       allow(cloud).to receive(:attach_disk)
       allow(cloud).to receive(:detach_disk)
       allow(agent_client).to receive(:stop)
@@ -80,7 +78,6 @@ module Bosh::Director
       allow(agent_client).to receive(:add_persistent_disk)
       allow(Config).to receive(:current_job).and_return(update_job)
       allow(Config).to receive(:enable_cpi_resize_disk).and_return(enable_cpi_resize_disk)
-      allow(Config).to receive(:enable_cpi_update_disk).and_return(enable_cpi_update_disk)
       allow(CloudFactory).to receive(:create).and_return(cloud_factory)
       allow(DeploymentPlan::Stages::Report).to receive(:new).and_return(step_report)
       allow(step_report).to receive(:disk_hint).and_return(disk_hint)
@@ -169,111 +166,6 @@ module Bosh::Director
         ).and_return([])
 
         disk_manager.update_persistent_disk(instance_plan)
-      end
-
-      context 'when `enable_cpi_update_disk` is enabled' do
-        let(:enable_cpi_update_disk) { true }
-        let(:job_persistent_disk_size) { 4096 }
-        let(:cloud_properties) do
-          { 'new' => 'properties' }
-        end
-
-        context 'when disk size and properties change' do
-          it 'updates the disk via cpi' do
-            disk_manager.update_persistent_disk(instance_plan)
-
-            expect(agent_client).to have_received(:unmount_disk)
-            expect(agent_client).to have_received(:remove_persistent_disk)
-            expect(cloud).to have_received(:detach_disk).with('vm234', 'disk123')
-            expect(cloud).to have_received(:update_disk).with('disk123', 4096, { "new" => "properties" })
-            expect(cloud).to have_received(:attach_disk).with('vm234', 'disk123')
-            expect(agent_client).to have_received(:mount_disk)
-          end
-
-          it 'updates the disk size and cloud properties in the db' do
-            disk_manager.update_persistent_disk(instance_plan)
-
-            model = Models::PersistentDisk.where(disk_cid: 'disk123').first
-            expect(model.size).to eq(job_persistent_disk_size)
-            expect(model.cloud_properties).to eq(cloud_properties)
-          end
-        end
-
-        context 'when the new disk is unmanaged' do
-          let(:disk_collection) do
-            collection = DeploymentPlan::PersistentDiskCollection.new(logger)
-            collection.add_by_disk_name_and_type('unmanaged-disk-name', disk_type)
-            collection
-          end
-
-          context 'when the old disk is unmanaged' do
-            let(:disk_name) { 'unmanaged-disk-name' }
-
-            it 'does not use cpi update_disk' do
-              disk_manager.update_persistent_disk(instance_plan)
-
-              expect(cloud).to_not have_received(:update_disk)
-            end
-          end
-
-          context 'when the old disk is managed' do
-            let(:disk_name) { '' }
-
-            it 'does not use cpi update_disk' do
-              expect do
-                disk_manager.update_persistent_disk(instance_plan)
-              end.not_to raise_error
-
-              expect(cloud).to_not have_received(:update_disk)
-            end
-          end
-        end
-
-        context 'when update_disk is not implemented' do
-          it 'falls back to manually copying disk' do
-            allow(cloud).to receive(:update_disk).and_raise(Bosh::Clouds::NotImplemented)
-
-            disk_manager.update_persistent_disk(instance_plan)
-
-            expect(cloud).to have_received(:detach_disk).with('vm234', 'disk123').twice
-            expect(cloud).to have_received(:update_disk)
-            expect(cloud).to have_received(:create_disk).with(4096, { 'new' => 'properties' }, 'vm234')
-            expect(cloud).to have_received(:attach_disk).with('vm234', 'disk123')
-            expect(cloud).to have_received(:attach_disk).with('vm234', 'new-disk-cid')
-          end
-        end
-
-        context 'when update_disk is not supported' do
-          let(:job_persistent_disk_size) { 3072 }
-
-          it 'falls back to manually copying disk' do
-            allow(cloud).to receive(:update_disk).and_raise(Bosh::Clouds::NotSupported)
-
-            disk_manager.update_persistent_disk(instance_plan)
-
-            expect(cloud).to have_received(:detach_disk).with('vm234', 'disk123').twice
-            expect(cloud).to have_received(:update_disk)
-            expect(cloud).to have_received(:create_disk).with(3072, { 'new' => 'properties' }, 'vm234')
-            expect(cloud).to have_received(:attach_disk).with('vm234', 'disk123')
-            expect(cloud).to have_received(:attach_disk).with('vm234', 'new-disk-cid')
-          end
-        end
-      end
-
-      context 'when `enable_cpi_update_disk` is disabled' do
-        let(:enable_cpi_update_disk) { false }
-        let(:cloud_properties) do
-          { 'other' => 'properties' }
-        end
-
-        it 'falls back to manually copying disk' do
-          disk_manager.update_persistent_disk(instance_plan)
-
-          expect(cloud).not_to have_received(:update_disk)
-          expect(cloud).to have_received(:create_disk).with(1024, { 'other' => 'properties' }, 'vm234')
-          expect(cloud).to have_received(:attach_disk).with('vm234', 'new-disk-cid')
-          expect(cloud).to have_received(:detach_disk).with('vm234', 'disk123')
-        end
       end
 
       context 'when `enable_cpi_disk_resize` is enabled' do

@@ -128,9 +128,6 @@ properties:
   director.enable_cpi_resize_disk:
     description: Enable/Disable native CPI disk resizing (true|false)
     default: false
-  director.enable_cpi_update_disk:
-    description: Enable/Disable native CPI disk update (true|false)
-    default: false
   director.enable_snapshots:
     description: Enable/Disable snapshots for persistent disks (true|false)
     default: false

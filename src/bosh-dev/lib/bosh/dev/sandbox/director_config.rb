@@ -22,7 +22,6 @@ module Bosh::Dev::Sandbox
                 :director_ruby_port,
                 :dns_enabled,
                 :enable_cpi_resize_disk,
-                :enable_cpi_update_disk,
                 :enable_nats_delivered_templates,
                 :enable_short_lived_nats_bootstrap_credentials,
                 :enable_short_lived_nats_bootstrap_credentials_compilation_vms,
@@ -86,7 +85,6 @@ module Bosh::Dev::Sandbox
       @trusted_certs = attrs.fetch(:trusted_certs)
       @users_in_manifest = attrs.fetch(:users_in_manifest, true)
       @enable_cpi_resize_disk = attrs.fetch(:enable_cpi_resize_disk, false)
-      @enable_cpi_update_disk = attrs.fetch(:enable_cpi_update_disk, false)
       @default_update_vm_strategy = attrs.fetch(:default_update_vm_strategy, nil)
       @enable_nats_delivered_templates = attrs.fetch(:enable_nats_delivered_templates, false)
       @enable_short_lived_nats_bootstrap_credentials = attrs.fetch(:enable_short_lived_nats_bootstrap_credentials, false)
