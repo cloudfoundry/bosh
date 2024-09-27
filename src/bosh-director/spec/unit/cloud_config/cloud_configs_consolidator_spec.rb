@@ -4,13 +4,13 @@ module Bosh::Director
   describe CloudConfig::CloudConfigsConsolidator do
     subject(:consolidator) { described_class.new(cloud_configs) }
     let(:cc_model_1) do
-      FactoryBot.create(:models_config, id: 1, content: cloud_config_1.to_yaml, raw_manifest: cloud_config_1)
+      FactoryBot.create(:models_config, content: cloud_config_1.to_yaml, raw_manifest: cloud_config_1)
     end
     let(:cc_model_2) do
-      FactoryBot.create(:models_config, id: 21, content: cloud_config_2.to_yaml, raw_manifest: cloud_config_2)
+      FactoryBot.create(:models_config, content: cloud_config_2.to_yaml, raw_manifest: cloud_config_2)
     end
     let(:cc_model_3) do
-      FactoryBot.create(:models_config, id: 65, content: cloud_config_3.to_yaml, raw_manifest: cloud_config_3)
+      FactoryBot.create(:models_config, content: cloud_config_3.to_yaml, raw_manifest: cloud_config_3)
     end
     let(:cloud_configs) { [cc_model_1, cc_model_2, cc_model_3] }
     let(:cloud_config_1) do
@@ -83,9 +83,17 @@ module Bosh::Director
     end
 
     describe '#create_from_model_ids' do
-      it 'calls initialize with the models' do
+      let(:non_existent_cc_id) { 99999999 }
+
+      it 'calls initialize with the models it finds by id' do
         expect(Bosh::Director::CloudConfig::CloudConfigsConsolidator).to receive(:new).with([cc_model_1, cc_model_2])
-        Bosh::Director::CloudConfig::CloudConfigsConsolidator.create_from_model_ids([1, 21, 65])
+
+        Bosh::Director::CloudConfig::CloudConfigsConsolidator.create_from_model_ids(
+          [
+            cc_model_1.id,
+            non_existent_cc_id,
+            cc_model_2.id,
+          ])
       end
     end
 
