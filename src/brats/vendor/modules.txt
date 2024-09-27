@@ -5,30 +5,30 @@ github.com/cloudfoundry/bosh-utils/uuid
 # github.com/creack/pty v1.1.15
 ## explicit; go 1.13
 github.com/creack/pty
-# github.com/go-logr/logr v1.2.3
-## explicit; go 1.16
+# github.com/go-logr/logr v1.4.2
+## explicit; go 1.18
 github.com/go-logr/logr
 github.com/go-logr/logr/funcr
-# github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0
-## explicit; go 1.13
-github.com/go-task/slim-sprig
-# github.com/google/go-cmp v0.5.9
+# github.com/go-task/slim-sprig/v3 v3.0.0
+## explicit; go 1.20
+github.com/go-task/slim-sprig/v3
+# github.com/google/go-cmp v0.6.0
 ## explicit; go 1.13
 github.com/google/go-cmp/cmp
 github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
 github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
-# github.com/google/pprof v0.0.0-20230309165930-d61513b1440d
-## explicit; go 1.19
+# github.com/google/pprof v0.0.0-20240925223930-fa3061bff0bc
+## explicit; go 1.22
 github.com/google/pprof/profile
 # github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
 ## explicit
 github.com/nu7hatch/gouuid
 # github.com/onsi/ginkgo v1.16.5
 ## explicit; go 1.16
-# github.com/onsi/ginkgo/v2 v2.9.1
-## explicit; go 1.18
+# github.com/onsi/ginkgo/v2 v2.20.2
+## explicit; go 1.22
 github.com/onsi/ginkgo/v2
 github.com/onsi/ginkgo/v2/config
 github.com/onsi/ginkgo/v2/formatter
@@ -49,8 +49,8 @@ github.com/onsi/ginkgo/v2/internal/parallel_support
 github.com/onsi/ginkgo/v2/internal/testingtproxy
 github.com/onsi/ginkgo/v2/reporters
 github.com/onsi/ginkgo/v2/types
-# github.com/onsi/gomega v1.27.4
-## explicit; go 1.18
+# github.com/onsi/gomega v1.34.2
+## explicit; go 1.22
 github.com/onsi/gomega
 github.com/onsi/gomega/format
 github.com/onsi/gomega/gbytes
@@ -65,17 +65,17 @@ github.com/onsi/gomega/matchers/support/goraph/edge
 github.com/onsi/gomega/matchers/support/goraph/node
 github.com/onsi/gomega/matchers/support/goraph/util
 github.com/onsi/gomega/types
-# golang.org/x/net v0.8.0
-## explicit; go 1.17
+# golang.org/x/net v0.29.0
+## explicit; go 1.18
 golang.org/x/net/context
 golang.org/x/net/html
 golang.org/x/net/html/atom
 golang.org/x/net/html/charset
-# golang.org/x/sys v0.6.0
-## explicit; go 1.17
+# golang.org/x/sys v0.25.0
+## explicit; go 1.18
 golang.org/x/sys/unix
-# golang.org/x/text v0.8.0
-## explicit; go 1.17
+# golang.org/x/text v0.18.0
+## explicit; go 1.18
 golang.org/x/text/encoding
 golang.org/x/text/encoding/charmap
 golang.org/x/text/encoding/htmlindex
@@ -93,10 +93,10 @@ golang.org/x/text/internal/utf8internal
 golang.org/x/text/language
 golang.org/x/text/runes
 golang.org/x/text/transform
-# golang.org/x/tools v0.7.0
-## explicit; go 1.18
+# golang.org/x/tools v0.25.0
+## explicit; go 1.22.0
+golang.org/x/tools/cover
 golang.org/x/tools/go/ast/inspector
-golang.org/x/tools/internal/typeparams
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3
