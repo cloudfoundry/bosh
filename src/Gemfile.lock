@@ -49,7 +49,7 @@ PATH
       sys-filesystem
       talentbox-delayed_job_sequel
       tzinfo-data
-      unix-crypt (~> 1.3.0)
+      unix-crypt
 
 PATH
   remote: bosh-monitor

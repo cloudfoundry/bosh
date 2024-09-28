@@ -58,7 +58,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'sys-filesystem'
   spec.add_dependency 'talentbox-delayed_job_sequel'
   spec.add_dependency 'tzinfo-data'
-  spec.add_dependency 'unix-crypt',       '~>1.3.0'
+  spec.add_dependency 'unix-crypt'
 
   spec.add_development_dependency 'timecop'
   spec.add_development_dependency 'fakefs'
