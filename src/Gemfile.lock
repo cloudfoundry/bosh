@@ -59,7 +59,7 @@ PATH
       async-http
       async-io
       cf-uaa-lib
-      dogapi (~> 1.45.0)
+      dogapi
       logging
       nats-pure
       net-smtp
