@@ -1,5 +1,3 @@
-require 'sys/filesystem'
-
 module Bosh::Director
   module Api::Controllers
     class DirectorController < BaseController
