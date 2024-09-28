@@ -44,7 +44,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'bosh_cpi'
   spec.add_dependency 'cf-uaa-lib'
   spec.add_dependency 'logging'
-  spec.add_dependency 'membrane',         '~>1.1.0'
+  spec.add_dependency 'membrane'
   spec.add_dependency 'nats-pure'
   spec.add_dependency 'openssl'
   spec.add_dependency 'ostruct'
