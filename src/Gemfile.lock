@@ -67,7 +67,7 @@ PATH
       ostruct
       puma
       riemann-client
-      sinatra (~> 2.2.0)
+      sinatra
 
 PATH
   remote: bosh-nats-sync
