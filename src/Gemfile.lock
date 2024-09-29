@@ -43,7 +43,7 @@ PATH
       puma
       rack-test
       rake
-      rufus-scheduler (~> 3.0)
+      rufus-scheduler
       sequel (~> 5.29.0)
       sinatra (~> 2.2.0)
       sys-filesystem
