@@ -40,7 +40,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'bosh-director-core', "~>#{version}"
   spec.add_dependency 'bosh-template',      "~>#{version}"
 
-  spec.add_dependency 'bcrypt',           '~>3.1.16'
+  spec.add_dependency 'bcrypt'
   spec.add_dependency 'bosh_cpi'
   spec.add_dependency 'cf-uaa-lib'
   spec.add_dependency 'logging'

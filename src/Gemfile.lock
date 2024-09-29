@@ -27,7 +27,7 @@ PATH
   remote: bosh-director
   specs:
     bosh-director (0.0.0)
-      bcrypt (~> 3.1.16)
+      bcrypt
       bosh-core (~> 0.0.0)
       bosh-director-core (~> 0.0.0)
       bosh-template (~> 0.0.0)
