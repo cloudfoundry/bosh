@@ -1,10 +1,10 @@
 module AssetHelpers
-  def spec_asset(filename)
-    File.read(asset(filename))
+  def spec_asset(asset_name)
+    File.read(asset(asset_name))
   end
 
-  def asset(filename)
-    File.expand_path("../../assets/#{filename}", __FILE__)
+  def asset(asset_name)
+    File.expand_path(File.join('..', '..', 'assets', asset_name), __FILE__)
   end
 end
 
