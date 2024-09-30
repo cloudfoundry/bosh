@@ -39,7 +39,7 @@ PATH
       nats-pure
       openssl
       ostruct
-      prometheus-client (~> 2.1.0)
+      prometheus-client
       puma
       rack-test
       rake
@@ -235,7 +235,8 @@ GEM
       ast (~> 2.4.1)
       racc
     pg (1.5.8)
-    prometheus-client (2.1.0)
+    prometheus-client (4.2.3)
+      base64
     protocol-hpack (1.5.1)
     protocol-http (0.37.0)
     protocol-http1 (0.27.0)
