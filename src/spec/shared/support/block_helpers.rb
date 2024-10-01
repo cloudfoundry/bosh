@@ -14,7 +14,7 @@ module Support
       def data
         begin
           parsed_data = JSON.parse(@source)
-        rescue JSON::ParserError => e
+        rescue JSON::ParserError
           raise 'Be sure to pass `json: true` arg to bosh_runner.run'
         end
         parsed_data['Blocks']

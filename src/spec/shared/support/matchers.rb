@@ -7,7 +7,7 @@ module Support
       @actual.include? @expected
     end
 
-    failure_message do |actual|
+    failure_message do |_actual|
       differ = RSpec::Support::Differ.new
 
       message = []
