@@ -36,10 +36,10 @@ describe 'compiled releases', type: :integration do
         compiled_job_pkg23 = 'compiled_releases/test_release-4+dev.1-centos-7-3002-job_using_pkg_2_3-20181227-113108-45819.tgz'
 
         upload_cloud_config(cloud_config_hash: cloud_config)
-        bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3002-aws-xen-centos-7-go_agent.tgz')}")
+        bosh_runner.run("upload-stemcell #{asset_path('light-bosh-stemcell-3002-aws-xen-centos-7-go_agent.tgz')}")
 
-        bosh_runner.run("upload-release #{spec_asset(compiled_job_pkg1)}")
-        bosh_runner.run("upload-release #{spec_asset(compiled_job_pkg23)}")
+        bosh_runner.run("upload-release #{asset_path(compiled_job_pkg1)}")
+        bosh_runner.run("upload-release #{asset_path(compiled_job_pkg23)}")
 
         manifest_hash['instance_groups'] = [
           Bosh::Spec::Deployments.simple_instance_group(
@@ -63,8 +63,8 @@ describe 'compiled releases', type: :integration do
 
   context 'release and stemcell have been uploaded' do
     before do
-      bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
-      bosh_runner.run("upload-release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
     end
 
     context 'it uploads the compiled release when there is no corresponding stemcell' do
@@ -73,7 +73,7 @@ describe 'compiled releases', type: :integration do
         bosh_runner.run('delete-release test_release')
         expect do
           bosh_runner.run(
-            "upload-release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}",
+            "upload-release #{asset_path('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}",
           )
         end.to_not raise_exception
         output = bosh_runner.run('inspect-release test_release/1', json: true)
@@ -108,7 +108,7 @@ describe 'compiled releases', type: :integration do
         end
 
         before do
-          release_path = spec_asset('compiled_releases/test_release/releases/test_release/test_release-4-same-packages-as-1.tgz')
+          release_path = asset_path('compiled_releases/test_release/releases/test_release/test_release-4-same-packages-as-1.tgz')
           bosh_runner.run("upload-release #{release_path}")
         end
 
@@ -130,7 +130,7 @@ describe 'compiled releases', type: :integration do
         end
 
         before do
-          release_path = spec_asset('compiled_releases/test_release/releases/test_release/test_release-3-pkg1-updated.tgz')
+          release_path = asset_path('compiled_releases/test_release/releases/test_release/test_release-3-pkg1-updated.tgz')
           bosh_runner.run("upload-release #{release_path}")
         end
 
@@ -148,7 +148,7 @@ describe 'compiled releases', type: :integration do
       context 'when deploying with a stemcell that does not match the compiled release' do
         before do
           # switch deployment to use "ubuntu-stemcell/1"
-          bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
+          bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
           upload_cloud_config
         end
 
@@ -171,7 +171,7 @@ describe 'compiled releases', type: :integration do
 
         context 'and multiple releases are referenced in the current deployment' do
           before do
-            release_path = spec_asset('compiled_releases/release-test_release_a-1-on-centos-7-stemcell-3001.tgz')
+            release_path = asset_path('compiled_releases/release-test_release_a-1-on-centos-7-stemcell-3001.tgz')
             bosh_runner.run("upload-release #{release_path}")
           end
 
@@ -226,7 +226,7 @@ describe 'compiled releases', type: :integration do
     it 'exports, deletes deployment & stemcell, uploads compiled, uploads patch-level stemcell, deploys' do
       upload_cloud_config
 
-      bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
 
       [
         'jobs/job_with_blocking_compilation',
@@ -250,7 +250,7 @@ describe 'compiled releases', type: :integration do
 
       release_path = File.join(Bosh::Dev::Sandbox::Workspace.dir, 'client-sandbox', 'bosh_work_dir')
       bosh_runner.run("upload-release #{release_path}/bosh-release-0.1-dev-toronto-os-1-*.tgz")
-      bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_1_1.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell_1_1.tgz')}")
 
       create_call_count = current_sandbox.cpi.invocations_for_method('create_vm').size
       deploy(manifest_hash: manifest)

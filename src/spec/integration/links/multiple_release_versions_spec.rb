@@ -67,10 +67,10 @@ describe 'multiple versions of a release are uploaded', type: :integration do
   context 'when a release job is being used as an addon' do
     # story link for context: https://www.pivotaltracker.com/n/projects/956238/stories/152689259
     it 'should ONLY use the release version specified in manifest' do
-      bosh_runner.run("upload-release #{spec_asset('links_releases/simple-link-release-v1.0.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('links_releases/simple-link-release-v1.0.tgz')}")
 
       # release with broken links
-      bosh_runner.run("upload-release #{spec_asset('links_releases/simple-link-release-v2.0.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('links_releases/simple-link-release-v2.0.tgz')}")
 
       _, exit_code = deploy_simple_manifest(manifest_hash: deployment_manifest, return_exit_code: true)
       expect(exit_code).to eq(0)

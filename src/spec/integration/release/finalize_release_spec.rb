@@ -17,7 +17,7 @@ describe 'finalize release', type: :integration do
     context 'when finalizing a release that was built elsewhere' do
       it 'updates the .final_builds index for each job and package' do
         Dir.chdir(ClientSandbox.test_release_dir) do
-          bosh_runner.run_in_current_dir("finalize-release #{spec_asset('dummy-gocli-release.tgz')} --force")
+          bosh_runner.run_in_current_dir("finalize-release #{asset_path('dummy-gocli-release.tgz')} --force")
 
           job_index = YAML.load_file(File.absolute_path('.final_builds/jobs/dummy/index.yml'))
           expect(job_index).to include('builds')
@@ -35,7 +35,7 @@ describe 'finalize release', type: :integration do
       it 'prints release summary' do
         Dir.chdir(ClientSandbox.test_release_dir) do
           out = table(
-            bosh_runner.run_in_current_dir("finalize-release #{spec_asset('dummy-gocli-release.tgz')} --force", json: true),
+            bosh_runner.run_in_current_dir("finalize-release #{asset_path('dummy-gocli-release.tgz')} --force", json: true),
           )
           expect(out).to include(
             {
@@ -81,7 +81,7 @@ describe 'finalize release', type: :integration do
 
       it 'updates the releases index' do
         Dir.chdir(ClientSandbox.test_release_dir) do
-          bosh_runner.run_in_current_dir("finalize-release #{spec_asset('dummy-gocli-release.tgz')} --force")
+          bosh_runner.run_in_current_dir("finalize-release #{asset_path('dummy-gocli-release.tgz')} --force")
           job_index = YAML.load_file(File.absolute_path('.final_builds/jobs/dummy/index.yml'))
           expect(job_index).to include('builds')
           expect(job_index['builds']).to include('a2f501d07c3e96689185ee6ebe26c15d54d4849a')
@@ -91,9 +91,9 @@ describe 'finalize release', type: :integration do
 
       it 'cannot create a final release without the blobstore configured' do
         Dir.chdir(ClientSandbox.test_release_dir) do
-          FileUtils.cp(spec_asset('empty_blobstore_config.yml'), 'config/final.yml')
+          FileUtils.cp(asset_path('empty_blobstore_config.yml'), 'config/final.yml')
           out = bosh_runner.run_in_current_dir(
-            "finalize-release #{spec_asset('dummy-gocli-release.tgz')} --force",
+            "finalize-release #{asset_path('dummy-gocli-release.tgz')} --force",
             json: true,
             failure_expected: true,
           )
@@ -103,9 +103,9 @@ describe 'finalize release', type: :integration do
 
       it 'cannot create a final release without the blobstore secret configured' do
         Dir.chdir(ClientSandbox.test_release_dir) do
-          FileUtils.cp(spec_asset('blobstore_config_requiring_credentials.yml'), 'config/final.yml')
+          FileUtils.cp(asset_path('blobstore_config_requiring_credentials.yml'), 'config/final.yml')
           out = bosh_runner.run_in_current_dir(
-            "finalize-release #{spec_asset('dummy-gocli-release.tgz')} --force",
+            "finalize-release #{asset_path('dummy-gocli-release.tgz')} --force",
             json: true,
             failure_expected: true,
           )
@@ -122,7 +122,7 @@ describe 'finalize release', type: :integration do
             expect(Dir).to_not exist('.dev_builds')
             expect(Dir).to_not exist(ClientSandbox.blobstore_dir)
 
-            bosh_runner.run_in_current_dir("finalize-release #{spec_asset('dummy-gocli-release.tgz')} --force")
+            bosh_runner.run_in_current_dir("finalize-release #{asset_path('dummy-gocli-release.tgz')} --force")
             expect(File).to exist('releases/dummy/dummy-1.yml')
             expect(File).to exist('.final_builds/jobs/dummy/index.yml')
             expect(File).to exist('.final_builds/packages/bad_package/index.yml')

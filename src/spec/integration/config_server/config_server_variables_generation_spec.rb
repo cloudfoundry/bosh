@@ -570,7 +570,7 @@ describe 'variable generation with config server', type: :integration do
           }))
 
           # upload valid_stemcell_v2
-          bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_v2.tgz')}", include_credentials: false, env: client_env)
+          bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell_v2.tgz')}", include_credentials: false, env: client_env)
 
           # deploy again using that stemcell
           deploy_simple_manifest(manifest_hash: manifest_hash, include_credentials: false, env: client_env)

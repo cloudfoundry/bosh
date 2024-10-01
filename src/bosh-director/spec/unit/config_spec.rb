@@ -8,7 +8,7 @@ require 'fakefs/spec_helpers'
 
 describe Bosh::Director::Config do
   include FakeFS::SpecHelpers
-  let(:test_config_path) { asset('test-director-config.yml') }
+  let(:test_config_path) { asset_path('test-director-config.yml') }
   let(:test_config) { YAML.safe_load(File.read(test_config_path)) }
   let(:temp_dir) { Dir.mktmpdir }
   let(:base_config) do
@@ -33,7 +33,7 @@ describe Bosh::Director::Config do
 
   describe 'initialization' do
     it 'loads config from a yaml file' do
-      config = described_class.load_file(asset('test-director-config.yml'))
+      config = described_class.load_file(asset_path('test-director-config.yml'))
       expect(config.name).to eq('Test Director')
     end
 

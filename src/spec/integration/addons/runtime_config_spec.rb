@@ -7,8 +7,8 @@ describe 'runtime config', type: :integration do
     runtime_config_file = yaml_file('runtime_config.yml', Bosh::Spec::Deployments.runtime_config_with_addon)
     expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
-    bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
-    bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+    bosh_runner.run("upload-release #{asset_path('bosh-release-0+dev.1.tgz')}")
+    bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
 
     upload_stemcell
 
@@ -30,8 +30,8 @@ describe 'runtime config', type: :integration do
     runtime_config_file = yaml_file('runtime_config.yml', Bosh::Spec::Deployments.runtime_config_with_addon)
     expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
-    bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
-    bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+    bosh_runner.run("upload-release #{asset_path('bosh-release-0+dev.1.tgz')}")
+    bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
 
     upload_stemcell
 
@@ -58,8 +58,8 @@ describe 'runtime config', type: :integration do
     runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
     expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
-    bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
-    bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+    bosh_runner.run("upload-release #{asset_path('bosh-release-0+dev.1.tgz')}")
+    bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
 
     upload_stemcell
 
@@ -80,8 +80,8 @@ describe 'runtime config', type: :integration do
     runtime_config_file = yaml_file('runtime_config.yml', Bosh::Spec::Deployments.simple_runtime_config)
     expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
-    bosh_runner.run("upload-release #{spec_asset('test_release.tgz')}")
-    bosh_runner.run("upload-release #{spec_asset('test_release_2.tgz')}")
+    bosh_runner.run("upload-release #{asset_path('test_release.tgz')}")
+    bosh_runner.run("upload-release #{asset_path('test_release_2.tgz')}")
 
     upload_stemcell
 
@@ -95,7 +95,7 @@ describe 'runtime config', type: :integration do
 
   context 'when version of uploaded release is same as one used in addon and one is an integer' do
     it 'deploys it after comparing both versions as a string' do
-      bosh_runner.run("upload-release #{spec_asset('test_release_2.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('test_release_2.tgz')}")
 
       runtime_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::Deployments.simple_runtime_config('test_release_2', 2,
                                                                                                  'job_using_pkg_2'))
@@ -127,7 +127,7 @@ describe 'runtime config', type: :integration do
       runtime_config['addons'][0]['exclude'] = { 'azs' => ['z2'] }
       runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
 
-      bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
       expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
       manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
@@ -155,7 +155,7 @@ describe 'runtime config', type: :integration do
     end
 
     it 'allows addons to be added to the deployment manifest' do
-      bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
 
       manifest_hash = Bosh::Spec::Deployments.manifest_with_addons
       manifest_hash['addons'][0]['include'] = { 'azs' => ['z1'] }
@@ -205,7 +205,7 @@ describe 'runtime config', type: :integration do
     end
 
     before do
-      bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
     end
 
     it 'should not associate unused release with the current deployment' do

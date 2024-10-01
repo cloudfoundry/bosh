@@ -5,7 +5,7 @@ describe 'cli: stemcell', type: :integration do
 
   # ~65s (possibly includes sandbox start)
   it 'can upload a stemcell and capture its metadata' do
-    stemcell_filename = spec_asset('valid_stemcell.tgz')
+    stemcell_filename = asset_path('valid_stemcell.tgz')
 
     out = bosh_runner.run("upload-stemcell #{stemcell_filename}")
     expect(out).to match(/Save stemcell/)
@@ -26,7 +26,7 @@ describe 'cli: stemcell', type: :integration do
 
   context 'when cpi does not have corresponding stemcell_formats value' do
     it 'fails' do
-      stemcell_filename_not_dummy = spec_asset('valid_stemcell_not_dummy_stemcell_format.tgz')
+      stemcell_filename_not_dummy = asset_path('valid_stemcell_not_dummy_stemcell_format.tgz')
 
       out = bosh_runner.run("upload-stemcell #{stemcell_filename_not_dummy}", failure_expected: true)
       expect(out).to match(/\["not_dummy"\] are not supported by available cpi formats: \["dummy"\]/)
@@ -35,7 +35,7 @@ describe 'cli: stemcell', type: :integration do
 
   context 'if cpi config is used' do
     it 'creates a stemcell for each configured cpi' do
-      stemcell_filename = spec_asset('valid_stemcell.tgz')
+      stemcell_filename = asset_path('valid_stemcell.tgz')
 
       cpi_path = current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI)
       cpi_config_manifest = yaml_file('cpi_manifest', Bosh::Spec::Deployments.multi_cpi_config(cpi_path))
@@ -69,7 +69,7 @@ describe 'cli: stemcell', type: :integration do
 
   # ~40s
   it 'can delete a stemcell' do
-    stemcell_filename = spec_asset('valid_stemcell.tgz')
+    stemcell_filename = asset_path('valid_stemcell.tgz')
 
     out = bosh_runner.run("upload-stemcell #{stemcell_filename}")
     expect(out).to match(/Save stemcell/)
@@ -93,7 +93,7 @@ describe 'cli: stemcell', type: :integration do
   end
 
   it 'allows --sha1 even when used during upload of a local stemcell' do
-    out = bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')} --sha1 shawone")
+    out = bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')} --sha1 shawone")
     expect(out).to match(/Save stemcell/)
     expect(out).to match(/Succeeded/)
   end
@@ -112,7 +112,7 @@ describe 'cli: stemcell', type: :integration do
   describe 'uploading a stemcell that already exists' do
 
     context 'when the stemcell is local' do
-      let(:local_stemcell_path) { spec_asset('valid_stemcell.tgz') }
+      let(:local_stemcell_path) { asset_path('valid_stemcell.tgz') }
       before { bosh_runner.run("upload-stemcell #{local_stemcell_path}") }
 
       it 'tells the user and does not exit as a failure' do
@@ -145,7 +145,7 @@ describe 'cli: stemcell', type: :integration do
           expect(File).to be_exist(stemcell_path)
 
           # Upload a new stemcell with same version and name as the existing one, but is of different image content
-          new_local_stemcell_path = spec_asset('valid_stemcell_with_different_content.tgz')
+          new_local_stemcell_path = asset_path('valid_stemcell_with_different_content.tgz')
           output = bosh_runner.run("upload-stemcell #{new_local_stemcell_path} --fix")
           expect(output).to match(/Save stemcell/)
           expect(output).to match(/Succeeded/)
@@ -172,7 +172,7 @@ describe 'cli: stemcell', type: :integration do
     end
 
     context 'when the stemcell is remote' do
-      let(:file_server) { Bosh::Spec::LocalFileServer.new(spec_asset(''), file_server_port, logger) }
+      let(:file_server) { Bosh::Spec::LocalFileServer.new(asset_path(''), file_server_port, logger) }
       let(:file_server_port) { current_sandbox.port_provider.get_port(:stemcell_repo) }
 
       before { file_server.start }

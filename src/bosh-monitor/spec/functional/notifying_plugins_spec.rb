@@ -27,7 +27,7 @@ describe 'notifying plugins' do
 
   WebMock.allow_net_connect!
 
-  let(:runner) { Bosh::Monitor::Runner.new(spec_asset('dummy_plugin_config.yml')) }
+  let(:runner) { Bosh::Monitor::Runner.new(asset_path('dummy_plugin_config.yml')) }
   let(:hm_process) { MonitorProcess.new(runner) }
 
   before do

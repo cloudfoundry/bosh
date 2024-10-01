@@ -16,7 +16,7 @@ describe 'cli: cloudcheck', type: :integration do
     let(:num_instances) { 3 }
 
     before do
-      bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_with_api_version.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell_with_api_version.tgz')}")
       upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
       create_and_upload_test_release
 

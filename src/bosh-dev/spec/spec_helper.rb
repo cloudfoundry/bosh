@@ -8,9 +8,3 @@ require 'sequel/adapters/sqlite'
 require 'support/buffered_logger'
 
 Dir.glob(File.expand_path('../support/**/*.rb', __FILE__)).each { |f| require(f) }
-
-SPEC_ROOT = File.dirname(__FILE__)
-
-def spec_asset(name)
-  File.join(SPEC_ROOT, 'assets', name)
-end

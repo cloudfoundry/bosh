@@ -43,7 +43,7 @@ describe 'when a release job modifies a property in the ERB script', type: :inte
 
     bosh_runner.run("upload-release #{release_file.path}")
     bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
-    bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
+    bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
   end
 
   it 'does not modify the property for other templates' do

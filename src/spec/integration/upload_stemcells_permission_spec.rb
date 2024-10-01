@@ -8,7 +8,7 @@ describe 'upload stemcell with permissions', type: :integration do
   no_access_client_env = {'BOSH_CLIENT' => 'no-access', 'BOSH_CLIENT_SECRET' => 'secret'}
 
   def run_upload_stemcell_cmd(env)
-    return bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}",
+    return bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}",
       client: env['BOSH_CLIENT'],
       client_secret: env['BOSH_CLIENT_SECRET'],
       return_exit_code: true,

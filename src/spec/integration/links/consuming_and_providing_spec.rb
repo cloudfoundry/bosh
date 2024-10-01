@@ -430,7 +430,7 @@ describe 'consuming and providing', type: :integration do
       end
 
       it 'should fail to create the link' do
-        bosh_runner.run("upload-release #{spec_asset('changing-release-0+dev.3.tgz')}")
+        bosh_runner.run("upload-release #{asset_path('changing-release-0+dev.3.tgz')}")
         output = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true)
         expect(output).to include(<<~OUTPUT.strip)
           Error: Failed to resolve links from deployment 'minimal'. See errors below:
@@ -475,7 +475,7 @@ describe 'consuming and providing', type: :integration do
         end
 
         before do
-          bosh_runner.run("upload-release #{spec_asset('changing-release-0+dev.3.tgz')}")
+          bosh_runner.run("upload-release #{asset_path('changing-release-0+dev.3.tgz')}")
           deploy_simple_manifest(manifest_hash: provider_manifest)
         end
 

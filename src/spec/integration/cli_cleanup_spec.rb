@@ -12,9 +12,9 @@ describe 'cli: cleanup', type: :integration do
 
   shared_examples_for 'removing an exported release' do
     before do
-      bosh_runner.run("upload-release #{spec_asset('test_release.tgz')}")
-      bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
-      bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('test_release.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
 
       cloud_config = Bosh::Spec::Deployments.simple_cloud_config
       upload_cloud_config(cloud_config)

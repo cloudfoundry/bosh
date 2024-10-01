@@ -3,7 +3,7 @@ require_relative '../spec_helper'
 describe 'cli: deploy uploading', type: :integration do
   include Bosh::Spec::CreateReleaseOutputParsers
   with_reset_sandbox_before_each
-  let(:stemcell_filename) { spec_asset('valid_stemcell.tgz') }
+  let(:stemcell_filename) { asset_path('valid_stemcell.tgz') }
 
   let(:cloud_config_manifest) { yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config) }
 
@@ -13,7 +13,7 @@ describe 'cli: deploy uploading', type: :integration do
   end
 
   context 'with a remote release' do
-    let(:file_server) { Bosh::Spec::LocalFileServer.new(spec_asset(''), file_server_port, logger) }
+    let(:file_server) { Bosh::Spec::LocalFileServer.new(asset_path(''), file_server_port, logger) }
     let(:file_server_port) { current_sandbox.port_provider.get_port(:releases_repo) }
 
     before { file_server.start }
@@ -80,7 +80,7 @@ describe 'cli: deploy uploading', type: :integration do
   end
 
   context 'with a local release tarball' do
-    let(:release_path) { spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz') }
+    let(:release_path) { asset_path('compiled_releases/test_release/releases/test_release/test_release-1.tgz') }
 
     it 'uploads the release from the local file path in the manifest' do
       deployment_manifest = yaml_file(
@@ -120,8 +120,8 @@ describe 'cli: deploy uploading', type: :integration do
   end
 
   context 'with a local release directory' do
-    let(:release_path) { spec_asset('compiled_releases/test_release') }
-    let(:release_tar) { spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz') }
+    let(:release_path) { asset_path('compiled_releases/test_release') }
+    let(:release_tar) { asset_path('compiled_releases/test_release/releases/test_release/test_release-1.tgz') }
 
     before {
       FileUtils.rm_rf("#{release_path}/.dev_builds")

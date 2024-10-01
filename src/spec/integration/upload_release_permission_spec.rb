@@ -4,7 +4,7 @@ describe 'upload releases with bosh.releases.upload permission', type: :integrat
   with_reset_sandbox_before_each(user_authentication: 'uaa')
 
   it 'bosh.releases.upload can upload a release' do
-    release_filename = spec_asset('test_release.tgz')
+    release_filename = asset_path('test_release.tgz')
 
     _, exit_code = bosh_runner.run("upload-release #{release_filename}",
       client: 'upload-releases-access',
@@ -25,7 +25,7 @@ describe 'upload releases with bosh.releases.upload permission', type: :integrat
 
 
   it 'is authenticated' do
-    release_filename = spec_asset('test_release.tgz')
+    release_filename = asset_path('test_release.tgz')
 
     _, exit_code = bosh_runner.run("upload-release #{release_filename}",
       client: 'no-access',

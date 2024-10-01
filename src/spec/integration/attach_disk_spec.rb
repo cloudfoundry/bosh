@@ -34,7 +34,7 @@ describe 'attach disk', type: :integration do
   context 'deployment has disk that does not exist in an orphaned list attached to an instance' do
 
     before do
-      bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_with_api_version.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell_with_api_version.tgz')}")
       upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
       create_and_upload_test_release
 
@@ -96,7 +96,7 @@ describe 'attach disk', type: :integration do
 
   context 'when deployment has an orphaned disk that was previously attached to an instance' do
     before do
-      bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_with_api_version.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell_with_api_version.tgz')}")
 
       manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
       instance_group = Bosh::Spec::Deployments.simple_instance_group(persistent_disk_type: 'disk_a', instances: 1)

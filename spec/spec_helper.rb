@@ -14,7 +14,7 @@ require 'bosh/template/test'
 
 require_relative './support/template_example_group'
 
-def spec_asset(name)
+def asset_path(name)
   File.join(SPEC_ROOT, 'support', name)
 end
 

@@ -14,8 +14,8 @@ describe 'basic functionality', type: :integration do
       runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
       expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
-      bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
-      bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('bosh-release-0+dev.1.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
 
       upload_stemcell
       upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
@@ -50,8 +50,8 @@ describe 'basic functionality', type: :integration do
       runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
       expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
-      bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
-      bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('bosh-release-0+dev.1.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
 
       upload_stemcell
       upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
@@ -86,8 +86,8 @@ describe 'basic functionality', type: :integration do
       runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
       expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
-      bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
-      bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('bosh-release-0+dev.1.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
 
       upload_stemcell
       upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
@@ -125,8 +125,8 @@ describe 'basic functionality', type: :integration do
       runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
       expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
-      bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
-      bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('bosh-release-0+dev.1.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
 
       upload_stemcell
       upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
@@ -161,8 +161,8 @@ describe 'basic functionality', type: :integration do
       runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
       expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
-      bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
-      bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('bosh-release-0+dev.1.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
 
       upload_stemcell
       upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
@@ -192,8 +192,8 @@ describe 'basic functionality', type: :integration do
       )
       expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
-      bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
-      bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('bosh-release-0+dev.1.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
 
       upload_stemcell # name: ubuntu-stemcell, os: toronto-os
       upload_stemcell_2 # name: centos-stemcell, os: toronto-centos
@@ -236,8 +236,8 @@ describe 'basic functionality', type: :integration do
       runtime_config_file = yaml_file('runtime_config.yml', Bosh::Spec::Deployments.runtime_config_with_addon_includes_network)
       expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
-      bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
-      bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('bosh-release-0+dev.1.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
 
       upload_stemcell
 
@@ -270,7 +270,7 @@ describe 'basic functionality', type: :integration do
       runtime_config_file = yaml_file('runtime_config.yml', Bosh::Spec::Deployments.runtime_config_with_addon_excludes_lifecycle)
       expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
-      bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
 
       manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'][1] = Bosh::Spec::Deployments.simple_errand_instance_group.merge(
@@ -295,8 +295,8 @@ describe 'basic functionality', type: :integration do
     it 'allows addon to be added and ensures that addon job properties are properly assigned' do
       manifest_hash = Bosh::Spec::Deployments.manifest_with_addons
 
-      bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
-      bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('bosh-release-0+dev.1.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
 
       upload_stemcell
       upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
@@ -320,8 +320,8 @@ describe 'basic functionality', type: :integration do
         instances: 1,
       )
 
-      bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
-      bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('bosh-release-0+dev.1.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
 
       upload_stemcell
 
@@ -350,8 +350,8 @@ describe 'basic functionality', type: :integration do
 
       manifest_hash = Bosh::Spec::Deployments.complex_manifest_with_addon
 
-      bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
-      bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('bosh-release-0+dev.1.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
 
       upload_stemcell # name: ubuntu-stemcell, os: toronto-os
       upload_stemcell_2 # name: centos-stemcell, os: toronto-centos

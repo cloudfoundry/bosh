@@ -14,12 +14,12 @@ describe 'when the deployment manifest file is large', type: :integration do
   end
 
   before do
-    release_filename = spec_asset('test_release.tgz')
+    release_filename = asset_path('test_release.tgz')
     cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
 
     bosh_runner.run("upload-release #{release_filename}")
     bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
-    bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
+    bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
   end
 
   it 'deploys successfully' do

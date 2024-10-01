@@ -6,7 +6,7 @@ describe 'exported_from releases', type: :integration do
 
   before do
     upload_cloud_config
-    bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-centos-7-go_agent.tgz')}")
+    bosh_runner.run("upload-stemcell #{asset_path('light-bosh-stemcell-3001-aws-xen-centos-7-go_agent.tgz')}")
   end
 
   let(:jobs) do
@@ -43,10 +43,10 @@ describe 'exported_from releases', type: :integration do
 
   context 'when new compiled releases have been uploaded after a deployment' do
     before do
-      bosh_runner.run("upload-release #{spec_asset(targeted_release)}")
+      bosh_runner.run("upload-release #{asset_path(targeted_release)}")
       deploy(manifest_hash: manifest)
 
-      bosh_runner.run("upload-release #{spec_asset(decoy_newer_release)}")
+      bosh_runner.run("upload-release #{asset_path(decoy_newer_release)}")
     end
 
     it 'a no-op deploy does not update any VMs' do
@@ -57,7 +57,7 @@ describe 'exported_from releases', type: :integration do
 
   context 'when the exported_from points to a compiled package that does not exist' do
     before do
-      bosh_runner.run("upload-release #{spec_asset(decoy_newer_release)}")
+      bosh_runner.run("upload-release #{asset_path(decoy_newer_release)}")
     end
 
     it 'fails the deployment' do
@@ -68,11 +68,11 @@ describe 'exported_from releases', type: :integration do
 
   context 'when the exported_from points to the wrong os' do
     before do
-      bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3002-aws-xen-centos-7-go_agent.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('light-bosh-stemcell-3002-aws-xen-centos-7-go_agent.tgz')}")
     end
 
     it 'fails the deployment' do
-      bosh_runner.run("upload-release #{spec_asset(targeted_release)}")
+      bosh_runner.run("upload-release #{asset_path(targeted_release)}")
       output = deploy(
         manifest_hash: manifest.tap { |manifest| manifest['stemcells'][0]['version'] = '3002' },
         failure_expected: true,
@@ -85,9 +85,9 @@ describe 'exported_from releases', type: :integration do
 
   context 'when multiple instance groups use different stemcells' do
     before do
-      bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3002-aws-xen-centos-7-go_agent.tgz')}")
-      bosh_runner.run("upload-release #{spec_asset(targeted_release)}")
-      bosh_runner.run("upload-release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3002.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('light-bosh-stemcell-3002-aws-xen-centos-7-go_agent.tgz')}")
+      bosh_runner.run("upload-release #{asset_path(targeted_release)}")
+      bosh_runner.run("upload-release #{asset_path('compiled_releases/release-test_release-1-on-centos-7-stemcell-3002.tgz')}")
     end
 
     it 'is able to deploy' do

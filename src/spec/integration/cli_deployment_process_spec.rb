@@ -3,7 +3,7 @@ require_relative '../spec_helper'
 describe 'cli: deployment process', type: :integration do
   include Bosh::Spec::CreateReleaseOutputParsers
   with_reset_sandbox_before_each
-  let(:stemcell_filename) { spec_asset('valid_stemcell.tgz') }
+  let(:stemcell_filename) { asset_path('valid_stemcell.tgz') }
 
   context 'when generating a tarball' do
     let!(:release_file) { Tempfile.new('release.tgz') }
@@ -48,7 +48,7 @@ describe 'cli: deployment process', type: :integration do
 
     context 'given two deployments from one release' do
       it 'is successful' do
-        release_filename = spec_asset('test_release.tgz')
+        release_filename = asset_path('test_release.tgz')
         minimal_manifest = Bosh::Spec::Deployments.minimal_manifest
         deployment_manifest = yaml_file('minimal_deployment', minimal_manifest)
 
@@ -340,7 +340,7 @@ lines',
 
   describe 'bosh deployment(s) table' do
     before do
-      release_filename = spec_asset('test_release.tgz')
+      release_filename = asset_path('test_release.tgz')
 
       manifest_hash = Bosh::Spec::Deployments.minimal_manifest
       cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
@@ -390,7 +390,7 @@ lines',
 
   describe 'bosh delete deployment' do
     it 'deletes an existing deployment' do
-      release_filename = spec_asset('test_release.tgz')
+      release_filename = asset_path('test_release.tgz')
       deployment_manifest = yaml_file('minimal', Bosh::Spec::Deployments.minimal_manifest_with_ubuntu_stemcell)
       cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
 

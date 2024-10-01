@@ -9,7 +9,7 @@ describe 'upload release', type: :integration do
   after { release_file.delete }
 
   it 'can upload a release' do
-    release_filename = spec_asset('test_release.tgz')
+    release_filename = asset_path('test_release.tgz')
 
     bosh_runner.run("upload-release #{release_filename}")
 
@@ -19,7 +19,7 @@ describe 'upload release', type: :integration do
   end
 
   it 'can upload a sha1 release' do
-    release_filename = spec_asset('sha1_release.tgz')
+    release_filename = asset_path('sha1_release.tgz')
 
     bosh_runner.run("upload-release #{release_filename}")
 
@@ -30,9 +30,9 @@ describe 'upload release', type: :integration do
 
   context 'when release tarball contents are not sorted' do
     it 'updates job successfully' do
-      bosh_runner.run("upload-release #{spec_asset('unsorted-release-0+dev.1.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('unsorted-release-0+dev.1.tgz')}")
 
-      out = bosh_runner.run("upload-release #{spec_asset('unsorted-release-0+dev.2.tgz')}")
+      out = bosh_runner.run("upload-release #{asset_path('unsorted-release-0+dev.2.tgz')}")
 
       expect(out).to include('Creating new jobs: foobar/')
       expect(out).to include('Processing 2 existing packages')
@@ -61,8 +61,8 @@ describe 'upload release', type: :integration do
 
   context 'when uploading a compiled release without "./" prefix in the tarball' do
     it 'should upload successfully and not raise an error' do
-      bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
-      bosh_runner.run("upload-release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001_without_dot_slash_prefix.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001_without_dot_slash_prefix.tgz')}")
     end
   end
 
@@ -115,7 +115,7 @@ describe 'upload release', type: :integration do
   end
 
   it 'cannot upload malformed release', no_reset: true do
-    release_filename = spec_asset('release_invalid_checksum.tgz')
+    release_filename = asset_path('release_invalid_checksum.tgz')
     out = bosh_runner.run("upload-release #{release_filename}", failure_expected: true)
     expect(out).to match(/Error: version presence, version format/)
   end
@@ -148,7 +148,7 @@ describe 'upload release', type: :integration do
 
   describe 'uploading a release that already exists' do
     context 'when the release is local' do
-      let(:local_release_path) { spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz') }
+      let(:local_release_path) { asset_path('compiled_releases/test_release/releases/test_release/test_release-1.tgz') }
       before { bosh_runner.run("upload-release #{local_release_path}") }
 
       it 'includes no package blobs in the repacked release and uploads it to the director' do
@@ -159,7 +159,7 @@ describe 'upload release', type: :integration do
     end
 
     context 'when the release is remote' do
-      let(:file_server) { Bosh::Spec::LocalFileServer.new(spec_asset(''), file_server_port, logger) }
+      let(:file_server) { Bosh::Spec::LocalFileServer.new(asset_path(''), file_server_port, logger) }
       let(:file_server_port) { current_sandbox.port_provider.get_port(:releases_repo) }
 
       before { file_server.start }
@@ -189,7 +189,7 @@ describe 'upload release', type: :integration do
   end
 
   describe 'when the release is remote' do
-    let(:file_server) { Bosh::Spec::LocalFileServer.new(spec_asset(''), file_server_port, logger) }
+    let(:file_server) { Bosh::Spec::LocalFileServer.new(asset_path(''), file_server_port, logger) }
     let(:file_server_port) { current_sandbox.port_provider.get_port(:releases_repo) }
 
     before { file_server.start }
@@ -241,8 +241,8 @@ describe 'upload release', type: :integration do
 
   describe 're-uploading a release after it fails in a previous attempt' do
     it 'should not throw an error, and should backfill missing items while not uploading already uploaded packages' do
-      bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release-1-corrupted.tgz')}")
-      clean_release_out = bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('compiled_releases/test_release-1-corrupted.tgz')}")
+      clean_release_out = bosh_runner.run("upload-release #{asset_path('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
 
       expect(clean_release_out).to include('Creating new packages: pkg_5_depends_on_4_and_1/3cacf579322370734855c20557321dadeee3a7a4')
       expect(clean_release_out).to include('Processing 4 existing packages')
@@ -268,9 +268,9 @@ describe 'upload release', type: :integration do
     end
 
     it 'does not allow uploading same release version with different commit hash' do
-      bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release-1-corrupted_with_different_commit.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('compiled_releases/test_release-1-corrupted_with_different_commit.tgz')}")
       expect do
-        bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
+        bosh_runner.run("upload-release #{asset_path('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
       end.to raise_error(
         RuntimeError,
         Regexp.new("Error: release 'test_release/1' has already been uploaded with commit_hash as '50e58577' " \
@@ -281,8 +281,8 @@ describe 'upload release', type: :integration do
 
   describe 'uploading a release with the same packages as some other release' do
     it 'omits identical packages from the repacked tarball and creates new copies of the blobstore entries under the new release' do
-      bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
-      bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release/releases/release_with_shared_blobs/release_with_shared_blobs-1.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('compiled_releases/test_release/releases/release_with_shared_blobs/release_with_shared_blobs-1.tgz')}")
 
       test_release_desc = table(bosh_runner.run('inspect-release test_release/1', json: true))
       shared_release_desc = table(bosh_runner.run('inspect-release release_with_shared_blobs/1', json: true))
@@ -308,25 +308,25 @@ describe 'upload release', type: :integration do
     end
 
     it 'raises an error if the uploaded release version already exists but there are packages with different fingerprints' do
-      bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
 
       expect {
-        bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1-pkg2-updated.tgz')}")
+        bosh_runner.run("upload-release #{asset_path('compiled_releases/test_release/releases/test_release/test_release-1-pkg2-updated.tgz')}")
       }.to raise_error(RuntimeError, /Error: package 'pkg_2' had different fingerprint in previously uploaded release 'test_release\/1'/)
     end
 
     it 'raises an error if the uploaded release version already exists but there are jobs with different fingerprints' do
-      bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
 
       expect {
-        bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1-job1-updated.tgz')}")
+        bosh_runner.run("upload-release #{asset_path('compiled_releases/test_release/releases/test_release/test_release-1-job1-updated.tgz')}")
       }.to raise_error(RuntimeError, /Error: job 'job_using_pkg_1' had different fingerprint in previously uploaded release 'test_release\/1'/)
     end
 
     it 'allows sharing of packages across releases when the original packages does not have source' do
-      bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
-      bosh_runner.run("upload-release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
-      output = bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release/releases/release_with_shared_blobs/release_with_shared_blobs-1.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
+      output = bosh_runner.run("upload-release #{asset_path('compiled_releases/test_release/releases/release_with_shared_blobs/release_with_shared_blobs-1.tgz')}")
       expect(output).to include('Creating new packages: pkg_1/16b4c8ef1574b3f98303307caad40227c208371f')
       expect(output).to include('Release has been created: release_with_shared_blobs/1')
     end
@@ -335,13 +335,13 @@ describe 'upload release', type: :integration do
   describe 'uploading compiled releases' do
     it 'should not raise an error if no stemcell matched the criteria' do
       expect {
-        bosh_runner.run("upload-release #{spec_asset('release-hello-go-50-on-centos-7-stemcell-3001.tgz')}")
+        bosh_runner.run("upload-release #{asset_path('release-hello-go-50-on-centos-7-stemcell-3001.tgz')}")
       }.not_to raise_error
     end
 
     it 'should populate compiled packages for one stemcell' do
-      bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
-      output = bosh_runner.run("upload-release #{spec_asset('release-hello-go-50-on-centos-7-stemcell-3001.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+      output = bosh_runner.run("upload-release #{asset_path('release-hello-go-50-on-centos-7-stemcell-3001.tgz')}")
 
       expect(output).to include('Creating new packages: go-lang-1.4.2/7d4bf6e5267a46d414af2b9a62e761c2e5f33a8d')
       expect(output).to include('Creating new compiled packages: go-lang-1.4.2/7d4bf6e5267a46d414af2b9a62e761c2e5f33a8d for centos-7/3001')
@@ -350,9 +350,9 @@ describe 'upload release', type: :integration do
     end
 
     it 'should populate compiled packages for two matching stemcells' do
-      bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-centos-7-go_agent.tgz')}")
-      bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
-      output = bosh_runner.run("upload-release #{spec_asset('release-hello-go-50-on-centos-7-stemcell-3001.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('light-bosh-stemcell-3001-aws-xen-centos-7-go_agent.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+      output = bosh_runner.run("upload-release #{asset_path('release-hello-go-50-on-centos-7-stemcell-3001.tgz')}")
 
       expect(output).to include('Creating new packages: go-lang-1.4.2/7d4bf6e5267a46d414af2b9a62e761c2e5f33a8d')
       expect(output).to include('Creating new compiled packages: go-lang-1.4.2/7d4bf6e5267a46d414af2b9a62e761c2e5f33a8d for centos-7/3001')
@@ -361,51 +361,51 @@ describe 'upload release', type: :integration do
     end
 
     it 'upload a compiled release tarball' do
-      bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
-      output = bosh_runner.run("upload-release #{spec_asset('release-hello-go-50-on-toronto-os-stemcell-1.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
+      output = bosh_runner.run("upload-release #{asset_path('release-hello-go-50-on-toronto-os-stemcell-1.tgz')}")
       expect(output).to include('Creating new packages: hello-go/b3df8c27c4525622aacc0d7013af30a9f2195393')
       expect(output).to include('Creating new compiled packages: hello-go/b3df8c27c4525622aacc0d7013af30a9f2195393 for toronto-os/1')
       expect(output).to include('Creating new jobs: hello-go/0cf937b9a063cf96bd7506fa31699325b40d2d08')
     end
 
     it 'should not do any expensive operations for 2nd upload of a compiled release tarball' do
-      bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
-      output = bosh_runner.run("upload-release #{spec_asset('release-hello-go-50-on-toronto-os-stemcell-1.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
+      output = bosh_runner.run("upload-release #{asset_path('release-hello-go-50-on-toronto-os-stemcell-1.tgz')}")
       expect(output).to include('Creating new packages: hello-go/')
       expect(output).to include('Creating new compiled packages: hello-go/')
       expect(output).to include('Creating new jobs: hello-go/')
 
-      output = bosh_runner.run("upload-release #{spec_asset('release-hello-go-50-on-toronto-os-stemcell-1.tgz')}")
+      output = bosh_runner.run("upload-release #{asset_path('release-hello-go-50-on-toronto-os-stemcell-1.tgz')}")
       #expect(output).to include('Processing 1 existing compiled package')
       expect(output).to include('Processing 1 existing job')
       expect(output).to include('Compiled Release has been created')
     end
 
     it 'should use dependencies in matching for 2nd upload of a compiled release tarball' do
-      bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
-      output = bosh_runner.run("upload-release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+      output = bosh_runner.run("upload-release #{asset_path('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
       expect(output).to include('Creating new packages')
       expect(output).to include('Creating new compiled packages')
       expect(output).to include('Creating new jobs')
 
-      output = bosh_runner.run("upload-release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
+      output = bosh_runner.run("upload-release #{asset_path('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
       expect(output).to include('Processing 6 existing job')
     end
 
     it 'upload a new version of compiled release tarball when the compiled release is already uploaded' do
-      bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
-      bosh_runner.run("upload-release #{spec_asset('release-hello-go-50-on-toronto-os-stemcell-1.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('release-hello-go-50-on-toronto-os-stemcell-1.tgz')}")
 
-      output = bosh_runner.run("upload-release #{spec_asset('release-hello-go-51-on-toronto-os-stemcell-1.tgz')}")
+      output = bosh_runner.run("upload-release #{asset_path('release-hello-go-51-on-toronto-os-stemcell-1.tgz')}")
       expect(output).to include('Processing 1 existing package')
       expect(output).to include('Processing 1 existing job')
     end
 
     it 'backfills the source code for an already exisiting compiled release' do
-      bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
-      bosh_runner.run("upload-release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
 
-      bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
 
       output = table(bosh_runner.run('inspect-release test_release/1', json: true))
       output.select{|item| item.has_key? 'package'}.each do |item|
@@ -414,11 +414,11 @@ describe 'upload release', type: :integration do
     end
 
     it 'backfill source of an already exisitng compiled release when there is another release that has exactly same contents' do
-      bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
 
-      bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release_with_different_name.tgz')}")
-      bosh_runner.run("upload-release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
-      bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('compiled_releases/test_release/releases/test_release/test_release_with_different_name.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
 
       inspect_release_with_other_name_out = table(bosh_runner.run('inspect-release test_release_with_other_name/1', json: true))
       inspect_release_out = table(bosh_runner.run('inspect-release test_release/1', json: true))
@@ -442,11 +442,11 @@ describe 'upload release', type: :integration do
     end
 
     it 'allows uploading a compiled release after its source release has been uploaded' do
-      bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-centos-7-go_agent.tgz')}")
-      bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
-      bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('light-bosh-stemcell-3001-aws-xen-centos-7-go_agent.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
 
-      bosh_runner.run("upload-release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
 
       output = table(bosh_runner.run('inspect-release test_release/1', json: true))
       expect(output).to include({'job'=> 'job_using_pkg_1/9a5f09364b2cdc18a45172c15dca21922b3ff196', 'blobstore_id'=> String, 'digest'=> 'a7d51f65cda79d2276dc9cc254e6fec523b07b02', 'links_consumed' => '', 'links_provided' => ''})
@@ -469,8 +469,8 @@ describe 'upload release', type: :integration do
     end
 
     it 'allows uploading two source releases with different version numbers but identical contents' do
-      bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
-      bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-4-same-packages-as-1.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('compiled_releases/test_release/releases/test_release/test_release-4-same-packages-as-1.tgz')}")
     end
   end
 
@@ -509,7 +509,7 @@ describe 'upload release', type: :integration do
           bosh_runner.run_in_current_dir('upload-release')
         end
 
-        bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
+        bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
 
         cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
         bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
@@ -541,8 +541,8 @@ describe 'upload release', type: :integration do
 
     context 'when uploading compiled package' do
       it 'Re-uploads all compiled packages to replace old ones' do
-        bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
-        bosh_runner.run("upload-release #{spec_asset('release-hello-go-50-on-toronto-os-stemcell-1.tgz')}")
+        bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
+        bosh_runner.run("upload-release #{asset_path('release-hello-go-50-on-toronto-os-stemcell-1.tgz')}")
 
         inspect1 = bosh_runner.run('inspect-release hello-go/50', json: true)
         blob_files_1 = get_blob_ids(inspect1)
@@ -551,7 +551,7 @@ describe 'upload release', type: :integration do
         # Delete all package and compiled package blob files
         search_and_delete_files(current_sandbox.blobstore_storage_dir, blob_files_1)
 
-        bosh_runner.run("upload-release #{spec_asset('release-hello-go-50-on-toronto-os-stemcell-1.tgz')} --fix")
+        bosh_runner.run("upload-release #{asset_path('release-hello-go-50-on-toronto-os-stemcell-1.tgz')} --fix")
 
         inspect2 = bosh_runner.run('inspect-release hello-go/50', json: true)
         blob_files_2 = get_blob_ids(inspect2)

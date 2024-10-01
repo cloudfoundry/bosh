@@ -9,6 +9,6 @@ describe 'cli: manifest', type: :integration do
     deploy_from_scratch(manifest_file: 'manifests/manifest_with_yaml_boolean_values.yml', cloud_config_hash: cloud_config)
     manifest_output = bosh_runner.run('manifest', deployment_name: 'simple')
 
-    expect(manifest_output).to match(File.open(spec_asset("manifests/manifest_with_yaml_boolean_values.yml")).read)
+    expect(manifest_output).to match(File.open(asset_path("manifests/manifest_with_yaml_boolean_values.yml")).read)
   end
 end

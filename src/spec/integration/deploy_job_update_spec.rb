@@ -55,7 +55,7 @@ describe 'deploy job update', type: :integration do
     it 'accurately reports deployment configuration changes, cloud configuration changes and runtime config changes' do
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
 
-      bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
 
       cloud_config_hash['vm_types'][0]['properties'] = { 'prop1' => 'val1' }
 

@@ -11,7 +11,7 @@ describe 'inspect release', type: :integration do
     end
 
     it 'shows jobs and source pacakges' do
-      bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
       out = scrub_random_ids(table(bosh_runner.run('inspect-release test_release/1', json: true)))
 
       expect(out).to eq([
@@ -91,8 +91,8 @@ describe 'inspect release', type: :integration do
     end
 
     it 'shows jobs and packages compiled against multiple stemcells' do
-      bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
-      bosh_runner.run("upload-release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
       out = scrub_random_ids(table(bosh_runner.run('inspect-release test_release/1', json: true)))
 
       expect(out).to eq([
@@ -202,7 +202,7 @@ describe 'inspect release', type: :integration do
     end
 
     it 'shows consumed and provided links of release jobs' do
-      bosh_runner.run("upload-release #{spec_asset('links_releases/release_with_optional_links-0+dev.1.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('links_releases/release_with_optional_links-0+dev.1.tgz')}")
       out = scrub_random_ids(table(bosh_runner.run('inspect-release release_with_optional_links/0+dev.1', json: true)))
 
       expect(out).to eq([

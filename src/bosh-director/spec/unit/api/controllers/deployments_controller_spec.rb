@@ -55,26 +55,26 @@ module Bosh::Director
         describe 'creating a deployment' do
           context 'authenticated access' do
             it 'expects compressed deployment file' do
-              post '/', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+              post '/', asset_content('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml'}
               expect_redirect_to_queued_task(last_response)
             end
 
             it 'accepts a context ID header' do
               context_id = 'example-context-id'
               header('X-Bosh-Context-Id', context_id)
-              post '/', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+              post '/', asset_content('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml'}
               task = expect_redirect_to_queued_task(last_response)
               expect(task.context_id).to eq(context_id)
             end
 
             it 'defaults to no context ID' do
-              post '/', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+              post '/', asset_content('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml'}
               task = expect_redirect_to_queued_task(last_response)
               expect(task.context_id).to eq('')
             end
 
             it 'only consumes text/yaml' do
-              post '/', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/plain'}
+              post '/', asset_content('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/plain'}
               expect(last_response.status).to eq(404)
             end
 
@@ -145,7 +145,7 @@ module Bosh::Director
                     anything,
                   ).and_return(FactoryBot.create(:models_task))
 
-                post "/?#{URI.encode_www_form(deployment_context)}", spec_asset('test_conf.yaml'), 'CONTENT_TYPE' => 'text/yaml'
+                post "/?#{URI.encode_www_form(deployment_context)}", asset_content('test_conf.yaml'), 'CONTENT_TYPE' => 'text/yaml'
                 expect_redirect_to_queued_task(last_response)
               end
 
@@ -169,7 +169,7 @@ module Bosh::Director
                 it 'should error if the user references a cloud config from another team' do
                   deployment_context = [['context', JSON.dump({'cloud_config_ids' => [dev_cloud_config.id, other_cloud_config.id], 'runtime_config_ids' => []})]]
 
-                  response = post "/?#{URI.encode_www_form(deployment_context)}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+                  response = post "/?#{URI.encode_www_form(deployment_context)}", asset_content('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml'}
                   expect(response.status).to eq(400)
                   expect(response.body).to match(/Context includes invalid config ID/)
                 end
@@ -177,7 +177,7 @@ module Bosh::Director
                 it 'should error if the user references a runtime config from another team' do
                   deployment_context = [['context', JSON.dump({'cloud_config_ids' => [], 'runtime_config_ids' => [dev_runtime_config.id, other_runtime_config.id]})]]
 
-                  response = post "/?#{URI.encode_www_form(deployment_context)}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+                  response = post "/?#{URI.encode_www_form(deployment_context)}", asset_content('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml'}
                   expect(response.status).to eq(400)
                   expect(response.body).to match(/Context includes invalid config ID/)
                 end
@@ -198,7 +198,7 @@ module Bosh::Director
                           )
                           .and_return(FactoryBot.create(:models_task))
 
-                  response = post "/?#{URI.encode_www_form(deployment_context)}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+                  response = post "/?#{URI.encode_www_form(deployment_context)}", asset_content('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml'}
 
                   expect(response.status).to eq(302)
                 end
@@ -210,7 +210,7 @@ module Bosh::Director
                 cloud_config = FactoryBot.create(:models_config_cloud, :with_manifest)
                 runtime_config = FactoryBot.create(:models_config_runtime)
 
-                post '/', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+                post '/', asset_content('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml'}
 
                 expect_redirect_to_queued_task(last_response)
                 deployment = Models::Deployment.first
@@ -223,7 +223,7 @@ module Bosh::Director
               it 'should queue a dry run task' do
                 expect(Models::Task.all).to be_empty
 
-                post '/?dry_run=true', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+                post '/?dry_run=true', asset_content('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml'}
 
                 expect_redirect_to_queued_task(last_response)
 
@@ -264,7 +264,7 @@ module Bosh::Director
                           )
                           .and_return(FactoryBot.create(:models_task))
 
-                  response = post '/', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+                  response = post '/', asset_content('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml'}
 
                   expect(response.status).to eq(302)
                 end
@@ -287,7 +287,7 @@ module Bosh::Director
                           )
                           .and_return(FactoryBot.create(:models_task))
 
-                  response = post '/', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+                  response = post '/', asset_content('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml'}
 
                   expect(response.status).to eq(302)
                 end
@@ -299,7 +299,7 @@ module Bosh::Director
             before { authorize 'invalid-user', 'invalid-password' }
 
             it 'returns 401' do
-              post '/', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+              post '/', asset_content('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml'}
               expect(last_response.status).to eq(401)
             end
           end
@@ -314,7 +314,7 @@ module Bosh::Director
                 .to receive(:create_deployment)
                 .with(anything, anything, anything, anything, anything, hash_excluding('skip_drain'), anything)
                 .and_return(OpenStruct.new(id: 1))
-              post '/', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+              post '/', asset_content('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
             end
           end
@@ -325,7 +325,7 @@ module Bosh::Director
                 .to receive(:create_deployment)
                 .with(anything, anything, anything, anything, anything, hash_including('skip_drain' => '*'), anything)
                 .and_return(OpenStruct.new(id: 1))
-              post '/?skip_drain=*', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+              post '/?skip_drain=*', asset_content('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
             end
           end
@@ -336,7 +336,7 @@ module Bosh::Director
                 .to receive(:create_deployment)
                 .with(anything, anything, anything, anything, anything, hash_including('skip_drain' => 'job_one,job_two'), anything)
                 .and_return(OpenStruct.new(id: 1))
-              post '/?skip_drain=job_one,job_two', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+              post '/?skip_drain=job_one,job_two', asset_content('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
             end
           end
@@ -347,7 +347,7 @@ module Bosh::Director
                 .to receive(:create_deployment)
                 .with(anything, anything, anything, anything, anything, hash_including('fix' => true), anything)
                 .and_return(OpenStruct.new(id: 1))
-              post '/?fix=true', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+              post '/?fix=true', asset_content('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml'}
               expect(last_response).to be_redirect
             end
           end
@@ -358,7 +358,7 @@ module Bosh::Director
                 .to receive(:create_deployment)
                 .with(anything, anything, anything, anything, anything, hash_including('canaries' => '1'), anything)
                 .and_return(OpenStruct.new(id: 1))
-              post '/?canaries=1', spec_asset('test_conf.yaml'), 'CONTENT_TYPE' => 'text/yaml'
+              post '/?canaries=1', asset_content('test_conf.yaml'), 'CONTENT_TYPE' => 'text/yaml'
               expect(last_response).to be_redirect
             end
           end
@@ -369,7 +369,7 @@ module Bosh::Director
                 .to receive(:create_deployment)
                 .with(anything, anything, anything, anything, anything, hash_including('max_in_flight' => '1'), anything)
                 .and_return(OpenStruct.new(id: 1))
-              post '/?max_in_flight=1', spec_asset('test_conf.yaml'), 'CONTENT_TYPE' => 'text/yaml'
+              post '/?max_in_flight=1', asset_content('test_conf.yaml'), 'CONTENT_TYPE' => 'text/yaml'
               expect(last_response).to be_redirect
             end
           end
@@ -387,7 +387,7 @@ module Bosh::Director
                   hash_including('recreate_persistent_disks' => true),
                   anything,
                 ).and_return(OpenStruct.new(id: 1))
-              post '/?recreate_persistent_disks=true', spec_asset('test_conf.yaml'), 'CONTENT_TYPE' => 'text/yaml'
+              post '/?recreate_persistent_disks=true', asset_content('test_conf.yaml'), 'CONTENT_TYPE' => 'text/yaml'
               expect(last_response).to be_redirect
             end
           end
@@ -398,7 +398,7 @@ module Bosh::Director
                   .to receive(:create_deployment)
                           .with(anything, anything, anything, anything, deployment, hash_excluding('skip_drain'), anything)
                           .and_return(OpenStruct.new(id: 1))
-              post '/', spec_asset('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
+              post '/', asset_content('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response).to be_redirect
             end
           end
@@ -409,7 +409,7 @@ module Bosh::Director
                   .to receive(:create_deployment)
                           .with(anything, anything, anything, anything, deployment, hash_including('new' => false), anything)
                           .and_return(OpenStruct.new(id: 1))
-              post '/', spec_asset('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
+              post '/', asset_content('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
             end
 
             it 'to true' do
@@ -418,7 +418,7 @@ module Bosh::Director
                           .with(anything, anything, anything, anything, anything, hash_including('new' => true), anything)
                           .and_return(OpenStruct.new(id: 1))
                Models::Deployment.first.delete
-              post '/', spec_asset('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
+              post '/', asset_content('test_manifest.yml'), { 'CONTENT_TYPE' => 'text/yaml' }
             end
           end
 
@@ -428,7 +428,7 @@ module Bosh::Director
                 .to receive(:create_deployment)
                       .with(anything, anything, anything, anything, anything, hash_including('force_latest_variables' => true), anything)
                       .and_return(OpenStruct.new(id: 1))
-              post '/?force_latest_variables=true', spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+              post '/?force_latest_variables=true', asset_content('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml'}
               expect(last_response).to be_redirect
             end
           end
@@ -543,7 +543,7 @@ module Bosh::Director
                   anything,
                 ).and_return(FactoryBot.create(:models_task))
 
-              put '/foo/jobs/*?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+              put '/foo/jobs/*?state=stopped', asset_content('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect_redirect_to_queued_task(last_response)
             end
 
@@ -559,7 +559,7 @@ module Bosh::Director
                   anything,
                 ).and_return(FactoryBot.create(:models_task))
 
-              put '/foo/jobs/dea/0B949287-CDED-4761-9002-FC4035E11B21?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+              put '/foo/jobs/dea/0B949287-CDED-4761-9002-FC4035E11B21?state=stopped', asset_content('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect_redirect_to_queued_task(last_response)
             end
           end
@@ -576,7 +576,7 @@ module Bosh::Director
                 variable_set: Models::VariableSet.create(deployment: deployment)
               )
               Models::PersistentDisk.create(instance: instance, disk_cid: 'disk_cid')
-              put "#{path}", spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+              put "#{path}", asset_content('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect_redirect_to_queued_task(last_response)
             end
 
@@ -584,7 +584,7 @@ module Bosh::Director
               RSpec::Matchers.define :not_to_have_body do |unexpected|
                 match { |actual| actual != unexpected }
               end
-              manifest = spec_asset('test_conf.yaml')
+              manifest = asset_content('test_conf.yaml')
               expect_any_instance_of(DeploymentManager)
                 .to receive(:create_deployment)
                 .with(anything, not_to_have_body(manifest), anything, anything,
@@ -606,7 +606,7 @@ module Bosh::Director
             end
 
             it 'should return 404 if the manifest cannot be found' do
-              put "#{path}", spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+              put "#{path}", asset_content('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
               expect(last_response.status).to eq(404)
             end
           end
@@ -671,7 +671,7 @@ module Bosh::Director
 
           it 'returns a "bad request" if index_or_id parameter of a PUT is neither a number nor a string with uuid format' do
             deployment
-            put '/foo/jobs/dea/snoopy?state=stopped', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+            put '/foo/jobs/dea/snoopy?state=stopped', asset_content('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
             expect(last_response.status).to eq(400)
           end
 
@@ -854,10 +854,10 @@ module Bosh::Director
                         hash_excluding('skip_drain'), anything)
                   .and_return(OpenStruct.new(id: 1))
 
-                put "#{path}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+                put "#{path}", asset_content('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml'}
                 expect(last_response).to be_redirect
 
-                put '/test_deployment/jobs/job_name/0B949287-CDED-4761-9002-FC4035E11B21', spec_asset('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
+                put '/test_deployment/jobs/job_name/0B949287-CDED-4761-9002-FC4035E11B21', asset_content('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml' }
                 expect(last_response).to be_redirect
               end
 
@@ -868,7 +868,7 @@ module Bosh::Director
                         hash_including('skip_drain' => drain_target), anything)
                   .and_return(OpenStruct.new(id: 1))
 
-                put "#{path + drain_option}", spec_asset('test_conf.yaml'), {'CONTENT_TYPE' => 'text/yaml'}
+                put "#{path + drain_option}", asset_content('test_conf.yaml'), { 'CONTENT_TYPE' => 'text/yaml'}
                 expect(last_response).to be_redirect
               end
             end

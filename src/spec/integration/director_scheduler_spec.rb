@@ -16,7 +16,7 @@ describe 'director_scheduler', type: :integration do
   before do
     runner.run('create-release --force')
     runner.run('upload-release')
-    runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
+    runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
 
     cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
     bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")

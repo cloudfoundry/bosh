@@ -9,12 +9,12 @@ require 'timecop'
 
 Dir.glob(File.expand_path('support/**/*.rb', __dir__)).each { |f| require(f) }
 
-def spec_asset(filename)
+def asset_path(filename)
   File.expand_path(File.join(File.dirname(__FILE__), 'assets', filename))
 end
 
 def sample_config
-  spec_asset('sample_config.yml')
+  asset_path('sample_config.yml')
 end
 
 def default_config

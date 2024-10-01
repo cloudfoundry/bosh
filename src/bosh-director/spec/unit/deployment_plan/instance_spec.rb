@@ -485,7 +485,7 @@ module Bosh::Director::DeploymentPlan
 
     describe '#update_instance_settings' do
       include FakeFS::SpecHelpers
-      let(:config_path) { asset('test-director-config.yml') }
+      let(:config_path) { asset_path('test-director-config.yml') }
       let(:config) { YAML.load_file(config_path) }
 
       let(:fake_cert) { 'super trustworthy cert' }

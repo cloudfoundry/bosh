@@ -91,11 +91,11 @@ module IntegrationExampleGroup
   end
 
   def upload_stemcell(options = {})
-    bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}", options)
+    bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}", options)
   end
 
   def upload_stemcell_2(options = {})
-    bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_2.tgz')}", options)
+    bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell_2.tgz')}", options)
   end
 
   def delete_stemcell
@@ -131,7 +131,7 @@ module IntegrationExampleGroup
     end
 
     cmd += if options[:manifest_file]
-             " #{spec_asset(options[:manifest_file])}"
+             " #{asset_path(options[:manifest_file])}"
            else
              " #{deployment_file(deployment_hash).path}"
            end
@@ -241,8 +241,8 @@ module IntegrationExampleGroup
     end
   end
 
-  def spec_asset(name)
-    File.expand_path("#{ASSETS_DIR}/#{name}", __FILE__)
+  def asset_path(name)
+    File.expand_path(File.join(ASSETS_DIR, name), __FILE__)
   end
 
   def regexp(string)

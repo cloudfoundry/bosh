@@ -66,7 +66,7 @@ describe 'encoding', type: :integration do
       expect(download_cpi_output).to include('cpi', 'germanic: Øl weiß æther ångström')
 
 
-      bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
 
       manifest_hash['update']['canary_watch_time'] = 0
       manifest_hash['instance_groups'][0]['instances'] = 2

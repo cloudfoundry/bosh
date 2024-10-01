@@ -44,9 +44,9 @@ describe 'collocating templates from multiple releases', type: :integration do
     end
 
     it 'shows correct versions and names in templates' do
-      bosh_runner.run("upload-release #{spec_asset('dummy-release.tgz')}")
-      bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
-      bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('dummy-release.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('bosh-release-0+dev.1.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
 
       cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
       bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
@@ -89,9 +89,9 @@ describe 'collocating templates from multiple releases', type: :integration do
     end
 
     it 'successfully deploys' do
-      bosh_runner.run("upload-release #{spec_asset('dummy-release.tgz')}")
-      bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
-      bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('dummy-release.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
 
       cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
       bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
@@ -117,8 +117,8 @@ describe 'collocating templates from multiple releases', type: :integration do
           { 'name' => 'job_using_pkg_1', 'release' => 'test_release_2' }
         ]
 
-        bosh_runner.run("upload-release #{spec_asset('test_release.tgz')}")
-        bosh_runner.run("upload-release #{spec_asset('test_release_2.tgz')}")
+        bosh_runner.run("upload-release #{asset_path('test_release.tgz')}")
+        bosh_runner.run("upload-release #{asset_path('test_release_2.tgz')}")
       end
 
       it 'allows the co-located jobs to share the same package' do
@@ -144,8 +144,8 @@ describe 'collocating templates from multiple releases', type: :integration do
           { 'name' => 'job_using_pkg_1', 'release' => 'test_release_with_modified_fingerprint_for_pkg_1' }
         ]
 
-        bosh_runner.run("upload-release #{spec_asset('test_release.tgz')}")
-        bosh_runner.run("upload-release #{spec_asset('test_release_with_modified_fingerprint_for_pkg_1.tgz')}")
+        bosh_runner.run("upload-release #{asset_path('test_release.tgz')}")
+        bosh_runner.run("upload-release #{asset_path('test_release_with_modified_fingerprint_for_pkg_1.tgz')}")
       end
 
       it 'refuses to deploy' do

@@ -15,8 +15,8 @@ describe 'teams', type: :integration do
 
     expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}", director_client_env)).to include('Succeeded')
 
-    bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}", director_client_env)
-    bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}", director_client_env)
+    bosh_runner.run("upload-release #{asset_path('bosh-release-0+dev.1.tgz')}", director_client_env)
+    bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}", director_client_env)
 
     upload_stemcell(director_client_env)
     upload_cloud_config(director_client_env)

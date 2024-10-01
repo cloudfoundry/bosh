@@ -5,7 +5,7 @@ describe 'delete release', type: :integration do
 
   # ~25s
   it 'allows deleting a whole release' do
-    release_filename = spec_asset('test_release.tgz')
+    release_filename = asset_path('test_release.tgz')
     bosh_runner.run("upload-release #{release_filename}")
 
     out = bosh_runner.run('delete-release test_release')
@@ -15,8 +15,8 @@ describe 'delete release', type: :integration do
   end
 
   it 'can delete an uploaded compiled release (no source)' do
-    bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
-    bosh_runner.run("upload-release #{spec_asset('release-hello-go-50-on-toronto-os-stemcell-1.tgz')}")
+    bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
+    bosh_runner.run("upload-release #{asset_path('release-hello-go-50-on-toronto-os-stemcell-1.tgz')}")
 
     out = bosh_runner.run("delete-release hello-go/50")
     expect(out).to match(/Deleting packages: hello-go\/b3df8c27c4525622aacc0d7013af30a9f2195393 \(\d{2}:\d{2}:\d{2}\)/)
@@ -26,7 +26,7 @@ describe 'delete release', type: :integration do
 
   # ~22s
   it 'allows deleting a particular release version' do
-    release_filename = spec_asset('test_release.tgz')
+    release_filename = asset_path('test_release.tgz')
     bosh_runner.run("upload-release #{release_filename}")
 
     out = bosh_runner.run('delete-release test_release/1')
@@ -45,7 +45,7 @@ describe 'delete release', type: :integration do
       bosh_runner.run_in_current_dir('upload-release')
     end
 
-    bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
+    bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
 
     upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
     deploy_simple_manifest(manifest_hash: Bosh::Spec::Deployments.simple_manifest_with_instance_groups, deployment_name: 'simple')

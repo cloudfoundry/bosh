@@ -40,7 +40,7 @@ describe 'cli: package compilation', type: :integration do
     bosh_runner.run_in_dir('upload-release', TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX)
 
     bosh_runner.run("update-cloud-config #{cloud_manifest.path}")
-    bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
+    bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
     deploy_simple_manifest(manifest_hash: manifest_hash)
 
     foobar_instance = director.instance('foobar', '0')

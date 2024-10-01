@@ -2,7 +2,7 @@ require_relative '../spec_helper'
 
 describe 'stemcell uploads api', type: :integration do
   with_reset_sandbox_before_each
-  let(:stemcell_filename) { spec_asset('valid_stemcell.tgz') }
+  let(:stemcell_filename) { asset_path('valid_stemcell.tgz') }
   let(:multiple_cpi_config) do
     cpi_config = Bosh::Spec::Deployments.multi_cpi_config(current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI))
     cpi_config['cpis'][0]['properties'] = { 'formats' => ['other'] }

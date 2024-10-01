@@ -113,8 +113,8 @@ describe 'recreate instance', type: :integration do
 
   context 'when a new release is uploaded and the release version in the manifest is latest' do
     it 'recreates an instance with initially resolved release version' do
-      release_filename = spec_asset('unsorted-release-0+dev.1.tgz')
-      stemcell_filename = spec_asset('valid_stemcell.tgz')
+      release_filename = asset_path('unsorted-release-0+dev.1.tgz')
+      stemcell_filename = asset_path('valid_stemcell.tgz')
       manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups(job_release: 'unsorted-release')
       manifest_hash['releases'] = [{
         'name' => 'unsorted-release',
@@ -129,7 +129,7 @@ describe 'recreate instance', type: :integration do
       bosh_runner.run("upload-release #{release_filename}")
 
       bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
-      bosh_runner.run("upload-release #{spec_asset('unsorted-release-0+dev.2.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('unsorted-release-0+dev.2.tgz')}")
       bosh_runner.run('recreate', deployment_name: 'simple')
 
       table_output = table(bosh_runner.run('releases', json: true))

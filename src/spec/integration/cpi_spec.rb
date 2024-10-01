@@ -226,7 +226,7 @@ describe 'CPI calls', type: :integration do
 
     context 'when stemcell has api version' do
       it 'sends correct CPI requests for select CPI calls' do
-        bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_with_api_version.tgz')}")
+        bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell_with_api_version.tgz')}")
         manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest
         manifest_hash['instance_groups'] = [
           Bosh::Spec::Deployments.simple_instance_group(
@@ -350,7 +350,7 @@ describe 'CPI calls', type: :integration do
           },
         }
 
-        bosh_runner.run("upload-release #{spec_asset('test_release_2.tgz')}")
+        bosh_runner.run("upload-release #{asset_path('test_release_2.tgz')}")
         upload_runtime_config(runtime_config_hash: runtime_config_hash)
 
         deploy(manifest_hash: manifest_hash)
@@ -610,7 +610,7 @@ describe 'CPI calls', type: :integration do
           },
         }
 
-        bosh_runner.run("upload-release #{spec_asset('test_release_2.tgz')}")
+        bosh_runner.run("upload-release #{asset_path('test_release_2.tgz')}")
         upload_runtime_config(runtime_config_hash: runtime_config_hash)
 
         deploy_simple_manifest(manifest_hash: manifest_hash)
@@ -855,7 +855,7 @@ describe 'CPI calls', type: :integration do
     end
 
     context 'a cli command that invokes a cpi action' do
-      let(:stemcell_filename) { spec_asset('valid_stemcell.tgz') }
+      let(:stemcell_filename) { asset_path('valid_stemcell.tgz') }
 
       before do
         bosh_runner.run("upload-stemcell #{stemcell_filename}")

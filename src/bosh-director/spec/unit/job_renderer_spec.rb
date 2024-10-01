@@ -29,7 +29,7 @@ module Bosh::Director
     let(:link_provider_intents) { [] }
 
     before do
-      job_tgz_path = asset('dummy_job_with_single_template.tgz')
+      job_tgz_path = asset_path('dummy_job_with_single_template.tgz')
       allow(blobstore_client).to receive(:get) { |_, f| blobstore_files << f.path; f.write(File.read(job_tgz_path)) }
       allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore_client)
     end

@@ -72,12 +72,12 @@ describe 'pre-start scripts', type: :integration do
         ),
       ],
     )
-    bosh_runner.run("upload-release #{spec_asset('pre_start_script_releases/release_with_prestart_script-1.tgz')}")
+    bosh_runner.run("upload-release #{asset_path('pre_start_script_releases/release_with_prestart_script-1.tgz')}")
     deploy(manifest_hash: manifest)
 
     # re-upload a different release version to make the pre-start scripts run
     manifest['releases'][0]['version'] = '2'
-    bosh_runner.run("upload-release #{spec_asset('pre_start_script_releases/release_with_prestart_script-2.tgz')}")
+    bosh_runner.run("upload-release #{asset_path('pre_start_script_releases/release_with_prestart_script-2.tgz')}")
     deploy(manifest_hash: manifest)
 
     agent_id = director.instance('job_with_templates_having_prestart_scripts', '0').agent_id
@@ -125,7 +125,7 @@ describe 'pre-start scripts', type: :integration do
     end
 
     it 'error out if run_script errors, and redirects stdout/stderr to pre-start.stdout.log/pre-start.stderr.log for each job' do
-      bosh_runner.run("upload-release #{spec_asset('pre_start_script_releases/release_with_corrupted_pre_start-1.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('pre_start_script_releases/release_with_corrupted_pre_start-1.tgz')}")
       expect do
         deploy(manifest_hash: manifest)
       end.to raise_error(

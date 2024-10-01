@@ -6,9 +6,9 @@ describe 'export-release', type: :integration do
   context 'with no source packages and no compiled packages against the targeted stemcell' do
     it 'should raise an error' do
       upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
-      bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
-      bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
-      bosh_runner.run("upload-release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
 
       manifest = Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5', 'test_release')
       manifest['stemcells'] = [{'name' => 'bosh-aws-xen-hvm-centos-7-go_agent', 'alias' => 'default', 'version' => '3001'}]
@@ -30,7 +30,7 @@ Can't use release 'test_release/1'. It references packages without source code a
     let(:deployment_manifest) { Bosh::Spec::Deployments.test_deployment_manifest }
 
     before do
-      bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
 
       upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
 
@@ -38,8 +38,8 @@ Can't use release 'test_release/1'. It references packages without source code a
       deployment_manifest['stemcells'].first['version'] = '3001'
       deployment_manifest['stemcells'].first.delete('os')
 
-      bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
-      bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-2-pkg2-updated.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('compiled_releases/test_release/releases/test_release/test_release-2-pkg2-updated.tgz')}")
     end
 
     it 'compiles the packages of the newer release when requested' do
@@ -82,7 +82,7 @@ Can't use release 'test_release/1'. It references packages without source code a
       deploy_simple_manifest(manifest_hash: deployment_manifest)
       bosh_runner.run('export-release test_release/1 centos-7/3001', deployment_name: 'test_deployment')
 
-      bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-3-pkg1-updated.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('compiled_releases/test_release/releases/test_release/test_release-3-pkg1-updated.tgz')}")
       deployment_manifest['releases'][0]['version'] = '3'
       deploy_simple_manifest(manifest_hash: deployment_manifest)
       out = bosh_runner.run('export-release test_release/3 centos-7/3001', deployment_name: 'test_deployment')
@@ -100,7 +100,7 @@ Can't use release 'test_release/1'. It references packages without source code a
     let(:deployment_manifest) { Bosh::Spec::Deployments.test_deployment_manifest }
 
     before do
-      bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
 
       upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
 
@@ -111,11 +111,11 @@ Can't use release 'test_release/1'. It references packages without source code a
 
       bosh_runner.run(
         'upload-release ' +
-        spec_asset('compiled_releases/test_release/releases/release-with-packages-being-updated/release-a-1-with-p-package.tgz'),
+        asset_path('compiled_releases/test_release/releases/release-with-packages-being-updated/release-a-1-with-p-package.tgz'),
       )
       bosh_runner.run(
         'upload-release ' +
-        spec_asset('compiled_releases/test_release/releases/release-with-packages-being-updated/release-a-2-with-q-package.tgz'),
+        asset_path('compiled_releases/test_release/releases/release-with-packages-being-updated/release-a-2-with-q-package.tgz'),
       )
     end
 
@@ -141,10 +141,10 @@ Can't use release 'test_release/1'. It references packages without source code a
     before{
       upload_cloud_config(cloud_config_hash: cloud_config)
 
-      bosh_runner.run("upload-release #{spec_asset('test_release.tgz')}")
-      bosh_runner.run("upload-release #{spec_asset('test_release_2.tgz')}")
-      bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
-      bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_2.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('test_release.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('test_release_2.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell_2.tgz')}")
       deploy_simple_manifest(manifest_hash: manifest_hash)
     }
 
@@ -219,7 +219,7 @@ Can't use release 'test_release/1'. It references packages without source code a
     end
 
     it 'raises an error when exporting a release version not matching the manifest release version' do
-      bosh_runner.run("upload-release #{spec_asset('valid_release.tgz')}")
+      bosh_runner.run("upload-release #{asset_path('valid_release.tgz')}")
       expect {
         bosh_runner.run('export-release appcloud/0.1 toronto-os/1', deployment_name: 'minimal')
       }.to raise_error(RuntimeError, /Error: Release version 'appcloud\/0.1' not found in deployment 'minimal' manifest/)
@@ -337,9 +337,9 @@ Can't use release 'test_release/1'. It references packages without source code a
   context 'when there is an existing deployment with running VMs' do
     context 'with global networking' do
       before do
-        bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
+        bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
         upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
-        bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
+        bosh_runner.run("upload-release #{asset_path('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
 
         deployment_manifest = Bosh::Spec::Deployments.minimal_manifest_with_ubuntu_stemcell
         deployment_manifest['instance_groups'] = [{
@@ -355,7 +355,7 @@ Can't use release 'test_release/1'. It references packages without source code a
       end
 
       it 'allocates non-conflicting IPs for compilation VMs' do
-        bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
+        bosh_runner.run("upload-stemcell #{asset_path('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
         output = bosh_runner.run('export-release test_release/1 centos-7/3001', deployment_name: 'minimal')
         expect(output).to include('Succeeded')
       end

@@ -2,7 +2,7 @@ require 'spec_helper'
 
 RSpec.describe 'ps_utils' do
   it 'checks bash utils' do
-    expect(`#{spec_asset('ps_utils_tests.sh')}`).to eq(
+    expect(`#{asset_path('ps_utils_tests.sh')}`).to eq(
         'an existing PID should exist
 a non-existing PID should NOT exist
 two kills should be sent to process 1

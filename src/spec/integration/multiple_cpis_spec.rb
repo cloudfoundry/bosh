@@ -3,7 +3,7 @@ require_relative '../spec_helper'
 describe 'Using multiple CPIs', type: :integration do
   with_reset_sandbox_before_each
 
-  let(:stemcell_filename) { spec_asset('valid_stemcell.tgz') }
+  let(:stemcell_filename) { asset_path('valid_stemcell.tgz') }
   let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs_and_cpis }
 
   let(:cpi_config) do

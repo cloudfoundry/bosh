@@ -11,10 +11,10 @@ describe 'stemcell configuration', type: :integration do
 
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
-      bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
       stemcell_id = current_sandbox.cpi.all_stemcells[0]['id']
 
-      bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_v2.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell_v2.tgz')}")
 
       manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
       manifest_hash['stemcells'].first.delete('name')
@@ -40,8 +40,8 @@ describe 'stemcell configuration', type: :integration do
 
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
-      bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
-      bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_v2.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell_v2.tgz')}")
 
       stemcell_v1_manifest = Bosh::Common::DeepCopy.copy(manifest_hash)
       stemcell_v1_manifest['stemcells'].first['version'] = '1'
@@ -111,7 +111,7 @@ describe 'stemcell configuration', type: :integration do
       create_and_upload_test_release
       upload_cloud_config(cloud_config_hash: cloud_config)
 
-      bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
       stemcell1 = table(bosh_runner.run('stemcells', json: true)).last
       expect(stemcell1['version']).to eq('1')
 
@@ -121,7 +121,7 @@ describe 'stemcell configuration', type: :integration do
       expect(initial_count).to be > 1
       expect(invocations.last['inputs']['stemcell_id']).to eq(stemcell1['cid'])
 
-      bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell_v2.tgz')}")
+      bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell_v2.tgz')}")
       stemcell2 = table(bosh_runner.run('stemcells', json: true)).first
       expect(stemcell2['version']).to eq('2')
 

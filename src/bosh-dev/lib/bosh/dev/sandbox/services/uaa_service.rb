@@ -168,10 +168,8 @@ module Bosh::Dev::Sandbox
     end
 
     def write_config_path
-      spec_assets_base_path = 'spec/assets/uaa_config'
-
       FileUtils.cp(
-        File.expand_path(File.join(spec_assets_base_path, 'asymmetric', 'uaa.yml'), REPO_ROOT),
+        File.expand_path(File.join('spec', 'assets', 'uaa_config', 'asymmetric', 'uaa.yml'), REPO_ROOT),
         @config_path,
       )
       @current_uaa_config_mode = 'asymmetric'

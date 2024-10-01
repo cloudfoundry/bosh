@@ -41,9 +41,9 @@ describe 'named runtime configs', type: :integration do
     expect(bosh_runner.run("update-runtime-config --name=rc_1 #{named_runetime_config_file1.path}")).to include('Succeeded')
     expect(bosh_runner.run("update-runtime-config --name=rc_2 #{named_runetime_config_file2.path}")).to include('Succeeded')
 
-    bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
-    bosh_runner.run("upload-release #{spec_asset('test_release.tgz')}")
-    bosh_runner.run("upload-release #{spec_asset('test_release_2.tgz')}")
+    bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
+    bosh_runner.run("upload-release #{asset_path('test_release.tgz')}")
+    bosh_runner.run("upload-release #{asset_path('test_release_2.tgz')}")
   end
 
   it 'merges the releases & addons for a deploy' do

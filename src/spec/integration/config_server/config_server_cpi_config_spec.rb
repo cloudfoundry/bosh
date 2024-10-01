@@ -24,7 +24,7 @@ describe 'cpi config', type: :integration do
     end
 
     describe 'when multiple cpis are defined' do
-      let(:stemcell_filename) { spec_asset('valid_stemcell.tgz') }
+      let(:stemcell_filename) { asset_path('valid_stemcell.tgz') }
 
       before do
         bosh_runner.run("update-cpi-config #{valid_cpi_config_file.path}", include_credentials: false,  env: client_env)

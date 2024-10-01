@@ -38,7 +38,7 @@ describe 'resurrector', type: :integration, hm: true do
       instances: 1,
     }
     deployment_hash_disabled['instance_groups'][1] = Bosh::Spec::Deployments.simple_instance_group(job_opts)
-    bosh_runner.run("upload-release #{spec_asset('dummy2-release.tgz')}")
+    bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
     upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
 
     # deploy simple_enabled

@@ -8,7 +8,7 @@ module Bosh::Director
       describe '#decompress' do
         it 'should decompress a .gz file' do
           Dir.mktmpdir do |dir|
-            FileUtils.cp(asset('foobar.gz'), dir)
+            FileUtils.cp(asset_path('foobar.gz'), dir)
             src = File.join(dir, 'foobar.gz')
             dst = File.join(dir, 'foobar')
 

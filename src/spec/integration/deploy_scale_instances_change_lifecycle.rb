@@ -74,7 +74,7 @@ describe 'deploy scaling instances and lifecycle', type: :integration do
 
   it 'does not try to delete previously deleted instances' do
     upload_stemcell
-    bosh_runner.run("upload-release #{spec_asset('bosh-release-0+dev.1.tgz')}")
+    bosh_runner.run("upload-release #{asset_path('bosh-release-0+dev.1.tgz')}")
     upload_cloud_config(cloud_config_hash: cloud_config)
 
     deploy_simple_manifest(manifest_hash: manifest_initial)

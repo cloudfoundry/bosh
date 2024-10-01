@@ -158,7 +158,7 @@ describe 'optional links', type: :integration do
   context 'when a job spec specifies an optional key in a provides link' do
     it 'should fail when uploading the release' do
       expect do
-        bosh_runner.run("upload-release #{spec_asset('links_releases/corrupted_release_optional_provides-0+dev.1.tgz')}")
+        bosh_runner.run("upload-release #{asset_path('links_releases/corrupted_release_optional_provides-0+dev.1.tgz')}")
       end.to raise_error(
         RuntimeError,
         /Error: Link 'node1' of type 'node1' is a provides link, not allowed to have 'optional' key/,
