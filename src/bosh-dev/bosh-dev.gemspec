@@ -1,20 +1,22 @@
 # coding: utf-8
+require File.expand_path('../lib/bosh/dev/version', __FILE__)
+
 Gem::Specification.new do |spec|
   spec.name          = 'bosh-dev'
-  spec.version       = '0.0.0'
-  spec.authors       = 'Pivotal'
-  spec.email         = 'support@cloudfoundry.com'
-  spec.description   = 'Bosh::Dev makes development on BOSH easier'
-  spec.summary       = 'Bosh::Dev makes development on BOSH easier'
-  spec.homepage      = 'https://github.com/cloudfoundry/bosh'
-  spec.license       = 'Apache 2.0'
+  spec.version       = Bosh::Dev::VERSION
+  spec.summary       = 'BOSH dev'
+  spec.description   = 'BOSH dev - utilities for BOSH development'
 
-  spec.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
+  spec.authors     = ['Cloud Foundry']
+  spec.email       = ['support@cloudfoundry.com']
+  spec.homepage    = 'https://github.com/cloudfoundry/bosh'
+  spec.license     = 'Apache-2.0'
+  spec.required_ruby_version = '>= 3.0.0'
 
-  spec.files         = Dir['lib/**/*'].select{ |f| File.file? f }
-  spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
-  spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
-  spec.require_paths = %w[lib]
+  spec.files         = Dir['lib/**/*'].select { |f| File.file?(f) }
+  spec.test_files    = Dir['spec/**/*'].select { |f| File.file?(f) }
+
+  spec.require_paths = ['lib']
 
   spec.add_dependency 'bosh_common'
   spec.add_dependency 'bosh-core'

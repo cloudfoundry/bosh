@@ -6,15 +6,18 @@ Gem::Specification.new do |spec|
   spec.version      = Bosh::Common::VERSION
   spec.platform     = Gem::Platform::RUBY
   spec.summary      = 'BOSH common'
-  spec.description  = "BOSH common"
-  spec.author       = 'VMware'
-  spec.homepage     = 'https://github.com/cloudfoundry/bosh'
-  spec.license      = 'Apache-2.0'
-  spec.email        = 'support@cloudfoundry.com'
-  spec.required_ruby_version = Gem::Requirement.new('>= 2.7.0')
+  spec.description  = 'BOSH common'
 
-  spec.files        = Dir['lib/**/*'].select{ |f| File.file? f }
-  spec.require_path = 'lib'
+  spec.authors     = ['Cloud Foundry']
+  spec.email       = ['support@cloudfoundry.com']
+  spec.homepage    = 'https://github.com/cloudfoundry/bosh'
+  spec.license     = 'Apache-2.0'
+  spec.required_ruby_version = '>= 3.0.0'
+
+  spec.files         = Dir['lib/**/*'].select { |f| File.file?(f) }
+  spec.test_files    = Dir['spec/**/*'].select { |f| File.file?(f) }
+
+  spec.require_paths = ['lib']
 
   spec.add_dependency 'semi_semantic'
   spec.add_dependency 'logging'
