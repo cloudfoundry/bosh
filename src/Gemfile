@@ -8,25 +8,10 @@ gem 'bosh-nats-sync', path: 'bosh-nats-sync'
 gem 'bosh-template', path: 'bosh-template'
 gem 'bosh_common', path: 'bosh_common'
 
-gem 'rake'
-
-# json version is hardcoded in release director and health_monitor
-# when modified needs to be updated there as well
-gem 'json', '~>2'
-
-gem 'ruby-prof'
-
 gem 'io-stream', '<= 0.4.0' # TODO unpin; v0.4.1 "expected `[#<Socket:(closed)>].empty?` to be truthy, got false"
-
-group :production do
-  gem 'mysql2'
-  gem 'pg'
-end
-
-group :bat do
-  gem 'minitar'
-  gem 'net-ssh'
-end
+gem 'mysql2'
+gem 'pg'
+gem 'sequel', '~> 5.29.0'
 
 group :development, :test do
   gem 'bosh-dev', path: 'bosh-dev'
@@ -37,33 +22,26 @@ group :development, :test do
   gem 'rspec'
   gem 'rspec-instafail'
   gem 'rspec-its'
-  gem 'async-rspec'
 
-  gem 'fakefs'
   gem 'parallel_tests'
-  gem 'rack-test'
-  gem 'sinatra', '>= 2.2.0'
-  gem 'sinatra-contrib', '>= 2.2.0'
-  gem 'webmock'
+
+  gem 'rubocop'
+  gem 'rubocop-git'
 
   gem 'simplecov', require: false
 
   gem 'pry-byebug'
   gem 'pry-remote'
 
-  gem 'rubocop'
-  gem 'rubocop-git'
-
-  # for director
-  gem 'factory_bot'
-
-  # for root level specs
-  gem 'nats-pure', '~>2.3'
-  gem 'rest-client'
-
+  gem 'async-rspec'
   gem 'blue-shell'
+  gem 'factory_bot'
+  gem 'fakefs'
+  gem 'minitar'
+  gem 'rack-test'
+  gem 'sinatra', '>= 2.2.0'
+  gem 'sinatra-contrib', '>= 2.2.0'
   gem 'sqlite3'
   gem 'timecop'
-
-  gem 'unix-crypt'
+  gem 'webmock'
 end

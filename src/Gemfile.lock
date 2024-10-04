@@ -12,6 +12,7 @@ PATH
       bosh-director
       bosh_common
       bundler
+      json
       logging
       openssl
 
@@ -22,6 +23,7 @@ PATH
       bosh-template (~> 0.0.0)
       bosh_common (~> 0.0.0)
       openssl
+      securerandom
 
 PATH
   remote: bosh-director
@@ -34,6 +36,7 @@ PATH
       bosh_common (~> 0.0.0)
       bosh_cpi
       cf-uaa-lib
+      json
       logging
       membrane
       nats-pure
@@ -44,8 +47,9 @@ PATH
       rack-test
       rake
       rufus-scheduler
-      sequel (~> 5.29.0)
-      sinatra (~> 2.2.0)
+      securerandom
+      sequel
+      sinatra
       sys-filesystem
       talentbox-delayed_job_sequel
       tzinfo-data
@@ -67,6 +71,7 @@ PATH
       ostruct
       puma
       riemann-client
+      securerandom
       sinatra
 
 PATH
@@ -74,6 +79,7 @@ PATH
   specs:
     bosh-nats-sync (0.0.0)
       cf-uaa-lib
+      json
       logging
       openssl
       rest-client
@@ -224,7 +230,6 @@ GEM
       timeout
     net-smtp (0.5.0)
       net-protocol
-    net-ssh (7.3.0)
     netrc (0.11.0)
     nio4r (2.7.3)
     openssl (3.2.0)
@@ -312,7 +317,6 @@ GEM
       parser (>= 3.3.1.0)
     rubocop-git (0.1.3)
       rubocop (>= 0.24.1)
-    ruby-prof (1.7.0)
     ruby-progressbar (1.13.0)
     ruby2_keywords (0.0.5)
     rufus-scheduler (3.9.2)
@@ -381,30 +385,24 @@ DEPENDENCIES
   factory_bot
   fakefs
   io-stream (<= 0.4.0)
-  json (~> 2)
   minitar
   mysql2
-  nats-pure (~> 2.3)
-  net-ssh
   parallel_tests
   pg
   pry-byebug
   pry-remote
   rack-test
-  rake
-  rest-client
   rspec
   rspec-instafail
   rspec-its
   rubocop
   rubocop-git
-  ruby-prof
+  sequel (~> 5.29.0)
   simplecov
   sinatra (>= 2.2.0)
   sinatra-contrib (>= 2.2.0)
   sqlite3
   timecop
-  unix-crypt
   webmock
 
 BUNDLED WITH

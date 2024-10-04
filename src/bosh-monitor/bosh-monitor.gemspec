@@ -28,6 +28,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'openssl'
   spec.add_dependency 'ostruct'
   spec.add_dependency 'puma'
+  spec.add_dependency 'securerandom'
   spec.add_dependency 'sinatra'
   spec.add_dependency 'dogapi'
   spec.add_dependency 'riemann-client'

@@ -23,6 +23,8 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'bosh_common', "~>#{version}"
   spec.add_dependency 'bosh-template', "~>#{version}"
   spec.add_dependency 'openssl'
+  spec.add_dependency 'securerandom'
 
   spec.add_development_dependency 'fakefs'
+  spec.add_development_dependency 'minitar'
 end
