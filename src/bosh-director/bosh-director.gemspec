@@ -1,44 +1,44 @@
 # coding: utf-8
 require File.expand_path('../lib/bosh/director/version', __FILE__)
 
-version = Bosh::Director::VERSION
-
 Gem::Specification.new do |spec|
   spec.name         = 'bosh-director'
-  spec.version      = version
+  spec.version      = Bosh::Director::VERSION
   spec.platform     = Gem::Platform::RUBY
   spec.summary      = 'BOSH Director'
   spec.description  = 'BOSH Director'
-  spec.author       = 'VMware'
-  spec.homepage     = 'https://github.com/cloudfoundry/bosh'
-  spec.license      = 'Apache 2.0'
-  spec.email        = 'support@cloudfoundry.com'
-  spec.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
 
-  spec.files        = Dir['db/**/*', 'lib/**/*'].select{ |f| File.file? f }
-  spec.require_path = 'lib'
-  spec.bindir       = 'bin'
-  spec.executables << 'bosh-director'
-  spec.executables << 'bosh-director-console'
-  spec.executables << 'bosh-director-drain-workers'
-  spec.executables << 'bosh-director-metrics-server'
-  spec.executables << 'bosh-director-migrate'
-  spec.executables << 'bosh-director-scheduler'
-  spec.executables << 'bosh-director-sync-dns'
-  spec.executables << 'bosh-director-trigger-one-time-sync-dns'
-  spec.executables << 'bosh-director-worker'
+  spec.authors     = ['Cloud Foundry']
+  spec.email       = ['support@cloudfoundry.com']
+  spec.homepage    = 'https://github.com/cloudfoundry/bosh'
+  spec.license     = 'Apache-2.0'
+  spec.required_ruby_version = '>= 3.0.0'
+
+  spec.files         = Dir['lib/**/*'].select { |f| File.file?(f) }
+  spec.test_files    = Dir['spec/**/*'].select { |f| File.file?(f) }
+
+  spec.bindir        = 'bin'
+  spec.executables   = [
+    'bosh-director',
+    'bosh-director-console',
+    'bosh-director-drain-workers',
+    'bosh-director-metrics-server',
+    'bosh-director-migrate',
+    'bosh-director-scheduler',
+    'bosh-director-sync-dns',
+    'bosh-director-trigger-one-time-sync-dns',
+    'bosh-director-worker',
+  ]
+  spec.require_paths = ['lib']
 
   # NOTE: We must specify all transitive BOSH gem dependencies found in the
   # external CPIs, in order to ensure appropriate versions are installed.
   # Also do the same in bosh_cli_plugin_micro.gemspec
   # Review this once CPIs are completely externalized and "micro" goes away.
-  # ----------------------------------------------------------------------------
-  spec.add_dependency 'bosh_common',        "~>#{version}"
-  # ----------------------------------------------------------------------------
-
-  spec.add_dependency 'bosh-core',          "~>#{version}"
-  spec.add_dependency 'bosh-director-core', "~>#{version}"
-  spec.add_dependency 'bosh-template',      "~>#{version}"
+  spec.add_dependency 'bosh_common',        "~>#{Bosh::Director::VERSION}"
+  spec.add_dependency 'bosh-core',          "~>#{Bosh::Director::VERSION}"
+  spec.add_dependency 'bosh-director-core', "~>#{Bosh::Director::VERSION}"
+  spec.add_dependency 'bosh-template',      "~>#{Bosh::Director::VERSION}"
 
   spec.add_dependency 'bcrypt'
   spec.add_dependency 'bosh_cpi'

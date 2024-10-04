@@ -4,19 +4,19 @@ require File.expand_path('../lib/bosh/core/version', __FILE__)
 Gem::Specification.new do |spec|
   spec.name        = 'bosh-core'
   spec.version     = Bosh::Core::VERSION
-  spec.authors     = 'Pivotal'
-  spec.email       = 'support@cloudfoundry.com'
-  spec.description = 'Bosh::Core provides things BOSH needs to exist'
-  spec.summary     = 'Bosh::Core provides things BOSH needs to exist'
+  spec.summary     = 'BOSH core'
+  spec.description = 'BOSH core provides things BOSH needs to exist'
+
+  spec.authors     = ['Cloud Foundry']
+  spec.email       = ['support@cloudfoundry.com']
   spec.homepage    = 'https://github.com/cloudfoundry/bosh'
-  spec.license     = 'Apache 2.0'
+  spec.license     = 'Apache-2.0'
+  spec.required_ruby_version = '>= 3.0.0'
 
-  spec.required_ruby_version = Gem::Requirement.new('>= 1.9.3')
+  spec.files         = Dir['lib/**/*'].select { |f| File.file?(f) }
+  spec.test_files    = Dir['spec/**/*'].select { |f| File.file?(f) }
 
-  spec.files         = Dir['lib/**/*'].select{ |f| File.file? f }
-  spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
-  spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
-  spec.require_paths = %w[lib]
+  spec.require_paths = ['lib']
 
   spec.add_dependency 'openssl'
 end
