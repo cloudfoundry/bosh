@@ -386,7 +386,6 @@ DEPENDENCIES
   mysql2
   nats-pure (~> 2.3)
   net-ssh
-  openssl
   parallel_tests
   pg
   pry-byebug

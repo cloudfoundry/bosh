@@ -10,8 +10,6 @@ gem 'bosh_common', path: 'bosh_common'
 
 gem 'rake'
 
-gem 'openssl'
-
 # json version is hardcoded in release director and health_monitor
 # when modified needs to be updated there as well
 gem 'json', '~>2'
