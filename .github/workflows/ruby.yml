@@ -20,9 +20,9 @@ jobs:
       with: { lfs: true}
     - uses: ruby/setup-ruby@v1
       with: { working-directory: src/ }
-    - run: bundle install
-      working-directory: src/
-    - run: bundle exec rake spec:unit:${{matrix.sub_project}}
+    - run: |
+        bundle install
+        bundle exec rake --trace spec:unit:${{matrix.sub_project}}
       working-directory: src/
 
   unit_specs-director:
@@ -52,5 +52,8 @@ jobs:
 
     - run: bundle
       working-directory: src/
-    - run: DB=${{matrix.db}} DB_USER=$(whoami) DB_PASSWORD=$(whoami) bundle exec rake spec:unit:director:parallel
+    - run: |
+        bundle install
+        export DB=${{matrix.db}} DB_USER=$(whoami) DB_PASSWORD=$(whoami)
+        bundle exec rake --trace spec:unit:director:parallel
       working-directory: src/
