@@ -1,7 +1,6 @@
 require 'timeout'
 require 'bosh/dev'
 require 'securerandom'
-require 'thread'
 
 module Bosh::Dev::Sandbox
   class Service
