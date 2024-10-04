@@ -403,6 +403,7 @@ DEPENDENCIES
   sinatra (>= 2.2.0)
   sinatra-contrib (>= 2.2.0)
   sqlite3
+  sys-filesystem (= 1.5.0)
   talentbox-delayed_job_sequel (~> 4.3)
   timecop
   unix-crypt
