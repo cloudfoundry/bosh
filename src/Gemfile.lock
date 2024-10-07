@@ -380,7 +380,6 @@ DEPENDENCIES
   bosh-nats-sync!
   bosh-template!
   bosh_common!
-  bosh_cpi
   bundle-audit
   factory_bot
   fakefs

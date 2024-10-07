@@ -11,10 +11,11 @@ gem 'bosh_common', path: 'bosh_common'
 gem 'mysql2'
 gem 'pg'
 gem 'sequel', '~> 5.29.0'
+gem 'sinatra', '>= 2.2.0'
+gem 'sinatra-contrib', '>= 2.2.0'
 
 group :development, :test do
   gem 'bosh-dev', path: 'bosh-dev'
-  gem 'bosh_cpi'
 
   gem 'bundle-audit'
 
@@ -38,8 +39,6 @@ group :development, :test do
   gem 'fakefs'
   gem 'minitar'
   gem 'rack-test'
-  gem 'sinatra', '>= 2.2.0'
-  gem 'sinatra-contrib', '>= 2.2.0'
   gem 'sqlite3'
   gem 'timecop'
   gem 'webmock'
