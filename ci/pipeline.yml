@@ -352,6 +352,9 @@ jobs:
           passed: [gate]
         - get: bosh-cli
           trigger: true
+          params:
+            globs:
+              - "bosh-cli-*-linux-amd64"
         - get: bosh-agent
         - get: integration-postgres-15-image
       - task: tests
@@ -374,6 +377,9 @@ jobs:
           passed: [gate]
         - get: bosh-cli
           trigger: true
+          params:
+            globs:
+              - "bosh-cli-*-linux-amd64"
         - get: bosh-agent
         - get: integration-postgres-15-image
       - task: tests
@@ -397,6 +403,9 @@ jobs:
           trigger: true
         - get: bosh-cli
           trigger: true
+          params:
+            globs:
+              - "bosh-cli-*-linux-amd64"
         - get: bosh-agent
         - get: integration-mysql-8-0-image
       - task: tests
@@ -429,6 +438,9 @@ jobs:
       - integration-postgres-hotswap
       - run-bundle-audit
     - get: bosh-cli
+      params:
+        globs:
+          - "bosh-cli-*-linux-amd64"
     - get: integration-image
     - task: make
       file: bosh-src/ci/tasks/make-candidate.yml
@@ -473,6 +485,9 @@ jobs:
         - get: stemcell
           resource: gcp-ubuntu-jammy
         - get: bosh-cli
+          params:
+            globs:
+              - "bosh-cli-*-linux-amd64"
         - get: bats
         - get: bosh-deployment
         - get: bosh-src
@@ -533,6 +548,9 @@ jobs:
         - get: stemcell
           resource: gcp-ubuntu-jammy-fips
         - get: bosh-cli
+          params:
+            globs:
+              - "bosh-cli-*-linux-amd64"
         - get: bats
         - get: bosh-deployment
         - get: bosh-src
@@ -694,6 +712,9 @@ jobs:
           resource: gcp-ubuntu-jammy
         - get: bosh-deployment
         - get: bosh-cli
+          params:
+            globs:
+              - "bosh-cli-*-linux-amd64"
         - get: bosh-release
           resource: bosh-compiled-candidate-jammy
           trigger: true
@@ -783,6 +804,9 @@ jobs:
         - get: bosh-src
           passed: [delivery]
         - get: bosh-cli
+          params:
+            globs:
+              - "bosh-cli-*-linux-amd64"
         - get: integration-image
         - get: version
           trigger: true
@@ -1016,6 +1040,9 @@ jobs:
             passed: [build-integration]
           - get: bosh-src-dockerfiles
           - get: bosh-cli
+            params:
+              globs:
+                - "bosh-cli-*-linux-amd64"
             trigger: true
           - get: bosh-deployment
             trigger: true
@@ -1523,11 +1550,11 @@ resources:
       branch: master
 
   - name: bosh-cli
-    type: s3
+    type: github-release
     source:
-      regexp: alpha-bosh-cli-(.*)-linux-amd64
-      bucket: bosh-cli-alpha-artifacts
-      region_name: us-east-1
+      owner: cloudfoundry
+      repository: bosh-cli
+      access_token: ((github_public_repo_token))
 
   - name: bosh-dns-release
     type: bosh-io-release
