@@ -1361,7 +1361,7 @@ resources:
     type: http-resource
     source:
       index: "https://mariadb.org/connector-c/all-releases/"
-      regex: 'href="https://mariadb\.org/download/\?tab=connector&#038;prod=connector-c&#038;rel=(?P<version>\d+\.\d+.\d)[^"]*">\d+\.\d+\.\d+</a></td><td>\d{4}-\d{2}-\d{2}</td><td>Stable'
+      regex: '>(?P<version>3\.3.\d+)</a></td><td>\d{4}-\d{2}-\d{2}</td><td>Stable'
       uri: "https://ftp.osuosl.org/pub/mariadb/connector-c-{version}/mariadb-connector-c-{version}-src.tar.gz"
 
   - name: postgres-10-src
