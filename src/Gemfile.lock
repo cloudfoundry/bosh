@@ -397,8 +397,8 @@ DEPENDENCIES
   rubocop-git
   sequel (~> 5.29.0)
   simplecov
-  sinatra (>= 2.2.0)
-  sinatra-contrib (>= 2.2.0)
+  sinatra (~> 2.2.0)
+  sinatra-contrib (~> 2.2.0)
   sqlite3
   timecop
   webmock
