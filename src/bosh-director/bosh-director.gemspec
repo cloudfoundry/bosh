@@ -57,6 +57,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'securerandom'
   spec.add_dependency 'sequel'
   spec.add_dependency 'sinatra'
+  spec.add_dependency 'sinatra-contrib'
   spec.add_dependency 'sys-filesystem'
   spec.add_dependency 'talentbox-delayed_job_sequel'
   spec.add_dependency 'tzinfo-data'
