@@ -10,10 +10,10 @@ davcli/davcli-0.0.370-linux-amd64:
   size: 9322793
   object_id: 90bdb04e-f64c-4e47-56bb-651f216a0096
   sha: sha256:c6a3814b752f659de71b539d7e82b819bb9f437c4fcffdbe996b3c1e56285c92
-mysql/mariadb-connector-c-3.4.1-src.tar.gz:
-  size: 1423524
-  object_id: 13079304-3e81-445f-485a-bf0b74587ff7
-  sha: sha256:0a7f2522a44a7369c1dda89676e43485037596a7b1534898448175178aedeb4d
+mysql/mariadb-connector-c-3.3.11-src.tar.gz:
+  size: 1394056
+  object_id: ff0e2c46-609d-4750-7088-3429e6bd3e0e
+  sha: sha256:f7ba02f70aa2ae2b13e9ee5acc78423f6bede38998afb91326a62be46cf5956a
 nats/nats-server-v2.10.21-linux-amd64.tar.gz:
   size: 5737263
   object_id: 80ebd1b5-1e2a-4709-6300-f31b87fdcde2
