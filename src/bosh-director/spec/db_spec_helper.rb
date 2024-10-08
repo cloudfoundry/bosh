@@ -1,4 +1,10 @@
-$: << File.expand_path('..', __FILE__)
+BOSH_REPO_SRC = File.expand_path(File.join('..', '..', '..'), __FILE__)
+
+BOSH_DIRECTOR_ROOT = File.join(BOSH_REPO_SRC, 'bosh-director')
+BOSH_DEV_ROOT = File.join(BOSH_REPO_SRC, 'bosh-dev')
+
+$LOAD_PATH << File.join(BOSH_DIRECTOR_ROOT, 'lib')
+$LOAD_PATH << File.join(BOSH_DEV_ROOT, 'lib')
 
 require 'rspec'
 require 'rspec/its'
@@ -6,8 +12,8 @@ require 'sequel'
 require 'logging'
 require 'securerandom'
 
-require_relative '../../bosh-director/lib/bosh/director/config'
-require_relative '../../bosh-director/lib/db_migrator'
+require 'bosh/director/config'
+require 'db_migrator'
 
 module DBSpecHelper
   class << self
@@ -15,7 +21,7 @@ module DBSpecHelper
 
     def init
       @temp_dir = Bosh::Director::Config.generate_temp_dir
-      @director_migrations_dir = File.expand_path('../../db/migrations/director', __FILE__)
+      @director_migrations_dir = File.join(BOSH_DIRECTOR_ROOT, 'db', 'migrations', 'director')
 
       Sequel.extension :migration
     end
@@ -32,17 +38,13 @@ module DBSpecHelper
 
       case ENV.fetch('DB', 'sqlite')
         when 'postgresql'
-          require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/postgresql', File.dirname(__FILE__))
-          db_options[:port] = 5432
-
+          require 'bosh/dev/sandbox/postgresql'
           @db_helper = Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_director", Bosh::Core::Shell.new, init_logger, db_options)
         when 'mysql'
-          require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/mysql', File.dirname(__FILE__))
-          db_options[:port] = 3306
-
-          @db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_dns", Bosh::Core::Shell.new, init_logger, db_options)
+          require 'bosh/dev/sandbox/mysql'
+          @db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_director", Bosh::Core::Shell.new, init_logger, db_options)
         when 'sqlite'
-          require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/sqlite', File.dirname(__FILE__))
+          require 'bosh/dev/sandbox/sqlite'
           @db_helper = Bosh::Dev::Sandbox::Sqlite.new(File.join(@temp_dir, "#{@db_name}_director.sqlite"), init_logger)
         else
           raise "Unsupported DB value: #{ENV['DB']}"

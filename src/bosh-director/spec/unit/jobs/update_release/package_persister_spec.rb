@@ -21,7 +21,7 @@ module Bosh::Director
             )
           end
 
-          let(:release_dir) { Test::ReleaseHelper.new.create_release_tarball(manifest) }
+          let(:release_dir) { Support::ReleaseHelper.new.create_release_tarball(manifest) }
           let(:release_version) { '42+dev.6' }
           let(:release_version_model) { FactoryBot.create(:models_release_version, version: release_version) }
           let(:release) { FactoryBot.create(:models_release, name: 'appcloud') }
