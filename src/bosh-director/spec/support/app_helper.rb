@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 module Support
   module AppHelpers
     def fake_app

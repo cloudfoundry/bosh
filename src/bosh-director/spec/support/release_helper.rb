@@ -2,7 +2,7 @@ require 'tmpdir'
 require 'fileutils'
 require 'digest/sha1'
 
-module Bosh::Director::Test
+module Support
   class ReleaseHelper
     # Creates release tarball using provided manifest.
     # Actual bits are dummy but all specs are meant to satisfy the release.

@@ -1,4 +1,3 @@
-require 'rspec'
 require 'logger'
 require 'logging'
 
