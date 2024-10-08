@@ -5,7 +5,7 @@ echo "Removing '${HOME}/.bosh' so it can be paved over with 'director-state/.bos
 rm -rf "${HOME}/.bosh"
 mv director-state/.bosh "${HOME}/"
 
-mv bosh-cli/alpha-bosh-cli-* /usr/local/bin/bosh-cli
+mv bosh-cli/bosh-cli-* /usr/local/bin/bosh-cli
 chmod +x /usr/local/bin/bosh-cli
 
 state_path() { bosh-cli int director-state/director.yml --path="$1" ; }

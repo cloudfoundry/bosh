@@ -15,7 +15,7 @@ function get_bosh_environment {
   fi
 }
 
-mv bosh-cli/alpha-bosh-cli-* /usr/local/bin/bosh-cli
+mv bosh-cli/bosh-cli-* /usr/local/bin/bosh-cli
 chmod +x /usr/local/bin/bosh-cli
 
 export BOSH_ENVIRONMENT=$(get_bosh_environment)

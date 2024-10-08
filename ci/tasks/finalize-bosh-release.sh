@@ -7,7 +7,7 @@ export FULL_VERSION=$(cat version/version)
 export ROOT_PATH=$PWD
 TARBALL_DIR=$PWD/release-tarball
 
-mv bosh-cli/alpha-bosh-cli-*-linux-amd64 bosh-cli/bosh-cli
+mv bosh-cli/bosh-cli-*-linux-amd64 bosh-cli/bosh-cli
 export GO_CLI_PATH=$ROOT_PATH/bosh-cli/bosh-cli
 chmod +x $GO_CLI_PATH
 
