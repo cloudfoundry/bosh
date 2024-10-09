@@ -51,7 +51,7 @@ module Bosh::Director
       let(:orphaned_vm_deleter) { instance_double(Bosh::Director::OrphanedVMDeleter) }
       subject(:cleanup_artifacts) { Jobs::CleanupArtifacts.new(config) }
 
-      def make_stemcell(name:, version:, operating_system: '', id: 1)
+      def make_model_stemcell_and_stemcell_upload(name:, version:, operating_system: '', id: 1)
         FactoryBot.create(:models_stemcell_upload, name: name, version: version)
         FactoryBot.create(:models_stemcell, name: name, version: version, operating_system: operating_system, id: id)
       end
@@ -59,8 +59,8 @@ module Bosh::Director
       before do
         fake_locks
 
-        stemcell1 = make_stemcell(name: 'stemcell-a', operating_system: 'gentoo_linux', version: '1', id: 1)
-        make_stemcell(name: 'stemcell-b', version: '2', id: 2)
+        stemcell1 = make_model_stemcell_and_stemcell_upload(name: 'stemcell-a', operating_system: 'gentoo_linux', version: '1', id: 1)
+        make_model_stemcell_and_stemcell_upload(name: 'stemcell-b', version: '2', id: 2)
 
         release_version1 = FactoryBot.create(:models_release_version, version: 1, release: release1)
         FactoryBot.create(:models_release_version, version: 2, release: release2)
@@ -206,8 +206,8 @@ module Bosh::Director
         context 'when there are more than 2 stemcells and/or releases' do
           context 'and there are no orphaned disks' do
             it 'removes all stemcells and releases' do
-              make_stemcell(name: 'stemcell-a', version: '10', id: 3)
-              make_stemcell(name: 'stemcell-b', version: '10', id: 4)
+              make_model_stemcell_and_stemcell_upload(name: 'stemcell-a', version: '10', id: 3)
+              make_model_stemcell_and_stemcell_upload(name: 'stemcell-b', version: '10', id: 4)
 
               FactoryBot.create(:models_release_version, version: 10, release: release1)
               FactoryBot.create(:models_release_version, version: 10, release: release2)
@@ -312,10 +312,10 @@ module Bosh::Director
           it 'keeps the 2 latest versions of each stemcell' do
             expect(blobstore).not_to receive(:delete).with('compiled-package-1')
 
-            make_stemcell(name: 'stemcell-a', version: '10', id: 3)
-            make_stemcell(name: 'stemcell-a', version: '9', id: 4)
-            make_stemcell(name: 'stemcell-b', version: '10', id: 5)
-            make_stemcell(name: 'stemcell-b', version: '9', id: 6)
+            make_model_stemcell_and_stemcell_upload(name: 'stemcell-a', version: '10', id: 3)
+            make_model_stemcell_and_stemcell_upload(name: 'stemcell-a', version: '9', id: 4)
+            make_model_stemcell_and_stemcell_upload(name: 'stemcell-b', version: '10', id: 5)
+            make_model_stemcell_and_stemcell_upload(name: 'stemcell-b', version: '9', id: 6)
 
             expect(event_log).to receive(:begin_stage).with('Deleting stemcells', 2)
             expect(event_log).to receive(:begin_stage).with('Deleting releases', 0)

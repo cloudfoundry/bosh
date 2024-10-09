@@ -1,14 +1,6 @@
 require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::Stemcell do
-  def make(spec)
-    Bosh::Director::DeploymentPlan::Stemcell.parse(spec)
-  end
-
-  def make_stemcell(name, version, os = 'os1', params = {})
-    FactoryBot.create(:models_stemcell, { name: name, operating_system: os, version: version }.merge(params))
-  end
-
   let(:valid_spec) do
     {
       'name' => 'stemcell-name',
@@ -20,7 +12,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
 
   describe 'creating' do
     it 'parses name and version' do
-      stemcell = make(valid_spec)
+      stemcell = Bosh::Director::DeploymentPlan::Stemcell.parse(valid_spec)
       expect(stemcell.name).to eq('stemcell-name')
       expect(stemcell.version).to eq('0.5.2')
     end
@@ -28,7 +20,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
     it 'requires version' do
       valid_spec.delete('version')
       expect do
-        make(valid_spec)
+        Bosh::Director::DeploymentPlan::Stemcell.parse(valid_spec)
       end.to raise_error(Bosh::Director::ValidationMissingField,
                          "Required property 'version' was not specified in object ({\"name\"=>\"stemcell-name\"})")
     end
@@ -38,7 +30,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
         it 'is valid' do
           valid_spec.delete('name')
           valid_spec['os'] = 'os1'
-          expect { make(valid_spec) }.to_not raise_error
+          expect { Bosh::Director::DeploymentPlan::Stemcell.parse(valid_spec) }.to_not raise_error
         end
       end
 
@@ -46,7 +38,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
         it 'is valid' do
           valid_spec.delete('os')
           valid_spec['name'] = 'stemcell-name'
-          expect { make(valid_spec) }.to_not raise_error
+          expect { Bosh::Director::DeploymentPlan::Stemcell.parse(valid_spec) }.to_not raise_error
         end
       end
 
@@ -54,7 +46,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
         it 'raises' do
           valid_spec.delete('name')
           valid_spec.delete('os')
-          expect { make(valid_spec) }.to raise_error(
+          expect { Bosh::Director::DeploymentPlan::Stemcell.parse(valid_spec) }.to raise_error(
             Bosh::Director::ValidationMissingField,
             "Required property 'os' or 'name' was not specified in object ({\"version\"=>\"0.5.2\"})",
           )
@@ -71,7 +63,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       end
 
       it 'should return string latest version' do
-        stemcell = make(valid_spec)
+        stemcell = Bosh::Director::DeploymentPlan::Stemcell.parse(valid_spec)
         expect(stemcell.version).to eq('latest')
       end
     end
@@ -80,7 +72,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
   describe '#spec' do
     context "when there's a single CPI (default CPI)" do
       it 'returns stemcell spec as Hash' do
-        stemcell = make(valid_spec)
+        stemcell = Bosh::Director::DeploymentPlan::Stemcell.parse(valid_spec)
         expect(stemcell.spec).to eq(valid_spec)
       end
     end
@@ -92,9 +84,9 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
         }
       end
       it 'returns the first stemcell (arbitrarily) in a backwards-compatible manner' do
-        make_stemcell('aws', '1.24.0', 'ubuntu-bionic', 'cid' => 'cid1', 'cpi' => 'aws')
-        make_stemcell('vsphere', '1.24.0', 'ubuntu-bionic', 'cid' => 'cid2', 'cpi' => 'vsphere')
-        stemcell = make(multi_cpi_spec)
+        FactoryBot.create(:models_stemcell, name: 'aws', operating_system: 'ubuntu-bionic', version: '1.24.0', cid: 'cid1', cpi: 'aws')
+        FactoryBot.create(:models_stemcell, name: 'vsphere', operating_system: 'ubuntu-bionic', version: '1.24.0', cid: 'cid1', cpi: 'vsphere')
+        stemcell = Bosh::Director::DeploymentPlan::Stemcell.parse(multi_cpi_spec)
         stemcell.bind_model(deployment)
         expect(stemcell.spec).to eq(
           'name' => 'aws',
@@ -103,10 +95,10 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       end
       context 'when a CPI is passed in' do
         it 'returns the appropriate stemcell for that CPI' do
-          make_stemcell('aws', '1.24.0', 'ubuntu-bionic', 'cid' => 'cid1', 'cpi' => 'aws')
-          make_stemcell('vsphere', '1.24.0', 'ubuntu-bionic', 'cid' => 'cid2', 'cpi' => 'vsphere-1')
-          make_stemcell('vsphere', '1.24.0', 'ubuntu-bionic', 'cid' => 'cid3', 'cpi' => 'vsphere-2')
-          stemcell = make(multi_cpi_spec)
+          FactoryBot.create(:models_stemcell, name: 'aws', version: '1.24.0', operating_system: 'ubuntu-bionic', cid: 'cid1', cpi: 'aws')
+          FactoryBot.create(:models_stemcell, name: 'vsphere', version: '1.24.0', operating_system: 'ubuntu-bionic', cid: 'cid2', cpi: 'vsphere-1')
+          FactoryBot.create(:models_stemcell, name: 'vsphere', version: '1.24.0', operating_system: 'ubuntu-bionic', cid: 'cid3', cpi: 'vsphere-2')
+          stemcell = Bosh::Director::DeploymentPlan::Stemcell.parse(multi_cpi_spec)
           stemcell.bind_model(deployment)
           expect(stemcell.spec('vsphere-1')).to eq(
             'name' => 'vsphere',
@@ -118,18 +110,18 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
   end
 
   it 'can not create multiple stemcells with same name and version' do
-    make_stemcell('foo', '42-dev', 'os1', 'cid' => 'cid1', 'cpi' => '')
+    FactoryBot.create(:models_stemcell, name: 'foo', version: '42-dev', operating_system: 'os1', cid: 'cid1', cpi: '')
     expect do
-      make_stemcell('foo', '42-dev', 'os1', 'cid' => 'cid2', 'cpi' => '')
+      FactoryBot.create(:models_stemcell, name: 'foo', version: '42-dev', operating_system: 'os1', cid: 'cid2', cpi: '')
     end.to raise_error Sequel::ValidationFailed, 'name and version and cpi unique'
   end
 
   describe 'binding stemcell model' do
     it 'should bind stemcell models' do
-      stemcell_model1 = make_stemcell('stemcell-name', '0.5.2', 'os1', 'cpi' => 'cpi1')
-      stemcell_model2 = make_stemcell('stemcell-name', '0.5.2', 'os1', 'cpi' => 'cpi2')
+      stemcell_model1 = FactoryBot.create(:models_stemcell, name: 'stemcell-name', version: '0.5.2',  operating_system: 'os1', cpi: 'cpi1')
+      stemcell_model2 = FactoryBot.create(:models_stemcell, name: 'stemcell-name', version: '0.5.2',  operating_system: 'os1', cpi: 'cpi2')
 
-      stemcell = make(valid_spec)
+      stemcell = Bosh::Director::DeploymentPlan::Stemcell.parse(valid_spec)
       stemcell.bind_model(deployment)
 
       expect(stemcell.models[0]).to eq(stemcell_model1)
@@ -139,10 +131,10 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
     end
 
     it 'should bind to stemcell with specified OS and version' do
-      stemcell_model = make_stemcell('stemcell-name', '0.5.0', 'os2')
-      make_stemcell('stemcell-name', '0.5.2', 'os2')
+      stemcell_model = FactoryBot.create(:models_stemcell, name: 'stemcell-name', operating_system: 'os2', version: '0.5.0')
+      FactoryBot.create(:models_stemcell, name: 'stemcell-name', operating_system: 'os2', version: '0.5.2')
 
-      stemcell = make(
+      stemcell = Bosh::Director::DeploymentPlan::Stemcell.parse(
         'os' => 'os2',
         'version' => '0.5.0',
       )
@@ -154,10 +146,10 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
 
     context 'when stemcell cannot be found' do
       it 'returns error out if specified OS and version is not found' do
-        make_stemcell('stemcell-name', '0.5.0', 'os2')
-        make_stemcell('stemcell-name', '0.5.2', 'os2')
+        FactoryBot.create(:models_stemcell, name: 'stemcell-name', operating_system: 'os2', version: '0.5.0')
+        FactoryBot.create(:models_stemcell, name: 'stemcell-name', operating_system: 'os2', version: '0.5.2')
 
-        stemcell = make(
+        stemcell = Bosh::Director::DeploymentPlan::Stemcell.parse(
           'os' => 'os2',
           'version' => '0.5.5',
         )
@@ -165,10 +157,10 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       end
 
       it 'returns error out if name and version is not found' do
-        make_stemcell('stemcell-name1', '0.5.0')
-        make_stemcell('stemcell-name2', '0.5.2')
+        FactoryBot.create(:models_stemcell, name: 'stemcell-name', version: '0.5.0')
+        FactoryBot.create(:models_stemcell, name: 'stemcell-name', version: '0.5.2')
 
-        stemcell = make(
+        stemcell = Bosh::Director::DeploymentPlan::Stemcell.parse(
           'name' => 'stemcell-name3',
           'version' => '0.5.2',
         )
@@ -176,7 +168,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       end
 
       it "fails if stemcell doesn't exist at all" do
-        stemcell = make(valid_spec)
+        stemcell = Bosh::Director::DeploymentPlan::Stemcell.parse(valid_spec)
         expect do
           stemcell.bind_model(deployment)
         end.to raise_error(Bosh::Director::StemcellNotFound)
@@ -184,12 +176,12 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
     end
 
     it 'binds stemcell to the first stemcell found when multiple stemcells match with OS and version' do
-      make_stemcell('stemcell0', '0.5.0', 'os2')
-      make_stemcell('stemcell2', '0.5.2', 'os2')
+      FactoryBot.create(:models_stemcell, name: 'stemcell0', operating_system: 'os2', version: '0.5.0')
+      FactoryBot.create(:models_stemcell, name: 'stemcell2', operating_system: 'os2', version: '0.5.2')
 
-      make_stemcell('stemcell1', '0.5.2', 'os2')
+      FactoryBot.create(:models_stemcell, name: 'stemcell1', operating_system: 'os2', version: '0.5.2')
 
-      stemcell = make('os' => 'os2', 'version' => '0.5.2')
+      stemcell = Bosh::Director::DeploymentPlan::Stemcell.parse('os' => 'os2', 'version' => '0.5.2')
 
       stemcell.bind_model(deployment)
 
@@ -198,21 +190,20 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
     end
 
     it 'binds stemcells to the deployment DB' do
-      stemcell1 = make_stemcell('foo', '42-dev')
-      stemcell2 = make_stemcell('bar', '55-dev')
-
+      stemcell1 = FactoryBot.create(:models_stemcell, name: 'foo', version: '42-dev')
+      stemcell2 = FactoryBot.create(:models_stemcell, name: 'bar', version: '55-dev')
       spec1 = { 'name' => 'foo', 'version' => '42-dev' }
       spec2 = { 'name' => 'bar', 'version' => '55-dev' }
 
-      make(spec1).bind_model(deployment)
-      make(spec2).bind_model(deployment)
+      Bosh::Director::DeploymentPlan::Stemcell.parse(spec1).bind_model(deployment)
+      Bosh::Director::DeploymentPlan::Stemcell.parse(spec2).bind_model(deployment)
 
       expect(deployment.stemcells).to match_array([stemcell1, stemcell2])
     end
 
     it "doesn't bind model if deployment plan has unbound deployment" do
       expect do
-        stemcell = make('name' => 'foo', 'version' => '42')
+        stemcell = Bosh::Director::DeploymentPlan::Stemcell.parse('name' => 'foo', 'version' => '42')
         stemcell.bind_model(nil)
       end.to raise_error(Bosh::Director::DirectorError, 'Deployment not bound in the deployment plan')
     end
@@ -222,25 +213,25 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
     let(:cloud_factory) { instance_double(Bosh::Director::AZCloudFactory) }
 
     it 'raises an error if no stemcell model was bound' do
-      stemcell = make('name' => 'does-not-exist', 'version' => 'non-existent-version')
+      stemcell = Bosh::Director::DeploymentPlan::Stemcell.parse('name' => 'does-not-exist', 'version' => 'non-existent-version')
       expect { stemcell.model_for_az('doesntmatter', cloud_factory) }.to raise_error(/please bind model first/)
     end
 
     context 'when the stemcell for the default cpi does not exist' do
-      let!(:stemcell_model_with_cpi1) { make_stemcell('foo', '42-dev', 'os1', cpi: 'cpi1') }
+      let!(:stemcell_model_with_cpi1) { FactoryBot.create(:models_stemcell, name: 'foo', version: '42-dev', operating_system: 'os1', cpi: 'cpi1') }
 
       it 'raises an error if no stemcell for the default cpi exists' do
-        stemcell = make('name' => 'foo', 'version' => '42-dev')
+        stemcell = Bosh::Director::DeploymentPlan::Stemcell.parse('name' => 'foo', 'version' => '42-dev')
         stemcell.bind_model(deployment)
         expect { stemcell.model_for_az(nil, cloud_factory) }.to raise_error Bosh::Director::StemcellNotFound
       end
     end
 
     context 'when the stemcell models exist' do
-      let!(:stemcell_with_default_cpi) { make_stemcell('foo', '42-dev', 'os1', cpi: '') }
-      let!(:stemcell_model_with_cpi1) { make_stemcell('foo', '42-dev', 'os1', cpi: 'cpi1') }
-      let!(:stemcell_model_with_cpi2) { make_stemcell('foo', '42-dev', 'os1', cpi: 'cpi2') }
-      let(:stemcell) { make('name' => 'foo', 'version' => '42-dev') }
+      let!(:stemcell_with_default_cpi) { FactoryBot.create(:models_stemcell, name: 'foo', version: '42-dev', operating_system: 'os1', cpi: '') }
+      let!(:stemcell_model_with_cpi1) { FactoryBot.create(:models_stemcell, name: 'foo', version: '42-dev', operating_system: 'os1', cpi: 'cpi1') }
+      let!(:stemcell_model_with_cpi2) { FactoryBot.create(:models_stemcell, name: 'foo', version: '42-dev', operating_system: 'os1', cpi: 'cpi2') }
+      let(:stemcell) { Bosh::Director::DeploymentPlan::Stemcell.parse('name' => 'foo', 'version' => '42-dev') }
 
       before do
         stemcell.bind_model(deployment)
