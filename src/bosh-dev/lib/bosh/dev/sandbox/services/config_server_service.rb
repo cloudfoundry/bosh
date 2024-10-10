@@ -66,8 +66,6 @@ module Bosh::Dev::Sandbox
       start(with_trusted_certs)
     end
 
-    private
-
     def self.download
       platform = RUBY_PLATFORM =~ /darwin/ ? 'darwin' : 'linux'
 
@@ -99,6 +97,8 @@ module Bosh::Dev::Sandbox
 
       version
     end
+
+    private
 
     def executable_path
       File.join(INSTALL_DIR, LOCAL_CONFIG_SERVER_FILE_NAME)
