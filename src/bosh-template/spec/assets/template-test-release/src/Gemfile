@@ -8,5 +8,4 @@ gem 'bundler'
 group :development, :test do
   gem 'bosh-template', path: '../../../..'
   gem 'rspec'
-  gem 'rspec-its'
 end

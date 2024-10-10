@@ -20,9 +20,6 @@ group :development, :test do
   gem 'parallel_tests'
   gem 'rubocop'
 
-  gem 'rspec-instafail'
-  gem 'rspec-its'
-
   gem 'pry-byebug'
   gem 'pry-remote'
 

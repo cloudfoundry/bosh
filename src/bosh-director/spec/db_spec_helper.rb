@@ -7,7 +7,6 @@ $LOAD_PATH << File.join(BOSH_DIRECTOR_ROOT, 'lib')
 $LOAD_PATH << File.join(BOSH_DEV_ROOT, 'lib')
 
 require 'rspec'
-require 'rspec/its'
 require 'sequel'
 require 'logging'
 require 'securerandom'

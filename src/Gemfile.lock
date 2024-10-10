@@ -292,11 +292,6 @@ GEM
       rspec-support (~> 3.13.0)
     rspec-files (1.1.3)
       rspec (~> 3.0)
-    rspec-instafail (1.0.0)
-      rspec
-    rspec-its (1.3.0)
-      rspec-core (>= 3.0.0)
-      rspec-expectations (>= 3.0.0)
     rspec-memory (1.0.4)
       rspec (~> 3.0)
     rspec-mocks (3.13.2)
@@ -390,8 +385,6 @@ DEPENDENCIES
   pry-remote
   rack-test
   rspec
-  rspec-instafail
-  rspec-its
   rubocop
   sequel (~> 5.29.0)
   simplecov

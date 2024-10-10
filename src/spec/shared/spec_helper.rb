@@ -17,7 +17,6 @@ if ENV['COVERAGE'] == 'true'
 end
 
 require 'rspec'
-require 'rspec/its'
 
 # Useful to see that tests are using expected version of Ruby in CI
 puts "Using #{RUBY_DESCRIPTION}"

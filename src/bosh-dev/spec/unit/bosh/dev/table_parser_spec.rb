@@ -21,8 +21,10 @@ Releases total: 1
           EOT
         end
 
-        its(:to_a) do
-          should eq [{ name: 'bosh', versions: '13.67-dev*', commit_hash: 'f694e3d2+' }]
+        describe '#to_a' do
+          it 'should be return an array of hashes with key from headers and values from the rows' do
+            expect(table_parser.to_a).to eq([{ name: 'bosh', versions: '13.67-dev*', commit_hash: 'f694e3d2+' }])
+          end
         end
       end
 
@@ -40,11 +42,13 @@ Stemcells total: 2
           EOT
         end
 
-        its(:to_a) do
-          should eq [
-                        { name: 'bosh-stemcell', version: '882', cid: 'ami-fac68793' },
-                        { name: 'bosh-stemcell', version: '896', cid: 'ami-b47b3add' }
-                    ]
+        describe '#to_a' do
+          it 'should be return an array of hashes with key from headers and values from the rows' do
+            expect(table_parser.to_a).to eq([
+                                              { name: 'bosh-stemcell', version: '882', cid: 'ami-fac68793' },
+                                              { name: 'bosh-stemcell', version: '896', cid: 'ami-b47b3add' }
+                                            ])
+          end
         end
       end
     end
