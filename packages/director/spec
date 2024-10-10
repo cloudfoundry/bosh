@@ -10,7 +10,6 @@ files:
 - bosh-director/**/*
 - bosh_common/**/*
 - bosh-core/**/*
-- bosh-director-core/**/*
 - bosh-template/**/*
 - vendor/cache/*.gem
 - vendor/cache/extensions/**

@@ -10,7 +10,6 @@ jobs:
         - common:parallel
         - core:parallel
         - dev:parallel
-        - director-core:parallel
         - monitor:parallel
         - nats-sync:parallel
         - template:parallel
