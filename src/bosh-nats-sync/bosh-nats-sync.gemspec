@@ -27,4 +27,8 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'openssl'
   spec.add_dependency 'rufus-scheduler'
   spec.add_dependency 'rest-client'
+
+  spec.add_development_dependency 'rspec'
+  spec.add_development_dependency 'simplecov'
+  spec.add_development_dependency 'webmock'
 end

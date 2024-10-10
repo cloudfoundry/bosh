@@ -22,4 +22,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'semi_semantic'
   spec.add_dependency 'logging'
   spec.add_dependency 'openssl'
+
+  spec.add_development_dependency 'rspec'
+  spec.add_development_dependency 'simplecov'
 end

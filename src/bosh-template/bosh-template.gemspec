@@ -24,4 +24,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'activesupport'
   spec.add_dependency 'openssl'
   spec.add_dependency 'ostruct'
+
+  spec.add_development_dependency 'rspec'
+  spec.add_development_dependency 'simplecov'
 end

@@ -51,7 +51,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'ostruct'
   spec.add_dependency 'prometheus-client'
   spec.add_dependency 'puma'
-  spec.add_dependency 'rack-test'
   spec.add_dependency 'rake'
   spec.add_dependency 'rufus-scheduler'
   spec.add_dependency 'securerandom'
@@ -63,8 +62,12 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'tzinfo-data'
   spec.add_dependency 'unix-crypt'
 
-  spec.add_development_dependency 'timecop'
   spec.add_development_dependency 'fakefs'
   spec.add_development_dependency 'factory_bot'
   spec.add_development_dependency 'minitar'
+  spec.add_development_dependency 'rack-test'
+  spec.add_development_dependency 'rspec'
+  spec.add_development_dependency 'simplecov'
+  spec.add_development_dependency 'timecop'
+  spec.add_development_dependency 'webmock'
 end
