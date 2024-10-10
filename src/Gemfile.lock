@@ -17,21 +17,11 @@ PATH
       openssl
 
 PATH
-  remote: bosh-director-core
-  specs:
-    bosh-director-core (0.0.0)
-      bosh-template (~> 0.0.0)
-      bosh_common (~> 0.0.0)
-      openssl
-      securerandom
-
-PATH
   remote: bosh-director
   specs:
     bosh-director (0.0.0)
       bcrypt
       bosh-core (~> 0.0.0)
-      bosh-director-core (~> 0.0.0)
       bosh-template (~> 0.0.0)
       bosh_common (~> 0.0.0)
       bosh_cpi
@@ -368,7 +358,6 @@ DEPENDENCIES
   bosh-core!
   bosh-dev!
   bosh-director!
-  bosh-director-core!
   bosh-monitor!
   bosh-nats-sync!
   bosh-template!
