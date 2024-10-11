@@ -4,13 +4,10 @@ require 'bosh/dev/sandbox/shell_runner'
 
 module Bosh::Dev::Sandbox
   class DirectorService
-    REPO_ROOT = File.expand_path('../../../../../../', File.dirname(__FILE__))
-    ASSETS_DIR = File.expand_path('bosh-dev/assets/sandbox', REPO_ROOT)
-
     DEFAULT_DIRECTOR_CONFIG = 'director_test.yml'.freeze
-    DIRECTOR_CONF_TEMPLATE = File.join(ASSETS_DIR, 'director_test.yml.erb')
+    DIRECTOR_CONF_TEMPLATE = File.join(Bosh::Dev::ASSETS_DIR, 'director_test.yml.erb')
 
-    DIRECTOR_PATH = File.expand_path('bosh-director', REPO_ROOT)
+    DIRECTOR_PATH = File.join(Bosh::Dev::REPO_ROOT, 'bosh-director')
 
     def initialize(options, logger)
       @database = options[:database]

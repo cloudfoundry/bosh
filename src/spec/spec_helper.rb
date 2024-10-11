@@ -1,4 +1,6 @@
-require File.expand_path('shared/spec_helper', __dir__)
+SPEC_ROOT = File.dirname(__FILE__)
+
+require File.expand_path('shared/spec_helper', SPEC_ROOT)
 
 require 'fileutils'
 require 'digest/sha1'
@@ -11,9 +13,9 @@ require 'bosh/director'
 require 'blue-shell'
 require 'bosh/dev/postgres_version'
 
-Dir.glob(File.expand_path('support/**/*.rb', __dir__)).each { |f| require(f) }
+Dir.glob(File.join(SPEC_ROOT, 'support/**/*.rb')).each { |f| require(f) }
 
-ASSETS_DIR = File.expand_path('assets', __dir__)
+ASSETS_DIR = File.join(SPEC_ROOT, 'assets')
 TEST_RELEASE_TEMPLATE = File.join(ASSETS_DIR, 'test_release_template')
 LINKS_RELEASE_TEMPLATE = File.join(ASSETS_DIR, 'links_releases', 'links_release_template')
 MULTIDISK_RELEASE_TEMPLATE = File.join(ASSETS_DIR, 'multidisks_releases', 'multidisks_release_template')

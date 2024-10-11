@@ -12,11 +12,9 @@ module Bosh::Dev::Sandbox
 
     COMPILED_UAA_RELEASE_PATH = '/usr/local/uaa.tgz'.freeze
     UAA_BIN_PATH = '/var/vcap/jobs/uaa/bin/'.freeze
-    REPO_ROOT = File.expand_path('../../../../../../', File.dirname(__FILE__))
 
     # Keys and Certs
-    ASSETS_DIR = File.expand_path('bosh-dev/assets/sandbox/ca', REPO_ROOT)
-    CERTS_DIR = File.expand_path('certs', ASSETS_DIR)
+    CERTS_DIR = File.join(Bosh::Dev::ASSETS_DIR, 'ca', 'certs')
     ROOT_CERT = File.join(CERTS_DIR, 'rootCA.pem')
     ROOT_KEY = File.join(CERTS_DIR, 'rootCA.key')
     SERVER_CERT = File.join(CERTS_DIR, 'server.crt')
@@ -80,7 +78,10 @@ module Bosh::Dev::Sandbox
           end
         end
 
-        context['properties'].deep_merge!(YAML.load_file(File.expand_path(File.join('spec','assets','uaa_config', 'asymmetric', 'uaa.yml'), REPO_ROOT)))
+        context['properties'].deep_merge!(
+          YAML.load_file(File.join(Bosh::Dev::REPO_ROOT, 'spec', 'assets', 'uaa_config', 'asymmetric', 'uaa.yml'))
+        )
+
         context['properties']['uaadb'] = {
           'address' => '127.0.0.1',
           'databases' => [
@@ -164,12 +165,12 @@ module Bosh::Dev::Sandbox
     end
 
     def working_dir
-      File.expand_path('spec/assets/uaa', REPO_ROOT)
+      File.join(Bosh::Dev::REPO_ROOT, 'spec', 'assets', 'uaa')
     end
 
     def write_config_path
       FileUtils.cp(
-        File.expand_path(File.join('spec', 'assets', 'uaa_config', 'asymmetric', 'uaa.yml'), REPO_ROOT),
+        File.join(Bosh::Dev::REPO_ROOT, 'spec', 'assets', 'uaa_config', 'asymmetric', 'uaa.yml'),
         @config_path,
       )
       @current_uaa_config_mode = 'asymmetric'
