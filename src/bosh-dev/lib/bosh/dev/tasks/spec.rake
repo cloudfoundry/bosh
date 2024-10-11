@@ -21,22 +21,19 @@ namespace :spec do
 
     desc 'Install BOSH integration test dependencies (currently Nginx, UAA, and Config Server)'
     task :install_dependencies do
-      FileUtils.mkdir_p('tmp')
-      File.open('tmp/compilation.log', 'w') do |log|
-        unless ENV['SKIP_DEPS'] == 'true'
-          install_with_retries(Bosh::Dev::Sandbox::Nginx.new(Bosh::Core::Shell.new(log))) unless ENV['SKIP_NGINX'] == 'true'
+      unless ENV['SKIP_DEPS'] == 'true'
+        install_with_retries(Bosh::Dev::Sandbox::Nginx.new) unless ENV['SKIP_NGINX'] == 'true'
 
-          Bosh::Dev::Sandbox::UaaService.install unless ENV['SKIP_UAA'] == 'true'
+        Bosh::Dev::Sandbox::UaaService.install unless ENV['SKIP_UAA'] == 'true'
 
-          Bosh::Dev::Sandbox::ConfigServerService.install unless ENV['SKIP_CONFIG_SERVER'] == 'true'
+        Bosh::Dev::Sandbox::ConfigServerService.install unless ENV['SKIP_CONFIG_SERVER'] == 'true'
 
-          Bosh::Dev::VerifyMultidigestManager.install unless ENV['SKIP_VERIFY_MULTIDIGEST'] == 'true'
+        Bosh::Dev::VerifyMultidigestManager.install unless ENV['SKIP_VERIFY_MULTIDIGEST'] == 'true'
 
-          Bosh::Dev::GnatsdManager.install unless ENV['SKIP_GNATSD'] == 'true'
-        end
-
-        compile_dependencies
+        Bosh::Dev::GnatsdManager.install unless ENV['SKIP_GNATSD'] == 'true'
       end
+
+      compile_dependencies
     end
 
     desc 'Download BOSH Agent. Use only for local dev environment'
@@ -54,6 +51,7 @@ namespace :spec do
       begin
         to_install.install
       rescue StandardError
+        puts "Failed to install #{to_install.inspect} on retry=#{retries}"
         retries -= 1
         retry if retries.positive?
         raise

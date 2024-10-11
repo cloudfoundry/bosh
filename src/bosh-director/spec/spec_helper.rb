@@ -109,25 +109,18 @@ module SpecHelper
         require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/postgresql', File.dirname(__FILE__))
         db_options[:port] ||= 5432
 
-        @director_db_helper = Bosh::Dev::Sandbox::Postgresql.new(
-          "#{@db_name}_director",
-          Bosh::Core::Shell.new,
-          @init_logger,
-          db_options,
-        )
+        @director_db_helper =
+          Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_director", @init_logger, db_options)
       when 'mysql'
         require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/mysql', File.dirname(__FILE__))
         db_options[:port] ||= 3306
 
-        @director_db_helper = Bosh::Dev::Sandbox::Mysql.new(
-          "#{@db_name}_director",
-          Bosh::Core::Shell.new,
-          @init_logger,
-          db_options,
-        )
+        @director_db_helper =
+          Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_director", @init_logger, db_options)
       when 'sqlite'
         require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/sqlite', File.dirname(__FILE__))
-        @director_db_helper = Bosh::Dev::Sandbox::Sqlite.new(File.join(@temp_dir, "#{@db_name}_director.sqlite"), @init_logger)
+        @director_db_helper =
+          Bosh::Dev::Sandbox::Sqlite.new(File.join(@temp_dir, "#{@db_name}_director.sqlite"), @init_logger)
       else
         raise "Unsupported DB value: #{ENV['DB']}"
       end

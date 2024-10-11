@@ -1,11 +1,11 @@
 require 'bosh/dev'
-require 'bosh/core/shell'
+require 'bosh/dev/shell'
 
 module Bosh::Dev::Sandbox
   class Sqlite
     attr_reader :db_name, :username, :password, :port, :adapter, :host
 
-    def initialize(db_name, logger, runner = Bosh::Core::Shell.new)
+    def initialize(db_name, logger, runner = Bosh::Dev::Shell.new)
       @db_name = db_name
       @logger = logger
       @runner = runner

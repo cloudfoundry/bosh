@@ -38,7 +38,6 @@ main() {
   do-rsync bosh-director bin
   do-rsync bosh-director db
   do-rsync bosh-director lib
-  do-rsync bosh-core lib
   do-rsync bosh-template bin
   do-rsync bosh-template lib
 
