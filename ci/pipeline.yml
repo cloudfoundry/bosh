@@ -9,7 +9,6 @@ groups:
       - unit-common
       - unit-core
       - unit-dev
-      - unit-director-core
       - unit-monitor
       - unit-nats-sync
       - unit-template
@@ -61,7 +60,6 @@ jobs:
       - unit-common
       - unit-core
       - unit-dev
-      - unit-director-core
       - unit-monitor
       - unit-nats-sync
       - unit-template
@@ -126,23 +124,6 @@ jobs:
       image: integration-image
       params:
         RAKE_TASK: spec:unit:dev
-
-  - name: unit-director-core
-    public: true
-    serial: true
-    serial_groups: [unit-director-core]
-    build_logs_to_retain: 250
-    plan:
-    - get: bosh-src
-      trigger: true
-      passed: [gate]
-    - get: integration-image
-    - task: test-rake-task
-      timeout: 2h
-      file: bosh-src/ci/tasks/test-rake-task.yml
-      image: integration-image
-      params:
-        RAKE_TASK: spec:unit:director-core
 
   - name: unit-monitor
     public: true
@@ -423,7 +404,6 @@ jobs:
       - unit-common
       - unit-core
       - unit-dev
-      - unit-director-core
       - unit-monitor
       - unit-nats-sync
       - unit-template
