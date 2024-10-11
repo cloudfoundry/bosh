@@ -1,7 +1,7 @@
 require 'spec_helper'
-require 'bosh/core/shell'
+require 'bosh/dev/shell'
 
-module Bosh::Core
+module Bosh::Dev
   describe Shell do
     subject { Shell.new(stdout) }
     let(:stdout) { StringIO.new }

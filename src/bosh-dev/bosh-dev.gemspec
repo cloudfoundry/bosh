@@ -19,7 +19,6 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_dependency 'bosh_common'
-  spec.add_dependency 'bosh-core'
   spec.add_dependency 'bosh-director'
   spec.add_dependency 'bundler'
   spec.add_dependency 'logging'

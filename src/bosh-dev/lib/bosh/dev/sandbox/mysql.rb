@@ -1,15 +1,15 @@
 require 'bosh/dev'
-require 'bosh/core/shell'
+require 'bosh/dev/shell'
 
 module Bosh::Dev::Sandbox
   class Mysql
     attr_reader :db_name, :username, :password, :adapter, :port, :host, :ca_path
 
-    def initialize(db_name, runner, logger, options = {})
+    def initialize(db_name, logger, options = {}, runner = Bosh::Dev::Shell.new)
+      @adapter = 'mysql2'
       @db_name = db_name
       @logger = logger
       @runner = runner
-      @adapter = 'mysql2'
 
       @username = options.fetch(:username, 'root')
       @password = options.fetch(:password, 'password')
@@ -18,8 +18,8 @@ module Bosh::Dev::Sandbox
       @ca_path = options.fetch(:ca_path, nil)
     end
 
-    def connection_string
-      "mysql2://#{username}:#{password}@#{@host}:#{@port}/#{@db_name}"
+    def connection_string(this_db_name = @db_name)
+      "mysql2://#{@username}:#{@password}@#{@host}:#{@port}/#{this_db_name}"
     end
 
     def create_db
