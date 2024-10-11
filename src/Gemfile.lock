@@ -34,6 +34,7 @@ PATH
       ostruct
       prometheus-client
       puma
+      rack-test
       rake
       rufus-scheduler
       securerandom
@@ -372,7 +373,6 @@ DEPENDENCIES
   pg
   pry-byebug
   pry-remote
-  rack-test
   rspec
   rubocop
   sequel (~> 5.29.0)

@@ -28,6 +28,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'rufus-scheduler'
   spec.add_dependency 'rest-client'
 
+  spec.add_development_dependency 'rack-test'
   spec.add_development_dependency 'rspec'
   spec.add_development_dependency 'simplecov'
   spec.add_development_dependency 'webmock'

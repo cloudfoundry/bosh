@@ -50,6 +50,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'ostruct'
   spec.add_dependency 'prometheus-client'
   spec.add_dependency 'puma'
+  spec.add_dependency 'rack-test'
   spec.add_dependency 'rake'
   spec.add_dependency 'rufus-scheduler'
   spec.add_dependency 'securerandom'

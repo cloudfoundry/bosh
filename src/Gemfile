@@ -27,7 +27,6 @@ group :development, :test do
   gem 'factory_bot'
   gem 'fakefs'
   gem 'minitar'
-  gem 'rack-test'
   gem 'rspec'
   gem 'simplecov', require: false
   gem 'sqlite3'
