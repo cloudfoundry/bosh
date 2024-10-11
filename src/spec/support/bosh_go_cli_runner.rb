@@ -167,7 +167,7 @@ module Bosh::Spec
       cli_options += " -d #{options[:deployment_name]}" if options[:deployment_name]
       cli_options += " --config #{config}"
 
-      default_ca_cert = Bosh::Dev::Sandbox::Workspace.new.asset_path("ca/certs/rootCA.pem")
+      default_ca_cert = File.join(Bosh::Dev::ASSETS_DIR, 'ca', 'certs', 'rootCA.pem')
       cli_options += options.fetch(:ca_cert, nil) ? " --ca-cert #{options[:ca_cert]}" : " --ca-cert #{default_ca_cert}"
       cli_options += options.fetch(:json, false) ? ' --json' : ''
       cli_options += ' --sha2' if @sha2

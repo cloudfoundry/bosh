@@ -6,12 +6,10 @@ module Bosh::Dev::Sandbox
 
     LOCAL_CONFIG_SERVER_FILE_NAME = "bosh-config-server-executable"
 
-    REPO_ROOT = File.expand_path('../../../../../../', File.dirname(__FILE__))
     INSTALL_DIR = File.join('tmp', 'integration-config-server')
-    ASSETS_DIR = File.expand_path('bosh-dev/assets/sandbox/config_server', REPO_ROOT)
 
     # Keys and Certs
-    CERTS_DIR = File.expand_path('certs', ASSETS_DIR)
+    CERTS_DIR = File.join(Bosh::Dev::ASSETS_DIR, 'config_server', 'certs')
     SERVER_CERT = File.join(CERTS_DIR, 'server.crt')
     SERVER_KEY = File.join(CERTS_DIR, 'server.key')
     NON_CA_SIGNED_CERT = File.join(CERTS_DIR, 'serverWithWrongCA.crt')

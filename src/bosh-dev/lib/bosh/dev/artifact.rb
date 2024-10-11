@@ -39,9 +39,7 @@ module Bosh::Dev::Artifact
     end
 
     def executable_path
-      repo_root = File.expand_path('../../../../', File.dirname(__FILE__))
-
-      File.expand_path(File.join(install_dir, executable_name), repo_root)
+      File.join(Bosh::Dev::REPO_ROOT, install_dir, executable_name)
     end
 
     private

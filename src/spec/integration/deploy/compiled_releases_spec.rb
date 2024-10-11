@@ -248,7 +248,7 @@ describe 'compiled releases', type: :integration do
       bosh_runner.run('delete-release bosh-release')
       bosh_runner.run('delete-stemcell ubuntu-stemcell/1')
 
-      release_path = File.join(Bosh::Dev::Sandbox::Workspace.dir, 'client-sandbox', 'bosh_work_dir')
+      release_path = ClientSandbox.bosh_work_dir
       bosh_runner.run("upload-release #{release_path}/bosh-release-0.1-dev-toronto-os-1-*.tgz")
       bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell_1_1.tgz')}")
 
