@@ -7,7 +7,7 @@ module Bosh::Dev::Sandbox
     DEFAULT_DIRECTOR_CONFIG = 'director_test.yml'.freeze
     DIRECTOR_CONF_TEMPLATE = File.join(Bosh::Dev::ASSETS_DIR, 'director_test.yml.erb')
 
-    DIRECTOR_PATH = File.join(Bosh::Dev::REPO_ROOT, 'bosh-director')
+    DIRECTOR_PATH = File.join(Bosh::Dev::RELEASE_SRC_DIR, 'bosh-director')
 
     def initialize(options, logger)
       @database = options[:database]

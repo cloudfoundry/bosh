@@ -20,7 +20,7 @@ namespace :db do
 
     require 'bosh/dev/sandbox/database_migrator'
     Bosh::Dev::Sandbox::DatabaseMigrator.new(
-      File.join(Bosh::Dev::REPO_ROOT, 'bosh-director'),
+      File.join(Bosh::Dev::RELEASE_SRC_DIR, 'bosh-director'),
       director_config_path.path,
       @logger,
     ).migrate
@@ -52,7 +52,7 @@ namespace :db do
 
     require 'bosh/dev/sandbox/database_migrator'
     Bosh::Dev::Sandbox::DatabaseMigrator.new(
-      File.join(Bosh::Dev::REPO_ROOT, 'bosh-director'),
+      File.join(Bosh::Dev::RELEASE_SRC_DIR, 'bosh-director'),
       director_config_path.path,
       @logger
     ).migrate

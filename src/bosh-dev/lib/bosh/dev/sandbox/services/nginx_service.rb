@@ -70,8 +70,8 @@ module Bosh::Dev::Sandbox
   end
 
   class NginxInstaller
-    WORKING_DIR = File.join(Bosh::Dev::REPO_ROOT, 'tmp', 'integration-nginx-work')
-    INSTALL_DIR = File.join(Bosh::Dev::REPO_ROOT, 'tmp', 'integration-nginx')
+    WORKING_DIR = File.join(Bosh::Dev::RELEASE_SRC_DIR, 'tmp', 'integration-nginx-work')
+    INSTALL_DIR = File.join(Bosh::Dev::RELEASE_SRC_DIR, 'tmp', 'integration-nginx')
     EXECUTABLE_PATH = File.join(INSTALL_DIR, 'sbin', 'nginx')
 
     def initialize(runner:)

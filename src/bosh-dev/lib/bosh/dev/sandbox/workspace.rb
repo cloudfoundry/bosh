@@ -30,7 +30,7 @@ module Bosh::Dev::Sandbox
       private
 
       def base_dir
-        File.join(Bosh::Dev::REPO_ROOT, 'tmp', 'integration-tests-workspace')
+        File.join(Bosh::Dev::RELEASE_SRC_DIR, 'tmp', 'integration-tests-workspace')
       end
 
       def pid_dir
