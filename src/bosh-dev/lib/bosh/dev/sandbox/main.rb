@@ -18,6 +18,7 @@ require 'logging'
 
 module Bosh::Dev::Sandbox
   class Main
+    ROOT_CA_CERTIFICATE_PATH = File.join(Bosh::Dev::ASSETS_DIR, 'ca', 'certs', 'rootCA.pem')
 
     HM_CONFIG = 'health_monitor.yml'
     DEFAULT_HM_CONF_TEMPLATE_NAME = 'health_monitor.yml.erb'
@@ -90,7 +91,7 @@ module Bosh::Dev::Sandbox
 
       @task_logs_dir = sandbox_path('boshdir/tasks')
       @blobstore_storage_dir = sandbox_path('bosh_test_blobstore')
-      @verify_multidigest_path = File.join(Bosh::Dev::REPO_ROOT, 'tmp', 'verify-multidigest', 'verify-multidigest')
+      @verify_multidigest_path = File.join(Bosh::Dev::RELEASE_SRC_DIR, 'tmp', 'verify-multidigest', 'verify-multidigest')
       @dummy_cpi_api_version = nil
 
       @nats_log_path = File.join(@logs_path, 'nats.log')
@@ -345,7 +346,7 @@ module Bosh::Dev::Sandbox
     end
 
     def certificate_path
-      File.join(Bosh::Dev::ASSETS_DIR, 'ca', 'certs', 'rootCA.pem')
+      ROOT_CA_CERTIFICATE_PATH
     end
 
     def nats_certificate_paths
@@ -433,7 +434,7 @@ module Bosh::Dev::Sandbox
     def external_cpi_config
       {
         name: 'test-cpi',
-        exec_path: File.join(Bosh::Dev::REPO_ROOT, 'bosh-director', 'bin', 'dummy_cpi'),
+        exec_path: File.join(Bosh::Dev::RELEASE_SRC_DIR, 'bosh-director', 'bin', 'dummy_cpi'),
         job_path: sandbox_path(EXTERNAL_CPI),
         config_path: sandbox_path(EXTERNAL_CPI_CONFIG),
         env_path: ENV['PATH'],

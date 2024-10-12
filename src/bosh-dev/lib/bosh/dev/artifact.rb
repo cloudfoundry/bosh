@@ -39,7 +39,7 @@ module Bosh::Dev::Artifact
     end
 
     def executable_path
-      File.join(Bosh::Dev::REPO_ROOT, install_dir, executable_name)
+      File.join(Bosh::Dev::RELEASE_SRC_DIR, install_dir, executable_name)
     end
 
     private

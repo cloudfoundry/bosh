@@ -79,7 +79,7 @@ module Bosh::Dev::Sandbox
         end
 
         context['properties'].deep_merge!(
-          YAML.load_file(File.join(Bosh::Dev::REPO_ROOT, 'spec', 'assets', 'uaa_config', 'asymmetric', 'uaa.yml'))
+          YAML.load_file(File.join(Bosh::Dev::RELEASE_SRC_DIR, 'spec', 'assets', 'uaa_config', 'asymmetric', 'uaa.yml'))
         )
 
         context['properties']['uaadb'] = {
@@ -165,12 +165,12 @@ module Bosh::Dev::Sandbox
     end
 
     def working_dir
-      File.join(Bosh::Dev::REPO_ROOT, 'spec', 'assets', 'uaa')
+      File.join(Bosh::Dev::RELEASE_SRC_DIR, 'spec', 'assets', 'uaa')
     end
 
     def write_config_path
       FileUtils.cp(
-        File.join(Bosh::Dev::REPO_ROOT, 'spec', 'assets', 'uaa_config', 'asymmetric', 'uaa.yml'),
+        File.join(Bosh::Dev::RELEASE_SRC_DIR, 'spec', 'assets', 'uaa_config', 'asymmetric', 'uaa.yml'),
         @config_path,
       )
       @current_uaa_config_mode = 'asymmetric'
