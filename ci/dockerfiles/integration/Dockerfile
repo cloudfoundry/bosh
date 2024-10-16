@@ -29,12 +29,18 @@ RUN apt-get update -y \
       | tee -a /etc/apt/sources.list.d/pgdg.list \
     && curl --show-error -sL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
       | gpg --dearmor -o /etc/apt/trusted.gpg.d/psql_org.gpg \
+    && curl -sL https://packages.microsoft.com/keys/microsoft.asc \
+      | gpg --dearmor \
+      | tee /etc/apt/trusted.gpg.d/microsoft.gpg > /dev/null \
+    && echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $(lsb_release -cs) main" \
+      | tee /etc/apt/sources.list.d/azure-cli.list \
     && apt-get update -y \
     && apt-get install -y --no-install-recommends \
         locales \
         unzip \
         qemu-utils \
         awscli \
+        azure-cli \
         build-essential \
         coreutils \
         dnsutils \
