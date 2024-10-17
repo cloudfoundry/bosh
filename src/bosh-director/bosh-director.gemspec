@@ -36,7 +36,6 @@ Gem::Specification.new do |spec|
   # Also do the same in bosh_cli_plugin_micro.gemspec
   # Review this once CPIs are completely externalized and "micro" goes away.
   spec.add_dependency 'bosh_common',   "~>#{Bosh::Director::VERSION}"
-  spec.add_dependency 'bosh-core',     "~>#{Bosh::Director::VERSION}"
   spec.add_dependency 'bosh-template', "~>#{Bosh::Director::VERSION}"
 
   spec.add_dependency 'bcrypt'

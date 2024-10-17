@@ -1,4 +1,4 @@
-module Bosh::Core
+module Bosh::Dev
   class Shell
     def initialize(stdout = $stdout)
       @stdout = stdout

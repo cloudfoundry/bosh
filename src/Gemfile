@@ -1,6 +1,5 @@
 source 'https://rubygems.org'
 
-gem 'bosh-core', path: 'bosh-core'
 gem 'bosh-director', path: 'bosh-director'
 gem 'bosh-monitor', path: 'bosh-monitor'
 gem 'bosh-nats-sync', path: 'bosh-nats-sync'
