@@ -1,15 +1,15 @@
 # abort script on any command that exit with a non zero value
 set -e
 
-(
-  set -e
-  tar xzf mysql/mariadb-connector-c-*-src.tar.gz
-  cd mariadb-connector-c-*-src
-  mkdir bld
-  cd bld
-  cmake .. -DCMAKE_INSTALL_PREFIX=${BOSH_INSTALL_TARGET}
-  make
-  make install
-)
-
+mkdir -p ${BOSH_INSTALL_TARGET}/bin/
 cp mysql-customization/mariadb_config-wrapper.sh ${BOSH_INSTALL_TARGET}/bin/
+
+tar xzf mysql/mariadb-connector-c-*-src.tar.gz
+cd mariadb-connector-c-*-src
+cmake \
+  -DCMAKE_INSTALL_PREFIX=${BOSH_INSTALL_TARGET} \
+  -DDEFAULT_SSL_VERIFY_SERVER_CERT=0
+# ^ Needed for mariadb-connector-c >3.4.0 due to changes in default TLS mode. May be removable if mysql2 gem gets updated: https://github.com/brianmario/mysql2/issues/1379
+
+make
+make install
