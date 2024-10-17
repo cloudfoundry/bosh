@@ -8,7 +8,6 @@ module Bosh::Dev
     LINUX_SHA256 = 'e5362a7c88ed92d4f4263b1b725e901fe29da220c3548e37570793776b5f6d51'.freeze
     BUCKET_NAME = 'bosh-gnatsd'.freeze
 
-    REPO_ROOT = File.expand_path('../../../../', File.dirname(__FILE__))
     INSTALL_DIR = File.join('tmp', 'gnatsd')
     EXECUTABLE_NAME = 'gnatsd'.freeze
 

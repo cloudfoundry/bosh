@@ -3,7 +3,6 @@ require_relative './artifact'
 
 module Bosh::Dev
   class VerifyMultidigestManager
-    REPO_ROOT = File.expand_path('../../../../', File.dirname(__FILE__))
     INSTALL_DIR = File.join('tmp', 'verify-multidigest')
     BUCKET_NAME = 'verify-multidigest'.freeze
 

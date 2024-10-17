@@ -2,11 +2,11 @@ require 'logging'
 require 'rspec'
 require 'tempfile'
 require 'rspec/core/rake_task'
-require 'bosh/dev/sandbox/nginx'
 require 'bosh/dev/sandbox/workspace'
 require 'common/thread_pool'
-require 'bosh/dev/sandbox/services/uaa_service'
 require 'bosh/dev/sandbox/services/config_server_service'
+require 'bosh/dev/sandbox/services/nginx_service'
+require 'bosh/dev/sandbox/services/uaa_service'
 require 'bosh/dev/verify_multidigest_manager'
 require 'bosh/dev/gnatsd_manager'
 require 'parallel_tests/tasks'
@@ -21,22 +21,19 @@ namespace :spec do
 
     desc 'Install BOSH integration test dependencies (currently Nginx, UAA, and Config Server)'
     task :install_dependencies do
-      FileUtils.mkdir_p('tmp')
-      File.open('tmp/compilation.log', 'w') do |log|
-        unless ENV['SKIP_DEPS'] == 'true'
-          install_with_retries(Bosh::Dev::Sandbox::Nginx.new(Bosh::Core::Shell.new(log))) unless ENV['SKIP_NGINX'] == 'true'
+      unless ENV['SKIP_DEPS'] == 'true'
+        Bosh::Dev::Sandbox::NginxService.install unless ENV['SKIP_NGINX'] == 'true'
 
-          Bosh::Dev::Sandbox::UaaService.install unless ENV['SKIP_UAA'] == 'true'
+        Bosh::Dev::Sandbox::UaaService.install unless ENV['SKIP_UAA'] == 'true'
 
-          Bosh::Dev::Sandbox::ConfigServerService.install unless ENV['SKIP_CONFIG_SERVER'] == 'true'
+        Bosh::Dev::Sandbox::ConfigServerService.install unless ENV['SKIP_CONFIG_SERVER'] == 'true'
 
-          Bosh::Dev::VerifyMultidigestManager.install unless ENV['SKIP_VERIFY_MULTIDIGEST'] == 'true'
+        Bosh::Dev::VerifyMultidigestManager.install unless ENV['SKIP_VERIFY_MULTIDIGEST'] == 'true'
 
-          Bosh::Dev::GnatsdManager.install unless ENV['SKIP_GNATSD'] == 'true'
-        end
-
-        compile_dependencies
+        Bosh::Dev::GnatsdManager.install unless ENV['SKIP_GNATSD'] == 'true'
       end
+
+      compile_dependencies
     end
 
     desc 'Download BOSH Agent. Use only for local dev environment'
@@ -47,17 +44,6 @@ namespace :spec do
       cmd += 'rm -rf bosh-agent && '
       cmd += 'git clone https://github.com/cloudfoundry/bosh-agent.git'
       sh(cmd)
-    end
-
-    def install_with_retries(to_install)
-      retries = 3
-      begin
-        to_install.install
-      rescue StandardError
-        retries -= 1
-        retry if retries.positive?
-        raise
-      end
     end
 
     def run_integration_specs(run_options = {})

@@ -38,10 +38,10 @@ module DBSpecHelper
       case ENV.fetch('DB', 'sqlite')
         when 'postgresql'
           require 'bosh/dev/sandbox/postgresql'
-          @db_helper = Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_director", Bosh::Core::Shell.new, init_logger, db_options)
+          @db_helper = Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_director", init_logger, db_options)
         when 'mysql'
           require 'bosh/dev/sandbox/mysql'
-          @db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_director", Bosh::Core::Shell.new, init_logger, db_options)
+          @db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_director", init_logger, db_options)
         when 'sqlite'
           require 'bosh/dev/sandbox/sqlite'
           @db_helper = Bosh::Dev::Sandbox::Sqlite.new(File.join(@temp_dir, "#{@db_name}_director.sqlite"), init_logger)
