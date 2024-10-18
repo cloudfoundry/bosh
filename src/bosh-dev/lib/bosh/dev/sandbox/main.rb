@@ -513,9 +513,9 @@ module Bosh::Dev::Sandbox
     def setup_database(db_config)
       unless @database
         if db_config[:type] == 'mysql'
-          @database = Mysql.new(@name, Bosh::Core::Shell.new, @logger, db_config)
+          @database = Mysql.new(@name, @logger, db_config)
         else
-          @database = Postgresql.new(@name, Bosh::Core::Shell.new, @logger, db_config.dup)
+          @database = Postgresql.new(@name, @logger, db_config.dup)
         end
       end
     end

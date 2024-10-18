@@ -1,12 +1,12 @@
 require 'bosh/dev'
-require 'bosh/core/shell'
+require 'bosh/dev/shell'
 
 module Bosh::Dev::Sandbox
   class Nginx
     REPO_ROOT = File.expand_path('../../../../../', File.dirname(__FILE__))
     RELEASE_ROOT = File.join(REPO_ROOT, '..')
 
-    def initialize(runner = Bosh::Core::Shell.new)
+    def initialize(runner = Bosh::Dev::Shell.new)
       @runner = runner
       @working_dir = File.join(REPO_ROOT, 'tmp', 'integration-nginx-work')
       @install_dir = File.join(REPO_ROOT, 'tmp', 'integration-nginx')

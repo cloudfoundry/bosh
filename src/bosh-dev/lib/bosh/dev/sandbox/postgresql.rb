@@ -1,16 +1,16 @@
 require 'bosh/dev'
-require 'bosh/core/shell'
+require 'bosh/dev/shell'
 require 'shellwords'
 
 module Bosh::Dev::Sandbox
   class Postgresql
     attr_reader :db_name, :username, :password, :adapter, :port, :host, :ca_path
 
-    def initialize(db_name, runner, logger, options = {})
+    def initialize(db_name, logger, options = {}, runner = Bosh::Dev::Shell.new)
+      @adapter = 'postgres'
       @db_name = db_name
       @logger = logger
       @runner = runner
-      @adapter = 'postgres'
 
       @username = options.fetch(:username, 'postgres')
       @password = options.fetch(:password, '')

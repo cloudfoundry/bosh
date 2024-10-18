@@ -1,14 +1,7 @@
 PATH
-  remote: bosh-core
-  specs:
-    bosh-core (0.0.0)
-      openssl
-
-PATH
   remote: bosh-dev
   specs:
     bosh-dev (0.0.0)
-      bosh-core
       bosh-director
       bosh_common
       bundler
@@ -21,7 +14,6 @@ PATH
   specs:
     bosh-director (0.0.0)
       bcrypt
-      bosh-core (~> 0.0.0)
       bosh-template (~> 0.0.0)
       bosh_common (~> 0.0.0)
       bosh_cpi
@@ -356,7 +348,6 @@ PLATFORMS
 DEPENDENCIES
   async-rspec
   blue-shell
-  bosh-core!
   bosh-dev!
   bosh-director!
   bosh-monitor!
