@@ -95,7 +95,7 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
-    activesupport (7.2.1)
+    activesupport (7.2.1.1)
       base64
       bigdecimal
       concurrent-ruby (~> 1.0, >= 1.3.1)
@@ -113,20 +113,20 @@ GEM
       console (~> 1.26)
       fiber-annotation
       io-event (~> 1.6, >= 1.6.5)
-    async-http (0.80.1)
+    async-http (0.81.0)
       async (>= 2.10.2)
-      async-pool (~> 0.7)
-      io-endpoint (~> 0.11)
+      async-pool (~> 0.9)
+      io-endpoint (~> 0.14)
       io-stream (~> 0.4)
+      metrics (~> 0.12)
       protocol-http (~> 0.37)
       protocol-http1 (~> 0.27)
       protocol-http2 (~> 0.19)
-      traces (>= 0.10)
+      traces (~> 0.10)
     async-io (1.43.2)
       async
-    async-pool (0.9.0)
+    async-pool (0.10.1)
       async (>= 1.25)
-      metrics (~> 0.11)
       traces
     async-rspec (1.17.0)
       rspec (~> 3.0)
@@ -190,8 +190,8 @@ GEM
     httpclient (2.8.3)
     i18n (1.14.6)
       concurrent-ruby (~> 1.0)
-    io-endpoint (0.13.1)
-    io-event (1.7.1)
+    io-endpoint (0.14.0)
+    io-event (1.7.2)
     io-stream (0.4.0)
     json (2.7.2)
     language_server-protocol (3.17.0.3)
@@ -202,7 +202,7 @@ GEM
       multi_json (~> 1.14)
     membrane (1.1.0)
     method_source (1.1.0)
-    metrics (0.11.0)
+    metrics (0.12.0)
     mime-types (3.6.0)
       logger
       mime-types-data (~> 3.2015)
@@ -235,8 +235,8 @@ GEM
     prometheus-client (4.2.3)
       base64
     protocol-hpack (1.5.1)
-    protocol-http (0.37.0)
-    protocol-http1 (0.27.0)
+    protocol-http (0.41.0)
+    protocol-http1 (0.28.1)
       protocol-http (~> 0.22)
     protocol-http2 (0.19.3)
       protocol-hpack (~> 1.4)
@@ -255,7 +255,7 @@ GEM
       nio4r (~> 2.0)
     raabro (1.4.0)
     racc (1.8.1)
-    rack (2.2.9)
+    rack (2.2.10)
     rack-protection (2.2.4)
       rack
     rack-test (2.1.0)
@@ -276,7 +276,7 @@ GEM
       rspec-core (~> 3.13.0)
       rspec-expectations (~> 3.13.0)
       rspec-mocks (~> 3.13.0)
-    rspec-core (3.13.1)
+    rspec-core (3.13.2)
       rspec-support (~> 3.13.0)
     rspec-expectations (3.13.3)
       diff-lcs (>= 1.2.0, < 2.0)
@@ -289,7 +289,7 @@ GEM
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.13.0)
     rspec-support (3.13.1)
-    rubocop (1.66.1)
+    rubocop (1.67.0)
       json (~> 2.3)
       language_server-protocol (>= 3.17.0)
       parallel (~> 1.10)
@@ -383,4 +383,4 @@ DEPENDENCIES
   webmock
 
 BUNDLED WITH
-   2.5.21
+   2.5.22
