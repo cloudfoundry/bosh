@@ -27,6 +27,13 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
       it 'sends a put request' do
         stub_request(:put, 'http://some-uri/some-path').with(body: 'some-request').to_return(body: 'response', status: 200)
 
+        expect(Async::HTTP::Internet).to receive(:put).and_wrap_original do |original_put, endpoint, body, headers|
+          expect(endpoint.to_url.to_s).to eq('http://some-uri/some-path')
+          expect(endpoint.endpoint).to be_a(Async::HTTP::Proxy)
+          expect(endpoint.endpoint.client.endpoint.to_url.to_s).to eq('https://proxy.local:1234/')
+          original_put.call(endpoint, body, headers)
+        end
+
         task = reactor.async do
           send_http_put_request('http://some-uri/some-path', { body: 'some-request', proxy: 'https://proxy.local:1234' })
         end

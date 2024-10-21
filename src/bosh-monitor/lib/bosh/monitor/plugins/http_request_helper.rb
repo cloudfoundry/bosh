@@ -1,4 +1,5 @@
 require 'async/http'
+require 'async/http/internet/instance'
 require 'async/http/proxy'
 require 'net/http'
 
@@ -59,9 +60,8 @@ module Bosh::Monitor::Plugins
       name = self.class.name
       started = Time.now
 
-      client = create_async_client(uri: uri, proxy: proxy)
-      parsed_uri = URI.parse(uri.to_s)
-      response = client.send(method, parsed_uri.path, headers, body)
+      endpoint = create_async_endpoint(uri: uri, proxy: proxy)
+      response = Async::HTTP::Internet.send(method, endpoint, headers, body)
 
       # Explicitly read the response stream to ensure the connection fully closes
       body = response.read
@@ -72,10 +72,10 @@ module Bosh::Monitor::Plugins
     rescue => e
       logger.error("Failed to send #{name} event: #{e.class} #{e.message}\n#{e.backtrace.join('\n')}")
     ensure
-      client.close if client
+      response.close if response
     end
 
-    def create_async_client(uri:, proxy:)
+    def create_async_endpoint(uri:, proxy:)
       parsed_uri = URI.parse(uri.to_s)
       env_proxy = parsed_uri.find_proxy
 
@@ -90,7 +90,7 @@ module Bosh::Monitor::Plugins
         endpoint = proxy.wrap_endpoint(endpoint)
       end
 
-      Async::HTTP::Client.new(endpoint)
+      endpoint
     end
   end
 end

@@ -1,3 +1,5 @@
+require 'async/http/internet/instance'
+
 module Bosh::Monitor
   class Director
     def initialize(options, logger)
@@ -47,31 +49,26 @@ module Bosh::Monitor
       raise DirectorError, "Cannot parse director response: #{e.message}"
     end
 
-    def perform_request(method, uri, options = {})
-      parsed_endpoint = URI.parse(endpoint)
-      target_path = parsed_endpoint.path + uri
-
+    def perform_request(method, request_path, options = {})
+      parsed_endpoint = URI.parse(endpoint + request_path)
       headers = {}
       headers['authorization'] = auth_provider.auth_header unless options.fetch(:no_login, false)
 
       ssl_context = OpenSSL::SSL::SSLContext.new
       ssl_context.set_params(verify_mode: OpenSSL::SSL::VERIFY_NONE)
-      http = Async::HTTP::Client.new(
-        Async::HTTP::Endpoint.parse(endpoint, ssl_context: ssl_context)
-      )
-
-      response = http.send(method.to_sym, target_path, headers)
+      async_endpoint = Async::HTTP::Endpoint.parse(parsed_endpoint, ssl_context: ssl_context)
+      response = Async::HTTP::Internet.send(method.to_sym, async_endpoint, headers)
 
       body   = response.read
       status = response.status
 
       [body, status]
     rescue URI::Error
-      raise DirectorError, "Invalid URI: #{target_path}"
+      raise DirectorError, "Invalid URI: #{endpoint + request_path}"
     rescue => e
-      raise DirectorError, "Unable to send #{method} #{target_path} to director: #{e}"
+      raise DirectorError, "Unable to send #{method} #{parsed_endpoint.path} to director: #{e}"
     ensure
-      http.close if http
+      response.close if response
     end
 
     def info

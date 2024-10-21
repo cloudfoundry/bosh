@@ -105,14 +105,14 @@ GEM
       console (~> 1.26)
       fiber-annotation
       io-event (~> 1.6, >= 1.6.5)
-    async-http (0.81.0)
+    async-http (0.82.1)
       async (>= 2.10.2)
       async-pool (~> 0.9)
       io-endpoint (~> 0.14)
-      io-stream (~> 0.4)
+      io-stream (~> 0.6)
       metrics (~> 0.12)
       protocol-http (~> 0.37)
-      protocol-http1 (~> 0.27)
+      protocol-http1 (>= 0.28.1)
       protocol-http2 (~> 0.19)
       traces (~> 0.10)
     async-io (1.43.2)
@@ -184,7 +184,7 @@ GEM
       concurrent-ruby (~> 1.0)
     io-endpoint (0.14.0)
     io-event (1.7.2)
-    io-stream (0.4.0)
+    io-stream (0.6.0)
     json (2.7.2)
     language_server-protocol (3.17.0.3)
     little-plugger (1.1.4)
@@ -227,7 +227,7 @@ GEM
     prometheus-client (4.2.3)
       base64
     protocol-hpack (1.5.1)
-    protocol-http (0.41.0)
+    protocol-http (0.42.0)
     protocol-http1 (0.28.1)
       protocol-http (~> 0.22)
     protocol-http2 (0.19.3)
@@ -357,7 +357,6 @@ DEPENDENCIES
   bundle-audit
   factory_bot
   fakefs
-  io-stream (<= 0.4.0)
   minitar
   mysql2
   parallel_tests
