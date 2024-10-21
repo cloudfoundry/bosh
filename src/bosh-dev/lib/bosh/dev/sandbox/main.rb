@@ -6,22 +6,19 @@ require 'bosh/dev/sandbox/http_endpoint_connector'
 require 'bosh/dev/sandbox/socket_connector'
 require 'bosh/dev/sandbox/postgresql'
 require 'bosh/dev/sandbox/mysql'
-require 'bosh/dev/sandbox/nginx'
 require 'bosh/dev/sandbox/workspace'
 require 'bosh/dev/sandbox/director_config'
 require 'bosh/dev/sandbox/port_provider'
+require 'bosh/dev/sandbox/services/config_server_service'
 require 'bosh/dev/sandbox/services/director_service'
 require 'bosh/dev/sandbox/services/nginx_service'
-require 'bosh/dev/sandbox/services/config_server_service'
 require 'bosh/dev/gnatsd_manager'
 require 'cloud/dummy'
 require 'logging'
 
 module Bosh::Dev::Sandbox
   class Main
-    REPO_ROOT = File.expand_path('../../../../../', File.dirname(__FILE__))
-
-    SANDBOX_ASSETS_DIR = File.expand_path('bosh-dev/assets/sandbox', REPO_ROOT)
+    ROOT_CA_CERTIFICATE_PATH = File.join(Bosh::Dev::ASSETS_DIR, 'ca', 'certs', 'rootCA.pem')
 
     HM_CONFIG = 'health_monitor.yml'
     DEFAULT_HM_CONF_TEMPLATE_NAME = 'health_monitor.yml.erb'
@@ -33,12 +30,10 @@ module Bosh::Dev::Sandbox
     DIRECTOR_CERTIFICATE_EXPIRY_JSON_TEMPLATE_NAME = 'director_certificate_expiry.json.erb'.freeze
 
     EXTERNAL_CPI = 'cpi'
-    EXTERNAL_CPI_TEMPLATE = File.join(SANDBOX_ASSETS_DIR, 'cpi.erb')
+    EXTERNAL_CPI_TEMPLATE = File.join(Bosh::Dev::ASSETS_DIR, 'cpi.erb')
 
     EXTERNAL_CPI_CONFIG = 'cpi.json'
-    EXTERNAL_CPI_CONFIG_TEMPLATE = File.join(SANDBOX_ASSETS_DIR, 'cpi_config.json.erb')
-
-    UPGRADE_SPEC_ASSETS_DIR = File.expand_path('spec/assets/upgrade', REPO_ROOT)
+    EXTERNAL_CPI_CONFIG_TEMPLATE = File.join(Bosh::Dev::ASSETS_DIR, 'cpi_config.json.erb')
 
     attr_reader :name
     attr_reader :health_monitor_process
@@ -94,7 +89,7 @@ module Bosh::Dev::Sandbox
 
       @task_logs_dir = sandbox_path('boshdir/tasks')
       @blobstore_storage_dir = sandbox_path('bosh_test_blobstore')
-      @verify_multidigest_path = File.join(REPO_ROOT, 'tmp', 'verify-multidigest', 'verify-multidigest')
+      @verify_multidigest_path = File.join(Bosh::Dev::RELEASE_SRC_DIR, 'tmp', 'verify-multidigest', 'verify-multidigest')
       @dummy_cpi_api_version = nil
 
       @nats_log_path = File.join(@logs_path, 'nats.log')
@@ -104,7 +99,7 @@ module Bosh::Dev::Sandbox
       @nginx_service = NginxService.new(sandbox_root, director_port, director_ruby_port, "8443", base_log_path, @logger)
 
       @db_config = {
-        ca_path: File.join(SANDBOX_ASSETS_DIR, 'database', 'rootCA.pem')
+        ca_path: File.join(Bosh::Dev::ASSETS_DIR, 'database', 'rootCA.pem')
       }.merge(db_opts)
 
       setup_database(@db_config)
@@ -176,10 +171,6 @@ module Bosh::Dev::Sandbox
 
       @database.create_db
 
-      unless @test_initial_state.nil?
-        load_db_and_populate_blobstore(@test_initial_state)
-      end
-
       @config_server_service.start(@with_config_server_trusted_certs) if @config_server_enabled
 
       dir_config = director_config
@@ -236,7 +227,7 @@ module Bosh::Dev::Sandbox
 
     def reconfigure_health_monitor(erb_template=DEFAULT_HM_CONF_TEMPLATE_NAME)
       @health_monitor_process.stop
-      write_in_sandbox(HM_CONFIG, load_config_template(File.join(SANDBOX_ASSETS_DIR, erb_template)))
+      write_in_sandbox(HM_CONFIG, load_config_template(File.join(Bosh::Dev::ASSETS_DIR, erb_template)))
       @health_monitor_process.start
     end
 
@@ -313,13 +304,12 @@ module Bosh::Dev::Sandbox
     end
 
     def sandbox_root
-      File.join(Workspace.dir, 'sandbox')
+      Workspace.sandbox_root
     end
 
     def reconfigure(options={})
       @user_authentication = options.fetch(:user_authentication, 'local')
       @config_server_enabled = options.fetch(:config_server_enabled, false)
-      @test_initial_state = options.fetch(:test_initial_state, nil)
       @with_config_server_trusted_certs = options.fetch(:with_config_server_trusted_certs, true)
       @director_fix_stateful_nodes = options.fetch(:director_fix_stateful_nodes, false)
       @dns_enabled = options.fetch(:dns_enabled, true)
@@ -349,7 +339,7 @@ module Bosh::Dev::Sandbox
     end
 
     def certificate_path
-      File.join(SANDBOX_ASSETS_DIR, 'ca', 'certs', 'rootCA.pem')
+      ROOT_CA_CERTIFICATE_PATH
     end
 
     def nats_certificate_paths
@@ -357,21 +347,21 @@ module Bosh::Dev::Sandbox
         'ca_path' => get_nats_server_ca_path,
 
         'server' => {
-          'certificate_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'nats', 'certificate.pem'),
-          'private_key_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'nats', 'private_key'),
+          'certificate_path' => File.join(Bosh::Dev::ASSETS_DIR, 'nats_server', 'certs', 'nats', 'certificate.pem'),
+          'private_key_path' => File.join(Bosh::Dev::ASSETS_DIR, 'nats_server', 'certs', 'nats', 'private_key'),
         },
         'clients' => {
           'director' => {
-            'certificate_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'director', 'certificate.pem'),
-            'private_key_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'director', 'private_key'),
+            'certificate_path' => File.join(Bosh::Dev::ASSETS_DIR, 'nats_server', 'certs', 'director', 'certificate.pem'),
+            'private_key_path' => File.join(Bosh::Dev::ASSETS_DIR, 'nats_server', 'certs', 'director', 'private_key'),
           },
           'health_monitor' => {
-            'certificate_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'health_monitor', 'certificate.pem'),
-            'private_key_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'health_monitor', 'private_key'),
+            'certificate_path' => File.join(Bosh::Dev::ASSETS_DIR, 'nats_server', 'certs', 'health_monitor', 'certificate.pem'),
+            'private_key_path' => File.join(Bosh::Dev::ASSETS_DIR, 'nats_server', 'certs', 'health_monitor', 'private_key'),
           },
           'test_client' => {
-            'certificate_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'test_client', 'certificate.pem'),
-            'private_key_path' => File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'test_client', 'private_key'),
+            'certificate_path' => File.join(Bosh::Dev::ASSETS_DIR, 'nats_server', 'certs', 'test_client', 'certificate.pem'),
+            'private_key_path' => File.join(Bosh::Dev::ASSETS_DIR, 'nats_server', 'certs', 'test_client', 'private_key'),
           }
         }
       }
@@ -405,7 +395,7 @@ module Bosh::Dev::Sandbox
     def start_nats
       return if @nats_process.running?
 
-      nats_template_path = File.join(SANDBOX_ASSETS_DIR, DEFAULT_NATS_CONF_TEMPLATE_NAME)
+      nats_template_path = File.join(Bosh::Dev::ASSETS_DIR, DEFAULT_NATS_CONF_TEMPLATE_NAME)
       write_in_sandbox(NATS_CONFIG, load_config_template(nats_template_path))
       write_in_sandbox(EXTERNAL_CPI_CONFIG, load_config_template(EXTERNAL_CPI_CONFIG_TEMPLATE))
       setup_nats
@@ -415,29 +405,10 @@ module Bosh::Dev::Sandbox
 
     private
 
-    def load_db_and_populate_blobstore(test_initial_state)
-      @database.load_db_initial_state(File.join(UPGRADE_SPEC_ASSETS_DIR, test_initial_state))
-
-      if @database.adapter.eql? 'mysql2'
-        tar_filename = 'blobstore_snapshot_with_mysql.tar.gz'
-      elsif @database.adapter.eql? 'postgres'
-        tar_filename = 'blobstore_snapshot_with_postgres.tar.gz'
-      else
-        raise 'Pre-loading blobstore supported only for PostgresDB and MySQL'
-      end
-
-      blobstore_snapshot_path = File.join(UPGRADE_SPEC_ASSETS_DIR, test_initial_state, tar_filename)
-      @logger.info("Pre-filling blobstore `#{blobstore_storage_dir}` with blobs from `#{blobstore_snapshot_path}`")
-      tar_out = `tar xzvf #{blobstore_snapshot_path} -C #{blobstore_storage_dir}  2>&1`
-      if $?.exitstatus != 0
-        raise "Cannot pre-fill blobstore: #{tar_out}"
-      end
-    end
-
     def external_cpi_config
       {
         name: 'test-cpi',
-        exec_path: File.join(REPO_ROOT, 'bosh-director', 'bin', 'dummy_cpi'),
+        exec_path: File.join(Bosh::Dev::RELEASE_SRC_DIR, 'bosh-director', 'bin', 'dummy_cpi'),
         job_path: sandbox_path(EXTERNAL_CPI),
         config_path: sandbox_path(EXTERNAL_CPI_CONFIG),
         env_path: ENV['PATH'],
@@ -456,8 +427,6 @@ module Bosh::Dev::Sandbox
 
       FileUtils.rm_rf(blobstore_storage_dir)
       FileUtils.mkdir_p(blobstore_storage_dir)
-
-      load_db_and_populate_blobstore(@test_initial_state) unless @test_initial_state.nil?
 
       stop_nats if @nats_process.running?
       start_nats
@@ -478,13 +447,13 @@ module Bosh::Dev::Sandbox
     end
 
     def setup_sandbox_root
-      hm_template_path = File.join(SANDBOX_ASSETS_DIR, DEFAULT_HM_CONF_TEMPLATE_NAME)
+      hm_template_path = File.join(Bosh::Dev::ASSETS_DIR, DEFAULT_HM_CONF_TEMPLATE_NAME)
       write_in_sandbox(HM_CONFIG, load_config_template(hm_template_path))
       write_in_sandbox(EXTERNAL_CPI, load_config_template(EXTERNAL_CPI_TEMPLATE))
       write_in_sandbox(EXTERNAL_CPI_CONFIG, load_config_template(EXTERNAL_CPI_CONFIG_TEMPLATE))
-      expiry_template_path = File.join(SANDBOX_ASSETS_DIR, DIRECTOR_CERTIFICATE_EXPIRY_JSON_TEMPLATE_NAME)
+      expiry_template_path = File.join(Bosh::Dev::ASSETS_DIR, DIRECTOR_CERTIFICATE_EXPIRY_JSON_TEMPLATE_NAME)
       write_in_sandbox(DIRECTOR_CERTIFICATE_EXPIRY_JSON_CONFIG, load_config_template(expiry_template_path))
-      nats_template_path = File.join(SANDBOX_ASSETS_DIR, DEFAULT_NATS_CONF_TEMPLATE_NAME)
+      nats_template_path = File.join(Bosh::Dev::ASSETS_DIR, DEFAULT_NATS_CONF_TEMPLATE_NAME)
       write_in_sandbox(NATS_CONFIG, load_config_template(nats_template_path))
       FileUtils.chmod(0755, sandbox_path(EXTERNAL_CPI))
       FileUtils.mkdir_p(blobstore_storage_dir)
@@ -547,9 +516,9 @@ module Bosh::Dev::Sandbox
 
     def get_nats_server_ca_path
       if @with_incorrect_nats_server_ca
-        File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'childless_rootCA.pem')
+        File.join(Bosh::Dev::ASSETS_DIR, 'nats_server', 'certs', 'childless_rootCA.pem')
       else
-        File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'rootCA.pem')
+        File.join(Bosh::Dev::ASSETS_DIR, 'nats_server', 'certs', 'rootCA.pem')
       end
     end
 
@@ -558,11 +527,11 @@ module Bosh::Dev::Sandbox
     end
 
     def get_nats_client_ca_certificate_path
-      File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'rootCA.pem')
+      File.join(Bosh::Dev::ASSETS_DIR, 'nats_server', 'certs', 'rootCA.pem')
     end
 
     def get_nats_client_ca_private_key_path
-      File.join(SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'rootCA.key')
+      File.join(Bosh::Dev::ASSETS_DIR, 'nats_server', 'certs', 'rootCA.key')
     end
 
     attr_reader :director_tmp_path, :task_logs_dir

@@ -13,7 +13,7 @@ module Bosh::Dev
         @release_version ||= begin
           postgres_release_config =
             YAML.load_file(
-              File.join(File.dirname(__FILE__), '../../../../../jobs/postgres/spec.yml'),
+              File.join(Bosh::Dev::RELEASE_ROOT, 'jobs', 'postgres', 'spec.yml'),
               permitted_classes: [Symbol],
               aliases: true,
             )

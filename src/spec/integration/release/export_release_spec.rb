@@ -273,7 +273,7 @@ Can't use release 'test_release/1'. It references packages without source code a
 
       output_file = File.basename(out.match(/Downloading resource '[0-9a-f-]{36}' to '(.*test_release-1-toronto-os-1-\d{8}-[0-9-]*\.tgz)'.../)[1])
 
-      dir = File.join(Bosh::Dev::Sandbox::Workspace.dir, "client-sandbox", "bosh_work_dir")
+      dir = ClientSandbox.bosh_work_dir
       files = Dir.entries(dir)
       expect(files).to include(output_file)
 
@@ -317,7 +317,7 @@ Can't use release 'test_release/1'. It references packages without source code a
         export_release_output = bosh_runner.run("export-release test_release/1 toronto-os/1 --job job_using_pkg_1", deployment_name: 'minimal')
         output_file = File.basename(export_release_output.match(/Downloading resource '[0-9a-f-]{36}' to '(.*test_release-1-toronto-os-1-\d{8}-[0-9-]*\.tgz)'.../)[1])
 
-        dir = File.join(Bosh::Dev::Sandbox::Workspace.dir, "client-sandbox", "bosh_work_dir")
+        dir = ClientSandbox.bosh_work_dir
         files = Dir.entries(dir)
         expect(files).to include(output_file)
 

@@ -19,8 +19,11 @@ namespace :db do
     @database.create_db
 
     require 'bosh/dev/sandbox/database_migrator'
-    director_dir = File.expand_path('../../../../../../bosh-director', __FILE__)
-    Bosh::Dev::Sandbox::DatabaseMigrator.new(director_dir, director_config_path.path, @logger).migrate
+    Bosh::Dev::Sandbox::DatabaseMigrator.new(
+      File.join(Bosh::Dev::RELEASE_SRC_DIR, 'bosh-director'),
+      director_config_path.path,
+      @logger,
+    ).migrate
     File.unlink(director_config_path)
 
     File.open('postgresql.dump.sql', 'w') do |f|
@@ -48,8 +51,11 @@ namespace :db do
     @database.create_db
 
     require 'bosh/dev/sandbox/database_migrator'
-    director_dir = File.expand_path('../../../../../../bosh-director', __FILE__)
-    Bosh::Dev::Sandbox::DatabaseMigrator.new(director_dir, director_config_path.path, @logger).migrate
+    Bosh::Dev::Sandbox::DatabaseMigrator.new(
+      File.join(Bosh::Dev::RELEASE_SRC_DIR, 'bosh-director'),
+      director_config_path.path,
+      @logger
+    ).migrate
     File.unlink(director_config_path)
 
     File.open('postgresql.tables.txt', 'w') do |f|

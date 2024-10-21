@@ -155,8 +155,8 @@ module Bosh::Spec
     def generate_command(cmd, options)
       no_color = options.fetch(:no_color, false)
       log_in = options.fetch(:include_credentials, true)
-      client = options[:client] || 'test'
-      client_secret = options[:client_secret] || 'test'
+      client = options.fetch(:client, 'test')
+      client_secret = options.fetch(:client_secret, 'test')
       config = options.fetch(:config, @bosh_config)
       cli_options = ''
       cli_options += options.fetch(:tty, true) ? ' --tty' : ''
@@ -167,8 +167,8 @@ module Bosh::Spec
       cli_options += " -d #{options[:deployment_name]}" if options[:deployment_name]
       cli_options += " --config #{config}"
 
-      default_ca_cert = Bosh::Dev::Sandbox::Workspace.new.asset_path("ca/certs/rootCA.pem")
-      cli_options += options.fetch(:ca_cert, nil) ? " --ca-cert #{options[:ca_cert]}" : " --ca-cert #{default_ca_cert}"
+
+      cli_options += " --ca-cert #{options.fetch(:ca_cert, Bosh::Dev::Sandbox::Main::ROOT_CA_CERTIFICATE_PATH)}"
       cli_options += options.fetch(:json, false) ? ' --json' : ''
       cli_options += ' --sha2' if @sha2
 
