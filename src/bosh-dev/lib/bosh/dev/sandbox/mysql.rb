@@ -3,6 +3,7 @@ require 'bosh/dev/shell'
 
 module Bosh::Dev::Sandbox
   class Mysql
+    DEFAULT_PASSWORD = ( /darwin/ =~ RUBY_PLATFORM) ? '' : 'password'
     attr_reader :db_name, :username, :password, :adapter, :port, :host, :ca_path
 
     def initialize(db_name, logger, options = {}, runner = Bosh::Dev::Shell.new)
@@ -12,7 +13,7 @@ module Bosh::Dev::Sandbox
       @runner = runner
 
       @username = options.fetch(:username, 'root')
-      @password = options.fetch(:password, 'password')
+      @password = options.fetch(:password, DEFAULT_PASSWORD)
       @port = options.fetch(:port, 3306)
       @host = options.fetch(:host, 'localhost')
       @ca_path = options.fetch(:ca_path, nil)
@@ -70,7 +71,7 @@ module Bosh::Dev::Sandbox
     private
 
     def run_quietly_redacted(cmd)
-      redacted = [@password] unless @password.blank?
+      redacted = [@password] unless @password.empty?
       @runner.run(%Q(#{cmd} > /dev/null 2>&1), redact: redacted)
     end
 
