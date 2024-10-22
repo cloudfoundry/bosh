@@ -52,9 +52,6 @@ dev_releases
 releases/*.tgz
 releases/**/*.tgz
 
-/*/spec/reports/
-/spec/reports
-spec.log
 spec/assets/**/*.pid
 spec/assets/**/elb-cfrouter.*
 spec/assets/*.db
@@ -68,15 +65,11 @@ spec/assets/test_release/dev_releases
 spec/assets/compiled_releases/test_release/.dev_builds
 spec/assets/compiled_releases/test_release/config/dev.yml
 spec/assets/compiled_releases/test_release/dev_releases
-spec_coverage
-spec_reports
 
 **/tmp
 coverage/
 tags
 src/parallel_runtime_rspec.log
 
-cscope.out
-.starscope.db
 /src/vendor/cache/extensions/*
 /src/vendor/ruby
