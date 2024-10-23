@@ -1,8 +1,6 @@
 require 'spec_helper'
 require 'bosh/template/evaluation_link'
 require 'bosh/template/evaluation_context'
-require 'bosh/director/dns/dns_encoder'
-require 'bosh/director/dns/canonicalizer'
 
 module Bosh
   module Template

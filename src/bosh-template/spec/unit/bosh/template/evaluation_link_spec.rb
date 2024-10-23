@@ -1,8 +1,6 @@
 require 'spec_helper'
 require 'bosh/template/evaluation_link'
 require 'bosh/template/evaluation_context'
-require 'bosh/director/dns/dns_encoder'
-require 'bosh/director/dns/canonicalizer'
 
 module Bosh
   module Template
@@ -31,15 +29,9 @@ module Bosh
         let(:deployment) { 'fake_deployment' }
         let(:root_domain) { 'sub.bosh' }
         let(:use_short_dns) { false }
-        let(:dns_encoder) do
-          instance_double(Bosh::Director::DnsEncoder)
-        end
+        let(:dns_encoder) { double('FAKE_DNS_ENCODER') }
 
         describe '#address' do
-          before do
-            allow(Bosh::Director::DnsEncoder).to receive(:new).and_return dns_encoder
-          end
-
           it 'resolves the link characteristics and query params using the dns resolver' do
             allow(dns_encoder).to receive(:encode_query).with(
               hash_including(
@@ -62,10 +54,6 @@ module Bosh
 
           context 'when use short dns is enabled' do
             let(:use_short_dns) { true }
-
-            let(:dns_encoder) do
-              instance_double(Bosh::Director::DnsEncoder)
-            end
 
             it 'resolves the address to a short dns name' do
               expect(dns_encoder).to receive(:encode_query).with(hash_including(azs: ['zone1']), true)
