@@ -1,65 +1,54 @@
-namespace :db do
-  desc 'Dump database'
-  task :dump do
+require 'bosh/dev/db/db_helper'
+require 'bosh/dev/sandbox/database_migrator'
+
+class RakeDbHelper
+  def self.db_adapter
+    ENV.fetch('DB', Bosh::Dev::DB::DBHelper::POSTGRESQL)
+  end
+
+  def self.prepared_db_helper
     director_config = {
       'db' => {
         'database' => 'director_latest_tmp',
-        'adapter' => 'postgresql',
-        'user' => 'postgres'
+        'adapter' => db_adapter,
       },
       'cloud' => {}
     }
-    director_config_path = Tempfile.new('director_config')
-    File.open(director_config_path.path, 'w') { |f| f.write(YAML.dump(director_config)) }
 
-    require 'bosh/dev/sandbox/postgresql'
-    @logger = Logging.logger(STDOUT)
-    @database = Bosh::Dev::Sandbox::Postgresql.new(director_config['db']['database'], @logger)
-    @database.drop_db
-    @database.create_db
+    db_helper =
+      Bosh::Dev::DB::DBHelper.build(
+        db_type: director_config['db']['adapter'],
+        db_options: { name: director_config['db']['database'], username: director_config['db']['user'] },
+        logger: Logging.logger(STDOUT),
+      )
+    db_helper.drop_db
+    db_helper.create_db
 
-    require 'bosh/dev/sandbox/database_migrator'
+    config = Tempfile.new("#{director_config['db']['database']}-config.yml")
+    File.write(config, YAML.dump(director_config))
     Bosh::Dev::Sandbox::DatabaseMigrator.new(
       File.join(Bosh::Dev::RELEASE_SRC_DIR, 'bosh-director'),
-      director_config_path.path,
-      @logger,
+      config.path,
+      Logging.logger(STDOUT)
     ).migrate
-    File.unlink(director_config_path)
+    config.unlink
 
-    File.open('postgresql.dump.sql', 'w') do |f|
-      f.puts @database.dump_db
-    end
+    db_helper
+  end
+end
+
+namespace :db do
+  desc 'Dump database'
+  task :dump do
+    db_helper = RakeDbHelper.prepared_db_helper
+
+    File.write("#{RakeDbHelper.db_adapter}.dump.sql", db_helper.dump_db)
   end
 
   desc 'Describe database tables'
   task :describe do
-    director_config = {
-      'db' => {
-        'database' => 'director_latest_tmp',
-        'adapter' => 'postgresql',
-        'user' => 'postgres'
-      },
-      'cloud' => {}
-    }
-    director_config_path = Tempfile.new('director_config')
-    File.open(director_config_path.path, 'w') { |f| f.write(YAML.dump(director_config)) }
+    db_helper = RakeDbHelper.prepared_db_helper
 
-    require 'bosh/dev/sandbox/postgresql'
-    @logger = Logging.logger(STDOUT)
-    @database = Bosh::Dev::Sandbox::Postgresql.new(director_config['db']['database'], @logger)
-    @database.drop_db
-    @database.create_db
-
-    require 'bosh/dev/sandbox/database_migrator'
-    Bosh::Dev::Sandbox::DatabaseMigrator.new(
-      File.join(Bosh::Dev::RELEASE_SRC_DIR, 'bosh-director'),
-      director_config_path.path,
-      @logger
-    ).migrate
-    File.unlink(director_config_path)
-
-    File.open('postgresql.tables.txt', 'w') do |f|
-      f.puts @database.describe_db
-    end
+    File.write("#{RakeDbHelper.db_adapter}.tables.txt", db_helper.describe_db)
   end
 end

@@ -1,11 +1,14 @@
 require 'benchmark'
+require 'logging'
 require 'securerandom'
+
 require 'bosh/director/config'
+
+require 'bosh/dev/db/db_helper'
+
 require 'bosh/dev/sandbox/service'
 require 'bosh/dev/sandbox/http_endpoint_connector'
 require 'bosh/dev/sandbox/socket_connector'
-require 'bosh/dev/sandbox/postgresql'
-require 'bosh/dev/sandbox/mysql'
 require 'bosh/dev/sandbox/workspace'
 require 'bosh/dev/sandbox/director_config'
 require 'bosh/dev/sandbox/port_provider'
@@ -13,8 +16,8 @@ require 'bosh/dev/sandbox/services/config_server_service'
 require 'bosh/dev/sandbox/services/director_service'
 require 'bosh/dev/sandbox/services/nginx_service'
 require 'bosh/dev/gnatsd_manager'
+
 require 'cloud/dummy'
-require 'logging'
 
 module Bosh::Dev::Sandbox
   class Main
@@ -60,7 +63,7 @@ module Bosh::Dev::Sandbox
 
     def self.from_env
       db_opts = {
-        type: ENV['DB'] || 'postgresql',
+        type: ENV.fetch('DB', 'postgresql'),
       }
       db_opts[:password] = ENV['DB_PASSWORD'] if ENV['DB_PASSWORD']
 
@@ -480,13 +483,16 @@ module Bosh::Dev::Sandbox
     end
 
     def setup_database(db_config)
-      unless @database
-        if db_config[:type] == 'mysql'
-          @database = Mysql.new(@name, @logger, db_config)
-        else
-          @database = Postgresql.new(@name, @logger, db_config.dup)
+      @database ||=
+        begin
+          db_options = db_config.dup
+          db_options[:name] = @name
+          Bosh::Dev::DB::DBHelper.build(
+            db_type: db_options[:type],
+            db_options: db_options,
+            logger: @logger,
+          )
         end
-      end
     end
 
     def setup_heath_monitor

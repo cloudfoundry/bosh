@@ -1,4 +1,4 @@
-require 'bosh/dev/shell'
+require 'bosh/dev'
 
 module Bosh::Dev::Sandbox
   class NginxService
@@ -7,7 +7,7 @@ module Bosh::Dev::Sandbox
     CERTS_DIR = File.join(Bosh::Dev::ASSETS_DIR, 'ca', 'certs')
 
     def self.install
-      installer = NginxInstaller.new(runner: Bosh::Dev::Shell.new)
+      installer = NginxInstaller.new
       installer.prepare
 
       if installer.should_compile?
@@ -17,23 +17,37 @@ module Bosh::Dev::Sandbox
       end
     end
 
-    def initialize(sandbox_root, port, director_ruby_port, uaa_port, base_log_path, logger)
-      @logger = logger
-      log_path = "#{base_log_path}.nginx.out"
+    def initialize(sandbox_root, nginx_port, director_ruby_port, uaa_port, base_log_path, logger)
       @process =
-        Service.new(%W[#{NginxInstaller::EXECUTABLE_PATH} -c #{File.join(sandbox_root, 'nginx.conf')} -p #{sandbox_root}],
-                    { output: log_path }, @logger)
-      @socket_connector = SocketConnector.new('director_nginx', 'localhost', port, log_path, @logger)
+        Service.new(
+          %W[#{NginxInstaller::EXECUTABLE_PATH} -c #{File.join(sandbox_root, 'nginx.conf')} -p #{sandbox_root}],
+          { output: logfile_path(base_log_path) },
+          logger,
+        )
 
-      default_attrs = {
-        ssl_cert_path: File.join(CERTS_DIR, 'server.crt'),
-        ssl_cert_key_path: File.join(CERTS_DIR, 'server.key'),
-        sandbox_root: sandbox_root,
-        director_ruby_port: director_ruby_port,
-        nginx_port: port,
-        uaa_port: uaa_port,
-      }
-      @config = NginxConfig.new(CONFIG_TEMPLATE, File.join(sandbox_root, 'nginx.conf'), default_attrs)
+      @socket_connector =
+        SocketConnector.new(
+          'director_nginx',
+          'localhost',
+          nginx_port,
+          logfile_path(base_log_path),
+          logger,
+        )
+
+      @config =
+        NginxConfig.new(
+          CONFIG_TEMPLATE,
+          File.join(sandbox_root, 'nginx.conf'),
+          {
+            sandbox_root: sandbox_root,
+            director_ruby_port: director_ruby_port,
+            uaa_port: uaa_port,
+            nginx_port: nginx_port,
+            ssl_cert_path: File.join(CERTS_DIR, 'server.crt'),
+            ssl_cert_key_path: File.join(CERTS_DIR, 'server.key'),
+          },
+        )
+
       @config.write
     end
 
@@ -67,6 +81,12 @@ module Bosh::Dev::Sandbox
 
       @config.write(ssl_cert_path: ssl_cert_path, ssl_cert_key_path: ssl_cert_key_path)
     end
+
+    private
+
+    def logfile_path(base_log_path)
+      "#{base_log_path}.nginx.out"
+    end
   end
 
   class NginxInstaller
@@ -74,13 +94,13 @@ module Bosh::Dev::Sandbox
     INSTALL_DIR = File.join(Bosh::Dev::RELEASE_SRC_DIR, 'tmp', 'integration-nginx')
     EXECUTABLE_PATH = File.join(INSTALL_DIR, 'sbin', 'nginx')
 
-    def initialize(runner:)
-      @runner = runner
-    end
-
     def prepare
-      sync_release_blobs
-      retrieve_nginx_package
+      Dir.chdir(Bosh::Dev::RELEASE_ROOT) do
+        run_command('bosh sync-blobs')
+        run_command('bosh create-release --force --tarball /tmp/release.tgz')
+        run_command('tar -zxvf /tmp/release.tgz -C /tmp packages/nginx.tgz')
+        run_command('tar -zxvf /tmp/packages/nginx.tgz  -C packages/nginx')
+      end
     end
 
     def should_compile?
@@ -95,57 +115,50 @@ module Bosh::Dev::Sandbox
       FileUtils.mkdir_p(WORKING_DIR)
       FileUtils.mkdir_p(INSTALL_DIR)
 
-      if /darwin/ =~ RUBY_PLATFORM
-        # search homebrew paths for openssl on osx (fixes nginx compilation issues)
-        ENV['LDFLAGS'] = '-L/usr/local/opt/openssl/lib'
-        ENV['CPPFLAGS'] = '-I/usr/local/opt/openssl/include'
-      end
-      @runner.run("echo '#{RUBY_PLATFORM}' > #{INSTALL_DIR}/platform")
+      run_command("echo '#{RUBY_PLATFORM}' > #{INSTALL_DIR}/platform")
 
       # Make sure packaging script has its own blob copies so that blobs/ directory is not affected
       nginx_blobs_path = File.join(Bosh::Dev::RELEASE_ROOT, 'packages', 'nginx')
-      @runner.run("cp -R #{nginx_blobs_path}/. #{File.join(WORKING_DIR)}")
+      run_command("cp -R #{nginx_blobs_path}/. #{File.join(WORKING_DIR)}")
 
       Dir.chdir(WORKING_DIR) do
         packaging_script_path = File.join(Bosh::Dev::RELEASE_ROOT, 'packages', 'nginx', 'packaging')
-        @runner.run("bash #{packaging_script_path}", env: {
-          'BOSH_INSTALL_TARGET' => INSTALL_DIR,
-        })
+        run_command("bash #{packaging_script_path}", { 'BOSH_INSTALL_TARGET' => INSTALL_DIR })
       end
     end
 
     private
 
+    def run_command(command, environment = {})
+      io = IO.popen([environment, 'bash', '-c', command])
+
+      lines =
+        io.each_with_object("") do |line, collect|
+          collect << line
+          puts line.chomp
+        end
+
+      io.close
+
+      lines
+    end
+
     def blob_has_changed?
-      release_nginx_path = File.join(Bosh::Dev::RELEASE_ROOT, 'blobs', 'nginx')
-      blobs_shasum = shasum(release_nginx_path)
-      working_dir_nginx_path = "#{WORKING_DIR}/nginx"
-      sandbox_copy_shasum = shasum(working_dir_nginx_path)
+      blobs_shasum = shasum(File.join(Bosh::Dev::RELEASE_ROOT, 'blobs', 'nginx'))
+      sandbox_copy_shasum = shasum(File.join(WORKING_DIR, 'nginx'))
 
       blobs_shasum.sort != sandbox_copy_shasum.sort
     end
 
     def platform_has_changed?
-      output = @runner.run("cat #{INSTALL_DIR}/platform || true")
+      output = run_command("cat #{INSTALL_DIR}/platform || true")
       output != RUBY_PLATFORM
     end
 
     def shasum(directory)
-      output = @runner.run("find #{directory} \\! -type d -print0 | xargs -0 shasum -a 256")
+      output = run_command("find #{directory} \\! -type d -print0 | xargs -0 shasum -a 256")
       output.split("\n").map do |line|
         line.split(' ').first
-      end
-    end
-
-    def sync_release_blobs
-      Dir.chdir(Bosh::Dev::RELEASE_ROOT) { @runner.run('bosh sync-blobs') }
-    end
-
-    def retrieve_nginx_package
-      Dir.chdir(Bosh::Dev::RELEASE_ROOT) do
-        @runner.run('bosh create-release --force --tarball /tmp/release.tgz')
-        @runner.run('tar -zxvf /tmp/release.tgz -C /tmp packages/nginx.tgz')
-        @runner.run('tar -zxvf /tmp/packages/nginx.tgz  -C packages/nginx')
       end
     end
   end

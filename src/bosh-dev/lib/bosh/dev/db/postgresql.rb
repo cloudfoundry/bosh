@@ -1,30 +1,27 @@
 require 'bosh/dev'
-require 'bosh/dev/shell'
 require 'shellwords'
 
-module Bosh::Dev::Sandbox
+module Bosh::Dev::DB
   class Postgresql
     attr_reader :db_name, :username, :password, :adapter, :port, :host, :ca_path
 
-    def initialize(db_name, logger, options = {}, runner = Bosh::Dev::Shell.new)
+    def initialize(db_options:, logger:)
       @adapter = 'postgres'
-      @db_name = db_name
+      @db_name = db_options[:name]
       @logger = logger
-      @runner = runner
 
-      @username = options.fetch(:username, 'postgres')
-      @password = options.fetch(:password, '')
-      @host = options.fetch(:host, '127.0.0.1')
-      @port = options.fetch(:port, 5432)
-      @ca_path = options.fetch(:ca_path, nil)
+      @username = db_options.fetch(:username, 'postgres')
+      @password = db_options.fetch(:password, '')
+      @host = db_options.fetch(:host, '127.0.0.1')
+      @port = db_options.fetch(:port, 5432)
+      @ca_path = db_options.fetch(:ca_path, nil)
     end
 
     def connection_string(this_db_name = @db_name)
       "postgres://#{@username}:#{@password}@#{@host}:#{@port}/#{this_db_name}"
     end
 
-    # Assumption is that user running tests can
-    # login via psql without entering password.
+    # Assumes: login via psql w/o password
     def create_db
       @logger.info("Creating postgres database #{db_name}")
       execute_sql(%(CREATE DATABASE "#{db_name}";), connection_string('postgres'))
@@ -53,7 +50,7 @@ module Bosh::Dev::Sandbox
 
     def dump_db
       @logger.info("Dumping postgres database schema for #{db_name}")
-      @runner.run(%(pg_dump #{connection_string}))
+      DBHelper.run_command(%(pg_dump #{connection_string}))
     end
 
     def describe_db
@@ -68,7 +65,7 @@ module Bosh::Dev::Sandbox
 
     def load_db(dump_file_path)
       @logger.info("Loading dump #{dump_file_path} into postgres database #{db_name}")
-      @runner.run(%(psql #{connection_string} < #{dump_file_path}))
+      DBHelper.run_command(%(psql #{connection_string} < #{dump_file_path}))
     end
 
     def current_tasks
@@ -107,7 +104,7 @@ module Bosh::Dev::Sandbox
     private
 
     def execute_sql(sql, this_connection_string = connection_string)
-      @runner.run(%{#{sql_cmd(sql, this_connection_string)} > /dev/null})
+      DBHelper.run_command(%{#{sql_cmd(sql, this_connection_string)} > /dev/null})
     end
 
     def sql_results_for(sql, this_connection_string = connection_string)

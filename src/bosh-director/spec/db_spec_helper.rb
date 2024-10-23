@@ -11,6 +11,7 @@ require 'sequel'
 require 'logging'
 require 'securerandom'
 
+require 'bosh/dev/db/db_helper'
 require 'bosh/director/config'
 require 'db_migrator'
 
@@ -35,19 +36,7 @@ module DBSpecHelper
         host: ENV['DB_HOST'] || '127.0.0.1',
       }.compact
 
-      case ENV.fetch('DB', 'sqlite')
-      when 'postgresql'
-        require 'bosh/dev/sandbox/postgresql'
-        @db_helper = Bosh::Dev::Sandbox::Postgresql.new(db_name, init_logger, db_options)
-      when 'mysql'
-        require 'bosh/dev/sandbox/mysql'
-        @db_helper = Bosh::Dev::Sandbox::Mysql.new(db_name, init_logger, db_options)
-      when 'sqlite'
-        require 'bosh/dev/sandbox/sqlite'
-        @db_helper = Bosh::Dev::Sandbox::Sqlite.new(db_name, init_logger, db_options)
-      else
-        raise "Unsupported DB value: #{ENV['DB']}"
-      end
+      @db_helper = Bosh::Dev::DB::DBHelper.build(db_type: ENV.fetch('DB', 'sqlite'), db_options: db_options, logger: init_logger)
 
       @db_helper.create_db
 

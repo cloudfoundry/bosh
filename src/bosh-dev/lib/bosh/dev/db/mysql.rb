@@ -1,22 +1,20 @@
 require 'bosh/dev'
-require 'bosh/dev/shell'
 
-module Bosh::Dev::Sandbox
+module Bosh::Dev::DB
   class Mysql
     DEFAULT_PASSWORD = ( /darwin/ =~ RUBY_PLATFORM) ? '' : 'password'
     attr_reader :db_name, :username, :password, :adapter, :port, :host, :ca_path
 
-    def initialize(db_name, logger, options = {}, runner = Bosh::Dev::Shell.new)
+    def initialize(db_options:, logger:)
       @adapter = 'mysql2'
-      @db_name = db_name
+      @db_name = db_options[:name]
       @logger = logger
-      @runner = runner
 
-      @username = options.fetch(:username, 'root')
-      @password = options.fetch(:password, DEFAULT_PASSWORD)
-      @host = options.fetch(:host, 'localhost')
-      @port = options.fetch(:port, 3306)
-      @ca_path = options.fetch(:ca_path, nil)
+      @username = db_options.fetch(:username, 'root')
+      @password = db_options.fetch(:password, DEFAULT_PASSWORD)
+      @host = db_options.fetch(:host, 'localhost')
+      @port = db_options.fetch(:port, 3306)
+      @ca_path = db_options.fetch(:ca_path, nil)
     end
 
     def connection_string(this_db_name = @db_name)
@@ -71,8 +69,7 @@ module Bosh::Dev::Sandbox
     private
 
     def run_quietly_redacted(cmd)
-      redacted = [@password] unless @password.empty?
-      @runner.run(%Q(#{cmd} > /dev/null 2>&1), redact: redacted)
+      DBHelper.run_command(%Q(#{cmd} > /dev/null 2>&1))
     end
 
     def execute_sql(sql, this_db_name = db_name)

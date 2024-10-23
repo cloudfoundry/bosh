@@ -16,6 +16,7 @@ require 'webmock/rspec'
 require 'minitar'
 require 'factory_bot'
 require 'support/buffered_logger'
+require 'bosh/dev/db/db_helper'
 
 Dir.glob(File.expand_path('support/**/*.rb', __dir__)).each { |f| require(f) }
 
@@ -99,22 +100,7 @@ module SpecHelper
         }.compact)
       end
 
-      case ENV.fetch('DB', 'sqlite')
-      when 'postgresql'
-        require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/postgresql', File.dirname(__FILE__))
-        @db_helper =
-          Bosh::Dev::Sandbox::Postgresql.new(db_name, @init_logger, db_options)
-      when 'mysql'
-        require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/mysql', File.dirname(__FILE__))
-        @db_helper =
-          Bosh::Dev::Sandbox::Mysql.new(db_name, @init_logger, db_options)
-      when 'sqlite'
-        require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/sqlite', File.dirname(__FILE__))
-        @db_helper =
-          Bosh::Dev::Sandbox::Sqlite.new(db_name, @init_logger, db_options)
-      else
-        raise "Unsupported DB value: #{ENV['DB']}"
-      end
+      @db_helper = Bosh::Dev::DB::DBHelper.build(db_type: ENV.fetch('DB', 'sqlite'), db_options: db_options, logger: @init_logger)
 
       @db_helper.create_db
 
