@@ -30,6 +30,7 @@ jobs:
         db:
         - mysql
         - postgresql
+        - sqlite
     steps:
     - uses: actions/checkout@v4
       with: { lfs: true}
