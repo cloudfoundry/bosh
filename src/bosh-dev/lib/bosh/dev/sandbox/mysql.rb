@@ -14,8 +14,8 @@ module Bosh::Dev::Sandbox
 
       @username = options.fetch(:username, 'root')
       @password = options.fetch(:password, DEFAULT_PASSWORD)
-      @port = options.fetch(:port, 3306)
       @host = options.fetch(:host, 'localhost')
+      @port = options.fetch(:port, 3306)
       @ca_path = options.fetch(:ca_path, nil)
     end
 

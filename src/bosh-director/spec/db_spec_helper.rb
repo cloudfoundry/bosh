@@ -19,7 +19,6 @@ module DBSpecHelper
     attr_reader :db, :director_migrations_dir, :director_migrations_digest_file
 
     def init
-      @temp_dir = Bosh::Director::Config.generate_temp_dir
       @director_migrations_dir = File.join(BOSH_DIRECTOR_ROOT, 'db', 'migrations', 'director')
       @director_migrations_digest_file  = File.join(BOSH_DIRECTOR_ROOT, 'db',  'migrations', 'migration_digests.json')
 
@@ -27,7 +26,7 @@ module DBSpecHelper
     end
 
     def connect_database
-      @db_name = SecureRandom.uuid.gsub('-', '')
+      db_name = "#{SecureRandom.uuid.delete('-')}_director"
       init_logger = Logging::Logger.new('TestLogger')
 
       db_options = {
@@ -39,13 +38,13 @@ module DBSpecHelper
       case ENV.fetch('DB', 'sqlite')
       when 'postgresql'
         require 'bosh/dev/sandbox/postgresql'
-        @db_helper = Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_director", init_logger, db_options)
+        @db_helper = Bosh::Dev::Sandbox::Postgresql.new(db_name, init_logger, db_options)
       when 'mysql'
         require 'bosh/dev/sandbox/mysql'
-        @db_helper = Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_director", init_logger, db_options)
+        @db_helper = Bosh::Dev::Sandbox::Mysql.new(db_name, init_logger, db_options)
       when 'sqlite'
         require 'bosh/dev/sandbox/sqlite'
-        @db_helper = Bosh::Dev::Sandbox::Sqlite.new(File.join(@temp_dir, "#{@db_name}_director.sqlite"), init_logger)
+        @db_helper = Bosh::Dev::Sandbox::Sqlite.new(db_name, init_logger, db_options)
       else
         raise "Unsupported DB value: #{ENV['DB']}"
       end

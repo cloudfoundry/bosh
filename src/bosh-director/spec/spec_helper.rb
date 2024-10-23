@@ -31,7 +31,6 @@ module SpecHelper
     def init
       ENV['RACK_ENV'] = 'test'
       configure_init_logger
-      configure_temp_dir
 
       require 'bosh/director'
 
@@ -54,10 +53,6 @@ module SpecHelper
         ),
       )
       @init_logger.level = :debug
-    end
-
-    def configure_temp_dir
-      @temp_dir = Bosh::Director::Config.generate_temp_dir
     end
 
     def spec_get_director_config
@@ -83,7 +78,7 @@ module SpecHelper
     end
 
     def init_database
-      @db_name = SecureRandom.uuid.delete('-')
+      db_name = "#{SecureRandom.uuid.delete('-')}_director"
       connection_string = ENV['DB_URI']
       db_options = {}
 
@@ -110,17 +105,17 @@ module SpecHelper
         db_options[:port] ||= 5432
 
         @director_db_helper =
-          Bosh::Dev::Sandbox::Postgresql.new("#{@db_name}_director", @init_logger, db_options)
+          Bosh::Dev::Sandbox::Postgresql.new(db_name, @init_logger, db_options)
       when 'mysql'
         require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/mysql', File.dirname(__FILE__))
         db_options[:port] ||= 3306
 
         @director_db_helper =
-          Bosh::Dev::Sandbox::Mysql.new("#{@db_name}_director", @init_logger, db_options)
+          Bosh::Dev::Sandbox::Mysql.new(db_name, @init_logger, db_options)
       when 'sqlite'
         require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/sqlite', File.dirname(__FILE__))
         @director_db_helper =
-          Bosh::Dev::Sandbox::Sqlite.new(File.join(@temp_dir, "#{@db_name}_director.sqlite"), @init_logger)
+          Bosh::Dev::Sandbox::Sqlite.new(db_name, @init_logger, db_options)
       else
         raise "Unsupported DB value: #{ENV['DB']}"
       end
