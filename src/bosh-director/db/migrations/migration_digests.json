@@ -95,7 +95,6 @@
   "20170216194502_remove_blobstore_id_idx_from_local_dns_blobs": "24a882cb8c016867d633a7396636631cd2d737d0",
   "20170217000000_variables_instance_table_foreign_key_update": "6f586bcfe0017d410d2d0daafc8e01a1dbe37be2",
   "20170301192646_add_deployed_successfully_to_variable_sets": "34b45e27dd813a6e91ac074b7beadbd520eda7ac",
-  "20120123234908_initial": "d90c0015e1e06ff3747bd6fe7fb66be5c5c9bdf4",
   "20170303175054_expand_template_json_column_lengths": "bb1868c23d48020990e23b25a8c5fcb1f93eb6fc",
   "20170306215659_expand_vms_json_column_lengths": "544410b869c44f6af0f748cf74da4e12f1919289",
   "20170320171505_add_id_group_az_network_deployment_columns_to_local_dns_records": "0a5296c0d3de35d3c3921e2f36c124f56a0a7e94",

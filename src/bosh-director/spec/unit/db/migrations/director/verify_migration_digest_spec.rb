@@ -3,18 +3,16 @@ require 'json'
 require 'digest/sha1'
 
 module Bosh::Director
-  describe 'Verify that each migration has not been modified' do
-    it 'should match the digest in the digests file' do
-      digests = JSON.parse(File.read(File.join(DBSpecHelper.director_migrations_dir, '..', 'migration_digests.json')))
-      DBSpecHelper.get_migrations.each do |migration|
-        expected_digest = digests.fetch(File.basename(migration, '.rb'))
-
-        actual_digest = ::Digest::SHA1.hexdigest(File.read(migration))
-        expect(actual_digest).to(
-          eq(expected_digest),
-          "A digest mismatch was detected in #{migration}. Expected #{expected_digest}, Got #{actual_digest}",
-        )
+  describe 'migration files' do
+    let(:expected_digests) { JSON.load_file(DBSpecHelper.director_migrations_digest_file)}
+    let(:actual_digests) do
+      DBSpecHelper.get_migrations.each_with_object({}) do |migration, hash|
+        hash[File.basename(migration, '.rb')] = Digest::SHA1.hexdigest(File.read(migration))
       end
+    end
+
+    it 'should have the same digest as the one that was previously recorded' do
+      expect(expected_digests).to eq(actual_digests)
     end
   end
 end
