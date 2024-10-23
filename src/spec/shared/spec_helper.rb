@@ -21,10 +21,14 @@ require 'rspec'
 # Useful to see that tests are using expected version of Ruby in CI
 puts "Using #{RUBY_DESCRIPTION}"
 
-RSpec.configure do |config|
-  config.mock_with :rspec do |mocks|
-    mocks.verify_partial_doubles = true
-    mocks.verify_doubled_constant_names = true
+RSpec.configure do |rspec|
+  rspec.expect_with :rspec do |c|
+    c.max_formatted_output_length = nil
+  end
+
+  rspec.mock_with :rspec do |c|
+    c.verify_partial_doubles = true
+    c.verify_doubled_constant_names = true
   end
 end
 
