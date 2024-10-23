@@ -2,7 +2,6 @@ PATH
   remote: bosh-dev
   specs:
     bosh-dev (0.0.0)
-      bosh-director
       bosh_common
       bundler
       json

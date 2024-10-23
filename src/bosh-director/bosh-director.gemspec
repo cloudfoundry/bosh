@@ -61,6 +61,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'tzinfo-data'
   spec.add_dependency 'unix-crypt'
 
+  spec.add_development_dependency 'bosh-dev'
   spec.add_development_dependency 'fakefs'
   spec.add_development_dependency 'factory_bot'
   spec.add_development_dependency 'minitar'
