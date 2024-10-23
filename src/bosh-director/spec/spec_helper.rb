@@ -67,12 +67,12 @@ module SpecHelper
         'assets/nats/nats_ca_private_key.pem',
         File.dirname(__FILE__),
       )
-      config['db']['adapter'] = @director_db_helper.adapter
-      config['db']['host'] = @director_db_helper.host
-      config['db']['database'] = @director_db_helper.db_name
-      config['db']['user'] = @director_db_helper.username
-      config['db']['password'] = @director_db_helper.password
-      config['db']['port'] = @director_db_helper.port
+      config['db']['adapter'] = @db_helper.adapter
+      config['db']['host'] = @db_helper.host
+      config['db']['database'] = @db_helper.db_name
+      config['db']['user'] = @db_helper.username
+      config['db']['password'] = @db_helper.password
+      config['db']['port'] = @db_helper.port
 
       config
     end
@@ -102,25 +102,21 @@ module SpecHelper
       case ENV.fetch('DB', 'sqlite')
       when 'postgresql'
         require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/postgresql', File.dirname(__FILE__))
-        db_options[:port] ||= 5432
-
-        @director_db_helper =
+        @db_helper =
           Bosh::Dev::Sandbox::Postgresql.new(db_name, @init_logger, db_options)
       when 'mysql'
         require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/mysql', File.dirname(__FILE__))
-        db_options[:port] ||= 3306
-
-        @director_db_helper =
+        @db_helper =
           Bosh::Dev::Sandbox::Mysql.new(db_name, @init_logger, db_options)
       when 'sqlite'
         require File.expand_path('../../bosh-dev/lib/bosh/dev/sandbox/sqlite', File.dirname(__FILE__))
-        @director_db_helper =
+        @db_helper =
           Bosh::Dev::Sandbox::Sqlite.new(db_name, @init_logger, db_options)
       else
         raise "Unsupported DB value: #{ENV['DB']}"
       end
 
-      @director_db_helper.create_db
+      @db_helper.create_db
 
       @director_migrations = File.expand_path('../db/migrations/director', __dir__)
       Sequel.extension :migration
@@ -138,7 +134,7 @@ module SpecHelper
       db_opts = { max_connections: 32, pool_timeout: 10 }
 
       Sequel.default_timezone = :utc
-      @director_db = Sequel.connect(@director_db_helper.connection_string, db_opts)
+      @director_db = Sequel.connect(@db_helper.connection_string, db_opts)
       @director_db.loggers << (logger || @init_logger)
       @director_db.log_connection_info = true
       Bosh::Director::Config.db = @director_db
@@ -147,10 +143,10 @@ module SpecHelper
     def disconnect_database
       if @director_db
         @director_db.disconnect
-        @director_db_helper.drop_db
+        @db_helper.drop_db
 
         @director_db = nil
-        @director_db_helper = nil
+        @db_helper = nil
       end
     end
 
@@ -191,7 +187,7 @@ module SpecHelper
 
       return unless example.metadata[:truncation]
 
-      @director_db_helper.truncate_db
+      @db_helper.truncate_db
     end
   end
 end
