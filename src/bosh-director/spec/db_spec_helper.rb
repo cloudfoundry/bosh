@@ -105,7 +105,7 @@ module DBSpecHelper
     end
 
     def migrate_to_version(version)
-      DBMigrator.new(@db, :director, target: version).migrate
+      DBMigrator.new(@db, target: version).migrate
     end
   end
 end

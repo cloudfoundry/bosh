@@ -29,5 +29,4 @@ if director_db.table_exists?(:releases)
 end
 abort 'Director database config missing from config file' unless director_db
 
-DBMigrator.new(director_db, :director).migrate
-DBMigrator.new(director_db, :cpi, cpi: config.cpi).migrate
+DBMigrator.new(director_db).migrate

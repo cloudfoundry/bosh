@@ -62,7 +62,7 @@ module Bosh::Director
       before do
         allow(Delayed::Worker).to receive(:new).and_return(djworker)
         allow(config).to receive(:db).and_return(double(:config_db))
-        allow(DBMigrator).to receive(:new).with(config.db, :director).and_return(migrator)
+        allow(DBMigrator).to receive(:new).with(config.db).and_return(migrator)
       end
 
       it 'starts up immediately if migrations are current' do

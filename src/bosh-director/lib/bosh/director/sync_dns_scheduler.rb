@@ -49,7 +49,7 @@ module Bosh::Director
               'Cowardly refusing to start sync dns scheduler.'
       end
 
-      migrator = DBMigrator.new(@config.db, :director)
+      migrator = DBMigrator.new(@config.db)
       raise_migration_error unless migrator.finished?
     end
 

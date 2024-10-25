@@ -62,7 +62,7 @@ module Bosh
         if defined?(Bosh::Director::Models)
           raise 'Bosh::Director::Models were loaded before ensuring migrations are current. Cowardly refusing to start worker.'
         end
-        migrator = DBMigrator.new(@config.db, :director)
+        migrator = DBMigrator.new(@config.db)
         unless migrator.finished?
           @config.worker_logger.error(
             "Migrations not current during worker start after #{DBMigrator::MAX_MIGRATION_ATTEMPTS} attempts.",

@@ -12,14 +12,10 @@ module Kernel
 end
 
 module Bosh::Director
-  describe 'sync_dns_scheduler' do
+  describe SyncDnsScheduler do
     subject(:sync_dns_scheduler) { SyncDnsScheduler.new(config, 0.01) }
-    let(:config_hash) do
-      SpecHelper.spec_get_director_config
-    end
 
-    let(:config) { Config.load_hash(config_hash) }
-    let(:dns_version_converger) { double(DnsVersionConverger) }
+    let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) } #
 
     before do
       Bosh::Director.send(:remove_const, :Models)
@@ -30,14 +26,17 @@ module Bosh::Director
     end
 
     describe 'migrations' do
-      let(:migrator) { instance_double(DBMigrator, current?: true) }
+      let(:db_migrator) { instance_double(DBMigrator, current?: true) }
+      let(:db) { instance_double(Sequel::Database) }
+
       before do
-        allow(config).to receive(:db).and_return(double(:config_db))
-        allow(DBMigrator).to receive(:new).with(config.db, :director).and_return(migrator)
+        allow(config).to receive(:db).and_return(db)
+
+        allow(DBMigrator).to receive(:new).with(db).and_return(db_migrator)
       end
 
       it 'starts up immediately if migrations have finished' do
-        allow(migrator).to receive(:finished?).and_return(true)
+        allow(db_migrator).to receive(:finished?).and_return(true)
         expect(sync_dns_scheduler).to receive(:ensure_migrations)
         expect { sync_dns_scheduler.prep }.not_to raise_error
       end
@@ -45,7 +44,7 @@ module Bosh::Director
       it 'raises error if migrations never finish' do
         logger = double(Logging::Logger)
         allow(config).to receive(:sync_dns_scheduler_logger).and_return(logger.tap { |l| allow(l).to receive(:error) })
-        allow(migrator).to receive(:finished?).and_return(false)
+        allow(db_migrator).to receive(:finished?).and_return(false)
 
         expect(logger).to receive(:error).with(
           /Migrations not current during sync dns scheduler start after #{DBMigrator::MAX_MIGRATION_ATTEMPTS} attempts./,

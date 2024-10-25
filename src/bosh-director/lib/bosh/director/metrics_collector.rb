@@ -73,7 +73,7 @@ module Bosh
                 'Cowardly refusing to start metrics collector.'
         end
 
-        migrator = DBMigrator.new(@config.db, :director)
+        migrator = DBMigrator.new(@config.db)
         unless migrator.finished?
           @logger.error(
             "Migrations not current during metrics collector start after #{DBMigrator::MAX_MIGRATION_ATTEMPTS} attempts.",
