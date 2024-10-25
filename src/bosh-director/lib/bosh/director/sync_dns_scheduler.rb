@@ -12,7 +12,6 @@ module Bosh::Director
     def prep
       ensure_migrations
 
-      require 'bosh/director'
       Bosh::Director::App.new(@config)
 
       @dns_version_converger = Bosh::Director::DnsVersionConverger.new(
@@ -45,19 +44,17 @@ module Bosh::Director
 
     def ensure_migrations
       if defined?(Bosh::Director::Models)
-        raise 'Bosh::Director::Models were loaded before ensuring migrations are current. '\
-              'Cowardly refusing to start sync dns scheduler.'
+        raise "Bosh::Director::Models loaded before ensuring migrations are current. Refusing to start #{self.class}."
       end
 
-      migrator = DBMigrator.new(@config.db)
-      raise_migration_error unless migrator.finished?
-    end
+      begin
+        DBMigrator.new(@config.db).ensure_migrated!
+      rescue DBMigrator::MigrationsNotCurrentError => e
+        @config.sync_dns_scheduler_logger.error("#{self.class} start failed: #{e.message}")
+        raise e
+      end
 
-    def raise_migration_error
-      @config.sync_dns_scheduler_logger.error(
-        "Migrations not current during sync dns scheduler start after #{DBMigrator::MAX_MIGRATION_ATTEMPTS} attempts.",
-      )
-      raise "Migrations not current during sync dns scheduler start after #{DBMigrator::MAX_MIGRATION_ATTEMPTS} retries"
+      require 'bosh/director'
     end
 
     def broadcast

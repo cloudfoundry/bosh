@@ -4,6 +4,8 @@ class DBMigrator
   MAX_MIGRATION_ATTEMPTS = 50
   MIGRATIONS_DIR = File.expand_path('../../db/migrations/director', __FILE__)
 
+  class MigrationsNotCurrentError < RuntimeError; end
+
   Sequel.extension :migration
 
   def initialize(database, options = {}, retry_interval = 0.5)
@@ -21,6 +23,11 @@ class DBMigrator
 
   def migrate
     @migrator.run
+  end
+
+  def ensure_migrated!
+    finished? ||
+      raise(MigrationsNotCurrentError.new("Migrations not current after #{MAX_MIGRATION_ATTEMPTS} retries"))
   end
 
   def finished?

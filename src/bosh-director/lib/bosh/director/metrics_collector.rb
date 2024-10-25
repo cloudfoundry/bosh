@@ -47,6 +47,7 @@ module Bosh
 
       def prep
         ensure_migrations
+
         Bosh::Director::App.new(@config)
       end
 
@@ -69,16 +70,14 @@ module Bosh
 
       def ensure_migrations
         if defined?(Bosh::Director::Models)
-          raise 'Bosh::Director::Models were loaded before ensuring migrations are current. ' \
-                'Cowardly refusing to start metrics collector.'
+          raise "Bosh::Director::Models loaded before ensuring migrations are current. Refusing to start #{self.class}."
         end
 
-        migrator = DBMigrator.new(@config.db)
-        unless migrator.finished?
-          @logger.error(
-            "Migrations not current during metrics collector start after #{DBMigrator::MAX_MIGRATION_ATTEMPTS} attempts.",
-          )
-          raise "Migrations not current after #{DBMigrator::MAX_MIGRATION_ATTEMPTS} retries"
+        begin
+          DBMigrator.new(@config.db).ensure_migrated!
+        rescue DBMigrator::MigrationsNotCurrentError => e
+          @logger.error("#{self.class} start failed: #{e.message}")
+          raise e
         end
 
         require 'bosh/director'
