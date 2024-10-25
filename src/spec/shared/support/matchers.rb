@@ -1,5 +1,11 @@
 module Support
   RSpec::Matchers.define :match_output do |expected|
+    def strip_heredoc(str)
+      min = str.scan(/^[ \t]*(?=\S)/).min || ''
+      indent = min.size || 0
+      str.gsub(/^[ \t]{#{indent}}/, '')
+    end
+
     match do |actual|
       @actual = actual.strip
       @expected = strip_heredoc(expected).strip

@@ -68,8 +68,7 @@ describe 'basic functionality', type: :integration do
   end
 
   it 'outputs properly formatted deploy information' do
-    # We need to keep this test since the output is not tested and
-    # keeps breaking.
+    # We need to keep this test since the output is not tested and keeps breaking.
 
     manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['instances'] = 1
@@ -77,14 +76,8 @@ describe 'basic functionality', type: :integration do
     output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
 
     duration_regex = '\\d\\d:\\d\\d:\\d\\d'
-    step_duration_regex = '\\(' + duration_regex + '\\)'
     date_regex = '\\d\\d:\\d\\d:\\d\\d'
-    sha_regex = '[0-9a-z]+'
-    task_regex = '\\d+'
-    uuid_regex = '[0-9a-f]{8}-[0-9a-f-]{27}'
-
-    # order for creating missing vms is not guaranteed (running in parallel)
-    expect(output).to match(strip_heredoc(<<~OUT))
+    expected_output = <<~EXPECTED_OUTPUT.strip
       #{date_regex} | Preparing deployment: Preparing deployment (#{duration_regex})
       #{date_regex} | Preparing deployment: Rendering templates (#{duration_regex})
       #{date_regex} | Preparing package compilation: Finding packages to compile (#{duration_regex})
@@ -92,7 +85,10 @@ describe 'basic functionality', type: :integration do
       #{date_regex} | Compiling packages: bar/f1267e1d4e06b60c91ef648fb9242e33ddcffa73 (#{duration_regex})
       #{date_regex} | Creating missing vms: foobar/82a2b496-35f7-4c82-8f6a-9f70af106798 (0) (#{duration_regex})
       #{date_regex} | Updating job foobar: foobar/82a2b496-35f7-4c82-8f6a-9f70af106798 (0) (canary) (#{duration_regex})
-    OUT
+    EXPECTED_OUTPUT
+
+    # order for creating missing vms is not guaranteed (running in parallel)
+    expect(output).to match(expected_output)
   end
 
   it 'saves instance name, deployment name, az, and id to the file system on the instance' do
