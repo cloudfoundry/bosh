@@ -50,7 +50,6 @@ describe 'health_monitor: 1', type: :integration, hm: true do
     resurrected_instance = director.wait_for_vm('ig_with_jobs_having_prestart_scripts', '0', 300, deployment_name: 'simple')
     expect(resurrected_instance.vm_cid).to_not eq(original_instance.vm_cid)
 
-    waiter = Bosh::Spec::Waiter.new(logger)
     waiter.wait(50) do
       agent_id = resurrected_instance.agent_id
 
