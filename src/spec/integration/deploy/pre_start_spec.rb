@@ -86,16 +86,16 @@ describe 'pre-start scripts', type: :integration do
     job_1_stdout = File.read(File.join(log_path, '/job_1_with_pre_start_script/pre-start.stdout.log'))
     job_1_stderr = File.read(File.join(log_path, '/job_1_with_pre_start_script/pre-start.stderr.log'))
 
-    expect(job_1_stdout).to match_output '
-    message on stdout of job 1 pre-start script
-    template interpolation works in this script: this is pre_start_message_1
-    message on stdout of job 1 new version pre-start script
-  '
+    expect(job_1_stdout).to include <<~OUTPUT.strip
+      message on stdout of job 1 pre-start script
+      template interpolation works in this script: this is pre_start_message_1
+      message on stdout of job 1 new version pre-start script
+    OUTPUT
 
-    expect(job_1_stderr).to match_output '
-    message on stderr of job 1 pre-start script
-    message on stderr of job 1 new version pre-start script
-  '
+    expect(job_1_stderr).to include <<~OUTPUT.strip
+      message on stderr of job 1 pre-start script
+      message on stderr of job 1 new version pre-start script
+    OUTPUT
   end
 
   context 'when the pre-start scripts are corrupted' do

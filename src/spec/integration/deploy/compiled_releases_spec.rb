@@ -159,7 +159,7 @@ describe 'compiled releases', type: :integration do
           )
           expect(out).to include('Error:')
 
-          expect(out).to match_output <<~OUTPUT.strip
+          expect(out).to include <<~OUTPUT.strip
             Can't use release 'test_release/1'. It references packages without source code and are not compiled against stemcell 'ubuntu-stemcell/1':
              - 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f'
              - 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154'
@@ -182,13 +182,13 @@ describe 'compiled releases', type: :integration do
             )
             expect(out).to include('Error:')
 
-            expect(out).to match_output <<~OUTPUT.strip
+            expect(out).to include <<~OUTPUT.strip
               Can't use release 'test_release/1'. It references packages without source code and are not compiled against stemcell 'ubuntu-stemcell/1':
                - 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f'
                - 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154'
             OUTPUT
 
-            expect(out).to match_output <<~OUTPUT.strip
+            expect(out).to include <<~OUTPUT.strip
               Can't use release 'test_release_a/1'. It references packages without source code and are not compiled against stemcell 'ubuntu-stemcell/1':
                - 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f'
                - 'pkg_2/f5c1c303c2308404983cf1e7566ddc0a22a22154'

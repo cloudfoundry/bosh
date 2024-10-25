@@ -72,21 +72,18 @@ describe 'cli: cloudcheck', type: :integration do
 
       it 'deletes missing VM reference' do
         delete_vm_reference = 4
-        expect(
-          scrub_randoms(
-            runner.run(
-              'cloud-check --report',
-              deployment_name: 'simple',
-              failure_expected: true,
-            ),
-          ),
-        ).to match_output %(
+        pre_cck_output =
+          scrub_randoms(runner.run('cloud-check --report', deployment_name: 'simple', failure_expected: true))
+        expect(pre_cck_output).to include  <<~OUTPUT.strip
 1  missing_vm  VM for 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (x)' with cloud ID 'xxx' missing.
-        )
+        OUTPUT
+
         bosh_run_cck_with_resolution(1, delete_vm_reference)
-        output = scrub_randoms(runner.run('cloud-check --report', deployment_name: 'simple', failure_expected: true))
-        expect(output).to include("missing_vm  VM for 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (x)' missing.")
-        expect(output).to include('1 problems')
+
+        post_cck_output =
+          scrub_randoms(runner.run('cloud-check --report', deployment_name: 'simple', failure_expected: true))
+        expect(post_cck_output).to include("missing_vm  VM for 'foobar/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (x)' missing.")
+        expect(post_cck_output).to include('1 problems')
       end
     end
   end
