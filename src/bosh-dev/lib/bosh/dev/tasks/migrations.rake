@@ -58,7 +58,7 @@ EOF
     digest_migration_json = JSON.parse(File.read(migration_digests))
     if digest_migration_json[name] != nil
       puts '
-        YOU ARE MODIFIFYING A DB MIGRATION DIGEST.
+        YOU ARE MODIFYING A DB MIGRATION DIGEST.
         IF THIS MIGRATION HAS ALREADY BEEN RELEASED, IT MIGHT RESULT IN UNDESIRABLE BEHAVIOR.
         YOU HAVE BEEN WARNED.
         '
