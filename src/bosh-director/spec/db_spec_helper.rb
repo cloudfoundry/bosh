@@ -11,9 +11,11 @@ require 'sequel'
 require 'logging'
 require 'securerandom'
 
-require 'bosh/dev/db/db_helper'
 require 'bosh/director/config'
+
 require 'db_migrator'
+
+require 'bosh/dev/db/db_helper'
 
 module DBSpecHelper
   class << self
@@ -22,26 +24,28 @@ module DBSpecHelper
     def init
       @director_migrations_dir = File.join(BOSH_DIRECTOR_ROOT, 'db', 'migrations', 'director')
       @director_migrations_digest_file  = File.join(BOSH_DIRECTOR_ROOT, 'db',  'migrations', 'migration_digests.json')
-
-      Sequel.extension :migration
     end
 
     def connect_database
-      db_name = "#{SecureRandom.uuid.delete('-')}_director"
       init_logger = Logging::Logger.new('TestLogger')
 
+      db_type = ENV.fetch('DB', 'sqlite')
+
       db_options = {
+        name: "#{SecureRandom.uuid.delete('-')}_director",
         username: ENV['DB_USER'],
         password: ENV['DB_PASSWORD'],
-        host: ENV['DB_HOST'] || '127.0.0.1',
-      }.compact
+        host: ENV['DB_HOST'],
+        port: ENV['DB_PORT'],
+      }
 
-      @db_helper = Bosh::Dev::DB::DBHelper.build(db_type: ENV.fetch('DB', 'sqlite'), db_options: db_options, logger: init_logger)
+      @db_helper =
+        Bosh::Dev::DB::DBHelper.build(db_type: db_type, db_options: db_options, logger: init_logger)
 
       @db_helper.create_db
 
       Sequel.default_timezone = :utc
-      @db = Sequel.connect(@db_helper.connection_string, max_connections: 32, pool_timeout: 10, timeout: 10)
+      @db = Sequel.connect(@db_helper.connection_string, max_connections: 32, pool_timeout: 10)
     end
 
     def disconnect_database

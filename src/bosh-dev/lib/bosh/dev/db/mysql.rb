@@ -12,7 +12,7 @@ module Bosh::Dev::DB
 
       @username = db_options.fetch(:username, 'root')
       @password = db_options.fetch(:password, DEFAULT_PASSWORD)
-      @host = db_options.fetch(:host, 'localhost')
+      @host = db_options.fetch(:host, '127.0.0.1')
       @port = db_options.fetch(:port, 3306)
       @ca_path = db_options.fetch(:ca_path, nil)
     end

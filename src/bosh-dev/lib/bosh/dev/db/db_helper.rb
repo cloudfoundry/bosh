@@ -20,7 +20,9 @@ module Bosh::Dev::DB
     end
 
     def self.build(db_type:, db_options:, logger:)
-      db_handler =
+      db_options.compact!
+
+      db_handler = # TODO: use sub-class here instead of delegating everything to @db_handler
         case db_type
         when 'mysql'
           require 'bosh/dev/db/mysql'

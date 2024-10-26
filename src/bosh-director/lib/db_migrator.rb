@@ -1,6 +1,7 @@
 require 'sequel'
 
 class DBMigrator
+  DEFAULT_RETRY_INTERVAL = 0.5
   MAX_MIGRATION_ATTEMPTS = 50
   MIGRATIONS_DIR = File.expand_path('../../db/migrations/director', __FILE__)
 
@@ -8,21 +9,20 @@ class DBMigrator
 
   Sequel.extension :migration
 
-  def initialize(database, options = {}, retry_interval = 0.5)
+  def initialize(database, options = {}, retry_interval = DEFAULT_RETRY_INTERVAL)
     return unless database && File.directory?(MIGRATIONS_DIR)
 
-    @migrator = Sequel::TimestampMigrator.new(database, MIGRATIONS_DIR, options)
     @database = database
     @options = options
     @retry_interval = retry_interval
   end
 
   def current?
-    @migrator.is_current?
+    Sequel::Migrator.is_current?(@database, MIGRATIONS_DIR)
   end
 
   def migrate
-    @migrator.run
+    Sequel::Migrator.apply(@database, MIGRATIONS_DIR, @options[:target], @options[:current])
   end
 
   def ensure_migrated!

@@ -16,6 +16,9 @@ require 'webmock/rspec'
 require 'minitar'
 require 'factory_bot'
 require 'support/buffered_logger'
+
+require 'db_migrator'
+
 require 'bosh/dev/db/db_helper'
 
 Dir.glob(File.expand_path('support/**/*.rb', __dir__)).each { |f| require(f) }
@@ -79,82 +82,66 @@ module SpecHelper
     end
 
     def init_database
-      db_name = "#{SecureRandom.uuid.delete('-')}_director"
-      connection_string = ENV['DB_URI']
-      db_options = {}
-
-      if !connection_string
-        db_options.merge!({
-          username: ENV['DB_USER'],
-          password: ENV['DB_PASSWORD'],
-          host: ENV['DB_HOST'] || '127.0.0.1',
-          port: ENV['DB_PORT'],
-        }.compact)
-      else
-        uri = URI.parse(connection_string)
-        db_options.merge!({
-          username: uri.user,
-          password: uri.password,
-          host: uri.host,
-          port: uri.port,
-        }.compact)
-      end
-
-      @db_helper = Bosh::Dev::DB::DBHelper.build(db_type: ENV.fetch('DB', 'sqlite'), db_options: db_options, logger: @init_logger)
-
-      @db_helper.create_db
-
-      @director_migrations = File.expand_path('../db/migrations/director', __dir__)
-      Sequel.extension :migration
-
       connect_database
 
-      Sequel::Deprecation.output = false
+      @db.loggers << (logger || @init_logger)
+      @db.log_connection_info = true
+      Bosh::Director::Config.db = @db
+
       Delayed::Worker.backend = :sequel
-      Sequel::Deprecation.output = $stderr
 
       run_migrations
     end
 
     def connect_database
-      db_opts = { max_connections: 32, pool_timeout: 10 }
+      db_type = ENV.fetch('DB', 'sqlite')
+
+      db_options = {
+        name: "#{SecureRandom.uuid.delete('-')}_director",
+        username: ENV['DB_USER'],
+        password: ENV['DB_PASSWORD'],
+        host: ENV['DB_HOST'],
+        port: ENV['DB_PORT'],
+      }
+
+      @db_helper =
+        Bosh::Dev::DB::DBHelper.build(db_type: db_type, db_options: db_options, logger: @init_logger)
+
+      @db_helper.create_db
 
       Sequel.default_timezone = :utc
-      @director_db = Sequel.connect(@db_helper.connection_string, db_opts)
-      @director_db.loggers << (logger || @init_logger)
-      @director_db.log_connection_info = true
-      Bosh::Director::Config.db = @director_db
+      @db = Sequel.connect(@db_helper.connection_string, max_connections: 32, pool_timeout: 10)
     end
 
     def disconnect_database
-      if @director_db
-        @director_db.disconnect
+      if @db
+        @db.disconnect
         @db_helper.drop_db
 
-        @director_db = nil
+        @db = nil
         @db_helper = nil
       end
     end
 
     def run_migrations
-      Sequel::Migrator.apply(@director_db, @director_migrations, nil)
+      DBMigrator.new(@db).migrate
     end
 
     def setup_datasets
       Bosh::Director::Models.constants.each do |e|
         c = Bosh::Director::Models.const_get(e)
-        c.dataset = @director_db[c.simple_table.gsub(/[`"]/, '').to_sym] if c.is_a?(Class) && c.ancestors.include?(Sequel::Model)
+        c.dataset = @db[c.simple_table.gsub(/[`"]/, '').to_sym] if c.is_a?(Class) && c.ancestors.include?(Sequel::Model)
       end
 
       Delayed::Backend::Sequel.constants.each do |e|
         c = Delayed::Backend::Sequel.const_get(e)
-        c.dataset = @director_db[c.simple_table.gsub(/[`"]/, '').to_sym] if c.is_a?(Class) && c.ancestors.include?(Sequel::Model)
+        c.dataset = @db[c.simple_table.gsub(/[`"]/, '').to_sym] if c.is_a?(Class) && c.ancestors.include?(Sequel::Model)
       end
     end
 
     def reset(logger)
       Bosh::Director::Config.clear
-      Bosh::Director::Config.db = @director_db
+      Bosh::Director::Config.db = @db
       Bosh::Director::Config.logger = logger
       Bosh::Director::Config.trusted_certs = ''
       Bosh::Director::Config.max_threads = 1
@@ -164,7 +151,7 @@ module SpecHelper
       if example.metadata[:truncation] && ENV.fetch('DB', 'sqlite') != 'sqlite'
         example.run
       else
-        Sequel.transaction([@director_db], rollback: :always, auto_savepoint: true) do
+        Sequel.transaction([@db], rollback: :always, auto_savepoint: true) do
           example.run
         end
       end
