@@ -12,18 +12,21 @@ namespace :migrations do
 
       puts "Creating #{new_migration_spec_path}"
       File.write new_migration_spec_path, <<EOF
-require_relative '../../../../db_spec_helper'
+require 'db_spec_helper'
 
 module Bosh::Director
-  describe '#{File.basename(new_migration_path)}' do
-    let(:db) {DBSpecHelper.db}
+  RSpec.describe '#{File.basename(new_migration_path)}' do
+    let(:db) { DBSpecHelper.db }
 
-    before do
-      DBSpecHelper.migrate_all_before(subject)
+    before { DBSpecHelper.migrate_all_before(subject) }
+
+    it 'TODO: describe what it does' do
+      # PRE_MIGRATION expectation(s0
+
       DBSpecHelper.migrate(subject)
-    end
 
-    # TODO
+      # POST_MIGRATION expectation(s0
+    end
   end
 end
 EOF
@@ -31,7 +34,7 @@ EOF
       puts "Creating #{new_migration_path}"
       File.write new_migration_path, <<EOF
 Sequel.migration do
-  up do
+  change do
     # TODO https://github.com/jeremyevans/sequel/blob/master/doc/migration.rdoc
   end
 end
