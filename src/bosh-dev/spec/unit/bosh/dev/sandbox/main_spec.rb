@@ -10,7 +10,7 @@ module Bosh::Dev::Sandbox
       allow(uaa).to receive(:reconfigure)
     end
 
-    subject(:sandbox) { Main.new({}, nil, 0) }
+    subject(:sandbox) { Main.new({type: 'sqlite'}, nil, 0) }
 
     describe '#run' do
       before do
