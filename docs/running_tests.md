@@ -23,7 +23,7 @@ bosh/src/bosh-director$ bundle exec rspec
 
 For components like BOSH's director you can specify the database connection via environment variables. If none are given, `sqlite` will be used.
 
-- `DB`: Pick between `postgresql`, `sqlite` and `mysql`.
+- `DB`: Pick between `postgresql`, `mysql` or , `sqlite`.
 - `DB_HOST`: Default is `127.0.0.1`.
 - `DB_USER`: Default is `root` for MySQL and `postgres` for PostgreSQL.
 - `DB_PASSWORD`: Default is `password` for MySQL and none for PostgreSQL.
