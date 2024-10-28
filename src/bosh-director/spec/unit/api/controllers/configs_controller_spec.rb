@@ -7,15 +7,16 @@ module Bosh::Director
     include Rack::Test::Methods
 
     subject(:app) { Api::Controllers::ConfigsController.new(config) }
-    let(:config) do
-      config = Config.load_hash(SpecHelper.spec_get_director_config)
-      identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)
-      allow(config).to receive(:identity_provider).and_return(identity_provider)
-      config
-    end
+
+    let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
+    let(:identity_provider) { Support::TestIdentityProvider.new(config.get_uuid_provider) }
 
     let(:config_name) { 'my-name' }
     let(:config_type) { 'some-type' }
+
+    before do
+      allow(config).to receive(:identity_provider).and_return(identity_provider)
+    end
 
     describe 'GET', '/' do
       context 'with authenticated admin user' do
