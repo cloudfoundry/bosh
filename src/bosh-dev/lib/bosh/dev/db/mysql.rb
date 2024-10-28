@@ -31,16 +31,6 @@ module Bosh::Dev::DB
       execute_sql(%Q(DROP DATABASE `#{db_name}`;), nil)
     end
 
-    def load_db_initial_state(initial_state_assets_dir)
-      sql_dump_path = File.join(initial_state_assets_dir, 'mysql_db_snapshot.sql')
-      load_db(sql_dump_path)
-    end
-
-    def load_db(dump_file_path)
-      @logger.info("Loading dump '#{dump_file_path}' into mysql database #{db_name}")
-      run_quietly_redacted(%Q(#{mysql_cmd} #{db_name} < #{dump_file_path}))
-    end
-
     def current_tasks
       task_lines = sql_results_for(%Q(SELECT description, output FROM TASKS WHERE state='processing';))
 

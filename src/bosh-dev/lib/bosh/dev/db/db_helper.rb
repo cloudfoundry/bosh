@@ -82,14 +82,6 @@ module Bosh::Dev::DB
       @db_handler.drop_db
     end
 
-    def load_db_initial_state(initial_state_assets_dir)
-      @db_handler.load_db_initial_state(initial_state_assets_dir)
-    end
-
-    def load_db(dump_file_path)
-      @db_handler.load_db(dump_file_path)
-    end
-
     def current_tasks
       @db_handler.current_tasks
     end

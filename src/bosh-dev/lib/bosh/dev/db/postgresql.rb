@@ -58,16 +58,6 @@ module Bosh::Dev::DB
       execute_sql("\\d+ public.*")
     end
 
-    def load_db_initial_state(initial_state_assets_dir)
-      sql_dump_path = File.join(initial_state_assets_dir, 'postgres_db_snapshot.sql')
-      load_db(sql_dump_path)
-    end
-
-    def load_db(dump_file_path)
-      @logger.info("Loading dump #{dump_file_path} into postgres database #{db_name}")
-      DBHelper.run_command(%(psql #{connection_string} < #{dump_file_path}))
-    end
-
     def current_tasks
       tasks_list_cmd = %{
         SELECT description, output

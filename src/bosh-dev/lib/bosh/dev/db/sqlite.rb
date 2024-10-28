@@ -32,14 +32,6 @@ module Bosh::Dev::DB
       DBHelper.run_command("rm #{@db_name}")
     end
 
-    def load_db_initial_state(_initial_state_assets_dir)
-      raise '"#load_db_initial_state" not supported for sqlite'
-    end
-
-    def load_db(_dump_file_path)
-      raise '"#load_db" not supported for sqlite'
-    end
-
     def current_tasks
       raise '"#current_tasks" not supported for sqlite'
     end
