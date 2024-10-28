@@ -1,12 +1,26 @@
 require 'yaml'
-require 'pg'
-require 'bosh/director/config'
 
 module Bosh::Dev
   class PostgresVersion
     class << self
+      def ensure_version_match!(env_db)
+        return unless env_db == 'postgresql'
+
+        unless local_major_version == release_major_version
+          raise "Postgres major version mismatch: jobs/postgres?spec.yml: #{local_version}; local: #{release_version}."
+        end
+      end
+
+      def local_major_version
+        local_version.split('.')[0]
+      end
+
       def local_version
         `postgres --version`.chomp.split(' ').last
+      end
+
+      def release_major_version
+        release_version.split('.')[0]
       end
 
       def release_version
