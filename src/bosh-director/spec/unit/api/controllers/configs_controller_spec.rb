@@ -1132,8 +1132,7 @@ module Bosh::Director
               JSON.generate('name' => config_name, 'type' => config_type, 'content' => 'a: 123'),
               'CONTENT_TYPE' => 'application/json',
             )
-          end.to change(Bosh::Director::Models::Config, :count).from(2).to(3)
-          expect(Bosh::Director::Models::Config.all[2][:team_id]).to eq(dev_team.id)
+          end.to change { Bosh::Director::Models::Config.filter(team_id: dev_team.id).count }.from(1).to(2)
         end
 
         it 'deletes the config' do
