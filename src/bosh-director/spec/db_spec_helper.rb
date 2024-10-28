@@ -29,9 +29,8 @@ module DBSpecHelper
     def connect_database
       init_logger = Logging::Logger.new('TestLogger')
 
-      db_type = ENV.fetch('DB', 'sqlite')
-
       db_options = {
+        type: ENV.fetch('DB', 'sqlite'),
         name: "#{SecureRandom.uuid.delete('-')}_director",
         username: ENV['DB_USER'],
         password: ENV['DB_PASSWORD'],
@@ -40,7 +39,7 @@ module DBSpecHelper
       }
 
       @db_helper =
-        Bosh::Dev::DB::DBHelper.build(db_type: db_type, db_options: db_options, logger: init_logger)
+        Bosh::Dev::DB::DBHelper.build(db_options: db_options, logger: init_logger)
 
       @db_helper.create_db
 

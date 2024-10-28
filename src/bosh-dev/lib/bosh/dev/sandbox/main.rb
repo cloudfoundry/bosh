@@ -487,11 +487,7 @@ module Bosh::Dev::Sandbox
         begin
           db_options = db_config.dup
           db_options[:name] = @name
-          Bosh::Dev::DB::DBHelper.build(
-            db_type: db_options[:type],
-            db_options: db_options,
-            logger: @logger,
-          )
+          Bosh::Dev::DB::DBHelper.build(db_options: db_options, logger: @logger)
         end
     end
 

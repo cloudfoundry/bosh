@@ -9,18 +9,20 @@ class RakeDbHelper
   def self.prepared_db_helper
     director_config = {
       'db' => {
-        'database' => 'director_latest_tmp',
         'adapter' => db_adapter,
+        'database' => 'director_latest_tmp',
       },
       'cloud' => {}
     }
 
+    db_options = {
+      type: director_config['db']['adapter'],
+      name: director_config['db']['database'],
+      username: director_config['db']['user'],
+    }
+
     db_helper =
-      Bosh::Dev::DB::DBHelper.build(
-        db_type: director_config['db']['adapter'],
-        db_options: { name: director_config['db']['database'], username: director_config['db']['user'] },
-        logger: Logging.logger(STDOUT),
-      )
+      Bosh::Dev::DB::DBHelper.build(db_options: db_options, logger: Logging.logger(STDOUT))
     db_helper.drop_db
     db_helper.create_db
 

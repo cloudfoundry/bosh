@@ -19,8 +19,10 @@ module Bosh::Dev::DB
       lines
     end
 
-    def self.build(db_type:, db_options:, logger:)
+    def self.build(db_options:, logger:)
       db_options.compact!
+
+      db_type = db_options.delete(:type)
 
       db_handler = # TODO: use sub-class here instead of delegating everything to @db_handler
         case db_type
