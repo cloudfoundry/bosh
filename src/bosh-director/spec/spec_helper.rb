@@ -104,8 +104,9 @@ module SpecHelper
       }
 
       @db_helper =
-        Bosh::Dev::DB::DBHelper.build(db_options: db_options, logger: @init_logger)
+        Bosh::Dev::DB::DBHelper.build(db_options: db_options)
 
+      @init_logger.info("Create database '#{@db_helper.connection_string}'")
       @db_helper.create_db
 
       Sequel.default_timezone = :utc
@@ -115,6 +116,7 @@ module SpecHelper
     def disconnect_database
       if @db
         @db.disconnect
+        @init_logger.info("Drop database '#{@db_helper.connection_string}'")
         @db_helper.drop_db
 
         @db = nil
@@ -159,6 +161,7 @@ module SpecHelper
 
       return unless example.metadata[:truncation]
 
+      @init_logger.info("Truncating database '#{@db_helper.connection_string}'")
       @db_helper.truncate_db
     end
   end

@@ -10,7 +10,7 @@ module Bosh::Dev::Sandbox
     DIRECTOR_PATH = File.join(Bosh::Dev::RELEASE_SRC_DIR, 'bosh-director')
 
     def initialize(options, logger)
-      @database = options[:database]
+      @db_helper = options[:db_helper]
       @logger = logger
       @director_tmp_path = options[:director_tmp_path]
       @director_config = options[:director_config]
@@ -82,7 +82,7 @@ module Bosh::Dev::Sandbox
     end
 
     def print_current_tasks
-      @database.current_tasks.each do |current_task|
+      @db_helper.current_tasks.each do |current_task|
         @logger.error("#{DEBUG_HEADER} Current task '#{current_task[:description]}' #{DEBUG_HEADER}:")
         @logger.error(File.read(File.join(current_task[:output], 'debug')))
         @logger.error("#{DEBUG_HEADER} End of task '#{current_task[:description]}' #{DEBUG_HEADER}:")
@@ -99,7 +99,7 @@ module Bosh::Dev::Sandbox
       until delayed_job_done?
         if attempt > max_attempts
           @logger.error("Delayed Job queue failed to drain in #{timeout} seconds}")
-          @database.current_tasks.each do |current_task|
+          @db_helper.current_tasks.each do |current_task|
             @logger.error("#{DEBUG_HEADER} Current task '#{current_task[:description]}' #{DEBUG_HEADER}:")
             @logger.error(File.read(File.join(current_task[:output], 'debug')))
             @logger.error("#{DEBUG_HEADER} End of task '#{current_task[:description]}' #{DEBUG_HEADER}:")
@@ -238,7 +238,7 @@ module Bosh::Dev::Sandbox
     end
 
     def delayed_job_done?
-      @database.current_locked_jobs.count.zero?
+      @db_helper.current_locked_jobs.count.zero?
     end
 
     DEBUG_HEADER = '*' * 20

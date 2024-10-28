@@ -105,13 +105,13 @@ module Bosh::Dev::Sandbox
         ca_path: File.join(Bosh::Dev::ASSETS_DIR, 'database', 'rootCA.pem')
       }.merge(db_opts)
 
-      setup_database(@db_config)
+      setup_db_helper(@db_config)
 
       director_config_path = sandbox_path(DirectorService::DEFAULT_DIRECTOR_CONFIG)
       director_tmp_path = sandbox_path('boshdir')
       @director_service = DirectorService.new(
         {
-          database: @database,
+          db_helper: @db_helper,
           director_port: director_ruby_port,
           base_log_path: base_log_path,
           director_tmp_path: director_tmp_path,
@@ -172,7 +172,7 @@ module Bosh::Dev::Sandbox
       @nats_process.start
       @nats_socket_connector.try_to_connect
 
-      @database.create_db
+      @db_helper.create_db
 
       @config_server_service.start(@with_config_server_trusted_certs) if @config_server_enabled
 
@@ -193,7 +193,7 @@ module Bosh::Dev::Sandbox
         blobstore_storage_dir: blobstore_storage_dir,
         cloud_storage_dir: cloud_storage_dir,
         config_server_enabled: @config_server_enabled,
-        database: @database,
+        database: @db_helper,
         default_update_vm_strategy: @default_update_vm_strategy,
         director_fix_stateful_nodes: @director_fix_stateful_nodes,
         director_ips: @director_ips,
@@ -261,7 +261,7 @@ module Bosh::Dev::Sandbox
 
       @config_server_service.stop
 
-      @database.drop_db
+      @db_helper.drop_db
 
       @sandbox_log_file.close unless @sandbox_log_file == STDOUT
 
@@ -338,7 +338,7 @@ module Bosh::Dev::Sandbox
       @nats_url = "nats://localhost:#{nats_port}"
       @cpi.options['nats'] = @nats_url
 
-      setup_database(@db_config)
+      setup_db_helper(@db_config)
     end
 
     def certificate_path
@@ -445,8 +445,10 @@ module Bosh::Dev::Sandbox
     end
 
     def clean_up_database
-      @database.drop_db
-      @database.create_db
+      @logger.info("Drop database '#{@db_helper.connection_string}'")
+      @db_helper.drop_db
+      @logger.info("Create database '#{@db_helper.connection_string}'")
+      @db_helper.create_db
     end
 
     def setup_sandbox_root
@@ -482,12 +484,12 @@ module Bosh::Dev::Sandbox
       template.result(binding)
     end
 
-    def setup_database(db_config)
-      @database ||=
+    def setup_db_helper(db_config)
+      @db_helper ||=
         begin
           db_options = db_config.dup
           db_options[:name] = @name
-          Bosh::Dev::DB::DBHelper.build(db_options: db_options, logger: @logger)
+          Bosh::Dev::DB::DBHelper.build(db_options: db_options)
         end
     end
 

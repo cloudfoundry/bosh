@@ -5,10 +5,9 @@ module Bosh::Dev::DB
     DEFAULT_PASSWORD = ( /darwin/ =~ RUBY_PLATFORM) ? '' : 'password'
     attr_reader :db_name, :username, :password, :adapter, :port, :host
 
-    def initialize(db_options:, logger:)
+    def initialize(db_options:)
       @adapter = 'mysql2'
       @db_name = db_options[:name]
-      @logger = logger
 
       @username = db_options.fetch(:username, 'root')
       @password = db_options.fetch(:password, DEFAULT_PASSWORD)
@@ -21,12 +20,10 @@ module Bosh::Dev::DB
     end
 
     def create_db
-      @logger.info("Creating mysql database #{db_name}")
       execute_sql(%Q(CREATE DATABASE `#{db_name}`;), nil)
     end
 
     def drop_db
-      @logger.info("Dropping mysql database #{db_name}")
       execute_sql(%Q(DROP DATABASE `#{db_name}`;), nil)
     end
 
@@ -47,7 +44,6 @@ module Bosh::Dev::DB
     end
 
     def truncate_db
-      @logger.info("Truncating mysql database #{db_name}")
       table_names = sql_results_for(%Q(SHOW TABLES))
       table_names.reject! { |name| name =~ /schema_migrations/ }
       truncate_cmds = table_names.map { |name| %Q(TRUNCATE TABLE `#{name.strip}`;) }

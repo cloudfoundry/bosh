@@ -39,7 +39,8 @@ module DBSpecHelper
       }
 
       @db_helper =
-        Bosh::Dev::DB::DBHelper.build(db_options: db_options, logger: init_logger)
+        Bosh::Dev::DB::DBHelper.build(db_options: db_options)
+
 
       @db_helper.create_db
 

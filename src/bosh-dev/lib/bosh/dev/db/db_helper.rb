@@ -19,7 +19,7 @@ module Bosh::Dev::DB
       lines
     end
 
-    def self.build(db_options:, logger:)
+    def self.build(db_options:)
       db_options.compact!
 
       db_type = db_options.delete(:type)
@@ -28,13 +28,13 @@ module Bosh::Dev::DB
         case db_type
         when 'mysql'
           require 'bosh/dev/db/mysql'
-          Bosh::Dev::DB::Mysql.new(db_options: db_options, logger: logger)
+          Bosh::Dev::DB::Mysql.new(db_options: db_options)
         when 'postgresql'
           require 'bosh/dev/db/postgresql'
-          Bosh::Dev::DB::Postgresql.new(db_options: db_options, logger: logger)
+          Bosh::Dev::DB::Postgresql.new(db_options: db_options)
         when 'sqlite'
           require 'bosh/dev/db/sqlite'
-          Bosh::Dev::DB::Sqlite.new(db_options: db_options, logger: logger)
+          Bosh::Dev::DB::Sqlite.new(db_options: db_options)
         else
           raise "Unsupported DB value: #{db_type}"
         end

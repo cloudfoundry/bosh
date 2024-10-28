@@ -4,10 +4,9 @@ module Bosh::Dev::DB
   class Sqlite
     attr_reader :db_name, :username, :password, :port, :adapter, :host
 
-    def initialize(db_options:, logger:)
+    def initialize(db_options:)
       @adapter = 'sqlite'
       @db_name = create_db_file(db_options[:name])
-      @logger = logger
 
       @username = db_options.fetch(:username, nil)
       @password = db_options.fetch(:password, nil)
@@ -20,11 +19,9 @@ module Bosh::Dev::DB
     end
 
     def create_db
-      @logger.info("Creating sqlite database #{@db_name}")
     end
 
     def drop_db
-      @logger.info("Dropping sqlite database #{@db_name}")
       DBHelper.run_command("rm #{@db_name}")
     end
 
@@ -37,7 +34,6 @@ module Bosh::Dev::DB
     end
 
     def truncate_db
-      @logger.info("Truncating sqlite database #{@db_name}")
       DBHelper.run_command("sqlite3 #{@db_name} 'UPDATE sqlite_sequence SET seq = 0'")
     end
 

@@ -5,10 +5,9 @@ module Bosh::Dev::DB
   class Postgresql
     attr_reader :db_name, :username, :password, :adapter, :port, :host
 
-    def initialize(db_options:, logger:)
+    def initialize(db_options:)
       @adapter = 'postgres'
       @db_name = db_options[:name]
-      @logger = logger
 
       @username = db_options.fetch(:username, 'postgres')
       @password = db_options.fetch(:password, '')
@@ -22,12 +21,10 @@ module Bosh::Dev::DB
 
     # Assumes: login via psql w/o password
     def create_db
-      @logger.info("Creating postgres database #{db_name}")
       execute_sql(%(CREATE DATABASE "#{db_name}";), connection_string('postgres'))
     end
 
     def kill_connections
-      @logger.info("Killing connections to #{db_name}")
       execute_sql(
         %(
           SELECT pg_terminate_backend(pg_stat_activity.pid)
@@ -39,7 +36,6 @@ module Bosh::Dev::DB
 
     def drop_db
       kill_connections
-      @logger.info("Dropping postgres database #{db_name}")
       sql = %(
         REVOKE CONNECT ON DATABASE "#{db_name}" FROM public;
         DROP DATABASE "#{db_name}";
@@ -48,12 +44,10 @@ module Bosh::Dev::DB
     end
 
     def dump_db
-      @logger.info("Dumping postgres database schema for #{db_name}")
       DBHelper.run_command(%(pg_dump #{connection_string}))
     end
 
     def describe_db
-      @logger.info("Describing postgres database tables for #{db_name}")
       execute_sql("\\d+ public.*")
     end
 
@@ -84,8 +78,6 @@ module Bosh::Dev::DB
     end
 
     def truncate_db
-      @logger.info("Truncating postgres database #{db_name}")
-
       cmds = drop_constraints_cmds + clear_table_cmds + add_constraints_cmds
       execute_sql(cmds.join(';'))
     end
