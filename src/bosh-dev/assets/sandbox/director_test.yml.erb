@@ -30,7 +30,7 @@ db: &bosh_db
   tls:
     enabled: true
     cert:
-      ca: <%= database.ca_path %>
+      ca: <%= database_ca_path %>
       certificate: "/not-used/path/in/integration/tests"
       private_key: "/not-used/path/in/integration/tests"
     bosh_internal:

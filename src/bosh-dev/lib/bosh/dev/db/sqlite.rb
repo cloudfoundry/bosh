@@ -19,10 +19,6 @@ module Bosh::Dev::DB
       "sqlite://#{@db_name}"
     end
 
-    def ca_path
-      raise '"#ca_path" not supported for sqlite'
-    end
-
     def create_db
       @logger.info("Creating sqlite database #{@db_name}")
     end

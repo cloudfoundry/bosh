@@ -3,7 +3,7 @@ require 'bosh/dev'
 module Bosh::Dev::DB
   class Mysql
     DEFAULT_PASSWORD = ( /darwin/ =~ RUBY_PLATFORM) ? '' : 'password'
-    attr_reader :db_name, :username, :password, :adapter, :port, :host, :ca_path
+    attr_reader :db_name, :username, :password, :adapter, :port, :host
 
     def initialize(db_options:, logger:)
       @adapter = 'mysql2'
@@ -14,7 +14,6 @@ module Bosh::Dev::DB
       @password = db_options.fetch(:password, DEFAULT_PASSWORD)
       @host = db_options.fetch(:host, '127.0.0.1')
       @port = db_options.fetch(:port, 3306)
-      @ca_path = db_options.fetch(:ca_path, nil)
     end
 
     def connection_string(this_db_name = @db_name)

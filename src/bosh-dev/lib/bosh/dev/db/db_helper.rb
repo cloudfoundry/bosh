@@ -66,10 +66,6 @@ module Bosh::Dev::DB
       @db_handler.host
     end
 
-    def ca_path
-      @db_handler.ca_path
-    end
-
     def connection_string
       @db_handler.connection_string
     end

@@ -3,7 +3,7 @@ require 'shellwords'
 
 module Bosh::Dev::DB
   class Postgresql
-    attr_reader :db_name, :username, :password, :adapter, :port, :host, :ca_path
+    attr_reader :db_name, :username, :password, :adapter, :port, :host
 
     def initialize(db_options:, logger:)
       @adapter = 'postgres'
@@ -14,7 +14,6 @@ module Bosh::Dev::DB
       @password = db_options.fetch(:password, '')
       @host = db_options.fetch(:host, '127.0.0.1')
       @port = db_options.fetch(:port, 5432)
-      @ca_path = db_options.fetch(:ca_path, nil)
     end
 
     def connection_string(this_db_name = @db_name)

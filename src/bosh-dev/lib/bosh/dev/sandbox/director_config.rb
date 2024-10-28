@@ -2,6 +2,8 @@ require 'bosh/dev/sandbox/services/uaa_service'
 
 module Bosh::Dev::Sandbox
   class DirectorConfig
+    DATABASE_CA_PATH = File.join(Bosh::Dev::ASSETS_DIR, 'database', 'rootCA.pem')
+
     attr_accessor :audit_log_path
     attr_reader :director_name,
                 :agent_wait_timeout,
@@ -16,6 +18,7 @@ module Bosh::Dev::Sandbox
                 :config_server_uaa_url,
                 :config_server_url,
                 :database,
+                :database_ca_path,
                 :default_update_vm_strategy,
                 :director_fix_stateful_nodes,
                 :director_ips,
@@ -52,6 +55,7 @@ module Bosh::Dev::Sandbox
       @sandbox_root = attrs.fetch(:sandbox_root)
 
       @database = attrs.fetch(:database)
+      @database_ca_path = DATABASE_CA_PATH
 
       @blobstore_storage_dir = attrs.fetch(:blobstore_storage_dir)
       @verify_multidigest_path = attrs.fetch(:verify_multidigest_path)
