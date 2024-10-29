@@ -1,4 +1,4 @@
-require_relative '../spec_helper'
+require 'spec_helper'
 
 describe 'orphaned disks', type: :integration do
   include Bosh::Spec::CreateReleaseOutputParsers

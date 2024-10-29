@@ -1,4 +1,4 @@
-require_relative '../../spec_helper'
+require 'spec_helper'
 require 'ipaddr'
 
 def make_subnet_spec(range, static_ips, zone_names = nil)

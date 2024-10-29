@@ -1,4 +1,4 @@
-require_relative '../spec_helper'
+require 'spec_helper'
 
 describe 'cli: manifest', type: :integration do
   with_reset_sandbox_before_each

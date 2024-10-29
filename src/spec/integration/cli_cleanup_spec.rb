@@ -1,4 +1,4 @@
-require_relative '../spec_helper'
+require 'spec_helper'
 require 'fileutils'
 
 describe 'cli: cleanup', type: :integration do

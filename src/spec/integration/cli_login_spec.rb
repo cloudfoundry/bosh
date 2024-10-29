@@ -1,4 +1,4 @@
-require_relative '../spec_helper'
+require 'spec_helper'
 
 describe 'cli: login using the directors built-in user DB', type: :integration do
   context 'when users specified in manifest' do

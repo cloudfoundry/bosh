@@ -1,4 +1,4 @@
-require_relative '../../spec_helper'
+require 'spec_helper'
 
 def upload_fake_errand_release
   FileUtils.cp_r(FAKE_ERRAND_RELEASE_TEMPLATE, ClientSandbox.fake_errand_release_dir, preserve: true)

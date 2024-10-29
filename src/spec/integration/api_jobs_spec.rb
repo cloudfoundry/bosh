@@ -1,4 +1,4 @@
-require_relative '../spec_helper'
+require 'spec_helper'
 require 'net/http'
 
 describe 'the jobs api', type: :integration do

@@ -1,4 +1,4 @@
-require_relative '../spec_helper'
+require 'spec_helper'
 
 def upload_multidisk_release
   FileUtils.cp_r(MULTIDISK_RELEASE_TEMPLATE, ClientSandbox.multidisks_release_dir, preserve: true)

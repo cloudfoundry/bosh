@@ -1,8 +1,9 @@
+require_relative 'table_helpers'
+
 module Bosh::Spec
   # Director information as a regular CLI user would see it.
   # State might not be necessarily in sync with what CPI thinks
   # (e.g. CPI might know about more VMs that director does).
-  require_relative '../shared/support/table_helpers'
 
   class Director
     include Support::TableHelpers

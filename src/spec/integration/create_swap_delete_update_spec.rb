@@ -1,17 +1,5 @@
-require_relative '../spec_helper'
+require 'spec_helper'
 require 'fileutils'
-
-RSpec::Matchers.define :be_create_swap_deleted do |old_vm|
-  match do |new_vm|
-    new_vm['active'] == 'true' &&
-      new_vm['az'] == old_vm['az'] &&
-      new_vm['vm_type'] == old_vm['vm_type'] &&
-      new_vm['instance'] == old_vm['instance'] &&
-      new_vm['process_state'] == 'running' &&
-      new_vm['vm_cid'] != old_vm['vm_cid'] &&
-      new_vm['ips'] != old_vm['ips']
-  end
-end
 
 describe 'deploy with create-swap-delete', type: :integration do
   with_reset_sandbox_before_each(local_dns: {'enabled' => true, 'include_index' => false, 'use_dns_addresses' => true},

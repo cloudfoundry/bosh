@@ -1,5 +1,4 @@
-require 'rspec'
-require_relative '../support/table_helpers'
+require 'spec_helper'
 
 module Support
   describe TableHelpers::Parser do

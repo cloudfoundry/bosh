@@ -1,4 +1,4 @@
-require_relative '../../spec_helper'
+require 'spec_helper'
 
 describe 'director behaviour', type: :integration do
   with_reset_sandbox_before_each(dummy_cpi_api_version: 2)

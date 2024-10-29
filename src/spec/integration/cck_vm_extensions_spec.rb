@@ -1,4 +1,4 @@
-require_relative '../spec_helper'
+require 'spec_helper'
 
 describe 'cck vm extensions', type: :integration do
   let(:manifest) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }

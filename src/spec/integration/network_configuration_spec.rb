@@ -1,4 +1,4 @@
-require_relative '../spec_helper'
+require 'spec_helper'
 
 describe 'network configuration', type: :integration do
   context 'with dns enabled' do

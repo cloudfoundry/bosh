@@ -1,4 +1,4 @@
-require_relative '../../spec_helper'
+require 'spec_helper'
 
 describe 'using director with nats server', type: :integration do
   context 'when NATS ca cert provided does not verify the NATS server certificates' do

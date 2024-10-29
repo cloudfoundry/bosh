@@ -1,4 +1,4 @@
-require_relative '../../spec_helper'
+require 'spec_helper'
 
 describe 'list errands', type: :integration, with_tmp_dir: true do
   with_reset_sandbox_before_each

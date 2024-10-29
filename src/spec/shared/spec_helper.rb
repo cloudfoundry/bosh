@@ -9,7 +9,7 @@ if ENV['COVERAGE'] == 'true'
   end
 
   SimpleCov.start do
-    root          File.expand_path('../..', __dir__)
+    root          File.expand_path('../..', File.dirname(__FILE__))
     merge_timeout 3600
     # command name is injected by the spec.rake runner
     command_name ENV['BOSH_BUILD_NAME'] if ENV['BOSH_BUILD_NAME']
@@ -32,5 +32,4 @@ RSpec.configure do |rspec|
   end
 end
 
-Dir.glob(File.expand_path('support/**/*.rb', __dir__)).each { |f| require(f) }
 # It must stay minimal!

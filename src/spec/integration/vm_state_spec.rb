@@ -1,4 +1,4 @@
-require_relative '../spec_helper'
+require 'spec_helper'
 
 describe 'vm state', type: :integration do
   let(:deployment_name) { 'simple' }

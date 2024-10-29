@@ -1,4 +1,4 @@
-require_relative '../spec_helper'
+require 'spec_helper'
 
 describe 'cli: deploy uploading', type: :integration do
   include Bosh::Spec::CreateReleaseOutputParsers

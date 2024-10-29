@@ -1,4 +1,4 @@
-require_relative '../../spec_helper'
+require 'spec_helper'
 
 describe 'nats server', type: :integration do
   let(:vm_type) do

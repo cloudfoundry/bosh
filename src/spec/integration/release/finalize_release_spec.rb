@@ -1,5 +1,5 @@
 require 'securerandom'
-require_relative '../../spec_helper'
+require 'spec_helper'
 
 describe 'finalize release', type: :integration do
   include Bosh::Spec::CreateReleaseOutputParsers

@@ -1,4 +1,4 @@
-require_relative '../spec_helper'
+require 'spec_helper'
 
 describe 'network lifecycle', type: :integration do
   context 'disabled', type: :integration do

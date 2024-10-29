@@ -1,4 +1,4 @@
-require_relative '../../spec_helper'
+require 'spec_helper'
 
 describe "#146961875 When an errand's az is changed on a re-deploy", type: :integration do
   with_reset_sandbox_before_each

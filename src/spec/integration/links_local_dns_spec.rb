@@ -1,4 +1,4 @@
-require_relative '../spec_helper'
+require 'spec_helper'
 
 describe 'Links with local_dns enabled', type: :integration do
   def upload_links_release

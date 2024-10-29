@@ -1,4 +1,4 @@
-require_relative '../../spec_helper'
+require 'spec_helper'
 
 describe 'User authorization with UAA', type: :integration do
   with_reset_sandbox_before_each(user_authentication: 'uaa')

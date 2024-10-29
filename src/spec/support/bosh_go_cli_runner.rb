@@ -1,4 +1,4 @@
-require_relative '../shared/support/table_helpers'
+require_relative 'table_helpers'
 
 module Bosh::Spec
   class BoshGoCliRunner

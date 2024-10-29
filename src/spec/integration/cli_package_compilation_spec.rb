@@ -1,4 +1,4 @@
-require_relative '../spec_helper'
+require 'spec_helper'
 
 describe 'cli: package compilation', type: :integration do
   include Bosh::Spec::CreateReleaseOutputParsers

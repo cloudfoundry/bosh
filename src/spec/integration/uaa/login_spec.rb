@@ -1,4 +1,4 @@
-require_relative '../../spec_helper'
+require 'spec_helper'
 
 describe 'Logging into a director with UAA authentication', type: :integration do
   context 'with properly configured UAA' do

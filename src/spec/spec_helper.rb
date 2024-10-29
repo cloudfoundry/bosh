@@ -2,15 +2,16 @@ SPEC_ROOT = File.dirname(__FILE__)
 
 require File.expand_path('shared/spec_helper', SPEC_ROOT)
 
-require 'bosh/director'
-require 'nats/io/client'
-
 require 'fileutils'
 require 'digest/sha1'
 require 'tmpdir'
 require 'tempfile'
 require 'yaml'
 require 'restclient'
+
+require 'bosh/director'
+require 'nats/client'
+require 'nats/io/client'
 
 require 'blue-shell'
 
@@ -40,7 +41,7 @@ RSpec.configure do |c|
   c.include BlueShell::Matchers
 
   c.before(:suite) do
-    agent_dir = File.expand_path('../go/src/github.com/cloudfoundry/bosh-agent', __dir__)
+    agent_dir = File.expand_path(File.join(SPEC_ROOT, '../go/src/github.com/cloudfoundry/bosh-agent'))
     unless File.exist?("#{agent_dir}/out/bosh-agent") || ENV['TEST_ENV_NUMBER']
       puts "Building agent in #{agent_dir}..."
 

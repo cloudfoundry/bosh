@@ -1,4 +1,4 @@
-require_relative '../../spec_helper'
+require 'spec_helper'
 require 'yaml'
 
 describe 'variable generation with config server', type: :integration do

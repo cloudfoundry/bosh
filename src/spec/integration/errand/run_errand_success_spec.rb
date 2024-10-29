@@ -1,4 +1,4 @@
-require_relative '../../spec_helper'
+require 'spec_helper'
 
 # Errand failure/success were split up so that they can be run on different rspec:parallel threads
 describe 'run-errand success', type: :integration, with_tmp_dir: true do

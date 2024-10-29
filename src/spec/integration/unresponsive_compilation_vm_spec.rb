@@ -1,4 +1,4 @@
-require_relative '../spec_helper'
+require 'spec_helper'
 
 describe 'when compilation vm fails to respond', type: :integration do
   with_reset_sandbox_before_each(agent_wait_timeout: 1)

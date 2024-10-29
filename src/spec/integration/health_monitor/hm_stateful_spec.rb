@@ -1,4 +1,4 @@
-require_relative "../../spec_helper"
+require 'spec_helper'
 
 describe 'health_monitor: 2', type: :integration, hm: true do
   context 'if fix_stateful_nodes director option is not set' do
