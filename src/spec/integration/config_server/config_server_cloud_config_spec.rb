@@ -256,7 +256,7 @@ describe 'using director with config server', type: :integration do
                               return_exit_code: true,
                               include_credentials: false,
                               env: client_env)
-        }.to raise_error(Bosh::Spec::BoshGoCliRunner::Error)
+        }.to raise_error(Bosh::Spec::BoshCliRunner::Error)
       end
     end
 

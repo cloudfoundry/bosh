@@ -1,7 +1,8 @@
+require 'blue-shell'
 require_relative 'table_helpers'
 
 module Bosh::Spec
-  class BoshGoCliRunner
+  class BoshCliRunner
     include Support::TableHelpers
 
     class Error < RuntimeError

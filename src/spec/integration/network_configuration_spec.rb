@@ -342,7 +342,7 @@ describe 'network configuration', type: :integration do
 
           expect {
             deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
-          }.to raise_error(Bosh::Spec::BoshGoCliRunner::Error)
+          }.to raise_error(Bosh::Spec::BoshCliRunner::Error)
         end
       end
 

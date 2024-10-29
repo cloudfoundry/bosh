@@ -39,7 +39,7 @@ module IntegrationExampleGroup
   end
 
   def make_a_bosh_runner(opts = {})
-    Bosh::Spec::BoshGoCliRunner.new(
+    Bosh::Spec::BoshCliRunner.new(
       opts.fetch(:work_dir, ClientSandbox.bosh_work_dir),
       opts.fetch(:config_path, ClientSandbox.bosh_config),
       current_sandbox.cpi.method(:agent_log_path),
