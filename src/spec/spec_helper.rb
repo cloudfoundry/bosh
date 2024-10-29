@@ -13,8 +13,6 @@ require 'bosh/director'
 require 'nats/client'
 require 'nats/io/client'
 
-require 'blue-shell'
-
 require 'bosh/dev/sandbox/postgres_version'
 
 Dir.glob(File.join(SPEC_ROOT, 'support/**/*.rb')).each { |f| require(f) }
@@ -38,7 +36,6 @@ RSpec.configure do |c|
   end
   c.filter_run focus: true if ENV['FOCUS']
   c.filter_run_excluding db: :postgresql unless ENV['DB'] == 'postgresql'
-  c.include BlueShell::Matchers
 
   c.before(:suite) do
     agent_dir = File.expand_path(File.join(SPEC_ROOT, '../go/src/github.com/cloudfoundry/bosh-agent'))
@@ -51,5 +48,3 @@ RSpec.configure do |c|
     Bosh::Dev::Sandbox::PostgresVersion.ensure_version_match!(ENV['DB'])
   end
 end
-
-BlueShell.timeout = 180 # the cli can be pretty slow
