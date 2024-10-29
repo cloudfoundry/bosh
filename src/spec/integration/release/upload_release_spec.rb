@@ -1,5 +1,4 @@
-require_relative '../../spec_helper'
-require 'bosh/dev/table_parser'
+require 'spec_helper'
 
 describe 'upload release', type: :integration do
   include Bosh::Spec::CreateReleaseOutputParsers
