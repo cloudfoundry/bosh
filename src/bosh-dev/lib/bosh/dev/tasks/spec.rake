@@ -4,11 +4,11 @@ require 'tempfile'
 require 'rspec/core/rake_task'
 require 'bosh/dev/sandbox/workspace'
 require 'common/thread_pool'
-require 'bosh/dev/sandbox/services/config_server_service'
-require 'bosh/dev/sandbox/services/nginx_service'
-require 'bosh/dev/sandbox/services/uaa_service'
-require 'bosh/dev/verify_multidigest_manager'
-require 'bosh/dev/gnatsd_manager'
+require 'bosh/dev/sandbox/config_server_service'
+require 'bosh/dev/sandbox/nginx_service'
+require 'bosh/dev/sandbox/uaa_service'
+require 'bosh/dev/sandbox/verify_multidigest_manager'
+require 'bosh/dev/sandbox/gnatsd_manager'
 require 'parallel_tests/tasks'
 require 'fileutils'
 
@@ -28,9 +28,9 @@ namespace :spec do
 
         Bosh::Dev::Sandbox::ConfigServerService.install unless ENV['SKIP_CONFIG_SERVER'] == 'true'
 
-        Bosh::Dev::VerifyMultidigestManager.install unless ENV['SKIP_VERIFY_MULTIDIGEST'] == 'true'
+        Bosh::Dev::Sandbox::VerifyMultidigestManager.install unless ENV['SKIP_VERIFY_MULTIDIGEST'] == 'true'
 
-        Bosh::Dev::GnatsdManager.install unless ENV['SKIP_GNATSD'] == 'true'
+        Bosh::Dev::Sandbox::GnatsdManager.install unless ENV['SKIP_GNATSD'] == 'true'
       end
 
       compile_dependencies

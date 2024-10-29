@@ -71,7 +71,7 @@ module Bosh::Dev::Sandbox
 
       retryable.retryer do
         destination_path = File.join(INSTALL_DIR, file_name_to_download)
-        `#{File.dirname(__FILE__)}/install_binary.sh #{file_name_to_download} #{destination_path} '' config-server-releases`
+        `#{Bosh::Dev::Sandbox::ArtifactInstaller::INSTALL_BINARY_SCRIPT} #{file_name_to_download} #{destination_path} '' config-server-releases`
         $? == 0
       end
 

@@ -1,4 +1,4 @@
-require 'bosh/dev/sandbox/services/uaa_service'
+require 'bosh/dev/sandbox/uaa_service'
 
 module Bosh::Dev::Sandbox
   class DirectorConfig

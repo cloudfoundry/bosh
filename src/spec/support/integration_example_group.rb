@@ -1,7 +1,7 @@
 require 'yaml'
 require 'bosh/dev/sandbox/main'
-require 'bosh/dev/verify_multidigest_manager'
-require 'bosh/dev/gnatsd_manager'
+require 'bosh/dev/sandbox/verify_multidigest_manager'
+require 'bosh/dev/sandbox/gnatsd_manager'
 
 module IntegrationExampleGroup
   class DeploymentFailedError < RuntimeError

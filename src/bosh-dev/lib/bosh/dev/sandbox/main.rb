@@ -12,10 +12,10 @@ require 'bosh/dev/sandbox/socket_connector'
 require 'bosh/dev/sandbox/workspace'
 require 'bosh/dev/sandbox/director_config'
 require 'bosh/dev/sandbox/port_provider'
-require 'bosh/dev/sandbox/services/config_server_service'
-require 'bosh/dev/sandbox/services/director_service'
-require 'bosh/dev/sandbox/services/nginx_service'
-require 'bosh/dev/gnatsd_manager'
+require 'bosh/dev/sandbox/config_server_service'
+require 'bosh/dev/sandbox/director_service'
+require 'bosh/dev/sandbox/nginx_service'
+require 'bosh/dev/sandbox/gnatsd_manager'
 
 require 'cloud/dummy'
 
@@ -506,7 +506,7 @@ module Bosh::Dev::Sandbox
     end
 
     def setup_nats
-      gnatsd_path = Bosh::Dev::GnatsdManager.executable_path
+      gnatsd_path = Bosh::Dev::Sandbox::GnatsdManager.executable_path
       conf = File.join(sandbox_root, NATS_CONFIG)
 
       @nats_process = Service.new(

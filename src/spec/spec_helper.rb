@@ -2,16 +2,19 @@ SPEC_ROOT = File.dirname(__FILE__)
 
 require File.expand_path('shared/spec_helper', SPEC_ROOT)
 
+require 'bosh/director'
+require 'nats/io/client'
+
 require 'fileutils'
 require 'digest/sha1'
 require 'tmpdir'
 require 'tempfile'
 require 'yaml'
-require 'nats/io/client'
 require 'restclient'
-require 'bosh/director'
+
 require 'blue-shell'
-require 'bosh/dev/postgres_version'
+
+require 'bosh/dev/sandbox/postgres_version'
 
 Dir.glob(File.join(SPEC_ROOT, 'support/**/*.rb')).each { |f| require(f) }
 
@@ -44,7 +47,7 @@ RSpec.configure do |c|
       raise 'Bosh agent build failed' unless system("#{agent_dir}/bin/build")
     end
 
-    Bosh::Dev::PostgresVersion.ensure_version_match!(ENV['DB'])
+    Bosh::Dev::Sandbox::PostgresVersion.ensure_version_match!(ENV['DB'])
   end
 end
 

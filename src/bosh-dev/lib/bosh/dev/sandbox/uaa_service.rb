@@ -3,7 +3,7 @@ require 'json'
 require 'fileutils'
 require 'tmpdir'
 require 'bosh/template/evaluation_context'
-require 'bosh/dev/sandbox/service.rb'
+require 'bosh/dev/sandbox/service'
 require 'erb'
 
 module Bosh::Dev::Sandbox
