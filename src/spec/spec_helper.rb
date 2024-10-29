@@ -36,12 +36,7 @@ RSpec.configure do |c|
   c.filter_run_excluding db: :postgresql unless ENV['DB'] == 'postgresql'
 
   c.before(:suite) do
-    agent_dir = File.expand_path(File.join(SPEC_ROOT, '../go/src/github.com/cloudfoundry/bosh-agent'))
-    unless File.exist?("#{agent_dir}/out/bosh-agent") || ENV['TEST_ENV_NUMBER']
-      puts "Building agent in #{agent_dir}..."
-
-      raise 'Bosh agent build failed' unless system("#{agent_dir}/bin/build")
-    end
+    Support::BoshAgent.ensure_agent_exists!
 
     Support::PostgresVersionHelper.ensure_version_match!(ENV['DB'])
   end
