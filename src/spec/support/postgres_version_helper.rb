@@ -1,7 +1,7 @@
 require 'yaml'
 
-module Bosh::Dev::Sandbox
-  class PostgresVersion
+module Support
+  class PostgresVersionHelper
     class << self
       def ensure_version_match!(env_db)
         return unless env_db == 'postgresql'

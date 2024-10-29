@@ -13,8 +13,6 @@ require 'bosh/director'
 require 'nats/client'
 require 'nats/io/client'
 
-require 'bosh/dev/sandbox/postgres_version'
-
 Dir.glob(File.join(SPEC_ROOT, 'support/**/*.rb')).each { |f| require(f) }
 
 ASSETS_DIR = File.join(SPEC_ROOT, 'assets')
@@ -45,6 +43,6 @@ RSpec.configure do |c|
       raise 'Bosh agent build failed' unless system("#{agent_dir}/bin/build")
     end
 
-    Bosh::Dev::Sandbox::PostgresVersion.ensure_version_match!(ENV['DB'])
+    Support::PostgresVersionHelper.ensure_version_match!(ENV['DB'])
   end
 end
