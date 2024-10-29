@@ -9,7 +9,7 @@ describe "When an errand's az is changed on a re-deploy", type: :integration do
   end
 
   let(:manifest) do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
 
     instance_group = manifest_hash['instance_groups'].first
     instance_group['networks'] = [
@@ -25,7 +25,7 @@ describe "When an errand's az is changed on a re-deploy", type: :integration do
   end
 
   let(:cloud_config_hash) do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
     cloud_config_hash['azs'] = [{'name' => 'my-az'}, {'name' => 'my-az2'}]
     cloud_config_hash['compilation']['az'] = 'my-az'
     network_a = cloud_config_hash['networks'].first

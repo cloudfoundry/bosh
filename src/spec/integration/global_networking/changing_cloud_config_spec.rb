@@ -10,8 +10,8 @@ describe 'Changing cloud config', type: :integration do
 
   describe 'changing the cloud config while deploying' do
     it 'should continue to use the original cloud config when deploying a job' do
-      cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
-      deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, job: 'foobar_without_packages')
+      cloud_config = Bosh::Spec::DeploymentManifestHelper.cloud_config_with_subnet(available_ips: 1)
+      deployment_manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest(instances: 1, job: 'foobar_without_packages')
 
       upload_cloud_config(cloud_config_hash: cloud_config)
       task_id = start_deploy(deployment_manifest)
@@ -22,8 +22,8 @@ describe 'Changing cloud config', type: :integration do
     end
 
     it 'should continue to use the original cloud config when running an errand' do
-      cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
-      manifest_with_errand = Bosh::Spec::NetworkingManifest.errand_manifest(instances: 1, job: 'foobar_without_packages')
+      cloud_config = Bosh::Spec::DeploymentManifestHelper.cloud_config_with_subnet(available_ips: 1)
+      manifest_with_errand = Bosh::Spec::DeploymentManifestHelper.errand_manifest(instances: 1, job: 'foobar_without_packages')
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: manifest_with_errand)
       current_target = current_sandbox.director_url
@@ -52,7 +52,7 @@ describe 'Changing cloud config', type: :integration do
     with_reset_hm_before_each
 
     it 'resurrects vm with original cloud config and IP' do
-      cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
+      cloud_config = Bosh::Spec::NetworkingManifest.cloud_config_with_subnet(available_ips: 1)
       deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, job: 'foobar_without_packages')
 
       upload_cloud_config(cloud_config_hash: cloud_config)
@@ -75,7 +75,7 @@ describe 'Changing cloud config', type: :integration do
 
   describe 'changing the cloud config when running cck' do
     it 'recreates vm with original cloud config' do
-      cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
+      cloud_config = Bosh::Spec::NetworkingManifest.cloud_config_with_subnet(available_ips: 1)
       deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, job: 'foobar_without_packages')
 
       upload_cloud_config(cloud_config_hash: cloud_config)
@@ -105,8 +105,8 @@ describe 'Changing cloud config', type: :integration do
   describe 'no changes' do
     context 'when redeploying after a network rename has been deployed' do
       it 'should not recreate vms when there are no changes' do
-        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-        simple_manifest = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+        cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+        simple_manifest = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
 
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
         deploy_simple_manifest(manifest_hash: simple_manifest)
@@ -129,7 +129,7 @@ describe 'Changing cloud config', type: :integration do
   end
 
   def upload_a_different_cloud_config
-    new_cloud_config = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 0)
+    new_cloud_config = Bosh::Spec::NetworkingManifest.cloud_config_with_subnet(available_ips: 0)
     new_cloud_config['networks'].first['name'] = 'other'
     new_cloud_config['vm_types'].first['network'] = 'other'
     new_cloud_config['compilation']['network'] = 'other'

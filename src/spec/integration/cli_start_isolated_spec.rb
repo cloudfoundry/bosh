@@ -19,7 +19,7 @@ describe 'start command', type: :integration do
 
   context 'when attempting to start an errand instance' do
     before do
-      deploy_from_scratch(manifest_hash: Bosh::Spec::Deployments.manifest_with_errand)
+      deploy_from_scratch(manifest_hash: Bosh::Spec::DeploymentManifestHelper.manifest_with_errand)
     end
 
     it 'fails gracefully with a useful message' do
@@ -137,8 +137,8 @@ describe 'start command', type: :integration do
             },
           },
         ]
-        instance_group = Bosh::Spec::Deployments.simple_instance_group(name: 'bad-instance-group', jobs: jobs)
-        manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+        instance_group = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'bad-instance-group', jobs: jobs)
+        manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
         manifest_hash['instance_groups'] << instance_group
         deploy(manifest_hash: manifest_hash)
 
@@ -181,7 +181,7 @@ describe 'start command', type: :integration do
             },
           },
         ]
-        Bosh::Spec::Deployments.simple_manifest_with_instance_groups(jobs: jobs)
+        Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups(jobs: jobs)
       end
 
       it 'starting does not change job templates already deployed on the instance' do
@@ -211,7 +211,7 @@ describe 'start command', type: :integration do
             },
           },
         ]
-        failing_manifest = Bosh::Spec::Deployments.simple_manifest_with_instance_groups(jobs: jobs)
+        failing_manifest = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups(jobs: jobs)
         deploy(manifest_hash: failing_manifest, failure_expected: true)
 
         isolated_stop(instance_group: 'foobar', index: first_instance.index)
@@ -250,7 +250,7 @@ describe 'start command', type: :integration do
             },
           },
         ]
-        manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups(
+        manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups(
           name: 'bad-instance-group',
           jobs: jobs, instances: 1
         )

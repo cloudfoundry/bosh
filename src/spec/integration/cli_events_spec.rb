@@ -4,11 +4,11 @@ describe 'cli: events', type: :integration do
   with_reset_sandbox_before_each
 
   def first_part_of_test
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'][0]['persistent_disk_type'] = 'disk_a'
     manifest_hash['instance_groups'][0]['instances'] = 1
-    cloud_config = Bosh::Spec::Deployments.simple_cloud_config
-    disk_type = Bosh::Spec::Deployments.disk_type
+    cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+    disk_type = Bosh::Spec::DeploymentManifestHelper.disk_type
     cloud_config['disk_types'] = [disk_type]
     cloud_config['compilation']['reuse_compilation_vms'] = true
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, runtime_config_hash: {

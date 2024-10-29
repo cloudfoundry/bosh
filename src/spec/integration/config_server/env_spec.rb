@@ -2,8 +2,8 @@ require 'spec_helper'
 
 describe 'env values in instance groups and resource pools', type: :integration do
   let(:manifest_hash) do
-    Bosh::Spec::Deployments.test_release_manifest_with_stemcell.merge(
-      'instance_groups' => [Bosh::Spec::Deployments.instance_group_with_many_jobs(
+    Bosh::Spec::DeploymentManifestHelper.test_release_manifest_with_stemcell.merge(
+      'instance_groups' => [Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
         name: 'our_instance_group',
         jobs: [
           { 'name' => 'job_1_with_many_properties',
@@ -16,7 +16,7 @@ describe 'env values in instance groups and resource pools', type: :integration 
   end
   let(:deployment_name) { manifest_hash['name'] }
   let(:director_name) { current_sandbox.director_name }
-  let(:cloud_config)  { Bosh::Spec::Deployments.simple_cloud_config }
+  let(:cloud_config)  { Bosh::Spec::DeploymentManifestHelper.simple_cloud_config }
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger) }
   let(:client_env) do
     { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => current_sandbox.certificate_path.to_s }
@@ -36,7 +36,7 @@ describe 'env values in instance groups and resource pools', type: :integration 
   context 'when instance groups env is using variables' do
     with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa')
 
-    let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
+    let(:cloud_config_hash) { Bosh::Spec::DeploymentManifestHelper.simple_cloud_config }
 
     let(:env_hash) do
       {
@@ -69,7 +69,7 @@ describe 'env values in instance groups and resource pools', type: :integration 
     end
 
     let(:manifest_hash) do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'] = [{
         'name' => 'foobar',
         'jobs' => [
@@ -136,13 +136,13 @@ describe 'env values in instance groups and resource pools', type: :integration 
     end
 
     let(:simple_manifest) do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'][0]['instances'] = 1
       manifest_hash['instance_groups'][0]['env'] = env_hash
       manifest_hash
     end
 
-    let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config }
+    let(:cloud_config) { Bosh::Spec::DeploymentManifestHelper.simple_cloud_config }
 
     before do
       config_server_helper.put_value(prepend_namespace('env1_placeholder'), 'lazy smurf')
@@ -193,12 +193,12 @@ describe 'env values in instance groups and resource pools', type: :integration 
     with_reset_sandbox_before_each
 
     let(:simple_manifest) do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['features'] = { 'use_tmpfs_config' => true }
       manifest_hash
     end
 
-    let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config }
+    let(:cloud_config) { Bosh::Spec::DeploymentManifestHelper.simple_cloud_config }
 
     it 'should send the flag to the agent with interpolated values' do
       deploy_from_scratch(manifest_hash: simple_manifest, cloud_config_hash: cloud_config)

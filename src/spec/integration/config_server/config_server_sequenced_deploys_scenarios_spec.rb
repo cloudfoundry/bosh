@@ -4,8 +4,8 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
   with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa', enable_nats_delivered_templates: true)
 
   let(:manifest_hash) do
-    Bosh::Spec::Deployments.test_release_manifest_with_stemcell.merge(
-      'instance_groups' => [Bosh::Spec::Deployments.instance_group_with_many_jobs(
+    Bosh::Spec::DeploymentManifestHelper.test_release_manifest_with_stemcell.merge(
+      'instance_groups' => [Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
         name: 'our_instance_group',
         jobs: [
           { 'name' => 'job_1_with_many_properties',
@@ -19,7 +19,7 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
   let(:deployment_name) { manifest_hash['name'] }
   let(:director_name) { current_sandbox.director_name }
   let(:cloud_config) do
-    Bosh::Spec::Deployments.simple_cloud_config.tap do |config|
+    Bosh::Spec::DeploymentManifestHelper.simple_cloud_config.tap do |config|
       config['vm_types'] = [
         { 'name' => 'a' },
         { 'name' => 'b', 'cloud_properties' => { 'foo' => 'bar' } },
@@ -161,8 +161,8 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
       }
     end
     let(:manifest_hash) do
-      Bosh::Spec::Deployments.test_release_manifest_with_stemcell.merge(
-        'instance_groups' => [Bosh::Spec::Deployments.instance_group_with_many_jobs(
+      Bosh::Spec::DeploymentManifestHelper.test_release_manifest_with_stemcell.merge(
+        'instance_groups' => [Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
           name: 'our_instance_group',
           jobs: [
             {
@@ -275,8 +275,8 @@ describe 'sequenced deploys scenarios when using config server', type: :integrat
 
   describe 'given a successful deployment that used config server values' do
     let(:manifest_hash) do
-      Bosh::Spec::Deployments.manifest_with_release.merge(
-        'instance_groups' => [Bosh::Spec::Deployments.instance_group_with_many_jobs(
+      Bosh::Spec::DeploymentManifestHelper.manifest_with_release.merge(
+        'instance_groups' => [Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
           name: 'our_instance_group',
           jobs: [
             {

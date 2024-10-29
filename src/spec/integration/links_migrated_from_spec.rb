@@ -46,7 +46,7 @@ describe 'Links', type: :integration do
   end
 
   let(:cloud_config) do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
     cloud_config_hash['azs'] = [{'name' => 'z1'}]
     cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.10', '192.168.1.11', '192.168.1.12', '192.168.1.13']
     cloud_config_hash['networks'].first['subnets'].first['az'] = 'z1'
@@ -76,7 +76,7 @@ describe 'Links', type: :integration do
     end
 
     let(:api_instance_group_spec) do
-      spec = Bosh::Spec::Deployments.simple_instance_group(
+      spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
         name: 'my_api',
         jobs: [
           'name' => 'api_server',
@@ -90,7 +90,7 @@ describe 'Links', type: :integration do
     end
 
     let(:aliased_instance_group_spec) do
-      spec = Bosh::Spec::Deployments.simple_instance_group(
+      spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
         name: 'aliased_postgres',
         jobs: [
           'name' => 'backup_database',
@@ -105,13 +105,13 @@ describe 'Links', type: :integration do
 
     context 'when deployment includes a migrated job which also provides or consumes links' do
       let(:manifest) do
-        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
         manifest['instance_groups'] = [api_instance_group_spec, aliased_instance_group_spec]
         manifest
       end
 
       let(:new_api_instance_group_spec) do
-        spec = Bosh::Spec::Deployments.simple_instance_group(
+        spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
           name: 'new_api_job',
           jobs: [
             'name' => 'api_server',
@@ -126,7 +126,7 @@ describe 'Links', type: :integration do
       end
 
       let(:new_aliased_instance_group_spec) do
-        spec = Bosh::Spec::Deployments.simple_instance_group(
+        spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
           name: 'new_aliased_job',
           jobs: [
             'name' => 'backup_database',
@@ -216,14 +216,14 @@ describe 'Links', type: :integration do
 
     context 'when deployment includes multiple migrated jobs with the same name and who both provide links' do
       let(:manifest) do
-        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
         manifest['instance_groups'] = [aliased_instance_group_spec, secondary_deployment_instance_group_spec,
                                        secondary_deployment_consumer_instance_group_spec, api_instance_group_spec]
         manifest
       end
 
       let(:secondary_deployment_instance_group_spec) do
-        spec = Bosh::Spec::Deployments.simple_instance_group(
+        spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
           name: 'test_another_group',
           jobs: [
             {
@@ -241,7 +241,7 @@ describe 'Links', type: :integration do
       end
 
       let(:secondary_deployment_consumer_instance_group_spec) do
-        spec = Bosh::Spec::Deployments.simple_instance_group(
+        spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
           name: 'test_another_consumer_group',
           jobs: [
             {
@@ -260,7 +260,7 @@ describe 'Links', type: :integration do
       end
 
       let(:new_aliased_instance_group_spec) do
-        spec = Bosh::Spec::Deployments.simple_instance_group(
+        spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
           name: 'new_aliased_job',
           jobs: [
             'name' => 'backup_database',
@@ -275,7 +275,7 @@ describe 'Links', type: :integration do
       end
 
       let(:new_api_instance_group_spec) do
-        spec = Bosh::Spec::Deployments.simple_instance_group(
+        spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
           name: 'new_api_job',
           jobs: [
             'name' => 'api_server',
@@ -328,7 +328,7 @@ describe 'Links', type: :integration do
       end
 
       let(:merged_instance_group_spec) do
-        spec = Bosh::Spec::Deployments.simple_instance_group(
+        spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
           name: 'merged_instance_group',
           jobs: [
             'name' => 'api_server',
@@ -344,7 +344,7 @@ describe 'Links', type: :integration do
       end
 
       let(:manifest) do
-        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
         manifest['instance_groups'] = [api_instance_group_spec, second_api_instance_group_spec]
         manifest
       end
@@ -364,7 +364,7 @@ describe 'Links', type: :integration do
       end
 
       let(:merged_instance_group) do
-        spec = Bosh::Spec::Deployments.simple_instance_group(
+        spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
           name: 'merged_group',
           jobs: [
             {
@@ -386,7 +386,7 @@ describe 'Links', type: :integration do
       end
 
       let(:manifest) do
-        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
         manifest['instance_groups'] = [aliased_instance_group_spec, secondary_aliased_instance_group_spec]
         manifest
       end
@@ -411,7 +411,7 @@ describe 'Links', type: :integration do
         end
 
         let(:merged_instance_group) do
-          spec = Bosh::Spec::Deployments.simple_instance_group(
+          spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
             name: 'merged_group',
             jobs: [
               {
@@ -441,7 +441,7 @@ describe 'Links', type: :integration do
         end
 
         let(:consuming_instance_group) do
-          spec = Bosh::Spec::Deployments.simple_instance_group(
+          spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
             name: 'consuming_instance_group',
             jobs: [{
               'name' => 'consumer',
@@ -455,7 +455,7 @@ describe 'Links', type: :integration do
         end
 
         let(:consuming_manifest) do
-          manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'consuming')
+          manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest(name: 'consuming')
           manifest['instance_groups'] = [consuming_instance_group]
           manifest
         end
@@ -484,7 +484,7 @@ describe 'Links', type: :integration do
 
         context 'if provider deployment failed because of network config' do
           let(:merged_instance_group) do
-            spec = Bosh::Spec::Deployments.simple_instance_group(
+            spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
               name: 'merged_group',
               jobs: [
                 {
@@ -540,7 +540,7 @@ describe 'Links', type: :integration do
         end
 
         let(:merged_instance_group) do
-          spec = Bosh::Spec::Deployments.simple_instance_group(
+          spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
             name: 'merged_group',
             jobs: [
               {
@@ -628,7 +628,7 @@ describe 'Links', type: :integration do
         end
 
         let(:merged_instance_group) do
-          spec = Bosh::Spec::Deployments.simple_instance_group(
+          spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
             name: 'merged_group',
             jobs: [
               {

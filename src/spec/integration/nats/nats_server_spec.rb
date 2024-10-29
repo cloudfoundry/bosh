@@ -8,7 +8,7 @@ describe 'nats server', type: :integration do
   end
 
   let(:manifest_hash) do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'] = [simple_instance_group]
     manifest_hash
   end
@@ -44,7 +44,7 @@ describe 'nats server', type: :integration do
 
     it 'should deploy successfully' do
       output, exit_code = deploy_from_scratch(
-        manifest_hash: Bosh::Spec::Deployments.simple_manifest_with_instance_groups,
+        manifest_hash: Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups,
         return_exit_code: true,
       )
 

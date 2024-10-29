@@ -4,8 +4,8 @@ describe 'using director with config server', type: :integration do
   with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa')
 
   let(:manifest_hash) do
-    Bosh::Spec::Deployments.test_release_manifest_with_stemcell.merge(
-      'instance_groups' => [Bosh::Spec::Deployments.instance_group_with_many_jobs(
+    Bosh::Spec::DeploymentManifestHelper.test_release_manifest_with_stemcell.merge(
+      'instance_groups' => [Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
         name: 'our_instance_group',
         jobs: [
           { 'name' => 'job_1_with_many_properties',
@@ -18,7 +18,7 @@ describe 'using director with config server', type: :integration do
   end
   let(:deployment_name) { manifest_hash['name'] }
   let(:director_name) { current_sandbox.director_name }
-  let(:cloud_config)  { Bosh::Spec::Deployments.simple_cloud_config }
+  let(:cloud_config)  { Bosh::Spec::DeploymentManifestHelper.simple_cloud_config }
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger) }
   let(:client_env) do
     { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => current_sandbox.certificate_path.to_s }
@@ -210,10 +210,10 @@ describe 'using director with config server', type: :integration do
         end
 
         context 'with dot syntax' do
-          let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
+          let(:cloud_config_hash) { Bosh::Spec::DeploymentManifestHelper.simple_cloud_config }
 
           let(:manifest_hash) do
-            manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+            manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
             manifest_hash['instance_groups'] = [{
               'name' => 'foobar',
               'jobs' => ['name' => 'job_1_with_many_properties', 'release' => 'bosh-release'],

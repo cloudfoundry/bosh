@@ -15,27 +15,27 @@ describe 'encoding', type: :integration do
   end
 
   let(:manifest_hash) do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['name'] = 'fake-name1'
     manifest_hash['instance_groups'][0]['jobs'][0]['properties'] = utf8_fixture
     manifest_hash
   end
 
   it 'supports non-ascii multibyte chars in manifests' do
-    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
   end
 
   describe 'when changes to manifests are made' do
-    let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
+    let(:cloud_config_hash) { Bosh::Spec::DeploymentManifestHelper.simple_cloud_config }
 
     let(:runtime_config_hash) do
-      runtime_config_hash = Bosh::Spec::Deployments.runtime_config_with_addon
+      runtime_config_hash = Bosh::Spec::DeploymentManifestHelper.runtime_config_with_addon
       runtime_config_hash['addons'][0]['jobs'][0]['properties'] = utf8_fixture
       runtime_config_hash
     end
 
     let(:cpi_config_yml) do
-      cpi_hash = Bosh::Spec::Deployments.single_cpi_config('cpi', utf8_fixture)
+      cpi_hash = Bosh::Spec::DeploymentManifestHelper.single_cpi_config('cpi', utf8_fixture)
       yaml_file('cpi.yml', cpi_hash)
     end
 

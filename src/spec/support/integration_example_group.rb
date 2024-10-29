@@ -59,13 +59,13 @@ module IntegrationExampleGroup
   end
 
   def upload_cloud_config(options = {})
-    cloud_config_hash = options.fetch(:cloud_config_hash, Bosh::Spec::Deployments.simple_cloud_config)
+    cloud_config_hash = options.fetch(:cloud_config_hash, Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
     cloud_config_manifest = yaml_file('simple', cloud_config_hash)
     bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}", options)
   end
 
   def upload_runtime_config(options = {})
-    runtime_config_hash = options.fetch(:runtime_config_hash, Bosh::Spec::Deployments.simple_runtime_config)
+    runtime_config_hash = options.fetch(:runtime_config_hash, Bosh::Spec::DeploymentManifestHelper.simple_runtime_config)
     name = options.fetch(:name, '')
     runtime_config_manifest = yaml_file('simple', runtime_config_hash)
     bosh_runner.run("update-runtime-config --name=#{name} #{runtime_config_manifest.path}", options)
@@ -111,7 +111,7 @@ module IntegrationExampleGroup
   def deploy(options = {})
     cmd = options.fetch(:no_color, false) ? '--no-color ' : ''
 
-    deployment_hash = options.fetch(:manifest_hash, Bosh::Spec::Deployments.simple_manifest_with_instance_groups)
+    deployment_hash = options.fetch(:manifest_hash, Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups)
     cmd += " -d #{deployment_hash['name']}"
 
     cmd += ' deploy'
@@ -140,11 +140,11 @@ module IntegrationExampleGroup
   end
 
   def stop_job(vm_name)
-    bosh_runner.run("stop -d #{Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME} #{vm_name}", {})
+    bosh_runner.run("stop -d #{Bosh::Spec::DeploymentManifestHelper::DEFAULT_DEPLOYMENT_NAME} #{vm_name}", {})
   end
 
   def isolated_stop(
-    deployment: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME,
+    deployment: Bosh::Spec::DeploymentManifestHelper::DEFAULT_DEPLOYMENT_NAME,
     instance_group:,
     index: nil,
     id: nil,
@@ -157,7 +157,7 @@ module IntegrationExampleGroup
   end
 
   def isolated_start(
-    deployment: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME,
+    deployment: Bosh::Spec::DeploymentManifestHelper::DEFAULT_DEPLOYMENT_NAME,
     instance_group:,
     index: nil,
     id: nil,
@@ -170,7 +170,7 @@ module IntegrationExampleGroup
   end
 
   def isolated_restart(
-    deployment: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME,
+    deployment: Bosh::Spec::DeploymentManifestHelper::DEFAULT_DEPLOYMENT_NAME,
     instance_group:,
     index: nil,
     id: nil,
@@ -183,7 +183,7 @@ module IntegrationExampleGroup
   end
 
   def isolated_recreate(
-    deployment: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME,
+    deployment: Bosh::Spec::DeploymentManifestHelper::DEFAULT_DEPLOYMENT_NAME,
     instance_group:,
     index: nil,
     id: nil,
@@ -319,7 +319,7 @@ module IntegrationExampleGroup
 
   def expect_running_vms_with_names_and_count(
     instance_group_names_to_instance_counts,
-    options = { deployment_name: Bosh::Spec::Deployments::DEFAULT_DEPLOYMENT_NAME }
+    options = { deployment_name: Bosh::Spec::DeploymentManifestHelper::DEFAULT_DEPLOYMENT_NAME }
   )
     instances = director.instances(options)
     check_for_unknowns(instances)
@@ -375,7 +375,7 @@ module IntegrationExampleGroup
 
   def with_blocking_deploy(options = {})
     manifest =
-      Bosh::Spec::NetworkingManifest.deployment_manifest(
+      Bosh::Spec::DeploymentManifestHelper.deployment_manifest(
         name: 'blocking',
         instances: 1,
         job: 'job_with_blocking_compilation',

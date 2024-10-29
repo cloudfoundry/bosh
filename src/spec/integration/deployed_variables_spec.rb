@@ -7,8 +7,8 @@ describe 'deployed variables endpoint', type: :integration do
   let(:director_name) { current_sandbox.director_name }
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger) }
   let(:manifest_hash) do
-    Bosh::Spec::Deployments.manifest_with_release.merge(
-      'instance_groups' => [Bosh::Spec::Deployments.instance_group_with_many_jobs(
+    Bosh::Spec::DeploymentManifestHelper.manifest_with_release.merge(
+      'instance_groups' => [Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
         name: 'foobar',
         jobs: [
           { 'name' => 'job_with_property_types',
@@ -19,7 +19,7 @@ describe 'deployed variables endpoint', type: :integration do
       )],
     )
   end
-  let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config }
+  let(:cloud_config) { Bosh::Spec::DeploymentManifestHelper.simple_cloud_config }
   let(:client_env) do
     { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => current_sandbox.certificate_path.to_s }
   end

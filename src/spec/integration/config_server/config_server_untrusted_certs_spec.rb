@@ -4,9 +4,9 @@ describe 'using director with config server and the certs are not trusted', type
   with_reset_sandbox_before_each(config_server_enabled: true, with_config_server_trusted_certs: false, user_authentication: 'uaa')
 
   let(:manifest_hash) do
-    Bosh::Spec::Deployments.test_release_manifest_with_stemcell.merge(
+    Bosh::Spec::DeploymentManifestHelper.test_release_manifest_with_stemcell.merge(
       {
-        'instance_groups' => [Bosh::Spec::Deployments.instance_group_with_many_jobs(
+        'instance_groups' => [Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
           name: 'our_instance_group',
           jobs: [
             {'name' => 'job_1_with_many_properties',
@@ -26,7 +26,7 @@ describe 'using director with config server and the certs are not trusted', type
       })
   end
 
-  let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config }
+  let(:cloud_config) { Bosh::Spec::DeploymentManifestHelper.simple_cloud_config }
   let(:client_env) do
     { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => current_sandbox.certificate_path.to_s }
   end

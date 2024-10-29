@@ -26,7 +26,7 @@ describe 'Aliasing links to DNS addresses', type: :integration do
     let(:instances) { director.instances }
 
     let(:cloud_config) do
-      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
       cloud_config_hash['azs'] = [{ 'name' => 'z1' }]
       cloud_config_hash['networks'].first['subnets'].first['az'] = 'z1'
       cloud_config_hash['compilation']['az'] = 'z1'
@@ -49,7 +49,7 @@ describe 'Aliasing links to DNS addresses', type: :integration do
     end
 
     let(:manifest) do
-      manifest = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest['instance_groups'] = [
         first_provider_instance_group,
         second_provider_instance_group,
@@ -58,7 +58,7 @@ describe 'Aliasing links to DNS addresses', type: :integration do
     end
 
     let(:first_provider_instance_group) do
-      spec = Bosh::Spec::Deployments.simple_instance_group(
+      spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
         name: 'mysql',
         jobs: [
           {
@@ -86,7 +86,7 @@ describe 'Aliasing links to DNS addresses', type: :integration do
     end
 
     let(:second_provider_instance_group) do
-      spec = Bosh::Spec::Deployments.simple_instance_group(
+      spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
         name: 'yoursql',
         jobs: [
           {
@@ -162,7 +162,7 @@ describe 'Aliasing links to DNS addresses', type: :integration do
     let(:instances) { director.instances }
 
     let(:cloud_config) do
-      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
       cloud_config_hash['azs'] = [{ 'name' => 'z1' }]
       cloud_config_hash['networks'].first['subnets'].first['az'] = 'z1'
       cloud_config_hash['compilation']['az'] = 'z1'
@@ -185,7 +185,7 @@ describe 'Aliasing links to DNS addresses', type: :integration do
     end
 
     let(:manifest) do
-      manifest = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest['instance_groups'] = [
         first_provider_instance_group,
         second_provider_instance_group,
@@ -194,7 +194,7 @@ describe 'Aliasing links to DNS addresses', type: :integration do
     end
 
     let(:first_provider_instance_group) do
-      spec = Bosh::Spec::Deployments.simple_instance_group(
+      spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
         name: 'mysql',
         jobs: [
           {
@@ -239,7 +239,7 @@ describe 'Aliasing links to DNS addresses', type: :integration do
     end
 
     let(:second_provider_instance_group) do
-      spec = Bosh::Spec::Deployments.simple_instance_group(
+      spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
         name: 'yoursql',
         jobs: [
           {

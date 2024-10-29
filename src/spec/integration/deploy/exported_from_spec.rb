@@ -14,7 +14,7 @@ describe 'exported_from releases', type: :integration do
   end
 
   let(:manifest) do
-    Bosh::Spec::Deployments.simple_manifest_with_instance_groups(
+    Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups(
       jobs: jobs,
       name: 'foobar',
       stemcell: 'centos',
@@ -96,7 +96,7 @@ describe 'exported_from releases', type: :integration do
         'os' => 'centos-7',
         'version' => '3002',
       }
-      manifest['instance_groups'] << Bosh::Spec::Deployments.simple_instance_group(
+      manifest['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
         :jobs => jobs,
         :name => 'foobar2',
         :stemcell => 'other-centos',

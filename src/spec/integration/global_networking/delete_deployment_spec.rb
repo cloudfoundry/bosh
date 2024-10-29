@@ -22,10 +22,10 @@ describe 'deleting deployment', type: :integration do
 
     expect(bosh_runner.run('deployments', failure_expected: true)).to match(/0 deployments/)
 
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['instances'] = 1
 
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
     cloud_config_hash['disk_types'] = [{ 'name' => 'disk_a', 'disk_size' => 123 }]
     manifest_hash['instance_groups'].first['persistent_disk_type'] = 'disk_a'
 
@@ -70,10 +70,10 @@ describe 'deleting deployment', type: :integration do
 
     expect(bosh_runner.run('deployments', failure_expected: true)).to match(/0 deployments/)
 
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['instances'] = 1
 
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
     cloud_config_hash['disk_types'] = [{ 'name' => 'disk_a', 'disk_size' => 123 }]
     manifest_hash['instance_groups'].first['persistent_disk_type'] = 'disk_a'
 

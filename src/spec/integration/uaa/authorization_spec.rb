@@ -6,14 +6,14 @@ describe 'User authorization with UAA', type: :integration do
   it 'can view deployments made by a particular client' do
     client_env = {'BOSH_CLIENT' => 'director-access', 'BOSH_CLIENT_SECRET' => 'secret'}
     prepare_for_deploy(
-      cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
+      cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
       environment_name: current_sandbox.director_url,
       include_credentials: false,
       env: client_env,
     )
 
     client_env = {'BOSH_CLIENT' => 'production_team', 'BOSH_CLIENT_SECRET' => 'secret'}
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['name'] = 'fake-name1'
     deploy_simple_manifest(environment_name: current_sandbox.director_url, include_credentials: false, env: client_env, manifest_hash: manifest_hash)
 
@@ -31,14 +31,14 @@ describe 'User authorization with UAA', type: :integration do
   it 'can deploy and delete a deployment as a team member' do
     client_env = {'BOSH_CLIENT' => 'director-access', 'BOSH_CLIENT_SECRET' => 'secret'}
     prepare_for_deploy(
-      cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
+      cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
       include_credentials: false,
       environment_name: current_sandbox.director_url,
       env: client_env,
     )
 
     client_env = {'BOSH_CLIENT' => 'production_team', 'BOSH_CLIENT_SECRET' => 'secret'}
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['name'] = 'fake-name1'
     deploy_simple_manifest(environment_name: current_sandbox.director_url, env: client_env , include_credentials: false, manifest_hash: manifest_hash)
 
@@ -51,14 +51,14 @@ describe 'User authorization with UAA', type: :integration do
   it 'should return tasks that user is permitted to view' do
     client_env = {'BOSH_CLIENT' => 'director-access', 'BOSH_CLIENT_SECRET' => 'secret'}
     prepare_for_deploy(
-      cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
+      cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
       environment_name: current_sandbox.director_url,
       env: client_env,
       include_credentials: false,
     )
 
     client_env = {'BOSH_CLIENT' => 'production_team', 'BOSH_CLIENT_SECRET' => 'secret'}
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['name'] = 'fake-name1'
     deploy_simple_manifest(environment_name: current_sandbox.director_url, env: client_env , include_credentials: false, manifest_hash: manifest_hash)
 

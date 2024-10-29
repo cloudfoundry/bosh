@@ -4,7 +4,7 @@ describe 'cli: vms', type: :integration do
   with_reset_sandbox_before_each
 
   it 'should return vm --vitals' do
-    deploy_from_scratch(manifest_hash: Bosh::Spec::Deployments.simple_manifest_with_instance_groups)
+    deploy_from_scratch(manifest_hash: Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups)
     vitals = director.vms_vitals[0]
 
     expect(vitals[:cpu_user]).to match(/\d+\.?\d*[%]/)
@@ -22,10 +22,10 @@ describe 'cli: vms', type: :integration do
   end
 
   it 'should return cloud_properties with vm_type cloud properties' do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
     cloud_config_hash['vm_types'].first['cloud_properties']['flavor'] = 'some-flavor'
 
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
 
     vms = director.vms_cloud_properties
@@ -33,9 +33,9 @@ describe 'cli: vms', type: :integration do
   end
 
   it 'should return cloud_properties with calculated vm cloud properties' do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
 
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups_and_vm_resources
+    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups_and_vm_resources
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
 
     vms = director.vms_cloud_properties
@@ -50,7 +50,7 @@ describe 'cli: vms', type: :integration do
   end
 
   it 'should return az with vms' do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
     cloud_config_hash['azs'] = [
       {'name' => 'zone-1', 'cloud_properties' => {}},
       {'name' => 'zone-2', 'cloud_properties' => {}},
@@ -87,7 +87,7 @@ describe 'cli: vms', type: :integration do
       }
     ]
 
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['azs'] = ['zone-1', 'zone-2', 'zone-3']
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
 
@@ -125,14 +125,14 @@ describe 'cli: vms', type: :integration do
   end
 
   it "retrieves vms from deployments in parallel" do
-    manifest1 = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+    manifest1 = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest1['name'] = 'simple1'
-    manifest1['instance_groups'] = [Bosh::Spec::Deployments.simple_instance_group(name: 'foobar1', instances: 2)]
+    manifest1['instance_groups'] = [Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar1', instances: 2)]
     deploy_from_scratch(manifest_hash: manifest1)
 
-    manifest2 = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+    manifest2 = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest2['name'] = 'simple2'
-    manifest2['instance_groups'] = [Bosh::Spec::Deployments.simple_instance_group(name: 'foobar2', instances: 4)]
+    manifest2['instance_groups'] = [Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 4)]
     deploy_from_scratch(manifest_hash: manifest2)
 
     output = bosh_runner.run('vms --parallel 5')

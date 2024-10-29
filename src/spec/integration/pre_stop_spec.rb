@@ -6,11 +6,11 @@ describe 'pre-stop', type: :integration do
   with_reset_sandbox_before_each
 
   let(:cloud_config_hash) do
-    Bosh::Spec::Deployments.simple_cloud_config
+    Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
   end
 
   let(:manifest_hash) do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['jobs'].first['name'] = 'bazquux'
     manifest_hash['releases'].first['version'] = 'latest'
     manifest_hash['instance_groups'].first['instances'] = 1

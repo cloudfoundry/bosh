@@ -11,7 +11,7 @@ describe 'dynamic networks', type: :integration do
   end
 
   let(:cloud_config_hash) do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
     cloud_config_hash['networks'] = [{
       'name' => 'a',
       'type' => 'dynamic',
@@ -20,7 +20,7 @@ describe 'dynamic networks', type: :integration do
   end
 
   let(:simple_manifest) do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['instances'] = 1
 
     manifest_hash
@@ -51,7 +51,7 @@ describe 'dynamic networks', type: :integration do
 
   context 'with a dynamic and manual network defined on an instance' do
     let(:cloud_config_hash) do
-      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
       cloud_config_hash['networks'] = [
         {
           'name' => 'a',
@@ -73,7 +73,7 @@ describe 'dynamic networks', type: :integration do
     end
 
     let(:manifest) do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
 
       instance_group = manifest_hash['instance_groups'].first
       instance_group['networks'] = [

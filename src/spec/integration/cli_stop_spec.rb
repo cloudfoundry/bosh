@@ -4,7 +4,7 @@ describe 'stop command', type: :integration do
   with_reset_sandbox_before_each
 
   let(:manifest_hash) do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'] << {
       'name' => 'another-job',
       'jobs' => [
@@ -23,7 +23,7 @@ describe 'stop command', type: :integration do
 
   context 'with a job name' do
     before do
-      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
     end
 
     context 'with an index or id' do
@@ -111,7 +111,7 @@ describe 'stop command', type: :integration do
 
   context 'without a job name' do
     before do
-      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
     end
 
     it 'stops all jobs in the deployment' do
@@ -140,14 +140,14 @@ describe 'stop command', type: :integration do
   describe 'hard-stopping a job with persistent disk, followed by a re-deploy' do
     before do
       manifest_hash['instance_groups'].first['persistent_disk'] = 1024
-      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
     end
 
     it 'is successful (regression: #108398600) ' do
       bosh_runner.run('stop foobar --hard', deployment_name: 'simple')
       expect(vm_states).to eq({'another-job/0' => 'running'})
       expect {
-        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
       }.to_not raise_error
       expect(vm_states).to eq({'another-job/0' => 'running'})
     end

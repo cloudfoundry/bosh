@@ -16,9 +16,9 @@ describe 'cli: cleanup', type: :integration do
       bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
       bosh_runner.run("upload-stemcell #{asset_path('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
 
-      cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
       upload_cloud_config(cloud_config)
-      manifest_hash = Bosh::Spec::Deployments.minimal_manifest
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.minimal_manifest
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
       bosh_runner.run('export-release test_release/1 toronto-os/1', deployment_name: 'minimal')
@@ -38,13 +38,13 @@ describe 'cli: cleanup', type: :integration do
     let(:clean_command) { 'clean-up' }
 
     it 'should remove orphaned vms, releases, stemcells and dns blobs, leaving recent versions. Also leaves orphaned disks.' do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['name'] = 'deployment-a'
       manifest_hash['instance_groups'] = [
-        Bosh::Spec::Deployments.simple_instance_group(persistent_disk_type: 'disk_a', instances: 1, name: 'first-job'),
+        Bosh::Spec::DeploymentManifestHelper.simple_instance_group(persistent_disk_type: 'disk_a', instances: 1, name: 'first-job'),
       ]
-      cloud_config = Bosh::Spec::Deployments.simple_cloud_config
-      disk_type = Bosh::Spec::Deployments.disk_type
+      cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+      disk_type = Bosh::Spec::DeploymentManifestHelper.disk_type
       disk_type['cloud_properties'] = { 'my' => 'property' }
       cloud_config['disk_types'] = [disk_type]
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
@@ -83,13 +83,13 @@ describe 'cli: cleanup', type: :integration do
     let(:clean_command) { 'clean-up --all' }
 
     it 'should remove orphaned disks, releases, stemcells, and all unused dns blobs' do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['name'] = 'deployment-a'
       manifest_hash['instance_groups'] = [
-        Bosh::Spec::Deployments.simple_instance_group(persistent_disk_type: 'disk_a', instances: 1, name: 'first-job'),
+        Bosh::Spec::DeploymentManifestHelper.simple_instance_group(persistent_disk_type: 'disk_a', instances: 1, name: 'first-job'),
       ]
-      cloud_config = Bosh::Spec::Deployments.simple_cloud_config
-      disk_type = Bosh::Spec::Deployments.disk_type
+      cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+      disk_type = Bosh::Spec::DeploymentManifestHelper.disk_type
       disk_type['cloud_properties'] = { 'my' => 'property' }
       cloud_config['disk_types'] = [disk_type]
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
@@ -111,8 +111,8 @@ describe 'cli: cleanup', type: :integration do
 
     context 'when there is a runtime config uploaded' do
       it 'does not remove the releases specified in the runtime config' do
-        manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
-        cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+        manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+        cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, runtime_config_hash: {
           'releases' => [{ 'name' => 'bosh-release', 'version' => '0+dev.1' }],
         })
@@ -132,14 +132,14 @@ describe 'cli: cleanup', type: :integration do
 
     context 'when errands that ran have changing jobs' do
       let(:manifest) do
-        manifest = Bosh::Spec::Deployments.manifest_with_errand
+        manifest = Bosh::Spec::DeploymentManifestHelper.manifest_with_errand
         manifest['releases'].first['version'] = 'latest'
         manifest
       end
       let(:deployment_name) { manifest['name'] }
 
       before do
-        deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
+        deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
         bosh_runner.run('run-errand errand1', deployment_name: deployment_name)
 
         Dir.chdir(ClientSandbox.test_release_dir) do
@@ -162,13 +162,13 @@ describe 'cli: cleanup', type: :integration do
       let(:clean_command) { 'clean-up --all --keep-orphaned-disks' }
 
       it 'removes all artifacts except orphaned disks' do
-        manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+        manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
         manifest_hash['name'] = 'deployment-a'
         manifest_hash['instance_groups'] = [
-          Bosh::Spec::Deployments.simple_instance_group(persistent_disk_type: 'disk_a', instances: 1, name: 'first-job'),
+          Bosh::Spec::DeploymentManifestHelper.simple_instance_group(persistent_disk_type: 'disk_a', instances: 1, name: 'first-job'),
         ]
-        cloud_config = Bosh::Spec::Deployments.simple_cloud_config
-        disk_type = Bosh::Spec::Deployments.disk_type
+        cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+        disk_type = Bosh::Spec::DeploymentManifestHelper.disk_type
         disk_type['cloud_properties'] = { 'my' => 'property' }
         cloud_config['disk_types'] = [disk_type]
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)

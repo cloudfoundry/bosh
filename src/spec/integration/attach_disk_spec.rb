@@ -22,7 +22,7 @@ describe 'attach disk', type: :integration do
   end
 
   let(:simple_manifest) do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['releases'].first['version'] = 'latest'
     manifest_hash['instance_groups'][0]['instances'] = 1
     manifest_hash['instance_groups'][0]['persistent_disk'] = 1000
@@ -35,7 +35,7 @@ describe 'attach disk', type: :integration do
 
     before do
       bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell_with_api_version.tgz')}")
-      upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
       create_and_upload_test_release
 
       deploy(manifest_hash: simple_manifest)
@@ -98,12 +98,12 @@ describe 'attach disk', type: :integration do
     before do
       bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell_with_api_version.tgz')}")
 
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
-      instance_group = Bosh::Spec::Deployments.simple_instance_group(persistent_disk_type: 'disk_a', instances: 1)
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      instance_group = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(persistent_disk_type: 'disk_a', instances: 1)
       manifest_hash['instance_groups'] = [instance_group]
-      cloud_config = Bosh::Spec::Deployments.simple_cloud_config
-      cloud_config['disk_types'] = [Bosh::Spec::Deployments.disk_type]
-      upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
+      cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+      cloud_config['disk_types'] = [Bosh::Spec::DeploymentManifestHelper.disk_type]
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
       create_and_upload_test_release
       deploy(manifest_hash: simple_manifest)
 

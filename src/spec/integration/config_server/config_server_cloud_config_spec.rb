@@ -66,7 +66,7 @@ describe 'using director with config server', type: :integration do
   end
 
   context 'cloud config contains placeholders' do
-    let(:cloud_config) { Bosh::Spec::Deployments.cloud_config_with_placeholders }
+    let(:cloud_config) { Bosh::Spec::DeploymentManifestHelper.cloud_config_with_placeholders }
 
     context 'all placeholders are set in config server' do
       before do
@@ -285,7 +285,7 @@ describe 'using director with config server', type: :integration do
   end
 
   context 'cloud config contains cloud properties only placeholders' do
-    let(:cloud_config) { Bosh::Spec::Deployments.cloud_config_with_cloud_properties_placeholders }
+    let(:cloud_config) { Bosh::Spec::DeploymentManifestHelper.cloud_config_with_cloud_properties_placeholders }
 
     before do
       config_server_helper.put_value('/never-log-me', 'super-secret')

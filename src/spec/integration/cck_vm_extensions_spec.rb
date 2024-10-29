@@ -1,12 +1,12 @@
 require 'spec_helper'
 
 describe 'cck vm extensions', type: :integration do
-  let(:manifest) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
+  let(:manifest) { Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups }
   let(:deployment_name) {manifest['name']}
 
   context 'when cloud config is updated after deploying' do
     with_reset_sandbox_before_each
-    let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
+    let(:cloud_config_hash) { Bosh::Spec::DeploymentManifestHelper.simple_cloud_config }
 
     before do
       manifest['instance_groups'][0]['instances'] = 1

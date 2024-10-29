@@ -1,8 +1,7 @@
-require_relative '../deployments'
-require_relative '../networking_manifest_helper'
+require 'spec_helper'
 
 module Bosh::Spec
-  RSpec.describe NetworkingManifest do
+  RSpec.describe DeploymentManifestHelper do
     let(:expected_cloud_config) do
       {
         "networks" => [
@@ -29,7 +28,7 @@ module Bosh::Spec
         }
       end
 
-      let(:cloud_config) { NetworkingManifest.cloud_config(available_ips: 2) }
+      let(:cloud_config) { DeploymentManifestHelper.cloud_config_with_subnet(available_ips: 2) }
 
       it 'creates the expected manifest' do
         first_subnet = cloud_config['networks'][0]['subnets'][0]
@@ -52,7 +51,7 @@ module Bosh::Spec
           }
         end
 
-        let(:cloud_config) { NetworkingManifest.cloud_config(available_ips: 2, range: range) }
+        let(:cloud_config) { DeploymentManifestHelper.cloud_config_with_subnet(available_ips: 2, range: range) }
 
         it 'creates the expected manifest' do
           first_subnet = cloud_config['networks'][0]['subnets'][0]
@@ -75,7 +74,7 @@ module Bosh::Spec
         }
       end
 
-      let(:cloud_config) { NetworkingManifest.cloud_config(available_ips: 3, shift_ip_range_by: 2) }
+      let(:cloud_config) { DeploymentManifestHelper.cloud_config_with_subnet(available_ips: 3, shift_ip_range_by: 2) }
 
       it 'creates the expected manifest' do
         first_subnet = cloud_config['networks'][0]['subnets'][0]

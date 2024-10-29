@@ -6,11 +6,11 @@ describe 'list errands', type: :integration, with_tmp_dir: true do
   let(:deployment_name) { manifest_hash['name'] }
 
   before do
-    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
   end
 
   context('when current deployment has an instance_group lifecycle errand') do
-    let(:manifest_hash) { Bosh::Spec::Deployments.manifest_with_errand }
+    let(:manifest_hash) { Bosh::Spec::DeploymentManifestHelper.manifest_with_errand }
 
     it 'lists the instance group name and the job name as errands' do
       output = bosh_runner.run('errands', deployment_name: deployment_name)
@@ -21,7 +21,7 @@ describe 'list errands', type: :integration, with_tmp_dir: true do
   end
 
   context('when current deployment has an instance_group lifecycle service with an errand job') do
-    let(:manifest_hash) { Bosh::Spec::Deployments.manifest_with_errand_on_service_instance }
+    let(:manifest_hash) { Bosh::Spec::DeploymentManifestHelper.manifest_with_errand_on_service_instance }
     it 'lists the job name as a errand' do
       output = bosh_runner.run('errands', deployment_name: deployment_name)
       expect(output).to match(/errand1/)
@@ -31,8 +31,8 @@ describe 'list errands', type: :integration, with_tmp_dir: true do
 
   context 'when there are both jobs and instance groups that are errands' do
     let(:manifest_hash) do
-      manifest = Bosh::Spec::Deployments.manifest_with_errand
-      manifest['instance_groups'] << Bosh::Spec::Deployments.service_instance_group_with_errand
+      manifest = Bosh::Spec::DeploymentManifestHelper.manifest_with_errand
+      manifest['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.service_instance_group_with_errand
       manifest
     end
 
@@ -45,9 +45,9 @@ describe 'list errands', type: :integration, with_tmp_dir: true do
 
     context 'the instance group and job have the same name' do
       let(:manifest_hash) do
-        manifest = Bosh::Spec::Deployments.manifest_with_errand
+        manifest = Bosh::Spec::DeploymentManifestHelper.manifest_with_errand
         manifest['instance_groups'].find { |instance_group| instance_group['name'] == 'fake-errand-name'}['name'] = 'errand1'
-        manifest['instance_groups'] << Bosh::Spec::Deployments.service_instance_group_with_errand
+        manifest['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.service_instance_group_with_errand
         manifest
       end
 

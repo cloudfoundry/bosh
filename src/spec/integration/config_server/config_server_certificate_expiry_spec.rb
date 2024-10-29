@@ -32,7 +32,7 @@ describe 'using director with config server and deployments having variables', t
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger) }
 
   let(:cloud_config) do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
     cloud_config_hash['azs'] = [{ 'name' => 'z1' }]
     cloud_config_hash['networks'].first['subnets'].first['static'] = [
       '192.168.1.10',
@@ -53,7 +53,7 @@ describe 'using director with config server and deployments having variables', t
 
   let(:provider_job_name) { 'http_server_with_provides' }
   let(:my_instance_group) do
-    instance_group_spec = Bosh::Spec::Deployments.simple_instance_group(
+    instance_group_spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
       name: 'my_instance_group',
       jobs: [
         {
@@ -73,7 +73,7 @@ describe 'using director with config server and deployments having variables', t
     instance_group_spec
   end
   let(:manifest) do
-    manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+    manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
     manifest['instance_groups'] = [my_instance_group]
     manifest
   end
@@ -167,7 +167,7 @@ describe 'using director with config server and deployments having variables', t
 
     context 'when certificate is specified as absolute path (from different deployment)' do
       let(:my_instance_group_2) do
-        instance_group_spec = Bosh::Spec::Deployments.simple_instance_group(
+        instance_group_spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
           name: 'my_instance_group',
           jobs: [
             {

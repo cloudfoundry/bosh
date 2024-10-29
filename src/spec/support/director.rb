@@ -18,7 +18,7 @@ module Bosh::Spec
       @director_nats_config = director_nats_config
     end
 
-    def instances(options={deployment_name: Deployments::DEFAULT_DEPLOYMENT_NAME})
+    def instances(options={deployment_name: DeploymentManifestHelper::DEFAULT_DEPLOYMENT_NAME})
       instances_details(options).map do |instance_data|
         Bosh::Spec::Instance.new(
           @waiter,
@@ -60,7 +60,7 @@ module Bosh::Spec
     end
 
     # vm always returns a vm
-    def instance(instance_group_name, index_or_id, options = { deployment_name: Deployments::DEFAULT_DEPLOYMENT_NAME })
+    def instance(instance_group_name, index_or_id, options = { deployment_name: DeploymentManifestHelper::DEFAULT_DEPLOYMENT_NAME })
       find_instance(instances(options), instance_group_name, index_or_id)
     end
 
@@ -71,7 +71,7 @@ module Bosh::Spec
 
     # wait_for_vm either returns a vm or nil after waiting for X seconds
     # (Do not add default timeout value to be more explicit in tests)
-    def wait_for_vm(instance_group_name, index, timeout_seconds, options = {deployment_name: Deployments::DEFAULT_DEPLOYMENT_NAME})
+    def wait_for_vm(instance_group_name, index, timeout_seconds, options = {deployment_name: DeploymentManifestHelper::DEFAULT_DEPLOYMENT_NAME})
       start_time = Time.now
       loop do
         vm = instances(options).detect { |vm| !vm.vm_cid.empty? && vm.instance_group_name == instance_group_name && vm.index == index && vm.last_known_state != 'unresponsive agent' && vm.last_known_state != nil }
@@ -84,7 +84,7 @@ module Bosh::Spec
       nil
     end
 
-    def wait_for_first_available_instance(timeout = 60, options = {deployment_name: Deployments::DEFAULT_DEPLOYMENT_NAME})
+    def wait_for_first_available_instance(timeout = 60, options = {deployment_name: DeploymentManifestHelper::DEFAULT_DEPLOYMENT_NAME})
       @waiter.wait(timeout) { instances(options).first || raise('Must have at least 1 VM') }
     end
 
@@ -159,7 +159,7 @@ module Bosh::Spec
       event_list
     end
 
-    def kill_vm_and_wait_for_resurrection(vm, options={deployment_name: Deployments::DEFAULT_DEPLOYMENT_NAME})
+    def kill_vm_and_wait_for_resurrection(vm, options={deployment_name: DeploymentManifestHelper::DEFAULT_DEPLOYMENT_NAME})
       vm.kill_agent
 
       wait_for_vm(vm.instance_group_name, vm.index, 300, options)
@@ -208,7 +208,7 @@ module Bosh::Spec
 
     def add_defaults(options)
       options[:json] = true
-      options[:deployment_name] ||= Deployments::DEFAULT_DEPLOYMENT_NAME
+      options[:deployment_name] ||= DeploymentManifestHelper::DEFAULT_DEPLOYMENT_NAME
       options
     end
 

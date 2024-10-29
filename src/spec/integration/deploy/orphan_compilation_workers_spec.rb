@@ -7,12 +7,12 @@ describe 'compilation.orphan_workers', type: :integration do
   let(:reuse_compilation_vms) { false }
 
   let(:manifest) do
-    manifest = Bosh::Spec::Deployments.simple_manifest_with_instance_groups(instances: 1, azs: ['z1'])
+    manifest = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups(instances: 1, azs: ['z1'])
     manifest
   end
 
   let(:cloud_config) do
-    cloud_config = Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs
+    cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs
     cloud_config['compilation'] = cloud_config['compilation'].merge(
       'orphan_workers' => orphan_compilation_workers,
       'reuse_compilation_vms' => reuse_compilation_vms,

@@ -10,7 +10,7 @@ describe 'checking link properties', type: :integration do
   end
 
   let(:cloud_config) do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
     cloud_config_hash['azs'] = [{ 'name' => 'z1' }]
     cloud_config_hash['networks'].first['subnets'].first['static'] = [
       '192.168.1.10',
@@ -30,7 +30,7 @@ describe 'checking link properties', type: :integration do
   end
 
   let(:instance_group_with_nil_properties) do
-    spec = Bosh::Spec::Deployments.simple_instance_group(
+    spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
       name: 'property_job',
       jobs: [
         {
@@ -58,7 +58,7 @@ describe 'checking link properties', type: :integration do
   end
 
   let(:instance_group_with_manual_consumes_link) do
-    spec = Bosh::Spec::Deployments.simple_instance_group(
+    spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
       name: 'property_job',
       jobs: [
         {
@@ -86,7 +86,7 @@ describe 'checking link properties', type: :integration do
   end
 
   let(:instance_group_with_link_properties_not_defined_in_release_properties) do
-    spec = Bosh::Spec::Deployments.simple_instance_group(
+    spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
       name: 'jobby',
       jobs: [{ 'name' => 'provider', 'properties' => { 'doesntExist' => 'someValue' }, 'release' => 'bosh-release' }],
       instances: 1,
@@ -109,7 +109,7 @@ describe 'checking link properties', type: :integration do
   end
 
   it 'should not raise an error when consuming links without properties' do
-    manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+    manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
     manifest['releases'][0]['version'] = '0+dev.1'
     manifest['instance_groups'] = [instance_group_with_nil_properties]
 
@@ -119,7 +119,7 @@ describe 'checking link properties', type: :integration do
   end
 
   it 'should not raise an error when a deployment template property is not defined in the release properties' do
-    manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+    manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
     manifest['releases'][0]['version'] = '0+dev.1'
     manifest['instance_groups'] = [instance_group_with_link_properties_not_defined_in_release_properties]
 
@@ -129,7 +129,7 @@ describe 'checking link properties', type: :integration do
   end
 
   it 'should be able to resolve a manual configuration in a consumes link' do
-    manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+    manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
     manifest['instance_groups'] = [instance_group_with_manual_consumes_link]
 
     _, exit_code = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)

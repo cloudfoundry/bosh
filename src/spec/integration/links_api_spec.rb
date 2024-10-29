@@ -10,7 +10,7 @@ describe 'links api', type: :integration do
   end
 
   let(:manifest_hash) do
-    Bosh::Spec::Deployments.manifest_with_release.merge(
+    Bosh::Spec::DeploymentManifestHelper.manifest_with_release.merge(
       'instance_groups' => [instance_group],
       'features' => features
     )
@@ -37,7 +37,7 @@ describe 'links api', type: :integration do
   let(:persistent_disks) { [] }
 
   let(:cloud_config_hash) do
-    Bosh::Spec::Deployments.simple_cloud_config.merge(
+    Bosh::Spec::DeploymentManifestHelper.simple_cloud_config.merge(
       'disk_types' => [
         {
           'name' => 'low-performance-disk-type',
@@ -516,7 +516,7 @@ describe 'links api', type: :integration do
         end
 
         let(:consumer_manifest_hash) do
-          Bosh::Spec::Deployments.manifest_with_release.merge(
+          Bosh::Spec::DeploymentManifestHelper.manifest_with_release.merge(
             'name' => 'consumer-simple',
             'instance_groups' => [consumer_instance_group],
           )
@@ -828,7 +828,7 @@ describe 'links api', type: :integration do
 
     context 'when the second deploy fails, so the deploy is rolled back' do
       let(:cloud_config_hash) do
-        Bosh::Spec::Deployments.simple_cloud_config.tap do |cloud_config|
+        Bosh::Spec::DeploymentManifestHelper.simple_cloud_config.tap do |cloud_config|
           cloud_config['networks'][0]['subnets'][0]['az'] = 'z1'
           cloud_config['compilation']['az'] = 'z1'
           cloud_config['azs'] = ['name' => 'z1']
@@ -836,7 +836,7 @@ describe 'links api', type: :integration do
       end
 
       let(:instance_group) do
-        spec = Bosh::Spec::Deployments.simple_instance_group(
+        spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
           name: 'instance_group',
           jobs: [
             { 'name' => 'api_server_2_instances', 'release' => 'bosh-release' },
@@ -871,7 +871,7 @@ describe 'links api', type: :integration do
 
     context 'when a provider job is removed, so the implicit link should be cleared out' do
       let(:cloud_config_hash) do
-        Bosh::Spec::Deployments.simple_cloud_config.tap do |cloud_config|
+        Bosh::Spec::DeploymentManifestHelper.simple_cloud_config.tap do |cloud_config|
           cloud_config['networks'][0]['subnets'][0]['az'] = 'z1'
           cloud_config['compilation']['az'] = 'z1'
           cloud_config['azs'] = ['name' => 'z1']
@@ -879,7 +879,7 @@ describe 'links api', type: :integration do
       end
 
       let(:instance_group) do
-        spec = Bosh::Spec::Deployments.simple_instance_group(
+        spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
           name: 'instance_group',
           jobs: [
             { 'name' => 'errand_with_optional_links', 'release' => 'bosh-release' },
@@ -1234,7 +1234,7 @@ describe 'links api', type: :integration do
 
         context 'when multiple provider with same name and type exists' do
           before do
-            new_instance_group = Bosh::Spec::Deployments.simple_instance_group(
+            new_instance_group = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
               name: 'new-foobar',
               jobs: jobs,
             )
@@ -1461,11 +1461,11 @@ describe 'links api', type: :integration do
     end
 
     let(:instance_group) do
-      Bosh::Spec::Deployments.simple_instance_group(jobs: jobs, azs: ['z2'])
+      Bosh::Spec::DeploymentManifestHelper.simple_instance_group(jobs: jobs, azs: ['z2'])
     end
 
     let(:cloud_config_hash) do
-      Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs
+      Bosh::Spec::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs
     end
 
     let(:payload_json) do

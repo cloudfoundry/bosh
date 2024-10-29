@@ -4,8 +4,8 @@ describe 'ignore/unignore-instance', type: :integration do
   with_reset_sandbox_before_each
 
   it 'changes the ignore value of vms correctly' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
-    cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
 
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -31,11 +31,11 @@ describe 'ignore/unignore-instance', type: :integration do
   end
 
   it 'fails when deleting deployment that has ignored instances even when using force flag' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
-    cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
 
     manifest_hash['instance_groups'].clear
-    manifest_hash['instance_groups'] << Bosh::Spec::Deployments.simple_instance_group(name: 'foobar1', instances: 2)
+    manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar1', instances: 2)
 
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -66,11 +66,11 @@ describe 'ignore/unignore-instance', type: :integration do
   end
 
   it 'fails when trying to attach a disk to an ignored instance' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
-    cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
 
     manifest_hash['instance_groups'].clear
-    manifest_hash['instance_groups'] << Bosh::Spec::Deployments.simple_instance_group(name: 'foobar1', instances: 2)
+    manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar1', instances: 2)
 
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 

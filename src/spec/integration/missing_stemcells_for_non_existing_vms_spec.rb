@@ -1,17 +1,17 @@
 require 'spec_helper'
 
 describe 'missing stemcells for non existing vms', type: :integration do
-  let(:manifest_hash) { Bosh::Spec::Deployments.manifest_with_errand }
+  let(:manifest_hash) { Bosh::Spec::DeploymentManifestHelper.manifest_with_errand }
   let(:deployment_name) { manifest_hash['name'] }
 
   context 'when errand script exits with 0 exit code' do
     with_reset_sandbox_before_each
 
     it 'returns 0 as exit code from the cli and indicates that errand ran successfully' do
-      manifest = Bosh::Spec::Deployments.manifest_with_errand
+      manifest = Bosh::Spec::DeploymentManifestHelper.manifest_with_errand
       deploy_from_scratch(
         manifest_hash: manifest,
-        cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
+        cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
       )
 
       _, exit_code = bosh_runner.run(
@@ -33,7 +33,7 @@ describe 'missing stemcells for non existing vms', type: :integration do
       ]
       deploy_simple_manifest(
         manifest_hash: manifest,
-        cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
+        cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
       )
 
       bosh_runner.run('clean-up --all')
@@ -43,7 +43,7 @@ describe 'missing stemcells for non existing vms', type: :integration do
       # this should not fail with missing stemcell
       deploy_simple_manifest(
         manifest_hash: manifest,
-        cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
+        cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
       )
     end
   end

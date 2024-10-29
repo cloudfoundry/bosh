@@ -21,7 +21,7 @@ describe 'network resolution', type: :integration do
   end
 
   let(:cloud_config) do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
     cloud_config_hash['azs'] = [{ 'name' => 'z1' }]
     cloud_config_hash['networks'].first['subnets'].first['static'] = [
       '192.168.1.10', '192.168.1.11', '192.168.1.12', '192.168.1.13'
@@ -38,7 +38,7 @@ describe 'network resolution', type: :integration do
   end
 
   let(:api_instance_group_spec) do
-    spec = Bosh::Spec::Deployments.simple_instance_group(
+    spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
       name: 'my_api',
       jobs: [{ 'name' => 'api_server', 'release' => 'bosh-release', 'consumes' => links }],
       instances: 1,
@@ -48,7 +48,7 @@ describe 'network resolution', type: :integration do
   end
 
   let(:mysql_instance_group_spec) do
-    spec = Bosh::Spec::Deployments.simple_instance_group(
+    spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
       name: 'mysql',
       jobs: [{ 'name' => 'database', 'release' => 'bosh-release' }],
       instances: 2,
@@ -63,7 +63,7 @@ describe 'network resolution', type: :integration do
   end
 
   let(:postgres_instance_group_spec) do
-    spec = Bosh::Spec::Deployments.simple_instance_group(
+    spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
       name: 'postgres',
       jobs: [{ 'name' => 'backup_database', 'release' => 'bosh-release' }],
       instances: 1,
@@ -74,7 +74,7 @@ describe 'network resolution', type: :integration do
   end
 
   let(:aliased_instance_group_spec) do
-    spec = Bosh::Spec::Deployments.simple_instance_group(
+    spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
       name: 'aliased_postgres',
       jobs: [
         'name' => 'backup_database',
@@ -88,7 +88,7 @@ describe 'network resolution', type: :integration do
   end
 
   let(:manifest) do
-    manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+    manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
     manifest['instance_groups'] = [api_instance_group_spec, mysql_instance_group_spec, postgres_instance_group_spec]
     manifest
   end
@@ -205,7 +205,7 @@ describe 'network resolution', type: :integration do
 
     context 'user has duplicate implicit links provided in two jobs over separate networks' do
       let(:mysql_instance_group_spec) do
-        spec = Bosh::Spec::Deployments.simple_instance_group(
+        spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
           name: 'mysql',
           jobs: [{ 'name' => 'database', 'release' => 'bosh-release' }],
           instances: 2,
@@ -242,7 +242,7 @@ describe 'network resolution', type: :integration do
     end
 
     it 'uses the network from link when only one network is available' do
-      mysql_instance_group_spec = Bosh::Spec::Deployments.simple_instance_group(
+      mysql_instance_group_spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
         name: 'mysql',
         jobs: [{ 'name' => 'database', 'release' => 'bosh-release' }],
         instances: 1,

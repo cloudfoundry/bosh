@@ -6,7 +6,7 @@ describe 'director_scheduler', type: :integration do
   with_reset_sandbox_before_each
 
   let(:deployment_hash) do
-    deployment_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+    deployment_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
     deployment_hash['instance_groups'][0]['persistent_disk'] = 20_480
     deployment_hash
   end
@@ -18,7 +18,7 @@ describe 'director_scheduler', type: :integration do
     runner.run('upload-release')
     runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
 
-    cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
+    cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
     bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
 
     deployment_manifest = yaml_file('deployment_manifest', deployment_hash)
@@ -49,7 +49,7 @@ describe 'director_scheduler', type: :integration do
     after { current_sandbox.scheduler_process.stop }
 
     let(:deployment_hash) do
-      deployment_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      deployment_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
       deployment_hash['instance_groups'][0]['update'] = {
         'vm_strategy' => 'create-swap-delete',
       }

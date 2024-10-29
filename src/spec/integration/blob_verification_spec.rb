@@ -4,7 +4,7 @@ describe 'blobs verification behavior', type: :integration do
   with_reset_sandbox_before_each
 
   it 'fails when job object is changed' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
     prepare_for_deploy
 
     inspected_release = bosh_runner.run('inspect-release bosh-release/0+dev.1', json: true)

@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe 'cli: cloudcheck', type: :integration do
-  let(:manifest) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
+  let(:manifest) { Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups }
   let(:director_name) { current_sandbox.director_name }
   let(:deployment_name) { manifest['name'] }
   let(:runner) { bosh_runner_in_work_dir(ClientSandbox.test_release_dir) }
@@ -12,7 +12,7 @@ describe 'cli: cloudcheck', type: :integration do
 
   context 'when cloud config is updated after deploying' do
     with_reset_sandbox_before_each
-    let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
+    let(:cloud_config_hash) { Bosh::Spec::DeploymentManifestHelper.simple_cloud_config }
 
     before do
       manifest['instance_groups'][0]['instances'] = 1

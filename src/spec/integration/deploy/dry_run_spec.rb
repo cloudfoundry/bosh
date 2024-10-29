@@ -5,7 +5,7 @@ describe 'dry run', type: :integration do
 
   context 'when there are template errors' do
     it 'prints all template evaluation errors and does not register an event' do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'] = [
         {
           'name' => 'foobar',
@@ -21,7 +21,7 @@ describe 'dry run', type: :integration do
 
       output = deploy_from_scratch(
         manifest_hash: manifest_hash,
-        cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
+        cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
         failure_expected: true,
         dry_run: true,
       )
@@ -40,11 +40,11 @@ describe 'dry run', type: :integration do
 
   context 'when there are no errors' do
     it 'returns some encouraging message but does not alter deployment' do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
 
       deploy_from_scratch(
         manifest_hash: manifest_hash,
-        cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
+        cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
         dry_run: true,
       )
 
@@ -53,17 +53,17 @@ describe 'dry run', type: :integration do
   end
 
   it 'does not interfere with a successful deployment later' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
 
     deploy_from_scratch(
       manifest_hash: manifest_hash,
-      cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
+      cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
       dry_run: true,
     )
 
     _, exit_code = deploy_from_scratch(
       manifest_hash: manifest_hash,
-      cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
+      cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
       return_exit_code: true,
     )
 

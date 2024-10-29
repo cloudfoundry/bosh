@@ -10,7 +10,7 @@ describe 'availability zones', type: :integration do
     end
 
     let(:cloud_config_hash) do
-      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
       cloud_config_hash['vm_types'].first['cloud_properties'] = {
         'a' => 'vm_value_for_a',
         'e' => 'vm_value_for_e',
@@ -28,7 +28,7 @@ describe 'availability zones', type: :integration do
     end
 
     let(:simple_manifest) do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'].first['instances'] = 1
       manifest_hash['instance_groups'].first['azs'] = ['my-az']
       manifest_hash['instance_groups'].first['networks'] = [{'name' => cloud_config_hash['networks'].first['name']}]
@@ -574,7 +574,7 @@ describe 'availability zones', type: :integration do
         ]
         upload_cloud_config(cloud_config_hash: cloud_hash)
 
-        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(
+        manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest(
           instances: 1,
           job: 'foobar_without_packages',
           job_release: 'bosh-release',

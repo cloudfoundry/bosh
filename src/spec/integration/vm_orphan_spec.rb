@@ -4,13 +4,13 @@ describe 'orphaning a vm', type: :integration do
   with_reset_sandbox_before_each
 
   let(:cloud_config) do
-    cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
     cloud_config['networks'][0]['type'] = 'manual'
     cloud_config
   end
 
   let(:manifest) do
-    manifest = Bosh::Spec::Deployments.simple_manifest_with_instance_groups(instances: 2)
+    manifest = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups(instances: 2)
     manifest['instance_groups'][0]['persistent_disk'] = 660
     manifest['update'] = manifest['update'].merge('vm_strategy' => 'create-swap-delete')
     manifest

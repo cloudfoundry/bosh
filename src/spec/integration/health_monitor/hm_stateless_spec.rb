@@ -32,8 +32,8 @@ describe 'health_monitor: 1', type: :integration, hm: true do
   end
 
   it 'runs the pre-start scripts when the VM is resurrected' do
-    manifest_hash = Bosh::Spec::Deployments.test_release_manifest_with_stemcell.merge(
-      'instance_groups' => [Bosh::Spec::Deployments.instance_group_with_many_jobs(
+    manifest_hash = Bosh::Spec::DeploymentManifestHelper.test_release_manifest_with_stemcell.merge(
+      'instance_groups' => [Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
         name: 'ig_with_jobs_having_prestart_scripts',
         jobs: [
           { 'name' => 'job_1_with_pre_start_script', 'release' => 'bosh-release' },
@@ -43,7 +43,7 @@ describe 'health_monitor: 1', type: :integration, hm: true do
       )],
     )
 
-    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
 
     original_instance = director.instance('ig_with_jobs_having_prestart_scripts', '0', deployment_name: 'simple')
     original_instance.kill_agent
@@ -73,9 +73,9 @@ describe 'health_monitor: 1', type: :integration, hm: true do
     # Turn resurrector off
     current_sandbox.reconfigure_health_monitor('health_monitor_without_resurrector.yml.erb')
 
-    deployment_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+    deployment_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
     deployment_hash['instance_groups'][0]['instances'] = 2
-    deploy_from_scratch(manifest_hash: deployment_hash, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
+    deploy_from_scratch(manifest_hash: deployment_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
 
     director.instance('foobar', '0', deployment_name: 'simple').kill_agent
     director.instance('foobar', '1', deployment_name: 'simple').kill_agent
@@ -99,7 +99,7 @@ describe 'health_monitor: 1', type: :integration, hm: true do
 
       current_sandbox.reconfigure_health_monitor('health_monitor_with_json_logging.yml.erb')
 
-      deployment_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      deployment_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
       deployment_hash['instance_groups'][0]['instances'] = 1
 
       prepare_for_deploy(env: director_client_env, include_credentials: false)
@@ -151,21 +151,21 @@ describe 'health_monitor: 1', type: :integration, hm: true do
 
   # ~50s
   it 'notifies health monitor about job failures' do
-    deployment_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+    deployment_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
     deployment_hash['instance_groups'][0]['instances'] = 1
-    deploy_from_scratch(manifest_hash: deployment_hash,  cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
+    deploy_from_scratch(manifest_hash: deployment_hash,  cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
 
     director.instance('foobar', '0').fail_job
     waiter.wait(20) { expect(health_monitor.read_log).to match(/\[ALERT\] Alert @ .* fake-monit-description/) }
   end
 
   it 're-renders templates with new dynamic network IPs' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['instances'] = 1
     manifest_hash['instance_groups'].first['networks'] << {'name' => 'b', 'default' => ['dns', 'gateway']}
     manifest_hash['instance_groups'].first['jobs'].first['properties'] = { 'networks' => ['a', 'b'] }
 
-    cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
     cloud_config['networks'] << {
       'name' => 'b',
       'type' => 'dynamic',

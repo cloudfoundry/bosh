@@ -3,8 +3,8 @@ require 'spec_helper'
 describe 'orphaned networks', type: :integration do
   include Bosh::Spec::CreateReleaseOutputParsers
   with_reset_sandbox_before_each(networks: { 'enable_cpi_management' => true })
-  let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs }
-  let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
+  let(:cloud_config_hash) { Bosh::Spec::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs }
+  let(:manifest_hash) { Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups }
   before do
     bosh_runner.reset
     manifest_hash['name'] = 'first-deployment'

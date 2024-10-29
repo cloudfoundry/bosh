@@ -5,21 +5,21 @@ describe 'post deploy scripts', type: :integration do
     with_reset_sandbox_before_each
 
     before do
-      upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
       upload_stemcell
     end
 
     context 'when the post-deploy scripts are valid' do
       let(:manifest) do
-        Bosh::Spec::Deployments.manifest_with_release.merge(
-          'instance_groups' => [Bosh::Spec::Deployments.instance_group_with_many_jobs(
+        Bosh::Spec::DeploymentManifestHelper.manifest_with_release.merge(
+          'instance_groups' => [Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
             name: 'job_with_post_deploy_script',
             jobs: [
               { 'name' => 'job_1_with_post_deploy_script', 'release' => 'bosh-release' },
               { 'name' => 'job_2_with_post_deploy_script', 'release' => 'bosh-release' },
             ],
             instances: 1,
-          ), Bosh::Spec::Deployments.instance_group_with_many_jobs(
+          ), Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
             name: 'another_job_with_post_deploy_script',
             jobs: [
               { 'name' => 'job_1_with_post_deploy_script', 'release' => 'bosh-release' },
@@ -123,8 +123,8 @@ describe 'post deploy scripts', type: :integration do
 
     context 'when the post-deploy scripts exit with error' do
       let(:manifest) do
-        Bosh::Spec::Deployments.manifest_with_release.merge(
-          'instance_groups' => [Bosh::Spec::Deployments.instance_group_with_many_jobs(
+        Bosh::Spec::DeploymentManifestHelper.manifest_with_release.merge(
+          'instance_groups' => [Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
             name: 'job_with_post_deploy_script',
             jobs: [
               { 'name' => 'job_1_with_post_deploy_script', 'release' => 'bosh-release' },
@@ -174,8 +174,8 @@ describe 'post deploy scripts', type: :integration do
 
     context 'when nothing has changed in the deployment it does not run the post-deploy script' do
       let(:manifest) do
-        Bosh::Spec::Deployments.manifest_with_release.merge(
-          'instance_groups' => [Bosh::Spec::Deployments.instance_group_with_many_jobs(
+        Bosh::Spec::DeploymentManifestHelper.manifest_with_release.merge(
+          'instance_groups' => [Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
             name: 'job_with_post_deploy_script',
             jobs: [
               { 'name' => 'job_1_with_post_deploy_script', 'release' => 'bosh-release' },
@@ -183,7 +183,7 @@ describe 'post deploy scripts', type: :integration do
             ],
             instances: 1,
           ),
-                                Bosh::Spec::Deployments.instance_group_with_many_jobs(
+                                Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
                                   name: 'job_with_errand',
                                   jobs: [
                                     { 'name' => 'errand1', 'release' => 'bosh-release' },

@@ -4,7 +4,7 @@ describe 'cancel task', type: :integration do
   with_reset_sandbox_before_each
 
   it 'creates a task and then successfully cancels it' do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
     cloud_config_hash['compilation']['workers'] = 1
     prepare_for_deploy(cloud_config_hash: cloud_config_hash)
 

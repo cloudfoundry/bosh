@@ -4,8 +4,8 @@ describe 'using director with config server', type: :integration do
   with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa')
 
   let(:manifest_hash) do
-    Bosh::Spec::Deployments.test_release_manifest_with_stemcell.merge(
-      'instance_groups' => [Bosh::Spec::Deployments.instance_group_with_many_jobs(
+    Bosh::Spec::DeploymentManifestHelper.test_release_manifest_with_stemcell.merge(
+      'instance_groups' => [Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
         name: 'our_instance_group',
         jobs: [
           {
@@ -24,7 +24,7 @@ describe 'using director with config server', type: :integration do
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger)}
   let(:deployment_name) { manifest_hash['name'] }
   let(:director_name) { current_sandbox.director_name }
-  let(:cloud_config)  { Bosh::Spec::Deployments.simple_cloud_config }
+  let(:cloud_config)  { Bosh::Spec::DeploymentManifestHelper.simple_cloud_config }
   let(:job_properties) do
     {
       'gargamel' => {
@@ -64,14 +64,14 @@ describe 'using director with config server', type: :integration do
   context 'when config server certificates are trusted' do
     context 'when runtime manifest has placeholders' do
       context 'when config server does not have all names' do
-        let(:runtime_config) { Bosh::Spec::Deployments.runtime_config_with_job_placeholders }
+        let(:runtime_config) { Bosh::Spec::DeploymentManifestHelper.runtime_config_with_job_placeholders }
 
         it 'will throw a valid error for the runtime config on deploy' do
           upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false,  env: client_env)
 
           output, exit_code = deploy_from_scratch(
             manifest_hash: manifest_hash,
-            cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
+            cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
             failure_expected: true,
             return_exit_code: true,
             include_credentials: false,
@@ -231,7 +231,7 @@ describe 'using director with config server', type: :integration do
           end
 
           it 'does variable substitution on the initial creation' do
-            manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+            manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
             manifest_hash['instance_groups'].first['instances'] = 1
             deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, include_credentials: false,  env: client_env)
 

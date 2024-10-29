@@ -4,7 +4,7 @@ describe 'vip networks', type: :integration do
   with_reset_sandbox_before_each
 
   let(:cloud_config_hash) do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
     cloud_config_hash['networks'] << {
       'name' => 'vip-network',
       'type' => 'vip',
@@ -27,7 +27,7 @@ describe 'vip networks', type: :integration do
 
   context 'when the operator defines a vip in the instance group' do
     let(:simple_manifest) do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'].first['instances'] = 1
       manifest_hash['instance_groups'].first['networks'] = [
         { 'name' => cloud_config_hash['networks'].first['name'], 'default' => %w[dns gateway] },
@@ -37,7 +37,7 @@ describe 'vip networks', type: :integration do
     end
 
     let(:updated_simple_manifest) do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'].first['instances'] = 2
       manifest_hash['instance_groups'].first['networks'] = [
         { 'name' => cloud_config_hash['networks'].first['name'], 'default' => %w[dns gateway] },
@@ -71,7 +71,7 @@ describe 'vip networks', type: :integration do
     end
 
     it 'shows no change on update' do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'].first['instances'] = 2
       manifest_hash['instance_groups'].first['networks'] = [
         { 'name' => cloud_config_hash['networks'].first['name'], 'default' => %w[dns gateway] },
@@ -102,7 +102,7 @@ describe 'vip networks', type: :integration do
 
   context 'when the operator predefines vips in the cloud config' do
     let(:simple_manifest) do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'].first['instances'] = 1
       manifest_hash['instance_groups'].first['networks'] = [
         { 'name' => cloud_config_hash['networks'].first['name'], 'default' => %w[dns gateway] },
@@ -112,7 +112,7 @@ describe 'vip networks', type: :integration do
     end
 
     let(:updated_simple_manifest) do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'].first['instances'] = 2
       manifest_hash['instance_groups'].first['networks'] = [
         { 'name' => cloud_config_hash['networks'].first['name'], 'default' => %w[dns gateway] },
@@ -205,7 +205,7 @@ describe 'vip networks', type: :integration do
 
   context 'when migrating instance group defined vips to the cloud config' do
     let(:simple_manifest) do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'].first['instances'] = 2
       manifest_hash['instance_groups'].first['networks'] = [
         { 'name' => cloud_config_hash['networks'].first['name'], 'default' => %w[dns gateway] },
@@ -215,7 +215,7 @@ describe 'vip networks', type: :integration do
     end
 
     let(:updated_simple_manifest) do
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'].first['instances'] = 2
       manifest_hash['instance_groups'].first['networks'] = [
         { 'name' => cloud_config_hash['networks'].first['name'], 'default' => %w[dns gateway] },

@@ -5,7 +5,7 @@ describe "#146961875 When an errand's az is changed on a re-deploy", type: :inte
 
   let(:number_of_instances) { 1 }
   let(:manifest) do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
 
     job = manifest_hash['instance_groups'].first
     job['networks'] = [
@@ -21,7 +21,7 @@ describe "#146961875 When an errand's az is changed on a re-deploy", type: :inte
   end
 
   let(:cloud_config_hash) do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
     cloud_config_hash['azs'] = [{'name' => 'my-az1'}, {'name' => 'my-az2'}]
     cloud_config_hash['compilation']['az'] = 'my-az1'
     network_a = cloud_config_hash['networks'].first

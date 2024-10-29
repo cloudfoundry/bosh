@@ -10,7 +10,7 @@ describe 'using director with config server and a deployment with errands', type
       'BOSH_CLIENT_SECRET' => 'secret',
       'BOSH_CA_CERT' => current_sandbox.certificate_path.to_s }
   end
-  let(:errand_manifest) { Bosh::Spec::Deployments.manifest_errand_with_placeholders }
+  let(:errand_manifest) { Bosh::Spec::DeploymentManifestHelper.manifest_errand_with_placeholders }
   let(:namespaced_key) { "/#{director_name}/#{errand_manifest['name']}/placeholder" }
   let(:errand_password) { "/#{director_name}/#{errand_manifest['name']}/errand_password" }
 
@@ -23,7 +23,7 @@ describe 'using director with config server and a deployment with errands', type
 
     deploy_from_scratch(
       manifest_hash: errand_manifest,
-      cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
+      cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
       include_credentials: false,
       env: client_env,
     )
@@ -37,7 +37,7 @@ describe 'using director with config server and a deployment with errands', type
 
     deploy_from_scratch(
       manifest_hash: errand_manifest,
-      cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
+      cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
       include_credentials: false,
       env: client_env,
     )
@@ -55,7 +55,7 @@ describe 'using director with config server and a deployment with errands', type
 
   context 'when config server does NOT have the variable' do
     let(:errand_manifest) do
-      manifest = Bosh::Spec::Deployments.manifest_errand_with_placeholders
+      manifest = Bosh::Spec::DeploymentManifestHelper.manifest_errand_with_placeholders
       manifest['instance_groups'][1]['jobs'].first['properties']['errand1']['gargamel_color'] = '((gargamel_color_variable))'
       manifest
     end
@@ -63,7 +63,7 @@ describe 'using director with config server and a deployment with errands', type
     it 'displays a error messages at deploy time' do
       output, exit_code = deploy_from_scratch(
         manifest_hash: errand_manifest,
-        cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
+        cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
         include_credentials: false,
         env: client_env,
         failure_expected: true,

@@ -58,14 +58,14 @@ describe 'cross deployment links', type: :integration do
   end
 
   let(:first_manifest) do
-    manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+    manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
     manifest['name'] = 'first'
     manifest['instance_groups'] = [first_deployment_instance_group_spec]
     manifest
   end
 
   let(:first_deployment_instance_group_spec) do
-    spec = Bosh::Spec::Deployments.simple_instance_group(
+    spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
       name: 'first_deployment_node',
       jobs: [
         {
@@ -95,7 +95,7 @@ describe 'cross deployment links', type: :integration do
   end
 
   let(:second_deployment_instance_group_spec) do
-    spec = Bosh::Spec::Deployments.simple_instance_group(
+    spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
       name: 'second_deployment_node',
       jobs: [{ 'name' => 'node', 'release' => 'bosh-release', 'consumes' => second_deployment_consumed_links }],
       instances: 1,
@@ -106,7 +106,7 @@ describe 'cross deployment links', type: :integration do
   end
 
   let(:second_manifest) do
-    manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+    manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
     manifest['name'] = 'second'
     manifest['instance_groups'] = [second_deployment_instance_group_spec]
     manifest
@@ -120,7 +120,7 @@ describe 'cross deployment links', type: :integration do
   end
 
   let(:cloud_config) do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
     cloud_config_hash['azs'] = [{ 'name' => 'z1' }]
     cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.10', '192.168.1.11', '192.168.1.12', '192.168.1.13']
     cloud_config_hash['networks'].first['subnets'].first['az'] = 'z1'
@@ -368,7 +368,7 @@ describe 'cross deployment links', type: :integration do
 
       context 'when provider job has 0 instances' do
         let(:first_deployment_instance_group_spec) do
-          spec = Bosh::Spec::Deployments.simple_instance_group(
+          spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
             name: 'first_deployment_node',
             jobs: [
               {

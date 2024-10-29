@@ -48,9 +48,9 @@ describe 'collocating templates from multiple releases', type: :integration do
       bosh_runner.run("upload-release #{asset_path('bosh-release-0+dev.1.tgz')}")
       bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
 
-      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
+      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
       bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups.merge(manifest_for_properties)
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups.merge(manifest_for_properties)
 
       # We manually change the deployment manifest release version, because of weird issue where
       # the uploaded release version is `0+dev.1` and the release version in the deployment manifest
@@ -93,10 +93,10 @@ describe 'collocating templates from multiple releases', type: :integration do
       bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
       bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
 
-      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::Deployments.simple_cloud_config)
+      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
       bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
 
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups.merge(manifest)
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups.merge(manifest)
       deployment_name = manifest_hash['name']
       deployment_manifest = yaml_file('simple', manifest_hash)
       bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: deployment_name)
@@ -104,7 +104,7 @@ describe 'collocating templates from multiple releases', type: :integration do
   end
 
   context 'when 2 templates depend on packages with the same name from different releases' do
-    let(:manifest) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
+    let(:manifest) { Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups }
 
     context 'and the fingerprints match' do
       before do
@@ -122,7 +122,7 @@ describe 'collocating templates from multiple releases', type: :integration do
       end
 
       it 'allows the co-located jobs to share the same package' do
-        deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
+        deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
 
         instance = director.instances.first
         agent_dir = current_sandbox.cpi.agent_dir_for_vm_cid(instance.vm_cid)
@@ -151,7 +151,7 @@ describe 'collocating templates from multiple releases', type: :integration do
       it 'refuses to deploy' do
         output = deploy_from_scratch(
           manifest_hash: manifest,
-          cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
+          cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
           failure_expected: true
         )
 

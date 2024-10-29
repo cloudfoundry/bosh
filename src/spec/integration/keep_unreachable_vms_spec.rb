@@ -4,13 +4,13 @@ describe 'keep unreachable vms', type: :integration do
   with_reset_sandbox_before_each(agent_wait_timeout: 1, keep_unreachable_vms: true)
 
   let(:cloud_config) do
-    cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
     cloud_config['networks'][0]['type'] = 'manual'
     cloud_config
   end
 
   let(:manifest) do
-    manifest = Bosh::Spec::Deployments.simple_manifest_with_instance_groups(instances: 1)
+    manifest = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups(instances: 1)
     manifest['instance_groups'][0]['jobs'] = []
     manifest
   end

@@ -49,7 +49,7 @@ describe 'using director with config server and deployments having links', type:
   end
 
   let(:cloud_config) do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
     cloud_config_hash['azs'] = [{ 'name' => 'z1' }]
     cloud_config_hash['networks'].first['subnets'].first['static'] = [
       '192.168.1.10',
@@ -94,7 +94,7 @@ describe 'using director with config server and deployments having links', type:
   end
 
   let(:deployment_manifest) do
-    Bosh::Spec::NetworkingManifest.deployment_manifest.tap do |manifest|
+    Bosh::Spec::DeploymentManifestHelper.deployment_manifest.tap do |manifest|
       manifest['name'] = deployment_name
       manifest['instance_groups'] = instance_groups
     end
@@ -121,7 +121,7 @@ describe 'using director with config server and deployments having links', type:
   end
 
   let(:instance_groups) do
-    [Bosh::Spec::Deployments.simple_instance_group(
+    [Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
       name: 'my_instance_group',
       jobs: [provider_job],
       instances: 1,
@@ -148,7 +148,7 @@ describe 'using director with config server and deployments having links', type:
 
   context 'when the runtime config has variable which consumes' do
     let(:runtime_config) do
-      Bosh::Spec::Deployments.simple_runtime_config.tap do |config|
+      Bosh::Spec::DeploymentManifestHelper.simple_runtime_config.tap do |config|
         config['variables'] = variables
         config['releases'] = []
         config['addons'] = []

@@ -4,20 +4,20 @@ describe 'multiple cloud configs', type: :integration do
   with_reset_sandbox_before_each
 
   let(:first_cloud_config) do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
     cloud_config_hash['vm_types'] = [{ 'name' => 'a', 'cloud_properties' => { 'prop-key-a' => 'prop-val-a' } }]
     yaml_file('first-cloud-config', cloud_config_hash)
   end
   let(:second_cloud_config) do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
     cloud_config_hash['vm_types'] = [{ 'name' => 'b', 'cloud_properties' => { 'prop-key-b' => 'prop-val-b' } }]
     cloud_config_hash.delete('compilation')
     cloud_config_hash.delete('networks')
     yaml_file('second-cloud-config', cloud_config_hash)
   end
   let(:manifest_hash) do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
-    manifest_hash['instance_groups'] << Bosh::Spec::Deployments.simple_instance_group(name: 'second-foobar', vm_type: 'b')
+    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'second-foobar', vm_type: 'b')
     manifest_hash
   end
 
@@ -65,18 +65,18 @@ describe 'multiple cloud configs', type: :integration do
 
     context 'when there are only team cloud configs' do
       let(:team1_cc) do
-        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
         yaml_file('team1_cc', cloud_config_hash)
       end
       let(:team2_cc) do
-        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
         yaml_file('team2_cc', cloud_config_hash)
       end
       let(:manifest_hash1) do
-        Bosh::Spec::Deployments.simple_manifest_with_instance_groups.merge!('name' => 'team1manifest')
+        Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups.merge!('name' => 'team1manifest')
       end
       let(:manifest_hash2) do
-        Bosh::Spec::Deployments.simple_manifest_with_instance_groups.merge!('name' => 'team2manifest')
+        Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups.merge!('name' => 'team2manifest')
       end
 
       before do
@@ -123,7 +123,7 @@ describe 'multiple cloud configs', type: :integration do
 
     context 'when an admin/global cloud config is present' do
       let(:admin_cc) do
-        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
         yaml_file('admin_cc', cloud_config_hash)
       end
 
@@ -133,11 +133,11 @@ describe 'multiple cloud configs', type: :integration do
       end
 
       let(:manifest_hash) do
-        Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+        Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
       end
 
       let(:team_manifest_hash) do
-        m = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+        m = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
         m['instance_groups'][0]['vm_type'] = 'team_vm'
         m
       end

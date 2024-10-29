@@ -11,7 +11,7 @@ describe 'global networking', type: :integration do
   context 'when compilation pool configuration contains az information' do
 
     let(:cloud_config_hash) do
-      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
       cloud_config_hash['azs'] = [{
           'name' => 'z2',
           'cloud_properties' => {
@@ -43,7 +43,7 @@ describe 'global networking', type: :integration do
     it 'should place the vm in the az with merged cloud properties and overrides specific cloud properties' do
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
-      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.deployment_manifest(instances: 1)
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
       create_vm_invocation = current_sandbox.cpi.invocations_for_method('create_vm')[0]
@@ -61,7 +61,7 @@ describe 'global networking', type: :integration do
         cloud_config_hash['compilation']['az'] = 'non_existing_az'
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
-        manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
+        manifest_hash = Bosh::Spec::DeploymentManifestHelper.deployment_manifest(instances: 1)
         expect{
           deploy_simple_manifest(manifest_hash: manifest_hash)
         }.to raise_error(RuntimeError, /Compilation config references unknown az 'non_existing_az'. Known azs are: \[z2\]/)
@@ -76,7 +76,7 @@ describe 'global networking', type: :integration do
 
     it 'releases its IP for next deploy' do
       upload_cloud_config
-      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.deployment_manifest(instances: 1)
       deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true)
 
       compilation_vm_ips = current_sandbox.cpi.invocations_for_method('create_vm').map do |invocation|
@@ -86,7 +86,7 @@ describe 'global networking', type: :integration do
       expect(compilation_vm_ips).to eq(['192.168.1.3']) # 192.168.1.2 is reserved for instance
 
       current_sandbox.cpi.commands.allow_set_vm_metadata_to_succeed
-      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 2)
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.deployment_manifest(instances: 2)
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
       expect(director.instances.map(&:ips).flatten).to contain_exactly('192.168.1.2', '192.168.1.3')
@@ -96,7 +96,7 @@ describe 'global networking', type: :integration do
   context 'when compilation fails' do
     it 'releases its IP for next deploy' do
       upload_cloud_config
-      failing_compilation_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(
+      failing_compilation_manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest(
         instances: 1,
         job: 'fails_with_too_much_output',
         job_release: 'bosh-release',
@@ -145,7 +145,7 @@ describe 'global networking', type: :integration do
 
   context 'when vm_type is specified for compilation' do
     let(:cloud_config_hash) do
-      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
       cloud_config_hash['vm_types'] = [{
           'name' => 'foo-compilation',
           'cloud_properties' => {

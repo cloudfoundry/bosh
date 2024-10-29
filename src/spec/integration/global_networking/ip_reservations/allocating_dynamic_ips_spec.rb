@@ -22,7 +22,7 @@ describe 'global networking', type: :integration do
   end
 
   def deploy_with_range(deployment_name, range)
-    cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2, range: range) # 1 for compilation
+    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.cloud_config_with_subnet(available_ips: 2, range: range) # 1 for compilation
     upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
     first_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: deployment_name, instances: 1)
@@ -30,7 +30,7 @@ describe 'global networking', type: :integration do
   end
 
   def deploy_with_static_ip(deployment_name, ip, range)
-    cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2, range: range) # 1 for compilation
+    cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config_with_subnet(available_ips: 2, range: range) # 1 for compilation
     cloud_config_hash['networks'].first['subnets'].first['static'] << ip
     upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
@@ -45,7 +45,7 @@ describe 'global networking', type: :integration do
     end
 
     it 'gives the correct error message when there are not enough IPs for compilation' do
-      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
+      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config_with_subnet(available_ips: 1)
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 1)
 
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
@@ -54,7 +54,7 @@ describe 'global networking', type: :integration do
     end
 
     it 'updates deployment when there is enough IPs for compilation' do
-      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
+      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config_with_subnet(available_ips: 2)
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 1)
 
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
@@ -67,7 +67,7 @@ describe 'global networking', type: :integration do
     end
 
     it 'gives VMs the same IP on redeploy' do
-      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 5)
+      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config_with_subnet(available_ips: 5)
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 2)
 
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
@@ -83,7 +83,7 @@ describe 'global networking', type: :integration do
     end
 
     it 'gives VMs the same IP on `deploy --recreate`', no_create_swap_delete: true do
-      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 5)
+      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config_with_subnet(available_ips: 5)
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 2)
 
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
@@ -100,7 +100,7 @@ describe 'global networking', type: :integration do
     end
 
     it 'gives VMs different IPs on `deploy --recreate`', create_swap_delete: true do
-      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 5)
+      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config_with_subnet(available_ips: 5)
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 2)
 
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
@@ -117,7 +117,7 @@ describe 'global networking', type: :integration do
     end
 
     it 'gives the correct error message when there are not enough IPs for instances' do
-      new_cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
+      new_cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config_with_subnet(available_ips: 1)
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(
         name: 'my-deploy',
         instances: 2,
@@ -135,9 +135,9 @@ describe 'global networking', type: :integration do
       # Until https://www.pivotaltracker.com/story/show/98057020 we cannot reuse the same IP
       # within single deployment
 
-      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 1)
+      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config_with_subnet(available_ips: 1)
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy')
-      manifest_hash['instance_groups'] = [Bosh::Spec::Deployments.simple_instance_group(
+      manifest_hash['instance_groups'] = [Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
         name: 'first-instance-group',
         instances: 1,
         job_name: 'foobar_without_packages',
@@ -150,14 +150,14 @@ describe 'global networking', type: :integration do
       expect_running_vms_with_names_and_count({ 'first-instance-group' => 1 }, { deployment_name: 'my-deploy' })
 
       manifest_hash['instance_groups'] = [
-        Bosh::Spec::Deployments.simple_instance_group(name: 'second-instance-group', instances: 1),
+        Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'second-instance-group', instances: 1),
       ]
       output = deploy_simple_manifest(manifest_hash: manifest_hash, failure_expected: true)
       expect(output).to include('no more available')
     end
 
     it 'keeps IPs of a job when that job fails to deploy its VMs' do
-      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
+      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config_with_subnet(available_ips: 2)
       failing_deployment_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 2)
       other_deployment_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-other-deploy', instances: 1)
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
@@ -183,7 +183,7 @@ describe 'global networking', type: :integration do
     end
 
     it 'redeploys VM on new IP address when reserved list includes current IP address of VM' do
-      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
+      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config_with_subnet(available_ips: 2)
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 1)
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
@@ -191,7 +191,7 @@ describe 'global networking', type: :integration do
       original_ips = director.instances(deployment_name: 'my-deploy').map(&:ips).flatten
       expect(original_ips).to eq(['192.168.1.2'])
 
-      new_cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2, shift_ip_range_by: 1)
+      new_cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config_with_subnet(available_ips: 2, shift_ip_range_by: 1)
       upload_cloud_config(cloud_config_hash: new_cloud_config_hash)
 
       deploy_simple_manifest(manifest_hash: manifest_hash)
@@ -200,7 +200,7 @@ describe 'global networking', type: :integration do
     end
 
     it 'can use IP that is no longer in reserved section' do
-      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2, shift_ip_range_by: 1)
+      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config_with_subnet(available_ips: 2, shift_ip_range_by: 1)
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 1)
@@ -208,7 +208,7 @@ describe 'global networking', type: :integration do
       new_ips = director.instances(deployment_name: 'my-deploy').map(&:ips).flatten
       expect(new_ips).to eq(['192.168.1.3'])
 
-      new_cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
+      new_cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config_with_subnet(available_ips: 2)
       upload_cloud_config(cloud_config_hash: new_cloud_config_hash)
 
       manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'my-deploy', instances: 2)
@@ -230,7 +230,7 @@ describe 'global networking', type: :integration do
     end
 
     it 'keeps IP when reservation is changed to static' do
-      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config(available_ips: 2)
+      cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config_with_subnet(available_ips: 2)
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
       simple_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)

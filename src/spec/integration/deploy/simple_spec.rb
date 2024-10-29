@@ -5,8 +5,8 @@ describe 'a very simple deploy', type: :integration do
 
   before do
     deploy_from_scratch(
-      manifest_hash: Bosh::Spec::Deployments.simple_manifest_with_instance_groups,
-      cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
+      manifest_hash: Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups,
+      cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
     )
   end
 

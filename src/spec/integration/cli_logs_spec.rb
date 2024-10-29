@@ -4,8 +4,8 @@ describe 'cli: logs', type: :integration do
   with_reset_sandbox_before_each
 
   it 'can fetch logs' do
-    manifest = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
-    manifest['instance_groups'] = [Bosh::Spec::Deployments.simple_instance_group(instances: 2, name: 'first-job')]
+    manifest = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    manifest['instance_groups'] = [Bosh::Spec::DeploymentManifestHelper.simple_instance_group(instances: 2, name: 'first-job')]
     manifest['instance_groups'] << {
       'name' => 'another-job',
       'jobs' => [{ 'name' => 'foobar', 'release' => 'bosh-release' }],
@@ -24,7 +24,7 @@ describe 'cli: logs', type: :integration do
       'networks' => [{ 'name' => 'a' }],
       'stemcell' => 'default',
     }
-    cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
     deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: cloud_config)
 
     instances = director.instances

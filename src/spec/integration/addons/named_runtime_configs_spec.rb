@@ -33,7 +33,7 @@ describe 'named runtime configs', type: :integration do
   end
 
   before do
-    default_runtime_config_file = yaml_file('runtime_config.yml', Bosh::Spec::Deployments.runtime_config_with_addon)
+    default_runtime_config_file = yaml_file('runtime_config.yml', Bosh::Spec::DeploymentManifestHelper.runtime_config_with_addon)
     named_runetime_config_file1 = yaml_file('runtime_config.yml', named_runtime_config1)
     named_runetime_config_file2 = yaml_file('runtime_config.yml', named_runtime_config2)
 
@@ -48,8 +48,8 @@ describe 'named runtime configs', type: :integration do
 
   it 'merges the releases & addons for a deploy' do
     deploy_from_scratch(
-      manifest_hash: Bosh::Spec::Deployments.simple_manifest_with_instance_groups,
-      cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
+      manifest_hash: Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups,
+      cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
     )
 
     director.instances.each do |foobar_instance|
@@ -64,8 +64,8 @@ describe 'named runtime configs', type: :integration do
 
   it 'merges the tags key for a deploy' do
     deploy_from_scratch(
-      manifest_hash: Bosh::Spec::Deployments.simple_manifest_with_instance_groups,
-      cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
+      manifest_hash: Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups,
+      cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
     )
 
     vms_cids = director.instances.map(&:vm_cid)
@@ -116,8 +116,8 @@ describe 'named runtime configs', type: :integration do
 
     it 'picks up the latest named runtime config when deploying' do
       deploy_from_scratch(
-        manifest_hash: Bosh::Spec::Deployments.simple_manifest_with_instance_groups,
-        cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
+        manifest_hash: Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups,
+        cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
       )
 
       director.instances.each do |foobar_instance|
@@ -144,8 +144,8 @@ describe 'named runtime configs', type: :integration do
       output, exit_code = deploy_from_scratch(
         failure_expected: true,
         return_exit_code: true,
-        manifest_hash: Bosh::Spec::Deployments.simple_manifest_with_instance_groups,
-        cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
+        manifest_hash: Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups,
+        cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
       )
       expect(exit_code).to_not eq(0)
       expect(output).to_not eq("Runtime config 'tags' key cannot be defined in multiple runtime configs.")

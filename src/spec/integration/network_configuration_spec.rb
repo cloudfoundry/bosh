@@ -5,7 +5,7 @@ describe 'network configuration', type: :integration do
     with_reset_sandbox_before_each
 
     it 'reserves first available dynamic ip' do
-      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
       cloud_config_hash['vm_types'].first['size'] = 3
       cloud_config_hash['networks'].first['subnets'][0] = {
         'range'    => '192.168.1.0/24',
@@ -20,7 +20,7 @@ describe 'network configuration', type: :integration do
         'cloud_properties' => {},
       }
 
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'].first['instances'] = 3
 
       deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
@@ -34,11 +34,11 @@ describe 'network configuration', type: :integration do
     end
 
     it 'recreates VM when specifying static IP on job' do
-      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
       cloud_config_hash['networks'].first['subnets'].first['static'] = %w(192.168.1.100)
       cloud_config_hash['vm_types'].first['size'] = 1
 
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'].first['instances'] = 1
 
       deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
@@ -51,8 +51,8 @@ describe 'network configuration', type: :integration do
     end
 
     context 'Network settings are changed' do
-      let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
-      let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
+      let(:cloud_config_hash) { Bosh::Spec::DeploymentManifestHelper.simple_cloud_config }
+      let(:manifest_hash) { Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups }
 
       it 'recreates VM when DNS nameservers are changed' do
         cloud_config_hash['networks'].first['subnets'].first['dns'] = ['8.8.8.8']
@@ -88,7 +88,7 @@ describe 'network configuration', type: :integration do
     end
 
     it 'preserves existing network reservations on a second deployment' do
-      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
       subnet = {                                      # For routed subnets larger than /31 or /32,
         'range'    => '192.168.1.0/29',               # the number of available host addresses is usually reduced by two,
         'gateway'  => '192.168.1.1',                  # namely the largest address, which is reserved as the broadcast address,
@@ -100,7 +100,7 @@ describe 'network configuration', type: :integration do
       cloud_config_hash['networks'].first['subnets'][0] = subnet
       cloud_config_hash['vm_types'].first['size'] = 4
 
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'].first['instances'] = 4
 
       deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
@@ -108,7 +108,7 @@ describe 'network configuration', type: :integration do
     end
 
     it 'does not recreate VM when re-deploying with cloud-config unchanged dynamic and vip networking' do
-      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
       cloud_config_hash['networks'] = [{
         'name' => 'a',
         'type' => 'dynamic',
@@ -121,7 +121,7 @@ describe 'network configuration', type: :integration do
         }
       ]
 
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'].first['instances'] = 1
       manifest_hash['instance_groups'].first['networks'].first['default'] = ['dns', 'gateway']
       manifest_hash['instance_groups'].first['networks'] << {'name' => 'b', 'static_ips' => ['69.69.69.69']}
@@ -136,8 +136,8 @@ describe 'network configuration', type: :integration do
     end
 
     it 'does not recreate VMs when switching between networks with the exact same configuration' do
-      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
       deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
 
       before_ips = director.instances.first.ips
@@ -158,7 +158,7 @@ describe 'network configuration', type: :integration do
     with_reset_sandbox_before_each(dns_enabled: false)
 
     it 'does not recreate VM when re-deploying with cloud-config unchanged dynamic and vip networking' do
-      cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
       cloud_config_hash['networks'] = [{
           'name' => 'a',
           'type' => 'dynamic',
@@ -171,7 +171,7 @@ describe 'network configuration', type: :integration do
         }
       ]
 
-      manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'].first['instances'] = 1
       manifest_hash['instance_groups'].first['networks'].first['default'] = ['dns', 'gateway']
       manifest_hash['instance_groups'].first['networks'] << {'name' => 'b', 'static_ips' => ['69.69.69.69']}
@@ -186,7 +186,7 @@ describe 'network configuration', type: :integration do
 
     context 'when the cloud config has overlapping networks' do
       let(:cloud_config_hash) do
-        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
         cloud_config_hash['networks'] << Bosh::Common::DeepCopy.copy(cloud_config_hash['networks'][0]).tap do |new_network|
           new_network['name'] = 'b'
         end
@@ -194,7 +194,7 @@ describe 'network configuration', type: :integration do
       end
 
       let(:manifest_hash) do
-        manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+        manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
         manifest_hash['instance_groups'].first['instances'] = 1
         manifest_hash
       end
@@ -248,7 +248,7 @@ describe 'network configuration', type: :integration do
 
     context 'instance group has multiple networks' do
       let(:cloud_config_hash) do
-        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
         cloud_config_hash['vm_types'].first['size'] = 1
         cloud_config_hash['networks'] = [
           {
@@ -282,7 +282,7 @@ describe 'network configuration', type: :integration do
       end
 
       let(:manifest_hash) do
-        manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+        manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
         manifest_hash['instance_groups'].first['instances'] = 1
         manifest_hash
       end
@@ -370,11 +370,11 @@ describe 'network configuration', type: :integration do
 
     context 'instance group has single network' do
       it 'uses ip from available network' do
-        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
         cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.100']
         cloud_config_hash['vm_types'].first['size'] = 1
 
-        manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+        manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
         manifest_hash['instance_groups'].first['instances'] = 1
         manifest_hash['instance_groups'].first['networks'].first['static_ips'] = '192.168.1.100'
 
@@ -390,7 +390,7 @@ describe 'network configuration', type: :integration do
       with_reset_hm_before_each
 
       it 'should update spec.ip with new ip on recreate' do
-        cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
         cloud_config_hash['networks'] = [{
             'name' => 'a',
             'type' => 'dynamic',
@@ -398,7 +398,7 @@ describe 'network configuration', type: :integration do
           }
         ]
 
-        manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+        manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
         manifest_hash['instance_groups'].first['instances'] = 1
         manifest_hash['instance_groups'].first['networks'].first['default'] = ['dns', 'gateway']
 

@@ -10,7 +10,7 @@ describe 'aliased links', type: :integration do
   end
 
   let(:cloud_config) do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
     cloud_config_hash['azs'] = [{ 'name' => 'z1' }]
     cloud_config_hash['networks'].first['subnets'].first['static'] = [
       '192.168.1.10',
@@ -30,7 +30,7 @@ describe 'aliased links', type: :integration do
   end
 
   let(:api_instance_group_spec) do
-    spec = Bosh::Spec::Deployments.simple_instance_group(
+    spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
       name: 'my_api',
       jobs: [{ 'name' => 'api_server', 'release' => 'bosh-release', 'consumes' => links }],
       instances: 1,
@@ -40,7 +40,7 @@ describe 'aliased links', type: :integration do
   end
 
   let(:aliased_instance_group_spec) do
-    spec = Bosh::Spec::Deployments.simple_instance_group(
+    spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
       name: 'aliased_postgres',
       jobs: [
         'name' => 'backup_database',
@@ -62,7 +62,7 @@ describe 'aliased links', type: :integration do
 
   context 'when provide link is aliased using "as", and the consume link references the new alias' do
     let(:manifest) do
-      manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+      manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
       manifest['instance_groups'] = [api_instance_group_spec, aliased_instance_group_spec]
       manifest
     end
@@ -93,13 +93,13 @@ describe 'aliased links', type: :integration do
 
     context 'co-located jobs consume two links with the same name, provided by a different job on the same instance group' do
       let(:manifest) do
-        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
         manifest['instance_groups'] = [provider_instance_group, consumer_instance_group]
         manifest
       end
 
       let(:provider_instance_group) do
-        spec = Bosh::Spec::Deployments.simple_instance_group(
+        spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
           name: 'provider_instance_group',
           jobs: [
             {
@@ -136,7 +136,7 @@ describe 'aliased links', type: :integration do
       end
 
       let(:consumer_instance_group) do
-        spec = Bosh::Spec::Deployments.simple_instance_group(
+        spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
           name: 'consumer_instance_group',
           jobs: [
             {
@@ -174,13 +174,13 @@ describe 'aliased links', type: :integration do
 
     context 'co-located jobs consume two links with the same name, provided by the same job on different instance groups' do
       let(:manifest) do
-        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
         manifest['instance_groups'] = [provider1_http, provider2_http, consumer_instance_group]
         manifest
       end
 
       let(:provider1_http) do
-        spec = Bosh::Spec::Deployments.simple_instance_group(
+        spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
           name: 'provider1_http_instance_group',
           jobs: [{
             'name' => 'http_server_with_provides',
@@ -200,7 +200,7 @@ describe 'aliased links', type: :integration do
       end
 
       let(:provider2_http) do
-        spec = Bosh::Spec::Deployments.simple_instance_group(
+        spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
           name: 'provider2_http_instance_group',
           jobs: [{
             'name' => 'http_server_with_provides',
@@ -220,7 +220,7 @@ describe 'aliased links', type: :integration do
       end
 
       let(:consumer_instance_group) do
-        spec = Bosh::Spec::Deployments.simple_instance_group(
+        spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
           name: 'consumer_instance_group',
           jobs: [
             {
@@ -258,13 +258,13 @@ describe 'aliased links', type: :integration do
 
     context 'consumes two links of the same type, provided by the same job on different instance groups' do
       let(:manifest) do
-        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
         manifest['instance_groups'] = [provider_1_db, provider_2_db, consumer_instance_group]
         manifest
       end
 
       let(:provider_1_db) do
-        spec = Bosh::Spec::Deployments.simple_instance_group(
+        spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
           name: 'provider_1_db',
           jobs: [{
             'name' => 'backup_database',
@@ -281,7 +281,7 @@ describe 'aliased links', type: :integration do
       end
 
       let(:provider_2_db) do
-        spec = Bosh::Spec::Deployments.simple_instance_group(
+        spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
           name: 'provider_2_db',
           jobs: [{
             'name' => 'backup_database',
@@ -298,7 +298,7 @@ describe 'aliased links', type: :integration do
       end
 
       let(:consumer_instance_group) do
-        spec = Bosh::Spec::Deployments.simple_instance_group(
+        spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
           name: 'consumer_instance_group',
           jobs: [
             {
@@ -328,7 +328,7 @@ describe 'aliased links', type: :integration do
 
   context 'when provide link is aliased using "as", and the consume link references the old name' do
     let(:manifest) do
-      manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+      manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
       manifest['instance_groups'] = [api_instance_group_spec, aliased_instance_group_spec]
       manifest
     end

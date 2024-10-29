@@ -48,8 +48,8 @@ describe 'Logging into a director with UAA authentication', type: :integration d
         env: client_env,
         include_credentials: false,
         return_exit_code: true,
-        manifest_hash: Bosh::Spec::Deployments.simple_manifest_with_instance_groups,
-        cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
+        manifest_hash: Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups,
+        cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
        )
       expect(exit_code).to eq(0)
     end
@@ -120,8 +120,8 @@ CERT
           environment_name: current_sandbox.director_url,
           include_credentials: false,
           env: client_env,
-          manifest_hash: Bosh::Spec::Deployments.simple_manifest_with_instance_groups,
-          cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
+          manifest_hash: Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups,
+          cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
         )
 
         client_env = {'BOSH_CLIENT' => 'read-access', 'BOSH_CLIENT_SECRET' => 'secret'}
@@ -139,8 +139,8 @@ CERT
           environment_name: current_sandbox.director_url,
           include_credentials: false,
           env: client_env,
-          manifest_hash: Bosh::Spec::Deployments.simple_manifest_with_instance_groups,
-          cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config,
+          manifest_hash: Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups,
+          cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
         )
 
         original_instance = director.instance('foobar', '0', deployment_name: 'simple', environment_name: current_sandbox.director_url, env: client_env, include_credentials: false)

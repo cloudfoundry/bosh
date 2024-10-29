@@ -4,7 +4,7 @@ describe 'template', type: :integration do
   with_reset_sandbox_before_each
 
   it 'can access exposed attributes of an instance' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'] = [
       {
         'name' => 'id_job',
@@ -17,7 +17,7 @@ describe 'template', type: :integration do
         'stemcell' => 'default',
       },
     ]
-    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
 
     id_instance = director.instance('id_job', '0')
     template = YAML.load(id_instance.read_job_template('id_job', 'config.yml'))
@@ -25,7 +25,7 @@ describe 'template', type: :integration do
   end
 
   it 'gives VMs the same id on `deploy --recreate`' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'] = [
       {
         'name' => 'id_job',
@@ -39,7 +39,7 @@ describe 'template', type: :integration do
       },
     ]
 
-    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
 
     id_instance = director.instance('id_job', '0')
     template = YAML.load(id_instance.read_job_template('id_job', 'config.yml'))
@@ -67,7 +67,7 @@ describe 'template', type: :integration do
   end
 
   it 'prints all template evaluation errors when there are errors in multiple job deployment templates' do
-    manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'] = [
       {
         'name' => 'foobar',

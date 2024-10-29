@@ -10,7 +10,7 @@ describe 'Links', type: :integration do
   end
 
   let(:cloud_config) do
-    cloud_config_hash = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
     cloud_config_hash['azs'] = [{ 'name' => 'z1' }]
     cloud_config_hash['networks'].first['subnets'].first['static'] = [
       '192.168.1.10',
@@ -38,7 +38,7 @@ describe 'Links', type: :integration do
 
   context 'when job requires link' do
     let(:implied_instance_group_spec) do
-      spec = Bosh::Spec::Deployments.simple_instance_group(
+      spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
         name: 'my_api',
         jobs: [{ 'name' => 'api_server', 'release' => 'bosh-release' }],
         instances: 1,
@@ -48,7 +48,7 @@ describe 'Links', type: :integration do
     end
 
     let(:api_instance_group_spec) do
-      spec = Bosh::Spec::Deployments.simple_instance_group(
+      spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
         name: 'my_api',
         jobs: [{ 'name' => 'api_server', 'release' => 'bosh-release', 'consumes' => links }],
         instances: 1,
@@ -58,7 +58,7 @@ describe 'Links', type: :integration do
     end
 
     let(:mysql_instance_group_spec) do
-      spec = Bosh::Spec::Deployments.simple_instance_group(
+      spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
         name: 'mysql',
         jobs: [{ 'name' => 'database', 'release' => 'bosh-release' }],
         instances: 2,
@@ -73,7 +73,7 @@ describe 'Links', type: :integration do
     end
 
     let(:postgres_instance_group_spec) do
-      spec = Bosh::Spec::Deployments.simple_instance_group(
+      spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
         name: 'postgres',
         jobs: [{ 'name' => 'backup_database', 'release' => 'bosh-release' }],
         instances: 1,
@@ -84,7 +84,7 @@ describe 'Links', type: :integration do
     end
 
     let(:aliased_instance_group_spec) do
-      spec = Bosh::Spec::Deployments.simple_instance_group(
+      spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
         name: 'aliased_postgres',
         jobs: [
           'name' => 'backup_database',
@@ -98,7 +98,7 @@ describe 'Links', type: :integration do
     end
 
     let(:mongo_db_spec) do
-      spec = Bosh::Spec::Deployments.simple_instance_group(
+      spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
         name: 'mongo',
         jobs: [{ 'name' => 'mongo_db', 'release' => 'bosh-release' }],
         instances: 1,
@@ -109,7 +109,7 @@ describe 'Links', type: :integration do
     end
 
     let(:manifest) do
-      manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+      manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
       manifest['instance_groups'] = [api_instance_group_spec, mysql_instance_group_spec, postgres_instance_group_spec]
       manifest
     end
@@ -120,7 +120,7 @@ describe 'Links', type: :integration do
 
     context 'when job consumes link with nested properties' do
       let(:link_instance_group_spec) do
-        spec = Bosh::Spec::Deployments.simple_instance_group(
+        spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
           name: 'my_links',
           jobs: [
             {
@@ -202,7 +202,7 @@ describe 'Links', type: :integration do
 
     context 'when consumes link is renamed by `from` key' do
       let(:manifest) do
-        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
         manifest['instance_groups'] = [api_instance_group_spec, mongo_db_spec, mysql_instance_group_spec]
         manifest
       end
@@ -243,7 +243,7 @@ describe 'Links', type: :integration do
           ],
         }
         mongo_db_spec['jobs'] = [custom_provider_job]
-        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
         manifest['instance_groups'] = [mongo_db_spec]
 
         output = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true)
@@ -266,7 +266,7 @@ describe 'Links', type: :integration do
           ],
         }
         mongo_db_spec['jobs'] = [custom_provider_job]
-        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
         manifest['instance_groups'] = [mongo_db_spec]
 
         output = deploy_simple_manifest(manifest_hash: manifest, failure_expected: true)
@@ -276,7 +276,7 @@ describe 'Links', type: :integration do
 
     context 'when manifest has non-conflicting custom provider definitions' do
       let(:link_instance_group_spec) do
-        spec = Bosh::Spec::Deployments.simple_instance_group(
+        spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
           name: 'my_links',
           jobs: [
             {
@@ -332,7 +332,7 @@ describe 'Links', type: :integration do
 
     context 'when release job requires and provides same link' do
       let(:first_node_instance_group_spec) do
-        spec = Bosh::Spec::Deployments.simple_instance_group(
+        spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
           name: 'first_node',
           jobs: [{ 'name' => 'node', 'release' => 'bosh-release', 'consumes' => first_node_links }],
           instances: 1,
@@ -350,7 +350,7 @@ describe 'Links', type: :integration do
       end
 
       let(:second_node_instance_group_spec) do
-        spec = Bosh::Spec::Deployments.simple_instance_group(
+        spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
           name: 'second_node',
           jobs: [{ 'name' => 'node', 'release' => 'bosh-release', 'consumes' => second_node_links }],
           instances: 1,
@@ -367,7 +367,7 @@ describe 'Links', type: :integration do
       end
 
       let(:manifest) do
-        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
         manifest['instance_groups'] = [first_node_instance_group_spec, second_node_instance_group_spec]
         manifest
       end
@@ -380,7 +380,7 @@ describe 'Links', type: :integration do
 
     context 'when provide and consume links are set in spec, but only implied by deployment manifest' do
       let(:manifest) do
-        manifest = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
         manifest['instance_groups'] = [implied_instance_group_spec, postgres_instance_group_spec]
         manifest
       end
@@ -428,7 +428,7 @@ describe 'Links', type: :integration do
 
       context 'when both provided links are in same template' do
         let(:instance_group_with_same_type_links) do
-          spec = Bosh::Spec::Deployments.simple_instance_group(
+          spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
             name: 'duplicate_link_type_job',
             jobs: [{ 'name' => 'database_with_two_provided_link_of_same_type', 'release' => 'bosh-release' }],
             instances: 1,
@@ -467,7 +467,7 @@ describe 'Links', type: :integration do
         end
 
         let(:manual_api_instance_group_spec) do
-          spec = Bosh::Spec::Deployments.simple_instance_group(
+          spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
             name: 'my_manual_api',
             jobs: [manual_api_server],
             instances: 1,
@@ -531,7 +531,7 @@ describe 'Links', type: :integration do
         end
 
         let(:manual_api_instance_group_spec) do
-          spec = Bosh::Spec::Deployments.simple_instance_group(
+          spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
             name: 'my_manual_api',
             jobs: [
               manual_api_server,
@@ -574,7 +574,7 @@ describe 'Links', type: :integration do
         end
 
         let(:manual_api_instance_group_spec) do
-          spec = Bosh::Spec::Deployments.simple_instance_group(
+          spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
             name: 'my_manual_api',
             jobs: [manual_api_server],
             instances: 1,
@@ -598,7 +598,7 @@ describe 'Links', type: :integration do
         end
 
         let(:manual_api_instance_group_spec2) do
-          spec = Bosh::Spec::Deployments.simple_instance_group(
+          spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
             name: 'your_manual_api',
             jobs: [manual_api_server2],
             instances: 1,
@@ -621,7 +621,7 @@ describe 'Links', type: :integration do
 
     context 'when link provider specifies properties from job spec' do
       let(:mysql_instance_group_spec) do
-        spec = Bosh::Spec::Deployments.simple_instance_group(
+        spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
           name: 'mysql',
           jobs: [
             'name' => 'database',
@@ -652,7 +652,7 @@ describe 'Links', type: :integration do
 
     context 'when link provider specifies properties not listed in job spec properties' do
       let(:mysql_instance_group_spec) do
-        spec = Bosh::Spec::Deployments.simple_instance_group(
+        spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
           name: 'mysql',
           jobs: [{ 'name' => 'provider_fail', 'release' => 'bosh-release' }],
           instances: 2,
@@ -751,7 +751,7 @@ describe 'Links', type: :integration do
 
   context 'when addon job requires link' do
     let(:mysql_instance_group_spec) do
-      spec = Bosh::Spec::Deployments.simple_instance_group(
+      spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
         name: 'mysql',
         jobs: [{ 'name' => 'database', 'release' => 'bosh-release' }],
         instances: 1,
@@ -766,7 +766,7 @@ describe 'Links', type: :integration do
     end
 
     before do
-      runtime_config_file = yaml_file('runtime_config.yml', Bosh::Spec::Deployments.runtime_config_with_links)
+      runtime_config_file = yaml_file('runtime_config.yml', Bosh::Spec::DeploymentManifestHelper.runtime_config_with_links)
       bosh_runner.run("update-runtime-config #{runtime_config_file.path}")
     end
 
@@ -790,7 +790,7 @@ describe 'Links', type: :integration do
 
   context 'when link is not satisfied in deployment' do
     let(:bad_properties_instance_group_spec) do
-      spec = Bosh::Spec::Deployments.simple_instance_group(
+      spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
         name: 'api_server_with_bad_link_types',
         jobs: [{ 'name' => 'api_server_with_bad_link_types', 'release' => 'bosh-release' }],
         instances: 1,

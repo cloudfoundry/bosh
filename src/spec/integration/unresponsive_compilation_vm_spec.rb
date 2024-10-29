@@ -9,13 +9,13 @@ describe 'when compilation vm fails to respond', type: :integration do
   end
 
   it 'deletes compilation VM only once' do
-    cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
     upload_cloud_config(cloud_config_hash: cloud_config)
 
     Thread.current[:sandbox].stop_nats
 
     deploy_simple_manifest(
-      manifest_hash: Bosh::Spec::Deployments.simple_manifest_with_instance_groups(instances: 1),
+      manifest_hash: Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups(instances: 1),
       failure_expected: true,
     )
 

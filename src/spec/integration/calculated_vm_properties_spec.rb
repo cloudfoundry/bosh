@@ -12,13 +12,13 @@ describe 'calculated vm properties', type: :integration do
   end
 
   let(:cloud_config_without_vm_types) do
-    cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
     cloud_config.delete('vm_types')
     cloud_config['compilation']['vm_resources'] = vm_resources
     cloud_config
   end
 
-  let(:cpi_config) { Bosh::Spec::Deployments.multi_cpi_config }
+  let(:cpi_config) { Bosh::Spec::DeploymentManifestHelper.multi_cpi_config }
 
   let(:instance_group) do
     {
@@ -127,7 +127,7 @@ describe 'calculated vm properties', type: :integration do
 
   context 'when using vm_type and vm_block in different instance groups' do
     let(:cloud_config_with_vm_types_and_vm_resources) do
-      cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
       cloud_config['vm_types'] = [{'name' => 'vm_type_1', 'cloud_properties' => { 'instance_type' => 'from-vm-type'}}]
       cloud_config['compilation']['vm_resources'] = vm_resources
       cloud_config['networks'].first['subnets'].first['static'] << '192.168.1.11'
@@ -169,7 +169,7 @@ describe 'calculated vm properties', type: :integration do
 
   context 'when using vm_resources for one or multiple deployment' do
     let(:cloud_config_with_vm_types_and_vm_resources) do
-      cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+      cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
       cloud_config['vm_types'] = [{ 'name' => 'vm_type_1' }]
       cloud_config['networks'].first['subnets'].first['static'] << '192.168.1.11'
       cloud_config['networks'][0]['subnets'][0]['azs'] = ['z1']
@@ -259,13 +259,13 @@ describe 'calculated vm properties', type: :integration do
 
   context 'when deploying with multiple CPIs' do
     let(:multi_cpi_cloud_config) do
-      cloud_config = Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs_and_cpis
+      cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs_and_cpis
       cloud_config.delete('vm_types')
       cloud_config['compilation']['vm_resources'] = vm_resources
       cloud_config
     end
     let(:cpi_config) do
-      cpi_config = Bosh::Spec::Deployments.multi_cpi_config(
+      cpi_config = Bosh::Spec::DeploymentManifestHelper.multi_cpi_config(
         current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI),
       )
       cpi_config['cpis'][0]['properties'] = { 'cvcpkey' => 'dummy1' }

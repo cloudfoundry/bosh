@@ -11,7 +11,7 @@ describe 'Links in errands', type: :integration do
 
   context 'when the errand is on a manual network and it contains a provider' do
     let(:cloud_config) do
-      Bosh::Spec::Deployments.simple_cloud_config.tap do |config|
+      Bosh::Spec::DeploymentManifestHelper.simple_cloud_config.tap do |config|
         config['azs'] = [{ 'name' => 'z1' }]
         config['compilation']['az'] = 'z1'
         config['compilation']['network'] = 'manual-network'
@@ -41,9 +41,9 @@ describe 'Links in errands', type: :integration do
     end
 
     let(:manifest) do
-      Bosh::Spec::Deployments.simple_manifest_with_instance_groups.tap do |manifest|
+      Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups.tap do |manifest|
         manifest['instance_groups'] = [
-          Bosh::Spec::Deployments.simple_instance_group(
+          Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
             name: 'first_ig',
             jobs: [{ 'name' => 'provider', 'release' => 'bosh-release' }],
             azs: ['z1'],
@@ -70,9 +70,9 @@ describe 'Links in errands', type: :integration do
 
     context 'when the provider is shared' do
       let(:manifest) do
-        Bosh::Spec::Deployments.simple_manifest_with_instance_groups.tap do |manifest|
+        Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups.tap do |manifest|
           manifest['instance_groups'] = [
-            Bosh::Spec::Deployments.simple_instance_group(
+            Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
               name: 'first_ig',
               jobs: [{ 'name' => 'provider', 'release' => 'bosh-release', 'provides' => { 'provider' => { 'shared' => true } } }],
               azs: ['z1'],
@@ -94,9 +94,9 @@ describe 'Links in errands', type: :integration do
 
     context 'when the provider is consumed' do
       let(:manifest) do
-        Bosh::Spec::Deployments.simple_manifest_with_instance_groups.tap do |manifest|
+        Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups.tap do |manifest|
           manifest['instance_groups'] = [
-            Bosh::Spec::Deployments.simple_instance_group(
+            Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
               name: 'consuming_ig',
               jobs: [{ 'name' => 'consumer', 'release' => 'bosh-release', 'consumes' => { 'provider' => { 'from' => 'foo' } } }],
               azs: ['z1'],
@@ -105,7 +105,7 @@ describe 'Links in errands', type: :integration do
               ig['lifecycle'] = 'errand'
               ig['networks'] = [{ 'name' => 'manual-network' }]
             end,
-            Bosh::Spec::Deployments.simple_instance_group(
+            Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
               name: 'first_ig',
               jobs: [{ 'name' => 'provider', 'release' => 'bosh-release', 'provides' => { 'provider' => { 'as' => 'foo' } } }],
               azs: ['z1'],
