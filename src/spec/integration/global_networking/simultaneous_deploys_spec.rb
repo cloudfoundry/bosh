@@ -1,7 +1,6 @@
 require_relative '../../spec_helper'
 
 describe 'simultaneous deploys', type: :integration do
-  include Bosh::Spec::BlockingDeployHelper
   with_reset_sandbox_before_each
 
   let(:first_manifest_hash) do
@@ -24,11 +23,11 @@ describe 'simultaneous deploys', type: :integration do
       second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 1, job: 'foobar_without_packages')
 
       upload_cloud_config(cloud_config_hash: cloud_config)
-      first_task_id = Bosh::Spec::DeployHelper.start_deploy(first_deployment_manifest)
-      second_task_id = Bosh::Spec::DeployHelper.start_deploy(second_deployment_manifest)
+      first_task_id = start_deploy(first_deployment_manifest)
+      second_task_id = start_deploy(second_deployment_manifest)
 
-      Bosh::Spec::DeployHelper.wait_for_task_to_succeed(first_task_id)
-      Bosh::Spec::DeployHelper.wait_for_task_to_succeed(second_task_id)
+      wait_for_task_to_succeed(first_task_id)
+      wait_for_task_to_succeed(second_task_id)
 
       first_deployment_ips = director.instances(deployment_name: 'first').map(&:ips).flatten
       second_deployment_ips = director.instances(deployment_name: 'second').map(&:ips).flatten
@@ -58,11 +57,11 @@ describe 'simultaneous deploys', type: :integration do
       second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 2, job: 'foobar_without_packages')
 
       upload_cloud_config(cloud_config_hash: cloud_config)
-      first_task_id = Bosh::Spec::DeployHelper.start_deploy(first_deployment_manifest)
-      second_task_id = Bosh::Spec::DeployHelper.start_deploy(second_deployment_manifest)
+      first_task_id = start_deploy(first_deployment_manifest)
+      second_task_id = start_deploy(second_deployment_manifest)
 
-      first_output, first_success = Bosh::Spec::DeployHelper.wait_for_task(first_task_id)
-      second_output, second_success = Bosh::Spec::DeployHelper.wait_for_task(second_task_id)
+      first_output, first_success = wait_for_task(first_task_id)
+      second_output, second_success = wait_for_task(second_task_id)
 
       expect([first_success, second_success]).to match_array([true, false])
       expect(first_output + second_output).to include('no more available')
@@ -78,9 +77,9 @@ describe 'simultaneous deploys', type: :integration do
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: manifest_with_errand)
 
-      deploy_task_id = Bosh::Spec::DeployHelper.start_deploy(second_deployment_manifest)
+      deploy_task_id = start_deploy(second_deployment_manifest)
       run_errand('errand_job', manifest_hash: manifest_with_errand)
-      Bosh::Spec::DeployHelper.wait_for_task_to_succeed(deploy_task_id)
+      wait_for_task_to_succeed(deploy_task_id)
 
       job_deployment_ips = director.instances(deployment_name: 'second').map(&:ips).flatten
       expect(job_deployment_ips.count).to eq(1)
@@ -95,9 +94,9 @@ describe 'simultaneous deploys', type: :integration do
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: manifest_with_errand)
 
-      deploy_task_id = Bosh::Spec::DeployHelper.start_deploy(second_deployment_manifest)
+      deploy_task_id = start_deploy(second_deployment_manifest)
       errand_output, errand_success = run_errand('errand_job', deployment_name: 'errand', manifest_hash: manifest_with_errand)
-      deploy_output, deploy_success = Bosh::Spec::DeployHelper.wait_for_task(deploy_task_id)
+      deploy_output, deploy_success = wait_for_task(deploy_task_id)
 
       expect([deploy_success, errand_success]).to match_array([true, false]), "\nerrand output:\n#{errand_output}\n\ndeploy output:\n#{deploy_output}\n"
       expect(deploy_output + errand_output).to include('no more available')

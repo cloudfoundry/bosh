@@ -1,7 +1,6 @@
 require_relative '../spec_helper'
 
 describe 'cli: locks', type: :integration do
-  include Bosh::Spec::BlockingDeployHelper
   with_reset_sandbox_before_each
 
   context 'when a deployment is in progress' do

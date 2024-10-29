@@ -1,7 +1,6 @@
 require_relative '../../spec_helper'
 
 describe 'global networking', type: :integration do
-  include Bosh::Spec::BlockingDeployHelper
   with_reset_sandbox_before_each
 
   before do

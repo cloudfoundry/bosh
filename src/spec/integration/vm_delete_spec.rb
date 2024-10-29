@@ -1,8 +1,6 @@
 require_relative '../spec_helper'
 
 describe 'vm delete', type: :integration do
-  include Bosh::Spec::BlockingDeployHelper
-
   with_reset_sandbox_before_each
   with_reset_hm_before_each
 

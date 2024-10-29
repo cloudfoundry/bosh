@@ -357,6 +357,54 @@ module IntegrationExampleGroup
     end
   end
 
+  def start_deploy(manifest)
+    output = deploy_simple_manifest(manifest_hash: manifest, no_track: true)
+
+    Bosh::Spec::OutputParser.new(output).task_id('*')
+  end
+
+  def wait_for_task(task_id)
+    director.task(task_id)
+  end
+
+  def wait_for_task_to_succeed(task_id)
+    output, success = wait_for_task(task_id)
+    raise "task failed: #{output}" unless success
+    output
+  end
+
+  def with_blocking_deploy(options = {})
+    manifest =
+      Bosh::Spec::NetworkingManifest.deployment_manifest(
+        name: 'blocking',
+        instances: 1,
+        job: 'job_with_blocking_compilation',
+        job_release: 'bosh-release',
+      )
+
+    output = deploy_simple_manifest(manifest_hash: manifest, no_track: true)
+
+    task_id = Bosh::Spec::OutputParser.new(output).task_id('*')
+
+    director.wait_for_first_available_vm
+
+    compilation_vm = director.vms.first
+    expect(compilation_vm).to_not be_nil
+
+    yield(task_id)
+
+    task_id
+  ensure
+    if compilation_vm
+      compilation_vm.unblock_package
+
+      unless options[:skip_task_wait]
+        _, first_success = wait_for_task(task_id)
+        expect(first_success).to eq(true)
+      end
+    end
+  end
+
   private
 
   def sub_in_records(output, regex_pattern, replace_pattern)

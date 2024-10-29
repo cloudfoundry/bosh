@@ -14,11 +14,11 @@ describe 'Changing cloud config', type: :integration do
       deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1, job: 'foobar_without_packages')
 
       upload_cloud_config(cloud_config_hash: cloud_config)
-      task_id = Bosh::Spec::DeployHelper.start_deploy(deployment_manifest)
+      task_id = start_deploy(deployment_manifest)
 
       upload_a_different_cloud_config
 
-      Bosh::Spec::DeployHelper.wait_for_task_to_succeed(task_id)
+      wait_for_task_to_succeed(task_id)
     end
 
     it 'should continue to use the original cloud config when running an errand' do

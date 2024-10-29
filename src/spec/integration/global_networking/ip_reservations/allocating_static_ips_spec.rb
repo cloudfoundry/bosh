@@ -132,7 +132,7 @@ describe 'global networking', type: :integration do
         expect(exit_code).to_not eq(0)
       ensure
         current_sandbox.cpi.commands.unpause_delete_vms
-        Bosh::Spec::DeployHelper.wait_for_task(delete_deployment_task)
+        wait_for_task(delete_deployment_task)
       end
     end
 

@@ -1,8 +1,6 @@
 require 'spec_helper'
-require_relative '../support/blocking_deploy_helper'
 
 describe 'cancel task', type: :integration do
-  include Bosh::Spec::BlockingDeployHelper
   with_reset_sandbox_before_each
 
   it 'creates a task and then successfully cancels it' do
