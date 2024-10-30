@@ -6,13 +6,13 @@ describe 'deploy with create-swap-delete', type: :integration do
                                  agent_wait_timeout: 3)
 
   let(:manifest) do
-    manifest = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups(instances: 1, azs: ['z1'])
+    manifest = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups(instances: 1, azs: ['z1'])
     manifest['update'] = manifest['update'].merge('vm_strategy' => 'create-swap-delete')
     manifest
   end
 
   let(:cloud_config) do
-    cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs
+    cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs
     cloud_config['networks'][0]['type'] = network_type
     cloud_config
   end
@@ -238,13 +238,13 @@ describe 'deploy with create-swap-delete', type: :integration do
 
       context 'when the network is too small' do
         let(:manifest) do
-          manifest = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups(instances: 2)
+          manifest = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups(instances: 2)
           manifest['update'] = manifest['update'].merge('vm_strategy' => 'create-swap-delete')
           manifest
         end
 
         let(:cloud_config) do
-          cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+          cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
           cloud_config['networks'][0]['type'] = network_type
           cloud_config['networks'][0]['subnets'][0]['range'] = '192.168.1.0/29' # 192.168.1.0 - 192.168.1.7 broadcast
           cloud_config['networks'][0]['subnets'][0]['reserved'] = ['192.168.1.3', '192.168.1.1', '192.168.1.2']
@@ -253,7 +253,7 @@ describe 'deploy with create-swap-delete', type: :integration do
         end
 
         let(:larger_network_cloud_config) do
-          cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+          cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
           cloud_config['networks'][0]['type'] = network_type
           cloud_config['networks'][0]['subnets'][0]['range'] = '192.168.1.0/29'
           cloud_config['networks'][0]['subnets'][0]['reserved'] = ['192.168.1.1', '192.168.1.2']
@@ -277,7 +277,7 @@ describe 'deploy with create-swap-delete', type: :integration do
       let(:network_type) { 'manual' }
 
       let(:cloud_config) do
-        cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+        cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
         cloud_config['networks'][0]['type'] = network_type
         cloud_config['networks'][0]['subnets'][0]['range'] = '192.168.1.0/29' # 8 ips in range
         cloud_config['networks'][0]['subnets'][0]['reserved'] = ['192.168.1.1', '192.168.1.2']
@@ -289,7 +289,7 @@ describe 'deploy with create-swap-delete', type: :integration do
       let(:instance_count) { 2 }
 
       let(:manifest) do
-        manifest = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups(instances: instance_count)
+        manifest = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups(instances: instance_count)
         manifest['update'] = manifest['update'].merge('vm_strategy' => 'delete-create')
         manifest
       end
@@ -302,7 +302,7 @@ describe 'deploy with create-swap-delete', type: :integration do
         }
       end
       let(:manifest_with_bad_templating) do
-        bad_manifest = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups(instances: instance_count)
+        bad_manifest = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups(instances: instance_count)
         bad_manifest['update'] = bad_manifest['update'].merge('vm_strategy' => 'create-swap-delete')
         bad_manifest['instance_groups'][0]['jobs'] << job_with_bad_template
         bad_manifest
@@ -315,7 +315,7 @@ describe 'deploy with create-swap-delete', type: :integration do
       end
 
       it 'can re-use create-swap-delete IPs from the failed deployment' do
-        manifest = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups(instances: 4)
+        manifest = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups(instances: 4)
         manifest['update'] = manifest['update'].merge('vm_strategy' => 'delete-create')
         _, exit_code = deploy_simple_manifest(manifest_hash: manifest, return_exit_code: true)
         expect(exit_code).to eq(0)
@@ -404,17 +404,17 @@ describe 'deploy with create-swap-delete', type: :integration do
       FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, ClientSandbox.links_release_dir, preserve: false)
       bosh_runner.run_in_dir('create-release --force', ClientSandbox.links_release_dir)
       bosh_runner.run_in_dir('upload-release', ClientSandbox.links_release_dir)
-      cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs
+      cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs
 
       upload_cloud_config(cloud_config_hash: cloud_config)
       upload_stemcell
     end
 
     let(:manifest) do
-      manifest = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      manifest = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest['update'] = manifest['update'].merge('vm_strategy' => 'create-swap-delete')
       manifest['features'] = { 'use_dns_addresses' => true }
-      consumer_spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+      consumer_spec = SharedSupport::DeploymentManifestHelper.simple_instance_group(
         name: 'my_api',
         jobs: [
           {
@@ -430,7 +430,7 @@ describe 'deploy with create-swap-delete', type: :integration do
         instances: 1,
       )
       consumer_spec['azs'] = ['z1']
-      provider_spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+      provider_spec = SharedSupport::DeploymentManifestHelper.simple_instance_group(
         name: 'mysql',
         jobs: [
           {

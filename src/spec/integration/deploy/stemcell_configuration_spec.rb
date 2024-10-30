@@ -7,7 +7,7 @@ describe 'stemcell configuration', type: :integration do
     it 'deploys with the stemcell with specified OS and version' do
       create_and_upload_test_release
 
-      cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+      cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
 
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
@@ -16,7 +16,7 @@ describe 'stemcell configuration', type: :integration do
 
       bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell_v2.tgz')}")
 
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['stemcells'].first.delete('name')
       manifest_hash['stemcells'].first['os'] = 'toronto-os'
       manifest_hash['stemcells'].first['version'] = '1'
@@ -36,7 +36,7 @@ describe 'stemcell configuration', type: :integration do
     before do
       create_and_upload_test_release
 
-      cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+      cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
 
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
@@ -49,7 +49,7 @@ describe 'stemcell configuration', type: :integration do
     end
 
     let(:manifest_hash) do
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['stemcells'].first.delete('name')
       manifest_hash['stemcells'].first['os'] = 'toronto-os'
       manifest_hash['stemcells'].first['version'] = '2'
@@ -80,7 +80,7 @@ describe 'stemcell configuration', type: :integration do
 
     context 'when there is a stopped instance during the update' do
       let(:manifest_hash) do
-        manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+        manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
         manifest_hash['stemcells'].first.delete('name')
         manifest_hash['stemcells'].first['os'] = 'toronto-os'
         manifest_hash['stemcells'].first['version'] = '2'
@@ -103,8 +103,8 @@ describe 'stemcell configuration', type: :integration do
 
   context 'when stemcell is using latest version' do
     it 'redeploys with latest version of stemcell' do
-      cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
+      manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['stemcells'].first['version'] = 'latest'
       manifest_hash['instance_groups'].first['instances'] = 1
 

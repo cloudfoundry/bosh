@@ -38,7 +38,7 @@ describe 'cli: stemcell', type: :integration do
       stemcell_filename = asset_path('valid_stemcell.tgz')
 
       cpi_path = current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI)
-      cpi_config_manifest = yaml_file('cpi_manifest', Bosh::Spec::DeploymentManifestHelper.multi_cpi_config(cpi_path))
+      cpi_config_manifest = yaml_file('cpi_manifest', SharedSupport::DeploymentManifestHelper.multi_cpi_config(cpi_path))
       bosh_runner.run("update-cpi-config #{cpi_config_manifest.path}")
 
       out = bosh_runner.run("upload-stemcell #{stemcell_filename}")
@@ -101,8 +101,8 @@ describe 'cli: stemcell', type: :integration do
   context 'when stemcell is in use by a deployment' do
     it 'refuses to delete it' do
       deploy_from_scratch(
-        cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
-        manifest_hash: Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups,
+        cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config,
+        manifest_hash: SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups,
       )
       results = bosh_runner.run('delete-stemcell ubuntu-stemcell/1', failure_expected: true)
       expect(results).to include("Stemcell 'ubuntu-stemcell/1' is still in use by: simple")

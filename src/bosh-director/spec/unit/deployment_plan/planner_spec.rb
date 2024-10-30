@@ -29,7 +29,7 @@ module Bosh::Director
         YAML.dump minimal_manifest
       end
 
-      let(:minimal_manifest) { Bosh::Spec::Deployments.minimal_manifest }
+      let(:minimal_manifest) { SharedSupport::DeploymentManifestHelper.minimal_manifest }
 
       describe 'with valid options' do
         let(:stemcell_model) { Bosh::Director::Models::Stemcell.create(name: 'default', version: '1', cid: 'abc') }

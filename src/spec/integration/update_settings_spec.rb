@@ -6,8 +6,8 @@ describe 'update settings configuration', type: :integration do
   it 'should update trusted certificates when the VM is first created' do
     director.start_recording_nats
 
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
-    deploy_from_scratch(cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config, manifest_hash: manifest_hash)
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    deploy_from_scratch(cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config, manifest_hash: manifest_hash)
 
     nats_messages = extract_agent_messages(director.finish_recording_nats, director.instance('foobar', '0').agent_id)
     expect(nats_messages).to include('update_settings')
@@ -16,8 +16,8 @@ describe 'update settings configuration', type: :integration do
   end
 
   it 'should not update the trusted certificates if they were not changed' do
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
-    deploy_from_scratch(cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config, manifest_hash: manifest_hash)
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    deploy_from_scratch(cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config, manifest_hash: manifest_hash)
 
     director.start_recording_nats
     deploy_simple_manifest(manifest_hash: manifest_hash)
@@ -28,8 +28,8 @@ describe 'update settings configuration', type: :integration do
   end
 
   it 'should update the trusted certificates if they were changed' do
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
-    deploy_from_scratch(cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config, manifest_hash: manifest_hash)
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    deploy_from_scratch(cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config, manifest_hash: manifest_hash)
 
     current_sandbox.trusted_certs = 'new trusted certs'
     current_sandbox.director_service.stop

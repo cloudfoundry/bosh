@@ -5,11 +5,11 @@ describe 'unresponsive agent', type: :integration do
 
   context 'when using v2 manifest' do
     it 'should not contact the VM and deploys successfully' do
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
-      cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+      manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
 
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar1', instances: 2)
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar1', instances: 2)
 
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -21,7 +21,7 @@ describe 'unresponsive agent', type: :integration do
       foobar1_instance1.kill_agent
 
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.instance_group_with_many_jobs(
         name: 'foobar1',
         jobs: [
           {

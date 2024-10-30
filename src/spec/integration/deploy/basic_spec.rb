@@ -4,9 +4,9 @@ describe 'basic functionality', type: :integration do
   with_reset_sandbox_before_each
 
   it 'allows removing deployed jobs and adding new jobs at the same time' do
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['name'] = 'fake-name1'
-    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
     expect_running_vms_with_names_and_count('fake-name1' => 3)
 
     manifest_hash['instance_groups'].first['name'] = 'fake-name2'
@@ -19,15 +19,15 @@ describe 'basic functionality', type: :integration do
   end
 
   it 'deployment fails when starting task fails' do
-    deploy_from_scratch(manifest_hash: Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups)
+    deploy_from_scratch(manifest_hash: SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups)
     director.instance('foobar', '0').fail_start_task
     _, exit_code = deploy(failure_expected: true, return_exit_code: true)
     expect(exit_code).to_not eq(0)
   end
 
   it 'supports scaling down and then scaling up' do
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
-    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
 
     manifest_hash['instance_groups'].first['instances'] = 3
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
@@ -43,9 +43,9 @@ describe 'basic functionality', type: :integration do
   end
 
   it 'supports dynamically sized resource pools' do
-    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+    cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
 
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['instances'] = 3
 
     deploy_from_scratch(cloud_config_hash: cloud_config_hash, manifest_hash: manifest_hash)
@@ -70,10 +70,10 @@ describe 'basic functionality', type: :integration do
   it 'outputs properly formatted deploy information' do
     # We need to keep this test since the output is not tested and keeps breaking.
 
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['instances'] = 1
 
-    output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+    output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
 
     duration_regex = '\\d\\d:\\d\\d:\\d\\d'
     date_regex = '\\d\\d:\\d\\d:\\d\\d'
@@ -92,11 +92,11 @@ describe 'basic functionality', type: :integration do
   end
 
   it 'saves instance name, deployment name, az, and id to the file system on the instance' do
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['name'] = 'fake-name1'
     manifest_hash['instance_groups'].first['azs'] = ['zone-1']
 
-    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+    cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
     cloud_config_hash['azs'] = [
       { 'name' => 'zone-1', 'cloud_properties' => {} },
     ]
@@ -114,7 +114,7 @@ describe 'basic functionality', type: :integration do
     id = File.read("#{agent_dir}/instance/id")
 
     expect(instance_name).to eq('fake-name1')
-    expect(deployment_name).to eq(Bosh::Spec::DeploymentManifestHelper::DEFAULT_DEPLOYMENT_NAME)
+    expect(deployment_name).to eq(SharedSupport::DeploymentManifestHelper::DEFAULT_DEPLOYMENT_NAME)
     expect(az_name).to eq('zone-1')
     expect(id).to eq(instance.id)
   end

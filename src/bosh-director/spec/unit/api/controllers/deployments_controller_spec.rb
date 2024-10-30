@@ -17,7 +17,7 @@ module Bosh::Director
       end
 
       def manifest_with_errand_hash(deployment_name='errand')
-        manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
+        manifest_hash = SharedSupport::DeploymentManifestHelper.manifest_with_errand
         manifest_hash['name'] = deployment_name
         manifest_hash['instance_groups'] << {
           'name' => 'another-errand',
@@ -1604,7 +1604,7 @@ module Bosh::Director
             version.add_template(FactoryBot.create(:models_template, name: 'job_using_pkg_1', release: release))
           end
           let(:deployment) { Models::Deployment.create(name: 'test_deployment', manifest: manifest) }
-          let(:default_manifest) { Bosh::Spec::Deployments.minimal_manifest }
+          let(:default_manifest) { SharedSupport::DeploymentManifestHelper.minimal_manifest }
 
           context 'multiple instances' do
             let(:manifest) do
@@ -1786,7 +1786,7 @@ module Bosh::Director
             end
 
             context 'is "service"' do
-              let(:manifest) { YAML.dump(default_manifest.merge(Bosh::Spec::Deployments.simple_instance_group)) }
+              let(:manifest) { YAML.dump(default_manifest.merge(SharedSupport::DeploymentManifestHelper.simple_instance_group)) }
               let(:instance_lifecycle) { 'service' }
 
               context 'and state is either "started" or "stopped"' do
@@ -1838,7 +1838,7 @@ module Bosh::Director
             end
 
             context 'is "errand"' do
-              let(:manifest) { YAML.dump(default_manifest.merge(Bosh::Spec::Deployments.simple_instance_group)) }
+              let(:manifest) { YAML.dump(default_manifest.merge(SharedSupport::DeploymentManifestHelper.simple_instance_group)) }
               let(:instance_lifecycle) { 'errand' }
 
               it 'sets "expects_vm" to "false"' do
@@ -2184,7 +2184,7 @@ module Bosh::Director
               )
             end
 
-            let(:cloud_config) { FactoryBot.create(:models_config_cloud, content: YAML.dump(Bosh::Spec::Deployments.simple_cloud_config)) }
+            let(:cloud_config) { FactoryBot.create(:models_config_cloud, content: YAML.dump(SharedSupport::DeploymentManifestHelper.simple_cloud_config)) }
 
             let(:service_errand) do
               {
@@ -2816,7 +2816,7 @@ module Bosh::Director
 
           context 'GET /:deployment/errands' do
 
-            let(:cloud_config) { FactoryBot.create(:models_config_cloud, content: YAML.dump(Bosh::Spec::Deployments.simple_cloud_config)) }
+            let(:cloud_config) { FactoryBot.create(:models_config_cloud, content: YAML.dump(SharedSupport::DeploymentManifestHelper.simple_cloud_config)) }
 
             it 'allows access to owned deployment' do
               expect(get('/owned_deployment/errands').status).to eq(200)

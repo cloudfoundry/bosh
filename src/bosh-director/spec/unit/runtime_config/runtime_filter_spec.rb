@@ -7,14 +7,14 @@ module Bosh::Director
     let(:deployment_model) { FactoryBot.create(:models_deployment, name: deployment_name) }
     let(:deployment_plan) do
       planner_attributes = { name: deployment_name, properties: {} }
-      cloud_config = Bosh::Spec::Deployments.simple_cloud_config
-      manifest = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
+      manifest = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
       planner = DeploymentPlan::Planner.new(
         planner_attributes,
         manifest,
         YAML.dump(manifest),
         [FactoryBot.create(:models_config_cloud, content: YAML.dump(cloud_config))],
-        Bosh::Spec::Deployments.simple_runtime_config,
+        SharedSupport::DeploymentManifestHelper.simple_runtime_config,
         deployment_model,
       )
       release1 = FactoryBot.create(:models_release, name: '1')
@@ -40,7 +40,7 @@ module Bosh::Director
     end
 
     let(:instance_group1) do
-      group1_spec = Bosh::Spec::Deployments.simple_instance_group(
+      group1_spec = SharedSupport::DeploymentManifestHelper.simple_instance_group(
         name: 'group1',
         jobs: [{ 'name' => 'job1', 'release' => '1' }],
       )
@@ -48,7 +48,7 @@ module Bosh::Director
     end
 
     let(:instance_group2) do
-      group2_spec = Bosh::Spec::Deployments.simple_instance_group(
+      group2_spec = SharedSupport::DeploymentManifestHelper.simple_instance_group(
         name: 'group2',
         jobs: [{ 'name' => 'job1', 'release' => '1' }, { 'name' => 'job2', 'release' => '2' }],
       )

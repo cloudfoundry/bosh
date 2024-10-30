@@ -11,13 +11,13 @@ describe 'deliver rendered templates through nats', type: :integration do
   end
 
   let(:cloud_config) do
-    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+    cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
     cloud_config_hash['vm_types'] = [vm_type]
     cloud_config_hash
   end
 
   let(:manifest_hash) do
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'] = [{
        'name' => 'our_instance_group',
        'jobs' => [{
@@ -91,7 +91,7 @@ describe 'deliver rendered templates through nats', type: :integration do
     end
 
     let(:big_manifest_hash) do
-      big_manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      big_manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
       big_manifest_hash['instance_groups'] = [{
                                  'name' => 'instance_group_1',
                                  'jobs' => [{

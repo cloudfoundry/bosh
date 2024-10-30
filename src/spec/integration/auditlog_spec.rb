@@ -10,8 +10,8 @@ describe 'Audit log', type: :integration do
 
   before(:all) do
     deploy_from_scratch(
-      manifest_hash: Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups,
-      cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
+      manifest_hash: SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups,
+      cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config,
       client: 'audit_log',
       client_secret: 'auditsecret',
     )

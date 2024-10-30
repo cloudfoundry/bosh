@@ -21,13 +21,13 @@ describe 'migrating networks', type: :integration do
     end
 
     let(:cloud_config_hash) do
-      cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+      cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
       cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.10', '192.168.1.11']
       cloud_config_hash
     end
 
     let(:renamed_network_cloud_config_hash) do
-      cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+      cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
       cloud_config_hash['networks'].first['name'] = 'b'
       cloud_config_hash['compilation']['network'] = 'b'
       cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.11', '192.168.1.10']
@@ -35,14 +35,14 @@ describe 'migrating networks', type: :integration do
     end
 
     let(:simple_manifest) do
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'].first['instances'] = 2
       manifest_hash['instance_groups'].first['networks'].first['static_ips'] = ['192.168.1.11', '192.168.1.10']
       manifest_hash
     end
 
     let(:renamed_network_simple_manifest) do
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'].first['instances'] = 2
       manifest_hash['instance_groups'].first['networks'] = [{'name' => 'b'}]
       manifest_hash['instance_groups'].first['networks'].first['static_ips'] = ['192.168.1.10', '192.168.1.11']

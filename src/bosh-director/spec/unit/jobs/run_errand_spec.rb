@@ -35,12 +35,12 @@ module Bosh::Director
     let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
     let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
     let(:manifest_hash) do
-      manifest_hash = Bosh::Spec::Deployments.manifest_with_errand
+      manifest_hash = SharedSupport::DeploymentManifestHelper.manifest_with_errand
       manifest_hash['name'] = 'fake-dep-name'
       manifest_hash
     end
     let(:service_errand_manifest_hash) do
-      service_errand_manifest_hash = Bosh::Spec::Deployments.manifest_with_errand_on_service_instance
+      service_errand_manifest_hash = SharedSupport::DeploymentManifestHelper.manifest_with_errand_on_service_instance
       service_errand_manifest_hash['name'] = 'fake-dep-name'
       service_errand_manifest_hash
     end

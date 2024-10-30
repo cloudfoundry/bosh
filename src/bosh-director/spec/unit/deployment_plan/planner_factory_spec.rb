@@ -7,15 +7,15 @@ module Bosh
         subject { PlannerFactory.new(manifest_validator, deployment_repo, logger) }
         let(:deployment_repo) { DeploymentRepo.new }
         let(:deployment_name) { 'simple' }
-        let(:manifest_hash) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
+        let(:manifest_hash) { SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups }
         let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new }
         let(:cloud_configs) { [FactoryBot.create(:models_config_cloud, content: YAML.dump(cloud_config_hash))] }
         let(:runtime_config_models) { [FactoryBot.create(:models_config_runtime, content: runtime_config_hash.to_yaml)] }
-        let(:cloud_config_hash) { Bosh::Spec::Deployments.simple_cloud_config }
-        let(:runtime_config_hash) { Bosh::Spec::Deployments.simple_runtime_config }
+        let(:cloud_config_hash) { SharedSupport::DeploymentManifestHelper.simple_cloud_config }
+        let(:runtime_config_hash) { SharedSupport::DeploymentManifestHelper.simple_runtime_config }
 
         let(:manifest_with_config_keys) do
-          Bosh::Spec::Deployments.simple_manifest_with_instance_groups.merge('name' => 'with_keys')
+          SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups.merge('name' => 'with_keys')
         end
 
         let(:manifest) { Manifest.new(manifest_hash, YAML.dump(manifest_hash), cloud_config_hash, runtime_config_hash) }
@@ -178,7 +178,7 @@ module Bosh
 
             describe 'releases' do
               let(:manifest_hash) do
-                manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups.merge(
+                manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups.merge(
                   'releases' => [
                     { 'name' => 'bosh-release', 'version' => 1 },
                     { 'name' => 'bar-release', 'version' => 2 },
@@ -190,7 +190,7 @@ module Bosh
               end
 
               context 'and the runtime config does not have any applicable jobs' do
-                let(:runtime_config_hash) { Bosh::Spec::Deployments.runtime_config_with_addon_includes }
+                let(:runtime_config_hash) { SharedSupport::DeploymentManifestHelper.runtime_config_with_addon_includes }
 
                 it 'has the releases from the deployment manifest' do
                   expect(planner.releases.map { |r| [r.name, r.version] }).to match_array(
@@ -204,7 +204,7 @@ module Bosh
 
               context 'and the runtime config does has applicable jobs' do
                 let(:runtime_config_hash) do
-                  Bosh::Spec::Deployments.simple_runtime_config.merge(
+                  SharedSupport::DeploymentManifestHelper.simple_runtime_config.merge(
                     'addons' => [
                       {
                         'name' => 'first_addon',
@@ -229,7 +229,7 @@ module Bosh
 
               context 'with runtime variables' do
                 let(:runtime_config_hash) do
-                  Bosh::Spec::Deployments.simple_runtime_config.merge(
+                  SharedSupport::DeploymentManifestHelper.simple_runtime_config.merge(
                     'variables' => [
                       {
                         'name' => '/dns_healthcheck_server_tlsX',
@@ -264,7 +264,7 @@ module Bosh
 
             describe 'jobs' do
               let(:cloud_config_hash) do
-                hash = Bosh::Spec::Deployments.simple_cloud_config.merge(
+                hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config.merge(
                   'azs' => [
                     { 'name' => 'zone1', 'cloud_properties' => { foo: 'bar' } },
                     { 'name' => 'zone2', 'cloud_properties' => { foo: 'baz' } },
@@ -273,7 +273,7 @@ module Bosh
                 hash['compilation']['az'] = 'zone1'
 
                 first_subnet = hash['networks'][0]['subnets']
-                first_subnet << Bosh::Spec::Deployments.subnet(
+                first_subnet << SharedSupport::DeploymentManifestHelper.subnet(
                   'range' => '192.168.2.0/24',
                   'gateway' => '192.168.2.1',
                   'dns' => ['192.168.2.1', '192.168.2.2'],
@@ -288,9 +288,9 @@ module Bosh
               end
 
               let(:manifest_hash) do
-                Bosh::Spec::Deployments.simple_manifest_with_instance_groups.merge(
+                SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups.merge(
                   'instance_groups' => [
-                    Bosh::Spec::Deployments.simple_instance_group.merge('azs' => %w[zone1 zone2]),
+                    SharedSupport::DeploymentManifestHelper.simple_instance_group.merge('azs' => %w[zone1 zone2]),
                   ],
                 )
               end
@@ -306,10 +306,10 @@ module Bosh
 
               context 'when there are two jobs with two availability zones' do
                 let(:manifest_hash) do
-                  Bosh::Spec::Deployments.simple_manifest_with_instance_groups.merge(
+                  SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups.merge(
                     'instance_groups' => [
-                      Bosh::Spec::Deployments.simple_instance_group.merge('azs' => ['zone1']),
-                      Bosh::Spec::Deployments.simple_instance_group(name: 'bar').merge('azs' => ['zone2']),
+                      SharedSupport::DeploymentManifestHelper.simple_instance_group.merge('azs' => ['zone1']),
+                      SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'bar').merge('azs' => ['zone2']),
                     ],
                   )
                 end
@@ -338,7 +338,7 @@ module Bosh
             end
 
             context "when the version of a release is 'latest'" do
-              let(:runtime_config_hash) { Bosh::Spec::Deployments.simple_runtime_config(release = 'bosh-release', version = 'latest') }
+              let(:runtime_config_hash) { SharedSupport::DeploymentManifestHelper.simple_runtime_config(release = 'bosh-release', version = 'latest') }
 
               it "throws an error" do
                 expect do
@@ -350,7 +350,7 @@ module Bosh
             end
 
             context "when the release used by an addon is not listed in the releases section" do
-              let(:runtime_config_hash) { Bosh::Spec::Deployments.runtime_config_release_missing }
+              let(:runtime_config_hash) { SharedSupport::DeploymentManifestHelper.runtime_config_release_missing }
 
               it 'throws an error' do
                 expect do
@@ -366,7 +366,7 @@ module Bosh
               let(:release_version) { manifest_hash['releases'].first['version'] }
               let(:non_matching_release_version) { "#{release_version}-2" }
               let(:matching_runtime_config_hash) do
-                Bosh::Spec::Deployments.simple_runtime_config(release_name, release_version).merge(
+                SharedSupport::DeploymentManifestHelper.simple_runtime_config(release_name, release_version).merge(
                   'addons' => [
                     {
                       'name' => 'addon1',
@@ -382,7 +382,7 @@ module Bosh
                 )
               end
               let(:non_matching_runtime_config_hash) do
-                Bosh::Spec::Deployments.simple_runtime_config(release_name, non_matching_release_version).merge(
+                SharedSupport::DeploymentManifestHelper.simple_runtime_config(release_name, non_matching_release_version).merge(
                   'addons' => [
                     {
                       'name' => 'addon1',

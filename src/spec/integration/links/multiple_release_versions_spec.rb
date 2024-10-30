@@ -4,7 +4,7 @@ describe 'multiple versions of a release are uploaded', type: :integration do
   with_reset_sandbox_before_each
 
   let(:cloud_config) do
-    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+    cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
     cloud_config_hash['azs'] = [{ 'name' => 'z1' }]
     cloud_config_hash['networks'].first['subnets'].first['az'] = 'z1'
     cloud_config_hash['compilation']['az'] = 'z1'
@@ -12,7 +12,7 @@ describe 'multiple versions of a release are uploaded', type: :integration do
   end
 
   let(:instance_group_consumes_link_spec_for_addon) do
-    spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+    spec = SharedSupport::DeploymentManifestHelper.simple_instance_group(
       name: 'deployment-job',
       jobs: [{ 'name' => 'api_server', 'consumes' => links, 'release' => 'simple-link-release' }],
     )
@@ -20,7 +20,7 @@ describe 'multiple versions of a release are uploaded', type: :integration do
   end
 
   let(:deployment_manifest) do
-    manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
+    manifest = SharedSupport::DeploymentManifestHelper.deployment_manifest
     manifest['releases'].clear
     manifest['releases'] << {
       'name' => 'simple-link-release',
@@ -33,7 +33,7 @@ describe 'multiple versions of a release are uploaded', type: :integration do
   end
 
   let(:mysql_instance_group_spec) do
-    spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+    spec = SharedSupport::DeploymentManifestHelper.simple_instance_group(
       name: 'mysql',
       jobs: [{ 'name' => 'database', 'release' => 'simple-link-release' }],
       instances: 1,
@@ -43,7 +43,7 @@ describe 'multiple versions of a release are uploaded', type: :integration do
   end
 
   let(:postgres_instance_group_spec) do
-    spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+    spec = SharedSupport::DeploymentManifestHelper.simple_instance_group(
       name: 'postgres',
       jobs: [{ 'name' => 'backup_database', 'release' => 'simple-link-release' }],
       instances: 1,

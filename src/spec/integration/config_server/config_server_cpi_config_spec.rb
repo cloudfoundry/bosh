@@ -8,10 +8,10 @@ describe 'cpi config', type: :integration do
   end
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger)}
   let(:cpi_path) { current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI) }
-  let(:valid_cpi_config_file) { yaml_file('cpi_manifest', Bosh::Spec::DeploymentManifestHelper.multi_cpi_config_with_variables(cpi_path)) }
+  let(:valid_cpi_config_file) { yaml_file('cpi_manifest', SharedSupport::DeploymentManifestHelper.multi_cpi_config_with_variables(cpi_path)) }
 
   before do
-    cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs_and_cpis)
+    cloud_config_manifest = yaml_file('cloud_manifest', SharedSupport::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs_and_cpis)
     bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}", include_credentials: false,  env: client_env)
   end
 
@@ -67,9 +67,9 @@ describe 'cpi config', type: :integration do
         end
 
         describe 'when a release is deployed' do
-          let(:instance_group) { Bosh::Spec::DeploymentManifestHelper.simple_instance_group(azs: %w[z1 z2]) }
+          let(:instance_group) { SharedSupport::DeploymentManifestHelper.simple_instance_group(azs: %w[z1 z2]) }
           let(:deployment) do
-            Bosh::Spec::DeploymentManifestHelper.test_release_manifest_with_stemcell.merge('instance_groups' => [instance_group])
+            SharedSupport::DeploymentManifestHelper.test_release_manifest_with_stemcell.merge('instance_groups' => [instance_group])
           end
           let(:deployment_manifest) { yaml_file('deployment_manifest', deployment) }
           before do
@@ -110,7 +110,7 @@ describe 'cpi config', type: :integration do
 
     describe 'when multiple cpis are defined with some relative variables' do
       let(:invalid_cpi_config_file) do
-        cpis_config = Bosh::Spec::DeploymentManifestHelper.multi_cpi_config_with_variables(cpi_path)
+        cpis_config = SharedSupport::DeploymentManifestHelper.multi_cpi_config_with_variables(cpi_path)
         cpis_config['cpis'][0]['properties']['someRelKey'] = '((some-rel-val))'
         yaml_file('cpi_manifest', cpis_config)
       end

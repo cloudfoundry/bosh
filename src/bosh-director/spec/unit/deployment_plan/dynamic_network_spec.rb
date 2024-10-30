@@ -495,7 +495,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
 
   describe 'validate_has_job' do
     let(:network_spec) do
-      Bosh::Spec::Deployments.network.merge(
+      SharedSupport::DeploymentManifestHelper.network.merge(
         'type' => 'dynamic',
         'subnets' => [
           {

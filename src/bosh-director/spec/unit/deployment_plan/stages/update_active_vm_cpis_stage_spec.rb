@@ -34,7 +34,7 @@ module Bosh::Director
         if prior_az_name.nil?
           FactoryBot.create(:models_config_cloud, :with_manifest)
         else
-          raw_manifest = Bosh::Spec::Deployments.simple_cloud_config.merge(
+          raw_manifest = SharedSupport::DeploymentManifestHelper.simple_cloud_config.merge(
             'azs' => [
               {
                 'name' => prior_az_name,

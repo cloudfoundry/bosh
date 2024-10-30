@@ -134,12 +134,12 @@ module Bosh::Director::DeploymentPlan
     let(:existing_instance) { instance_model }
 
     let(:instance_group_spec) do
-      Bosh::Spec::Deployments.simple_instance_group(env: { 'bosh' => { 'password' => 'foobar' } })
+      SharedSupport::DeploymentManifestHelper.simple_instance_group(env: { 'bosh' => { 'password' => 'foobar' } })
     end
 
-    let(:network_spec) { Bosh::Spec::Deployments.simple_cloud_config['networks'].first }
-    let(:cloud_config_manifest) { Bosh::Spec::Deployments.simple_cloud_config }
-    let(:deployment_manifest) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
+    let(:network_spec) { SharedSupport::DeploymentManifestHelper.simple_cloud_config['networks'].first }
+    let(:cloud_config_manifest) { SharedSupport::DeploymentManifestHelper.simple_cloud_config }
+    let(:deployment_manifest) { SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups }
     let(:deployment_model) do
       cloud_config = FactoryBot.create(:models_config_cloud, content: YAML.dump(cloud_config_manifest))
       deployment = FactoryBot.create(:models_deployment,
@@ -649,7 +649,7 @@ module Bosh::Director::DeploymentPlan
 
       context 'when the env has changed' do
         let(:instance_group_spec) do
-          Bosh::Spec::Deployments.simple_instance_group(env: { 'key' => 'changed-value' })
+          SharedSupport::DeploymentManifestHelper.simple_instance_group(env: { 'key' => 'changed-value' })
         end
 
         before do
@@ -684,7 +684,7 @@ module Bosh::Director::DeploymentPlan
 
     describe '#vm_matches_plan?' do
       let(:instance_group_spec) do
-        Bosh::Spec::Deployments.simple_instance_group(
+        SharedSupport::DeploymentManifestHelper.simple_instance_group(
           name: 'foo-instance-group',
           env: { 'env' => 'env-val' },
           vm_type: 'a',
@@ -692,7 +692,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       let(:cloud_config_manifest) do
-        cc = Bosh::Spec::Deployments.simple_cloud_config
+        cc = SharedSupport::DeploymentManifestHelper.simple_cloud_config
         cc['vm_types'][0] = { 'name' => 'a', 'cloud_properties' => uninterpolated_cloud_properties_hash }
         cc
       end
@@ -998,7 +998,7 @@ module Bosh::Director::DeploymentPlan
 
       context 'when the env has changed' do
         let(:instance_group_spec) do
-          Bosh::Spec::Deployments.simple_instance_group(env: { 'key' => 'changed-value' })
+          SharedSupport::DeploymentManifestHelper.simple_instance_group(env: { 'key' => 'changed-value' })
         end
 
         before do
@@ -1180,7 +1180,7 @@ module Bosh::Director::DeploymentPlan
 
       context 'when the env has changed' do
         let(:instance_group_spec) do
-          Bosh::Spec::Deployments.simple_instance_group(env: { 'key' => 'changed-value' })
+          SharedSupport::DeploymentManifestHelper.simple_instance_group(env: { 'key' => 'changed-value' })
         end
 
         before do
@@ -1431,7 +1431,7 @@ module Bosh::Director::DeploymentPlan
 
     describe '#persistent_disk_changed?' do
       let(:cloud_config_manifest) do
-        cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
         cloud_config['disk_types'] = [{
           'name' => 'disk_a',
           'disk_size' => 24,
@@ -1461,7 +1461,7 @@ module Bosh::Director::DeploymentPlan
 
       context 'when there is a change' do
         let(:instance_group_spec) do
-          Bosh::Spec::Deployments.simple_instance_group(persistent_disk_type: 'disk_a')
+          SharedSupport::DeploymentManifestHelper.simple_instance_group(persistent_disk_type: 'disk_a')
         end
 
         before do
@@ -1661,7 +1661,7 @@ module Bosh::Director::DeploymentPlan
           let(:job2_template) { FactoryBot.create(:models_template, name: 'job2') }
 
           let(:deployment_manifest) do
-            Bosh::Spec::Deployments.simple_manifest_with_instance_groups(
+            SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups(
               jobs: [
                 { 'name' => 'job1', 'release' => 'bosh-release' },
                 { 'name' => 'job2', 'release' => 'bosh-release' },
@@ -1670,7 +1670,7 @@ module Bosh::Director::DeploymentPlan
           end
 
           let(:instance_group_spec) do
-            Bosh::Spec::Deployments.simple_instance_group(
+            SharedSupport::DeploymentManifestHelper.simple_instance_group(
               jobs: [
                 { 'name' => 'job1', 'release' => 'bosh-release' },
                 { 'name' => 'job2', 'release' => 'bosh-release' },

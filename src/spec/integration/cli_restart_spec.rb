@@ -4,7 +4,7 @@ describe 'restart job', type: :integration do
   with_reset_sandbox_before_each
 
   let(:manifest_hash) do
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'] << {
       'name' => 'another-job',
       'jobs' => [{ 'name' => 'foobar', 'release' => 'bosh-release' }],
@@ -18,7 +18,7 @@ describe 'restart job', type: :integration do
   end
 
   it 'restarts a job instance / job / all jobs' do
-    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
 
     instance_before_with_index_1 = director.instances.find{ |instance| instance.index == '1' }
     instance_uuid = instance_before_with_index_1.id

@@ -41,7 +41,7 @@ module Bosh::Director
       end
 
       let(:deployment_model) do
-        FactoryBot.create(:models_deployment, manifest: YAML.dump(Bosh::Spec::Deployments.minimal_manifest))
+        FactoryBot.create(:models_deployment, manifest: YAML.dump(SharedSupport::DeploymentManifestHelper.minimal_manifest))
       end
 
       let(:range) { IPAddr.new('192.168.1.1/24') }

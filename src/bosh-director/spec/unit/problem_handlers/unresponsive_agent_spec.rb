@@ -13,7 +13,7 @@ module Bosh::Director
     end
     let(:planner_factory) { instance_double(Bosh::Director::DeploymentPlan::PlannerFactory) }
     let(:deployment_model) do
-      manifest = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
       FactoryBot.create(:models_deployment, name: manifest['name'], manifest: YAML.dump(manifest))
     end
     let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }

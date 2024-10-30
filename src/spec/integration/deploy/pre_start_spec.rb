@@ -4,14 +4,14 @@ describe 'pre-start scripts', type: :integration do
   with_reset_sandbox_before_each
 
   before do
-    upload_cloud_config(cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+    upload_cloud_config(cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
     upload_stemcell
   end
 
   context 'when the pre-start scripts are valid' do
     let(:manifest) do
-      Bosh::Spec::DeploymentManifestHelper.manifest_with_release.merge(
-        'instance_groups' => [Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
+      SharedSupport::DeploymentManifestHelper.manifest_with_release.merge(
+        'instance_groups' => [SharedSupport::DeploymentManifestHelper.instance_group_with_many_jobs(
           name: 'job_with_templates_having_prestart_scripts',
           jobs: [
             {
@@ -54,13 +54,13 @@ describe 'pre-start scripts', type: :integration do
   end
 
   it 'should append the logs to the previous pre-start logs' do
-    manifest = Bosh::Spec::DeploymentManifestHelper.manifest_with_release.merge(
+    manifest = SharedSupport::DeploymentManifestHelper.manifest_with_release.merge(
       'releases' => [{
         'name' => 'release_with_prestart_script',
         'version' => '1',
       }],
       'instance_groups' => [
-        Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
+        SharedSupport::DeploymentManifestHelper.instance_group_with_many_jobs(
           name: 'job_with_templates_having_prestart_scripts',
           jobs: [
             {
@@ -100,13 +100,13 @@ describe 'pre-start scripts', type: :integration do
 
   context 'when the pre-start scripts are corrupted' do
     let(:manifest) do
-      Bosh::Spec::DeploymentManifestHelper.manifest_with_release.merge(
+      SharedSupport::DeploymentManifestHelper.manifest_with_release.merge(
         'releases' => [{
           'name' => 'release_with_corrupted_pre_start',
           'version' => '1',
         }],
         'instance_groups' => [
-          Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
+          SharedSupport::DeploymentManifestHelper.instance_group_with_many_jobs(
             name: 'job_with_templates_having_prestart_scripts',
             jobs: [
               {

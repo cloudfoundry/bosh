@@ -13,7 +13,7 @@ describe 'post-stop', type: :integration do
     ]
   end
   let(:manifest) do
-    Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups(jobs: jobs).tap do |manifest|
+    SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups(jobs: jobs).tap do |manifest|
       manifest.merge!(
         'releases' => [{
           'name' => 'post-stop',
@@ -28,7 +28,7 @@ describe 'post-stop', type: :integration do
     bosh_runner.run("reset-release --dir #{asset_path('post-stop')}")
     bosh_runner.run("create-release --dir #{asset_path('post-stop')} --tarball=#{release_tarball} --force")
     bosh_runner.run("upload-release #{release_tarball}")
-    deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+    deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
   end
 
   after do

@@ -39,7 +39,7 @@ FactoryBot.define do
     vm_type { nil }
     vm_resources { nil }
     vm_extensions { nil }
-    update { Bosh::Director::DeploymentPlan::UpdateConfig.new(Bosh::Spec::Deployments.minimal_manifest['update']) }
+    update { Bosh::Director::DeploymentPlan::UpdateConfig.new(SharedSupport::DeploymentManifestHelper.minimal_manifest['update']) }
     networks { [] }
     default_network { {} }
     availability_zones { [] }
@@ -114,7 +114,7 @@ FactoryBot.define do
       type { 'cloud' }
 
       trait :with_manifest do
-        content { YAML.dump(Bosh::Spec::Deployments.simple_cloud_config) }
+        content { YAML.dump(SharedSupport::DeploymentManifestHelper.simple_cloud_config) }
       end
     end
 
@@ -123,7 +123,7 @@ FactoryBot.define do
       type { 'cpi' }
 
       trait :with_manifest do
-        content { YAML.dump(Bosh::Spec::Deployments.multi_cpi_config) }
+        content { YAML.dump(SharedSupport::DeploymentManifestHelper.multi_cpi_config) }
       end
     end
 

@@ -4,7 +4,7 @@ describe 'runtime config', type: :integration do
   with_reset_sandbox_before_each
 
   it 'collocates addon jobs with deployment jobs and evaluates addon properties' do
-    runtime_config_file = yaml_file('runtime_config.yml', Bosh::Spec::DeploymentManifestHelper.runtime_config_with_addon)
+    runtime_config_file = yaml_file('runtime_config.yml', SharedSupport::DeploymentManifestHelper.runtime_config_with_addon)
     expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
     bosh_runner.run("upload-release #{asset_path('bosh-release-0+dev.1.tgz')}")
@@ -12,9 +12,9 @@ describe 'runtime config', type: :integration do
 
     upload_stemcell
 
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
 
-    upload_cloud_config(cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+    upload_cloud_config(cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
     deploy_simple_manifest(manifest_hash: manifest_hash)
 
     foobar_instance = director.instance('foobar', '0')
@@ -27,7 +27,7 @@ describe 'runtime config', type: :integration do
   end
 
   it 'raises an error if the addon job has the same name as an existing job in an instance group' do
-    runtime_config_file = yaml_file('runtime_config.yml', Bosh::Spec::DeploymentManifestHelper.runtime_config_with_addon)
+    runtime_config_file = yaml_file('runtime_config.yml', SharedSupport::DeploymentManifestHelper.runtime_config_with_addon)
     expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
     bosh_runner.run("upload-release #{asset_path('bosh-release-0+dev.1.tgz')}")
@@ -35,8 +35,8 @@ describe 'runtime config', type: :integration do
 
     upload_stemcell
 
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
-    upload_cloud_config(cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    upload_cloud_config(cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
 
     manifest_hash['releases'] = [
       { 'name' => 'bosh-release', 'version' => '0.1-dev' },
@@ -53,7 +53,7 @@ describe 'runtime config', type: :integration do
   end
 
   it 'ensures that addon job properties are assigned' do
-    runtime_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::DeploymentManifestHelper.runtime_config_with_addon)
+    runtime_config = Bosh::Common::DeepCopy.copy(SharedSupport::DeploymentManifestHelper.runtime_config_with_addon)
     runtime_config['addons'][0]['jobs'][0]['properties'] = { 'dummy_with_properties' => { 'echo_value' => 'new_prop_value' } }
     runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
     expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
@@ -63,8 +63,8 @@ describe 'runtime config', type: :integration do
 
     upload_stemcell
 
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
-    upload_cloud_config(cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    upload_cloud_config(cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
     deploy_simple_manifest(manifest_hash: manifest_hash)
 
     foobar_instance = director.instance('foobar', '0')
@@ -77,7 +77,7 @@ describe 'runtime config', type: :integration do
   end
 
   it 'succeeds when deployment and runtime config both have the same release with the same version' do
-    runtime_config_file = yaml_file('runtime_config.yml', Bosh::Spec::DeploymentManifestHelper.simple_runtime_config)
+    runtime_config_file = yaml_file('runtime_config.yml', SharedSupport::DeploymentManifestHelper.simple_runtime_config)
     expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
     bosh_runner.run("upload-release #{asset_path('test_release.tgz')}")
@@ -85,8 +85,8 @@ describe 'runtime config', type: :integration do
 
     upload_stemcell
 
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.multiple_release_manifest
-    upload_cloud_config(cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+    manifest_hash = SharedSupport::DeploymentManifestHelper.multiple_release_manifest
+    upload_cloud_config(cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
     deploy_output = deploy_simple_manifest(manifest_hash: manifest_hash)
 
     # ensure that the diff only contains one instance of the release
@@ -97,32 +97,32 @@ describe 'runtime config', type: :integration do
     it 'deploys it after comparing both versions as a string' do
       bosh_runner.run("upload-release #{asset_path('test_release_2.tgz')}")
 
-      runtime_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::DeploymentManifestHelper.simple_runtime_config('test_release_2', 2,
+      runtime_config = Bosh::Common::DeepCopy.copy(SharedSupport::DeploymentManifestHelper.simple_runtime_config('test_release_2', 2,
                                                                                                               'job_using_pkg_2'))
       runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
       expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
       upload_stemcell
 
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['releases'] = [{ 'name' => 'test_release_2',
                                      'version' => '2' }]
 
-      manifest_hash['instance_groups'] = [Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+      manifest_hash['instance_groups'] = [SharedSupport::DeploymentManifestHelper.simple_instance_group(
         name: 'instance_group',
         jobs: [{ 'name' => 'job_using_pkg_1', 'release' => 'test_release_2' }],
         instances: 1,
         static_ips: ['192.168.1.10'],
       )]
 
-      upload_cloud_config(cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+      upload_cloud_config(cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
       deploy_simple_manifest(manifest_hash: manifest_hash)
     end
   end
 
   context 'when availability zones are specified' do
     it 'allows addons to be added to the runtime config' do
-      runtime_config = Bosh::Spec::DeploymentManifestHelper.runtime_config_with_addon
+      runtime_config = SharedSupport::DeploymentManifestHelper.runtime_config_with_addon
       runtime_config['addons'][0]['include'] = { 'azs' => ['z1'] }
       runtime_config['addons'][0]['exclude'] = { 'azs' => ['z2'] }
       runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
@@ -130,13 +130,13 @@ describe 'runtime config', type: :integration do
       bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
       expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
 
       manifest_hash['name'] = 'dep1'
       manifest_hash['instance_groups'].first['azs'] = ['z1']
       deploy_from_scratch(
         manifest_hash: manifest_hash,
-        cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs,
+        cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs,
       )
       foobar_instance = director.instance('foobar', '0', deployment_name: 'dep1')
       expect(File.exist?(foobar_instance.job_path('dummy_with_properties'))).to eq(true)
@@ -147,7 +147,7 @@ describe 'runtime config', type: :integration do
       manifest_hash['instance_groups'].first['azs'] = ['z2']
       deploy_from_scratch(
         manifest_hash: manifest_hash,
-        cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs,
+        cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs,
       )
       foobar_instance = director.instance('foobar', '0', deployment_name: 'dep2')
       expect(File.exist?(foobar_instance.job_path('dummy_with_properties'))).to eq(false)
@@ -157,7 +157,7 @@ describe 'runtime config', type: :integration do
     it 'allows addons to be added to the deployment manifest' do
       bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
 
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.manifest_with_addons
+      manifest_hash = SharedSupport::DeploymentManifestHelper.manifest_with_addons
       manifest_hash['addons'][0]['include'] = { 'azs' => ['z1'] }
       manifest_hash['addons'][0]['exclude'] = { 'azs' => ['z2'] }
 
@@ -166,7 +166,7 @@ describe 'runtime config', type: :integration do
 
       deploy_from_scratch(
         manifest_hash: manifest_hash,
-        cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs,
+        cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs,
       )
       foobar_instance = director.instance('foobar', '0', deployment_name: 'dep1')
       expect(File.exist?(foobar_instance.job_path('dummy_with_properties'))).to eq(true)
@@ -177,7 +177,7 @@ describe 'runtime config', type: :integration do
       manifest_hash['instance_groups'].first['azs'] = ['z2']
       deploy_from_scratch(
         manifest_hash: manifest_hash,
-        cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs,
+        cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs,
       )
       foobar_instance = director.instance('foobar', '0', deployment_name: 'dep2')
       expect(File.exist?(foobar_instance.job_path('dummy_with_properties'))).to eq(false)
@@ -187,11 +187,11 @@ describe 'runtime config', type: :integration do
 
   context 'runtime config entries are excluded from current deployment' do
     let(:manifest_hash) do
-      Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
     end
 
     let(:runtime_config) do
-      Bosh::Spec::DeploymentManifestHelper.runtime_config_with_addon.tap do |config|
+      SharedSupport::DeploymentManifestHelper.runtime_config_with_addon.tap do |config|
         config['addons'][0].merge!(addon_exclude)
       end
     end
@@ -211,7 +211,7 @@ describe 'runtime config', type: :integration do
     it 'should not associate unused release with the current deployment' do
       deploy_from_scratch(
         manifest_hash: manifest_hash,
-        cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
+        cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config,
         runtime_config_hash: runtime_config,
       )
 

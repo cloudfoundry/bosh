@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Bosh::Director::Api::CloudConfigManager do
   subject(:manager) { Bosh::Director::Api::CloudConfigManager.new }
-  let(:valid_cloud_manifest) { YAML.dump(Bosh::Spec::Deployments.simple_cloud_config) }
+  let(:valid_cloud_manifest) { YAML.dump(SharedSupport::DeploymentManifestHelper.simple_cloud_config) }
   let(:user) {'username-1'}
   let(:event_manager) {Bosh::Director::Api::EventManager.new(true)}
 
@@ -30,7 +30,7 @@ describe Bosh::Director::Api::CloudConfigManager do
     end
 
     context 'when cloud config uses placeholders' do
-      let(:cloud_config_with_placeholders) { YAML.dump(Bosh::Spec::Deployments.cloud_config_with_placeholders) }
+      let(:cloud_config_with_placeholders) { YAML.dump(SharedSupport::DeploymentManifestHelper.cloud_config_with_placeholders) }
 
       it 'does not error on update' do
         expect {

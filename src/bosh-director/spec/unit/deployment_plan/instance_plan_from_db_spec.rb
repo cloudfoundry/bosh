@@ -27,9 +27,9 @@ module Bosh::Director
         }
       end
       let(:variable_set_model) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
-      let(:cloud_config_manifest) { Bosh::Spec::Deployments.simple_cloud_config }
+      let(:cloud_config_manifest) { SharedSupport::DeploymentManifestHelper.simple_cloud_config }
 
-      let(:deployment_manifest) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
+      let(:deployment_manifest) { SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups }
       let(:deployment_model) do
         cloud_config = FactoryBot.create(:models_config_cloud, content: YAML.dump(cloud_config_manifest))
         deployment = FactoryBot.create(:models_deployment,

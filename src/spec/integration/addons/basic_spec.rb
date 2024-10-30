@@ -5,7 +5,7 @@ describe 'basic functionality', type: :integration do
 
   context 'in runtime configs' do
     it 'allows addons to be added to specific jobs' do
-      runtime_config = Bosh::Spec::DeploymentManifestHelper.runtime_config_with_addon_includes
+      runtime_config = SharedSupport::DeploymentManifestHelper.runtime_config_with_addon_includes
       runtime_config['addons'][0]['include'] = { 'jobs' => [
         { 'name' => 'foobar', 'release' => 'bosh-release' },
       ] }
@@ -18,10 +18,10 @@ describe 'basic functionality', type: :integration do
       bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
 
       upload_stemcell
-      upload_cloud_config(cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+      upload_cloud_config(cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
 
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+      manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(
         name: 'foobar_without_packages',
         job_name: 'foobar_without_packages',
       )
@@ -41,7 +41,7 @@ describe 'basic functionality', type: :integration do
     end
 
     it 'allows addons to be excluded from specific jobs' do
-      runtime_config = Bosh::Spec::DeploymentManifestHelper.runtime_config_with_addon_excludes
+      runtime_config = SharedSupport::DeploymentManifestHelper.runtime_config_with_addon_excludes
       runtime_config['addons'][0]['exclude'] = { 'jobs' => [
         { 'name' => 'foobar_without_packages', 'release' => 'bosh-release' },
       ] }
@@ -54,10 +54,10 @@ describe 'basic functionality', type: :integration do
       bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
 
       upload_stemcell
-      upload_cloud_config(cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+      upload_cloud_config(cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
 
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+      manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(
         name: 'foobar_without_packages',
         job_name: 'foobar_without_packages',
       )
@@ -77,7 +77,7 @@ describe 'basic functionality', type: :integration do
     end
 
     it 'allows addons to be added to and excluded from specific deployments' do
-      runtime_config = Bosh::Spec::DeploymentManifestHelper.runtime_config_with_addon_includes
+      runtime_config = SharedSupport::DeploymentManifestHelper.runtime_config_with_addon_includes
       runtime_config['addons'][0]['include'] = { 'jobs' => [
         { 'name' => 'foobar', 'release' => 'bosh-release' },
       ] }
@@ -90,9 +90,9 @@ describe 'basic functionality', type: :integration do
       bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
 
       upload_stemcell
-      upload_cloud_config(cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+      upload_cloud_config(cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
 
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
 
       # deploy Deployment1
       manifest_hash['name'] = 'dep1'
@@ -116,7 +116,7 @@ describe 'basic functionality', type: :integration do
     end
 
     it 'allows addons to be added to specific instance groups' do
-      runtime_config = Bosh::Spec::DeploymentManifestHelper.runtime_config_with_addon_includes
+      runtime_config = SharedSupport::DeploymentManifestHelper.runtime_config_with_addon_includes
       runtime_config['addons'][0]['include'] = {
         'instance_groups' => ['ig-1'],
       }
@@ -129,12 +129,12 @@ describe 'basic functionality', type: :integration do
       bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
 
       upload_stemcell
-      upload_cloud_config(cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+      upload_cloud_config(cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
 
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'] = []
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'ig-1')
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'ig-2')
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'ig-1')
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'ig-2')
 
       # deploy Deployment1
       manifest_hash['name'] = 'dep1'
@@ -152,7 +152,7 @@ describe 'basic functionality', type: :integration do
     end
 
     it 'allows addons to be excluded from specific instance groups' do
-      runtime_config = Bosh::Spec::DeploymentManifestHelper.runtime_config_with_addon_excludes
+      runtime_config = SharedSupport::DeploymentManifestHelper.runtime_config_with_addon_excludes
       runtime_config['addons'][0]['include'] = {}
       runtime_config['addons'][0]['exclude'] = {
         'instance_groups' => ['ig-2'],
@@ -165,11 +165,11 @@ describe 'basic functionality', type: :integration do
       bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
 
       upload_stemcell
-      upload_cloud_config(cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+      upload_cloud_config(cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
 
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'ig-1')
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'ig-2')
+      manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'ig-1')
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'ig-2')
 
       # deploy Deployment1
       manifest_hash['name'] = 'dep1'
@@ -188,7 +188,7 @@ describe 'basic functionality', type: :integration do
     it 'allows addons to be added for specific stemcell operating systems' do
       runtime_config_file = yaml_file(
         'runtime_config.yml',
-        Bosh::Spec::DeploymentManifestHelper.runtime_config_with_addon_includes_stemcell_os,
+        SharedSupport::DeploymentManifestHelper.runtime_config_with_addon_includes_stemcell_os,
       )
       expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
@@ -198,7 +198,7 @@ describe 'basic functionality', type: :integration do
       upload_stemcell # name: ubuntu-stemcell, os: toronto-os
       upload_stemcell_2 # name: centos-stemcell, os: toronto-centos
 
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.stemcell_os_specific_addon_manifest
+      manifest_hash = SharedSupport::DeploymentManifestHelper.stemcell_os_specific_addon_manifest
       manifest_hash['stemcells'] = [
         {
           'alias' => 'toronto',
@@ -212,7 +212,7 @@ describe 'basic functionality', type: :integration do
         },
       ]
 
-      cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+      cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
       cloud_config_hash['vm_types'] = [
         { 'name' => 'a', 'cloud_properties' => {} },
         { 'name' => 'b', 'cloud_properties' => {} },
@@ -233,7 +233,7 @@ describe 'basic functionality', type: :integration do
     end
 
     it 'allows addons to be added for specific networks' do
-      runtime_config_file = yaml_file('runtime_config.yml', Bosh::Spec::DeploymentManifestHelper.runtime_config_with_addon_includes_network)
+      runtime_config_file = yaml_file('runtime_config.yml', SharedSupport::DeploymentManifestHelper.runtime_config_with_addon_includes_network)
       expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
       bosh_runner.run("upload-release #{asset_path('bosh-release-0+dev.1.tgz')}")
@@ -241,17 +241,17 @@ describe 'basic functionality', type: :integration do
 
       upload_stemcell
 
-      cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+      cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
       cloud_config_hash['networks'] = [
-        { 'name' => 'a', 'subnets' => [Bosh::Spec::DeploymentManifestHelper.subnet] },
-        { 'name' => 'b', 'subnets' => [Bosh::Spec::DeploymentManifestHelper.subnet] },
+        { 'name' => 'a', 'subnets' => [SharedSupport::DeploymentManifestHelper.subnet] },
+        { 'name' => 'b', 'subnets' => [SharedSupport::DeploymentManifestHelper.subnet] },
       ]
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.test_release_manifest_with_stemcell
+      manifest_hash = SharedSupport::DeploymentManifestHelper.test_release_manifest_with_stemcell
       manifest_hash['instance_groups'] = [
-        Bosh::Spec::DeploymentManifestHelper.simple_instance_group(network_name: 'a', name: 'has-addon-vm', instances: 1),
-        Bosh::Spec::DeploymentManifestHelper.simple_instance_group(network_name: 'b', name: 'no-addon-vm', instances: 1),
+        SharedSupport::DeploymentManifestHelper.simple_instance_group(network_name: 'a', name: 'has-addon-vm', instances: 1),
+        SharedSupport::DeploymentManifestHelper.simple_instance_group(network_name: 'b', name: 'no-addon-vm', instances: 1),
       ]
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
@@ -267,13 +267,13 @@ describe 'basic functionality', type: :integration do
     end
 
     it 'allows addons to be excluded for specific lifecycle type' do
-      runtime_config_file = yaml_file('runtime_config.yml', Bosh::Spec::DeploymentManifestHelper.runtime_config_with_addon_excludes_lifecycle)
+      runtime_config_file = yaml_file('runtime_config.yml', SharedSupport::DeploymentManifestHelper.runtime_config_with_addon_excludes_lifecycle)
       expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
       bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
 
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
-      manifest_hash['instance_groups'][1] = Bosh::Spec::DeploymentManifestHelper.simple_errand_instance_group.merge(
+      manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      manifest_hash['instance_groups'][1] = SharedSupport::DeploymentManifestHelper.simple_errand_instance_group.merge(
         'name' => 'errand',
       )
 
@@ -293,13 +293,13 @@ describe 'basic functionality', type: :integration do
 
   context 'in deployent manifests' do
     it 'allows addon to be added and ensures that addon job properties are properly assigned' do
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.manifest_with_addons
+      manifest_hash = SharedSupport::DeploymentManifestHelper.manifest_with_addons
 
       bosh_runner.run("upload-release #{asset_path('bosh-release-0+dev.1.tgz')}")
       bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
 
       upload_stemcell
-      upload_cloud_config(cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+      upload_cloud_config(cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
       foobar_instance = director.instance('foobar', '0')
@@ -312,9 +312,9 @@ describe 'basic functionality', type: :integration do
     end
 
     it 'allows to apply exclude rules' do
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.manifest_with_addons
+      manifest_hash = SharedSupport::DeploymentManifestHelper.manifest_with_addons
       manifest_hash['addons'][0]['exclude'] = { 'jobs' => [{ 'name' => 'foobar_without_packages', 'release' => 'bosh-release' }] }
-      manifest_hash['instance_groups'][1] = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+      manifest_hash['instance_groups'][1] = SharedSupport::DeploymentManifestHelper.simple_instance_group(
         name: 'foobar_without_packages',
         jobs: [{ 'name' => 'foobar_without_packages', 'release' => 'bosh-release' }],
         instances: 1,
@@ -325,7 +325,7 @@ describe 'basic functionality', type: :integration do
 
       upload_stemcell
 
-      upload_cloud_config(cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+      upload_cloud_config(cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
       foobar_instance = director.instance('foobar', '0')
@@ -340,7 +340,7 @@ describe 'basic functionality', type: :integration do
 
   context 'in both deployment manifest and runtime config' do
     it 'applies rules from both deployment manifest and from runtime config' do
-      runtime_config = Bosh::Spec::DeploymentManifestHelper.runtime_config_with_addon
+      runtime_config = SharedSupport::DeploymentManifestHelper.runtime_config_with_addon
       runtime_config['addons'][0]['include'] = { 'jobs' => [
         { 'name' => 'foobar', 'release' => 'bosh-release' },
       ] }
@@ -348,7 +348,7 @@ describe 'basic functionality', type: :integration do
       runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
       expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
 
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.complex_manifest_with_addon
+      manifest_hash = SharedSupport::DeploymentManifestHelper.complex_manifest_with_addon
 
       bosh_runner.run("upload-release #{asset_path('bosh-release-0+dev.1.tgz')}")
       bosh_runner.run("upload-release #{asset_path('dummy2-release.tgz')}")
@@ -356,7 +356,7 @@ describe 'basic functionality', type: :integration do
       upload_stemcell # name: ubuntu-stemcell, os: toronto-os
       upload_stemcell_2 # name: centos-stemcell, os: toronto-centos
 
-      cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_os_specific_cloud_config
+      cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_os_specific_cloud_config
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
@@ -398,7 +398,7 @@ describe 'basic functionality', type: :integration do
     end
 
     it 'does not cause updates if job ordering within instance group changes' do
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
       deploy_simple_manifest(manifest_hash: manifest_hash)
 
       runtime_config['addons'] = [

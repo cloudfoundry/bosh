@@ -4,9 +4,9 @@ describe 'errand jobs', type: :integration do
   with_reset_sandbox_before_each
 
   let(:manifest) do
-    Bosh::Spec::DeploymentManifestHelper.manifest_with_release.merge(
+    SharedSupport::DeploymentManifestHelper.manifest_with_release.merge(
       'instance_groups' => [
-        Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
+        SharedSupport::DeploymentManifestHelper.instance_group_with_many_jobs(
           name: 'job_with_post_deploy_script',
           jobs: [
             {
@@ -20,10 +20,10 @@ describe 'errand jobs', type: :integration do
           ],
           instances: 1,
         ),
-        Bosh::Spec::DeploymentManifestHelper.simple_errand_instance_group.merge(
+        SharedSupport::DeploymentManifestHelper.simple_errand_instance_group.merge(
           'name' => 'alive-errand',
         ),
-        Bosh::Spec::DeploymentManifestHelper.simple_errand_instance_group.merge(
+        SharedSupport::DeploymentManifestHelper.simple_errand_instance_group.merge(
           'name' => 'dead-errand',
         ),
       ],

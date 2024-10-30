@@ -5,18 +5,18 @@ describe 'cli cloud config', type: :integration do
 
   context 'when cloud config uses placeholders' do
     it 'does not error' do
-      cloud_config = yaml_file('cloud_config.yml', Bosh::Spec::DeploymentManifestHelper.cloud_config_with_placeholders)
+      cloud_config = yaml_file('cloud_config.yml', SharedSupport::DeploymentManifestHelper.cloud_config_with_placeholders)
       expect(bosh_runner.run("update-cloud-config #{cloud_config.path}")).to include('Succeeded')
     end
   end
 
   it 'can upload a cloud config' do
-    cloud_config = yaml_file('cloud_config.yml', Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+    cloud_config = yaml_file('cloud_config.yml', SharedSupport::DeploymentManifestHelper.simple_cloud_config)
     expect(bosh_runner.run("update-cloud-config #{cloud_config.path}")).to include('Succeeded')
   end
 
   context 'when an az is removed' do
-    let(:initial_cloud_config) { Bosh::Spec::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs }
+    let(:initial_cloud_config) { SharedSupport::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs }
 
     let(:new_cloud_config) do
       cloud_config = initial_cloud_config
@@ -26,13 +26,13 @@ describe 'cli cloud config', type: :integration do
     end
 
     let(:initial_manifest) do
-      manifest = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      manifest = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest['instance_groups'][0]['azs'] = ['z1', 'z2']
       manifest
     end
 
     let(:new_manifest) do
-      manifest = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      manifest = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest['instance_groups'][0]['azs'] = ['z1']
       manifest
     end
@@ -52,7 +52,7 @@ describe 'cli cloud config', type: :integration do
     # none present yet
     expect(bosh_runner.run('cloud-config', failure_expected: true)).to match(/Using environment 'https:\/\/127\.0\.0\.1:\d+' as client 'test'/)
 
-    cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+    cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
     cloud_config_file = yaml_file('cloud_config.yml', cloud_config)
     bosh_runner.run("update-cloud-config #{cloud_config_file.path}")
 
@@ -60,7 +60,7 @@ describe 'cli cloud config', type: :integration do
   end
 
   it 'does not fail if the uploaded cloud config is a large file' do
-    cloud_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+    cloud_config = Bosh::Common::DeepCopy.copy(SharedSupport::DeploymentManifestHelper.simple_cloud_config)
 
     (0..10001).each { |i|
       cloud_config["boshbosh#{i}"] = 'smurfsAreBlueGargamelIsBrownPinkpantherIsPinkAndPikachuIsYellow'

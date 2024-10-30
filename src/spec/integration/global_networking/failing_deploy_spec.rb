@@ -20,7 +20,7 @@ describe 'failing deploy', type: :integration do
   it 'keeps automatically assigned IP address when vm creation fails' do
     current_sandbox.cpi.commands.make_create_vm_always_fail
 
-    first_manifest_hash = Bosh::Spec::DeploymentManifestHelper.deployment_manifest(
+    first_manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest(
       name: 'first',
       instances: 1,
       job: 'foobar_without_packages',
@@ -36,7 +36,7 @@ describe 'failing deploy', type: :integration do
 
     current_sandbox.cpi.commands.allow_create_vm_to_succeed
 
-    second_manifest_hash = Bosh::Spec::DeploymentManifestHelper.deployment_manifest(
+    second_manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest(
       name: 'second',
       instances: 1,
       job: 'foobar_without_packages',
@@ -54,7 +54,7 @@ describe 'failing deploy', type: :integration do
   it 'keeps static IP address when vm creation fails' do
     current_sandbox.cpi.commands.make_create_vm_always_fail
 
-    first_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(
+    first_manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest(
       name: 'first',
       instances: 1,
       job: 'foobar_without_packages',
@@ -63,7 +63,7 @@ describe 'failing deploy', type: :integration do
     )
     deploy_from_scratch(
       manifest_hash: first_manifest_hash,
-      cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
+      cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config,
       failure_expected: true,
     )
 
@@ -75,7 +75,7 @@ describe 'failing deploy', type: :integration do
 
     current_sandbox.cpi.commands.allow_create_vm_to_succeed
 
-    second_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(
+    second_manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest(
       name: 'second',
       instances: 1,
       job: 'foobar_without_packages',
@@ -93,7 +93,7 @@ describe 'failing deploy', type: :integration do
   it 'releases unneeded IP addresses when deploy is no longer failing' do
     current_sandbox.cpi.commands.make_create_vm_always_fail
 
-    manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(
+    manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest(
       instances: 1,
       job: 'foobar_without_packages',
       job_release: 'bosh-release',
@@ -101,7 +101,7 @@ describe 'failing deploy', type: :integration do
     )
     deploy_from_scratch(
       manifest_hash: manifest_hash,
-      cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
+      cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config,
       failure_expected: true,
     )
 
@@ -117,7 +117,7 @@ describe 'failing deploy', type: :integration do
 
     expect(director.instances.map(&:ips).flatten).to eq(['192.168.1.2'])
 
-    second_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(
+    second_manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest(
       name: 'second',
       instances: 1,
       job: 'foobar_without_packages',
@@ -131,14 +131,14 @@ describe 'failing deploy', type: :integration do
   it 'releases IP when subsequent deploy does not need failing instance' do
     current_sandbox.cpi.commands.make_create_vm_always_fail
 
-    manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(
+    manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest(
       instances: 1,
       job: 'foobar_without_packages',
       job_release: 'bosh-release',
     )
     deploy_from_scratch(
       manifest_hash: manifest_hash,
-      cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
+      cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config,
       failure_expected: true,
     )
 
@@ -151,7 +151,7 @@ describe 'failing deploy', type: :integration do
     current_sandbox.cpi.commands.allow_create_vm_to_succeed
 
     manifest_hash['instance_groups'] = [
-      Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'second-instance-group', instances: 1),
+      SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'second-instance-group', instances: 1),
     ]
     deploy_simple_manifest(manifest_hash: manifest_hash)
     # IPs are not released within single deployment
@@ -161,7 +161,7 @@ describe 'failing deploy', type: :integration do
 
   context 'create-swap-delete' do
     let(:manifest) do
-      manifest = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups(instances: 2)
+      manifest = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups(instances: 2)
       manifest['instance_groups'][0]['persistent_disk'] = 660
       manifest['update'] = manifest['update'].merge('vm_strategy' => 'create-swap-delete')
       manifest
@@ -181,7 +181,7 @@ describe 'failing deploy', type: :integration do
 
       context 'manual network' do
         let(:cloud_config) do
-          cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+          cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
           cloud_config['networks'][0]['type'] = 'manual'
           cloud_config
         end
@@ -201,7 +201,7 @@ describe 'failing deploy', type: :integration do
 
           context 'starting with multiple networks' do
             let(:cloud_config) do
-              cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+              cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
               cloud_config['networks'] = networks_spec
               cloud_config
             end
@@ -226,7 +226,7 @@ describe 'failing deploy', type: :integration do
               ]
             end
             let(:manifest) do
-              manifest = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups(instances: 2)
+              manifest = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups(instances: 2)
               manifest['instance_groups'][0]['persistent_disk'] = 660
               manifest['instance_groups'][0]['networks'] = [
                 { 'name' => 'a', 'default' => %w[dns gateway] },
@@ -254,7 +254,7 @@ describe 'failing deploy', type: :integration do
 
       context 'dynamic network' do
         let(:cloud_config) do
-          cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+          cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
           cloud_config['networks'][0]['type'] = 'dynamic'
           cloud_config
         end

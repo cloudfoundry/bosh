@@ -11,7 +11,7 @@ module Bosh::Director
 
       let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
       let(:directory) { Support::FileHelpers::DeploymentDirectory.new }
-      let(:manifest_content) { YAML.dump(Bosh::Spec::Deployments.simple_manifest_with_instance_groups) }
+      let(:manifest_content) { YAML.dump(SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups) }
       let(:cloud_config_id) { nil }
       let(:runtime_config_ids) { [] }
       let(:options) { {} }
@@ -37,7 +37,7 @@ module Bosh::Director
           allow(double).to receive(:get_links_for_instance_group).and_return(resolved_links)
         end
       end
-      let(:deployment_name) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups['name'] }
+      let(:deployment_name) { SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups['name'] }
 
       before do
         App.new(config)

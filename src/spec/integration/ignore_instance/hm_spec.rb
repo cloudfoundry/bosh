@@ -5,12 +5,12 @@ describe 'hm notifications', hm: true, type: :integration do
   with_reset_hm_before_each
 
   it 'should not scan & fix the ignored VM' do
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
-    cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
 
     manifest_hash['instance_groups'].clear
-    manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar1', instances: 2)
-    manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 2)
+    manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar1', instances: 2)
+    manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 2)
 
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 

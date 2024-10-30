@@ -507,7 +507,7 @@ module Bosh::Director
       describe 'addons' do
         context 'when addon spec is valid' do
           it 'parses provided addons' do
-            manifest_hash.merge!(Bosh::Spec::Deployments.runtime_config_with_addon)
+            manifest_hash.merge!(SharedSupport::DeploymentManifestHelper.runtime_config_with_addon)
 
             result_obj = parsed_deployment.addons
 

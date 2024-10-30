@@ -170,8 +170,8 @@ describe 'CPI and Agent:', type: :integration do
   end
 
   let(:manifest_hash) do
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.deployment_manifest(instances: instances)
-    manifest_hash['instance_groups'].first['persistent_disk_type'] = Bosh::Spec::DeploymentManifestHelper::DISK_TYPE['name']
+    manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest(instances: instances)
+    manifest_hash['instance_groups'].first['persistent_disk_type'] = SharedSupport::DeploymentManifestHelper::DISK_TYPE['name']
     manifest_hash
   end
 
@@ -185,9 +185,9 @@ describe 'CPI and Agent:', type: :integration do
   end
 
   let(:cloud_config_hash) do
-    Bosh::Spec::DeploymentManifestHelper.simple_cloud_config.merge(
+    SharedSupport::DeploymentManifestHelper.simple_cloud_config.merge(
       'disk_types' => [
-        Bosh::Spec::DeploymentManifestHelper::DISK_TYPE,
+        SharedSupport::DeploymentManifestHelper::DISK_TYPE,
       ],
     )
   end
@@ -280,8 +280,8 @@ describe 'CPI and Agent:', type: :integration do
 
     context 'on an update deployment with persistent disk' do
       let(:updated_manifest_hash) do
-        updated_manifest_hash = Bosh::Spec::DeploymentManifestHelper.deployment_manifest(instances: 1)
-        updated_manifest_hash['instance_groups'].first['persistent_disk_type'] = Bosh::Spec::DeploymentManifestHelper::DISK_TYPE['name']
+        updated_manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest(instances: 1)
+        updated_manifest_hash['instance_groups'].first['persistent_disk_type'] = SharedSupport::DeploymentManifestHelper::DISK_TYPE['name']
         updated_manifest_hash['instance_groups'].first['env'] = { 'bosh' => { 'password' => 'foobar' } }
         updated_manifest_hash
       end
@@ -466,7 +466,7 @@ describe 'CPI and Agent:', type: :integration do
                 failing_manifest_hash = Bosh::Common::DeepCopy.copy(manifest_hash)
                 failing_manifest_hash['releases'] = [{ 'name' => 'bosh-release', 'version' => '0.1-dev' }]
                 failing_manifest_hash['instance_groups']
-                  .first['persistent_disk_type'] = Bosh::Spec::DeploymentManifestHelper::DISK_TYPE['name']
+                  .first['persistent_disk_type'] = SharedSupport::DeploymentManifestHelper::DISK_TYPE['name']
                 failing_manifest_hash['instance_groups'].first['env'] = { 'bosh' => { 'password' => 'foobar' } }
                 failing_manifest_hash['instance_groups'].first['jobs'] = [
                   {

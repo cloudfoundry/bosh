@@ -10,7 +10,7 @@ describe 'director behaviour', type: :integration do
 
   shared_examples_for 'using CPI specific cpi_api_version' do
     before do
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.deployment_manifest(instances: 1)
+      manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest(instances: 1)
       manifest_hash['instance_groups'][0]['persistent_disk'] = 1000
       output = deploy_from_scratch(manifest_hash: manifest_hash)
       task_id = Bosh::Spec::OutputParser.new(output).task_id

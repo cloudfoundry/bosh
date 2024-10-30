@@ -3,14 +3,14 @@ require 'ipaddr'
 
 describe Bosh::Director::DeploymentPlan::ManualNetwork do
   let(:cloud_config_hash) do
-    cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+    cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
     cloud_config['networks'].first['subnets'].first['range'] = network_range
     cloud_config['networks'].first['subnets'].first['reserved'] << '192.168.1.3'
     cloud_config['networks'].first['subnets'].first['static'] = static_ips
     cloud_config
   end
   let(:manifest_hash) do
-    manifest = Bosh::Spec::Deployments.minimal_manifest
+    manifest = SharedSupport::DeploymentManifestHelper.minimal_manifest
     manifest['stemcells'].first['version'] = 1
     manifest
   end
@@ -103,11 +103,11 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     context 'when there are overlapping subnets' do
       let(:cloud_config_hash) do
         # Replacing manifest changes below with CC changes
-        cloud_config = Bosh::Spec::Deployments.simple_cloud_config
+        cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
         cloud_config['networks'].first['subnets'].first['range'] = network_range
         cloud_config['networks'].first['subnets'].first['reserved'] << '192.168.1.3'
         cloud_config['networks'].first['subnets'].first['static'] = static_ips
-        cloud_config['networks'].first['subnets'] << Bosh::Spec::Deployments.subnet('range' => '192.168.1.0/28')
+        cloud_config['networks'].first['subnets'] << SharedSupport::DeploymentManifestHelper.subnet('range' => '192.168.1.0/28')
         cloud_config
       end
 
@@ -174,7 +174,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
 
   describe 'azs' do
     let(:network_spec) do
-      Bosh::Spec::Deployments.network.merge(
+      SharedSupport::DeploymentManifestHelper.network.merge(
         'subnets' => [
           {
             'range' => '10.1.0.0/24',
@@ -202,7 +202,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
 
   describe 'validate_has_job' do
     let(:network_spec) do
-      Bosh::Spec::Deployments.network.merge(
+      SharedSupport::DeploymentManifestHelper.network.merge(
         'subnets' => [
           {
             'range' => '10.1.0.0/24',
@@ -240,7 +240,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
 
     context 'when there are no subnets' do
       let(:network_spec) do
-        Bosh::Spec::Deployments.network.merge(
+        SharedSupport::DeploymentManifestHelper.network.merge(
           'subnets' => [],
         )
       end
@@ -253,7 +253,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
 
   context 'when any subnet has AZs, then all subnets must contain AZs' do
     let(:network_spec) do
-      Bosh::Spec::Deployments.network.merge(
+      SharedSupport::DeploymentManifestHelper.network.merge(
         'subnets' => [
           {
             'range' => '10.10.1.0/24',

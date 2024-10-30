@@ -4,7 +4,7 @@ describe 'Managed persistent disk', type: :integration do
   with_reset_sandbox_before_each(dummy_cpi_api_version: 2)
 
   let(:cloud_config_hash) do
-    hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+    hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
     hash['disk_types'] = [
       {
         'name' => 'my-disk',
@@ -21,7 +21,7 @@ describe 'Managed persistent disk', type: :integration do
   end
 
   let(:manifest_hash) do
-    manifest = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    manifest = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest['instance_groups'][0]['persistent_disk_type'] = 'my-disk'
     manifest
   end

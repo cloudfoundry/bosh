@@ -8,7 +8,7 @@ module Bosh::Director::DeploymentPlan
     let(:fake_cpi1) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:fake_cpi2) { instance_double(Bosh::Clouds::ExternalCpi) }
 
-    let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs_and_cpis }
+    let(:cloud_config) { SharedSupport::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs_and_cpis }
 
     let(:vm_resources) do
       {

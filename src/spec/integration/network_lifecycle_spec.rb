@@ -6,7 +6,7 @@ describe 'network lifecycle', type: :integration do
     before { bosh_runner.reset }
     context 'when deploying a manifest with a manual network not marked as managed' do
       it 'should not attempt to create a subnet in the iaas' do
-        cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs
+        cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs
         cloud_config_hash['networks'] = [{
           'name' => 'a',
           'type' => 'manual',
@@ -22,7 +22,7 @@ describe 'network lifecycle', type: :integration do
           ],
         }]
 
-        manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+        manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
         manifest_hash['instance_groups'].first['instances'] = 1
         manifest_hash['instance_groups'].first['azs'] = ['z1']
         manifest_hash['instance_groups'].first['networks'] = [{ 'name' => 'a' }]
@@ -36,8 +36,8 @@ describe 'network lifecycle', type: :integration do
 
   context 'enabled', type: :integration do
     with_reset_sandbox_before_each(networks: { 'enable_cpi_management' => true })
-    let(:cloud_config_hash) { Bosh::Spec::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs }
-    let(:manifest_hash) { Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups }
+    let(:cloud_config_hash) { SharedSupport::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs }
+    let(:manifest_hash) { SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups }
 
     before do
       bosh_runner.reset

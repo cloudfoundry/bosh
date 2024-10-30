@@ -7,8 +7,8 @@ describe 'cli: variables', type: :integration do
   let(:director_name) { current_sandbox.director_name }
   let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger) }
   let(:manifest_hash) do
-    Bosh::Spec::DeploymentManifestHelper.manifest_with_release.merge(
-      'instance_groups' => [Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
+    SharedSupport::DeploymentManifestHelper.manifest_with_release.merge(
+      'instance_groups' => [SharedSupport::DeploymentManifestHelper.instance_group_with_many_jobs(
         name: '((ig_placeholder))',
         jobs: [
           { 'name' => 'job_with_property_types',
@@ -19,7 +19,7 @@ describe 'cli: variables', type: :integration do
       )],
     )
   end
-  let(:cloud_config) { Bosh::Spec::DeploymentManifestHelper.simple_cloud_config }
+  let(:cloud_config) { SharedSupport::DeploymentManifestHelper.simple_cloud_config }
   let(:client_env) do
     { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => current_sandbox.certificate_path.to_s }
   end
@@ -100,7 +100,7 @@ describe 'cli: variables', type: :integration do
   end
 
   it 'should return list of variables for the runtime_config' do
-    runtime_config = Bosh::Spec::DeploymentManifestHelper.runtime_config_with_job_placeholders
+    runtime_config = SharedSupport::DeploymentManifestHelper.runtime_config_with_job_placeholders
     upload_runtime_config(runtime_config_hash: runtime_config, include_credentials: false, env: client_env)
 
     config_server_helper.put_value('/release_name', 'bosh-release')
@@ -143,10 +143,10 @@ describe 'cli: variables', type: :integration do
 
   context 'when dealing with multiple deploys' do
     let(:manifest_hash) do
-      Bosh::Spec::DeploymentManifestHelper.manifest_with_release.merge(
+      SharedSupport::DeploymentManifestHelper.manifest_with_release.merge(
         'releases' => [{ 'name' => 'bosh-release', 'version' => '0.1-dev' }],
         'instance_groups' => [
-          Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
+          SharedSupport::DeploymentManifestHelper.instance_group_with_many_jobs(
             name: 'ig1',
             jobs: [
               {
@@ -161,7 +161,7 @@ describe 'cli: variables', type: :integration do
             ],
             instances: 1,
           ),
-          Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
+          SharedSupport::DeploymentManifestHelper.instance_group_with_many_jobs(
             name: 'ig2',
             jobs: [
               {
@@ -320,10 +320,10 @@ describe 'cli: variables', type: :integration do
 
     context 'when you have failed deploys' do
       let(:manifest_hash) do
-        Bosh::Spec::DeploymentManifestHelper.manifest_with_release.merge(
+        SharedSupport::DeploymentManifestHelper.manifest_with_release.merge(
           'releases' => [{ 'name' => 'bosh-release', 'version' => '0.1-dev' }],
           'instance_groups' => [
-            Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
+            SharedSupport::DeploymentManifestHelper.instance_group_with_many_jobs(
               name: 'ig1',
               jobs: [
                 {
@@ -340,7 +340,7 @@ describe 'cli: variables', type: :integration do
               ],
               instances: 1,
             ),
-            Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
+            SharedSupport::DeploymentManifestHelper.instance_group_with_many_jobs(
               name: 'ig2',
               jobs: [
                 {

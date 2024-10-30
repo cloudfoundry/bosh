@@ -8,7 +8,7 @@ describe 'teams', type: :integration do
     production_team_env = { 'BOSH_CLIENT' => 'production_team', 'BOSH_CLIENT_SECRET' => 'secret' }
     director_client_env = { client: 'director-access', client_secret: 'secret' }
 
-    runtime_config = Bosh::Spec::DeploymentManifestHelper.runtime_config_with_addon
+    runtime_config = SharedSupport::DeploymentManifestHelper.runtime_config_with_addon
     runtime_config['addons'][0]['include'] = { 'teams' => ['production_team'] }
     runtime_config['addons'][0]['exclude'] = { 'teams' => ['dev_team'] }
     runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
@@ -21,7 +21,7 @@ describe 'teams', type: :integration do
     upload_stemcell(director_client_env)
     upload_cloud_config(director_client_env)
 
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
 
     # deploy Deployment1
     manifest_hash['name'] = 'dep1'

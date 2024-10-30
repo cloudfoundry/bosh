@@ -13,7 +13,7 @@ module Bosh::Director
 
     describe '#parse' do
       let(:parsed_cloud_planner) { subject.parse(cloud_manifest) }
-      let(:cloud_manifest) { Bosh::Spec::Deployments.simple_cloud_config }
+      let(:cloud_manifest) { SharedSupport::DeploymentManifestHelper.simple_cloud_config }
 
       context 'when availability zones section is specified' do
         describe 'availability zones' do
@@ -339,8 +339,8 @@ module Bosh::Director
           context 'when each vm type has a unique name' do
             before do
               cloud_manifest['vm_types'] = [
-                Bosh::Spec::Deployments.vm_type.merge('name' => 'vm1-name'),
-                Bosh::Spec::Deployments.vm_type.merge('name' => 'vm2-name'),
+                SharedSupport::DeploymentManifestHelper.vm_type.merge('name' => 'vm1-name'),
+                SharedSupport::DeploymentManifestHelper.vm_type.merge('name' => 'vm2-name'),
               ]
             end
 
@@ -358,8 +358,8 @@ module Bosh::Director
           context 'when more than one vm type have same name' do
             before do
               cloud_manifest['vm_types'] = [
-                Bosh::Spec::Deployments.vm_type.merge('name' => 'same-name'),
-                Bosh::Spec::Deployments.vm_type.merge('name' => 'same-name'),
+                SharedSupport::DeploymentManifestHelper.vm_type.merge('name' => 'same-name'),
+                SharedSupport::DeploymentManifestHelper.vm_type.merge('name' => 'same-name'),
               ]
             end
 
@@ -379,8 +379,8 @@ module Bosh::Director
         context 'when vm_extensions are specified' do
           before do
             cloud_manifest['vm_extensions'] = [
-              Bosh::Spec::Deployments.vm_extension.merge('name' => 'vm-extension-1-name'),
-              Bosh::Spec::Deployments.vm_extension.merge('name' => 'vm-extension-2-name'),
+              SharedSupport::DeploymentManifestHelper.vm_extension.merge('name' => 'vm-extension-1-name'),
+              SharedSupport::DeploymentManifestHelper.vm_extension.merge('name' => 'vm-extension-2-name'),
             ]
           end
 
@@ -397,8 +397,8 @@ module Bosh::Director
           context 'when each disk type has a unique name' do
             before do
               cloud_manifest['disk_types'] = [
-                Bosh::Spec::Deployments.disk_type.merge('name' => 'dk1-name'),
-                Bosh::Spec::Deployments.disk_type.merge('name' => 'dk2-name'),
+                SharedSupport::DeploymentManifestHelper.disk_type.merge('name' => 'dk1-name'),
+                SharedSupport::DeploymentManifestHelper.disk_type.merge('name' => 'dk2-name'),
               ]
             end
 
@@ -416,8 +416,8 @@ module Bosh::Director
           context 'when more than one disk type have same name' do
             before do
               cloud_manifest['disk_types'] = [
-                Bosh::Spec::Deployments.disk_type.merge('name' => 'same-name'),
-                Bosh::Spec::Deployments.disk_type.merge('name' => 'same-name'),
+                SharedSupport::DeploymentManifestHelper.disk_type.merge('name' => 'same-name'),
+                SharedSupport::DeploymentManifestHelper.disk_type.merge('name' => 'same-name'),
               ]
             end
 
@@ -436,7 +436,7 @@ module Bosh::Director
 
     describe '#parse_availability_zones' do
       let(:parsed_availability_zones) { subject.parse_availability_zones(cloud_manifest) }
-      let(:cloud_manifest) { Bosh::Spec::Deployments.simple_cloud_config }
+      let(:cloud_manifest) { SharedSupport::DeploymentManifestHelper.simple_cloud_config }
       let(:availability_zones) do
         {
           'azs' => [

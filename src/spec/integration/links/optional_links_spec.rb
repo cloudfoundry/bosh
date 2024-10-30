@@ -10,7 +10,7 @@ describe 'optional links', type: :integration do
   end
 
   let(:cloud_config) do
-    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+    cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
     cloud_config_hash['azs'] = [{ 'name' => 'z1' }]
     cloud_config_hash['networks'].first['subnets'].first['static'] = [
       '192.168.1.10',
@@ -30,7 +30,7 @@ describe 'optional links', type: :integration do
   end
 
   let(:api_instance_group_with_optional_db_link) do
-    spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+    spec = SharedSupport::DeploymentManifestHelper.simple_instance_group(
       name: 'my_api',
       jobs: [
         'name' => 'api_server_with_optional_db_link',
@@ -44,7 +44,7 @@ describe 'optional links', type: :integration do
   end
 
   let(:api_instance_group_with_optional_links_spec_1) do
-    spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+    spec = SharedSupport::DeploymentManifestHelper.simple_instance_group(
       name: 'my_api',
       jobs: [
         'name' => 'api_server_with_optional_links_1',
@@ -58,7 +58,7 @@ describe 'optional links', type: :integration do
   end
 
   let(:api_instance_group_with_optional_links_spec_2) do
-    spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+    spec = SharedSupport::DeploymentManifestHelper.simple_instance_group(
       name: 'my_api',
       jobs: [
         'name' => 'api_server_with_optional_links_2',
@@ -72,7 +72,7 @@ describe 'optional links', type: :integration do
   end
 
   let(:mysql_instance_group_spec) do
-    spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+    spec = SharedSupport::DeploymentManifestHelper.simple_instance_group(
       name: 'mysql',
       jobs: [
         'name' => 'database',
@@ -90,7 +90,7 @@ describe 'optional links', type: :integration do
   end
 
   let(:postgres_instance_group_spec) do
-    spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+    spec = SharedSupport::DeploymentManifestHelper.simple_instance_group(
       name: 'postgres',
       jobs: [
         'name' => 'backup_database',
@@ -104,7 +104,7 @@ describe 'optional links', type: :integration do
   end
 
   let(:manifest) do
-    manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
+    manifest = SharedSupport::DeploymentManifestHelper.deployment_manifest
     manifest['instance_groups'] = [
       api_instance_group_with_optional_links_spec_1,
       mysql_instance_group_spec,
@@ -188,7 +188,7 @@ describe 'optional links', type: :integration do
 
     context 'when the link is optional and transitions from implicit to blocked' do
       let(:manifest) do
-        manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
+        manifest = SharedSupport::DeploymentManifestHelper.deployment_manifest
         manifest['instance_groups'] = [
           api_instance_group_with_optional_links_spec_2,
           mysql_instance_group_spec,
@@ -227,7 +227,7 @@ describe 'optional links', type: :integration do
 
     context 'when the link is optional and transitions from explicit to blocked' do
       let(:manifest) do
-        manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
+        manifest = SharedSupport::DeploymentManifestHelper.deployment_manifest
         manifest['instance_groups'] = [
           api_instance_group_with_optional_links_spec_2,
           mysql_instance_group_spec,
@@ -272,7 +272,7 @@ describe 'optional links', type: :integration do
       end
 
       let(:manifest) do
-        manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
+        manifest = SharedSupport::DeploymentManifestHelper.deployment_manifest
         manifest['instance_groups'] = [
           api_instance_group_with_optional_db_link,
           mysql_instance_group_spec,
@@ -304,7 +304,7 @@ describe 'optional links', type: :integration do
       end
 
       let(:manifest) do
-        manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
+        manifest = SharedSupport::DeploymentManifestHelper.deployment_manifest
         manifest['instance_groups'] = [
           api_instance_group_with_optional_db_link,
           mysql_instance_group_spec,
@@ -338,7 +338,7 @@ describe 'optional links', type: :integration do
       end
 
       let(:manifest) do
-        manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
+        manifest = SharedSupport::DeploymentManifestHelper.deployment_manifest
         manifest['instance_groups'] = [
           api_instance_group_with_optional_links_spec_2,
           mysql_instance_group_spec,
@@ -386,7 +386,7 @@ describe 'optional links', type: :integration do
     end
 
     let(:manifest) do
-      manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
+      manifest = SharedSupport::DeploymentManifestHelper.deployment_manifest
       manifest['instance_groups'] = [
         api_instance_group_with_optional_links_spec_2,
         mysql_instance_group_spec,
@@ -411,7 +411,7 @@ describe 'optional links', type: :integration do
 
   context 'when the optional link is used without if_link in templates' do
     let(:api_instance_group_with_bad_optional_links) do
-      spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+      spec = SharedSupport::DeploymentManifestHelper.simple_instance_group(
         name: 'my_api',
         jobs: [
           'name' => 'api_server_with_bad_optional_links',
@@ -424,7 +424,7 @@ describe 'optional links', type: :integration do
     end
 
     let(:manifest) do
-      manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
+      manifest = SharedSupport::DeploymentManifestHelper.deployment_manifest
       manifest['instance_groups'] = [api_instance_group_with_bad_optional_links]
       manifest
     end
@@ -442,7 +442,7 @@ describe 'optional links', type: :integration do
 
   context 'when multiple links with same type being provided' do
     let(:api_server_with_optional_db_links) do
-      spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+      spec = SharedSupport::DeploymentManifestHelper.simple_instance_group(
         name: 'optional_db',
         jobs: [
           'name' => 'api_server_with_optional_db_link',
@@ -456,7 +456,7 @@ describe 'optional links', type: :integration do
     end
 
     let(:manifest) do
-      manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
+      manifest = SharedSupport::DeploymentManifestHelper.deployment_manifest
       manifest['instance_groups'] = [api_server_with_optional_db_links, mysql_instance_group_spec, postgres_instance_group_spec]
       manifest
     end

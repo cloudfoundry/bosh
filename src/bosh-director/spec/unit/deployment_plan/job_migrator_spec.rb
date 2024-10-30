@@ -11,13 +11,13 @@ module Bosh::Director
     end
 
     let(:etcd_instance_group_spec) do
-      spec = Bosh::Spec::Deployments.simple_instance_group(name: 'etcd', instances: 4)
+      spec = SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'etcd', instances: 4)
       spec['azs'] = ['z1', 'z2']
       spec
     end
 
     let(:deployment_manifest) do
-      manifest = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+      manifest = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest['instance_groups'] = [etcd_instance_group_spec]
       manifest
     end
@@ -27,7 +27,7 @@ module Bosh::Director
     end
 
     let(:cloud_config_manifest) do
-      manifest = Bosh::Spec::Deployments.simple_cloud_config
+      manifest = SharedSupport::DeploymentManifestHelper.simple_cloud_config
       manifest['azs'] = [
         { 'name' => 'z1' },
         { 'name' => 'z2' },
@@ -102,7 +102,7 @@ module Bosh::Director
     describe 'find_existing_instances' do
       context 'when instance group needs to be migrated from' do
         let(:etcd_instance_group_spec) do
-          instance_group = Bosh::Spec::Deployments.simple_instance_group(name: 'etcd', instances: 4)
+          instance_group = SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'etcd', instances: 4)
           instance_group['azs'] = ['z1', 'z2']
           instance_group['migrated_from'] = [
             {'name' => 'etcd_z1', 'az' => 'z1'},
@@ -192,11 +192,11 @@ module Bosh::Director
 
         context 'when migrated_from instance group is still referenced in new deployment' do
           let(:deployment_manifest) do
-            manifest = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+            manifest = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
             manifest['instance_groups'] = [
               etcd_instance_group_spec,
-              Bosh::Spec::Deployments.simple_instance_group(name: 'etcd_z1').merge('azs' => ['z1']),
-              Bosh::Spec::Deployments.simple_instance_group(name: 'etcd_z2').merge('azs' => ['z2']),
+              SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'etcd_z1').merge('azs' => ['z1']),
+              SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'etcd_z2').merge('azs' => ['z2']),
             ]
             manifest
           end
@@ -214,7 +214,7 @@ module Bosh::Director
 
         context 'when the referenced instance group was the original instance group' do
           let(:etcd_instance_group_spec) do
-            instance_group = Bosh::Spec::Deployments.simple_instance_group(name: 'etcd', instances: 4)
+            instance_group = SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'etcd', instances: 4)
             instance_group['azs'] = ['z1']
             instance_group['migrated_from'] = [
               { 'name' => 'etcd', 'az' => 'z1' },
@@ -236,8 +236,8 @@ module Bosh::Director
 
         context 'when two instance groups migrate from the same job' do
           let(:deployment_manifest) do
-            manifest = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
-            another_instance_group_spec = Bosh::Spec::Deployments.simple_instance_group(name: 'another')
+            manifest = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
+            another_instance_group_spec = SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'another')
             another_instance_group_spec['migrated_from'] = etcd_instance_group_spec['migrated_from']
             another_instance_group_spec['azs'] = etcd_instance_group_spec['azs']
             manifest['instance_groups'] = [
@@ -287,7 +287,7 @@ module Bosh::Director
         context 'when migrated_from section does not contain availability zone and instance models do not have az (legacy instances)' do
           context 'and the desired job has azs' do
             let(:etcd_instance_group_spec) do
-              instance_group = Bosh::Spec::Deployments.simple_instance_group(name: 'etcd', instances: 4)
+              instance_group = SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'etcd', instances: 4)
               instance_group['migrated_from'] = [
                 {'name' => 'etcd_z1'},
               ]
@@ -311,7 +311,7 @@ module Bosh::Director
 
           context 'and the desired instance group does not have azs' do
             let(:etcd_instance_group_spec) do
-              instance_group = Bosh::Spec::Deployments.simple_instance_group(name: 'etcd', instances: 4)
+              instance_group = SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'etcd', instances: 4)
               instance_group['migrated_from'] = [{'name' => 'etcd_z1'}]
               instance_group['networks'] = [{'name' => 'no-az'}]
               instance_group

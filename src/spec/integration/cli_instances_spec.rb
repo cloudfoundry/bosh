@@ -5,7 +5,7 @@ describe 'cli: deployment process', type: :integration do
   with_reset_sandbox_before_each
 
   it 'displays instances in a deployment' do
-    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+    cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
     cloud_config_hash['azs'] = [
       { 'name' => 'zone-1', 'cloud_properties' => {} },
       { 'name' => 'zone-2', 'cloud_properties' => {} },
@@ -42,7 +42,7 @@ describe 'cli: deployment process', type: :integration do
       },
     ]
 
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['azs'] = ['zone-1', 'zone-2', 'zone-3']
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
 
@@ -259,8 +259,8 @@ describe 'cli: deployment process', type: :integration do
 
   it 'should return instances --vitals' do
     deploy_from_scratch(
-      manifest_hash: Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups,
-      cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
+      manifest_hash: SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups,
+      cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config,
     )
     vitals = director.instances_ps_vitals[0]
 
@@ -281,14 +281,14 @@ describe 'cli: deployment process', type: :integration do
   end
 
   it 'retrieves instances from deployments in parallel' do
-    manifest1 = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    manifest1 = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest1['name'] = 'simple1'
-    manifest1['instance_groups'] = [Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar1', instances: 2)]
+    manifest1['instance_groups'] = [SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar1', instances: 2)]
     deploy_from_scratch(manifest_hash: manifest1)
 
-    manifest2 = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    manifest2 = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest2['name'] = 'simple2'
-    manifest2['instance_groups'] = [Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 4)]
+    manifest2['instance_groups'] = [SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 4)]
     deploy_from_scratch(manifest_hash: manifest2)
 
     output = bosh_runner.run('instances --parallel 5')

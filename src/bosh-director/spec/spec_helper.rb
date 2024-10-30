@@ -1,7 +1,6 @@
 $LOAD_PATH << File.expand_path(__dir__)
 
 require_relative '../../spec/shared/spec_helper'
-require_relative '../../spec/support/deployments'
 
 require 'digest/sha1'
 require 'fileutils'

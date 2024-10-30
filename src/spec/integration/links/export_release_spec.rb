@@ -10,7 +10,7 @@ describe 'exporting release with templates that have links', type: :integration 
   end
 
   let(:cloud_config) do
-    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+    cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
     cloud_config_hash['azs'] = [{ 'name' => 'z1' }]
     cloud_config_hash['networks'].first['subnets'].first['static'] = [
       '192.168.1.10',
@@ -30,7 +30,7 @@ describe 'exporting release with templates that have links', type: :integration 
   end
 
   let(:mongo_db_spec) do
-    spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+    spec = SharedSupport::DeploymentManifestHelper.simple_instance_group(
       name: 'mongo',
       jobs: [{ 'name' => 'mongo_db', 'release' => 'bosh-release' }],
       instances: 1,
@@ -41,7 +41,7 @@ describe 'exporting release with templates that have links', type: :integration 
   end
 
   let(:manifest) do
-    manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest
+    manifest = SharedSupport::DeploymentManifestHelper.deployment_manifest
     manifest['instance_groups'] = [mongo_db_spec]
 
     # We manually change the deployment manifest release version, beacuse of w weird issue where

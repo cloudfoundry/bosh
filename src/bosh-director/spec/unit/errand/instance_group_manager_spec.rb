@@ -97,7 +97,7 @@ module Bosh::Director
     end
 
     describe '#delete_vms' do
-      let(:manifest) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
+      let(:manifest) { SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups }
       let(:deployment_model) { FactoryBot.create(:models_deployment, manifest: YAML.dump(manifest)) }
 
       let(:instance1_model) do

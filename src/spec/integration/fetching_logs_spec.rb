@@ -5,8 +5,8 @@ describe 'fetching logs', type: :integration do
 
   it 'can fetch job (default) and agent logs' do
     deploy_from_scratch(
-      manifest_hash: Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups,
-      cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
+      manifest_hash: SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups,
+      cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config,
     )
 
     vm_0 = director.instance('foobar', '0')

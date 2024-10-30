@@ -10,7 +10,7 @@ describe 'multiple persistent disks', type: :integration do
   with_reset_sandbox_before_each(dummy_cpi_api_version: 2)
 
   let(:cloud_config_hash) do
-    hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+    hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
     hash['disk_types'] = [
       {
         'name' => 'low-performance-disk-type',

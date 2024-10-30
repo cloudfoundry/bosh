@@ -16,9 +16,9 @@ describe 'deploy --fix', type: :integration do
   end
 
   def do_test
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'][0]['persistent_disk'] = 1
-    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
     current_sandbox.cpi.commands.make_delete_vm_to_raise_vmnotfound
     current_sandbox.cpi.kill_agents
 

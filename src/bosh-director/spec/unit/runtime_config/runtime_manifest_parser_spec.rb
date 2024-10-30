@@ -12,7 +12,7 @@ module Bosh::Director
     let(:event_log) { Config.event_log }
 
     describe '#parse' do
-      let(:runtime_manifest) { Bosh::Spec::Deployments.simple_runtime_config }
+      let(:runtime_manifest) { SharedSupport::DeploymentManifestHelper.simple_runtime_config }
 
       it "raises RuntimeInvalidReleaseVersion if a release uses version 'latest'" do
         runtime_manifest['releases'][0]['version'] = 'latest'
@@ -25,13 +25,13 @@ module Bosh::Director
       end
 
       it "raises AddonReleaseNotListedInReleases if addon job's release is not listed in releases" do
-        runtime_manifest = Bosh::Spec::Deployments.runtime_config_with_addon
+        runtime_manifest = SharedSupport::DeploymentManifestHelper.runtime_config_with_addon
         runtime_manifest['releases'][0]['name'] = 'weird_name'
         expect { subject.parse(runtime_manifest) }.to raise_error(AddonReleaseNotListedInReleases)
       end
 
       context 'when runtime manifest does not have an include or exclude section' do
-        let(:runtime_manifest) { Bosh::Spec::Deployments.runtime_config_with_addon }
+        let(:runtime_manifest) { SharedSupport::DeploymentManifestHelper.runtime_config_with_addon }
 
         it 'appends addon jobs to deployment job templates and addon properties to deployment job properties' do
           expect(Addon::Filter).to receive(:new).with(
@@ -79,11 +79,11 @@ module Bosh::Director
       end
 
       context 'when runtime manifest has an include section' do
-        let(:runtime_manifest) { Bosh::Spec::Deployments.runtime_config_with_addon }
+        let(:runtime_manifest) { SharedSupport::DeploymentManifestHelper.runtime_config_with_addon }
 
         context 'when deployment name is in the includes.deployments section' do
           let(:runtime_manifest) do
-            runtime_manifest = Bosh::Spec::Deployments.runtime_config_with_addon
+            runtime_manifest = SharedSupport::DeploymentManifestHelper.runtime_config_with_addon
             runtime_manifest['addons'].first.merge!(
               'include' => {
                 'deployments' => ['dep1'],
@@ -107,11 +107,11 @@ module Bosh::Director
       end
 
       context 'when runtime manifest has an exclude section' do
-        let(:runtime_manifest) { Bosh::Spec::Deployments.runtime_config_with_addon_excludes }
+        let(:runtime_manifest) { SharedSupport::DeploymentManifestHelper.runtime_config_with_addon_excludes }
 
         context 'when deployment name is in the includes.deployments section' do
           let(:runtime_manifest) do
-            runtime_manifest = Bosh::Spec::Deployments.runtime_config_with_addon
+            runtime_manifest = SharedSupport::DeploymentManifestHelper.runtime_config_with_addon
             runtime_manifest['addons'].first.merge!(
               'exclude' => {
                 'deployments' => ['dep1'],
@@ -137,7 +137,7 @@ module Bosh::Director
         context 'when jobs section present' do
           context 'when only job name is provided' do
             let(:runtime_manifest) do
-              runtime_manifest = Bosh::Spec::Deployments.runtime_config_with_addon
+              runtime_manifest = SharedSupport::DeploymentManifestHelper.runtime_config_with_addon
               runtime_manifest['addons'].first.merge!(
                 'exclude' => {
                   'jobs' => [{ 'name' => 'foobar' }],
@@ -152,7 +152,7 @@ module Bosh::Director
 
           context 'when only release is provided' do
             let(:runtime_manifest) do
-              runtime_manifest = Bosh::Spec::Deployments.runtime_config_with_addon
+              runtime_manifest = SharedSupport::DeploymentManifestHelper.runtime_config_with_addon
               runtime_manifest['addons'].first.merge!(
                 'exclude' => {
                   'jobs' => [{ 'release' => 'foobar' }],
@@ -168,7 +168,7 @@ module Bosh::Director
 
         context 'when variables section present' do
           let(:runtime_manifest) do
-            runtime_manifest = Bosh::Spec::Deployments.runtime_config_with_addon
+            runtime_manifest = SharedSupport::DeploymentManifestHelper.runtime_config_with_addon
 
             variables_spec = [
               { 'name' => 'var_a', 'type' => 'a' },

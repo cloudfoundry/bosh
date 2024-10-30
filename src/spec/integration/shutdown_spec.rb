@@ -5,16 +5,16 @@ describe 'Shutdown', type: :integration do
   with_reset_sandbox_before_each
 
   before do
-    upload_cloud_config(cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+    upload_cloud_config(cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
     upload_stemcell
     create_and_upload_test_release
   end
 
   context 'when create swap delete is enabled', create_swap_delete: true do
     it 'shuts down orphaned vms' do
-      manifest_deployment = Bosh::Spec::DeploymentManifestHelper.test_release_manifest_with_stemcell
+      manifest_deployment = SharedSupport::DeploymentManifestHelper.test_release_manifest_with_stemcell
       manifest_deployment['instance_groups'] = [
-        Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+        SharedSupport::DeploymentManifestHelper.simple_instance_group(
           name: 'test-job',
           instances: 1,
         ),

@@ -10,8 +10,8 @@ describe 'Changing ip ranges', type: :integration do
 
   describe 'shifting the IP range for a job' do
     it 'should recreate VMs outside of the range in the new range, but not touch VMs that are ok' do
-      cloud_config = Bosh::Spec::DeploymentManifestHelper.cloud_config_with_subnet(available_ips: 2)
-      deployment_manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest(
+      cloud_config = SharedSupport::DeploymentManifestHelper.cloud_config_with_subnet(available_ips: 2)
+      deployment_manifest = SharedSupport::DeploymentManifestHelper.deployment_manifest(
         instances: 2,
         job: 'foobar_without_packages',
         job_release: 'bosh-release',
@@ -26,7 +26,7 @@ describe 'Changing ip ranges', type: :integration do
       expect(original_instance_0.ips).to contain_exactly('192.168.1.2')
       expect(original_instance_1.ips).to contain_exactly('192.168.1.3')
 
-      new_cloud_config = Bosh::Spec::DeploymentManifestHelper.cloud_config_with_subnet(available_ips: 2, shift_ip_range_by: 1)
+      new_cloud_config = SharedSupport::DeploymentManifestHelper.cloud_config_with_subnet(available_ips: 2, shift_ip_range_by: 1)
       upload_cloud_config(cloud_config_hash: new_cloud_config)
 
       deploy_simple_manifest(manifest_hash: deployment_manifest)

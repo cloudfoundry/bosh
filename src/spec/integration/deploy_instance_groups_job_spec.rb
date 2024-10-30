@@ -4,9 +4,9 @@ describe 'deploy instance_groups job', type: :integration do
   with_reset_sandbox_before_each
 
   it 're-evaluates job with new manifest job properties' do
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['jobs'].first['properties'] = { 'test_property' => 1 }
-    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
 
     foobar_instance = director.instance('foobar', '0')
 
@@ -21,11 +21,11 @@ describe 'deploy instance_groups job', type: :integration do
   end
 
   it 're-evaluates job with new dynamic network configuration' do
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['instances'] = 1
     manifest_hash['instance_groups'].first['jobs'].first['properties'] = { 'network_name' => 'a' }
 
-    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+    cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
     cloud_config_hash['networks'].first['type'] = 'dynamic'
     cloud_config_hash['networks'].first['cloud_properties'] = {}
     cloud_config_hash['networks'].first.delete('subnets')
@@ -54,7 +54,7 @@ describe 'deploy instance_groups job', type: :integration do
   end
 
   it 'does not redeploy if the order of properties get changed' do
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['jobs'].first['properties'] = {
       'test_property' =>
       {
@@ -69,7 +69,7 @@ describe 'deploy instance_groups job', type: :integration do
     }
     manifest_hash['instance_groups'].first['instances'] = 1
 
-    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
     expect(director.instances.count).to eq(1)
 
     instance = director.instance('foobar', '0')
@@ -90,10 +90,10 @@ describe 'deploy instance_groups job', type: :integration do
     with_reset_hm_before_each
 
     it 'creates alerts to mark the start and end of an update deployment' do
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'].first['instances'] = 1
 
-      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
 
       waiter.wait(60) do
         expect(health_monitor.read_log).to match(/\[ALERT\] Alert @ .* Begin update deployment for 'simple'/)

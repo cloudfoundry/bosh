@@ -4,7 +4,7 @@ describe 'stop command', type: :integration do
   with_reset_sandbox_before_each
 
   let(:manifest_hash) do
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'] << {
       'name' => 'another-job',
       'jobs' => [
@@ -34,7 +34,7 @@ describe 'stop command', type: :integration do
 
   context 'when attempting to stop an errand instance' do
     before do
-      deploy_from_scratch(manifest_hash: Bosh::Spec::DeploymentManifestHelper.manifest_with_errand)
+      deploy_from_scratch(manifest_hash: SharedSupport::DeploymentManifestHelper.manifest_with_errand)
     end
 
     it 'fails gracefully with a useful message' do
@@ -50,7 +50,7 @@ describe 'stop command', type: :integration do
 
   context 'after a successful deploy' do
     before do
-      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
     end
 
     context 'with an index or id' do
@@ -128,7 +128,7 @@ describe 'stop command', type: :integration do
   context 'after a failed deploy' do
     context 'when there are unrelated instances that are not converged' do
       let(:late_fail_manifest) do
-        manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+        manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
         manifest_hash['instance_groups'] << {
           'name' => 'another-job',
           'jobs' => [
@@ -166,7 +166,7 @@ describe 'stop command', type: :integration do
       end
 
       before do
-        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
         deploy(manifest_hash: late_fail_manifest, failure_expected: true)
       end
 
@@ -182,14 +182,14 @@ describe 'stop command', type: :integration do
     before do
       manifest_hash['instance_groups'].first['persistent_disk'] = 1024
       manifest_hash['instance_groups'].first['instances'] = 1
-      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
     end
 
     it 'is successful (regression: #108398600) ' do
       isolated_stop(instance_group: 'foobar', index: 0, params: { hard: true })
       expect(vm_states).to eq('another-job/0' => 'running')
       expect do
-        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
       end.to_not raise_error
       expect(vm_states).to eq('another-job/0' => 'running')
     end

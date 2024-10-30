@@ -4,11 +4,11 @@ describe 'simultaneous deploys', type: :integration do
   with_reset_sandbox_before_each
 
   let(:first_manifest_hash) do
-    Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
   end
 
   let(:second_manifest_hash) do
-    Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups.merge('name' => 'second')
+    SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups.merge('name' => 'second')
   end
 
   before do
@@ -18,9 +18,9 @@ describe 'simultaneous deploys', type: :integration do
 
   context 'when there are enough IPs for two deployments' do
     it 'allocates different IP to another deploy' do
-      cloud_config = Bosh::Spec::DeploymentManifestHelper.cloud_config_with_subnet(available_ips: 6)
-      first_deployment_manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest(name: 'first', instances: 1, job: 'foobar_without_packages')
-      second_deployment_manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest(name: 'second', instances: 1, job: 'foobar_without_packages')
+      cloud_config = SharedSupport::DeploymentManifestHelper.cloud_config_with_subnet(available_ips: 6)
+      first_deployment_manifest = SharedSupport::DeploymentManifestHelper.deployment_manifest(name: 'first', instances: 1, job: 'foobar_without_packages')
+      second_deployment_manifest = SharedSupport::DeploymentManifestHelper.deployment_manifest(name: 'second', instances: 1, job: 'foobar_without_packages')
 
       upload_cloud_config(cloud_config_hash: cloud_config)
       first_task_id = start_deploy(first_deployment_manifest)
@@ -39,11 +39,11 @@ describe 'simultaneous deploys', type: :integration do
 
   context 'when there are not enough IPs for compilation for two deployments' do
     it 'fails one of deploys' do
-      cloud_config = Bosh::Spec::DeploymentManifestHelper.cloud_config_with_subnet(available_ips: 3)
+      cloud_config = SharedSupport::DeploymentManifestHelper.cloud_config_with_subnet(available_ips: 3)
       upload_cloud_config(cloud_config_hash: cloud_config)
 
       with_blocking_deploy do
-        deployment_manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest(name: 'second', instances: 1)
+        deployment_manifest = SharedSupport::DeploymentManifestHelper.deployment_manifest(name: 'second', instances: 1)
         output = deploy_simple_manifest(manifest_hash: deployment_manifest, failure_expected: true)
         expect(output).to match(/Failed to reserve IP for 'compilation-.*' for manual network 'a': no more available/)
       end
@@ -52,9 +52,9 @@ describe 'simultaneous deploys', type: :integration do
 
   context 'when there are not enough IPs for two deployments' do
     it 'fails one of deploys' do
-      cloud_config = Bosh::Spec::DeploymentManifestHelper.cloud_config_with_subnet(available_ips: 2)
-      first_deployment_manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest(name: 'first', instances: 2, job: 'foobar_without_packages')
-      second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 2, job: 'foobar_without_packages')
+      cloud_config = SharedSupport::DeploymentManifestHelper.cloud_config_with_subnet(available_ips: 2)
+      first_deployment_manifest = SharedSupport::DeploymentManifestHelper.deployment_manifest(name: 'first', instances: 2, job: 'foobar_without_packages')
+      second_deployment_manifest = SharedSupport::DeploymentManifestHelper.deployment_manifest(name: 'second', instances: 2, job: 'foobar_without_packages')
 
       upload_cloud_config(cloud_config_hash: cloud_config)
       first_task_id = start_deploy(first_deployment_manifest)
@@ -70,9 +70,9 @@ describe 'simultaneous deploys', type: :integration do
 
   describe 'running errand during deploy' do
     it 'allocates IPs correctly for simultaneous errand run and deploy' do
-      cloud_config = Bosh::Spec::NetworkingManifest.cloud_config_with_subnet(available_ips: 2)
-      manifest_with_errand = Bosh::Spec::NetworkingManifest.errand_manifest(instances: 1)
-      second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 1, job: 'foobar_without_packages')
+      cloud_config = SharedSupport::DeploymentManifestHelper.cloud_config_with_subnet(available_ips: 2)
+      manifest_with_errand = SharedSupport::DeploymentManifestHelper.errand_manifest(instances: 1)
+      second_deployment_manifest = SharedSupport::DeploymentManifestHelper.deployment_manifest(name: 'second', instances: 1, job: 'foobar_without_packages')
 
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: manifest_with_errand)
@@ -87,9 +87,9 @@ describe 'simultaneous deploys', type: :integration do
     end
 
     it 'raises correct error message when we do not have enough IPs for the errand and the deploy' do
-      cloud_config = Bosh::Spec::NetworkingManifest.cloud_config_with_subnet(available_ips: 2)
-      manifest_with_errand = Bosh::Spec::NetworkingManifest.errand_manifest(instances: 2, job: 'errand_without_package')
-      second_deployment_manifest = Bosh::Spec::NetworkingManifest.deployment_manifest(name: 'second', instances: 2, job: 'foobar_without_packages')
+      cloud_config = SharedSupport::DeploymentManifestHelper.cloud_config_with_subnet(available_ips: 2)
+      manifest_with_errand = SharedSupport::DeploymentManifestHelper.errand_manifest(instances: 2, job: 'errand_without_package')
+      second_deployment_manifest = SharedSupport::DeploymentManifestHelper.deployment_manifest(name: 'second', instances: 2, job: 'foobar_without_packages')
 
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: manifest_with_errand)
@@ -105,9 +105,9 @@ describe 'simultaneous deploys', type: :integration do
 
   describe 'running two errands' do
     it 'allocates IPs correctly for simultaneous errand runs' do
-      cloud_config = Bosh::Spec::NetworkingManifest.cloud_config_with_subnet(available_ips: 2)
-      first_errand_manifest = Bosh::Spec::NetworkingManifest.errand_manifest(name: 'first-errand', instances: 1)
-      second_errand_manifest = Bosh::Spec::NetworkingManifest.errand_manifest(name: 'second-errand',instances: 1)
+      cloud_config = SharedSupport::DeploymentManifestHelper.cloud_config_with_subnet(available_ips: 2)
+      first_errand_manifest = SharedSupport::DeploymentManifestHelper.errand_manifest(name: 'first-errand', instances: 1)
+      second_errand_manifest = SharedSupport::DeploymentManifestHelper.errand_manifest(name: 'second-errand',instances: 1)
 
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: first_errand_manifest)
@@ -126,9 +126,9 @@ describe 'simultaneous deploys', type: :integration do
     end
 
     it 'raises correct error message when we do not have enough IPs for the errands' do
-      cloud_config = Bosh::Spec::NetworkingManifest.cloud_config_with_subnet(available_ips: 1)
-      first_errand_manifest = Bosh::Spec::NetworkingManifest.errand_manifest(name: 'first-errand', instances: 1)
-      second_errand_manifest = Bosh::Spec::NetworkingManifest.errand_manifest(name: 'second-errand',instances: 1)
+      cloud_config = SharedSupport::DeploymentManifestHelper.cloud_config_with_subnet(available_ips: 1)
+      first_errand_manifest = SharedSupport::DeploymentManifestHelper.errand_manifest(name: 'first-errand', instances: 1)
+      second_errand_manifest = SharedSupport::DeploymentManifestHelper.errand_manifest(name: 'second-errand',instances: 1)
 
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: first_errand_manifest)

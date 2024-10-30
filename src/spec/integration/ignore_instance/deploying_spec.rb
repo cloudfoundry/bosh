@@ -7,11 +7,11 @@ describe 'deploying with ignored instances', type: :integration do
     with_reset_sandbox_before_each
 
     it 'does not run them on the ignored vms' do
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
-      cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+      manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
 
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.instance_group_with_many_jobs(
         name: 'foobar1',
         jobs: [
           { 'name' => 'job_1_with_pre_start_script', 'release' => 'bosh-release' },
@@ -113,13 +113,13 @@ describe 'deploying with ignored instances', type: :integration do
 
   context 'when the number of instances in an instance group did not change between deployments' do
     it 'leaves ignored instances alone when instance count is 1' do
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
-      cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+      manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
 
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar1', instances: 1)
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 1)
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar3', instances: 1)
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar1', instances: 1)
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 1)
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar3', instances: 1)
 
       output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -134,7 +134,7 @@ describe 'deploying with ignored instances', type: :integration do
       bosh_runner.run("ignore #{foobar1_instance1.instance_group_name}/#{foobar1_instance1.id}", deployment_name: 'simple')
 
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.instance_group_with_many_jobs(
         name: 'foobar1',
         jobs: [
           { 'name' => 'job_1_with_pre_start_script', 'release' => 'bosh-release' },
@@ -142,8 +142,8 @@ describe 'deploying with ignored instances', type: :integration do
         ],
         instances: 1,
       )
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 1)
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar3', instances: 1)
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 1)
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar3', instances: 1)
 
       output = deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -155,12 +155,12 @@ describe 'deploying with ignored instances', type: :integration do
     end
 
     it 'leaves ignored instances alone when count of the instance groups is larger than 1' do
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
-      cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+      manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
 
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar1', instances: 3)
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 3)
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar1', instances: 3)
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 3)
 
       output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -174,7 +174,7 @@ describe 'deploying with ignored instances', type: :integration do
       bosh_runner.run("ignore #{instance1.instance_group_name}/#{instance1.id}", deployment_name: 'simple')
 
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.instance_group_with_many_jobs(
         name: 'foobar1',
         jobs: [
           { 'name' => 'job_1_with_pre_start_script', 'release' => 'bosh-release' },
@@ -182,7 +182,7 @@ describe 'deploying with ignored instances', type: :integration do
         ],
         instances: 3,
       )
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 3)
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 3)
 
       output = deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -193,11 +193,11 @@ describe 'deploying with ignored instances', type: :integration do
 
     context 'when the instances have persistent disks' do
       let(:cloud_config) do
-        Bosh::Spec::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs
+        SharedSupport::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs
       end
 
       let(:manifest) do
-        manifest = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups(azs: %w[z1 z2])
+        manifest = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups(azs: %w[z1 z2])
         manifest['instance_groups'][0]['persistent_disk'] = 1024
         manifest
       end
@@ -226,12 +226,12 @@ describe 'deploying with ignored instances', type: :integration do
 
   context 'when the existing instances is less than the desired ones' do
     it 'should handle ignored instances' do
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
-      cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+      manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
 
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar1', instances: 1)
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 1)
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar1', instances: 1)
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 1)
 
       output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
       expect(output.split("\n").select { |e| /Updating instance/ =~ e }.count).to eq(2)
@@ -244,12 +244,12 @@ describe 'deploying with ignored instances', type: :integration do
 
       # redeploy with different foobar1 templates
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.instance_group_with_many_jobs(
         name: 'foobar1',
         jobs: [{ 'name' => 'job_1_with_pre_start_script', 'release' => 'bosh-release' }],
         instances: 2,
       )
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 1)
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 1)
 
       output = deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -265,12 +265,12 @@ describe 'deploying with ignored instances', type: :integration do
 
       # Redeploy with different numbers
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.instance_group_with_many_jobs(
         name: 'foobar1',
         jobs: [{ 'name' => 'job_2_with_pre_start_script', 'release' => 'bosh-release' }],
         instances: 4,
       )
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.instance_group_with_many_jobs(
         name: 'foobar2',
         jobs: [{ 'name' => 'job_1_with_pre_start_script', 'release' => 'bosh-release' }],
         instances: 3,
@@ -320,12 +320,12 @@ describe 'deploying with ignored instances', type: :integration do
   context 'when the existing instances is larger than the desired ones' do
     context 'when the ignored instances is larger than the desired ones' do
       it 'should fail to deploy' do
-        manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
-        cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+        manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
+        cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
 
         manifest_hash['instance_groups'].clear
-        manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar1', instances: 4)
-        manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 1)
+        manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar1', instances: 4)
+        manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 1)
 
         output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -344,12 +344,12 @@ describe 'deploying with ignored instances', type: :integration do
 
         # redeploy with different foobar1 templates
         manifest_hash['instance_groups'].clear
-        manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
+        manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.instance_group_with_many_jobs(
           name: 'foobar1',
           jobs: [{ 'name' => 'job_1_with_pre_start_script', 'release' => 'bosh-release' }],
           instances: 2,
         )
-        manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 1)
+        manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 1)
 
         output, exit_code = deploy_simple_manifest(
           manifest_hash: manifest_hash,
@@ -368,12 +368,12 @@ describe 'deploying with ignored instances', type: :integration do
 
     context 'when the ignored instances is equal to desired ones' do
       it 'deletes all non-ignored vms and leaves the ignored alone without updating them' do
-        manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
-        cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+        manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
+        cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
 
         manifest_hash['instance_groups'].clear
-        manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar1', instances: 4)
-        manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 1)
+        manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar1', instances: 4)
+        manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 1)
 
         output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
         expect(output.split("\n").select { |e| /Updating instance/ =~ e }.count).to eq(5)
@@ -391,12 +391,12 @@ describe 'deploying with ignored instances', type: :integration do
         # ===================================================
         # redeploy with different foobar1 templates
         manifest_hash['instance_groups'].clear
-        manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
+        manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.instance_group_with_many_jobs(
           name: 'foobar1',
           jobs: [{ 'name' => 'job_1_with_pre_start_script', 'release' => 'bosh-release' }],
           instances: 2,
         )
-        manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 1)
+        manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 1)
 
         output = deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
         expect(output).to include("Deleting unneeded instances foobar1: foobar1/#{foobar1_instance3.id}")
@@ -420,12 +420,12 @@ describe 'deploying with ignored instances', type: :integration do
 
     context 'when the ignored instances are fewer than the desired ones' do
       it 'should keep the ignored instances untouched and adjust the number of remaining functional instances' do
-        manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
-        cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+        manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
+        cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
 
         manifest_hash['instance_groups'].clear
-        manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar1', instances: 5)
-        manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 1)
+        manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar1', instances: 5)
+        manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 1)
 
         output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -441,12 +441,12 @@ describe 'deploying with ignored instances', type: :integration do
         # ===================================================
         # redeploy with different foobar1 templates
         manifest_hash['instance_groups'].clear
-        manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
+        manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.instance_group_with_many_jobs(
           name: 'foobar1',
           jobs: [{ 'name' => 'job_1_with_pre_start_script', 'release' => 'bosh-release' }],
           instances: 3,
         )
-        manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 1)
+        manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 1)
 
         output = deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -476,12 +476,12 @@ describe 'deploying with ignored instances', type: :integration do
 
   context 'when --recreate flag is passed' do
     it 'should recreate needed vms but leave the ignored ones alone' do
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
-      cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+      manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
 
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar1', instances: 3)
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 3)
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar1', instances: 3)
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 3)
 
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -498,7 +498,7 @@ describe 'deploying with ignored instances', type: :integration do
       bosh_runner.run("ignore #{foobar1_instance1.instance_group_name}/#{foobar1_instance1.id}", deployment_name: 'simple')
 
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.instance_group_with_many_jobs(
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.instance_group_with_many_jobs(
         name: 'foobar1',
         jobs: [
           { 'name' => 'job_1_with_pre_start_script', 'release' => 'bosh-release' },
@@ -506,7 +506,7 @@ describe 'deploying with ignored instances', type: :integration do
         ],
         instances: 3,
       )
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 3)
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 3)
 
       output = deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: cloud_config, recreate: true)
 
@@ -540,12 +540,12 @@ describe 'deploying with ignored instances', type: :integration do
 
   context 'when an attempt is made to delete an instance group from deployment' do
     it 'fails if the instance group contains ignored vms' do
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
-      cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+      manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
 
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar1', instances: 2)
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 2)
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar1', instances: 2)
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 2)
 
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
@@ -556,7 +556,7 @@ describe 'deploying with ignored instances', type: :integration do
       bosh_runner.run("ignore #{foobar1_instance1.instance_group_name}/#{foobar1_instance1.id}", deployment_name: 'simple')
 
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 2)
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'foobar2', instances: 2)
 
       output, exit_code = deploy_simple_manifest(
         manifest_hash: manifest_hash,

@@ -4,7 +4,7 @@ describe 'tags', type: :integration do
   with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa')
 
   let(:manifest_hash) do
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'] = [{
       'name' => 'foobar',
       'jobs' => ['name' => 'id_job', 'release' => 'bosh-release'],
@@ -33,7 +33,7 @@ describe 'tags', type: :integration do
   let(:client_env) do
     { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => current_sandbox.certificate_path.to_s }
   end
-  let(:cloud_config_hash) { Bosh::Spec::DeploymentManifestHelper.simple_cloud_config }
+  let(:cloud_config_hash) { SharedSupport::DeploymentManifestHelper.simple_cloud_config }
   let(:job_properties) do
     {
       'gargamel' => {
@@ -70,13 +70,13 @@ describe 'tags', type: :integration do
   end
 
   it 'does variable substitution on the initial creation' do
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['tags'] = {
       'tag-key1' => '((/tag-variable1))',
       'tag-key2' => '((tag-variable2))',
     }
 
-    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+    cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env)
 
     set_vm_metadata_invocations = current_sandbox.cpi.invocations.select { |invocation| invocation.method_name == 'set_vm_metadata' && invocation.inputs['metadata']['compiling'].nil? }

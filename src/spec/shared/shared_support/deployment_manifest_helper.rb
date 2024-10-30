@@ -1,4 +1,4 @@
-module Bosh::Spec
+module SharedSupport
   class DeploymentManifestHelper
     DEFAULT_DEPLOYMENT_NAME = 'simple'.freeze
     DISK_TYPE = {
@@ -8,6 +8,8 @@ module Bosh::Spec
     }.freeze
 
     ### Cloud Configs
+
+    # TODO: used by bosh-director
     def self.simple_cloud_config
       minimal_cloud_config.merge(
         'networks' => [network],
@@ -32,6 +34,7 @@ module Bosh::Spec
       }
     end
 
+    # TODO: used by bosh-director
     def self.network(options = {})
       {
         'name' => 'a',
@@ -39,6 +42,7 @@ module Bosh::Spec
       }.merge!(options)
     end
 
+    # TODO: used by bosh-director
     def self.subnet(options = {})
       {
         'range' => '192.168.1.0/24',
@@ -50,6 +54,7 @@ module Bosh::Spec
       }.merge!(options)
     end
 
+    # TODO: used by bosh-director
     def self.vm_type
       {
         'name' => 'a',
@@ -57,6 +62,7 @@ module Bosh::Spec
       }
     end
 
+    # TODO: used by bosh-director
     def self.vm_extension
       {
         'name' => 'vm-extension-name',
@@ -64,6 +70,7 @@ module Bosh::Spec
       }
     end
 
+    # TODO: used by bosh-director
     def self.disk_type
       {
         'name' => 'disk_a',
@@ -71,6 +78,7 @@ module Bosh::Spec
       }
     end
 
+    # TODO: used by bosh-director
     def self.simple_cloud_config_with_multiple_azs_and_cpis
       cloud_config = simple_cloud_config_with_multiple_azs
 
@@ -81,6 +89,7 @@ module Bosh::Spec
       cloud_config
     end
 
+    # TODO: used by bosh-director
     def self.simple_cloud_config_with_multiple_azs
       networks = [
         {
@@ -141,6 +150,7 @@ module Bosh::Spec
       )
     end
 
+    # TODO: used by bosh-deployment
     def self.cloud_config_with_placeholders
       {
         'azs' => [
@@ -262,6 +272,7 @@ module Bosh::Spec
     end
 
     ### Deployment Manifests
+
     def self.simple_errand_instance_group
       {
         'name' => 'fake-errand-name',
@@ -288,6 +299,7 @@ module Bosh::Spec
       }
     end
 
+    # TODO: used by bosh-director
     def self.simple_instance_group(opts = {})
       instance_group_hash = {
         'name' => opts.fetch(:name, 'foobar'),
@@ -341,6 +353,7 @@ module Bosh::Spec
       }
     end
 
+    # TODO: used by bosh-director
     def self.minimal_manifest
       {
         'name' => 'minimal',
@@ -397,6 +410,7 @@ module Bosh::Spec
       )
     end
 
+    # TODO: used by bosh-director
     def self.simple_manifest_with_instance_groups(opts = {})
       test_release_manifest_with_stemcell.merge(
         'instance_groups' => [simple_instance_group(opts)],
@@ -631,12 +645,14 @@ module Bosh::Spec
       manifest
     end
 
+    # TODO: used by bosh-director
     def self.manifest_with_errand_on_service_instance
       manifest = manifest_with_release
       manifest['instance_groups'] = [service_instance_group_with_errand]
       manifest
     end
 
+    # TODO: used by bosh-director
     def self.manifest_with_errand
       manifest = simple_manifest_with_instance_groups.merge('name' => 'errand')
       manifest['instance_groups'].find { |instance_group| instance_group['name'] == 'foobar' }['instances'] = 1
@@ -678,6 +694,8 @@ module Bosh::Spec
     end
 
     ### Other Configs
+
+    # TODO: used by bosh-director
     def self.simple_runtime_config(release = 'test_release_2', version = '2', job = 'my_template')
       {
         'releases' => [{ 'name' => release, 'version' => version }],
@@ -685,6 +703,7 @@ module Bosh::Spec
       }
     end
 
+    # TODO: used by bosh-director
     def self.runtime_config_release_missing
       {
         'releases' => [{ 'name' => 'test_release_2', 'version' => '2' }],
@@ -692,6 +711,7 @@ module Bosh::Spec
       }
     end
 
+    # TODO: used by bosh-director
     def self.runtime_config_with_addon
       {
         'releases' => [{ 'name' => 'dummy2', 'version' => '0.2-dev' }],
@@ -715,6 +735,7 @@ module Bosh::Spec
       }
     end
 
+    # TODO: used by bosh-director
     def self.runtime_config_with_addon_includes
       runtime_config_with_addon.merge(
         'addons' => [
@@ -738,6 +759,7 @@ module Bosh::Spec
       )
     end
 
+    # TODO: used by bosh-director
     def self.runtime_config_with_addon_excludes
       runtime_config_with_addon.merge(
         'addons' => [
@@ -866,6 +888,7 @@ module Bosh::Spec
       cpi_config
     end
 
+    # TODO: used by bosh-director
     def self.multi_cpi_config(exec_path = nil)
       cpi_config = {
         'cpis' => [
@@ -950,8 +973,8 @@ module Bosh::Spec
       job_opts[:static_ips] = opts[:static_ips] if opts[:static_ips]
 
       job_opts[:jobs] = [{ 'name' => opts[:job], 'release' => opts.fetch(:job_release, 'bosh-release') }] if opts[:job]
-      manifest = opts.fetch(:manifest, Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups)
-      manifest['instance_groups'] = [Bosh::Spec::DeploymentManifestHelper.simple_instance_group(job_opts)]
+      manifest = opts.fetch(:manifest, SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups)
+      manifest['instance_groups'] = [SharedSupport::DeploymentManifestHelper.simple_instance_group(job_opts)]
 
       manifest['name'] = opts.fetch(:name, 'simple')
 
@@ -959,7 +982,7 @@ module Bosh::Spec
     end
 
     def self.cloud_config_with_subnet(opts)
-      cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+      cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
       cloud_config['networks'].first['subnets'] = [make_subnet(opts)]
       cloud_config
     end
@@ -990,9 +1013,9 @@ module Bosh::Spec
     end
 
     def self.errand_manifest(opts)
-      manifest = Bosh::Spec::DeploymentManifestHelper.deployment_manifest(name: opts.fetch(:name, 'errand'))
+      manifest = SharedSupport::DeploymentManifestHelper.deployment_manifest(name: opts.fetch(:name, 'errand'))
       manifest['instance_groups'] = [
-        Bosh::Spec::DeploymentManifestHelper.simple_errand_instance_group.merge(
+        DeploymentManifestHelper.simple_errand_instance_group.merge(
           'instances' => opts.fetch(:instances),
           'name' => 'errand_job'
         )

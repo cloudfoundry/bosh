@@ -29,7 +29,7 @@ describe 'compiled releases', type: :integration do
         }
       end
       let(:deployment_name) { manifest_hash['name'] }
-      let(:cloud_config) { Bosh::Spec::DeploymentManifestHelper.simple_cloud_config }
+      let(:cloud_config) { SharedSupport::DeploymentManifestHelper.simple_cloud_config }
 
       before do
         compiled_job_pkg1 = 'compiled_releases/test_release-4+dev.1-centos-7-3001-job_using_pkg_1-20181224-150940-167574.tgz'
@@ -42,7 +42,7 @@ describe 'compiled releases', type: :integration do
         bosh_runner.run("upload-release #{asset_path(compiled_job_pkg23)}")
 
         manifest_hash['instance_groups'] = [
-          Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+          SharedSupport::DeploymentManifestHelper.simple_instance_group(
             jobs: [
               { 'name' => 'job_using_pkg_2', 'release' => 'test_release' },
             ],
@@ -99,7 +99,7 @@ describe 'compiled releases', type: :integration do
 
       context 'and they contain identical packages' do
         let(:manifest) do
-          manifest = Bosh::Spec::DeploymentManifestHelper.test_deployment_manifest_with_job('job_using_pkg_5', 'test_release')
+          manifest = SharedSupport::DeploymentManifestHelper.test_deployment_manifest_with_job('job_using_pkg_5', 'test_release')
           manifest['stemcells'].first.delete('os')
           manifest['stemcells'].first['name'] = 'bosh-aws-xen-hvm-centos-7-go_agent'
           manifest['stemcells'].first['version'] = '3001'
@@ -121,7 +121,7 @@ describe 'compiled releases', type: :integration do
 
       context 'and they contain one different package' do
         let(:manifest) do
-          manifest = Bosh::Spec::DeploymentManifestHelper.test_deployment_manifest_with_job('job_using_pkg_5', 'test_release')
+          manifest = SharedSupport::DeploymentManifestHelper.test_deployment_manifest_with_job('job_using_pkg_5', 'test_release')
           manifest['stemcells'].first.delete('os')
           manifest['stemcells'].first['name'] = 'bosh-aws-xen-hvm-centos-7-go_agent'
           manifest['stemcells'].first['version'] = '3001'
@@ -154,7 +154,7 @@ describe 'compiled releases', type: :integration do
 
         it 'fails with an error message saying there is no way to compile for that stemcell' do
           out = deploy(
-            manifest_hash: Bosh::Spec::DeploymentManifestHelper.test_deployment_manifest_with_job('job_using_pkg_5', 'test_release'),
+            manifest_hash: SharedSupport::DeploymentManifestHelper.test_deployment_manifest_with_job('job_using_pkg_5', 'test_release'),
             failure_expected: true,
           )
           expect(out).to include('Error:')
@@ -177,7 +177,7 @@ describe 'compiled releases', type: :integration do
 
           it 'fails with an error message saying there is no way to compile the releases for that stemcell' do
             out = deploy(
-              manifest_hash: Bosh::Spec::DeploymentManifestHelper.test_deployment_manifest_referencing_multiple_releases,
+              manifest_hash: SharedSupport::DeploymentManifestHelper.test_deployment_manifest_referencing_multiple_releases,
               failure_expected: true,
             )
             expect(out).to include('Error:')
@@ -204,7 +204,7 @@ describe 'compiled releases', type: :integration do
 
   context 'it exercises the entire compiled release lifecycle' do
     let(:manifest) do
-      Bosh::Spec::DeploymentManifestHelper.manifest_with_release.merge(
+      SharedSupport::DeploymentManifestHelper.manifest_with_release.merge(
         'instance_groups' => [
           {
             'name' => 'job_with_many_packages',

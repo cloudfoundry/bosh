@@ -13,7 +13,7 @@ describe 'restart command', type: :integration do
 
   context 'when attempting to restart an errand instance' do
     before do
-      deploy_from_scratch(manifest_hash: Bosh::Spec::DeploymentManifestHelper.manifest_with_errand)
+      deploy_from_scratch(manifest_hash: SharedSupport::DeploymentManifestHelper.manifest_with_errand)
     end
 
     it 'fails gracefully with a useful message' do
@@ -29,7 +29,7 @@ describe 'restart command', type: :integration do
 
   context 'after a successful deploy' do
     before do
-      deploy_from_scratch(Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups)
+      deploy_from_scratch(SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups)
     end
 
     it 'restarts the specified instance' do
@@ -90,8 +90,8 @@ describe 'restart command', type: :integration do
             },
           },
         ]
-        instance_group = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(name: 'bad-instance-group', jobs: jobs)
-        manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+        instance_group = SharedSupport::DeploymentManifestHelper.simple_instance_group(name: 'bad-instance-group', jobs: jobs)
+        manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
         manifest_hash['instance_groups'] << instance_group
         deploy(manifest_hash: manifest_hash)
 

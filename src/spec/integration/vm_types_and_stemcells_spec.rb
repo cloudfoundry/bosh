@@ -3,7 +3,7 @@ require 'spec_helper'
 describe 'vm_types and stemcells', type: :integration do
   with_reset_sandbox_before_each
 
-  let(:cloud_config_hash) { Bosh::Spec::DeploymentManifestHelper.simple_cloud_config }
+  let(:cloud_config_hash) { SharedSupport::DeploymentManifestHelper.simple_cloud_config }
 
   let(:env_hash) do
     {
@@ -23,7 +23,7 @@ describe 'vm_types and stemcells', type: :integration do
     hash_copy
   end
   let(:manifest_hash) do
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'] = [{
       'name' => 'foobar',
       'jobs' => [{ 'name' => 'foobar', 'release' => 'bosh-release' }],
@@ -87,16 +87,16 @@ describe 'vm_types and stemcells', type: :integration do
 
   context 'when instance is deployed originally with stemcell specified with name' do
     let(:cloud_config) do
-      Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+      SharedSupport::DeploymentManifestHelper.simple_cloud_config
     end
 
     it 'should not recreate if the stemcell is the same one' do
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
       create_vm_invocations = current_sandbox.cpi.invocations_for_method('create_vm')
       expect(create_vm_invocations.count).to be > 0
 
-      cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+      cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
       manifest_hash['instance_groups'] = [{
@@ -116,10 +116,10 @@ describe 'vm_types and stemcells', type: :integration do
 
     context 'when switching stemcells' do
       let(:cloud_config) do
-        Bosh::Spec::DeploymentManifestHelper.simple_os_specific_cloud_config
+        SharedSupport::DeploymentManifestHelper.simple_os_specific_cloud_config
       end
       let(:manifest_hash_one_stemcell) do
-        m = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+        m = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
         m['instance_groups'] = [{
           'name' => 'foobar',
           'jobs' => [{ 'name' => 'foobar', 'release' => 'bosh-release' }],
@@ -132,7 +132,7 @@ describe 'vm_types and stemcells', type: :integration do
       end
 
       let(:manifest_hash_different_stemcell) do
-        m = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+        m = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
         m['instance_groups'] = [{
           'name' => 'foobar',
           'jobs' => [{ 'name' => 'foobar', 'release' => 'bosh-release' }],
@@ -218,17 +218,17 @@ describe 'vm_types and stemcells', type: :integration do
   end
 
   it 'recreates instance when with vm_type changes' do
-    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+    cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
 
-    vm_type1 = Bosh::Spec::DeploymentManifestHelper.vm_type
-    vm_type2 = Bosh::Spec::DeploymentManifestHelper.vm_type
+    vm_type1 = SharedSupport::DeploymentManifestHelper.vm_type
+    vm_type2 = SharedSupport::DeploymentManifestHelper.vm_type
     vm_type2['name'] = 'renamed-vm-type'
-    vm_type3 = Bosh::Spec::DeploymentManifestHelper.vm_type
+    vm_type3 = SharedSupport::DeploymentManifestHelper.vm_type
     vm_type3['name'] = 'changed-vm-type-cloud-properties'
     vm_type3['cloud_properties']['blarg'] = ['ful']
     cloud_config_hash['vm_types'] = [vm_type1, vm_type2, vm_type3]
 
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
 
     manifest_hash['instance_groups'] = [{
       'name' => 'foobar',
@@ -298,7 +298,7 @@ describe 'vm_types and stemcells', type: :integration do
     end
 
     let(:cloud_config_hash) do
-      cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+      cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
       cloud_config_hash['vm_extensions'] = [vm_extension_1, vm_extension_2, vm_extension_3]
       cloud_config_hash['vm_types'] = [vm_type_1]
       cloud_config_hash['azs'] = [az_1]
@@ -311,7 +311,7 @@ describe 'vm_types and stemcells', type: :integration do
 
     context 'deployment instance group uses other vm_extensions' do
       let(:manifest_hash) do
-        manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+        manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
         manifest_hash['instance_groups'] = [{
           'name' => 'foobar',
           'jobs' => [{ 'name' => 'foobar', 'release' => 'bosh-release' }],

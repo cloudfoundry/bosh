@@ -60,11 +60,11 @@ module Bosh::Director
 
       let(:instance_group_spec) do
         jobs = [{ 'name' => 'dummy', 'release' => 'dummy' }]
-        Bosh::Spec::Deployments.simple_instance_group(jobs: jobs, azs: ['z1'])
+        SharedSupport::DeploymentManifestHelper.simple_instance_group(jobs: jobs, azs: ['z1'])
       end
 
       let(:manifest_hash) do
-        manifest_hash = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+        manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
         manifest_hash['name'] = deployment_name
         manifest_hash
       end
@@ -166,7 +166,7 @@ module Bosh::Director
           stemcell = DeploymentPlan::Stemcell.parse(manifest_hash['stemcells'].first)
           deployment.add_stemcell(stemcell)
           deployment.cloud_planner = DeploymentPlan::CloudManifestParser.new(logger).parse(
-            Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs,
+            SharedSupport::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs,
           )
 
           deployment.add_instance_group(instance_group)
@@ -249,7 +249,7 @@ module Bosh::Director
 
             let(:instance_group_spec) do
               jobs = [{ 'name' => 'dummy_with_properties', 'release' => 'dummy' }]
-              Bosh::Spec::Deployments.simple_instance_group(
+              SharedSupport::DeploymentManifestHelper.simple_instance_group(
                 name: 'excluded_ig',
                 jobs: jobs,
                 azs: ['z1'],
@@ -586,7 +586,7 @@ module Bosh::Director
               )
             end
             let(:instance_group2_spec) do
-              Bosh::Spec::Deployments.simple_instance_group(
+              SharedSupport::DeploymentManifestHelper.simple_instance_group(
                 name: 'foobar1',
                 jobs: [{ 'name' => 'dummy_with_properties', 'release' => 'dummy' }],
                 azs: ['z2'],
@@ -612,7 +612,7 @@ module Bosh::Director
               stemcell = DeploymentPlan::Stemcell.parse(manifest_hash['stemcells'].first)
               deployment.add_stemcell(stemcell)
               deployment.cloud_planner = DeploymentPlan::CloudManifestParser.new(logger).parse(
-                Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs,
+                SharedSupport::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs,
               )
 
               deployment.add_instance_group(instance_group)
@@ -632,7 +632,7 @@ module Bosh::Director
             end
             let(:instance_group_spec) do
               jobs = [{ 'name' => 'dummy', 'release' => 'dummy' }]
-              Bosh::Spec::Deployments.simple_instance_group(jobs: jobs, azs: ['z1'])
+              SharedSupport::DeploymentManifestHelper.simple_instance_group(jobs: jobs, azs: ['z1'])
             end
             before do
               release_version_model.add_template(FactoryBot.create(:models_template, name: 'dummy', release: release_model))
@@ -642,7 +642,7 @@ module Bosh::Director
               stemcell = DeploymentPlan::Stemcell.parse(manifest_hash['stemcells'].first)
               deployment.add_stemcell(stemcell)
               deployment.cloud_planner = DeploymentPlan::CloudManifestParser.new(logger).parse(
-                Bosh::Spec::Deployments.simple_cloud_config_with_multiple_azs,
+                SharedSupport::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs,
               )
               deployment.add_instance_group(instance_group)
             end

@@ -8,7 +8,7 @@ describe "cli cpi config", type: :integration do
       output = bosh_runner.run('cpi-config', failure_expected: true)
       expect(output).to include('No CPI config')
 
-      cpi_yaml = yaml_file('cpi', Bosh::Spec::DeploymentManifestHelper.multi_cpi_config)
+      cpi_yaml = yaml_file('cpi', SharedSupport::DeploymentManifestHelper.multi_cpi_config)
 
       upload_output = bosh_runner.run("update-cpi-config #{cpi_yaml.path}")
 
@@ -16,7 +16,7 @@ describe "cli cpi config", type: :integration do
 
       download_output = YAML.load(bosh_runner.run('cpi-config', tty: false))
 
-      expect(download_output).to eq(Bosh::Spec::DeploymentManifestHelper.multi_cpi_config)
+      expect(download_output).to eq(SharedSupport::DeploymentManifestHelper.multi_cpi_config)
     end
   end
 
@@ -25,8 +25,8 @@ describe "cli cpi config", type: :integration do
       output = bosh_runner.run('config --type=cpi --name=default', failure_expected: true)
       expect(output).to include('No config')
 
-      cpi1_yaml = yaml_file('cpi1', Bosh::Spec::DeploymentManifestHelper.single_cpi_config('cpi-name1'))
-      cpi2_yaml = yaml_file('cpi2', Bosh::Spec::DeploymentManifestHelper.single_cpi_config('cpi-name2'))
+      cpi1_yaml = yaml_file('cpi1', SharedSupport::DeploymentManifestHelper.single_cpi_config('cpi-name1'))
+      cpi2_yaml = yaml_file('cpi2', SharedSupport::DeploymentManifestHelper.single_cpi_config('cpi-name2'))
 
       upload1_output = bosh_runner.run("update-config --name=cpi_config_1 --type=cpi #{cpi1_yaml.path}")
       upload2_output = bosh_runner.run("update-config --name=cpi_config_2 --type=cpi #{cpi2_yaml.path}")
@@ -43,7 +43,7 @@ describe "cli cpi config", type: :integration do
   end
 
   it 'does not fail when cpi config is very large' do
-    cpi_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::DeploymentManifestHelper.multi_cpi_config)
+    cpi_config = Bosh::Common::DeepCopy.copy(SharedSupport::DeploymentManifestHelper.multi_cpi_config)
 
     (0..10001).each { |i|
       cpi_config["boshbosh#{i}"] = 'smurfsAreBlueGargamelIsBrownPinkpantherIsPinkAndPikachuIsYellow'

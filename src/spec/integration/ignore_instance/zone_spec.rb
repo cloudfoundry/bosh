@@ -5,15 +5,15 @@ describe 'ignoring zone', type: :integration do
 
   context 'when not using static ips' do
     it 'doesnt rebalance ignored vms, selects new bootstrap node from ignored if needed, & errors removing az w/ ignored vms' do
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(
         name: 'foobar1',
         instances: 4,
         azs: ['my-az1', 'my-az2'],
       )
 
-      cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+      cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
       cloud_config['azs'] = [
         {
           'name' => 'my-az1',
@@ -57,7 +57,7 @@ describe 'ignoring zone', type: :integration do
       bosh_runner.run("ignore #{az2_instances[1].instance_group_name}/#{az2_instances[1].id}", deployment_name: 'simple')
 
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(
         name: 'foobar1',
         instances: 2,
         azs: ['my-az1', 'my-az2'],
@@ -74,7 +74,7 @@ describe 'ignoring zone', type: :integration do
       expect(new_state_instances.select(&:bootstrap).count).to eq(1)
 
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(
         name: 'foobar1',
         instances: 2,
         azs: ['my-az1'],
@@ -89,7 +89,7 @@ describe 'ignoring zone', type: :integration do
       expect(output).to include("Instance Group 'foobar1' no longer contains AZs [\"my-az2\"] where ignored instance(s) exist.")
 
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(
         name: 'foobar1',
         instances: 4,
         azs: ['my-az1', 'my-az2'],
@@ -97,7 +97,7 @@ describe 'ignoring zone', type: :integration do
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(
         name: 'foobar1',
         instances: 4,
         azs: ['my-az1'],
@@ -115,9 +115,9 @@ describe 'ignoring zone', type: :integration do
 
   context 'when using static IPs' do
     it 'balances vms, errors removing azs containing ignored vms, and errors removing static IP assigned to an ignored VM' do
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(
         name: 'foobar1',
         instances: 4,
         azs: ['my-az1', 'my-az2'],
@@ -129,7 +129,7 @@ describe 'ignoring zone', type: :integration do
         },
       ]
 
-      cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+      cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
       cloud_config['azs'] = [
         {
           'name' => 'my-az1',
@@ -180,7 +180,7 @@ describe 'ignoring zone', type: :integration do
       # =======================================================
       # remove IPs used by non-ignored vms, should be good
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(
         name: 'foobar1',
         instances: 2,
         azs: ['my-az1', 'my-az2'],
@@ -205,7 +205,7 @@ describe 'ignoring zone', type: :integration do
       # =======================================================
       # remove an ignored vm static IP, should error
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(
         name: 'foobar1',
         instances: 1,
         azs: ['my-az1', 'my-az2'],
@@ -227,7 +227,7 @@ describe 'ignoring zone', type: :integration do
       # =======================================================
       # remove an az that has ignored VMs, should error
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(
         name: 'foobar1',
         instances: 4,
         azs: ['my-az1', 'my-az2'],
@@ -241,7 +241,7 @@ describe 'ignoring zone', type: :integration do
       deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(
         name: 'foobar1',
         instances: 4,
         azs: ['my-az1'],

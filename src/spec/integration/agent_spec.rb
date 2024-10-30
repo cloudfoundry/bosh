@@ -33,8 +33,8 @@ describe 'Agent', type: :integration do
   describe 'stop' do
     context 'when director calls stop' do
       before do
-        manifest_hash = Bosh::Spec::DeploymentManifestHelper.deployment_manifest(instances: 2)
-        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+        manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest(instances: 2)
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
       end
 
       it 'should call these methods in order' do
@@ -58,8 +58,8 @@ describe 'Agent', type: :integration do
         with_reset_sandbox_before_each(enable_nats_delivered_templates: true)
 
         before do
-          manifest_hash = Bosh::Spec::DeploymentManifestHelper.deployment_manifest(instances: 2)
-          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+          manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest(instances: 2)
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
         end
 
         it 'sends upload_blob action to agent' do
@@ -98,13 +98,13 @@ describe 'Agent', type: :integration do
   describe 'start' do
     context 'when director calls start' do
       before do
-        manifest_hash = Bosh::Spec::DeploymentManifestHelper.deployment_manifest(instances: 1)
-        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+        manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest(instances: 1)
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
       end
 
       context 'starting a new instance' do
         it 'should call these methods in the following order' do
-          updated_manifest_hash = Bosh::Spec::DeploymentManifestHelper.deployment_manifest(instances: 2)
+          updated_manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest(instances: 2)
           output = deploy_simple_manifest(manifest_hash: updated_manifest_hash)
           sent_messages = get_messages_sent_to_agent(output)
 
@@ -152,12 +152,12 @@ describe 'Agent', type: :integration do
           with_reset_sandbox_before_each(enable_nats_delivered_templates: true)
 
           before do
-            manifest_hash = Bosh::Spec::DeploymentManifestHelper.deployment_manifest(instances: 1)
-            deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+            manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest(instances: 1)
+            deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
           end
 
           it 'should call these methods in the following order, including upload blob action' do
-            updated_manifest_hash = Bosh::Spec::DeploymentManifestHelper.deployment_manifest(instances: 2)
+            updated_manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest(instances: 2)
             output = deploy_simple_manifest(manifest_hash: updated_manifest_hash)
             sent_messages = get_messages_sent_to_agent(output)
 
@@ -232,8 +232,8 @@ describe 'Agent', type: :integration do
           with_reset_sandbox_before_each(enable_nats_delivered_templates: true)
 
           before do
-            manifest_hash = Bosh::Spec::DeploymentManifestHelper.deployment_manifest(instances: 1)
-            deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+            manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest(instances: 1)
+            deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
           end
 
           it 'should call these methods in the following order, including upload blob action' do
@@ -266,7 +266,7 @@ describe 'Agent', type: :integration do
 
   describe 'deploy' do
     let(:manifest_hash) do
-      manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
+      manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest(instances: 1)
       manifest_hash['instance_groups'][0]['jobs'][0]['properties'] = {
         'test_property' => 5,
       }
@@ -275,7 +275,7 @@ describe 'Agent', type: :integration do
 
     context 'updating the deployment with a property change' do
       it 'should call these methods in the following order' do
-        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
         manifest_hash['instance_groups'][0]['jobs'][0]['properties']['test_property'] = 7
         output = deploy_simple_manifest(manifest_hash: manifest_hash)
         sent_messages = get_messages_sent_to_agent(output)
@@ -308,7 +308,7 @@ describe 'Agent', type: :integration do
       with_reset_sandbox_before_each(enable_nats_delivered_templates: true)
 
       before do
-        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
       end
 
       it 'should call these methods in the following order' do
@@ -346,7 +346,7 @@ describe 'Agent', type: :integration do
       with_reset_sandbox_before_each
 
       it 'calls post-deploy' do
-        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+        deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
 
         manifest_hash['instance_groups'][0]['jobs'][0]['properties']['test_property'] = 7
         output = deploy_simple_manifest(manifest_hash: manifest_hash)
@@ -379,7 +379,7 @@ describe 'Agent', type: :integration do
         with_reset_sandbox_before_each(enable_nats_delivered_templates: true)
 
         before do
-          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
         end
 
         it 'calls post-deploy with upload_blobs' do
@@ -447,8 +447,8 @@ describe 'Agent', type: :integration do
 
       context 'when deleting a VM' do
         it 'sets the pre-stop environment variables correctly' do
-          manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
-          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+          manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest(instances: 1)
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
           manifest_hash['instance_groups'][0]['jobs'][0]['properties']['test_property'] = 7
           output = deploy_simple_manifest(manifest_hash: manifest_hash, recreate: true)
           sent_messages = get_messages_sent_to_agent(output)
@@ -468,8 +468,8 @@ describe 'Agent', type: :integration do
 
       context 'when deleting an instance' do
         it 'sets the pre-stop environment variables correctly' do
-          manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
-          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+          manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest(instances: 1)
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
           manifest_hash['instance_groups'][0]['instances'] = 0
 
           output = deploy_simple_manifest(manifest_hash: manifest_hash)
@@ -490,8 +490,8 @@ describe 'Agent', type: :integration do
 
       context 'when deleting a deployment' do
         it 'sets the pre-stop environment variables correctly' do
-          manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
-          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+          manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest(instances: 1)
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
           output = bosh_runner.run(
             'delete-deployment',
             deployment_name: manifest_hash['name'],
@@ -513,8 +513,8 @@ describe 'Agent', type: :integration do
 
       context 'when no deletion of the VM is required' do
         it 'sets the pre-stop variables correctly' do
-          manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
-          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+          manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest(instances: 1)
+          deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
           manifest_hash['instance_groups'][0]['jobs'][0]['properties']['test_property'] = 7
           output = deploy_simple_manifest(manifest_hash: manifest_hash, recreate: false)
           sent_messages = get_messages_sent_to_agent(output)

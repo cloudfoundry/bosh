@@ -50,7 +50,7 @@ module Bosh::Director
 
     let(:release_name) { deployment_manifest['releases'].first['name'] }
     let(:manifest_release_version) { deployment_manifest['releases'].first['version'] }
-    let(:deployment_manifest) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
+    let(:deployment_manifest) { SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups }
 
     it 'raises an error when the targeted deployment is not found' do
       create_stemcell
@@ -60,7 +60,7 @@ module Bosh::Director
     end
 
     context 'with a valid deployment targeted' do
-      let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config }
+      let(:cloud_config) { SharedSupport::DeploymentManifestHelper.simple_cloud_config }
 
       let!(:deployment_model) do
         deployment = FactoryBot.create(:models_deployment,
@@ -154,16 +154,16 @@ module Bosh::Director
 
           context 'when using vm_types, stemcells, and azs' do
             let(:cloud_config) do
-              config = Bosh::Spec::Deployments.simple_cloud_config
+              config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
               config['azs'] = [{'name' => 'z1', 'cloud_properties' => {}}]
               config['networks'].first['subnets'].first['az'] = 'z1'
-              config['vm_types'] = [Bosh::Spec::Deployments.vm_type]
+              config['vm_types'] = [SharedSupport::DeploymentManifestHelper.vm_type]
               config['compilation']['az'] = 'z1'
               config
             end
 
             let(:deployment_manifest) do
-              manifest = Bosh::Spec::Deployments.simple_manifest_with_instance_groups
+              manifest = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
               stemcell = {
                 'alias' => 'ubuntu',
                 'os' => 'ubuntu',
@@ -172,7 +172,7 @@ module Bosh::Director
               manifest['stemcells'] = [stemcell]
               instance_group = manifest['instance_groups'].first
               instance_group['stemcell'] = stemcell['alias']
-              instance_group['vm_type'] = Bosh::Spec::Deployments.vm_type['name']
+              instance_group['vm_type'] = SharedSupport::DeploymentManifestHelper.vm_type['name']
               instance_group['azs'] = ['z1']
               manifest
             end
@@ -413,7 +413,7 @@ version: 0.1-dev
         end
 
         context 'when an empty list of jobs are specified' do
-          let(:deployment_manifest) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
+          let(:deployment_manifest) { SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups }
           let(:options) do
             {
               'jobs' => [],
@@ -443,7 +443,7 @@ version: 0.1-dev
         end
 
         context 'when specific jobs are specified' do
-          let(:deployment_manifest) { Bosh::Spec::Deployments.simple_manifest_with_instance_groups }
+          let(:deployment_manifest) { SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups }
 
           let(:options) do
             {

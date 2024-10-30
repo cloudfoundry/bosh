@@ -2,15 +2,15 @@ require 'spec_helper'
 
 describe 'cli runtime config', type: :integration do
   with_reset_sandbox_before_each
-  let(:un_named_rc) { Bosh::Spec::DeploymentManifestHelper.simple_runtime_config }
+  let(:un_named_rc) { SharedSupport::DeploymentManifestHelper.simple_runtime_config }
   let(:named_rc_1) do
-    rc = Bosh::Spec::DeploymentManifestHelper.simple_runtime_config
+    rc = SharedSupport::DeploymentManifestHelper.simple_runtime_config
     rc['releases'][0] = { 'name' => 'named_rc_1', 'version' => '1' }
     rc
   end
 
   let(:named_rc_2) do
-    rc = Bosh::Spec::DeploymentManifestHelper.simple_runtime_config
+    rc = SharedSupport::DeploymentManifestHelper.simple_runtime_config
     rc['releases'][0] = { 'name' => 'named_rc_2', 'version' => '1' }
     rc
   end
@@ -80,11 +80,11 @@ describe 'cli runtime config', type: :integration do
   end
 
   it "gives an error when release version is 'latest'" do
-    runtime_config = Bosh::Spec::DeploymentManifestHelper.simple_runtime_config('bosh-release', 'latest')
+    runtime_config = SharedSupport::DeploymentManifestHelper.simple_runtime_config('bosh-release', 'latest')
     upload_runtime_config(runtime_config_hash: runtime_config)
     output, exit_code = deploy_from_scratch(
-      manifest_hash: Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups,
-      cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
+      manifest_hash: SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups,
+      cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config,
       failure_expected: true,
       return_exit_code: true,
     )
@@ -96,12 +96,12 @@ describe 'cli runtime config', type: :integration do
   end
 
   it 'gives an error when release for addon does not exist in releases section' do
-    runtime_config = Bosh::Spec::DeploymentManifestHelper.runtime_config_release_missing
+    runtime_config = SharedSupport::DeploymentManifestHelper.runtime_config_release_missing
 
     upload_runtime_config(runtime_config_hash: runtime_config)
     output, exit_code = deploy_from_scratch(
-      manifest_hash: Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups,
-      cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config,
+      manifest_hash: SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups,
+      cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config,
       failure_expected: true,
       return_exit_code: true,
     )
@@ -111,7 +111,7 @@ describe 'cli runtime config', type: :integration do
   end
 
   it 'does not fail when runtime config is very large' do
-    runtime_config = Bosh::Common::DeepCopy.copy(Bosh::Spec::DeploymentManifestHelper.simple_runtime_config)
+    runtime_config = Bosh::Common::DeepCopy.copy(SharedSupport::DeploymentManifestHelper.simple_runtime_config)
 
     (0..10_001).each do |i|
       runtime_config["boshbosh#{i}"] = 'smurfsAreBlueGargamelIsBrownPinkpantherIsPinkAndPikachuIsYellow'

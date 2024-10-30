@@ -5,15 +5,15 @@ describe 'netowrking', type: :integration do
 
   context 'when not using static ips' do
     it 'fails when adding/removing networks from instance groups with ignored VMs' do
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(
         name: 'foobar1',
         instances: 2,
         azs: ['my-az1'],
       )
 
-      cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+      cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
       cloud_config['azs'] = [{ 'name' => 'my-az1' }]
       cloud_config['compilation']['az'] = 'my-az1'
 
@@ -52,7 +52,7 @@ describe 'netowrking', type: :integration do
       }
 
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(
         name: 'foobar1',
         instances: 2,
         azs: ['my-az1'],
@@ -75,7 +75,7 @@ describe 'netowrking', type: :integration do
       # =================================================
       # remove a network from the instance group that has ignored VM, should fail
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(
         name: 'foobar1',
         instances: 2,
         azs: ['my-az1'],
@@ -98,16 +98,16 @@ describe 'netowrking', type: :integration do
 
   context 'when using static IPs' do
     it 'doesnt re-assign static IPs for ignored VM, and fails when adding/removing static networks' do
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(
         name: 'foobar1',
         instances: 2,
         azs: ['my-az1'],
       )
       manifest_hash['instance_groups'].first['networks'] = [{ 'name' => 'a', 'static_ips' => ['192.168.1.10', '192.168.1.11'] }]
 
-      cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+      cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
       cloud_config['azs'] = [
         {
           'name' => 'my-az1',
@@ -147,9 +147,9 @@ describe 'netowrking', type: :integration do
 
       # =================================================
       # switch a static IP address used by an ignored VM, should fail
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+      manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(
         name: 'foobar1',
         instances: 2,
         azs: ['my-az1'],
@@ -186,7 +186,7 @@ describe 'netowrking', type: :integration do
       }
 
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(
         name: 'foobar1',
         instances: 2,
         azs: ['my-az1'],
@@ -215,7 +215,7 @@ describe 'netowrking', type: :integration do
       # =================================================
       # remove a network from the instance group that has ignored VM, should fail
       manifest_hash['instance_groups'].clear
-      manifest_hash['instance_groups'] << Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+      manifest_hash['instance_groups'] << SharedSupport::DeploymentManifestHelper.simple_instance_group(
         name: 'foobar1',
         instances: 2,
         azs: ['my-az1'],

@@ -28,9 +28,9 @@ describe 'CPI calls', type: :integration do
     end
 
     it 'sends correct CPI requests' do
-      manifest_hash = Bosh::Spec::DeploymentManifestHelper.deployment_manifest(instances: 1)
+      manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest(instances: 1)
       manifest_hash['instance_groups'].first['env'] = {'bosh' => {'password' => 'foobar'}}
-      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+      deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
 
       invocations = current_sandbox.cpi.invocations
 
@@ -227,19 +227,19 @@ describe 'CPI calls', type: :integration do
     context 'when stemcell has api version' do
       it 'sends correct CPI requests for select CPI calls' do
         bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell_with_api_version.tgz')}")
-        manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest
         manifest_hash['instance_groups'] = [
-          Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+          SharedSupport::DeploymentManifestHelper.simple_instance_group(
             name: 'first-job',
             static_ips: ['192.168.1.10'],
             instances: 1,
             jobs: ['name' => 'foobar_without_packages', 'release' => 'bosh-release'],
-            persistent_disk_type: Bosh::Spec::DeploymentManifestHelper.disk_type['name'],
+            persistent_disk_type: SharedSupport::DeploymentManifestHelper.disk_type['name'],
           ),
         ]
-        cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+        cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
         cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.10', '192.168.1.11']
-        cloud_config_hash['disk_types'] = [Bosh::Spec::DeploymentManifestHelper.disk_type]
+        cloud_config_hash['disk_types'] = [SharedSupport::DeploymentManifestHelper.disk_type]
         upload_cloud_config(cloud_config_hash: cloud_config_hash)
         create_and_upload_test_release
         deploy(manifest_hash: manifest_hash)
@@ -326,12 +326,12 @@ describe 'CPI calls', type: :integration do
         expect(first_deploy_invocations[13].context).to match(context_without_api_version)
 
         manifest_hash['instance_groups'] = [
-          Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+          SharedSupport::DeploymentManifestHelper.simple_instance_group(
             name: 'first-job',
             static_ips: ['192.168.1.11'],
             instances: 1,
             jobs: ['name' => 'foobar', 'release' => 'bosh-release'],
-            persistent_disk_type: Bosh::Spec::DeploymentManifestHelper.disk_type['name'],
+            persistent_disk_type: SharedSupport::DeploymentManifestHelper.disk_type['name'],
           ),
         ]
 
@@ -486,19 +486,19 @@ describe 'CPI calls', type: :integration do
 
     context 'when deploying instances with a persistent disk' do
       it 'recreates VM with correct CPI requests' do
-        manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest
+        manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest
         manifest_hash['instance_groups'] = [
-          Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+          SharedSupport::DeploymentManifestHelper.simple_instance_group(
             name: 'first-job',
             static_ips: ['192.168.1.10'],
             instances: 1,
             jobs: ['name' => 'foobar_without_packages', 'release' => 'bosh-release'],
-            persistent_disk_type: Bosh::Spec::DeploymentManifestHelper.disk_type['name'],
+            persistent_disk_type: SharedSupport::DeploymentManifestHelper.disk_type['name'],
           ),
         ]
-        cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+        cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
         cloud_config_hash['networks'].first['subnets'].first['static'] = ['192.168.1.10', '192.168.1.11']
-        cloud_config_hash['disk_types'] = [Bosh::Spec::DeploymentManifestHelper.disk_type]
+        cloud_config_hash['disk_types'] = [SharedSupport::DeploymentManifestHelper.disk_type]
         deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash)
         first_deploy_invocations = current_sandbox.cpi.invocations
 
@@ -586,12 +586,12 @@ describe 'CPI calls', type: :integration do
         })
 
         manifest_hash['instance_groups'] = [
-          Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+          SharedSupport::DeploymentManifestHelper.simple_instance_group(
             name: 'first-job',
             static_ips: ['192.168.1.11'],
             instances: 1,
             jobs: ['name' => 'foobar', 'release' => 'bosh-release'],
-            persistent_disk_type: Bosh::Spec::DeploymentManifestHelper.disk_type['name'],
+            persistent_disk_type: SharedSupport::DeploymentManifestHelper.disk_type['name'],
           ),
         ]
 
@@ -832,7 +832,7 @@ describe 'CPI calls', type: :integration do
 
     context "redacting sensitive information in logs" do
       it "redacts certificates" do
-        manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(instances: 1)
+        manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest(instances: 1)
         output = deploy_from_scratch(manifest_hash: manifest_hash)
 
         deployment_name = manifest_hash["name"]
@@ -847,8 +847,8 @@ describe 'CPI calls', type: :integration do
 
     before do
       cpi_path = current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI)
-      cloud_config_manifest = yaml_file('cloud_manifest', Bosh::Spec::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs_and_cpis)
-      cpi_config_manifest = yaml_file('cpi_manifest', Bosh::Spec::DeploymentManifestHelper.multi_cpi_config(cpi_path))
+      cloud_config_manifest = yaml_file('cloud_manifest', SharedSupport::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs_and_cpis)
+      cpi_config_manifest = yaml_file('cpi_manifest', SharedSupport::DeploymentManifestHelper.multi_cpi_config(cpi_path))
 
       bosh_runner.run("update-cloud-config #{cloud_config_manifest.path}")
       bosh_runner.run("update-cpi-config #{cpi_config_manifest.path}")

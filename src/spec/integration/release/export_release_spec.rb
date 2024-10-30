@@ -5,12 +5,12 @@ describe 'export-release', type: :integration do
 
   context 'with no source packages and no compiled packages against the targeted stemcell' do
     it 'should raise an error' do
-      upload_cloud_config(cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+      upload_cloud_config(cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
       bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
       bosh_runner.run("upload-stemcell #{asset_path('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
       bosh_runner.run("upload-release #{asset_path('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
 
-      manifest = Bosh::Spec::DeploymentManifestHelper.test_deployment_manifest_with_job('job_using_pkg_5', 'test_release')
+      manifest = SharedSupport::DeploymentManifestHelper.test_deployment_manifest_with_job('job_using_pkg_5', 'test_release')
       manifest['stemcells'] = [{'name' => 'bosh-aws-xen-hvm-centos-7-go_agent', 'alias' => 'default', 'version' => '3001'}]
       deploy_simple_manifest(manifest_hash: manifest)
 
@@ -27,12 +27,12 @@ Can't use release 'test_release/1'. It references packages without source code a
   end
 
   context 'when there are two versions of the same release uploaded' do
-    let(:deployment_manifest) { Bosh::Spec::DeploymentManifestHelper.test_deployment_manifest }
+    let(:deployment_manifest) { SharedSupport::DeploymentManifestHelper.test_deployment_manifest }
 
     before do
       bosh_runner.run("upload-stemcell #{asset_path('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
 
-      upload_cloud_config(cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+      upload_cloud_config(cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
 
       deployment_manifest['stemcells'].first['name'] = 'bosh-aws-xen-hvm-centos-7-go_agent'
       deployment_manifest['stemcells'].first['version'] = '3001'
@@ -97,12 +97,12 @@ Can't use release 'test_release/1'. It references packages without source code a
   end
 
   context 'when updating a package used by a job in a release' do
-    let(:deployment_manifest) { Bosh::Spec::DeploymentManifestHelper.test_deployment_manifest }
+    let(:deployment_manifest) { SharedSupport::DeploymentManifestHelper.test_deployment_manifest }
 
     before do
       bosh_runner.run("upload-stemcell #{asset_path('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
 
-      upload_cloud_config(cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+      upload_cloud_config(cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
 
       deployment_manifest['stemcells'].first['name'] = 'bosh-aws-xen-hvm-centos-7-go_agent'
       deployment_manifest['stemcells'].first['version'] = '3001'
@@ -135,8 +135,8 @@ Can't use release 'test_release/1'. It references packages without source code a
   end
 
   context 'with a cloud config manifest' do
-    let(:cloud_config) { Bosh::Spec::DeploymentManifestHelper.simple_cloud_config }
-    let(:manifest_hash) { Bosh::Spec::DeploymentManifestHelper.multiple_release_manifest }
+    let(:cloud_config) { SharedSupport::DeploymentManifestHelper.simple_cloud_config }
+    let(:manifest_hash) { SharedSupport::DeploymentManifestHelper.multiple_release_manifest }
 
     before{
       upload_cloud_config(cloud_config_hash: cloud_config)
@@ -150,7 +150,7 @@ Can't use release 'test_release/1'. It references packages without source code a
 
     context 'when using vm_types and stemcells and networks with azs' do
       let(:cloud_config) do
-        config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+        config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
         config['azs'] = [{'name' => 'z1', 'cloud_properties' => {}}]
         config['networks'].first['subnets'].first['az'] = 'z1'
         config['compilation']['az'] = 'z1'
@@ -338,10 +338,10 @@ Can't use release 'test_release/1'. It references packages without source code a
     context 'with global networking' do
       before do
         bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
-        upload_cloud_config(cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+        upload_cloud_config(cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
         bosh_runner.run("upload-release #{asset_path('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
 
-        deployment_manifest = Bosh::Spec::DeploymentManifestHelper.minimal_manifest_with_ubuntu_stemcell
+        deployment_manifest = SharedSupport::DeploymentManifestHelper.minimal_manifest_with_ubuntu_stemcell
         deployment_manifest['instance_groups'] = [{
           'name' => 'job_using_pkg_5',
           'jobs' => [],

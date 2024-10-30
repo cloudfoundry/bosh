@@ -19,7 +19,7 @@ module Bosh::Director
         before { authorize('admin', 'admin') }
 
         it 'creates a new cpi config' do
-          cpi_config = YAML.dump(Bosh::Spec::Deployments.multi_cpi_config)
+          cpi_config = YAML.dump(SharedSupport::DeploymentManifestHelper.multi_cpi_config)
           expect do
             post '/', cpi_config, 'CONTENT_TYPE' => 'text/yaml'
           end.to change(Bosh::Director::Models::Config, :count).from(0).to(1)
@@ -28,7 +28,7 @@ module Bosh::Director
         end
 
         it 'creates a new cpi config when one exists with different content' do
-          content = YAML.dump(Bosh::Spec::Deployments.multi_cpi_config)
+          content = YAML.dump(SharedSupport::DeploymentManifestHelper.multi_cpi_config)
           FactoryBot.create(:models_config_cpi, content: content + '123')
 
           expect do
@@ -39,7 +39,7 @@ module Bosh::Director
         end
 
         it 'ignores cpi config when config already exists' do
-          content = YAML.dump(Bosh::Spec::Deployments.multi_cpi_config)
+          content = YAML.dump(SharedSupport::DeploymentManifestHelper.multi_cpi_config)
           FactoryBot.create(:models_config_cpi, content: content)
 
           expect do
@@ -68,7 +68,7 @@ module Bosh::Director
         end
 
         it 'creates a new event' do
-          properties = YAML.dump(Bosh::Spec::Deployments.multi_cpi_config)
+          properties = YAML.dump(SharedSupport::DeploymentManifestHelper.multi_cpi_config)
           expect do
             post '/', properties, 'CONTENT_TYPE' => 'text/yaml'
           end.to change(Bosh::Director::Models::Event, :count).from(0).to(1)
@@ -94,14 +94,14 @@ module Bosh::Director
         before { basic_authorize 'reader', 'reader' }
 
         it 'denies access' do
-          expect(post('/', YAML.dump(Bosh::Spec::Deployments.multi_cpi_config), 'CONTENT_TYPE' => 'text/yaml').status)
+          expect(post('/', YAML.dump(SharedSupport::DeploymentManifestHelper.multi_cpi_config), 'CONTENT_TYPE' => 'text/yaml').status)
             .to eq(401)
         end
       end
     end
 
     describe 'POST', '/diff' do
-      let(:cpi_config) { YAML.dump(Bosh::Spec::Deployments.multi_cpi_config) }
+      let(:cpi_config) { YAML.dump(SharedSupport::DeploymentManifestHelper.multi_cpi_config) }
       let(:expected_diff) { '{"diff":[["cpis:","added"],["- name: cpi-name1","added"],["  type: cpi-type","added"],["  properties:","added"],["    somekey: \"<redacted>\"","added"],["- name: cpi-name2","added"],["  type: cpi-type2","added"],["  properties:","added"],["    somekey2: \"<redacted>\"","added"]]}' }
 
       describe 'when user has admin access' do

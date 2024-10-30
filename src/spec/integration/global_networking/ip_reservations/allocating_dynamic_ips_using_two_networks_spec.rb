@@ -22,19 +22,19 @@ describe 'global networking', type: :integration do
   end
 
   def deploy_with_range(deployment_name, range)
-    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.cloud_config_with_subnet(available_ips: 2, range: range) # 1 for compilation
+    cloud_config_hash = SharedSupport::DeploymentManifestHelper.cloud_config_with_subnet(available_ips: 2, range: range) # 1 for compilation
     upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
-    first_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: deployment_name, instances: 1)
+    first_manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest(name: deployment_name, instances: 1)
     deploy_simple_manifest(manifest_hash: first_manifest_hash)
   end
 
   def deploy_with_static_ip(deployment_name, ip, range)
-    cloud_config_hash = Bosh::Spec::NetworkingManifest.cloud_config_with_subnet(available_ips: 2, range: range) # 1 for compilation
+    cloud_config_hash = SharedSupport::DeploymentManifestHelper.cloud_config_with_subnet(available_ips: 2, range: range) # 1 for compilation
     cloud_config_hash['networks'].first['subnets'].first['static'] << ip
     upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
-    first_manifest_hash = Bosh::Spec::NetworkingManifest.deployment_manifest(name: deployment_name, instances: 1)
+    first_manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest(name: deployment_name, instances: 1)
     deploy_with_ips(first_manifest_hash, [ip])
   end
 
@@ -60,7 +60,7 @@ describe 'global networking', type: :integration do
         end
 
         let(:instance_group_with_two_networks) do
-          instance_group_spec = Bosh::Spec::DeploymentManifestHelper.simple_instance_group(instances: 1)
+          instance_group_spec = SharedSupport::DeploymentManifestHelper.simple_instance_group(instances: 1)
           instance_group_spec['networks'] = [
             { 'name' => 'first', 'default' => %w[dns gateway] },
             { 'name' => 'second' },
@@ -69,15 +69,15 @@ describe 'global networking', type: :integration do
         end
 
         it 'redeploys VM updating IP that does not belong to range and keeping another IP', no_create_swap_delete: true do
-          first_subnet = Bosh::Spec::NetworkingManifest.make_subnet(available_ips: 2, range: '192.168.1.0/24') # 1 for compilation
-          second_subnet = Bosh::Spec::NetworkingManifest.make_subnet(available_ips: 1, range: '10.10.0.0/24')
+          first_subnet = SharedSupport::DeploymentManifestHelper.make_subnet(available_ips: 2, range: '192.168.1.0/24') # 1 for compilation
+          second_subnet = SharedSupport::DeploymentManifestHelper.make_subnet(available_ips: 1, range: '10.10.0.0/24')
 
-          cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
+          cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
           cloud_config_hash['networks'] = make_network_spec(first_subnet, second_subnet)
           cloud_config_hash['compilation']['network'] = 'first'
           upload_cloud_config(cloud_config_hash: cloud_config_hash)
 
-          manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+          manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
           manifest_hash['instance_groups'] = [instance_group_with_two_networks]
           deploy_simple_manifest(manifest_hash: manifest_hash)
 
@@ -85,7 +85,7 @@ describe 'global networking', type: :integration do
           expect(instances.size).to eq(1)
           expect(instances.map(&:ips).flatten).to match_array(['192.168.1.2', '10.10.0.2'])
 
-          new_second_subnet = Bosh::Spec::NetworkingManifest.make_subnet(available_ips: 1, range: '10.10.0.0/24', shift_ip_range_by: 1)
+          new_second_subnet = SharedSupport::DeploymentManifestHelper.make_subnet(available_ips: 1, range: '10.10.0.0/24', shift_ip_range_by: 1)
           cloud_config_hash['networks'] = make_network_spec(first_subnet, new_second_subnet)
           upload_cloud_config(cloud_config_hash: cloud_config_hash)
 

@@ -5,7 +5,7 @@ describe 'package dependencies', type: :integration do
   with_reset_sandbox_before_each
 
   let(:manifest_hash) do
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['releases'].first['version'] = 'latest'
     manifest_hash['instance_groups'] = [
       {

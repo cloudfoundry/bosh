@@ -14,7 +14,7 @@ module Bosh::Director::DeploymentPlan::Stages
 
     let(:base_job) { Bosh::Director::Jobs::BaseJob.new }
     let(:assembler) { Assembler.new(deployment_plan, nil, nil, variables_interpolator) }
-    let(:cloud_config) { Bosh::Spec::Deployments.simple_cloud_config }
+    let(:cloud_config) { SharedSupport::DeploymentManifestHelper.simple_cloud_config }
     let(:runtime_configs) { [] }
 
     let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
@@ -26,9 +26,9 @@ module Bosh::Director::DeploymentPlan::Stages
       Bosh::Director::DeploymentPlan::Assembler.create(deployment_plan, variables_interpolator).bind_models
       deployment_plan
     end
-    let(:static_ip) { Bosh::Spec::Deployments.subnet['static'].first }
+    let(:static_ip) { SharedSupport::DeploymentManifestHelper.subnet['static'].first }
     let(:deployment_manifest) do
-      Bosh::Spec::Deployments.simple_manifest_with_instance_groups(instances: 1, static_ips: static_ip)
+      SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups(instances: 1, static_ips: static_ip)
     end
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpiResponseWrapper) }
 
@@ -42,7 +42,7 @@ module Bosh::Director::DeploymentPlan::Stages
       release_version = FactoryBot.create(:models_release_version, version: '0.1-dev')
       release.add_version(release_version)
       template = FactoryBot.create(:models_template,
-        name: Bosh::Spec::Deployments.simple_instance_group['jobs'].first['name'],
+        name: SharedSupport::DeploymentManifestHelper.simple_instance_group['jobs'].first['name'],
       )
       release_version.add_template(template)
 
@@ -111,7 +111,7 @@ module Bosh::Director::DeploymentPlan::Stages
                 anything,
                 stemcell.cid,
                 anything,
-                { Bosh::Spec::Deployments.network['name'] => hash_including('ip' => static_ip) },
+                { SharedSupport::DeploymentManifestHelper.network['name'] => hash_including('ip' => static_ip) },
                 anything,
                 anything,
               )

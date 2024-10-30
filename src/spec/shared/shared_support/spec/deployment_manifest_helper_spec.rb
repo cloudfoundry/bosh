@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-module Bosh::Spec
+module SharedSupport
   RSpec.describe DeploymentManifestHelper do
     let(:expected_cloud_config) do
       {

@@ -5,24 +5,24 @@ describe 'orphaned disks', type: :integration do
   with_reset_sandbox_before_each
 
   it 'should return orphan disks' do
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['name'] = 'first-deployment'
     manifest_hash['instance_groups'] = [
-      Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+      SharedSupport::DeploymentManifestHelper.simple_instance_group(
         persistent_disk_type: 'disk_a',
         instances: 1,
         name: 'first-instance-group',
       ),
     ]
-    cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
-    disk_type = Bosh::Spec::DeploymentManifestHelper.disk_type
+    cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
+    disk_type = SharedSupport::DeploymentManifestHelper.disk_type
     disk_type['cloud_properties'] = { 'my' => 'property' }
     cloud_config['disk_types'] = [disk_type]
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
 
     manifest_hash['name'] = 'second-deployment'
     manifest_hash['instance_groups'] = [
-      Bosh::Spec::DeploymentManifestHelper.simple_instance_group(
+      SharedSupport::DeploymentManifestHelper.simple_instance_group(
         persistent_disk_type: 'disk_a',
         instances: 1,
         name: 'second-instance-group',
@@ -68,10 +68,10 @@ describe 'orphaned disks', type: :integration do
   end
 
   it 'should delete an orphaned disk' do
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
-    manifest_hash['instance_groups'] = [Bosh::Spec::DeploymentManifestHelper.simple_instance_group(persistent_disk_type: 'disk_a')]
-    cloud_config = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
-    cloud_config['disk_types'] = [Bosh::Spec::DeploymentManifestHelper.disk_type]
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'] = [SharedSupport::DeploymentManifestHelper.simple_instance_group(persistent_disk_type: 'disk_a')]
+    cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config
+    cloud_config['disk_types'] = [SharedSupport::DeploymentManifestHelper.disk_type]
     deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config)
     bosh_runner.run('delete-deployment', deployment_name: 'simple')
 
@@ -94,8 +94,8 @@ describe 'orphaned disks', type: :integration do
   end
 
   it 'does not detach and reattach disks unnecessarily', no_create_swap_delete: true do
-    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['persistent_disk'] = 3000
     manifest_hash['instance_groups'].first['instances'] = 1
 
@@ -124,8 +124,8 @@ describe 'orphaned disks', type: :integration do
   end
 
   it 'does not detach and reattach disks unnecessarily', create_swap_delete: true do
-    cloud_config_hash = Bosh::Spec::DeploymentManifestHelper.simple_cloud_config
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['persistent_disk'] = 3000
     manifest_hash['instance_groups'].first['instances'] = 1
 
@@ -153,10 +153,10 @@ describe 'orphaned disks', type: :integration do
   end
 
   it 'should orhpan disk' do
-    manifest_hash = Bosh::Spec::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
     manifest_hash['instance_groups'].first['persistent_disk'] = 3000
     manifest_hash['instance_groups'].first['instances'] = 1
-    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: Bosh::Spec::DeploymentManifestHelper.simple_cloud_config)
+    deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
     disk_cid = director.instances.first.disk_cids.first
 
     result = bosh_runner.run('disks --orphaned')
