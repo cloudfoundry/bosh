@@ -6,7 +6,6 @@ BOSH_REPO='bosh-src'
 
 source "${BOSH_REPO}/ci/tasks/utils.sh"
 
-check_param RUBY_VERSION
 check_param DB
 
 start_db "${DB}"

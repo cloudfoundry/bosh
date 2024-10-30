@@ -16,7 +16,6 @@ run:
   path: bosh-src/ci/tasks/test-integration.sh
 
 params:
-  RUBY_VERSION:               3.2.0
   DB:                         postgresql
   DB_VERSION:                 15
   LOG_LEVEL:                  ERROR
