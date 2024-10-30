@@ -6,8 +6,6 @@ BOSH_REPO='bosh-src'
 
 source "${BOSH_REPO}/ci/tasks/utils.sh"
 
-check_param DB
-
 start_db "${DB}"
 
 install bosh-cli/*bosh-cli-*-linux-amd64 "/usr/local/bin/bosh"
