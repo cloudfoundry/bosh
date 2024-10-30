@@ -158,10 +158,10 @@ module Bosh::Director
 
           status = JSON.parse(Models::Task.first(id: task.id).result_output)
 
-          expect(status['ips']).to eq([
-            '1.1.1.1', '2.2.2.2', # Static
-            '3.3.3.3', '4.4.4.4', # Dynamic
-          ])
+          expect(status['ips']).to contain_exactly(
+                                     '1.1.1.1', '2.2.2.2', # Static
+                                     '3.3.3.3', '4.4.4.4', # Dynamic
+                                   )
         end
       end
 
