@@ -17,6 +17,7 @@ cp -r bosh-agent "${BOSH_REPO}/src/"
 
 pushd "${BOSH_REPO}/src"
   print_git_state
+  print_ruby_info
 
   gem install -f bundler
   bundle install --local

@@ -58,6 +58,10 @@ print_git_state() {
   fi
 }
 
+print_ruby_info() {
+   ruby -e 'puts "Using #{RUBY_DESCRIPTION.inspect}"'
+}
+
 set_up_vagrant_private_key() {
   if [ ! -f "$BOSH_VAGRANT_PRIVATE_KEY" ]; then
     key_path=$(mktemp -d /tmp/ssh_key.XXXXXXXXXX)/value

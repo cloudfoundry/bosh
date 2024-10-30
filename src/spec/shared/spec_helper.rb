@@ -9,9 +9,6 @@ require 'shared_support/deployment_manifest_helper'
 
 require 'shared_support/simplecov' if ENV['COVERAGE'] == 'true'
 
-# Useful to see that tests are using expected version of Ruby in CI
-puts "Using #{RUBY_DESCRIPTION}"
-
 RSpec.configure do |rspec|
   rspec.expect_with :rspec do |c|
     c.max_formatted_output_length = nil
