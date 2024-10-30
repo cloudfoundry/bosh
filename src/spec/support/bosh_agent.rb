@@ -1,7 +1,7 @@
 module Support
   module BoshAgent
     BOSH_REPO_ROOT = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..')).freeze
-    BOSH_AGENT_SRC = File.join(BOSH_REPO_ROOT, 'src/go/src/github.com/cloudfoundry/bosh-agent')
+    BOSH_AGENT_SRC = File.join(BOSH_REPO_ROOT, 'src/bosh-agent')
     COMPILED_BOSH_AGENT = File.join(BOSH_AGENT_SRC, 'out', 'bosh-agent')
 
     def self.ensure_agent_exists!

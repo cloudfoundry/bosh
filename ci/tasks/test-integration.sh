@@ -1,22 +1,21 @@
 #!/usr/bin/env bash
-
 set -euo pipefail
 set -x
 
-source bosh-src/ci/tasks/utils.sh
+BOSH_REPO='bosh-src'
+
+source "${BOSH_REPO}/ci/tasks/utils.sh"
 
 check_param RUBY_VERSION
 check_param DB
 
 start_db "${DB}"
 
-install ./bosh-cli/*bosh-cli-*-linux-amd64 /usr/local/bin/bosh
+install bosh-cli/*bosh-cli-*-linux-amd64 "/usr/local/bin/bosh"
 
-agent_path=bosh-src/src/go/src/github.com/cloudfoundry/
-mkdir -p "${agent_path}"
-cp -r bosh-agent "${agent_path}"
+cp -r bosh-agent "${BOSH_REPO}/src/"
 
-pushd bosh-src/src
+pushd "${BOSH_REPO}/src"
   print_git_state
 
   gem install -f bundler

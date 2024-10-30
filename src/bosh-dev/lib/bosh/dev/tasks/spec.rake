@@ -39,11 +39,7 @@ namespace :spec do
     desc 'Download BOSH Agent. Use only for local dev environment'
     task :download_bosh_agent do
       trap('INT') { exit }
-      cmd = 'mkdir -p ./go/src/github.com/cloudfoundry && '
-      cmd += 'cd ./go/src/github.com/cloudfoundry && '
-      cmd += 'rm -rf bosh-agent && '
-      cmd += 'git clone https://github.com/cloudfoundry/bosh-agent.git'
-      sh(cmd)
+      sh('rm -rf bosh-agent && git clone https://github.com/cloudfoundry/bosh-agent.git')
     end
 
     def run_integration_specs(run_options = {})
@@ -88,7 +84,7 @@ namespace :spec do
 
     def compile_dependencies
       puts 'If this fails you may want to run rake spec:integration:download_bosh_agent'
-      sh('cd go/src/github.com/cloudfoundry/bosh-agent/; bin/build; cd -')
+      sh('cd bosh-agent && bin/build && cd -')
     end
   end
 

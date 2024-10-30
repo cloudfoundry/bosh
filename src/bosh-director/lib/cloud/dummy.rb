@@ -512,7 +512,7 @@ module Bosh
 
       def agent_cmd(agent_id, legacy_agent_path)
         if legacy_agent_path.nil?
-          go_agent_exe =  File.expand_path('../../../../go/src/github.com/cloudfoundry/bosh-agent/out/bosh-agent', __FILE__)
+          go_agent_exe =  File.expand_path('../../../../bosh-agent/out/bosh-agent', __FILE__)
         else
           go_agent_exe = legacy_agent_path
         end
