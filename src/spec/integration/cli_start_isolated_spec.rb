@@ -223,7 +223,7 @@ describe 'start command', type: :integration do
         isolated_stop(instance_group: 'foobar', index: middle_instance.index)
         expect {
           isolated_start(instance_group: 'foobar', index: middle_instance.index)
-        }.to raise_error(Bosh::Spec::BoshCliRunner::Error)
+        }.to raise_error(IntegrationSupport::BoshCliRunner::Error)
 
         config_file = middle_instance.read_job_template('job_with_bad_template', 'config/config.yml')
         expect(config_file).to include('updated_value')

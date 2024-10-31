@@ -4,7 +4,7 @@ describe 'using director with config server and a deployment with errands', type
   with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa')
 
   let(:director_name) { current_sandbox.director_name }
-  let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger) }
+  let(:config_server_helper) { IntegrationSupport::ConfigServerHelper.new(current_sandbox, logger) }
   let(:client_env) do
     { 'BOSH_CLIENT' => 'test',
       'BOSH_CLIENT_SECRET' => 'secret',

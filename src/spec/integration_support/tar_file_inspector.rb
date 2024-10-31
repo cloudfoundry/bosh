@@ -1,6 +1,6 @@
 require 'minitar'
 
-module Bosh::Spec
+module IntegrationSupport
   class TarFileInspector
     def initialize(path)
       @path = path

@@ -2,7 +2,7 @@ require 'securerandom'
 require 'spec_helper'
 
 describe 'finalize release', type: :integration do
-  include Bosh::Spec::CreateReleaseOutputParsers
+  include IntegrationSupport::CreateReleaseOutputParsers
   with_reset_sandbox_before_each
   SHA1_REGEXP = /^[0-9a-f]{40}$/
 
@@ -16,7 +16,7 @@ describe 'finalize release', type: :integration do
   describe 'release finalization' do
     context 'when finalizing a release that was built elsewhere' do
       it 'updates the .final_builds index for each job and package' do
-        Dir.chdir(ClientSandbox.test_release_dir) do
+        Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
           bosh_runner.run_in_current_dir("finalize-release #{asset_path('dummy-gocli-release.tgz')} --force")
 
           job_index = YAML.load_file(File.absolute_path('.final_builds/jobs/dummy/index.yml'))
@@ -33,7 +33,7 @@ describe 'finalize release', type: :integration do
       end
 
       it 'prints release summary' do
-        Dir.chdir(ClientSandbox.test_release_dir) do
+        Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
           out = table(
             bosh_runner.run_in_current_dir("finalize-release #{asset_path('dummy-gocli-release.tgz')} --force", json: true),
           )
@@ -80,7 +80,7 @@ describe 'finalize release', type: :integration do
       end
 
       it 'updates the releases index' do
-        Dir.chdir(ClientSandbox.test_release_dir) do
+        Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
           bosh_runner.run_in_current_dir("finalize-release #{asset_path('dummy-gocli-release.tgz')} --force")
           job_index = YAML.load_file(File.absolute_path('.final_builds/jobs/dummy/index.yml'))
           expect(job_index).to include('builds')
@@ -90,7 +90,7 @@ describe 'finalize release', type: :integration do
       end
 
       it 'cannot create a final release without the blobstore configured' do
-        Dir.chdir(ClientSandbox.test_release_dir) do
+        Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
           FileUtils.cp(asset_path('empty_blobstore_config.yml'), 'config/final.yml')
           out = bosh_runner.run_in_current_dir(
             "finalize-release #{asset_path('dummy-gocli-release.tgz')} --force",
@@ -102,7 +102,7 @@ describe 'finalize release', type: :integration do
       end
 
       it 'cannot create a final release without the blobstore secret configured' do
-        Dir.chdir(ClientSandbox.test_release_dir) do
+        Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
           FileUtils.cp(asset_path('blobstore_config_requiring_credentials.yml'), 'config/final.yml')
           out = bosh_runner.run_in_current_dir(
             "finalize-release #{asset_path('dummy-gocli-release.tgz')} --force",
@@ -115,18 +115,18 @@ describe 'finalize release', type: :integration do
 
       context 'when no previous releases have been made' do
         it 'finalize-release uploads the job & package blobs' do
-          Dir.chdir(ClientSandbox.test_release_dir) do
+          Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
             expect(Dir).to_not exist('releases')
             expect(Dir).to_not exist('dev_releases')
             expect(Dir).to_not exist('.final_builds')
             expect(Dir).to_not exist('.dev_builds')
-            expect(Dir).to_not exist(ClientSandbox.blobstore_dir)
+            expect(Dir).to_not exist(IntegrationSupport::ClientSandbox.blobstore_dir)
 
             bosh_runner.run_in_current_dir("finalize-release #{asset_path('dummy-gocli-release.tgz')} --force")
             expect(File).to exist('releases/dummy/dummy-1.yml')
             expect(File).to exist('.final_builds/jobs/dummy/index.yml')
             expect(File).to exist('.final_builds/packages/bad_package/index.yml')
-            uploaded_blob_count = Dir[File.join(ClientSandbox.blobstore_dir, '**', '*')].length
+            uploaded_blob_count = Dir[File.join(IntegrationSupport::ClientSandbox.blobstore_dir, '**', '*')].length
             expect(uploaded_blob_count).to eq(7)
           end
         end
@@ -138,7 +138,7 @@ describe 'finalize release', type: :integration do
       after { release_file.delete }
 
       it 'can finalize the dev release tarball' do
-        Dir.chdir(ClientSandbox.test_release_dir) do
+        Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
           bosh_runner.run_in_current_dir("create-release --force --tarball=#{release_file.path} --name=test-release")
           out = bosh_runner.run_in_current_dir("finalize-release #{release_file.path} --force")
           expect(out).to match("Added final release 'test-release/1'")
@@ -146,7 +146,7 @@ describe 'finalize release', type: :integration do
       end
 
       it 'works without a NOTICE or LICENSE present' do
-        Dir.chdir(ClientSandbox.test_release_dir) do
+        Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
           File.delete('LICENSE')
           expect(File).to_not exist('NOTICE')
           bosh_runner.run_in_current_dir("create-release --force --tarball=#{release_file.path} --name=test-release")
@@ -156,7 +156,7 @@ describe 'finalize release', type: :integration do
       end
 
       it 'includes the LICENSE file' do
-        Dir.chdir(ClientSandbox.test_release_dir) do
+        Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
           expect(File).to_not exist('NOTICE')
           File.open('LICENSE', 'w') do |f|
             f.write('This is an example license file')
@@ -177,7 +177,7 @@ describe 'finalize release', type: :integration do
       end
 
       it 'includes the NOTICE file if no LICENSE was present' do
-        Dir.chdir(ClientSandbox.test_release_dir) do
+        Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
           File.delete('LICENSE')
           File.open('NOTICE', 'w') do |f|
             f.write('This is an example license file called NOTICE')
@@ -197,7 +197,7 @@ describe 'finalize release', type: :integration do
       end
 
       it 'includes both NOTICE and LICENSE files when present' do
-        Dir.chdir(ClientSandbox.test_release_dir) do
+        Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
           File.open('NOTICE', 'w') do |f|
             f.write('This is an example license file called NOTICE')
           end

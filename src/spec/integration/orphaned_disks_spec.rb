@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe 'orphaned disks', type: :integration do
-  include Bosh::Spec::CreateReleaseOutputParsers
+  include IntegrationSupport::CreateReleaseOutputParsers
   with_reset_sandbox_before_each
 
   it 'should return orphan disks' do

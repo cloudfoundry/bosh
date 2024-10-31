@@ -4,16 +4,16 @@ describe 'using director with config server and deployments having links', type:
   with_reset_sandbox_before_each(config_server_enabled: true, user_authentication: 'uaa')
 
   def upload_links_release
-    FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, ClientSandbox.links_release_dir, preserve: true)
+    FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, IntegrationSupport::ClientSandbox.links_release_dir, preserve: true)
     bosh_runner.run_in_dir(
       'create-release --force',
-      ClientSandbox.links_release_dir,
+      IntegrationSupport::ClientSandbox.links_release_dir,
       include_credentials: false,
       env: client_env,
     )
     bosh_runner.run_in_dir(
       'upload-release',
-      ClientSandbox.links_release_dir,
+      IntegrationSupport::ClientSandbox.links_release_dir,
       include_credentials: false,
       env: client_env,
     )
@@ -68,7 +68,7 @@ describe 'using director with config server and deployments having links', type:
     cloud_config_hash
   end
 
-  let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger) }
+  let(:config_server_helper) { IntegrationSupport::ConfigServerHelper.new(current_sandbox, logger) }
 
   before do
     upload_links_release

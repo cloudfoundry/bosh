@@ -4,9 +4,9 @@ describe 'Links', type: :integration do
   with_reset_sandbox_before_each
 
   def upload_links_release
-    FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, ClientSandbox.links_release_dir, preserve: true)
-    bosh_runner.run_in_dir('create-release --force', ClientSandbox.links_release_dir)
-    bosh_runner.run_in_dir('upload-release', ClientSandbox.links_release_dir)
+    FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, IntegrationSupport::ClientSandbox.links_release_dir, preserve: true)
+    bosh_runner.run_in_dir('create-release --force', IntegrationSupport::ClientSandbox.links_release_dir)
+    bosh_runner.run_in_dir('upload-release', IntegrationSupport::ClientSandbox.links_release_dir)
   end
 
   let(:cloud_config) do
@@ -66,7 +66,7 @@ describe 'Links', type: :integration do
       manifest['instance_groups'] = [instance_group]
 
       deploy_output = deploy_simple_manifest(manifest_hash: manifest)
-      task_id = Bosh::Spec::OutputParser.new(deploy_output).task_id
+      task_id = IntegrationSupport::OutputParser.new(deploy_output).task_id
       task_debug_logs = bosh_runner.run("task --debug #{task_id}")
 
       expect(task_debug_logs).to include(<<~OUTPUT.strip)
@@ -106,7 +106,7 @@ describe 'Links', type: :integration do
       manifest['instance_groups'] = [instance_group]
 
       deploy_output = deploy_simple_manifest(manifest_hash: manifest)
-      task_id = Bosh::Spec::OutputParser.new(deploy_output).task_id
+      task_id = IntegrationSupport::OutputParser.new(deploy_output).task_id
       task_debug_logs = bosh_runner.run("task --debug #{task_id}")
 
       expect(task_debug_logs).to include(<<~OUTPUT.strip)
@@ -146,7 +146,7 @@ describe 'Links', type: :integration do
       manifest['instance_groups'] = [instance_group]
 
       deploy_output = deploy_simple_manifest(manifest_hash: manifest)
-      task_id = Bosh::Spec::OutputParser.new(deploy_output).task_id
+      task_id = IntegrationSupport::OutputParser.new(deploy_output).task_id
       task_debug_logs = bosh_runner.run("task --debug #{task_id}")
 
       expect(task_debug_logs).to include(<<~OUTPUT.strip)
@@ -186,7 +186,7 @@ describe 'Links', type: :integration do
       manifest['instance_groups'] = [instance_group]
 
       deploy_output = deploy_simple_manifest(manifest_hash: manifest)
-      task_id = Bosh::Spec::OutputParser.new(deploy_output).task_id
+      task_id = IntegrationSupport::OutputParser.new(deploy_output).task_id
       task_debug_logs = bosh_runner.run("task --debug #{task_id}")
 
       expect(task_debug_logs).to include(<<~OUTPUT.strip)

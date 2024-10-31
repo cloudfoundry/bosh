@@ -57,7 +57,7 @@ describe 'Logging into a director with UAA authentication', type: :integration d
     it 'can handle long-running http requests' do
       client_env = {'BOSH_CLIENT' => 'short-lived-client', 'BOSH_CLIENT_SECRET' => 'short-lived-secret'}
 
-      `dd if=/dev/urandom of=#{ClientSandbox.test_release_dir}/src/a/bigfile.txt bs=512 count=604800`
+      `dd if=/dev/urandom of=#{IntegrationSupport::ClientSandbox.test_release_dir}/src/a/bigfile.txt bs=512 count=604800`
       _, exit_code = create_and_upload_test_release(environment_name: current_sandbox.director_url, env: client_env, include_credentials: false, return_exit_code: true, force: true)
 
       expect(exit_code).to eq(0)

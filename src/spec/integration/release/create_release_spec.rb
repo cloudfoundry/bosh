@@ -2,7 +2,7 @@ require 'securerandom'
 require 'spec_helper'
 
 describe 'create-release', type: :integration do
-  include Bosh::Spec::CreateReleaseOutputParsers
+  include IntegrationSupport::CreateReleaseOutputParsers
   with_reset_sandbox_before_each
   let(:sha2_regexp) { /^[0-9a-f]{64}$/ }
   let(:sha2_prefixed_regexp) { /^sha256:[0-9a-f]{64}$/ }
@@ -20,7 +20,7 @@ describe 'create-release', type: :integration do
 
   describe 'release creation' do
     before do
-      Dir.chdir(ClientSandbox.test_release_dir) do
+      Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
         bosh_runner.run_in_current_dir("create-release --final --tarball=#{release_file.path}")
       end
     end
@@ -82,7 +82,7 @@ describe 'create-release', type: :integration do
     end
 
     it 'updates the .final_builds index for each job, package and license' do
-      Dir.chdir(ClientSandbox.test_release_dir) do
+      Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
         package_files = {
           'a' => ['./packaging', './a/run.sh'],
           'b' => ['./packaging', './b/run.sh'],
@@ -129,7 +129,7 @@ describe 'create-release', type: :integration do
     end
 
     it 'creates a release manifest' do
-      Dir.chdir(ClientSandbox.test_release_dir) do
+      Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
         release_manifest = YAML.load_file(latest_release_manifest)
         expect(release_manifest['commit_hash']).to match(/[0-9a-f]{7}/)
         expect(release_manifest['license']).to match(license_desc)
@@ -204,7 +204,7 @@ describe 'create-release', type: :integration do
     end
 
     it 'updates the index' do
-      Dir.chdir(ClientSandbox.test_release_dir) do
+      Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
         index = YAML.load_file('releases/bosh-release/index.yml')
         builds = index['builds']
         uuid, = builds.first
@@ -220,7 +220,7 @@ describe 'create-release', type: :integration do
 
   describe 'release creation from manifest' do
     before do
-      Dir.chdir(ClientSandbox.test_release_dir) do
+      Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
         bosh_runner.run_in_current_dir('create-release --final')
 
         bosh_runner.run_in_current_dir("create-release #{latest_release_manifest} --tarball=#{release_file.path}")
@@ -285,7 +285,7 @@ describe 'create-release', type: :integration do
   end
 
   it 'allows creation of new final releases with the same content as the latest final release' do
-    Dir.chdir(ClientSandbox.test_release_dir) do
+    Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
       out = bosh_runner.run_in_current_dir('create-release --final')
       expect(parse_release_version(out)).to eq('1')
 
@@ -298,7 +298,7 @@ describe 'create-release', type: :integration do
   end
 
   it 'allows creation of new dev releases with the same content as the latest dev release' do
-    Dir.chdir(ClientSandbox.test_release_dir) do
+    Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
       out = bosh_runner.run_in_current_dir('create-release')
       expect(parse_release_version(out)).to eq('0+dev.1')
 
@@ -311,7 +311,7 @@ describe 'create-release', type: :integration do
   end
 
   it 'allows creation of new final releases with the same content as a previous final release' do
-    Dir.chdir(ClientSandbox.test_release_dir) do
+    Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
       out = bosh_runner.run_in_current_dir('create-release --final')
       expect(parse_release_version(out)).to eq('1')
 
@@ -326,7 +326,7 @@ describe 'create-release', type: :integration do
   end
 
   it 'allows creation of new dev releases with the same content as a previous dev release' do
-    Dir.chdir(ClientSandbox.test_release_dir) do
+    Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
       out = bosh_runner.run_in_current_dir('create-release')
       expect(parse_release_version(out)).to eq('0+dev.1')
 
@@ -341,7 +341,7 @@ describe 'create-release', type: :integration do
   end
 
   it 'allows creation of new final release without .gitignore files' do
-    Dir.chdir(ClientSandbox.test_release_dir) do
+    Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
       out = bosh_runner.run_in_current_dir('create-release --final')
       expect(out).to match(/Version\s*1/)
 
@@ -356,7 +356,7 @@ describe 'create-release', type: :integration do
 
   context 'when no previous releases have been made' do
     it 'final release uploads the job & package blobs' do
-      Dir.chdir(ClientSandbox.test_release_dir) do
+      Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
         expect(File).to_not exist('releases/bosh-release/bosh-release-0.yml')
 
         out = bosh_runner.run_in_current_dir('create-release --final')
@@ -365,7 +365,7 @@ describe 'create-release', type: :integration do
     end
 
     it 'uses a provided --name' do
-      Dir.chdir(ClientSandbox.test_release_dir) do
+      Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
         out = bosh_runner.run_in_current_dir('create-release --name "bosh-fork"')
         expect(parse_release_name(out)).to eq('bosh-fork')
         expect(parse_release_version(out)).to eq('0+dev.1')
@@ -375,7 +375,7 @@ describe 'create-release', type: :integration do
 
   context 'when previous release have been made' do
     it 'allows creation of a new dev release with a new name' do
-      Dir.chdir(ClientSandbox.test_release_dir) do
+      Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
         out = bosh_runner.run_in_current_dir('create-release')
         expect(parse_release_name(out)).to eq('bosh-release')
         expect(parse_release_version(out)).to eq('0+dev.1')
@@ -387,7 +387,7 @@ describe 'create-release', type: :integration do
     end
 
     it 'allows creation of a new final release with a new name' do
-      Dir.chdir(ClientSandbox.test_release_dir) do
+      Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
         out = bosh_runner.run_in_current_dir('create-release --final')
         expect(parse_release_name(out)).to eq('bosh-release')
         expect(parse_release_version(out)).to eq('1')
@@ -404,7 +404,7 @@ describe 'create-release', type: :integration do
     end
 
     it 'allows creation of a new final release with a custom name & version' do
-      Dir.chdir(ClientSandbox.test_release_dir) do
+      Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
         out = bosh_runner.run_in_current_dir('create-release --final --name fake-release --version 2.0.1')
         expect(parse_release_name(out)).to eq('fake-release')
         expect(parse_release_version(out)).to eq('2.0.1')
@@ -413,7 +413,7 @@ describe 'create-release', type: :integration do
   end
 
   it 'creates a new final release with a default version' do
-    Dir.chdir(ClientSandbox.test_release_dir) do
+    Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
       File.open('config/final.yml', 'w') do |final|
         final.puts YAML.dump(
           'final_name' => 'bosh-release',
@@ -440,7 +440,7 @@ describe 'create-release', type: :integration do
       expect(File).to exist(manifest1)
 
       # modify a release file to force a new version
-      `echo ' ' >> #{File.join(ClientSandbox.test_release_dir, 'jobs', 'foobar', 'templates', 'foobar_ctl')}`
+      `echo ' ' >> #{File.join(IntegrationSupport::ClientSandbox.test_release_dir, 'jobs', 'foobar', 'templates', 'foobar_ctl')}`
       bosh_runner.run_in_current_dir('create-release --force')
 
       out = bosh_runner.run_in_current_dir('create-release --final --force')
@@ -451,7 +451,7 @@ describe 'create-release', type: :integration do
   end
 
   it 'release tarball does not include excluded files' do
-    Dir.chdir(ClientSandbox.test_release_dir) do
+    Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
       FileUtils.rm_rf('dev_releases')
 
       bosh_runner.run_in_current_dir("create-release --tarball=#{release_file.path}")
@@ -476,7 +476,7 @@ describe 'create-release', type: :integration do
     it 'creates releases from different folder using the shared cache' do
       setup_test_release_dir(second_test_release_dir)
 
-      Dir.chdir(ClientSandbox.test_release_dir) do
+      Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
         bosh_runner.run_in_current_dir('create-release')
       end
 
@@ -484,7 +484,7 @@ describe 'create-release', type: :integration do
         bosh_runner.run_in_current_dir('create-release')
       end
 
-      Dir.chdir(ClientSandbox.test_release_dir) do
+      Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
         bosh_runner.run_in_current_dir('upload-release')
       end
     end
@@ -550,7 +550,7 @@ describe 'create-release', type: :integration do
     artifact_tarball = File.join(ENV['HOME'], '.bosh', 'cache', checksum)
     expect(File.exist?(artifact_tarball)).to eq(true)
 
-    tarblob = File.join(ClientSandbox.blobstore_dir, index['builds'][fingerprint]['blobstore_id'])
+    tarblob = File.join(IntegrationSupport::ClientSandbox.blobstore_dir, index['builds'][fingerprint]['blobstore_id'])
     expect(File.exist?(tarblob)).to eq(true)
     actual_digest = sha_generator.create([Bosh::Director::BoshDigest::MultiDigest::SHA256], tarblob)
     expect(actual_digest).to eq(checksum)

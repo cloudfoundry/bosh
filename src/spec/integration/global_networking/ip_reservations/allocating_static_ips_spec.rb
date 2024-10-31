@@ -119,7 +119,7 @@ describe 'global networking', type: :integration do
 
       current_sandbox.cpi.commands.pause_delete_vms
       output = bosh_runner.run('delete-deployment -d simple', no_track: true)
-      delete_deployment_task = Bosh::Spec::OutputParser.new(output).task_id('*')
+      delete_deployment_task = IntegrationSupport::OutputParser.new(output).task_id('*')
       current_sandbox.cpi.commands.wait_for_delete_vms
 
       begin
@@ -149,7 +149,7 @@ describe 'global networking', type: :integration do
 
       current_sandbox.cpi.commands.pause_delete_vms
       output = deploy_simple_manifest(manifest_hash: simple_manifest, no_track: true)
-      scale_down_task = Bosh::Spec::OutputParser.new(output).task_id('*')
+      scale_down_task = IntegrationSupport::OutputParser.new(output).task_id('*')
 
       current_sandbox.cpi.commands.wait_for_delete_vms
 

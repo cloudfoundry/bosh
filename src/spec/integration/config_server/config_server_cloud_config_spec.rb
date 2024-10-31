@@ -41,7 +41,7 @@ describe 'using director with config server', type: :integration do
   let(:client_env) do
     { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => current_sandbox.certificate_path.to_s }
   end
-  let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger) }
+  let(:config_server_helper) { IntegrationSupport::ConfigServerHelper.new(current_sandbox, logger) }
 
   let(:log_options) do
     { include_credentials: false, env: client_env }
@@ -256,7 +256,7 @@ describe 'using director with config server', type: :integration do
                               return_exit_code: true,
                               include_credentials: false,
                               env: client_env)
-        }.to raise_error(Bosh::Spec::BoshCliRunner::Error)
+        }.to raise_error(IntegrationSupport::BoshCliRunner::Error)
       end
     end
 
@@ -319,7 +319,7 @@ describe 'using director with config server', type: :integration do
           recreate_vm = 3
           cck_output = bosh_run_cck_with_resolution(1, recreate_vm, client_env)
 
-          expect_logs_not_to_contain('simple', Bosh::Spec::OutputParser.new(cck_output).task_id, ['super-secret'], log_options)
+          expect_logs_not_to_contain('simple', IntegrationSupport::OutputParser.new(cck_output).task_id, ['super-secret'], log_options)
         end
       end
     end
@@ -527,7 +527,7 @@ describe 'using director with config server', type: :integration do
 
       it 'should not make any updates when redeploying' do
         output = deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: cloud_config, include_credentials: false, env: client_env)
-        task_id = Bosh::Spec::OutputParser.new(output).task_id
+        task_id = IntegrationSupport::OutputParser.new(output).task_id
         task_output = bosh_runner.run("task #{task_id} --debug", deployment_name: 'foo-deployment', include_credentials: false, env: client_env)
         expect(task_output).to include("No instances to update for 'ig_1'")
       end
@@ -659,7 +659,7 @@ describe 'using director with config server', type: :integration do
         variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
         expect(variables_names).to match_array(['/smurf_1_variable'])
 
-        expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1'], log_options)
+        expect_logs_not_to_contain('my-dep', IntegrationSupport::OutputParser.new(output).task_id, ['cat_1'], log_options)
       end
 
       it 'does not update deployment when variables values do not change before a second deploy' do
@@ -670,7 +670,7 @@ describe 'using director with config server', type: :integration do
         output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
         expect(output).to_not include('Updating instance instance_group_1')
 
-        task_id = Bosh::Spec::OutputParser.new(output).task_id
+        task_id = IntegrationSupport::OutputParser.new(output).task_id
         task_output = bosh_runner.run("task #{task_id} --debug", deployment_name: 'my-dep', include_credentials: false, env: client_env)
         expect(task_output).to include("No instances to update for 'instance_group_1'")
 
@@ -698,7 +698,7 @@ describe 'using director with config server', type: :integration do
           variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
           expect(variables_names).to match_array(['/smurf_1_variable'])
 
-          expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_2'], log_options)
+          expect_logs_not_to_contain('my-dep', IntegrationSupport::OutputParser.new(output).task_id, ['cat_2'], log_options)
         end
       end
     end
@@ -719,7 +719,7 @@ describe 'using director with config server', type: :integration do
         variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
         expect(variables_names).to match_array(['/smurf_1_variable'])
 
-        expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1'], log_options)
+        expect_logs_not_to_contain('my-dep', IntegrationSupport::OutputParser.new(output).task_id, ['cat_1'], log_options)
       end
 
       it 'does not update deployment when variables values do not change before a second deploy' do
@@ -729,7 +729,7 @@ describe 'using director with config server', type: :integration do
         # Second Deploy
         second_deploy_output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
-        task_id = Bosh::Spec::OutputParser.new(second_deploy_output).task_id
+        task_id = IntegrationSupport::OutputParser.new(second_deploy_output).task_id
         task_output = bosh_runner.run("task #{task_id} --debug", deployment_name: 'my-dep', include_credentials: false, env: client_env)
         expect(task_output).to include("No instances to update for 'instance_group_1'")
 
@@ -776,7 +776,7 @@ describe 'using director with config server', type: :integration do
         variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
         expect(variables_names).to match_array(['/smurf_1_variable_vm_extension'])
 
-        expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1_vm_extension'], log_options)
+        expect_logs_not_to_contain('my-dep', IntegrationSupport::OutputParser.new(output).task_id, ['cat_1_vm_extension'], log_options)
       end
 
       it 'does not update deployment when variables values do not change before a second deploy' do
@@ -786,7 +786,7 @@ describe 'using director with config server', type: :integration do
         # Second Deploy
         second_deploy_output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
-        task_id = Bosh::Spec::OutputParser.new(second_deploy_output).task_id
+        task_id = IntegrationSupport::OutputParser.new(second_deploy_output).task_id
         task_output = bosh_runner.run("task #{task_id} --debug", deployment_name: 'my-dep', include_credentials: false, env: client_env)
         expect(task_output).to include("No instances to update for 'instance_group_1'")
 
@@ -833,7 +833,7 @@ describe 'using director with config server', type: :integration do
         variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
         expect(variables_names).to match_array(['/smurf_1_variable'])
 
-        expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1_disk'], log_options)
+        expect_logs_not_to_contain('my-dep', IntegrationSupport::OutputParser.new(output).task_id, ['cat_1_disk'], log_options)
       end
 
       it 'does not update deployment when variables values do not change before a second deploy' do
@@ -843,7 +843,7 @@ describe 'using director with config server', type: :integration do
         # Second Deploy
         second_deploy_output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
-        task_id = Bosh::Spec::OutputParser.new(second_deploy_output).task_id
+        task_id = IntegrationSupport::OutputParser.new(second_deploy_output).task_id
         task_output = bosh_runner.run("task #{task_id} --debug", deployment_name: 'my-dep', include_credentials: false, env: client_env)
         expect(task_output).to include("No instances to update for 'instance_group_1'")
 
@@ -912,7 +912,7 @@ describe 'using director with config server', type: :integration do
           variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
           expect(variables_names).to match_array(['/smurf_1_variable_manual_network'])
 
-          expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1_manual_network'], log_options)
+          expect_logs_not_to_contain('my-dep', IntegrationSupport::OutputParser.new(output).task_id, ['cat_1_manual_network'], log_options)
         end
 
         it 'does not update deployment when variables values do not change before a second deploy' do
@@ -922,7 +922,7 @@ describe 'using director with config server', type: :integration do
           # Second Deploy
           second_deploy_output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
-          task_id = Bosh::Spec::OutputParser.new(second_deploy_output).task_id
+          task_id = IntegrationSupport::OutputParser.new(second_deploy_output).task_id
           task_output = bosh_runner.run("task #{task_id} --debug", deployment_name: 'my-dep', include_credentials: false, env: client_env)
           expect(task_output).to include("No instances to update for 'instance_group_1'")
 
@@ -986,7 +986,7 @@ describe 'using director with config server', type: :integration do
           variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
           expect(variables_names).to match_array(['/smurf_1_variable_dynamic_network'])
 
-          expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1_dynamic_network'], log_options)
+          expect_logs_not_to_contain('my-dep', IntegrationSupport::OutputParser.new(output).task_id, ['cat_1_dynamic_network'], log_options)
         end
 
         it 'does not update deployment when variables values do not change before a second deploy' do
@@ -996,7 +996,7 @@ describe 'using director with config server', type: :integration do
           # Second Deploy
           second_deploy_output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
-          task_id = Bosh::Spec::OutputParser.new(second_deploy_output).task_id
+          task_id = IntegrationSupport::OutputParser.new(second_deploy_output).task_id
           task_output = bosh_runner.run("task #{task_id} --debug", deployment_name: 'my-dep', include_credentials: false, env: client_env)
           expect(task_output).to include("No instances to update for 'instance_group_1'")
 
@@ -1078,7 +1078,7 @@ describe 'using director with config server', type: :integration do
           variables_names = table(bosh_runner.run('variables', json: true, include_credentials: false, deployment_name: 'my-dep', env: client_env)).map { |v| v['name'] }
           expect(variables_names).to match_array(['/smurf_1_variable_vip_network'])
 
-          expect_logs_not_to_contain('my-dep', Bosh::Spec::OutputParser.new(output).task_id, ['cat_1_vip_network'], log_options)
+          expect_logs_not_to_contain('my-dep', IntegrationSupport::OutputParser.new(output).task_id, ['cat_1_vip_network'], log_options)
         end
 
         it 'does not update deployment when variables values do not change before a second deploy' do
@@ -1088,7 +1088,7 @@ describe 'using director with config server', type: :integration do
           # Second Deploy
           second_deploy_output = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: cloud_config_hash, include_credentials: false, env: client_env, deployment_name: 'my-dep')
 
-          task_id = Bosh::Spec::OutputParser.new(second_deploy_output).task_id
+          task_id = IntegrationSupport::OutputParser.new(second_deploy_output).task_id
           task_output = bosh_runner.run("task #{task_id} --debug", deployment_name: 'my-dep', include_credentials: false, env: client_env)
           expect(task_output).to include("No instances to update for 'instance_group_1'")
 

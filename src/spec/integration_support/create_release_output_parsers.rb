@@ -1,4 +1,4 @@
-module Bosh::Spec
+module IntegrationSupport
   module CreateReleaseOutputParsers
     def parse_release_tarball_path(create_release_output)
       regex = /^Archive\s+(.*\.tgz)\s*$/

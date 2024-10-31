@@ -81,7 +81,7 @@ describe 'vip networks', type: :integration do
       deploy_simple_manifest(manifest_hash: manifest_hash)
       second_deploy_output = deploy_simple_manifest(manifest_hash: manifest_hash)
 
-      task_id = Bosh::Spec::OutputParser.new(second_deploy_output).task_id
+      task_id = IntegrationSupport::OutputParser.new(second_deploy_output).task_id
       task_output = bosh_runner.run("task #{task_id} --debug",
                                     deployment_name: 'my-dep',
                                     include_credentials: true,

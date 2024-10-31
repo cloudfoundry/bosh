@@ -13,7 +13,7 @@ describe 'director behaviour', type: :integration do
       manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest(instances: 1)
       manifest_hash['instance_groups'][0]['persistent_disk'] = 1000
       output = deploy_from_scratch(manifest_hash: manifest_hash)
-      task_id = Bosh::Spec::OutputParser.new(output).task_id
+      task_id = IntegrationSupport::OutputParser.new(output).task_id
       @task_output = bosh_runner.run("task #{task_id} --debug")
     end
 

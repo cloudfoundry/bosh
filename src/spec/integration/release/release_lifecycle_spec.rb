@@ -2,13 +2,13 @@ require 'securerandom'
 require 'spec_helper'
 
 describe 'release lifecycle', type: :integration do
-  include Bosh::Spec::CreateReleaseOutputParsers
+  include IntegrationSupport::CreateReleaseOutputParsers
   with_reset_sandbox_before_each
 
   it 'creates and deploys a new final release with a user defined version' do
     commit_hash = ''
 
-    Dir.chdir(ClientSandbox.test_release_dir) do
+    Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
       File.open('config/final.yml', 'w') do |final|
         final.puts YAML.dump(
           'final_name' => 'bosh-release',
@@ -69,7 +69,7 @@ describe 'release lifecycle', type: :integration do
   it 'release lifecycle: create, upload, update (w/sparse upload), delete' do
     commit_hash = ''
 
-    Dir.chdir(ClientSandbox.test_release_dir) do
+    Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
       commit_hash = `git show-ref --head --hash=7 2> /dev/null`.split.first
 
       out = bosh_runner.run_in_current_dir('create-release')

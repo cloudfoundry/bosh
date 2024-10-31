@@ -1,6 +1,7 @@
 SPEC_ROOT = File.dirname(__FILE__)
 
 require File.expand_path('shared/spec_helper', SPEC_ROOT)
+require 'rspec/core/formatters/console_codes'
 
 require 'fileutils'
 require 'digest/sha1'
@@ -13,6 +14,7 @@ require 'bosh/director'
 require 'nats/client'
 require 'nats/io/client'
 
+Dir.glob(File.join(SPEC_ROOT, 'integration_support/**/*.rb')).each { |f| require(f) }
 Dir.glob(File.join(SPEC_ROOT, 'support/**/*.rb')).each { |f| require(f) }
 
 ASSETS_DIR = File.join(SPEC_ROOT, 'assets')
@@ -24,20 +26,31 @@ BOSH_WORK_TEMPLATE = File.join(ASSETS_DIR, 'bosh_work_dir')
 
 STDOUT.sync = true
 
-module Bosh
-  module Spec; end
-end
-
 RSpec.configure do |c|
   c.expect_with :rspec do |expect|
     expect.max_formatted_output_length = 10_000
   end
   c.filter_run focus: true if ENV['FOCUS']
-  c.filter_run_excluding db: :postgresql unless ENV['DB'] == 'postgresql'
 
-  c.before(:suite) do
-    Support::BoshAgent.ensure_agent_exists!
+  unless ENV['DB'] == 'postgresql'
+    puts RSpec::Core::Formatters::ConsoleCodes.wrap('Skipping postgresql-only tests', :yellow)
+    c.filter_run_excluding db: :postgresql
+  end
 
-    Support::PostgresVersionHelper.ensure_version_match!(ENV['DB'])
+  if ENV['DEFAULT_UPDATE_VM_STRATEGY'] == 'create-swap-delete'
+    puts RSpec::Core::Formatters::ConsoleCodes.wrap('Skipping non-create-swap-delete tests', :yellow)
+    c.filter_run_excluding no_create_swap_delete: true
+  else
+    puts RSpec::Core::Formatters::ConsoleCodes.wrap('Skipping create-swap-delete tests', :yellow)
+    c.filter_run_excluding create_swap_delete: true
+  end
+
+  if ENV['SKIP_RUN_SCRIPT_ENV'] == 'true'
+    puts RSpec::Core::Formatters::ConsoleCodes.wrap('Skipping tests using env params to run_script', :yellow)
+    c.filter_run_excluding run_script_env: true
+  end
+
+  c.after(type: :integration) do
+    current_sandbox.director_service.wait_for_tasks_to_finish
   end
 end

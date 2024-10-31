@@ -1,9 +1,9 @@
 require 'spec_helper'
 
 def upload_multidisk_release
-  FileUtils.cp_r(MULTIDISK_RELEASE_TEMPLATE, ClientSandbox.multidisks_release_dir, preserve: true)
-  bosh_runner.run_in_dir('create-release --force', ClientSandbox.multidisks_release_dir)
-  bosh_runner.run_in_dir('upload-release', ClientSandbox.multidisks_release_dir)
+  FileUtils.cp_r(MULTIDISK_RELEASE_TEMPLATE, IntegrationSupport::ClientSandbox.multidisks_release_dir, preserve: true)
+  bosh_runner.run_in_dir('create-release --force', IntegrationSupport::ClientSandbox.multidisks_release_dir)
+  bosh_runner.run_in_dir('upload-release', IntegrationSupport::ClientSandbox.multidisks_release_dir)
 end
 
 describe 'multiple persistent disks', type: :integration do

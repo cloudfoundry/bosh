@@ -1,10 +1,10 @@
 trap 'QUIT' do
-  threads = Thread.list
-  PID = Process.pid
-  STDERR.puts "#{PID}: Dumping stack traces for #{threads.size} threads:"
-  threads.each do |thread|
-    STDERR.puts "#{PID}: Thread-#{thread.object_id.to_s(36)}"
-    STDERR.puts thread.backtrace.join("\n#{PID}:  ")
+  current_pid = Process.pid
+  current_threads = Thread.list
+  STDERR.puts "PID: #{current_pid}: Dumping stack traces for #{current_threads.size} threads:"
+  current_threads.each do |thread|
+    STDERR.puts "#{current_pid}: Thread-#{thread.object_id.to_s(36)}"
+    STDERR.puts thread.backtrace.join("\n#{current_pid}:  ")
   end
 end
 

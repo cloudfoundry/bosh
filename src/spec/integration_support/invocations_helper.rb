@@ -1,4 +1,4 @@
-module Support
+module IntegrationSupport
   module InvocationsHelper
     CPI_TARGET = 'cpi'.freeze
     AGENT_TARGET = 'agent'.freeze
@@ -141,5 +141,5 @@ module Support
 end
 
 RSpec.configure do |config|
-  config.include(Support::InvocationsHelper)
+  config.include(IntegrationSupport::InvocationsHelper)
 end

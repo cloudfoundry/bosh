@@ -11,7 +11,7 @@ describe 'director_scheduler', type: :integration do
     deployment_hash
   end
 
-  let(:runner) { bosh_runner_in_work_dir(ClientSandbox.test_release_dir) }
+  let(:runner) { bosh_runner_in_work_dir(IntegrationSupport::ClientSandbox.test_release_dir) }
 
   before do
     runner.run('create-release --force')
@@ -29,18 +29,18 @@ describe 'director_scheduler', type: :integration do
     before { current_sandbox.scheduler_process.start }
     after { current_sandbox.scheduler_process.stop }
 
+    let(:snapshots_glob) { File.join(current_sandbox.agent_tmp_path, 'snapshots', '*') }
+
     it 'snapshots a disk' do
-      waiter.wait(300) { expect(snapshots).to_not be_empty }
-
-      keys = %w[deployment job index director_name director_uuid agent_id instance_id]
-      snapshots.each do |snapshot|
-        json = JSON.parse(File.read(snapshot))
-        expect(json.keys - keys).to be_empty
+      waiter.wait(300) do
+        expect(Dir[snapshots_glob]).not_to be_empty, "No snapshots found in #{snapshots_glob}"
       end
-    end
 
-    def snapshots
-      Dir[File.join(current_sandbox.agent_tmp_path, 'snapshots', '*')]
+      expected_keys = %w[deployment job index director_name director_uuid agent_id instance_id]
+      Dir[snapshots_glob].each do |snapshot|
+        json = JSON.parse(File.read(snapshot))
+        expect(json.keys).to contain_exactly(*expected_keys)
+      end
     end
   end
 

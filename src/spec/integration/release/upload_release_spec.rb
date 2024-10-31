@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe 'upload release', type: :integration do
-  include Bosh::Spec::CreateReleaseOutputParsers
+  include IntegrationSupport::CreateReleaseOutputParsers
   with_reset_sandbox_before_each
 
   let!(:release_file) { Tempfile.new('release.tgz') }
@@ -39,7 +39,7 @@ describe 'upload release', type: :integration do
   end
 
   it 'can upload a release without any package changes when using --rebase option' do
-    Dir.chdir(ClientSandbox.test_release_dir) do
+    Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
       FileUtils.rm_rf('dev_releases')
 
       bosh_runner.run_in_current_dir("create-release --tarball=#{release_file.path}")
@@ -66,7 +66,7 @@ describe 'upload release', type: :integration do
   end
 
   it 'uploads the latest generated release if no release path given' do
-    Dir.chdir(ClientSandbox.test_release_dir) do
+    Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
       FileUtils.rm_rf('dev_releases')
 
       bosh_runner.run_in_current_dir('create-release')
@@ -82,7 +82,7 @@ describe 'upload release', type: :integration do
     after { release_file2.delete }
 
     it 'reuses existing jobs/packages release' do
-      Dir.chdir(ClientSandbox.test_release_dir) do
+      Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
         FileUtils.rm_rf('dev_releases')
 
         out = bosh_runner.run_in_current_dir("create-release --tarball=#{release_file.path}")
@@ -122,7 +122,7 @@ describe 'upload release', type: :integration do
   it 'marks releases that have uncommitted changes' do
     commit_hash = ''
 
-    Dir.chdir(ClientSandbox.test_release_dir) do
+    Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
       commit_hash = `git show-ref --head --hash=7 2> /dev/null`.split.first
 
       new_file = File.join('src', 'bar', 'bla')
@@ -158,7 +158,7 @@ describe 'upload release', type: :integration do
     end
 
     context 'when the release is remote' do
-      let(:file_server) { Bosh::Spec::LocalFileServer.new(asset_path(''), file_server_port, logger) }
+      let(:file_server) { IntegrationSupport::LocalFileServer.new(asset_path(''), file_server_port, logger) }
       let(:file_server_port) { current_sandbox.port_provider.get_port(:releases_repo) }
 
       before { file_server.start }
@@ -188,7 +188,7 @@ describe 'upload release', type: :integration do
   end
 
   describe 'when the release is remote' do
-    let(:file_server) { Bosh::Spec::LocalFileServer.new(asset_path(''), file_server_port, logger) }
+    let(:file_server) { IntegrationSupport::LocalFileServer.new(asset_path(''), file_server_port, logger) }
     let(:file_server_port) { current_sandbox.port_provider.get_port(:releases_repo) }
 
     before { file_server.start }
@@ -503,7 +503,7 @@ describe 'upload release', type: :integration do
 
     context 'when uploading source package' do
       it 'Re-uploads all packages to replace old ones and eliminates broken compiled packages' do
-        Dir.chdir(ClientSandbox.test_release_dir) do
+        Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
           bosh_runner.run_in_current_dir('create-release')
           bosh_runner.run_in_current_dir('upload-release')
         end
@@ -524,7 +524,7 @@ describe 'upload release', type: :integration do
         # Delete all package and compiled package blob files
         search_and_delete_files(current_sandbox.blobstore_storage_dir, blob_files_1)
 
-        Dir.chdir(ClientSandbox.test_release_dir) do
+        Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
           bosh_runner.run_in_current_dir('upload-release --fix')
         end
 

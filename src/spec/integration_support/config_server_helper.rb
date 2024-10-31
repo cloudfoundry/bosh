@@ -1,7 +1,7 @@
 require 'net/http'
 require 'json'
 
-module Bosh::Spec
+module IntegrationSupport
   class ConfigServerHelper
     def initialize(sandbox, logger)
       @logger = logger

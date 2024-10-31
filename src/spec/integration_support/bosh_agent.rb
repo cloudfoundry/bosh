@@ -1,4 +1,4 @@
-module Support
+module IntegrationSupport
   module BoshAgent
     BOSH_REPO_ROOT = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..')).freeze
     BOSH_AGENT_SRC = File.join(BOSH_REPO_ROOT, 'src/bosh-agent')
@@ -11,5 +11,11 @@ module Support
         raise 'Bosh agent build failed' unless system(File.join(BOSH_AGENT_SRC, 'bin', 'build'))
       end
     end
+  end
+end
+
+RSpec.configure do |c|
+  c.before(:suite) do
+    IntegrationSupport::BoshAgent.ensure_agent_exists!
   end
 end

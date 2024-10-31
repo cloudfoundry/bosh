@@ -1,9 +1,9 @@
 require 'spec_helper'
 
 def upload_fake_errand_release
-  FileUtils.cp_r(FAKE_ERRAND_RELEASE_TEMPLATE, ClientSandbox.fake_errand_release_dir, preserve: true)
-  bosh_runner.run_in_dir('create-release --force', ClientSandbox.fake_errand_release_dir)
-  bosh_runner.run_in_dir('upload-release', ClientSandbox.fake_errand_release_dir)
+  FileUtils.cp_r(FAKE_ERRAND_RELEASE_TEMPLATE, IntegrationSupport::ClientSandbox.fake_errand_release_dir, preserve: true)
+  bosh_runner.run_in_dir('create-release --force', IntegrationSupport::ClientSandbox.fake_errand_release_dir)
+  bosh_runner.run_in_dir('upload-release', IntegrationSupport::ClientSandbox.fake_errand_release_dir)
 end
 
 describe 'run release job errand', type: :integration, with_tmp_dir: true do

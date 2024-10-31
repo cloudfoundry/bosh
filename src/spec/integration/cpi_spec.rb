@@ -836,7 +836,7 @@ describe 'CPI calls', type: :integration do
         output = deploy_from_scratch(manifest_hash: manifest_hash)
 
         deployment_name = manifest_hash["name"]
-        task_id = Bosh::Spec::OutputParser.new(output).task_id
+        task_id = IntegrationSupport::OutputParser.new(output).task_id
 
         expect_logs_not_to_contain(deployment_name, task_id, ["-----BEGIN"])
       end

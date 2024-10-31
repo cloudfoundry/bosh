@@ -3,7 +3,7 @@ require 'bosh/dev/sandbox/socket_connector'
 require 'puma'
 require 'puma/configuration'
 
-module Bosh::Spec
+module IntegrationSupport
   class LocalFileServer
     def initialize(directory, port, logger)
       @port = port

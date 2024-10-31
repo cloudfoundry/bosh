@@ -21,7 +21,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
       deploy_from_scratch(manifest_hash: manifest_hash_errand, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
 
       output = bosh_runner.run('run-errand fake-errand-name', deployment_name: deployment_name, no_track: true)
-      task_id = Bosh::Spec::OutputParser.new(output).task_id('*')
+      task_id = IntegrationSupport::OutputParser.new(output).task_id('*')
       expect(director.wait_for_vm('fake-errand-name', '0', 150, deployment_name: deployment_name)).to_not be_nil
 
       output = JSON.parse(bosh_runner.run_until_succeeds('locks --json'))
@@ -412,7 +412,7 @@ describe 'run-errand success', type: :integration, with_tmp_dir: true do
             deployment_name: 'errand',
           )
           expect(output =~ /Downloading resource .* to '(.*fake-errand-name[0-9-]*\.tgz)'/).to_not(be_nil, output)
-          logs_file = Bosh::Spec::TarFileInspector.new($1)
+          logs_file = IntegrationSupport::TarFileInspector.new($1)
           expect(logs_file.file_names).to match_array(%w(./errand1/stdout.log ./custom.log))
           expect(logs_file.smallest_file_size).to be > 0
         end

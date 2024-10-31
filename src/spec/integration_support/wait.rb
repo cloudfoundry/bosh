@@ -1,4 +1,4 @@
-module Bosh::Spec
+module IntegrationSupport
   class Waiter
     def initialize(logger)
       @logger = logger
@@ -7,7 +7,7 @@ module Bosh::Spec
     # Do not add retries_left default value
     def wait(retries_left, &blk)
       blk.call
-    rescue Exception => e
+    rescue Exception # rubocop:disable Lint/RescueException
       retries_left -= 1
       if retries_left > 0
         sleep(0.5)

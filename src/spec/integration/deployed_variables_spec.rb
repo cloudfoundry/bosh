@@ -5,7 +5,7 @@ describe 'deployed variables endpoint', type: :integration do
 
   let(:deployment_name) { manifest_hash['name'] }
   let(:director_name) { current_sandbox.director_name }
-  let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger) }
+  let(:config_server_helper) { IntegrationSupport::ConfigServerHelper.new(current_sandbox, logger) }
   let(:manifest_hash) do
     SharedSupport::DeploymentManifestHelper.manifest_with_release.merge(
       'instance_groups' => [SharedSupport::DeploymentManifestHelper.instance_group_with_many_jobs(

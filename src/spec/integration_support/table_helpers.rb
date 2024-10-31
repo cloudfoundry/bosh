@@ -1,6 +1,6 @@
 require 'json'
 
-module Support
+module IntegrationSupport
   module TableHelpers
     def table(source)
       Parser.new(source).data
@@ -31,5 +31,5 @@ module Support
 end
 
 RSpec.configure do |config|
-  config.include(Support::TableHelpers)
+  config.include(IntegrationSupport::TableHelpers)
 end

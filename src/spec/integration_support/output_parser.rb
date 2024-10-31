@@ -1,4 +1,4 @@
-module Bosh::Spec
+module IntegrationSupport
   class OutputParser
     attr_reader :output
 
@@ -7,10 +7,10 @@ module Bosh::Spec
     end
 
     def task_id(state = 'done')
-      if (match = /Task (?<id>\d+) #{state}/.match(output))
+      if (match = /Task (?<id>\d+) #{state}/.match(@output))
         match[:id]
       else
-        raise "No task ID found with state #{state} in output: #{output}"
+        raise "No task ID found with state #{state} in output: #{@output}"
       end
     end
   end

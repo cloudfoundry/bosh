@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-module Support
+module IntegrationSupport
   describe TableHelpers::Parser do
     let(:parser) { TableHelpers::Parser.new(source) }
 

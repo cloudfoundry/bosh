@@ -21,7 +21,7 @@ describe 'using director with config server', type: :integration do
   let(:client_env) do
     { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => current_sandbox.certificate_path.to_s }
   end
-  let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger)}
+  let(:config_server_helper) { IntegrationSupport::ConfigServerHelper.new(current_sandbox, logger)}
   let(:deployment_name) { manifest_hash['name'] }
   let(:director_name) { current_sandbox.director_name }
   let(:cloud_config)  { SharedSupport::DeploymentManifestHelper.simple_cloud_config }
@@ -34,9 +34,9 @@ describe 'using director with config server', type: :integration do
   end
 
   def upload_links_release
-    FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, ClientSandbox.links_release_dir, :preserve => true)
-    bosh_runner.run_in_dir('create-release --force', ClientSandbox.links_release_dir, include_credentials: false,  env: client_env)
-    bosh_runner.run_in_dir('upload-release', ClientSandbox.links_release_dir, include_credentials: false,  env: client_env)
+    FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, IntegrationSupport::ClientSandbox.links_release_dir, :preserve => true)
+    bosh_runner.run_in_dir('create-release --force', IntegrationSupport::ClientSandbox.links_release_dir, include_credentials: false,  env: client_env)
+    bosh_runner.run_in_dir('upload-release', IntegrationSupport::ClientSandbox.links_release_dir, include_credentials: false,  env: client_env)
   end
 
   def prepend_namespace(key)

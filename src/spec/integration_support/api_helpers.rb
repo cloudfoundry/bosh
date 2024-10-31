@@ -1,4 +1,4 @@
-module Support
+module IntegrationSupport
   module ApiHelpers
     def send_director_post_request(url_path, query, request_body, auth = {username: 'test', password: 'test'}, init_header = {'Content-Type' =>'application/json'})
       director_url = build_director_api_url(url_path, query)
@@ -49,5 +49,5 @@ module Support
 end
 
 RSpec.configure do |config|
-  config.include(Support::ApiHelpers)
+  config.include(IntegrationSupport::ApiHelpers)
 end

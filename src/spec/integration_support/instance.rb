@@ -1,4 +1,4 @@
-module Bosh::Spec
+module IntegrationSupport
   class Instance
     attr_reader :last_known_state, :vm_cid, :agent_id, :resurrection, :ips, :availability_zone, :id,
                 :instance_group_name, :index, :ignore, :bootstrap, :disk_cids, :vm_state

@@ -29,6 +29,6 @@ describe 'fetching logs', type: :integration do
 
     tarball_path = %r{Downloading resource '.*' to '(?'log_location'.*)'}.match(output)[:log_location]
 
-    Bosh::Spec::TarFileInspector.new(tarball_path).file_names
+    IntegrationSupport::TarFileInspector.new(tarball_path).file_names
   end
 end

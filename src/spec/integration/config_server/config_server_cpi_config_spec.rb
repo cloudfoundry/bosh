@@ -6,7 +6,7 @@ describe 'cpi config', type: :integration do
   let(:client_env) do
     { 'BOSH_CLIENT' => 'test', 'BOSH_CLIENT_SECRET' => 'secret', 'BOSH_CA_CERT' => current_sandbox.certificate_path.to_s }
   end
-  let(:config_server_helper) { Bosh::Spec::ConfigServerHelper.new(current_sandbox, logger)}
+  let(:config_server_helper) { IntegrationSupport::ConfigServerHelper.new(current_sandbox, logger)}
   let(:cpi_path) { current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI) }
   let(:valid_cpi_config_file) { yaml_file('cpi_manifest', SharedSupport::DeploymentManifestHelper.multi_cpi_config_with_variables(cpi_path)) }
 

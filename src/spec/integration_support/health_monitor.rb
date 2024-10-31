@@ -1,4 +1,4 @@
-module Bosh::Spec
+module IntegrationSupport
   # HealthMonitor provides information from the operator perspective.
   class HealthMonitor
     def initialize(health_monitor_process, logger)

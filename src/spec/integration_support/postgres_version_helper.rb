@@ -1,6 +1,6 @@
 require 'yaml'
 
-module Support
+module IntegrationSupport
   class PostgresVersionHelper
     class << self
       def ensure_version_match!(env_db)
@@ -39,5 +39,11 @@ module Support
         end
       end
     end
+  end
+end
+
+RSpec.configure do |c|
+  c.before(:suite) do
+    IntegrationSupport::PostgresVersionHelper.ensure_version_match!(ENV['DB'])
   end
 end

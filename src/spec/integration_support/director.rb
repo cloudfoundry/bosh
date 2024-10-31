@@ -1,12 +1,12 @@
-require_relative 'table_helpers'
+require_relative '../integration_support/table_helpers'
 
-module Bosh::Spec
+module IntegrationSupport
   # Director information as a regular CLI user would see it.
   # State might not be necessarily in sync with what CPI thinks
   # (e.g. CPI might know about more VMs that director does).
 
   class Director
-    include Support::TableHelpers
+    include IntegrationSupport::TableHelpers
 
     def initialize(runner, waiter, agents_base_dir, db, director_nats_config, logger)
       @runner = runner
@@ -20,7 +20,7 @@ module Bosh::Spec
 
     def instances(options={deployment_name: SharedSupport::DeploymentManifestHelper::DEFAULT_DEPLOYMENT_NAME})
       instances_details(options).map do |instance_data|
-        Bosh::Spec::Instance.new(
+        IntegrationSupport::Instance.new(
           @waiter,
           instance_data[:process_state],
           instance_data[:vm_cid],
@@ -44,7 +44,7 @@ module Bosh::Spec
 
     def vms(options={})
       parse_table_with_ips(@runner.run('vms', options.merge(json: true))).map do |vm_data|
-        Bosh::Spec::Vm.new(
+        IntegrationSupport::Vm.new(
           @waiter,
           vm_data[:process_state],
           vm_data[:vm_cid],

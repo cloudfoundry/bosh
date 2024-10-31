@@ -4,9 +4,9 @@ describe 'network resolution', type: :integration do
   with_reset_sandbox_before_each
 
   def upload_links_release
-    FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, ClientSandbox.links_release_dir, preserve: true)
-    bosh_runner.run_in_dir('create-release --force', ClientSandbox.links_release_dir)
-    bosh_runner.run_in_dir('upload-release', ClientSandbox.links_release_dir)
+    FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, IntegrationSupport::ClientSandbox.links_release_dir, preserve: true)
+    bosh_runner.run_in_dir('create-release --force', IntegrationSupport::ClientSandbox.links_release_dir)
+    bosh_runner.run_in_dir('upload-release', IntegrationSupport::ClientSandbox.links_release_dir)
   end
 
   def should_contain_network_for_job(job, template, pattern)

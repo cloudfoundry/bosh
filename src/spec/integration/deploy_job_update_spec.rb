@@ -100,7 +100,7 @@ describe 'deploy job update', type: :integration do
     deploy_output, exit_code = deploy(manifest_hash: manifest_hash, failure_expected: true, return_exit_code: true)
     expect(exit_code).to_not eq(0)
 
-    task_id = Bosh::Spec::OutputParser.new(deploy_output).task_id('error')
+    task_id = IntegrationSupport::OutputParser.new(deploy_output).task_id('error')
     task_events = events(task_id)
 
     failing_job_event = task_events[-2]

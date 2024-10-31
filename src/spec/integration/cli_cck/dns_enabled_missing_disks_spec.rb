@@ -4,7 +4,7 @@ describe 'cli: cloudcheck', type: :integration do
   let(:manifest) { SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups }
   let(:director_name) { current_sandbox.director_name }
   let(:deployment_name) { manifest['name'] }
-  let(:runner) { bosh_runner_in_work_dir(ClientSandbox.test_release_dir) }
+  let(:runner) { bosh_runner_in_work_dir(IntegrationSupport::ClientSandbox.test_release_dir) }
 
   def prepend_namespace(key)
     "/#{director_name}/#{deployment_name}/#{key}"

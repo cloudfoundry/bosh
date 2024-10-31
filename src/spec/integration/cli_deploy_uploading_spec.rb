@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe 'cli: deploy uploading', type: :integration do
-  include Bosh::Spec::CreateReleaseOutputParsers
+  include IntegrationSupport::CreateReleaseOutputParsers
   with_reset_sandbox_before_each
   let(:stemcell_filename) { asset_path('valid_stemcell.tgz') }
 
@@ -13,7 +13,7 @@ describe 'cli: deploy uploading', type: :integration do
   end
 
   context 'with a remote release' do
-    let(:file_server) { Bosh::Spec::LocalFileServer.new(asset_path(''), file_server_port, logger) }
+    let(:file_server) { IntegrationSupport::LocalFileServer.new(asset_path(''), file_server_port, logger) }
     let(:file_server_port) { current_sandbox.port_provider.get_port(:releases_repo) }
 
     before { file_server.start }

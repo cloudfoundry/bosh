@@ -1,6 +1,6 @@
 require 'json'
 
-module Support
+module IntegrationSupport
   module BlockHelpers
     def parse_blocks(source)
       Parser.new(source).data
@@ -24,5 +24,5 @@ module Support
 end
 
 RSpec.configure do |config|
-  config.include(Support::BlockHelpers)
+  config.include(IntegrationSupport::BlockHelpers)
 end

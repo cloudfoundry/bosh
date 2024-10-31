@@ -148,7 +148,7 @@ describe 'local DNS', type: :integration do
     end
 
     context 'recreates missing VMs with cck' do
-      let(:runner) { bosh_runner_in_work_dir(ClientSandbox.test_release_dir) }
+      let(:runner) { bosh_runner_in_work_dir(IntegrationSupport::ClientSandbox.test_release_dir) }
 
       it 'automatically recreates missing VMs when cck --auto is used' do
         manifest_deployment = initial_deployment(5)

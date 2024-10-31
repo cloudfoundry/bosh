@@ -1,4 +1,4 @@
-module Bosh::Spec
+module IntegrationSupport
   class Vm
     attr_reader :last_known_state, :cid, :ips, :availability_zone, :instance_uuid, :job_name
 
