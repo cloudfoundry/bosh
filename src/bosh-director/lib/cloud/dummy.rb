@@ -285,7 +285,7 @@ module Bosh
         File.write(disk_info_file, JSON.generate(disk_info))
       end
 
-      UPDATE_DISK_SCHEMA = Membrane::SchemaParser.parse { {disk_id: String, size: Integer, cloud_properties: Hash} }
+      UPDATE_DISK_SCHEMA = Membrane::SchemaParser.parse { {disk_id: String, new_size: Integer, cloud_properties: Hash} }
       def update_disk(disk_id, new_size, cloud_properties)
         validate_and_record_inputs(UPDATE_DISK_SCHEMA, __method__, disk_id, new_size, cloud_properties)
 

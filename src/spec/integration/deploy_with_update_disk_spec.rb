@@ -1,4 +1,4 @@
-require_relative '../spec_helper'
+require 'spec_helper'
 require 'fileutils'
 
 describe 'deploy with update_disk', type: :integration do
@@ -14,12 +14,9 @@ describe 'deploy with update_disk', type: :integration do
       }],
       'disk_types' => [{
           'name' => 'disk_a',
-          'disk_size' => 123
-      }, {
-          'name' => 'disk_b',
-          'disk_size' => 456,
+          'disk_size' => 1024,
           'cloud_properties' => {
-            'foos' => 'ball'
+            'foo' => 'bar'
           }
       }],
       'compilation' => {
@@ -61,7 +58,23 @@ describe 'deploy with update_disk', type: :integration do
       deploy_update_deploy
 
       invocations = current_sandbox.cpi.invocations_for_method('update_disk')
-      expect(invocations.count).to be > 0
+      inputs = invocations.first[:inputs]
+
+      expect(invocations.count).to eq(1)
+      expect(inputs['new_size']).to eq(2048)
+      expect(inputs['cloud_properties']).to eq({'foo'=>'baz'})
+
+      vm_cid = director.instances.first.vm_cid
+      disk_infos = current_sandbox.cpi.attached_disk_infos(vm_cid)
+      expect(disk_infos).to match([
+        {
+          'size' => 2048,
+          'cloud_properties' => {'foo' => 'baz'},
+          'vm_locality' => String,
+          'disk_cid' => String,
+          'device_path' => 'attached'
+        }
+      ])
     end
 
     context 'when CPI does not implement update_disk' do
@@ -69,10 +82,10 @@ describe 'deploy with update_disk', type: :integration do
       it 'handles the exception' do
         current_sandbox.cpi.commands.make_update_disk_to_raise_not_implemented
 
-        deploy_update_deploy
+        expect { deploy_update_deploy }.not_to raise_error
 
         invocations = current_sandbox.cpi.invocations_for_method('update_disk')
-        expect(invocations.count).to be > 0
+        expect(invocations.count).to eq(1)
       end
     end
   end
@@ -90,11 +103,15 @@ describe 'deploy with update_disk', type: :integration do
 end
 
 def deploy_update_deploy
-  cloud_config['instance_groups'][0]['persistent_disk_type'] = 'disk_a'
+  # Deploy with initial disk size and cloud properties
+  cloud_config['disk_types'][0]['disk_size'] = 1024
+  cloud_config['disk_types'][0]['cloud_properties']['foo'] = 'bar'
   prepare_for_deploy(cloud_config_hash: cloud_config)
   deploy_simple_manifest(manifest_hash: manifest)
 
-  cloud_config['instance_groups'][0]['persistent_disk_type'] = 'disk_b'
+  # Update disk size and cloud properties
+  cloud_config['disk_types'][0]['disk_size'] = 2048
+  cloud_config['disk_types'][0]['cloud_properties']['foo'] = 'baz'
   upload_cloud_config(cloud_config_hash: cloud_config)
   deploy_simple_manifest(manifest_hash: manifest)
 end
