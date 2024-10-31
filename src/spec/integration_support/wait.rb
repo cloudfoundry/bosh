@@ -1,3 +1,5 @@
+require 'rspec/expectations'
+
 module IntegrationSupport
   class Waiter
     def initialize(logger)
@@ -7,13 +9,13 @@ module IntegrationSupport
     # Do not add retries_left default value
     def wait(retries_left, &blk)
       blk.call
-    rescue Exception # rubocop:disable Lint/RescueException
+    rescue StandardError, RSpec::Expectations::ExpectationNotMetError => e
       retries_left -= 1
       if retries_left > 0
         sleep(0.5)
         retry
       else
-        raise
+        raise e
       end
     end
   end
