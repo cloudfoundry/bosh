@@ -3,12 +3,6 @@ require 'spec_helper'
 describe 'cross deployment links', type: :integration do
   with_reset_sandbox_before_each
 
-  def upload_links_release
-    FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, IntegrationSupport::ClientSandbox.links_release_dir, :preserve => true)
-    bosh_runner.run_in_dir('create-release --force', IntegrationSupport::ClientSandbox.links_release_dir)
-    bosh_runner.run_in_dir('upload-release', IntegrationSupport::ClientSandbox.links_release_dir)
-  end
-
   def bosh_run_cck_with_resolution_with_name(deployment_name, num_errors, option = 1)
     output = ''
     bosh_runner.run_interactively('cck', deployment_name: deployment_name) do |runner|
@@ -27,8 +21,7 @@ describe 'cross deployment links', type: :integration do
     output
   end
 
-  def add_extra_networks_with_single_ip(cloud_config_hash)
-
+  def add_extra_networks_with_single_ip(cloud_config)
     new_network_b = {
       'name' => 'b',
       'subnets' => [{
@@ -135,7 +128,7 @@ describe 'cross deployment links', type: :integration do
   end
 
   before do
-    upload_links_release
+    upload_links_release(bosh_runner_options: {})
     upload_stemcell
 
     upload_cloud_config(cloud_config_hash: cloud_config)
@@ -426,7 +419,7 @@ describe 'cross deployment links', type: :integration do
     with_reset_sandbox_before_each(local_dns: {'enabled' => true, 'include_index' => false, 'use_dns_addresses' => true})
 
     before do
-      upload_links_release
+      upload_links_release(bosh_runner_options: {})
       upload_stemcell
 
       add_extra_networks_with_single_ip(cloud_config)

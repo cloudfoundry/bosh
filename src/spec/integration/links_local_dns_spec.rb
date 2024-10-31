@@ -1,12 +1,6 @@
 require 'spec_helper'
 
 describe 'Links with local_dns enabled', type: :integration do
-  def upload_links_release
-    FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, IntegrationSupport::ClientSandbox.links_release_dir, preserve: false)
-    bosh_runner.run_in_dir('create-release --force', IntegrationSupport::ClientSandbox.links_release_dir)
-    bosh_runner.run_in_dir('upload-release', IntegrationSupport::ClientSandbox.links_release_dir)
-  end
-
   let(:cloud_config) do
     cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
     cloud_config_hash['azs'] = [{ 'name' => 'z1' }]
@@ -74,7 +68,7 @@ describe 'Links with local_dns enabled', type: :integration do
     with_reset_sandbox_before_each(local_dns: {'enabled' => true, 'include_index' => false, 'use_dns_addresses' => true})
 
     before do
-      upload_links_release
+      upload_links_release(bosh_runner_options: {})
       upload_stemcell
 
       upload_cloud_config(cloud_config_hash: cloud_config)
@@ -398,7 +392,7 @@ describe 'Links with local_dns enabled', type: :integration do
     with_reset_sandbox_before_each(local_dns: {'enabled' => true, 'include_index' => false, 'use_dns_addresses' => false} )
 
     before do
-      upload_links_release
+      upload_links_release(bosh_runner_options: {})
       upload_stemcell
 
       upload_cloud_config(cloud_config_hash: cloud_config)

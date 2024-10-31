@@ -3,12 +3,6 @@ require 'spec_helper'
 describe 'links api', type: :integration do
   with_reset_sandbox_before_each
 
-  def upload_links_release
-    FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, IntegrationSupport::ClientSandbox.links_release_dir, preserve: true)
-    bosh_runner.run_in_dir('create-release --force', IntegrationSupport::ClientSandbox.links_release_dir)
-    bosh_runner.run_in_dir('upload-release', IntegrationSupport::ClientSandbox.links_release_dir)
-  end
-
   let(:manifest_hash) do
     SharedSupport::DeploymentManifestHelper.manifest_with_release.merge(
       'instance_groups' => [instance_group],
@@ -145,28 +139,8 @@ describe 'links api', type: :integration do
     }
   end
 
-  def get(path, params)
-    send_director_get_request(path, params)
-  end
-
-  def get_json(*args)
-    JSON.parse get(*args).read_body
-  end
-
-  def get_link_providers
-    get_json('/link_providers', 'deployment=simple')
-  end
-
-  def get_link_consumers
-    get_json('/link_consumers', 'deployment=simple')
-  end
-
-  def get_links
-    get_json('/links', 'deployment=simple')
-  end
-
   before do
-    upload_links_release
+    upload_links_release(bosh_runner_options: {})
     upload_stemcell
 
     upload_cloud_config(cloud_config_hash: cloud_config_hash)
