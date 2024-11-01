@@ -1,7 +1,7 @@
-require 'bosh/dev/sandbox/service'
-require 'bosh/dev/sandbox/socket_connector'
 require 'puma'
 require 'puma/configuration'
+require 'integration_support/service'
+require 'integration_support/socket_connector'
 
 module IntegrationSupport
   class LocalFileServer
@@ -35,7 +35,7 @@ module IntegrationSupport
         end
       end
 
-      @socket_connector = Bosh::Dev::Sandbox::SocketConnector.new(
+      @socket_connector = IntegrationSupport::SocketConnector.new(
         'local-file-server',
         'localhost',
         port,

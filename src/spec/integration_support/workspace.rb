@@ -1,7 +1,7 @@
 require 'bosh/dev'
 require 'fileutils'
 
-module Bosh::Dev::Sandbox
+module IntegrationSupport
   class Workspace
     class << self
       def dir(*parts)

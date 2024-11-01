@@ -1,7 +1,8 @@
 require 'spec_helper'
-require 'bosh/dev/sandbox/main'
+require 'integration_support/main'
+require 'integration_support/uaa_service'
 
-module Bosh::Dev::Sandbox
+module IntegrationSupport
   describe Main do
     let(:uaa){ double(UaaService)}
     before do
@@ -38,14 +39,14 @@ module Bosh::Dev::Sandbox
       end
 
       it 'exposes needed ENV vars for running ruby' do
-        ENV['PATH'] = 'dummy-path'
-        ENV['GEM_HOME'] = 'dummy-gem-home'
-        ENV['GEM_PATH'] = 'dummy-gem-path'
+        allow(ENV).to receive(:[]).with('PATH').and_return('dummy-path')
+        allow(ENV).to receive(:[]).with('GEM_HOME').and_return('dummy-gem-home')
+        allow(ENV).to receive(:[]).with('GEM_PATH').and_return('dummy-gem-path')
 
         external_cpi_config = sandbox.director_config.external_cpi_config
-        expect(external_cpi_config[:env_path]).to eq(ENV['PATH'])
-        expect(external_cpi_config[:gem_home]).to eq(ENV['GEM_HOME'])
-        expect(external_cpi_config[:gem_path]).to eq(ENV['GEM_PATH'])
+        expect(external_cpi_config[:env_path]).to eq('dummy-path')
+        expect(external_cpi_config[:gem_home]).to eq('dummy-gem-home')
+        expect(external_cpi_config[:gem_path]).to eq('dummy-gem-path')
       end
     end
   end

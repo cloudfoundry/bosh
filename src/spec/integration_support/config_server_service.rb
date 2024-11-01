@@ -1,6 +1,6 @@
 require 'common/retryable'
 
-module Bosh::Dev::Sandbox
+module IntegrationSupport
   class ConfigServerService
     attr_reader :port
 
@@ -26,7 +26,7 @@ module Bosh::Dev::Sandbox
       @config_server_config_file= File.join(INSTALL_DIR, "config-server-config#{test_env_number}.json")
       @config_server_socket_connector = SocketConnector.new('config-server', 'localhost', @port, @log_location, logger)
 
-      @config_server_process = Bosh::Dev::Sandbox::Service.new(
+      @config_server_process = IntegrationSupport::Service.new(
         [executable_path, @config_server_config_file],
         {
           output: @log_location
@@ -71,7 +71,7 @@ module Bosh::Dev::Sandbox
 
       retryable.retryer do
         destination_path = File.join(INSTALL_DIR, file_name_to_download)
-        `#{Bosh::Dev::Sandbox::ArtifactInstaller::INSTALL_BINARY_SCRIPT} #{file_name_to_download} #{destination_path} '' config-server-releases`
+        `#{IntegrationSupport::ArtifactInstaller::INSTALL_BINARY_SCRIPT} #{file_name_to_download} #{destination_path} '' config-server-releases`
         $? == 0
       end
 

@@ -1,6 +1,6 @@
-require 'bosh/dev/sandbox/artifact_installer'
+require 'integration_support/artifact_installer'
 
-module Bosh::Dev::Sandbox
+module IntegrationSupport
   class GnatsdManager
     def self.install
       installer.install

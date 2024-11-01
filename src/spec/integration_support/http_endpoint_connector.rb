@@ -2,7 +2,7 @@ require 'net/http'
 require 'timeout'
 require 'bosh/dev'
 
-module Bosh::Dev::Sandbox
+module IntegrationSupport
   class HTTPEndpointConnector
     class MissingContent < StandardError; end
 

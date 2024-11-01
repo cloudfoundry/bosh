@@ -1,4 +1,4 @@
-require_relative '../integration_support/table_helpers'
+require 'integration_support/table_helpers'
 
 module IntegrationSupport
   # Director information as a regular CLI user would see it.

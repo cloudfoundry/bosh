@@ -1,4 +1,4 @@
-module Bosh::Dev::Sandbox
+module IntegrationSupport
 
   class ArtifactInstaller
     INSTALL_BINARY_SCRIPT = File.expand_path(File.join(File.dirname(__FILE__), 'artifact_installer_install_binary.sh'))

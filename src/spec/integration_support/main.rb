@@ -3,23 +3,22 @@ require 'logging'
 require 'securerandom'
 
 require 'bosh/director/config'
+require 'cloud/dummy'
 
 require 'bosh/dev/db/db_helper'
 
-require 'bosh/dev/sandbox/service'
-require 'bosh/dev/sandbox/http_endpoint_connector'
-require 'bosh/dev/sandbox/socket_connector'
-require 'bosh/dev/sandbox/workspace'
-require 'bosh/dev/sandbox/director_config'
-require 'bosh/dev/sandbox/port_provider'
-require 'bosh/dev/sandbox/config_server_service'
-require 'bosh/dev/sandbox/director_service'
-require 'bosh/dev/sandbox/nginx_service'
-require 'bosh/dev/sandbox/gnatsd_manager'
+require 'integration_support/service'
+require 'integration_support/http_endpoint_connector'
+require 'integration_support/socket_connector'
+require 'integration_support/workspace'
+require 'integration_support/director_config'
+require 'integration_support/port_provider'
+require 'integration_support/config_server_service'
+require 'integration_support/director_service'
+require 'integration_support/nginx_service'
+require 'integration_support/gnatsd_manager'
 
-require 'cloud/dummy'
-
-module Bosh::Dev::Sandbox
+module IntegrationSupport
   class Main
     ROOT_CA_CERTIFICATE_PATH = File.join(Bosh::Dev::ASSETS_DIR, 'ca', 'certs', 'rootCA.pem')
 
@@ -506,7 +505,7 @@ module Bosh::Dev::Sandbox
     end
 
     def setup_nats
-      gnatsd_path = Bosh::Dev::Sandbox::GnatsdManager.executable_path
+      gnatsd_path = IntegrationSupport::GnatsdManager.executable_path
       conf = File.join(sandbox_root, NATS_CONFIG)
 
       @nats_process = Service.new(

@@ -1,6 +1,8 @@
 SPEC_ROOT = File.dirname(__FILE__)
 
-require File.expand_path('shared/spec_helper', SPEC_ROOT)
+$LOAD_PATH << File.expand_path(SPEC_ROOT)
+
+require 'shared/spec_helper'
 require 'rspec/core/formatters/console_codes'
 
 require 'fileutils'

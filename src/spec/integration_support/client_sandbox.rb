@@ -1,13 +1,13 @@
 require 'tmpdir'
 require 'tempfile'
 require 'fileutils'
-require 'bosh/dev/sandbox/workspace'
+require 'integration_support/workspace'
 
 module IntegrationSupport
   class ClientSandbox
     class << self
       def workspace_dir
-        Bosh::Dev::Sandbox::Workspace.dir
+        IntegrationSupport::Workspace.dir
       end
 
       def base_dir

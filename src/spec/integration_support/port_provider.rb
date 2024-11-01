@@ -1,4 +1,4 @@
-module Bosh::Dev::Sandbox
+module IntegrationSupport
   class PortProvider
     BASE_PORT = 61000
 

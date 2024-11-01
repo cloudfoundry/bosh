@@ -1,4 +1,8 @@
 # encoding: UTF-8
+BOSH_REPO_ROOT = File.expand_path(File.join(File.dirname(__FILE__), '..'))
+BOSH_SRC_ROOT = File.join(BOSH_REPO_ROOT, 'src')
+
+$LOAD_PATH.unshift(File.join(BOSH_SRC_ROOT, 'spec'))
 
 require 'bosh/dev/tasks'
 

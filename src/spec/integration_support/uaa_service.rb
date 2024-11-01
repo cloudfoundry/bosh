@@ -2,11 +2,13 @@ require 'yaml'
 require 'json'
 require 'fileutils'
 require 'tmpdir'
-require 'bosh/template/evaluation_context'
-require 'bosh/dev/sandbox/service'
 require 'erb'
 
-module Bosh::Dev::Sandbox
+require 'bosh/template/evaluation_context'
+
+require 'integration_support/service'
+
+module IntegrationSupport
   class UaaService
     attr_reader :port
 

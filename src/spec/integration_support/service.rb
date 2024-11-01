@@ -2,7 +2,7 @@ require 'timeout'
 require 'bosh/dev'
 require 'securerandom'
 
-module Bosh::Dev::Sandbox
+module IntegrationSupport
   class Service
     attr_reader :description
     attr_accessor :pid
@@ -106,6 +106,7 @@ module Bosh::Dev::Sandbox
     rescue Timeout::Error
       yield
     rescue Errno::ECHILD
+      # intentionally blank
     end
 
     def wait_for_process_to_exit_or_be_killed(pid)

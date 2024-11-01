@@ -1,6 +1,6 @@
-require 'bosh/dev/sandbox/uaa_service'
+require 'integration_support/uaa_service'
 
-module Bosh::Dev::Sandbox
+module IntegrationSupport
   class DirectorConfig
     DATABASE_CA_PATH = File.join(Bosh::Dev::ASSETS_DIR, 'database', 'rootCA.pem')
 
@@ -79,12 +79,12 @@ module Bosh::Dev::Sandbox
 
       @config_server_enabled = attrs.fetch(:config_server_enabled)
       @config_server_url = "https://127.0.0.1:#{port_provider.get_port(:config_server_port)}"
-      @config_server_cert_path = Bosh::Dev::Sandbox::ConfigServerService::ROOT_CERT
+      @config_server_cert_path = IntegrationSupport::ConfigServerService::ROOT_CERT
 
       @config_server_uaa_url = @uaa_url
       @config_server_uaa_client_id = 'test'
       @config_server_uaa_client_secret = 'secret'
-      @config_server_uaa_ca_cert_path = Bosh::Dev::Sandbox::UaaService::ROOT_CERT
+      @config_server_uaa_ca_cert_path = IntegrationSupport::UaaService::ROOT_CERT
 
       @trusted_certs = attrs.fetch(:trusted_certs)
       @users_in_manifest = attrs.fetch(:users_in_manifest, true)

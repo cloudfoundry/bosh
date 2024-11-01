@@ -16,7 +16,7 @@ describe 'using director with config server and deployments having links', type:
     http = Net::HTTP.new(url.host, url.port)
     http.use_ssl = true
     http.verify_mode = OpenSSL::SSL::VERIFY_PEER
-    http.ca_file = Bosh::Dev::Sandbox::UaaService::ROOT_CERT
+    http.ca_file = IntegrationSupport::UaaService::ROOT_CERT
     http.send_request(verb, url.request_uri, body, {'Authorization' => config_server_helper.auth_header, 'Content-Type' => 'application/json'})
   end
 

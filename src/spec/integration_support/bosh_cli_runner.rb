@@ -1,5 +1,5 @@
 require 'blue-shell'
-require_relative '../integration_support/table_helpers'
+require 'integration_support/table_helpers'
 
 module IntegrationSupport
   class BoshCliRunner
@@ -169,7 +169,7 @@ module IntegrationSupport
       cli_options += " --config #{config}"
 
 
-      cli_options += " --ca-cert #{options.fetch(:ca_cert, Bosh::Dev::Sandbox::Main::ROOT_CA_CERTIFICATE_PATH)}"
+      cli_options += " --ca-cert #{options.fetch(:ca_cert, IntegrationSupport::Main::ROOT_CA_CERTIFICATE_PATH)}"
       cli_options += options.fetch(:json, false) ? ' --json' : ''
       cli_options += ' --sha2' if @sha2
 

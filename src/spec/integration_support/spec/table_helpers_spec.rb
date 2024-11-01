@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'integration_support/table_helpers'
 
 module IntegrationSupport
   describe TableHelpers::Parser do

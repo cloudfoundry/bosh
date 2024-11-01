@@ -2,7 +2,7 @@ require 'socket'
 require 'timeout'
 require 'bosh/dev'
 
-module Bosh::Dev::Sandbox
+module IntegrationSupport
   class SocketConnector
     def initialize(service_name, host, port, log_location, logger)
       @service_name = service_name

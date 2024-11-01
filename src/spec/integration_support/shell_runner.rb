@@ -1,4 +1,4 @@
-module Bosh::Dev::Sandbox
+module IntegrationSupport
   class ShellRunner
     def run(command)
       command.split(' ')

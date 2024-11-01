@@ -1,6 +1,6 @@
 require 'bosh/dev'
 
-module Bosh::Dev::Sandbox
+module IntegrationSupport
   class NginxService
 
     CONFIG_TEMPLATE = File.join(Bosh::Dev::ASSETS_DIR, 'nginx.conf.erb')

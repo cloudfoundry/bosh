@@ -1,7 +1,7 @@
 require 'yaml'
-require 'bosh/dev/sandbox/main'
-require 'bosh/dev/sandbox/verify_multidigest_manager'
-require 'bosh/dev/sandbox/gnatsd_manager'
+require 'integration_support/main'
+require 'integration_support/verify_multidigest_manager'
+require 'integration_support/gnatsd_manager'
 
 module IntegrationSupport
   module IntegrationExampleGroup
@@ -477,7 +477,7 @@ module IntegrationSupport
       setup_home_dir
       setup_test_release_dir
       setup_bosh_work_dir
-      Thread.current[:sandbox] ||= Bosh::Dev::Sandbox::Main.from_env
+      Thread.current[:sandbox] ||= IntegrationSupport::Main.from_env
     end
 
     def reconfigure_sandbox(options)

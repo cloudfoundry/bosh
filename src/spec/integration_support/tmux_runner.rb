@@ -1,4 +1,4 @@
-module Bosh::Dev::Sandbox
+module IntegrationSupport
   class TmuxRunner
     def initialize(window_name)
       @window_name = window_name

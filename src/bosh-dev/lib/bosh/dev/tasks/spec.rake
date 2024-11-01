@@ -1,16 +1,18 @@
+require 'fileutils'
 require 'logging'
 require 'rspec'
-require 'tempfile'
 require 'rspec/core/rake_task'
-require 'bosh/dev/sandbox/workspace'
-require 'common/thread_pool'
-require 'bosh/dev/sandbox/config_server_service'
-require 'bosh/dev/sandbox/nginx_service'
-require 'bosh/dev/sandbox/uaa_service'
-require 'bosh/dev/sandbox/verify_multidigest_manager'
-require 'bosh/dev/sandbox/gnatsd_manager'
 require 'parallel_tests/tasks'
-require 'fileutils'
+require 'tempfile'
+
+require 'common/thread_pool'
+
+require 'integration_support/workspace'
+require 'integration_support/config_server_service'
+require 'integration_support/nginx_service'
+require 'integration_support/uaa_service'
+require 'integration_support/verify_multidigest_manager'
+require 'integration_support/gnatsd_manager'
 
 namespace :spec do
   namespace :integration do
@@ -22,15 +24,15 @@ namespace :spec do
     desc 'Install BOSH integration test dependencies (currently Nginx, UAA, and Config Server)'
     task :install_dependencies do
       unless ENV['SKIP_DEPS'] == 'true'
-        Bosh::Dev::Sandbox::NginxService.install unless ENV['SKIP_NGINX'] == 'true'
+        IntegrationSupport::NginxService.install unless ENV['SKIP_NGINX'] == 'true'
 
-        Bosh::Dev::Sandbox::UaaService.install unless ENV['SKIP_UAA'] == 'true'
+        IntegrationSupport::UaaService.install unless ENV['SKIP_UAA'] == 'true'
 
-        Bosh::Dev::Sandbox::ConfigServerService.install unless ENV['SKIP_CONFIG_SERVER'] == 'true'
+        IntegrationSupport::ConfigServerService.install unless ENV['SKIP_CONFIG_SERVER'] == 'true'
 
-        Bosh::Dev::Sandbox::VerifyMultidigestManager.install unless ENV['SKIP_VERIFY_MULTIDIGEST'] == 'true'
+        IntegrationSupport::VerifyMultidigestManager.install unless ENV['SKIP_VERIFY_MULTIDIGEST'] == 'true'
 
-        Bosh::Dev::Sandbox::GnatsdManager.install unless ENV['SKIP_GNATSD'] == 'true'
+        IntegrationSupport::GnatsdManager.install unless ENV['SKIP_GNATSD'] == 'true'
       end
 
       compile_dependencies
@@ -43,8 +45,8 @@ namespace :spec do
     end
 
     def run_integration_specs(run_options = {})
-      Bosh::Dev::Sandbox::Workspace.clean
-      uaa_service = Bosh::Dev::Sandbox::Workspace.start_uaa
+      IntegrationSupport::Workspace.clean
+      uaa_service = IntegrationSupport::Workspace.start_uaa
 
       num_processes = ENV['NUM_PROCESSES']
 

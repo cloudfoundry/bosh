@@ -1,5 +1,6 @@
 require 'bosh/dev/db/db_helper'
-require 'bosh/dev/sandbox/database_migrator'
+
+require 'integration_support/database_migrator'
 
 class RakeDbHelper
   def self.db_adapter

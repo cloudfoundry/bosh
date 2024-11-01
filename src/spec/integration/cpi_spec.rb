@@ -846,7 +846,7 @@ describe 'CPI calls', type: :integration do
   describe 'upload simple cpi config' do
 
     before do
-      cpi_path = current_sandbox.sandbox_path(Bosh::Dev::Sandbox::Main::EXTERNAL_CPI)
+      cpi_path = current_sandbox.sandbox_path(IntegrationSupport::Main::EXTERNAL_CPI)
       cloud_config_manifest = yaml_file('cloud_manifest', SharedSupport::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs_and_cpis)
       cpi_config_manifest = yaml_file('cpi_manifest', SharedSupport::DeploymentManifestHelper.multi_cpi_config(cpi_path))
 

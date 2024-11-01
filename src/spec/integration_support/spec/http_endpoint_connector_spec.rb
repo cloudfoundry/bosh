@@ -1,8 +1,9 @@
 require 'spec_helper'
-require 'bosh/dev/sandbox/http_endpoint_connector'
+require 'integration_support/http_endpoint_connector'
 
-module Bosh::Dev::Sandbox
+module IntegrationSupport
   describe HTTPEndpointConnector do
+    let(:logger) { double(Logging::Logger).as_null_object }
     let(:http_endpoint_connector) { HTTPEndpointConnector.new('fake-name', '10.10.0.1', '1234', '/fake/path', 'expected-content', 'fake-log-location', logger) }
 
     describe '#try_to_connect' do

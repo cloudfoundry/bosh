@@ -1,8 +1,9 @@
 require 'spec_helper'
-require 'bosh/dev/sandbox/socket_connector'
+require 'integration_support/socket_connector'
 
-module Bosh::Dev::Sandbox
+module IntegrationSupport
   describe SocketConnector do
+    let(:logger) { double(Logging::Logger).as_null_object }
     let(:socket_connector) { SocketConnector.new('fake-name', 'fake-host', 'fake-port', 'fake-log-location', logger) }
 
     describe '#try_to_connect' do

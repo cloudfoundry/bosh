@@ -1,8 +1,8 @@
-require 'bosh/dev/sandbox/database_migrator'
-require 'bosh/dev/sandbox/tmux_runner'
-require 'bosh/dev/sandbox/shell_runner'
+require 'integration_support/database_migrator'
+require 'integration_support/tmux_runner'
+require 'integration_support/shell_runner'
 
-module Bosh::Dev::Sandbox
+module IntegrationSupport
   class DirectorService
     DEFAULT_DIRECTOR_CONFIG = 'director_test.yml'.freeze
     DIRECTOR_CONF_TEMPLATE = File.join(Bosh::Dev::ASSETS_DIR, 'director_test.yml.erb')
