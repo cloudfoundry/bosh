@@ -90,14 +90,6 @@ module Bosh::Dev::DB
       @db_handler.truncate_db
     end
 
-    def describe_db
-      @db_handler.describe_db
-    end
-
-    def dump_db
-      @db_handler.dump_db
-    end
-
     private
 
     def initialize(db_handler)

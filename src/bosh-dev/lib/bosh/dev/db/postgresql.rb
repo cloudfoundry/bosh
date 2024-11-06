@@ -43,14 +43,6 @@ module Bosh::Dev::DB
       execute_sql(sql, connection_string('postgres'))
     end
 
-    def dump_db
-      DBHelper.run_command(%(pg_dump #{connection_string}))
-    end
-
-    def describe_db
-      execute_sql("\\d+ public.*")
-    end
-
     def current_tasks
       tasks_list_cmd = %{
         SELECT description, output
