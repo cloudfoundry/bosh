@@ -213,7 +213,7 @@ lines',
 
     context 'when using cpi config for a new deployment' do
       it 'deploys to multiple cpis' do
-        cpi_path = current_sandbox.sandbox_path(IntegrationSupport::Main::EXTERNAL_CPI)
+        cpi_path = current_sandbox.sandbox_path(IntegrationSupport::Sandbox::EXTERNAL_CPI)
 
         cloud_config_manifest = yaml_file(
           'cloud_manifest',
@@ -284,7 +284,7 @@ lines',
         )
 
         # now deploy with cpi config
-        cpi_path = current_sandbox.sandbox_path(IntegrationSupport::Main::EXTERNAL_CPI)
+        cpi_path = current_sandbox.sandbox_path(IntegrationSupport::Sandbox::EXTERNAL_CPI)
         cloud_config_manifest = yaml_file(
           'cloud_manifest',
           SharedSupport::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs_and_cpis,

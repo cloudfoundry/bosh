@@ -1,5 +1,5 @@
 require 'yaml'
-require 'integration_support/main'
+require 'integration_support/sandbox'
 require 'integration_support/verify_multidigest_manager'
 require 'integration_support/gnatsd_manager'
 
@@ -477,7 +477,7 @@ module IntegrationSupport
       setup_home_dir
       setup_test_release_dir
       setup_bosh_work_dir
-      Thread.current[:sandbox] ||= IntegrationSupport::Main.from_env
+      Thread.current[:sandbox] ||= IntegrationSupport::Sandbox.from_env
     end
 
     def reconfigure_sandbox(options)

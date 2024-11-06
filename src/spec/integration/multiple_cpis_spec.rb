@@ -7,7 +7,7 @@ describe 'Using multiple CPIs', type: :integration do
   let(:cloud_config) { SharedSupport::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs_and_cpis }
 
   let(:cpi_config) do
-    SharedSupport::DeploymentManifestHelper.multi_cpi_config(current_sandbox.sandbox_path(IntegrationSupport::Main::EXTERNAL_CPI))
+    SharedSupport::DeploymentManifestHelper.multi_cpi_config(current_sandbox.sandbox_path(IntegrationSupport::Sandbox::EXTERNAL_CPI))
   end
 
   let(:instance_group) { SharedSupport::DeploymentManifestHelper.simple_instance_group(azs: %w[z1 z2]) }
@@ -27,7 +27,7 @@ describe 'Using multiple CPIs', type: :integration do
   context 'when multiple cpis that support different stemcell formats are configured' do
     let(:cpi_config) do
       cpi_config = SharedSupport::DeploymentManifestHelper.multi_cpi_config(
-        current_sandbox.sandbox_path(IntegrationSupport::Main::EXTERNAL_CPI),
+        current_sandbox.sandbox_path(IntegrationSupport::Sandbox::EXTERNAL_CPI),
       )
       cpi_config['cpis'][0]['properties'] = { 'formats' => ['other'] }
       cpi_config
@@ -45,7 +45,7 @@ describe 'Using multiple CPIs', type: :integration do
             'name' => 'new-cpi',
             'type' => 'cpi-type',
             'properties' => {},
-            'exec_path' => current_sandbox.sandbox_path(IntegrationSupport::Main::EXTERNAL_CPI),
+            'exec_path' => current_sandbox.sandbox_path(IntegrationSupport::Sandbox::EXTERNAL_CPI),
           }
           cpi_config_manifest = yaml_file('cpi_manifest', cpi_config)
           bosh_runner.run("update-cpi-config #{cpi_config_manifest.path}")

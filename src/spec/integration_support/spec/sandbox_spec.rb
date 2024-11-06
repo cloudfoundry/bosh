@@ -1,9 +1,9 @@
 require 'spec_helper'
-require 'integration_support/main'
+require 'integration_support/sandbox'
 require 'integration_support/uaa_service'
 
 module IntegrationSupport
-  describe Main do
+  describe Sandbox do
     let(:uaa){ double(UaaService)}
     before do
       allow(UaaService).to receive(:new).and_return(uaa)
@@ -11,7 +11,7 @@ module IntegrationSupport
       allow(uaa).to receive(:reconfigure)
     end
 
-    subject(:sandbox) { Main.new({type: 'sqlite'}, nil, 0) }
+    subject(:sandbox) { Sandbox.new({ type: 'sqlite'}, nil, 0) }
 
     describe '#run' do
       before do

@@ -19,7 +19,7 @@ require 'integration_support/nginx_service'
 require 'integration_support/gnatsd_manager'
 
 module IntegrationSupport
-  class Main
+  class Sandbox
     ROOT_CA_CERTIFICATE_PATH = File.join(Bosh::Dev::ASSETS_DIR, 'ca', 'certs', 'rootCA.pem')
 
     HM_CONFIG = 'health_monitor.yml'

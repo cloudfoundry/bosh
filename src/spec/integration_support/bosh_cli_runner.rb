@@ -169,7 +169,7 @@ module IntegrationSupport
       cli_options += " --config #{config}"
 
 
-      cli_options += " --ca-cert #{options.fetch(:ca_cert, IntegrationSupport::Main::ROOT_CA_CERTIFICATE_PATH)}"
+      cli_options += " --ca-cert #{options.fetch(:ca_cert, IntegrationSupport::Sandbox::ROOT_CA_CERTIFICATE_PATH)}"
       cli_options += options.fetch(:json, false) ? ' --json' : ''
       cli_options += ' --sha2' if @sha2
 

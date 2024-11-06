@@ -266,7 +266,7 @@ describe 'calculated vm properties', type: :integration do
     end
     let(:cpi_config) do
       cpi_config = SharedSupport::DeploymentManifestHelper.multi_cpi_config(
-        current_sandbox.sandbox_path(IntegrationSupport::Main::EXTERNAL_CPI),
+        current_sandbox.sandbox_path(IntegrationSupport::Sandbox::EXTERNAL_CPI),
       )
       cpi_config['cpis'][0]['properties'] = { 'cvcpkey' => 'dummy1' }
       cpi_config['cpis'][1]['properties'] = { 'cvcpkey' => 'dummy2' }
