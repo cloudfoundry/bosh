@@ -1,3 +1,5 @@
+require 'bosh/director/config'
+
 Sequel.migration do
   up do
     alter_table(:vms) do

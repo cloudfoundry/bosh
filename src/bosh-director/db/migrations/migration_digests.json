@@ -158,7 +158,7 @@
   "20190318234554_add_criteria_columns_to_local_dns_aliases": "8f36cbe5cf9759ad6b903e8c08dc0cf388260cef",
   "20190325095716_remove_resurrection_paused": "546c855e7d2ee00a4f9867ab1d819847781a06de",
   "20190327222054_scale_dns_blob_version": "2460bacc06eae7368d9322a97bfe781a10c59d3f",
-  "20210902232124_add_blobstore_and_nats_shas_to_vms": "34aaaf22c8e5074a96b2666f1bd30a2f41652e24",
+  "20210902232124_add_blobstore_and_nats_shas_to_vms": "7710e2c2c9589865382daaa456bd0e95b22ba3b6",
   "20230103143246_add_permanent_nats_credentials_to_vms": "a01b24aa3891d6bb0eb4e4032553d4e9871a19e0",
   "20240319204601_remove_dns_records_from_instances": "bb637d410772d09caabdb68a1126fbc9f9b4deec"
 }
