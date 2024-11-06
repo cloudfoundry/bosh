@@ -27,8 +27,6 @@ module DBSpecHelper
     end
 
     def connect_database
-      init_logger = Logging::Logger.new('TestLogger')
-
       db_options = {
         type: ENV.fetch('DB', 'sqlite'),
         name: "#{SecureRandom.uuid.delete('-')}_director",

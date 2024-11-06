@@ -55,16 +55,14 @@ namespace :db do
     File.write("#{RakeDbHelper.db_adapter}.tables.txt", db_helper.describe_db)
   end
 
-  namespace :migrations do
-    desc 'Generate new migration with NAME (there are two namespaces: dns, director)'
-    task :new, :name, :namespace do |_, args|
-      args = args.to_hash
-      name = args.fetch(:name)
-      namespace = args.fetch(:namespace)
+  namespace :migration do
+    desc 'Generate new migration with NAME'
+    task :generate, :name do |_, args|
+      name = args.to_hash.fetch(:name)
 
       timestamp = Time.new.getutc.strftime('%Y%m%d%H%M%S')
-      new_migration_path = "bosh-director/db/migrations/#{namespace}/#{timestamp}_#{name}.rb"
-      new_migration_spec_path = "bosh-director/spec/unit/db/migrations/#{namespace}/#{timestamp}_#{name}_spec.rb"
+      new_migration_path = "bosh-director/db/migrations/director/#{timestamp}_#{name}.rb"
+      new_migration_spec_path = "bosh-director/spec/unit/db/migrations/director/#{timestamp}_#{name}_spec.rb"
 
       puts "Creating #{new_migration_spec_path}"
       File.write new_migration_spec_path, <<EOF
@@ -98,20 +96,12 @@ EOF
     end
 
     desc 'Generate digest for a migration file'
-    task :generate_migration_digest, :name, :namespace do |_, args|
-      args = args.to_hash
-      name = args.fetch(:name)
-      namespace = args.fetch(:namespace)
-
-      generate_migration_digest("bosh-director/db/migrations", namespace, name)
-    end
-
-    def generate_migration_digest(migrations_dir, namespace, name)
+    task :generate_digest, :name do |_, args|
       require 'json'
-      new_migration_path = File.join(migrations_dir, "#{namespace}","#{name}.rb")
-      migration_digests = File.join(migrations_dir, "migration_digests.json")
+      name = args.to_hash.fetch(:name)
+      migrations_dir = 'bosh-director/db/migrations'
 
-      migration_digest = Digest::SHA1.hexdigest(File.read(new_migration_path))
+      migration_digests = File.join(migrations_dir, "migration_digests.json")
 
       digest_migration_json = JSON.parse(File.read(migration_digests))
       if digest_migration_json[name] != nil
@@ -121,7 +111,9 @@ EOF
         YOU HAVE BEEN WARNED.
         '
       end
-      digest_migration_json[name] = migration_digest
+      digest_migration_json[name] =
+        Digest::SHA1.hexdigest(File.read(File.join(migrations_dir, 'director', "#{name}.rb")))
+
       File.write(migration_digests, JSON.pretty_generate(digest_migration_json))
     end
   end
