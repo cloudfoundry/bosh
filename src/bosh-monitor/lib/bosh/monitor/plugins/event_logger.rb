@@ -13,7 +13,6 @@ module Bosh::Monitor
         @url              = URI(director['endpoint'])
         @director_options = director
         @processor        = Bhm.event_processor
-        #  @director         = Bhm.director
       end
 
       def run
