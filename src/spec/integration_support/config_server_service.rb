@@ -9,7 +9,7 @@ module IntegrationSupport
     INSTALL_DIR = File.join('tmp', 'integration-config-server')
 
     # Keys and Certs
-    CERTS_DIR = File.join(Bosh::Dev::ASSETS_DIR, 'config_server', 'certs')
+    CERTS_DIR = File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, 'config_server', 'certs')
     SERVER_CERT = File.join(CERTS_DIR, 'server.crt')
     SERVER_KEY = File.join(CERTS_DIR, 'server.key')
     NON_CA_SIGNED_CERT = File.join(CERTS_DIR, 'serverWithWrongCA.crt')

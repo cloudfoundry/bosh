@@ -3,8 +3,8 @@ require 'bosh/dev'
 module IntegrationSupport
   class NginxService
 
-    CONFIG_TEMPLATE = File.join(Bosh::Dev::ASSETS_DIR, 'nginx.conf.erb')
-    CERTS_DIR = File.join(Bosh::Dev::ASSETS_DIR, 'ca', 'certs')
+    CONFIG_TEMPLATE = File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, 'nginx.conf.erb')
+    CERTS_DIR = File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, 'ca', 'certs')
 
     def self.install
       installer = NginxInstaller.new

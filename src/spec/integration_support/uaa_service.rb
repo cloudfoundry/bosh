@@ -16,7 +16,7 @@ module IntegrationSupport
     UAA_BIN_PATH = '/var/vcap/jobs/uaa/bin/'.freeze
 
     # Keys and Certs
-    CERTS_DIR = File.join(Bosh::Dev::ASSETS_DIR, 'ca', 'certs')
+    CERTS_DIR = File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, 'ca', 'certs')
     ROOT_CERT = File.join(CERTS_DIR, 'rootCA.pem')
     ROOT_KEY = File.join(CERTS_DIR, 'rootCA.key')
     SERVER_CERT = File.join(CERTS_DIR, 'server.crt')
