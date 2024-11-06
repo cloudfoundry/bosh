@@ -13,7 +13,7 @@ module Bosh::Monitor
       # hash of deployment_name to deployment for all managed deployments
       @deployment_name_to_deployments = {}
 
-      @logger = Bhm.logger
+      @logger = Bosh::Monitor.logger
       @heartbeats_received = 0
       @alerts_received = 0
       @alerts_processed = 0
@@ -51,20 +51,20 @@ module Bosh::Monitor
     end
 
     def setup_events
-      @processor.enable_pruning(Bhm.intervals.prune_events)
-      Bhm.plugins.each do |plugin|
+      @processor.enable_pruning(Bosh::Monitor.intervals.prune_events)
+      Bosh::Monitor.plugins.each do |plugin|
         @processor.add_plugin(lookup_plugin(plugin['name'], plugin['options']), plugin['events'])
       end
 
-      Bhm.nats.subscribe('hm.agent.heartbeat.*') do |message, _reply, subject|
+      Bosh::Monitor.nats.subscribe('hm.agent.heartbeat.*') do |message, _reply, subject|
         process_event(:heartbeat, subject, message)
       end
 
-      Bhm.nats.subscribe('hm.agent.alert.*') do |message, _reply, subject|
+      Bosh::Monitor.nats.subscribe('hm.agent.alert.*') do |message, _reply, subject|
         process_event(:alert, subject, message)
       end
 
-      Bhm.nats.subscribe('hm.agent.shutdown.*') do |message, _reply, subject|
+      Bosh::Monitor.nats.subscribe('hm.agent.shutdown.*') do |message, _reply, subject|
         process_event(:shutdown, subject, message)
       end
     end
@@ -250,7 +250,7 @@ module Bosh::Monitor
       end
     rescue JSON::ParserError => e
       @logger.error("Cannot parse incoming event: #{e}")
-    rescue Bhm::InvalidEvent => e
+    rescue Bosh::Monitor::InvalidEvent => e
       @logger.error("Invalid event: #{e}")
     end
 
@@ -416,7 +416,7 @@ module Bosh::Monitor
     def sync_active_instances(deployment, instances_data)
       active_instances_ids = Set.new
       instances_data.each do |instance_data|
-        instance = Bhm::Instance.create(instance_data)
+        instance = Bosh::Monitor::Instance.create(instance_data)
         active_instances_ids << instance.id if deployment.add_instance(instance)
       end
       active_instances_ids

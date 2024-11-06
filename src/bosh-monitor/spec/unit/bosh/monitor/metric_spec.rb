@@ -1,9 +1,9 @@
 require 'spec_helper'
 
-describe Bhm::Metric do
+describe Bosh::Monitor::Metric do
   it 'has name, value, timestamp and tags' do
     ts = Time.now
-    metric = Bhm::Metric.new('foo', 'bar', ts, %w[bar baz])
+    metric = Bosh::Monitor::Metric.new('foo', 'bar', ts, %w[bar baz])
     expect(metric.name).to eq('foo')
     expect(metric.value).to eq('bar')
     expect(metric.timestamp).to eq(ts)
@@ -12,7 +12,7 @@ describe Bhm::Metric do
 
   it 'returns a hash representation' do
     ts = Time.now
-    metric = Bhm::Metric.new('foo', 'bar', ts, %w[bar baz])
+    metric = Bosh::Monitor::Metric.new('foo', 'bar', ts, %w[bar baz])
 
     expect(metric.to_hash).to eq(
       name: 'foo',

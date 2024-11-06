@@ -14,8 +14,8 @@ module Bosh::Monitor
 
         @uri                  = URI(director['endpoint'])
         @director_options     = director
-        @processor            = Bhm.event_processor
-        @resurrection_manager = Bhm.resurrection_manager
+        @processor            = Bosh::Monitor.event_processor
+        @resurrection_manager = Bosh::Monitor.resurrection_manager
         @alert_tracker        = ResurrectorHelper::AlertTracker.new(@options)
       end
 

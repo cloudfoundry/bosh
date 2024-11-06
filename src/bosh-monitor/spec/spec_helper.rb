@@ -53,7 +53,7 @@ def make_alert(attrs = {})
     'instance_id' => 'instance_id',
     'created_at' => Time.now.to_i,
   }
-  Bhm::Events::Alert.new(defaults.merge(attrs))
+  Bosh::Monitor::Events::Alert.new(defaults.merge(attrs))
 end
 
 def make_heartbeat(attrs = {})
@@ -79,7 +79,7 @@ def make_heartbeat(attrs = {})
     },
     teams: %w[ateam bteam],
   }
-  Bhm::Events::Heartbeat.new(defaults.merge(attrs))
+  Bosh::Monitor::Events::Heartbeat.new(defaults.merge(attrs))
 end
 
 def find_free_tcp_port
@@ -93,7 +93,7 @@ RSpec.configure do |c|
   c.color = true
 
   c.around do |example|
-    Bhm.config = default_config
+    Bosh::Monitor.config = default_config
 
     example.call
   end

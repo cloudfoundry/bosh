@@ -7,14 +7,14 @@ module Bosh::Monitor
     end
 
     def initialize(config_file)
-      Bhm.config = load_yaml_file(config_file)
+      Bosh::Monitor.config = load_yaml_file(config_file)
 
-      @logger        = Bhm.logger
-      @director      = Bhm.director
-      @intervals     = Bhm.intervals
-      @mbus          = Bhm.mbus
-      @instance_manager = Bhm.instance_manager
-      @resurrection_manager = Bhm.resurrection_manager
+      @logger        = Bosh::Monitor.logger
+      @director      = Bosh::Monitor.director
+      @intervals     = Bosh::Monitor.intervals
+      @mbus          = Bosh::Monitor.mbus
+      @instance_manager = Bosh::Monitor.instance_manager
+      @resurrection_manager = Bosh::Monitor.resurrection_manager
     end
 
     def run
@@ -22,13 +22,13 @@ module Bosh::Monitor
 
       Sync do
         connect_to_mbus
-        @director_monitor = DirectorMonitor.new(Bhm)
+        @director_monitor = DirectorMonitor.new(Bosh::Monitor)
         @director_monitor.subscribe
         @instance_manager.setup_events
         start_http_server
         setup_timers
         update_resurrection_config
-        @logger.info("BOSH HealthMonitor #{Bhm::VERSION} is running...")
+        @logger.info("BOSH HealthMonitor #{Bosh::Monitor::VERSION} is running...")
       rescue => e
         handle_fatal_error(e)
       end
@@ -67,7 +67,7 @@ module Bosh::Monitor
     end
 
     def connect_to_mbus
-      Bhm.nats = NATS::IO::Client.new
+      Bosh::Monitor.nats = NATS::IO::Client.new
 
       tls_context = OpenSSL::SSL::SSLContext.new
       tls_context.ssl_version = :TLSv1_2
@@ -88,7 +88,7 @@ module Bosh::Monitor
         },
       }
 
-      Bhm.nats.on_error do |e|
+      Bosh::Monitor.nats.on_error do |e|
         unless @shutting_down
           redacted_msg = @mbus.password.nil? ? "NATS client error: #{e}" : "NATS client error: #{e}".gsub(@mbus.password, '*****')
           if e.is_a?(NATS::IO::ConnectError)
@@ -99,21 +99,21 @@ module Bosh::Monitor
         end
       end
 
-      Bhm.nats.connect(options)
+      Bosh::Monitor.nats.connect(options)
       @logger.info("Connected to NATS at '#{@mbus.endpoint}'")
     end
 
     def start_http_server
-      @logger.info("HTTP server is starting on port #{Bhm.http_port}...")
+      @logger.info("HTTP server is starting on port #{Bosh::Monitor.http_port}...")
       rack_app = Puma::Rack::Builder.app do
         map '/' do
-          run Bhm::ApiController.new
+          run Bosh::Monitor::ApiController.new
         end
       end
 
       puma_configuration = Puma::Configuration.new do |config|
         config.tag 'bosh_monitor'
-        config.bind "tcp://127.0.0.1:#{Bhm.http_port}"
+        config.bind "tcp://127.0.0.1:#{Bosh::Monitor.http_port}"
         config.app rack_app
         config.preload_app!
       end
@@ -165,7 +165,7 @@ module Bosh::Monitor
     end
 
     def alert_director_error(message)
-      Bhm.event_processor.process(
+      Bosh::Monitor.event_processor.process(
         :alert,
         id: SecureRandom.uuid,
         severity: 3,
@@ -178,7 +178,7 @@ module Bosh::Monitor
 
     def fetch_deployments
       @instance_manager.fetch_deployments(@director)
-    rescue Bhm::DirectorError => e
+    rescue Bosh::Monitor::DirectorError => e
       log_exception(e)
       alert_director_error(e.message)
     end
@@ -188,7 +188,7 @@ module Bosh::Monitor
 
       resurrection_config = @director.resurrection_config
       @resurrection_manager.update_rules(resurrection_config)
-    rescue Bhm::DirectorError => e
+    rescue Bosh::Monitor::DirectorError => e
       log_exception(e)
       alert_director_error(e.message)
     end

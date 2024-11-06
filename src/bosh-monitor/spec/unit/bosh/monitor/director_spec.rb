@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'Bhm::Director' do
+describe 'Bosh::Monitor::Director' do
   include_context Async::RSpec::Reactor
   include Support::UaaHelpers
 
@@ -8,7 +8,7 @@ describe 'Bhm::Director' do
   # However we don't test that here, we only test the synchronous interface.
   # This is way overmocked so it needs an appropriate support from integration tests.
   subject(:director) do
-    Bhm::Director.new(
+    Bosh::Monitor::Director.new(
       {
         'endpoint' => 'http://localhost:8080/director',
         'user' => 'admin',
@@ -52,7 +52,7 @@ describe 'Bhm::Director' do
 
       expect { director.resurrection_config }
         .to raise_error(
-          Bhm::DirectorError,
+          Bosh::Monitor::DirectorError,
           'Cannot get resurrection config from director at'\
           ' http://localhost:8080/director/configs?type=resurrection&latest=true: 500 foo',
         )
@@ -66,7 +66,7 @@ describe 'Bhm::Director' do
       expect do
         director.deployments
       end.to raise_error(
-        Bhm::DirectorError,
+        Bosh::Monitor::DirectorError,
         'Cannot get deployments from director at ' \
         'http://localhost:8080/director/deployments?exclude_configs=true&exclude_releases=true&exclude_stemcells=true: 500 foo',
       )
@@ -88,7 +88,7 @@ describe 'Bhm::Director' do
       expect do
         expect(director.get_deployment_instances('foo')).to eq(deployments)
       end.to raise_error(
-        Bhm::DirectorError,
+        Bosh::Monitor::DirectorError,
         'Cannot get deployment \'foo\' from director at ' \
         'http://localhost:8080/director/deployments/foo/instances: 500 foo',
       )

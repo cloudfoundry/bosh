@@ -16,8 +16,8 @@ module Bosh::Monitor
       @id            = id
       @discovered_at = Time.now
       @updated_at    = Time.now
-      @logger        = Bhm.logger
-      @intervals     = Bhm.intervals
+      @logger        = Bosh::Monitor.logger
+      @intervals     = Bosh::Monitor.intervals
 
       @deployment = opts[:deployment]
       @job = opts[:job]

@@ -1,13 +1,13 @@
 require 'spec_helper'
 
-describe Bhm::Plugins::Pagerduty do
+describe Bosh::Monitor::Plugins::Pagerduty do
   before do
     @options = {
       'service_key' => 'zbzb',
       'http_proxy' => 'http://nowhere.com:3128',
     }
 
-    @plugin = Bhm::Plugins::Pagerduty.new(@options)
+    @plugin = Bosh::Monitor::Plugins::Pagerduty.new(@options)
   end
 
   it 'validates options' do
@@ -20,8 +20,8 @@ describe Bhm::Plugins::Pagerduty do
       'http_proxy' => 'http://nowhere.com:3128',
     }
 
-    expect(Bhm::Plugins::Pagerduty.new(valid_options).validate_options).to be(true)
-    expect(Bhm::Plugins::Pagerduty.new(invalid_options).validate_options).to be(false)
+    expect(Bosh::Monitor::Plugins::Pagerduty.new(valid_options).validate_options).to be(true)
+    expect(Bosh::Monitor::Plugins::Pagerduty.new(invalid_options).validate_options).to be(false)
   end
 
   it "doesn't start if event loop isn't running" do
@@ -31,8 +31,8 @@ describe Bhm::Plugins::Pagerduty do
   it 'sends events to Pagerduty' do
     uri = 'https://events.pagerduty.com/generic/2010-04-15/create_event.json'
 
-    alert = Bhm::Events::Base.create!(:alert, alert_payload)
-    heartbeat = Bhm::Events::Base.create!(:heartbeat, heartbeat_payload)
+    alert = Bosh::Monitor::Events::Base.create!(:alert, alert_payload)
+    heartbeat = Bosh::Monitor::Events::Base.create!(:heartbeat, heartbeat_payload)
 
     alert_request = {
       proxy: 'http://nowhere.com:3128',

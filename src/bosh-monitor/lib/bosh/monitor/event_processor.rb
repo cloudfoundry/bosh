@@ -7,7 +7,7 @@ module Bosh::Monitor
       @plugins = {}
 
       @lock   = Mutex.new
-      @logger = Bhm.logger
+      @logger = Bosh::Monitor.logger
     end
 
     def add_plugin(plugin, event_kinds = [])
@@ -27,7 +27,7 @@ module Bosh::Monitor
 
     def process(kind, data)
       kind = kind.to_sym
-      event = Bhm::Events::Base.create!(kind, data)
+      event = Bosh::Monitor::Events::Base.create!(kind, data)
 
       @lock.synchronize do
         @events[kind] ||= {}
@@ -104,7 +104,7 @@ module Bosh::Monitor
 
     def plugin_process(plugin, event)
       plugin.process(event)
-    rescue Bhm::PluginError => e
+    rescue Bosh::Monitor::PluginError => e
       @logger.error("Plugin #{plugin.class} failed to process #{event.kind}: #{e}")
     end
   end

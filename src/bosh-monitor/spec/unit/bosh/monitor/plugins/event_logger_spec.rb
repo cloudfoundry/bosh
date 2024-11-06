@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'Bhm::Plugins::Resurrector' do
+describe 'Bosh::Monitor::Plugins::Resurrector' do
   include Support::UaaHelpers
 
   let(:options) do
@@ -15,7 +15,7 @@ describe 'Bhm::Plugins::Resurrector' do
       },
     }
   end
-  let(:plugin) { Bhm::Plugins::EventLogger.new(options) }
+  let(:plugin) { Bosh::Monitor::Plugins::EventLogger.new(options) }
   let(:uri) { 'http://foo.bar.com:25555' }
   let(:status_uri) { "#{uri}/info" }
 
@@ -25,7 +25,7 @@ describe 'Bhm::Plugins::Resurrector' do
   end
 
   let(:time) { Time.new }
-  let(:alert) { Bhm::Events::Base.create!(:alert, alert_payload(deployment: 'd', job: 'j', instance_id: 'i')) }
+  let(:alert) { Bosh::Monitor::Events::Base.create!(:alert, alert_payload(deployment: 'd', job: 'j', instance_id: 'i')) }
   let(:user_authentication) do
     {}
   end
@@ -44,7 +44,7 @@ describe 'Bhm::Plugins::Resurrector' do
     include_context Async::RSpec::Reactor
 
     context 'alert' do
-      let(:event_processor) { Bhm::EventProcessor.new }
+      let(:event_processor) { Bosh::Monitor::EventProcessor.new }
 
       it 'should be delivered' do
         plugin.run

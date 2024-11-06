@@ -1,16 +1,16 @@
 require 'spec_helper'
 
-describe Bhm::Instance do
+describe Bosh::Monitor::Instance do
   it 'refuses to create instance with malformed director instance data' do
-    expect(Bhm::Instance.create(['zb'])).to be_nil # not a Hash
+    expect(Bosh::Monitor::Instance.create(['zb'])).to be_nil # not a Hash
   end
 
   it 'refuses to create instance with missing instance id' do
-    expect(Bhm::Instance.create('agent_id' => 'auuid')).to be_nil # not a Hash
+    expect(Bosh::Monitor::Instance.create('agent_id' => 'auuid')).to be_nil # not a Hash
   end
 
   it 'create instance with well formed director instance data' do
-    instance = Bhm::Instance.create(
+    instance = Bosh::Monitor::Instance.create(
       'id' => 'iuuid',
       'agent_id' => 'auuid',
       'job' => 'zb',
@@ -19,7 +19,7 @@ describe Bhm::Instance do
       'expects_vm' => true,
     )
 
-    expect(instance).to be_a(Bhm::Instance)
+    expect(instance).to be_a(Bosh::Monitor::Instance)
     expect(instance.id).to eq('iuuid')
     expect(instance.agent_id).to eq('auuid')
     expect(instance.job).to eq('zb')
@@ -31,7 +31,7 @@ describe Bhm::Instance do
   describe '#vm?' do
     context 'instance has no vm' do
       it 'returns false' do
-        instance = Bhm::Instance.create(
+        instance = Bosh::Monitor::Instance.create(
           'id' => 'iuuid',
           'agent_id' => 'auuid',
           'job' => 'zb',
@@ -45,7 +45,7 @@ describe Bhm::Instance do
 
     context 'instance has vm' do
       it 'returns true' do
-        instance = Bhm::Instance.create(
+        instance = Bosh::Monitor::Instance.create(
           'id' => 'iuuid',
           'agent_id' => 'auuid',
           'job' => 'zb',
@@ -61,7 +61,7 @@ describe Bhm::Instance do
 
   describe '#name' do
     let(:instance) do
-      Bhm::Instance.create(
+      Bosh::Monitor::Instance.create(
         'id' => 'iuuid',
         'agent_id' => 'auuid',
         'job' => 'zb',
@@ -82,7 +82,7 @@ describe Bhm::Instance do
     end
 
     context 'instance has no job, agent_id, index and cid' do
-      let(:instance) { Bhm::Instance.create('id' => 'iuuid', 'expects_vm' => true) }
+      let(:instance) { Bosh::Monitor::Instance.create('id' => 'iuuid', 'expects_vm' => true) }
 
       it 'returns name without missing attributes' do
         expect(instance.name).to eq('my_deployment: instance iuuid [expects_vm=true]')
@@ -91,7 +91,7 @@ describe Bhm::Instance do
 
     context 'instance has no job' do
       let(:instance) do
-        Bhm::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'index' => '0', 'cid' => 'cuuid', 'expects_vm' => true)
+        Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'index' => '0', 'cid' => 'cuuid', 'expects_vm' => true)
       end
 
       it 'returns name without job' do
@@ -101,7 +101,7 @@ describe Bhm::Instance do
 
     context 'instance has no index' do
       let(:instance) do
-        Bhm::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'cid' => 'cuuid', 'expects_vm' => true)
+        Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'cid' => 'cuuid', 'expects_vm' => true)
       end
 
       it 'returns name without index' do
@@ -111,7 +111,7 @@ describe Bhm::Instance do
 
     context 'instance has no agent_id' do
       let(:instance) do
-        Bhm::Instance.create('id' => 'iuuid', 'job' => 'zb', 'index' => '0', 'cid' => 'cuuid', 'expects_vm' => true)
+        Bosh::Monitor::Instance.create('id' => 'iuuid', 'job' => 'zb', 'index' => '0', 'cid' => 'cuuid', 'expects_vm' => true)
       end
 
       it 'returns name without agent_id ' do
@@ -121,7 +121,7 @@ describe Bhm::Instance do
 
     context 'instance has no cid' do
       let(:instance) do
-        Bhm::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true)
+        Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true)
       end
 
       it 'returns name without cid' do

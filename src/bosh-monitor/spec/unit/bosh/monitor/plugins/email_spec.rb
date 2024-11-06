@@ -1,8 +1,8 @@
 require 'spec_helper'
 
-describe Bhm::Plugins::Email do
+describe Bosh::Monitor::Plugins::Email do
   before do
-    Bhm.logger = logger
+    Bosh::Monitor.logger = logger
 
     @smtp_options = {
       'from' => 'hm@example.com',
@@ -20,7 +20,7 @@ describe Bhm::Plugins::Email do
       'interval' => 0.1,
     }
 
-    @plugin = Bhm::Plugins::Email.new(@options)
+    @plugin = Bosh::Monitor::Plugins::Email.new(@options)
   end
 
   it 'validates options' do
@@ -42,8 +42,8 @@ describe Bhm::Plugins::Email do
       'c' => 'd',
     }
 
-    expect(Bhm::Plugins::Email.new(valid_options).validate_options).to eq(true)
-    expect(Bhm::Plugins::Email.new(invalid_options).validate_options).to eq(false)
+    expect(Bosh::Monitor::Plugins::Email.new(valid_options).validate_options).to eq(true)
+    expect(Bosh::Monitor::Plugins::Email.new(invalid_options).validate_options).to eq(false)
   end
 
   it 'does not start if event loop is not running' do
@@ -59,8 +59,8 @@ describe Bhm::Plugins::Email do
     expect(@plugin).to_not receive(:send_email_async)
 
     10.times do |_i|
-      @plugin.process(Bhm::Events::Base.create!(:alert, alert_payload))
-      @plugin.process(Bhm::Events::Base.create!(:heartbeat, heartbeat_payload))
+      @plugin.process(Bosh::Monitor::Events::Base.create!(:alert, alert_payload))
+      @plugin.process(Bosh::Monitor::Events::Base.create!(:heartbeat, heartbeat_payload))
     end
 
     expect(@plugin.queue_size(:alert)).to eq(10)
@@ -71,12 +71,12 @@ describe Bhm::Plugins::Email do
     alerts = []
 
     3.times do
-      alert = Bhm::Events::Base.create!(:alert, alert_payload)
+      alert = Bosh::Monitor::Events::Base.create!(:alert, alert_payload)
       alerts << alert
       @plugin.process(alert)
     end
 
-    heartbeats = [Bhm::Events::Base.create!(:heartbeat, heartbeat_payload)]
+    heartbeats = [Bosh::Monitor::Events::Base.create!(:heartbeat, heartbeat_payload)]
     @plugin.process(heartbeats[0])
 
     alert_email_body = alerts.map(&:to_plain_text).join("\n") + "\n"
@@ -93,8 +93,8 @@ describe Bhm::Plugins::Email do
     allow(@plugin).to receive(:send_email_async)
 
     20.times do |_i|
-      @plugin.process(Bhm::Events::Base.create!(:heartbeat, heartbeat_payload))
-      @plugin.process(Bhm::Events::Base.create!(:alert, alert_payload))
+      @plugin.process(Bosh::Monitor::Events::Base.create!(:heartbeat, heartbeat_payload))
+      @plugin.process(Bosh::Monitor::Events::Base.create!(:alert, alert_payload))
     end
 
     expect(@plugin.queue_size(:alert)).to eq(20)

@@ -3,10 +3,10 @@ require 'spec_helper'
 describe Bosh::Monitor::TcpConnection do
   describe 'exponential back off' do
     context 'when the initial connection fails' do
-      let(:tcp_connection) { Bosh::Monitor::TcpConnection.new('connection.tcp', '127.0.0.1', 80, Bhm::TcpConnection::DEFAULT_RETRIES) }
+      let(:tcp_connection) { Bosh::Monitor::TcpConnection.new('connection.tcp', '127.0.0.1', 80, Bosh::Monitor::TcpConnection::DEFAULT_RETRIES) }
 
       before do
-        Bhm.logger = logger
+        Bosh::Monitor.logger = logger
         allow(tcp_connection).to receive(:retry_reconnect)
       end
 
@@ -37,7 +37,7 @@ describe Bosh::Monitor::TcpConnection do
 
       it 'should exit after MAX_RETRIES retries' do
         expect do
-          (Bhm::TcpConnection::DEFAULT_RETRIES + 1).times do
+          (Bosh::Monitor::TcpConnection::DEFAULT_RETRIES + 1).times do
             tcp_connection.unbind
           end
         end.to raise_error(/connection.tcp-failed-to-reconnect after/)
@@ -47,10 +47,10 @@ describe Bosh::Monitor::TcpConnection do
         let(:tcp_connection) { Bosh::Monitor::TcpConnection.new('connection.tcp', '127.0.0.1', 80, -1) }
 
         it 'should try "indefinitely"' do
-          expect(tcp_connection).to receive(:retry_reconnect).at_least(Bhm::TcpConnection::DEFAULT_RETRIES + 5).times
+          expect(tcp_connection).to receive(:retry_reconnect).at_least(Bosh::Monitor::TcpConnection::DEFAULT_RETRIES + 5).times
 
           expect do
-            (Bhm::TcpConnection::DEFAULT_RETRIES + 5).times do
+            (Bosh::Monitor::TcpConnection::DEFAULT_RETRIES + 5).times do
               tcp_connection.unbind
             end
           end.to_not raise_error
@@ -58,7 +58,7 @@ describe Bosh::Monitor::TcpConnection do
       end
     end
     context 'when send_data errors' do
-      let(:tcp_connection) { Bosh::Monitor::TcpConnection.new('connection.tcp', '127.0.0.1', 80, Bhm::TcpConnection::DEFAULT_RETRIES) }
+      let(:tcp_connection) { Bosh::Monitor::TcpConnection.new('connection.tcp', '127.0.0.1', 80, Bosh::Monitor::TcpConnection::DEFAULT_RETRIES) }
       it 'creates a new socket and continues transmitting' do
         endpoint = double('endpoint').as_null_object
         socket = double('socket').as_null_object

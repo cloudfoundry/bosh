@@ -1,11 +1,11 @@
 require 'spec_helper'
 
-describe Bhm::Plugins::Dummy do
+describe Bosh::Monitor::Plugins::Dummy do
   let(:plugin) { described_class.new }
 
   it 'retains a list of previously made alerts' do
-    heartbeat = Bhm::Events::Base.create!(:heartbeat, heartbeat_payload)
-    alert = Bhm::Events::Base.create!(:alert, alert_payload)
+    heartbeat = Bosh::Monitor::Events::Base.create!(:heartbeat, heartbeat_payload)
+    alert = Bosh::Monitor::Events::Base.create!(:alert, alert_payload)
 
     plugin.process(heartbeat)
     plugin.process(alert)

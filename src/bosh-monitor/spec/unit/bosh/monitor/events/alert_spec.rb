@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Bhm::Events::Alert do
+describe Bosh::Monitor::Events::Alert do
   it 'supports attributes validation' do
     expect(make_alert).to be_valid
     expect(make_alert.kind).to eq(:alert)

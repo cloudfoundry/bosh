@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Bhm::Plugins::ConsulEventForwarder do
+describe Bosh::Monitor::Plugins::ConsulEventForwarder do
   WebMock.allow_net_connect!
 
   subject { described_class.new(options) }

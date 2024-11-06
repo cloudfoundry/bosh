@@ -1,12 +1,12 @@
 require 'spec_helper'
 
-describe Bhm::Agent do
+describe Bosh::Monitor::Agent do
   before :each do
-    Bhm.intervals = OpenStruct.new(agent_timeout: 344, rogue_agent_alert: 124)
+    Bosh::Monitor.intervals = OpenStruct.new(agent_timeout: 344, rogue_agent_alert: 124)
   end
 
   def make_agent(id)
-    Bhm::Agent.new(id)
+    Bosh::Monitor::Agent.new(id)
   end
 
   it 'knows if it is timed out' do

@@ -1,7 +1,7 @@
 require 'spec_helper'
 
-describe Bhm::Plugins::Graphite do
-  subject(:plugin) { Bhm::Plugins::Graphite.new(options) }
+describe Bosh::Monitor::Plugins::Graphite do
+  subject(:plugin) { Bosh::Monitor::Plugins::Graphite.new(options) }
 
   let(:options) do
     {
@@ -35,10 +35,10 @@ describe Bhm::Plugins::Graphite do
     }
 
     it 'validates options' do
-      expect(Bhm::Plugins::Graphite.new(invalid_port_options).validate_options).to be_falsey
-      expect(Bhm::Plugins::Graphite.new(invalid_max_retries_options).validate_options).to be_falsey
-      expect(Bhm::Plugins::Graphite.new(valid_options).validate_options).to be_truthy
-      expect(Bhm::Plugins::Graphite.new(valid_infinite_retries_options).validate_options).to be_truthy
+      expect(Bosh::Monitor::Plugins::Graphite.new(invalid_port_options).validate_options).to be_falsey
+      expect(Bosh::Monitor::Plugins::Graphite.new(invalid_max_retries_options).validate_options).to be_falsey
+      expect(Bosh::Monitor::Plugins::Graphite.new(valid_options).validate_options).to be_truthy
+      expect(Bosh::Monitor::Plugins::Graphite.new(valid_infinite_retries_options).validate_options).to be_truthy
     end
   end
 

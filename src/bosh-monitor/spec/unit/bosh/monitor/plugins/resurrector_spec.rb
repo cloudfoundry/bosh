@@ -15,7 +15,7 @@ module Bosh::Monitor::Plugins
         },
       }
     end
-    let(:plugin) { Bhm::Plugins::Resurrector.new(options) }
+    let(:plugin) { Bosh::Monitor::Plugins::Resurrector.new(options) }
     let(:uri) { 'http://foo.bar.com:25555' }
     let(:status_uri) { "#{uri}/info" }
     let(:tasks_uri) { "#{uri}/tasks?deployment=d&state=queued,processing&verbose=2" }
@@ -47,7 +47,7 @@ module Bosh::Monitor::Plugins
     end
 
     let(:alert) do
-      Bhm::Events::Base.create!(:alert, alert_payload(
+      Bosh::Monitor::Events::Base.create!(:alert, alert_payload(
                                           category: Bosh::Monitor::Events::Alert::CATEGORY_DEPLOYMENT_HEALTH,
                                           deployment: 'd',
                                           jobs_to_instance_ids: { 'j1' => %w[i1 i2], 'j2' => %w[i3 i4] },
@@ -69,15 +69,15 @@ module Bosh::Monitor::Plugins
       include_context Async::RSpec::Reactor
 
       context 'when resurrector checks if scan and fix needs to be scheduled' do
-        let(:event_processor) { Bhm::EventProcessor.new }
+        let(:event_processor) { Bosh::Monitor::EventProcessor.new }
         let(:state) do
-          double(Bhm::Plugins::ResurrectorHelper::DeploymentState, managed?: true, meltdown?: false, summary: 'summary')
+          double(Bosh::Monitor::Plugins::ResurrectorHelper::DeploymentState, managed?: true, meltdown?: false, summary: 'summary')
         end
 
         before do
-          Bhm.event_processor = event_processor
-          @don = double(Bhm::Plugins::ResurrectorHelper::AlertTracker, record: nil, state_for: state)
-          expect(Bhm::Plugins::ResurrectorHelper::AlertTracker).to receive(:new).and_return(@don)
+          Bosh::Monitor.event_processor = event_processor
+          @don = double(Bosh::Monitor::Plugins::ResurrectorHelper::AlertTracker, record: nil, state_for: state)
+          expect(Bosh::Monitor::Plugins::ResurrectorHelper::AlertTracker).to receive(:new).and_return(@don)
         end
 
         context 'with a scan task already queued' do
@@ -128,7 +128,7 @@ module Bosh::Monitor::Plugins
 
         context 'when the tasks endpoint is not responding with a 200 and resurrector does not know if tasks are scheduled for a deployment' do
           let(:state) do
-            double(Bhm::Plugins::ResurrectorHelper::DeploymentState, managed?: true, meltdown?: false, summary: 'summary')
+            double(Bosh::Monitor::Plugins::ResurrectorHelper::DeploymentState, managed?: true, meltdown?: false, summary: 'summary')
           end
           let(:tasks_body) { '{}' }
           let(:tasks_status) { 500 }
@@ -144,15 +144,15 @@ module Bosh::Monitor::Plugins
       end
 
       context 'alert of CATEGORY_DEPLOYMENT_HEALTH' do
-        let(:event_processor) { Bhm::EventProcessor.new }
+        let(:event_processor) { Bosh::Monitor::EventProcessor.new }
         let(:state) do
-          double(Bhm::Plugins::ResurrectorHelper::DeploymentState, managed?: true, meltdown?: false, summary: 'summary')
+          double(Bosh::Monitor::Plugins::ResurrectorHelper::DeploymentState, managed?: true, meltdown?: false, summary: 'summary')
         end
 
         before do
-          Bhm.event_processor = event_processor
-          @don = double(Bhm::Plugins::ResurrectorHelper::AlertTracker, record: nil, state_for: state)
-          expect(Bhm::Plugins::ResurrectorHelper::AlertTracker).to receive(:new).and_return(@don)
+          Bosh::Monitor.event_processor = event_processor
+          @don = double(Bosh::Monitor::Plugins::ResurrectorHelper::AlertTracker, record: nil, state_for: state)
+          expect(Bosh::Monitor::Plugins::ResurrectorHelper::AlertTracker).to receive(:new).and_return(@don)
         end
 
         it 'gets delivered' do
@@ -214,7 +214,7 @@ module Bosh::Monitor::Plugins
 
         context 'while melting down' do
           let(:state) do
-            double(Bhm::Plugins::ResurrectorHelper::DeploymentState, managed?: false, meltdown?: true, summary: 'summary')
+            double(Bosh::Monitor::Plugins::ResurrectorHelper::DeploymentState, managed?: false, meltdown?: true, summary: 'summary')
           end
 
           it 'does not send requests to scan and fix' do
@@ -242,7 +242,7 @@ module Bosh::Monitor::Plugins
 
         context 'when resurrection is disabled for all instance_groups' do
           let(:resurrection_manager) { double(Bosh::Monitor::ResurrectionManager, resurrection_enabled?: false) }
-          before { allow(Bhm).to receive(:resurrection_manager).and_return(resurrection_manager) }
+          before { allow(Bosh::Monitor).to receive(:resurrection_manager).and_return(resurrection_manager) }
 
           it 'does not send requests to scan and fix' do
             plugin.run
@@ -273,7 +273,7 @@ module Bosh::Monitor::Plugins
           before do
             allow(resurrection_manager).to receive(:resurrection_enabled?).with('d', 'j1').and_return(false)
             allow(resurrection_manager).to receive(:resurrection_enabled?).with('d', 'j2').and_return(true)
-            allow(Bhm).to receive(:resurrection_manager).and_return(resurrection_manager)
+            allow(Bosh::Monitor).to receive(:resurrection_manager).and_return(resurrection_manager)
           end
 
           it 'sends request to scan and fix for only enabled instance_groups' do
@@ -322,7 +322,7 @@ module Bosh::Monitor::Plugins
         end
 
         context 'without deployment or jobs_to_instance_ids' do
-          let(:alert) { Bhm::Events::Base.create!(:alert, alert_payload) }
+          let(:alert) { Bosh::Monitor::Events::Base.create!(:alert, alert_payload) }
 
           it 'does not send request to scan and fix' do
             plugin.run
@@ -336,7 +336,7 @@ module Bosh::Monitor::Plugins
 
       context 'alert of CATEGORY_VM_HEALTH' do
         let(:alert) do
-          Bhm::Events::Base.create!(:alert, alert_payload(category: Bosh::Monitor::Events::Alert::CATEGORY_VM_HEALTH))
+          Bosh::Monitor::Events::Base.create!(:alert, alert_payload(category: Bosh::Monitor::Events::Alert::CATEGORY_VM_HEALTH))
         end
 
         it 'does not send request to scan and fix' do
@@ -363,8 +363,8 @@ module Bosh::Monitor::Plugins
 
         context 'when director starts responding' do
           before do
-            state = double(Bhm::Plugins::ResurrectorHelper::DeploymentState, managed?: true, meltdown?: false, summary: 'summary')
-            expect(Bhm::Plugins::ResurrectorHelper::DeploymentState).to receive(:new).and_return(state)
+            state = double(Bosh::Monitor::Plugins::ResurrectorHelper::DeploymentState, managed?: true, meltdown?: false, summary: 'summary')
+            expect(Bosh::Monitor::Plugins::ResurrectorHelper::DeploymentState).to receive(:new).and_return(state)
           end
 
           it 'starts sending alerts' do

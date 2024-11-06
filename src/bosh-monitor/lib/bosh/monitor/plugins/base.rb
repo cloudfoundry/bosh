@@ -6,7 +6,7 @@ module Bosh::Monitor
       attr_reader :event_kinds
 
       def initialize(options = {})
-        @logger  = Bhm.logger
+        @logger  = Bosh::Monitor.logger
         @options = (options || {}).dup
         @event_kinds = []
       end

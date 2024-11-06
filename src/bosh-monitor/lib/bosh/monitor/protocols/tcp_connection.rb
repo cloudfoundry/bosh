@@ -9,7 +9,7 @@ module Bosh::Monitor
       @logger_name = logger_name
       @host = host
       @port = port
-      @logger = Bhm.logger
+      @logger = Bosh::Monitor.logger
       @max_retries = max_retries
       reset_retries
     end

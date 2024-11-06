@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Bhm::Plugins::DataDog do
+describe Bosh::Monitor::Plugins::DataDog do
   include_context Async::RSpec::Reactor
 
   let(:options) do

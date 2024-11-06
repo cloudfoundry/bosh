@@ -17,8 +17,8 @@ module Bosh::Monitor
 
         host = options['host']
         port = options['port']
-        retries = options['max_retries'] || Bhm::TcpConnection::DEFAULT_RETRIES
-        @tsdb = Bhm::TsdbConnection.new(host, port, retries)
+        retries = options['max_retries'] || Bosh::Monitor::TcpConnection::DEFAULT_RETRIES
+        @tsdb = Bosh::Monitor::TsdbConnection.new(host, port, retries)
         @tsdb.connect
       end
 

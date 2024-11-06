@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Bhm::Deployment do
+describe Bosh::Monitor::Deployment do
   describe '.create' do
     context 'from valid hash' do
       let(:deployment_data) do
@@ -8,9 +8,9 @@ describe Bhm::Deployment do
       end
 
       it 'creates a deployment' do
-        deployment = Bhm::Deployment.create(deployment_data)
+        deployment = Bosh::Monitor::Deployment.create(deployment_data)
 
-        expect(deployment).to be_a(Bhm::Deployment)
+        expect(deployment).to be_a(Bosh::Monitor::Deployment)
       end
     end
 
@@ -20,7 +20,7 @@ describe Bhm::Deployment do
       end
 
       it 'fails to create a deployment' do
-        deployment = Bhm::Deployment.create(deployment_data)
+        deployment = Bosh::Monitor::Deployment.create(deployment_data)
 
         expect(deployment).to be_nil
       end
@@ -30,7 +30,7 @@ describe Bhm::Deployment do
       let(:deployment_data) { 'no-hash' }
 
       it 'fails to create deployment' do
-        deployment = Bhm::Deployment.create(deployment_data)
+        deployment = Bosh::Monitor::Deployment.create(deployment_data)
 
         expect(deployment).to be_nil
       end
@@ -38,12 +38,12 @@ describe Bhm::Deployment do
   end
 
   describe '#add_instance' do
-    let(:deployment) { Bhm::Deployment.create('name' => 'deployment-name') }
+    let(:deployment) { Bosh::Monitor::Deployment.create('name' => 'deployment-name') }
 
     it 'add instance with well formed director instance data' do
       expect(
         deployment.add_instance(
-          Bhm::Instance.create(
+          Bosh::Monitor::Instance.create(
             'id' => 'iuuid',
             'job' => 'zb',
             'index' => '0',
@@ -51,21 +51,21 @@ describe Bhm::Deployment do
           ),
         ),
       ).to be(true)
-      expect(deployment.instance('iuuid')).to be_a(Bhm::Instance)
+      expect(deployment.instance('iuuid')).to be_a(Bosh::Monitor::Instance)
       expect(deployment.instance('iuuid').id).to eq('iuuid')
       expect(deployment.instance('iuuid').deployment).to eq('deployment-name')
     end
 
     it 'add only new instances' do
-      deployment.add_instance(Bhm::Instance.create('id' => 'iuuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true))
-      deployment.add_instance(Bhm::Instance.create('id' => 'iuuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true))
+      deployment.add_instance(Bosh::Monitor::Instance.create('id' => 'iuuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true))
+      deployment.add_instance(Bosh::Monitor::Instance.create('id' => 'iuuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true))
 
       expect(deployment.instances.size).to eq(1)
     end
 
     it 'overrides existing instance' do
-      deployment.add_instance(Bhm::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'cid' => 'cid', 'expects_vm' => true))
-      updated_instance = Bhm::Instance.create(
+      deployment.add_instance(Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'cid' => 'cid', 'expects_vm' => true))
+      updated_instance = Bosh::Monitor::Instance.create(
         'id' => 'iuuid',
         'agent_id' => 'another-auuid',
         'cid' => 'another-cid',
@@ -79,11 +79,11 @@ describe Bhm::Deployment do
   end
 
   describe '#instance_ids' do
-    let(:deployment) { Bhm::Deployment.create('name' => 'deployment-name') }
+    let(:deployment) { Bosh::Monitor::Deployment.create('name' => 'deployment-name') }
 
     before do
-      deployment.add_instance(Bhm::Instance.create('id' => 'iuuid1', 'job' => 'zb', 'index' => '0', 'expects_vm' => true))
-      deployment.add_instance(Bhm::Instance.create('id' => 'iuuid2', 'job' => 'zb', 'index' => '0', 'expects_vm' => true))
+      deployment.add_instance(Bosh::Monitor::Instance.create('id' => 'iuuid1', 'job' => 'zb', 'index' => '0', 'expects_vm' => true))
+      deployment.add_instance(Bosh::Monitor::Instance.create('id' => 'iuuid2', 'job' => 'zb', 'index' => '0', 'expects_vm' => true))
     end
 
     it 'returns all instance ids' do
@@ -97,32 +97,32 @@ describe Bhm::Deployment do
   end
 
   describe '#remove_instance' do
-    let(:deployment) { Bhm::Deployment.create('name' => 'deployment-name') }
+    let(:deployment) { Bosh::Monitor::Deployment.create('name' => 'deployment-name') }
 
     it 'remove instance with id' do
-      deployment.add_instance(Bhm::Instance.create('id' => 'iuuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true))
+      deployment.add_instance(Bosh::Monitor::Instance.create('id' => 'iuuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true))
 
-      expect(deployment.instance('iuuid')).to be_a(Bhm::Instance)
+      expect(deployment.instance('iuuid')).to be_a(Bosh::Monitor::Instance)
       expect(deployment.remove_instance('iuuid').id).to be_truthy
       expect(deployment.instance('iuuid')).to be_nil
     end
   end
 
   describe '#upsert_agent' do
-    let(:deployment) { Bhm::Deployment.create('name' => 'deployment-name') }
+    let(:deployment) { Bosh::Monitor::Deployment.create('name' => 'deployment-name') }
     let(:instance) do
-      Bhm::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true)
+      Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true)
     end
 
     it 'adds agent' do
       expect(deployment.upsert_agent(instance)).to be(true)
-      expect(deployment.agent('auuid')).to be_a(Bhm::Agent)
+      expect(deployment.agent('auuid')).to be_a(Bosh::Monitor::Agent)
       expect(deployment.agent('auuid').id).to eq('auuid')
       expect(deployment.agent('auuid').deployment).to eq('deployment-name')
     end
 
     it 'updates existing agents' do
-      updated_instance = Bhm::Instance.create(
+      updated_instance = Bosh::Monitor::Instance.create(
         'id' => 'iuuid',
         'agent_id' => 'auuid',
         'job' => 'new_job',
@@ -140,9 +140,9 @@ describe Bhm::Deployment do
 
     context 'Instance has no agent id' do
       context 'when instance expects vm' do
-        let(:instance) { Bhm::Instance.create('id' => 'iuuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true) }
+        let(:instance) { Bosh::Monitor::Instance.create('id' => 'iuuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true) }
         it 'refuses to add active agent' do
-          expect(Bhm.logger).to receive(:warn).with('No agent id for instance zb/iuuid in deployment deployment-name')
+          expect(Bosh::Monitor.logger).to receive(:warn).with('No agent id for instance zb/iuuid in deployment deployment-name')
           expect(deployment.upsert_agent(instance)).to be_falsey
         end
 
@@ -153,7 +153,7 @@ describe Bhm::Deployment do
       end
 
       context 'when instance does not expect vm' do
-        let(:instance) { Bhm::Instance.create('id' => 'iuuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => false) }
+        let(:instance) { Bosh::Monitor::Instance.create('id' => 'iuuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => false) }
         it 'refuses to add active agent' do
           expect(deployment.upsert_agent(instance)).to be_falsey
         end
@@ -167,26 +167,26 @@ describe Bhm::Deployment do
   end
 
   describe '#remove_agent' do
-    let(:deployment) { Bhm::Deployment.create('name' => 'deployment-name') }
+    let(:deployment) { Bosh::Monitor::Deployment.create('name' => 'deployment-name') }
     let(:instance) do
-      Bhm::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true)
+      Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true)
     end
 
     it 'remove agent with id' do
       deployment.upsert_agent(instance)
 
-      expect(deployment.agent('auuid')).to be_a(Bhm::Agent)
+      expect(deployment.agent('auuid')).to be_a(Bosh::Monitor::Agent)
       expect(deployment.remove_agent('auuid').id).to be_truthy
       expect(deployment.agent('auuid')).to be_nil
     end
   end
 
   describe '#agent_ids' do
-    let(:deployment) { Bhm::Deployment.create('name' => 'deployment-name') }
+    let(:deployment) { Bosh::Monitor::Deployment.create('name' => 'deployment-name') }
 
     before do
       deployment.upsert_agent(
-        Bhm::Instance.create(
+        Bosh::Monitor::Instance.create(
           'id' => 'iuuid1',
           'agent_id' => 'auuid1',
           'job' => 'zb',
@@ -195,7 +195,7 @@ describe Bhm::Deployment do
         ),
       )
       deployment.upsert_agent(
-        Bhm::Instance.create(
+        Bosh::Monitor::Instance.create(
           'id' => 'iuuid2',
           'agent_id' => 'auuid2',
           'job' => 'zb',
@@ -217,9 +217,9 @@ describe Bhm::Deployment do
   end
 
   describe '#teams' do
-    let(:deployment) { Bhm::Deployment.create('name' => 'deployment-name', 'teams' => %w[ateam bteam]) }
+    let(:deployment) { Bosh::Monitor::Deployment.create('name' => 'deployment-name', 'teams' => %w[ateam bteam]) }
     let(:instance) do
-      Bhm::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true)
+      Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true)
     end
 
     it 'returns teams provided in intialization' do
@@ -228,9 +228,9 @@ describe Bhm::Deployment do
   end
 
   describe '#update_teams' do
-    let(:deployment) { Bhm::Deployment.create('name' => 'deployment-name', 'teams' => %w[ateam bteam]) }
+    let(:deployment) { Bosh::Monitor::Deployment.create('name' => 'deployment-name', 'teams' => %w[ateam bteam]) }
     let(:instance) do
-      Bhm::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true)
+      Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true)
     end
 
     it 'updates teams with given values' do
@@ -243,7 +243,7 @@ describe Bhm::Deployment do
 
   describe 'locked?' do
     it 'returns true if locked' do
-      deployment = Bhm::Deployment.create(
+      deployment = Bosh::Monitor::Deployment.create(
         'name' => 'deployment-name',
         'locked' => true,
       )
@@ -252,7 +252,7 @@ describe Bhm::Deployment do
     end
 
     it 'returns false if not locked' do
-      deployment = Bhm::Deployment.create(
+      deployment = Bosh::Monitor::Deployment.create(
         'name' => 'deployment-name',
         'locked' => false,
       )

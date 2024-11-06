@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Bhm::Plugins::Riemann do
+describe Bosh::Monitor::Plugins::Riemann do
   before do
     options = {
       'host' => '127.0.0.1',
@@ -8,14 +8,14 @@ describe Bhm::Plugins::Riemann do
     }
 
     @client = double('Riemann Client')
-    @plugin = Bhm::Plugins::Riemann.new(options)
+    @plugin = Bosh::Monitor::Plugins::Riemann.new(options)
     allow(@plugin).to receive_messages(client: @client)
   end
 
   it 'validates options' do
-    expect(Bhm::Plugins::Riemann.new('host' => '127.0.0.1', 'port' => '5555').validate_options).to be(true)
-    expect(Bhm::Plugins::Riemann.new('host' => '127.0.0.1').validate_options).to be(false)
-    expect(Bhm::Plugins::Riemann.new('port' => '5555').validate_options).to be(false)
+    expect(Bosh::Monitor::Plugins::Riemann.new('host' => '127.0.0.1', 'port' => '5555').validate_options).to be(true)
+    expect(Bosh::Monitor::Plugins::Riemann.new('host' => '127.0.0.1').validate_options).to be(false)
+    expect(Bosh::Monitor::Plugins::Riemann.new('port' => '5555').validate_options).to be(false)
   end
 
   it "doesn't start if event loop isn't running" do

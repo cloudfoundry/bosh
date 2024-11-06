@@ -2,7 +2,7 @@ module Bosh::Monitor
   class ResurrectionManager
     def initialize
       @parsed_rules = []
-      @logger = Bhm.logger
+      @logger = Bosh::Monitor.logger
       @resurrection_config_sha = []
     end
 

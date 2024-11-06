@@ -12,10 +12,10 @@ module Bosh::Monitor::Plugins::ResurrectorHelper
 
     describe '#state_for' do
       before do
-        instance_manager = double(Bhm::InstanceManager)
+        instance_manager = double(Bosh::Monitor::InstanceManager)
         allow(instance_manager).to receive(:get_agents_for_deployment).with('deployment').and_return(agents)
         allow(instance_manager).to receive(:get_deleted_agents_for_deployment).with('deployment').and_return({})
-        allow(Bhm).to receive_messages(instance_manager: instance_manager)
+        allow(Bosh::Monitor).to receive_messages(instance_manager: instance_manager)
 
         alerts.times do |i|
           alert = double(Bosh::Monitor::Events::Alert, created_at: Time.now, severity: :critical)
@@ -93,13 +93,13 @@ module Bosh::Monitor::Plugins::ResurrectorHelper
       def build_agents(count)
         {}.tap do |result|
           count.times do |i|
-            result["00#{i}"] = Bhm::Agent.new("00#{i}", deployment: 'deployment', job: "00#{i}", instance_id: "uuid#{i}")
+            result["00#{i}"] = Bosh::Monitor::Agent.new("00#{i}", deployment: 'deployment', job: "00#{i}", instance_id: "uuid#{i}")
           end
         end
       end
 
       def build_key(num)
-        Bhm::Plugins::ResurrectorHelper::JobInstanceKey.new('deployment', "00#{num}", "uuid#{num}")
+        Bosh::Monitor::Plugins::ResurrectorHelper::JobInstanceKey.new('deployment', "00#{num}", "uuid#{num}")
       end
     end
   end

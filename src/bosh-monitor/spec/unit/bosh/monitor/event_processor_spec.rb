@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Bhm::EventProcessor do
+describe Bosh::Monitor::EventProcessor do
   before do
     email_options = {
       'recipients' => ['dude@example.com'],
@@ -13,11 +13,11 @@ describe Bhm::EventProcessor do
       'interval' => 0.1,
     }
 
-    Bhm.logger = logger
-    @processor = Bhm::EventProcessor.new
+    Bosh::Monitor.logger = logger
+    @processor = Bosh::Monitor::EventProcessor.new
 
-    @logger_plugin = Bhm::Plugins::Logger.new
-    @email_plugin = Bhm::Plugins::Email.new(email_options)
+    @logger_plugin = Bosh::Monitor::Plugins::Logger.new
+    @email_plugin = Bosh::Monitor::Plugins::Email.new(email_options)
   end
 
   it 'registers plugin handlers for different event kinds' do
@@ -25,7 +25,7 @@ describe Bhm::EventProcessor do
     @processor.add_plugin(@email_plugin, %w[heartbeat foobar])
 
     expect(@logger_plugin).to receive(:process) { |alert|
-      expect(alert).to be_instance_of Bhm::Events::Alert
+      expect(alert).to be_instance_of Bosh::Monitor::Events::Alert
     }
 
     expect(@email_plugin).not_to receive(:process)
@@ -37,22 +37,22 @@ describe Bhm::EventProcessor do
     @processor.add_plugin(@email_plugin, ['heartbeat'])
 
     expect(@logger_plugin).to receive(:process) { |alert|
-      expect(alert).to be_instance_of Bhm::Events::Alert
+      expect(alert).to be_instance_of Bosh::Monitor::Events::Alert
       expect(alert.id).to eq(1)
     }.once
 
     expect(@logger_plugin).to receive(:process) { |alert|
-      expect(alert).to be_instance_of Bhm::Events::Alert
+      expect(alert).to be_instance_of Bosh::Monitor::Events::Alert
       expect(alert.id).to eq(2)
     }.once
 
     expect(@email_plugin).to receive(:process) { |heartbeat|
-      expect(heartbeat).to be_instance_of Bhm::Events::Heartbeat
+      expect(heartbeat).to be_instance_of Bosh::Monitor::Events::Heartbeat
       expect(heartbeat.id).to eq(1)
     }.once
 
     expect(@email_plugin).to receive(:process) { |heartbeat|
-      expect(heartbeat).to be_instance_of Bhm::Events::Heartbeat
+      expect(heartbeat).to be_instance_of Bosh::Monitor::Events::Heartbeat
       expect(heartbeat.id).to eq(2)
     }.once
 
@@ -71,12 +71,12 @@ describe Bhm::EventProcessor do
     @processor.add_plugin(@logger_plugin, %w[alert heartbeat])
 
     expect(@logger_plugin).to receive(:process) { |alert|
-      expect(alert).to be_instance_of Bhm::Events::Alert
-    }.and_raise(Bhm::PluginError.new('error1'))
+      expect(alert).to be_instance_of Bosh::Monitor::Events::Alert
+    }.and_raise(Bosh::Monitor::PluginError.new('error1'))
 
     expect(@logger_plugin).to receive(:process) { |heartbeat|
-      expect(heartbeat).to be_instance_of Bhm::Events::Heartbeat
-    }.and_raise(Bhm::PluginError.new('error2'))
+      expect(heartbeat).to be_instance_of Bosh::Monitor::Events::Heartbeat
+    }.and_raise(Bosh::Monitor::PluginError.new('error2'))
 
     @processor.process(:alert, alert_payload)
     @processor.process(:heartbeat, heartbeat_payload)

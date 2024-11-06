@@ -5,7 +5,7 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
   include_context Async::RSpec::Reactor
 
   before do
-    Bhm.logger = logger
+    Bosh::Monitor.logger = logger
   end
 
   describe '#send_http_put_request' do

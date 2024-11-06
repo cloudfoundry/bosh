@@ -1,8 +1,8 @@
 require 'spec_helper'
 
-module Bhm
+module Bosh::Monitor
   describe InstanceManager do
-    let(:event_processor) { double(Bhm::EventProcessor) }
+    let(:event_processor) { double(Bosh::Monitor::EventProcessor) }
     let(:manager) { described_class.new(event_processor) }
 
     before do
@@ -13,20 +13,20 @@ module Bhm
 
     context 'stubbed config' do
       before do
-        Bhm.config = { 'director' => {} }
+        Bosh::Monitor.config = { 'director' => {} }
 
         # Just use 2 loggers to test multiple agents without having to care
         # about stubbing delivery operations and providing well formed configs
-        Bhm.plugins = [{ 'name' => 'logger' }, { 'name' => 'logger' }]
-        Bhm.intervals = OpenStruct.new(agent_timeout: 10, rogue_agent_alert: 10)
+        Bosh::Monitor.plugins = [{ 'name' => 'logger' }, { 'name' => 'logger' }]
+        Bosh::Monitor.intervals = OpenStruct.new(agent_timeout: 10, rogue_agent_alert: 10)
       end
 
       describe '#process_event' do
         context 'shutdown' do
           it 'shutdowns agent' do
-            instance_1 = Bhm::Instance.create('id' => 'iuuid1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator')
-            instance_2 = Bhm::Instance.create('id' => 'iuuid2', 'agent_id' => '008', 'index' => '0', 'job' => 'nats')
-            instance_3 = Bhm::Instance.create('id' => 'iuuid3', 'agent_id' => '009', 'index' => '28', 'job' => 'mysql_node')
+            instance_1 = Bosh::Monitor::Instance.create('id' => 'iuuid1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator')
+            instance_2 = Bosh::Monitor::Instance.create('id' => 'iuuid2', 'agent_id' => '008', 'index' => '0', 'job' => 'nats')
+            instance_3 = Bosh::Monitor::Instance.create('id' => 'iuuid3', 'agent_id' => '009', 'index' => '28', 'job' => 'mysql_node')
 
             manager.sync_deployments([{ 'name' => 'mycloud' }])
             manager.sync_agents('mycloud', [instance_1, instance_2, instance_3])
@@ -198,9 +198,9 @@ module Bhm
 
       describe '#get_agents_for_deployment' do
         it 'can provide agent information for a deployment' do
-          instance_1 = Bhm::Instance.create('id' => 'iuuid1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator')
-          instance_2 = Bhm::Instance.create('id' => 'iuuid2', 'agent_id' => '008', 'index' => '0', 'job' => 'nats')
-          instance_3 = Bhm::Instance.create('id' => 'iuuid3', 'agent_id' => '009', 'index' => '28', 'job' => 'mysql_node')
+          instance_1 = Bosh::Monitor::Instance.create('id' => 'iuuid1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator')
+          instance_2 = Bosh::Monitor::Instance.create('id' => 'iuuid2', 'agent_id' => '008', 'index' => '0', 'job' => 'nats')
+          instance_3 = Bosh::Monitor::Instance.create('id' => 'iuuid3', 'agent_id' => '009', 'index' => '28', 'job' => 'mysql_node')
 
           manager.sync_deployments([{ 'name' => 'mycloud' }])
           manager.sync_agents('mycloud', [instance_1, instance_2, instance_3])
@@ -221,9 +221,9 @@ module Bhm
 
       describe '#get_deleted_agents_for_deployment' do
         it 'can provide agent information for a deployment' do
-          instance_1 = Bhm::Instance.create('id' => 'iuuid1',  'index' => '0', 'job' => 'mutator', 'expects_vm' => true)
-          instance_2 = Bhm::Instance.create('id' => 'iuuid2',  'index' => '0', 'job' => 'nats', 'expects_vm' => true)
-          instance_3 = Bhm::Instance.create('id' => 'iuuid3',  'index' => '28', 'job' => 'mysql_node', 'expects_vm' => true)
+          instance_1 = Bosh::Monitor::Instance.create('id' => 'iuuid1',  'index' => '0', 'job' => 'mutator', 'expects_vm' => true)
+          instance_2 = Bosh::Monitor::Instance.create('id' => 'iuuid2',  'index' => '0', 'job' => 'nats', 'expects_vm' => true)
+          instance_3 = Bosh::Monitor::Instance.create('id' => 'iuuid3',  'index' => '28', 'job' => 'mysql_node', 'expects_vm' => true)
 
           manager.sync_deployments([{ 'name' => 'mycloud' }])
           manager.sync_agents('mycloud', [instance_1, instance_2, instance_3])
@@ -252,7 +252,7 @@ module Bhm
 
           expect(manager.get_instances_for_deployment('mycloud').size).to eq(1)
           manager.get_instances_for_deployment('mycloud').each do |instance|
-            expect(instance).to be_a(Bhm::Instance)
+            expect(instance).to be_a(Bosh::Monitor::Instance)
           end
         end
 
@@ -263,24 +263,24 @@ module Bhm
 
       describe '#unresponsive_agents' do
         it 'can return number of unresponsive agents for each deployment' do
-          instance1 = Bhm::Instance.create('id' => 'iuuid1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator')
-          instance2 = Bhm::Instance.create('id' => 'iuuid2', 'agent_id' => '008', 'index' => '0', 'job' => 'nats')
-          instance3 = Bhm::Instance.create('id' => 'iuuid3', 'agent_id' => '009', 'index' => '28', 'job' => 'mysql_node')
+          instance1 = Bosh::Monitor::Instance.create('id' => 'iuuid1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator')
+          instance2 = Bosh::Monitor::Instance.create('id' => 'iuuid2', 'agent_id' => '008', 'index' => '0', 'job' => 'nats')
+          instance3 = Bosh::Monitor::Instance.create('id' => 'iuuid3', 'agent_id' => '009', 'index' => '28', 'job' => 'mysql_node')
 
           manager.sync_deployments([{ 'name' => 'mycloud' }])
           manager.sync_agents('mycloud', [instance1, instance2, instance3])
 
           expect(manager.unresponsive_agents).to eq('mycloud' => 0)
           ts = Time.now
-          allow(Time).to receive(:now).and_return(ts + Bhm.intervals.agent_timeout + 10)
+          allow(Time).to receive(:now).and_return(ts + Bosh::Monitor.intervals.agent_timeout + 10)
           expect(manager.unresponsive_agents).to eq('mycloud' => 3)
         end
       end
 
       describe '#analyze_agents' do
-        let(:instance_1) { Bhm::Instance.create('id' => 'instance-uuid-1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator') }
-        let(:instance_2) { Bhm::Instance.create('id' => 'instance-uuid-2', 'agent_id' => '008', 'index' => '1', 'job' => 'mutator') }
-        let(:instance_3) { Bhm::Instance.create('id' => 'instance-uuid-3', 'agent_id' => '009', 'index' => '2', 'job' => 'mutator2') }
+        let(:instance_1) { Bosh::Monitor::Instance.create('id' => 'instance-uuid-1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator') }
+        let(:instance_2) { Bosh::Monitor::Instance.create('id' => 'instance-uuid-2', 'agent_id' => '008', 'index' => '1', 'job' => 'mutator') }
+        let(:instance_3) { Bosh::Monitor::Instance.create('id' => 'instance-uuid-3', 'agent_id' => '009', 'index' => '2', 'job' => 'mutator2') }
 
         before do
           manager.sync_deployments([{ 'name' => 'mycloud' }])
@@ -293,14 +293,14 @@ module Bhm
         end
 
         context('when multiple agents time out in different deployments') do
-          let(:instance_4) { Bhm::Instance.create('id' => 'instance-uuid-4', 'agent_id' => '010', 'index' => '3', 'job' => 'mutator2') }
+          let(:instance_4) { Bosh::Monitor::Instance.create('id' => 'instance-uuid-4', 'agent_id' => '010', 'index' => '3', 'job' => 'mutator2') }
 
           before do
             manager.sync_deployments([{ 'name' => 'mycloud' }, { 'name' => 'mycloud-2' }])
             manager.sync_agents('mycloud', [instance_1, instance_2, instance_3])
             manager.sync_agents('mycloud-2', [instance_4])
             ts = Time.now
-            allow(Time).to receive(:now).and_return(ts + Bhm.intervals.agent_timeout + 10)
+            allow(Time).to receive(:now).and_return(ts + Bosh::Monitor.intervals.agent_timeout + 10)
           end
 
           it 'sends an alert for each timed out agent' do
@@ -352,7 +352,7 @@ module Bhm
         it 'alerts on a timed out agent' do
           manager.sync_agents('mycloud', [instance_1])
           ts = Time.now
-          allow(Time).to receive(:now).and_return(ts + Bhm.intervals.agent_timeout + 10)
+          allow(Time).to receive(:now).and_return(ts + Bosh::Monitor.intervals.agent_timeout + 10)
 
           expect(event_processor).to receive(:process).with(
             :alert,
@@ -391,7 +391,7 @@ module Bhm
           expect(manager.analyze_agents).to eq(5)
 
           ts = Time.now
-          allow(Time).to receive(:now).and_return(ts + [Bhm.intervals.agent_timeout, Bhm.intervals.rogue_agent_alert].max + 10)
+          allow(Time).to receive(:now).and_return(ts + [Bosh::Monitor.intervals.agent_timeout, Bosh::Monitor.intervals.rogue_agent_alert].max + 10)
 
           manager.process_event(:heartbeat, '512', nil)
           # 5 agents total:  2 timed out, 1 rogue, 1 rogue AND timeout, expecting 4 alerts
@@ -410,14 +410,14 @@ module Bhm
       it 'can analyze instance with vm' do
         instance = { 'id' => 'instance-uuid', 'agent_id' => '007', 'index' => '0', 'cid' => 'cuuid', 'job' => 'mutator', 'expects_vm' => true }
 
-        expect(manager.alert_needed?(Bhm::Instance.create(instance))).to be(false)
+        expect(manager.alert_needed?(Bosh::Monitor::Instance.create(instance))).to be(false)
       end
 
       context 'when the instances expects a VM, and does not have one' do
         it 'sends an alert' do
           instance = { 'id' => 'instance-uuid', 'agent_id' => '007', 'index' => '0', 'cid' => nil, 'job' => 'mutator', 'expects_vm' => true }
 
-          expect(manager.alert_needed?(Bhm::Instance.create(instance))).to be(true)
+          expect(manager.alert_needed?(Bosh::Monitor::Instance.create(instance))).to be(true)
         end
       end
     end
@@ -531,13 +531,13 @@ module Bhm
       let(:mock_nats) { double('nats') }
 
       before do
-        Bhm.config = YAML.load_file(sample_config,  permitted_classes: [Symbol], permitted_symbols:[], aliases: true)
+        Bosh::Monitor.config = YAML.load_file(sample_config,  permitted_classes: [Symbol], permitted_symbols:[], aliases: true)
         allow(mock_nats).to receive(:subscribe)
-        allow(Bhm).to receive(:nats).and_return(mock_nats)
+        allow(Bosh::Monitor).to receive(:nats).and_return(mock_nats)
       end
 
       it 'has the tsdb plugin' do
-        expect(Bhm::Plugins::Tsdb).to receive(:new).with({
+        expect(Bosh::Monitor::Plugins::Tsdb).to receive(:new).with({
           'host' => 'localhost',
           'port' => 4242,
         }).and_call_original
@@ -550,13 +550,13 @@ module Bhm
       before do
         config = YAML.load_file(sample_config,  permitted_classes: [Symbol], permitted_symbols:[], aliases: true)
         config['plugins'] << { 'name' => 'joes_plugin_thing', 'events' => %w[alerts heartbeats] }
-        Bhm.config = config
+        Bosh::Monitor.config = config
       end
 
       it 'raises an error' do
         expect do
           manager.setup_events
-        end.to raise_error(Bhm::PluginError, "Cannot find 'joes_plugin_thing' plugin")
+        end.to raise_error(Bosh::Monitor::PluginError, "Cannot find 'joes_plugin_thing' plugin")
       end
     end
   end

@@ -32,7 +32,7 @@ describe 'notifying plugins' do
 
   before do
     free_port = find_free_tcp_port
-    allow(Bhm).to receive(:http_port).and_return(free_port)
+    allow(Bosh::Monitor).to receive(:http_port).and_return(free_port)
     allow(runner).to receive(:connect_to_mbus)
     allow_any_instance_of(Puma::Launcher).to receive(:run)
   end
@@ -51,7 +51,7 @@ describe 'notifying plugins' do
       alert = nil
 
       nats = FakeNATS.new
-      allow(Bhm).to receive(:nats).and_return(nats)
+      allow(Bosh::Monitor).to receive(:nats).and_return(nats)
 
       reactor.async do
         runner.run
@@ -109,7 +109,7 @@ describe 'notifying plugins' do
       alert = nil
 
       nats = FakeNATS.new
-      allow(Bhm).to receive(:nats).and_return(nats)
+      allow(Bosh::Monitor).to receive(:nats).and_return(nats)
 
       reactor.async do
         runner.run

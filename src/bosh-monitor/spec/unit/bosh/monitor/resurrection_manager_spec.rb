@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-module Bhm
+module Bosh::Monitor
   describe ResurrectionManager do
     let(:manager) { described_class.new }
 
@@ -30,8 +30,8 @@ module Bhm
     end
 
     before do
-      Bhm.config = { 'director' => {} }
-      Bhm.plugins = [{ 'name' => 'logger' }, { 'name' => 'logger' }]
+      Bosh::Monitor.config = { 'director' => {} }
+      Bosh::Monitor.plugins = [{ 'name' => 'logger' }, { 'name' => 'logger' }]
     end
 
     describe '#update_rules' do

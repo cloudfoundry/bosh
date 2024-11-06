@@ -42,7 +42,7 @@ module Bosh::Monitor::Plugins
       attr_accessor :percent_threshold
 
       def initialize(args = {})
-        @instance_manager  = Bhm.instance_manager
+        @instance_manager  = Bosh::Monitor.instance_manager
         @unhealthy_agents  = {}
         @minimum_down_jobs = args.fetch('minimum_down_jobs', 5)
         @percent_threshold = args.fetch('percent_threshold', 0.2)

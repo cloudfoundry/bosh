@@ -15,7 +15,7 @@ describe Bosh::Monitor::Runner do
   let(:x509_cert_content) { 'client_cert' }
 
   before do
-    allow(Bhm).to receive(:logger).and_return(logger)
+    allow(Bosh::Monitor).to receive(:logger).and_return(logger)
 
     runner
 
@@ -25,8 +25,8 @@ describe Bosh::Monitor::Runner do
     allow(nats).to receive(:connected?).and_return(false)
     allow(OpenSSL::PKey::RSA).to receive(:new)
     allow(OpenSSL::X509::Certificate).to receive(:new)
-    allow(File).to receive(:open).with(Bhm.mbus.client_private_key_path).and_return(rsa_key_content)
-    allow(File).to receive(:open).with(Bhm.mbus.client_certificate_path).and_return(x509_cert_content)
+    allow(File).to receive(:open).with(Bosh::Monitor.mbus.client_private_key_path).and_return(rsa_key_content)
+    allow(File).to receive(:open).with(Bosh::Monitor.mbus.client_certificate_path).and_return(x509_cert_content)
   end
 
   describe '#handle_fatal_error' do

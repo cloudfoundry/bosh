@@ -20,9 +20,9 @@ module Bosh::Monitor
 
         case kind.to_s
         when 'heartbeat'
-          klass = Bhm::Events::Heartbeat
+          klass = Bosh::Monitor::Events::Heartbeat
         when 'alert'
-          klass = Bhm::Events::Alert
+          klass = Bosh::Monitor::Events::Alert
         else
           raise InvalidEvent, "Cannot find '#{kind}' event handler"
         end
@@ -40,7 +40,7 @@ module Bosh::Monitor
           @attributes[k.to_s] = v
         end
 
-        @logger = Bhm.logger
+        @logger = Bosh::Monitor.logger
         @errors = Set.new
       end
 

@@ -1,12 +1,12 @@
 require 'spec_helper'
 
-describe Bhm::Plugins::Logger do
-  let(:plugin) { Bhm::Plugins::Logger.new(options) }
-  let(:heartbeat) { Bhm::Events::Base.create!(:heartbeat, heartbeat_payload) }
-  let(:alert) { Bhm::Events::Base.create!(:alert, alert_payload) }
+describe Bosh::Monitor::Plugins::Logger do
+  let(:plugin) { Bosh::Monitor::Plugins::Logger.new(options) }
+  let(:heartbeat) { Bosh::Monitor::Events::Base.create!(:heartbeat, heartbeat_payload) }
+  let(:alert) { Bosh::Monitor::Events::Base.create!(:alert, alert_payload) }
 
   before do
-    Bhm.logger = logger
+    Bosh::Monitor.logger = logger
   end
 
   describe 'without options' do

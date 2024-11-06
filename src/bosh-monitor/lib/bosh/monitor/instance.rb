@@ -4,7 +4,7 @@ module Bosh::Monitor
     attr_accessor :deployment
 
     def initialize(instance_data)
-      @logger = Bhm.logger
+      @logger = Bosh::Monitor.logger
       @id     = instance_data['id']
       @agent_id = instance_data['agent_id']
       @job = instance_data['job']
@@ -15,12 +15,12 @@ module Bosh::Monitor
 
     def self.create(instance_data)
       unless instance_data.is_a?(Hash)
-        Bhm.logger.error("Invalid format for Instance data: expected Hash, got #{instance_data.class}: #{instance_data}")
+        Bosh::Monitor.logger.error("Invalid format for Instance data: expected Hash, got #{instance_data.class}: #{instance_data}")
         return nil
       end
 
       unless instance_data['id']
-        Bhm.logger.error("Instance data has no id: got #{instance_data}")
+        Bosh::Monitor.logger.error("Instance data has no id: got #{instance_data}")
         return nil
       end
 

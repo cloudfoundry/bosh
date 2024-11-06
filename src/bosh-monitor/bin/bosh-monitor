@@ -25,7 +25,7 @@ Signal.trap('INT') do
 end
 
 Signal.trap('EXIT') do
-  Bhm.logger.info('HealthMonitor exiting!')
+  Bosh::Monitor.logger.info('HealthMonitor exiting!')
 end
 
 runner.run

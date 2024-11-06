@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Bhm::Events::Heartbeat do
+describe Bosh::Monitor::Events::Heartbeat do
   let(:timestamp) { 1320196099  }
 
   let(:heartbeat) { make_heartbeat(timestamp: timestamp) }
@@ -94,7 +94,7 @@ describe Bhm::Events::Heartbeat do
   it 'has metrics' do
     hb = heartbeat
     metrics = hb.metrics.each_with_object({}) do |m, h|
-      expect(m).to be_kind_of(Bhm::Metric)
+      expect(m).to be_kind_of(Bosh::Monitor::Metric)
       expect(m.tags).to eq('job' => 'mysql_node', 'index' => '0', 'id' => 'instance_id_abc')
       h[m.name] = m.value
     end

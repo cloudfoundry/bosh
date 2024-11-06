@@ -1,7 +1,7 @@
 require 'spec_helper'
 
-describe Bhm::Plugins::Tsdb do
-  subject(:plugin) { Bhm::Plugins::Tsdb.new(options) }
+describe Bosh::Monitor::Plugins::Tsdb do
+  subject(:plugin) { Bosh::Monitor::Plugins::Tsdb.new(options) }
 
   let(:options) do
     {
@@ -44,11 +44,11 @@ describe Bhm::Plugins::Tsdb do
       'max_retries' => -1337,
     }
 
-    expect(Bhm::Plugins::Tsdb.new(valid_options).validate_options).to be(true)
-    expect(Bhm::Plugins::Tsdb.new(retries_options).validate_options).to be(true)
-    expect(Bhm::Plugins::Tsdb.new(infinite_retries_options).validate_options).to be(true)
-    expect(Bhm::Plugins::Tsdb.new(invalid_options).validate_options).to be(false)
-    expect(Bhm::Plugins::Tsdb.new(bad_retries_options).validate_options).to be(false)
+    expect(Bosh::Monitor::Plugins::Tsdb.new(valid_options).validate_options).to be(true)
+    expect(Bosh::Monitor::Plugins::Tsdb.new(retries_options).validate_options).to be(true)
+    expect(Bosh::Monitor::Plugins::Tsdb.new(infinite_retries_options).validate_options).to be(true)
+    expect(Bosh::Monitor::Plugins::Tsdb.new(invalid_options).validate_options).to be(false)
+    expect(Bosh::Monitor::Plugins::Tsdb.new(bad_retries_options).validate_options).to be(false)
   end
 
   it "doesn't start if event loop isn't running" do

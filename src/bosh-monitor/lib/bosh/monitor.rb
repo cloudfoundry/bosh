@@ -3,8 +3,6 @@ module Bosh
   end
 end
 
-Bhm = Bosh::Monitor
-
 begin
   require 'fiber'
 rescue LoadError

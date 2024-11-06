@@ -28,7 +28,7 @@ module Bosh
         end
 
         puts "=> Loading #{config_file}"
-        Bhm.config = load_yaml_file(config_file)
+        Bosh::Monitor.config = load_yaml_file(config_file)
 
         begin
           require 'ruby-debug'
@@ -45,4 +45,4 @@ module Bosh
   end
 end
 
-Bhm::Console.start(self)
+Bosh::Monitor::Console.start(self)

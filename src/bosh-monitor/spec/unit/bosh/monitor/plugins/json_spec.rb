@@ -1,9 +1,9 @@
 require 'spec_helper'
 
-describe Bhm::Plugins::Json do
+describe Bosh::Monitor::Plugins::Json do
   let(:process_manager) { instance_double(Bosh::Monitor::Plugins::ProcessManager) }
 
-  subject(:plugin) { Bhm::Plugins::Json.new('process_manager' => process_manager) }
+  subject(:plugin) { Bosh::Monitor::Plugins::Json.new('process_manager' => process_manager) }
 
   it 'send events to the process manager' do
     expect(process_manager).to receive(:start)
@@ -16,9 +16,9 @@ describe Bhm::Plugins::Json do
   end
 end
 
-describe Bhm::Plugins::ProcessManager do
+describe Bosh::Monitor::Plugins::ProcessManager do
   subject(:process_manager) do
-    Bhm::Plugins::ProcessManager.new(
+    Bosh::Monitor::Plugins::ProcessManager.new(
       glob: '/*/json-plugin/*',
       logger: Logger.new(IO::NULL),
       check_interval: 0.2,

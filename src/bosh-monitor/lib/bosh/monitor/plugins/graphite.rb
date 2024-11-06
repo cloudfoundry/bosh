@@ -17,9 +17,9 @@ module Bosh::Monitor
 
         host = options['host']
         port = options['port']
-        retries = options['max_retries'] || Bhm::TcpConnection::DEFAULT_RETRIES
+        retries = options['max_retries'] || Bosh::Monitor::TcpConnection::DEFAULT_RETRIES
 
-        @connection = Bhm::GraphiteConnection.new(host, port, retries)
+        @connection = Bosh::Monitor::GraphiteConnection.new(host, port, retries)
         @connection.connect
       end
 

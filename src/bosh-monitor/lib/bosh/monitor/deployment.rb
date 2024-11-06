@@ -7,7 +7,7 @@ module Bosh::Monitor
     attr_writer :locked
 
     def initialize(deployment_data)
-      @logger = Bhm.logger
+      @logger = Bosh::Monitor.logger
       @name = deployment_data['name']
       @teams = deployment_data['teams']
       @locked = deployment_data['locked']
@@ -18,12 +18,12 @@ module Bosh::Monitor
 
     def self.create(deployment_data)
       unless deployment_data.is_a?(Hash)
-        Bhm.logger.error("Invalid format for Deployment data: expected Hash, got #{deployment_data.class}: #{deployment_data}")
+        Bosh::Monitor.logger.error("Invalid format for Deployment data: expected Hash, got #{deployment_data.class}: #{deployment_data}")
         return nil
       end
 
       unless deployment_data['name']
-        Bhm.logger.error("Deployment data has no name: got #{deployment_data}")
+        Bosh::Monitor.logger.error("Deployment data has no name: got #{deployment_data}")
         return nil
       end
 
