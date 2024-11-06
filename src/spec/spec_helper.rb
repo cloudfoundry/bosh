@@ -19,12 +19,12 @@ require 'nats/io/client'
 Dir.glob(File.join(SPEC_ROOT, 'integration_support/**/*.rb')).each { |f| require(f) }
 Dir.glob(File.join(SPEC_ROOT, 'support/**/*.rb')).each { |f| require(f) }
 
-ASSETS_DIR = File.join(SPEC_ROOT, 'assets')
-TEST_RELEASE_TEMPLATE = File.join(ASSETS_DIR, 'test_release_template')
-LINKS_RELEASE_TEMPLATE = File.join(ASSETS_DIR, 'links_releases', 'links_release_template')
-MULTIDISK_RELEASE_TEMPLATE = File.join(ASSETS_DIR, 'multidisks_releases', 'multidisks_release_template')
-FAKE_ERRAND_RELEASE_TEMPLATE = File.join(ASSETS_DIR, 'fake_errand_release_template')
-BOSH_WORK_TEMPLATE = File.join(ASSETS_DIR, 'bosh_work_dir')
+SPEC_ASSETS_DIR = File.join(SPEC_ROOT, 'assets')
+TEST_RELEASE_TEMPLATE = File.join(SPEC_ASSETS_DIR, 'test_release_template')
+LINKS_RELEASE_TEMPLATE = File.join(SPEC_ASSETS_DIR, 'links_releases', 'links_release_template')
+MULTIDISK_RELEASE_TEMPLATE = File.join(SPEC_ASSETS_DIR, 'multidisks_releases', 'multidisks_release_template')
+FAKE_ERRAND_RELEASE_TEMPLATE = File.join(SPEC_ASSETS_DIR, 'fake_errand_release_template')
+BOSH_WORK_TEMPLATE = File.join(SPEC_ASSETS_DIR, 'bosh_work_dir')
 
 STDOUT.sync = true
 

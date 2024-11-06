@@ -7,7 +7,7 @@ describe 'cli: package compilation', type: :integration do
   let!(:release_file) { Tempfile.new('release.tgz') }
   after { release_file.delete }
 
-  RELEASE_COMPILATION_TEMPLATE_ASSETS = File.join(ASSETS_DIR, 'release_compilation_test_release')
+  RELEASE_COMPILATION_TEMPLATE_ASSETS = File.join(SPEC_ASSETS_DIR, 'release_compilation_test_release')
   TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX = File.join(IntegrationSupport::ClientSandbox.base_dir, 'release_compilation_test_release')
   before do
     FileUtils.rm_rf(TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX)

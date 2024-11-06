@@ -243,7 +243,7 @@ module IntegrationSupport
     end
 
     def asset_path(name)
-      File.expand_path(File.join(ASSETS_DIR, name), __FILE__)
+      File.join(SPEC_ASSETS_DIR, name)
     end
 
     def regexp(string)
