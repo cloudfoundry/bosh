@@ -1,6 +1,8 @@
 require 'net/http'
 require 'json'
 
+require 'bosh/director/config'
+
 module IntegrationSupport
   class ConfigServerHelper
     def initialize(sandbox, logger)

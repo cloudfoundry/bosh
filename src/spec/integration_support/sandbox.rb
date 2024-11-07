@@ -2,7 +2,6 @@ require 'benchmark'
 require 'logging'
 require 'securerandom'
 
-require 'bosh/director/config'
 require 'cloud/dummy'
 
 require 'bosh/dev/db/db_helper'
