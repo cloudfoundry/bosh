@@ -7,10 +7,10 @@ class DBMigrator
 
   class MigrationsNotCurrentError < RuntimeError; end
 
-  Sequel.extension :migration
-
   def initialize(database, options = {}, retry_interval = DEFAULT_RETRY_INTERVAL)
     return unless database && File.directory?(MIGRATIONS_DIR)
+
+    Sequel.extension :migration, :core_extensions
 
     @database = database
     @options = options
@@ -22,7 +22,7 @@ class DBMigrator
   end
 
   def migrate
-    Sequel::Migrator.apply(@database, MIGRATIONS_DIR, @options[:target], @options[:current])
+    Sequel::Migrator.run(@database, MIGRATIONS_DIR, @options)
   end
 
   def ensure_migrated!
