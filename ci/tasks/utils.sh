@@ -4,6 +4,7 @@ rotate_bbl_certs() {
   for vars_store in $@; do
     local ops=""
     for cert in $(grep "ca: |" -B1 "${vars_store}" | grep -v "ca: |" | grep ':' | cut -d: -f1); do
+        # shellcheck disable=SC2089
         ops="${ops}"'- {"type":"remove","path":"/'"${cert}"'"}\n'
     done
     bosh int "${vars_store}" -o <(echo -e $ops) > "${vars_store}.tmp"
@@ -108,9 +109,9 @@ start_db() {
         mount -t tmpfs -o size=512M tmpfs "${MYSQL_ROOT}"
         mv /var/lib/mysql-src/* "${MYSQL_ROOT}/"
 
-        echo "Copy 'src/bosh-dev/assets/sandbox/database/database_server/{private_key,certificate.pem}' to '${MYSQL_ROOT}/'"
-        cp bosh-src/src/bosh-dev/assets/sandbox/database/database_server/private_key "${MYSQL_ROOT}/server.key"
-        cp bosh-src/src/bosh-dev/assets/sandbox/database/database_server/certificate.pem "${MYSQL_ROOT}/server.cert"
+        echo "Copy 'src/spec/assets/sandbox/database/database_server/{private_key,certificate.pem}' to '${MYSQL_ROOT}/'"
+        cp bosh-src/src/spec/assets/sandbox/database/database_server/private_key "${MYSQL_ROOT}/server.key"
+        cp bosh-src/src/spec/assets/sandbox/database/database_server/certificate.pem "${MYSQL_ROOT}/server.cert"
 
         {
           echo "[client]"
@@ -165,9 +166,9 @@ start_db() {
         run_as postgres "$(which initdb)" -U postgres -D "${PGDATA}" --pwfile "${POSTGRES_PASSWORD_FILE}"
 
         # NOTE: certificates can only moved to ${PGDATA}/ _after_ `initdb` is run
-        echo "Copy 'src/bosh-dev/assets/sandbox/database/database_server/{private_key,certificate.pem}' to '${PGDATA}'"
-        cp bosh-src/src/bosh-dev/assets/sandbox/database/database_server/private_key "${PGDATA}/server.key"
-        cp bosh-src/src/bosh-dev/assets/sandbox/database/database_server/certificate.pem "${PGDATA}/server.crt"
+        echo "Copy 'src/spec/assets/sandbox/database/database_server/{private_key,certificate.pem}' to '${PGDATA}'"
+        cp bosh-src/src/spec/assets/sandbox/database/database_server/private_key "${PGDATA}/server.key"
+        cp bosh-src/src/spec/assets/sandbox/database/database_server/certificate.pem "${PGDATA}/server.crt"
         chmod 600 ${PGDATA}/server.*
 
         export POSTGRES_CONF="${PGDATA}/postgresql.conf"
