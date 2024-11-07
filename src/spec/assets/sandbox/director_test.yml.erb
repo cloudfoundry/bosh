@@ -39,7 +39,6 @@ db: &bosh_db
   connection_options:
     max_connections: 32
     pool_timeout: 10
-    reconnect: <%= database.adapter == 'mysql2' ? true : false %>
 
 <% if dns_enabled %>
 dns:
