@@ -295,12 +295,14 @@ jobs:
             args:
               - -exc
               - |
-                set -eux;
-                cd bosh-src/src;
+                set -euo pipefail
+                set -x
+                cd bosh-src/src
                 gem install bundler:"$(grep -A 1 'BUNDLED WITH' Gemfile.lock | tail -n 1 | awk '{$1=$1};1')";
-                bundle install;
-                bundle exec bundle-audit update;
-                bundle exec bundle-audit check --ignore 'CVE-2019-17383';
+                bundle install
+                bundle exec bundle-audit version
+                bundle exec bundle-audit update
+                bundle exec bundle-audit check
 
   - name: integration-postgres
     public: true
