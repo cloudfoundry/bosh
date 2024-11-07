@@ -1,8 +1,9 @@
+require 'integration_support/constants'
 require 'integration_support/uaa_service'
 
 module IntegrationSupport
   class DirectorConfig
-    DATABASE_CA_PATH = File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, 'database', 'rootCA.pem')
+    DATABASE_CA_PATH = File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, 'database', 'rootCA.pem')
 
     attr_accessor :audit_log_path
     attr_reader :director_name,

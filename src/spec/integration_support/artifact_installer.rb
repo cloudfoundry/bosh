@@ -25,7 +25,7 @@ module IntegrationSupport
     end
 
     def executable_path
-      File.join(Bosh::Dev::RELEASE_SRC_DIR, install_dir, executable_name)
+      File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_DIR, install_dir, executable_name)
     end
 
     private

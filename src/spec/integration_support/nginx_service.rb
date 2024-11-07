@@ -1,10 +1,9 @@
-require 'bosh/dev'
+require 'integration_support/constants'
 
 module IntegrationSupport
   class NginxService
 
-    CONFIG_TEMPLATE = File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, 'nginx.conf.erb')
-    CERTS_DIR = File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, 'ca', 'certs')
+    CONFIG_TEMPLATE = File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, 'nginx.conf.erb')
 
     def self.install
       installer = NginxInstaller.new
@@ -43,8 +42,8 @@ module IntegrationSupport
             director_ruby_port: director_ruby_port,
             uaa_port: uaa_port,
             nginx_port: nginx_port,
-            ssl_cert_path: File.join(CERTS_DIR, 'server.crt'),
-            ssl_cert_key_path: File.join(CERTS_DIR, 'server.key'),
+            ssl_cert_path: File.join(IntegrationSupport::Constants::SANDBOX_CERTS_DIR, 'server.crt'),
+            ssl_cert_key_path: File.join(IntegrationSupport::Constants::SANDBOX_CERTS_DIR, 'server.key'),
           },
         )
 
@@ -72,11 +71,11 @@ module IntegrationSupport
       @ssl_mode = ssl_mode
 
       if @ssl_mode == 'wrong-ca'
-        ssl_cert_path =  File.join(CERTS_DIR, 'serverWithWrongCA.crt')
-        ssl_cert_key_path =  File.join(CERTS_DIR, 'serverWithWrongCA.key')
+        ssl_cert_path =  File.join(IntegrationSupport::Constants::SANDBOX_CERTS_DIR, 'serverWithWrongCA.crt')
+        ssl_cert_key_path =  File.join(IntegrationSupport::Constants::SANDBOX_CERTS_DIR, 'serverWithWrongCA.key')
       else
-        ssl_cert_path =  File.join(CERTS_DIR, 'server.crt')
-        ssl_cert_key_path =  File.join(CERTS_DIR, 'server.key')
+        ssl_cert_path =  File.join(IntegrationSupport::Constants::SANDBOX_CERTS_DIR, 'server.crt')
+        ssl_cert_key_path =  File.join(IntegrationSupport::Constants::SANDBOX_CERTS_DIR, 'server.key')
       end
 
       @config.write(ssl_cert_path: ssl_cert_path, ssl_cert_key_path: ssl_cert_key_path)
@@ -90,12 +89,12 @@ module IntegrationSupport
   end
 
   class NginxInstaller
-    WORKING_DIR = File.join(Bosh::Dev::RELEASE_SRC_DIR, 'tmp', 'integration-nginx-work')
-    INSTALL_DIR = File.join(Bosh::Dev::RELEASE_SRC_DIR, 'tmp', 'integration-nginx')
+    WORKING_DIR = File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_DIR, 'tmp', 'integration-nginx-work')
+    INSTALL_DIR = File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_DIR, 'tmp', 'integration-nginx')
     EXECUTABLE_PATH = File.join(INSTALL_DIR, 'sbin', 'nginx')
 
     def prepare
-      Dir.chdir(Bosh::Dev::RELEASE_ROOT) do
+      Dir.chdir(IntegrationSupport::Constants::BOSH_REPO_ROOT) do
         run_command('bosh sync-blobs')
         run_command('bosh create-release --force --tarball /tmp/release.tgz')
         run_command('tar -zxvf /tmp/release.tgz -C /tmp packages/nginx.tgz')
@@ -118,11 +117,11 @@ module IntegrationSupport
       run_command("echo '#{RUBY_PLATFORM}' > #{INSTALL_DIR}/platform")
 
       # Make sure packaging script has its own blob copies so that blobs/ directory is not affected
-      nginx_blobs_path = File.join(Bosh::Dev::RELEASE_ROOT, 'packages', 'nginx')
+      nginx_blobs_path = File.join(IntegrationSupport::Constants::BOSH_REPO_ROOT, 'packages', 'nginx')
       run_command("cp -R #{nginx_blobs_path}/. #{File.join(WORKING_DIR)}")
 
       Dir.chdir(WORKING_DIR) do
-        packaging_script_path = File.join(Bosh::Dev::RELEASE_ROOT, 'packages', 'nginx', 'packaging')
+        packaging_script_path = File.join(IntegrationSupport::Constants::BOSH_REPO_ROOT, 'packages', 'nginx', 'packaging')
         run_command("bash #{packaging_script_path}", { 'BOSH_INSTALL_TARGET' => INSTALL_DIR })
       end
     end
@@ -144,7 +143,7 @@ module IntegrationSupport
     end
 
     def blob_has_changed?
-      blobs_shasum = shasum(File.join(Bosh::Dev::RELEASE_ROOT, 'blobs', 'nginx'))
+      blobs_shasum = shasum(File.join(IntegrationSupport::Constants::BOSH_REPO_ROOT, 'blobs', 'nginx'))
       sandbox_copy_shasum = shasum(File.join(WORKING_DIR, 'nginx'))
 
       blobs_shasum.sort != sandbox_copy_shasum.sort

@@ -1,4 +1,5 @@
 require 'yaml'
+require 'integration_support/constants'
 
 module IntegrationSupport
   class PostgresVersionHelper
@@ -27,7 +28,7 @@ module IntegrationSupport
         @release_version ||= begin
           postgres_release_config =
             YAML.load_file(
-              File.join(Bosh::Dev::RELEASE_ROOT, 'jobs', 'postgres', 'spec.yml'),
+              File.join(IntegrationSupport::Constants::BOSH_REPO_ROOT, 'jobs', 'postgres', 'spec.yml'),
               permitted_classes: [Symbol],
               aliases: true,
             )

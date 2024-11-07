@@ -1,3 +1,4 @@
+require 'integration_support/constants'
 require 'integration_support/database_migrator'
 require 'integration_support/tmux_runner'
 require 'integration_support/shell_runner'
@@ -5,9 +6,9 @@ require 'integration_support/shell_runner'
 module IntegrationSupport
   class DirectorService
     DEFAULT_DIRECTOR_CONFIG = 'director_test.yml'.freeze
-    DIRECTOR_CONF_TEMPLATE = File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, 'director_test.yml.erb')
+    DIRECTOR_CONF_TEMPLATE = File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, 'director_test.yml.erb')
 
-    DIRECTOR_PATH = File.join(Bosh::Dev::RELEASE_SRC_DIR, 'bosh-director')
+    DIRECTOR_PATH = File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_DIR, 'bosh-director')
 
     def initialize(options, logger)
       @db_helper = options[:db_helper]

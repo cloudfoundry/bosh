@@ -1,5 +1,4 @@
 require 'timeout'
-require 'bosh/dev'
 require 'securerandom'
 
 module IntegrationSupport

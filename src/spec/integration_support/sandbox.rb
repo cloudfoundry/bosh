@@ -7,6 +7,7 @@ require 'cloud/dummy'
 
 require 'bosh/dev/db/db_helper'
 
+require 'integration_support/constants'
 require 'integration_support/service'
 require 'integration_support/http_endpoint_connector'
 require 'integration_support/socket_connector'
@@ -20,7 +21,7 @@ require 'integration_support/gnatsd_manager'
 
 module IntegrationSupport
   class Sandbox
-    ROOT_CA_CERTIFICATE_PATH = File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, 'ca', 'certs', 'rootCA.pem')
+    ROOT_CA_CERTIFICATE_PATH = File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, 'ca', 'certs', 'rootCA.pem')
 
     HM_CONFIG = 'health_monitor.yml'
     DEFAULT_HM_CONF_TEMPLATE_NAME = 'health_monitor.yml.erb'
@@ -32,10 +33,10 @@ module IntegrationSupport
     DIRECTOR_CERTIFICATE_EXPIRY_JSON_TEMPLATE_NAME = 'director_certificate_expiry.json.erb'.freeze
 
     EXTERNAL_CPI = 'cpi'
-    EXTERNAL_CPI_TEMPLATE = File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, 'cpi.erb')
+    EXTERNAL_CPI_TEMPLATE = File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, 'cpi.erb')
 
     EXTERNAL_CPI_CONFIG = 'cpi.json'
-    EXTERNAL_CPI_CONFIG_TEMPLATE = File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, 'cpi_config.json.erb')
+    EXTERNAL_CPI_CONFIG_TEMPLATE = File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, 'cpi_config.json.erb')
 
     attr_reader :name
     attr_reader :health_monitor_process
@@ -91,7 +92,7 @@ module IntegrationSupport
 
       @task_logs_dir = sandbox_path('boshdir/tasks')
       @blobstore_storage_dir = sandbox_path('bosh_test_blobstore')
-      @verify_multidigest_path = File.join(Bosh::Dev::RELEASE_SRC_DIR, 'tmp', 'verify-multidigest', 'verify-multidigest')
+      @verify_multidigest_path = File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_DIR, 'tmp', 'verify-multidigest', 'verify-multidigest')
       @dummy_cpi_api_version = nil
 
       @nats_log_path = File.join(@logs_path, 'nats.log')
@@ -101,7 +102,7 @@ module IntegrationSupport
       @nginx_service = NginxService.new(sandbox_root, director_port, director_ruby_port, "8443", base_log_path, @logger)
 
       @db_config = {
-        ca_path: File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, 'database', 'rootCA.pem')
+        ca_path: File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, 'database', 'rootCA.pem')
       }.merge(db_opts)
 
       setup_db_helper(@db_config)
@@ -229,7 +230,7 @@ module IntegrationSupport
 
     def reconfigure_health_monitor(erb_template=DEFAULT_HM_CONF_TEMPLATE_NAME)
       @health_monitor_process.stop
-      write_in_sandbox(HM_CONFIG, load_config_template(File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, erb_template)))
+      write_in_sandbox(HM_CONFIG, load_config_template(File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, erb_template)))
       @health_monitor_process.start
     end
 
@@ -349,21 +350,21 @@ module IntegrationSupport
         'ca_path' => get_nats_server_ca_path,
 
         'server' => {
-          'certificate_path' => File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'nats', 'certificate.pem'),
-          'private_key_path' => File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'nats', 'private_key'),
+          'certificate_path' => File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'nats', 'certificate.pem'),
+          'private_key_path' => File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'nats', 'private_key'),
         },
         'clients' => {
           'director' => {
-            'certificate_path' => File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'director', 'certificate.pem'),
-            'private_key_path' => File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'director', 'private_key'),
+            'certificate_path' => File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'director', 'certificate.pem'),
+            'private_key_path' => File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'director', 'private_key'),
           },
           'health_monitor' => {
-            'certificate_path' => File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'health_monitor', 'certificate.pem'),
-            'private_key_path' => File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'health_monitor', 'private_key'),
+            'certificate_path' => File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'health_monitor', 'certificate.pem'),
+            'private_key_path' => File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'health_monitor', 'private_key'),
           },
           'test_client' => {
-            'certificate_path' => File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'test_client', 'certificate.pem'),
-            'private_key_path' => File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'test_client', 'private_key'),
+            'certificate_path' => File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'test_client', 'certificate.pem'),
+            'private_key_path' => File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'test_client', 'private_key'),
           }
         }
       }
@@ -397,7 +398,7 @@ module IntegrationSupport
     def start_nats
       return if @nats_process.running?
 
-      nats_template_path = File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, DEFAULT_NATS_CONF_TEMPLATE_NAME)
+      nats_template_path = File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, DEFAULT_NATS_CONF_TEMPLATE_NAME)
       write_in_sandbox(NATS_CONFIG, load_config_template(nats_template_path))
       write_in_sandbox(EXTERNAL_CPI_CONFIG, load_config_template(EXTERNAL_CPI_CONFIG_TEMPLATE))
       setup_nats
@@ -410,7 +411,7 @@ module IntegrationSupport
     def external_cpi_config
       {
         name: 'test-cpi',
-        exec_path: File.join(Bosh::Dev::RELEASE_SRC_DIR, 'bosh-director', 'bin', 'dummy_cpi'),
+        exec_path: File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_DIR, 'bosh-director', 'bin', 'dummy_cpi'),
         job_path: sandbox_path(EXTERNAL_CPI),
         config_path: sandbox_path(EXTERNAL_CPI_CONFIG),
         env_path: ENV['PATH'],
@@ -451,13 +452,13 @@ module IntegrationSupport
     end
 
     def setup_sandbox_root
-      hm_template_path = File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, DEFAULT_HM_CONF_TEMPLATE_NAME)
+      hm_template_path = File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, DEFAULT_HM_CONF_TEMPLATE_NAME)
       write_in_sandbox(HM_CONFIG, load_config_template(hm_template_path))
       write_in_sandbox(EXTERNAL_CPI, load_config_template(EXTERNAL_CPI_TEMPLATE))
       write_in_sandbox(EXTERNAL_CPI_CONFIG, load_config_template(EXTERNAL_CPI_CONFIG_TEMPLATE))
-      expiry_template_path = File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, DIRECTOR_CERTIFICATE_EXPIRY_JSON_TEMPLATE_NAME)
+      expiry_template_path = File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, DIRECTOR_CERTIFICATE_EXPIRY_JSON_TEMPLATE_NAME)
       write_in_sandbox(DIRECTOR_CERTIFICATE_EXPIRY_JSON_CONFIG, load_config_template(expiry_template_path))
-      nats_template_path = File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, DEFAULT_NATS_CONF_TEMPLATE_NAME)
+      nats_template_path = File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, DEFAULT_NATS_CONF_TEMPLATE_NAME)
       write_in_sandbox(NATS_CONFIG, load_config_template(nats_template_path))
       FileUtils.chmod(0755, sandbox_path(EXTERNAL_CPI))
       FileUtils.mkdir_p(blobstore_storage_dir)
@@ -519,9 +520,9 @@ module IntegrationSupport
 
     def get_nats_server_ca_path
       if @with_incorrect_nats_server_ca
-        File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'childless_rootCA.pem')
+        File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'childless_rootCA.pem')
       else
-        File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'rootCA.pem')
+        File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'rootCA.pem')
       end
     end
 
@@ -530,11 +531,11 @@ module IntegrationSupport
     end
 
     def get_nats_client_ca_certificate_path
-      File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'rootCA.pem')
+      File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'rootCA.pem')
     end
 
     def get_nats_client_ca_private_key_path
-      File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'rootCA.key')
+      File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'rootCA.key')
     end
 
     attr_reader :director_tmp_path, :task_logs_dir

@@ -1,6 +1,5 @@
 require 'net/http'
 require 'timeout'
-require 'bosh/dev'
 
 module IntegrationSupport
   class HTTPEndpointConnector

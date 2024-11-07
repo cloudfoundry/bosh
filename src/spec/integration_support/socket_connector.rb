@@ -1,6 +1,5 @@
 require 'socket'
 require 'timeout'
-require 'bosh/dev'
 
 module IntegrationSupport
   class SocketConnector

@@ -6,6 +6,7 @@ require 'erb'
 
 require 'bosh/template/evaluation_context'
 
+require 'integration_support/constants'
 require 'integration_support/service'
 
 module IntegrationSupport
@@ -16,11 +17,10 @@ module IntegrationSupport
     UAA_BIN_PATH = '/var/vcap/jobs/uaa/bin/'.freeze
 
     # Keys and Certs
-    CERTS_DIR = File.join(Bosh::Dev::SANDBOX_ASSETS_DIR, 'ca', 'certs')
-    ROOT_CERT = File.join(CERTS_DIR, 'rootCA.pem')
-    ROOT_KEY = File.join(CERTS_DIR, 'rootCA.key')
-    SERVER_CERT = File.join(CERTS_DIR, 'server.crt')
-    SERVER_KEY = File.join(CERTS_DIR, 'server.key')
+    ROOT_CERT = File.join(IntegrationSupport::Constants::SANDBOX_CERTS_DIR, 'rootCA.pem')
+    ROOT_KEY = File.join(IntegrationSupport::Constants::SANDBOX_CERTS_DIR, 'rootCA.key')
+    SERVER_CERT = File.join(IntegrationSupport::Constants::SANDBOX_CERTS_DIR, 'server.crt')
+    SERVER_KEY = File.join(IntegrationSupport::Constants::SANDBOX_CERTS_DIR, 'server.key')
 
     def initialize(sandbox_root, base_log_path, logger)
       @logger = logger
@@ -81,7 +81,7 @@ module IntegrationSupport
         end
 
         context['properties'].deep_merge!(
-          YAML.load_file(File.join(Bosh::Dev::RELEASE_SRC_DIR, 'spec', 'assets', 'uaa_config', 'asymmetric', 'uaa.yml'))
+          YAML.load_file(File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_DIR, 'spec', 'assets', 'uaa_config', 'asymmetric', 'uaa.yml'))
         )
 
         context['properties']['uaadb'] = {
@@ -167,12 +167,12 @@ module IntegrationSupport
     end
 
     def working_dir
-      File.join(Bosh::Dev::RELEASE_SRC_DIR, 'spec', 'assets', 'uaa')
+      File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_DIR, 'spec', 'assets', 'uaa')
     end
 
     def write_config_path
       FileUtils.cp(
-        File.join(Bosh::Dev::RELEASE_SRC_DIR, 'spec', 'assets', 'uaa_config', 'asymmetric', 'uaa.yml'),
+        File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_DIR, 'spec', 'assets', 'uaa_config', 'asymmetric', 'uaa.yml'),
         @config_path,
       )
       @current_uaa_config_mode = 'asymmetric'

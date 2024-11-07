@@ -1,5 +1,5 @@
-require 'bosh/dev'
 require 'fileutils'
+require 'integration_support/constants'
 
 module IntegrationSupport
   class Workspace
@@ -30,7 +30,7 @@ module IntegrationSupport
       private
 
       def base_dir
-        File.join(Bosh::Dev::RELEASE_SRC_DIR, 'tmp', 'integration-tests-workspace')
+        File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_DIR, 'tmp', 'integration-tests-workspace')
       end
 
       def pid_dir
