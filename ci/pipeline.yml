@@ -1062,6 +1062,7 @@ jobs:
       input_mapping:
         bosh-src: bosh-src-out
       params:
+        COVERAGE: false
         RAKE_TASK: spec:unit:parallel
     - put: bosh-src
       params:
