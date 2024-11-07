@@ -6,7 +6,7 @@ module Bosh::Director
     module ApiHelper
       READ_CHUNK_SIZE = 16384
 
-      class DisposableFile < ::Rack::File
+      class DisposableFile < ::Rack::Files
         def close
           FileUtils.rm_rf(self.path) if File.exist?(self.path)
         end
