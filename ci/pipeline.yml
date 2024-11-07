@@ -321,6 +321,7 @@ jobs:
               - "bosh-cli-*-linux-amd64"
         - get: bosh-agent
         - get: integration-postgres-15-image
+        - get: config-server
       - task: tests
         privileged: true
         file: bosh-src/ci/tasks/test-integration.yml
@@ -346,6 +347,7 @@ jobs:
               - "bosh-cli-*-linux-amd64"
         - get: bosh-agent
         - get: integration-postgres-15-image
+        - get: config-server
       - task: tests
         privileged: true
         file: bosh-src/ci/tasks/test-integration.yml
@@ -372,6 +374,7 @@ jobs:
               - "bosh-cli-*-linux-amd64"
         - get: bosh-agent
         - get: integration-mysql-8-0-image
+        - get: config-server
       - task: tests
         privileged: true
         file: bosh-src/ci/tasks/test-integration.yml
@@ -1520,6 +1523,13 @@ resources:
     type: bosh-io-release
     source:
       repository: cloudfoundry/bosh-dns-release
+
+  - name: config-server
+    type: git
+    source:
+      uri: git@github.com:cloudfoundry/config-server.git
+      branch: develop
+      private_key: ((github_deploy_key_config-server.private_key))
 
   #
   # BATS

@@ -12,6 +12,11 @@ install bosh-cli/*bosh-cli-*-linux-amd64 "/usr/local/bin/bosh"
 
 cp -r bosh-agent "${BOSH_REPO}/src/"
 
+pushd config-server
+  go build .
+  export CONFIG_SERVER_BINARY=$(realpath config-server)
+popd
+
 pushd "${BOSH_REPO}/src"
   print_git_state
   print_ruby_info

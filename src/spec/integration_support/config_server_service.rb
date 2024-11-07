@@ -1,5 +1,4 @@
 require 'integration_support/constants'
-require 'common/retryable'
 
 module IntegrationSupport
   class ConfigServerService
@@ -37,10 +36,11 @@ module IntegrationSupport
     end
 
     def self.install
+      binary_file_path = ENV.fetch('CONFIG_SERVER_BINARY')
+
       FileUtils.mkdir_p(INSTALL_DIR)
-      downloaded_file_name = download
       executable_file_path = File.join(INSTALL_DIR, LOCAL_CONFIG_SERVER_FILE_NAME)
-      FileUtils.copy(File.join(INSTALL_DIR, downloaded_file_name), executable_file_path)
+      FileUtils.copy(binary_file_path, executable_file_path)
       File.chmod(0777, executable_file_path)
     end
 
@@ -63,38 +63,6 @@ module IntegrationSupport
     def restart(with_trusted_certs)
       @config_server_process.stop
       start(with_trusted_certs)
-    end
-
-    def self.download
-      platform = RUBY_PLATFORM =~ /darwin/ ? 'darwin' : 'linux'
-
-      file_name_to_download = "config-server-#{latest_version}-#{platform}-amd64"
-
-      retryable.retryer do
-        destination_path = File.join(INSTALL_DIR, file_name_to_download)
-        `#{IntegrationSupport::ArtifactInstaller::INSTALL_BINARY_SCRIPT} #{file_name_to_download} #{destination_path} '' config-server-releases`
-        $? == 0
-      end
-
-      file_name_to_download
-    end
-
-    def self.retryable
-      Bosh::Retryable.new({tries: 6})
-    end
-
-    def self.latest_version
-      config_server_version_url = 'https://s3.amazonaws.com/config-server-releases/current-version'
-      retryable.retryer do
-        `wget -O #{File.join(INSTALL_DIR, 'current-version')} #{config_server_version_url}`
-        $? == 0
-      end
-
-      file = File.open(File.join(INSTALL_DIR, 'current-version'), 'r')
-      version = file.read
-      file.close
-
-      version
     end
 
     private
