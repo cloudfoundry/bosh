@@ -364,6 +364,7 @@ DEPENDENCIES
   bundle-audit
   factory_bot
   fakefs
+  json_pure (~> 2.7.0)
   minitar
   mysql2
   parallel_tests
