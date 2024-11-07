@@ -12,7 +12,7 @@ describe 'create-release', type: :integration do
   end
 
   let(:sha_generator) do
-    path = File.expand_path('../../../tmp/verify-multidigest/verify-multidigest', File.dirname(__FILE__))
+    path = IntegrationSupport::VerifyMultidigestManager.executable_path
     Bosh::Director::BoshDigest::MultiDigest.new(logger, path)
   end
   let!(:release_file) { Tempfile.new('release.tgz') }

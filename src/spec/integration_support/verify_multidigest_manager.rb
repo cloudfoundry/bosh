@@ -1,5 +1,3 @@
-require 'integration_support/artifact_installer'
-
 module IntegrationSupport
   class VerifyMultidigestManager
     def self.install
@@ -11,19 +9,42 @@ module IntegrationSupport
     end
 
     def self.installer
-      @installer ||=
-        ArtifactInstaller.new(
-          File.join('tmp', 'verify-multidigest'),
-          'verify-multidigest',
-          {
-            version: '0.0.156',
-            darwin_sha256: '4450a58db4c3df9a522299525ab70eaf2aee94f74fc2404bc28dea1068c094d6',
-            linux_sha256: 'f72a33761540d010c136d020038e764d04ddc9a1ee71ffd2367304f18ba550d3',
-            bucket_name: 'verify-multidigest',
-          }
-        )
+      @installer ||= VerifyMultidigestBlobInstaller.new
     end
 
     private_class_method :installer
+  end
+
+  class VerifyMultidigestBlobInstaller
+    INSTALL_DIR = File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_DIR, 'tmp', 'integration-verify-multidigest')
+
+    def install
+      Dir.chdir(IntegrationSupport::Constants::BOSH_REPO_ROOT) do
+        run_command("mkdir -p #{INSTALL_DIR}")
+        run_command('bosh sync-blobs')
+        run_command("cp blobs/verify-multidigest/verify-multidigest-*-linux-amd64 #{executable_path}")
+        run_command("chmod +x #{executable_path}")
+      end
+    end
+
+    def executable_path
+      File.join(INSTALL_DIR, 'verify-multidigest')
+    end
+
+    private
+
+    def run_command(command, environment = {})
+      io = IO.popen([environment, 'bash', '-c', command])
+
+      lines =
+        io.each_with_object("") do |line, collect|
+          collect << line
+          puts line.chomp
+        end
+
+      io.close
+
+      lines
+    end
   end
 end

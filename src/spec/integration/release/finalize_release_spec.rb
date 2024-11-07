@@ -9,7 +9,7 @@ describe 'finalize release', type: :integration do
   before { setup_test_release_dir }
 
   let(:sha_generator) do
-    path = File.expand_path('../../../tmp/verify-multidigest/verify-multidigest', File.dirname(__FILE__))
+    path = IntegrationSupport::VerifyMultidigestManager.executable_path
     Bosh::Director::BoshDigest::MultiDigest.new(logger, path)
   end
 

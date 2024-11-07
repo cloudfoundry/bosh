@@ -89,7 +89,7 @@ module IntegrationSupport
 
       @task_logs_dir = sandbox_path('boshdir/tasks')
       @blobstore_storage_dir = sandbox_path('bosh_test_blobstore')
-      @verify_multidigest_path = File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_DIR, 'tmp', 'verify-multidigest', 'verify-multidigest')
+      @verify_multidigest_path = VerifyMultidigestManager.executable_path
       @dummy_cpi_api_version = nil
 
       @nats_log_path = File.join(@logs_path, 'nats.log')
