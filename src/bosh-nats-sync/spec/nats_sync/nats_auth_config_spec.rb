@@ -16,8 +16,8 @@ module NATSSync
         },
       ]
     end
-    let(:director_subject) { 'subject=C = USA, O = Cloud Foundry, CN = default.hm.bosh-internal' }
-    let(:hm_subject) { 'C = USA, O = Cloud Foundry, CN = default.hm.bosh-internal' }
+    let(:director_subject) { 'subject=C=USA, O=Cloud Foundry, CN=default.hm.bosh-internal' }
+    let(:hm_subject) { 'C=USA, O=Cloud Foundry, CN=default.hm.bosh-internal' }
 
     describe '#execute_nats_auth_config' do
       describe 'read config' do
