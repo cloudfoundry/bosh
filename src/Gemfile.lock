@@ -86,7 +86,7 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
-    activesupport (7.2.2)
+    activesupport (8.0.0)
       base64
       benchmark (>= 0.3)
       bigdecimal
@@ -98,11 +98,12 @@ GEM
       minitest (>= 5.1)
       securerandom (>= 0.3)
       tzinfo (~> 2.0, >= 2.0.5)
+      uri (>= 0.13.1)
     addressable (2.8.7)
       public_suffix (>= 2.0.2, < 7.0)
     ast (2.4.2)
-    async (2.18.0)
-      console (~> 1.26)
+    async (2.19.0)
+      console (~> 1.29)
       fiber-annotation
       io-event (~> 1.6, >= 1.6.5)
     async-http (0.82.3)
@@ -127,7 +128,7 @@ GEM
     base64 (0.2.0)
     bcrypt (3.1.20)
     beefcake (1.2.0)
-    benchmark (0.3.0)
+    benchmark (0.4.0)
     bigdecimal (3.1.8)
     blue-shell (0.3.0)
       rspec
@@ -156,8 +157,8 @@ GEM
     crack (1.0.0)
       bigdecimal
       rexml
-    delayed_job (4.1.12)
-      activesupport (>= 3.0, < 8.0)
+    delayed_job (4.1.13)
+      activesupport (>= 3.0, < 9.0)
     diff-lcs (1.5.1)
     docile (1.4.1)
     dogapi (1.45.0)
@@ -186,7 +187,7 @@ GEM
       concurrent-ruby (~> 1.0)
     io-endpoint (0.14.0)
     io-event (1.7.3)
-    io-stream (0.6.0)
+    io-stream (0.6.1)
     json (2.8.1)
     json_pure (2.7.6)
     language_server-protocol (3.17.0.3)
@@ -219,7 +220,7 @@ GEM
     netrc (0.11.0)
     nio4r (2.7.4)
     openssl (3.2.0)
-    ostruct (0.6.0)
+    ostruct (0.6.1)
     parallel (1.26.3)
     parallel_tests (4.7.2)
       parallel
@@ -345,6 +346,7 @@ GEM
       tzinfo (>= 1.0.0)
     unicode-display_width (2.6.0)
     unix-crypt (1.3.1)
+    uri (1.0.1)
     webmock (3.24.0)
       addressable (>= 2.8.0)
       crack (>= 0.3.2)
