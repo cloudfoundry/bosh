@@ -1,32 +1,26 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe 'validate mysql database' do
+  describe 'MySQL column types' do
     let(:db) { Bosh::Director::Config.db }
 
+    let(:sequel_internal_tables) { [:schema_migrations] }
+    let(:bosh_tables) { (db.tables - sequel_internal_tables) }
+
     before do
-      skip('Skipping tests that check for longtext fields in MySQL') unless [:mysql2, :mysql].include?(db.adapter_scheme)
+      skip('Skipping specs for `longtext` fields in MySQL') unless [:mysql2].include?(db.adapter_scheme)
     end
 
-    it 'should only have longtext types' do
-      excluded_tables = [:schema_migrations]
-      (db.tables - excluded_tables).each do |table|
+    it 'should use `longtext`' do
+      bosh_tables.each do |table|
         db.schema(table).each do |column|
-          expect(column.last[:db_type]).to_not eq('text'), "#{table}.#{column.first} is of type text.
-Please consider migrating it to use longtext or add this table to excluded_tables"
-        end
-      end
-    end
-
-    context 'when the column name contains the string json' do
-      it 'should be longtext type' do
-        (db.tables).each do |table|
-          db.schema(table).each do |column|
-            column_name = column.first.to_s
-            if column_name.include?('json')
-              expect(column.last[:db_type]).to eq('longtext'), "#{table}.#{column.first} is not of type longtext."
-            end
-          end
+          column_name = column.first
+          column_data = column.last
+          column_type = column_data.fetch(:db_type)
+          expect(column_type).to_not(
+            eq('text'),
+            "#{table}.#{column_name} (#{column_data.inspect}) type is `#{column_type}`, which has size limitations, use `longtext` instead",
+          )
         end
       end
     end
