@@ -1401,14 +1401,11 @@ resources:
       bucket: bosh-azure-storage-cli-artifacts
 
   - name: verify-multidigest-cli
-    type: s3
+    type: gcs-resource
     source:
-      regexp: verify-multidigest-(.*)-linux-amd64
-      bucket: verify-multidigest
-      region_name: us-east-1
-      access_key_id: ((bosh-verify-multidigest-upload_assume_aws_access_key.username))
-      secret_access_key: ((bosh-verify-multidigest-upload_assume_aws_access_key.password))
-      aws_role_arn: ((bosh-verify-multidigest-upload_assume_aws_access_key.role_arn))
+      regexp: verify-multidigest/verify-multidigest-(.*)-linux-amd64
+      bucket: bosh-director-pipeline
+      json_key: ((gcp_json_key))
 
   - name: nats-server-github-release
     type: github-release
