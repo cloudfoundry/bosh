@@ -5,6 +5,7 @@ require 'rspec/core/rake_task'
 require 'parallel_tests/tasks'
 require 'tempfile'
 
+require 'common/retryable'
 require 'common/thread_pool'
 
 require 'integration_support/workspace'
