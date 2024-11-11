@@ -4,7 +4,7 @@ require 'db_migrator'
 module Bosh::Director
   describe 'DBMigrator' do
     let(:db) { instance_double(Sequel::Database) }
-    let(:options) { { target: 15, current: 10 } }
+    let(:options) { { allow_missing_migration_files: true, target: 15, current: 10 } }
     let(:retry_interval_override) { 0.01 }
 
     subject(:db_migrator) { DBMigrator.new(db, options, retry_interval_override) }

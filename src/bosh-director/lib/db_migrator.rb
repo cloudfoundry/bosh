@@ -1,9 +1,9 @@
 require 'sequel'
 
 class DBMigrator
+  MIGRATIONS_DIR = File.expand_path(File.join(File.dirname(__FILE__), '..', 'db', 'migrations'))
   DEFAULT_RETRY_INTERVAL = 0.5
   MAX_MIGRATION_ATTEMPTS = 50
-  MIGRATIONS_DIR = File.expand_path('../../db/migrations/director', __FILE__)
 
   class MigrationsNotCurrentError < RuntimeError; end
 
@@ -13,7 +13,7 @@ class DBMigrator
     Sequel.extension :migration, :core_extensions
 
     @database = database
-    @options = options
+    @options = { allow_missing_migration_files: true }.merge(options)
     @retry_interval = retry_interval
   end
 
