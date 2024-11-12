@@ -25,7 +25,7 @@ export BOSH_DIRECTOR_IP="10.245.0.3"
 
 BOSH_BINARY_PATH=$(which bosh)
 export BOSH_BINARY_PATH
-export BOSH_RELEASE="${PWD}/bosh-src/src/spec/assets/dummy-release.tgz"
+export BOSH_RELEASE="${PWD}/bosh/src/spec/assets/dummy-release.tgz"
 export BOSH_DIRECTOR_RELEASE_PATH="${PWD}/bosh-release"
 DNS_RELEASE_PATH="$(realpath "$(find "${PWD}"/bosh-dns-release -maxdepth 1 -path '*.tgz')")"
 export DNS_RELEASE_PATH
@@ -112,4 +112,4 @@ brats_env_file="${PWD}/brats-env.sh"
 echo "# The required BRATS environment can be loaded by running the following:"
 echo "# 'source ${brats_env_file}'"
 
-bosh-src/scripts/test-brats
+bosh/scripts/test-brats

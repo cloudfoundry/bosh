@@ -16,7 +16,7 @@ uaa_release_url="$(bosh int bosh-deployment/uaa.yml --path /release=uaa/value/ur
 java_install_prefix="/usr/lib/jvm"
 
 gem_home="/usr/local/bundle"
-ruby_version="$(cat bosh-src/src/.ruby-version)"
+ruby_version="$(cat bosh/src/.ruby-version)"
 
 postgres_major_version="13"
 

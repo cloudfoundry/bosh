@@ -18,7 +18,7 @@ export BOSH_DIRECTOR_IP="10.245.0.3"
 export BOSH_BINARY_PATH=$(which bosh)
 bosh_release_tgz=(${PWD}/bosh-release/*.tgz)
 export BOSH_DIRECTOR_TARBALL_PATH=${bosh_release_tgz[0]}
-export BOSH_DIRECTOR_RELEASE_PATH="$PWD/bosh-src"
+export BOSH_DIRECTOR_RELEASE_PATH="$PWD/bosh"
 export CF_DEPLOYMENT_RELEASE_PATH="$PWD/cf-deployment"
 export CANDIDATE_STEMCELL_TARBALL_PATH="$(realpath "${src_dir}"/stemcell/*.tgz)"
 export STEMCELL_OS=ubuntu-jammy
@@ -38,6 +38,6 @@ bosh upload-release "$(bosh int ${BOSH_DEPLOYMENT_PATH}/docker/cpi.yml --path /n
 bosh upload-release "$(bosh int ${BOSH_DEPLOYMENT_PATH}/jumpbox-user.yml --path /release=os-conf/value/url)" \
   --sha1 "$(bosh int ${BOSH_DEPLOYMENT_PATH}/jumpbox-user.yml --path /release=os-conf/value/sha1)"
 
-pushd "${src_dir}/bosh-src/src/brats" > /dev/null
+pushd "${src_dir}/bosh/src/brats" > /dev/null
   go run github.com/onsi/ginkgo/v2/ginkgo --timeout=24h -r --race --nodes 1 performance
 popd > /dev/null

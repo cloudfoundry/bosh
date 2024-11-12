@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-pushd bosh-src
+pushd bosh
   echo "${PRIVATE_YML}" > config/private.yml
 
   BLOB_PREFIX="verify-multidigest"

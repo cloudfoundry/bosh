@@ -15,7 +15,7 @@ azure-storage)
   exit 1;;
 esac
 
-pushd bosh-src
+pushd bosh
   echo "${PRIVATE_YML}" > config/private.yml
 
   BLOB_PREFIX="${cli_name}"

@@ -12,7 +12,7 @@ export GO_CLI_PATH=$ROOT_PATH/bosh-cli/bosh-cli
 chmod +x $GO_CLI_PATH
 
 
-pushd bosh-src
+pushd bosh
 
   set +x
   echo "$RELEASE_PRIVATE_YML" >> "config/private.yml"

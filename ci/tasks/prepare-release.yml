@@ -8,12 +8,12 @@ image_resource:
 
 inputs:
   - name: bosh-ci
-  - name: bosh-src
+  - name: bosh
   - name: bosh-cli
   - name: version
 
 outputs:
-  - name: bosh-src
+  - name: bosh
   - name: release-tarball
 
 params:

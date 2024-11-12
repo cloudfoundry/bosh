@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 NEED_COMMIT=false
 
-echo "${PRIVATE_YML}" > bosh-src/config/private.yml
+echo "${PRIVATE_YML}" > bosh/config/private.yml
 
 set -e
 
-pushd bosh-src
+pushd bosh
   CURRENT_BLOBS=$(bosh blobs)
   BLOB_PATH=$(ls ../postgres-src/postgresql-*.tar.gz)
   FILENAME=$( basename ${BLOB_PATH} )

@@ -5,7 +5,7 @@ set -eux
 export FULL_VERSION=$(cat version/version)
 
 export ROOT_PATH=$PWD
-BOSH_SRC=$PWD/bosh-src
+BOSH_SRC=$PWD/bosh
 TARBALL_OUTPUT_DIR=$PWD/release-tarball
 
 mkdir -p $TARBALL_OUTPUT_DIR

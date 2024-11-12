@@ -6,7 +6,7 @@ version_number="$(cat version/version)"
 updated_blob=0
 parsed_blobs="$(echo "$BLOBS" | jq -r '.[]')"
 
-pushd bosh-src
+pushd bosh
   ls -la
   git status
   for blob in $parsed_blobs; do

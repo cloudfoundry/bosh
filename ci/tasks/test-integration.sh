@@ -2,7 +2,7 @@
 set -euo pipefail
 set -x
 
-BOSH_REPO='bosh-src'
+BOSH_REPO='bosh'
 
 source "${BOSH_REPO}/ci/tasks/utils.sh"
 
@@ -23,6 +23,6 @@ pushd "${BOSH_REPO}/src"
 
   gem install -f bundler
   bundle install --local
-  
+
   bundle exec rake --trace spec:integration
 popd

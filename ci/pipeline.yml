@@ -69,7 +69,7 @@ jobs:
       - unit-director-postgres-15
       - run-bundle-audit
     plan:
-    - get: bosh-src
+    - get: bosh
       trigger: true
 
   - name: unit-common
@@ -80,7 +80,7 @@ jobs:
     plan:
     - in_parallel:
       - get: bosh-ci
-      - get: bosh-src
+      - get: bosh
         trigger: true
         passed: [gate]
       - get: integration-image
@@ -99,7 +99,7 @@ jobs:
     plan:
     - in_parallel:
       - get: bosh-ci
-      - get: bosh-src
+      - get: bosh
         trigger: true
         passed: [gate]
       - get: integration-image
@@ -118,7 +118,7 @@ jobs:
     plan:
     - in_parallel:
       - get: bosh-ci
-      - get: bosh-src
+      - get: bosh
         trigger: true
         passed: [gate]
       - get: integration-image
@@ -137,7 +137,7 @@ jobs:
     plan:
     - in_parallel:
       - get: bosh-ci
-      - get: bosh-src
+      - get: bosh
         trigger: true
         passed: [gate]
       - get: integration-image
@@ -156,7 +156,7 @@ jobs:
     plan:
     - in_parallel:
       - get: bosh-ci
-      - get: bosh-src
+      - get: bosh
         trigger: true
         passed: [gate]
       - get: integration-image
@@ -175,7 +175,7 @@ jobs:
     plan:
     - in_parallel:
       - get: bosh-ci
-      - get: bosh-src
+      - get: bosh
         trigger: true
         passed: [gate]
       - get: integration-image
@@ -194,7 +194,7 @@ jobs:
     plan:
     - in_parallel:
       - get: bosh-ci
-      - get: bosh-src
+      - get: bosh
         trigger: true
         passed: [gate]
       - get: integration-image
@@ -213,7 +213,7 @@ jobs:
     plan:
     - in_parallel:
       - get: bosh-ci
-      - get: bosh-src
+      - get: bosh
         passed: [gate]
         trigger: true
       - get: integration-mysql-8-0-image
@@ -234,7 +234,7 @@ jobs:
     plan:
     - in_parallel:
       - get: bosh-ci
-      - get: bosh-src
+      - get: bosh
         passed: [gate]
         trigger: true
       - get: integration-postgres-10-image
@@ -255,7 +255,7 @@ jobs:
     plan:
     - in_parallel:
       - get: bosh-ci
-      - get: bosh-src
+      - get: bosh
         passed: [gate]
         trigger: true
       - get: integration-postgres-13-image
@@ -276,7 +276,7 @@ jobs:
     plan:
     - in_parallel:
       - get: bosh-ci
-      - get: bosh-src
+      - get: bosh
         passed: [gate]
         trigger: true
       - get: integration-postgres-15-image
@@ -295,13 +295,13 @@ jobs:
     serial_groups: [run-bundle-audit]
     build_logs_to_retain: 250
     plan:
-      - get: bosh-src
+      - get: bosh
         trigger: true
         passed: [gate]
       - task: test-bundle-audit
         config:
           inputs:
-            - name: bosh-src
+            - name: bosh
           platform: linux
           image_resource:
             type: docker-image
@@ -315,7 +315,7 @@ jobs:
               - |
                 set -eu -o pipefail
                 set -x
-                cd bosh-src/src
+                cd bosh/src
                 gem install bundler:"$(grep -A 1 'BUNDLED WITH' Gemfile.lock | tail -n 1 | awk '{$1=$1};1')";
                 bundle install
                 bundle exec bundle-audit version
@@ -330,7 +330,7 @@ jobs:
     plan:
       - in_parallel:
         - get: bosh-ci
-        - get: bosh-src
+        - get: bosh
           trigger: true
           passed: [gate]
         - get: bosh-cli
@@ -357,7 +357,7 @@ jobs:
     plan:
       - in_parallel:
         - get: bosh-ci
-        - get: bosh-src
+        - get: bosh
           trigger: true
           passed: [gate]
         - get: bosh-cli
@@ -385,7 +385,7 @@ jobs:
     plan:
       - in_parallel:
         - get: bosh-ci
-        - get: bosh-src
+        - get: bosh
           passed: [gate]
           trigger: true
         - get: bosh-cli
@@ -407,7 +407,7 @@ jobs:
     plan:
     - in_parallel:
       - get: bosh-ci
-      - get: bosh-src
+      - get: bosh
         trigger: true
         passed:
         - unit-common
@@ -442,7 +442,7 @@ jobs:
     plan:
     - in_parallel:
       - get: bosh-ci
-      - get: bosh-src
+      - get: bosh
         passed: [candidate-release]
       - get: release
         resource: bosh-candidate-release-tarballs
@@ -480,7 +480,7 @@ jobs:
               - "bosh-cli-*-linux-amd64"
         - get: bats
         - get: bosh-deployment
-        - get: bosh-src
+        - get: bosh
           passed: [compile-bosh-dev-release-jammy]
         - get: integration-image
       - put: terraform
@@ -544,7 +544,7 @@ jobs:
               - "bosh-cli-*-linux-amd64"
         - get: bats
         - get: bosh-deployment
-        - get: bosh-src
+        - get: bosh
           passed: [compile-bosh-dev-release-jammy]
         - get: integration-image
       - put: terraform
@@ -594,7 +594,7 @@ jobs:
     plan:
     - in_parallel:
       - get: bosh-ci
-      - get: bosh-src
+      - get: bosh
         passed: [compile-bosh-dev-release-jammy]
       - get: bosh-dns-release
       - get: stemcell
@@ -653,7 +653,7 @@ jobs:
     plan:
     - in_parallel:
       - get: bosh-ci
-      - get: bosh-src
+      - get: bosh
         passed: [compile-bosh-dev-release-jammy]
       - get: bosh-release
         resource: bosh-compiled-candidate-jammy
@@ -673,7 +673,7 @@ jobs:
     plan:
     - in_parallel:
       - get: bosh-ci
-      - get: bosh-src
+      - get: bosh
         passed: [compile-bosh-dev-release-jammy]
       - get: stemcell
         resource: warden-ubuntu-jammy
@@ -701,7 +701,7 @@ jobs:
     - do:
       - in_parallel:
         - get: bosh-ci
-        - get: bosh-src
+        - get: bosh
           passed: [compile-bosh-dev-release-jammy]
         - get: stemcell
           resource: gcp-ubuntu-jammy
@@ -784,7 +784,7 @@ jobs:
   - name: delivery
     plan:
       - in_parallel:
-        - get: bosh-src
+        - get: bosh
           trigger: true
           passed:
           - bats-ubuntu-jammy
@@ -797,7 +797,7 @@ jobs:
     plan:
       - in_parallel:
         - get: bosh-ci
-        - get: bosh-src
+        - get: bosh
           passed: [delivery]
         - get: bosh-cli
           params:
@@ -819,9 +819,9 @@ jobs:
               options:
                 credentials_source: static
                 json_key: '((bosh_release_blobs_gcp_credentials_json))'
-      - put: bosh-src
+      - put: bosh
         params:
-          repository: bosh-src
+          repository: bosh
           tag: release-metadata/tag-name
           annotate: release-metadata/annotate-msg
           merge: true
@@ -830,7 +830,7 @@ jobs:
           name: release-metadata/tag-name
           tag: release-metadata/tag-name
           body: release-notes/release-notes.md
-          commitish: bosh-src/.git/ref
+          commitish: bosh/.git/ref
           generate_release_notes: true
 
   - name: clear-release-notes
@@ -863,7 +863,7 @@ jobs:
     plan:
     - in_parallel:
       - get: bosh-ci
-      - get: bosh-src
+      - get: bosh
         trigger: true
         passed:
         - delivery
@@ -935,7 +935,7 @@ jobs:
       trigger: true
     - get: bosh-ci-dockerfiles
       trigger: true
-    - get: bosh-src
+    - get: bosh
     - get: bosh-deployment
       params:
         depth: 1
@@ -1075,7 +1075,7 @@ jobs:
     plan:
     - in_parallel:
       - get: bosh-ci
-      - get: bosh-src
+      - get: bosh
       - get: ruby-release
       - get: weekly
         trigger: true
@@ -1083,9 +1083,9 @@ jobs:
     - task: bump-gems
       file: ruby-release/ci/tasks/shared/bump-gems.yml
       input_mapping:
-        input-repo: bosh-src
+        input-repo: bosh
       output_mapping:
-        output-repo: bosh-src-out
+        output-repo: bosh-out
       params:
         GEM_DIRS: src
         GIT_USER_NAME: CI Bot
@@ -1098,13 +1098,13 @@ jobs:
       file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-image
       input_mapping:
-        bosh-src: bosh-src-out
+        bosh: bosh-out
       params:
         COVERAGE: false
         RAKE_TASK: spec:unit:parallel
-    - put: bosh-src
+    - put: bosh
       params:
-        repository: bosh-src-out
+        repository: bosh-out
         rebase: true
 
   - name: bump-golang-deps
@@ -1113,31 +1113,31 @@ jobs:
     - get: weekly
       trigger: true
     - get: bosh-ci
-    - get: bosh-src
+    - get: bosh
     - get: golang-release
     - get: integration-image
     - task: bump-deps
       file: golang-release/ci/tasks/shared/bump-deps.yml
       input_mapping:
-        input_repo: bosh-src
+        input_repo: bosh
       output_mapping:
-        output_repo: bosh-src-out
+        output_repo: bosh-out
       params:
         SOURCE_PATH: src/brats/
     - task: lint-brats
       input_mapping:
-        bosh-src: bosh-src-out
+        bosh: bosh-out
       file: bosh-ci/ci/tasks/lint-brats.yml
-    - put: bosh-src
+    - put: bosh
       params:
-        repository: bosh-src-out
+        repository: bosh-out
 
   - name: bump-packages
     serial: true
     plan:
     - in_parallel:
       - get: bosh-ci
-      - get: bosh-src
+      - get: bosh
       - get: nginx-release
         trigger: true
       - get: mariadb-connector-c-resource
@@ -1167,9 +1167,9 @@ jobs:
     - task: bump-nginx-packages
       file: nginx-release/ci/shared/bump-nginx-package.yml
       input_mapping:
-        input_repo: bosh-src
+        input_repo: bosh
       output_mapping:
-        output_repo: bosh-src-out
+        output_repo: bosh-out
       params:
         PACKAGES: [nginx]
         PRIVATE_YML: |
@@ -1180,9 +1180,9 @@ jobs:
     - task: bump-mariadb-connector
       file: bosh-ci/ci/tasks/bump-mariadb-connector.yml
       input_mapping:
-        bosh-src: bosh-src-out
+        bosh: bosh-out
       output_mapping:
-        bosh-src: bosh-src-out
+        bosh: bosh-out
       params:
         GIT_USER_NAME: CI Bot
         GIT_USER_EMAIL: cf-bosh-eng@pivotal.io
@@ -1194,10 +1194,10 @@ jobs:
     - task: bump-postgres-10-package
       file: bosh-ci/ci/tasks/bump-postgres-packages.yml
       input_mapping:
-        bosh-src: bosh-src-out
+        bosh: bosh-out
         postgres-src: postgres-10-src
       output_mapping:
-        bosh-src: bosh-src-out
+        bosh: bosh-out
       params:
         MAJOR_VERSION: 10
         PRIVATE_YML: |
@@ -1208,10 +1208,10 @@ jobs:
     - task: bump-postgres-13-package
       file: bosh-ci/ci/tasks/bump-postgres-packages.yml
       input_mapping:
-        bosh-src: bosh-src-out
+        bosh: bosh-out
         postgres-src: postgres-13-src
       output_mapping:
-        bosh-src: bosh-src-out
+        bosh: bosh-out
       params:
         MAJOR_VERSION: 13
         PRIVATE_YML: |
@@ -1222,10 +1222,10 @@ jobs:
     - task: bump-postgres-15-package
       file: bosh-ci/ci/tasks/bump-postgres-packages.yml
       input_mapping:
-        bosh-src: bosh-src-out
+        bosh: bosh-out
         postgres-src: postgres-15-src
       output_mapping:
-        bosh-src: bosh-src-out
+        bosh: bosh-out
       params:
         MAJOR_VERSION: 15
         PRIVATE_YML: |
@@ -1236,9 +1236,9 @@ jobs:
     - task: bump-ruby-package
       file: ruby-release/ci/tasks/shared/bump-ruby-package.yml
       input_mapping:
-        bosh-release: bosh-src-out
+        bosh-release: bosh-out
       output_mapping:
-        bosh-release: bosh-src-out
+        bosh-release: bosh-out
       params:
         GIT_USER_NAME: CI Bot
         GIT_USER_EMAIL: cf-bosh-eng@pivotal.io
@@ -1253,10 +1253,10 @@ jobs:
     - task: bump-bosh-blobstore-dav
       file: bosh-ci/ci/tasks/bump-blobstore-cli.yml
       input_mapping:
-        bosh-src: bosh-src-out
+        bosh: bosh-out
         bosh-blobstore-cli: bosh-blobstore-dav
       output_mapping:
-        bosh-src: bosh-src-out
+        bosh: bosh-out
       params:
         BLOBSTORE_TYPE: dav
         GIT_USER_NAME: CI Bot
@@ -1269,10 +1269,10 @@ jobs:
     - task: bump-bosh-blobstore-gcs
       file: bosh-ci/ci/tasks/bump-blobstore-cli.yml
       input_mapping:
-        bosh-src: bosh-src-out
+        bosh: bosh-out
         bosh-blobstore-cli: bosh-blobstore-gcs
       output_mapping:
-        bosh-src: bosh-src-out
+        bosh: bosh-out
       params:
         BLOBSTORE_TYPE: gcs
         GIT_USER_NAME: CI Bot
@@ -1285,10 +1285,10 @@ jobs:
     - task: bump-bosh-blobstore-s3
       file: bosh-ci/ci/tasks/bump-blobstore-cli.yml
       input_mapping:
-        bosh-src: bosh-src-out
+        bosh: bosh-out
         bosh-blobstore-cli: bosh-blobstore-s3
       output_mapping:
-        bosh-src: bosh-src-out
+        bosh: bosh-out
       params:
         BLOBSTORE_TYPE: s3
         GIT_USER_NAME: CI Bot
@@ -1301,10 +1301,10 @@ jobs:
     - task: bump-bosh-blobstore-azure-storage
       file: bosh-ci/ci/tasks/bump-blobstore-cli.yml
       input_mapping:
-        bosh-src: bosh-src-out
+        bosh: bosh-out
         bosh-blobstore-cli: bosh-blobstore-azure-storage
       output_mapping:
-        bosh-src: bosh-src-out
+        bosh: bosh-out
       params:
         BLOBSTORE_TYPE: azure-storage
         GIT_USER_NAME: CI Bot
@@ -1317,9 +1317,9 @@ jobs:
     - task: bump-verify-multidigest-cli
       file: bosh-ci/ci/tasks/bump-verify-multidigest-cli.yml
       input_mapping:
-        bosh-src: bosh-src-out
+        bosh: bosh-out
       output_mapping:
-        bosh-src: bosh-src-out
+        bosh: bosh-out
       params:
         GIT_USER_NAME: CI Bot
         GIT_USER_EMAIL: cf-bosh-eng@pivotal.io
@@ -1331,9 +1331,9 @@ jobs:
     - task: bump-nats-server
       file: bosh-ci/ci/tasks/bump-nats-server.yml
       input_mapping:
-        bosh-src: bosh-src-out
+        bosh: bosh-out
       output_mapping:
-        bosh-src: bosh-src-out
+        bosh: bosh-out
       params:
         GIT_USER_NAME: CI Bot
         GIT_USER_EMAIL: cf-bosh-eng@pivotal.io
@@ -1342,9 +1342,9 @@ jobs:
             options:
               credentials_source: static
               json_key: '((bosh_release_blobs_gcp_credentials_json))'
-    - put: bosh-src
+    - put: bosh
       params:
-        repository: bosh-src-out
+        repository: bosh-out
         rebase: true
 
 resource_types:
@@ -1459,7 +1459,7 @@ resources:
       stop: 4:30 -0700
       days: [ Saturday ]
 
-  - name: bosh-src
+  - name: bosh
     type: git
     source:
       uri: git@github.com:cloudfoundry/bosh.git

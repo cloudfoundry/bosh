@@ -5,7 +5,7 @@ source bosh-ci/ci/tasks/utils.sh
 
 start_db "${DB}"
 
-pushd bosh-src/src
+pushd bosh/src
   print_git_state
   print_ruby_info
 

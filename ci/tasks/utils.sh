@@ -110,8 +110,8 @@ start_db() {
         mv /var/lib/mysql-src/* "${MYSQL_ROOT}/"
 
         echo "Copy 'src/spec/assets/sandbox/database/database_server/{private_key,certificate.pem}' to '${MYSQL_ROOT}/'"
-        cp bosh-src/src/spec/assets/sandbox/database/database_server/private_key "${MYSQL_ROOT}/server.key"
-        cp bosh-src/src/spec/assets/sandbox/database/database_server/certificate.pem "${MYSQL_ROOT}/server.cert"
+        cp bosh/src/spec/assets/sandbox/database/database_server/private_key "${MYSQL_ROOT}/server.key"
+        cp bosh/src/spec/assets/sandbox/database/database_server/certificate.pem "${MYSQL_ROOT}/server.cert"
 
         {
           echo "[client]"
@@ -167,8 +167,8 @@ start_db() {
 
         # NOTE: certificates can only moved to ${PGDATA}/ _after_ `initdb` is run
         echo "Copy 'src/spec/assets/sandbox/database/database_server/{private_key,certificate.pem}' to '${PGDATA}'"
-        cp bosh-src/src/spec/assets/sandbox/database/database_server/private_key "${PGDATA}/server.key"
-        cp bosh-src/src/spec/assets/sandbox/database/database_server/certificate.pem "${PGDATA}/server.crt"
+        cp bosh/src/spec/assets/sandbox/database/database_server/private_key "${PGDATA}/server.key"
+        cp bosh/src/spec/assets/sandbox/database/database_server/certificate.pem "${PGDATA}/server.crt"
         chmod 600 ${PGDATA}/server.*
 
         export POSTGRES_CONF="${PGDATA}/postgresql.conf"

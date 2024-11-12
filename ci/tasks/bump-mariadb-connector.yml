@@ -8,11 +8,11 @@ image_resource:
 
 inputs:
 - name: bosh-ci
-- name: bosh-src
+- name: bosh
 - name: mariadb-connector-c-resource
 
 outputs:
-- name: bosh-src
+- name: bosh
 
 run:
   path: bosh-ci/ci/tasks/bump-mariadb-connector.sh
