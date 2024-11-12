@@ -45,19 +45,19 @@ namespace :spec do
     sh('cd bosh-template/spec/assets/template-test-release/src && rspec')
   end
 
-  def component_spec_dirs
-    @component_spec_dirs ||= Dir['*/spec']
-  end
-
-  def component_dir(component_spec_dir)
-    File.dirname(component_spec_dir)
-  end
-
-  def component_symbol(component_spec_dir)
-    component_dir(component_spec_dir).sub(/^bosh[_-]/, '').to_sym
-  end
-
   namespace :unit do
+    def component_spec_dirs
+      @component_spec_dirs ||= Dir['*/spec']
+    end
+
+    def component_dir(component_spec_dir)
+      File.dirname(component_spec_dir)
+    end
+
+    def component_symbol(component_spec_dir)
+      component_dir(component_spec_dir).sub(/^bosh[_-]/, '').to_sym
+    end
+
     desc 'Run all release unit tests (ERB templates)'
     task :release do
       puts 'Run unit tests for the release (ERB templates)'
