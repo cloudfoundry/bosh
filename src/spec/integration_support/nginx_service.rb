@@ -6,6 +6,8 @@ module IntegrationSupport
     CONFIG_TEMPLATE = File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, 'nginx.conf.erb')
 
     def self.install
+      return if File.exist?(NginxInstaller::EXECUTABLE_PATH)
+
       installer = NginxInstaller.new
       installer.prepare
 
@@ -90,8 +92,7 @@ module IntegrationSupport
 
   class NginxInstaller
     WORKING_DIR = File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_DIR, 'tmp', 'integration-nginx-work')
-    INSTALL_DIR = File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_DIR, 'tmp', 'integration-nginx')
-    EXECUTABLE_PATH = File.join(INSTALL_DIR, 'sbin', 'nginx')
+    EXECUTABLE_PATH = File.join(IntegrationSupport::Constants::INTEGRATION_BIN_DIR, 'sbin', 'nginx')
 
     def prepare
       Dir.chdir(IntegrationSupport::Constants::BOSH_REPO_ROOT) do
@@ -109,12 +110,10 @@ module IntegrationSupport
     def compile
       # Clean up old compiled nginx bits to stay up-to-date
       FileUtils.rm_rf(WORKING_DIR)
-      FileUtils.rm_rf(INSTALL_DIR)
 
       FileUtils.mkdir_p(WORKING_DIR)
-      FileUtils.mkdir_p(INSTALL_DIR)
 
-      run_command("echo '#{RUBY_PLATFORM}' > #{INSTALL_DIR}/platform")
+      run_command("echo '#{RUBY_PLATFORM}' > #{IntegrationSupport::Constants::INTEGRATION_BIN_DIR}/platform")
 
       # Make sure packaging script has its own blob copies so that blobs/ directory is not affected
       nginx_blobs_path = File.join(IntegrationSupport::Constants::BOSH_REPO_ROOT, 'packages', 'nginx')
@@ -122,7 +121,7 @@ module IntegrationSupport
 
       Dir.chdir(WORKING_DIR) do
         packaging_script_path = File.join(IntegrationSupport::Constants::BOSH_REPO_ROOT, 'packages', 'nginx', 'packaging')
-        run_command("bash #{packaging_script_path}", { 'BOSH_INSTALL_TARGET' => INSTALL_DIR })
+        run_command("bash #{packaging_script_path}", { 'BOSH_INSTALL_TARGET' => IntegrationSupport::Constants::INTEGRATION_BIN_DIR })
       end
     end
 
@@ -150,7 +149,7 @@ module IntegrationSupport
     end
 
     def platform_has_changed?
-      output = run_command("cat #{INSTALL_DIR}/platform || true")
+      output = run_command("cat #{IntegrationSupport::Constants::INTEGRATION_BIN_DIR}/platform || true")
       output != RUBY_PLATFORM
     end
 

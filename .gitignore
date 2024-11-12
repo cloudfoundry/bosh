@@ -14,7 +14,6 @@ dev_releases
 releases/*.tgz
 releases/**/*.tgz
 
-src/bosh-agent/
 src/postgresql.dump.sql
 src/postgresql.tables.txt
 src/parallel_runtime_rspec.log

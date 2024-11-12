@@ -9,6 +9,8 @@ module Bosh
     class Dummy
       class NotImplemented < StandardError; end
 
+      BOSH_REPO_ROOT = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..', '..'))
+
       attr_reader :commands
       attr_accessor :options
 
@@ -525,7 +527,7 @@ module Bosh
 
       def agent_cmd(agent_id, legacy_agent_path)
         if legacy_agent_path.nil?
-          go_agent_exe =  File.expand_path('../../../../bosh-agent/out/bosh-agent', __FILE__)
+          go_agent_exe =  File.join(BOSH_REPO_ROOT, 'src', 'tmp', 'bin', 'bosh-agent')
         else
           go_agent_exe = legacy_agent_path
         end

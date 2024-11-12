@@ -6,7 +6,7 @@ module IntegrationSupport
 
     LOCAL_CONFIG_SERVER_FILE_NAME = "bosh-config-server-executable"
 
-    INSTALL_DIR = File.join('tmp', 'integration-config-server')
+    SOURCE_DIR = File.join(IntegrationSupport::Constants::BOSH_REPO_PARENT_DIR, 'config-server')
 
     # Keys and Certs
     CERTS_DIR = File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, 'config_server', 'certs')
@@ -23,7 +23,7 @@ module IntegrationSupport
       @port = port_provider.get_port(:config_server_port)
       @logger = logger
       @log_location = "#{base_log_path}.config-server.out"
-      @config_server_config_file= File.join(INSTALL_DIR, "config-server-config#{test_env_number}.json")
+      @config_server_config_file= File.join(IntegrationSupport::Constants::INTEGRATION_BIN_DIR, "config-server-config#{test_env_number}.json")
       @config_server_socket_connector = SocketConnector.new('config-server', 'localhost', @port, @log_location, logger)
 
       @config_server_process = IntegrationSupport::Service.new(
@@ -36,12 +36,25 @@ module IntegrationSupport
     end
 
     def self.install
-      binary_file_path = ENV.fetch('CONFIG_SERVER_BINARY')
+      return if File.exist?(executable_path)
 
-      FileUtils.mkdir_p(INSTALL_DIR)
-      executable_file_path = File.join(INSTALL_DIR, LOCAL_CONFIG_SERVER_FILE_NAME)
-      FileUtils.copy(binary_file_path, executable_file_path)
-      File.chmod(0777, executable_file_path)
+      binary_file_path = self.build_binary
+      FileUtils.copy(binary_file_path, executable_path)
+    end
+
+    def self.executable_path
+      File.join(IntegrationSupport::Constants::INTEGRATION_BIN_DIR, LOCAL_CONFIG_SERVER_FILE_NAME)
+    end
+
+    def self.build_binary
+      raise "The config-server source must be a sibling to the BOSH Director repo" unless File.exist?(SOURCE_DIR)
+
+      Dir.chdir(SOURCE_DIR) do
+        system('go build .') || raise('Unable to build config-server')
+      end
+      binary_file_path = File.join(SOURCE_DIR, 'config-server')
+      raise 'Expected config-server binary to exist, but it does not' unless File.exist?(binary_file_path)
+      binary_file_path
     end
 
     def start(with_trusted_certs)
@@ -68,7 +81,7 @@ module IntegrationSupport
     private
 
     def executable_path
-      File.join(INSTALL_DIR, LOCAL_CONFIG_SERVER_FILE_NAME)
+      File.join(IntegrationSupport::Constants::INTEGRATION_BIN_DIR, LOCAL_CONFIG_SERVER_FILE_NAME)
     end
 
     def setup_config_file(with_trusted_certs = true)

@@ -1,21 +1,26 @@
+require 'integration_support/constants'
+
 module IntegrationSupport
   module BoshAgent
-    BOSH_REPO_ROOT = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..')).freeze
-    BOSH_AGENT_SRC = File.join(BOSH_REPO_ROOT, 'src/bosh-agent')
-    COMPILED_BOSH_AGENT = File.join(BOSH_AGENT_SRC, 'out', 'bosh-agent')
+    SOURCE_DIR = File.join(IntegrationSupport::Constants::BOSH_REPO_PARENT_DIR, 'bosh-agent')
+    COMPILED_BOSH_AGENT = File.join(SOURCE_DIR, 'out', 'bosh-agent')
 
-    def self.ensure_agent_exists!
-      unless File.exist?(COMPILED_BOSH_AGENT) || ENV['TEST_ENV_NUMBER']
-        puts "Building agent in #{COMPILED_BOSH_AGENT}..."
+    def self.install
+      return if File.exist?(executable_path)
 
-        raise 'Bosh agent build failed' unless system(File.join(BOSH_AGENT_SRC, 'bin', 'build'))
+      raise "The bosh-agent source must be a sibling to the BOSH Director repo" unless File.exist?(SOURCE_DIR)
+
+      Dir.chdir(SOURCE_DIR) do
+        system('bin/build') || raise('Unable to build bosh-agent')
       end
+      raise 'Expected bosh-agent binary to exist, but it does not' unless File.exist?(COMPILED_BOSH_AGENT)
+
+      FileUtils.cp(COMPILED_BOSH_AGENT, executable_path)
+    end
+
+    def self.executable_path
+      File.join(IntegrationSupport::Constants::INTEGRATION_BIN_DIR, 'bosh-agent')
     end
   end
 end
 
-RSpec.configure do |c|
-  c.before(:suite) do
-    IntegrationSupport::BoshAgent.ensure_agent_exists!
-  end
-end

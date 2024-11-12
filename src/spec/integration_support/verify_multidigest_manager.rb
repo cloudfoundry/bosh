@@ -1,3 +1,5 @@
+require 'integration_support/constants'
+
 module IntegrationSupport
   class VerifyMultidigestManager
     def self.install
@@ -16,11 +18,10 @@ module IntegrationSupport
   end
 
   class VerifyMultidigestBlobInstaller
-    INSTALL_DIR = File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_DIR, 'tmp', 'integration-verify-multidigest')
-
     def install
+      return if File.exist?(executable_path)
+
       Dir.chdir(IntegrationSupport::Constants::BOSH_REPO_ROOT) do
-        run_command("mkdir -p #{INSTALL_DIR}")
         run_command('bosh sync-blobs')
         run_command("cp blobs/verify-multidigest/verify-multidigest-*-linux-amd64 #{executable_path}")
         run_command("chmod +x #{executable_path}")
@@ -28,7 +29,7 @@ module IntegrationSupport
     end
 
     def executable_path
-      File.join(INSTALL_DIR, 'verify-multidigest')
+      File.join(IntegrationSupport::Constants::INTEGRATION_BIN_DIR, 'verify-multidigest')
     end
 
     private

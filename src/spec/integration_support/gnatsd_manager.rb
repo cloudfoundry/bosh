@@ -1,3 +1,5 @@
+require 'integration_support/constants'
+
 module IntegrationSupport
   class GnatsdManager
     def self.install
@@ -16,11 +18,10 @@ module IntegrationSupport
   end
 
   class NatsServerBlobInstaller
-    INSTALL_DIR = File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_DIR, 'tmp', 'integration-nats')
-
     def install
+      return if File.exist?(executable_path)
+
       Dir.chdir(IntegrationSupport::Constants::BOSH_REPO_ROOT) do
-        run_command("mkdir -p #{INSTALL_DIR}")
         run_command('bosh sync-blobs')
         run_command('tar -zxvf blobs/nats/nats-server-*.tar.gz -C /tmp')
         run_command("cp /tmp/nats-server-*/nats-server #{executable_path}")
@@ -29,7 +30,7 @@ module IntegrationSupport
     end
 
     def executable_path
-      File.join(INSTALL_DIR, 'nats-server')
+      File.join(IntegrationSupport::Constants::INTEGRATION_BIN_DIR, 'nats-server')
     end
 
     private

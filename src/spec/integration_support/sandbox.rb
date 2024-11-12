@@ -15,6 +15,9 @@ require 'integration_support/config_server_service'
 require 'integration_support/director_service'
 require 'integration_support/nginx_service'
 require 'integration_support/gnatsd_manager'
+require 'integration_support/bosh_agent'
+require 'integration_support/uaa_service'
+require 'integration_support/verify_multidigest_manager'
 
 module IntegrationSupport
   class Sandbox
@@ -72,6 +75,17 @@ module IntegrationSupport
         ENV['TEST_ENV_NUMBER'].to_i,
       )
     end
+
+    def self.install_dependencies
+      FileUtils.mkdir_p(IntegrationSupport::Constants::INTEGRATION_BIN_DIR)
+      IntegrationSupport::BoshAgent.install
+      IntegrationSupport::NginxService.install
+      IntegrationSupport::UaaService.install
+      IntegrationSupport::ConfigServerService.install
+      IntegrationSupport::VerifyMultidigestManager.install
+      IntegrationSupport::GnatsdManager.install
+    end
+
 
     def initialize(db_opts, debug, test_env_number)
       @debug = debug
