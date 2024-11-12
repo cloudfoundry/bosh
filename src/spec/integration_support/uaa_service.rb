@@ -22,12 +22,15 @@ module IntegrationSupport
     SERVER_CERT = File.join(IntegrationSupport::Constants::SANDBOX_CERTS_DIR, 'server.crt')
     SERVER_KEY = File.join(IntegrationSupport::Constants::SANDBOX_CERTS_DIR, 'server.key')
 
-    def initialize(sandbox_root, base_log_path, logger)
-      @logger = logger
-      @log_location = "#{base_log_path}.uaa.out"
-
+    def initialize(sandbox_root, base_log_path)
       @config_path = File.join(sandbox_root, 'uaa_config')
       FileUtils.mkdir_p(@config_path)
+
+      FileUtils.mkdir_p(base_log_path)
+      @log_location = "#{base_log_path}.uaa.out"
+
+      @logger = Logging.logger(File.open(File.join(base_log_path, 'uaa_service.log'), 'w+'))
+
       write_config_path
 
       @uaa_process = initialize_uaa_process

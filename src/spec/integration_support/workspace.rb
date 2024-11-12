@@ -9,22 +9,16 @@ module IntegrationSupport
       end
 
       def sandbox_root
-        File.join(pid_dir, '.sandbox')
+        File.join(pid_dir, 'sandbox')
       end
 
       def clean
         FileUtils.rm_rf(base_dir)
       end
 
-      def start_uaa
-        log_dir = dir('uaa_logs')
-        FileUtils.mkdir_p(log_dir)
-
-        UaaService.new(
-          dir('sandbox'),
-          log_dir,
-          Logging.logger(File.open(File.join(log_dir, 'uaa_service.log'), 'w+'))
-        ).tap { |s| s.start }
+      def uaa_service
+        @uaa_service ||=
+          UaaService.new(dir('sandbox'), dir('uaa_logs'))
       end
 
       private

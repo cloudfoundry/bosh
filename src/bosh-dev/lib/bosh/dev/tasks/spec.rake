@@ -19,7 +19,7 @@ namespace :spec do
   namespace :integration do
     desc 'Run health monitor integration tests against a local sandbox'
     task health_monitor: :install_dependencies do
-      run_integration_specs(spec_path: 'spec/integration', tags: 'hm')
+      run_integration_specs(tags: 'hm')
     end
 
     desc 'Install BOSH integration test dependencies (currently Nginx, UAA, and Config Server)'
@@ -45,44 +45,29 @@ namespace :spec do
       sh('rm -rf bosh-agent && git clone https://github.com/cloudfoundry/bosh-agent.git')
     end
 
-    def run_integration_specs(run_options = {})
+    def run_integration_specs(tags: nil)
       IntegrationSupport::Workspace.clean
-      uaa_service = IntegrationSupport::Workspace.start_uaa
+      IntegrationSupport::Workspace.uaa_service.start
 
-      num_processes = ENV['NUM_PROCESSES']
+      proxy_env = 'https_proxy= http_proxy='
 
-      options = {}
-      options.merge!(run_options)
-      options[:count] = num_processes if num_processes
+      rspec_opts += "--tag #{tags}" if tags
+      rspec_opts = "SPEC_OPTS='--format documentation #{rspec_opts}'"
 
-      spec_path = options.fetch(:spec_path)
-
-      puts "Launching parallel execution of #{spec_path}"
-      run_in_parallel(spec_path, options)
-    ensure
-      uaa_service.stop if uaa_service
-    end
-
-    def run_in_parallel(test_path, options = {})
-      spec_path = ENV.fetch('SPEC_PATH', '').split(',')
-      count_flag = "-n #{options[:count]}" unless options[:count].to_s.empty?
-
-      rspec_options = '--format documentation '
-      rspec_options += "--tag #{options[:tags]} " unless options[:tags].nil?
-      spec_opts = "SPEC_OPTS='#{rspec_options}'"
-
-      cmd_prefix = "#{spec_opts} https_proxy= http_proxy= bundle exec"
-
-      command = begin
-        if !spec_path.empty?
-          "#{cmd_prefix} rspec #{spec_path.join(' ')}"
-        else
-          "#{cmd_prefix} parallel_rspec #{count_flag} --multiply-processes 0.5 '#{test_path}'"
-        end
+      parallel_options = '--multiply-processes 0.5'
+      if (num_processes = ENV.fetch('NUM_PROCESSES', nil))
+        parallel_options += " -n #{num_processes}"
       end
+
+      paths = ENV.fetch('SPEC_PATH', ['spec']).split(',').join(' ')
+
+      command =
+        "#{proxy_env} #{rspec_opts} bundle exec parallel_rspec #{parallel_options} #{paths}"
 
       puts command
       raise unless system(command)
+    ensure
+      IntegrationSupport::Workspace.uaa_service.stop
     end
 
     def compile_dependencies
@@ -93,7 +78,7 @@ namespace :spec do
 
   desc 'Run all integration tests against a local sandbox'
   task integration: %w[spec:integration:install_dependencies] do
-    run_integration_specs(spec_path: 'spec/integration')
+    run_integration_specs
   end
 
   desc 'Run template test unit tests (i.e. Bosh::Template::Test)'
