@@ -8,7 +8,7 @@ image_resource:
 
 inputs:
 - name: environment
-- name: bosh-src
+- name: bosh-ci
 - name: bosh-cli
 - name: bosh-deployment
 - name: bosh-release
@@ -27,4 +27,4 @@ outputs:
 - name: director-state
 
 run:
-  path: bosh-src/ci/bats/tasks/deploy-director.sh
+  path: bosh-ci/ci/bats/tasks/deploy-director.sh

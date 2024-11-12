@@ -7,7 +7,7 @@ image_resource:
     repository: bosh/warden-cpi
 
 inputs:
-- name: bosh-src
+- name: bosh-ci
 - name: stemcell
 - name: bosh-release
 - name: bosh-disaster-recovery-acceptance-tests
@@ -17,4 +17,4 @@ inputs:
   optional: true
 
 run:
-  path: bosh-src/ci/tasks/test-bdrats.sh
+  path: bosh-ci/ci/tasks/test-bdrats.sh

@@ -7,11 +7,12 @@ image_resource:
     repository: bosh/docker-cpi
 
 inputs:
+  - name: bosh-ci
   - name: bosh-src
   - name: stemcell
   - name: bosh-release
   - name: cf-deployment
 
 run:
-  path: bosh-src/ci/tasks/test-brats-performance.sh
+  path: bosh-ci/ci/tasks/test-brats-performance.sh
 

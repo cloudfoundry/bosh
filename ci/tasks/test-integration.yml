@@ -8,13 +8,14 @@ image_resource:
     tag: main
 
 inputs:
+- name: bosh-ci
 - name: bosh-src
 - name: bosh-cli
 - name: bosh-agent
 - name: config-server
 
 run:
-  path: bosh-src/ci/tasks/test-integration.sh
+  path: bosh-ci/ci/tasks/test-integration.sh
 
 params:
   DB:                         postgresql

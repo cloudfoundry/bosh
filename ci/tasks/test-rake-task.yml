@@ -7,10 +7,11 @@ image_resource:
     repository: bosh/integration
 
 inputs:
+  - name: bosh-ci
   - name: bosh-src
 
 run:
-  path: bosh-src/ci/tasks/test-rake-task.sh
+  path: bosh-ci/ci/tasks/test-rake-task.sh
 
 params:
   COVERAGE:     true

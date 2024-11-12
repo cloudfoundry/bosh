@@ -8,7 +8,7 @@ image_resource:
     tag: main
 
 inputs:
-  - name: bosh-src
+  - name: bosh-ci
   - name: director-state
   - name: terraform
 
@@ -19,4 +19,4 @@ outputs:
   - name: bats-config
 
 run:
-  path: bosh-src/ci/bats/iaas/gcp/prepare-bats-config.sh
+  path: bosh-ci/ci/bats/iaas/gcp/prepare-bats-config.sh

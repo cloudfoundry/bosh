@@ -7,7 +7,7 @@ image_resource:
     repository: bosh/integration
 
 inputs:
-- name: bosh-src
+- name: bosh-ci
 - name: release
 - name: stemcell
 
@@ -15,4 +15,4 @@ outputs:
 - name: compiled-release
 
 run:
-  path: bosh-src/ci/tasks/export-release.sh
+  path: bosh-ci/ci/tasks/export-release.sh

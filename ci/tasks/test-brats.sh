@@ -14,7 +14,7 @@ fi
 export BOSH_DEPLOYMENT_PATH
 
 if [ ! -f /tmp/local-bosh/director/env ]; then
-  source "${src_dir}/bosh-src/ci/dockerfiles/docker-cpi/start-bosh.sh"
+  source start-bosh
 fi
 source /tmp/local-bosh/director/env
 
@@ -42,7 +42,7 @@ export DOCKER_HOST
 
 bosh -n update-cloud-config \
   "${BOSH_DEPLOYMENT_PATH}/docker/cloud-config.yml" \
-  -o "${src_dir}/bosh-src/ci/dockerfiles/docker-cpi/outer-cloud-config-ops.yml" \
+  -o "${src_dir}/bosh-ci/ci/dockerfiles/docker-cpi/outer-cloud-config-ops.yml" \
   -v network=director_network
 
 bosh -n upload-stemcell "${CANDIDATE_STEMCELL_TARBALL_PATH}"

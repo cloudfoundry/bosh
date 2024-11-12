@@ -9,13 +9,13 @@ image_resource:
 inputs:
 - name: bosh-deployment
 - name: bosh-src
-- name: bosh-src-dockerfiles
+- name: bosh-ci-dockerfiles
 
 outputs:
 - name: docker-build-args
 
 run:
-  path: bosh-src-dockerfiles/ci/dockerfiles/integration/build-docker-args.sh
+  path: bosh-ci-dockerfiles/ci/dockerfiles/integration/build-docker-args.sh
 
 params:
   GITHUB_ACCESS_TOKEN:

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cp -rp bosh-src-dockerfiles/ci/dockerfiles/docker-cpi/* docker-build-context
+cp -rp bosh-ci-dockerfiles/ci/dockerfiles/docker-cpi/* docker-build-context
 
 cp bosh-cli/*bosh* docker-build-context/bosh
 

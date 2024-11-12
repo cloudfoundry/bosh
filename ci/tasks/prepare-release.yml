@@ -7,6 +7,7 @@ image_resource:
     repository: bosh/integration
 
 inputs:
+  - name: bosh-ci
   - name: bosh-src
   - name: bosh-cli
   - name: version
@@ -20,4 +21,4 @@ params:
   BLOBSTORE_SECRET_ACCESS_KEY: replace-me
 
 run:
-  path: bosh-src/ci/tasks/prepare-release.sh
+  path: bosh-ci/ci/tasks/prepare-release.sh

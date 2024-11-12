@@ -7,6 +7,7 @@ image_resource:
     repository: boshcpi/aws-cpi-release
 
 inputs:
+- name: bosh-ci
 - name: bosh-src
 - name: bosh-cli
 
@@ -14,4 +15,4 @@ outputs:
 - name: release
 
 run:
-  path: bosh-src/ci/tasks/make-candidate.sh
+  path: bosh-ci/ci/tasks/make-candidate.sh

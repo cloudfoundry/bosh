@@ -78,13 +78,15 @@ jobs:
     serial_groups: [unit-common]
     build_logs_to_retain: 250
     plan:
-    - get: bosh-src
-      trigger: true
-      passed: [gate]
-    - get: integration-image
+    - in_parallel:
+      - get: bosh-ci
+      - get: bosh-src
+        trigger: true
+        passed: [gate]
+      - get: integration-image
     - task: test-rake-task
       timeout: 2h
-      file: bosh-src/ci/tasks/test-rake-task.yml
+      file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-image
       params:
         RAKE_TASK: spec:unit:common
@@ -95,13 +97,15 @@ jobs:
     serial_groups: [unit-dev]
     build_logs_to_retain: 250
     plan:
-    - get: bosh-src
-      trigger: true
-      passed: [gate]
-    - get: integration-image
+    - in_parallel:
+      - get: bosh-ci
+      - get: bosh-src
+        trigger: true
+        passed: [gate]
+      - get: integration-image
     - task: test-rake-task
       timeout: 2h
-      file: bosh-src/ci/tasks/test-rake-task.yml
+      file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-image
       params:
         RAKE_TASK: spec:unit:dev
@@ -112,13 +116,15 @@ jobs:
     serial_groups: [unit-monitor]
     build_logs_to_retain: 250
     plan:
-    - get: bosh-src
-      trigger: true
-      passed: [gate]
-    - get: integration-image
+    - in_parallel:
+      - get: bosh-ci
+      - get: bosh-src
+        trigger: true
+        passed: [gate]
+      - get: integration-image
     - task: test-rake-task
       timeout: 2h
-      file: bosh-src/ci/tasks/test-rake-task.yml
+      file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-image
       params:
         RAKE_TASK: spec:unit:monitor
@@ -129,13 +135,15 @@ jobs:
     serial_groups: [unit-nats-sync]
     build_logs_to_retain: 250
     plan:
-    - get: bosh-src
-      trigger: true
-      passed: [gate]
-    - get: integration-image
+    - in_parallel:
+      - get: bosh-ci
+      - get: bosh-src
+        trigger: true
+        passed: [gate]
+      - get: integration-image
     - task: test-rake-task
       timeout: 2h
-      file: bosh-src/ci/tasks/test-rake-task.yml
+      file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-image
       params:
         RAKE_TASK: spec:unit:nats-sync
@@ -146,13 +154,15 @@ jobs:
     serial_groups: [unit-template]
     build_logs_to_retain: 250
     plan:
-    - get: bosh-src
-      trigger: true
-      passed: [gate]
-    - get: integration-image
+    - in_parallel:
+      - get: bosh-ci
+      - get: bosh-src
+        trigger: true
+        passed: [gate]
+      - get: integration-image
     - task: test-rake-task
       timeout: 2h
-      file: bosh-src/ci/tasks/test-rake-task.yml
+      file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-image
       params:
         RAKE_TASK: spec:unit:template
@@ -163,13 +173,15 @@ jobs:
     serial_groups: [unit-release]
     build_logs_to_retain: 250
     plan:
-    - get: bosh-src
-      trigger: true
-      passed: [gate]
-    - get: integration-image
+    - in_parallel:
+      - get: bosh-ci
+      - get: bosh-src
+        trigger: true
+        passed: [gate]
+      - get: integration-image
     - task: test-rake-task
       timeout: 2h
-      file: bosh-src/ci/tasks/test-rake-task.yml
+      file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-image
       params:
         RAKE_TASK: spec:unit:release
@@ -180,13 +192,15 @@ jobs:
     serial_groups: [unit-director-sqlite]
     build_logs_to_retain: 250
     plan:
-    - get: bosh-src
-      trigger: true
-      passed: [gate]
-    - get: integration-image
+    - in_parallel:
+      - get: bosh-ci
+      - get: bosh-src
+        trigger: true
+        passed: [gate]
+      - get: integration-image
     - task: test-rake-task
       timeout: 2h
-      file: bosh-src/ci/tasks/test-rake-task.yml
+      file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-image
       params:
         RAKE_TASK: spec:unit:director
@@ -198,6 +212,7 @@ jobs:
     build_logs_to_retain: 250
     plan:
     - in_parallel:
+      - get: bosh-ci
       - get: bosh-src
         passed: [gate]
         trigger: true
@@ -205,7 +220,7 @@ jobs:
     - task: test-rake-task
       timeout: 2h
       privileged: true
-      file: bosh-src/ci/tasks/test-rake-task.yml
+      file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-mysql-8-0-image
       params:
         DB: mysql
@@ -218,6 +233,7 @@ jobs:
     build_logs_to_retain: 250
     plan:
     - in_parallel:
+      - get: bosh-ci
       - get: bosh-src
         passed: [gate]
         trigger: true
@@ -225,7 +241,7 @@ jobs:
     - task: test-rake-task
       timeout: 2h
       privileged: true
-      file: bosh-src/ci/tasks/test-rake-task.yml
+      file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-postgres-10-image
       params:
         DB: postgresql
@@ -238,6 +254,7 @@ jobs:
     build_logs_to_retain: 250
     plan:
     - in_parallel:
+      - get: bosh-ci
       - get: bosh-src
         passed: [gate]
         trigger: true
@@ -245,7 +262,7 @@ jobs:
     - task: test-rake-task
       timeout: 2h
       privileged: true
-      file: bosh-src/ci/tasks/test-rake-task.yml
+      file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-postgres-13-image
       params:
         DB: postgresql
@@ -258,6 +275,7 @@ jobs:
     build_logs_to_retain: 250
     plan:
     - in_parallel:
+      - get: bosh-ci
       - get: bosh-src
         passed: [gate]
         trigger: true
@@ -265,7 +283,7 @@ jobs:
     - task: test-rake-task
       timeout: 2h
       privileged: true
-      file: bosh-src/ci/tasks/test-rake-task.yml
+      file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-postgres-15-image
       params:
         DB: postgresql
@@ -311,6 +329,7 @@ jobs:
     build_logs_to_retain: 250
     plan:
       - in_parallel:
+        - get: bosh-ci
         - get: bosh-src
           trigger: true
           passed: [gate]
@@ -324,7 +343,7 @@ jobs:
         - get: config-server
       - task: tests
         privileged: true
-        file: bosh-src/ci/tasks/test-integration.yml
+        file: bosh-ci/ci/tasks/test-integration.yml
         image: integration-postgres-15-image
         params:
           DB: postgresql
@@ -337,6 +356,7 @@ jobs:
     build_logs_to_retain: 250
     plan:
       - in_parallel:
+        - get: bosh-ci
         - get: bosh-src
           trigger: true
           passed: [gate]
@@ -350,7 +370,7 @@ jobs:
         - get: config-server
       - task: tests
         privileged: true
-        file: bosh-src/ci/tasks/test-integration.yml
+        file: bosh-ci/ci/tasks/test-integration.yml
         image: integration-postgres-15-image
         params:
           DB: postgresql
@@ -364,6 +384,7 @@ jobs:
     build_logs_to_retain: 250
     plan:
       - in_parallel:
+        - get: bosh-ci
         - get: bosh-src
           passed: [gate]
           trigger: true
@@ -377,38 +398,40 @@ jobs:
         - get: config-server
       - task: tests
         privileged: true
-        file: bosh-src/ci/tasks/test-integration.yml
+        file: bosh-ci/ci/tasks/test-integration.yml
         image: integration-mysql-8-0-image
         params:
           DB: mysql
 
   - name: candidate-release
     plan:
-    - get: bosh-src
-      trigger: true
-      passed:
-      - unit-common
-      - unit-dev
-      - unit-monitor
-      - unit-nats-sync
-      - unit-template
-      - unit-release
-      - unit-director-sqlite
-      - unit-director-mysql-8
-      - unit-director-postgres-10
-      - unit-director-postgres-13
-      - unit-director-postgres-15
-      - integration-mysql
-      - integration-postgres
-      - integration-postgres-hotswap
-      - run-bundle-audit
-    - get: bosh-cli
-      params:
-        globs:
-          - "bosh-cli-*-linux-amd64"
-    - get: integration-image
+    - in_parallel:
+      - get: bosh-ci
+      - get: bosh-src
+        trigger: true
+        passed:
+        - unit-common
+        - unit-dev
+        - unit-monitor
+        - unit-nats-sync
+        - unit-template
+        - unit-release
+        - unit-director-sqlite
+        - unit-director-mysql-8
+        - unit-director-postgres-10
+        - unit-director-postgres-13
+        - unit-director-postgres-15
+        - integration-mysql
+        - integration-postgres
+        - integration-postgres-hotswap
+        - run-bundle-audit
+      - get: bosh-cli
+        params:
+          globs:
+            - "bosh-cli-*-linux-amd64"
+      - get: integration-image
     - task: make
-      file: bosh-src/ci/tasks/make-candidate.yml
+      file: bosh-ci/ci/tasks/make-candidate.yml
       image: integration-image
     - put: bosh-candidate-release-tarballs
       params:
@@ -418,6 +441,7 @@ jobs:
   - name: compile-bosh-dev-release-jammy
     plan:
     - in_parallel:
+      - get: bosh-ci
       - get: bosh-src
         passed: [candidate-release]
       - get: release
@@ -430,7 +454,7 @@ jobs:
       - get: docker-cpi-image
     - task: export-release
       image: docker-cpi-image
-      file: bosh-src/ci/tasks/export-release.yml
+      file: bosh-ci/ci/tasks/export-release.yml
       privileged: true
     - put: bosh-compiled-candidate-jammy
       params:
@@ -441,6 +465,7 @@ jobs:
     plan:
     - do:
       - in_parallel:
+        - get: bosh-ci
         - get: bosh-candidate-release-tarballs
           passed: [compile-bosh-dev-release-jammy]
         - get: bosh-release
@@ -462,12 +487,12 @@ jobs:
         resource: gcp-terraform
         params:
           env_name: bats-ubuntu-jammy
-          terraform_source: bosh-src/ci/bats/iaas/gcp/terraform
+          terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
           vars:
             name: bats-ubuntu-jammy
       - do:
         - task: deploy-director
-          file: bosh-src/ci/bats/tasks/deploy-director.yml
+          file: bosh-ci/ci/bats/tasks/deploy-director.yml
           image: integration-image
           input_mapping:
             environment: terraform
@@ -477,7 +502,7 @@ jobs:
             DEPLOY_ARGS: |-
               -o bosh-deployment/external-ip-not-recommended.yml
         - task: prepare-bats-config
-          file: bosh-src/ci/bats/iaas/gcp/prepare-bats-config.yml
+          file: bosh-ci/ci/bats/iaas/gcp/prepare-bats-config.yml
           image: integration-image
           params:
             STEMCELL_NAME: bosh-google-kvm-ubuntu-jammy-go_agent
@@ -487,7 +512,7 @@ jobs:
       ensure:
         do:
         - task: teardown
-          file: bosh-src/ci/bats/tasks/destroy-director.yml
+          file: bosh-ci/ci/bats/tasks/destroy-director.yml
           image: integration-image
         - put: terraform
           resource: gcp-terraform
@@ -495,7 +520,7 @@ jobs:
           params:
             action: destroy
             env_name: bats-ubuntu-jammy
-            terraform_source: bosh-src/ci/bats/iaas/gcp/terraform
+            terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
             vars:
               name: bats-ubuntu-jammy
 
@@ -504,6 +529,7 @@ jobs:
     plan:
     - do:
       - in_parallel:
+        - get: bosh-ci
         - get: bosh-candidate-release-tarballs
           passed: [compile-bosh-dev-release-jammy]
         - get: bosh-release
@@ -525,12 +551,12 @@ jobs:
         resource: gcp-terraform
         params:
           env_name: bats-ubuntu-jammy-fips
-          terraform_source: bosh-src/ci/bats/iaas/gcp/terraform
+          terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
           vars:
             name: bats-ubuntu-jammy-fips
       - do:
         - task: deploy-director
-          file: bosh-src/ci/bats/tasks/deploy-director.yml
+          file: bosh-ci/ci/bats/tasks/deploy-director.yml
           image: integration-image
           input_mapping:
             environment: terraform
@@ -539,9 +565,9 @@ jobs:
             GCP_JSON_KEY: ((gcp_json_key))
             DEPLOY_ARGS: |-
               -o bosh-deployment/external-ip-not-recommended.yml
-              -o bosh-src/ci/bats/ops/use-custom-stemcell.yml
+              -o bosh-ci/ci/bats/ops/use-custom-stemcell.yml
         - task: prepare-bats-config
-          file: bosh-src/ci/bats/iaas/gcp/prepare-bats-config.yml
+          file: bosh-ci/ci/bats/iaas/gcp/prepare-bats-config.yml
           image: integration-image
           params:
             STEMCELL_NAME: bosh-google-kvm-ubuntu-jammy-fips-go_agent
@@ -551,7 +577,7 @@ jobs:
       ensure:
         do:
         - task: teardown
-          file: bosh-src/ci/bats/tasks/destroy-director.yml
+          file: bosh-ci/ci/bats/tasks/destroy-director.yml
           image: integration-image
         - put: terraform
           resource: gcp-terraform
@@ -559,7 +585,7 @@ jobs:
           params:
             action: destroy
             env_name: bats-ubuntu-jammy-fips
-            terraform_source: bosh-src/ci/bats/iaas/gcp/terraform
+            terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
             vars:
               name: bats-ubuntu-jammy-fips
 
@@ -567,6 +593,7 @@ jobs:
     serial: true
     plan:
     - in_parallel:
+      - get: bosh-ci
       - get: bosh-src
         passed: [compile-bosh-dev-release-jammy]
       - get: bosh-dns-release
@@ -585,7 +612,7 @@ jobs:
       - put: brats-terraform
         params:
           env_name: brats-ubuntu-jammy-((branch_name))
-          terraform_source: bosh-src/ci/brats
+          terraform_source: bosh-ci/ci/brats
           vars: &brats-terraform-jammy-vars
             aws_access_key_id: ((brats_rds_terraform_aws_access_key.username))
             aws_secret_access_key: ((brats_rds_terraform_aws_access_key.password))
@@ -594,7 +621,7 @@ jobs:
             database_password: ((brats_database_user.password))
       - task: test-brats
         image: docker-cpi-image
-        file: bosh-src/ci/tasks/test-brats.yml
+        file: bosh-ci/ci/tasks/test-brats.yml
         input_mapping:
           database-metadata: brats-terraform
         privileged: true
@@ -617,7 +644,7 @@ jobs:
         no_get: true
         params:
           env_name: brats-ubuntu-jammy-((branch_name))
-          terraform_source: bosh-src/ci/brats
+          terraform_source: bosh-ci/ci/brats
           vars: *brats-terraform-jammy-vars
           action: destroy
 
@@ -625,6 +652,7 @@ jobs:
     serial: true
     plan:
     - in_parallel:
+      - get: bosh-ci
       - get: bosh-src
         passed: [compile-bosh-dev-release-jammy]
       - get: bosh-release
@@ -638,12 +666,13 @@ jobs:
     - do:
       - task: test-brats-performance
         image: docker-cpi-image
-        file: bosh-src/ci/tasks/test-brats-performance.yml
+        file: bosh-ci/ci/tasks/test-brats-performance.yml
         privileged: true
 
   - name: bosh-disaster-recovery-acceptance-tests
     plan:
     - in_parallel:
+      - get: bosh-ci
       - get: bosh-src
         passed: [compile-bosh-dev-release-jammy]
       - get: stemcell
@@ -663,7 +692,7 @@ jobs:
     - do:
       - task: test-bdrats
         image: warden-cpi-docker-image
-        file: bosh-src/ci/tasks/test-bdrats.yml
+        file: bosh-ci/ci/tasks/test-bdrats.yml
         privileged: true
 
   - name: upgrade
@@ -671,6 +700,7 @@ jobs:
     plan:
     - do:
       - in_parallel:
+        - get: bosh-ci
         - get: bosh-src
           passed: [compile-bosh-dev-release-jammy]
         - get: stemcell
@@ -691,13 +721,13 @@ jobs:
         resource: gcp-terraform
         params:
           env_name: upgrade-ubuntu-jammy
-          terraform_source: bosh-src/ci/bats/iaas/gcp/terraform
+          terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
           vars:
             name: upgrade-ubuntu-jammy
     - do:
       - task: deploy-previous-version
         image: integration-image
-        file: bosh-src/ci/bats/tasks/deploy-director.yml
+        file: bosh-ci/ci/bats/tasks/deploy-director.yml
         input_mapping:
           environment: terraform
           bosh-release: last-released-bosh-release
@@ -708,12 +738,12 @@ jobs:
             -o bosh-deployment/external-ip-not-recommended.yml
       - task: deploy-zookeeper
         image: integration-image
-        file: bosh-src/ci/tasks/deploy-zookeeper.yml
+        file: bosh-ci/ci/tasks/deploy-zookeeper.yml
         params:
           CPI: gcp
       - task: upgrade-to-current-version
         image: integration-image
-        file: bosh-src/ci/bats/tasks/deploy-director.yml
+        file: bosh-ci/ci/bats/tasks/deploy-director.yml
         input_mapping:
           environment: terraform
         params:
@@ -733,21 +763,21 @@ jobs:
                 sleep 180
       - task: recreate-zookeeper
         image: integration-image
-        file: bosh-src/ci/tasks/deploy-zookeeper.yml
+        file: bosh-ci/ci/tasks/deploy-zookeeper.yml
         params:
           CPI: gcp
       ensure:
         do:
         - task: teardown
           image: integration-image
-          file: bosh-src/ci/bats/tasks/destroy-director.yml
+          file: bosh-ci/ci/bats/tasks/destroy-director.yml
         - put: terraform
           resource: gcp-terraform
           no_get: true
           params:
             action: destroy
             env_name: upgrade-ubuntu-jammy
-            terraform_source: bosh-src/ci/bats/iaas/gcp/terraform
+            terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
             vars:
               name: upgrade-ubuntu-jammy
 
@@ -766,6 +796,7 @@ jobs:
     serial: true
     plan:
       - in_parallel:
+        - get: bosh-ci
         - get: bosh-src
           passed: [delivery]
         - get: bosh-cli
@@ -778,10 +809,10 @@ jobs:
         - get: release-notes
       - task: prepare-release
         image: integration-image
-        file: bosh-src/ci/tasks/prepare-release.yml
+        file: bosh-ci/ci/tasks/prepare-release.yml
       - task: finalize-release
         image: integration-image
-        file: bosh-src/ci/tasks/finalize-bosh-release.yml
+        file: bosh-ci/ci/tasks/finalize-bosh-release.yml
         params:
           RELEASE_PRIVATE_YML: |
             blobstore:
@@ -831,6 +862,7 @@ jobs:
     - version
     plan:
     - in_parallel:
+      - get: bosh-ci
       - get: bosh-src
         trigger: true
         passed:
@@ -843,7 +875,7 @@ jobs:
           bump: patch
     - try:
         task: check-for-updated-blobs
-        file: bosh-src/ci/tasks/check-for-updated-blobs.yml
+        file: bosh-ci/ci/tasks/check-for-updated-blobs.yml
         input_mapping:
           version: current-version
         params:
@@ -901,24 +933,24 @@ jobs:
       trigger: true
     - get: ubuntu-docker-image
       trigger: true
-    - get: bosh-src-dockerfiles
+    - get: bosh-ci-dockerfiles
       trigger: true
     - get: bosh-src
     - get: bosh-deployment
       params:
         depth: 1
     - task: build-docker-args
-      file: bosh-src-dockerfiles/ci/dockerfiles/integration/build-docker-args.yml
+      file: bosh-ci-dockerfiles/ci/dockerfiles/integration/build-docker-args.yml
       params:
         GITHUB_ACCESS_TOKEN: ((github_public_repo_token))
     - put: integration-image
       inputs:
-      - bosh-src-dockerfiles
+      - bosh-ci-dockerfiles
       - docker-build-args
       params:
         build: .
         build_args_file: docker-build-args/docker-build-args.json
-        dockerfile: bosh-src-dockerfiles/ci/dockerfiles/integration/Dockerfile
+        dockerfile: bosh-ci-dockerfiles/ci/dockerfiles/integration/Dockerfile
         tag_as_latest: true
       get_params:
         skip_download: true
@@ -927,14 +959,14 @@ jobs:
     public: true
     serial: true
     plan:
-      - get: bosh-src-dockerfiles
+      - get: bosh-ci-dockerfiles
       - get: integration-image
         trigger: true
         passed: [build-integration]
       - put: integration-postgres-10-image
         params:
           tag_as_latest: true
-          build: "bosh-src-dockerfiles/ci/dockerfiles/main-postgres"
+          build: "bosh-ci-dockerfiles/ci/dockerfiles/main-postgres"
           build_args:
             DB_VERSION: "10"
             BRANCH: ((branch_name))
@@ -945,14 +977,14 @@ jobs:
     public: true
     serial: true
     plan:
-      - get: bosh-src-dockerfiles
+      - get: bosh-ci-dockerfiles
       - get: integration-image
         trigger: true
         passed: [build-integration]
       - put: integration-postgres-13-image
         params:
           tag_as_latest: true
-          build: "bosh-src-dockerfiles/ci/dockerfiles/main-postgres"
+          build: "bosh-ci-dockerfiles/ci/dockerfiles/main-postgres"
           build_args:
             DB_VERSION: "13"
             BRANCH: ((branch_name))
@@ -963,14 +995,14 @@ jobs:
     public: true
     serial: true
     plan:
-      - get: bosh-src-dockerfiles
+      - get: bosh-ci-dockerfiles
       - get: integration-image
         trigger: true
         passed: [build-integration]
       - put: integration-postgres-15-image
         params:
           tag_as_latest: true
-          build: "bosh-src-dockerfiles/ci/dockerfiles/main-postgres"
+          build: "bosh-ci-dockerfiles/ci/dockerfiles/main-postgres"
           build_args:
             DB_VERSION: "15"
             BRANCH: ((branch_name))
@@ -981,14 +1013,14 @@ jobs:
     public: true
     serial: true
     plan:
-      - get: bosh-src-dockerfiles
+      - get: bosh-ci-dockerfiles
       - get: integration-image
         trigger: true
         passed: [build-integration]
       - put: integration-mysql-8-0-image
         params:
           tag_as_latest: true
-          build: "bosh-src-dockerfiles/ci/dockerfiles/main-mysql"
+          build: "bosh-ci-dockerfiles/ci/dockerfiles/main-mysql"
           build_args:
             BRANCH: ((branch_name))
         get_params:
@@ -999,11 +1031,11 @@ jobs:
     serial: true
     plan:
       - in_parallel:
-          - get: bosh-src
+          - get: bosh-ci
           - get: integration-image
             trigger: true
             passed: [build-integration]
-          - get: bosh-src-dockerfiles
+          - get: bosh-ci-dockerfiles
           - get: bosh-cli
             params:
               globs:
@@ -1012,7 +1044,7 @@ jobs:
           - get: bosh-deployment
             trigger: true
       - task: copy-dependencies
-        file: bosh-src/ci/tasks/prepare-container-docker-cpi-build-context.yml
+        file: bosh-ci/ci/tasks/prepare-container-docker-cpi-build-context.yml
       - put: docker-cpi-image
         params:
           tag_as_latest: true
@@ -1023,7 +1055,7 @@ jobs:
   - name: build-warden-cpi
     plan:
     - in_parallel:
-      - get: bosh-src
+      - get: bosh-ci-dockerfiles
       - get: integration-image
         trigger: true
         passed: [build-integration]
@@ -1031,7 +1063,7 @@ jobs:
         trigger: true
       - get: ubuntu-docker-image
     - task: prepare-container-build-context
-      file: bosh-src/ci/dockerfiles/warden-cpi/prepare-container-build-context.yml
+      file: bosh-ci-dockerfiles/ci/dockerfiles/warden-cpi/prepare-container-build-context.yml
       image: ubuntu-docker-image
     - put: warden-cpi-docker-image
       params:
@@ -1042,6 +1074,7 @@ jobs:
     serial: true
     plan:
     - in_parallel:
+      - get: bosh-ci
       - get: bosh-src
       - get: ruby-release
       - get: weekly
@@ -1062,7 +1095,7 @@ jobs:
         VENDOR_PATH: vendor/cache
     - task: test
       timeout: 2h
-      file: bosh-src/ci/tasks/test-rake-task.yml
+      file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-image
       input_mapping:
         bosh-src: bosh-src-out
@@ -1079,6 +1112,7 @@ jobs:
     plan:
     - get: weekly
       trigger: true
+    - get: bosh-ci
     - get: bosh-src
     - get: golang-release
     - get: integration-image
@@ -1093,7 +1127,7 @@ jobs:
     - task: lint-brats
       input_mapping:
         bosh-src: bosh-src-out
-      file: bosh-src/ci/tasks/lint-brats.yml
+      file: bosh-ci/ci/tasks/lint-brats.yml
     - put: bosh-src
       params:
         repository: bosh-src-out
@@ -1102,6 +1136,7 @@ jobs:
     serial: true
     plan:
     - in_parallel:
+      - get: bosh-ci
       - get: bosh-src
       - get: nginx-release
         trigger: true
@@ -1143,7 +1178,7 @@ jobs:
               credentials_source: static
               json_key: '((bosh_release_blobs_gcp_credentials_json))'
     - task: bump-mariadb-connector
-      file: bosh-src/ci/tasks/bump-mariadb-connector.yml
+      file: bosh-ci/ci/tasks/bump-mariadb-connector.yml
       input_mapping:
         bosh-src: bosh-src-out
       output_mapping:
@@ -1157,7 +1192,7 @@ jobs:
               credentials_source: static
               json_key: '((bosh_release_blobs_gcp_credentials_json))'
     - task: bump-postgres-10-package
-      file: bosh-src/ci/tasks/bump-postgres-packages.yml
+      file: bosh-ci/ci/tasks/bump-postgres-packages.yml
       input_mapping:
         bosh-src: bosh-src-out
         postgres-src: postgres-10-src
@@ -1171,7 +1206,7 @@ jobs:
               credentials_source: static
               json_key: '((bosh_release_blobs_gcp_credentials_json))'
     - task: bump-postgres-13-package
-      file: bosh-src/ci/tasks/bump-postgres-packages.yml
+      file: bosh-ci/ci/tasks/bump-postgres-packages.yml
       input_mapping:
         bosh-src: bosh-src-out
         postgres-src: postgres-13-src
@@ -1185,7 +1220,7 @@ jobs:
               credentials_source: static
               json_key: '((bosh_release_blobs_gcp_credentials_json))'
     - task: bump-postgres-15-package
-      file: bosh-src/ci/tasks/bump-postgres-packages.yml
+      file: bosh-ci/ci/tasks/bump-postgres-packages.yml
       input_mapping:
         bosh-src: bosh-src-out
         postgres-src: postgres-15-src
@@ -1216,7 +1251,7 @@ jobs:
               json_key: '((bosh_release_blobs_gcp_credentials_json))'
         RUBY_VERSION_PATH: src/.ruby-version
     - task: bump-bosh-blobstore-dav
-      file: bosh-src/ci/tasks/bump-blobstore-cli.yml
+      file: bosh-ci/ci/tasks/bump-blobstore-cli.yml
       input_mapping:
         bosh-src: bosh-src-out
         bosh-blobstore-cli: bosh-blobstore-dav
@@ -1232,7 +1267,7 @@ jobs:
               credentials_source: static
               json_key: '((bosh_release_blobs_gcp_credentials_json))'
     - task: bump-bosh-blobstore-gcs
-      file: bosh-src/ci/tasks/bump-blobstore-cli.yml
+      file: bosh-ci/ci/tasks/bump-blobstore-cli.yml
       input_mapping:
         bosh-src: bosh-src-out
         bosh-blobstore-cli: bosh-blobstore-gcs
@@ -1248,7 +1283,7 @@ jobs:
               credentials_source: static
               json_key: '((bosh_release_blobs_gcp_credentials_json))'
     - task: bump-bosh-blobstore-s3
-      file: bosh-src/ci/tasks/bump-blobstore-cli.yml
+      file: bosh-ci/ci/tasks/bump-blobstore-cli.yml
       input_mapping:
         bosh-src: bosh-src-out
         bosh-blobstore-cli: bosh-blobstore-s3
@@ -1264,7 +1299,7 @@ jobs:
               credentials_source: static
               json_key: '((bosh_release_blobs_gcp_credentials_json))'
     - task: bump-bosh-blobstore-azure-storage
-      file: bosh-src/ci/tasks/bump-blobstore-cli.yml
+      file: bosh-ci/ci/tasks/bump-blobstore-cli.yml
       input_mapping:
         bosh-src: bosh-src-out
         bosh-blobstore-cli: bosh-blobstore-azure-storage
@@ -1280,7 +1315,7 @@ jobs:
               credentials_source: static
               json_key: '((bosh_release_blobs_gcp_credentials_json))'
     - task: bump-verify-multidigest-cli
-      file: bosh-src/ci/tasks/bump-verify-multidigest-cli.yml
+      file: bosh-ci/ci/tasks/bump-verify-multidigest-cli.yml
       input_mapping:
         bosh-src: bosh-src-out
       output_mapping:
@@ -1294,7 +1329,7 @@ jobs:
               credentials_source: static
               json_key: '((bosh_release_blobs_gcp_credentials_json))'
     - task: bump-nats-server
-      file: bosh-src/ci/tasks/bump-nats-server.yml
+      file: bosh-ci/ci/tasks/bump-nats-server.yml
       input_mapping:
         bosh-src: bosh-src-out
       output_mapping:
@@ -1431,7 +1466,14 @@ resources:
       branch: ((branch_name))
       private_key: ((github_deploy_key_bosh.private_key))
 
-  - name: bosh-src-dockerfiles
+  - name: bosh-ci
+    type: git
+    source:
+      uri: https://github.com/cloudfoundry/bosh.git
+      paths:
+        - ci
+
+  - name: bosh-ci-dockerfiles
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh.git

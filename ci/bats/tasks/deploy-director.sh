@@ -33,7 +33,7 @@ if [[ -e director-state/director-state.json ]]; then
   restore_state
 fi
 
-"bosh-src/ci/bats/iaas/${BAT_INFRASTRUCTURE}/director-vars" > director-vars.json
+"bosh-ci/ci/bats/iaas/${BAT_INFRASTRUCTURE}/director-vars" > director-vars.json
 
 bosh-cli interpolate bosh-deployment/bosh.yml \
   -o "bosh-deployment/${BAT_INFRASTRUCTURE}/cpi.yml" \

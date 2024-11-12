@@ -8,14 +8,14 @@ image_resource:
 
 inputs:
 - name: director-state
-- name: bosh-src
+- name: bosh-ci
 - name: bosh-cli
 - name: stemcell
 - name: zookeeper-release
 - name: bosh-deployment
 
 run:
-  path: bosh-src/ci/tasks/deploy-zookeeper.sh
+  path: bosh-ci/ci/tasks/deploy-zookeeper.sh
 
 params:
   CPI:

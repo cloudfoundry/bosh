@@ -7,13 +7,13 @@ image_resource:
     repository: ubuntu
 
 inputs:
-  - name: bosh-src
-  - name: bosh-src-dockerfiles
+  - name: bosh-ci
+  - name: bosh-ci-dockerfiles
   - name: bosh-deployment
   - name: bosh-cli
 
 run:
-  path: bosh-src/ci/tasks/prepare-container-docker-cpi-build-context.sh
+  path: bosh-ci/ci/tasks/prepare-container-docker-cpi-build-context.sh
 
 outputs:
   - name: docker-build-context

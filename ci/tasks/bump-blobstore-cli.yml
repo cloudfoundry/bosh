@@ -7,6 +7,7 @@ image_resource:
     repository: bosh/integration
 
 inputs:
+- name: bosh-ci
 - name: bosh-src
 - name: bosh-blobstore-cli
 
@@ -14,7 +15,7 @@ outputs:
 - name: bosh-src
 
 run:
-  path: bosh-src/ci/tasks/bump-blobstore-cli.sh
+  path: bosh-ci/ci/tasks/bump-blobstore-cli.sh
 
 params:
   BLOBSTORE_TYPE:

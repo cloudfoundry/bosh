@@ -7,6 +7,7 @@ image_resource:
     repository: bosh/golang-release-security-scanner
 
 inputs:
+- name: bosh-ci
 - name: bosh-src
 - name: version
 - name: release-notes
@@ -16,7 +17,7 @@ outputs:
 - name: release-notes
 
 run:
-  path: bosh-src/ci/tasks/check-for-updated-blobs.sh
+  path: bosh-ci/ci/tasks/check-for-updated-blobs.sh
 
 params:
   BLOBS:

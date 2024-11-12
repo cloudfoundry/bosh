@@ -8,8 +8,8 @@ image_resource:
 
 inputs:
   - name: director-state
-  - name: bosh-src
+  - name: bosh-ci
   - name: bosh-cli
 
 run:
-  path: bosh-src/ci/bats/tasks/destroy-director.sh
+  path: bosh-ci/ci/bats/tasks/destroy-director.sh
