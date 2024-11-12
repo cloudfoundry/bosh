@@ -314,10 +314,10 @@ properties:
   director.db.host:
     description: |
       Address of the director database, for example, in the case of AWS RDS:
-      rds-instance-name.coqxxxxxxxxx.us-east-1.rds.amazonaws.com
+      fake-rds-instance-name.fake-rds-subdomain.us-east-1.rds.amazonaws.com
     default: 127.0.0.1
   director.db.port:
-    description: Port of the director database (e.g, msyql2 adapter would generally use 3306)
+    description: Port of the director database (e.g, mysql2 adapter would generally use 3306)
     default: 5432
   director.db.database:
     description: Name of the director database
@@ -411,7 +411,7 @@ properties:
   blobstore.director.password:
     description: Password director uses to connect to blobstore used by simple blobstore plugin
   blobstore.tls.cert.ca:
-    description: CA Cert for TLS communcation with blobstore
+    description: CA Cert for TLS communication with blobstore
   blobstore.enable_signed_urls:
     description: Use pre-signed urls for blobstore so that deployed VMs do not require blobstore credentials
     default: false
@@ -432,11 +432,11 @@ properties:
     description: swift_temp_url_key of swift storage account
 
   director.ignore_missing_gateway:
-    description: Allow gateway to be omitted from subnet configuration. Boshlite vms(containers) do not require gateway.
+    description: Allow gateway to be omitted from subnet configuration. Bosh lite vms(containers) do not require gateway.
     default: false
 
   director.trusted_certs:
-    description: Cerfiticates that VMs created by this director should trust in addition to those packaged with the stemcell (PEM encoded; zero or more certs allowed)
+    description: Certificates that VMs created by this director should trust in addition to those packaged with the stemcell (PEM encoded; zero or more certs allowed)
     default: ''
 
   # Cpi

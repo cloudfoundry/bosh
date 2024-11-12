@@ -103,21 +103,21 @@ properties:
   hm.email_recipients:
     description: Email of recipients (Array)
   hm.smtp.from:
-    description: Email of sender, e.g. "bosh-director@cfapps.io"
+    description: Email of sender, e.g. "bosh-director@example.com"
   hm.smtp.host:
-    description: Address of the SMTP server to connect to (e.g. "smtp.gmail.com")
+    description: Address of the SMTP server to connect to (e.g. "smtp-host.example.com")
   hm.smtp.port:
     description: Port of the SMTP server to connect to (e.g. 25, 465, or 587)
   hm.smtp.domain:
-    description: SMTP EHLO domain (typically server's fully qualified domain name, e.g. "bosh.cfapps.io")
+    description: SMTP EHLO domain (typically server's fully qualified domain name, e.g. "smtp-domain.example.com")
   hm.smtp.tls:
     description: Use STARTTLS (optional)
   hm.smtp.auth:
     description: SMTP Authentication type (optional, only "plain" is supported)
   hm.smtp.user:
-    description: User for SMTP Authentication (optional, use in conjuction with hm.smtp.auth)
+    description: User for SMTP Authentication (optional, use in conjunction with hm.smtp.auth)
   hm.smtp.password:
-    description: Password for SMTP Authentication (optional, use in conjuction with hm.smtp.auth)
+    description: Password for SMTP Authentication (optional, use in conjunction with hm.smtp.auth)
   hm.email_interval:
     description: Interval (in seconds) to deliver alerts by email (optional)
 
