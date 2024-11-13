@@ -53,3 +53,15 @@ output "second_static_ip_first_network" {
 output "static_ip_second_network" {
   value = cidrhost(var.second_internal_cidr, 2)
 }
+
+output "mysql_dns_name" {
+  value = google_sql_database_instance.mysql-db.dns_name
+}
+
+output "mysql_user" {
+  value = google_sql_user.mysql-bosh-user.name
+}
+
+output "mysql_password" {
+  value = google_sql_user.mysql-bosh-user.password
+}

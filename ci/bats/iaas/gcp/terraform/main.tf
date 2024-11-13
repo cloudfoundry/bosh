@@ -73,3 +73,30 @@ resource "google_compute_firewall" "bosh-internal" {
   source_tags = ["bosh-deployed", "test-stemcells-bats", "test-stemcells-ipv4"]
   target_tags = ["bosh-deployed", "test-stemcells-bats", "test-stemcells-ipv4"]
 }
+
+resource "google_sql_database_instance" "mysql-db" {
+  count            = var.create_mysql_db ? 1 : 0
+  name             = "mysql-db"
+  database_version = "MYSQL_8_0"
+  region           = var.region
+
+  settings {
+    tier = "db-f1-micro"
+
+    backup_configuration {
+      enabled = false
+    }
+  }
+}
+
+resource "random_password" "mysql-password" {
+  count            = var.create_mysql_db ? 1 : 0
+  length           = 16
+}
+
+resource "google_sql_user" "mysql-bosh-user" {
+  count    = var.create_mysql_db ? 1 : 0
+  name     = "bosh"
+  instance = google_sql_database_instance.mysql-db.name
+  password = random_password.mysql-password.result
+}

@@ -28,7 +28,8 @@ groups:
       - brats-ubuntu-jammy
       - brats-performance
       - bosh-disaster-recovery-acceptance-tests
-      - upgrade
+      - upgrade-postgres
+      - upgrade-mysql
       - delivery
 
   - name: cut-release
@@ -695,7 +696,8 @@ jobs:
         file: bosh-ci/ci/tasks/test-bdrats.yml
         privileged: true
 
-  - name: upgrade
+  - name: upgrade-postgres
+    old_name: upgrade
     serial: true
     plan:
     - do:
@@ -720,10 +722,10 @@ jobs:
       - put: terraform
         resource: gcp-terraform
         params:
-          env_name: upgrade-ubuntu-jammy
+          env_name: upgrade-postgres-ubuntu-jammy
           terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
           vars:
-            name: upgrade-ubuntu-jammy
+            name: upgrade-postgres-ubuntu-jammy
     - do:
       - task: deploy-previous-version
         image: integration-image
@@ -776,10 +778,99 @@ jobs:
           no_get: true
           params:
             action: destroy
-            env_name: upgrade-ubuntu-jammy
+            env_name: upgrade-postgres-ubuntu-jammy
             terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
             vars:
-              name: upgrade-ubuntu-jammy
+              name: upgrade-postgres-ubuntu-jammy
+
+  - name: upgrade-mysql
+    serial: true
+    plan:
+    - do:
+      - in_parallel:
+        - get: bosh-ci
+        - get: bosh
+          passed: [compile-bosh-dev-release-jammy]
+        - get: stemcell
+          resource: gcp-ubuntu-jammy
+        - get: bosh-deployment
+        - get: bosh-cli
+          params:
+            globs:
+              - "bosh-cli-*-linux-amd64"
+        - get: bosh-release
+          resource: bosh-compiled-candidate-jammy
+          trigger: true
+          passed: [compile-bosh-dev-release-jammy]
+        - get: last-released-bosh-release
+        - get: zookeeper-release
+        - get: integration-image
+      - put: terraform
+        resource: gcp-terraform
+        params:
+          env_name: upgrade-mysql-ubuntu-jammy
+          terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
+          vars:
+            name: upgrade-mysql-ubuntu-jammy
+            create_mysql_db: true
+    - do:
+      - task: deploy-previous-version
+        image: integration-image
+        file: bosh-ci/ci/bats/tasks/deploy-director.yml
+        input_mapping:
+          environment: terraform
+          bosh-release: last-released-bosh-release
+        params:
+          BAT_INFRASTRUCTURE: gcp
+          GCP_JSON_KEY: ((gcp_json_key))
+          DEPLOY_ARGS: |-
+            -o bosh-deployment/external-ip-not-recommended.yml
+            -o bosh-deployment/misc/external-db.yml
+      - task: deploy-zookeeper
+        image: integration-image
+        file: bosh-ci/ci/tasks/deploy-zookeeper.yml
+        params:
+          CPI: gcp
+      - task: upgrade-to-current-version
+        image: integration-image
+        file: bosh-ci/ci/bats/tasks/deploy-director.yml
+        input_mapping:
+          environment: terraform
+        params:
+          BAT_INFRASTRUCTURE: gcp
+          GCP_JSON_KEY: ((gcp_json_key))
+          DEPLOY_ARGS: |-
+            -o bosh-deployment/external-ip-not-recommended.yml
+            -o bosh-deployment/misc/external-db.yml
+      - task: sleep-180-seconds
+        image: integration-image
+        config:
+          platform: linux
+          run:
+            path: /bin/sh
+            args:
+              - -exc
+              - |
+                sleep 180
+      - task: recreate-zookeeper
+        image: integration-image
+        file: bosh-ci/ci/tasks/deploy-zookeeper.yml
+        params:
+          CPI: gcp
+      ensure:
+        do:
+        - task: teardown
+          image: integration-image
+          file: bosh-ci/ci/bats/tasks/destroy-director.yml
+        - put: terraform
+          resource: gcp-terraform
+          no_get: true
+          params:
+            action: destroy
+            env_name: upgrade-mysql-ubuntu-jammy
+            terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
+            vars:
+              name: upgrade-mysql-ubuntu-jammy
 
   - name: delivery
     plan:
@@ -790,7 +881,8 @@ jobs:
           - bats-ubuntu-jammy
           - brats-ubuntu-jammy
           - bosh-disaster-recovery-acceptance-tests
-          - upgrade
+          - upgrade-postgres
+          - upgrade-mysql
 
   - name: finalize-release
     serial: true

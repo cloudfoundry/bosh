@@ -25,3 +25,7 @@ variable "zone" {
 variable "region" {
   default = "europe-west2"
 }
+
+variable "create_mysql_db" {
+  default = false
+}
