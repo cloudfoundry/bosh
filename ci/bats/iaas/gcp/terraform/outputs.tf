@@ -54,19 +54,8 @@ output "static_ip_second_network" {
   value = cidrhost(var.second_internal_cidr, 2)
 }
 
-
-
-output "mysql_dns_name" {
-  value = element(
-    concat(
-      [
-        for each in concat(google_sql_database_instance.mysql-db.*.ip_address, []):
-          each.ip_address if each.type == "PRIMARY"
-      ],
-      [""]
-    ),
-    0
-  )
+output "mysql_host" {
+  value = element(concat(google_sql_database_instance.mysql-db.*.first_ip_address, [""]), 0)
 }
 
 output "mysql_user" {

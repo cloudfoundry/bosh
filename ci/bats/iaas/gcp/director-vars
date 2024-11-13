@@ -15,7 +15,7 @@ exec jq '{
   "subnetwork": .subnetwork,
   "reserved_range": [.gateway, .director_ip],
   "gcp_credentials_json": $ENV.GCP_JSON_KEY,
-  "external_db_host": .mysql_dns_name,
+  "external_db_host": .mysql_host,
   "external_db_port": 3306,
   "external_db_user": .mysql_user,
   "external_db_password": .mysql_password,
