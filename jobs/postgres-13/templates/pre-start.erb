@@ -4,13 +4,12 @@ set -eu
 set -o pipefail
 
 PACKAGE_DIR=/var/vcap/packages/postgres-13
-PACKAGE_DIR_OLD=/var/vcap/packages/postgres-10
 
 PERSISTENT_DISK_DIR=/var/vcap/store
 
 STORE_DIR=${PERSISTENT_DISK_DIR}/postgres-13
-STORE_DIR_OLD=${PERSISTENT_DISK_DIR}/postgres-10
-STORE_DIR_OBSOLETE=${PERSISTENT_DISK_DIR}/postgres-9.4
+STORE_DIR_OBSOLETE_10=${PERSISTENT_DISK_DIR}/postgres-10
+STORE_DIR_OBSOLETE_9=${PERSISTENT_DISK_DIR}/postgres-9.4
 
 USER='<%= p("postgres.user") %>'
 
@@ -21,16 +20,21 @@ if [[ -d /var/vcap/store/postgres-15 ]]; then
   exit 1
 fi
 
-if [ -d $STORE_DIR_OBSOLETE ]; then
+if [ -d ${STORE_DIR_OBSOLETE_9} ]; then
   # uh-oh, we have years-old BOSH Director
-  if [ ! -d $STORE_DIR_OLD ] && [ ! -d $STORE_DIR ]; then
+  if [ ! -d ${STORE_DIR_OBSOLETE_10} ] && [ ! -d ${STORE_DIR} ]; then
     # we never upgraded this BOSH Director from PostgreSQL 9.4 to 10
     echo "Please use a previous bosh release version (271.x or lower) to migrate data from postgres-9.4 to postgres-10."
     exit 1
   fi
   # delete the obsolete 9.4 directory to free up space
-  echo "Deleting obsolete $STORE_DIR_OBSOLETE directory."
-  rm -rf "${STORE_DIR_OBSOLETE}"
+  echo "Deleting obsolete ${STORE_DIR_OBSOLETE_9} directory."
+  rm -rf "${STORE_DIR_OBSOLETE_9}"
+fi
+
+if [ -d ${STORE_DIR_OBSOLETE_10} ]; then
+  echo "Please use a previous bosh release version (< 280.1.9) to migrate data from postgres-10 to postgres-13."
+  exit 1
 fi
 
 # We cannot kill the following conditional
@@ -56,18 +60,6 @@ if [[ ! -d ${STORE_DIR} || ! -f ${STORE_DIR}/postgresql.conf ]]; then
 fi
 
 if [[ -f ${STORE_DIR}/fresh ]] ; then
-  if [[ -d ${STORE_DIR_OLD} ]] ; then
-    echo "copying contents of postgres-10 to postgres-13 for postgres upgrade..."
-    su - vcap -c "${PACKAGE_DIR}/bin/pg_upgrade \
-      --old-bindir=${PACKAGE_DIR_OLD}/bin \
-      --new-bindir=${PACKAGE_DIR}/bin \
-      --old-datadir=${STORE_DIR_OLD} \
-      --new-datadir=${STORE_DIR}"
-
-    echo "successfully upgraded from postgres-10"
-    rm -rf "${STORE_DIR_OLD}"
-  fi
-
   rm "${STORE_DIR}/fresh"
 fi
 

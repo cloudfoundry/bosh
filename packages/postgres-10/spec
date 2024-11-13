@@ -1,5 +1,0 @@
----
-name: postgres-10
-
-files:
-- postgres/postgresql-10.*.tar.gz
