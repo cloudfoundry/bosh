@@ -54,14 +54,27 @@ output "static_ip_second_network" {
   value = cidrhost(var.second_internal_cidr, 2)
 }
 
+
+
 output "mysql_dns_name" {
-  value = element(concat(google_sql_database_instance.mysql-db.*.dns_name, [""]), 0)
+  value = element(
+    concat(
+      [
+        for each in concat(google_sql_database_instance.mysql-db.*.ip_address, []):
+          each.ip_address if each.type == "PRIMARY"
+      ],
+      [""]
+    ),
+    0
+  )
 }
 
 output "mysql_user" {
   value = element(concat(google_sql_user.mysql-bosh-user.*.name, [""]), 0)
+  sensitive = true
 }
 
 output "mysql_password" {
   value = element(concat(google_sql_user.mysql-bosh-user.*.password, [""]), 0)
+  sensitive = true
 }
