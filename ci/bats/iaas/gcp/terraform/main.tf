@@ -97,6 +97,6 @@ resource "random_password" "mysql-password" {
 resource "google_sql_user" "mysql-bosh-user" {
   count    = var.create_mysql_db ? 1 : 0
   name     = "bosh"
-  instance = google_sql_database_instance.mysql-db.name
-  password = random_password.mysql-password.result
+  instance = google_sql_database_instance.mysql-db[0].name
+  password = random_password.mysql-password[0].result
 }

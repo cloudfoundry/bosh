@@ -55,13 +55,13 @@ output "static_ip_second_network" {
 }
 
 output "mysql_dns_name" {
-  value = google_sql_database_instance.mysql-db.dns_name
+  value = element(concat(google_sql_database_instance.mysql-db.*.dns_name, [""]), 0)
 }
 
 output "mysql_user" {
-  value = google_sql_user.mysql-bosh-user.name
+  value = element(concat(google_sql_user.mysql-bosh-user.*.name, [""]), 0)
 }
 
 output "mysql_password" {
-  value = google_sql_user.mysql-bosh-user.password
+  value = element(concat(google_sql_user.mysql-bosh-user.*.password, [""]), 0)
 }
