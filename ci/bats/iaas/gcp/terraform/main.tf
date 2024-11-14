@@ -37,18 +37,18 @@ resource "google_compute_subnetwork" "bosh-second-subnet" {
   region        = var.region
 }
 
-resource "google_service_networking_connection" "private_vpc_connection" {
-  network                 = google_compute_network.network.id
-  service                 = "servicenetworking.googleapis.com"
-  reserved_peering_ranges = [google_compute_global_address.private_ip_address.name]
-}
-
 resource "google_compute_global_address" "private_ip_address" {
   name          = "${var.name}-private-ip-address"
   purpose       = "VPC_PEERING"
   address_type  = "INTERNAL"
   prefix_length = 16
   network       = google_compute_network.network.id
+}
+
+resource "google_service_networking_connection" "private_vpc_connection" {
+  network                 = google_compute_network.network.id
+  service                 = "servicenetworking.googleapis.com"
+  reserved_peering_ranges = [google_compute_global_address.private_ip_address.name]
 }
 
 resource "google_compute_firewall" "director-ingress" {
@@ -106,7 +106,7 @@ resource "google_sql_database_instance" "mysql-db" {
 
     ip_configuration {
       ipv4_enabled = false
-      private_network                               = google_compute_network.network.self_link
+      private_network = google_compute_network.network.self_link
       enable_private_path_for_google_cloud_services = true
     }
   }
