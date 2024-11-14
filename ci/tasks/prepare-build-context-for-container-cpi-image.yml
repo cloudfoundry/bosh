@@ -10,7 +10,6 @@ inputs:
   - name: bosh-ci
   - name: bosh-ci-dockerfiles
   - name: bosh-deployment
-  - name: bosh-cli
 
 run:
   path: bosh-ci/ci/tasks/prepare-build-context-for-container-cpi-image.sh

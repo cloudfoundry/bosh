@@ -1127,13 +1127,8 @@ jobs:
     plan:
       - in_parallel:
           - get: bosh-ci
-          - get: integration-image
-            trigger: true
           - get: bosh-ci-dockerfiles
-          - get: bosh-cli
-            params:
-              globs:
-                - "bosh-cli-*-linux-amd64"
+          - get: integration-image
             trigger: true
           - get: bosh-deployment
             trigger: true
