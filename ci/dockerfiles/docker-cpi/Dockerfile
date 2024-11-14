@@ -2,24 +2,42 @@
 # it is used across ci to start a bosh in a docker container
 FROM bosh/integration:main
 
-ADD install.sh /tmp/install.sh
-RUN /tmp/install.sh && rm /tmp/install.sh
+RUN docker_gpg="/etc/apt/trusted.gpg.d/docker.gpg" \
+    && curl --show-error -sL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o "${docker_gpg}" \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=${docker_gpg}] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
+      | tee /etc/apt/sources.list.d/docker.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+      apt-transport-https \
+      ca-certificates \
+      docker-ce \
+      iproute2 \
+      xfsprogs
+
+ADD ./install-garden.sh /tmp/install-garden.sh
+RUN /tmp/install-garden.sh \
+    && rm /tmp/install-garden.sh
+
+# https://github.com/docker/cli/issues/4807
+# As of 02/01/2024 a change in the "/etc/init.d/docker" script shipped with docker v25
+# is preventing the cpi image to work.
+# when start-bosh runs `service docker start` it errors with:
+# "/etc/init.d/docker: 62: ulimit: error setting limit (Invalid argument)"
+# disable resetting ulimit. Pre v25 the script contained `ulimit -n 1048576`
+# the default in our base image is:
+# ulimit | grep file
+# `open files                          (-n) 1048576`
+# so it was a noOp..
+# running `ulimit -Hn 1048576` will succeed.. The issue happens when we want to raise the ulimit.
+RUN sed -i 's/\(ulimit -Hn [0-9]*\)/#\1/' /etc/init.d/docker
 
 COPY bosh-deployment /usr/local/bosh-deployment/
-RUN \
-  BOSH_RELEASE_URL="$(bosh int /usr/local/bosh-deployment/bosh.yml --path /releases/name=bosh/url)" \
-  BPM_RELEASE_URL="$(bosh int /usr/local/bosh-deployment/bosh.yml --path /releases/name=bpm/url)" && \
-  curl -o /usr/local/bosh.tgz "$BOSH_RELEASE_URL" && \
-  curl -o /usr/local/bpm.tgz "$BPM_RELEASE_URL" && \
-  apt-get update && apt-get install -y xfsprogs
+RUN curl -o /usr/local/bosh.tgz "$(bosh int /usr/local/bosh-deployment/bosh.yml --path /releases/name=bosh/url)" \
+    && curl -o /usr/local/bpm.tgz "$(bosh int /usr/local/bosh-deployment/bosh.yml --path /releases/name=bpm/url)"
 
 COPY local-releases.yml /usr/local/local-releases.yml
 COPY start-bosh.sh /usr/local/bin/start-bosh
-RUN chmod +x /usr/local/bin/start-bosh
-
-ADD ./install-garden.sh /tmp/install-garden.sh
-RUN /tmp/install-garden.sh
-RUN rm /tmp/install-garden.sh
 COPY start-garden.sh /usr/local/bin/start-garden
-RUN chmod +x /usr/local/bin/start-garden
 
+RUN chmod +x /usr/local/bin/start-bosh \
+    && chmod +x /usr/local/bin/start-garden \
