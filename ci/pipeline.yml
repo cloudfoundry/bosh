@@ -1125,40 +1125,45 @@ jobs:
     public: true
     serial: true
     plan:
-      - in_parallel:
-          - get: bosh-ci
-          - get: bosh-ci-dockerfiles
-          - get: integration-image
-            trigger: true
-          - get: bosh-deployment
-            trigger: true
-      - task: copy-dependencies
-        file: bosh-ci/ci/tasks/prepare-build-context-for-container-cpi-image.yml
-        params:
-          CONTAINER_CPI_TYPE: docker-cpi
-      - put: docker-cpi-image
-        params:
-          tag_as_latest: true
-          build: docker-build-context
-        get_params:
-          skip_download: true
-
-  - name: build-warden-cpi
-    plan:
     - in_parallel:
+      - get: bosh-ci
       - get: bosh-ci-dockerfiles
       - get: integration-image
         trigger: true
       - get: bosh-deployment
         trigger: true
-      - get: ubuntu-docker-image
-    - task: prepare-container-build-context
-      file: bosh-ci-dockerfiles/ci/dockerfiles/warden-cpi/prepare-container-build-context.yml
-      image: ubuntu-docker-image
+    - task: copy-dependencies
+      file: bosh-ci/ci/tasks/prepare-build-context-for-container-cpi-image.yml
+      params:
+        CONTAINER_CPI_TYPE: docker-cpi
+    - put: docker-cpi-image
+      params:
+        build: docker-build-context
+        tag_as_latest: true
+      get_params:
+        skip_download: true
+
+  - name: build-warden-cpi
+    public: true
+    serial: true
+    plan:
+    - in_parallel:
+      - get: bosh-ci
+      - get: bosh-ci-dockerfiles
+      - get: integration-image
+        trigger: true
+      - get: bosh-deployment
+        trigger: true
+    - task: copy-dependencies
+      file: bosh-ci/ci/tasks/prepare-build-context-for-container-cpi-image.yml
+      params:
+        CONTAINER_CPI_TYPE: warden-cpi
     - put: warden-cpi-docker-image
       params:
         build: docker-build-context
-        cache: true
+        tag_as_latest: true
+      get_params:
+        skip_download: true
 
   - name: bump-deps
     serial: true
