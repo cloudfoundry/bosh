@@ -7,7 +7,7 @@ src_dir="${script_dir}/../../.."
 
 export BOSH_DEPLOYMENT_PATH="/usr/local/bosh-deployment"
 
-source start-bosh
+source "${src_dir}/bosh/ci/dockerfiles/docker-cpi/start-bosh.sh"
 source /tmp/local-bosh/director/env
 
 bosh int /tmp/local-bosh/director/creds.yml --path /jumpbox_ssh/private_key > /tmp/jumpbox_ssh_key.pem

@@ -14,7 +14,7 @@ fi
 export BOSH_DEPLOYMENT_PATH
 
 if [ ! -f /tmp/local-bosh/director/env ]; then
-  source start-bosh
+  source "${src_dir}/bosh/ci/dockerfiles/docker-cpi/start-bosh.sh"
 fi
 source /tmp/local-bosh/director/env
 
