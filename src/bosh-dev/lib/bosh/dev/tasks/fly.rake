@@ -102,10 +102,18 @@ namespace :fly do
 
   def execute(task, command_options = nil, additional_env = {})
     env = prepare_env(additional_env)
+
     sh("#{env} fly #{concourse_target} sync")
-    sh(
-      "#{env} fly #{concourse_target} execute #{concourse_tag} #{command_options} -c ../ci/tasks/#{task}.yml -i bosh-src=$PWD/../",
-    )
+
+    execute_cmd = [
+      'execute',
+      concourse_tag,
+      command_options,
+      "--config ../ci/tasks/#{task}.yml",
+      '--input bosh=$PWD/../',
+      '--input bosh-ci=$PWD/../',
+    ]
+    sh("#{env} fly #{concourse_target} #{execute_cmd.join(' ')}")
   end
 end
 
