@@ -117,6 +117,12 @@ resource "random_password" "mysql-password" {
   length           = 16
 }
 
+resource "google_sql_database" "database" {
+  count    = var.create_mysql_db ? 1 : 0
+  name     = "bosh"
+  instance = google_sql_database_instance.mysql-db[0].name
+}
+
 resource "google_sql_user" "mysql-bosh-user" {
   count    = var.create_mysql_db ? 1 : 0
   name     = "bosh"
