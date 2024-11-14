@@ -41,13 +41,16 @@ groups:
       - finalize-release
       - clear-release-notes
 
-  - name: docker
+  - name: ci-images
     jobs:
     - build-main-postgres-10
     - build-main-postgres-13
     - build-main-postgres-15
     - build-main-mysql-8-0
     - build-integration
+
+  - name: container-cpi-images
+    jobs:
     - build-docker-cpi
     - build-warden-cpi
 
@@ -1126,7 +1129,6 @@ jobs:
           - get: bosh-ci
           - get: integration-image
             trigger: true
-            passed: [build-integration]
           - get: bosh-ci-dockerfiles
           - get: bosh-cli
             params:
@@ -1136,7 +1138,9 @@ jobs:
           - get: bosh-deployment
             trigger: true
       - task: copy-dependencies
-        file: bosh-ci/ci/tasks/prepare-container-docker-cpi-build-context.yml
+        file: bosh-ci/ci/tasks/prepare-build-context-for-container-cpi-image.yml
+        params:
+          CONTAINER_CPI_TYPE: docker-cpi
       - put: docker-cpi-image
         params:
           tag_as_latest: true
@@ -1150,7 +1154,6 @@ jobs:
       - get: bosh-ci-dockerfiles
       - get: integration-image
         trigger: true
-        passed: [build-integration]
       - get: bosh-deployment
         trigger: true
       - get: ubuntu-docker-image
@@ -1570,7 +1573,7 @@ resources:
     source:
       uri: https://github.com/cloudfoundry/bosh.git
       paths:
-        - "ci/dockerfiles"
+        - ci/dockerfiles
 
   - name: bosh-github-release
     type: github-release
