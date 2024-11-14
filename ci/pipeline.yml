@@ -1560,6 +1560,8 @@ resources:
       uri: git@github.com:cloudfoundry/bosh.git
       branch: ((branch_name))
       private_key: ((github_deploy_key_bosh.private_key))
+      ignore_paths:
+        - ci
 
   - name: bosh-ci
     type: git
