@@ -692,10 +692,10 @@ jobs:
       - get: bbr-cli-binary
         params:
           globs: ["bbr*-linux-amd64"]
-      - get: warden-cpi-docker-image
+      - get: warden-cpi-image
     - do:
       - task: test-bdrats
-        image: warden-cpi-docker-image
+        image: warden-cpi-image
         file: bosh-ci/ci/tasks/test-bdrats.yml
         privileged: true
 
@@ -1158,7 +1158,7 @@ jobs:
       file: bosh-ci/ci/tasks/prepare-build-context-for-container-cpi-image.yml
       params:
         CONTAINER_CPI_TYPE: warden-cpi
-    - put: warden-cpi-docker-image
+    - put: warden-cpi-image
       params:
         build: docker-build-context
         tag_as_latest: true
@@ -1797,7 +1797,7 @@ resources:
       username: ((dockerhub_username))
       password: ((dockerhub_password))
 
-  - name: warden-cpi-docker-image
+  - name: warden-cpi-image
     type: docker-image
     source:
       repository: bosh/warden-cpi
