@@ -37,6 +37,19 @@ resource "google_compute_subnetwork" "bosh-second-subnet" {
   region        = var.region
 }
 
+resource "google_service_networking_connection" "private_vpc_connection" {
+  network                 = google_compute_network.network.id
+  service                 = "servicenetworking.googleapis.com"
+}
+
+resource "google_compute_global_address" "private_ip_address" {
+  name          = "private-ip-address"
+  purpose       = "VPC_PEERING"
+  address_type  = "INTERNAL"
+  prefix_length = 16
+  network       = google_compute_network.network.id
+}
+
 resource "google_compute_firewall" "director-ingress" {
   name    = "${var.name}-director-ingress"
   network = google_compute_network.network.name
@@ -76,16 +89,24 @@ resource "google_compute_firewall" "bosh-internal" {
 
 resource "google_sql_database_instance" "mysql-db" {
   count            = var.create_mysql_db ? 1 : 0
-  name             = "mysql-db"
+  name             = "${var.name}-mysql-db"
   database_version = "MYSQL_8_0"
   region           = var.region
   deletion_protection = false
+
+  depends_on = [google_service_networking_connection.private_vpc_connection]
 
   settings {
     tier = "db-f1-micro"
 
     backup_configuration {
       enabled = false
+    }
+
+    ip_configuration {
+      ipv4_enabled = false
+      private_network                               = google_compute_network.network.self_link
+      enable_private_path_for_google_cloud_services = true
     }
   }
 }

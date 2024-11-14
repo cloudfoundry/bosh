@@ -55,7 +55,7 @@ output "static_ip_second_network" {
 }
 
 output "mysql_host" {
-  value = element(concat(google_sql_database_instance.mysql-db.*.first_ip_address, [""]), 0)
+  value = element(concat(google_sql_database_instance.mysql-db.*.private_ip_address, [""]), 0)
 }
 
 output "mysql_user" {
