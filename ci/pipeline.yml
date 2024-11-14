@@ -453,7 +453,7 @@ jobs:
         passed: [candidate-release]
         trigger: true
       - get: stemcell
-        resource: warden-ubuntu-jammy
+        resource: warden-stemcell
         trigger: true
       - get: docker-cpi-image
     - task: export-release
@@ -602,7 +602,7 @@ jobs:
         passed: [compile-bosh-dev-release-jammy]
       - get: bosh-dns-release
       - get: stemcell
-        resource: warden-ubuntu-jammy
+        resource: warden-stemcell
       - get: bosh-candidate-release-tarballs
         passed: [compile-bosh-dev-release-jammy]
       - get: bosh-release
@@ -665,7 +665,7 @@ jobs:
       - get: cf-deployment
       - get: docker-cpi-image
       - get: stemcell
-        resource: warden-ubuntu-jammy
+        resource: warden-stemcell
         passed: [compile-bosh-dev-release-jammy]
     - do:
       - task: test-brats-performance
@@ -680,7 +680,7 @@ jobs:
       - get: bosh
         passed: [compile-bosh-dev-release-jammy]
       - get: stemcell
-        resource: warden-ubuntu-jammy
+        resource: warden-stemcell
       - get: bosh-candidate-release-tarballs
         passed: [compile-bosh-dev-release-jammy]
       - get: bosh-release
@@ -1704,7 +1704,7 @@ resources:
         access_key: ((hmac_accesskey))
         secret_key: ((hmac_secret))
 
-  - name: warden-ubuntu-jammy
+  - name: warden-stemcell
     type: bosh-io-stemcell
     source:
       name: bosh-warden-boshlite-ubuntu-jammy-go_agent
