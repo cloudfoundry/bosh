@@ -8,20 +8,20 @@ set -e
 pushd bosh
   CURRENT_BLOBS=$(bosh blobs)
   BLOB_PATH=$(ls ../postgres-src/postgresql-*.tar.gz)
-  FILENAME=$( basename ${BLOB_PATH} )
-  OLD_BLOB_PATH=$(cat config/blobs.yml  | grep "postgresql-${MAJOR_VERSION}" | cut -f1 -d:)
+  FILENAME=$( basename "${BLOB_PATH}" )
+  OLD_BLOB_PATH=$(grep "postgresql-${MAJOR_VERSION}" config/blobs.yml  | cut -f1 -d:)
   if ! echo "${CURRENT_BLOBS}" | grep "${FILENAME}" ; then
     NEED_COMMIT=true
     echo "adding ${FILENAME}"
     bosh add-blob --sha2 "${BLOB_PATH}" "postgres/${FILENAME}"
-    bosh remove-blob ${OLD_BLOB_PATH}
+    bosh remove-blob "${OLD_BLOB_PATH}"
     bosh upload-blobs
   fi
 
   if ${NEED_COMMIT}; then
     echo "-----> $(date): Creating git commit"
-    git config user.name "$GIT_USER_NAME"
-    git config user.email "$GIT_USER_EMAIL"
+    git config user.name "${GIT_USER_NAME}"
+    git config user.email "${GIT_USER_EMAIL}"
     git add .
 
     git --no-pager diff --cached
