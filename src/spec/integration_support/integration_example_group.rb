@@ -530,7 +530,7 @@ module IntegrationSupport
     def setup_home_dir
       FileUtils.mkdir_p(IntegrationSupport::ClientSandbox.home_dir)
       ENV['HOME'] = IntegrationSupport::ClientSandbox.home_dir
-      `git config --global init.defaultBranch "master"`
+      system("git config --global init.defaultBranch 'main'") # Prevents warning from git
     end
 
     def cleanup_client_sandbox_dir
