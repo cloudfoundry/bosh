@@ -9,10 +9,11 @@ gem 'bosh_common', path: 'bosh_common'
 gem 'mysql2'
 gem 'pg'
 gem 'sequel', '~> 5.29.0'
-# TODO unpin `json_pure` after fixing bosh-director: rspec ./spec/unit/job_renderer_spec.rb:84
+# TODO unpin `json` / `json_pure` after fixing bosh-director: rspec ./spec/unit/job_renderer_spec.rb:84
 # TODO > expected: #<Encoding:UTF-8> "53b2a7cac279af8bb73885b08a794ab5dd21bb8c"
 # TODO >      got: #<Encoding:US-ASCII> "d4712f01af58824081e9d964522782da9889cd1b"
-gem 'json_pure', '~> 2.7.0'
+gem 'json', '~> 2.7.0'
+gem 'json_pure', '~> 2.7.0' # TODO: remove `json_pure` after https://github.com/cloudfoundry/cf-uaa-lib/pull/99
 
 group :development, :test do
   gem 'bosh-dev', path: 'bosh-dev'

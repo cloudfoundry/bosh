@@ -188,7 +188,7 @@ GEM
     io-endpoint (0.14.0)
     io-event (1.7.3)
     io-stream (0.6.1)
-    json (2.8.1)
+    json (2.7.6)
     json_pure (2.7.6)
     language_server-protocol (3.17.0.3)
     little-plugger (1.1.4)
@@ -367,6 +367,7 @@ DEPENDENCIES
   bundle-audit
   factory_bot
   fakefs
+  json (~> 2.7.0)
   json_pure (~> 2.7.0)
   minitar
   mysql2
