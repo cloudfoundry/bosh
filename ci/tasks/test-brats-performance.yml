@@ -13,6 +13,9 @@ inputs:
   - name: bosh-release
   - name: cf-deployment
 
+params:
+  START_INNER_BOSH_TIMEOUT: "" # default is 25m
+
 run:
   path: bosh-ci/ci/tasks/test-brats-performance.sh
 

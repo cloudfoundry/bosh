@@ -36,3 +36,4 @@ params:
   GCP_POSTGRES_EXTERNAL_DB_NAME: replace-me
   GCP_PRIVATE_NETWORK_NAME: replace-me
   STEMCELL_OS: ""
+  START_INNER_BOSH_TIMEOUT: "" # default is 25m

@@ -55,6 +55,7 @@ var (
 	innerDirectorUser,
 	boshDirectorReleasePath,
 	stemcellOS string
+	startInnerBoshTimeout time.Duration
 )
 
 func Bootstrap() {
@@ -70,6 +71,11 @@ func Bootstrap() {
 
 	AssertEnvExists("BOSH_ENVIRONMENT")
 	AssertEnvExists("BOSH_DEPLOYMENT_PATH")
+
+	startInnerBoshTimeoutString := LoadEnvOrDefault("START_INNER_BOSH_TIMEOUT", "25m")
+	var err error
+	startInnerBoshTimeout, err = time.ParseDuration(startInnerBoshTimeoutString)
+	Expect(err).NotTo(HaveOccurred())
 }
 
 func LoadExternalDBConfig(iaasAndDbName string, mutualTLSEnabled bool, tmpCertDir string) *ExternalDBConfig {
@@ -277,6 +283,15 @@ func AssertEnvExists(envName string) string {
 	return val
 }
 
+func LoadEnvOrDefault(envName string, envDefault string) string {
+	envValue, found := os.LookupEnv(envName)
+	if !found {
+		return envDefault
+	}
+
+	return envValue
+}
+
 func AssetPath(filename string) string {
 	path, err := filepath.Abs("../assets/" + filename)
 	Expect(err).ToNot(HaveOccurred())
@@ -322,10 +337,10 @@ func StartInnerBoshWithExpectation(expectedFailure bool, expectedErrorToMatch st
 	Expect(err).ToNot(HaveOccurred())
 
 	if expectedFailure {
-		Eventually(session, 25*time.Minute).Should(gbytes.Say(expectedErrorToMatch))
-		Eventually(session, 25*time.Minute).Should(gexec.Exit(1))
+		Eventually(session, startInnerBoshTimeout).Should(gbytes.Say(expectedErrorToMatch))
+		Eventually(session, startInnerBoshTimeout).Should(gexec.Exit(1))
 	} else {
-		Eventually(session, 25*time.Minute).Should(gexec.Exit(0))
+		Eventually(session, startInnerBoshTimeout).Should(gexec.Exit(0))
 	}
 }
 
