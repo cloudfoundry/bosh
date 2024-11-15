@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-set -eu
+set -euo pipefail
+set -x
 
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 src_dir="${script_dir}/../../../"
