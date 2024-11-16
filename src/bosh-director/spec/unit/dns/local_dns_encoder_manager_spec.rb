@@ -6,39 +6,31 @@ module Bosh::Director
 
     describe '.persist_az_names' do
       it 'saves new AZs' do
-        subject.persist_az_names(%w[zone1 zone2])
-        expect(Models::LocalDnsEncodedAz.all.count).to eq 2
-        expect(Models::LocalDnsEncodedAz.all[0].name).to eq 'zone1'
-        expect(Models::LocalDnsEncodedAz.all[1].name).to eq 'zone2'
+        LocalDnsEncoderManager.persist_az_names(%w[zone1 zone2])
+        expect(Models::LocalDnsEncodedAz.all.map(&:name)).to contain_exactly('zone1', 'zone2')
       end
 
       it 'saves new AZs only if unique' do
-        subject.persist_az_names(%w[zone1 zone2 zone1])
-        subject.persist_az_names(['zone1'])
-        subject.persist_az_names(['zone2'])
+        LocalDnsEncoderManager.persist_az_names(%w[zone1 zone2 zone1])
+        LocalDnsEncoderManager.persist_az_names(['zone1'])
+        LocalDnsEncoderManager.persist_az_names(['zone2'])
 
-        expect(Models::LocalDnsEncodedAz.all.count).to eq 2
-        expect(Models::LocalDnsEncodedAz.all[0].name).to eq 'zone1'
-        expect(Models::LocalDnsEncodedAz.all[1].name).to eq 'zone2'
+        expect(Models::LocalDnsEncodedAz.all.map(&:name)).to contain_exactly('zone1', 'zone2')
       end
     end
 
     describe '.persist_network_names' do
       it 'saves new Networks' do
-        subject.persist_network_names(%w[nw1 nw2])
-        expect(Models::LocalDnsEncodedNetwork.all.count).to eq 2
-        expect(Models::LocalDnsEncodedNetwork.all[0].name).to eq 'nw1'
-        expect(Models::LocalDnsEncodedNetwork.all[1].name).to eq 'nw2'
+        LocalDnsEncoderManager.persist_network_names(%w[nw1 nw2])
+        expect(Models::LocalDnsEncodedNetwork.all.map(&:name)).to contain_exactly('nw1', 'nw2')
       end
 
       it 'saves new Networks only if unique' do
-        subject.persist_network_names(%w[nw1 nw2 nw1])
-        subject.persist_network_names(['nw1'])
-        subject.persist_network_names(['nw2'])
+        LocalDnsEncoderManager.persist_network_names(%w[nw1 nw2 nw1])
+        LocalDnsEncoderManager.persist_network_names(['nw1'])
+        LocalDnsEncoderManager.persist_network_names(['nw2'])
 
-        expect(Models::LocalDnsEncodedNetwork.all.count).to eq 2
-        expect(Models::LocalDnsEncodedNetwork.all[0].name).to eq 'nw1'
-        expect(Models::LocalDnsEncodedNetwork.all[1].name).to eq 'nw2'
+        expect(Models::LocalDnsEncodedNetwork.all.map(&:name)).to contain_exactly('nw1', 'nw2')
       end
     end
 
