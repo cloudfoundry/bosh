@@ -2,8 +2,6 @@ require 'spec_helper'
 
 module Bosh::Director
   describe LocalDnsEncoderManager do
-    subject { described_class }
-
     describe '.persist_az_names' do
       it 'saves new AZs' do
         LocalDnsEncoderManager.persist_az_names(%w[zone1 zone2])
@@ -36,8 +34,9 @@ module Bosh::Director
 
     describe '.create_dns_encoder' do
       let(:deployment) { FactoryBot.create(:models_deployment, name: 'a-deployment') }
-      let(:encoder) { subject.create_dns_encoder(false) }
-      let(:short_dns_encoder) { subject.create_dns_encoder(true) }
+      let(:local_dns_encoder_manager_using_short_names) { LocalDnsEncoderManager.create_dns_encoder(true) }
+
+      let(:local_dns_encoder_manager) { LocalDnsEncoderManager.create_dns_encoder(false) }
 
       before do
         Models::LocalDnsEncodedAz.create(name: 'az1')
@@ -55,20 +54,20 @@ module Bosh::Director
       end
 
       it 'should create a dns encoder that uses the current index' do
-        expect(encoder.id_for_az('az1')).to eq(Models::LocalDnsEncodedAz.last.id.to_s)
+        expect(local_dns_encoder_manager.id_for_az('az1')).to eq(Models::LocalDnsEncodedAz.last.id.to_s)
         expect(
-          encoder.id_for_group_tuple(
+          local_dns_encoder_manager.id_for_group_tuple(
             Models::LocalDnsEncodedGroup::Types::INSTANCE_GROUP,
             'some-ig',
             'a-deployment',
           ),
         ).to eq(Models::LocalDnsEncodedGroup.last.id.to_s)
-        expect(encoder.num_for_uuid('my-uuid')).to eq('7654321')
+        expect(local_dns_encoder_manager.num_for_uuid('my-uuid')).to eq('7654321')
       end
 
       it 'respects the option for short names as default' do
         expect(
-          encoder.encode_query(
+          local_dns_encoder_manager.encode_query(
             group_type: Models::LocalDnsEncodedGroup::Types::INSTANCE_GROUP,
             group_name: 'some-ig',
             default_network: 'my-network',
@@ -76,8 +75,9 @@ module Bosh::Director
             root_domain: 'super-bosh',
           ),
         ).to eq 'q-s0.some-ig.my-network.a-deployment.super-bosh'
+
         expect(
-          short_dns_encoder.encode_query(
+          local_dns_encoder_manager_using_short_names.encode_query(
             group_type: Models::LocalDnsEncodedGroup::Types::INSTANCE_GROUP,
             group_name: 'some-ig',
             default_network: 'my-network',
@@ -120,6 +120,10 @@ module Bosh::Director
         )
       end
 
+      subject(:local_dns_encoder_manager) {
+        LocalDnsEncoderManager.new_encoder_with_updated_index(plan)
+      }
+
       before do
         Models::LocalDnsEncodedAz.create(name: 'old-az')
         deployment = FactoryBot.create(:models_deployment, name: 'old-deployment')
@@ -135,19 +139,16 @@ module Bosh::Director
       end
 
       it 'returns a dns encoder that includes the provided azs' do
-        encoder = subject.new_encoder_with_updated_index(plan)
-        expect(encoder.id_for_az('new-az')).to eq(Models::LocalDnsEncodedAz.last.id.to_s)
+        expect(local_dns_encoder_manager.id_for_az('new-az')).to eq(Models::LocalDnsEncodedAz.last.id.to_s)
       end
 
       it 'returns a dns encoder that includes the provided networks' do
-        encoder = subject.new_encoder_with_updated_index(plan)
-        expect(encoder.id_for_network('nw2')).to eq(Models::LocalDnsEncodedNetwork.last.id.to_s)
+        expect(local_dns_encoder_manager.id_for_network('nw2')).to eq(Models::LocalDnsEncodedNetwork.last.id.to_s)
       end
 
       it 'returns an encoder that includes the provided groups' do
-        encoder = subject.new_encoder_with_updated_index(plan)
         expect(
-          encoder.id_for_group_tuple(
+          local_dns_encoder_manager.id_for_group_tuple(
             Models::LocalDnsEncodedGroup::Types::INSTANCE_GROUP,
             'some-ig',
             'new-deployment',
@@ -155,21 +156,21 @@ module Bosh::Director
         ).to eq Models::LocalDnsEncodedGroup.order(:id).all[1].id.to_s
 
         expect(
-          encoder.id_for_group_tuple(
+          local_dns_encoder_manager.id_for_group_tuple(
             Models::LocalDnsEncodedGroup::Types::INSTANCE_GROUP,
             'some-ig',
             'old-deployment',
           ),
         ).to eq Models::LocalDnsEncodedGroup.order(:id).all[0].id.to_s
         expect(
-          encoder.id_for_group_tuple(
+          local_dns_encoder_manager.id_for_group_tuple(
             Models::LocalDnsEncodedGroup::Types::LINK,
             'provider1-t1',
             'new-deployment',
           ),
         ).to eq Models::LocalDnsEncodedGroup.order(:id).all[2].id.to_s
         expect(
-          encoder.id_for_group_tuple(
+          local_dns_encoder_manager.id_for_group_tuple(
             Models::LocalDnsEncodedGroup::Types::LINK,
             'provider2-t2',
             'new-deployment',
@@ -179,9 +180,8 @@ module Bosh::Director
 
       it 'makes long dns names in the plan' do
         allow(plan).to receive(:use_short_dns_addresses?).and_return false
-        encoder = subject.new_encoder_with_updated_index(plan)
         expect(
-          encoder.encode_query(
+          local_dns_encoder_manager.encode_query(
             group_name: 'some-ig',
             deployment_name: 'new-deployment',
             default_network: 'my-network',
@@ -190,7 +190,7 @@ module Bosh::Director
         ).to eq 'q-s0.some-ig.my-network.new-deployment.sub.bosh'
 
         expect(
-          encoder.encode_query(
+          local_dns_encoder_manager.encode_query(
             group_name: 'link-provider1-t1',
             deployment_name: 'new-deployment',
             default_network: 'my-network',
@@ -199,7 +199,7 @@ module Bosh::Director
         ).to eq 'q-s0.link-provider1-t1.my-network.new-deployment.sub.bosh'
 
         expect(
-          encoder.encode_query(
+          local_dns_encoder_manager.encode_query(
             group_name: 'link-provider2-t2',
             deployment_name: 'new-deployment',
             default_network: 'my-network',
@@ -210,9 +210,8 @@ module Bosh::Director
 
       it 'makes short-dns-names in the plan' do
         allow(plan).to receive(:use_short_dns_addresses?).and_return true
-        encoder = subject.new_encoder_with_updated_index(plan)
         expect(
-          encoder.encode_query(
+          local_dns_encoder_manager.encode_query(
             group_name: 'some-ig',
             group_type: Models::LocalDnsEncodedGroup::Types::INSTANCE_GROUP,
             deployment_name: 'new-deployment',
@@ -222,7 +221,7 @@ module Bosh::Director
         ).to eq "q-n#{Models::LocalDnsEncodedNetwork.first.id}s0.q-g#{Models::LocalDnsEncodedGroup.order(:id).all[1].id}.sub.bosh"
 
         expect(
-          encoder.encode_query(
+          local_dns_encoder_manager.encode_query(
             group_name: 'provider1-t1',
             group_type: Models::LocalDnsEncodedGroup::Types::LINK,
             deployment_name: 'new-deployment',
@@ -232,7 +231,7 @@ module Bosh::Director
         ).to eq "q-n#{Models::LocalDnsEncodedNetwork.first.id}s0.q-g#{Models::LocalDnsEncodedGroup.order(:id).all[2].id}.sub.bosh"
 
         expect(
-          encoder.encode_query(
+          local_dns_encoder_manager.encode_query(
             group_name: 'provider2-t2',
             group_type: Models::LocalDnsEncodedGroup::Types::LINK,
             deployment_name: 'new-deployment',
