@@ -52,8 +52,7 @@ module IntegrationSupport
 
     def fail_job
       @logger.info("Failing job #{@cid}")
-      nats = NATS::IO::Client.new
-      nats.connect(@nats_config)
+      nats = connect_to_nats
       msg = JSON.dump(
           method: 'set_dummy_status',
           status: 'failing',
@@ -64,8 +63,7 @@ module IntegrationSupport
 
     def fail_start_task
       @logger.info("Failing task #{@cid}")
-      nats = NATS::IO::Client.new
-      nats.connect(@nats_config)
+      nats = connect_to_nats
       msg = JSON.dump(
           method: 'set_task_fail',
           status: 'fail_task',
@@ -115,6 +113,15 @@ module IntegrationSupport
     end
 
     private
+
+    def connect_to_nats
+      # Explicitly retry on AuthErrors to allow time for the NATS sync process to allow the client
+      Bosh::Common.retryable(sleep: 0.5, tries: 20, on: [Errno::ECONNREFUSED, NATS::IO::AuthError]) do
+        nats = NATS::IO::Client.new
+        nats.connect(@nats_config)
+        nats
+      end
+    end
 
     def jobs_logs_path
       File.join(@agent_base_dir, 'sys', 'log')
