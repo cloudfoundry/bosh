@@ -285,7 +285,7 @@ func AssertEnvExists(envName string) string {
 
 func LoadEnvOrDefault(envName string, envDefault string) string {
 	envValue, found := os.LookupEnv(envName)
-	if !found {
+	if !found || envValue == "" {
 		return envDefault
 	}
 
