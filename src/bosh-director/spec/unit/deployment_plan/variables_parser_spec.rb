@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe DeploymentPlan::VariablesSpecParser do
 
-    subject(:variables_parser) { described_class.new(logger, nil) }
+    subject(:variables_parser) { described_class.new(per_spec_logger, nil) }
 
     describe '#parse' do
       let(:links_parser) do

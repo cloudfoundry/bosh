@@ -11,7 +11,7 @@ module Bosh::Director
         instance_group,
         keep_alive,
         deployment_name,
-        logger,
+        per_spec_logger,
       )
     end
 
@@ -35,10 +35,10 @@ module Bosh::Director
 
     before do
       allow(Errand::InstanceGroupManager).to receive(:new)
-        .with(deployment_planner, instance_group, logger)
+        .with(deployment_planner, instance_group, per_spec_logger)
         .and_return(instance_group_manager)
       allow(Errand::ErrandInstanceUpdater).to receive(:new)
-        .with(instance_group_manager, logger, errand_name, deployment_name)
+        .with(instance_group_manager, per_spec_logger, errand_name, deployment_name)
         .and_return(errand_instance_updater)
     end
 

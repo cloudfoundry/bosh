@@ -3,8 +3,8 @@ require 'spec_helper'
 module Bosh::Director
   describe RuntimeConfig::RuntimeManifestParser do
     subject(:parser) do
-      variables_spec_parser = Bosh::Director::DeploymentPlan::VariablesSpecParser.new(@logger, FactoryBot.create(:models_deployment))
-      described_class.new(logger, variables_spec_parser)
+      variables_spec_parser = Bosh::Director::DeploymentPlan::VariablesSpecParser.new(per_spec_logger, FactoryBot.create(:models_deployment))
+      described_class.new(per_spec_logger, variables_spec_parser)
     end
     let(:planner_options) do
       {}

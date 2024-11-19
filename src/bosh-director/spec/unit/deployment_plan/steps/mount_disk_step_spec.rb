@@ -29,7 +29,7 @@ module Bosh::Director
 
           it 'logs that the disk is being mounted' do
             expect(agent_client).to receive(:wait_until_ready)
-            expect(logger).to receive(:info).with(
+            expect(per_spec_logger).to receive(:info).with(
               "Mounting disk '#{disk.disk_cid}' for instance '#{instance}'",
             )
 

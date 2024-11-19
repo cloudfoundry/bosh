@@ -56,7 +56,7 @@ module Bosh::Director::DeploymentPlan
     let(:network_spec) do
       { 'name' => 'default', 'subnets' => [{ 'cloud_properties' => { 'foo' => 'bar' }, 'az' => 'foo-az' }] }
     end
-    let(:network) { DynamicNetwork.parse(network_spec, [AvailabilityZone.new('foo-az', {})], logger) }
+    let(:network) { DynamicNetwork.parse(network_spec, [AvailabilityZone.new('foo-az', {})], per_spec_logger) }
     let(:instance_group) do
       instance_double(
         'Bosh::Director::DeploymentPlan::InstanceGroup',
@@ -93,7 +93,7 @@ module Bosh::Director::DeploymentPlan
         deployment,
         instance_state,
         availability_zone,
-        logger,
+        per_spec_logger,
         variables_interpolator,
       )
       instance.desired_variable_set = desired_variable_set
@@ -114,7 +114,7 @@ module Bosh::Director::DeploymentPlan
         variables_interpolator: variables_interpolator,
       )
     end
-    let(:persistent_disk_collection) { PersistentDiskCollection.new(logger) }
+    let(:persistent_disk_collection) { PersistentDiskCollection.new(per_spec_logger) }
 
     before do
       allow(Bosh::Director::Links::LinksManager).to receive(:new).and_return(links_manager)
@@ -338,7 +338,7 @@ module Bosh::Director::DeploymentPlan
           }
         end
         let(:subnet) { ManualNetworkSubnet.parse(network_spec['name'], subnet_spec, [availability_zone]) }
-        let(:network) { ManualNetwork.new(network_spec['name'], [subnet], logger) }
+        let(:network) { ManualNetwork.new(network_spec['name'], [subnet], per_spec_logger) }
 
         it 'returns a valid instance template_spec' do
           network_name = network_spec['name']

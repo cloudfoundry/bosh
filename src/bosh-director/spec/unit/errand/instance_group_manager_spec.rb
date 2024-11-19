@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Errand::InstanceGroupManager do
-    subject { described_class.new(deployment, job, logger) }
+    subject { described_class.new(deployment, job, per_spec_logger) }
     let(:ip_provider) { instance_double(DeploymentPlan::IpProvider) }
     let(:skip_drain) { instance_double(DeploymentPlan::SkipDrain) }
     let(:deployment) do
@@ -65,7 +65,7 @@ module Bosh::Director
       allow(job).to receive(:needed_instance_plans).with(no_args).and_return([instance_plan1, instance_plan2])
       allow(Config).to receive(:event_log).and_return(event_log)
 
-      allow(LocalDnsManager).to receive(:create).with(Config.root_domain, logger).and_return(local_dns_manager)
+      allow(LocalDnsManager).to receive(:create).with(Config.root_domain, per_spec_logger).and_return(local_dns_manager)
     end
 
     describe '#create_missing_vms' do
@@ -121,7 +121,7 @@ module Bosh::Director
       end
 
       let(:unmount_step) { instance_double(DeploymentPlan::Steps::UnmountInstanceDisksStep) }
-      let(:vm_deleter) { VmDeleter.new(logger, false, false) }
+      let(:vm_deleter) { VmDeleter.new(per_spec_logger, false, false) }
 
       context 'when there are instance plans' do
         before do
@@ -153,7 +153,7 @@ module Bosh::Director
         it 'does not try to delete vms' do
           expect(vm_deleter).to_not receive(:delete_for_instance)
           expect(unmount_step).to_not receive(:perform)
-          expect(logger).to receive(:info).with('No errand vms to delete')
+          expect(per_spec_logger).to receive(:info).with('No errand vms to delete')
 
           subject.delete_vms
         end

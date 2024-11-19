@@ -6,7 +6,7 @@ module Bosh::Director
     describe InstancePlanFactory do
       include Bosh::Director::IpUtil
 
-      let(:instance_repo) { Bosh::Director::DeploymentPlan::InstanceRepository.new(logger, variables_interpolator) }
+      let(:instance_repo) { Bosh::Director::DeploymentPlan::InstanceRepository.new(per_spec_logger, variables_interpolator) }
       let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
       let(:skip_drain) { SkipDrain.new(true) }
       let(:index_assigner) { instance_double('Bosh::Director::DeploymentPlan::PlacementPlanner::IndexAssigner') }
@@ -46,14 +46,14 @@ module Bosh::Director
 
       let(:range) { IPAddr.new('192.168.1.1/24') }
       let(:manual_network_subnet) { ManualNetworkSubnet.new('name-7', range, nil, nil, nil, nil, nil, [], []) }
-      let(:network) { Bosh::Director::DeploymentPlan::ManualNetwork.new('name-7', [manual_network_subnet], logger) }
-      let(:ip_repo) { Bosh::Director::DeploymentPlan::IpRepo.new(logger) }
+      let(:network) { Bosh::Director::DeploymentPlan::ManualNetwork.new('name-7', [manual_network_subnet], per_spec_logger) }
+      let(:ip_repo) { Bosh::Director::DeploymentPlan::IpRepo.new(per_spec_logger) }
       let(:deployment_plan) do
         instance_double(
           Planner,
           network: network,
           networks: [network],
-          ip_provider: Bosh::Director::DeploymentPlan::IpProvider.new(ip_repo, { 'name-7' => network }, logger),
+          ip_provider: Bosh::Director::DeploymentPlan::IpProvider.new(ip_repo, { 'name-7' => network }, per_spec_logger),
           model: deployment_model,
           skip_drain: skip_drain,
         )

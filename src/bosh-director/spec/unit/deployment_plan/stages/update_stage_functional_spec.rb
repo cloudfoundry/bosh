@@ -1,9 +1,9 @@
 require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan::Stages
-  describe 'deployment prepare & update', truncation: true, :if => ENV.fetch('DB', 'sqlite') != 'sqlite' do
+  describe 'deployment prepare & update' do
     let(:deployment) { FactoryBot.create(:models_deployment, name: deployment_manifest['name']) }
-    let!(:stemcell) { FactoryBot.create(:models_stemcell, 'name' => 'ubuntu-stemcell', 'version' => '1') }
+    let!(:stemcell) { FactoryBot.create(:models_stemcell, name: 'ubuntu-stemcell', version: '1') }
 
     let(:agent_client) { instance_double(Bosh::Director::AgentClient) }
     let(:dns_encoder) { Bosh::Director::DnsEncoder.new({}) }
@@ -20,7 +20,7 @@ module Bosh::Director::DeploymentPlan::Stages
     let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
     let(:deployment_plan) do
-      planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
+      planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(per_spec_logger)
       manifest = Bosh::Director::Manifest.new(deployment_manifest, YAML.dump(deployment_manifest), cloud_config, nil)
       deployment_plan = planner_factory.create_from_manifest(manifest, nil, runtime_configs, {})
       Bosh::Director::DeploymentPlan::Assembler.create(deployment_plan, variables_interpolator).bind_models
@@ -134,7 +134,7 @@ module Bosh::Director::DeploymentPlan::Stages
       let(:multi_instance_group_updater) do
         Bosh::Director::DeploymentPlan::SerialMultiInstanceGroupUpdater.new(
           Bosh::Director::InstanceGroupUpdaterFactory.new(
-            logger,
+            per_spec_logger,
             deployment_plan.template_blob_cache,
             dns_encoder,
             link_provider_intents,

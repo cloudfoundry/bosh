@@ -3,10 +3,10 @@ require 'spec_helper'
 module Bosh
   module Director
     describe VmCreator do
-      subject(:vm_creator) { VmCreator.new(logger, template_blob_cache, dns_encoder, agent_broadcaster, link_provider_intents) }
+      subject(:vm_creator) { VmCreator.new(per_spec_logger, template_blob_cache, dns_encoder, agent_broadcaster, link_provider_intents) }
 
       let(:link_provider_intents) { [] }
-      let(:vm_deleter) { VmDeleter.new(logger, false, false) }
+      let(:vm_deleter) { VmDeleter.new(per_spec_logger, false, false) }
       let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
       let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
       let(:deployment) { FactoryBot.create(:models_deployment, name: 'deployment_name') }
@@ -36,7 +36,7 @@ module Bosh
       let(:expected_merged_tags) { { 'mytag' => 'foobar', 'secondtag' => 'overwritten', 'instance_tag' => 'buzz' } }
 
       let(:instance_group) do
-        disk = DeploymentPlan::PersistentDiskCollection.new(logger)
+        disk = DeploymentPlan::PersistentDiskCollection.new(per_spec_logger)
         disk.add_by_disk_size(1024)
         instance_group_tags = { 'instance_tag' => 'buzz', 'secondtag' => 'overwritten' }
         FactoryBot.build(:deployment_plan_instance_group,
@@ -77,7 +77,7 @@ module Bosh
         DeploymentPlan::ManualNetwork.parse(
           manual_network_spec,
           [Bosh::Director::DeploymentPlan::AvailabilityZone.new('az-1', {})],
-          logger,
+          per_spec_logger,
         )
       end
 
@@ -218,8 +218,8 @@ module Bosh
       end
 
       describe '#create_for_instance_plans' do
-        let(:ip_repo) { DeploymentPlan::IpRepo.new(logger) }
-        let(:ip_provider) { DeploymentPlan::IpProvider.new(ip_repo, networks, logger) }
+        let(:ip_repo) { DeploymentPlan::IpRepo.new(per_spec_logger) }
+        let(:ip_provider) { DeploymentPlan::IpProvider.new(ip_repo, networks, per_spec_logger) }
 
         it 'creates vms for the given instance plans' do
           expect(create_vm_step).to receive(:perform).with(report)

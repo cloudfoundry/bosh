@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director
-  describe Lock, truncation: true, if: ENV.fetch('DB', 'sqlite') != 'sqlite' do
+  describe Lock, truncation: true do
     let!(:task) { FactoryBot.create(:models_task, state: 'processing', description: 'fake-description') }
     before do
       allow(Config).to receive_message_chain(:current_job, :username).and_return('current-user')
@@ -20,6 +20,8 @@ module Bosh::Director
     end
 
     it 'should renew a lock' do
+      skip('because SQLite fails with "SQLite3::BusyException: database is locked"') if ENV.fetch('DB', 'sqlite') == 'sqlite'
+
       lock = Lock.new('foo', expiration: 1)
 
       expected = false
@@ -154,6 +156,8 @@ module Bosh::Director
         end
 
         it 'should record an event' do
+          skip('because SQLite fails with "SQLite3::BusyException: database is locked"') if ENV.fetch('DB', 'sqlite') == 'sqlite'
+
           lock = Lock.new('foo', deployment_name: 'my-deployment', expiration: 1)
 
           destroy_lock_record('foo')
@@ -173,6 +177,8 @@ module Bosh::Director
         end
 
         it 'should cancel the running task' do
+          skip('because SQLite fails with "SQLite3::BusyException: database is locked"') if ENV.fetch('DB', 'sqlite') == 'sqlite'
+
           lock = Lock.new('foo', deployment_name: 'my-deployment', expiration: 1)
 
           destroy_lock_record('foo')

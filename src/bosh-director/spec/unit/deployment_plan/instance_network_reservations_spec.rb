@@ -26,7 +26,7 @@ module Bosh::Director
           Bosh::Director::DeploymentPlan::AvailabilityZone.new('az-1', {}),
           Bosh::Director::DeploymentPlan::AvailabilityZone.new('az-2', {}),
         ],
-        logger,
+        per_spec_logger,
       )
     end
     let(:manual_network_spec) do
@@ -43,7 +43,7 @@ module Bosh::Director
     let(:instance_model) { FactoryBot.create(:models_instance, deployment: deployment_model) }
     let!(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
     let(:ip_provider) do
-      DeploymentPlan::IpProvider.new(DeploymentPlan::IpRepo.new(logger), { 'fake-network' => network }, logger)
+      DeploymentPlan::IpProvider.new(DeploymentPlan::IpRepo.new(per_spec_logger), { 'fake-network' => network }, per_spec_logger)
     end
     before do
       allow(deployment).to receive(:ip_provider).and_return(ip_provider)
@@ -79,7 +79,7 @@ module Bosh::Director
           end
 
           it 'creates reservations from the last VM associated with an instance' do
-            reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, logger)
+            reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, per_spec_logger)
             expect(reservations.map(&:ip)).to eq([ip1, ip2])
           end
         end
@@ -94,7 +94,7 @@ module Bosh::Director
           end
 
           it 'creates reservations from the orphaned IP addresses' do
-            reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, logger)
+            reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, per_spec_logger)
             expect(reservations.map(&:ip)).to eq([ip2, ip1])
           end
         end
@@ -107,7 +107,7 @@ module Bosh::Director
           end
 
           it 'creates reservations based on IP addresses' do
-            reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, logger)
+            reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, per_spec_logger)
             expect(reservations.map(&:ip)).to eq([ip1, ip2])
           end
         end
@@ -119,7 +119,7 @@ module Bosh::Director
           end
 
           context 'if the IP is contained in that network range' do
-            let(:network_with_subnets) { [DeploymentPlan::VipNetwork.parse(network_spec, [], logger)] }
+            let(:network_with_subnets) { [DeploymentPlan::VipNetwork.parse(network_spec, [], per_spec_logger)] }
             let(:network_spec) do
               {
                 'name' => 'fake-network',
@@ -130,15 +130,15 @@ module Bosh::Director
             end
 
             it 'assigns that network to the reservation' do
-              reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, logger)
+              reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, per_spec_logger)
               expect(reservations.first.network).to eq(network_with_subnets.first)
             end
           end
 
           context 'if the IP is not contained in that network range' do
             let(:network_with_subnets) { [existing_network, new_network] }
-            let(:existing_network) { DeploymentPlan::VipNetwork.parse(existing_network_spec, [], logger) }
-            let(:new_network) { DeploymentPlan::VipNetwork.parse(new_network_spec, [], logger) }
+            let(:existing_network) { DeploymentPlan::VipNetwork.parse(existing_network_spec, [], per_spec_logger) }
+            let(:new_network) { DeploymentPlan::VipNetwork.parse(new_network_spec, [], per_spec_logger) }
             let(:existing_network_spec) do
               {
                 'name' => 'fake-network',
@@ -158,7 +158,7 @@ module Bosh::Director
             end
 
             it 'assigns the closest matching network in the cloud config' do
-              reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, logger)
+              reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, per_spec_logger)
               expect(reservations.first.network).to eq(new_network)
             end
           end
@@ -175,13 +175,13 @@ module Bosh::Director
           end
 
           it 'returns the network with matching name' do
-            reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, logger)
+            reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, per_spec_logger)
             expect(reservations.first.network).to eq(static_vip_network)
           end
         end
 
         context 'when there are no network subnets that contain the IP or matches by name' do
-          let(:dummy_network) { DeploymentPlan::Network.new('fake-network', logger) }
+          let(:dummy_network) { DeploymentPlan::Network.new('fake-network', per_spec_logger) }
           before do
             instance_model.add_ip_address(ip_model1)
             allow(cloud_planner).to receive(:networks).and_return([])
@@ -190,7 +190,7 @@ module Bosh::Director
           end
 
           it 'assigns a placeholder network' do
-            reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, logger)
+            reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, per_spec_logger)
             expect(reservations.first.network).to eq(dummy_network)
           end
         end
@@ -210,14 +210,14 @@ module Bosh::Director
         end
 
         let(:dynamic_network) do
-          DeploymentPlan::DynamicNetwork.new('dynamic-network', [], logger)
+          DeploymentPlan::DynamicNetwork.new('dynamic-network', [], per_spec_logger)
         end
         before do
           allow(deployment).to receive(:network).with('dynamic-network').and_return(dynamic_network)
         end
 
         it 'creates reservations for dynamic networks' do
-          reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, logger)
+          reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, per_spec_logger)
           expect(reservations.first).to_not be_nil
           expect(reservations.first.ip).to eq(IPAddr.new('10.10.0.10').to_i)
         end

@@ -40,7 +40,7 @@ module Bosh::Director
         deployment
       end
       let(:deployment_plan) do
-        planner_factory = PlannerFactory.create(logger)
+        planner_factory = PlannerFactory.create(per_spec_logger)
         planner_factory.create_from_model(deployment_model)
       end
 
@@ -57,7 +57,7 @@ module Bosh::Director
             instance_model,
             deployment_plan,
             'started',
-            logger,
+            per_spec_logger,
           )
           expect(instance_plan.instance_model).to eq(instance_model)
         end

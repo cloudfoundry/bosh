@@ -68,7 +68,7 @@ module Bosh::Director
         end
 
         it 'logs notification of attaching' do
-          expect(logger).to receive(:info).with("Attaching disk #{disk.disk_cid}")
+          expect(per_spec_logger).to receive(:info).with("Attaching disk #{disk.disk_cid}")
 
           step.perform(report)
         end

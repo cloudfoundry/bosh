@@ -223,7 +223,7 @@ module Bosh::Director
 
             it 'chooses the first stemcell alphabetically by name' do
               job.perform
-              expect(log_string).to match(/Will compile with stemcell: ubuntu-stemcell/)
+              expect(per_spec_log_string).to match(/Will compile with stemcell: ubuntu-stemcell/)
             end
           end
         end
@@ -232,7 +232,7 @@ module Bosh::Director
       context 'when creating a tarball' do
         let(:blobstore_client) { instance_double('Bosh::Blobstore::BaseClient') }
         let(:archiver) { instance_double('Bosh::Director::Core::TarGzipper') }
-        let(:planner_factory) { DeploymentPlan::PlannerFactory.create(logger) }
+        let(:planner_factory) { DeploymentPlan::PlannerFactory.create(per_spec_logger) }
         let(:planner) { planner_factory.create_from_model(deployment_model) }
         let(:task_dir) { Dir.mktmpdir }
         let(:release) {Bosh::Director::Models::Release.create(name: release_name)}

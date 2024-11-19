@@ -4,9 +4,9 @@ module Bosh::Director
   describe DeploymentPlan::NetworkPlanner::VipPlanner do
     include IpUtil
 
-    subject(:planner) { DeploymentPlan::NetworkPlanner::VipPlanner.new(network_planner, logger) }
+    subject(:planner) { DeploymentPlan::NetworkPlanner::VipPlanner.new(network_planner, per_spec_logger) }
 
-    let(:network_planner) { DeploymentPlan::NetworkPlanner::Planner.new(logger) }
+    let(:network_planner) { DeploymentPlan::NetworkPlanner::Planner.new(per_spec_logger) }
     let(:deployment_model) { FactoryBot.create(:models_deployment, name: 'my-deployment') }
     let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
@@ -25,7 +25,7 @@ module Bosh::Director
         deployment_model,
         {},
         nil,
-        logger,
+        per_spec_logger,
         variables_interpolator,
       )
 
@@ -61,11 +61,11 @@ module Bosh::Director
       end
 
       let(:vip_deployment_network1) do
-        DeploymentPlan::VipNetwork.parse(vip_network_spec1, [], logger)
+        DeploymentPlan::VipNetwork.parse(vip_network_spec1, [], per_spec_logger)
       end
 
       let(:vip_deployment_network2) do
-        DeploymentPlan::VipNetwork.parse(vip_network_spec2, [], logger)
+        DeploymentPlan::VipNetwork.parse(vip_network_spec2, [], per_spec_logger)
       end
 
       context 'and there are static ips defined only on the job network' do

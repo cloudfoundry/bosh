@@ -5,14 +5,14 @@ module Bosh::Director::DeploymentPlan
   describe NetworkPlanner::Planner do
     include Bosh::Director::IpUtil
 
-    subject(:planner) { NetworkPlanner::Planner.new(logger) }
+    subject(:planner) { NetworkPlanner::Planner.new(per_spec_logger) }
     let(:instance_plan) { InstancePlan.new(existing_instance: nil, desired_instance: desired_instance, instance: instance, variables_interpolator: variables_interpolator) }
     let(:variables_interpolator) { double(Bosh::Director::ConfigServer::VariablesInterpolator) }
     let(:deployment) { instance_double(Planner, model: FactoryBot.create(:models_deployment)) }
     let(:desired_instance) { DesiredInstance.new(instance_group, deployment) }
     let(:instance_model) { FactoryBot.create(:models_instance) }
     let(:instance_group) { FactoryBot.build(:deployment_plan_instance_group) }
-    let(:instance_repository) { InstanceRepository.new(logger, variables_interpolator) }
+    let(:instance_repository) { InstanceRepository.new(per_spec_logger, variables_interpolator) }
     let(:instance) { instance_repository.fetch_existing(instance_model, {}, desired_instance) }
     let(:deployment_subnets) do
       [

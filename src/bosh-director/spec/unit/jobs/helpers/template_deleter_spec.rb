@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   module Jobs::Helpers
     describe TemplateDeleter do
-      subject(:template_deleter) { TemplateDeleter.new(blobstore, logger) }
+      subject(:template_deleter) { TemplateDeleter.new(blobstore, per_spec_logger) }
       let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
       let(:release_version) { FactoryBot.create(:models_release_version) }
       let(:template) { FactoryBot.create(:models_template, blobstore_id: 'template-blob-id') }

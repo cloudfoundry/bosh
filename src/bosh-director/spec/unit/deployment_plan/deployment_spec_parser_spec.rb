@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DeploymentPlan::DeploymentSpecParser do
-    subject(:parser) { described_class.new(deployment, event_log, logger) }
+    subject(:parser) { described_class.new(deployment, event_log, per_spec_logger) }
     let(:deployment) do
       DeploymentPlan::Planner.new(
         manifest_hash['name'],
@@ -330,11 +330,11 @@ module Bosh::Director
 
             it 'delegates to InstanceGroup to parse instance group specs' do
               expect(DeploymentPlan::InstanceGroup).to receive(:parse)
-                .with(be_a(DeploymentPlan::Planner), { 'name' => 'instance-group-1-name' }, event_log, logger, { 'is_deploy_action' => true })
+                .with(be_a(DeploymentPlan::Planner), { 'name' => 'instance-group-1-name' }, event_log, per_spec_logger, { 'is_deploy_action' => true })
                 .and_return(instance_group_1)
 
               expect(DeploymentPlan::InstanceGroup).to receive(:parse)
-                .with(be_a(DeploymentPlan::Planner), { 'name' => 'instance-group-2-name' }, event_log, logger, { 'is_deploy_action' => true })
+                .with(be_a(DeploymentPlan::Planner), { 'name' => 'instance-group-2-name' }, event_log, per_spec_logger, { 'is_deploy_action' => true })
                 .and_return(instance_group_2)
 
               expect(parsed_deployment.instance_groups).to eq([instance_group_1, instance_group_2])
@@ -346,11 +346,11 @@ module Bosh::Director
               end
               it "replaces canaries value from instance group's update section with option's value" do
                 expect(DeploymentPlan::InstanceGroup).to receive(:parse)
-                  .with(be_a(DeploymentPlan::Planner), { 'name' => 'instance-group-1-name' }, event_log, logger, options)
+                  .with(be_a(DeploymentPlan::Planner), { 'name' => 'instance-group-1-name' }, event_log, per_spec_logger, options)
                   .and_return(instance_group_1)
 
                 expect(DeploymentPlan::InstanceGroup).to receive(:parse)
-                  .with(be_a(DeploymentPlan::Planner), { 'name' => 'instance-group-2-name' }, event_log, logger, options)
+                  .with(be_a(DeploymentPlan::Planner), { 'name' => 'instance-group-2-name' }, event_log, per_spec_logger, options)
                   .and_return(instance_group_2)
 
                 parsed_deployment.instance_groups
@@ -363,11 +363,11 @@ module Bosh::Director
               end
               it "replaces max_in_flight value from instance group's update section with option's value" do
                 expect(DeploymentPlan::InstanceGroup).to receive(:parse)
-                  .with(be_a(DeploymentPlan::Planner), { 'name' => 'instance-group-1-name' }, event_log, logger, options)
+                  .with(be_a(DeploymentPlan::Planner), { 'name' => 'instance-group-1-name' }, event_log, per_spec_logger, options)
                   .and_return(instance_group_1)
 
                 expect(DeploymentPlan::InstanceGroup).to receive(:parse)
-                  .with(be_a(DeploymentPlan::Planner), { 'name' => 'instance-group-2-name' }, event_log, logger, options)
+                  .with(be_a(DeploymentPlan::Planner), { 'name' => 'instance-group-2-name' }, event_log, per_spec_logger, options)
                   .and_return(instance_group_2)
 
                 parsed_deployment.instance_groups
@@ -376,11 +376,11 @@ module Bosh::Director
 
             it 'allows to look up instance group by name' do
               allow(DeploymentPlan::InstanceGroup).to receive(:parse)
-                .with(be_a(DeploymentPlan::Planner), { 'name' => 'instance-group-1-name' }, event_log, logger, { 'is_deploy_action' => true })
+                .with(be_a(DeploymentPlan::Planner), { 'name' => 'instance-group-1-name' }, event_log, per_spec_logger, { 'is_deploy_action' => true })
                 .and_return(instance_group_1)
 
               allow(DeploymentPlan::InstanceGroup).to receive(:parse)
-                .with(be_a(DeploymentPlan::Planner), { 'name' => 'instance-group-2-name' }, event_log, logger, { 'is_deploy_action' => true })
+                .with(be_a(DeploymentPlan::Planner), { 'name' => 'instance-group-2-name' }, event_log, per_spec_logger, { 'is_deploy_action' => true })
                 .and_return(instance_group_2)
 
               expect(parsed_deployment.instance_group('instance-group-1-name')).to eq(instance_group_1)
@@ -412,11 +412,11 @@ module Bosh::Director
 
             it 'raises an error' do
               allow(DeploymentPlan::InstanceGroup).to receive(:parse)
-                .with(be_a(DeploymentPlan::Planner), { 'name' => 'instance-group-1-name' }, event_log, logger, { 'is_deploy_action' => true })
+                .with(be_a(DeploymentPlan::Planner), { 'name' => 'instance-group-1-name' }, event_log, per_spec_logger, { 'is_deploy_action' => true })
                 .and_return(instance_group_1)
 
               allow(DeploymentPlan::InstanceGroup).to receive(:parse)
-                .with(be_a(DeploymentPlan::Planner), { 'name' => 'instance-group-2-name' }, event_log, logger, { 'is_deploy_action' => true })
+                .with(be_a(DeploymentPlan::Planner), { 'name' => 'instance-group-2-name' }, event_log, per_spec_logger, { 'is_deploy_action' => true })
                 .and_return(instance_group_2)
 
               expect do

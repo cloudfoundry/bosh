@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::InstanceGroup do
-  let(:instance_group) { Bosh::Director::DeploymentPlan::InstanceGroup.parse(plan, spec, event_log, logger, parse_options) }
+  let(:instance_group) { Bosh::Director::DeploymentPlan::InstanceGroup.parse(plan, spec, event_log, per_spec_logger, parse_options) }
   let(:parse_options) { {} }
   let(:event_log)  { instance_double('Bosh::Director::EventLog::Log', warn_deprecated: nil) }
   let(:deployment) { FactoryBot.create(:models_deployment) }
@@ -112,7 +112,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   let(:update_config) { double(Bosh::Director::DeploymentPlan::UpdateConfig) }
   let(:links_serial_id) { 7 }
 
-  let(:links_manager) { Bosh::Director::Links::LinksManager.new(links_serial_id, logger, event_log) }
+  let(:links_manager) { Bosh::Director::Links::LinksManager.new(links_serial_id, per_spec_logger, event_log) }
 
   before do
     allow(Bosh::Director::DeploymentPlan::UpdateConfig).to receive(:new).and_return update_config
@@ -641,9 +641,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   describe '#bind_unallocated_vms' do
     it 'allocates a VM to all non obsolete instances if they are not already bound to a VM' do
       az = Bosh::Director::DeploymentPlan::AvailabilityZone.new('az', {})
-      instance0 = Bosh::Director::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', deployment, {}, az, logger, variables_interpolator)
+      instance0 = Bosh::Director::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', deployment, {}, az, per_spec_logger, variables_interpolator)
       instance0.bind_existing_instance_model(FactoryBot.create(:models_instance, bootstrap: true))
-      instance1 = Bosh::Director::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', deployment, {}, az, logger, variables_interpolator)
+      instance1 = Bosh::Director::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', deployment, {}, az, per_spec_logger, variables_interpolator)
       instance_plan0 = Bosh::Director::DeploymentPlan::InstancePlan.new(
         desired_instance: instance_double(Bosh::Director::DeploymentPlan::DesiredInstance),
         existing_instance: nil,
@@ -665,9 +665,9 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   describe '#bind_instances' do
     it 'makes sure theres a model and binds instance networks' do
       az = Bosh::Director::DeploymentPlan::AvailabilityZone.new('az', {})
-      instance0 = Bosh::Director::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', deployment, {}, az, logger, variables_interpolator)
+      instance0 = Bosh::Director::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', deployment, {}, az, per_spec_logger, variables_interpolator)
       instance0.bind_existing_instance_model(FactoryBot.create(:models_instance, bootstrap: true))
-      instance1 = Bosh::Director::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', deployment, {}, az, logger, variables_interpolator)
+      instance1 = Bosh::Director::DeploymentPlan::Instance.create_from_instance_group(instance_group, 6, 'started', deployment, {}, az, per_spec_logger, variables_interpolator)
       instance0_reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance0.model, network)
       instance0_obsolete_reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance0.model, network)
       instance1_reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance1.model, network)
@@ -844,7 +844,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         deployment,
         {},
         nil,
-        logger,
+        per_spec_logger,
         variables_interpolator,
       )
       instance1.bind_new_instance_model
@@ -856,7 +856,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         deployment,
         {},
         nil,
-        logger,
+        per_spec_logger,
         variables_interpolator,
       )
       instance2.bind_new_instance_model
@@ -867,7 +867,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         deployment,
         {},
         nil,
-        logger,
+        per_spec_logger,
         variables_interpolator,
       )
       instance3.bind_new_instance_model
@@ -926,7 +926,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         deployment,
         {},
         nil,
-        logger,
+        per_spec_logger,
         variables_interpolator,
       )
       instance1.bind_new_instance_model
@@ -938,7 +938,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
         deployment,
         {},
         nil,
-        logger,
+        per_spec_logger,
         variables_interpolator,
       )
       instance2.bind_new_instance_model

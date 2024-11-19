@@ -12,10 +12,10 @@ module Bosh::Director::DeploymentPlan
       instance_group_network['static_ips'] = ['192.168.1.1', '192.168.1.2']
       instance_group
     end
-    let(:manifest_networks) { [ManualNetwork.new('a', [], logger)] }
+    let(:manifest_networks) { [ManualNetwork.new('a', [], per_spec_logger)] }
 
     context 'when instance group references a network not mentioned in the networks spec' do
-      let(:manifest_networks) { [ManualNetwork.new('my-network', [], logger)] }
+      let(:manifest_networks) { [ManualNetwork.new('my-network', [], per_spec_logger)] }
 
       it 'raises JobUnknownNetwork' do
         expect do
@@ -39,7 +39,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     context 'when instance group network spec references dynamic network with static IPs' do
-      let(:dynamic_network) { Bosh::Director::DeploymentPlan::DynamicNetwork.new('a', [], logger) }
+      let(:dynamic_network) { Bosh::Director::DeploymentPlan::DynamicNetwork.new('a', [], per_spec_logger) }
       let(:instance_group_spec) do
         instance_group = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups['instance_groups'].first
         instance_group['networks'] = [{

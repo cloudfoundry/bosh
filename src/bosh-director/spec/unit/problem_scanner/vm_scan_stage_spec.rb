@@ -25,7 +25,7 @@ module Bosh::Director
     end
 
     let(:instance_manager) { instance_double(Api::InstanceManager) }
-    let(:problem_register) { ProblemScanner::ProblemRegister.new(deployment, logger) }
+    let(:problem_register) { ProblemScanner::ProblemRegister.new(deployment, per_spec_logger) }
     before do
       allow(problem_register).to receive(:get_disk).and_call_original
     end

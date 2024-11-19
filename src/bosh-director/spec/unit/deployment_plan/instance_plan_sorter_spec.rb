@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe InstancePlanSorter do
-    let(:instance_plan_sorter) { InstancePlanSorter.new(logger) }
+    let(:instance_plan_sorter) { InstancePlanSorter.new(per_spec_logger) }
 
     describe '#sort' do
       let(:desired_instance) { DesiredInstance.new(instance_group) }
@@ -11,7 +11,7 @@ module Bosh::Director::DeploymentPlan
       let(:deployment_model) { FactoryBot.create(:models_deployment, name: 'my-deployment') }
       let(:bootstrap_az) { AvailabilityZone.new('bootstrap_name', {}) }
       let(:bootstrap_instance) do
-        bootstrap_instance = Instance.create_from_instance_group(instance_group, 0, 'started', deployment_model, {}, bootstrap_az, logger, variables_interpolator)
+        bootstrap_instance = Instance.create_from_instance_group(instance_group, 0, 'started', deployment_model, {}, bootstrap_az, per_spec_logger, variables_interpolator)
         bootstrap_instance.bind_existing_instance_model(
           FactoryBot.create(:models_instance, uuid: 'a-uuid', index: 0, job: 'job_name', bootstrap: true),
         )
@@ -31,7 +31,7 @@ module Bosh::Director::DeploymentPlan
       context 'when there are multiple instance plans' do
         let(:az_2) { AvailabilityZone.new('az2_name', {}) }
         let(:instance_in_bootstrap_az) do
-          instance = Instance.create_from_instance_group(instance_group, 4, 'started', deployment_model, {}, bootstrap_az, logger, variables_interpolator)
+          instance = Instance.create_from_instance_group(instance_group, 4, 'started', deployment_model, {}, bootstrap_az, per_spec_logger, variables_interpolator)
           instance.bind_existing_instance_model(FactoryBot.create(:models_instance, uuid: 'bb-uuid1', index: 4, job: 'job_name'))
           instance
         end
@@ -48,7 +48,7 @@ module Bosh::Director::DeploymentPlan
 
         let(:instance2_in_bootstrap_az) do
           instance2_in_bootstrap_az = Instance.create_from_instance_group(
-            instance_group, 2, 'started', deployment_model, {}, bootstrap_az, logger, variables_interpolator
+            instance_group, 2, 'started', deployment_model, {}, bootstrap_az, per_spec_logger, variables_interpolator
           )
           instance2_in_bootstrap_az.bind_existing_instance_model(
             FactoryBot.create(:models_instance, uuid: 'bb-uuid2', index: 2, job: 'job_name'),
@@ -77,7 +77,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should sort instance plans in alphanum order in alphanum sorted az' do
-          instance2_not_in_bootstrap_az = Instance.create_from_instance_group(instance_group, 2, 'started', deployment_model, {}, az_2, logger, variables_interpolator)
+          instance2_not_in_bootstrap_az = Instance.create_from_instance_group(instance_group, 2, 'started', deployment_model, {}, az_2, per_spec_logger, variables_interpolator)
           instance2_not_in_bootstrap_az.bind_existing_instance_model(FactoryBot.create(:models_instance, uuid: '1-uuid2', index: 2, job: 'job_name'))
           instance_plan2_not_in_bootstrap_az = InstancePlan.new(
             existing_instance: instance2_not_in_bootstrap_az.model,
@@ -92,7 +92,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should set instance plans from az with bootstrap node first' do
-          instance2_not_in_bootstrap_az = Instance.create_from_instance_group(instance_group, 2, 'started', deployment_model, {}, az_2, logger, variables_interpolator)
+          instance2_not_in_bootstrap_az = Instance.create_from_instance_group(instance_group, 2, 'started', deployment_model, {}, az_2, per_spec_logger, variables_interpolator)
           instance2_not_in_bootstrap_az.bind_existing_instance_model(FactoryBot.create(:models_instance, uuid: '1-uuid2', index: 2, job: 'job_name'))
           instance_plan2_not_in_bootstrap_az = InstancePlan.new(
             existing_instance: instance2_not_in_bootstrap_az.model,
@@ -102,7 +102,7 @@ module Bosh::Director::DeploymentPlan
             variables_interpolator: variables_interpolator,
           )
 
-          instance3_not_in_bootstrap_az = Instance.create_from_instance_group(instance_group, 3, 'started', deployment_model, {}, az_2, logger, variables_interpolator)
+          instance3_not_in_bootstrap_az = Instance.create_from_instance_group(instance_group, 3, 'started', deployment_model, {}, az_2, per_spec_logger, variables_interpolator)
           instance3_not_in_bootstrap_az.bind_existing_instance_model(FactoryBot.create(:models_instance, uuid: '2-uuid2', index: 3, job: 'job_name'))
           instance_plan3_not_in_bootstrap_az = InstancePlan.new(
             existing_instance: instance3_not_in_bootstrap_az.model,
@@ -120,7 +120,7 @@ module Bosh::Director::DeploymentPlan
           az3 = AvailabilityZone.new('az3_name', {})
           az_4 = AvailabilityZone.new('az4_name', {})
 
-          instance4_az3 = Instance.create_from_instance_group(instance_group, 7, 'started', deployment_model, {}, az3, logger, variables_interpolator)
+          instance4_az3 = Instance.create_from_instance_group(instance_group, 7, 'started', deployment_model, {}, az3, per_spec_logger, variables_interpolator)
           instance4_az3.bind_existing_instance_model(FactoryBot.create(:models_instance, uuid: '1234-uuid2', index: 7, job: 'job_name'))
           instance_plan3_az3 = InstancePlan.new(
             existing_instance: instance4_az3.model,
@@ -130,7 +130,7 @@ module Bosh::Director::DeploymentPlan
             variables_interpolator: variables_interpolator,
           )
 
-          instance5_az4 = Instance.create_from_instance_group(instance_group, 8, 'started', deployment_model, {}, az_4, logger, variables_interpolator)
+          instance5_az4 = Instance.create_from_instance_group(instance_group, 8, 'started', deployment_model, {}, az_4, per_spec_logger, variables_interpolator)
           instance5_az4.bind_existing_instance_model(FactoryBot.create(:models_instance, uuid: '42341-uuid2', index: 8, job: 'job_name'))
           instance_plan5_az4 = InstancePlan.new(
             existing_instance: instance5_az4.model,
@@ -147,7 +147,7 @@ module Bosh::Director::DeploymentPlan
 
         context 'when instance does not have az' do
           it 'should sort it without errors' do
-            instance2_without_az = Instance.create_from_instance_group(instance_group, 2, 'started', deployment_model, {}, nil, logger, variables_interpolator)
+            instance2_without_az = Instance.create_from_instance_group(instance_group, 2, 'started', deployment_model, {}, nil, per_spec_logger, variables_interpolator)
             instance2_without_az.bind_existing_instance_model(FactoryBot.create(:models_instance, uuid: '1-uuid2', index: 2, job: 'job_name'))
             instance_plan2_without_az = InstancePlan.new(
               existing_instance: instance2_without_az.model,

@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Blobstore
   describe Sha1VerifiableBlobstoreClient do
-    subject { described_class.new(wrapped_client, logger) }
+    subject { described_class.new(wrapped_client, per_spec_logger) }
     let(:wrapped_client) { instance_double('Bosh::Blobstore::BaseClient') }
     let(:multidigest_path) { 'some/path/to/binary' }
 

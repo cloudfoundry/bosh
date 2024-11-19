@@ -5,7 +5,7 @@ module Bosh::Director
     let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
-    let(:stemcell_deleter) { Jobs::Helpers::StemcellDeleter.new(logger) }
+    let(:stemcell_deleter) { Jobs::Helpers::StemcellDeleter.new(per_spec_logger) }
     let(:stemcell) { FactoryBot.create(:models_stemcell, name: 'test_stemcell', version: 'test_version', cid: 'stemcell_cid') }
 
     before do

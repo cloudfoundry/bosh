@@ -4,9 +4,9 @@ module Bosh::Director
   module DeploymentPlan
     describe Notifier do
       context 'event hooks' do
-        let(:planner) { instance_double('Bosh::Director::DeploymentPlan::Planner', :canonical_name => 'Blorgh') }
+        let(:planner) { instance_double('Bosh::Director::DeploymentPlan::Planner', canonical_name: 'Blorgh') }
         let(:nats_rpc) { instance_double('Bosh::Director::NatsRpc') }
-        subject { Notifier.new('Blorgh', nats_rpc, logger) }
+        subject { Notifier.new('Blorgh', nats_rpc, per_spec_logger) }
 
         let(:uuid) { SecureRandom.uuid }
         before do

@@ -5,7 +5,7 @@ module Bosh::Director::DeploymentPlan
   describe PlacementPlanner::AvailabilityZonePicker do
     subject(:zone_picker) { PlacementPlanner::AvailabilityZonePicker.new(instance_plan_factory, network_planner, job_networks, desired_azs, random_tie_strategy: test_random_tie_strategy ) }
 
-    let(:network_planner) { NetworkPlanner::Planner.new(logger) }
+    let(:network_planner) { NetworkPlanner::Planner.new(per_spec_logger) }
     let(:skip_drain_decider) { SkipDrain.new(true) }
     let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
     let(:instance_plan_factory) do

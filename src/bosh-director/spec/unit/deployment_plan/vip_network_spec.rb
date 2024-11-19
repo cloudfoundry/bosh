@@ -25,12 +25,12 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
 
   describe :parse do
     it 'defaults cloud properties to empty hash' do
-      network = Bosh::Director::DeploymentPlan::VipNetwork.parse(network_spec, azs, logger)
+      network = Bosh::Director::DeploymentPlan::VipNetwork.parse(network_spec, azs, per_spec_logger)
       expect(network.cloud_properties).to eq({})
     end
 
     it 'correctly parses the subnets defined in the network spec' do
-      vip_network = Bosh::Director::DeploymentPlan::VipNetwork.parse(network_spec, azs, logger)
+      vip_network = Bosh::Director::DeploymentPlan::VipNetwork.parse(network_spec, azs, per_spec_logger)
       expect(vip_network).to be_a(Bosh::Director::DeploymentPlan::VipNetwork)
       expect(vip_network.subnets.size).to eq(2)
     end
@@ -43,7 +43,7 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
         'cloud_properties' => {
           'foz' => 'baz',
         },
-      }, azs, logger)
+      }, azs, per_spec_logger)
     end
 
     it 'should provide the VIP network settings' do
@@ -74,7 +74,7 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
   describe :ip_type do
     context 'when the network has subnets defined' do
       it 'returns dynamic' do
-        network = Bosh::Director::DeploymentPlan::VipNetwork.parse(network_spec, azs, logger)
+        network = Bosh::Director::DeploymentPlan::VipNetwork.parse(network_spec, azs, per_spec_logger)
         expect(network.ip_type(nil)).to eq(:dynamic)
       end
     end
@@ -83,7 +83,7 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
       let(:network_spec) { { 'name' => 'foo' } }
 
       it 'returns static' do
-        network = Bosh::Director::DeploymentPlan::VipNetwork.parse(network_spec, azs, logger)
+        network = Bosh::Director::DeploymentPlan::VipNetwork.parse(network_spec, azs, per_spec_logger)
         expect(network.ip_type(nil)).to eq(:static)
       end
     end
@@ -103,7 +103,7 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
     end
 
     it 'returns the availability zones associated with the given ip' do
-      network = Bosh::Director::DeploymentPlan::VipNetwork.parse(network_spec, azs, logger)
+      network = Bosh::Director::DeploymentPlan::VipNetwork.parse(network_spec, azs, per_spec_logger)
       az = network.find_az_names_for_ip(IPAddr.new('69.69.69.69').to_i)
       expect(az).to include('z1')
     end

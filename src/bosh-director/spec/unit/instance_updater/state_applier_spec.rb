@@ -5,7 +5,7 @@ module Bosh::Director
     include Support::StemcellHelpers
 
     subject(:state_applier) do
-      InstanceUpdater::StateApplier.new(instance_plan, agent_client, rendered_job_templates_cleaner, logger, options)
+      InstanceUpdater::StateApplier.new(instance_plan, agent_client, rendered_job_templates_cleaner, per_spec_logger, options)
     end
 
     let(:task) { instance_double('Bosh::Director::EventLog::Task') }
@@ -25,7 +25,7 @@ module Bosh::Director
     let(:network_spec) do
       { 'name' => 'default', 'subnets' => [{ 'cloud_properties' => { 'foo' => 'bar' }, 'az' => 'foo-az' }] }
     end
-    let(:network) { DeploymentPlan::DynamicNetwork.parse(network_spec, [availability_zone], logger) }
+    let(:network) { DeploymentPlan::DynamicNetwork.parse(network_spec, [availability_zone], per_spec_logger) }
 
     let(:instance_group) do
       instance_double(
@@ -40,7 +40,7 @@ module Bosh::Director
         stemcell: make_stemcell(name: 'fake-stemcell-name', version: '1.0'),
         env: DeploymentPlan::Env.new('key' => 'value'),
         package_spec: {},
-        persistent_disk_collection: DeploymentPlan::PersistentDiskCollection.new(logger),
+        persistent_disk_collection: DeploymentPlan::PersistentDiskCollection.new(per_spec_logger),
         errand?: false,
         compilation?: false,
         jobs: [],
@@ -69,7 +69,7 @@ module Bosh::Director
         deployment,
         {},
         availability_zone,
-        logger,
+        per_spec_logger,
         variables_interpolator,
       )
     end
@@ -111,7 +111,7 @@ module Bosh::Director
         update_config: update_config,
         is_canary: false,
         wait_for_running: true,
-        logger: logger,
+        logger: per_spec_logger,
         task: task,
       )
     end
@@ -130,7 +130,7 @@ module Bosh::Director
         update_config: update_config,
         is_canary: false,
         wait_for_running: false,
-        logger: logger,
+        logger: per_spec_logger,
         task: task,
       )
     end

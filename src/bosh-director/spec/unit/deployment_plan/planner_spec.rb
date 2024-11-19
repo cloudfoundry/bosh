@@ -39,12 +39,12 @@ module Bosh::Director
           deployment_model.add_stemcell(stemcell_model)
           deployment_model.add_variable_set(FactoryBot.create(:models_variable_set, deployment: deployment_model))
           cloud_planner = CloudPlanner.new(
-            networks: [Network.new('default', logger)],
+            networks: [Network.new('default', per_spec_logger)],
             disk_types: [],
             availability_zones_list: {},
             vm_type: vm_type,
             compilation: nil,
-            logger: logger,
+            logger: per_spec_logger,
           )
           planner.cloud_planner = cloud_planner
           allow(Config).to receive_message_chain(:current_job, :username).and_return('username')

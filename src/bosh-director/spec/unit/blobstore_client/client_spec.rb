@@ -69,7 +69,7 @@ module Bosh::Blobstore
           sha1_verifiable_client = instance_double('Bosh::Blobstore::Sha1VerifiableBlobstoreClient')
           expect(Sha1VerifiableBlobstoreClient)
             .to receive(:new)
-            .with(wrapped_client, logger)
+            .with(wrapped_client, per_spec_logger)
             .and_return(sha1_verifiable_client)
 
           retryable = instance_double('Bosh::Retryable')
@@ -99,7 +99,7 @@ module Bosh::Blobstore
           sha1_verifiable_client = instance_double('Bosh::Blobstore::Sha1VerifiableBlobstoreClient')
           expect(Sha1VerifiableBlobstoreClient)
             .to receive(:new)
-            .with(wrapped_client, logger)
+            .with(wrapped_client, per_spec_logger)
             .and_return(sha1_verifiable_client)
 
           retryable = instance_double('Bosh::Retryable')

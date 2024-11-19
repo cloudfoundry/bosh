@@ -17,7 +17,7 @@ module Bosh::Director
           links_manager,
           ip_provider,
           dns_state_updater,
-          logger,
+          per_spec_logger,
           task,
         )
       end

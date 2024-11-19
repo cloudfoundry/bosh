@@ -13,7 +13,7 @@ module Bosh::Director
             name,
             version,
             manifest_packages,
-            logger,
+            per_spec_logger,
             fix,
           )
         end

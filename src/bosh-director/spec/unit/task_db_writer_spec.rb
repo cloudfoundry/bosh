@@ -21,32 +21,42 @@ module Bosh::Director
         expect(task[:result_output]).to eq('result-result1')
       end
 
-      context 'database table does not support utf8 data', truncation: true, if: ENV.fetch('DB', 'sqlite') == 'mysql' do
-        before { Bosh::Director::Config.db.run('ALTER TABLE tasks CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci') }
-        after { Bosh::Director::Config.db.run('ALTER TABLE tasks CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci') }
+      describe 'MySQL encoding specifics' do
+        before(:all) do
+          skip('only MySQL') if ENV.fetch('DB', 'sqlite') != 'mysql'
+        end
 
-        it 'converts utf8 data' do
-          task_db_writer.write("code is \u{1F600}!\n")
-          task.refresh
-          expect(task[:result_output]).to eq("code is <bosh-non-ascii-char>!\n")
+        context 'database table does not support utf8 data', truncation: true do
+          before { Bosh::Director::Config.db.run('ALTER TABLE tasks CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci') }
+          after { Bosh::Director::Config.db.run('ALTER TABLE tasks CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci') }
+
+          it 'converts utf8 data' do
+            task_db_writer.write("code is \u{1F600}!\n")
+            task.refresh
+            expect(task[:result_output]).to eq("code is <bosh-non-ascii-char>!\n")
+          end
+        end
+
+        context 'database table does only support utf8 3-byte chars', truncation: true do
+          before do
+            Bosh::Director::Config.db.run('ALTER TABLE tasks CONVERT TO CHARACTER SET utf8 COLLATE utf8_unicode_ci')
+            Bosh::Director::Config.db.run('SET sql_mode="STRICT_TRANS_TABLES"')
+          end
+          after { Bosh::Director::Config.db.run('ALTER TABLE tasks CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci') }
+
+          it 'converts utf8 4-byte chars' do
+            task_db_writer.write("code is \u{1F600}!\n")
+            task.refresh
+            expect(task[:result_output]).to eq("code is <bosh-non-ascii-char>!\n")
+          end
         end
       end
 
-      context 'database table does only support utf8 3-byte chars', truncation: true, if: ENV.fetch('DB', 'sqlite') == 'mysql' do
+      context 'non MySQL encoding specifics' do
         before do
-          Bosh::Director::Config.db.run('ALTER TABLE tasks CONVERT TO CHARACTER SET utf8 COLLATE utf8_unicode_ci')
-          Bosh::Director::Config.db.run('SET sql_mode="STRICT_TRANS_TABLES"')
+          skip('because MySQL') if ENV.fetch('DB', 'sqlite') == 'mysql'
         end
-        after { Bosh::Director::Config.db.run('ALTER TABLE tasks CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci') }
 
-        it 'converts utf8 4-byte chars' do
-          task_db_writer.write("code is \u{1F600}!\n")
-          task.refresh
-          expect(task[:result_output]).to eq("code is <bosh-non-ascii-char>!\n")
-        end
-      end
-
-      context 'database table supports utf8 data', if: ENV.fetch('DB', 'sqlite') != 'mysql' do
         it 'stores utf8 data' do
           task_db_writer.write("code is \u{1F600}!\n")
           task.refresh

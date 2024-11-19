@@ -71,7 +71,7 @@ module Bosh::Director
       allow(Bosh::Director::Config).to receive(:current_job).and_return(job)
       allow(Bosh::Director::Config).to receive(:name).and_return('fake-director-name')
 
-      allow(Bosh::Director::DeploymentPlan::PlannerFactory).to receive(:create).with(logger).and_return(planner_factory)
+      allow(Bosh::Director::DeploymentPlan::PlannerFactory).to receive(:create).with(per_spec_logger).and_return(planner_factory)
       allow(planner_factory).to receive(:create_from_model).with(instance.deployment).and_return(planner)
       allow(deployment_model).to receive(:last_successful_variable_set).and_return(variable_set)
     end

@@ -4,7 +4,7 @@ require 'bosh/director/log_bundles_cleaner'
 
 module Bosh::Director
   describe LogBundlesCleaner do
-    subject(:log_bundles_cleaner) { described_class.new(blobstore, 86400, logger) } # 1 day
+    subject(:log_bundles_cleaner) { described_class.new(blobstore, 86400, per_spec_logger) } # 1 day
     let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient', delete: nil) }
 
     describe '#register_blobstore_id' do

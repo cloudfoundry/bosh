@@ -55,7 +55,7 @@ module Bosh::Director
     let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
 
     before do
-      allow(Bosh::Director::DeploymentPlan::PlannerFactory).to receive(:create).with(logger).and_return(planner_factory)
+      allow(Bosh::Director::DeploymentPlan::PlannerFactory).to receive(:create).with(per_spec_logger).and_return(planner_factory)
       allow(planner_factory).to receive(:create_from_model).with(instance.deployment).and_return(planner)
       fake_app
       allow(App.instance.blobstores.blobstore).to receive(:create).and_return('fake-blobstore-id')

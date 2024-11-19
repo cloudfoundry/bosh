@@ -16,7 +16,7 @@ module Bosh::Director
         deployment
       end
       let(:deployment_plan) do
-        planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(logger)
+        planner_factory = Bosh::Director::DeploymentPlan::PlannerFactory.create(per_spec_logger)
         deployment_plan = planner_factory.create_from_model(deployment_model)
 
         agent_client = instance_double('Bosh::Director::AgentClient')

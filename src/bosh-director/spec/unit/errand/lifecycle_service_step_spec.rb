@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Errand::LifecycleServiceStep do
-    subject(:errand_step) { Errand::LifecycleServiceStep.new(runner, instance, logger) }
+    subject(:errand_step) { Errand::LifecycleServiceStep.new(runner, instance, per_spec_logger) }
     let(:runner) { instance_double(Errand::Runner) }
     let(:errand_name) { 'errand_name' }
     let(:errand_result) { Errand::Result.new(instance, errand_name, exit_code, nil, nil, nil) }

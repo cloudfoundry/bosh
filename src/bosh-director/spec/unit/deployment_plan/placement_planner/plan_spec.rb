@@ -3,8 +3,8 @@ require 'ipaddr'
 
 module Bosh::Director::DeploymentPlan
   describe PlacementPlanner::Plan do
-    subject(:plan) { PlacementPlanner::Plan.new(instance_plan_factory, network_planner, logger) }
-    let(:network_planner) { NetworkPlanner::Planner.new(logger) }
+    subject(:plan) { PlacementPlanner::Plan.new(instance_plan_factory, network_planner, per_spec_logger) }
+    let(:network_planner) { NetworkPlanner::Planner.new(per_spec_logger) }
     let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
     let(:instance_plan_factory) do
@@ -19,7 +19,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     let(:index_assigner) { PlacementPlanner::IndexAssigner.new(deployment_model) }
-    let(:instance_repo) { Bosh::Director::DeploymentPlan::InstanceRepository.new(logger, variables_interpolator) }
+    let(:instance_repo) { Bosh::Director::DeploymentPlan::InstanceRepository.new(per_spec_logger, variables_interpolator) }
     let(:instance_plans) do
       plan.create_instance_plans(desired, existing, job_networks, availability_zones, 'jobname')
     end

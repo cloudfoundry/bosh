@@ -8,7 +8,7 @@ describe Bosh::Director::DeploymentPlan::SerialMultiInstanceGroupUpdater do
   let(:ip_provider) { instance_double(Bosh::Director::DeploymentPlan::IpProvider) }
 
   describe '#run' do
-    let(:base_job) { instance_double('Bosh::Director::Jobs::BaseJob', task_checkpoint: nil, logger: logger) }
+    let(:base_job) { instance_double('Bosh::Director::Jobs::BaseJob', task_checkpoint: nil, logger: per_spec_logger) }
     let(:job1) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'fake-job1-name') }
     let(:job2) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'fake-job2-name') }
 
@@ -56,7 +56,7 @@ describe Bosh::Director::DeploymentPlan::ParallelMultiInstanceGroupUpdater do
   let(:instance_group_updater_factory) { instance_double('Bosh::Director::InstanceGroupUpdaterFactory') }
 
   describe '#run' do
-    let(:base_job) { instance_double('Bosh::Director::Jobs::BaseJob', task_checkpoint: nil, logger: logger) }
+    let(:base_job) { instance_double('Bosh::Director::Jobs::BaseJob', task_checkpoint: nil, logger: per_spec_logger) }
     let(:job1) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'fake-job1-name') }
     let(:job2) { instance_double('Bosh::Director::DeploymentPlan::InstanceGroup', name: 'fake-job2-name') }
 
@@ -123,7 +123,7 @@ describe Bosh::Director::DeploymentPlan::BatchMultiInstanceGroupUpdater do
   let(:instance_group_updater_factory) { instance_double('Bosh::Director::InstanceGroupUpdaterFactory') }
 
   describe '#run' do
-    let(:base_job) { instance_double('Bosh::Director::Jobs::BaseJob', task_checkpoint: nil, logger: logger) }
+    let(:base_job) { instance_double('Bosh::Director::Jobs::BaseJob', task_checkpoint: nil, logger: per_spec_logger) }
 
     before do
       allow(Bosh::Director::DeploymentPlan::SerialMultiInstanceGroupUpdater).to receive(:new).

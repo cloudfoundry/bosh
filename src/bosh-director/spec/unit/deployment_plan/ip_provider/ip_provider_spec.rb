@@ -49,7 +49,7 @@ module Bosh::Director::DeploymentPlan
           Bosh::Director::DeploymentPlan::AvailabilityZone.new('az-1', {}),
           Bosh::Director::DeploymentPlan::AvailabilityZone.new('az-2', {})
         ],
-        logger
+        per_spec_logger
       )
     end
     let(:another_manual_network) do
@@ -64,7 +64,7 @@ module Bosh::Director::DeploymentPlan
           ]
         },
         [],
-        logger
+        per_spec_logger
       )
     end
     let(:vip_network_spec) do
@@ -73,7 +73,7 @@ module Bosh::Director::DeploymentPlan
         'type' => 'vip',
       }
     end
-    let(:vip_network) { VipNetwork.parse(vip_network_spec, [], logger) }
+    let(:vip_network) { VipNetwork.parse(vip_network_spec, [], per_spec_logger) }
     let(:ip_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, manual_network) }
 
     before do
@@ -91,7 +91,7 @@ module Bosh::Director::DeploymentPlan
         )
       end
       let(:ip) { Bosh::Director::IpAddrOrCidr.new('1.1.1.1') }
-      let(:ip_provider) { IpProvider.new(ip_repo, networks, logger) }
+      let(:ip_provider) { IpProvider.new(ip_repo, networks, per_spec_logger) }
 
       describe :release do
         context 'when reservation does not have an IP' do
@@ -103,7 +103,7 @@ module Bosh::Director::DeploymentPlan
 
           context 'when reservation is on dynamic network with no IP address' do
             it 'does not fail to release it' do
-              dynamic_network = DynamicNetwork.new('my-manual-network', [], logger)
+              dynamic_network = DynamicNetwork.new('my-manual-network', [], per_spec_logger)
               reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, dynamic_network)
 
               expect do
@@ -128,7 +128,7 @@ module Bosh::Director::DeploymentPlan
 
       describe :reserve_existing_ips do
         context 'when dynamic network' do
-          let(:dynamic_network) { Bosh::Director::DeploymentPlan::DynamicNetwork.new('fake-dynamic-network', [], logger) }
+          let(:dynamic_network) { Bosh::Director::DeploymentPlan::DynamicNetwork.new('fake-dynamic-network', [], per_spec_logger) }
           let(:existing_network_reservation) do
             Bosh::Director::ExistingNetworkReservation.new(
               instance_model,
@@ -148,7 +148,7 @@ module Bosh::Director::DeploymentPlan
           let(:existing_network_reservation) do
             Bosh::Director::ExistingNetworkReservation.new(instance_model, static_vip_network, '69.69.69.69', 'vip')
           end
-          let(:static_vip_network) { Bosh::Director::DeploymentPlan::VipNetwork.parse({ 'name' => 'fake-network' }, [], logger) }
+          let(:static_vip_network) { Bosh::Director::DeploymentPlan::VipNetwork.parse({ 'name' => 'fake-network' }, [], per_spec_logger) }
 
           it 'saves the ip' do
             ip_provider.reserve_existing_ips(existing_network_reservation)
@@ -213,7 +213,7 @@ module Bosh::Director::DeploymentPlan
                   ],
                 },
                 [],
-                logger,
+                per_spec_logger,
               )
             end
 

@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DeploymentPlan::DeploymentFeaturesParser do
-    subject(:deployment_features_parser) { described_class.new(logger) }
+    subject(:deployment_features_parser) { described_class.new(per_spec_logger) }
 
     describe '#parse' do
       context 'when features spec passed is nil' do

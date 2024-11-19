@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DeploymentDeleter do
-    subject(:deleter) { described_class.new(event_log, logger, 3) }
+    subject(:deleter) { described_class.new(event_log, per_spec_logger, 3) }
     before do
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
     end

@@ -8,7 +8,7 @@ module Bosh::Director
       end
 
       context 'when enable_nats_delivered_templates flag is set to true' do
-        subject(:persistor) { RenderedTemplatesPersister.new(blobstore, logger) }
+        subject(:persistor) { RenderedTemplatesPersister.new(blobstore, per_spec_logger) }
 
         let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
         let(:instance_plan) { instance_double('Bosh::Director::DeploymentPlan::InstancePlan') }
@@ -94,7 +94,7 @@ module Bosh::Director
       end
 
       context 'when enable_nats_delivered_templates flag is set to false' do
-        subject(:persistor) { RenderedTemplatesPersister.new(blobstore, logger) }
+        subject(:persistor) { RenderedTemplatesPersister.new(blobstore, per_spec_logger) }
 
         let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
         let(:instance_plan) { instance_double('Bosh::Director::DeploymentPlan::InstancePlan') }

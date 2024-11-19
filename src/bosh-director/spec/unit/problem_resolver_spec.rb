@@ -341,8 +341,8 @@ module Bosh::Director
         it 'rescues ProblemHandlerError and logs' do
           expect(problem_resolver).to receive(:track_and_log)
             .and_raise(Bosh::Director::ProblemHandlerError.new('Resolution failed'))
-          expect(logger).to receive(:error).with("Error resolving problem '#{problem.id}': Resolution failed")
-          expect(logger).to receive(:error).with(backtrace)
+          expect(per_spec_logger).to receive(:error).with("Error resolving problem '#{problem.id}': Resolution failed")
+          expect(per_spec_logger).to receive(:error).with(backtrace)
 
           count, error_message = problem_resolver.apply_resolutions(problem.id.to_s => 'ignore')
 
@@ -353,8 +353,8 @@ module Bosh::Director
         it 'rescues StandardError and logs' do
           expect(ProblemHandlers::Base).to receive(:create_from_model)
             .and_raise(StandardError.new('Model creation failed'))
-          expect(logger).to receive(:error).with("Error resolving problem '#{problem.id}': Model creation failed")
-          expect(logger).to receive(:error).with(backtrace)
+          expect(per_spec_logger).to receive(:error).with("Error resolving problem '#{problem.id}': Model creation failed")
+          expect(per_spec_logger).to receive(:error).with(backtrace)
 
           count, error_message = problem_resolver.apply_resolutions(problem.id.to_s => 'ignore')
 

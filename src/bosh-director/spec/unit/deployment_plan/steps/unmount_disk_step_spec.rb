@@ -26,7 +26,7 @@ module Bosh::Director
           end
 
           it 'logs that the disk is being unmounted' do
-            expect(logger).to receive(:info).with(
+            expect(per_spec_logger).to receive(:info).with(
               "Unmounting disk '#{disk.disk_cid}' for instance '#{instance}'",
             )
 

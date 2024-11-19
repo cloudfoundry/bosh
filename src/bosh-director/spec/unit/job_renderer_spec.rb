@@ -21,7 +21,7 @@ module Bosh::Director
     let(:instance) do
       deployment = instance_double(DeploymentPlan::Planner, model: deployment_model)
       availability_zone = DeploymentPlan::AvailabilityZone.new('z1', {})
-      DeploymentPlan::Instance.create_from_instance_group(instance_group, 5, 'started', deployment, {}, availability_zone, logger, variables_interpolator)
+      DeploymentPlan::Instance.create_from_instance_group(instance_group, 5, 'started', deployment, {}, availability_zone, per_spec_logger, variables_interpolator)
     end
 
     let(:deployment_model) { FactoryBot.create(:models_deployment, name: 'fake-deployment') }
@@ -36,7 +36,7 @@ module Bosh::Director
 
     describe '#render_job_instances_with_cache' do
       def perform
-        JobRenderer.render_job_instances_with_cache(logger, [instance_plan], cache, encoder, link_provider_intents)
+        JobRenderer.render_job_instances_with_cache(per_spec_logger, [instance_plan], cache, encoder, link_provider_intents)
       end
 
       before do
@@ -67,7 +67,7 @@ module Bosh::Director
         end
 
         it 'does not render' do
-          expect(logger).to receive(:debug).with("Skipping rendering templates for 'test-instance-group/5': no job")
+          expect(per_spec_logger).to receive(:debug).with("Skipping rendering templates for 'test-instance-group/5': no job")
           expect { perform }.not_to change { instance_plan.rendered_templates }
         end
       end

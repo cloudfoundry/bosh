@@ -3,7 +3,7 @@ require 'ipaddr'
 
 module Bosh::Director::DeploymentPlan
   describe IpRepo do
-    let(:ip_repo) { IpRepo.new(logger) }
+    let(:ip_repo) { IpRepo.new(per_spec_logger) }
     let(:instance_model) { FactoryBot.create(:models_instance) }
     let(:network_spec) do
       {
@@ -26,7 +26,7 @@ module Bosh::Director::DeploymentPlan
       ManualNetwork.parse(
         network_spec,
         availability_zones,
-        logger
+        per_spec_logger
       )
     end
     let(:subnet) do
@@ -42,7 +42,7 @@ module Bosh::Director::DeploymentPlan
       ManualNetwork.parse(
         other_network_spec,
         availability_zones,
-        logger
+        per_spec_logger
       )
     end
     let(:other_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, other_network) }
@@ -71,7 +71,7 @@ module Bosh::Director::DeploymentPlan
 
       let(:network_without_static_pool) do
         network_spec['subnets'].first['static'] = []
-        ManualNetwork.parse(network_spec, availability_zones, logger)
+        ManualNetwork.parse(network_spec, availability_zones, per_spec_logger)
       end
 
       context 'when reservation changes type' do
@@ -401,7 +401,7 @@ module Bosh::Director::DeploymentPlan
         VipNetwork.parse(
           network_spec,
           availability_zones,
-          logger,
+          per_spec_logger,
         )
       end
 

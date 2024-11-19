@@ -46,10 +46,10 @@ module Bosh::Director
 
     let(:test_problem_handler) { ProblemHandlers::Base.create_by_type(:test_problem_handler, instance.uuid, {}) }
     let(:dns_encoder) { LocalDnsEncoderManager.create_dns_encoder(false) }
-    let(:vm_deleter) { Bosh::Director::VmDeleter.new(logger, false, false) }
+    let(:vm_deleter) { Bosh::Director::VmDeleter.new(per_spec_logger, false, false) }
     let(:vm_creator) do
       Bosh::Director::VmCreator.new(
-        logger,
+        per_spec_logger,
         template_cache,
         dns_encoder,
         agent_broadcaster,
@@ -96,7 +96,7 @@ module Bosh::Director
 
       allow(RenderedTemplatesPersister).to receive(:new).and_return(rendered_templates_persister)
 
-      allow(Bosh::Director::DeploymentPlan::PlannerFactory).to receive(:create).with(logger).and_return(planner_factory)
+      allow(Bosh::Director::DeploymentPlan::PlannerFactory).to receive(:create).with(per_spec_logger).and_return(planner_factory)
 
       allow(planner_factory).to receive(:create_from_model).with(instance.deployment).and_return(planner)
       allow(planner).to receive(:network).with(network.name).and_return(network)

@@ -5,7 +5,7 @@ require 'bosh/director/instance_group_updater'
 module Bosh::Director
   module DeploymentPlan::Stages
     describe PreCleanupStage do
-      subject { PreCleanupStage.new(logger, deployment_plan) }
+      subject { PreCleanupStage.new(per_spec_logger, deployment_plan) }
       let(:event_log) { Config.event_log }
       let(:ip_provider) { instance_double('Bosh::Director::DeploymentPlan::IpProvider') }
       let(:existing_instance) { FactoryBot.create(:models_instance) }
@@ -44,8 +44,8 @@ module Bosh::Director
                                         .with('Deleting unneeded instances', 1)
                                         .and_return(event_log_stage)
 
-          expect(logger).to receive(:info).with('Deleting no longer needed instances')
-          expect(logger).to receive(:info).with('Deleted no longer needed instances')
+          expect(per_spec_logger).to receive(:info).with('Deleting no longer needed instances')
+          expect(per_spec_logger).to receive(:info).with('Deleted no longer needed instances')
 
           subject.perform
         end
@@ -56,8 +56,8 @@ module Bosh::Director
           end
 
           it 'exits early and logs the lack of work needed' do
-            expect(logger).to receive(:info).with('Deleting no longer needed instances')
-            expect(logger).to receive(:info).with('No unneeded instances to delete')
+            expect(per_spec_logger).to receive(:info).with('Deleting no longer needed instances')
+            expect(per_spec_logger).to receive(:info).with('No unneeded instances to delete')
             expect(instance_deleter).to_not receive(:delete_instance_plans)
 
             subject.perform

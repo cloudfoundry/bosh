@@ -1,9 +1,7 @@
 require 'spec_helper'
 require 'blue-shell'
 
-# DB != sqlite to avoid SQLite3::BusyException: database is locked
-# truncation = true because a separate process needs to look at the database
-describe '#bosh-director-drain-workers', if: ENV.fetch('DB', 'sqlite') != 'sqlite', truncation: true do
+describe '#bosh-director-drain-workers', truncation: true do
   let(:tmpdir) { Dir.mktmpdir }
   let(:director_config_filename) { File.join(tmpdir, 'director_config.yml') }
 
@@ -11,9 +9,10 @@ describe '#bosh-director-drain-workers', if: ENV.fetch('DB', 'sqlite') != 'sqlit
   after { FileUtils.rm_rf(tmpdir) }
 
   before do
+    skip('because SQLite fails with "SQLite3::BusyException: database is locked"') if ENV.fetch('DB', 'sqlite') == 'sqlite'
+
     Delayed::Worker.backend = :sequel
 
-    # VmState.queue == urgent
     Delayed::Job.enqueue Bosh::Director::Jobs::DBJob.new(Bosh::Director::Jobs::VmState, 123, {})
   end
 

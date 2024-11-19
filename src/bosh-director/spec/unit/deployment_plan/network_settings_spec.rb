@@ -18,7 +18,7 @@ module Bosh::Director::DeploymentPlan
       )
     end
     let(:instance_group) do
-      instance_group = InstanceGroup.new(logger)
+      instance_group = InstanceGroup.new(per_spec_logger)
       instance_group.name = 'fake-job'
       instance_group
     end
@@ -42,7 +42,7 @@ module Bosh::Director::DeploymentPlan
           }],
         },
         [],
-        logger,
+        per_spec_logger,
       )
     end
 
@@ -63,7 +63,7 @@ module Bosh::Director::DeploymentPlan
       context 'dynamic network' do
         let(:dynamic_network) do
           subnets = [DynamicNetworkSubnet.new(['1.2.3.4'], {'foo' => 'bar'}, 'az-1')]
-          DynamicNetwork.new('net_a', subnets, logger)
+          DynamicNetwork.new('net_a', subnets, per_spec_logger)
         end
 
         let(:reservations) { [Bosh::Director::DesiredNetworkReservation.new_dynamic(nil, dynamic_network)] }
@@ -132,7 +132,7 @@ module Bosh::Director::DeploymentPlan
         context 'when it is a dynamic network' do
           let(:dynamic_network) do
             subnets = [DynamicNetworkSubnet.new(['1.2.3.4'], {'foo' => 'bar'}, 'az-1')]
-            DynamicNetwork.new('net_a', subnets, logger)
+            DynamicNetwork.new('net_a', subnets, per_spec_logger)
           end
           let(:reservations) {[Bosh::Director::DesiredNetworkReservation.new_dynamic(nil, dynamic_network)]}
 
@@ -188,7 +188,7 @@ module Bosh::Director::DeploymentPlan
               ]
             },
             [],
-            logger
+            per_spec_logger
           )
           Bosh::Director::DesiredNetworkReservation.new_dynamic(nil, network)
         end
@@ -253,7 +253,7 @@ module Bosh::Director::DeploymentPlan
         context 'when it is a dynamic network' do
           let(:dynamic_network) do
             subnets = [DynamicNetworkSubnet.new(['1.2.3.4'], {'foo' => 'bar'}, 'az-1')]
-            DynamicNetwork.new('net_a', subnets, logger)
+            DynamicNetwork.new('net_a', subnets, per_spec_logger)
           end
           let(:reservations) {[Bosh::Director::DesiredNetworkReservation.new_dynamic(nil, dynamic_network)]}
 
@@ -293,7 +293,7 @@ module Bosh::Director::DeploymentPlan
       context 'dynamic network' do
         let(:dynamic_network) do
           subnets = [DynamicNetworkSubnet.new(['1.2.3.4'], {'foo' => 'bar'}, 'az-1')]
-          DynamicNetwork.new('net_a', subnets, logger)
+          DynamicNetwork.new('net_a', subnets, per_spec_logger)
         end
 
         let(:reservations) {[Bosh::Director::DesiredNetworkReservation.new_dynamic(nil, dynamic_network)]}
@@ -380,7 +380,7 @@ module Bosh::Director::DeploymentPlan
         context 'when it is a dynamic network' do
           let(:dynamic_network) do
             subnets = [DynamicNetworkSubnet.new(['1.2.3.4'], { 'foo' => 'bar' }, 'az-1')]
-            DynamicNetwork.new('net_a', subnets, logger)
+            DynamicNetwork.new('net_a', subnets, per_spec_logger)
           end
           let(:reservations) { [Bosh::Director::DesiredNetworkReservation.new_dynamic(nil, dynamic_network)] }
 
@@ -430,7 +430,7 @@ module Bosh::Director::DeploymentPlan
               ],
             },
             [],
-            logger,
+            per_spec_logger,
           )
           Bosh::Director::DesiredNetworkReservation.new_dynamic(nil, network)
         end
@@ -494,7 +494,7 @@ module Bosh::Director::DeploymentPlan
         context 'when it is a dynamic network' do
           let(:dynamic_network) do
             subnets = [DynamicNetworkSubnet.new(['1.2.3.4'], { 'foo' => 'bar' }, 'az-1')]
-            DynamicNetwork.new('net_a', subnets, logger)
+            DynamicNetwork.new('net_a', subnets, per_spec_logger)
           end
           let(:reservations) { [Bosh::Director::DesiredNetworkReservation.new_dynamic(nil, dynamic_network)] }
 
@@ -532,12 +532,12 @@ module Bosh::Director::DeploymentPlan
       context 'when there are multiple network reservations' do
         let(:dynamic_network) do
           subnets = [DynamicNetworkSubnet.new(['1.2.3.4'], { 'foo' => 'bar' }, 'az-1')]
-          DynamicNetwork.new('net_a', subnets, logger)
+          DynamicNetwork.new('net_a', subnets, per_spec_logger)
         end
 
         let(:dynamic_network2) do
           subnets = [DynamicNetworkSubnet.new(['9.8.7.6'], { 'bob' => 'joe' }, 'az-1')]
-          DynamicNetwork.new('net_b', subnets, logger)
+          DynamicNetwork.new('net_b', subnets, per_spec_logger)
         end
 
         let(:reservations) do
@@ -562,7 +562,7 @@ module Bosh::Director::DeploymentPlan
       context 'dynamic network' do
         let(:dynamic_network) do
           subnets = [DynamicNetworkSubnet.new(['1.2.3.4'], { 'foo' => 'bar' }, 'az-1')]
-          DynamicNetwork.new('net_a', subnets, logger)
+          DynamicNetwork.new('net_a', subnets, per_spec_logger)
         end
 
         let(:reservations) { [Bosh::Director::DesiredNetworkReservation.new_dynamic(nil, dynamic_network)] }

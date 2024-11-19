@@ -12,7 +12,7 @@ module Bosh::Director
     end
     let(:link_provider_intents) { [] }
     let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
-    let(:disk_manager) { DiskManager.new(logger) }
+    let(:disk_manager) { DiskManager.new(per_spec_logger) }
 
     let(:ip_provider) { instance_double('Bosh::Director::DeploymentPlan::IpProvider') }
     let(:dns_encoder) { instance_double(DnsEncoder) }

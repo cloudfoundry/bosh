@@ -6,7 +6,7 @@ module Bosh::Director::DeploymentPlan
     include Support::StemcellHelpers
 
     subject(:instance) do
-      Instance.create_from_instance_group(instance_group, index, state, deployment, current_state, az, logger,
+      Instance.create_from_instance_group(instance_group, index, state, deployment, current_state, az, per_spec_logger,
                                           variables_interpolator)
     end
     let(:index) { 0 }
@@ -233,7 +233,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should log the change reason' do
-          expect(logger).to receive(:debug)
+          expect(per_spec_logger).to receive(:debug)
             .with('trusted_certs_changed? changed '\
                   'FROM: da39a3ee5e6b4b0d3255bfef95601890afd80709 '\
                   'TO: e88d62015cb4220631fec64c7db420761a50cc6b')
@@ -264,7 +264,7 @@ module Bosh::Director::DeploymentPlan
 
         it 'should log the change reason' do
           allow(instance_model).to receive(:blobstore_config_sha1).and_return('old fingerprint')
-          expect(logger).to receive(:debug)
+          expect(per_spec_logger).to receive(:debug)
             .with('blobstore_config_changed? changed '\
                   'FROM: old fingerprint '\
                   'TO: new fingerprint')
@@ -299,7 +299,7 @@ module Bosh::Director::DeploymentPlan
 
         it 'should log the change reason' do
           allow(instance_model).to receive(:nats_config_sha1).and_return('old fingerprint')
-          expect(logger).to receive(:debug)
+          expect(per_spec_logger).to receive(:debug)
             .with('nats_config_changed? changed '\
                   'FROM: old fingerprint '\
                   'TO: new fingerprint')
@@ -343,7 +343,7 @@ module Bosh::Director::DeploymentPlan
             let(:az) { AvailabilityZone.new('az', 'abcd' => 'wera') }
 
             it 'should log the change' do
-              expect(logger).to receive(:debug)
+              expect(per_spec_logger).to receive(:debug)
                 .with('cloud_properties_changed? changed FROM: {"a"=>"b"} TO: {"abcd"=>"wera", "baz"=>"bang", "a"=>"b"}')
               instance.cloud_properties_changed?
             end
@@ -373,7 +373,7 @@ module Bosh::Director::DeploymentPlan
             end
 
             it 'should NOT log the interpolated values' do
-              expect(logger).to receive(:debug)
+              expect(per_spec_logger).to receive(:debug)
                 .with('cloud_properties_changed? changed '\
                       "FROM: #{instance_model.cloud_properties_hash} "\
                       "TO: #{merged_cloud_properties}")
@@ -673,7 +673,7 @@ module Bosh::Director::DeploymentPlan
         allow(az).to receive(:cloud_properties).and_return('foo' => 'az-foo', 'zone' => 'the-right-one')
         allow(vm_type).to receive(:cloud_properties).and_return('foo' => 'rp-foo', 'resources' => 'the-good-stuff')
 
-        instance = Instance.create_from_instance_group(instance_group, index, state, deployment, current_state, az, logger,
+        instance = Instance.create_from_instance_group(instance_group, index, state, deployment, current_state, az, per_spec_logger,
                                                        variables_interpolator)
         instance.bind_existing_instance_model(instance_model)
 
@@ -693,7 +693,7 @@ module Bosh::Director::DeploymentPlan
         selected_variable_set = FactoryBot.create(:models_variable_set, deployment:, created_at: fixed_time)
         FactoryBot.create(:models_variable_set, deployment:, created_at: fixed_time - 1)
 
-        instance = Instance.create_from_instance_group(instance_group, index, state, deployment, current_state, az, logger,
+        instance = Instance.create_from_instance_group(instance_group, index, state, deployment, current_state, az, per_spec_logger,
                                                        variables_interpolator)
         instance.bind_existing_instance_model(instance_model)
 

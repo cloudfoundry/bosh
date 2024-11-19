@@ -50,7 +50,7 @@ module Bosh::Director
 
     before do
       allow(instance).to receive(:to_s).and_return('fake-job/uuid-1 (0)')
-      allow(logger).to receive(:info)
+      allow(per_spec_logger).to receive(:info)
     end
 
     describe '#start' do
@@ -87,11 +87,11 @@ module Bosh::Director
           task: task,
         )
 
-        expect(logger).to have_received(:info).with('Running pre-start for fake-job/uuid-1 (0)').ordered
-        expect(logger).to have_received(:info).with('Starting instance fake-job/uuid-1 (0)').ordered
-        expect(logger).to have_received(:info).with('Waiting for 1.0 seconds to check fake-job/uuid-1 (0) status').ordered
-        expect(logger).to have_received(:info).with('Checking if fake-job/uuid-1 (0) has been updated after 1.0 seconds').ordered
-        expect(logger).to have_received(:info).with('Running post-start for fake-job/uuid-1 (0)').ordered
+        expect(per_spec_logger).to have_received(:info).with('Running pre-start for fake-job/uuid-1 (0)').ordered
+        expect(per_spec_logger).to have_received(:info).with('Starting instance fake-job/uuid-1 (0)').ordered
+        expect(per_spec_logger).to have_received(:info).with('Waiting for 1.0 seconds to check fake-job/uuid-1 (0) status').ordered
+        expect(per_spec_logger).to have_received(:info).with('Checking if fake-job/uuid-1 (0) has been updated after 1.0 seconds').ordered
+        expect(per_spec_logger).to have_received(:info).with('Running post-start for fake-job/uuid-1 (0)').ordered
       end
 
       context 'when the update config is not defined' do

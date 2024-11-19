@@ -21,7 +21,7 @@ module Bosh::Director
 
       describe '#perform' do
         it 'logs and calls out to multi job updater' do
-          expect(logger).to receive(:info).with('Updating instances')
+          expect(per_spec_logger).to receive(:info).with('Updating instances')
           expect(multi_instance_group_updater).to receive(:run).with(base_job, ip_provider, [instance_group1])
 
           subject.perform

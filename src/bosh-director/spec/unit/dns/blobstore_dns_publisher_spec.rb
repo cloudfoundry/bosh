@@ -4,7 +4,7 @@ module Bosh::Director
   describe BlobstoreDnsPublisher do
     include IpUtil
 
-    subject(:dns) { BlobstoreDnsPublisher.new(-> { blobstore }, domain_name, agent_broadcaster, logger) }
+    subject(:dns) { BlobstoreDnsPublisher.new(-> { blobstore }, domain_name, agent_broadcaster, per_spec_logger) }
 
     let(:dns_encoder) do
       DnsEncoder.new(

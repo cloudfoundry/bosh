@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe Errand::ErrandProvider do
     subject(:errand_provider) do
-      Errand::ErrandProvider.new(logs_fetcher, instance_manager, event_manager, logger, task_result, deployment_planner_provider)
+      Errand::ErrandProvider.new(logs_fetcher, instance_manager, event_manager, per_spec_logger, task_result, deployment_planner_provider)
     end
 
     describe '#get' do
@@ -66,7 +66,7 @@ module Bosh::Director
             .with(job_name, true, task_result, instance_manager, logs_fetcher)
             .and_return(runner)
           expect(Errand::LifecycleServiceStep).to receive(:new).with(
-            runner, instance, logger
+            runner, instance, per_spec_logger
           ).and_return(errand_step)
           returned_errand = subject.get(deployment_name, 'errand-job-name', keep_alive, instance_slugs)
           expect(returned_errand.steps[0]).to eq(errand_step)
@@ -182,13 +182,13 @@ module Bosh::Director
 
             it 'tries to run all matching jobs even if some are not errands ' do
               expect(Errand::LifecycleServiceStep).to receive(:new)
-                .with(runner, instance1, logger)
+                .with(runner, instance1, per_spec_logger)
                 .and_return(errand_step1)
               expect(Errand::LifecycleServiceStep).to receive(:new)
-                .with(runner, instance2, logger)
+                .with(runner, instance2, per_spec_logger)
                 .and_return(errand_step2)
               expect(Errand::LifecycleServiceStep).to receive(:new)
-                .with(runner, non_errand_instance, logger)
+                .with(runner, non_errand_instance, per_spec_logger)
                 .and_return(non_errand_step)
 
               returned_errands = subject.get(deployment_name, 'errand-job-name', keep_alive, instance_slugs)
@@ -218,10 +218,10 @@ module Bosh::Director
                   .and_return(runner)
 
                 expect(Errand::LifecycleServiceStep).to receive(:new)
-                  .with(runner, instance1, logger)
+                  .with(runner, instance1, per_spec_logger)
                   .and_return(errand_step1)
                 expect(Errand::LifecycleServiceStep).to receive(:new)
-                  .with(runner, instance2, logger)
+                  .with(runner, instance2, per_spec_logger)
                   .and_return(errand_step2)
 
                 returned_errands = subject.get(deployment_name, 'errand-job-name', keep_alive, instance_slugs)
@@ -236,10 +236,10 @@ module Bosh::Director
                   .and_return(runner)
 
                 expect(Errand::LifecycleServiceStep).to receive(:new)
-                  .with(runner, instance1, logger)
+                  .with(runner, instance1, per_spec_logger)
                   .and_return(errand_step1)
                 expect(Errand::LifecycleServiceStep).to receive(:new)
-                  .with(runner, instance2, logger)
+                  .with(runner, instance2, per_spec_logger)
                   .and_return(errand_step2)
 
                 returned_errands = subject.get(deployment_name, 'errand-job-name', keep_alive, instance_slugs)
@@ -259,13 +259,13 @@ module Bosh::Director
                 .and_return(runner)
 
               allow(Errand::LifecycleServiceStep).to receive(:new)
-                .with(runner, instance1, logger)
+                .with(runner, instance1, per_spec_logger)
                 .and_return(errand_step1)
               allow(Errand::LifecycleServiceStep).to receive(:new)
-                .with(runner, instance2, logger)
+                .with(runner, instance2, per_spec_logger)
                 .and_return(errand_step2)
               allow(Errand::LifecycleErrandStep).to receive(:new)
-                .with(runner, deployment_planner, job_name, instance3, instance_group2, keep_alive, deployment_name, logger)
+                .with(runner, deployment_planner, job_name, instance3, instance_group2, keep_alive, deployment_name, per_spec_logger)
                 .and_return(errand_step3)
               allow(deployment_planner).to receive(:instance_group)
                 .with(ambiguous_errand_name)
@@ -310,13 +310,13 @@ module Bosh::Director
               .and_return(runner)
 
             expect(Errand::LifecycleServiceStep).to receive(:new)
-              .with(runner, instance1, logger)
+              .with(runner, instance1, per_spec_logger)
               .and_return(errand_step1)
             expect(Errand::LifecycleServiceStep).to receive(:new)
-              .with(runner, instance2, logger)
+              .with(runner, instance2, per_spec_logger)
               .and_return(errand_step2)
             expect(Errand::LifecycleErrandStep).to receive(:new)
-              .with(runner, deployment_planner, job_name, instance3, instance_group2, keep_alive, deployment_name, logger)
+              .with(runner, deployment_planner, job_name, instance3, instance_group2, keep_alive, deployment_name, per_spec_logger)
               .and_return(errand_step3)
 
             returned_errands = subject.get(deployment_name, 'errand-job-name', keep_alive, instance_slugs)
@@ -331,12 +331,12 @@ module Bosh::Director
                 .with(job_name, true, task_result, instance_manager, logs_fetcher)
                 .and_return(runner)
               expect(Errand::LifecycleServiceStep).to receive(:new)
-                .with(runner, instance1, logger)
+                .with(runner, instance1, per_spec_logger)
                 .and_return(errand_step1)
               expect(Errand::LifecycleServiceStep).not_to receive(:new)
-                .with(runner, instance2, logger)
+                .with(runner, instance2, per_spec_logger)
               expect(Errand::LifecycleErrandStep).to receive(:new)
-                .with(runner, deployment_planner, job_name, instance3, instance_group2, keep_alive, deployment_name, logger)
+                .with(runner, deployment_planner, job_name, instance3, instance_group2, keep_alive, deployment_name, per_spec_logger)
                 .and_return(errand_step3)
 
               returned_errands = subject.get(deployment_name, 'errand-job-name', keep_alive, instance_slugs)
@@ -386,7 +386,7 @@ module Bosh::Director
 
             it 'only creates an errand for the requested slug' do
               expect(Errand::LifecycleServiceStep).to receive(:new).with(
-                runner, instance2, logger
+                runner, instance2, per_spec_logger
               ).and_return(errand_step2)
               returned_errands = subject.get(deployment_name, 'errand-job-name', keep_alive, instance_slugs)
               expect(returned_errands.steps).to contain_exactly(errand_step2)
@@ -397,7 +397,7 @@ module Bosh::Director
             let(:instance_slugs) { [{ 'group' => 'errand-group-name' }] }
             it 'only creates an errand for the requested slug' do
               expect(Errand::LifecycleErrandStep).to receive(:new).with(
-                runner, deployment_planner, job_name, instance3, instance_group2, keep_alive, deployment_name, logger
+                runner, deployment_planner, job_name, instance3, instance_group2, keep_alive, deployment_name, per_spec_logger
               ).and_return(errand_step3)
               returned_errands = subject.get(deployment_name, 'errand-job-name', keep_alive, instance_slugs)
               expect(returned_errands.steps).to contain_exactly(errand_step3)
@@ -452,7 +452,7 @@ module Bosh::Director
             expect(package_compile_step).to receive(:perform)
             expect(instance_group).to receive(:bind_instances).with(ip_provider)
             expect(JobRenderer).to receive(:render_job_instances_with_cache).with(
-              logger,
+              per_spec_logger,
               needed_instance_plans,
               template_blob_cache,
               an_instance_of(DnsEncoder),
@@ -462,7 +462,7 @@ module Bosh::Director
               .with(ig_name, false, task_result, instance_manager, logs_fetcher)
               .and_return(runner)
             expect(Errand::LifecycleErrandStep).to receive(:new)
-              .with(runner, deployment_planner, ig_name, instance, instance_group, keep_alive, deployment_name, logger)
+              .with(runner, deployment_planner, ig_name, instance, instance_group, keep_alive, deployment_name, per_spec_logger)
               .and_return(errand_step)
             returned_errand = subject.get(deployment_name, ig_name, keep_alive, instance_slugs)
             expect(returned_errand.steps[0]).to eq(errand_step)
@@ -476,7 +476,7 @@ module Bosh::Director
               expect(package_compile_step).to receive(:perform)
               expect(instance_group).to receive(:bind_instances).with(ip_provider)
               expect(JobRenderer).to receive(:render_job_instances_with_cache).with(
-                logger,
+                per_spec_logger,
                 needed_instance_plans,
                 template_blob_cache,
                 an_instance_of(DnsEncoder),
@@ -486,7 +486,7 @@ module Bosh::Director
                 .with(ig_name, true, task_result, instance_manager, logs_fetcher)
                 .and_return(runner)
               expect(Errand::LifecycleErrandStep).to receive(:new)
-                .with(runner, deployment_planner, ig_name, instance, instance_group, keep_alive, deployment_name, logger)
+                .with(runner, deployment_planner, ig_name, instance, instance_group, keep_alive, deployment_name, per_spec_logger)
                 .and_return(errand_step)
               returned_errand = subject.get(deployment_name, ig_name, keep_alive, instance_slugs)
               expect(returned_errand.steps[0]).to eq(errand_step)

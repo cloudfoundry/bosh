@@ -49,7 +49,7 @@ module Bosh::Director
 
       it 'should not raise error' do
         FactoryBot.create(:models_persistent_disk, disk_cid: 'disk_cid_2', size: 2048, cloud_properties: {'cloud' => 'properties'}, active: true)
-        expect(logger).to receive(:info).with("disk disk_cid does not exist")
+        expect(per_spec_logger).to receive(:info).with("disk disk_cid does not exist")
         expect(stage).to receive(:advance_and_track).with('disk_cid')
         expect(event_log).to receive(:warn).with('Disk disk_cid does not exist. Orphaning is skipped')
         expect(job.perform).to eq 'disk disk_cid orphaned'

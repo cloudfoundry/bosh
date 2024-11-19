@@ -7,7 +7,7 @@ module Bosh::Director
       DeploymentPlan::CompilationInstancePool.new(
         instance_reuser,
         instance_provider,
-        logger,
+        per_spec_logger,
         instance_deleter,
         double(:config, workers: max_instance_count, orphan_workers: orphan_workers),
       )
@@ -29,7 +29,7 @@ module Bosh::Director
     let(:event_manager) { Api::EventManager.new(true) }
     let(:expected_network_settings) { { 'a' => { 'a' => { 'property' => 'settings' } } } }
     let(:instance_deleter) { instance_double(Bosh::Director::InstanceDeleter) }
-    let(:instance_provider) { DeploymentPlan::InstanceProvider.new(deployment_plan, vm_creator, logger) }
+    let(:instance_provider) { DeploymentPlan::InstanceProvider.new(deployment_plan, vm_creator, per_spec_logger) }
     let(:instance_reuser) { InstanceReuser.new }
     let(:ip_provider) { instance_double(DeploymentPlan::IpProvider, reserve: nil, release: nil) }
     let(:max_instance_count) { 1 }
@@ -417,7 +417,7 @@ module Bosh::Director
           end
 
           allow(VmCreator).to receive(:new)
-            .with(logger, vm_deleter, template_blob_cache, agent_broadcaster, deployment_plan.link_provider_intents)
+            .with(per_spec_logger, vm_deleter, template_blob_cache, agent_broadcaster, deployment_plan.link_provider_intents)
             .and_return(vm_creator)
         end
 
@@ -592,7 +592,7 @@ module Bosh::Director
 
     describe '.create' do
       let(:instance_reuser) { InstanceReuser.new }
-      let(:disk_manager) { DiskManager.new(logger) }
+      let(:disk_manager) { DiskManager.new(per_spec_logger) }
       let(:agent_broadcaster) { AgentBroadcaster.new }
       let(:vm_deleter) { instance_double('Bosh::Director::VmDeleter') }
       let(:vm_creator) { instance_double('Bosh::Director::VmCreator') }
@@ -602,17 +602,17 @@ module Bosh::Director
       before do
         allow(AgentBroadcaster).to receive(:new).and_return(agent_broadcaster)
         allow(Config).to receive(:enable_virtual_delete_vms).and_return(false)
-        allow(Config).to receive(:logger).and_return(logger)
-        allow(DiskManager).to receive(:new).with(logger).and_return(disk_manager)
+        allow(Config).to receive(:logger).and_return(per_spec_logger)
+        allow(DiskManager).to receive(:new).with(per_spec_logger).and_return(disk_manager)
         allow(InstanceDeleter).to receive(:new).with(disk_manager).and_return(instance_deleter)
         allow(InstanceReuser).to receive(:new).and_return(instance_reuser)
         allow(VmCreator).to receive(:new)
-          .with(logger, template_blob_cache, anything, agent_broadcaster, deployment_plan.link_provider_intents)
+          .with(per_spec_logger, template_blob_cache, anything, agent_broadcaster, deployment_plan.link_provider_intents)
           .and_return(vm_creator)
-        allow(VmDeleter).to receive(:new).with(logger, false, false).and_return(vm_deleter)
+        allow(VmDeleter).to receive(:new).with(per_spec_logger, false, false).and_return(vm_deleter)
 
         allow(DeploymentPlan::InstanceProvider).to receive(:new)
-          .with(deployment_plan, vm_creator, logger)
+          .with(deployment_plan, vm_creator, per_spec_logger)
           .and_return(instance_provider)
         allow(deployment_plan).to receive(:availability_zones).and_return([])
 
@@ -623,7 +623,7 @@ module Bosh::Director
         expect(DeploymentPlan::CompilationInstancePool).to receive(:new).with(
           instance_reuser,
           instance_provider,
-          logger,
+          per_spec_logger,
           instance_deleter,
           compilation_config,
         ).and_call_original

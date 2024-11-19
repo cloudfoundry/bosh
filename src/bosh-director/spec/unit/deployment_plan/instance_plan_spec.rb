@@ -47,7 +47,7 @@ module Bosh::Director::DeploymentPlan
         network_plans: network_plans,
         use_dns_addresses: use_dns_addresses,
         use_short_dns_addresses: use_short_dns_addresses,
-        logger: logger,
+        logger: per_spec_logger,
         tags: tags,
         variables_interpolator: variables_interpolator,
         link_provider_intents: link_provider_intents,
@@ -56,7 +56,7 @@ module Bosh::Director::DeploymentPlan
 
     let(:variables_interpolator) { Bosh::Director::ConfigServer::VariablesInterpolator.new }
     let(:instance_group) do
-      ig = InstanceGroup.parse(deployment_plan, instance_group_spec, Bosh::Director::Config.event_log, logger)
+      ig = InstanceGroup.parse(deployment_plan, instance_group_spec, Bosh::Director::Config.event_log, per_spec_logger)
       allow(ig).to receive(:jobs).and_return(desired_deployment_plan_jobs)
       ig
     end
@@ -113,12 +113,12 @@ module Bosh::Director::DeploymentPlan
         deployment_plan.model,
         current_state,
         availability_zone,
-        logger,
+        per_spec_logger,
         variables_interpolator,
       )
     end
     let(:instance_state) { 'started' }
-    let(:network) { ManualNetwork.parse(network_spec, [availability_zone], logger) }
+    let(:network) { ManualNetwork.parse(network_spec, [availability_zone], per_spec_logger) }
     let(:reservation) do
       reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network)
       reservation.resolve_ip('192.168.1.3')
@@ -150,7 +150,7 @@ module Bosh::Director::DeploymentPlan
       deployment
     end
     let(:deployment_plan) do
-      planner_factory = PlannerFactory.create(logger)
+      planner_factory = PlannerFactory.create(per_spec_logger)
       plan = planner_factory.create_from_model(deployment_model)
       Assembler.create(plan, variables_interpolator).bind_models
       plan
@@ -207,7 +207,7 @@ module Bosh::Director::DeploymentPlan
     describe 'networks_changed?' do
       context 'when the instance plan has desired network plans' do
         let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
-        let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], logger) }
+        let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], per_spec_logger) }
         let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
         let(:network_plans) do
           [
@@ -235,8 +235,8 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should log the changes' do
-          allow(logger).to receive(:debug)
-          expect(logger).to receive(:debug).with(
+          allow(per_spec_logger).to receive(:debug)
+          expect(per_spec_logger).to receive(:debug).with(
             "networks_changed? desired reservations: [#{reservation}]",
           )
 
@@ -271,8 +271,8 @@ module Bosh::Director::DeploymentPlan
           end
 
           it 'should ignore dns_record_name when comparing old and new network_settings' do
-            allow(logger).to receive(:debug)
-            expect(logger).to_not receive(:debug).with(
+            allow(per_spec_logger).to receive(:debug)
+            expect(per_spec_logger).to_not receive(:debug).with(
               /networks_changed\? network settings changed FROM:/,
             )
 
@@ -293,8 +293,8 @@ module Bosh::Director::DeploymentPlan
           end
 
           it 'logs' do
-            allow(logger).to receive(:debug)
-            expect(logger).to receive(:debug).with(
+            allow(per_spec_logger).to receive(:debug)
+            expect(per_spec_logger).to receive(:debug).with(
               'networks_changed? obsolete reservations: ' \
               "[{type=dynamic, ip=10.0.0.5, network=existing-network, instance=#{instance_model}}]",
             )
@@ -315,8 +315,8 @@ module Bosh::Director::DeploymentPlan
           end
 
           it 'logs' do
-            allow(logger).to receive(:debug)
-            expect(logger).to receive(:debug).with(
+            allow(per_spec_logger).to receive(:debug)
+            expect(per_spec_logger).to receive(:debug).with(
               'networks_changed? desired reservations: ' \
               "[{type=dynamic, ip=10.0.0.5, network=existing-network, instance=#{instance_model}}]",
             )
@@ -337,7 +337,7 @@ module Bosh::Director::DeploymentPlan
     describe 'network_settings_changed?' do
       context 'when the instance plan has desired network plans' do
         let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
-        let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], logger) }
+        let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], per_spec_logger) }
         let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
         let(:network_plans) do
           [
@@ -382,8 +382,8 @@ module Bosh::Director::DeploymentPlan
             },
           }
 
-          allow(logger).to receive(:debug)
-          expect(logger).to receive(:debug).with(
+          allow(per_spec_logger).to receive(:debug)
+          expect(per_spec_logger).to receive(:debug).with(
             'network_settings_changed? network settings changed ' \
             "FROM: #{network_settings} TO: #{new_network_settings} on instance #{instance_plan.existing_instance}",
           )
@@ -483,7 +483,7 @@ module Bosh::Director::DeploymentPlan
                                                                                                         desired_variable_set)
                                                                                                   .and_return(true)
 
-              expect(logger).to receive(:debug).with(
+              expect(per_spec_logger).to receive(:debug).with(
                 'network_settings_changed? network settings changed ' \
                 "FROM: #{current_networks_hash} TO: #{desired_networks_hash} on instance #{mock_existing_instance}",
               )
@@ -519,7 +519,7 @@ module Bosh::Director::DeploymentPlan
 
       context 'when the vm type name has changed' do
         let(:subnet) { DynamicNetworkSubnet.new(['10.0.0.1'], {}, ['foo-az']) }
-        let(:existing_network) { DynamicNetwork.new('a', [subnet], logger) }
+        let(:existing_network) { DynamicNetwork.new('a', [subnet], per_spec_logger) }
         let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
 
         let(:network_plans) { [NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true)] }
@@ -549,7 +549,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'logs the change reason' do
-          expect(logger).to receive(:debug).with('stemcell_changed? changed FROM: ' \
+          expect(per_spec_logger).to receive(:debug).with('stemcell_changed? changed FROM: ' \
             'version: 2 ' \
             'TO: ' \
             'version: 1' \
@@ -562,7 +562,7 @@ module Bosh::Director::DeploymentPlan
         # everything else should be the same
         let(:availability_zone) { AvailabilityZone.new('foo-az', 'old' => 'value') }
         let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
-        let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], logger) }
+        let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], per_spec_logger) }
         let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
 
         let(:network_plans) do
@@ -602,7 +602,7 @@ module Bosh::Director::DeploymentPlan
 
       context 'when the network settings have NOT changed' do
         # everything else should be the same
-        let(:network) { DynamicNetwork.parse(network_spec, [availability_zone], logger) }
+        let(:network) { DynamicNetwork.parse(network_spec, [availability_zone], per_spec_logger) }
         let(:network_spec) do
           {
             'name' => 'a',
@@ -638,7 +638,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'logs the change reason' do
-          expect(logger).to receive(:debug).with('stemcell_changed? changed FROM: ' \
+          expect(per_spec_logger).to receive(:debug).with('stemcell_changed? changed FROM: ' \
             'ubuntu-stemcell-old ' \
             'TO: ' \
             'ubuntu-stemcell' \
@@ -665,7 +665,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'log the change reason' do
-          expect(logger).to receive(:debug).with(
+          expect(per_spec_logger).to receive(:debug).with(
             'env_changed? changed FROM: {"key":"previous-value"} TO: {"key":"changed-value"}' \
               ' on instance ' + instance_plan.existing_instance.to_s,
           )
@@ -893,7 +893,7 @@ module Bosh::Director::DeploymentPlan
 
       context 'when the vm type name has changed' do
         let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
-        let(:existing_network) { DynamicNetwork.new('a', [subnet], logger) }
+        let(:existing_network) { DynamicNetwork.new('a', [subnet], per_spec_logger) }
         let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
 
         let(:network_plans) { [NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true)] }
@@ -923,7 +923,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'logs the change reason' do
-          expect(logger).to receive(:debug).with('stemcell_changed? changed FROM: ' \
+          expect(per_spec_logger).to receive(:debug).with('stemcell_changed? changed FROM: ' \
             'version: 2 ' \
             'TO: ' \
             'version: 1' \
@@ -936,7 +936,7 @@ module Bosh::Director::DeploymentPlan
         # everything else should be the same
         let(:availability_zone) { AvailabilityZone.new('foo-az', 'old' => 'value') }
         let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
-        let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], logger) }
+        let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], per_spec_logger) }
         let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
 
         let(:network_plans) do
@@ -987,7 +987,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'logs the change reason' do
-          expect(logger).to receive(:debug).with('stemcell_changed? changed FROM: ' \
+          expect(per_spec_logger).to receive(:debug).with('stemcell_changed? changed FROM: ' \
             'ubuntu-stemcell-old ' \
             'TO: ' \
             'ubuntu-stemcell' \
@@ -1014,7 +1014,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'log the change reason' do
-          expect(logger).to receive(:debug).with(
+          expect(per_spec_logger).to receive(:debug).with(
             'env_changed? changed FROM: {"key":"previous-value"} TO: {"key":"changed-value"}' \
               ' on instance ' + instance_plan.existing_instance.to_s,
           )
@@ -1041,7 +1041,7 @@ module Bosh::Director::DeploymentPlan
 
       context 'when the vm type name has changed' do
         let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
-        let(:existing_network) { DynamicNetwork.new('a', [subnet], logger) }
+        let(:existing_network) { DynamicNetwork.new('a', [subnet], per_spec_logger) }
         let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
 
         let(:network_plans) { [NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true)] }
@@ -1071,7 +1071,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'logs the change reason' do
-          expect(logger).to receive(:debug).with(
+          expect(per_spec_logger).to receive(:debug).with(
             'stemcell_changed? changed FROM: ' \
             'version: 2 ' \
             'TO: ' \
@@ -1125,7 +1125,7 @@ module Bosh::Director::DeploymentPlan
         # everything else should be the same
         let(:availability_zone) { AvailabilityZone.new('foo-az', 'old' => 'value') }
         let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
-        let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], logger) }
+        let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], per_spec_logger) }
         let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
 
         let(:network_plans) do
@@ -1167,7 +1167,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'logs the change reason' do
-          expect(logger).to receive(:debug).with(
+          expect(per_spec_logger).to receive(:debug).with(
             'stemcell_changed? changed FROM: ' \
             'ubuntu-stemcell-old ' \
             'TO: ' \
@@ -1196,7 +1196,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'log the change reason' do
-          expect(logger).to receive(:debug).with(
+          expect(per_spec_logger).to receive(:debug).with(
             'env_changed? changed FROM: {"key":"previous-value"} TO: {"key":"changed-value"}' \
             " on instance #{instance_plan.existing_instance}",
           )
@@ -1279,7 +1279,7 @@ module Bosh::Director::DeploymentPlan
 
     describe '#persist_current_spec' do
       let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
-      let(:existing_network) { DynamicNetwork.new('a', [subnet], logger) }
+      let(:existing_network) { DynamicNetwork.new('a', [subnet], per_spec_logger) }
       let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
 
       let(:network_plans) do
@@ -1326,7 +1326,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should log the change reason' do
-          expect(logger).to receive(:debug).with('recreation_requested? job deployment is configured with "recreate" state')
+          expect(per_spec_logger).to receive(:debug).with('recreation_requested? job deployment is configured with "recreate" state')
           instance_plan.recreation_requested?
         end
       end
@@ -1374,7 +1374,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should log the change reason' do
-          allow(logger).to receive(:debug) do |log_line|
+          allow(per_spec_logger).to receive(:debug) do |log_line|
             expect(log_line).to eq(
               'recreate_persistent_disks_requested? job deployment is configured with "recreate_persistent_disks" state',
             )
@@ -1474,9 +1474,9 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should log' do
-          allow(logger).to receive(:debug)
+          allow(per_spec_logger).to receive(:debug)
 
-          expect(logger).to log_persistent_disk_change(from: {
+          expect(per_spec_logger).to log_persistent_disk_change(from: {
             name: '',
             size: 42,
             cloud_properties: {
@@ -1740,7 +1740,7 @@ module Bosh::Director::DeploymentPlan
           end
 
           it 'logs the change' do
-            expect(logger).to receive(:debug).with(/job_changed\? changed FROM: .* TO: .*/)
+            expect(per_spec_logger).to receive(:debug).with(/job_changed\? changed FROM: .* TO: .*/)
             instance_plan.job_changed?
           end
         end
@@ -1771,7 +1771,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should log changes' do
-          expect(logger).to receive(:debug).with('packages_changed? changed FROM: {"changed":"value"} ' \
+          expect(per_spec_logger).to receive(:debug).with('packages_changed? changed FROM: {"changed":"value"} ' \
                                                  'TO: {} on instance foobar/uuid-1 (1)')
           instance_plan.packages_changed?
         end
@@ -1813,7 +1813,7 @@ module Bosh::Director::DeploymentPlan
         it 'should log the configuration changed reason' do
           instance.configuration_hash = { 'changed' => 'config' }
 
-          expect(logger).to receive(:debug).with('configuration_changed? changed FROM: {"old":"config"} ' \
+          expect(per_spec_logger).to receive(:debug).with('configuration_changed? changed FROM: {"old":"config"} ' \
                                                  "TO: {\"changed\":\"config\"} on instance foobar/#{instance.model.uuid} (1)")
           instance_plan.configuration_changed?
         end
@@ -1916,7 +1916,7 @@ module Bosh::Director::DeploymentPlan
           end
 
           it 'should log the dns changes' do
-            expect(logger).to log_dns_change(from: [], to: [{
+            expect(per_spec_logger).to log_dns_change(from: [], to: [{
               ip: '192.168.1.3',
               instance_id: instance_model.id,
               az: nil,
@@ -1935,7 +1935,7 @@ module Bosh::Director::DeploymentPlan
           before do
             FactoryBot.create(:models_local_dns_record, instance_id: instance_model.id, ip: 'dummy-ip')
             allow(Bosh::Director::Config).to receive(:local_dns_enabled?).and_return(true)
-            allow(logger).to receive(:debug)
+            allow(per_spec_logger).to receive(:debug)
           end
 
           it '#dns_changed? should return true' do
@@ -1943,7 +1943,7 @@ module Bosh::Director::DeploymentPlan
           end
 
           it 'should log the dns changes' do
-            expect(logger).to log_dns_change(
+            expect(per_spec_logger).to log_dns_change(
               from: [{
                 ip: 'dummy-ip',
                 az: nil,

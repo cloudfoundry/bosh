@@ -19,7 +19,7 @@ module Bosh::Director
         allow(Config).to receive(:network_lifecycle_enabled?).and_return(true)
       end
 
-      subject { CreateNetworkStage.new(logger, deployment_plan) }
+      subject { CreateNetworkStage.new(per_spec_logger, deployment_plan) }
       let(:cloud_factory) { instance_double(AZCloudFactory) }
       let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
       let(:deployment_model) { FactoryBot.create(:models_deployment, name: 'deployment_name') }
@@ -58,7 +58,7 @@ module Bosh::Director
           Bosh::Director::DeploymentPlan::ManualNetwork.parse(
             network_spec,
             [availability_zone],
-            logger,
+            per_spec_logger,
           )
         end
 
@@ -182,7 +182,7 @@ module Bosh::Director
           Bosh::Director::DeploymentPlan::ManualNetwork.parse(
             network_spec,
             [availability_zone],
-            logger,
+            per_spec_logger,
           )
         end
 
@@ -222,7 +222,7 @@ module Bosh::Director
           Bosh::Director::DeploymentPlan::ManualNetwork.parse(
             network_spec,
             [availability_zone],
-            logger,
+            per_spec_logger,
           )
         end
 

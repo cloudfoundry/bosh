@@ -43,16 +43,16 @@ module Bosh::Director
         allow(UpdateInstanceGroupsStage).to receive(:new)
           .with(base_job, deployment_plan, multi_instance_group_updater).and_return(update_instance_groups)
         allow(UpdateErrandsStage).to receive(:new).with(base_job, deployment_plan).and_return(update_errands)
-        allow(VmDeleter).to receive(:new).with(logger, false, Config.enable_virtual_delete_vms).and_return(vm_deleter)
+        allow(VmDeleter).to receive(:new).with(per_spec_logger, false, Config.enable_virtual_delete_vms).and_return(vm_deleter)
         allow(VmCreator).to receive(:new)
-          .with(logger, anything, dns_encoder, anything, link_provider_intents).and_return(vm_creator)
+          .with(per_spec_logger, anything, dns_encoder, anything, link_provider_intents).and_return(vm_creator)
         allow(CleanupStemcellReferencesStage).to receive(:new).with(deployment_plan).and_return(cleanup_stemcell_reference)
         allow(PersistDeploymentStage).to receive(:new).with(deployment_plan).and_return(persist_deployment)
       end
 
       describe '#perform' do
         before do
-          allow(logger).to receive(:info)
+          allow(per_spec_logger).to receive(:info)
           allow(pre_cleanup).to receive(:perform)
           allow(update_active_vm_cpis).to receive(:perform)
           allow(setup).to receive(:perform)
@@ -64,16 +64,16 @@ module Bosh::Director
         end
 
         it 'runs deployment plan update steps in the correct order' do
-          expect(logger).to receive(:info).with('Updating deployment').ordered
+          expect(per_spec_logger).to receive(:info).with('Updating deployment').ordered
           expect(pre_cleanup).to receive(:perform).ordered
           expect(update_active_vm_cpis).to receive(:perform).ordered
           expect(setup).to receive(:perform).ordered
           expect(download_packages_step).to receive(:perform).ordered
           expect(update_instance_groups).to receive(:perform).ordered
           expect(update_errands).to receive(:perform).ordered
-          expect(logger).to receive(:info).with('Committing updates').ordered
+          expect(per_spec_logger).to receive(:info).with('Committing updates').ordered
           expect(persist_deployment).to receive(:perform).ordered
-          expect(logger).to receive(:info).with('Finished updating deployment').ordered
+          expect(per_spec_logger).to receive(:info).with('Finished updating deployment').ordered
           expect(cleanup_stemcell_reference).to receive(:perform).ordered
 
           subject.perform

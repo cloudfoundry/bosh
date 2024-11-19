@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'logger'
 
 describe Bosh::Director::MetadataUpdater do
-  subject(:metadata_updater) { described_class.new(director_metadata, logger) }
+  subject(:metadata_updater) { described_class.new(director_metadata, per_spec_logger) }
   let(:director_metadata) do
     {}
   end

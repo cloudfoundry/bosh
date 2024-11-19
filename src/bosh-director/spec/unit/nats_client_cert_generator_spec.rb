@@ -4,7 +4,7 @@ module Bosh
   module Director
     describe NatsClientCertGenerator do
       subject do
-        NatsClientCertGenerator.new(logger)
+        NatsClientCertGenerator.new(per_spec_logger)
       end
 
       let(:Config) { instance_double('Config') }

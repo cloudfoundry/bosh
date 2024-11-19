@@ -76,7 +76,7 @@ module Bosh
           end
 
           let(:vm_deleter) do
-            vm_deleter = VmDeleter.new(logger, false, false)
+            vm_deleter = VmDeleter.new(per_spec_logger, false, false)
             allow(VmDeleter).to receive(:new).and_return(vm_deleter)
             vm_deleter
           end
@@ -138,7 +138,7 @@ module Bosh
               deployment,
               {},
               nil,
-              logger,
+              per_spec_logger,
               nil,
             )
             instance.bind_existing_instance_model(instance_model)
@@ -147,7 +147,7 @@ module Bosh
 
           let(:reservation) do
             subnet = Bosh::Director::DeploymentPlan::DynamicNetworkSubnet.new('dns', network_cloud_properties, ['az-1'])
-            network = Bosh::Director::DeploymentPlan::DynamicNetwork.new('name', [subnet], logger)
+            network = Bosh::Director::DeploymentPlan::DynamicNetwork.new('name', [subnet], per_spec_logger)
             reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network)
             reservation
           end

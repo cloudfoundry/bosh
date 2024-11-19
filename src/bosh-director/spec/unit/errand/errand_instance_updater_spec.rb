@@ -3,7 +3,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Errand::ErrandInstanceUpdater do
-    subject(:updater) { Errand::ErrandInstanceUpdater.new(instance_group_manager, logger, errand_name, deployment_name) }
+    subject(:updater) { Errand::ErrandInstanceUpdater.new(instance_group_manager, per_spec_logger, errand_name, deployment_name) }
 
     let(:instance_group_manager) { instance_double(Errand::InstanceGroupManager) }
     let(:deployment_name) { 'some-deployment' }
@@ -13,7 +13,7 @@ module Bosh::Director
       allow(instance_group_manager).to receive(:update_instances)
       allow(instance_group_manager).to receive(:create_missing_vms)
       allow(instance_group_manager).to receive(:delete_vms)
-      allow(logger).to receive(:info)
+      allow(per_spec_logger).to receive(:info)
     end
 
     describe 'create_vms' do
@@ -29,14 +29,14 @@ module Bosh::Director
 
         context 'when keep alive is true' do
           it 'logs a message but does not delete' do
-            expect(logger).to receive(:info).with('Skipping vms deletion, keep-alive is set')
+            expect(per_spec_logger).to receive(:info).with('Skipping vms deletion, keep-alive is set')
             expect { updater.create_vms(true) }.to raise_error('omg')
           end
         end
 
         context 'when keep alive is false' do
           it 'cleans up the vms and logs a message' do
-            expect(logger).to receive(:info).with('Deleting vms')
+            expect(per_spec_logger).to receive(:info).with('Deleting vms')
             expect(instance_group_manager).to receive(:delete_vms)
             expect { updater.create_vms(false) }.to raise_error('omg')
           end
@@ -53,7 +53,7 @@ module Bosh::Director
           end
 
           it 'outputs a warning' do
-            expect(logger).to receive(:warn).with(/Failed to delete vms: RuntimeError: no delete for you/)
+            expect(per_spec_logger).to receive(:warn).with(/Failed to delete vms: RuntimeError: no delete for you/)
             expect { updater.create_vms(false) }.to raise_error('omg')
           end
         end
@@ -91,7 +91,7 @@ module Bosh::Director
         context 'when keep alive is true' do
           let(:keep_alive) { true }
           it 'does not delete the vm, but does log a warning' do
-            expect(logger).to receive(:info).with('Skipping vms deletion, keep-alive is set')
+            expect(per_spec_logger).to receive(:info).with('Skipping vms deletion, keep-alive is set')
             expect { updater.with_updated_instances(keep_alive) {} }.to raise_error(RuntimeError, 'omg')
           end
         end
@@ -121,7 +121,7 @@ module Bosh::Director
           let(:keep_alive) { true }
 
           it 'logs an error' do
-            expect(logger).to receive(:info).with('Skipping vms deletion, keep-alive is set')
+            expect(per_spec_logger).to receive(:info).with('Skipping vms deletion, keep-alive is set')
             expect do
               updater.with_updated_instances(keep_alive) { raise RuntimeError, 'omg' }
             end.to raise_error(RuntimeError, 'omg')

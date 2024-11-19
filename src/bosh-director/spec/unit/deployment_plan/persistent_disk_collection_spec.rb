@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   module DeploymentPlan
     describe PersistentDiskCollection do
-      let(:persistent_disk_collection) { PersistentDiskCollection.new(logger) }
+      let(:persistent_disk_collection) { PersistentDiskCollection.new(per_spec_logger) }
       let(:disk_size) { 30 }
       let(:cloud_properties) do
         {}
@@ -122,8 +122,8 @@ module Bosh::Director
       end
 
       describe '#self.changed_disk_pairs' do
-        let(:desired_disks) { PersistentDiskCollection.new(logger) }
-        let(:existing_disks) { PersistentDiskCollection.new(logger) }
+        let(:desired_disks) { PersistentDiskCollection.new(per_spec_logger) }
+        let(:existing_disks) { PersistentDiskCollection.new(per_spec_logger) }
         let(:variable_set) { instance_double(Bosh::Director::Models::VariableSet) }
         let(:deployment) { instance_double(Bosh::Director::Models::Deployment) }
 

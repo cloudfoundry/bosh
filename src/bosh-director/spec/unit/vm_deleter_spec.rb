@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh
   module Director
     describe VmDeleter do
-      subject { VmDeleter.new(logger) }
+      subject { VmDeleter.new(per_spec_logger) }
 
       let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
       let(:cloud_factory) { instance_double(CloudFactory) }
@@ -96,16 +96,16 @@ module Bosh
           end
 
           it 'calls delete_vm' do
-            expect(logger).to receive(:info).with('Deleting VM')
+            expect(per_spec_logger).to receive(:info).with('Deleting VM')
             expect(cloud).to receive(:delete_vm).with(vm_model.cid)
             subject.delete_vm_by_cid(vm_model.cid, 25, 'cpi1')
           end
 
           context 'when virtual delete is enabled' do
-            subject { VmDeleter.new(logger, false, true) }
+            subject { VmDeleter.new(per_spec_logger, false, true) }
 
             it 'skips calling delete_vm on the cloud' do
-              expect(logger).to receive(:info).with('Deleting VM')
+              expect(per_spec_logger).to receive(:info).with('Deleting VM')
               expect(cloud).not_to receive(:delete_vm)
               subject.delete_vm_by_cid(vm_model.cid, nil)
             end

@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe LocalDnsManager do
     subject(:local_dns_manager) do
-      LocalDnsManager.new(Config.root_domain, local_dns_records_repo, blobstore_dns_publisher, logger)
+      LocalDnsManager.new(Config.root_domain, local_dns_records_repo, blobstore_dns_publisher, per_spec_logger)
     end
 
     let(:instance_model) { FactoryBot.create(:models_instance) }
@@ -14,10 +14,10 @@ module Bosh::Director
 
     describe '.create' do
       it 'should create a dns repo and blobstore_dns_publisher and make a new dns manager' do
-        expect(LocalDnsRecordsRepo).to receive(:new).with(logger, Config.root_domain)
-        expect(BlobstoreDnsPublisher).to receive(:new).with(anything, Config.root_domain, anything, logger)
+        expect(LocalDnsRecordsRepo).to receive(:new).with(per_spec_logger, Config.root_domain)
+        expect(BlobstoreDnsPublisher).to receive(:new).with(anything, Config.root_domain, anything, per_spec_logger)
 
-        expect(LocalDnsManager.create(Config.root_domain, logger)).to be_a(LocalDnsManager)
+        expect(LocalDnsManager.create(Config.root_domain, per_spec_logger)).to be_a(LocalDnsManager)
       end
     end
 

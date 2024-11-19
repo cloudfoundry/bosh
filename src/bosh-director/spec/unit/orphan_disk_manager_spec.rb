@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe OrphanDiskManager do
-    subject(:disk_manager) { OrphanDiskManager.new(logger) }
+    subject(:disk_manager) { OrphanDiskManager.new(per_spec_logger) }
 
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:cloud_factory) { instance_double(CloudFactory) }
@@ -251,7 +251,7 @@ module Bosh::Director
 
         context 'when user accidentally tries to delete an non-existent disk' do
           it 'raises DiskNotFound AND continues to delete the remaining disks' do
-            expect(logger).to receive(:debug).with('Disk not found: non_existing_orphan_disk_cid')
+            expect(per_spec_logger).to receive(:debug).with('Disk not found: non_existing_orphan_disk_cid')
 
             subject.delete_orphan_disk_by_disk_cid('non_existing_orphan_disk_cid')
           end
@@ -318,7 +318,7 @@ module Bosh::Director
             expect(cloud).to receive(:delete_snapshot).with('snap-cid-a').and_raise(Bosh::Clouds::DiskNotFound.new(false))
             expect(cloud_factory).to receive(:get).with(orphan_disk_1.cpi).at_least(:once).and_return(cloud)
 
-            expect(logger).to receive(:debug).with('Disk not found in IaaS: snap-cid-a')
+            expect(per_spec_logger).to receive(:debug).with('Disk not found in IaaS: snap-cid-a')
             subject.delete_orphan_disk(orphan_disk_1)
             expect(Models::OrphanSnapshot.where(orphan_disk_id: orphan_disk_1.id).all).to be_empty
           end
@@ -331,7 +331,7 @@ module Bosh::Director
 
           it 'logs the error to the debug log AND continues to delete the remaining disks' do
             expect(cloud_factory).to receive(:get).with(orphan_disk_1.cpi).at_least(:once).and_return(cloud)
-            expect(logger).to receive(:debug).with("Disk not found in IaaS: #{orphan_disk_cid_1}")
+            expect(per_spec_logger).to receive(:debug).with("Disk not found in IaaS: #{orphan_disk_cid_1}")
 
             subject.delete_orphan_disk(orphan_disk_1)
             expect(Models::OrphanDisk.where(disk_cid: orphan_disk_cid_1).all).to be_empty
@@ -404,16 +404,16 @@ module Bosh::Director
             end
 
             it 'logs error' do
-              allow(logger).to receive(:warn)
-              allow(logger).to receive(:info)
+              allow(per_spec_logger).to receive(:warn)
+              allow(per_spec_logger).to receive(:info)
 
               expect do
                 subject.delete_orphan_disk(orphan_disk_1)
               end.to raise_error Bosh::Clouds::CloudError
 
-              expect(logger).to have_received(:info)
+              expect(per_spec_logger).to have_received(:info)
                 .with('Failed to deleted snapshot snap-cid-a disk of disk-cid-1. Failed with: Bad stuff happened!')
-              expect(logger).to have_received(:warn)
+              expect(per_spec_logger).to have_received(:warn)
             end
 
             context 'when snapshot disk is not found' do
@@ -421,11 +421,11 @@ module Bosh::Director
                 allow(cloud).to receive(:delete_snapshot)
                   .with(orphan_disk_snapshot_1a.snapshot_cid)
                   .and_raise(Bosh::Clouds::DiskNotFound.new(false))
-                allow(logger).to receive(:debug)
+                allow(per_spec_logger).to receive(:debug)
 
                 subject.delete_orphan_disk(orphan_disk_1)
 
-                expect(logger).to have_received(:debug).with('Disk not found in IaaS: snap-cid-a')
+                expect(per_spec_logger).to have_received(:debug).with('Disk not found in IaaS: snap-cid-a')
                 expect(cloud).to have_received(:delete_snapshot).with(orphan_disk_snapshot_1b.snapshot_cid)
                 expect(cloud).to have_received(:delete_disk).with(orphan_disk_cid_1)
               end

@@ -4,7 +4,7 @@ require 'ipaddr'
 module Bosh
   module Director
     describe OrphanedVMDeleter do
-      subject { OrphanedVMDeleter.new(logger) }
+      subject { OrphanedVMDeleter.new(per_spec_logger) }
 
       describe '#delete_all' do
         let!(:orphaned_vm1) do

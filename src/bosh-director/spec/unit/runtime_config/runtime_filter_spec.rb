@@ -29,7 +29,7 @@ module Bosh::Director
       stemcell = DeploymentPlan::Stemcell.parse(manifest['stemcells'].first)
       planner.add_stemcell(stemcell)
 
-      planner.cloud_planner = DeploymentPlan::CloudManifestParser.new(logger).parse(cloud_config)
+      planner.cloud_planner = DeploymentPlan::CloudManifestParser.new(per_spec_logger).parse(cloud_config)
       planner.update = DeploymentPlan::UpdateConfig.new(manifest['update'])
 
       planner
@@ -44,7 +44,7 @@ module Bosh::Director
         name: 'group1',
         jobs: [{ 'name' => 'job1', 'release' => '1' }],
       )
-      DeploymentPlan::InstanceGroup.parse(deployment_plan, group1_spec, Config.event_log, logger)
+      DeploymentPlan::InstanceGroup.parse(deployment_plan, group1_spec, Config.event_log, per_spec_logger)
     end
 
     let(:instance_group2) do
@@ -52,7 +52,7 @@ module Bosh::Director
         name: 'group2',
         jobs: [{ 'name' => 'job1', 'release' => '1' }, { 'name' => 'job2', 'release' => '2' }],
       )
-      DeploymentPlan::InstanceGroup.parse(deployment_plan, group2_spec, Config.event_log, logger)
+      DeploymentPlan::InstanceGroup.parse(deployment_plan, group2_spec, Config.event_log, per_spec_logger)
     end
 
     shared_examples :addon_filters do

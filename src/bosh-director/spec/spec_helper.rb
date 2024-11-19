@@ -5,29 +5,25 @@ require_relative '../../spec/shared/spec_helper'
 require 'digest/sha1'
 require 'fileutils'
 require 'logging'
+require 'minitar'
 require 'pg'
 require 'tempfile'
 require 'tmpdir'
 require 'zlib'
 require 'timecop'
-require 'webmock/rspec'
-
-require 'minitar'
-require 'factory_bot'
-require 'support/buffered_logger'
 
 require 'db_migrator'
 
 require 'bosh/dev/db/db_helper'
 
-Dir.glob(File.expand_path('support/**/*.rb', __dir__)).each { |f| require(f) }
+require 'webmock/rspec'
+require 'factory_bot'
 
-DIRECTOR_TEST_CERTS = "these\nare\nthe\ncerts".freeze
-DIRECTOR_TEST_CERTS_SHA1 = ::Digest::SHA1.hexdigest DIRECTOR_TEST_CERTS
+Dir.glob(File.join(File.dirname(__FILE__), 'support/**/*.rb')).each { |f| require(f) }
 
 module SpecHelper
   class << self
-    include BufferedLogger
+    include LoggingHelper
 
     attr_accessor :temp_dir
 
@@ -83,7 +79,7 @@ module SpecHelper
     def init_database
       connect_database
 
-      @db.loggers << (logger || @init_logger)
+      @db.loggers << @init_logger
       @db.log_connection_info = true
       Bosh::Director::Config.db = @db
 
@@ -139,10 +135,10 @@ module SpecHelper
       end
     end
 
-    def reset(logger)
+    def reset(test_logger)
       Bosh::Director::Config.clear
       Bosh::Director::Config.db = @db
-      Bosh::Director::Config.logger = logger
+      Bosh::Director::Config.logger = test_logger
       Bosh::Director::Config.trusted_certs = ''
       Bosh::Director::Config.max_threads = 1
     end
@@ -176,7 +172,7 @@ RSpec.configure do |rspec|
   rspec.include FactoryBot::Syntax::Methods
 
   rspec.before(:each) do
-    SpecHelper.reset(logger)
+    SpecHelper.reset(per_spec_logger)
     @event_buffer = StringIO.new
     @event_log = Bosh::Director::EventLog::Log.new(@event_buffer)
     Bosh::Director::Config.event_log = @event_log

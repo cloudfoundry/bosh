@@ -43,12 +43,12 @@ module Bosh::Director
     let(:instance_reuser) { InstanceReuser.new }
     let(:instance_deleter) { instance_double(Bosh::Director::InstanceDeleter) }
     let(:ip_provider) { instance_double(DeploymentPlan::IpProvider, reserve: nil, release: nil) }
-    let(:instance_provider) { DeploymentPlan::InstanceProvider.new(plan, vm_creator, logger) }
+    let(:instance_provider) { DeploymentPlan::InstanceProvider.new(plan, vm_creator, per_spec_logger) }
     let(:compilation_instance_pool) do
       DeploymentPlan::CompilationInstancePool.new(
         instance_reuser,
         instance_provider,
-        logger,
+        per_spec_logger,
         instance_deleter,
         compilation_config,
       )
@@ -114,21 +114,24 @@ module Bosh::Director
         release_manager,
         package_validator,
         compiled_package_finder,
-        logger,
+        per_spec_logger,
       )
     end
 
     let(:package_validator) do
-      DeploymentPlan::PackageValidator.new(logger)
+      DeploymentPlan::PackageValidator.new(per_spec_logger)
     end
 
     let(:release_manager) do
       Bosh::Director::Api::ReleaseManager.new
     end
 
-    let(:compiled_package_finder) { DeploymentPlan::CompiledPackageFinder.new(logger) }
+    let(:compiled_package_finder) { DeploymentPlan::CompiledPackageFinder.new(per_spec_logger) }
 
     let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
+
+    let(:director_test_certs) { "these\nare\nthe\ncerts" }
+    let(:director_test_certs_sha1) { ::Digest::SHA1.hexdigest director_test_certs }
 
     before do
       FactoryBot.create(:models_variable_set, deployment: deployment)
@@ -348,8 +351,8 @@ module Bosh::Director
         # But they are already compiled!
         expect(compiler.compilations_performed).to eq(0)
 
-        expect(log_string).to include("Job templates 'cf-release/dea', 'cf-release/warden' need to run on stemcell '#{@stemcell_a.desc}'")
-        expect(log_string).to include("Job templates 'cf-release/nginx', 'cf-release/router', 'cf-release/warden' need to run on stemcell '#{@stemcell_b.desc}'")
+        expect(per_spec_log_string).to include("Job templates 'cf-release/dea', 'cf-release/warden' need to run on stemcell '#{@stemcell_a.desc}'")
+        expect(per_spec_log_string).to include("Job templates 'cf-release/nginx', 'cf-release/router', 'cf-release/warden' need to run on stemcell '#{@stemcell_b.desc}'")
       end
     end
 
@@ -452,7 +455,7 @@ module Bosh::Director
             release_manager,
             package_validator,
             compiled_package_finder,
-            logger,
+            per_spec_logger,
           )
 
           @package_set_a.each do |package|
@@ -478,7 +481,7 @@ module Bosh::Director
           # and they should be recompiled
           expect(compiler.compilations_performed).to eq(6)
 
-          expect(log_string).to include("Job templates 'cf-release/dea', 'cf-release/warden' need to run on stemcell '#{@stemcell_b.desc}'")
+          expect(per_spec_log_string).to include("Job templates 'cf-release/dea', 'cf-release/warden' need to run on stemcell '#{@stemcell_b.desc}'")
         end
       end
 
@@ -492,7 +495,7 @@ module Bosh::Director
             release_manager,
             package_validator,
             compiled_package_finder,
-            logger,
+            per_spec_logger,
           )
 
           @j_dea.jobs.each do |job|
@@ -512,7 +515,7 @@ module Bosh::Director
           # and they should be recompiled
           expect(compiler.compilations_performed).to eq(0)
 
-          expect(log_string).to include("Job templates 'cf-release/dea', 'cf-release/warden' need to run on stemcell '#{@stemcell_b.desc}'")
+          expect(per_spec_log_string).to include("Job templates 'cf-release/dea', 'cf-release/warden' need to run on stemcell '#{@stemcell_b.desc}'")
         end
       end
     end
@@ -708,7 +711,7 @@ module Bosh::Director
       before { allow(SecureRandom).to receive(:uuid).and_return('deadbeef') }
 
       let(:vm_creator) do
-        Bosh::Director::VmCreator.new(logger, template_blob_cache, dns_encoder, agent_broadcaster, plan.link_provider_intents)
+        Bosh::Director::VmCreator.new(per_spec_logger, template_blob_cache, dns_encoder, agent_broadcaster, plan.link_provider_intents)
       end
 
       it 'reuses compilation VMs' do
@@ -860,7 +863,7 @@ module Bosh::Director
         let(:client) { instance_double('Bosh::Director::AgentClient') }
 
         before do
-          Bosh::Director::Config.trusted_certs = DIRECTOR_TEST_CERTS
+          Bosh::Director::Config.trusted_certs = director_test_certs
 
           allow(cloud).to receive(:create_vm).and_return('new-vm-cid')
           allow(AgentClient).to receive_messages(with_agent_id: client)
@@ -880,7 +883,7 @@ module Bosh::Director
             rescue exception
             end
 
-            expect(Models::Vm.find(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1)).to be_nil
+            expect(Models::Vm.find(trusted_certs_sha1: director_test_certs_sha1)).to be_nil
           end
         end
 
@@ -888,7 +891,7 @@ module Bosh::Director
           expect do
             compiler.prepare_vm(stemcell, package) {}
           end.to change {
-            matching_vm = Models::Vm.find(trusted_certs_sha1: DIRECTOR_TEST_CERTS_SHA1)
+            matching_vm = Models::Vm.find(trusted_certs_sha1: director_test_certs_sha1)
             matching_vm.nil? ? 0 : Models::Instance.all.select { |i| i.active_vm == matching_vm }.count
           }.from(0).to(1)
         end

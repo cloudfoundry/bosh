@@ -7,7 +7,7 @@ module Bosh::Director
       describe DownloadPackagesStage do
         subject { DownloadPackagesStage.new(base_job, deployment_plan) }
 
-        let(:base_job) { instance_double(Jobs::BaseJob, logger: logger) }
+        let(:base_job) { instance_double(Jobs::BaseJob, logger: per_spec_logger) }
 
         let(:swap_instance_plan) { instance_double(DeploymentPlan::InstancePlan) }
         let(:instance_plans_with_create_swap_delete_and_needs_duplicate_vm) { [swap_instance_plan] }

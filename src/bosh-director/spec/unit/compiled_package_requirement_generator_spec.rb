@@ -6,7 +6,7 @@ module Bosh::Director
     include Support::StemcellHelpers
 
     describe '#generate!' do
-      subject(:generator) { described_class.new(logger, event_log, compiled_package_finder) }
+      subject(:generator) { described_class.new(per_spec_logger, event_log, compiled_package_finder) }
 
       let(:release_version_model) { FactoryBot.create(:models_release_version) }
       let(:release_version) do
@@ -32,7 +32,7 @@ module Bosh::Director
 
       let(:stemcell) { make_stemcell(operating_system: 'chrome-os', version: 'latest') }
       let(:event_log) { instance_double('Bosh::Director::EventLog::Log') }
-      let(:compiled_package_finder) { DeploymentPlan::CompiledPackageFinder.new(logger) }
+      let(:compiled_package_finder) { DeploymentPlan::CompiledPackageFinder.new(per_spec_logger) }
 
       let(:requirements) do
         {}
@@ -234,19 +234,19 @@ module Bosh::Director
 
       describe 'logging' do
         it 'logs at each step of dependency resolution' do
-          allow(logger).to receive(:info)
-          expect(logger).to receive(:info).with(
+          allow(per_spec_logger).to receive(:info)
+          expect(per_spec_logger).to receive(:info).with(
             "Checking whether package '#{package_a.desc}' needs to be compiled for stemcell '#{stemcell.desc}'",
           ).ordered
-          expect(logger).to receive(:info).with("Processing package '#{package_a.desc}' dependencies").ordered
-          expect(logger).to receive(:info).with(
+          expect(per_spec_logger).to receive(:info).with("Processing package '#{package_a.desc}' dependencies").ordered
+          expect(per_spec_logger).to receive(:info).with(
             "Package '#{package_a.desc}' depends on package '#{package_b.desc}'",
           ).ordered
 
-          expect(logger).to receive(:info).with(
+          expect(per_spec_logger).to receive(:info).with(
             "Checking whether package '#{package_b.desc}' needs to be compiled for stemcell '#{stemcell.desc}'",
           ).ordered
-          expect(logger).to receive(:info).with("Processing package '#{package_b.desc}' dependencies").ordered
+          expect(per_spec_logger).to receive(:info).with("Processing package '#{package_b.desc}' dependencies").ordered
 
           generator.generate!(requirements, instance_group, job, package_a, stemcell)
         end

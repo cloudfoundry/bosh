@@ -2,14 +2,12 @@ require 'spec_helper'
 
 module Bosh::Director
   describe InstanceUpdater do
-    let(:updater) { InstanceUpdater.new_instance_updater(ip_provider, template_blob_cache, dns_encoder) }
-
     let(:blobstore_client) { instance_double(Bosh::Blobstore::Client) }
     let(:deployment_model) { FactoryBot.create(:models_deployment) }
     let(:dns_encoder) { instance_double(DnsEncoder) }
     let(:instance_model) { FactoryBot.create(:models_instance) }
-    let(:ip_provider) { DeploymentPlan::IpProvider.new(ip_repo, [], logger) }
-    let(:ip_repo) { DeploymentPlan::IpRepo.new(logger) }
+    let(:ip_provider) { DeploymentPlan::IpProvider.new(ip_repo, [], per_spec_logger) }
+    let(:ip_repo) { DeploymentPlan::IpRepo.new(per_spec_logger) }
     let(:template_blob_cache) { instance_double(Core::Templates::TemplateBlobCache) }
     let(:instance_plan_changed) { false }
     let(:needs_shutting_down) { false }

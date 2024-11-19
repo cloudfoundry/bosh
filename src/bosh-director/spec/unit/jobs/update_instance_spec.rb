@@ -320,7 +320,7 @@ module Bosh::Director
           intent: :keep_vm,
           instance_plan: anything,
           target_state: 'stopped',
-          logger: logger,
+          logger: per_spec_logger,
         )
         expect(instance_model.reload.state).to eq 'stopped'
         expect(result_msg).to eq 'foobar/test-uuid'
@@ -336,7 +336,7 @@ module Bosh::Director
           intent: :delete_vm,
           instance_plan: anything,
           target_state: 'detached',
-          logger: logger,
+          logger: per_spec_logger,
         )
         expect(unmount_instance_disk_step).to have_received(:perform)
         expect(detach_instance_disk_step).to have_received(:perform)
@@ -475,7 +475,7 @@ module Bosh::Director
             instance_model,
             anything,
             'stopped',
-            logger,
+            per_spec_logger,
             'skip_drain' => true,
           )
         end
@@ -526,7 +526,7 @@ module Bosh::Director
           intent: :keep_vm,
           instance_plan: anything,
           target_state: 'stopped',
-          logger: logger,
+          logger: per_spec_logger,
         ).ordered
         expect(state_applier).to have_received(:apply).ordered
 
@@ -667,7 +667,7 @@ module Bosh::Director
             intent: :delete_vm,
             instance_plan: anything,
             target_state: 'detached',
-            logger: logger,
+            logger: per_spec_logger,
           ).ordered
           expect(delete_vm_step).to have_received(:perform).ordered
           expect(vm_creator).to have_received(:create_for_instance_plan).ordered
@@ -718,7 +718,7 @@ module Bosh::Director
             instance_model,
             anything,
             'stopped',
-            logger,
+            per_spec_logger,
             'skip_drain' => true,
           ).ordered
 
@@ -726,7 +726,7 @@ module Bosh::Director
             instance_model,
             anything,
             'started',
-            logger,
+            per_spec_logger,
           ).ordered
         end
       end

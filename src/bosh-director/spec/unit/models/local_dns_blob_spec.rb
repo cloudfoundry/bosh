@@ -11,7 +11,7 @@ module Bosh::Director::Models
         expect(LocalDnsBlob.latest).to eq(expected_blob)
       end
 
-      # When the database contraints were removed from this table this became
+      # When the database constraints were removed from this table this became
       # possible if posting to the blobstore failed. Depending on the database,
       # records with the null version could be considered as newer than records
       # with an integer version.

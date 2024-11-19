@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe OrphanNetworkManager do
-    subject(:network_manager) { OrphanNetworkManager.new(logger) }
+    subject(:network_manager) { OrphanNetworkManager.new(per_spec_logger) }
 
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:cloud_factory) { instance_double(CloudFactory) }

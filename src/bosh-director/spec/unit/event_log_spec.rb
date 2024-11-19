@@ -21,46 +21,46 @@ describe Bosh::Director::EventLog::Log do
     expect(events.map { |e| e['state'] }).to eq(%w[started started finished finished])
   end
 
-  it 'supports tracking parallel events without being thread safe' \
-     '(since stages can start in the middle of other stages)',
-     truncation: true, if: ENV.fetch('DB', 'sqlite') != 'sqlite' do
-    stage = event_log.begin_stage(:prepare, 5)
-    threads = []
+  context 'since stages can start in the middle of other stages' do
+    it 'supports tracking parallel events without being thread safe', truncation: true do
+      skip('because SQLite deadlocks') if ENV.fetch('DB', 'sqlite') == 'sqlite'
+      stage = event_log.begin_stage(:prepare, 5)
+      threads = []
 
-    5.times do |i|
-      threads << Thread.new do
-        sleep(rand / 5)
-        stage.advance_and_track(i) { sleep(rand / 5) }
+      5.times do |i|
+        threads << Thread.new do
+          sleep(rand / 5)
+          stage.advance_and_track(i) { sleep(rand / 5) }
+        end
       end
+
+      threads.each(&:join)
+
+      events = sent_events
+      expect(events.size).to eq(10)
+      expect(events.map { |e| e['total'] }.uniq).to eq([5])
+      expect(events.map { |e| e['index'] }.sort).to eq([1, 1, 2, 2, 3, 3, 4, 4, 5, 5])
+      expect(events.map { |e| e['stage'] }.uniq).to eq(['prepare'])
+      expect(events.map { |e| e['state'] }.sort).to eq([['finished'] * 5, ['started'] * 5].flatten)
     end
 
-    threads.each(&:join)
+    it 'supports tracking parallel events while being thread safe' do
+      stage1 = event_log.begin_stage(:stage1, 2)
+      stage2 = event_log.begin_stage(:stage2, 2)
 
-    events = sent_events
-    expect(events.size).to eq(10)
-    expect(events.map { |e| e['total'] }.uniq).to eq([5])
-    expect(events.map { |e| e['index'] }.sort).to eq([1, 1, 2, 2, 3, 3, 4, 4, 5, 5])
-    expect(events.map { |e| e['stage'] }.uniq).to eq(['prepare'])
-    expect(events.map { |e| e['state'] }.sort).to eq([['finished'] * 5, ['started'] * 5].flatten)
-  end
+      # stages are started and completed out of order
+      stage1.advance_and_track(:stage1_task1)
+      stage2.advance_and_track(:stage2_task1)
+      stage1.advance_and_track(:stage1_task2)
+      stage2.advance_and_track(:stage2_task2)
 
-  it 'supports tracking parallel events while being thread safe' \
-     '(since stages can start in the middle of other stages)' do
-    stage1 = event_log.begin_stage(:stage1, 2)
-    stage2 = event_log.begin_stage(:stage2, 2)
-
-    # stages are started and completed out of order
-    stage1.advance_and_track(:stage1_task1)
-    stage2.advance_and_track(:stage2_task1)
-    stage1.advance_and_track(:stage1_task2)
-    stage2.advance_and_track(:stage2_task2)
-
-    events = sent_events
-    expect(events.size).to eq(8)
-    expect(events.map { |e| e['total'] }.uniq).to eq([2])
-    expect(events.map { |e| e['index'] }).to eq([1, 1, 1, 1, 2, 2, 2, 2])
-    expect(events.map { |e| e['stage'] }).to eq(%w[stage1 stage1 stage2 stage2 stage1 stage1 stage2 stage2])
-    expect(events.map { |e| e['state'] }).to eq(%w[started finished started finished started finished started finished])
+      events = sent_events
+      expect(events.size).to eq(8)
+      expect(events.map { |e| e['total'] }.uniq).to eq([2])
+      expect(events.map { |e| e['index'] }).to eq([1, 1, 1, 1, 2, 2, 2, 2])
+      expect(events.map { |e| e['stage'] }).to eq(%w[stage1 stage1 stage2 stage2 stage1 stage1 stage2 stage2])
+      expect(events.map { |e| e['state'] }).to eq(%w[started finished started finished started finished started finished])
+    end
   end
 
   it 'does not enforce current task index consistency for a stage' do

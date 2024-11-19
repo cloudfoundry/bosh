@@ -93,12 +93,12 @@ module Bosh::Director
           allow(Bosh::Director::ConfigServer::VariablesInterpolator).to receive(:new).and_return(variable_interpolator)
           allow(DeploymentPlan::Assembler).to receive(:create).with(planner, variable_interpolator).and_return(assembler)
           allow(JobRenderer).to receive(:render_job_instances_with_cache)
-            .with(logger, anything, template_blob_cache, anything, planner.link_provider_intents)
+            .with(per_spec_logger, anything, template_blob_cache, anything, planner.link_provider_intents)
         end
 
         let(:planner) do
-          ip_repo = DeploymentPlan::IpRepo.new(logger)
-          ip_provider = DeploymentPlan::IpProvider.new(ip_repo, {}, logger)
+          ip_repo = DeploymentPlan::IpRepo.new(per_spec_logger)
+          ip_provider = DeploymentPlan::IpProvider.new(ip_repo, {}, per_spec_logger)
 
           instance_double(
             'Bosh::Director::DeploymentPlan::Planner',
@@ -175,14 +175,14 @@ module Bosh::Director
 
             allow(DeploymentPlan::Assembler).to receive(:create).and_return(assembler)
             allow(JobRenderer).to receive(:render_job_instances_with_cache)
-              .with(logger, anything, template_blob_cache, anything, planner.link_provider_intents)
+              .with(per_spec_logger, anything, template_blob_cache, anything, planner.link_provider_intents)
           end
 
           let(:assembler) { instance_double(DeploymentPlan::Assembler, bind_models: nil) }
 
           let(:planner) do
-            ip_repo = DeploymentPlan::IpRepo.new(logger)
-            ip_provider = DeploymentPlan::IpProvider.new(ip_repo, {}, logger)
+            ip_repo = DeploymentPlan::IpRepo.new(per_spec_logger)
+            ip_provider = DeploymentPlan::IpProvider.new(ip_repo, {}, per_spec_logger)
 
             instance_double(
               'Bosh::Director::DeploymentPlan::Planner',
@@ -250,7 +250,7 @@ module Bosh::Director
 
                 before do
                   allow(LogBundlesCleaner).to receive(:new)
-                    .with(blobstore, 86_400 * 10, logger)
+                    .with(blobstore, 86_400 * 10, per_spec_logger)
                     .and_return(log_bundles_cleaner)
                 end
                 let(:log_bundles_cleaner) do
@@ -261,14 +261,14 @@ module Bosh::Director
 
                 before do
                   allow(LogsFetcher).to receive(:new)
-                    .with(instance_manager, log_bundles_cleaner, logger)
+                    .with(instance_manager, log_bundles_cleaner, per_spec_logger)
                     .and_return(logs_fetcher)
                 end
                 let(:logs_fetcher) { instance_double('Bosh::Director::LogsFetcher') }
 
                 before do
                   allow(Errand::InstanceGroupManager).to receive(:new)
-                    .with(planner, deployment_instance_group, logger)
+                    .with(planner, deployment_instance_group, per_spec_logger)
                     .and_return(instance_group_manager)
                 end
                 let(:instance_group_manager) do
@@ -349,7 +349,7 @@ module Bosh::Director
                       expect(instance_group_manager).to receive(:delete_vms).with(no_args).ordered.and_raise(cleanup_error)
 
                       expect { subject.perform }.to raise_error(original_error)
-                      expect(log_string).to include('cleanup error')
+                      expect(per_spec_log_string).to include('cleanup error')
                     end
                   end
                 end
@@ -377,7 +377,7 @@ module Bosh::Director
                 context 'when errand is run with when-changed' do
                   before do
                     allow(JobRenderer).to receive(:render_job_instances_with_cache)
-                      .with(logger, [instance_plan], template_blob_cache, anything, anything)
+                      .with(per_spec_logger, [instance_plan], template_blob_cache, anything, anything)
                     allow(deployment_instance_group).to receive(:needed_instance_plans).and_return([instance_plan])
                   end
 

@@ -17,10 +17,10 @@ module Bosh::Director
         describe '#perform' do
           context 'with a non-compilation instance' do
             it 'logs to debug log and uses JobRenderer to render job templates' do
-              expect(logger).to receive(:debug)
+              expect(per_spec_logger).to receive(:debug)
                 .with('Re-rendering templates with updated dynamic networks: template-spec')
               expect(JobRenderer).to receive(:render_job_instances_with_cache)
-                .with(logger, [instance_plan], blob_cache, dns_encoder, link_provider_intents)
+                .with(per_spec_logger, [instance_plan], blob_cache, dns_encoder, link_provider_intents)
 
               step.perform(report)
             end
@@ -30,7 +30,7 @@ module Bosh::Director
             before { allow(deployment_instance).to receive(:compilation?).and_return(true) }
 
             it 'logs that it is skipping due to being a compilation vm' do
-              expect(logger).to receive(:debug)
+              expect(per_spec_logger).to receive(:debug)
                 .with('Skipping job template rendering, as instance is a compilation instance')
               expect(JobRenderer).to_not receive(:render_job_instances_with_cache)
 

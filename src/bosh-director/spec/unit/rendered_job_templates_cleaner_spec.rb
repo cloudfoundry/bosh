@@ -3,7 +3,7 @@ require 'bosh/director/rendered_job_templates_cleaner'
 
 module Bosh::Director
   describe RenderedJobTemplatesCleaner do
-    subject(:rendered_job_templates) { described_class.new(instance_model, blobstore, logger) }
+    subject(:rendered_job_templates) { described_class.new(instance_model, blobstore, per_spec_logger) }
     let(:instance_model) { FactoryBot.create(:models_instance) }
     let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
 
@@ -30,7 +30,7 @@ module Bosh::Director
       it 'removes *stale* archives from the database even if the archives are not in the blobstore' do
         allow(instance_model).to receive(:stale_rendered_templates_archives).and_return([stale_archive])
         expect(blobstore).to receive(:delete).with('fake-blob-id').and_raise Bosh::Blobstore::NotFound
-        expect(logger).to receive(:debug).with(
+        expect(per_spec_logger).to receive(:debug).with(
           'Blobstore#delete error: Bosh::Blobstore::NotFound, will ignore this error and delete the db record',
         )
         expect(stale_archive).to receive(:delete).with(no_args)
@@ -61,7 +61,7 @@ module Bosh::Director
       it 'removes *all* archives from the database even if the archives are not in the blobstore' do
         allow(instance_model).to receive(:rendered_templates_archives).and_return([stale_archive])
         expect(blobstore).to receive(:delete).with('fake-blob-id').and_raise Bosh::Blobstore::NotFound
-        expect(logger).to receive(:debug).with(
+        expect(per_spec_logger).to receive(:debug).with(
           'Blobstore#delete error: Bosh::Blobstore::NotFound, will ignore this error and delete the db record',
         )
         expect(stale_archive).to receive(:delete).with(no_args)

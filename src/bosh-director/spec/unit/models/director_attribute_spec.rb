@@ -9,7 +9,7 @@ module Bosh::Director::Models
       context 'when uuid is found' do
         it 'returns uuid value' do
           described_class.create(name: 'uuid', value: 'fake-uuid')
-          expect(described_class.find_or_create_uuid(logger)).to eq('fake-uuid')
+          expect(described_class.find_or_create_uuid(per_spec_logger)).to eq('fake-uuid')
         end
       end
 
@@ -25,7 +25,7 @@ module Bosh::Director::Models
             expect(described_class).to receive(:first)
               .with(name: 'uuid')
               .and_return(initial_uuid, later_uuid)
-            expect(described_class.find_or_create_uuid(logger)).to eq('fake-uuid')
+            expect(described_class.find_or_create_uuid(per_spec_logger)).to eq('fake-uuid')
           end
         end
 
@@ -33,7 +33,7 @@ module Bosh::Director::Models
           it 'saves and returns newly created uuid' do
             expect(SecureRandom).to receive(:uuid).and_return('fake-uuid')
             expect {
-              @uuid = described_class.find_or_create_uuid(logger)
+              @uuid = described_class.find_or_create_uuid(per_spec_logger)
             }.to change { described_class.all.size }.by(1)
             expect(@uuid).to eq('fake-uuid')
           end

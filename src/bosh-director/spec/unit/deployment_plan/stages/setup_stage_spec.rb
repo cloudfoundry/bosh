@@ -16,7 +16,7 @@ module Bosh::Director
           )
         end
 
-        let(:base_job) { instance_double(Jobs::BaseJob, logger: logger) }
+        let(:base_job) { instance_double(Jobs::BaseJob, logger: per_spec_logger) }
         let(:vm_creator) { instance_double(VmCreator) }
 
         let(:instance_model_create_swap_delete) { instance_double(Models::Instance) }

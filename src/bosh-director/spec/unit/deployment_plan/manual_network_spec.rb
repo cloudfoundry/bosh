@@ -37,7 +37,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
         Bosh::Director::DeploymentPlan::AvailabilityZone.new('zone_1', {}),
         Bosh::Director::DeploymentPlan::AvailabilityZone.new('zone_2', {}),
       ],
-      logger,
+      per_spec_logger,
     )
   end
 

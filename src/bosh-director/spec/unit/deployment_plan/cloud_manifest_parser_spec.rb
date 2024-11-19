@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DeploymentPlan::CloudManifestParser do
-    subject(:parser) { described_class.new(logger) }
+    subject(:parser) { described_class.new(per_spec_logger) }
     let(:planner_attributes) do
       {
         name: 'deployment-name',

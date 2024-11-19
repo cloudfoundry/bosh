@@ -813,7 +813,7 @@ module Bosh::Director
         expect(rv.templates.map(&:version)).to match_array(%w[0.2-dev 33 666])
       end
 
-      it 'performs the rebase if same release is being rebased twice', if: ENV.fetch('DB', 'sqlite') != 'sqlite' do
+      it 'performs the rebase if same release is being rebased twice' do
         allow(Config).to receive_message_chain(:current_job, :username).and_return('username')
         task = FactoryBot.create(:models_task, state: 'processing')
         allow(Config).to receive_message_chain(:current_job, :task_id).and_return(task.id)
@@ -825,9 +825,7 @@ module Bosh::Director
         @release_path = File.join(@release_dir, 'release.tgz')
         @job = Jobs::UpdateRelease.new(@release_path, 'rebase' => true)
 
-        expect do
-          @job.perform
-        end.to_not raise_error
+        expect { @job.perform }.to_not raise_error
 
         rv = Models::ReleaseVersion.filter(release_id: @release.id, version: '42+dev.2').first
         expect(rv).to_not be_nil

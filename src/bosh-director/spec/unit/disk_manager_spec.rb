@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Bosh::Director::DiskManager do
-    subject(:disk_manager) { DiskManager.new(logger) }
+    subject(:disk_manager) { DiskManager.new(per_spec_logger) }
 
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:enable_cpi_resize_disk) { false }
@@ -24,7 +24,7 @@ module Bosh::Director
     let(:job_persistent_disk_size) { 1024 }
 
     let(:disk_collection) do
-      collection = DeploymentPlan::PersistentDiskCollection.new(logger)
+      collection = DeploymentPlan::PersistentDiskCollection.new(per_spec_logger)
       collection.add_by_disk_type(disk_type)
       collection
     end
@@ -38,7 +38,7 @@ module Bosh::Director
 
     let(:disk_type) { DeploymentPlan::DiskType.new('disk-name', job_persistent_disk_size, cloud_properties) }
     let(:deployment_model) { FactoryBot.create(:models_deployment, name: 'dep1') }
-    let(:instance) { DeploymentPlan::Instance.create_from_instance_group(instance_group, 1, 'started', deployment_model, {}, nil, logger, variables_interpolator) }
+    let(:instance) { DeploymentPlan::Instance.create_from_instance_group(instance_group, 1, 'started', deployment_model, {}, nil, per_spec_logger, variables_interpolator) }
     let(:instance_model) do
       FactoryBot.create(:models_instance, uuid: 'my-uuid-1', availability_zone: 'az1', variable_set_id: variable_set.id).tap do |i|
         FactoryBot.create(:models_vm, cid: 'vm234', instance_id: i.id, active: true, cpi: 'my-cpi')
@@ -201,7 +201,7 @@ module Bosh::Director
 
         context 'when the new disk is unmanaged' do
           let(:disk_collection) do
-            collection = DeploymentPlan::PersistentDiskCollection.new(logger)
+            collection = DeploymentPlan::PersistentDiskCollection.new(per_spec_logger)
             collection.add_by_disk_name_and_type('unmanaged-disk-name', disk_type)
             collection
           end
@@ -303,7 +303,7 @@ module Bosh::Director
 
           context 'when the new disk is unmanaged' do
             let(:disk_collection) do
-              collection = DeploymentPlan::PersistentDiskCollection.new(logger)
+              collection = DeploymentPlan::PersistentDiskCollection.new(per_spec_logger)
               collection.add_by_disk_name_and_type('unmanaged-disk-name', disk_type)
               collection
             end
@@ -417,7 +417,7 @@ module Bosh::Director
         context 'when uuid has been set' do
           let!(:instance_plan) do
             instance_model.uuid = '123-456-789'
-            instance = DeploymentPlan::Instance.create_from_instance_group(instance_group, 1, 'started', deployment_model, {}, nil, logger, variables_interpolator)
+            instance = DeploymentPlan::Instance.create_from_instance_group(instance_group, 1, 'started', deployment_model, {}, nil, per_spec_logger, variables_interpolator)
             instance.bind_existing_instance_model(instance_model)
 
             DeploymentPlan::InstancePlan.new(existing_instance: instance_model,
@@ -452,7 +452,7 @@ module Bosh::Director
         end
 
         it 'logs when the disks are inactive' do
-          expect(logger).to receive(:warn).with("'job-name/my-uuid-1 (1)' has inactive disk inactive-disk")
+          expect(per_spec_logger).to receive(:warn).with("'job-name/my-uuid-1 (1)' has inactive disk inactive-disk")
           disk_manager.update_persistent_disk(instance_plan)
         end
 
@@ -670,7 +670,7 @@ module Bosh::Director
         end
 
         context 'when we no longer need disk' do
-          let(:disk_collection) { DeploymentPlan::PersistentDiskCollection.new(logger) }
+          let(:disk_collection) { DeploymentPlan::PersistentDiskCollection.new(per_spec_logger) }
 
           it 'orphans disk' do
             expect(Models::PersistentDisk.all.size).to eq(1)
@@ -688,7 +688,7 @@ module Bosh::Director
           let(:job_persistent_disk_size) { 100 }
 
           it 're-attaches the disk' do
-            expect(logger).to receive(:warn).with(
+            expect(per_spec_logger).to receive(:warn).with(
               "Agent of 'job-name/my-uuid-1 (1)' reports no disk while director record shows 'disk123'. " \
               'Re-attaching existing persistent disk...',
             )
@@ -794,7 +794,7 @@ module Bosh::Director
       end
 
       context 'when instance desired job does not have disk' do
-        let(:disk_collection) { DeploymentPlan::PersistentDiskCollection.new(logger) }
+        let(:disk_collection) { DeploymentPlan::PersistentDiskCollection.new(per_spec_logger) }
 
         it 'does not attach current instance disk' do
           expect(cloud).to_not receive(:attach_disk)

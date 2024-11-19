@@ -12,7 +12,7 @@ module Bosh::Director::DeploymentPlan
         instance_group.networks,
         'fake-instance-group',
         availability_zones,
-        logger,
+        per_spec_logger,
       )
     end
 
@@ -24,7 +24,7 @@ module Bosh::Director::DeploymentPlan
     let(:desired_instance_count) { 3 }
     let(:event_log) { Bosh::Director::EventLog::Log.new(StringIO.new('')) }
     let(:index_assigner) { PlacementPlanner::IndexAssigner.new(deployment_model) }
-    let(:instance_repo) { Bosh::Director::DeploymentPlan::InstanceRepository.new(logger, variables_interpolator) }
+    let(:instance_repo) { Bosh::Director::DeploymentPlan::InstanceRepository.new(per_spec_logger, variables_interpolator) }
     let(:instance_plans) { zone_picker.place_and_match_in(desired_instances, existing_instances) }
 
     let(:instance_plan_factory) do
@@ -38,14 +38,14 @@ module Bosh::Director::DeploymentPlan
       )
     end
 
-    let(:network_planner) { NetworkPlanner::Planner.new(logger) }
+    let(:network_planner) { NetworkPlanner::Planner.new(per_spec_logger) }
     let(:planner) do
       planner = planner_factory.create_from_manifest(manifest, cloud_configs, [], {})
       stemcell = Stemcell.parse(manifest_hash['stemcells'].first)
       planner.add_stemcell(stemcell)
       planner
     end
-    let(:planner_factory) { PlannerFactory.new(manifest_validator, deployment_repo, logger) }
+    let(:planner_factory) { PlannerFactory.new(manifest_validator, deployment_repo, per_spec_logger) }
     let(:manifest_validator) { Bosh::Director::DeploymentPlan::ManifestValidator.new }
     let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, YAML.dump(manifest_hash), cloud_config_hash, nil) }
     let(:instance_group) { planner.instance_groups.first }

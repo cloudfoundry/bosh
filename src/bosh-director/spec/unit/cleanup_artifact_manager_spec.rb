@@ -31,7 +31,7 @@ module Bosh::Director
         allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
       end
 
-      subject { CleanupArtifactManager.new(options, logger) }
+      subject { CleanupArtifactManager.new(options, per_spec_logger) }
       context 'when remove_all is specified' do
         let(:options) { { 'remove_all' => true, 'keep_orphaned_disks' => false } }
 

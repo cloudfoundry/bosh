@@ -7,7 +7,7 @@ module Bosh::Director
     let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
     let(:delete_job) { Jobs::DeleteDeployment.new('test_deployment', {}) }
     let(:deleter) { InstanceDeleter.new(disk_manager, options) }
-    let(:disk_manager) { DiskManager.new(logger) }
+    let(:disk_manager) { DiskManager.new(per_spec_logger) }
     let(:dns_publisher) { instance_double(BlobstoreDnsPublisher, publish_and_broadcast: nil) }
     let(:local_dns_records_repo) { instance_double(LocalDnsRecordsRepo, delete_for_instance: nil) }
     let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
@@ -66,13 +66,13 @@ module Bosh::Director
 
       describe 'deleting instances' do
         let(:deployment_model) { FactoryBot.create(:models_deployment, name: 'deployment-name') }
-        let(:vm_deleter) { VmDeleter.new(logger, false, false) }
+        let(:vm_deleter) { VmDeleter.new(per_spec_logger, false, false) }
 
         let(:job_templates_cleaner) do
           job_templates_cleaner = instance_double('Bosh::Director::RenderedJobTemplatesCleaner')
 
           allow(RenderedJobTemplatesCleaner).to receive(:new)
-            .with(existing_instance, blobstore, logger).and_return(job_templates_cleaner)
+            .with(existing_instance, blobstore, per_spec_logger).and_return(job_templates_cleaner)
 
           job_templates_cleaner
         end
@@ -180,7 +180,7 @@ module Bosh::Director
           job_templates_cleaner = instance_double('Bosh::Director::RenderedJobTemplatesCleaner')
 
           allow(RenderedJobTemplatesCleaner).to receive(:new)
-            .with(existing_instance, blobstore, logger).and_return(job_templates_cleaner)
+            .with(existing_instance, blobstore, per_spec_logger).and_return(job_templates_cleaner)
 
           expect(job_templates_cleaner).to receive(:clean_all).with(no_args)
 
@@ -209,7 +209,7 @@ module Bosh::Director
         end
 
         context 'when force option is passed in' do
-          let(:vm_deleter) { VmDeleter.new(logger, true, false) }
+          let(:vm_deleter) { VmDeleter.new(per_spec_logger, true, false) }
           let(:options) do
             { force: true }
           end
@@ -284,7 +284,7 @@ module Bosh::Director
         end
 
         context 'when virtual_delete_vm option is passed in' do
-          let(:vm_deleter) { VmDeleter.new(logger, false, true) }
+          let(:vm_deleter) { VmDeleter.new(per_spec_logger, false, true) }
           let(:options) do
             { virtual_delete_vm: true }
           end

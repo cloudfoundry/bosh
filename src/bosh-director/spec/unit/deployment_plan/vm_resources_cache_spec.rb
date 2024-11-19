@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director::DeploymentPlan
   describe VmResourcesCache do
-    subject { VmResourcesCache.new(cloud_factory, logger) }
+    subject { VmResourcesCache.new(cloud_factory, per_spec_logger) }
 
     let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
     let(:fake_cpi1) { instance_double(Bosh::Clouds::ExternalCpi) }
@@ -45,7 +45,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     it 'logs the vm cloud properties returned by the CPI' do
-      expect(logger)
+      expect(per_spec_logger)
         .to receive(:info)
         .with("CPI cpi-name1 calculated vm cloud properties '#{vm_cloud_properties1}' for vm requirements '#{vm_resources}'")
 

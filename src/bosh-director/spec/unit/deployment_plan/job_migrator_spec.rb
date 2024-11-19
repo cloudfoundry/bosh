@@ -2,12 +2,12 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DeploymentPlan::JobMigrator do
-    subject(:job_migrator) { described_class.new(deployment_plan, logger) }
+    subject(:job_migrator) { described_class.new(deployment_plan, per_spec_logger) }
 
     let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment_model) }
 
     let(:etcd_instance_group) do
-      DeploymentPlan::InstanceGroup.parse(deployment_plan, instance_group_spec, Config.event_log, logger)
+      DeploymentPlan::InstanceGroup.parse(deployment_plan, instance_group_spec, Config.event_log, per_spec_logger)
     end
 
     let(:etcd_instance_group_spec) do
@@ -77,7 +77,7 @@ module Bosh::Director
     end
 
     let(:deployment_plan) do
-      planner_factory = DeploymentPlan::PlannerFactory.create(logger)
+      planner_factory = DeploymentPlan::PlannerFactory.create(per_spec_logger)
       plan = planner_factory.create_from_model(deployment_model)
       plan
     end
@@ -96,7 +96,7 @@ module Bosh::Director
       )
       version.add_template(template_model)
 
-      allow(logger).to receive(:debug)
+      allow(per_spec_logger).to receive(:debug)
     end
 
     describe 'find_existing_instances' do
@@ -135,11 +135,11 @@ module Bosh::Director
             end
 
             it 'logs the instance groups being migrated' do
-              expect(logger).to receive(:debug).with("Migrating instance group 'etcd_z1/uuid-1 (0)' to 'etcd/uuid-1 (0)'")
-              expect(logger).to receive(:debug).with("Migrating instance group 'etcd_z1/uuid-2 (1)' to 'etcd/uuid-2 (1)'")
-              expect(logger).to receive(:debug).with("Migrating instance group 'etcd_z1/uuid-3 (2)' to 'etcd/uuid-3 (2)'")
-              expect(logger).to receive(:debug).with("Migrating instance group 'etcd_z2/uuid-4 (0)' to 'etcd/uuid-4 (0)'")
-              expect(logger).to receive(:debug).with("Migrating instance group 'etcd_z2/uuid-5 (1)' to 'etcd/uuid-5 (1)'")
+              expect(per_spec_logger).to receive(:debug).with("Migrating instance group 'etcd_z1/uuid-1 (0)' to 'etcd/uuid-1 (0)'")
+              expect(per_spec_logger).to receive(:debug).with("Migrating instance group 'etcd_z1/uuid-2 (1)' to 'etcd/uuid-2 (1)'")
+              expect(per_spec_logger).to receive(:debug).with("Migrating instance group 'etcd_z1/uuid-3 (2)' to 'etcd/uuid-3 (2)'")
+              expect(per_spec_logger).to receive(:debug).with("Migrating instance group 'etcd_z2/uuid-4 (0)' to 'etcd/uuid-4 (0)'")
+              expect(per_spec_logger).to receive(:debug).with("Migrating instance group 'etcd_z2/uuid-5 (1)' to 'etcd/uuid-5 (1)'")
               job_migrator.find_existing_instances(etcd_instance_group)
             end
           end
@@ -179,12 +179,12 @@ module Bosh::Director
             end
 
             it 'logs the instance groups being migrated' do
-              expect(logger).to receive(:debug).with("Migrating instance group 'etcd_z1/uuid-1 (0)' to 'etcd/uuid-1 (0)'")
-              expect(logger).to receive(:debug).with("Migrating instance group 'etcd_z1/uuid-2 (1)' to 'etcd/uuid-2 (1)'")
-              expect(logger).to receive(:debug).with("Migrating instance group 'etcd_z1/uuid-3 (2)' to 'etcd/uuid-3 (2)'")
-              expect(logger).to receive(:debug).with("Migrating instance group 'etcd_z2/uuid-4 (0)' to 'etcd/uuid-4 (0)'")
-              expect(logger).to receive(:debug).with("Migrating instance group 'etcd_z2/uuid-5 (1)' to 'etcd/uuid-5 (1)'")
-              expect(logger).to receive(:debug).with("Migrating instance group 'etcd_z2/uuid-6 (2)' to 'etcd/uuid-6 (2)'")
+              expect(per_spec_logger).to receive(:debug).with("Migrating instance group 'etcd_z1/uuid-1 (0)' to 'etcd/uuid-1 (0)'")
+              expect(per_spec_logger).to receive(:debug).with("Migrating instance group 'etcd_z1/uuid-2 (1)' to 'etcd/uuid-2 (1)'")
+              expect(per_spec_logger).to receive(:debug).with("Migrating instance group 'etcd_z1/uuid-3 (2)' to 'etcd/uuid-3 (2)'")
+              expect(per_spec_logger).to receive(:debug).with("Migrating instance group 'etcd_z2/uuid-4 (0)' to 'etcd/uuid-4 (0)'")
+              expect(per_spec_logger).to receive(:debug).with("Migrating instance group 'etcd_z2/uuid-5 (1)' to 'etcd/uuid-5 (1)'")
+              expect(per_spec_logger).to receive(:debug).with("Migrating instance group 'etcd_z2/uuid-6 (2)' to 'etcd/uuid-6 (2)'")
               job_migrator.find_existing_instances(etcd_instance_group)
             end
           end
