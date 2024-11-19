@@ -1,8 +1,8 @@
-# This file is included by every sub-project's spec_helper
-SHARED_SPEC_ROOT = File.dirname(__FILE__)
-BOSH_REPO_SRC_DIR = File.expand_path(File.join(SHARED_SPEC_ROOT, '..','..'))
+# This file is included by every subproject's spec_helper
+SHARED_SPEC_ROOT = File.expand_path(File.dirname(__FILE__))
+BOSH_REPO_SRC_DIR = File.join(SHARED_SPEC_ROOT, '..','..')
 
-$LOAD_PATH << File.expand_path(SHARED_SPEC_ROOT)
+$LOAD_PATH << SHARED_SPEC_ROOT
 
 require 'rspec'
 require 'shared_support/deployment_manifest_helper'
