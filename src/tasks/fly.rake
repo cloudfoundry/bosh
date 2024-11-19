@@ -1,5 +1,3 @@
-require 'rspec'
-
 namespace :fly do
   desc 'Fly unit specs'
   task :unit do
@@ -116,6 +114,3 @@ namespace :fly do
     sh("#{env} fly #{concourse_target} #{execute_cmd.join(' ')}")
   end
 end
-
-desc 'Fly unit and integration specs'
-task fly: %w[fly:unit fly:integration]

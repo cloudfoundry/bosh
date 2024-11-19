@@ -1,3 +1,5 @@
+require 'common/retryable'
+
 module IntegrationSupport
 
   class ArtifactInstaller

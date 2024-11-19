@@ -1,22 +1,16 @@
-require 'fileutils'
-require 'logging'
 require 'rspec'
 require 'rspec/core/rake_task'
 require 'parallel_tests/tasks'
-require 'tempfile'
-
-require 'common/retryable'
-require 'common/thread_pool'
-
-require 'integration_support/workspace'
-require 'integration_support/config_server_service'
-require 'integration_support/nginx_service'
-require 'integration_support/uaa_service'
-require 'integration_support/verify_multidigest_manager'
-require 'integration_support/gnatsd_manager'
 
 namespace :spec do
   namespace :integration do
+    require 'integration_support/workspace'
+    require 'integration_support/config_server_service'
+    require 'integration_support/nginx_service'
+    require 'integration_support/uaa_service'
+    require 'integration_support/verify_multidigest_manager'
+    require 'integration_support/gnatsd_manager'
+
     desc 'Run health monitor integration tests against a local sandbox'
     task health_monitor: :install_dependencies do
       run_integration_specs(tags: 'hm')

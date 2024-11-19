@@ -2,8 +2,12 @@
 BOSH_REPO_ROOT = File.expand_path(File.join(File.dirname(__FILE__), '..'))
 BOSH_SRC_ROOT = File.join(BOSH_REPO_ROOT, 'src')
 
-$LOAD_PATH.unshift(File.join(BOSH_SRC_ROOT, 'spec'))
+$LOAD_PATH << File.join(BOSH_SRC_ROOT, 'spec')
+$LOAD_PATH << File.join(BOSH_SRC_ROOT, 'spec', 'shared', 'shared_support')
 
-require 'bosh/dev/tasks'
+import 'tasks/fly.rake'
+import 'tasks/spec.rake'
 
 task default: :spec
+
+require 'bosh/director/tasks'

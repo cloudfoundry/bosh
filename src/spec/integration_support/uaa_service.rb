@@ -1,8 +1,9 @@
-require 'yaml'
-require 'json'
-require 'fileutils'
-require 'tmpdir'
 require 'erb'
+require 'fileutils'
+require 'json'
+require 'logging'
+require 'tmpdir'
+require 'yaml'
 
 require 'bosh/template/evaluation_context'
 
