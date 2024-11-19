@@ -1,14 +1,4 @@
 PATH
-  remote: bosh-dev
-  specs:
-    bosh-dev (0.0.0)
-      bosh_common
-      bundler
-      json
-      logging
-      openssl
-
-PATH
   remote: bosh-director
   specs:
     bosh-director (0.0.0)
@@ -357,7 +347,6 @@ PLATFORMS
 DEPENDENCIES
   async-rspec
   blue-shell
-  bosh-dev!
   bosh-director!
   bosh-monitor!
   bosh-nats-sync!

@@ -7,7 +7,6 @@ groups:
       - bump-golang-deps
       - bump-packages
       - unit-common
-      - unit-dev
       - unit-monitor
       - unit-nats-sync
       - unit-template
@@ -61,7 +60,6 @@ jobs:
       - integration-postgres
       - integration-postgres-hotswap
       - unit-common
-      - unit-dev
       - unit-monitor
       - unit-nats-sync
       - unit-template
@@ -94,25 +92,6 @@ jobs:
       image: integration-image
       params:
         RAKE_TASK: spec:unit:common
-
-  - name: unit-dev
-    public: true
-    serial: true
-    serial_groups: [unit-dev]
-    build_logs_to_retain: 250
-    plan:
-    - in_parallel:
-      - get: bosh-ci
-      - get: bosh
-        trigger: true
-        passed: [gate]
-      - get: integration-image
-    - task: test-rake-task
-      timeout: 2h
-      file: bosh-ci/ci/tasks/test-rake-task.yml
-      image: integration-image
-      params:
-        RAKE_TASK: spec:unit:dev
 
   - name: unit-monitor
     public: true
@@ -415,7 +394,6 @@ jobs:
         trigger: true
         passed:
         - unit-common
-        - unit-dev
         - unit-monitor
         - unit-nats-sync
         - unit-template

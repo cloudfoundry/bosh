@@ -1,14 +1,11 @@
 BOSH_REPO_SRC = File.expand_path(File.join('..', '..', '..'), __FILE__)
 
 BOSH_DIRECTOR_ROOT = File.join(BOSH_REPO_SRC, 'bosh-director')
-BOSH_DEV_ROOT = File.join(BOSH_REPO_SRC, 'bosh-dev')
 
 $LOAD_PATH << File.join(BOSH_DIRECTOR_ROOT, 'lib')
-$LOAD_PATH << File.join(BOSH_DEV_ROOT, 'lib')
 
 require 'rspec'
 require 'sequel'
-require 'logging'
 require 'securerandom'
 
 require 'bosh/director/config'

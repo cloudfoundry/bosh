@@ -16,7 +16,6 @@ gem 'json', '~> 2.7.0'
 gem 'json_pure', '~> 2.7.0' # TODO: remove `json_pure` after https://github.com/cloudfoundry/cf-uaa-lib/pull/99
 
 group :development, :test do
-  gem 'bosh-dev', path: 'bosh-dev'
   gem 'bundle-audit'
   gem 'parallel_tests'
   gem 'rubocop'

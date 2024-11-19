@@ -8,7 +8,6 @@ jobs:
       matrix:
         sub_project:
         - common:parallel
-        - dev:parallel
         - monitor:parallel
         - nats-sync:parallel
         - template:parallel
