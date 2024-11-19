@@ -4,8 +4,6 @@ require 'securerandom'
 
 require 'cloud/dummy'
 
-require 'bosh/dev/db/db_helper'
-
 require 'integration_support/constants'
 require 'integration_support/service'
 require 'integration_support/http_endpoint_connector'
@@ -490,7 +488,7 @@ module IntegrationSupport
         begin
           db_options = db_config.dup
           db_options[:name] = @name
-          Bosh::Dev::DB::DBHelper.build(db_options: db_options)
+          SharedSupport::DBHelper.build(db_options: db_options)
         end
     end
 

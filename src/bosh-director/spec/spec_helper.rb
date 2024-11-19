@@ -10,14 +10,12 @@ require 'pg'
 require 'tempfile'
 require 'tmpdir'
 require 'zlib'
+
 require 'timecop'
-
-require 'db_migrator'
-
-require 'bosh/dev/db/db_helper'
-
 require 'webmock/rspec'
 require 'factory_bot'
+
+require 'db_migrator'
 
 Dir.glob(File.join(File.dirname(__FILE__), 'support/**/*.rb')).each { |f| require(f) }
 
@@ -99,7 +97,7 @@ module SpecHelper
       }
 
       @db_helper =
-        Bosh::Dev::DB::DBHelper.build(db_options: db_options)
+        SharedSupport::DBHelper.build(db_options: db_options)
 
       @init_logger.info("Create database '#{@db_helper.connection_string}'")
       @db_helper.create_db

@@ -1,5 +1,3 @@
-require 'bosh/dev/db/db_helper'
-
 namespace :db do
   namespace :migration do
     desc 'Generate new migration with NAME'

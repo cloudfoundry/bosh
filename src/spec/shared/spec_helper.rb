@@ -5,6 +5,7 @@ BOSH_REPO_SRC_DIR = File.join(SHARED_SPEC_ROOT, '..','..')
 $LOAD_PATH << SHARED_SPEC_ROOT
 
 require 'rspec'
+require 'shared_support/db_helper'
 require 'shared_support/deployment_manifest_helper'
 
 require 'shared_support/simplecov' if ENV['COVERAGE'] == 'true'

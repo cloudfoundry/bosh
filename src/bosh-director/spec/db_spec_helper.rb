@@ -15,8 +15,6 @@ require 'bosh/director/config'
 
 require 'db_migrator'
 
-require 'bosh/dev/db/db_helper'
-
 module DBSpecHelper
   class << self
     attr_reader :db, :director_migrations_dir, :director_migrations_digest_file
@@ -37,7 +35,7 @@ module DBSpecHelper
       }
 
       @db_helper =
-        Bosh::Dev::DB::DBHelper.build(db_options: db_options)
+        SharedSupport::DBHelper.build(db_options: db_options)
 
 
       @db_helper.create_db
