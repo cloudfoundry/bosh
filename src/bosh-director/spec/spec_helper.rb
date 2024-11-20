@@ -2,6 +2,9 @@ $LOAD_PATH << File.expand_path(File.dirname(__FILE__))
 
 require_relative '../../spec/shared/spec_helper'
 
+SPEC_ROOT = File.dirname(__FILE__)
+SPEC_ASSETS = File.join(SPEC_ROOT, 'assets')
+
 require 'digest/sha1'
 require 'fileutils'
 require 'logging'
@@ -16,6 +19,8 @@ require 'factory_bot'
 
 require 'db_migrator'
 
+require 'bosh/director'
+
 Dir.glob(File.join(File.dirname(__FILE__), 'support/**/*.rb')).each { |f| require(f) }
 
 ENV['RACK_ENV'] = 'test'
@@ -27,8 +32,6 @@ module SpecHelper
     attr_accessor :temp_dir
 
     def init
-      require 'bosh/director'
-
       init_database
 
       require 'factories'
@@ -37,12 +40,11 @@ module SpecHelper
     def init_logger
       @init_logger ||= begin
                     name = "bosh-director-spec-logger-#{Process.pid}"
-                    file_path = File.join(BOSH_REPO_SRC_DIR, 'tmp', "#{name}.log")
                     Logging::Logger.new(name).tap do |logger|
                       logger.add_appenders(
                         Logging.appenders.file(
                           "bosh-director-spec-logger-#{Process.pid}",
-                          filename: file_path,
+                          filename: File.join(BOSH_REPO_SRC_DIR, 'tmp', "#{name}.log"),
                           layout: ThreadFormatter.layout,
                         ),
                       )
@@ -52,32 +54,23 @@ module SpecHelper
     end
 
     def spec_get_director_config
-      config = YAML.load_file(File.expand_path('assets/test-director-config.yml', File.dirname(__FILE__)))
+      YAML.load_file(File.join(SPEC_ASSETS, 'test-director-config.yml')).tap do |config|
+        config['nats']['server_ca_path'] = File.join(SPEC_ASSETS, 'nats', 'nats_ca.pem')
+        config['nats']['client_ca_certificate_path'] = File.join(SPEC_ASSETS, 'nats', 'nats_ca_certificate.pem')
+        config['nats']['client_ca_private_key_path'] = File.join(SPEC_ASSETS, 'nats', 'nats_ca_private_key.pem')
 
-      config['nats']['server_ca_path'] = File.expand_path('assets/nats/nats_ca.pem', File.dirname(__FILE__))
-      config['nats']['client_ca_certificate_path'] = File.expand_path(
-        'assets/nats/nats_ca_certificate.pem',
-        File.dirname(__FILE__),
-      )
-      config['nats']['client_ca_private_key_path'] = File.expand_path(
-        'assets/nats/nats_ca_private_key.pem',
-        File.dirname(__FILE__),
-      )
-      config['db']['adapter'] = @db_helper.adapter
-      config['db']['host'] = @db_helper.host
-      config['db']['database'] = @db_helper.db_name
-      config['db']['user'] = @db_helper.username
-      config['db']['password'] = @db_helper.password
-      config['db']['port'] = @db_helper.port
-
-      config
+        config['db']['adapter'] = db_helper.adapter
+        config['db']['host'] = db_helper.host
+        config['db']['database'] = db_helper.db_name
+        config['db']['user'] = db_helper.username
+        config['db']['password'] = db_helper.password
+        config['db']['port'] = db_helper.port
+      end
     end
 
     def init_database
       connect_database
 
-      @db.loggers << @init_logger
-      @db.log_connection_info = true
       Bosh::Director::Config.db = @db
 
       Delayed::Worker.backend = :sequel
@@ -90,13 +83,17 @@ module SpecHelper
       db_helper.create_db
 
       Sequel.default_timezone = :utc
-      @db = Sequel.connect(db_helper.connection_string, max_connections: 32, pool_timeout: 10)
+      @db =
+        Sequel.connect(db_helper.connection_string, max_connections: 32, pool_timeout: 10).tap do |db|
+          db.loggers << init_logger
+          db.log_connection_info = true
+        end
     end
 
     def disconnect_database
       if @db
         @db.disconnect
-        init_logger.info("Drop database '#{@db_helper.connection_string}'")
+        init_logger.info("Drop database '#{db_helper.connection_string}'")
         db_helper.drop_db
 
         @db = nil
@@ -187,8 +184,8 @@ end
 
 def gzip(string)
   result = StringIO.new
-  zio = Zlib::GzipWriter.new(result, nil, nil)
-  zio.mtime = 1
+  zio = Zlib::GzipWriter.new(result)
+  zio.mtime = '1'
   zio.write(string)
   zio.close
   result.string
