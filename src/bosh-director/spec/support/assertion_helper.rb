@@ -1,4 +1,4 @@
-module BaseSharedExamples
+module AssertionHelper
   def it_implements_base_client_interface
     delegation_args = [[:rest, :args], [:block, :block]]
 
@@ -79,5 +79,5 @@ module BaseSharedExamples
 end
 
 RSpec.configure do |config|
-  config.extend(BaseSharedExamples)
+  config.extend(AssertionHelper)
 end
