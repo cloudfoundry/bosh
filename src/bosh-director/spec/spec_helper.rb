@@ -21,7 +21,7 @@ require 'db_migrator'
 
 require 'bosh/director'
 
-Dir.glob(File.join(File.dirname(__FILE__), 'support/**/*.rb')).each { |f| require(f) }
+Dir.glob(File.join(SPEC_ROOT, 'support/**/*.rb')).each { |f| require(f) }
 
 ENV['RACK_ENV'] = 'test'
 
@@ -67,6 +67,8 @@ module SpecHelper
           example.run
         end
       end
+
+      Bosh::Director::Config.db&.disconnect # prevent "too many connections" error
 
       if example.metadata[:truncation]
         database_logger.info("Truncating database '#{db_helper.connection_string}'")
