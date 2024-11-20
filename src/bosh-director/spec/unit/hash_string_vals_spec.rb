@@ -1,4 +1,4 @@
-require File.expand_path('../spec_helper', __dir__)
+require 'spec_helper'
 
 describe 'Bosh::Director.hash_string_vals' do
   let(:h) do

@@ -1,4 +1,4 @@
-require File.expand_path('../spec_helper', __dir__)
+require 'spec_helper'
 
 module Bosh::Director
   describe LockHelper do

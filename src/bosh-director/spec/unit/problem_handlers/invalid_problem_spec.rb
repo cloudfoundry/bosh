@@ -1,4 +1,4 @@
-require File.expand_path('../../../spec_helper', __FILE__)
+require 'spec_helper'
 
 describe Bosh::Director::ProblemHandlers::InvalidProblem do
   class ErrorHandler < Bosh::Director::ProblemHandlers::Base

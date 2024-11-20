@@ -1,4 +1,4 @@
-require File.expand_path('../spec_helper', __dir__)
+require 'spec_helper'
 
 describe Bosh::Director::CycleHelper do
   it 'should detect simple cycles' do
