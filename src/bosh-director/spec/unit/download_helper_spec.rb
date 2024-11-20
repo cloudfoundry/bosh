@@ -151,10 +151,17 @@ describe Bosh::Director::DownloadHelper do
       let(:remote_file) { 'http://user:password@example.com/file.tgz' }
       let(:remote_file_redacted) { 'http://<redacted>:<redacted>@example.com/file.tgz' }
 
+      before do
+        # DownloadHelper expects @logger to exist
+        @logger = double
+      end
+
       it 'should return a ResourceNotFound exception and redact basic auth' do
         expect(Net::HTTP).to receive(:start).with('example.com', 80, :ENV, use_ssl: false).and_yield(http)
         expect(http).to receive(:request).and_yield(http_404)
-        expect_logs_redacted
+
+        expect(@logger).to receive(:info).with(/#{remote_file_redacted}/)
+        expect(@logger).to receive(:error).with(/#{remote_file_redacted}/)
 
         expect do
           download_remote_file('resource', remote_file, local_file)
@@ -164,7 +171,9 @@ describe Bosh::Director::DownloadHelper do
       it 'should return a ResourceError exception if remote server returns an error code' do
         allow(Net::HTTP).to receive(:start).and_yield(http)
         expect(http).to receive(:request).and_yield(http_500)
-        expect_logs_redacted
+
+        expect(@logger).to receive(:info).with(/#{remote_file_redacted}/)
+        expect(@logger).to receive(:error).with(/#{remote_file_redacted}/)
 
         expect do
           download_remote_file('resource', remote_file, local_file)
@@ -173,17 +182,13 @@ describe Bosh::Director::DownloadHelper do
 
       it 'should return a ResourceError exception if there is a connection error' do
         allow(Net::HTTP).to receive(:start).and_raise(Timeout::Error)
-        expect_logs_redacted
+
+        expect(@logger).to receive(:info).with(/#{remote_file_redacted}/)
+        expect(@logger).to receive(:error).with(/#{remote_file_redacted}/)
 
         expect do
           download_remote_file('resource', remote_file, local_file)
         end.to raise_error(Bosh::Director::ResourceError, 'Downloading remote resource failed. Check task debug log for details.')
-      end
-
-      def expect_logs_redacted
-        @logger = double
-        expect(@logger).to receive(:info).with(/#{remote_file_redacted}/)
-        expect(@logger).to receive(:error).with(/#{remote_file_redacted}/)
       end
     end
   end
