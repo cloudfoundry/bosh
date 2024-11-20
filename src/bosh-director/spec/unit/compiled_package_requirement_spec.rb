@@ -7,7 +7,7 @@ module Bosh::Director
     let(:instance_group) { double('instance_group').as_null_object }
     let(:precompiled_package) { nil }
 
-    def make(package, stemcell)
+    def new_compiled_package_requirement(package, stemcell)
       CompiledPackageRequirement.new(
         package: package,
         stemcell: stemcell,
@@ -27,13 +27,13 @@ module Bosh::Director
       let(:dep_pkg2) { double('dependent package 2', fingerprint: 'dp_fingerprint2', version: '9.2-dev', name: 'zyx') }
       let(:dep_pkg1) { double('dependent package 1', fingerprint: 'dp_fingerprint1', version: '10.1-dev', name: 'abc') }
 
-      let(:dep_requirement2) { make(dep_pkg2, stemcell) }
-      let(:dep_requirement1) { make(dep_pkg1, stemcell) }
+      let(:dep_requirement2) { new_compiled_package_requirement(dep_pkg2, stemcell) }
+      let(:dep_requirement1) { new_compiled_package_requirement(dep_pkg1, stemcell) }
 
       let(:dependent_packages) { [] }
 
       subject(:requirement) do
-        make(package, stemcell)
+        new_compiled_package_requirement(package, stemcell)
       end
 
       context 'with an initial instance_group' do
@@ -59,7 +59,7 @@ module Bosh::Director
       let(:compiled_package) { FactoryBot.create(:models_compiled_package, package: package, stemcell_os: 'chrome-os', stemcell_version: 'latest') }
 
       it 'can tell if compiled' do
-        requirement = make(package, stemcell)
+        requirement = new_compiled_package_requirement(package, stemcell)
         expect(requirement.ready_to_compile?).to be(true)
         expect(requirement.compiled?).to be(false)
 
@@ -72,9 +72,9 @@ module Bosh::Director
         dep1 = FactoryBot.create(:models_package, name: 'bar')
         dep2 = FactoryBot.create(:models_package, name: 'baz')
 
-        requirement = make(package, stemcell)
-        dep1_requirement = make(dep1, stemcell)
-        dep2_requirement = make(dep2, stemcell)
+        requirement = new_compiled_package_requirement(package, stemcell)
+        dep1_requirement = new_compiled_package_requirement(dep1, stemcell)
+        dep2_requirement = new_compiled_package_requirement(dep2, stemcell)
 
         requirement.add_dependency(dep1_requirement)
         requirement.add_dependency(dep2_requirement)
@@ -95,9 +95,9 @@ module Bosh::Director
         bar = FactoryBot.create(:models_package, name: 'bar')
         baz = FactoryBot.create(:models_package, name: 'baz')
 
-        foo_requirement = make(foo, stemcell)
-        bar_requirement = make(bar, stemcell)
-        baz_requirement = make(baz, stemcell)
+        foo_requirement = new_compiled_package_requirement(foo, stemcell)
+        bar_requirement = new_compiled_package_requirement(bar, stemcell)
+        baz_requirement = new_compiled_package_requirement(baz, stemcell)
 
         expect(foo_requirement.dependencies).to eq([])
         expect(bar_requirement.dependent_requirements).to eq([])
@@ -122,7 +122,7 @@ module Bosh::Director
         cp = FactoryBot.create(:models_compiled_package, stemcell_os: 'firefox_os', stemcell_version: '2')
         cp2 = FactoryBot.create(:models_compiled_package, stemcell_os: 'firefox_os', stemcell_version: '2')
 
-        requirement = make(package, stemcell)
+        requirement = new_compiled_package_requirement(package, stemcell)
 
         instance_group_a = instance_group
         instance_group_b = instance_double('Bosh::Director::DeploymentPlan::InstanceGroup')
@@ -149,8 +149,8 @@ module Bosh::Director
         bar = FactoryBot.create(:models_package, name: 'bar', version: '42')
         cp = FactoryBot.create(:models_compiled_package, package: bar, build: 152, sha1: 'deadbeef', blobstore_id: 'deadcafe', stemcell_os: 'linux', stemcell_version: '2.6.11')
 
-        foo_requirement = make(foo, stemcell)
-        bar_requirement = make(bar, stemcell)
+        foo_requirement = new_compiled_package_requirement(foo, stemcell)
+        bar_requirement = new_compiled_package_requirement(bar, stemcell)
 
         foo_requirement.add_dependency(bar_requirement)
 
@@ -178,9 +178,9 @@ module Bosh::Director
 
         cp_bar = FactoryBot.create(:models_compiled_package, package: bar, build: 152, sha1: 'deadbeef', blobstore_id: 'deadcafe', stemcell_os: 'chrome-os', stemcell_version: 'latest')
 
-        foo_requirement = make(foo, stemcell)
-        bar_requirement = make(bar, stemcell)
-        baz_requirement = make(baz, stemcell)
+        foo_requirement = new_compiled_package_requirement(foo, stemcell)
+        bar_requirement = new_compiled_package_requirement(bar, stemcell)
+        baz_requirement = new_compiled_package_requirement(baz, stemcell)
 
         foo_requirement.add_dependency(bar_requirement)
         bar_requirement.add_dependency(baz_requirement)
