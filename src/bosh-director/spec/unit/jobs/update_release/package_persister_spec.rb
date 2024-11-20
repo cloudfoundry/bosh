@@ -21,7 +21,7 @@ module Bosh::Director
             )
           end
 
-          let(:release_dir) { Support::ReleaseHelper.new.create_release_tarball(manifest) }
+          let(:release_dir) { create_release_tarball(manifest) }
           let(:release_version) { '42+dev.6' }
           let(:release_version_model) { FactoryBot.create(:models_release_version, version: release_version) }
           let(:release) { FactoryBot.create(:models_release, name: 'appcloud') }
@@ -305,7 +305,7 @@ module Bosh::Director
           package_path = File.join(release_dir, 'packages', 'test_package.tgz')
 
           File.open(package_path, 'w') do |f|
-            f.write(create_package('test' => 'test contents'))
+            f.write(create_release_package('test' => 'test contents'))
           end
 
           expect(blobstore).to receive(:create)
@@ -340,7 +340,7 @@ module Bosh::Director
           FileUtils.mkdir_p(File.join(release_dir, 'packages'))
           package_path = File.join(release_dir, 'packages', 'test_package.tgz')
           File.open(package_path, 'w') do |f|
-            f.write(create_package('test' => 'test contents'))
+            f.write(create_release_package('test' => 'test contents'))
           end
 
           Jobs::UpdateRelease::PackagePersister.create_package(
@@ -416,19 +416,6 @@ module Bosh::Director
             expect(package.sha1).to be_nil
             expect(package.blobstore_id).to be_nil
           end
-        end
-
-        def create_package(files)
-          io = StringIO.new
-
-          Minitar::Writer.open(io) do |tar|
-            files.each do |key, value|
-              tar.add_file(key, mode: '0644', mtime: 0) { |os, _| os.write(value) }
-            end
-          end
-
-          io.close
-          gzip(io.string)
         end
       end
     end

@@ -16,7 +16,7 @@ module Bosh::Director
       let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
       let(:job_tarball_path) { File.join(release_dir, 'jobs', 'foo-job.tgz') }
 
-      let(:job_bits) { create_job('foo-job', 'monit', {'foo-erb' => {'destination' => 'foo-rendered', 'contents' => 'bar'}}) }
+      let(:job_bits) { create_release_job('foo-job', 'monit', { 'foo-erb' => { 'destination' => 'foo-rendered', 'contents' => 'bar'}}) }
       before { FileUtils.mkdir_p(File.dirname(job_tarball_path)) }
 
       before { allow(blobstore).to receive(:create).and_return('fake-blobstore-id') }
@@ -102,7 +102,7 @@ module Bosh::Director
 
       it 'whines on missing manifest' do
         job_without_manifest =
-          create_job('foo-job', 'monit', {'foo-erb' => {'destination' => 'foo-rendered', 'contents' => 'bar'}}, skip_manifest: true)
+          create_release_job('foo-job', 'monit', { 'foo-erb' => { 'destination' => 'foo-rendered', 'contents' => 'bar'}}, skip_manifest: true)
 
         File.open(job_tarball_path, 'w') { |f| f.write(job_without_manifest) }
 
@@ -111,7 +111,7 @@ module Bosh::Director
 
       it 'whines on inconsistent job name' do
         job_without_manifest =
-          create_job('different-job-name', 'monit', {'foo-erb' => {'destination' => 'foo-rendered', 'contents' => 'bar'}})
+          create_release_job('different-job-name', 'monit', { 'foo-erb' => { 'destination' => 'foo-rendered', 'contents' => 'bar'}})
 
         File.open(job_tarball_path, 'w') { |f| f.write(job_without_manifest) }
 
@@ -120,7 +120,7 @@ module Bosh::Director
 
       it 'whines on missing monit file' do
         job_without_monit =
-          create_job('foo-job', 'monit', {'foo-erb' => {'destination' => 'foo-rendered', 'contents' => 'bar'}}, skip_monit: true)
+          create_release_job('foo-job', 'monit', { 'foo-erb' => { 'destination' => 'foo-rendered', 'contents' => 'bar'}}, skip_monit: true)
         File.open(job_tarball_path, 'w') { |f| f.write(job_without_monit) }
 
         expect { release_job.update }.to raise_error(JobMissingMonit)
@@ -128,7 +128,7 @@ module Bosh::Director
 
       it 'does not whine when it has a foo.monit file' do
         job_without_monit =
-          create_job('foo-job', 'monit', {'foo-erb' => {'destination' => 'foo-rendered', 'contents' => 'bar'}}, monit_file: 'foo.monit')
+          create_release_job('foo-job', 'monit', { 'foo-erb' => { 'destination' => 'foo-rendered', 'contents' => 'bar'}}, monit_file: 'foo.monit')
 
         File.open(job_tarball_path, 'w') { |f| f.write(job_without_monit) }
 
@@ -137,7 +137,7 @@ module Bosh::Director
 
       it 'saves the templates hash in the template spec' do
         job_with_interesting_templates =
-          create_job('foo-job', 'monit', {
+          create_release_job('foo-job', 'monit', {
             'template source path' => {'destination' => 'rendered template path', 'contents' => 'whatever'}
           }, monit_file: 'foo.monit')
 
@@ -150,7 +150,7 @@ module Bosh::Director
 
       it 'whines on missing template' do
         job_without_template =
-          create_job('foo-job', 'monit', {'foo-erb' => {'destination' => 'foo-rendered', 'contents' => 'bar'}}, skip_templates: ['foo-erb'])
+          create_release_job('foo-job', 'monit', { 'foo-erb' => { 'destination' => 'foo-rendered', 'contents' => 'bar'}}, skip_templates: ['foo-erb'])
 
         File.open(job_tarball_path, 'w') { |f| f.write(job_without_template) }
 
@@ -159,8 +159,8 @@ module Bosh::Director
 
       it 'does not whine when no packages are specified' do
         job_without_packages =
-          create_job('foo-job', 'monit', {'foo-erb' => {'destination' => 'foo-renderd', 'contents' => 'bar'}},
-            manifest: {
+          create_release_job('foo-job', 'monit', { 'foo-erb' => { 'destination' => 'foo-renderd', 'contents' => 'bar'}},
+                             manifest: {
               'name' => 'foo-job',
               'templates' => {}
             })
@@ -173,8 +173,8 @@ module Bosh::Director
 
       it 'whines when packages is not an array' do
         job_with_invalid_packages =
-          create_job('foo-job', 'monit', {'foo-erb' => {'destination' => 'foo-rendered', 'contents' => 'bar'}},
-            manifest: {
+          create_release_job('foo-job', 'monit', { 'foo-erb' => { 'destination' => 'foo-rendered', 'contents' => 'bar'}},
+                             manifest: {
               'name' => 'foo-job',
               'templates' => {},
               'packages' => 'my-awesome-package'
@@ -186,8 +186,8 @@ module Bosh::Director
 
       context 'when job spec file includes provides' do
         it 'verifies it is an array' do
-          job_with_invalid_spec = create_job('foo-job', 'monit', {},
-            manifest: {
+          job_with_invalid_spec = create_release_job('foo-job', 'monit', {},
+                                                     manifest: {
               'name' => 'foo-job',
               'provides' => 'Invalid'
             })
@@ -197,8 +197,8 @@ module Bosh::Director
         end
 
         it 'verifies that it is an array of hashes' do
-          job_with_invalid_spec = create_job('foo-job', 'monit', {},
-            manifest: {
+          job_with_invalid_spec = create_release_job('foo-job', 'monit', {},
+                                                     manifest: {
               'name' => 'foo-job',
               'provides' => ['Invalid', 1]
             })
@@ -208,8 +208,8 @@ module Bosh::Director
         end
 
         it 'verifies hash contains name and type' do
-          job_with_invalid_spec = create_job('foo-job', 'monit', {},
-            manifest: {
+          job_with_invalid_spec = create_release_job('foo-job', 'monit', {},
+                                                     manifest: {
               'name' => 'foo-job',
               'provides' => [{'name' => 'db'}]
             })
@@ -219,8 +219,8 @@ module Bosh::Director
         end
 
         it 'verifies names are unique' do
-          job_with_invalid_spec = create_job('foo-job', 'monit', {},
-            manifest: {
+          job_with_invalid_spec = create_release_job('foo-job', 'monit', {},
+                                                     manifest: {
               'name' => 'foo-job',
               'provides' => [{'name' => 'db', 'type' => 'first'}, {'name' => 'db', 'type' => 'second'}]
             })
@@ -233,8 +233,8 @@ module Bosh::Director
         end
 
         it 'saves them on template' do
-          job_with_invalid_spec = create_job('foo-job', 'monit', {},
-            manifest: {
+          job_with_invalid_spec = create_release_job('foo-job', 'monit', {},
+                                                     manifest: {
               'name' => 'foo-job',
               'provides' => [{'name' => 'db1', 'type' =>'db'}, {'name' => 'db2', 'type' =>'db'}]
             })
@@ -252,8 +252,8 @@ module Bosh::Director
         it 'verifies it is an array' do
           allow(blobstore).to receive(:create).and_return('fake-blobstore-id')
 
-          job_with_invalid_spec = create_job('foo-job', 'monit', {},
-            manifest: {
+          job_with_invalid_spec = create_release_job('foo-job', 'monit', {},
+                                                     manifest: {
               'name' => 'foo-job',
               'consumes' => 'Invalid'
             })
@@ -263,8 +263,8 @@ module Bosh::Director
         end
 
         it 'verifies that it is an array of string' do
-          job_with_invalid_spec = create_job('foo-job', 'monit', {},
-            manifest: {
+          job_with_invalid_spec = create_release_job('foo-job', 'monit', {},
+                                                     manifest: {
               'name' => 'foo-job',
               'consumes' => ['Invalid', 1]
             })
@@ -274,8 +274,8 @@ module Bosh::Director
         end
 
         it 'verifies hash contains name and type' do
-          job_with_invalid_spec = create_job('foo-job', 'monit', {},
-            manifest: {
+          job_with_invalid_spec = create_release_job('foo-job', 'monit', {},
+                                                     manifest: {
               'name' => 'foo-job',
               'consumes' => [{'name' => 'db'}]
             })
@@ -285,8 +285,8 @@ module Bosh::Director
         end
 
         it 'verifies names are unique' do
-          job_with_invalid_spec = create_job('foo-job', 'monit', {},
-            manifest: {
+          job_with_invalid_spec = create_release_job('foo-job', 'monit', {},
+                                                     manifest: {
               'name' => 'foo-job',
               'consumes' => [{'name' => 'db', 'type' => 'one'}, {'name' => 'db', 'type' => 'two'}]
             })
@@ -299,8 +299,8 @@ module Bosh::Director
         end
 
         it 'saves them on template' do
-          job_with_invalid_spec = create_job('foo-job', 'monit', {},
-            manifest: {
+          job_with_invalid_spec = create_release_job('foo-job', 'monit', {},
+                                                     manifest: {
               'name' => 'foo-job',
               'consumes' => [{'name' => 'db1', 'type' =>'db'}, {'name' => 'db2', 'type' =>'db'}]
             })
@@ -313,44 +313,6 @@ module Bosh::Director
           expect(template.consumes).to eq([{'name' => 'db1', 'type' =>'db'}, {'name' => 'db2', 'type' =>'db'} ])
         end
       end
-    end
-
-    def create_job(name, monit, configuration_files, options = { })
-      io = StringIO.new
-
-      manifest = {
-        'name' => name,
-        'templates' => {},
-        'packages' => []
-      }.merge(options.fetch(:manifest, {}))
-
-      configuration_files.each do |path, configuration_file|
-        manifest['templates'][path] = configuration_file['destination']
-      end
-
-      Minitar::Writer.open(io) do |tar|
-        manifest = options[:manifest] if options[:manifest]
-        unless options[:skip_manifest]
-          tar.add_file('job.MF', {:mode => '0644', :mtime => 0}) { |os, _| os.write(manifest.to_yaml) }
-        end
-        unless options[:skip_monit]
-          monit_file = options[:monit_file] ? options[:monit_file] : 'monit'
-          tar.add_file(monit_file, {:mode => '0644', :mtime => 0}) { |os, _| os.write(monit) }
-        end
-
-        tar.mkdir('templates', {:mode => '0755', :mtime => 0})
-        configuration_files.each do |path, configuration_file|
-          unless options[:skip_templates] && options[:skip_templates].include?(path)
-            tar.add_file("templates/#{path}", {:mode => '0644', :mtime => 0}) do |os, _|
-              os.write(configuration_file['contents'])
-            end
-          end
-        end
-      end
-
-      io.close
-
-      gzip(io.string)
     end
   end
 end

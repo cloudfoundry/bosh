@@ -160,13 +160,14 @@ RSpec.configure do |config|
   end
 end
 
-def gzip(string)
-  result = StringIO.new
-  zio = Zlib::GzipWriter.new(result)
-  zio.mtime = '1'
-  zio.write(string)
-  zio.close
-  result.string
+def gzip(string_to_gzip)
+  StringIO.new.tap do |io|
+    Zlib::GzipWriter.new(io).tap do |gz|
+      gz.mtime = '1'
+      gz.write(string_to_gzip)
+      gz.close
+    end
+  end.string
 end
 
 def linted_rack_app(app)

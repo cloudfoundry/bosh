@@ -26,7 +26,7 @@ module Bosh::Director
     describe 'Compiled release upload' do
       subject(:job) { Jobs::UpdateRelease.new(release_path, job_options) }
 
-      let(:release_dir) { Support::ReleaseHelper.new.create_release_tarball(manifest) }
+      let(:release_dir) { create_release_tarball(manifest) }
       let(:release_path) { File.join(release_dir, 'release.tgz') }
       let(:release_version) { '42+dev.6' }
       let(:release) { FactoryBot.create(:models_release, name: 'appcloud') }
@@ -99,7 +99,7 @@ module Bosh::Director
         {}
       end
 
-      let(:release_dir) { Support::ReleaseHelper.new.create_release_tarball(manifest) }
+      let(:release_dir) { create_release_tarball(manifest) }
       before { allow(Dir).to receive(:mktmpdir).and_return(release_dir) }
 
       let(:release_path) { File.join(release_dir, 'release.tgz') }
@@ -616,7 +616,7 @@ module Bosh::Director
       end
 
       before do
-        @release_dir = Support::ReleaseHelper.new.create_release_tarball(manifest)
+        @release_dir = create_release_tarball(manifest)
         @release_path = File.join(@release_dir, 'release.tgz')
 
         @job = Jobs::UpdateRelease.new(@release_path, 'rebase' => true)
@@ -821,7 +821,7 @@ module Bosh::Director
         Config.configure(SpecHelper.director_config_hash)
         @job.perform
 
-        @release_dir = Support::ReleaseHelper.new.create_release_tarball(manifest)
+        @release_dir = create_release_tarball(manifest)
         @release_path = File.join(@release_dir, 'release.tgz')
         @job = Jobs::UpdateRelease.new(@release_path, 'rebase' => true)
 
@@ -834,7 +834,7 @@ module Bosh::Director
 
     describe 'uploading release with --fix' do
       subject(:job) { Jobs::UpdateRelease.new(release_path, 'fix' => true) }
-      let(:release_dir) { Support::ReleaseHelper.new.create_release_tarball(manifest) }
+      let(:release_dir) { create_release_tarball(manifest) }
       let(:release_path) { File.join(release_dir, 'release.tgz') }
       let!(:release) { FactoryBot.create(:models_release, name: 'appcloud') }
 
@@ -1191,7 +1191,7 @@ module Bosh::Director
 
     describe 'process_release' do
       subject(:job) { Jobs::UpdateRelease.new(release_path) }
-      let(:release_dir) { Support::ReleaseHelper.new.create_release_tarball(manifest) }
+      let(:release_dir) { create_release_tarball(manifest) }
       let(:release_path) { File.join(release_dir, 'release.tgz') }
       let(:manifest) do
         {
@@ -1279,7 +1279,7 @@ module Bosh::Director
         ]
       end
 
-      let(:release_dir) { Support::ReleaseHelper.new.create_release_tarball(manifest, skip_packages: true) }
+      let(:release_dir) { create_release_tarball(manifest, skip_packages: true) }
       let(:release_path) { File.join(release_dir, 'release.tgz') }
       let(:release_version) { '42+dev.6' }
       let(:release) { FactoryBot.create(:models_release, name: 'appcloud') }

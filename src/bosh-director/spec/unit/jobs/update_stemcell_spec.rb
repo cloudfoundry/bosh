@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'net/http'
 
 describe Bosh::Director::Jobs::UpdateStemcell do
   before do
@@ -31,15 +30,26 @@ describe Bosh::Director::Jobs::UpdateStemcell do
         'operating_system' => 'jeos-5',
         'stemcell_formats' => ['dummy'],
         'cloud_properties' => { 'ram' => '2gb' },
-        'sha1' => 'shawone',
+        'sha1' => 'FAKE_SHA1',
       }
     end
 
+    let(:stemcell_image_content) { 'FAKE_STEMCELL_IMAGE_CONTENT' }
     let(:stemcell_file) do
-      stemcell_contents = create_stemcell(manifest, 'image contents')
-      file = Tempfile.new('stemcell_contents')
-      File.open(file.path, 'w') { |f| f.write(stemcell_contents) }
-      file
+      Tempfile.new('stemcell_contents').tap do |tempfile|
+        File.write(tempfile.path,
+                   gzip(
+                     StringIO.new.tap do |io|
+                       Minitar::Writer.open(io) do |tar|
+                         tar.add_file('stemcell.MF', mode: '0644', mtime: 0) { |os, _| os.write(manifest.to_yaml) }
+                         tar.add_file('image', mode: '0644', mtime: 0) { |os, _| os.write(stemcell_image_content) }
+                       end
+
+                       io.close
+                     end.string
+                   ),
+        )
+      end
     end
 
     before do
@@ -70,7 +80,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
           expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
             contents = File.open(image, &:read)
-            expect(contents).to eq('image contents')
+            expect(contents).to eq(stemcell_image_content)
             'stemcell-cid'
           end
 
@@ -84,7 +94,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           stemcell = Bosh::Director::Models::Stemcell.find(name: 'jeos', version: '5')
           expect(stemcell).not_to be_nil
           expect(stemcell.cid).to eq('stemcell-cid')
-          expect(stemcell.sha1).to eq('shawone')
+          expect(stemcell.sha1).to eq('FAKE_SHA1')
           expect(stemcell.operating_system).to eq('jeos-5')
           expect(stemcell.api_version).to be_nil
         end
@@ -107,7 +117,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
             expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
             expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
               contents = File.open(image, &:read)
-              expect(contents).to eq('image contents')
+              expect(contents).to eq(stemcell_image_content)
               'stemcell-cid'
             end
 
@@ -120,7 +130,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
             stemcell = Bosh::Director::Models::Stemcell.find(name: 'jeos', version: '5')
             expect(stemcell).not_to be_nil
             expect(stemcell.cid).to eq('stemcell-cid')
-            expect(stemcell.sha1).to eq('shawone')
+            expect(stemcell.sha1).to eq('FAKE_SHA1')
             expect(stemcell.operating_system).to eq('jeos-5')
             expect(stemcell.api_version).to be_nil
           end
@@ -135,7 +145,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
           expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
             contents = File.open(image, &:read)
-            expect(contents).to eql('image contents')
+            expect(contents).to eql(stemcell_image_content)
             'stemcell-cid'
           end
 
@@ -153,7 +163,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           stemcell = Bosh::Director::Models::Stemcell.find(name: 'jeos', version: '5')
           expect(stemcell).not_to be_nil
           expect(stemcell.cid).to eq('stemcell-cid')
-          expect(stemcell.sha1).to eq('shawone')
+          expect(stemcell.sha1).to eq('FAKE_SHA1')
           expect(stemcell.api_version).to be_nil
         end
 
@@ -191,7 +201,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
             expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
             expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
               contents = File.open(image, &:read)
-              expect(contents).to eql('image contents')
+              expect(contents).to eql(stemcell_image_content)
               'stemcell-cid'
             end
 
@@ -209,7 +219,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
             stemcell = Bosh::Director::Models::Stemcell.find(name: 'jeos', version: '5')
             expect(stemcell).not_to be_nil
             expect(stemcell.cid).to eq('stemcell-cid')
-            expect(stemcell.sha1).to eq('shawone')
+            expect(stemcell.sha1).to eq('FAKE_SHA1')
             expect(stemcell.api_version).to be_nil
           end
         end
@@ -219,7 +229,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
         expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
         expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
           contents = File.open(image, &:read)
-          expect(contents).to eql('image contents')
+          expect(contents).to eql(stemcell_image_content)
           'stemcell-cid'
         end
 
@@ -339,14 +349,14 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
           expect(stemcells.count).to eq(2)
           expect(stemcells[0]).not_to be_nil
-          expect(stemcells[0].sha1).to eq('shawone')
+          expect(stemcells[0].sha1).to eq('FAKE_SHA1')
           expect(stemcells[0].operating_system).to eq('jeos-5')
           expect(stemcells[0].cpi).to eq('cloud1')
           expect(stemcells[0].cid).to eq('stemcell-cid1')
           expect(stemcells[0].api_version).to be_nil
 
           expect(stemcells[1]).not_to be_nil
-          expect(stemcells[1].sha1).to eq('shawone')
+          expect(stemcells[1].sha1).to eq('FAKE_SHA1')
           expect(stemcells[1].operating_system).to eq('jeos-5')
           expect(stemcells[1].cpi).to eq('cloud3')
           expect(stemcells[1].cid).to eq('stemcell-cid3')
@@ -429,7 +439,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
           expect(stemcells.count).to eq(1)
           expect(stemcells[0]).not_to be_nil
-          expect(stemcells[0].sha1).to eq('shawone')
+          expect(stemcells[0].sha1).to eq('FAKE_SHA1')
           expect(stemcells[0].operating_system).to eq('jeos-5')
           expect(stemcells[0].cpi).to eq('')
           expect(stemcells[0].api_version).to be_nil
@@ -443,7 +453,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           'name' => 'jeos',
           'version' => 5,
           'cloud_properties' => { 'ram' => '2gb' },
-          'sha1' => 'shawone',
+          'sha1' => 'FAKE_SHA1',
         }
       end
 
@@ -452,7 +462,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
           expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
             contents = File.open(image, &:read)
-            expect(contents).to eql('image contents')
+            expect(contents).to eql(stemcell_image_content)
             'stemcell-cid'
           end
 
@@ -466,7 +476,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
             'name' => 'jeos',
             'version' => 5,
             'cloud_properties' => { 'ram' => '2gb' },
-            'sha1' => 'shawone',
+            'sha1' => 'FAKE_SHA1',
           }
         end
 
@@ -474,7 +484,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(cloud).to receive(:info).and_return({})
           expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
             contents = File.open(image, &:read)
-            expect(contents).to eql('image contents')
+            expect(contents).to eql(stemcell_image_content)
             'stemcell-cid'
           end
 
@@ -488,7 +498,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
             'name' => 'jeos',
             'version' => 5,
             'cloud_properties' => { 'ram' => '2gb' },
-            'sha1' => 'shawone',
+            'sha1' => 'FAKE_SHA1',
           }
         end
 
@@ -496,7 +506,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(cloud).to receive(:info).and_raise(Bosh::Clouds::NotImplemented)
           expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
             contents = File.open(image, &:read)
-            expect(contents).to eql('image contents')
+            expect(contents).to eql(stemcell_image_content)
             'stemcell-cid'
           end
 
@@ -511,7 +521,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           'name' => 'jeos',
           'version' => 5,
           'cloud_properties' => { 'ram' => '2gb' },
-          'sha1' => 'shawone',
+          'sha1' => 'FAKE_SHA1',
         }
       end
 
@@ -519,7 +529,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
         expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
         expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
           contents = File.open(image, &:read)
-          expect(contents).to eql('image contents')
+          expect(contents).to eql(stemcell_image_content)
           'stemcell-cid'
         end
 
@@ -536,7 +546,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           'operating_system' => 'jeos-5',
           'stemcell_formats' => ['dummy'],
           'cloud_properties' => { 'ram' => '2gb' },
-          'sha1' => 'shawone',
+          'sha1' => 'FAKE_SHA1',
           'api_version' => 2,
         }
       end
@@ -545,7 +555,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
         expect(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
         expect(cloud).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }) do |image, _|
           contents = File.open(image, &:read)
-          expect(contents).to eq('image contents')
+          expect(contents).to eq(stemcell_image_content)
           'stemcell-cid'
         end
 
@@ -554,22 +564,10 @@ describe Bosh::Director::Jobs::UpdateStemcell do
         stemcell = Bosh::Director::Models::Stemcell.find(name: 'jeos', version: '5')
         expect(stemcell).not_to be_nil
         expect(stemcell.cid).to eq('stemcell-cid')
-        expect(stemcell.sha1).to eq('shawone')
+        expect(stemcell.sha1).to eq('FAKE_SHA1')
         expect(stemcell.operating_system).to eq('jeos-5')
         expect(stemcell.api_version).to eq(2)
       end
-    end
-
-    def create_stemcell(manifest, image)
-      io = StringIO.new
-
-      Minitar::Writer.open(io) do |tar|
-        tar.add_file('stemcell.MF', mode: '0644', mtime: 0) { |os, _| os.write(manifest.to_yaml) }
-        tar.add_file('image', mode: '0644', mtime: 0) { |os, _| os.write(image) }
-      end
-
-      io.close
-      gzip(io.string)
     end
   end
 end

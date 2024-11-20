@@ -3,7 +3,7 @@ require 'fileutils'
 require 'digest/sha1'
 
 module Support
-  class ReleaseHelper
+  module ReleaseHelper
     # Creates release tarball using provided manifest.
     # Actual bits are dummy but all specs are meant to satisfy the release.
     # Checksums are filled in automatically to satisfy integrity checks.
@@ -97,5 +97,61 @@ module Support
 
       release_dir
     end
+
+    def create_release_package(files)
+      io = StringIO.new
+
+      Minitar::Writer.open(io) do |tar|
+        files.each do |key, value|
+          tar.add_file(key, mode: '0644', mtime: 0) { |os, _| os.write(value) }
+        end
+      end
+
+      io.close
+      gzip(io.string)
+    end
+
+    def create_release_job(name, monit, configuration_files, options = { })
+      io = StringIO.new
+
+      manifest = {
+        'name' => name,
+        'templates' => {},
+        'packages' => []
+      }.merge(options.fetch(:manifest, {}))
+
+      configuration_files.each do |path, configuration_file|
+        manifest['templates'][path] = configuration_file['destination']
+      end
+
+      Minitar::Writer.open(io) do |tar|
+        manifest = options[:manifest] if options[:manifest]
+        unless options[:skip_manifest]
+          tar.add_file('job.MF', {:mode => '0644', :mtime => 0}) { |os, _| os.write(manifest.to_yaml) }
+        end
+        unless options[:skip_monit]
+          monit_file = options[:monit_file] ? options[:monit_file] : 'monit'
+          tar.add_file(monit_file, {:mode => '0644', :mtime => 0}) { |os, _| os.write(monit) }
+        end
+
+        tar.mkdir('templates', {:mode => '0755', :mtime => 0})
+        configuration_files.each do |path, configuration_file|
+          unless options[:skip_templates] && options[:skip_templates].include?(path)
+            tar.add_file("templates/#{path}", {:mode => '0644', :mtime => 0}) do |os, _|
+              os.write(configuration_file['contents'])
+            end
+          end
+        end
+      end
+
+      io.close
+
+      gzip(io.string)
+    end
+
   end
+end
+
+RSpec.configure do |config|
+  config.include(Support::ReleaseHelper)
 end
