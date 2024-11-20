@@ -29,8 +29,6 @@ module SpecHelper
   class << self
     include LoggingHelper
 
-    attr_accessor :temp_dir
-
     def init
       init_database
 
