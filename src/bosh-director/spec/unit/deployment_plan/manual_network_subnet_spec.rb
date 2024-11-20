@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'unit/deployment_plan/subnet_spec'
 require 'ipaddr'
 
 describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do

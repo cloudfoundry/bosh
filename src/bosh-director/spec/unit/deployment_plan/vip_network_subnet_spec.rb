@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'unit/deployment_plan/subnet_spec'
 
 describe Bosh::Director::DeploymentPlan::VipNetworkSubnet do
   include Bosh::Director::IpUtil
