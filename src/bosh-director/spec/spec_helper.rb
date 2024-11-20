@@ -27,97 +27,51 @@ ENV['RACK_ENV'] = 'test'
 
 module SpecHelper
   class << self
+    attr_accessor :database
 
-    def init
-      init_database
+    def create_and_migrate_database
+      @database = begin
+                    database_logger.info("Creating database '#{db_helper.connection_string}'")
+                    db_helper.create_db
 
-      require 'factories'
-    end
+                    Sequel.default_timezone = :utc
+                    Sequel.connect(db_helper.connection_string, max_connections: 32, pool_timeout: 10).tap do |sequel_db|
+                      sequel_db.loggers << database_logger
+                      sequel_db.log_connection_info = true
+                      Bosh::Director::Config.db = sequel_db
 
-    def init_logger
-      @init_logger ||= begin
-                    name = "bosh-director-spec-logger-#{Process.pid}"
-                    Logging::Logger.new(name).tap do |logger|
-                      logger.add_appenders(
-                        Logging.appenders.file(
-                          "bosh-director-spec-logger-#{Process.pid}",
-                          filename: File.join(BOSH_REPO_SRC_DIR, 'tmp', "#{name}.log"),
-                          layout: ThreadFormatter.layout,
-                        ),
-                      )
-                      logger.level = :debug
+                      DBMigrator.new(sequel_db).migrate
+
+                      Bosh::Director::Models.constants.each do |constant_sym|
+                        constant = Bosh::Director::Models.const_get(constant_sym)
+                        set_dataset_for(constant, sequel_db) if sequel_model?(constant)
+                      end
+
+                      Delayed::Worker.backend = :sequel
+                      Delayed::Backend::Sequel.constants.each do |constant_sym|
+                        constant = Delayed::Backend::Sequel.const_get(constant_sym)
+                        set_dataset_for(constant, sequel_db) if sequel_model?(constant)
+                      end
+
+                      require 'factories'
                     end
                   end
     end
 
-    def init_database
-      connect_database
-
-      Bosh::Director::Config.db = @db
-
-      Delayed::Worker.backend = :sequel
-
-      run_migrations
-    end
-
-    def connect_database
-      init_logger.info("Create database '#{db_helper.connection_string}'")
-      db_helper.create_db
-
-      Sequel.default_timezone = :utc
-      @db =
-        Sequel.connect(db_helper.connection_string, max_connections: 32, pool_timeout: 10).tap do |db|
-          db.loggers << init_logger
-          db.log_connection_info = true
-        end
-    end
-
-    def run_migrations
-      DBMigrator.new(@db).migrate
-    end
-
-    def db_helper
-      @db_helper ||= begin
-                       db_options = {
-                         type: ENV.fetch('DB', 'sqlite'),
-                         name: "#{SecureRandom.uuid.delete('-')}_director",
-                         username: ENV['DB_USER'],
-                         password: ENV['DB_PASSWORD'],
-                         host: ENV['DB_HOST'],
-                         port: ENV['DB_PORT'],
-                       }
-
-                       SharedSupport::DBHelper.build(db_options: db_options)
-                     end
-    end
-
-    def setup_datasets
-      Bosh::Director::Models.constants.each do |e|
-        c = Bosh::Director::Models.const_get(e)
-        c.dataset = @db[c.simple_table.gsub(/[`"]/, '').to_sym] if c.is_a?(Class) && c.ancestors.include?(Sequel::Model)
-      end
-
-      Delayed::Backend::Sequel.constants.each do |e|
-        c = Delayed::Backend::Sequel.const_get(e)
-        c.dataset = @db[c.simple_table.gsub(/[`"]/, '').to_sym] if c.is_a?(Class) && c.ancestors.include?(Sequel::Model)
-      end
-    end
-
-    def reset_database(example)
+    def reset_database(database, example)
+      database_logger.info("Resetting database '#{db_helper.connection_string}'")
       if example.metadata[:truncation] && ENV.fetch('DB', 'sqlite') != 'sqlite'
         example.run
       else
-        Sequel.transaction([@db], rollback: :always, auto_savepoint: true) do
+        Sequel.transaction([database], rollback: :always, auto_savepoint: true) do
           example.run
         end
       end
 
-      Bosh::Director::Config.db&.disconnect
-
-      return unless example.metadata[:truncation]
-
-      init_logger.info("Truncating database '#{db_helper.connection_string}'")
-      db_helper.truncate_db
+      if example.metadata[:truncation]
+        database_logger.info("Truncating database '#{db_helper.connection_string}'")
+        db_helper.truncate_db
+      end
     end
 
     def director_config_hash
@@ -135,32 +89,70 @@ module SpecHelper
       end
     end
 
-    def reset_director_config(test_logger)
+    def reset_director_config(database, test_logger)
       Bosh::Director::Config.clear
-      Bosh::Director::Config.db = @db
+      Bosh::Director::Config.db = database
       Bosh::Director::Config.logger = test_logger
       Bosh::Director::Config.trusted_certs = ''
       Bosh::Director::Config.max_threads = 1
       Bosh::Director::Config.event_log = Bosh::Director::EventLog::Log.new
     end
+
+    private
+
+    def db_helper
+      @db_helper ||= begin
+                       db_options = {
+                         type: ENV.fetch('DB', 'sqlite'),
+                         name: "#{SecureRandom.uuid.delete('-')}_director",
+                         username: ENV['DB_USER'],
+                         password: ENV['DB_PASSWORD'],
+                         host: ENV['DB_HOST'],
+                         port: ENV['DB_PORT'],
+                       }
+
+                       SharedSupport::DBHelper.build(db_options: db_options)
+                     end
+    end
+
+    def sequel_model?(constant)
+      constant.is_a?(Class) && constant.ancestors.include?(Sequel::Model)
+    end
+
+    def set_dataset_for(sequel_class, sequel_db)
+      sequel_class.dataset = sequel_db[sequel_class.table_name]
+    end
+
+    def database_logger
+      @database_logger ||= begin
+                         name = "bosh-director-spec-logger-#{Process.pid}"
+                         Logging::Logger.new(name).tap do |logger|
+                           logger.add_appenders(
+                             Logging.appenders.file(
+                               "bosh-director-spec-logger-#{Process.pid}",
+                               filename: File.join(BOSH_REPO_SRC_DIR, 'tmp', "#{name}.log"),
+                               layout: ThreadFormatter.layout,
+                             ),
+                           )
+                           logger.level = :debug
+                         end
+                       end
+    end
+
   end
 end
 
-SpecHelper.init
+SpecHelper.create_and_migrate_database
 
 RSpec.configure do |config|
   config.include(FactoryBot::Syntax::Methods)
 
-  config.before(:suite) do
-    SpecHelper.setup_datasets
-  end
-
   config.around(:each) do |example|
-    SpecHelper.reset_database(example)
+    SpecHelper.reset_database(SpecHelper.database, example)
   end
 
   config.before(:each) do
-    SpecHelper.reset_director_config(per_spec_logger)
+    SpecHelper.reset_director_config(SpecHelper.database, per_spec_logger)
   end
 end
 
