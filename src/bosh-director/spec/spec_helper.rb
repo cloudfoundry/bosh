@@ -127,12 +127,14 @@ module SpecHelper
 
     def database_logger
       @database_logger ||= begin
-                         name = "bosh-director-spec-logger-#{Process.pid}"
+                         name = "bosh-director-spec_helper-#{Process.pid}"
+                         filename = File.join(BOSH_REPO_SRC_DIR, 'tmp', "#{name}.log")
+                         FileUtils.mkdir_p(File.dirname(filename))
                          Logging::Logger.new(name).tap do |logger|
                            logger.add_appenders(
                              Logging.appenders.file(
                                "bosh-director-spec-logger-#{Process.pid}",
-                               filename: File.join(BOSH_REPO_SRC_DIR, 'tmp', "#{name}.log"),
+                               filename: filename,
                                layout: ThreadFormatter.layout,
                              ),
                            )
