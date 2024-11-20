@@ -1,4 +1,4 @@
-$LOAD_PATH << File.expand_path(__dir__)
+$LOAD_PATH << File.expand_path(File.dirname(__FILE__))
 
 require_relative '../../spec/shared/spec_helper'
 
@@ -11,13 +11,14 @@ require 'tempfile'
 require 'tmpdir'
 require 'zlib'
 
-require 'timecop'
 require 'webmock/rspec'
 require 'factory_bot'
 
 require 'db_migrator'
 
 Dir.glob(File.join(File.dirname(__FILE__), 'support/**/*.rb')).each { |f| require(f) }
+
+ENV['RACK_ENV'] = 'test'
 
 module SpecHelper
   class << self
@@ -26,9 +27,6 @@ module SpecHelper
     attr_accessor :temp_dir
 
     def init
-      ENV['RACK_ENV'] = 'test'
-      configure_init_logger
-
       require 'bosh/director'
 
       init_database
@@ -36,20 +34,21 @@ module SpecHelper
       require 'factories'
     end
 
-    # init_logger is only used before the tests start.
-    # Inside each test BufferedLogger will be used.
-    def configure_init_logger
-      file_path = File.expand_path('/tmp/spec.log', __dir__)
-
-      @init_logger = Logging::Logger.new('TestLogger')
-      @init_logger.add_appenders(
-        Logging.appenders.file(
-          'TestLogFile',
-          filename: file_path,
-          layout: ThreadFormatter.layout,
-        ),
-      )
-      @init_logger.level = :debug
+    def init_logger
+      @init_logger ||= begin
+                    name = "bosh-director-spec-logger-#{Process.pid}"
+                    file_path = File.join(BOSH_REPO_SRC_DIR, 'tmp', "#{name}.log")
+                    Logging::Logger.new(name).tap do |logger|
+                      logger.add_appenders(
+                        Logging.appenders.file(
+                          "bosh-director-spec-logger-#{Process.pid}",
+                          filename: file_path,
+                          layout: ThreadFormatter.layout,
+                        ),
+                      )
+                      logger.level = :debug
+                    end
+                  end
     end
 
     def spec_get_director_config
@@ -87,30 +86,18 @@ module SpecHelper
     end
 
     def connect_database
-      db_options = {
-        type: ENV.fetch('DB', 'sqlite'),
-        name: "#{SecureRandom.uuid.delete('-')}_director",
-        username: ENV['DB_USER'],
-        password: ENV['DB_PASSWORD'],
-        host: ENV['DB_HOST'],
-        port: ENV['DB_PORT'],
-      }
-
-      @db_helper =
-        SharedSupport::DBHelper.build(db_options: db_options)
-
-      @init_logger.info("Create database '#{@db_helper.connection_string}'")
-      @db_helper.create_db
+      init_logger.info("Create database '#{db_helper.connection_string}'")
+      db_helper.create_db
 
       Sequel.default_timezone = :utc
-      @db = Sequel.connect(@db_helper.connection_string, max_connections: 32, pool_timeout: 10)
+      @db = Sequel.connect(db_helper.connection_string, max_connections: 32, pool_timeout: 10)
     end
 
     def disconnect_database
       if @db
         @db.disconnect
-        @init_logger.info("Drop database '#{@db_helper.connection_string}'")
-        @db_helper.drop_db
+        init_logger.info("Drop database '#{@db_helper.connection_string}'")
+        db_helper.drop_db
 
         @db = nil
         @db_helper = nil
@@ -119,6 +106,21 @@ module SpecHelper
 
     def run_migrations
       DBMigrator.new(@db).migrate
+    end
+
+    def db_helper
+      @db_helper ||= begin
+                       db_options = {
+                         type: ENV.fetch('DB', 'sqlite'),
+                         name: "#{SecureRandom.uuid.delete('-')}_director",
+                         username: ENV['DB_USER'],
+                         password: ENV['DB_PASSWORD'],
+                         host: ENV['DB_HOST'],
+                         port: ENV['DB_PORT'],
+                       }
+
+                       SharedSupport::DBHelper.build(db_options: db_options)
+                     end
     end
 
     def setup_datasets
@@ -133,12 +135,13 @@ module SpecHelper
       end
     end
 
-    def reset(test_logger)
+    def reset_config(test_logger)
       Bosh::Director::Config.clear
       Bosh::Director::Config.db = @db
       Bosh::Director::Config.logger = test_logger
       Bosh::Director::Config.trusted_certs = ''
       Bosh::Director::Config.max_threads = 1
+      Bosh::Director::Config.event_log = Bosh::Director::EventLog::Log.new
     end
 
     def reset_database(example)
@@ -154,46 +157,31 @@ module SpecHelper
 
       return unless example.metadata[:truncation]
 
-      @init_logger.info("Truncating database '#{@db_helper.connection_string}'")
-      @db_helper.truncate_db
+      init_logger.info("Truncating database '#{db_helper.connection_string}'")
+      db_helper.truncate_db
     end
   end
 end
 
 SpecHelper.init
 
-RSpec.configure do |rspec|
-  rspec.around(:each) do |example|
-    SpecHelper.reset_database(example)
-  end
+RSpec.configure do |config|
+  config.include(FactoryBot::Syntax::Methods)
 
-  rspec.include FactoryBot::Syntax::Methods
-
-  rspec.before(:each) do
-    SpecHelper.reset(per_spec_logger)
-    @event_buffer = StringIO.new
-    @event_log = Bosh::Director::EventLog::Log.new(@event_buffer)
-    Bosh::Director::Config.event_log = @event_log
-
-    audit_logger = instance_double(Bosh::Director::AuditLogger)
-    allow(Bosh::Director::AuditLogger).to receive(:instance).and_return(audit_logger)
-    allow(audit_logger).to receive(:info)
-
-    threadpool = instance_double(Bosh::Director::ThreadPool)
-    allow(Bosh::Director::ThreadPool).to receive(:new).and_return(threadpool)
-    allow(threadpool).to receive(:wrap).and_yield(threadpool)
-    allow(threadpool).to receive(:process).and_yield
-    allow(threadpool).to receive(:wait)
-  end
-
-  rspec.after(:each) { Timecop.return }
-
-  rspec.before(:suite) do
+  config.before(:suite) do
     SpecHelper.setup_datasets
   end
 
-  rspec.after(:suite) do
+  config.after(:suite) do
     SpecHelper.disconnect_database
+  end
+
+  config.around(:each) do |example|
+    SpecHelper.reset_database(example)
+  end
+
+  config.before(:each) do
+    SpecHelper.reset_config(per_spec_logger)
   end
 end
 

@@ -23,10 +23,6 @@ module Bosh::Director
       Timecop.freeze(Time.now)
     end
 
-    after do
-      Timecop.return
-    end
-
     describe '.has_work' do
       context 'when there are more than the given num_dns_blobs_to_keep' do
         describe 'when there an old blob' do

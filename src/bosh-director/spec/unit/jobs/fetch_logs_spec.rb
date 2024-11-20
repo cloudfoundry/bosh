@@ -177,7 +177,6 @@ module Bosh::Director
             allow(Core::TarGzipper).to receive(:new).and_return(archiver)
             Timecop.freeze(Time.new(2011, 10, 9, 11, 55, 45))
           end
-          after { Timecop.return }
 
           it 'should store all logs together' do
             expect(archiver).to receive(:compress) { |download_dir, sources, output_path|

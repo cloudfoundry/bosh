@@ -25,7 +25,6 @@ module Bosh::Director
       end
 
       before { Timecop.travel(Date.new(2011, 10, 10)) }
-      after { Timecop.return }
 
       it 'deletes old log bundles from the database and keeps recent ones' do
         %w[fake-very-old-blob-id fake-old-blob-id fake-recent-blob-id fake-future-blob-id].each do |id|

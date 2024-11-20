@@ -1,6 +1,10 @@
 require 'logger'
 require 'logging'
 
+require 'bosh/director/config'
+require 'bosh/director/audit_logger'
+require 'bosh/director/event_log'
+
 module LoggingHelper
   def setup_per_spec_logger_and_buffer(logger, log_buffer)
     @test_logger = logger
@@ -47,10 +51,10 @@ module LoggingHelper
   end
 end
 
-RSpec.configure do |c|
-  c.include(LoggingHelper)
+RSpec.configure do |config|
+  config.include(LoggingHelper)
 
-  c.before do
+  config.before(:each) do
     Logging::Repository.reset # wipe out cached loggers before each test
 
     logger_new = Logging::Logger.method(:new)
@@ -59,9 +63,13 @@ RSpec.configure do |c|
     allow(Logging::Logger).to receive(:new) do |name|
       create_tracked_logger(name, logger_new)
     end
+
+    audit_logger = instance_double(Bosh::Director::AuditLogger)
+    allow(Bosh::Director::AuditLogger).to receive(:instance).and_return(audit_logger)
+    allow(audit_logger).to receive(:info)
   end
 
-  c.after do |example|
+  config.after(:each) do |example|
     unless example.exception.nil? # Print logs if the test failed
       STDERR.write("Test Failed: '#{example.metadata[:file_path]}:#{example.metadata[:line_number]}'\n")
       tracked_loggers.each do |name, info|

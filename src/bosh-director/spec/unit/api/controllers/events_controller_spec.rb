@@ -21,10 +21,6 @@ module Bosh::Director
           Timecop.freeze(timestamp)
         end
 
-        after do
-          Timecop.return
-        end
-
         def make_events(count)
           (1..count).each do |i|
             FactoryBot.create(:models_event, timestamp: timestamp + (i * 1.second))

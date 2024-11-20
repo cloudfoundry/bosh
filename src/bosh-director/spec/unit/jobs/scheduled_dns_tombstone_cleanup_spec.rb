@@ -12,10 +12,6 @@ module Bosh::Director
       Timecop.freeze(Time.now)
     end
 
-    after do
-      Timecop.return
-    end
-
     describe '.has_work' do
       describe 'when there are more than one tombstone record' do
         before do

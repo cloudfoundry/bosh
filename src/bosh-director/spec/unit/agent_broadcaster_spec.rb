@@ -2,8 +2,6 @@ require 'spec_helper'
 
 module Bosh::Director
   describe AgentBroadcaster do
-    after { Timecop.return }
-
     let(:ip_addresses) { ['10.0.0.1'] }
     let(:instance1) do
       FactoryBot.create(:models_instance, uuid: SecureRandom.uuid, index: 1, job: 'fake-job-1').tap do |i|

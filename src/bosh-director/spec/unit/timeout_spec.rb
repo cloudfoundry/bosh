@@ -9,10 +9,6 @@ module Bosh::Director
         Timecop.freeze(Time.local(1990))
       end
 
-      after do
-        Timecop.return
-      end
-
       it 'returns false if it has not timed out' do
         timeout = Timeout.new(seconds_till_timed_out)
         expect(timeout.timed_out?).to eq(false)
