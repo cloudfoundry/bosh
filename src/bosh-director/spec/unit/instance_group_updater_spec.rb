@@ -24,6 +24,14 @@ module Bosh::Director
     let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
     let(:manifest) { 'something' }
 
+    def parsed_event_log_lines_for(task_id)
+      yield(
+        (Models::Task.first(id: task_id).event_output || '').split("\n").map do |line|
+        JSON.parse(line)
+        end
+      )
+    end
+
     before do
       allow(Bosh::Director::InstanceUpdater).to receive(:new_instance_updater)
         .with(ip_provider, template_blob_cache, dns_encoder,
@@ -106,7 +114,7 @@ module Bosh::Director
         it 'should not begin the updating instance_group event stage' do
           instance_group_updater.update
 
-          check_event_log(task.id) do |events|
+          parsed_event_log_lines_for(task.id) do |events|
             expect(events).to be_empty
           end
         end
@@ -171,7 +179,7 @@ module Bosh::Director
 
             instance_group_updater.update
 
-            check_event_log(task.id) do |events|
+            parsed_event_log_lines_for(task.id) do |events|
               [
                 updating_stage_event(index: 1, total: 1, task: 'instance_group_name/fake_uuid (1) (canary)', state: 'started'),
                 updating_stage_event(index: 1, total: 1, task: 'instance_group_name/fake_uuid (1) (canary)', state: 'finished'),
@@ -185,7 +193,7 @@ module Bosh::Director
         it 'should not apply' do
           instance_group_updater.update
 
-          check_event_log(task.id) do |events|
+          parsed_event_log_lines_for(task.id) do |events|
             expect(events).to be_empty
           end
         end
@@ -210,7 +218,7 @@ module Bosh::Director
         it 'should apply the instance plan' do
           instance_group_updater.update
 
-          check_event_log(task.id) do |events|
+          parsed_event_log_lines_for(task.id) do |events|
             expect(events).to be_empty
           end
         end
@@ -291,7 +299,7 @@ module Bosh::Director
 
           instance_group_updater.update
 
-          check_event_log(task.id) do |events|
+          parsed_event_log_lines_for(task.id) do |events|
             [
               updating_stage_event(index: 1, total: 2, task: 'instance_group_name/fake_uuid (1) (canary)', state: 'started'),
               updating_stage_event(index: 1, total: 2, task: 'instance_group_name/fake_uuid (1) (canary)', state: 'finished'),
@@ -310,7 +318,7 @@ module Bosh::Director
 
           expect { instance_group_updater.update }.to raise_error(update_error)
 
-          check_event_log(task.id) do |events|
+          parsed_event_log_lines_for(task.id) do |events|
             [
               updating_stage_event(index: 1, total: 2, task: 'instance_group_name/fake_uuid (1) (canary)', state: 'started'),
               updating_stage_event(index: 1, total: 2, task: 'instance_group_name/fake_uuid (1) (canary)', state: 'failed'),
@@ -327,7 +335,7 @@ module Bosh::Director
 
           expect { instance_group_updater.update }.to raise_error(update_error)
 
-          check_event_log(task.id) do |events|
+          parsed_event_log_lines_for(task.id) do |events|
             [
               updating_stage_event(index: 1, total: 2, task: 'instance_group_name/fake_uuid (1) (canary)', state: 'started'),
               updating_stage_event(index: 1, total: 2, task: 'instance_group_name/fake_uuid (1) (canary)', state: 'finished'),
@@ -456,7 +464,7 @@ module Bosh::Director
 
           instance_group_updater.update
 
-          check_event_log(task.id) do |events|
+          parsed_event_log_lines_for(task.id) do |events|
             [
               updating_stage_event(index: 1, total: 4, task: 'instance_group_name/fake_uuid (1) (canary)', state: 'started'),
               updating_stage_event(index: 1, total: 4, task: 'instance_group_name/fake_uuid (1) (canary)', state: 'finished'),
@@ -492,7 +500,7 @@ module Bosh::Director
 
             instance_group_updater.update
 
-            check_event_log(task.id) do |events|
+            parsed_event_log_lines_for(task.id) do |events|
               [
                 updating_stage_event(index: 1, total: 4, task: 'instance_group_name/fake_uuid (1) (canary)', state: 'started'),
                 updating_stage_event(index: 1, total: 4, task: 'instance_group_name/fake_uuid (1) (canary)', state: 'finished'),
@@ -544,7 +552,7 @@ module Bosh::Director
 
               instance_group_updater.update
 
-              check_event_log(task.id) do |events|
+              parsed_event_log_lines_for(task.id) do |events|
                 [
                   updating_stage_event(index: 1, total: 4, task: 'instance_group_name/fake_uuid (1) (canary)', state: 'started'),
                   updating_stage_event(index: 1, total: 4, task: 'instance_group_name/fake_uuid (1) (canary)', state: 'finished'),
@@ -572,7 +580,7 @@ module Bosh::Director
 
               instance_group_updater.update
 
-              check_event_log(task.id) do |events|
+              parsed_event_log_lines_for(task.id) do |events|
                 [
                   updating_stage_event(index: 1, total: 4, task: 'instance_group_name/fake_uuid (1) (canary)', state: 'started'),
                   updating_stage_event(index: 1, total: 4, task: 'instance_group_name/fake_uuid (1) (canary)', state: 'finished'),

@@ -169,16 +169,6 @@ def gzip(string)
   result.string
 end
 
-def check_event_log(task_id)
-  return if Bosh::Director::Models::Task.first(id: task_id).event_output.nil?
-
-  events = Bosh::Director::Models::Task.first(id: task_id).event_output.split("\n").map do |line|
-    JSON.parse(line)
-  end
-
-  yield events
-end
-
 def linted_rack_app(app)
   Rack::Builder.new do
     use Rack::Lint
