@@ -7,12 +7,8 @@ module Bosh::Director
 
     describe '#retryable_transaction' do
       it 'yields to Sequel' do
-        def execute(error_message)
-          raise error_message
-        end
-
         expect(fake_db).to receive(:transaction).and_return(true)
-        expect { transactor.retryable_transaction(fake_db) { execute('blah') } }.to_not raise_error
+        expect { transactor.retryable_transaction(fake_db) { raise 'blah' } }.to_not raise_error
       end
 
       context 'when the block returns nil' do
@@ -25,7 +21,9 @@ module Bosh::Director
       context 'when the block returns an object' do
         it 'bubbles the object up' do
           expect(fake_db).to receive(:transaction).and_return('template')
-          expect(transactor.retryable_transaction(fake_db) {}).to eq('template')
+          expect(transactor.retryable_transaction(fake_db) {
+            # intentionally empty
+          }).to eq('template')
         end
       end
 

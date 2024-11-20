@@ -2,6 +2,32 @@ require 'spec_helper'
 require 'bosh/director/scheduler'
 
 module Bosh::Director
+  module Jobs
+    class FakeJob
+      def self.job_type
+        :fake_job
+      end
+    end
+
+    class FakeJobWithScheduleMessage
+      def self.schedule_message
+        'class with schedule message'
+      end
+    end
+
+    class FakeJobNoWork
+      def self.has_work(_params)
+        false
+      end
+    end
+
+    class FakeJobHasWork
+      def self.has_work(_params)
+        true
+      end
+    end
+  end
+
   describe Scheduler do
     let(:scheduler) { described_class.new(scheduled_jobs, opts) }
     let(:scheduled_jobs) do
@@ -38,35 +64,6 @@ module Bosh::Director
       allow(Config).to receive(:uuid).and_return(uuid)
       allow(Config).to receive(:name).and_return(director_name)
       allow(Config).to receive(:enable_snapshots).and_return(true)
-    end
-
-    module Jobs
-      class FakeJob
-      end
-    end
-
-    module Jobs
-      class FakeJobWithScheduleMessage
-        def self.schedule_message
-          'class with schedule message'
-        end
-      end
-    end
-
-    module Jobs
-      class FakeJobNoWork
-        def self.has_work(_params)
-          false
-        end
-      end
-    end
-
-    module Jobs
-      class FakeJobHasWork
-        def self.has_work(_params)
-          true
-        end
-      end
     end
 
     describe 'scheduling jobs' do
