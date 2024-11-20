@@ -14,28 +14,24 @@ module Bosh::Director
     let(:task) { FactoryBot.create(:models_task, id: 42) }
 
     let(:tasks_dir) { Dir.mktmpdir }
-    before { allow(Config).to receive(:base_dir).and_return(tasks_dir) }
-    before { allow(Config).to receive(:task_checkpoint_interval).and_return(30) }
-    after { FileUtils.rm_rf(tasks_dir) }
-
     let(:task_dir) { File.join(tasks_dir, 'tasks', task.id.to_s) }
-    before { FileUtils.mkdir_p(task_dir) }
 
-    before { allow(Config).to receive(:cloud_options).and_return({}) }
-    before { allow(Config).to receive(:runtime).and_return('instance' => 'name/id', 'ip' => '127.0.127.0') }
+    let(:worker_name) {'workername1'}
+    before do
+      FileUtils.mkdir_p(task_dir)
 
-    def make_runner(job_class, task_id)
-      JobRunner.new(job_class, task_id, 'workername1')
+      allow(Config).to receive(:base_dir).and_return(tasks_dir)
+      allow(Config).to receive(:task_checkpoint_interval).and_return(30)
+      allow(Config).to receive(:cloud_options).and_return({})
+      allow(Config).to receive(:runtime).and_return('instance' => 'name/id', 'ip' => '127.0.127.0')
     end
 
     it "doesn't accept job class that is not a subclass of base job" do
-      expect do
-        make_runner(Class.new, 42)
-      end.to raise_error(DirectorError, /invalid director job/i)
+      expect { JobRunner.new(Class.new, 42, worker_name) }.to raise_error(DirectorError, /invalid director job/i)
     end
 
     it 'performs the requested job with provided args' do
-      runner = make_runner(sample_job_class, 42)
+      runner = JobRunner.new(sample_job_class, 42, worker_name)
       allow(runner).to receive(:run_checkpointing)
 
       runner.run
@@ -46,9 +42,7 @@ module Bosh::Director
     end
 
     it 'whines when no task is found' do
-      expect do
-        make_runner(sample_job_class, 155)
-      end.to raise_error(TaskNotFound)
+      expect { JobRunner.new(sample_job_class, 155, worker_name) }.to raise_error(TaskNotFound)
     end
 
     context 'when task directory is missing' do
@@ -56,7 +50,7 @@ module Bosh::Director
 
       it 'creates task directory if it is missing' do
         task.save
-        make_runner(sample_job_class, 188)
+        JobRunner.new(sample_job_class, 188, worker_name)
         expect(File).to exist(task_dir)
       end
     end
@@ -78,7 +72,7 @@ module Bosh::Director
         .with(:result_output, task.id)
         .and_return(task_result)
 
-      make_runner(sample_job_class, 42)
+      JobRunner.new(sample_job_class, 42, worker_name)
 
       logger_repo = Logging::Repository.instance
 
@@ -89,7 +83,7 @@ module Bosh::Director
     end
 
     it 'logs the worker name and process information' do
-      runner = make_runner(sample_job_class, 42)
+      runner = JobRunner.new(sample_job_class, 42, worker_name)
       allow(runner).to receive(:run_checkpointing)
 
       logger = Logging::Repository.instance.fetch('DirectorJobRunner')
@@ -99,7 +93,7 @@ module Bosh::Director
     end
 
     it 'should not log standard blacklist messages' do
-      make_runner(sample_job_class, 42)
+      JobRunner.new(sample_job_class, 42, worker_name)
 
       Config.logger.debug('before')
       Config.logger.debug('(10.01s) (conn: 123123123) SELECT NULL')
@@ -114,7 +108,7 @@ module Bosh::Director
 
     it 'should generate timestamp with milliseconds' do
       Timecop.freeze do
-        make_runner(sample_job_class, 42)
+        JobRunner.new(sample_job_class, 42, worker_name)
         Config.logger.debug('test')
 
         time = Time.new
@@ -131,7 +125,7 @@ module Bosh::Director
         end
       end
 
-      runner = make_runner(job, 42)
+      runner = JobRunner.new(job, 42, worker_name)
       allow(runner).to receive(:run_checkpointing)
 
       runner.run
@@ -144,7 +138,7 @@ module Bosh::Director
         define_method(:perform) { |*_args| raise 'Oops' }
       end
 
-      runner = make_runner(job, 42)
+      runner = JobRunner.new(job, 42, worker_name)
       allow(runner).to receive(:run_checkpointing)
 
       runner.run

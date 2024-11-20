@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'bosh/director/rendered_job_templates_cleaner'
 
 module Bosh::Director
   describe RenderedJobTemplatesCleaner do
@@ -8,10 +7,6 @@ module Bosh::Director
     let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
 
     describe '#clean' do
-      def perform
-        rendered_job_templates.clean
-      end
-
       let(:stale_archive) do
         FactoryBot.create(:models_rendered_templates_archive,
           blobstore_id: 'fake-blob-id',
@@ -24,7 +19,8 @@ module Bosh::Director
         allow(instance_model).to receive(:stale_rendered_templates_archives).and_return([stale_archive])
         expect(blobstore).to receive(:delete).with('fake-blob-id').ordered
         expect(stale_archive).to receive(:delete).with(no_args).ordered
-        perform
+
+        rendered_job_templates.clean
       end
 
       it 'removes *stale* archives from the database even if the archives are not in the blobstore' do
@@ -34,15 +30,12 @@ module Bosh::Director
           'Blobstore#delete error: Bosh::Blobstore::NotFound, will ignore this error and delete the db record',
         )
         expect(stale_archive).to receive(:delete).with(no_args)
-        perform
+
+        rendered_job_templates.clean
       end
     end
 
     describe '#clean_all' do
-      def perform
-        rendered_job_templates.clean_all
-      end
-
       let(:stale_archive) do
         FactoryBot.create(:models_rendered_templates_archive,
           blobstore_id: 'fake-blob-id',
@@ -55,7 +48,8 @@ module Bosh::Director
         allow(instance_model).to receive(:rendered_templates_archives).and_return([stale_archive])
         expect(blobstore).to receive(:delete).with('fake-blob-id').ordered
         expect(stale_archive).to receive(:delete).with(no_args).ordered
-        perform
+
+        rendered_job_templates.clean_all
       end
 
       it 'removes *all* archives from the database even if the archives are not in the blobstore' do
@@ -65,7 +59,8 @@ module Bosh::Director
           'Blobstore#delete error: Bosh::Blobstore::NotFound, will ignore this error and delete the db record',
         )
         expect(stale_archive).to receive(:delete).with(no_args)
-        perform
+
+        rendered_job_templates.clean_all
       end
     end
   end

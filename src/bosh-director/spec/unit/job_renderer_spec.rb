@@ -35,10 +35,6 @@ module Bosh::Director
     end
 
     describe '#render_job_instances_with_cache' do
-      def perform
-        JobRenderer.render_job_instances_with_cache(per_spec_logger, [instance_plan], cache, encoder, link_provider_intents)
-      end
-
       before do
         release_version = DeploymentPlan::ReleaseVersion.parse(deployment_model, 'name' => 'fake-release', 'version' => '123')
 
@@ -68,7 +64,9 @@ module Bosh::Director
 
         it 'does not render' do
           expect(per_spec_logger).to receive(:debug).with("Skipping rendering templates for 'test-instance-group/5': no job")
-          expect { perform }.not_to change { instance_plan.rendered_templates }
+          expect {
+            JobRenderer.render_job_instances_with_cache(per_spec_logger, [instance_plan], cache, encoder, link_provider_intents)
+          }.not_to(change { instance_plan.rendered_templates })
         end
       end
 
@@ -78,7 +76,7 @@ module Bosh::Director
           expect(instance.configuration_hash).to be_nil
           expect(instance.template_hashes).to be_nil
 
-          perform
+          JobRenderer.render_job_instances_with_cache(per_spec_logger, [instance_plan], cache, encoder, link_provider_intents)
 
           expect(instance_plan.rendered_templates.template_hashes.keys).to eq ['dummy']
           expect(instance.configuration_hash).to eq('53b2a7cac279af8bb73885b08a794ab5dd21bb8c')
@@ -87,7 +85,7 @@ module Bosh::Director
 
         context 'when a template has already been downloaded' do
           it 'should reuse the downloaded template' do
-            perform
+            JobRenderer.render_job_instances_with_cache(per_spec_logger, [instance_plan], cache, encoder, link_provider_intents)
 
             expect(blobstore_client).to have_received(:get).once
           end
@@ -112,11 +110,9 @@ module Bosh::Director
               - Failed to find variable '/TestDirector/simple/i_am_not_here_3' from config server: HTTP code '404'
           EXPECTED
 
-          expect do
-            perform
-          end.to(raise_error do |error|
-            expect(error.message).to eq(expected)
-          end)
+          expect {
+            JobRenderer.render_job_instances_with_cache(per_spec_logger, [instance_plan], cache, encoder, link_provider_intents)
+          }.to(raise_error { |error| expect(error.message).to eq(expected) })
         end
       end
     end
