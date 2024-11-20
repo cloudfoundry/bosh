@@ -12,21 +12,9 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
     Bosh::Director::DeploymentPlan::ManualNetworkSubnet.parse(@network.name, properties, availability_zones, true)
   end
 
-  let(:instance) { instance_double(Bosh::Director::DeploymentPlan::Instance, model: FactoryBot.create(:models_instance)) }
-
-  def create_static_reservation(ip)
-    Bosh::Director::StaticNetworkReservation.new(instance, @network, IPAddr.new(ip))
-  end
-
-  def create_dynamic_reservation(ip)
-    reservation = Bosh::Director::DynamicNetworkReservation.new(instance, @network)
-    reservation.resolve_ip(IPAddr.new(ip))
-    reservation
-  end
-
   it_behaves_like 'a subnet'
 
-  describe :initialize do
+  describe '#initialize' do
     it 'should create a subnet spec' do
       subnet = make_subnet(
         {
@@ -344,8 +332,8 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
   end
 
   describe :overlaps? do
-    before(:each) do
-      @subnet = make_subnet(
+    let(:subnet) do
+      make_subnet(
         {
           'range' => '192.168.0.0/24',
           'gateway' => '192.168.0.254',
@@ -364,7 +352,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
         },
         []
       )
-      expect(@subnet.overlaps?(other)).to eq(false)
+      expect(subnet.overlaps?(other)).to eq(false)
     end
 
     it 'should return true when the given range overlaps' do
@@ -376,7 +364,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
         },
         []
       )
-      expect(@subnet.overlaps?(other)).to eq(true)
+      expect(subnet.overlaps?(other)).to eq(true)
     end
 
     it 'should return false when IPv4 and IPv6 ranges are compared' do
@@ -388,7 +376,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
         },
         [],
       )
-      expect(@subnet.overlaps?(other)).to eq(false)
+      expect(subnet.overlaps?(other)).to eq(false)
     end
   end
 
