@@ -79,7 +79,7 @@ module Bosh::Director
           JobRenderer.render_job_instances_with_cache(per_spec_logger, [instance_plan], cache, encoder, link_provider_intents)
 
           expect(instance_plan.rendered_templates.template_hashes.keys).to eq ['dummy']
-          expect(instance.configuration_hash).to eq('53b2a7cac279af8bb73885b08a794ab5dd21bb8c')
+          expect(instance.configuration_hash).to eq('d4712f01af58824081e9d964522782da9889cd1b')
           expect(instance.template_hashes.keys).to eq(['dummy'])
         end
 
