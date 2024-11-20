@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'bosh/director/compiled_package_requirement_generator'
 
 module Bosh::Director
   describe CompiledPackageRequirementGenerator do

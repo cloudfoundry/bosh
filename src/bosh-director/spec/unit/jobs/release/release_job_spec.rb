@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'support/release_helper'
 
 module Bosh::Director
   describe ReleaseJob do

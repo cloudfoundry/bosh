@@ -1,3 +1,4 @@
+require 'spec_helper'
 require 'bosh/director/stale_file_killer'
 require 'fakefs/spec_helpers'
 

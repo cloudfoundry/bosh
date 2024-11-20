@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'bosh/director/compiled_package_group'
 
 module Bosh::Director
   describe CompiledPackageGroup do

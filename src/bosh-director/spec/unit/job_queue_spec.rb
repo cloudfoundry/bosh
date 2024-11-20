@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'bosh/director/job_queue'
 
 module Bosh::Director
   describe JobQueue do

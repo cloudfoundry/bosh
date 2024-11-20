@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'bosh/director/starter'
 
 module Bosh::Director
   describe Starter do

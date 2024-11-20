@@ -1,6 +1,4 @@
 require 'spec_helper'
-require 'bosh/director/logs_fetcher'
-require 'logger'
 
 module Bosh::Director
   describe LogsFetcher do

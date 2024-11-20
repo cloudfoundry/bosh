@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'bosh/director/stopper'
 
 module Bosh::Director
   describe Stopper do
