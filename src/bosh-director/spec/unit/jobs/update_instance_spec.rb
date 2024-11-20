@@ -100,7 +100,7 @@ module Bosh::Director
       let(:job_type) { :update_instance }
       let(:queue) { :normal }
 
-      it_behaves_like 'a DJ job'
+      it_behaves_like 'a DelayedJob job'
     end
 
     describe 'validation' do

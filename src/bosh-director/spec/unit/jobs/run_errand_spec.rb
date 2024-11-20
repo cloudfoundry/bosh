@@ -61,7 +61,7 @@ module Bosh::Director
       let(:queue) { :normal }
       let(:errand_name) { 'fake-errand-name' }
 
-      it_behaves_like 'a DJ job'
+      it_behaves_like 'a DelayedJob job'
     end
 
     context 'when running an errand on a lifecycle service instance by release job name' do

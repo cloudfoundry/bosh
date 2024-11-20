@@ -50,7 +50,7 @@ module Bosh::Director
       describe 'DJ job class expectations' do
         let(:job_type) { :delete_vm }
         let(:queue) { :normal }
-        it_behaves_like 'a DJ job'
+        it_behaves_like 'a DelayedJob job'
       end
 
       context 'when instance has reference to vm' do

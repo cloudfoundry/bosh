@@ -7,7 +7,7 @@ module Bosh::Director
         let(:blobstore) { double('Blobstore') }
         let(:job_type) { :delete_stemcell }
         let(:queue) { :normal }
-        it_behaves_like 'a DJ job'
+        it_behaves_like 'a DelayedJob job'
       end
 
       let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }

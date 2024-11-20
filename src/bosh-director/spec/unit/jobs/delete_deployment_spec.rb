@@ -27,7 +27,7 @@ module Bosh::Director
       let(:job_type) { :delete_deployment }
       let(:queue) { :normal }
 
-      it_behaves_like 'a DJ job'
+      it_behaves_like 'a DelayedJob job'
     end
 
     it 'should fail if the deployment is not found' do

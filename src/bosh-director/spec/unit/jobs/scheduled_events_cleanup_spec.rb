@@ -19,7 +19,7 @@ module Bosh::Director
     describe 'DJ class expectations' do
       let(:job_type) { :scheduled_events_cleanup }
       let(:queue) { :normal }
-      it_behaves_like 'a DJ job'
+      it_behaves_like 'a DelayedJob job'
     end
 
 

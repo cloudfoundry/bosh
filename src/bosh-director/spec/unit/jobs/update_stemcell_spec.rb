@@ -9,7 +9,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
   describe 'DJ job class expectations' do
     let(:job_type) { :update_stemcell }
     let(:queue) { :normal }
-    it_behaves_like 'a DJ job'
+    it_behaves_like 'a DelayedJob job'
   end
 
   describe '#perform' do

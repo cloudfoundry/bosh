@@ -1,4 +1,4 @@
-shared_examples_for 'a DJ job' do
+shared_examples_for 'a DelayedJob job' do
   describe 'described_class.job_type' do
     it 'returns a symbol representing job type' do
       expect(described_class.job_type).to eq job_type

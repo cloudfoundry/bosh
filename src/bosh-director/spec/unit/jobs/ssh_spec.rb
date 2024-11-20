@@ -23,7 +23,7 @@ module Bosh::Director
     describe 'DJ job class expectations' do
       let(:job_type) { :ssh }
       let(:queue) { :urgent }
-      it_behaves_like 'a DJ job'
+      it_behaves_like 'a DelayedJob job'
     end
 
     before do
