@@ -36,7 +36,7 @@ module Bosh::Director
       before do
         allow(deployment_planner).to receive(:uninterpolated_manifest_hash).and_return(minimal_manifest)
         allow(deployment_planner).to receive(:raw_manifest_text).and_return(raw_manifest_text)
-        Bosh::Director::App.new(Bosh::Director::Config.load_hash(SpecHelper.spec_get_director_config))
+        Bosh::Director::App.new(Bosh::Director::Config.load_hash(SpecHelper.director_config_hash))
         allow(deployment_planner).to receive(:model).and_return(deployment_model)
       end
 

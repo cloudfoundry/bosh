@@ -23,7 +23,7 @@ module Bosh::Director
       end
 
       before do
-        Bosh::Director::App.new(Bosh::Director::Config.load_hash(SpecHelper.spec_get_director_config))
+        Bosh::Director::App.new(Bosh::Director::Config.load_hash(SpecHelper.director_config_hash))
 
         allow(event_log).to receive(:begin_stage)
         allow(InstanceDeleter).to receive(:new).and_return(instance_deleter)

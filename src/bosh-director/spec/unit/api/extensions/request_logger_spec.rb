@@ -5,7 +5,7 @@ module Bosh::Director
   module Api
     describe Extensions::RequestLogger do
       include Rack::Test::Methods
-      let(:config_hash) { SpecHelper.spec_get_director_config }
+      let(:config_hash) { SpecHelper.director_config_hash }
       let(:config) do
         config = Config.load_hash(config_hash)
         identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)

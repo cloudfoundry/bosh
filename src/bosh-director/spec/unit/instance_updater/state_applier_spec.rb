@@ -89,7 +89,7 @@ module Bosh::Director
       instance_plan.network_plans << DeploymentPlan::NetworkPlanner::Plan.new(reservation: reservation)
       instance.bind_existing_instance_model(instance_model)
 
-      config = Config.load_hash(SpecHelper.spec_get_director_config)
+      config = Config.load_hash(SpecHelper.director_config_hash)
       identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)
       allow(config).to receive(:identity_provider).and_return(identity_provider)
       App.new(config)

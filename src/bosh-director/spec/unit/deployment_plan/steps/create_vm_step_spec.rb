@@ -602,7 +602,7 @@ module Bosh
                 let(:private_key) { instance_double 'OpenSSL::PKey::RSA' }
 
                 before do
-                  director_config = SpecHelper.spec_get_director_config
+                  director_config = SpecHelper.director_config_hash
                   allow(Config).to receive(:nats_client_ca_certificate_path).and_return(director_config['nats']['client_ca_certificate_path'])
                   allow(Config).to receive(:nats_client_ca_private_key_path).and_return(director_config['nats']['client_ca_private_key_path'])
                 end

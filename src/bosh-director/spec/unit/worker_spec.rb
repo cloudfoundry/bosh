@@ -15,7 +15,7 @@ module Bosh::Director
   describe Worker do
     subject(:worker) { Worker.new(config, 0) }
 
-    let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
+    let(:config) { Config.load_hash(SpecHelper.director_config_hash) }
 
     before do
       Bosh::Director.send(:remove_const, :Models)

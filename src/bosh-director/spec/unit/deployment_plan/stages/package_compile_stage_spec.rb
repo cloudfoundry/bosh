@@ -148,7 +148,7 @@ module Bosh::Director
       allow(Config).to receive(:name).and_return('fake-director-name')
       allow(Config).to receive(:cloud_options).and_return('provider' => { 'path' => '/path/to/default/cpi' })
       allow(Config).to receive(:enable_short_lived_nats_bootstrap_credentials_compilation_vms).and_return(false)
-      director_config = SpecHelper.spec_get_director_config
+      director_config = SpecHelper.director_config_hash
       allow(Config).to receive(:nats_client_ca_private_key_path).and_return(director_config['nats']['client_ca_private_key_path'])
       allow(Config).to receive(:nats_client_ca_certificate_path).and_return(director_config['nats']['client_ca_certificate_path'])
       allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)

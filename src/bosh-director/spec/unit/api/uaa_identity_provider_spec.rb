@@ -14,7 +14,7 @@ module Bosh::Director
     end
     let(:skey) { 'tokenkey' }
     let(:pkey) { nil }
-    let(:test_config) { SpecHelper.spec_get_director_config }
+    let(:test_config) { SpecHelper.director_config_hash }
     let(:config) do
       config = Config.load_hash(test_config)
       allow(config).to receive(:identity_provider).and_return(identity_provider)

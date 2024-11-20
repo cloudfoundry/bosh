@@ -61,7 +61,7 @@ module Bosh::Director
       allow(App.instance.blobstores.blobstore).to receive(:create).and_return('fake-blobstore-id')
       allow(Config).to receive(:preferred_cpi_api_version).and_return(2)
       allow(Config).to receive(:enable_short_lived_nats_bootstrap_credentials).and_return(true)
-      director_config = SpecHelper.spec_get_director_config
+      director_config = SpecHelper.director_config_hash
       allow(Config).to receive(:nats_client_ca_private_key_path).and_return(director_config['nats']['client_ca_private_key_path'])
       allow(Config).to receive(:nats_client_ca_certificate_path).and_return(director_config['nats']['client_ca_certificate_path'])
       allow(deployment_model).to receive(:last_successful_variable_set).and_return(variable_set)

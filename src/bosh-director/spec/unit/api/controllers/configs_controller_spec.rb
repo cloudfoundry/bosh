@@ -8,7 +8,7 @@ module Bosh::Director
 
     subject(:app) { Api::Controllers::ConfigsController.new(config) }
 
-    let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
+    let(:config) { Config.load_hash(SpecHelper.director_config_hash) }
     let(:identity_provider) { Support::TestIdentityProvider.new(config.get_uuid_provider) }
 
     let(:config_name) { 'my-name' }

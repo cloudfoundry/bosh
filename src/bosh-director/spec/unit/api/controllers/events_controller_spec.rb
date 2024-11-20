@@ -9,7 +9,7 @@ module Bosh::Director
 
       subject(:app) { linted_rack_app(described_class.new(config)) }
 
-      let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
+      let(:config) { Config.load_hash(SpecHelper.director_config_hash) }
       let(:timestamp) { Time.now }
 
       before do

@@ -7,7 +7,7 @@ module Bosh::Director
       include Rack::Test::Methods
 
       subject(:app) { linted_rack_app(described_class.new(config)) }
-      let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
+      let(:config) { Config.load_hash(SpecHelper.director_config_hash) }
       let(:cpi_config) { FactoryBot.create(:models_config_cpi, :with_manifest).raw_manifest }
 
       before do

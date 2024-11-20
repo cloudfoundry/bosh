@@ -25,7 +25,7 @@ module Bosh::Director
 
   describe MetricsCollector do
     let(:scheduler) { FakeRufusScheduler.new }
-    let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
+    let(:config) { Config.load_hash(SpecHelper.director_config_hash) }
     let(:metrics_collector) { MetricsCollector.new(config) }
     let(:resurrector_manager) { instance_double(Api::ResurrectorManager) }
 

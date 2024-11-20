@@ -168,7 +168,7 @@ module Bosh::Director
       allow(instance_deleter).to receive(:delete_instance_plan)
       allow(Config).to receive(:current_job).and_return(update_job)
       allow(Config).to receive(:enable_short_lived_nats_bootstrap_credentials_compilation_vms).and_return(false)
-      director_config = SpecHelper.spec_get_director_config
+      director_config = SpecHelper.director_config_hash
       allow(Config).to receive(:nats_client_ca_private_key_path).and_return(director_config['nats']['client_ca_private_key_path'])
       allow(Config).to receive(:nats_client_ca_certificate_path).and_return(director_config['nats']['client_ca_certificate_path'])
       allow(deployment_model).to receive(:current_variable_set).and_return(FactoryBot.create(:models_variable_set))
@@ -616,7 +616,7 @@ module Bosh::Director
           .and_return(instance_provider)
         allow(deployment_plan).to receive(:availability_zones).and_return([])
 
-        Bosh::Director::App.new(Bosh::Director::Config.load_hash(SpecHelper.spec_get_director_config))
+        Bosh::Director::App.new(Bosh::Director::Config.load_hash(SpecHelper.director_config_hash))
       end
 
       it 'creates the needed collaborators and news up a CompilationInstancePool' do

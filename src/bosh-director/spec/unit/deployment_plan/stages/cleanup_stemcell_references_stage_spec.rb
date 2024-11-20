@@ -17,7 +17,7 @@ module Bosh::Director
       end
 
       before do
-        Bosh::Director::App.new(Bosh::Director::Config.load_hash(SpecHelper.spec_get_director_config))
+        Bosh::Director::App.new(Bosh::Director::Config.load_hash(SpecHelper.director_config_hash))
         allow(deployment_planner).to receive(:model).and_return(deployment_model)
 
         planner_stemcell.bind_model(deployment_model)

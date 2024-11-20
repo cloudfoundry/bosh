@@ -64,7 +64,7 @@ module Bosh::Director
     describe 'a request (controller integration)' do
       include Rack::Test::Methods
 
-      let(:test_config) { SpecHelper.spec_get_director_config }
+      let(:test_config) { SpecHelper.director_config_hash }
       let(:config) do
         config = Config.load_hash(test_config)
         identity_provider = Support::TestIdentityProvider.new(config.get_uuid_provider)

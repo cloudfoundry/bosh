@@ -16,7 +16,7 @@ module Bosh::Director
     let(:tmpdir) { Dir.mktmpdir }
     after { FileUtils.rm_rf tmpdir }
 
-    let(:config) { SpecHelper.spec_get_director_config }
+    let(:config) { SpecHelper.director_config_hash }
     let(:job_class) { FakeJob }
     let(:description) { 'busy doing something' }
 

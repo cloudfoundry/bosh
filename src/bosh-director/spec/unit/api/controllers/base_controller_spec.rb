@@ -9,7 +9,7 @@ module Bosh
           include Rack::Test::Methods
 
           subject(:app) { Support::TestController.new(config, requires_authentication) }
-          let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
+          let(:config) { Config.load_hash(SpecHelper.director_config_hash) }
 
           let(:requires_authentication) { nil }
           let(:authenticates_successfully) { false }

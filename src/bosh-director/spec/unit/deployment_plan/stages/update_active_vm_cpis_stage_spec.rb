@@ -87,7 +87,7 @@ module Bosh::Director
       end
 
       before do
-        Bosh::Director::App.new(Bosh::Director::Config.load_hash(SpecHelper.spec_get_director_config))
+        Bosh::Director::App.new(Bosh::Director::Config.load_hash(SpecHelper.director_config_hash))
 
         allow(base_job).to receive(:task_id).and_return(1)
         allow(Bosh::Director::Config).to receive(:current_job).and_return(base_job)

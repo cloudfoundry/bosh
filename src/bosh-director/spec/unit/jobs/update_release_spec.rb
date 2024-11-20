@@ -818,7 +818,7 @@ module Bosh::Director
         task = FactoryBot.create(:models_task, state: 'processing')
         allow(Config).to receive_message_chain(:current_job, :task_id).and_return(task.id)
 
-        Config.configure(SpecHelper.spec_get_director_config)
+        Config.configure(SpecHelper.director_config_hash)
         @job.perform
 
         @release_dir = Support::ReleaseHelper.new.create_release_tarball(manifest)

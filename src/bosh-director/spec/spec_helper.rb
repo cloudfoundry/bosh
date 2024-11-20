@@ -27,7 +27,6 @@ ENV['RACK_ENV'] = 'test'
 
 module SpecHelper
   class << self
-    include LoggingHelper
 
     def init
       init_database
@@ -51,21 +50,6 @@ module SpecHelper
                   end
     end
 
-    def spec_get_director_config
-      YAML.load_file(File.join(SPEC_ASSETS, 'test-director-config.yml')).tap do |config|
-        config['nats']['server_ca_path'] = File.join(SPEC_ASSETS, 'nats', 'nats_ca.pem')
-        config['nats']['client_ca_certificate_path'] = File.join(SPEC_ASSETS, 'nats', 'nats_ca_certificate.pem')
-        config['nats']['client_ca_private_key_path'] = File.join(SPEC_ASSETS, 'nats', 'nats_ca_private_key.pem')
-
-        config['db']['adapter'] = db_helper.adapter
-        config['db']['host'] = db_helper.host
-        config['db']['database'] = db_helper.db_name
-        config['db']['user'] = db_helper.username
-        config['db']['password'] = db_helper.password
-        config['db']['port'] = db_helper.port
-      end
-    end
-
     def init_database
       connect_database
 
@@ -86,17 +70,6 @@ module SpecHelper
           db.loggers << init_logger
           db.log_connection_info = true
         end
-    end
-
-    def disconnect_database
-      if @db
-        @db.disconnect
-        init_logger.info("Drop database '#{db_helper.connection_string}'")
-        db_helper.drop_db
-
-        @db = nil
-        @db_helper = nil
-      end
     end
 
     def run_migrations
@@ -130,15 +103,6 @@ module SpecHelper
       end
     end
 
-    def reset_config(test_logger)
-      Bosh::Director::Config.clear
-      Bosh::Director::Config.db = @db
-      Bosh::Director::Config.logger = test_logger
-      Bosh::Director::Config.trusted_certs = ''
-      Bosh::Director::Config.max_threads = 1
-      Bosh::Director::Config.event_log = Bosh::Director::EventLog::Log.new
-    end
-
     def reset_database(example)
       if example.metadata[:truncation] && ENV.fetch('DB', 'sqlite') != 'sqlite'
         example.run
@@ -155,6 +119,30 @@ module SpecHelper
       init_logger.info("Truncating database '#{db_helper.connection_string}'")
       db_helper.truncate_db
     end
+
+    def director_config_hash
+      YAML.load_file(File.join(SPEC_ASSETS, 'test-director-config.yml')).tap do |config|
+        config['nats']['server_ca_path'] = File.join(SPEC_ASSETS, 'nats', 'nats_ca.pem')
+        config['nats']['client_ca_certificate_path'] = File.join(SPEC_ASSETS, 'nats', 'nats_ca_certificate.pem')
+        config['nats']['client_ca_private_key_path'] = File.join(SPEC_ASSETS, 'nats', 'nats_ca_private_key.pem')
+
+        config['db']['adapter'] = db_helper.adapter
+        config['db']['host'] = db_helper.host
+        config['db']['database'] = db_helper.db_name
+        config['db']['user'] = db_helper.username
+        config['db']['password'] = db_helper.password
+        config['db']['port'] = db_helper.port
+      end
+    end
+
+    def reset_director_config(test_logger)
+      Bosh::Director::Config.clear
+      Bosh::Director::Config.db = @db
+      Bosh::Director::Config.logger = test_logger
+      Bosh::Director::Config.trusted_certs = ''
+      Bosh::Director::Config.max_threads = 1
+      Bosh::Director::Config.event_log = Bosh::Director::EventLog::Log.new
+    end
   end
 end
 
@@ -167,16 +155,12 @@ RSpec.configure do |config|
     SpecHelper.setup_datasets
   end
 
-  config.after(:suite) do
-    SpecHelper.disconnect_database
-  end
-
   config.around(:each) do |example|
     SpecHelper.reset_database(example)
   end
 
   config.before(:each) do
-    SpecHelper.reset_config(per_spec_logger)
+    SpecHelper.reset_director_config(per_spec_logger)
   end
 end
 

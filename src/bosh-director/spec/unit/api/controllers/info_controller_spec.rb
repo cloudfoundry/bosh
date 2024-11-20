@@ -17,7 +17,7 @@ module Bosh::Director
       let(:test_config) { base_config }
 
       let(:base_config) do
-        config = SpecHelper.spec_get_director_config
+        config = SpecHelper.director_config_hash
         config['local_dns'] = { 'enabled' => true }
         config
       end

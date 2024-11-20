@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe App do
-    let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
+    let(:config) { Config.load_hash(SpecHelper.director_config_hash) }
 
     describe 'initialize' do
       it 'takes a Config' do

@@ -15,7 +15,7 @@ module Bosh::Director
   describe SyncDnsScheduler do
     subject(:sync_dns_scheduler) { SyncDnsScheduler.new(config, 0.01) }
 
-    let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
+    let(:config) { Config.load_hash(SpecHelper.director_config_hash) }
 
     before do
       Bosh::Director.send(:remove_const, :Models)

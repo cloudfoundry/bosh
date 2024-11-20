@@ -15,7 +15,7 @@ module Bosh::Director
       subject(:app) { linted_rack_app(described_class.new(config, resource_manager)) }
 
       let(:config) do
-        config = SpecHelper.spec_get_director_config
+        config = SpecHelper.director_config_hash
         config['dir'] = temp_dir
         config['blobstore'] = {
           'provider' => 'davcli',

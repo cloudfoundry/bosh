@@ -6,7 +6,7 @@ require 'spec_helper'
 #
 
 describe Bosh::Director::Config do
-  let(:test_config) { SpecHelper.spec_get_director_config }
+  let(:test_config) { SpecHelper.director_config_hash }
 
   context 'max_tasks' do
     it 'can set max_tasks in config' do

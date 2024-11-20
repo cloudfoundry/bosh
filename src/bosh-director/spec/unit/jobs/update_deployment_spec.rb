@@ -9,7 +9,7 @@ module Bosh::Director
         end
       end
 
-      let(:config) { Config.load_hash(SpecHelper.spec_get_director_config) }
+      let(:config) { Config.load_hash(SpecHelper.director_config_hash) }
       let(:directory) { Support::FileHelpers::DeploymentDirectory.new }
       let(:manifest_content) { YAML.dump(SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups) }
       let(:cloud_config_id) { nil }

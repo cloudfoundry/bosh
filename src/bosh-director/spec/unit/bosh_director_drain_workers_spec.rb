@@ -5,7 +5,7 @@ describe '#bosh-director-drain-workers', truncation: true do
   let(:tmpdir) { Dir.mktmpdir }
   let(:director_config_filename) { File.join(tmpdir, 'director_config.yml') }
 
-  before { File.write(director_config_filename, YAML.dump(SpecHelper.spec_get_director_config)) }
+  before { File.write(director_config_filename, YAML.dump(SpecHelper.director_config_hash)) }
   after { FileUtils.rm_rf(tmpdir) }
 
   before do
