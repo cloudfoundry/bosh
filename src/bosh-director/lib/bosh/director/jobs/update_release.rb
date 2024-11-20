@@ -172,10 +172,18 @@ module Bosh::Director
       # Normalizes release manifest, so all names, versions, and checksums are Strings.
       # @return [void]
       def normalize_manifest
-        Bosh::Director.hash_string_vals(@manifest, 'name', 'version')
+        hash_string_vals(@manifest, 'name', 'version')
 
-        manifest_packages.each { |p| Bosh::Director.hash_string_vals(p, 'name', 'version', 'sha1') }
-        manifest_jobs.each { |j| Bosh::Director.hash_string_vals(j, 'name', 'version', 'sha1') }
+        manifest_packages.each { |p| hash_string_vals(p, 'name', 'version', 'sha1') }
+        manifest_jobs.each { |j| hash_string_vals(j, 'name', 'version', 'sha1') }
+      end
+
+      # Replace values for keys in a hash with their to_s.
+      def hash_string_vals(h, *keys)
+        keys.each do |k|
+          h[k] = h[k].to_s
+        end
+        h
       end
 
       # Resolves package dependencies, makes sure there are no cycles
