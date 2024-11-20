@@ -34,6 +34,7 @@ module Bosh::Director
 
       let(:expected_status) { 401 }
 
+      let(:host_header_value) { 'request-logger-spec.example.org' }
       let(:log_string) do
         log_string = nil
         allow(Bosh::Director::AuditLogger).to receive(:instance).and_return(audit_logger)
@@ -42,7 +43,7 @@ module Bosh::Director
         end
         authorize!
         header 'random-header',      'should-be-ignored'
-        header 'HOST',               'fake-host.com'
+        header 'HOST',               host_header_value
         header 'X_REAL_IP',          '5.6.7.8'
         header 'X_FORWARDED_FOR',    '1.2.3.4'
         header 'X_FORWARDED_PROTO',  'https'
@@ -109,8 +110,15 @@ module Bosh::Director
             end
 
             it 'includes http headers' do
-              expect(log_string).to include('cs2=HOST=fake-host.com&X_REAL_IP=5.6.7.8&X_FORWARDED_FOR=1.2.3.4&'\
-                                            'X_FORWARDED_PROTO=https&USER_AGENT=Fake Agent cs2Label=httpHeaders')
+              expect(log_string).to include(
+                                      [
+                                        "cs2=HOST=#{host_header_value}",
+                                        "X_REAL_IP=5.6.7.8",
+                                        "X_FORWARDED_FOR=1.2.3.4",
+                                        "X_FORWARDED_PROTO=https",
+                                        "USER_AGENT=Fake Agent cs2Label=httpHeaders",
+                                      ].join('&')
+                                    )
             end
 
             it 'includes authorization type' do
