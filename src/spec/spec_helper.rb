@@ -10,7 +10,6 @@ require 'digest/sha1'
 require 'tmpdir'
 require 'tempfile'
 require 'yaml'
-require 'restclient'
 
 require 'bosh/director'
 require 'nats/client'

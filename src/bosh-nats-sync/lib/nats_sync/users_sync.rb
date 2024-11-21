@@ -1,10 +1,11 @@
-require 'rest-client'
 require 'base64'
 require 'nats_sync/nats_auth_config'
 require 'open3'
 
 module NATSSync
   class UsersSync
+    HTTP_SUCCESS = "200"
+
     def initialize(nats_config_file_path, bosh_config, nats_server_executable, nats_server_pid_file)
       @nats_config_file_path = nats_config_file_path
       @bosh_config = bosh_config
@@ -42,15 +43,13 @@ module NATSSync
     end
 
     def self.reload_nats_server_config(nats_server_executable, nats_server_pid_file)
-      output, status = Open3.capture2e("#{nats_server_executable} --signal reload=#{nats_server_pid_file}")
+      nats_command = "#{nats_server_executable} --signal reload=#{nats_server_pid_file}"
 
-      # rubocop:disable Style/GuardClause
-      # rubocop:disable Layout/LineLength
+      output, status = Open3.capture2e(nats_command)
+
       unless status.success?
-        raise("Cannot execute: #{nats_server_executable} --signal reload=#{nats_server_pid_file}, Status Code: #{status} \nError: #{output}")
+        raise("Cannot execute: #{nats_command}, Status Code: #{status}\nError: #{output}")
       end
-      # rubocop:enable Style/GuardClause
-      # rubocop:enable Layout/LineLength
     end
 
     private
@@ -72,28 +71,33 @@ module NATSSync
       Digest::MD5.file(@nats_config_file_path).hexdigest
     end
 
-    def call_bosh_api(endpoint)
-      auth_header = create_authentication_header
-      NATSSync.logger.debug 'auth_header is empty, next REST call could fail' if auth_header.nil? || auth_header.empty?
-      response = RestClient::Request.execute(
-        url: @bosh_config['url'] + endpoint,
-        method: :get,
-        headers: { 'Authorization' => auth_header },
-        verify_ssl: false,
-      )
+    def parsed_uri_for(api_path:)
+      URI.parse("#{@bosh_config['url']}#{api_path}")
+    end
+
+    def bosh_api_response_body(api_path, auth: true)
+      parsed_uri = parsed_uri_for(api_path: api_path)
+
+      response =
+        Net::HTTP.new(parsed_uri.host, parsed_uri.port).tap do |http|
+          http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        end.get(parsed_uri.request_uri, build_headers(auth: auth))
+
       NATSSync.logger.debug(response.inspect)
-      raise("Cannot access: #{endpoint}, Status Code: #{response.code}, #{response.body}") unless response.code == 200
+      unless response.code == HTTP_SUCCESS
+        raise("Cannot access: #{api_path}, Status Code: #{response.code}, #{response.body}")
+      end
 
       response.body
     end
 
     def query_all_deployments
-      deployments_json = JSON.parse(call_bosh_api('/deployments'))
+      deployments_json = JSON.parse(bosh_api_response_body('/deployments'))
       deployments_json.map { |deployment| deployment['name'] }
     end
 
     def get_vms_by_deployment(deployment)
-      JSON.parse(call_bosh_api("/deployments/#{deployment}/vms"))
+      JSON.parse(bosh_api_response_body("/deployments/#{deployment}/vms"))
     end
 
     def query_all_running_vms
@@ -103,27 +107,21 @@ module NATSSync
       vms
     end
 
-    def call_bosh_api_no_auth(endpoint)
-      response = RestClient::Request.execute(
-        url: @bosh_config['url'] + endpoint,
-        method: :get,
-        verify_ssl: false,
-      )
-      NATSSync.logger.debug(response.inspect)
-      raise("Cannot access: #{endpoint}, Status Code: #{response.code}, #{response.body}") unless response.code == 200
-
-      response.body
-    end
-
     def info
       return @director_info if @director_info
-      body = call_bosh_api_no_auth('/info')
 
-      @director_info = JSON.parse(body)
+      @director_info = JSON.parse(bosh_api_response_body('/info', auth: false))
     end
 
-    def create_authentication_header
-      NATSSync::AuthProvider.new(info, @bosh_config).auth_header
+    def build_headers(auth: true)
+      if auth
+        auth_header = "#{NATSSync::AuthProvider.new(info, @bosh_config).auth_header}"
+        NATSSync.logger.debug 'auth_header is empty, next REST call could fail' if auth_header.empty?
+
+        { 'Authorization' => auth_header }
+      else
+        {}
+      end
     end
 
     def write_nats_config_file(vms, director_subject, hm_subject)

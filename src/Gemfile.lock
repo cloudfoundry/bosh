@@ -54,7 +54,6 @@ PATH
       json
       logging
       openssl
-      rest-client
       rufus-scheduler
 
 PATH
@@ -151,7 +150,6 @@ GEM
     docile (1.4.1)
     dogapi (1.45.0)
       multi_json
-    domain_name (0.6.20240107)
     drb (2.2.1)
     et-orbi (1.2.11)
       tzinfo
@@ -167,9 +165,6 @@ GEM
       et-orbi (~> 1, >= 1.2.11)
       raabro (~> 1.4)
     hashdiff (1.1.2)
-    http-accept (1.7.0)
-    http-cookie (1.0.7)
-      domain_name (~> 0.5)
     httpclient (2.8.3)
     i18n (1.14.6)
       concurrent-ruby (~> 1.0)
@@ -186,10 +181,6 @@ GEM
     membrane (1.1.0)
     method_source (1.1.0)
     metrics (0.12.1)
-    mime-types (3.6.0)
-      logger
-      mime-types-data (~> 3.2015)
-    mime-types-data (3.2024.1105)
     mini_portile2 (2.8.8)
     minitar (1.0.2)
     minitest (5.25.1)
@@ -204,7 +195,6 @@ GEM
       timeout
     net-smtp (0.5.0)
       net-protocol
-    netrc (0.11.0)
     nio4r (2.7.4)
     openssl (3.2.0)
     ostruct (0.6.1)
@@ -244,11 +234,6 @@ GEM
     rainbow (3.1.1)
     rake (13.2.1)
     regexp_parser (2.9.2)
-    rest-client (2.1.0)
-      http-accept (>= 1.7.0, < 2.0)
-      http-cookie (>= 1.0.2, < 2.0)
-      mime-types (>= 1.16, < 4.0)
-      netrc (~> 0.8)
     rexml (3.3.9)
     riemann-client (1.2.1)
       beefcake (>= 1.0.0)
