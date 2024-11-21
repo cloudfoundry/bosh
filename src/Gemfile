@@ -15,8 +15,7 @@ group :development, :test do
   gem 'parallel_tests'
   gem 'rubocop'
 
-  gem 'pry-byebug'
-  gem 'pry-remote'
+  gem 'pry'
 
   gem 'async-rspec'
   gem 'blue-shell'
