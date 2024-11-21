@@ -1,15 +1,19 @@
 module SharedSupport
-  class Sqlite
-    attr_reader :db_name, :username, :password, :port, :adapter, :host
+  class Sqlite < SharedSupport::DBHelper
+    TYPE = 'sqlite3'
+    DEFAULTS = {
+      adapter: 'sqlite',
+      username: nil,
+      password: nil,
+      host: 'localhost',
+      port: nil
+    }
 
     def initialize(db_options:)
-      @adapter = 'sqlite'
-      @db_name = create_db_file(db_options[:name])
-
-      @username = db_options.fetch(:username, nil)
-      @password = db_options.fetch(:password, nil)
-      @host = db_options.fetch(:host, 'localhost')
-      @port = db_options.fetch(:port, nil)
+      super(
+        db_options: DEFAULTS.merge(db_options)
+                            .merge(name: create_db_file(db_options[:name]))
+      )
     end
 
     def connection_string
@@ -20,7 +24,7 @@ module SharedSupport
     end
 
     def drop_db
-      DBHelper.run_command("rm #{@db_name}")
+      run_command("rm #{@db_name}")
     end
 
     def current_tasks
@@ -32,7 +36,7 @@ module SharedSupport
     end
 
     def truncate_db
-      DBHelper.run_command("sqlite3 #{@db_name} 'UPDATE sqlite_sequence SET seq = 0'")
+      run_command("sqlite3 #{@db_name} 'UPDATE sqlite_sequence SET seq = 0'")
     end
 
     private

@@ -1,17 +1,18 @@
 require 'shellwords'
 
 module SharedSupport
-  class Postgresql
-    attr_reader :db_name, :username, :password, :adapter, :port, :host
+  class Postgresql < DBHelper
+    TYPE = 'postgresql'
+    DEFAULTS = {
+      adapter: 'postgresql',
+      username: 'postgres',
+      password: '',
+      host: '127.0.0.1',
+      port: 5432,
+    }
 
     def initialize(db_options:)
-      @adapter = 'postgres'
-      @db_name = db_options[:name]
-
-      @username = db_options.fetch(:username, 'postgres')
-      @password = db_options.fetch(:password, '')
-      @host = db_options.fetch(:host, '127.0.0.1')
-      @port = db_options.fetch(:port, 5432)
+      super(db_options: DEFAULTS.merge(db_options))
     end
 
     def connection_string(this_db_name = @db_name)
@@ -76,7 +77,7 @@ module SharedSupport
     private
 
     def execute_sql(sql, this_connection_string = connection_string)
-      DBHelper.run_command(%{#{sql_cmd(sql, this_connection_string)} > /dev/null})
+      run_command(%{#{sql_cmd(sql, this_connection_string)} > /dev/null})
     end
 
     def sql_results_for(sql, this_connection_string = connection_string)

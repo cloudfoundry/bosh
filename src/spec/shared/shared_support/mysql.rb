@@ -1,16 +1,17 @@
 module SharedSupport
-  class Mysql
+  class Mysql < DBHelper
+    TYPE = 'mysql'
     DEFAULT_PASSWORD = (/darwin/ =~ RUBY_PLATFORM) ? '' : 'password'
-    attr_reader :db_name, :username, :password, :adapter, :port, :host
+    DEFAULTS = {
+      adapter: 'mysql2',
+      username: 'root',
+      password: DEFAULT_PASSWORD,
+      host: '127.0.0.1',
+      port: '3306',
+    }
 
     def initialize(db_options:)
-      @adapter = 'mysql2'
-      @db_name = db_options[:name]
-
-      @username = db_options.fetch(:username, 'root')
-      @password = db_options.fetch(:password, DEFAULT_PASSWORD)
-      @host = db_options.fetch(:host, '127.0.0.1')
-      @port = db_options.fetch(:port, 3306)
+      super(db_options: DEFAULTS.merge(db_options))
     end
 
     def connection_string(this_db_name = @db_name)
@@ -52,7 +53,7 @@ module SharedSupport
     private
 
     def run_quietly_redacted(cmd)
-      DBHelper.run_command(%Q(#{cmd} > /dev/null 2>&1))
+      run_command(%Q(#{cmd} > /dev/null 2>&1))
     end
 
     def execute_sql(sql, this_db_name = db_name)
