@@ -1,6 +1,5 @@
 require 'spec_helper'
 require 'nats_sync/users_sync'
-require 'rest-client'
 
 module NATSSync
   describe UsersSync do
