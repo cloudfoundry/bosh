@@ -8,7 +8,8 @@ PIDFILE=$RUN_DIR/worker_$INDEX.pid
 RUNAS=vcap
 
 # Postgres
-PATH=/var/vcap/packages/postgres-10/bin:$PATH
+POSTGRES_PACKAGE="postgres-13"
+PATH=/var/vcap/packages/${POSTGRES_PACKAGE}/bin:$PATH
 LD_LIBRARY_PATH=/var/vcap/packages/libpq/lib:$LD_LIBRARY_PATH
 
 # MySQL
