@@ -8,7 +8,7 @@ module Bosh::Director
       [
         {
           filename: '20110209010747_initial.rb',
-          sha1: 'c9b5654ce0a4a5df4805a2acec301fc65e0fd310',
+          sha1: 'c313f56a60615786b4c38ff72a1e2350e214e182',
         },
         {
           filename: '20210902232124_add_blobstore_and_nats_shas_to_vms.rb',

@@ -939,7 +939,7 @@ Sequel.migration do
 
         create_table(:errand_runs) do
           primary_key :id, :type=>"int"
-          foreign_key :deployment_id, :deployments, :default=>-1, :type=>"int", :null=>false, :key=>[:id]
+          foreign_key :deployment_id, :deployments, :default=>-1, :type=>"int", :null=>false, :key=>[:id], :on_delete=>:cascade
           column :errand_name, "longtext"
           column :successful_state_hash, "varchar(512)"
 
@@ -992,7 +992,7 @@ Sequel.migration do
         create_table(:local_dns_encoded_groups) do
           primary_key :id, :type=>"int"
           column :name, "varchar(255)", :null=>false
-          foreign_key :deployment_id, :deployments, :type=>"int", :null=>false, :key=>[:id]
+          foreign_key :deployment_id, :deployments, :type=>"int", :null=>false, :key=>[:id], :on_delete=>:cascade
           column :type, "varchar(255)", :default=>"instance-group", :null=>false
 
           index [:deployment_id]
