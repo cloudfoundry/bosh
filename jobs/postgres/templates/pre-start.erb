@@ -22,11 +22,11 @@ function print_director_upgrade_recommendation_for {
         echo "Please use a previous bosh release version (270.12) to migrate data from postgres-9.4 to postgres-10."
       ;;
       "10")
-        echo "Please use a previous bosh release version (280.1.9) to migrate data from postgres-10 to postgres-13."
+        echo "Please use a previous bosh release version (280.1.10) to migrate data from postgres-10 to postgres-13."
       ;;
       # Uncomment once 13 is in ${OBSOLETE_VERSIONS}
       # "13")
-      #   echo "Please use a previous bosh release version (280.1.9) to migrate data from postgres-13 to postgres-15."
+      #   echo "Please use a previous bosh release version (280.1.10) to migrate data from postgres-13 to postgres-15."
       # ;;
       *)
         echo "Unknown obsolete postgres version: '$1'!"
