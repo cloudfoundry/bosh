@@ -1,4 +1,4 @@
-require_relative '../../../../db_spec_helper'
+require 'db_spec_helper'
 
 module Bosh::Director
   describe '20210902232124_add_blobstore_and_nats_shas_to_vms.rb' do

@@ -5,8 +5,8 @@ namespace :db do
       name = args.to_hash.fetch(:name)
 
       timestamp = Time.new.getutc.strftime('%Y%m%d%H%M%S')
-      new_migration_path = "bosh-director/db/migrations/director/#{timestamp}_#{name}.rb"
-      new_migration_spec_path = "bosh-director/spec/unit/db/migrations/director/#{timestamp}_#{name}_spec.rb"
+      new_migration_path = "bosh-director/db/migrations/#{timestamp}_#{name}.rb"
+      new_migration_spec_path = "bosh-director/spec/unit/db/migrations/#{timestamp}_#{name}_spec.rb"
 
       puts "Creating #{new_migration_spec_path}"
       File.write new_migration_spec_path, <<EOF

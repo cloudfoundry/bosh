@@ -14,17 +14,12 @@ require 'db_migrator'
 
 module DBSpecHelper
   class << self
-    attr_reader :db, :director_migrations_dir, :director_migrations_digest_file
-
-    def init
-      @director_migrations_dir = File.join(BOSH_DIRECTOR_ROOT, 'db', 'migrations', 'director')
-      @director_migrations_digest_file  = File.join(BOSH_DIRECTOR_ROOT, 'db',  'migrations', 'migration_digests.json')
-    end
+    attr_reader :db
 
     def connect_database
       db_options = {
         type: ENV.fetch('DB', 'sqlite'),
-        name: "#{SecureRandom.uuid.delete('-')}_director",
+        name: ['director_test', SecureRandom.uuid.delete('-')].join('_'),
         username: ENV['DB_USER'],
         password: ENV['DB_PASSWORD'],
         host: ENV['DB_HOST'],
@@ -67,47 +62,13 @@ module DBSpecHelper
       migrate_to_version(version)
     end
 
-    def get_latest_migration_script
-      Dir.entries(@director_migrations_dir).select {|f| !File.directory? f}.sort.last
-    end
-
-    def get_migrations
-      Dir.glob(File.join(@director_migrations_dir, '..', '**', '[0-9]*_*.rb'))
-    end
-
-    def skip_on_mysql(example, why = nil)
-      skip_on_db_type(:mysql, example, why)
-    end
-
-    def skip_on_postgresql(example, why = nil)
-      skip_on_db_type(:postgresql, example, why)
-    end
-
-    def skip_on_sqlite(example, why = nil)
-      skip_on_db_type(:sqlite, example, why)
-    end
-
     private
-
-    def skip_on_db_type(db_type, example, why)
-      if db_is?(db_type)
-        message = "Assertion not supported on DB #{db_type.inspect}"
-        message += " because '#{why}'." if why
-        example.skip(message)
-      end
-    end
-
-    def db_is?(db_type)
-      /#{db_type}/.match?("#{db.adapter_scheme}")
-    end
 
     def migrate_to_version(version)
       DBMigrator.new(@db, target: version).migrate
     end
   end
 end
-
-DBSpecHelper.init
 
 RSpec.configure do |rspec|
   rspec.after(:suite) do
