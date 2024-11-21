@@ -13,7 +13,6 @@ groups:
       - unit-release
       - unit-director-sqlite
       - unit-director-mysql-8
-      - unit-director-postgres-10
       - unit-director-postgres-13
       - unit-director-postgres-15
       - run-bundle-audit
@@ -42,7 +41,6 @@ groups:
 
   - name: ci-images
     jobs:
-    - build-main-postgres-10
     - build-main-postgres-13
     - build-main-postgres-15
     - build-main-mysql-8-0
@@ -66,7 +64,6 @@ jobs:
       - unit-release
       - unit-director-sqlite
       - unit-director-mysql-8
-      - unit-director-postgres-10
       - unit-director-postgres-13
       - unit-director-postgres-15
       - run-bundle-audit
@@ -207,27 +204,6 @@ jobs:
       image: integration-mysql-8-0-image
       params:
         DB: mysql
-        RAKE_TASK: spec:unit:director
-
-  - name: unit-director-postgres-10
-    public: true
-    serial: true
-    serial_groups: [unit-director-postgres-10]
-    build_logs_to_retain: 250
-    plan:
-    - in_parallel:
-      - get: bosh-ci
-      - get: bosh
-        passed: [gate]
-        trigger: true
-      - get: integration-postgres-10-image
-    - task: test-rake-task
-      timeout: 2h
-      privileged: true
-      file: bosh-ci/ci/tasks/test-rake-task.yml
-      image: integration-postgres-10-image
-      params:
-        DB: postgresql
         RAKE_TASK: spec:unit:director
 
   - name: unit-director-postgres-13
@@ -400,7 +376,6 @@ jobs:
         - unit-release
         - unit-director-sqlite
         - unit-director-mysql-8
-        - unit-director-postgres-10
         - unit-director-postgres-13
         - unit-director-postgres-15
         - integration-mysql
@@ -1028,24 +1003,6 @@ jobs:
       get_params:
         skip_download: true
 
-  - name: build-main-postgres-10
-    public: true
-    serial: true
-    plan:
-      - get: bosh-ci-dockerfiles
-      - get: integration-image
-        trigger: true
-        passed: [build-integration]
-      - put: integration-postgres-10-image
-        params:
-          tag_as_latest: true
-          build: "bosh-ci-dockerfiles/ci/dockerfiles/main-postgres"
-          build_args:
-            DB_VERSION: "10"
-            BRANCH: ((branch_name))
-        get_params:
-          skip_download: true
-
   - name: build-main-postgres-13
     public: true
     serial: true
@@ -1215,8 +1172,6 @@ jobs:
         trigger: true
       - get: mariadb-connector-c-resource
         trigger: true
-      - get: postgres-10-src
-        trigger: true
       - get: postgres-13-src
         trigger: true
       - get: postgres-15-src
@@ -1259,20 +1214,6 @@ jobs:
       params:
         GIT_USER_NAME: CI Bot
         GIT_USER_EMAIL: cf-bosh-eng@pivotal.io
-        PRIVATE_YML: |
-          blobstore:
-            options:
-              credentials_source: static
-              json_key: '((bosh_release_blobs_gcp_credentials_json))'
-    - task: bump-postgres-10-package
-      file: bosh-ci/ci/tasks/bump-postgres-packages.yml
-      input_mapping:
-        bosh: bosh-out
-        postgres-src: postgres-10-src
-      output_mapping:
-        bosh: bosh-out
-      params:
-        MAJOR_VERSION: 10
         PRIVATE_YML: |
           blobstore:
             options:
@@ -1464,13 +1405,6 @@ resources:
       index: "https://mariadb.org/connector-c/all-releases/"
       regex: '>(?P<version>3\.\d+.\d+)</a></td><td>\d{4}-\d{2}-\d{2}</td><td>Stable'
       uri: "https://ftp.osuosl.org/pub/mariadb/connector-c-{version}/mariadb-connector-c-{version}-src.tar.gz"
-
-  - name: postgres-10-src
-    type: http-resource
-    source:
-      index: "https://ftp.postgresql.org/pub/source/"
-      regex: 'href="v(?P<version>10\.[0-9.]+)/"'
-      uri: "https://ftp.postgresql.org/pub/source/v{version}/postgresql-{version}.tar.gz"
 
   - name: postgres-13-src
     type: http-resource
@@ -1723,14 +1657,6 @@ resources:
     type: docker-image
     source:
       repository: bosh/main-mysql-8.0
-      tag: ((branch_name))
-      username: ((dockerhub_username))
-      password: ((dockerhub_password))
-
-  - name: integration-postgres-10-image
-    type: docker-image
-    source:
-      repository: bosh/main-postgres-10
       tag: ((branch_name))
       username: ((dockerhub_username))
       password: ((dockerhub_password))

@@ -35,9 +35,9 @@ RSpec.describe 'postgres job rendering' do
     end
   end
 
-  describe 'postgres-10 job' do
+  describe 'postgres-13 job' do
     it_should_behave_like 'rendered postgres* bpm.yml' do
-      let(:job) { release.job('postgres-10') }
+      let(:job) { release.job('postgres-13') }
     end
   end
 end
