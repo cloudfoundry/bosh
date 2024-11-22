@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'blue-shell'
 
 describe '#bosh-director-drain-workers', truncation: true do
   let(:tmpdir) { Dir.mktmpdir }
