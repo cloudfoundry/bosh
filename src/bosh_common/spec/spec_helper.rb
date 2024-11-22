@@ -1,5 +1,8 @@
-require File.expand_path('../../../spec/shared/spec_helper', __FILE__)
+SPEC_ROOT = File.expand_path(File.dirname(__FILE__))
+$LOAD_PATH << SPEC_ROOT
 
-def asset(file)
-  File.expand_path(File.join(File.dirname(__FILE__), "assets", file))
+require File.expand_path('../../spec/shared/spec_helper', SPEC_ROOT)
+
+def asset_path(name)
+  File.join(SPEC_ROOT, 'assets', name)
 end

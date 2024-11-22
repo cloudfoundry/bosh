@@ -1,4 +1,7 @@
-require File.expand_path('../../spec/shared/spec_helper', __dir__)
+SPEC_ROOT = File.expand_path(File.dirname(__FILE__))
+$LOAD_PATH << SPEC_ROOT
+
+require File.expand_path('../../spec/shared/spec_helper', SPEC_ROOT)
 
 require 'async/rspec'
 require 'async/io'
@@ -7,10 +10,10 @@ require 'bosh/monitor'
 require 'webmock/rspec'
 require 'timecop'
 
-Dir.glob(File.expand_path('support/**/*.rb', __dir__)).each { |f| require(f) }
+Dir.glob(File.join(SPEC_ROOT, 'support/**/*.rb')).each { |f| require(f) }
 
-def asset_path(filename)
-  File.expand_path(File.join(File.dirname(__FILE__), 'assets', filename))
+def asset_path(name)
+  File.join(SPEC_ROOT, 'assets', name)
 end
 
 def sample_config

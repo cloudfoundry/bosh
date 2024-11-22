@@ -13,7 +13,7 @@ describe Bosh::Ssl::Certificate do
       let(:certificate_path) { File.join(Dir.tmpdir, 'ca.pem') }
 
       context 'when the key exists but the certificate does not' do
-        let(:key_path) { asset('ca/ca.key') }
+        let(:key_path) { asset_path('ca/ca.key') }
 
         before do
           FileUtils.rm_f(certificate_path)
@@ -27,7 +27,7 @@ describe Bosh::Ssl::Certificate do
       end
 
       context 'when the certificate exists but the key does not' do
-        let(:certificate_path) { asset('ca/ca.pem') }
+        let(:certificate_path) { asset_path('ca/ca.pem') }
 
         before do
           FileUtils.rm_f(key_path)
@@ -91,8 +91,8 @@ describe Bosh::Ssl::Certificate do
     end
 
     context 'when the paths given do exist' do
-      let(:key_path) { asset('ca/ca.key') }
-      let(:certificate_path) { asset('ca/ca.pem') }
+      let(:key_path) { asset_path('ca/ca.key') }
+      let(:certificate_path) { asset_path('ca/ca.pem') }
       let(:common_name) { 'myapp.dev102.cf.com' }
 
       it 'loads the key and certificate from the files' do
@@ -111,7 +111,7 @@ describe Bosh::Ssl::Certificate do
       end
 
       context 'when the user has a certificate chain' do
-        let(:chain_path) { asset('ca/chain.pem') }
+        let(:chain_path) { asset_path('ca/chain.pem') }
         let(:server_certificate) { described_class.new(key_path, certificate_path, common_name, chain_path) }
 
         it 'allows the user to read the contents of the chain file' do

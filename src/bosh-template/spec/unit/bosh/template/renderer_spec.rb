@@ -10,19 +10,15 @@ module Bosh
       end
 
       let(:template) do
-        File.join(assets_dir, 'nats.conf.erb')
+        asset_path('nats.conf.erb')
       end
 
       let(:rendered) do
-        File.join(assets_dir, 'nats.conf')
+        asset_path('nats.conf')
       end
 
       let(:context) do
-        File.read(File.join(assets_dir, 'nats.json'))
-      end
-
-      let(:assets_dir) do
-        File.expand_path('../../../assets', File.dirname(__FILE__))
+        asset_content('nats.json')
       end
 
       it 'correctly renders a realistic nats config template' do
@@ -31,11 +27,11 @@ module Bosh
 
       context 'backward compatibility' do
         let(:template) do
-          File.join(assets_dir, 'backward_compatibility.erb')
+          asset_path('backward_compatibility.erb')
         end
 
         let(:rendered) do
-          File.join(assets_dir, 'backward_compatibility')
+          asset_path('backward_compatibility')
         end
 
         let(:context) do

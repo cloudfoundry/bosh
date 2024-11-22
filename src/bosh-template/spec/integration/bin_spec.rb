@@ -7,20 +7,17 @@ describe 'bin/bosh-template' do
   end
 
   let(:template) do
-    File.join(assets_dir, 'nats.conf.erb')
+    asset_path('nats.conf.erb')
   end
 
   let(:rendered) do
-    File.join(assets_dir, 'nats.conf')
+    asset_path('nats.conf')
   end
 
   let(:context) do
-    File.read(File.join(assets_dir, 'nats.json'))
+    asset_content('nats.json')
   end
 
-  let(:assets_dir) do
-    File.expand_path('../assets', File.dirname(__FILE__))
-  end
 
   it 'correctly renders a realistic nats config template' do
     output = run("#{bin_file} #{template} --context '#{context}'")

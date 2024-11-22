@@ -1,8 +1,8 @@
-$LOAD_PATH << File.expand_path(File.dirname(__FILE__))
+SPEC_ROOT = File.expand_path(File.dirname(__FILE__))
+$LOAD_PATH << SPEC_ROOT
 
-require_relative '../../spec/shared/spec_helper'
+require File.expand_path('../../spec/shared/spec_helper', SPEC_ROOT)
 
-SPEC_ROOT = File.dirname(__FILE__)
 SPEC_ASSETS = File.join(SPEC_ROOT, 'assets')
 
 require 'digest/sha1'

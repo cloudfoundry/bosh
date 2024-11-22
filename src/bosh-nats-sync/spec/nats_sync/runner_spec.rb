@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe NATSSync::Runner do
-  subject { NATSSync::Runner.new(sample_config) }
+  subject { NATSSync::Runner.new(asset_path('sample_config.yml')) }
   let(:user_sync_class) { class_double('NATSSync::UsersSync').as_stubbed_const }
   let(:user_sync_instance) { instance_double(NATSSync::UsersSync) }
   let(:scheduler) { Rufus::Scheduler.new }

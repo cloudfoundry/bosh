@@ -1,4 +1,4 @@
-SPEC_ROOT = File.dirname(__FILE__)
+SPEC_ROOT = File.expand_path(File.dirname(__FILE__))
 
 $LOAD_PATH << File.expand_path(SPEC_ROOT)
 
