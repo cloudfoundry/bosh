@@ -18,7 +18,7 @@ class DBMigrator
   end
 
   def current?
-    Sequel::Migrator.is_current?(@database, MIGRATIONS_DIR)
+    Sequel::Migrator.is_current?(@database, MIGRATIONS_DIR, @options)
   end
 
   def migrate
