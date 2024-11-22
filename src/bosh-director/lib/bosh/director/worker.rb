@@ -1,7 +1,5 @@
 require 'db_migrator'
 require 'delayed_job'
-#TODO: remove when https://github.com/collectiveidea/delayed_job/pull/1185 is merged
-require "active_support/core_ext/array/extract_options"
 
 module Bosh
   module Director
