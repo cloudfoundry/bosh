@@ -1,5 +1,4 @@
-require 'common/version/stemcell_version_list'
-require 'common/version/version_list'
+require 'spec_helper'
 
 module Bosh::Common::Version
   describe StemcellVersionList do

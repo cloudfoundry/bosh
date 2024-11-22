@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'date'
 
 module Bosh::Director
   describe LogBundlesCleaner do

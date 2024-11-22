@@ -1,7 +1,4 @@
-require 'rspec'
-require 'bosh/template/test'
-require 'yaml'
-require 'json'
+require 'spec_helper'
 
 
 module Bosh::Template::Test

@@ -1,6 +1,4 @@
 require 'spec_helper'
-require 'bosh/template/evaluation_link'
-require 'bosh/template/evaluation_context'
 
 module Bosh
   module Template

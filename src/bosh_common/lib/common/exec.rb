@@ -1,7 +1,7 @@
 module Bosh; end
 
-require "common/exec/result"
-require "common/exec/error"
+require 'common/exec/result'
+require 'common/exec/error'
 
 module Bosh
 

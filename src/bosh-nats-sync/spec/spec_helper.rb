@@ -3,6 +3,8 @@ SPEC_ROOT = File.expand_path(File.dirname(__FILE__))
 require File.join(SPEC_ROOT, '../../spec/shared/spec_helper')
 
 require 'nats_sync'
+
+require 'rack/test'
 require 'webmock/rspec'
 require 'tempfile'
 

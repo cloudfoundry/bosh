@@ -1,6 +1,4 @@
 require 'spec_helper'
-require 'json'
-require 'ipaddr'
 
 describe 'Bosh::Director::DeploymentPlan::InstancePlanner' do
   include Bosh::Director::IpUtil

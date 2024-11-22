@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'db_migrator'
 
 WorkerSpecModels = Bosh::Director::Models
 module Kernel

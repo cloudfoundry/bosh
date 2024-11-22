@@ -1,5 +1,4 @@
-require 'rspec'
-require 'bosh/template/manual_link_dns_encoder'
+require 'spec_helper'
 
 
 module Bosh

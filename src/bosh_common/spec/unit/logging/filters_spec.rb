@@ -1,7 +1,4 @@
 require 'spec_helper'
-require 'common/logging/regex_filter'
-require 'common/logging/filters'
-require 'logging/log_event'
 
 describe Bosh::Common::Logging do
   let(:event) { Logging::LogEvent.new(nil, 100, event_data, false) }

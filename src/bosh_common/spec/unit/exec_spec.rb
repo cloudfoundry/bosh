@@ -1,5 +1,4 @@
-require "spec_helper"
-require "common/exec"
+require 'spec_helper'
 
 describe Bosh::Exec do
   let(:opts) do

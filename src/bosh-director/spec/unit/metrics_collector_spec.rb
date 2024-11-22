@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'ipaddr'
 
 MetricsCollectorModels = Bosh::Director::Models
 module Kernel

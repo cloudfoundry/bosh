@@ -1,5 +1,5 @@
 require 'rubygems/package'
-require "zlib"
+require 'zlib'
 require 'fileutils'
 
 module Bosh::Director::Core::Templates

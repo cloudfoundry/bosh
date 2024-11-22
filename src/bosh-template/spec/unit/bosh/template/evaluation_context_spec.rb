@@ -1,8 +1,4 @@
 require 'spec_helper'
-require 'bosh/template/evaluation_context'
-require 'bosh/template/evaluation_link_instance'
-require 'bosh/template/evaluation_link'
-require 'common/deep_copy'
 
 module Bosh
   module Template

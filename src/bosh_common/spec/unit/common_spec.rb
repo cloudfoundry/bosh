@@ -1,5 +1,4 @@
-require "spec_helper"
-require "common/common"
+require 'spec_helper'
 
 describe Bosh::Common do
 

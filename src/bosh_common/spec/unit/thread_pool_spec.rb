@@ -1,6 +1,4 @@
 require 'spec_helper'
-require 'logging'
-require 'common/thread_pool'
 
 describe Bosh::ThreadPool do
 

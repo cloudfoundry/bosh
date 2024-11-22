@@ -1,6 +1,5 @@
 require 'spec_helper'
-require 'json'
-require 'bosh/template/renderer'
+require 'bosh/template/renderer' # required as this is only loaded by `bin/bosh-template`
 
 module Bosh
   module Template

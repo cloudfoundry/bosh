@@ -1,6 +1,4 @@
-require 'db_migrator'
-require 'json'
-require 'digest/sha1'
+require 'spec_helper'
 
 module Bosh::Director
   describe 'migration files' do

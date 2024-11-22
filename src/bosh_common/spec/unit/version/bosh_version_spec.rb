@@ -1,4 +1,4 @@
-require 'common/version/bosh_version'
+require 'spec_helper'
 
 module Bosh::Common::Version
   describe BoshVersion do

@@ -1,6 +1,4 @@
 require 'spec_helper'
-require 'bosh/director/models/ip_address'
-require 'ipaddr'
 
 module Bosh::Director::Models
   describe IpAddress do

@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'ipaddr'
 
 describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
   before { @network = instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }

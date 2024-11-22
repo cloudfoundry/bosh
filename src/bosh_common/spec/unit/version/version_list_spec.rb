@@ -1,5 +1,4 @@
-require 'common/version/version_list'
-require 'common/version/semi_semantic_version'
+require 'spec_helper'
 
 module Bosh::Common::Version
   describe VersionList do

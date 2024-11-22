@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'common/retryable'
 
 describe Bosh::Retryable do
   before { allow(Kernel).to receive(:sleep) }

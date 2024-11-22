@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'nats_sync/nats_auth_config'
 
 module NATSSync
   describe NatsAuthConfig do

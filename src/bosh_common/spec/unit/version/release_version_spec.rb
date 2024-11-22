@@ -1,4 +1,4 @@
-require 'common/version/release_version'
+require 'spec_helper'
 
 module Bosh::Common::Version
   describe ReleaseVersion do

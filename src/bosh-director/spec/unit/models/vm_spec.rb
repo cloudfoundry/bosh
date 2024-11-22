@@ -1,6 +1,4 @@
 require 'spec_helper'
-require 'bosh/director/models/vm'
-require 'ipaddr'
 
 module Bosh::Director::Models
   describe Vm do

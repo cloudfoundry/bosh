@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'ipaddr'
 
 module Bosh::Director::DeploymentPlan
   describe IpRepo do

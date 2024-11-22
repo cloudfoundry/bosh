@@ -1,6 +1,4 @@
 require 'spec_helper'
-require 'common/ssl'
-require 'tmpdir'
 
 describe Bosh::Ssl::Certificate do
   let(:subject_name) { '/C=US/O=Pivotal/CN=myapp.foo.com' }

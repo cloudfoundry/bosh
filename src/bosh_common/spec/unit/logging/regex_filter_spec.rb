@@ -1,6 +1,4 @@
 require 'spec_helper'
-require 'common/logging/regex_filter'
-require 'logging/log_event'
 
 describe Bosh::Common::Logging::RegexFilter do
   subject { described_class.new(filter) }

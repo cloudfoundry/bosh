@@ -1,6 +1,4 @@
 require 'spec_helper'
-require 'bosh/template/property_helper'
-require 'bosh/template/invalid_property_type'
 
 module Bosh
   module Template

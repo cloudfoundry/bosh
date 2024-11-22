@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'ipaddr'
 
 describe Bosh::Director::DeploymentPlan::ManualNetwork do
   let(:cloud_config_hash) do

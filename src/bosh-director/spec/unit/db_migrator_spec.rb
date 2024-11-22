@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'db_migrator'
 
 module Bosh::Director
   describe 'DBMigrator' do

@@ -7,6 +7,8 @@ require 'async/rspec'
 require 'async/io'
 require 'tempfile'
 require 'bosh/monitor'
+
+require 'rack/test'
 require 'webmock/rspec'
 require 'timecop'
 

@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'ipaddr'
 
 module Bosh::Director
   describe DeploymentPlan::InstanceNetworkReservations do

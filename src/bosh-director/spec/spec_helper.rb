@@ -3,8 +3,6 @@ $LOAD_PATH << SPEC_ROOT
 
 require File.expand_path('../../spec/shared/spec_helper', SPEC_ROOT)
 
-SPEC_ASSETS = File.join(SPEC_ROOT, 'assets')
-
 require 'digest/sha1'
 require 'fileutils'
 require 'logging'
@@ -14,18 +12,18 @@ require 'tempfile'
 require 'tmpdir'
 require 'zlib'
 
-require 'webmock/rspec'
-require 'factory_bot'
-
 require 'db_migrator'
-
 require 'bosh/director'
+
+require 'webmock/rspec'
 
 Dir.glob(File.join(SPEC_ROOT, 'support/**/*.rb')).each { |f| require(f) }
 
 ENV['RACK_ENV'] = 'test'
 
 module SpecHelper
+  SPEC_ASSETS = File.join(SPEC_ROOT, 'assets')
+
   class << self
     attr_accessor :database
 

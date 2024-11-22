@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'rack/test'
 
 describe Bosh::Monitor::ApiController do
   include Rack::Test::Methods

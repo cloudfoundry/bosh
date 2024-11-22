@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'ipaddr'
 
 RSpec::Matchers.define :log_dns_change do |expected|
   match do |actual|

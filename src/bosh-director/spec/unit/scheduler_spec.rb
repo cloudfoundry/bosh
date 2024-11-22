@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'bosh/director/scheduler'
+require 'bosh/director/scheduler' # required as this is only loaded by `bin/bosh-director-scheduler`
 
 module Bosh::Director
   module Jobs
