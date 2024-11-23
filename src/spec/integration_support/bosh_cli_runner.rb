@@ -1,5 +1,5 @@
-require 'blue-shell'
 require 'integration_support/table_helpers'
+require 'integration_support/minimal_runner'
 
 module IntegrationSupport
   class BoshCliRunner
@@ -41,12 +41,11 @@ module IntegrationSupport
 
     def run_interactively(cmd, options = {})
       Dir.chdir(@bosh_work_dir) do
-        options[:tty] = true
-        options[:interactive] = true
-        command = generate_command(cmd, options)
+        command = generate_command(cmd, options.merge(tty: true, interactive: true))
+
         @logger.info("Running ... `#{command}`")
 
-        BlueShell::Runner.run({}, "#{command}") do |runner|
+        IntegrationSupport::MinimalRunner.new(command) do |runner|
           yield runner
         end
       end
@@ -62,7 +61,7 @@ module IntegrationSupport
       sandbox
     end
 
-    def run_in_current_dir(cmd, options={})
+    def run_in_current_dir(cmd, options = {})
       run_in_dir(cmd, Dir.pwd, options)
     end
 
@@ -70,7 +69,7 @@ module IntegrationSupport
       failure_expected = options.fetch(:failure_expected, false)
       command = generate_command(cmd, options)
       @logger.info("Running ... `#{command}`")
-      output    = nil
+      output = nil
       env = options.fetch(:env, {})
       exit_code = 0
 
@@ -167,7 +166,6 @@ module IntegrationSupport
       cli_options += " -e #{options[:environment_name] || current_sandbox.director_url}"
       cli_options += " -d #{options[:deployment_name]}" if options[:deployment_name]
       cli_options += " --config #{config}"
-
 
       cli_options += " --ca-cert #{options.fetch(:ca_cert, IntegrationSupport::Sandbox::ROOT_CA_CERTIFICATE_PATH)}"
       cli_options += options.fetch(:json, false) ? ' --json' : ''
