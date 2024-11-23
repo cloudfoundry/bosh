@@ -1,3 +1,5 @@
+require 'puma/rack/builder'
+
 module Bosh::Monitor
   class Runner
     include YamlHelper
