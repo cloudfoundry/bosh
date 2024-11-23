@@ -19,7 +19,7 @@ github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
 github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
-# github.com/google/pprof v0.0.0-20241101162523-b92577c0c142
+# github.com/google/pprof v0.0.0-20241122213907-cbe949e5a41b
 ## explicit; go 1.22
 github.com/google/pprof/profile
 # github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
@@ -27,7 +27,7 @@ github.com/google/pprof/profile
 github.com/nu7hatch/gouuid
 # github.com/onsi/ginkgo v1.16.5
 ## explicit; go 1.16
-# github.com/onsi/ginkgo/v2 v2.21.0
+# github.com/onsi/ginkgo/v2 v2.22.0
 ## explicit; go 1.22.0
 github.com/onsi/ginkgo/v2
 github.com/onsi/ginkgo/v2/config
