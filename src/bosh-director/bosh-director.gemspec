@@ -31,10 +31,6 @@ Gem::Specification.new do |spec|
   ]
   spec.require_paths = ['lib']
 
-  # NOTE: We must specify all transitive BOSH gem dependencies found in the
-  # external CPIs, in order to ensure appropriate versions are installed.
-  # Also do the same in bosh_cli_plugin_micro.gemspec
-  # Review this once CPIs are completely externalized and "micro" goes away.
   spec.add_dependency 'bosh_common',   "~>#{Bosh::Director::VERSION}"
   spec.add_dependency 'bosh-template', "~>#{Bosh::Director::VERSION}"
 
