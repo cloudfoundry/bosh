@@ -1,6 +1,7 @@
 require 'base64'
-require 'nats_sync/nats_auth_config'
+require 'net/http'
 require 'open3'
+require 'nats_sync/nats_auth_config'
 
 module NATSSync
   class UsersSync
