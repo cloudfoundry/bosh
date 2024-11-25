@@ -113,7 +113,7 @@ module Bosh
           value
         end
 
-        yield *values
+        yield(*values)
         InactiveElseBlock.new
       end
 
@@ -232,11 +232,11 @@ module Bosh
         def else
         end
 
-        def else_if_p(*names)
+        def else_if_p(*_names)
           InactiveElseBlock.new
         end
 
-        def else_if_link(name)
+        def else_if_link(_name)
           InactiveElseBlock.new
         end
       end
