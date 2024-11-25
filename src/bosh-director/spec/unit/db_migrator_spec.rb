@@ -4,16 +4,24 @@ require 'db_migrator'
 module Bosh::Director
   describe 'DBMigrator' do
     let(:db) { instance_double(Sequel::Database) }
-    let(:options) { { allow_missing_migration_files: true, target: 15, current: 10 } }
+    let(:db_migrator_options) { { target: 15, current: 10 } }
+    let(:sequel_migrator_options) { { allow_missing_migration_files: true }.merge(db_migrator_options) }
     let(:retry_interval_override) { 0.01 }
 
-    subject(:db_migrator) { DBMigrator.new(db, options, retry_interval_override) }
+    subject(:db_migrator) { DBMigrator.new(db, sequel_migrator_options, retry_interval_override) }
 
     describe '#initialize' do
       it 'sets the expected extensions' do
         expect(Sequel).to receive(:extension).with(:migration, :core_extensions)
 
         DBMigrator.new(db)
+      end
+    end
+
+    describe '#current?' do
+      it 'invokes Sequel::Migrator.is_current? with the expected args' do
+        expect(Sequel::Migrator).to receive(:is_current?).with(db, DBMigrator::MIGRATIONS_DIR, sequel_migrator_options)
+        db_migrator.current?
       end
     end
 
@@ -63,9 +71,16 @@ module Bosh::Director
         allow(Sequel::Migrator).to receive(:run).with(
           db,
           DBMigrator::MIGRATIONS_DIR,
-          options
+          sequel_migrator_options
         )
 
+        db_migrator.migrate
+      end
+    end
+
+    describe '#migrate' do
+      it 'invokes Sequel::Migrator.run with the expected args' do
+        expect(Sequel::Migrator).to receive(:run).with(db, DBMigrator::MIGRATIONS_DIR, sequel_migrator_options)
         db_migrator.migrate
       end
     end
