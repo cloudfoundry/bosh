@@ -1,10 +1,5 @@
 require 'pty'
 require 'timeout'
-require 'blue-shell'
-
-# BlueShell::Runner#send_keys
-# BlueShell::Runner#exit_code
-# BlueShell::Runner#output
 
 module IntegrationSupport
   class MinimalRunner
@@ -17,7 +12,8 @@ module IntegrationSupport
 
       @pid = spawn({}, command, in: read, out: pseudo_terminal, err: pseudo_terminal)
 
-      @expector = BufferedReaderExpector.new(@stdout)
+      @unused = ""
+      @output = ""
 
       if block_given?
         yield self
@@ -26,10 +22,21 @@ module IntegrationSupport
       end
     end
 
-    def expect(matcher)
-      raise "Unsupported matcher: #{matcher.inspect}" if matcher.is_a?(Hash)
+    def expect(pattern)
+      case pattern
+      when String
+        pattern = Regexp.new(Regexp.quote(pattern))
+      when Regexp
+        # noop
+      else
+        raise TypeError, "unsupported pattern class: #{pattern.class}"
+      end
 
-      @expector.expect(matcher)
+      result, buffer = read_pipe(EXECUTION_TIMEOUT, pattern)
+
+      @output << buffer
+
+      result
     end
 
     def send_keys(text_to_send)
@@ -45,7 +52,7 @@ module IntegrationSupport
           code = Process.waitpid2(@pid)[1]
         end
       rescue Timeout::Error
-        raise ::Timeout::Error, "execution expired, output was:\n#{@expector.read_to_end}"
+        raise Timeout::Error, "execution expired, output was:\n#{read_to_end}"
       end
 
       @code = numeric_exit_code(code)
@@ -54,7 +61,7 @@ module IntegrationSupport
     alias_method :wait_for_exit, :exit_code
 
     def output
-      @expector.output
+      @output
     end
 
     private
@@ -65,83 +72,54 @@ module IntegrationSupport
       status
     end
 
-    class BufferedReaderExpector
-      attr_reader :output
+    def read_to_end
+      _, buffer = read_pipe(0.01)
+      @output << buffer
+    end
 
-      def initialize(out)
-        @out = out
-        @unused = ""
-        @output = ""
-      end
+    def read_pipe(timeout, pattern = nil)
+      buffer = ""
+      result = nil
+      position = 0
 
-      def expect(pattern)
-        case pattern
-        when String
-          pattern = Regexp.new(Regexp.quote(pattern))
-        when Regexp
-          # noop
+      while true
+        if !@unused.empty?
+          c = @unused.slice!(0).chr
+        elsif output_ended?(timeout)
+          @unused = buffer
+          break
         else
-          raise TypeError, "unsupported pattern class: #{pattern.class}"
+          c = @stdout.getc.chr
         end
 
-        result, buffer = read_pipe(EXECUTION_TIMEOUT, pattern)
-
-        @output << buffer
-
-        result
-      end
-
-      def read_to_end
-        _, buffer = read_pipe(0.01)
-        @output << buffer
-      end
-
-      private
-
-      def read_pipe(timeout, pattern = nil)
-        buffer = ""
-        result = nil
-        position = 0
-
-        while true
-          if !@unused.empty?
-            c = @unused.slice!(0).chr
-          elsif output_ended?(timeout)
-            @unused = buffer
-            break
-          else
-            c = @out.getc.chr
-          end
-
-          # wear your flip-flops
-          unless (c == "\e") .. (c == "m")
-            if c == "\b"
-              if position > 0 && buffer[position - 1] && buffer[position - 1].chr != "\n"
-                position -= 1
-              end
-            else
-              if buffer.size > position
-                buffer[position] = c
-              else
-                buffer << c
-              end
-
-              position += 1
+        # wear your flip-flops
+        unless (c == "\e") .. (c == "m")
+          if c == "\b"
+            if position > 0 && buffer[position - 1] && buffer[position - 1].chr != "\n"
+              position -= 1
             end
-          end
+          else
+            if buffer.size > position
+              buffer[position] = c
+            else
+              buffer << c
+            end
 
-          if pattern && (matches = pattern.match(buffer))
-            result = [buffer, *matches.to_a[1..-1]]
-            break
+            position += 1
           end
         end
 
-        [result, buffer]
+        if pattern && (matches = pattern.match(buffer))
+          result = [buffer, *matches.to_a[1..-1]]
+          break
+        end
       end
 
-      def output_ended?(timeout)
-        !@out.wait_readable(timeout) || @out.eof?
-      end
+      [result, buffer]
+    end
+
+    def output_ended?(timeout)
+      !@stdout.wait_readable(timeout) || @stdout.eof?
     end
   end
 end
