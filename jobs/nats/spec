@@ -17,7 +17,7 @@ templates:
 
 packages:
   - nats
-  - director-ruby-3.2
+  - director-ruby-3.3
 
 properties:
   nats.listen_address:
