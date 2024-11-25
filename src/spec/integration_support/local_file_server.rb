@@ -1,5 +1,6 @@
 require 'puma'
 require 'puma/configuration'
+require 'puma/rack/builder'
 require 'integration_support/service'
 require 'integration_support/socket_connector'
 

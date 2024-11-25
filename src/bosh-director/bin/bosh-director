@@ -3,6 +3,7 @@
 require 'bosh/director'
 require 'puma'
 require 'puma/configuration'
+require 'puma/rack/builder'
 require 'prometheus/middleware/collector'
 require 'prometheus/middleware/exporter'
 require 'prometheus/client'
