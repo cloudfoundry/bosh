@@ -17,7 +17,6 @@ group :development, :test do
   gem 'pry'
 
   gem 'async-rspec'
-  gem 'blue-shell'
   gem 'factory_bot'
   gem 'fakefs'
   gem 'minitar'
