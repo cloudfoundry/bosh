@@ -23,15 +23,6 @@ module IntegrationSupport
     end
 
     def expect(pattern)
-      case pattern
-      when String
-        pattern = Regexp.new(Regexp.quote(pattern))
-      when Regexp
-        # noop
-      else
-        raise TypeError, "unsupported pattern class: #{pattern.class}"
-      end
-
       result, buffer = read_pipe(EXECUTION_TIMEOUT, pattern)
 
       @output << buffer
