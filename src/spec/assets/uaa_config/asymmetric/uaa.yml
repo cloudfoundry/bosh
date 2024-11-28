@@ -106,6 +106,14 @@ uaa:
       authorities: uaa.none,bosh.admin
       secret: "secret"
       redirect-uri: http://127.0.0.1
+    nats-sync:
+      id: nats-sync
+      override: true
+      authorized-grant-types: client_credentials
+      scope: ''
+      authorities: bosh.admin
+      secret: "secret"
+      redirect-uri: http://127.0.0.1
     production_team:
       id: production_team
       override: true

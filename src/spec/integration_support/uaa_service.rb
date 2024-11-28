@@ -38,6 +38,8 @@ module IntegrationSupport
     end
 
     def self.install
+      return if File.exist?(File.join(UAA_BIN_PATH, 'uaa'))
+
       %w{
         /var/vcap/sys/run/uaa
         /var/vcap/sys/log/uaa

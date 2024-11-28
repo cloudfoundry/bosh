@@ -37,8 +37,8 @@ module NATSSync
     let(:ca_cert) { 'ca_cert' }
     let(:director_subject_file) { sample_director_subject }
     let(:hm_subject_file) { sample_hm_subject }
-    let(:director_subject) { 'C = USA, O = Pivotal, CN = default.director.bosh-internal' }
-    let(:hm_subject) { 'C = USA, O = Cloud Foundry, CN = default.hm.bosh-internal' }
+    let(:director_subject) { 'C=USA, O=Cloud Foundry, CN=default.director.bosh-internal' }
+    let(:hm_subject) { 'C=USA, O=Cloud Foundry, CN=default.hm.bosh-internal' }
     let(:bosh_vms_subject) { 'C=USA, O=Cloud Foundry, CN=%s.bosh-internal' }
     let(:auth_provider) { class_double('NATSSync::AuthProvider').as_stubbed_const }
     let(:auth_provider_double) { instance_double(NATSSync::AuthProvider) }

@@ -123,8 +123,7 @@ module IntegrationSupport
 
     def start_recording_nats
       Thread.new do
-        @nats_client = NATS::IO::Client.new
-        @nats_client.connect(@director_nats_config)
+        @nats_client = connect_to_nats
         @nats_client.subscribe('>') do |msg, reply, sub|
           @nats_recording << [sub, msg]
         end
@@ -205,6 +204,15 @@ module IntegrationSupport
     end
 
     private
+
+    def connect_to_nats
+      # Explicitly retry on AuthErrors to allow time for the NATS sync process to allow the client
+      Bosh::Common.retryable(sleep: 0.5, tries: 20, on: [Errno::ECONNREFUSED, NATS::IO::AuthError]) do
+        nats = NATS::IO::Client.new
+        nats.connect(@director_nats_config)
+        nats
+      end
+    end
 
     def add_defaults(options)
       options[:json] = true

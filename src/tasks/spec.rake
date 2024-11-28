@@ -5,41 +5,10 @@ require 'parallel_tests/tasks'
 namespace :spec do
   namespace :integration do
     require 'integration_support/workspace'
-    require 'integration_support/config_server_service'
-    require 'integration_support/nginx_service'
-    require 'integration_support/uaa_service'
-    require 'integration_support/verify_multidigest_manager'
-    require 'integration_support/gnatsd_manager'
-
-    desc 'Run health monitor integration tests against a local sandbox'
-    task health_monitor: :install_dependencies do
-      run_integration_specs(tags: 'hm')
-    end
-
-    desc 'Install BOSH integration test dependencies (currently Nginx, UAA, and Config Server)'
-    task :install_dependencies do
-      unless ENV['SKIP_DEPS'] == 'true'
-        IntegrationSupport::NginxService.install unless ENV['SKIP_NGINX'] == 'true'
-
-        IntegrationSupport::UaaService.install unless ENV['SKIP_UAA'] == 'true'
-
-        IntegrationSupport::ConfigServerService.install unless ENV['SKIP_CONFIG_SERVER'] == 'true'
-
-        IntegrationSupport::VerifyMultidigestManager.install unless ENV['SKIP_VERIFY_MULTIDIGEST'] == 'true'
-
-        IntegrationSupport::GnatsdManager.install unless ENV['SKIP_GNATSD'] == 'true'
-      end
-
-      compile_dependencies
-    end
-
-    desc 'Download BOSH Agent. Use only for local dev environment'
-    task :download_bosh_agent do
-      trap('INT') { exit }
-      sh('rm -rf bosh-agent && git clone https://github.com/cloudfoundry/bosh-agent.git')
-    end
+    require 'integration_support/sandbox'
 
     def run_integration_specs(tags: nil)
+      IntegrationSupport::Sandbox.install_dependencies
       IntegrationSupport::Workspace.clean
       IntegrationSupport::Workspace.uaa_service.start
 
@@ -63,15 +32,10 @@ namespace :spec do
     ensure
       IntegrationSupport::Workspace.uaa_service.stop
     end
-
-    def compile_dependencies
-      puts 'If this fails you may want to run rake spec:integration:download_bosh_agent'
-      sh('cd bosh-agent && bin/build && cd -')
-    end
   end
 
   desc 'Run all integration tests against a local sandbox'
-  task integration: %w[spec:integration:install_dependencies] do
+  task :integration do
     run_integration_specs
   end
 
@@ -81,19 +45,19 @@ namespace :spec do
     sh('cd bosh-template/spec/assets/template-test-release/src && rspec')
   end
 
-  def component_spec_dirs
-    @component_spec_dirs ||= Dir['*/spec']
-  end
-
-  def component_dir(component_spec_dir)
-    File.dirname(component_spec_dir)
-  end
-
-  def component_symbol(component_spec_dir)
-    component_dir(component_spec_dir).sub(/^bosh[_-]/, '').to_sym
-  end
-
   namespace :unit do
+    def component_spec_dirs
+      @component_spec_dirs ||= Dir['*/spec']
+    end
+
+    def component_dir(component_spec_dir)
+      File.dirname(component_spec_dir)
+    end
+
+    def component_symbol(component_spec_dir)
+      component_dir(component_spec_dir).sub(/^bosh[_-]/, '').to_sym
+    end
+
     desc 'Run all release unit tests (ERB templates)'
     task :release do
       puts 'Run unit tests for the release (ERB templates)'

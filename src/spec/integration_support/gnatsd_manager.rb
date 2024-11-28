@@ -1,4 +1,4 @@
-require 'integration_support/artifact_installer'
+require 'integration_support/constants'
 
 module IntegrationSupport
   class GnatsdManager
@@ -11,19 +11,42 @@ module IntegrationSupport
     end
 
     def self.installer
-      @installer ||=
-        ArtifactInstaller.new(
-          File.join('tmp', 'gnatsd'),
-          'gnatsd',
-          {
-            version: '1.3.0-bosh.10',
-            darwin_sha256: 'fac87b6b9b46830551f32f22930a61e2162edf025304f0f2ce7282b4350003f7',
-            linux_sha256: 'e5362a7c88ed92d4f4263b1b725e901fe29da220c3548e37570793776b5f6d51',
-            bucket_name: 'bosh-gnatsd',
-          }
-        )
+      @installer ||= NatsServerBlobInstaller.new
     end
 
     private_class_method :installer
+  end
+
+  class NatsServerBlobInstaller
+    def install
+      return if File.exist?(executable_path)
+
+      Dir.chdir(IntegrationSupport::Constants::BOSH_REPO_ROOT) do
+        run_command('bosh sync-blobs')
+        run_command('tar -zxvf blobs/nats/nats-server-*.tar.gz -C /tmp')
+        run_command("cp /tmp/nats-server-*/nats-server #{executable_path}")
+        run_command("chmod +x #{executable_path}")
+      end
+    end
+
+    def executable_path
+      File.join(IntegrationSupport::Constants::INTEGRATION_BIN_DIR, 'nats-server')
+    end
+
+    private
+
+    def run_command(command, environment = {})
+      io = IO.popen([environment, 'bash', '-c', command])
+
+      lines =
+        io.each_with_object("") do |line, collect|
+          collect << line
+          puts line.chomp
+        end
+
+      io.close
+
+      lines
+    end
   end
 end

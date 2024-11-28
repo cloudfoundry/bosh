@@ -494,28 +494,9 @@ module IntegrationSupport
       File.open(final_config_path, 'w') { |file| file.write(YAML.dump(final_config)) }
 
       Dir.chdir(destination_dir) do
-        ignore = %w[
-        blobs
-        dev-releases
-        config/dev.yml
-        config/private.yml
-        releases/*.tgz
-        dev_releases
-        .dev_builds
-        .final_builds/jobs/**/*.tgz
-        .final_builds/packages/**/*.tgz
-        blobs
-        .blobs
-        .DS_Store
-      ]
-
-        File.open('.gitignore', 'w+') do |f|
-          f.write(ignore.join("\n") + "\n")
-        end
-
         `git init;
-       git config user.name "John Doe";
-       git config user.email "john.doe@example.org";
+       git config --local user.name "Integration Example Group";
+       git config --local user.email "#{File.basename(__FILE__)}@example.org";
        git add .;
        git commit -m "Initial Test Commit"`
       end

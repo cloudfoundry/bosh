@@ -15,6 +15,9 @@ require 'integration_support/config_server_service'
 require 'integration_support/director_service'
 require 'integration_support/nginx_service'
 require 'integration_support/gnatsd_manager'
+require 'integration_support/bosh_agent'
+require 'integration_support/uaa_service'
+require 'integration_support/verify_multidigest_manager'
 
 module IntegrationSupport
   class Sandbox
@@ -23,6 +26,7 @@ module IntegrationSupport
     HM_CONFIG = 'health_monitor.yml'
     DEFAULT_HM_CONF_TEMPLATE_NAME = 'health_monitor.yml.erb'
 
+    NATS_SERVER_PID = 'nats.pid'
     NATS_CONFIG = 'nats.conf'
     DEFAULT_NATS_CONF_TEMPLATE_NAME = 'nats.conf.erb'
 
@@ -55,6 +59,7 @@ module IntegrationSupport
     attr_reader :nats_url
 
     attr_reader :dummy_cpi_api_version
+    attr_reader :user_authentication
 
     attr_accessor :trusted_certs
 
@@ -70,6 +75,17 @@ module IntegrationSupport
         ENV['TEST_ENV_NUMBER'].to_i,
       )
     end
+
+    def self.install_dependencies
+      FileUtils.mkdir_p(IntegrationSupport::Constants::INTEGRATION_BIN_DIR)
+      IntegrationSupport::BoshAgent.install
+      IntegrationSupport::NginxService.install
+      IntegrationSupport::UaaService.install
+      IntegrationSupport::ConfigServerService.install
+      IntegrationSupport::VerifyMultidigestManager.install
+      IntegrationSupport::GnatsdManager.install
+    end
+
 
     def initialize(db_opts, debug, test_env_number)
       @debug = debug
@@ -89,7 +105,7 @@ module IntegrationSupport
 
       @task_logs_dir = sandbox_path('boshdir/tasks')
       @blobstore_storage_dir = sandbox_path('bosh_test_blobstore')
-      @verify_multidigest_path = File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_DIR, 'tmp', 'verify-multidigest', 'verify-multidigest')
+      @verify_multidigest_path = VerifyMultidigestManager.executable_path
       @dummy_cpi_api_version = nil
 
       @nats_log_path = File.join(@logs_path, 'nats.log')
@@ -166,8 +182,7 @@ module IntegrationSupport
 
       @nginx_service.start
 
-      @nats_process.start
-      @nats_socket_connector.try_to_connect
+      start_nats
 
       @db_helper.create_db
 
@@ -403,6 +418,7 @@ module IntegrationSupport
       setup_nats
       @nats_process.start
       @nats_socket_connector.try_to_connect
+      write_in_sandbox(NATS_SERVER_PID, @nats_process.pid)
     end
 
     private
@@ -505,11 +521,10 @@ module IntegrationSupport
     end
 
     def setup_nats
-      gnatsd_path = IntegrationSupport::GnatsdManager.executable_path
-      conf = File.join(sandbox_root, NATS_CONFIG)
+      nats_server_conf_path = File.join(sandbox_root, NATS_CONFIG)
 
       @nats_process = Service.new(
-        %W[#{gnatsd_path} -c #{conf} -T -D ],
+        %W[#{nats_server_executable_path} -c #{nats_server_conf_path} -T -D ],
         {stdout: $stdout, stderr: $stderr},
         @logger
       )
@@ -535,6 +550,18 @@ module IntegrationSupport
 
     def get_nats_client_ca_private_key_path
       File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, 'nats_server', 'certs', 'rootCA.key')
+    end
+
+    def nats_server_executable_path
+      IntegrationSupport::GnatsdManager.executable_path
+    end
+
+    def nats_server_pid_path
+      File.join(sandbox_root, NATS_SERVER_PID)
+    end
+
+    def uaa_ca_cert_path
+      IntegrationSupport::UaaService::ROOT_CERT
     end
 
     attr_reader :director_tmp_path, :task_logs_dir
