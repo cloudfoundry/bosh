@@ -56,7 +56,7 @@ module Bosh::Monitor
 
       ssl_context = OpenSSL::SSL::SSLContext.new
       ssl_context.set_params(verify_mode: OpenSSL::SSL::VERIFY_NONE)
-      async_endpoint = Async::HTTP::Endpoint.parse(parsed_endpoint, ssl_context: ssl_context)
+      async_endpoint = Async::HTTP::Endpoint.parse(parsed_endpoint.to_s, ssl_context: ssl_context)
       response = Async::HTTP::Internet.send(method.to_sym, async_endpoint, headers)
 
       body   = response.read
