@@ -218,7 +218,7 @@ module Bosh::Director
             default_network: 'my-network',
             root_domain: 'sub.bosh',
           ),
-        ).to eq "q-n#{Models::LocalDnsEncodedNetwork.first.id}s0.q-g#{Models::LocalDnsEncodedGroup.order(:id).all[1].id}.sub.bosh"
+        ).to eq "q-n#{Models::LocalDnsEncodedNetwork.order(:id).first.id}s0.q-g#{Models::LocalDnsEncodedGroup.order(:id).all[1].id}.sub.bosh"
 
         expect(
           local_dns_encoder_manager.encode_query(
@@ -228,7 +228,7 @@ module Bosh::Director
             default_network: 'my-network',
             root_domain: 'sub.bosh',
           ),
-        ).to eq "q-n#{Models::LocalDnsEncodedNetwork.first.id}s0.q-g#{Models::LocalDnsEncodedGroup.order(:id).all[2].id}.sub.bosh"
+        ).to eq "q-n#{Models::LocalDnsEncodedNetwork.order(:id).first.id}s0.q-g#{Models::LocalDnsEncodedGroup.order(:id).all[2].id}.sub.bosh"
 
         expect(
           local_dns_encoder_manager.encode_query(
@@ -238,7 +238,7 @@ module Bosh::Director
             default_network: 'my-network',
             root_domain: 'sub.bosh',
           ),
-        ).to eq "q-n#{Models::LocalDnsEncodedNetwork.first.id}s0.q-g#{Models::LocalDnsEncodedGroup.order(:id).all[3].id}.sub.bosh"
+        ).to eq "q-n#{Models::LocalDnsEncodedNetwork.order(:id).first.id}s0.q-g#{Models::LocalDnsEncodedGroup.order(:id).all[3].id}.sub.bosh"
       end
     end
   end
