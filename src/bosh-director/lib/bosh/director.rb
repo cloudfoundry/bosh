@@ -278,3 +278,6 @@ Bosh::Blobstore.autoload(:DavcliBlobstoreClient, 'bosh/blobstore_client/davcli_b
 Bosh::Blobstore.autoload(:S3cliBlobstoreClient, 'bosh/blobstore_client/s3cli_blobstore_client')
 Bosh::Blobstore.autoload(:AzurestoragecliBlobstoreClient, 'bosh/blobstore_client/azurestoragecli_blobstore_client')
 Bosh::Blobstore.autoload(:GcscliBlobstoreClient, 'bosh/blobstore_client/gcscli_blobstore_client')
+
+# Allow all hostnames, the X-Forwarded-Host header is removed at the nginx layer. CVE-2024-21510
+Sinatra::Base.set(:host_authorization, { permitted_hosts: [] })
