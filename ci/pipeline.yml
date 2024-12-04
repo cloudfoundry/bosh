@@ -27,9 +27,9 @@ groups:
       - brats-performance
       - bosh-disaster-recovery-acceptance-tests
       - upgrade-postgres
-      - cleanup-leftover-postgres-environments
+      - upgrade-postgres-cleanup-leftovers
       - upgrade-mysql
-      - cleanup-leftover-mysql-environments
+      - upgrade-mysql-cleanup-leftovers
       - delivery
 
   - name: cut-release
