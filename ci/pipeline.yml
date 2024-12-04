@@ -655,6 +655,7 @@ jobs:
   - name: upgrade-postgres
     old_name: upgrade
     serial: true
+    serial_groups: [upgrade-postgres]
     plan:
     - do:
       - in_parallel:
@@ -739,8 +740,25 @@ jobs:
             vars:
               name: upgrade-postgres-ubuntu-jammy
 
+  - name: cleanup-leftover-postgres-environments
+    serial_groups:
+      - upgrade-postgres
+    plan:
+      - in_parallel:
+          - get: integration-image
+          - get: bosh-ci
+          - get: daily
+            trigger: true
+      - task: cleanup-leftover-environments
+        file: bosh-ci/ci/tasks/cleanup-leftover-environments.yml
+        image: integration-image
+        params:
+          LEFTOVERS_PREFIX: "upgrade-postgres"
+          GCP_SERVICE_ACCOUNT_JSON: ((gcp_json_key))
+
   - name: upgrade-mysql
     serial: true
+    serial_groups: [upgrade-mysql]
     plan:
     - do:
       - in_parallel:
@@ -827,6 +845,22 @@ jobs:
             terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
             vars:
               name: upgrade-mysql-ubuntu-jammy
+
+  - name: cleanup-leftover-mysql-environments
+    serial_groups:
+      - upgrade-mysql
+    plan:
+      - in_parallel:
+          - get: integration-image
+          - get: bosh-ci
+          - get: daily
+            trigger: true
+      - task: cleanup-leftover-environments
+        file: bosh-ci/ci/tasks/cleanup-leftover-environments.yml
+        image: integration-image
+        params:
+          LEFTOVERS_PREFIX: "upgrade-mysql"
+          GCP_SERVICE_ACCOUNT_JSON: ((gcp_json_key))
 
   - name: delivery
     plan:
@@ -1465,6 +1499,11 @@ resources:
       start: 3:00 -0700
       stop: 4:30 -0700
       days: [ Saturday ]
+
+  - name: daily
+    type: time
+    source:
+      interval: 24h
 
   - name: bosh
     type: git
