@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eux -o pipefail
+set -euo pipefail
 
 export BBL_GCP_SERVICE_ACCOUNT_KEY="gcp_service_account.json"
 echo "${GCP_SERVICE_ACCOUNT_JSON}" > ${BBL_GCP_SERVICE_ACCOUNT_KEY}
