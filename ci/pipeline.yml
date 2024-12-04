@@ -741,6 +741,12 @@ jobs:
             terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
             vars:
               name: upgrade-postgres-ubuntu-jammy
+        - task: cleanup-leftover-environments
+          file: bosh-ci/ci/tasks/cleanup-leftovers.yml
+          image: integration-image
+          params:
+            LEFTOVERS_PREFIX: upgrade-postgres
+            GCP_JSON_KEY: ((gcp_json_key))
 
   - name: upgrade-postgres-cleanup-leftovers
     serial_groups: [ upgrade-postgres ]
@@ -846,6 +852,12 @@ jobs:
             terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
             vars:
               name: upgrade-mysql-ubuntu-jammy
+        - task: cleanup-leftover-environments
+          file: bosh-ci/ci/tasks/cleanup-leftovers.yml
+          image: integration-image
+          params:
+            LEFTOVERS_PREFIX: upgrade-mysql
+            GCP_JSON_KEY: ((gcp_json_key))
 
   - name: upgrade-mysql-cleanup-leftovers
     serial_groups: [upgrade-mysql]
