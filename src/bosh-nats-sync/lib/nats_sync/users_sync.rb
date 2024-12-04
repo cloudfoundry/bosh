@@ -80,7 +80,8 @@ module NATSSync
       parsed_uri = parsed_uri_for(api_path: api_path)
 
       response =
-        Net::HTTP.new(parsed_uri.host, parsed_uri.port).tap do |http|
+        Net::HTTP.new("#{parsed_uri.host}", parsed_uri.port).tap do |http|
+          http.use_ssl = use_ssl(parsed_uri: parsed_uri)
           http.verify_mode = OpenSSL::SSL::VERIFY_NONE
         end.get(parsed_uri.request_uri, build_headers(auth: auth))
 
@@ -90,6 +91,10 @@ module NATSSync
       end
 
       response.body
+    end
+
+    def use_ssl(parsed_uri:)
+      parsed_uri.scheme == 'https'
     end
 
     def query_all_deployments
