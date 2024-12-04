@@ -9,7 +9,7 @@ set +x # hide credentials
 echo "${GCP_JSON_KEY}" > ${BBL_GCP_SERVICE_ACCOUNT_KEY}
 set -x
 
-go run "github.com/genevieve/leftovers/cmd/leftovers@${LEFTOVERS_VERSION}" -- \
+go run "github.com/genevieve/leftovers/cmd/leftovers@${LEFTOVERS_VERSION}" \
   --debug \
   --no-confirm \
   --iaas gcp \
