@@ -8,8 +8,9 @@ inputs:
   - name: bosh-ci
 
 run:
-  path: bosh-ci/ci/tasks/cleanup-leftover-environments.sh
+  path: bosh-ci/ci/tasks/cleanup-leftovers.sh
 
 params:
-  GCP_SERVICE_ACCOUNT_JSON:
+  GCP_JSON_KEY:
+  LEFTOVERS_VERSION: latest
   LEFTOVERS_PREFIX:

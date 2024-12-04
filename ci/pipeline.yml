@@ -742,21 +742,20 @@ jobs:
             vars:
               name: upgrade-postgres-ubuntu-jammy
 
-  - name: cleanup-leftover-postgres-environments
-    serial_groups:
-      - upgrade-postgres
+  - name: upgrade-postgres-cleanup-leftovers
+    serial_groups: [ upgrade-postgres ]
     plan:
-      - in_parallel:
-          - get: integration-image
-          - get: bosh-ci
-          - get: daily
-            trigger: true
-      - task: cleanup-leftover-environments
-        file: bosh-ci/ci/tasks/cleanup-leftover-environments.yml
-        image: integration-image
-        params:
-          LEFTOVERS_PREFIX: "upgrade-postgres"
-          GCP_SERVICE_ACCOUNT_JSON: ((gcp_json_key))
+    - in_parallel:
+      - get: integration-image
+      - get: bosh-ci
+      - get: daily
+        trigger: true
+    - task: cleanup-leftover-environments
+      file: bosh-ci/ci/tasks/cleanup-leftover.yml
+      image: integration-image
+      params:
+        LEFTOVERS_PREFIX: "upgrade-postgres"
+        GCP_JSON_KEY: ((gcp_json_key))
 
   - name: upgrade-mysql
     serial: true
@@ -848,21 +847,20 @@ jobs:
             vars:
               name: upgrade-mysql-ubuntu-jammy
 
-  - name: cleanup-leftover-mysql-environments
-    serial_groups:
-      - upgrade-mysql
+  - name: upgrade-mysql-cleanup-leftovers
+    serial_groups: [upgrade-mysql]
     plan:
-      - in_parallel:
-          - get: integration-image
-          - get: bosh-ci
-          - get: daily
-            trigger: true
-      - task: cleanup-leftover-environments
-        file: bosh-ci/ci/tasks/cleanup-leftover-environments.yml
-        image: integration-image
-        params:
-          LEFTOVERS_PREFIX: "upgrade-mysql"
-          GCP_SERVICE_ACCOUNT_JSON: ((gcp_json_key))
+    - in_parallel:
+      - get: integration-image
+      - get: bosh-ci
+      - get: daily
+        trigger: true
+    - task: cleanup-leftover-environments
+      file: bosh-ci/ci/tasks/cleanup-leftover.yml
+      image: integration-image
+      params:
+        LEFTOVERS_PREFIX: "upgrade-mysql"
+        GCP_JSON_KEY: ((gcp_json_key))
 
   - name: delivery
     plan:
