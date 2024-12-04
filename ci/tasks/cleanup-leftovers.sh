@@ -6,6 +6,8 @@ export BBL_GCP_SERVICE_ACCOUNT_KEY="gcp_service_account.json"
 
 echo "${GCP_JSON_KEY}" > ${BBL_GCP_SERVICE_ACCOUNT_KEY}
 
+set +x
+
 go run "github.com/genevieve/leftovers/cmd/leftovers@${LEFTOVERS_VERSION}" -- \
   --no-confirm \
   --iaas gcp \
