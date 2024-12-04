@@ -751,7 +751,7 @@ jobs:
       - get: daily
         trigger: true
     - task: cleanup-leftover-environments
-      file: bosh-ci/ci/tasks/cleanup-leftover.yml
+      file: bosh-ci/ci/tasks/cleanup-leftovers.yml
       image: integration-image
       params:
         LEFTOVERS_PREFIX: "upgrade-postgres"
@@ -856,7 +856,7 @@ jobs:
       - get: daily
         trigger: true
     - task: cleanup-leftover-environments
-      file: bosh-ci/ci/tasks/cleanup-leftover.yml
+      file: bosh-ci/ci/tasks/cleanup-leftovers.yml
       image: integration-image
       params:
         LEFTOVERS_PREFIX: "upgrade-mysql"
