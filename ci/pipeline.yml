@@ -754,7 +754,7 @@ jobs:
       file: bosh-ci/ci/tasks/cleanup-leftovers.yml
       image: integration-image
       params:
-        LEFTOVERS_PREFIX: "upgrade-postgres"
+        LEFTOVERS_PREFIX: upgrade-postgres
         GCP_JSON_KEY: ((gcp_json_key))
 
   - name: upgrade-mysql
@@ -859,7 +859,7 @@ jobs:
       file: bosh-ci/ci/tasks/cleanup-leftovers.yml
       image: integration-image
       params:
-        LEFTOVERS_PREFIX: "upgrade-mysql"
+        LEFTOVERS_PREFIX: upgrade-mysql
         GCP_JSON_KEY: ((gcp_json_key))
 
   - name: delivery
