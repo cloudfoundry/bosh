@@ -22,7 +22,9 @@ groups:
       - candidate-release
       - compile-bosh-dev-release-jammy
       - bats-ubuntu-jammy
+      - bats-cleanup-leftovers
       - bats-fips-ubuntu-jammy
+      - bats-fips-cleanup-leftovers
       - brats-ubuntu-jammy
       - brats-performance
       - bosh-disaster-recovery-acceptance-tests
@@ -421,6 +423,7 @@ jobs:
 
   - name: bats-ubuntu-jammy
     serial: true
+    serial_groups: [ bats-ubuntu-jammy ]
     plan:
     - do:
       - in_parallel:
@@ -482,10 +485,32 @@ jobs:
             terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
             vars:
               name: bats-ubuntu-jammy
+        - task: cleanup-leftover-environments
+          file: bosh-ci/ci/tasks/cleanup-leftovers.yml
+          image: integration-image
+          params:
+            LEFTOVERS_PREFIX: bats-ubuntu-jammy
+            GCP_JSON_KEY: ((gcp_json_key))
+
+  - name: bats-cleanup-leftovers
+    serial: true
+    serial_groups: [ bats-ubuntu-jammy ]
+    plan:
+    - in_parallel:
+      - get: integration-image
+      - get: bosh-ci
+      - get: daily
+        trigger: true
+    - task: cleanup-leftover-environments
+      file: bosh-ci/ci/tasks/cleanup-leftovers.yml
+      image: integration-image
+      params:
+        LEFTOVERS_PREFIX: bats-ubuntu-jammy
+        GCP_JSON_KEY: ((gcp_json_key))
 
   - name: bats-fips-ubuntu-jammy
-    old_name: bats-ubuntu-jammy-fips
     serial: true
+    serial_groups: [ bats-fips-ubuntu-jammy ]
     plan:
     - do:
       - in_parallel:
@@ -548,6 +573,28 @@ jobs:
             terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
             vars:
               name: bats-fips-ubuntu-jammy
+        - task: cleanup-leftover-environments
+          file: bosh-ci/ci/tasks/cleanup-leftovers.yml
+          image: integration-image
+          params:
+            LEFTOVERS_PREFIX: bats-fips-ubuntu-jammy
+            GCP_JSON_KEY: ((gcp_json_key))
+
+  - name: bats-fips-cleanup-leftovers
+    serial: true
+    serial_groups: [ bats-fips-ubuntu-jammy ]
+    plan:
+    - in_parallel:
+      - get: integration-image
+      - get: bosh-ci
+      - get: daily
+        trigger: true
+    - task: cleanup-leftover-environments
+      file: bosh-ci/ci/tasks/cleanup-leftovers.yml
+      image: integration-image
+      params:
+        LEFTOVERS_PREFIX: bats-fips-ubuntu-jammy
+        GCP_JSON_KEY: ((gcp_json_key))
 
   - name: brats-ubuntu-jammy
     serial: true
