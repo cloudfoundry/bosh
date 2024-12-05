@@ -22,7 +22,7 @@ groups:
       - candidate-release
       - compile-bosh-dev-release-jammy
       - bats-ubuntu-jammy
-      - bats-ubuntu-jammy-fips
+      - bats-fips-ubuntu-jammy
       - brats-ubuntu-jammy
       - brats-performance
       - bosh-disaster-recovery-acceptance-tests
@@ -483,7 +483,8 @@ jobs:
             vars:
               name: bats-ubuntu-jammy
 
-  - name: bats-ubuntu-jammy-fips
+  - name: bats-fips-ubuntu-jammy
+    old_name: bats-ubuntu-jammy-fips
     serial: true
     plan:
     - do:
@@ -509,10 +510,10 @@ jobs:
       - put: terraform
         resource: gcp-terraform
         params:
-          env_name: bats-ubuntu-jammy-fips
+          env_name: bats-fips-ubuntu-jammy
           terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
           vars:
-            name: bats-ubuntu-jammy-fips
+            name: bats-fips-ubuntu-jammy
       - do:
         - task: deploy-director
           file: bosh-ci/ci/bats/tasks/deploy-director.yml
@@ -543,10 +544,10 @@ jobs:
           no_get: true
           params:
             action: destroy
-            env_name: bats-ubuntu-jammy-fips
+            env_name: bats-fips-ubuntu-jammy
             terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
             vars:
-              name: bats-ubuntu-jammy-fips
+              name: bats-fips-ubuntu-jammy
 
   - name: brats-ubuntu-jammy
     serial: true
