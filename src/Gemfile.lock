@@ -208,7 +208,7 @@ GEM
     prometheus-client (4.2.3)
       base64
     protocol-hpack (1.5.1)
-    protocol-http (0.47.0)
+    protocol-http (0.47.1)
     protocol-http1 (0.28.1)
       protocol-http (~> 0.22)
     protocol-http2 (0.22.0)
@@ -273,7 +273,8 @@ GEM
       fugit (~> 1.1, >= 1.11.1)
     securerandom (0.4.0)
     semi_semantic (1.2.0)
-    sequel (5.29.0)
+    sequel (5.87.0)
+      bigdecimal
     simplecov (0.22.0)
       docile (~> 1.1)
       simplecov-html (~> 0.11)
