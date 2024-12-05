@@ -69,10 +69,10 @@ RSpec.configure do |config|
 
   config.after do |example|
     if example.exception
-      puts "An exception occurred running #{example.location}:"
-      puts "\tTest directory:     #{tmp_dir}"
-      puts "\tSandbox directory:  #{IntegrationSupport::ClientSandbox.workspace_dir}"
-      puts "\t#{example.exception.inspect}\n"
+      puts "> Spec failed: #{example.location}"
+      puts "> Test tmpdir: #{tmp_dir}\n"
+      puts "#{example.exception.message}\n"
+      puts '> ---------------'
     else
       FileUtils.rm_rf(tmp_dir) unless tmp_dir.nil?
     end
