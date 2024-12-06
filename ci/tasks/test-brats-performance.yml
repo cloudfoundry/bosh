@@ -14,6 +14,7 @@ inputs:
   - name: cf-deployment
 
 params:
+  FOCUS_SPEC:
   START_INNER_BOSH_TIMEOUT: "" # default is 25m
 
 run:
