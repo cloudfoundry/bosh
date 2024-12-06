@@ -18,6 +18,8 @@ import (
 )
 
 var _ = Describe("Blobstore", func() {
+	const blobstoreAccessLog = "/var/vcap/sys/log/blobstore/blobstore_access.log"
+
 	Context("SSL", func() {
 		testDeployment := func(allowHttp bool, schema string, errorCode int) {
 			By(fmt.Sprintf("specifying blobstore.allow_http (%v) and agent.env.bosh.blobstores (%v)", allowHttp, schema))
@@ -69,13 +71,19 @@ var _ = Describe("Blobstore", func() {
 
 		getStdout := func(boshCmdOutput []byte) []byte {
 			jq := exec.Command("jq", ".Tables[0].Rows[0].stdout", "-r")
+
 			si, err := jq.StdinPipe()
 			Expect(err).ToNot(HaveOccurred())
+
 			jqSession, err := gexec.Start(jq, io.Discard, io.Discard)
 			Expect(err).ToNot(HaveOccurred())
+
 			_, err = io.Copy(si, bytes.NewReader(boshCmdOutput))
 			Expect(err).ToNot(HaveOccurred())
-			si.Close()
+
+			err = si.Close()
+			Expect(err).ToNot(HaveOccurred())
+
 			Eventually(jqSession, 5*time.Second).Should(gexec.Exit(0))
 			return jqSession.Out.Contents()
 		}
@@ -198,7 +206,7 @@ var _ = Describe("Blobstore", func() {
 
 			utils.UploadRelease(boshRelease)
 
-			session := utils.OuterBosh("-d", utils.InnerBoshDirectorName(), "scp", fmt.Sprintf("bosh:%s", BlobstoreAccessLog), tempBlobstoreDir)
+			session := utils.OuterBosh("-d", utils.InnerBoshDirectorName(), "scp", fmt.Sprintf("bosh:%s", blobstoreAccessLog), tempBlobstoreDir)
 			Eventually(session, time.Minute).Should(gexec.Exit(0))
 		})
 

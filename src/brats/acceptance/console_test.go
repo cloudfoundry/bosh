@@ -32,7 +32,7 @@ var _ = Describe("director console", func() {
 
 		session, err := gexec.Start(consoleCmd, GinkgoWriter, GinkgoWriter)
 		Expect(err).ShouldNot(HaveOccurred())
-		Expect(ttyF.Close()).NotTo(HaveOccurred())
+		Expect(ttyF.Close()).To(Succeed())
 
 		Eventually(session.Out, 1*time.Minute).Should(gbytes.Say(`bosh/[0-9a-f\-]{36}:~\$ `))
 

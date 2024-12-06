@@ -13,8 +13,6 @@ import (
 	"brats/utils"
 )
 
-const BlobstoreAccessLog = "/var/vcap/sys/log/blobstore/blobstore_access.log"
-
 func TestBrats(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Brats Suite")

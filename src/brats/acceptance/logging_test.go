@@ -38,7 +38,7 @@ var _ = Describe("logging", func() {
 
 		session = utils.OuterBoshQuiet("-d", utils.InnerBoshDirectorName(), "ssh", "bosh", "-c", "sudo cat /var/vcap/sys/log/director/*")
 		Eventually(session, 2*time.Minute).Should(gexec.Exit(0))
-		Expect(string(session.Out.Contents())).To(ContainSubstring("INSERT INTO \"configs\" <redacted>"))
+		Expect(string(session.Out.Contents())).To(ContainSubstring(`INSERT INTO "configs" <redacted>`))
 		Expect(string(session.Out.Contents())).NotTo(ContainSubstring(redactable))
 	})
 })
