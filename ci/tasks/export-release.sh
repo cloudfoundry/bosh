@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 
+script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ci_dir="${script_dir}/.."
+
 main() {
   set -eu
 
-  tar -xzf release/*.tgz $( tar -tzf release/*.tgz | grep 'release.MF' )
-  tar -xzf stemcell/*.tgz $( tar -tzf stemcell/*.tgz | grep 'stemcell.MF' )
+  tar -xzf release/*.tgz "$( tar -tzf release/*.tgz | grep 'release.MF' )"
+  tar -xzf stemcell/*.tgz "$( tar -tzf stemcell/*.tgz | grep 'stemcell.MF' )"
 
   export STEMCELL_OS=$( grep -E '^operating_system: ' stemcell.MF | awk '{print $2}' | tr -d "\"'" )
   local RELEASE_NAME=$( grep -E '^name: ' release.MF | awk '{print $2}' | tr -d "\"'" )
@@ -16,17 +19,17 @@ main() {
   source /tmp/local-bosh/director/env
 
   bosh -n upload-stemcell stemcell/*.tgz
-  bosh -n upload-release $RELEASE_TARBALL
+  bosh -n upload-release "${RELEASE_TARBALL}"
 
-  bosh -n -d compilation deploy bosh-ci/ci/assets/compilation-manifest.yml \
-    -v release_name="$RELEASE_NAME" \
-    -v release_version="'$RELEASE_VERSION'" \
-    -v stemcell_os="$STEMCELL_OS" \
-    -v stemcell_version="'$STEMCELL_VERSION'"
+  bosh -n -d compilation deploy "${ci_dir}/ci/tasks/export-release/compilation-manifest.yml" \
+    -v release_name="${RELEASE_NAME}" \
+    -v release_version="'${RELEASE_VERSION}'" \
+    -v stemcell_os="${STEMCELL_OS}" \
+    -v stemcell_version="'${STEMCELL_VERSION}'"
 
-  bosh -d compilation export-release $RELEASE_NAME/$RELEASE_VERSION $STEMCELL_OS/$STEMCELL_VERSION
+  bosh -d compilation export-release "${RELEASE_NAME}/${RELEASE_VERSION}" "${STEMCELL_OS}/${STEMCELL_VERSION}"
 
-  mv *.tgz compiled-release/$(echo *.tgz | sed "s/${STEMCELL_VERSION}-.*\.tgz/${STEMCELL_VERSION}.tgz/")
+  mv ./*.tgz "compiled-release/$(echo *.tgz | sed "s/${STEMCELL_VERSION}-.*\.tgz/${STEMCELL_VERSION}.tgz/")"
 }
 
 main "$@"

@@ -18,8 +18,6 @@ func TestPerformance(t *testing.T) {
 	RunSpecs(t, "Performance Suite")
 }
 
-var candidateWardenLinuxStemcellPath string
-
 var _ = SynchronizedBeforeSuite(func() {
 	utils.Bootstrap()
 	utils.OuterBosh("upload-release", utils.AssertEnvExists("BOSH_DIRECTOR_TARBALL_PATH"))
@@ -30,7 +28,6 @@ var _ = SynchronizedBeforeSuite(func() {
 	Eventually(session, 1*time.Minute).Should(gexec.Exit())
 }, func() {
 	utils.Bootstrap()
-	candidateWardenLinuxStemcellPath = utils.AssertEnvExists("CANDIDATE_STEMCELL_TARBALL_PATH")
 })
 
 var _ = AfterSuite(func() {

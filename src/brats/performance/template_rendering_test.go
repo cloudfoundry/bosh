@@ -16,12 +16,9 @@ import (
 	"brats/utils"
 )
 
-const deploymentName = "cf"
-
 var _ = Describe("Template Rendering", Serial, func() {
-	var (
-		cfDeploymentPath string
-	)
+	const deploymentName = "cf"
+	var cfDeploymentPath string
 
 	BeforeEach(func() {
 		utils.StartInnerBosh(
