@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-ci_dir="${script_dir}/.."
+bosh_repo_dir="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../" && pwd)")"
 
 main() {
   set -eu
@@ -21,7 +20,7 @@ main() {
   bosh -n upload-stemcell stemcell/*.tgz
   bosh -n upload-release "${RELEASE_TARBALL}"
 
-  bosh -n -d compilation deploy "${ci_dir}/ci/tasks/export-release/compilation-manifest.yml" \
+  bosh -n -d compilation deploy "${bosh_repo_dir}/ci/tasks/export-release/compilation-manifest.yml" \
     -v release_name="${RELEASE_NAME}" \
     -v release_version="'${RELEASE_VERSION}'" \
     -v stemcell_os="${STEMCELL_OS}" \
