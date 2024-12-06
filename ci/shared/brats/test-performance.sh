@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eu -o pipefail
 
-bosh_repo_dir="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../" && pwd)")"
+bosh_repo_dir="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../" && pwd)")"
 bosh_repo_parent_dir="$(realpath "${bosh_repo_dir}/..")"
 
 export BOSH_DEPLOYMENT_PATH="/usr/local/bosh-deployment"
@@ -43,9 +43,9 @@ bosh upload-release "$(bosh int ${BOSH_DEPLOYMENT_PATH}/jumpbox-user.yml --path 
 
 pushd "${bosh_repo_dir}/src/brats/performance"
   go run github.com/onsi/ginkgo/v2/ginkgo \
-    -r -v --race \
+    -r -v --race --timeout=24h \
+    --randomize-suites --randomize-all \
     --focus="${FOCUS_SPEC:-}" \
     --nodes 1 \
-    --timeout=24h \
     .
 popd

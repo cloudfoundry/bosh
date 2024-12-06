@@ -25,8 +25,9 @@ groups:
       - bats-cleanup-leftovers
       - bats-fips-ubuntu-jammy
       - bats-fips-cleanup-leftovers
-      - brats-ubuntu-jammy
-      - brats-performance
+      - brats-acceptance-ubuntu-jammy
+      - brats-utils-ubuntu-jammy
+      - brats-performance-ubuntu-jammy
       - bosh-disaster-recovery-acceptance-tests
       - upgrade-postgres
       - upgrade-postgres-cleanup-leftovers
@@ -596,7 +597,8 @@ jobs:
         LEFTOVERS_PREFIX: bats-fips-ubuntu-jammy
         GCP_JSON_KEY: ((gcp_json_key))
 
-  - name: brats-ubuntu-jammy
+  - name: brats-acceptance-ubuntu-jammy
+    old_name: brats-ubuntu-jammy
     serial: true
     plan:
     - in_parallel:
@@ -619,16 +621,16 @@ jobs:
       - put: brats-terraform
         params:
           env_name: brats-ubuntu-jammy-((branch_name))
-          terraform_source: bosh-ci/ci/brats
+          terraform_source: bosh-ci/ci/shared/brats/terraform
           vars: &brats-terraform-jammy-vars
             aws_access_key_id: ((brats_rds_terraform_aws_access_key.username))
             aws_secret_access_key: ((brats_rds_terraform_aws_access_key.password))
             database_name: brats
             database_username: ((brats_database_user.username))
             database_password: ((brats_database_user.password))
-      - task: test-brats
+      - task: test-brats-acceptance
         image: docker-cpi-image
-        file: bosh-ci/ci/tasks/test-brats.yml
+        file: bosh-ci/ci/shared/brats/test-acceptance.yml
         input_mapping:
           database-metadata: brats-terraform
         privileged: true
@@ -651,11 +653,12 @@ jobs:
         no_get: true
         params:
           env_name: brats-ubuntu-jammy-((branch_name))
-          terraform_source: bosh-ci/ci/brats
+          terraform_source: bosh-ci/ci/shared/brats/terraform
           vars: *brats-terraform-jammy-vars
           action: destroy
 
-  - name: brats-performance
+  - name: brats-performance-ubuntu-jammy
+    old_name: brats-performance
     serial: true
     plan:
     - in_parallel:
@@ -673,7 +676,21 @@ jobs:
     - do:
       - task: test-brats-performance
         image: docker-cpi-image
-        file: bosh-ci/ci/tasks/test-brats-performance.yml
+        file: bosh-ci/ci/shared/brats/test-performance.yml
+        privileged: true
+
+  - name: brats-utils-ubuntu-jammy
+    serial: true
+    plan:
+    - in_parallel:
+      - get: bosh-ci
+      - get: bosh
+        passed: [compile-bosh-dev-release-jammy]
+      - get: integration-image
+    - do:
+      - task: test-brats-utils
+        image: integration-image
+        file: bosh-ci/ci/shared/brats/test-utils.yml
         privileged: true
 
   - name: bosh-disaster-recovery-acceptance-tests
@@ -929,7 +946,7 @@ jobs:
           trigger: true
           passed:
           - bats-ubuntu-jammy
-          - brats-ubuntu-jammy
+          - brats-acceptance-ubuntu-jammy
           - bosh-disaster-recovery-acceptance-tests
           - upgrade-postgres
           - upgrade-mysql

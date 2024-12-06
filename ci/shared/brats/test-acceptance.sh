@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eu -o pipefail
 
-bosh_repo_dir="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../" && pwd)")"
+bosh_repo_dir="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../" && pwd)")"
 bosh_repo_parent_dir="$(realpath "${bosh_repo_dir}/..")"
 
 OVERRIDDEN_BOSH_DEPLOYMENT="${bosh_repo_parent_dir}/bosh-deployment"
@@ -112,12 +112,10 @@ brats_env_file="${bosh_repo_parent_dir}/brats-env.sh"
 echo "# The required BRATS environment can be loaded by running the following:"
 echo "# 'source ${brats_env_file}'"
 
-pushd "${bosh_repo_dir}/src/brats"
+pushd "${bosh_repo_dir}/src/brats/acceptance"
   go run github.com/onsi/ginkgo/v2/ginkgo \
-    -r -v --race \
+    -r -v --race --timeout=24h \
     --randomize-suites --randomize-all \
     --focus="${FOCUS_SPEC:-}" \
-    -nodes 5 \
-    --skip-package=performance \
     .
 popd

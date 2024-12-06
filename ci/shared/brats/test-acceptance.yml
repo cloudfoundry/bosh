@@ -18,7 +18,7 @@ inputs:
     optional: true
 
 run:
-  path: bosh-ci/ci/tasks/test-brats.sh
+  path: bosh-ci/ci/shared/brats/test-acceptance.sh
 
 params:
   FOCUS_SPEC:

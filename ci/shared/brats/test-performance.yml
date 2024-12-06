@@ -18,5 +18,5 @@ params:
   START_INNER_BOSH_TIMEOUT: "" # default is 25m
 
 run:
-  path: bosh-ci/ci/tasks/test-brats-performance.sh
+  path: bosh-ci/ci/shared/brats/test-performance.sh
 

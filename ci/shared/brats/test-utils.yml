@@ -1,0 +1,18 @@
+---
+platform: linux
+
+image_resource:
+  type: registry-image
+  source:
+    repository: bosh/integration
+
+inputs:
+  - name: bosh-ci
+  - name: bosh
+
+params:
+  FOCUS_SPEC:
+
+run:
+  path: bosh-ci/ci/shared/brats/test-utils.sh
+
