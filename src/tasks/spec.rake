@@ -46,16 +46,12 @@ namespace :spec do
   end
 
   namespace :unit do
-    def component_spec_dirs
-      @component_spec_dirs ||= Dir['*/spec']
+    def component_dir_names
+      @component_dir_names ||= Dir['*/spec'].map { |d| File.dirname(d) }
     end
 
-    def component_dir(component_spec_dir)
-      File.dirname(component_spec_dir)
-    end
-
-    def component_symbol(component_spec_dir)
-      component_dir(component_spec_dir).sub(/^bosh[_-]/, '').to_sym
+    def component_symbol(component_dir_name)
+      component_dir_name.sub(/^bosh[_-]/, '').to_sym
     end
 
     desc 'Run all release unit tests (ERB templates)'
@@ -71,18 +67,18 @@ namespace :spec do
       end
     end
 
-    component_spec_dirs.each do |component_spec_dir|
-      desc "Run unit tests for the #{component_dir(component_spec_dir)} component"
-      task component_symbol(component_spec_dir) do
+    component_dir_names.each do |component_name|
+      desc "Run unit tests for the #{component_name} component"
+      task component_symbol(component_name) do
         trap('INT') { exit }
-        sh("cd #{File.expand_path(component_dir(component_spec_dir))} && rspec")
+        sh("cd #{File.expand_path(component_name)} && rspec")
       end
 
-      namespace component_symbol(component_spec_dir) do
-        desc "Run parallel unit tests for the #{component_dir(component_spec_dir)} component"
+      namespace component_symbol(component_name) do
+        desc "Run parallel unit tests for the #{component_name} component"
         task :parallel do
           trap('INT') { exit }
-          sh("cd #{File.expand_path(component_dir(component_spec_dir))} && parallel_rspec spec")
+          sh("cd #{File.expand_path(component_name)} && parallel_rspec spec")
         end
       end
     end
@@ -94,13 +90,13 @@ namespace :spec do
     end
 
     desc 'Run all unit tests in parallel'
-    multitask parallel: %w[spec:unit:release:parallel] + component_spec_dirs.map{|d| "spec:unit:#{component_symbol(d)}:parallel" } do
+    multitask parallel: %w[spec:unit:release:parallel] + component_dir_names.map{|d| "spec:unit:#{component_symbol(d)}:parallel" } do
       trap('INT') { exit }
     end
   end
 
   desc 'Run all unit tests'
-  task unit: %w[spec:unit:release] + component_spec_dirs.map{|d| "spec:unit:#{component_symbol(d)}" }
+  task unit: %w[spec:unit:release] + component_dir_names.map{|d| "spec:unit:#{component_symbol(d)}" }
 end
 
 desc 'Run unit and integration specs'
