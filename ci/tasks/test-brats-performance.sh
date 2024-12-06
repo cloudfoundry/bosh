@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eu -o pipefail
 
-bosh_repo_dir="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")../../" && pwd)")"
+bosh_repo_dir="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../" && pwd)")"
 bosh_repo_parent_dir="$(realpath "${bosh_repo_dir}/..")"
 
 export BOSH_DEPLOYMENT_PATH="/usr/local/bosh-deployment"
