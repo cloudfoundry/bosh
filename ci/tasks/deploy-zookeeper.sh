@@ -2,8 +2,7 @@
 
 set -e
 
-script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-ci_dir="${script_dir}/.."
+bosh_repo_dir="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../" && pwd)")"
 
 state_path() { bosh-cli int director-state/director.yml --path="$1" ; }
 
@@ -28,5 +27,5 @@ bosh-cli update-cloud-config "bosh-deployment/${CPI}/cloud-config.yml" \
   --vars-file director-state/director-vars.json
 
 bosh-cli upload-stemcell stemcell/*.tgz
-bosh-cli -d zookeeper deploy --recreate "${ci_dir}/ci/tasks/deploy-zookeeper/zookeeper-manifest.yml"
+bosh-cli -d zookeeper deploy --recreate "${bosh_repo_dir}/ci/tasks/deploy-zookeeper/zookeeper-manifest.yml"
 bosh-cli -d zookeeper run-errand smoke-tests
