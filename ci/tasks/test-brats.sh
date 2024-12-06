@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -eu -o pipefail
 
-script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-src_dir="${script_dir}/../../.."
+bosh_repo_dir="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")../../" && pwd)")"
+bosh_repo_parent_dir="$(realpath "${bosh_repo_dir}/..")"
 
-OVERRIDDEN_BOSH_DEPLOYMENT=$(realpath "$(dirname $0)/../../../bosh-deployment")
+OVERRIDDEN_BOSH_DEPLOYMENT="${bosh_repo_parent_dir}/bosh-deployment"
 
 if [[ -e "${OVERRIDDEN_BOSH_DEPLOYMENT}/bosh.yml" ]];then
   BOSH_DEPLOYMENT_PATH=${OVERRIDDEN_BOSH_DEPLOYMENT}
@@ -14,7 +14,7 @@ fi
 export BOSH_DEPLOYMENT_PATH
 
 if [ ! -f /tmp/local-bosh/director/env ]; then
-  source "${src_dir}/bosh/ci/dockerfiles/docker-cpi/start-bosh.sh"
+  source "${bosh_repo_dir}/ci/dockerfiles/docker-cpi/start-bosh.sh"
 fi
 source /tmp/local-bosh/director/env
 
@@ -25,11 +25,11 @@ export BOSH_DIRECTOR_IP="10.245.0.3"
 
 BOSH_BINARY_PATH=$(which bosh)
 export BOSH_BINARY_PATH
-export BOSH_RELEASE="${PWD}/bosh/src/spec/assets/dummy-release.tgz"
-export BOSH_DIRECTOR_RELEASE_PATH="${PWD}/bosh-release"
-DNS_RELEASE_PATH="$(realpath "$(find "${PWD}"/bosh-dns-release -maxdepth 1 -path '*.tgz')")"
+export BOSH_RELEASE="${bosh_repo_dir}/src/spec/assets/dummy-release.tgz"
+export BOSH_DIRECTOR_RELEASE_PATH="${bosh_repo_parent_dir}/bosh-release"
+DNS_RELEASE_PATH="$(find "${bosh_repo_parent_dir}/bosh-dns-release" -maxdepth 1 -path '*.tgz')"
 export DNS_RELEASE_PATH
-CANDIDATE_STEMCELL_TARBALL_PATH="$(realpath "${src_dir}"/stemcell/*.tgz)"
+CANDIDATE_STEMCELL_TARBALL_PATH="$(find "${bosh_repo_parent_dir}/stemcell" -maxdepth 1 -path '*.tgz')"
 export CANDIDATE_STEMCELL_TARBALL_PATH
 export BOSH_DNS_ADDON_OPS_FILE_PATH="${BOSH_DEPLOYMENT_PATH}/misc/dns-addon.yml"
 
@@ -42,7 +42,7 @@ export DOCKER_HOST
 
 bosh -n update-cloud-config \
   "${BOSH_DEPLOYMENT_PATH}/docker/cloud-config.yml" \
-  -o "${src_dir}/bosh-ci/ci/dockerfiles/docker-cpi/outer-cloud-config-ops.yml" \
+  -o "${bosh_repo_dir}/ci/dockerfiles/docker-cpi/outer-cloud-config-ops.yml" \
   -v network=director_network
 
 bosh -n upload-stemcell "${CANDIDATE_STEMCELL_TARBALL_PATH}"
@@ -73,7 +73,7 @@ if [ -d database-metadata ]; then
   export GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY
 fi
 
-brats_env_file="${PWD}/brats-env.sh"
+brats_env_file="${bosh_repo_parent_dir}/brats-env.sh"
 {
   echo "export OUTER_BOSH_ENV_PATH=\"${OUTER_BOSH_ENV_PATH}\""
   echo "export DOCKER_CERTS=\"${DOCKER_CERTS}\""
@@ -112,4 +112,12 @@ brats_env_file="${PWD}/brats-env.sh"
 echo "# The required BRATS environment can be loaded by running the following:"
 echo "# 'source ${brats_env_file}'"
 
-bosh/scripts/test-brats
+pushd "${bosh_repo_dir}/src/brats"
+  go run github.com/onsi/ginkgo/v2/ginkgo \
+    -r -v --race \
+    --randomize-suites --randomize-all \
+    --focus="${FOCUS_SPEC:-}" \
+    -nodes 5 \
+    --skip-package=performance \
+    .
+popd
