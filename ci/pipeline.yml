@@ -598,7 +598,6 @@ jobs:
         GCP_JSON_KEY: ((gcp_json_key))
 
   - name: brats-acceptance-ubuntu-jammy
-    old_name: brats-ubuntu-jammy
     serial: true
     plan:
     - in_parallel:
@@ -658,7 +657,6 @@ jobs:
           action: destroy
 
   - name: brats-performance-ubuntu-jammy
-    old_name: brats-performance
     serial: true
     plan:
     - in_parallel:
@@ -720,7 +718,6 @@ jobs:
         privileged: true
 
   - name: upgrade-postgres
-    old_name: upgrade
     serial: true
     serial_groups: [upgrade-postgres]
     plan:
