@@ -32,7 +32,7 @@ inputs:
   optional: true
 
 run:
-  path: bosh/ci/tasks/shared/test-release-template-rendering.sh
+  path: bosh/ci/shared/tasks/test-release-template-rendering.sh
 
 params:
   MANIFEST_FOLDER:
