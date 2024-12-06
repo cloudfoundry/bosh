@@ -1,7 +1,3 @@
-# github.com/cloudfoundry/bosh-utils v0.0.0-20180919212956-15c556314b68
-## explicit
-github.com/cloudfoundry/bosh-utils/errors
-github.com/cloudfoundry/bosh-utils/uuid
 # github.com/creack/pty v1.1.15
 ## explicit; go 1.13
 github.com/creack/pty
@@ -22,11 +18,6 @@ github.com/google/go-cmp/cmp/internal/value
 # github.com/google/pprof v0.0.0-20241128161848-dc51965c6481
 ## explicit; go 1.22
 github.com/google/pprof/profile
-# github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
-## explicit
-github.com/nu7hatch/gouuid
-# github.com/onsi/ginkgo v1.16.5
-## explicit; go 1.16
 # github.com/onsi/ginkgo/v2 v2.22.0
 ## explicit; go 1.22.0
 github.com/onsi/ginkgo/v2

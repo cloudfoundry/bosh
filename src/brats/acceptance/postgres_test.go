@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cloudfoundry/bosh-utils/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -14,34 +13,26 @@ import (
 
 var _ = Describe("postgres", func() {
 	Context("postgres-15", func() {
-		var (
-			postgres15Manifest     string
-			postgres13Manifest     string
-			postgresDeploymentName string
-		)
+		const upgradeTimeout = 20 * time.Minute
 
 		It("Upgrades from 13", func() {
-			var err error
+			postgresDeploymentName := fmt.Sprintf("postgres-13-to-postgres-15-%x", GinkgoT().RandomSeed())
 
-			postgresDeploymentName, err = uuid.NewGenerator().Generate()
-			Expect(err).NotTo(HaveOccurred())
-
-			postgres15Manifest = utils.AssetPath("postgres-manifest.yml")
-			postgres13Manifest = utils.AssetPath("postgres-13-manifest.yml")
-
+			postgres13Manifest := utils.AssetPath("postgres-13-manifest.yml")
 			session := utils.OuterBosh("deploy", "-n", postgres13Manifest,
 				"-d", postgresDeploymentName,
 				"-v", fmt.Sprintf("stemcell-os=%s", utils.StemcellOS()),
 				"-v", fmt.Sprintf("deployment-name=%s", postgresDeploymentName),
 			)
-			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
+			Eventually(session, upgradeTimeout).Should(gexec.Exit(0))
 
+			postgres15Manifest := utils.AssetPath("postgres-manifest.yml")
 			session = utils.OuterBosh("deploy", "-n", postgres15Manifest,
 				"-d", postgresDeploymentName,
 				"-v", fmt.Sprintf("stemcell-os=%s", utils.StemcellOS()),
 				"-v", fmt.Sprintf("deployment-name=%s", postgresDeploymentName),
 			)
-			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
+			Eventually(session, upgradeTimeout).Should(gexec.Exit(0))
 		})
 	})
 })
