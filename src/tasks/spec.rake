@@ -46,8 +46,12 @@ namespace :spec do
   end
 
   namespace :unit do
+    def excluded_component_dirs
+      []
+    end
+
     def component_dir_names
-      @component_dir_names ||= Dir['*/spec'].map { |d| File.dirname(d) }
+      @component_dir_names ||= (Dir['*/spec'].map { |d| File.dirname(d) } - excluded_component_dirs)
     end
 
     def component_symbol(component_dir_name)
