@@ -9,7 +9,7 @@ jobs:
         sub_project:
         - common:parallel
         - monitor:parallel
-        - nats-sync:parallel
+        - nats_sync:parallel
         - template:parallel
         - release
     steps:

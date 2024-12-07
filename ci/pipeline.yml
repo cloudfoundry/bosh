@@ -131,7 +131,7 @@ jobs:
       file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-image
       params:
-        RAKE_TASK: spec:unit:nats-sync
+        RAKE_TASK: spec:unit:nats_sync
 
   - name: unit-template
     public: true

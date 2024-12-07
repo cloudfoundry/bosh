@@ -55,7 +55,7 @@ namespace :spec do
     end
 
     def component_symbol(component_dir_name)
-      component_dir_name.sub(/^bosh[_-]/, '').to_sym
+      component_dir_name.gsub('-', '_').sub(/^bosh_/, '').to_sym
     end
 
     desc 'Run all release unit tests (ERB templates)'
@@ -71,18 +71,18 @@ namespace :spec do
       end
     end
 
-    component_dir_names.each do |component_name|
-      desc "Run unit tests for the #{component_name} component"
-      task component_symbol(component_name) do
+    component_dir_names.each do |component_dir_name|
+      desc "Run unit tests for the #{component_dir_name} component"
+      task component_symbol(component_dir_name) do
         trap('INT') { exit }
-        sh("cd #{File.expand_path(component_name)} && rspec")
+        sh("cd #{File.expand_path(component_dir_name)} && rspec")
       end
 
-      namespace component_symbol(component_name) do
-        desc "Run parallel unit tests for the #{component_name} component"
+      namespace component_symbol(component_dir_name) do
+        desc "Run parallel unit tests for the #{component_dir_name} component"
         task :parallel do
           trap('INT') { exit }
-          sh("cd #{File.expand_path(component_name)} && parallel_rspec spec")
+          sh("cd #{File.expand_path(component_dir_name)} && parallel_rspec spec")
         end
       end
     end
