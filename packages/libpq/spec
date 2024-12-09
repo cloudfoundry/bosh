@@ -2,5 +2,3 @@
 name: libpq
 files:
 - postgres/postgresql-10.*.tar.gz
-- config/config.guess
-- config/config.sub
