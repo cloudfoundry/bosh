@@ -18,8 +18,8 @@ BOSH_BINARY_PATH=$(which bosh)
 export BOSH_BINARY_PATH
 BOSH_DIRECTOR_TARBALL_PATH="$(find "${bosh_repo_parent_dir}/bosh-release" -maxdepth 1 -path '*.tgz')"
 export BOSH_DIRECTOR_TARBALL_PATH
-export BOSH_DIRECTOR_RELEASE_PATH="$PWD/bosh"
-export CF_DEPLOYMENT_RELEASE_PATH="$PWD/cf-deployment"
+export BOSH_DIRECTOR_RELEASE_PATH="${bosh_repo_parent_dir}/bosh"
+export CF_DEPLOYMENT_RELEASE_PATH="${bosh_repo_parent_dir}/cf-deployment"
 CANDIDATE_STEMCELL_TARBALL_PATH="$(find "${bosh_repo_parent_dir}/stemcell" -maxdepth 1 -path '*.tgz')"
 export CANDIDATE_STEMCELL_TARBALL_PATH
 export STEMCELL_OS=ubuntu-jammy

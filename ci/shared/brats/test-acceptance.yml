@@ -8,6 +8,7 @@ image_resource:
 
 inputs:
   - name: bosh-ci
+    optional: true
   - name: bosh
   - name: bosh-dns-release
   - name: stemcell
