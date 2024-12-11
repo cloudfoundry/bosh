@@ -98,7 +98,7 @@ module IntegrationSupport
       Dir.chdir(IntegrationSupport::Constants::BOSH_REPO_ROOT) do
         run_command('bosh sync-blobs')
         run_command('bosh create-release --force --tarball /tmp/release.tgz')
-        nginx_package_path = run_command('tar -tvf /tmp/release.tgz --wildcards "*nginx.tgz" | cut -d' ' -f 8')
+        nginx_package_path = run_command('tar -tvf /tmp/release.tgz --wildcards "*nginx.tgz" | cut -d" " -f 8')
         run_command("tar -zxvf /tmp/release.tgz -C /tmp #{nginx_package_path}")
         run_command('tar -zxvf /tmp/packages/nginx.tgz  -C packages/nginx')
       end
