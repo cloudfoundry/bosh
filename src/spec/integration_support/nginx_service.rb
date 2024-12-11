@@ -138,6 +138,9 @@ module IntegrationSupport
         end
 
       io.close
+      process_status = $?
+
+      raise "Command: #{command.inspect} failed with #{process_status.inspect}" unless process_status.success?
 
       lines
     end
