@@ -44,6 +44,7 @@ module Bosh::Blobstore
         assume_role_arn: @options[:assume_role_arn],
         swift_auth_account: @options[:swift_auth_account],
         swift_temp_url_key: @options[:swift_temp_url_key],
+        openstack_blobstore_type: @options[:openstack_blobstore_type]
       }
 
       @s3cli_options.reject! { |_k, v| v.nil? }
