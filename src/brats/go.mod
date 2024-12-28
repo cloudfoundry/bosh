@@ -5,7 +5,7 @@ go 1.22.0
 require (
 	github.com/creack/pty v1.1.15
 	github.com/onsi/ginkgo/v2 v2.22.1
-	github.com/onsi/gomega v1.36.1
+	github.com/onsi/gomega v1.36.2
 )
 
 require (
