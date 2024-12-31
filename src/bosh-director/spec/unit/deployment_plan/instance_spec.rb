@@ -96,6 +96,17 @@ module Bosh::Director::DeploymentPlan
           expect(instance.previous_variable_set).to eq(variable_set_model)
         end
       end
+
+      context 'if there is an existing rendered_templates_archive for the model' do
+        let!(:rendered_templates_archive) { FactoryBot.create(:models_rendered_templates_archive, instance: instance_model) }
+
+        it 'configures the instance to have the same rendered_templates_archive as the existing model' do
+          instance.bind_existing_instance_model(instance_model)
+
+          expect(instance.rendered_templates_archive.sha1).to eq(rendered_templates_archive.sha1)
+          expect(instance.rendered_templates_archive.blobstore_id).to eq(rendered_templates_archive.blobstore_id)
+        end
+      end
     end
 
     describe '#bind_new_instance_model' do
