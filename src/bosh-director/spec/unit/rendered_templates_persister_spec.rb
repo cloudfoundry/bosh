@@ -10,7 +10,10 @@ module Bosh::Director
         let(:instance_plan) { instance_double('Bosh::Director::DeploymentPlan::InstancePlan') }
         let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
 
-        let(:rendered_templates_archive) { instance_double('Bosh::Director::Core::Templates::RenderedTemplatesArchive') }
+        let(:blobstore_id) { 'generated-blobstore-id' }
+        let(:sha1) { 'generated-sha1' }
+        let(:configuration_hash) { 'configuraiton-hash' }
+        let(:rendered_templates_archive) { Bosh::Director::Core::Templates::RenderedTemplatesArchive.new(blobstore_id, sha1) }
 
         let(:rendered_job_instance) { instance_double('Bosh::Director::Core::Templates::RenderedJobInstance') }
 
@@ -32,6 +35,8 @@ module Bosh::Director
 
           allow(instance).to receive(:rendered_templates_archive=)
           allow(instance).to receive(:agent_client).and_return(agent_client)
+          allow(instance).to receive(:model).and_return(FactoryBot.create(:models_instance))
+          allow(instance).to receive(:configuration_hash).and_return(configuration_hash)
 
           allow(SecureRandom).to receive(:uuid).and_return(blobstore_id)
         end
@@ -55,7 +60,7 @@ module Bosh::Director
 
           it 'should deliver the templates through NATS' do
             allow(Base64).to receive(:encode64).with(template_contents).and_return(mock_base64_contents)
-            expect(rendered_job_instance).to receive(:persist_through_agent).with(agent_client)
+            expect(rendered_job_instance).to receive(:persist_through_agent).with(agent_client).and_return(rendered_templates_archive)
 
             persister.persist(instance_plan)
           end
@@ -65,6 +70,18 @@ module Bosh::Director
             expect(instance).to receive(:rendered_templates_archive=).with(rendered_templates_archive)
 
             persister.persist(instance_plan)
+          end
+
+          it 'persists the rendered_templates_archive for the instance model' do
+            allow(rendered_job_instance).to receive(:persist_through_agent).with(agent_client).and_return(rendered_templates_archive)
+
+            persister.persist(instance_plan)
+
+            rendered_templates_archive = instance.model.latest_rendered_templates_archive
+            expect(rendered_templates_archive).to be
+            expect(rendered_templates_archive.content_sha1).to eq(configuration_hash)
+            expect(rendered_templates_archive.sha1).to eq(sha1)
+            expect(rendered_templates_archive.blobstore_id).to eq(blobstore_id)
           end
 
           context 'when persist through agent fails with AgentUnsupportedAction error' do

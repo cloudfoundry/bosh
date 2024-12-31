@@ -81,6 +81,10 @@ module Bosh::Director
 
       rendered_templates_archive = instance_plan.rendered_templates.persist_through_agent(instance.agent_client)
 
+      instance.model.add_rendered_templates_archive(rendered_templates_archive.spec.merge({
+        content_sha1: instance.configuration_hash,
+        created_at: Time.now,
+      }))
       instance.rendered_templates_archive = rendered_templates_archive
     end
   end
