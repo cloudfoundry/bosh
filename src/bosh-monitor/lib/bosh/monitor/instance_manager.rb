@@ -121,6 +121,15 @@ module Bosh::Monitor
       agents_hash
     end
 
+    def detached_instances
+      instances = {}
+      @deployment_name_to_deployments.each do |name, deployment|
+        instances[name] = deployment.agents.count(&:is_detached?)
+      end
+
+      instances
+    end
+
     def analyze_agents
       @logger.info('Analyzing agents...')
       started = Time.now

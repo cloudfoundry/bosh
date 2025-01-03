@@ -51,6 +51,10 @@ module Bosh::Monitor
       (Time.now - @discovered_at) > @intervals.rogue_agent_alert && @deployment.nil?
     end
 
+    def is_detached?
+      (Time.now - @updated_at) > @intervals.agent_timeout
+    end
+
     def update_instance(instance)
       @job = instance.job
       @index = instance.index

@@ -42,6 +42,13 @@ module Bosh
           labels: %i[name],
           docstring: 'Number of unresponsive agents per deployment',
         )
+
+        @detached_instances = Prometheus::Client.registry.gauge(
+          :bosh_detached_instances,
+          labels: %i[name],
+          docstring: 'Number of detached_instances per deployment',
+        )
+
         @scheduler = Rufus::Scheduler.new
       end
 
@@ -109,32 +116,33 @@ module Bosh
 
         populate_network_metrics
 
-        populate_vm_metrics
+        populate_vm_metrics(unresponsive_agents, @unresponsive_agents)
+        populate_vm_metrics(detached_instances, @detached_instances)
 
         @logger.info('populated metrics')
       end
 
-      def populate_vm_metrics
-        response = Net::HTTP.get_response('127.0.0.1', '/unresponsive_agents', @config.health_monitor_port)
+      def populate_vm_metrics(metric, metric_call)
+        response = Net::HTTP.get_response('127.0.0.1', "#{metric}", @config.health_monitor_port)
         return unless response.is_a?(Net::HTTPSuccess)
 
-        unresponsive_agent_counts = JSON.parse(response.body)
-        return unless unresponsive_agent_counts.is_a?(Hash)
+        metric_counts = JSON.parse(response.body)
+        return unless metric_counts.is_a?(Hash)
 
-        existing_deployment_names = @unresponsive_agents.values.map do |key, _|
+        existing_deployment_names = metric_call.values.map do |key, _|
           # The keys within the Prometheus::Client::Metric#values method are actually hashes. So the
           # data returned from values looks like:
           # { { name: "deployment_a"} => 10, { name: "deployment_b "} => 0, ... }
           key[:name]
         end
 
-        unresponsive_agent_counts.each do |deployment, count|
-          @unresponsive_agents.set(count, labels: { name: deployment })
+        metric_counts.each do |deployment, count|
+          metric_call.set(count, labels: { name: deployment })
         end
 
-        removed_deployments = existing_deployment_names - unresponsive_agent_counts.keys
+        removed_deployments = existing_deployment_names - metric_counts.keys
         removed_deployments.each do |deployment|
-          @unresponsive_agents.set(0, labels: { name: deployment })
+          metric_call.set(0, labels: { name: deployment })
         end
       end
 
