@@ -18,7 +18,8 @@ namespace :spec do
       rspec_opts = "SPEC_OPTS='--format documentation #{rspec_opts}'"
 
       parallel_options = '--multiply-processes 0.5'
-      if (num_processes = ENV.fetch('NUM_PROCESSES', nil))
+      num_processes = ENV.fetch('NUM_PROCESSES', '')
+      unless num_processes.empty?
         parallel_options += " -n #{num_processes}"
       end
 
