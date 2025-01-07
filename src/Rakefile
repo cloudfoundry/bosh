@@ -2,9 +2,6 @@
 BOSH_REPO_ROOT = File.expand_path(File.join(File.dirname(__FILE__), '..'))
 BOSH_SRC_ROOT = File.join(BOSH_REPO_ROOT, 'src')
 
-$LOAD_PATH << File.join(BOSH_SRC_ROOT, 'spec')
-$LOAD_PATH << File.join(BOSH_SRC_ROOT, 'spec', 'shared', 'shared_support')
-
 import 'tasks/fly.rake'
 import 'tasks/spec.rake'
 

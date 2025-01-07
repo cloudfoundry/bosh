@@ -1,9 +1,6 @@
-require 'rspec'
-require 'rspec/core/rake_task'
-require 'parallel_tests/tasks'
-
 namespace :spec do
   namespace :integration do
+    $LOAD_PATH << File.join(BOSH_SRC_ROOT, 'spec')
     require 'integration_support/workspace'
     require 'integration_support/sandbox'
 
