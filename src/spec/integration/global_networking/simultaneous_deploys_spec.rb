@@ -160,11 +160,11 @@ describe 'simultaneous deploys', type: :integration do
     end
 
     def make_independent_bosh_runners
-      FileUtils.touch(IntegrationSupport::ClientSandbox.bosh_config)
-      first_config_path = File.join(IntegrationSupport::ClientSandbox.base_dir, 'first_config.yml')
-      FileUtils.copy(IntegrationSupport::ClientSandbox.bosh_config, first_config_path)
-      second_config_path = File.join(IntegrationSupport::ClientSandbox.base_dir, 'second_config.yml')
-      FileUtils.copy(IntegrationSupport::ClientSandbox.bosh_config, second_config_path)
+      FileUtils.touch(IntegrationSupport::Sandbox.bosh_config)
+      first_config_path = File.join(IntegrationSupport::Sandbox.base_dir, 'first_config.yml')
+      FileUtils.copy(IntegrationSupport::Sandbox.bosh_config, first_config_path)
+      second_config_path = File.join(IntegrationSupport::Sandbox.base_dir, 'second_config.yml')
+      FileUtils.copy(IntegrationSupport::Sandbox.bosh_config, second_config_path)
       first_errand_runner = make_a_bosh_runner(config_path: first_config_path)
       second_errand_runner = make_a_bosh_runner(config_path: second_config_path)
       return first_errand_runner, second_errand_runner

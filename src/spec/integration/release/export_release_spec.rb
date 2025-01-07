@@ -226,7 +226,7 @@ Can't use release 'test_release/1'. It references packages without source code a
     end
 
     it 'puts a tarball in the blobstore' do
-      Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
+      Dir.chdir(IntegrationSupport::Sandbox.test_release_dir) do
         File.open('config/final.yml', 'w') do |final|
           final.puts YAML.dump(
                          'blobstore' => {
@@ -256,7 +256,7 @@ Can't use release 'test_release/1'. It references packages without source code a
     end
 
     it 'downloads a tarball from the blobstore to the current directory' do
-      Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
+      Dir.chdir(IntegrationSupport::Sandbox.test_release_dir) do
         File.open('config/final.yml', 'w') do |final|
           final.puts YAML.dump(
                          'blobstore' => {
@@ -273,7 +273,7 @@ Can't use release 'test_release/1'. It references packages without source code a
 
       output_file = File.basename(out.match(/Downloading resource '[0-9a-f-]{36}' to '(.*test_release-1-toronto-os-1-\d{8}-[0-9-]*\.tgz)'.../)[1])
 
-      dir = IntegrationSupport::ClientSandbox.bosh_work_dir
+      dir = IntegrationSupport::Sandbox.bosh_work_dir
       files = Dir.entries(dir)
       expect(files).to include(output_file)
 
@@ -317,7 +317,7 @@ Can't use release 'test_release/1'. It references packages without source code a
         export_release_output = bosh_runner.run("export-release test_release/1 toronto-os/1 --job job_using_pkg_1", deployment_name: 'minimal')
         output_file = File.basename(export_release_output.match(/Downloading resource '[0-9a-f-]{36}' to '(.*test_release-1-toronto-os-1-\d{8}-[0-9-]*\.tgz)'.../)[1])
 
-        dir = IntegrationSupport::ClientSandbox.bosh_work_dir
+        dir = IntegrationSupport::Sandbox.bosh_work_dir
         files = Dir.entries(dir)
         expect(files).to include(output_file)
 

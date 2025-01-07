@@ -1,9 +1,9 @@
 module IntegrationSupport
   module LinksHelper
     def upload_links_release(bosh_runner_options:)
-      FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, IntegrationSupport::ClientSandbox.links_release_dir, preserve: true)
-      bosh_runner.run_in_dir('create-release --force', IntegrationSupport::ClientSandbox.links_release_dir, bosh_runner_options)
-      bosh_runner.run_in_dir('upload-release', IntegrationSupport::ClientSandbox.links_release_dir, bosh_runner_options)
+      FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, IntegrationSupport::Sandbox.links_release_dir, preserve: true)
+      bosh_runner.run_in_dir('create-release --force', IntegrationSupport::Sandbox.links_release_dir, bosh_runner_options)
+      bosh_runner.run_in_dir('upload-release', IntegrationSupport::Sandbox.links_release_dir, bosh_runner_options)
     end
 
     def get_link_providers

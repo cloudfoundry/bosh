@@ -30,7 +30,7 @@ describe 'Changing cloud config', type: :integration do
 
       errand_succeeded = nil
       errand_thread = Thread.new do
-        thread_config_path = File.join(IntegrationSupport::ClientSandbox.base_dir, 'bosh_config_errand.yml')
+        thread_config_path = File.join(IntegrationSupport::Sandbox.base_dir, 'bosh_config_errand.yml')
         bosh_runner.run('log-in', config: thread_config_path, log_in: true, environment_name: current_target)
         _, errand_succeeded = run_errand('errand_job', {
           config: thread_config_path,

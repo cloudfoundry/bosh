@@ -8,7 +8,7 @@ describe 'cli: package compilation', type: :integration do
   after { release_file.delete }
 
   RELEASE_COMPILATION_TEMPLATE_ASSETS = File.join(SPEC_ASSETS_DIR, 'release_compilation_test_release')
-  TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX = File.join(IntegrationSupport::ClientSandbox.base_dir, 'release_compilation_test_release')
+  TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX = File.join(IntegrationSupport::Sandbox.base_dir, 'release_compilation_test_release')
   before do
     FileUtils.rm_rf(TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX)
     FileUtils.cp_r(RELEASE_COMPILATION_TEMPLATE_ASSETS, TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX, preserve: true)

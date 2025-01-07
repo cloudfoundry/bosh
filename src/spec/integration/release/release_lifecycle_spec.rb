@@ -8,7 +8,7 @@ describe 'release lifecycle', type: :integration do
   it 'creates and deploys a new final release with a user defined version' do
     commit_hash = ''
 
-    Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
+    Dir.chdir(IntegrationSupport::Sandbox.test_release_dir) do
       File.open('config/final.yml', 'w') do |final|
         final.puts YAML.dump(
           'final_name' => 'bosh-release',
@@ -69,7 +69,7 @@ describe 'release lifecycle', type: :integration do
   it 'release lifecycle: create, upload, update (w/sparse upload), delete' do
     commit_hash = ''
 
-    Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
+    Dir.chdir(IntegrationSupport::Sandbox.test_release_dir) do
       commit_hash = `git show-ref --head --hash=7 2> /dev/null`.split.first
 
       out = bosh_runner.run_in_current_dir('create-release')

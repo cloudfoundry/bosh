@@ -3,7 +3,7 @@ require 'spec_helper'
 describe 'dynamic networks', type: :integration do
   with_reset_sandbox_before_each
 
-  let(:runner) { bosh_runner_in_work_dir(IntegrationSupport::ClientSandbox.test_release_dir) }
+  let(:runner) { bosh_runner_in_work_dir(IntegrationSupport::Sandbox.test_release_dir) }
 
   before do
     create_and_upload_test_release

@@ -33,7 +33,7 @@ describe 'when a release job modifies a property in the ERB script', type: :inte
   after { release_file.delete }
 
   before do
-    Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
+    Dir.chdir(IntegrationSupport::Sandbox.test_release_dir) do
       FileUtils.rm_rf('dev_releases')
       bosh_runner.run_in_current_dir("create-release --tarball=#{release_file.path}")
     end

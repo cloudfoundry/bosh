@@ -34,11 +34,11 @@ describe 'delete release', type: :integration do
   end
 
   it 'fails to delete release in use but deletes a different release' do
-    Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
+    Dir.chdir(IntegrationSupport::Sandbox.test_release_dir) do
       bosh_runner.run_in_current_dir('create-release')
       bosh_runner.run_in_current_dir('upload-release')
 
-      # change something in IntegrationSupport::ClientSandbox.test_release_dir
+      # change something in test_release_dir
       FileUtils.touch(File.join('src', 'bar', 'pretend_something_changed'))
 
       bosh_runner.run_in_current_dir('create-release --force')

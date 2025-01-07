@@ -11,7 +11,7 @@ describe 'cli: deployment process', type: :integration do
 
     it 'generates release and deploys it via simple manifest' do
       # Test release created with bosh (see spec/assets/test_release_template)
-      Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
+      Dir.chdir(IntegrationSupport::Sandbox.test_release_dir) do
         FileUtils.rm_rf('dev_releases')
         bosh_runner.run_in_current_dir("create-release --tarball=#{release_file.path}")
       end

@@ -142,7 +142,7 @@ describe 'cli: cleanup', type: :integration do
         deploy_from_scratch(manifest_hash: manifest, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config)
         bosh_runner.run('run-errand errand1', deployment_name: deployment_name)
 
-        Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
+        Dir.chdir(IntegrationSupport::Sandbox.test_release_dir) do
           open('jobs/errand1/templates/run', 'a') { |f| f.puts 'echo "bye"' }
           bosh_runner.run_in_current_dir('create-release --force --timestamp-version')
           bosh_runner.run_in_current_dir('upload-release')
@@ -191,7 +191,7 @@ describe 'cli: cleanup', type: :integration do
   end
 
   def upload_new_release_version(touched_file)
-    Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
+    Dir.chdir(IntegrationSupport::Sandbox.test_release_dir) do
       FileUtils.touch(File.join('src', 'bar', touched_file))
       bosh_runner.run_in_current_dir('create-release --force')
       bosh_runner.run_in_current_dir('upload-release')

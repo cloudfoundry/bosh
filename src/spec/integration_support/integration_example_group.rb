@@ -41,8 +41,8 @@ module IntegrationSupport
 
     def make_a_bosh_runner(opts = {})
       IntegrationSupport::BoshCliRunner.new(
-        opts.fetch(:work_dir, IntegrationSupport::ClientSandbox.bosh_work_dir),
-        opts.fetch(:config_path, IntegrationSupport::ClientSandbox.bosh_config),
+        opts.fetch(:work_dir, IntegrationSupport::Sandbox.bosh_work_dir),
+        opts.fetch(:config_path, IntegrationSupport::Sandbox.bosh_config),
         current_sandbox.cpi.method(:agent_log_path),
         current_sandbox.nats_log_path,
         current_sandbox.saved_logs_path,
@@ -74,18 +74,18 @@ module IntegrationSupport
 
     def create_and_upload_test_release(options = {})
       create_args = options.fetch(:force, false) ? '--force' : ''
-      bosh_runner.run_in_dir("create-release #{create_args}", IntegrationSupport::ClientSandbox.test_release_dir, options)
-      bosh_runner.run_in_dir('upload-release', IntegrationSupport::ClientSandbox.test_release_dir, options)
+      bosh_runner.run_in_dir("create-release #{create_args}", IntegrationSupport::Sandbox.test_release_dir, options)
+      bosh_runner.run_in_dir('upload-release', IntegrationSupport::Sandbox.test_release_dir, options)
     end
 
     def create_and_upload_links_release
-      FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, IntegrationSupport::ClientSandbox.links_release_dir, preserve: true)
-      bosh_runner.run_in_dir('create-release --force', IntegrationSupport::ClientSandbox.links_release_dir)
-      bosh_runner.run_in_dir('upload-release', IntegrationSupport::ClientSandbox.links_release_dir)
+      FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, IntegrationSupport::Sandbox.links_release_dir, preserve: true)
+      bosh_runner.run_in_dir('create-release --force', IntegrationSupport::Sandbox.links_release_dir)
+      bosh_runner.run_in_dir('upload-release', IntegrationSupport::Sandbox.links_release_dir)
     end
 
     def update_release
-      Dir.chdir(IntegrationSupport::ClientSandbox.test_release_dir) do
+      Dir.chdir(IntegrationSupport::Sandbox.test_release_dir) do
         File.open(File.join('src', 'foo'), 'w') { |f| f.write(SecureRandom.uuid) }
       end
       create_and_upload_test_release(force: true)
@@ -234,8 +234,8 @@ module IntegrationSupport
     end
 
     def yaml_file(name, object)
-      FileUtils.mkdir_p(IntegrationSupport::ClientSandbox.manifests_dir)
-      file_path = File.join(IntegrationSupport::ClientSandbox.manifests_dir, "#{name}-#{SecureRandom.uuid}")
+      FileUtils.mkdir_p(IntegrationSupport::Sandbox.manifests_dir)
+      file_path = File.join(IntegrationSupport::Sandbox.manifests_dir, "#{name}-#{SecureRandom.uuid}")
       File.open(file_path, 'w') do |f|
         f.write(Psych.dump(object))
         f
@@ -484,13 +484,13 @@ module IntegrationSupport
       current_sandbox.reconfigure(options)
     end
 
-    def setup_test_release_dir(destination_dir = IntegrationSupport::ClientSandbox.test_release_dir)
+    def setup_test_release_dir(destination_dir = IntegrationSupport::Sandbox.test_release_dir)
       FileUtils.rm_rf(destination_dir)
       FileUtils.cp_r(TEST_RELEASE_TEMPLATE, destination_dir, preserve: true)
 
       final_config_path = File.join(destination_dir, 'config', 'final.yml')
       final_config = YAML.load_file(final_config_path, permitted_classes: [Symbol], aliases: true)
-      final_config['blobstore']['options']['blobstore_path'] = IntegrationSupport::ClientSandbox.blobstore_dir
+      final_config['blobstore']['options']['blobstore_path'] = IntegrationSupport::Sandbox.blobstore_dir
       File.open(final_config_path, 'w') { |file| file.write(YAML.dump(final_config)) }
 
       Dir.chdir(destination_dir) do
@@ -505,18 +505,18 @@ module IntegrationSupport
     private
 
     def setup_bosh_work_dir
-      FileUtils.cp_r(BOSH_WORK_TEMPLATE, IntegrationSupport::ClientSandbox.bosh_work_dir, preserve: true)
+      FileUtils.cp_r(BOSH_WORK_TEMPLATE, IntegrationSupport::Sandbox.bosh_work_dir, preserve: true)
     end
 
     def setup_home_dir
-      FileUtils.mkdir_p(IntegrationSupport::ClientSandbox.home_dir)
-      ENV['HOME'] = IntegrationSupport::ClientSandbox.home_dir
+      FileUtils.mkdir_p(IntegrationSupport::Sandbox.home_dir)
+      ENV['HOME'] = IntegrationSupport::Sandbox.home_dir
       system("git config --global init.defaultBranch 'main'") # Prevents warning from git
     end
 
     def cleanup_client_sandbox_dir
-      FileUtils.rm_rf(IntegrationSupport::ClientSandbox.base_dir)
-      FileUtils.mkdir_p(IntegrationSupport::ClientSandbox.base_dir)
+      FileUtils.rm_rf(IntegrationSupport::Sandbox.base_dir)
+      FileUtils.mkdir_p(IntegrationSupport::Sandbox.base_dir)
     end
   end
 

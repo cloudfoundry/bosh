@@ -234,7 +234,7 @@ describe 'compiled releases', type: :integration do
         'jobs/fails_with_too_much_output',
         'packages/fails_with_too_much_output',
       ].each do |release_path|
-        FileUtils.rm_rf(File.join(IntegrationSupport::ClientSandbox.test_release_dir, release_path))
+        FileUtils.rm_rf(File.join(IntegrationSupport::Sandbox.test_release_dir, release_path))
       end
 
       create_and_upload_test_release(force: true)
@@ -248,7 +248,7 @@ describe 'compiled releases', type: :integration do
       bosh_runner.run('delete-release bosh-release')
       bosh_runner.run('delete-stemcell ubuntu-stemcell/1')
 
-      release_path = IntegrationSupport::ClientSandbox.bosh_work_dir
+      release_path = IntegrationSupport::Sandbox.bosh_work_dir
       bosh_runner.run("upload-release #{release_path}/bosh-release-0.1-dev-toronto-os-1-*.tgz")
       bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell_1_1.tgz')}")
 

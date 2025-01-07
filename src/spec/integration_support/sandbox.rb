@@ -1,6 +1,10 @@
 require 'benchmark'
+require 'fileutils'
 require 'logging'
+require 'rspec'
 require 'securerandom'
+require 'tmpdir'
+require 'tempfile'
 
 require 'cloud/dummy'
 
@@ -62,6 +66,54 @@ module IntegrationSupport
     attr_reader :user_authentication
 
     attr_accessor :trusted_certs
+
+    def self.workspace_dir
+      Workspace.dir
+    end
+
+    def self.base_dir
+      File.join(workspace_dir, 'client-sandbox')
+    end
+
+    def self.home_dir
+      File.join(base_dir, 'home')
+    end
+
+    def self.test_release_dir
+      File.join(base_dir, 'test_release')
+    end
+
+    def self.manifests_dir
+      File.join(base_dir, 'manifests')
+    end
+
+    def self.links_release_dir
+      File.join(base_dir, 'links_release')
+    end
+
+    def self.multidisks_release_dir
+      File.join(base_dir, 'multidisks_release')
+    end
+
+    def self.fake_errand_release_dir
+      File.join(base_dir, 'fake_errand_release')
+    end
+
+    def self.bosh_work_dir
+      File.join(base_dir, 'bosh_work_dir')
+    end
+
+    def self.bosh_config
+      File.join(base_dir, 'bosh_config.yml')
+    end
+
+    def self.blobstore_dir
+      File.join(base_dir, 'release_blobstore')
+    end
+
+    def self.temp_dir
+      File.join(base_dir, 'release_blobstore')
+    end
 
     def self.from_env
       db_opts = {
@@ -252,7 +304,7 @@ module IntegrationSupport
     end
 
     def saved_logs_path
-      File.join(Workspace.dir, "#{@name}.log")
+      File.join(Sandbox.workspace_dir, "#{@name}.log")
     end
 
     def save_task_logs(name)
@@ -565,5 +617,27 @@ module IntegrationSupport
     end
 
     attr_reader :director_tmp_path, :task_logs_dir
+  end
+end
+
+RSpec.configure do |config|
+  tmp_dir = nil
+
+  config.before do
+    FileUtils.mkdir_p(IntegrationSupport::Sandbox.workspace_dir)
+    tmp_dir = Dir.mktmpdir('spec-', IntegrationSupport::Sandbox.workspace_dir)
+
+    allow(Dir).to receive(:tmpdir).and_return(tmp_dir)
+  end
+
+  config.after do |example|
+    if example.exception
+      puts "> Spec failed: #{example.location}"
+      puts "> Test tmpdir: #{tmp_dir}\n"
+      puts "#{example.exception.message}\n"
+      puts '> ---------------'
+    else
+      FileUtils.rm_rf(tmp_dir) unless tmp_dir.nil?
+    end
   end
 end

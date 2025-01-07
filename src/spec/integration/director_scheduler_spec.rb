@@ -11,7 +11,7 @@ describe 'director_scheduler', type: :integration do
     deployment_hash
   end
 
-  let(:runner) { bosh_runner_in_work_dir(IntegrationSupport::ClientSandbox.test_release_dir) }
+  let(:runner) { bosh_runner_in_work_dir(IntegrationSupport::Sandbox.test_release_dir) }
 
   before do
     runner.run('create-release --force')

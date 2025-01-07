@@ -401,9 +401,9 @@ describe 'deploy with create-swap-delete', type: :integration do
 
   context 'when a create-swap-delete deployment fails with unresponsive agent on a link provider VM' do
     before do
-      FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, IntegrationSupport::ClientSandbox.links_release_dir, preserve: false)
-      bosh_runner.run_in_dir('create-release --force', IntegrationSupport::ClientSandbox.links_release_dir)
-      bosh_runner.run_in_dir('upload-release', IntegrationSupport::ClientSandbox.links_release_dir)
+      FileUtils.cp_r(LINKS_RELEASE_TEMPLATE, IntegrationSupport::Sandbox.links_release_dir, preserve: false)
+      bosh_runner.run_in_dir('create-release --force', IntegrationSupport::Sandbox.links_release_dir)
+      bosh_runner.run_in_dir('upload-release', IntegrationSupport::Sandbox.links_release_dir)
       cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config_with_multiple_azs
 
       upload_cloud_config(cloud_config_hash: cloud_config)
