@@ -4,7 +4,7 @@ module IntegrationSupport
       license_index = YAML.load_file(File.join(IntegrationSupport::Sandbox.test_release_dir, '.final_builds', 'license', 'index.yml'))
       blobstore_id = license_index['builds'][version]['blobstore_id']
 
-      File.join(IntegrationSupport::Sandbox.blobstore_dir, blobstore_id)
+      File.join(IntegrationSupport::Sandbox.test_release_blobstore_dir, blobstore_id)
     end
 
     def manifest_sha1_of_license(version)

@@ -4,14 +4,11 @@ describe 'cli: package compilation', type: :integration do
   include IntegrationSupport::CreateReleaseOutputParsers
   with_reset_sandbox_before_each
 
-  let!(:release_file) { Tempfile.new('release.tgz') }
-  after { release_file.delete }
+  let(:test_release_compilation_template_sandbox) { File.join(IntegrationSupport::Sandbox.sandbox_client_dir, 'release_compilation_test_release') }
 
-  RELEASE_COMPILATION_TEMPLATE_ASSETS = File.join(SPEC_ASSETS_DIR, 'release_compilation_test_release')
-  TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX = File.join(IntegrationSupport::Sandbox.base_dir, 'release_compilation_test_release')
   before do
-    FileUtils.rm_rf(TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX)
-    FileUtils.cp_r(RELEASE_COMPILATION_TEMPLATE_ASSETS, TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX, preserve: true)
+    FileUtils.rm_rf(test_release_compilation_template_sandbox)
+    FileUtils.cp_r(File.join(SPEC_ASSETS_DIR, 'release_compilation_test_release'), test_release_compilation_template_sandbox, preserve: true)
   end
 
   # This should be a unit test. Need to figure out best placement.
@@ -36,8 +33,8 @@ describe 'cli: package compilation', type: :integration do
 
     cloud_manifest = yaml_file('cloud_manifest', cloud_config_hash)
 
-    bosh_runner.run_in_dir('create-release --force', TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX)
-    bosh_runner.run_in_dir('upload-release', TEST_RELEASE_COMPILATION_TEMPLATE_SANDBOX)
+    bosh_runner.run_in_dir('create-release --force', test_release_compilation_template_sandbox)
+    bosh_runner.run_in_dir('upload-release', test_release_compilation_template_sandbox)
 
     bosh_runner.run("update-cloud-config #{cloud_manifest.path}")
     bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")

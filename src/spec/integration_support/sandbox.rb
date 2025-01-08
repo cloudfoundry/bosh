@@ -71,63 +71,58 @@ module IntegrationSupport
     end
     private_class_method :integration_spec_base_dir
 
-    def self.pid_root
-      File.join(integration_spec_base_dir, "pid-#{Process.pid}")
-    end
-    private_class_method :pid_root
-
     def self.uaa_service
       @uaa_service ||= UaaService.new(uaa_root: File.join(integration_spec_base_dir, 'uaa_root'))
     end
     private_class_method :uaa_service
 
-
-    def self.workspace_dir # TODO: rename for clarity
-      pid_root
+    def self.sandbox_pid_root
+      File.join(integration_spec_base_dir, "pid-#{Process.pid}-sandbox")
     end
 
-    def self.sandbox_root
-      File.join(workspace_dir, 'sandbox')
+    def self.sandbox_tmp_dir
+      File.join(sandbox_pid_root, 'tmp')
     end
 
-    def self.base_dir # TODO: rename for clarity
-      File.join(workspace_dir, 'client-sandbox')
+
+    def self.sandbox_client_dir
+      File.join(sandbox_pid_root, 'client')
     end
 
     def self.home_dir
-      File.join(base_dir, 'home')
+      File.join(sandbox_client_dir, 'home')
     end
 
     def self.test_release_dir
-      File.join(base_dir, 'test_release')
+      File.join(sandbox_client_dir, 'test_release')
     end
 
-    def self.manifests_dir
-      File.join(base_dir, 'manifests')
+    def self.test_release_blobstore_dir
+      File.join(sandbox_client_dir, 'test_release_blobstore')
+    end
+
+    def self.yaml_files_dir
+      File.join(sandbox_client_dir, 'yaml_files')
     end
 
     def self.links_release_dir
-      File.join(base_dir, 'links_release')
+      File.join(sandbox_client_dir, 'links_release')
     end
 
     def self.multidisks_release_dir
-      File.join(base_dir, 'multidisks_release')
+      File.join(sandbox_client_dir, 'multidisks_release')
     end
 
     def self.fake_errand_release_dir
-      File.join(base_dir, 'fake_errand_release')
+      File.join(sandbox_client_dir, 'fake_errand_release')
     end
 
     def self.bosh_work_dir
-      File.join(base_dir, 'bosh_work_dir')
+      File.join(sandbox_client_dir, 'bosh_work_dir')
     end
 
     def self.bosh_config
-      File.join(base_dir, 'bosh_config.yml')
-    end
-
-    def self.blobstore_dir
-      File.join(base_dir, 'release_blobstore')
+      File.join(sandbox_client_dir, 'bosh_config.yml')
     end
 
 
@@ -328,7 +323,7 @@ module IntegrationSupport
     end
 
     def saved_logs_path
-      File.join(Sandbox.workspace_dir, "#{@name}.log")
+      File.join(IntegrationSupport::Sandbox.sandbox_pid_root, "#{@name}.log")
     end
 
     def save_task_logs(name)
@@ -396,7 +391,7 @@ module IntegrationSupport
     end
 
     def sandbox_root
-      Sandbox.sandbox_root
+      File.join(Sandbox.sandbox_pid_root, 'sandbox')
     end
 
     def reconfigure(options={})
@@ -648,8 +643,8 @@ RSpec.configure do |config|
   tmp_dir = nil
 
   config.before do
-    FileUtils.mkdir_p(IntegrationSupport::Sandbox.workspace_dir)
-    tmp_dir = Dir.mktmpdir('spec-', IntegrationSupport::Sandbox.workspace_dir)
+    FileUtils.mkdir_p(IntegrationSupport::Sandbox.sandbox_tmp_dir)
+    tmp_dir = Dir.mktmpdir('spec-', IntegrationSupport::Sandbox.sandbox_tmp_dir)
 
     allow(Dir).to receive(:tmpdir).and_return(tmp_dir)
   end

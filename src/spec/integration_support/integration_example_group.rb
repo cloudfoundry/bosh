@@ -234,8 +234,8 @@ module IntegrationSupport
     end
 
     def yaml_file(name, object)
-      FileUtils.mkdir_p(IntegrationSupport::Sandbox.manifests_dir)
-      file_path = File.join(IntegrationSupport::Sandbox.manifests_dir, "#{name}-#{SecureRandom.uuid}")
+      FileUtils.mkdir_p(IntegrationSupport::Sandbox.yaml_files_dir)
+      file_path = File.join(IntegrationSupport::Sandbox.yaml_files_dir, "#{name}-#{SecureRandom.uuid}")
       File.open(file_path, 'w') do |f|
         f.write(Psych.dump(object))
         f
@@ -490,7 +490,7 @@ module IntegrationSupport
 
       final_config_path = File.join(destination_dir, 'config', 'final.yml')
       final_config = YAML.load_file(final_config_path, permitted_classes: [Symbol], aliases: true)
-      final_config['blobstore']['options']['blobstore_path'] = IntegrationSupport::Sandbox.blobstore_dir
+      final_config['blobstore']['options']['blobstore_path'] = IntegrationSupport::Sandbox.test_release_blobstore_dir
       File.open(final_config_path, 'w') { |file| file.write(YAML.dump(final_config)) }
 
       Dir.chdir(destination_dir) do
@@ -515,8 +515,8 @@ module IntegrationSupport
     end
 
     def cleanup_client_sandbox_dir
-      FileUtils.rm_rf(IntegrationSupport::Sandbox.base_dir)
-      FileUtils.mkdir_p(IntegrationSupport::Sandbox.base_dir)
+      FileUtils.rm_rf(IntegrationSupport::Sandbox.sandbox_client_dir)
+      FileUtils.mkdir_p(IntegrationSupport::Sandbox.sandbox_client_dir)
     end
   end
 
