@@ -17,8 +17,7 @@ module IntegrationSupport
       end
 
       def uaa_service
-        @uaa_service ||=
-          UaaService.new(dir('sandbox'), dir('uaa_logs'))
+        @uaa_service ||= UaaService.new(uaa_root: File.join(base_dir, 'uaa_root'))
       end
 
       private

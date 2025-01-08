@@ -23,18 +23,12 @@ module IntegrationSupport
     SERVER_CERT = File.join(IntegrationSupport::Constants::SANDBOX_CERTS_DIR, 'server.crt')
     SERVER_KEY = File.join(IntegrationSupport::Constants::SANDBOX_CERTS_DIR, 'server.key')
 
-    def initialize(sandbox_root, base_log_path)
-      @config_path = File.join(sandbox_root, 'uaa_config')
-      FileUtils.mkdir_p(@config_path)
+    def initialize(uaa_root:)
+      FileUtils.mkdir_p(uaa_root)
 
-      FileUtils.mkdir_p(base_log_path)
-      @log_location = "#{base_log_path}.uaa.out"
+      @logger = Logging.logger(File.open(File.join(uaa_root, 'uaa_service.log'), 'w+'))
 
-      @logger = Logging.logger(File.open(File.join(base_log_path, 'uaa_service.log'), 'w+'))
-
-      write_config_path
-
-      @uaa_process = initialize_uaa_process
+      @uaa_process = initialize_uaa_process(uaa_root, @logger)
     end
 
     def self.install
@@ -72,10 +66,10 @@ module IntegrationSupport
           }
         }
 
-        job_spec['properties'].map do |key, value|
+        job_spec['properties'].map do |properties_key, value|
           next unless value.has_key?('default')
-          keys = key.split('.')
-          hash_segment =context['properties']
+          keys = properties_key.split('.')
+          hash_segment = context['properties']
           keys.each_with_index do |key, index|
             if index == keys.length - 1
               hash_segment[key] ||= value['default']
@@ -146,9 +140,11 @@ module IntegrationSupport
 
     private
 
-    def initialize_uaa_process
+    def initialize_uaa_process(uaa_dir, logger)
+      write_config_path(uaa_dir)
+
       opts = {
-        'uaa.access_log_dir' => File.dirname(@log_location),
+        'uaa.access_log_dir' => uaa_dir,
         'securerandom.source' => 'file:/dev/urandom',
       }
 
@@ -158,7 +154,7 @@ module IntegrationSupport
       Service.new(
         [File.join(UAA_BIN_PATH, 'uaa')],
         {
-          output: @log_location,
+          output: File.join(uaa_dir, 'uaa.out'),
           env: {
             'CATALINA_OPTS' => catalina_opts,
             'CATALINA_BASE' => '/var/vcap/data/uaa/tomcat',
@@ -168,7 +164,7 @@ module IntegrationSupport
             'JAVA_HOME' => ''
           },
         },
-        @logger,
+        logger,
       )
     end
 
@@ -176,10 +172,10 @@ module IntegrationSupport
       File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_DIR, 'spec', 'assets', 'uaa')
     end
 
-    def write_config_path
+    def write_config_path(config_dir)
       FileUtils.cp(
         File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_DIR, 'spec', 'assets', 'uaa_config', 'asymmetric', 'uaa.yml'),
-        @config_path,
+        config_dir,
       )
       @current_uaa_config_mode = 'asymmetric'
     end
