@@ -1,13 +1,12 @@
 namespace :spec do
   namespace :integration do
     $LOAD_PATH << File.join(BOSH_SRC_ROOT, 'spec')
-    require 'integration_support/workspace'
     require 'integration_support/sandbox'
 
     def run_integration_specs(tags: nil)
       IntegrationSupport::Sandbox.install_dependencies
-      IntegrationSupport::Workspace.clean
-      IntegrationSupport::Workspace.uaa_service.start
+      IntegrationSupport::Sandbox.clean
+      IntegrationSupport::Sandbox.uaa_service.start
 
       proxy_env = 'https_proxy= http_proxy='
 
@@ -28,7 +27,7 @@ namespace :spec do
       puts command
       raise unless system(command)
     ensure
-      IntegrationSupport::Workspace.uaa_service.stop
+      IntegrationSupport::Sandbox.uaa_service.stop
     end
   end
 

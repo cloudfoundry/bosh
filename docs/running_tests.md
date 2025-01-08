@@ -71,7 +71,7 @@ Run tests against a specific database by setting the `DB` environment variable.
 bosh/src$ DB=mysql bundle exec rspec spec/integration/cli_env_spec.rb
 ```
 
-The integration test are run in a sandbox, detailed logs can be found in folder like `src/tmp/integration-tests-workspace/pid-<pid>/sandbox/boshdir/tasks/<n>/debug`.
+The integration test are run in a sandbox, detailed logs can be found in folder like `src/tmp/integration-specs/pid-<pid>/sandbox/boshdir/tasks/<n>/debug`.
 
 #### Custom bosh-cli
 

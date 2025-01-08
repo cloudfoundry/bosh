@@ -12,7 +12,6 @@ require 'integration_support/constants'
 require 'integration_support/service'
 require 'integration_support/http_endpoint_connector'
 require 'integration_support/socket_connector'
-require 'integration_support/workspace'
 require 'integration_support/director_config'
 require 'integration_support/port_provider'
 require 'integration_support/config_server_service'
@@ -67,11 +66,34 @@ module IntegrationSupport
 
     attr_accessor :trusted_certs
 
-    def self.workspace_dir
-      Workspace.dir
+    def self.clean
+      FileUtils.rm_rf(integration_spec_base_dir)
     end
 
-    def self.base_dir
+    def self.integration_spec_base_dir
+      File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_DIR, 'tmp', 'integration-specs')
+    end
+    private_class_method :integration_spec_base_dir
+
+    def self.pid_root
+      File.join(integration_spec_base_dir, "pid-#{Process.pid}")
+    end
+    private_class_method :pid_root
+
+    def self.uaa_service
+      @uaa_service ||= UaaService.new(uaa_root: File.join(integration_spec_base_dir, 'uaa_root'))
+    end
+
+
+    def self.workspace_dir # TODO: rename for clarity
+      pid_root
+    end
+
+    def self.sandbox_root
+      File.join(workspace_dir, 'sandbox')
+    end
+
+    def self.base_dir # TODO: rename for clarity
       File.join(workspace_dir, 'client-sandbox')
     end
 
@@ -114,6 +136,7 @@ module IntegrationSupport
     def self.temp_dir
       File.join(base_dir, 'release_blobstore')
     end
+
 
     def self.from_env
       db_opts = {
@@ -372,7 +395,7 @@ module IntegrationSupport
     end
 
     def sandbox_root
-      Workspace.sandbox_root
+      Sandbox.sandbox_root
     end
 
     def reconfigure(options={})
