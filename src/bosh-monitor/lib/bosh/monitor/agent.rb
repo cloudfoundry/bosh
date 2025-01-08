@@ -51,7 +51,14 @@ module Bosh::Monitor
       (Time.now - @discovered_at) > @intervals.rogue_agent_alert && @deployment.nil?
     end
 
-    def is_detached?
+    def is_inactive?
+      @logger.info("ABCDEF Job: #{@job}")
+      @logger.info("ABCDEF Deployment: #{@deployment}")
+      @logger.info("ABCDEF Instance agent id: #{@instance.agent_id}")
+      @logger.info("ABCDEF Instance VM cid: #{@instance.vm_cid}")
+      @logger.info("ABCDEF Expects VM: #{@instance.expects_vm}")
+      @logger.info("ABCDEF Instance Job state: #{@instance.job_state}")
+      @logger.info("ABCDEF Instance state: #{@instance.state}")
       (Time.now - @updated_at) > @intervals.agent_timeout
     end
 
@@ -60,6 +67,7 @@ module Bosh::Monitor
       @index = instance.index
       @cid = instance.cid
       @instance_id = instance.id
+      @instance = instance
     end
   end
 end

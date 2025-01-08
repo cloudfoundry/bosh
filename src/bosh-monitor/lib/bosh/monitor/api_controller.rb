@@ -41,9 +41,9 @@ module Bosh::Monitor
       end
     end
 
-    get '/detached_instances' do
+    get '/inactive_instances' do
       if @instance_manager.director_initial_deployment_sync_done
-        JSON.generate(@instance_manager.detached_instances)
+        JSON.generate(@instance_manager.inactive_instances)
       else
         status(503)
       end

@@ -31,6 +31,14 @@ module Bosh::Monitor
       parse_json(body, Array)
     end
 
+    def get_deployment_instances_full(name)
+      body, status = perform_request(:get, "/deployments/#{name}/instances?format=full")
+
+      raise DirectorError, "Cannot get deployment '#{name}' from director at #{endpoint}/deployments/#{name}/instances?format=full: #{status} #{body}" if status != 200
+
+      parse_json(body, Array)
+    end
+
     private
 
     def endpoint

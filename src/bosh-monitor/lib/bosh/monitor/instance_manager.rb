@@ -121,10 +121,10 @@ module Bosh::Monitor
       agents_hash
     end
 
-    def detached_instances
+    def inactive_instances
       instances = {}
       @deployment_name_to_deployments.each do |name, deployment|
-        instances[name] = deployment.agents.count(&:is_detached?)
+        instances[name] = deployment.agents.count(&:is_inactive?)
       end
 
       instances
