@@ -148,6 +148,13 @@ module Bosh::Director
         @model = existing_instance_model
         @desired_variable_set = @deployment_model.last_successful_variable_set || @deployment_model.current_variable_set
         @previous_variable_set = existing_instance_model.variable_set
+        templates_archive = existing_instance_model.latest_rendered_templates_archive
+        if templates_archive
+          self.rendered_templates_archive = Core::Templates::RenderedTemplatesArchive.new(
+            templates_archive.blobstore_id,
+            templates_archive.sha1,
+          )
+        end
       end
 
       def bind_existing_reservations(reservations)
