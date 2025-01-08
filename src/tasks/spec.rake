@@ -4,9 +4,7 @@ namespace :spec do
     require 'integration_support/sandbox'
 
     def run_integration_specs(tags: nil)
-      IntegrationSupport::Sandbox.install_dependencies
-      IntegrationSupport::Sandbox.clean
-      IntegrationSupport::Sandbox.uaa_service.start
+      IntegrationSupport::Sandbox.setup
 
       proxy_env = 'https_proxy= http_proxy='
 
@@ -14,8 +12,7 @@ namespace :spec do
       rspec_opts = "SPEC_OPTS='--format documentation #{rspec_opts}'"
 
       parallel_options = '--multiply-processes 0.5'
-      num_processes = ENV.fetch('NUM_PROCESSES', '')
-      unless num_processes.empty?
+      unless (num_processes = ENV.fetch('NUM_PROCESSES', '')).empty?
         parallel_options += " -n #{num_processes}"
       end
 
@@ -27,7 +24,7 @@ namespace :spec do
       puts command
       raise unless system(command)
     ensure
-      IntegrationSupport::Sandbox.uaa_service.stop
+      IntegrationSupport::Sandbox.teardown
     end
   end
 

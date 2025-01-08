@@ -66,10 +66,6 @@ module IntegrationSupport
 
     attr_accessor :trusted_certs
 
-    def self.clean
-      FileUtils.rm_rf(integration_spec_base_dir)
-    end
-
     def self.integration_spec_base_dir
       File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_DIR, 'tmp', 'integration-specs')
     end
@@ -83,6 +79,7 @@ module IntegrationSupport
     def self.uaa_service
       @uaa_service ||= UaaService.new(uaa_root: File.join(integration_spec_base_dir, 'uaa_root'))
     end
+    private_class_method :uaa_service
 
 
     def self.workspace_dir # TODO: rename for clarity
@@ -133,10 +130,6 @@ module IntegrationSupport
       File.join(base_dir, 'release_blobstore')
     end
 
-    def self.temp_dir
-      File.join(base_dir, 'release_blobstore')
-    end
-
 
     def self.from_env
       db_opts = {
@@ -151,7 +144,7 @@ module IntegrationSupport
       )
     end
 
-    def self.install_dependencies
+    def self.setup
       FileUtils.mkdir_p(IntegrationSupport::Constants::INTEGRATION_BIN_DIR)
       IntegrationSupport::BoshAgent.install
       IntegrationSupport::NginxService.install
@@ -159,6 +152,14 @@ module IntegrationSupport
       IntegrationSupport::ConfigServerService.install
       IntegrationSupport::VerifyMultidigestManager.install
       IntegrationSupport::GnatsdManager.install
+
+      FileUtils.rm_rf(integration_spec_base_dir)
+
+      uaa_service.start
+    end
+
+    def self.teardown
+      uaa_service.stop
     end
 
 
