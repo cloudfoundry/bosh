@@ -154,6 +154,7 @@ module IntegrationSupport
       Service.new(
         [File.join(UAA_BIN_PATH, 'uaa')],
         {
+          working_dir: uaa_dir,
           output: File.join(uaa_dir, 'uaa.out'),
           env: {
             'CATALINA_OPTS' => catalina_opts,
