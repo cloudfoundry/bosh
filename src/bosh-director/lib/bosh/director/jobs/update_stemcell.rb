@@ -109,7 +109,7 @@ module Bosh::Director
             upload_suffix = ' (already exists, skipped)' unless needs_upload
             track_and_log("Uploading stemcell #{@name}/#{@version} to the cloud#{cpi_suffix}#{upload_suffix}") do
               if needs_upload
-                stemcell.cid = cloud.create_stemcell(@stemcell_image, @cloud_properties)
+                stemcell.cid = cloud.create_stemcell(@stemcell_image, @cloud_properties, {})
                 logger.info("Cloud created stemcell#{cpi_suffix}: #{stemcell.cid}")
               else
                 logger.info("Skipping stemcell upload, already exists#{cpi_suffix}")
