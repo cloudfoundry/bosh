@@ -91,7 +91,7 @@ module IntegrationSupport
   end
 
   class NginxInstaller
-    WORKING_DIR = File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_DIR, 'tmp', 'integration-nginx-work')
+    WORK_DIR = File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_TMP_DIR, 'nginx-work')
     EXECUTABLE_PATH = File.join(IntegrationSupport::Constants::INTEGRATION_BIN_DIR, 'sbin', 'nginx')
 
     def prepare
@@ -110,17 +110,17 @@ module IntegrationSupport
 
     def compile
       # Clean up old compiled nginx bits to stay up-to-date
-      FileUtils.rm_rf(WORKING_DIR)
+      FileUtils.rm_rf(WORK_DIR)
 
-      FileUtils.mkdir_p(WORKING_DIR)
+      FileUtils.mkdir_p(WORK_DIR)
 
       run_command("echo '#{RUBY_PLATFORM}' > #{IntegrationSupport::Constants::INTEGRATION_BIN_DIR}/platform")
 
       # Make sure packaging script has its own blob copies so that blobs/ directory is not affected
       nginx_blobs_path = File.join(IntegrationSupport::Constants::BOSH_REPO_ROOT, 'packages', 'nginx')
-      run_command("cp -R #{nginx_blobs_path}/. #{File.join(WORKING_DIR)}")
+      run_command("cp -R #{nginx_blobs_path}/. #{WORK_DIR}")
 
-      Dir.chdir(WORKING_DIR) do
+      Dir.chdir(WORK_DIR) do
         packaging_script_path = File.join(IntegrationSupport::Constants::BOSH_REPO_ROOT, 'packages', 'nginx', 'packaging')
         run_command("bash #{packaging_script_path}", { 'BOSH_INSTALL_TARGET' => IntegrationSupport::Constants::INTEGRATION_BIN_DIR })
       end
@@ -129,7 +129,10 @@ module IntegrationSupport
     private
 
     def run_command(command, environment = {})
-      io = IO.popen([environment, 'bash', '-c', command])
+      command = [environment, 'bash', '-c', command]
+      puts "Running: #{command.join(' ')}"
+
+      io = IO.popen(command)
 
       lines =
         io.each_with_object("") do |line, collect|
@@ -140,14 +143,14 @@ module IntegrationSupport
       io.close
       process_status = $?
 
-      raise "Command: #{command.inspect} failed with #{process_status.inspect}" unless process_status.success?
+      raise "Command: #{command.inspect} failed with #{process_status.inspect}" unless process_status&.success?
 
       lines
     end
 
     def blob_has_changed?
       blobs_shasum = shasum(File.join(IntegrationSupport::Constants::BOSH_REPO_ROOT, 'blobs', 'nginx'))
-      sandbox_copy_shasum = shasum(File.join(WORKING_DIR, 'nginx'))
+      sandbox_copy_shasum = shasum(File.join(WORK_DIR, 'nginx'))
 
       blobs_shasum.sort != sandbox_copy_shasum.sort
     end

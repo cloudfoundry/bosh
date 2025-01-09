@@ -67,17 +67,18 @@ module IntegrationSupport
     attr_accessor :trusted_certs
 
     def self.integration_spec_base_dir
-      File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_DIR, 'tmp', 'integration-specs')
+      File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_TMP_DIR, 'integration-specs')
     end
     private_class_method :integration_spec_base_dir
 
     def self.uaa_service
-      @uaa_service ||= UaaService.new(uaa_root: File.join(integration_spec_base_dir, 'uaa_root'))
+      @uaa_service ||= UaaService.new(uaa_root: File.join(integration_spec_base_dir, "uaa_root-pid-#{Process.pid}"))
     end
     private_class_method :uaa_service
 
+
     def self.sandbox_pid_root
-      File.join(integration_spec_base_dir, "pid-#{Process.pid}-sandbox")
+      File.join(integration_spec_base_dir, "sandbox-pid-#{Process.pid}")
     end
 
     def self.sandbox_tmp_dir
