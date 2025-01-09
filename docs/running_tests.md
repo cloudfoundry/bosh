@@ -53,16 +53,12 @@ Integration tests describe communication between BOSH components focusing on the
 bosh/src$ bundle exec rake spec:integration
 ```
 
-In order to run the integration tests in parallel:
+Individual specs can be run by setting `SPEC_PATH` to a comma separated list of spec paths relative to `bosh/src/` (ex: `spec/integration/deploy/basic_spec.rb,spec/integration/cli_cck/cloud_config_update_spec.rb`). By default, integration specs are executed in parallel via `parallel_rspec`, if a line number is specified (ex: `some_spec.rb:123`) then `rspec` is used. More information about the integration test set up can  be found in the [workstation setup docs](workstation_setup.md).
+
+NOTE: as of 2025-01 the team has not invested in ensuring that local execution is possible, one-off integration spec execution is done via Concourse using the `fly:integration` task. This task also accepts `SPEC_PATH`, as well as `DB` environment variables. Concourse execution requires privileges on that Concourse instance, and a functioning bosh CI pipeline (see: `ci/pipeline.yml`)
 
 ```
-export NUM_PROCESSES=<n>
-```
-
-You can run individual tests by invoking `rspec` directly after setting up the sandbox with `rake spec:integration:install_dependencies` and `rake  spec:integration:download_bosh_agent`. More information about the integration test set up can  be found in the [workstation setup docs](workstation_setup.md).
-
-```
-bosh/src$ bundle exec rspec spec/integration/cli_env_spec.rb
+bosh/src$ bundle exec rake fly:integration
 ```
 
 Run tests against a specific database by setting the `DB` environment variable.

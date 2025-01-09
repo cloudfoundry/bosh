@@ -1,36 +1,29 @@
 namespace :spec do
-  namespace :integration do
-    $LOAD_PATH << File.join(BOSH_SRC_ROOT, 'spec')
-    require 'integration_support/sandbox'
-
-    def run_integration_specs(tags: nil)
-      IntegrationSupport::Sandbox.setup
-
-      proxy_env = 'https_proxy= http_proxy='
-
-      rspec_opts += "--tag #{tags}" if tags
-      rspec_opts = "SPEC_OPTS='--format documentation #{rspec_opts}'"
-
-      parallel_options = '--multiply-processes 0.5'
-      unless (num_processes = ENV.fetch('NUM_PROCESSES', '')).empty?
-        parallel_options += " -n #{num_processes}"
-      end
-
-      paths = ENV.fetch('SPEC_PATH', ['spec']).split(',').join(' ')
-
-      command =
-        "#{proxy_env} #{rspec_opts} bundle exec parallel_rspec #{parallel_options} #{paths}"
-
-      puts command
-      raise unless system(command)
-    ensure
-      IntegrationSupport::Sandbox.teardown
-    end
-  end
-
   desc 'Run all integration tests against a local sandbox'
   task :integration do
-    run_integration_specs
+    $LOAD_PATH << File.join(BOSH_SRC_ROOT, 'spec')
+    require 'integration_support/sandbox'
+    IntegrationSupport::Sandbox.setup
+
+    rspec_opts = ['--format documentation']
+    rspec_opts += ENV.fetch('RSPEC_TAGS', '').split(',').map { |t| "--tag #{t}" }
+
+    paths = ENV.fetch('SPEC_PATH', 'spec').split(',').join(' ')
+
+    spec_runner_command =
+      if paths =~ /:\d+/ # line number was specified; run with `rspec`
+        "bundle exec rspec #{rspec_opts.join(' ')} #{paths}"
+
+      else
+        # no line number specified; run with `parallel_rspec`
+        "SPEC_OPTS='#{rspec_opts.join(' ')}' bundle exec parallel_rspec --multiply-processes 0.5"
+      end
+
+    proxy_env = 'https_proxy= http_proxy='
+
+    sh("#{proxy_env} #{spec_runner_command} #{paths}")
+  ensure
+    IntegrationSupport::Sandbox.teardown
   end
 
   desc 'Run template test unit tests (i.e. Bosh::Template::Test)'
@@ -55,13 +48,13 @@ namespace :spec do
     desc 'Run all release unit tests (ERB templates)'
     task :release do
       puts 'Run unit tests for the release (ERB templates)'
-      sh("cd #{File.expand_path('..')} && rspec")
+      sh("cd #{BOSH_REPO_ROOT} && rspec")
     end
 
     namespace :release do
       task :parallel do
         puts 'Run unit tests for the release (ERB templates)'
-        sh("cd #{File.expand_path('..')} && parallel_rspec spec")
+        sh("cd #{BOSH_REPO_ROOT} && parallel_rspec spec")
       end
     end
 

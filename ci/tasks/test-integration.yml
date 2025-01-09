@@ -24,5 +24,4 @@ params:
   SPEC_PATH:                  ~
   SHA2_MODE:                  ~
   DEFAULT_UPDATE_VM_STRATEGY: "delete-create"
-  NUM_PROCESSES:
   GOOS:                       linux
