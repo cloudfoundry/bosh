@@ -167,7 +167,7 @@ module IntegrationSupport
       cli_options += " -d #{options[:deployment_name]}" if options[:deployment_name]
       cli_options += " --config #{config}"
 
-      cli_options += " --ca-cert #{options.fetch(:ca_cert, IntegrationSupport::Sandbox::ROOT_CA_CERTIFICATE_PATH)}"
+      cli_options += " --ca-cert #{options.fetch(:ca_cert, current_sandbox.certificate_path)}"
       cli_options += options.fetch(:json, false) ? ' --json' : ''
       cli_options += ' --sha2' if @sha2
 
