@@ -413,7 +413,7 @@ module IntegrationSupport
       )
       @enable_cpi_resize_disk = options.fetch(:enable_cpi_resize_disk, false)
       @enable_cpi_update_disk = options.fetch(:enable_cpi_update_disk, false)
-      @default_update_vm_strategy = options.fetch(:default_update_vm_strategy, ENV['DEFAULT_UPDATE_VM_STRATEGY'])
+      @default_update_vm_strategy = options.fetch(:default_update_vm_strategy, ENV['UPDATE_VM_STRATEGY'])
       @generate_vm_passwords = options.fetch(:generate_vm_passwords, false)
       @remove_dev_tools = options.fetch(:remove_dev_tools, false)
       @director_ips = options.fetch(:director_ips, [])

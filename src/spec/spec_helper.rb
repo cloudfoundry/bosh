@@ -38,7 +38,7 @@ RSpec.configure do |c|
     c.filter_run_excluding db: :postgresql
   end
 
-  if ENV['DEFAULT_UPDATE_VM_STRATEGY'] == 'create-swap-delete'
+  if ENV['UPDATE_VM_STRATEGY'] == 'create-swap-delete'
     puts RSpec::Core::Formatters::ConsoleCodes.wrap('Skipping non-create-swap-delete tests', :yellow)
     c.filter_run_excluding no_create_swap_delete: true
   else

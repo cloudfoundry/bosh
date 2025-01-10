@@ -339,7 +339,7 @@ jobs:
         params:
           DB: postgresql
           DB_VERSION: 15
-          DEFAULT_UPDATE_VM_STRATEGY: create-swap-delete
+          UPDATE_VM_STRATEGY: create-swap-delete
 
   - name: integration-mysql
     public: true

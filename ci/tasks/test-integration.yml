@@ -18,10 +18,10 @@ run:
   path: bosh-ci/ci/tasks/test-integration.sh
 
 params:
-  DB:                         postgresql
-  DB_VERSION:                 15
-  LOG_LEVEL:                  ERROR
-  SPEC_PATH:                  ~
-  SHA2_MODE:                  ~
-  DEFAULT_UPDATE_VM_STRATEGY: "delete-create"
-  GOOS:                       linux
+  DB:                 postgresql
+  DB_VERSION:         15
+  LOG_LEVEL:          ERROR
+  SPEC_PATH:          ~
+  SHA2_MODE:          ~
+  UPDATE_VM_STRATEGY: delete-create
+  GOOS:               linux
