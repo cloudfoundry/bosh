@@ -93,6 +93,7 @@ jobs:
       file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-image
       params:
+        DB: sqlite
         RAKE_TASK: spec:unit:common
 
   - name: unit-monitor
@@ -112,6 +113,7 @@ jobs:
       file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-image
       params:
+        DB: sqlite
         RAKE_TASK: spec:unit:monitor
 
   - name: unit-nats-sync
@@ -131,6 +133,7 @@ jobs:
       file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-image
       params:
+        DB: sqlite
         RAKE_TASK: spec:unit:nats_sync
 
   - name: unit-template
@@ -150,6 +153,7 @@ jobs:
       file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-image
       params:
+        DB: sqlite
         RAKE_TASK: spec:unit:template
 
   - name: unit-release
@@ -169,6 +173,7 @@ jobs:
       file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-image
       params:
+        DB: sqlite
         RAKE_TASK: spec:unit:release
 
   - name: unit-director-sqlite
@@ -188,6 +193,7 @@ jobs:
       file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-image
       params:
+        DB: sqlite
         RAKE_TASK: spec:unit:director
 
   - name: unit-director-mysql-8
@@ -208,6 +214,7 @@ jobs:
       file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-mysql-8-0-image
       params:
+        COVERAGE: false
         DB: mysql
         RAKE_TASK: spec:unit:director
 
@@ -229,6 +236,7 @@ jobs:
       file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-postgres-13-image
       params:
+        COVERAGE: false
         DB: postgresql
         RAKE_TASK: spec:unit:director
 
@@ -250,6 +258,7 @@ jobs:
       file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-postgres-15-image
       params:
+        COVERAGE: false
         DB: postgresql
         RAKE_TASK: spec:unit:director
 
@@ -307,11 +316,12 @@ jobs:
         - get: config-server
       - task: tests
         privileged: true
-        file: bosh-ci/ci/tasks/test-integration.yml
+        file: bosh-ci/ci/tasks/test-rake-task.yml
         image: integration-postgres-15-image
         params:
+          COVERAGE: false
           DB: postgresql
-          DB_VERSION: 15
+          RAKE_TASK: spec:integration
 
   - name: integration-postgres-hotswap
     public: true
@@ -334,11 +344,11 @@ jobs:
         - get: config-server
       - task: tests
         privileged: true
-        file: bosh-ci/ci/tasks/test-integration.yml
+        file: bosh-ci/ci/tasks/test-rake-task.yml
         image: integration-postgres-15-image
         params:
           DB: postgresql
-          DB_VERSION: 15
+          RAKE_TASK: spec:integration
           UPDATE_VM_STRATEGY: create-swap-delete
 
   - name: integration-mysql
@@ -362,10 +372,12 @@ jobs:
         - get: config-server
       - task: tests
         privileged: true
-        file: bosh-ci/ci/tasks/test-integration.yml
+        file: bosh-ci/ci/tasks/test-rake-task.yml
         image: integration-mysql-8-0-image
         params:
+          COVERAGE: false
           DB: mysql
+          RAKE_TASK: spec:integration
 
   - name: candidate-release
     plan:
@@ -1239,6 +1251,7 @@ jobs:
         bosh: bosh-out
       params:
         COVERAGE: false
+        DB: sqlite
         RAKE_TASK: spec:unit:parallel
     - put: bosh
       params:
