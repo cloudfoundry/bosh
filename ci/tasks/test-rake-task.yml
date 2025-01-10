@@ -9,6 +9,12 @@ image_resource:
 inputs:
   - name: bosh-ci
   - name: bosh
+  - name: bosh-cli
+    optional: true
+  - name: bosh-agent
+    optional: true
+  - name: config-server
+    optional: true
 
 run:
   path: bosh-ci/ci/tasks/test-rake-task.sh
