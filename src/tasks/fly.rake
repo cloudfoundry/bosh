@@ -16,8 +16,10 @@ namespace :fly do
     command_opts = command_opts('integration', db, db_version)
     command_opts += " --input bosh-cli=#{args[:cli_dir]}" if args[:cli_dir]
 
-    execute('test-integration', command_opts,
+    execute('test-rake-task', command_opts,
             DB: db,
+            COVERAGE: ENV.fetch('COVERAGE', false),
+            RAKE_TASK: 'spec:integration',
             SPEC_PATH: ENV.fetch('SPEC_PATH', nil))
   end
 
