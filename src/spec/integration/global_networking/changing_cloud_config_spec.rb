@@ -26,19 +26,24 @@ describe 'Changing cloud config', type: :integration do
       manifest_with_errand = SharedSupport::DeploymentManifestHelper.errand_manifest(instances: 1, job: 'foobar_without_packages')
       upload_cloud_config(cloud_config_hash: cloud_config)
       deploy_simple_manifest(manifest_hash: manifest_with_errand)
-      current_target = current_sandbox.director_url
+
+      main_thread_sandbox = current_sandbox
 
       errand_succeeded = nil
       errand_thread = Thread.new do
+        Thread.current[:sandbox] = main_thread_sandbox
+
         thread_config_path = File.join(IntegrationSupport::Sandbox.sandbox_client_dir, 'bosh_config_errand.yml')
-        bosh_runner.run('log-in', config: thread_config_path, log_in: true, environment_name: current_target)
-        _, errand_succeeded = run_errand('errand_job', {
-          config: thread_config_path,
-          manifest_hash: manifest_with_errand,
-          deployment_name: 'errand',
-          failure_expected: false,
-          environment_name: current_target
-        })
+
+        bosh_runner.run('log-in', config: thread_config_path, log_in: true)
+
+        _, errand_succeeded = run_errand('errand_job',
+                                         {
+                                           config: thread_config_path,
+                                           manifest_hash: manifest_with_errand,
+                                           deployment_name: 'errand',
+                                           failure_expected: false,
+                                         })
       end
 
       upload_a_different_cloud_config

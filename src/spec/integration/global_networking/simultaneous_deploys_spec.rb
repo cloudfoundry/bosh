@@ -147,15 +147,24 @@ describe 'simultaneous deploys', type: :integration do
     end
 
     def run_errand_in_thread(errand_manifest, errand_runner)
+      main_thread_sandbox = current_sandbox
+
       errand_result = {}
-      current_target = current_sandbox.director_url
-      errand_thread = Thread.new do
-        output, exit_code = errand_runner.run("run-errand errand_job", deployment_name: errand_manifest['name'], return_exit_code: true, failure_expected: true, environment_name: current_target)
-        errand_result.merge!(
-          output: output,
-          exit_code: exit_code
-        )
-      end
+
+      errand_thread =
+        Thread.new do
+          Thread.current[:sandbox] = main_thread_sandbox
+          output, exit_code = errand_runner.run("run-errand errand_job",
+                                                deployment_name: errand_manifest['name'],
+                                                return_exit_code: true,
+                                                failure_expected: true)
+
+          errand_result.merge!(
+            output: output,
+            exit_code: exit_code
+          )
+        end
+
       return errand_thread, errand_result
     end
 
