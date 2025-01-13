@@ -33,9 +33,10 @@ start_db() {
 
   case "${db_name}" in
     mysql)
+      export DB_HOST="127.0.0.1"
+      export DB_PORT="3306"
       export DB_USER="root"
       export DB_PASSWORD="password"
-      export DB_PORT="3306"
 
       export MYSQL_ROOT=/var/lib/mysql
       if [ ! -d /var/lib/mysql-src ]; then # Set up MySQL if it's the first time
@@ -71,7 +72,7 @@ start_db() {
 
       service mysql start
       sleep 5
-      mysql -h 127.0.0.1 \
+      mysql -h ${DB_HOST} \
             -P ${DB_PORT} \
             --user=${DB_USER} \
             --password=${DB_PASSWORD} \
@@ -79,9 +80,10 @@ start_db() {
       ;;
 
     postgresql)
+      export DB_HOST="127.0.0.1"
+      export DB_PORT="5432"
       export DB_USER="postgres"
       export DB_PASSWORD="smurf"
-      export DB_PORT="5432"
       export PGPASSWORD="${DB_PASSWORD}"
 
       export POSTGRES_ROOT="/tmp/postgres"
@@ -126,7 +128,7 @@ start_db() {
         chown -R postgres:postgres "${PGDATA}" "${PGLOGS}"
 
         run_as postgres "$(which pg_ctl)" start --log="${PGLOGS}/server.log" --wait
-        run_as postgres "$(which createdb)" -h 127.0.0.1 uaa
+        run_as postgres "$(which createdb)" -h "${DB_HOST}" uaa
       fi
       ;;
 
