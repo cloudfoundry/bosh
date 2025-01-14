@@ -47,7 +47,6 @@ module IntegrationSupport
         current_sandbox.nats_log_path,
         current_sandbox.saved_logs_path,
         logger,
-        ENV['SHA2_MODE'] == 'true',
       )
     end
 

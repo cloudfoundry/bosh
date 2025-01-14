@@ -31,7 +31,7 @@ module IntegrationSupport
       @uaa_process = initialize_uaa_process(uaa_root, @logger)
     end
 
-    def self.install
+    def self.install(db_config:)
       return if File.exist?(File.join(UAA_BIN_PATH, 'uaa'))
 
       %w{
@@ -85,20 +85,20 @@ module IntegrationSupport
         )
 
         context['properties']['uaadb'] = {
-          'address' => '127.0.0.1',
+          'address' => db_config[:db_host],
           'databases' => [
             {
               'name' => 'uaa',
               'tag' => 'uaa'
             }
           ],
-          'db_scheme' => ENV.fetch('DB'),
-          'port' => ENV.fetch('DB_PORT'),
+          'db_scheme' => db_config[:db_type],
+          'port' => db_config[:db_port],
           'roles' => [
             {
               'tag' => 'admin',
-              'name' => ENV.fetch('DB_USER'),
-              'password' => ENV.fetch('DB_PASSWORD'),
+              'name' => db_config[:db_user],
+              'password' => db_config[:db_pass],
             }
           ],
           'tls' => 'enabled_skip_all_validation'

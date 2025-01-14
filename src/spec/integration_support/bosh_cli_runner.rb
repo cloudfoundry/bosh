@@ -25,14 +25,13 @@ module IntegrationSupport
 
     end
 
-    def initialize(bosh_work_dir, bosh_config, agent_log_path_resolver, nats_log_path, saved_logs_path, logger, sha2)
+    def initialize(bosh_work_dir, bosh_config, agent_log_path_resolver, nats_log_path, saved_logs_path, logger)
       @bosh_work_dir = bosh_work_dir
       @bosh_config = bosh_config
       @agent_log_path_resolver = agent_log_path_resolver
       @nats_log_path = nats_log_path
       @saved_logs_path = saved_logs_path
       @logger = logger
-      @sha2 = sha2
     end
 
     def run(cmd, options = {})
@@ -169,10 +168,9 @@ module IntegrationSupport
 
       cli_options += " --ca-cert #{options.fetch(:ca_cert, current_sandbox.certificate_path)}"
       cli_options += options.fetch(:json, false) ? ' --json' : ''
-      cli_options += ' --sha2' if @sha2
+      cli_options += ' --sha2' if current_sandbox.bosh_cli_sha2_mode
 
-      bosh_cli = ENV['BOSH_CLI'] || "bosh"
-      "#{bosh_cli} #{cli_options} #{cmd}"
+      "#{current_sandbox.bosh_cli} #{cli_options} #{cmd}"
     end
 
     DEBUG_HEADER = '*' * 20

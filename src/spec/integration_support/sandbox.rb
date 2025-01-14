@@ -42,6 +42,9 @@ module IntegrationSupport
     EXTERNAL_CPI_CONFIG = 'cpi.json'
     EXTERNAL_CPI_CONFIG_TEMPLATE = File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, 'cpi_config.json.erb')
 
+    attr_reader :bosh_cli
+    attr_reader :bosh_cli_sha2_mode
+
     attr_reader :name
     attr_reader :health_monitor_process
     attr_reader :scheduler_process
@@ -70,6 +73,17 @@ module IntegrationSupport
       File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_TMP_DIR, 'integration-specs')
     end
     private_class_method :integration_spec_base_dir
+
+    def self.db_config_from_env
+      @db_config ||= {
+        db_type: ENV.fetch('DB'),
+        db_host: ENV.fetch('DB_HOST', '127.0.0.1'),
+        db_port: ENV.fetch('DB_PORT'),
+        db_user: ENV.fetch('DB_USER'),
+        db_pass: ENV.fetch('DB_PASSWORD'),
+      }
+    end
+    private_class_method :db_config_from_env
 
     def self.uaa_service
       @uaa_service ||= UaaService.new(uaa_root: File.join(integration_spec_base_dir, "uaa_root-pid-#{Process.pid}"))
@@ -127,24 +141,11 @@ module IntegrationSupport
     end
 
 
-    def self.from_env
-      db_opts = {
-        type: ENV.fetch('DB', 'postgresql'),
-      }
-      db_opts[:password] = ENV['DB_PASSWORD'] if ENV['DB_PASSWORD']
-
-      new(
-        db_opts,
-        ENV['DEBUG'],
-        ENV['TEST_ENV_NUMBER'].to_i,
-      )
-    end
-
     def self.setup
       FileUtils.mkdir_p(IntegrationSupport::Constants::INTEGRATION_BIN_DIR)
       IntegrationSupport::BoshAgent.install
       IntegrationSupport::NginxService.install
-      IntegrationSupport::UaaService.install
+      IntegrationSupport::UaaService.install(db_config: db_config_from_env)
       IntegrationSupport::ConfigServerService.install
       IntegrationSupport::VerifyMultidigestManager.install
       IntegrationSupport::GnatsdManager.install
@@ -158,8 +159,37 @@ module IntegrationSupport
       uaa_service.stop
     end
 
+    def self.from_env
+      db_opts = {
+        type: db_config_from_env[:db_type],
+      }
+      db_opts[:password] = db_config_from_env[:db_pass] if db_config_from_env[:db_pass]
 
-    def initialize(db_opts, debug, test_env_number)
+      bosh_cli = ENV.fetch('BOSH_CLI', 'bosh')
+      bosh_cli_sha2_mode = ENV['SHA2_MODE'] == 'true'
+
+      log_level = ENV.fetch('LOG_LEVEL', 'DEBUG')
+      log_to_stdout = ENV['LOG_STDOUT'] == 'true'
+
+      new(
+        bosh_cli: bosh_cli,
+        bosh_cli_sha2_mode: bosh_cli_sha2_mode,
+        db_opts: db_opts,
+        debug: ENV['DEBUG'],
+        env_path: ENV['PATH'],
+        gem_home: ENV['GEM_HOME'],
+        gem_path: ENV['GEM_PATH'],
+        log_level: log_level,
+        log_to_stdout: log_to_stdout,
+        update_vm_strategy: ENV['UPDATE_VM_STRATEGY'],
+        test_env_number: ENV['TEST_ENV_NUMBER'].to_i,
+      )
+    end
+
+    def initialize(bosh_cli:, bosh_cli_sha2_mode:, db_opts:, debug:, env_path:, gem_home:, gem_path:, log_level:, log_to_stdout:, update_vm_strategy:, test_env_number:)
+      @bosh_cli = bosh_cli
+      @bosh_cli_sha2_mode = bosh_cli_sha2_mode
+
       @debug = debug
       @name = SecureRandom.uuid.gsub('-', '')
 
@@ -168,12 +198,15 @@ module IntegrationSupport
       @logs_path = sandbox_path('logs')
       FileUtils.mkdir_p(@logs_path)
 
-      @sandbox_log_file = File.open(sandbox_path('sandbox.log'), 'w+')
-
-      @sandbox_log_file = STDOUT unless ENV.fetch('LOG_STDOUT', '').empty?
+      @sandbox_log_file = log_to_stdout ? STDOUT : File.open(sandbox_path('sandbox.log'), 'w+')
       @logger = Logging.logger(@sandbox_log_file)
+      @logger.level = log_level
 
-      @logger.level = ENV.fetch('LOG_LEVEL', 'DEBUG')
+      @env_path = env_path
+      @gem_home = gem_home
+      @gem_path = gem_path
+
+      @update_vm_strategy = update_vm_strategy
 
       @task_logs_dir = sandbox_path('boshdir/tasks')
       @blobstore_storage_dir = sandbox_path('bosh_test_blobstore')
@@ -186,9 +219,7 @@ module IntegrationSupport
       @config_server_service = ConfigServerService.new(@port_provider, base_log_path, @logger, test_env_number)
       @nginx_service = NginxService.new(sandbox_root, director_port, director_ruby_port, "8443", base_log_path, @logger)
 
-      @db_config = {
-        ca_path: File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, 'database', 'rootCA.pem')
-      }.merge(db_opts)
+      @db_config = { ca_path: IntegrationSupport::Constants::DATABASE_CA_PATH }.merge(db_opts)
 
       setup_db_helper(@db_config)
 
@@ -407,13 +438,11 @@ module IntegrationSupport
       @users_in_manifest = options.fetch(:users_in_manifest, true)
       @enable_nats_delivered_templates = options.fetch(:enable_nats_delivered_templates, false)
       @enable_short_lived_nats_bootstrap_credentials = options.fetch(:enable_short_lived_nats_bootstrap_credentials, false)
-      @enable_short_lived_nats_bootstrap_credentials_compilation_vms = options.fetch(
-        :enable_short_lived_nats_bootstrap_credentials_compilation_vms,
-        false,
-      )
+      @enable_short_lived_nats_bootstrap_credentials_compilation_vms =
+        options.fetch(:enable_short_lived_nats_bootstrap_credentials_compilation_vms, false)
       @enable_cpi_resize_disk = options.fetch(:enable_cpi_resize_disk, false)
       @enable_cpi_update_disk = options.fetch(:enable_cpi_update_disk, false)
-      @default_update_vm_strategy = options.fetch(:default_update_vm_strategy, ENV['UPDATE_VM_STRATEGY'])
+      @default_update_vm_strategy = options.fetch(:default_update_vm_strategy, @update_vm_strategy)
       @generate_vm_passwords = options.fetch(:generate_vm_passwords, false)
       @remove_dev_tools = options.fetch(:remove_dev_tools, false)
       @director_ips = options.fetch(:director_ips, [])
@@ -457,23 +486,31 @@ module IntegrationSupport
     end
 
     def director_nats_config
-      tls_context = OpenSSL::SSL::SSLContext.new
-      tls_context.ssl_version = :TLSv1_2
-      tls_context.verify_mode = OpenSSL::SSL::VERIFY_PEER
+      tls_context =
+        OpenSSL::SSL::SSLContext.new.tap do |ctx|
+          ctx.ssl_version = :TLSv1_2
+          ctx.verify_mode = OpenSSL::SSL::VERIFY_PEER
 
-      tls_context.key = OpenSSL::PKey::RSA.new(File.open(nats_certificate_paths['clients']['test_client']['private_key_path']))
-      tls_context.cert = OpenSSL::X509::Certificate.new(File.open(nats_certificate_paths['clients']['test_client']['certificate_path']))
-      tls_context.ca_file = nats_certificate_paths['ca_path']
+          ctx.key =
+            OpenSSL::PKey::RSA.new(
+              File.read(nats_certificate_paths['clients']['test_client']['private_key_path']),
+            )
+          ctx.cert =
+            OpenSSL::X509::Certificate.new(
+              File.read(nats_certificate_paths['clients']['test_client']['certificate_path']),
+            )
+          ctx.ca_file = nats_certificate_paths['ca_path'].to_s
+        end
 
       {
-          servers: Array.new(1, "nats://localhost:#{nats_port}"),
-          dont_randomize_servers: true,
-          max_reconnect_attempts: 4,
-          reconnect_time_wait: 2,
-          reconnect: true,
-          tls: {
-              context: tls_context,
-          },
+        servers: Array.new(1, "nats://localhost:#{nats_port}"),
+        dont_randomize_servers: true,
+        max_reconnect_attempts: 4,
+        reconnect_time_wait: 2,
+        reconnect: true,
+        tls: {
+          context: tls_context,
+        },
       }
     end
 
@@ -501,9 +538,9 @@ module IntegrationSupport
         exec_path: File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_DIR, 'bosh-director', 'bin', 'dummy_cpi'),
         job_path: sandbox_path(EXTERNAL_CPI),
         config_path: sandbox_path(EXTERNAL_CPI_CONFIG),
-        env_path: ENV['PATH'],
-        gem_home: ENV['GEM_HOME'],
-        gem_path: ENV['GEM_PATH'],
+        env_path: @env_path,
+        gem_home: @gem_home,
+        gem_path: @gem_path,
         dummy_cpi_api_version: @dummy_cpi_api_version,
       }
     end

@@ -8,5 +8,7 @@ module IntegrationSupport
 
     SANDBOX_ASSETS_DIR = File.join(BOSH_REPO_SRC_DIR, 'spec', 'assets', 'sandbox')
     SANDBOX_CERTS_DIR = File.join(SANDBOX_ASSETS_DIR, 'ca', 'certs')
+
+    DATABASE_CA_PATH = File.join(SANDBOX_ASSETS_DIR, 'database', 'rootCA.pem')
   end
 end

@@ -3,8 +3,6 @@ require 'integration_support/uaa_service'
 
 module IntegrationSupport
   class DirectorConfig
-    DATABASE_CA_PATH = File.join(IntegrationSupport::Constants::SANDBOX_ASSETS_DIR, 'database', 'rootCA.pem')
-
     attr_accessor :audit_log_path
     attr_reader :director_name,
                 :agent_wait_timeout,
@@ -57,7 +55,7 @@ module IntegrationSupport
       @sandbox_root = attrs.fetch(:sandbox_root)
 
       @database = attrs.fetch(:database)
-      @database_ca_path = DATABASE_CA_PATH
+      @database_ca_path = IntegrationSupport::Constants::DATABASE_CA_PATH
 
       @blobstore_storage_dir = attrs.fetch(:blobstore_storage_dir)
       @verify_multidigest_path = attrs.fetch(:verify_multidigest_path)

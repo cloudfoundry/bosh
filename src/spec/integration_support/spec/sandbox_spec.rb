@@ -4,14 +4,25 @@ require 'integration_support/uaa_service'
 
 module IntegrationSupport
   describe Sandbox do
-    let(:uaa){ double(UaaService)}
-    before do
-      allow(UaaService).to receive(:new).and_return(uaa)
-      allow(uaa).to receive(:port).and_return(9999)
-      allow(uaa).to receive(:reconfigure)
-    end
+    let(:env_path) { 'DUMMY_PATH' }
+    let(:gem_home) { 'DUMMY_GEM_HOME' }
+    let(:gem_path) { 'DUMMY_GEM_PATH' }
 
-    subject(:sandbox) { Sandbox.new({ type: 'sqlite'}, nil, 0) }
+    subject(:sandbox) do
+      Sandbox.new(
+        bosh_cli: 'bosh',
+        bosh_cli_sha2_mode: false,
+        db_opts: { type: 'sqlite' },
+        debug: nil,
+        env_path: env_path,
+        gem_home: gem_home,
+        gem_path: gem_path,
+        log_level: 'DEBUG',
+        log_to_stdout: false,
+        update_vm_strategy: 'create-swap-delete',
+        test_env_number: 0,
+      )
+    end
 
     describe '#run' do
       before do
@@ -25,28 +36,41 @@ module IntegrationSupport
         expect(sandbox).to have_received(:start)
       end
 
-      it 'waits for an interrupt from the user to stop' do
-        allow(sandbox).to receive(:loop).and_raise(Interrupt)
-        sandbox.run
-        expect(sandbox).to have_received(:loop)
-        expect(sandbox).to have_received(:stop)
+      context 'when an exception is raised' do
+        context 'that is of type `Interrupt`' do
+          before do
+            allow(sandbox).to receive(:loop).and_raise(Interrupt)
+          end
+
+          it 'runs loop and then stops' do
+            sandbox.run
+            expect(sandbox).to have_received(:loop)
+            expect(sandbox).to have_received(:stop)
+          end
+        end
       end
 
-      it 'always stops the standbox' do
-        allow(sandbox).to receive(:loop).and_raise('Something unexpected and bad happened')
-        expect { sandbox.run }.to raise_error(/unexpected/)
-        expect(sandbox).to have_received(:stop)
+      context 'that is NOT of type `Interrupt`' do
+        before do
+          allow(sandbox).to receive(:loop).and_raise('Something unexpected and bad happened')
+        end
+
+        it 'raises runs stops and raises the exception' do
+          expect { sandbox.run }.to raise_error(/unexpected/)
+          expect(sandbox).to have_received(:stop)
+        end
       end
+    end
 
-      it 'exposes needed ENV vars for running ruby' do
-        allow(ENV).to receive(:[]).with('PATH').and_return('dummy-path')
-        allow(ENV).to receive(:[]).with('GEM_HOME').and_return('dummy-gem-home')
-        allow(ENV).to receive(:[]).with('GEM_PATH').and_return('dummy-gem-path')
+    describe '#director_config' do
+      describe '#external_cpi_config' do
+        let(:external_cpi_config) { sandbox.director_config.external_cpi_config }
 
-        external_cpi_config = sandbox.director_config.external_cpi_config
-        expect(external_cpi_config[:env_path]).to eq('dummy-path')
-        expect(external_cpi_config[:gem_home]).to eq('dummy-gem-home')
-        expect(external_cpi_config[:gem_path]).to eq('dummy-gem-path')
+        it 'exposes needed ENV vars for running ruby' do
+          expect(external_cpi_config[:env_path]).to eq(env_path)
+          expect(external_cpi_config[:gem_home]).to eq(gem_home)
+          expect(external_cpi_config[:gem_path]).to eq(gem_path)
+        end
       end
     end
   end
