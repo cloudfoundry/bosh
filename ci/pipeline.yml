@@ -966,6 +966,7 @@ jobs:
     plan:
       - in_parallel:
         - get: bosh-ci
+        - get: bosh-cli-registry-image
         - get: bosh-shared-ci
         - get: bosh
           passed: [delivery]
@@ -1848,6 +1849,13 @@ resources:
     source:
       repository: bosh/docker-cpi
       tag: ((branch_name))
+      username: ((dockerhub_username))
+      password: ((dockerhub_password))
+
+  - name: bosh-cli-registry-image
+    type: registry-image
+    source:
+      repository: bosh/cli
       username: ((dockerhub_username))
       password: ((dockerhub_password))
 
