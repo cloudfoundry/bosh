@@ -1035,6 +1035,7 @@ jobs:
           version: current-version
         params:
           SEVERITY: CRITICAL,HIGH
+          GIT_PRIVATE_KEY: ((github_deploy_key_bosh.private_key))
         on_success:
           do:
             - put: release-notes
