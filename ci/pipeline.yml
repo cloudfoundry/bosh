@@ -42,7 +42,6 @@ groups:
       - bump-minor
       - bump-patch
       - finalize-release
-      - clear-release-notes
 
   - name: ci-images
     jobs:
@@ -961,10 +960,13 @@ jobs:
           - upgrade-mysql
 
   - name: finalize-release
-    serial: true
+    disable_manual_trigger: true
+    serial_groups:
+      - version
     plan:
       - in_parallel:
         - get: bosh-ci
+        - get: bosh-shared-ci
         - get: bosh
           passed: [delivery]
         - get: bosh-cli
@@ -978,59 +980,42 @@ jobs:
       - task: prepare-release
         image: integration-image
         file: bosh-ci/ci/tasks/prepare-release.yml
-      - task: finalize-release
-        image: integration-image
-        file: bosh-ci/ci/tasks/finalize-bosh-release.yml
+      - task: create-final-release
+        image: bosh-cli-registry-image
+        file: bosh-shared-ci/tasks/release/create-final-release.yml
+        input_mapping:
+          release_repo: bosh
         params:
-          RELEASE_PRIVATE_YML: |
+          GIT_USER_NAME: CI Bot
+          GIT_USER_EMAIL: ci@localhost
+          PRIVATE_YML: |
             blobstore:
               options:
                 credentials_source: static
                 json_key: '((bosh_release_blobs_gcp_credentials_json))'
       - put: bosh
         params:
-          repository: bosh
-          tag: release-metadata/tag-name
-          annotate: release-metadata/annotate-msg
-          merge: true
+          repository: release_repo
+          rebase: true
+          tag: release_metadata/tag-name
       - put: bosh-github-release
         params:
-          name: release-metadata/tag-name
-          tag: release-metadata/tag-name
+          name: release_metadata/tag-name
+          tag: release_metadata/tag-name
           body: release-notes/release-notes.md
           commitish: bosh/.git/ref
           generate_release_notes: true
-
-  - name: clear-release-notes
-    plan:
-    - get: version
-      passed:
-      - finalize-release
-      trigger: true
-    - task: clear-release-notes
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source:
-            repository: alpine
-        outputs:
-        - name: release-notes
-        run:
-          path: sh
-          args:
-          - -exc
-          - touch release-notes/release-notes.md
-    - put: release-notes
-      params:
-        file: release-notes/release-notes.md
+      - put: release-notes
+        params:
+          file: release_metadata/empty-file
 
   - name: automatically-release-new-patch
     serial_groups:
     - version
     plan:
     - in_parallel:
-      - get: bosh-ci
+      - get: bosh-shared-ci
+      - get: bosh-security-scanner-registry-image
       - get: bosh
         trigger: true
         passed:
@@ -1042,54 +1027,102 @@ jobs:
         params:
           bump: patch
     - try:
-        task: check-for-updated-blobs
-        file: bosh-ci/ci/tasks/check-for-updated-blobs.yml
+        task: check-for-patched-cves
+        file: bosh-shared-ci/tasks/release/check-for-patched-cves.yml
+        image: bosh-security-scanner-registry-image
         input_mapping:
+          input_repo: bosh
+          version: current-version
+        params:
+          SEVERITY: CRITICAL,HIGH
+        on_success:
+          do:
+            - put: release-notes
+              params:
+                file: release-notes/release-notes.md
+            - put: version
+              params:
+                file: patched-version/version
+    - task: ensure-cve-checker-succeeded
+      file: bosh-shared-ci/tasks/release/ensure-task-succeeded.yml
+      image: bosh-security-scanner-registry-image
+      input_mapping:
+        task-output-folder: patched_cves
+    - try:
+        task: check-for-updated-vendored-packages
+        file: bosh-shared-ci/tasks/release/check-for-updated-vendored-packages.yml
+        image: bosh-security-scanner-registry-image
+        input_mapping:
+          input_repo: bosh
+          version: current-version
+        params:
+          PACKAGES:
+          - director-ruby-3.3
+          - nginx
+        on_success:
+          do:
+            - put: release-notes
+              params:
+                file: release-notes/release-notes.md
+            - put: version
+              params:
+                file: patched-version/version
+    - task: ensure-update-package-check-succeeded
+      file: bosh-shared-ci/tasks/release/ensure-task-succeeded.yml
+      image: bosh-security-scanner-registry-image
+      input_mapping:
+        task-output-folder: package-updates
+    - try:
+        task: check-for-updated-blobs
+        file: bosh-shared-ci/tasks/release/check-for-updated-blobs.yml
+        image: bosh-security-scanner-registry-image
+        input_mapping:
+          input_repo: bosh
           version: current-version
         params:
           BLOBS:
-          - nats-server
-          - postgresql-10
-          - postgresql-13
-          - postgresql-15
+            - mariadb-connector
+            - nats-server
+            - postgresql-10
+            - postgresql-13
+            - postgresql-15
         on_success:
           do:
-          - put: release-notes
-            params:
-              file: release-notes/release-notes.md
-          - put: version
-            params:
-              file: patched-version/version
+            - put: release-notes
+              params:
+                file: release-notes/release-notes.md
+            - put: version
+              params:
+                file: patched-version/version
+    - task: ensure-blob-update-checker-succeeded
+      file: bosh-shared-ci/tasks/release/ensure-task-succeeded.yml
+      image: bosh-security-scanner-registry-image
+      input_mapping:
+        task-output-folder: blob-updates
 
   - name: bump-major
-    serial: true
+    serial_groups:
+      - version
     plan:
-    - get: version
+    - put: version
       params:
         bump: major
-    - put: version
-      params:
-        file: version/version
 
   - name: bump-minor
-    serial: true
+    serial_groups:
+      - version
     plan:
-    - get: version
+    - put: version
       params:
         bump: minor
-    - put: version
-      params:
-        file: version/version
 
   - name: bump-patch
-    serial: true
+    serial_groups:
+      - version
     plan:
-    - get: version
-      params:
-        bump: patch
     - put: version
       params:
-        file: version/version
+        bump: patch
 
   - name: build-integration
     public: true
@@ -1622,6 +1655,12 @@ resources:
       repository: bosh
       access_token: ((github_public_repo_token))
 
+  - name: bosh-shared-ci
+    type: git
+    source:
+      uri: git@github.com:cloudfoundry/bosh-shared-ci.git
+      private_key: ((github_deploy_key_bosh-shared-ci.private_key))
+
   - name: version
     type: semver
     source:
@@ -1808,6 +1847,13 @@ resources:
     source:
       repository: bosh/docker-cpi
       tag: ((branch_name))
+      username: ((dockerhub_username))
+      password: ((dockerhub_password))
+
+  - name: bosh-security-scanner-registry-image
+    type: registry-image
+    source:
+      repository: bosh/security-scanner
       username: ((dockerhub_username))
       password: ((dockerhub_password))
 

@@ -14,11 +14,6 @@ inputs:
 
 outputs:
   - name: bosh
-  - name: release-tarball
-
-params:
-  BLOBSTORE_ACCESS_KEY_ID: replace-me
-  BLOBSTORE_SECRET_ACCESS_KEY: replace-me
 
 run:
   path: bosh-ci/ci/tasks/prepare-release.sh

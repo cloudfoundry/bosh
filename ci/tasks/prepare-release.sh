@@ -6,9 +6,6 @@ export FULL_VERSION=$(cat version/version)
 
 export ROOT_PATH=$PWD
 BOSH_SRC=$PWD/bosh
-TARBALL_OUTPUT_DIR=$PWD/release-tarball
-
-mkdir -p $TARBALL_OUTPUT_DIR
 
 mv bosh-cli/bosh-cli-*-linux-amd64 bosh-cli/bosh-cli
 export GO_CLI_PATH=$ROOT_PATH/bosh-cli/bosh-cli
@@ -28,6 +25,4 @@ pushd $BOSH_SRC
   git config --global user.name "CI Bot"
 
   git commit -m "Bump version $FULL_VERSION via concourse"
-
-  $GO_CLI_PATH create-release --version $FULL_VERSION --tarball=$TARBALL_OUTPUT_DIR/tarball.tgz
 popd
