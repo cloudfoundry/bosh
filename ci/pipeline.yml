@@ -997,7 +997,7 @@ jobs:
       - put: bosh
         params:
           repository: release_repo
-          rebase: true
+          merge: true
           tag: release_metadata/tag-name
       - put: bosh-github-release
         params:
