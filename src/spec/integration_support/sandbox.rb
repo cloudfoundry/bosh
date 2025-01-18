@@ -186,19 +186,30 @@ module IntegrationSupport
       )
     end
 
-    def initialize(bosh_cli:, bosh_cli_sha2_mode:, db_opts:, debug:, env_path:, gem_home:, gem_path:, log_level:, log_to_stdout:, update_vm_strategy:, test_env_number:)
+    def initialize(bosh_cli:,
+                   bosh_cli_sha2_mode:,
+                   db_opts:,
+                   debug:,
+                   env_path:,
+                   gem_home:,
+                   gem_path:,
+                   log_level:,
+                   log_to_stdout:,
+                   update_vm_strategy:,
+                   test_env_number:)
+
+      @name = "director_test#{test_env_number}"
       @bosh_cli = bosh_cli
       @bosh_cli_sha2_mode = bosh_cli_sha2_mode
 
       @debug = debug
-      @name = SecureRandom.uuid.gsub('-', '')
 
       @port_provider = PortProvider.new(test_env_number)
 
       @logs_path = sandbox_path('logs')
       FileUtils.mkdir_p(@logs_path)
 
-      @sandbox_log_file = log_to_stdout ? STDOUT : File.open(sandbox_path('sandbox.log'), 'w+')
+      @sandbox_log_file = log_to_stdout ? STDOUT : File.open(sandbox_path("sandbox#{test_env_number}.log"), 'w+')
       @logger = Logging.logger(@sandbox_log_file)
       @logger.level = log_level
 
@@ -240,7 +251,7 @@ module IntegrationSupport
 
       @scheduler_process = Service.new(
         %W[bosh-director-scheduler -c #{director_config_path}],
-        {output: "#{base_log_path}.scheduler.out"},
+        { output: "#{base_log_path}.scheduler.out" },
         @logger,
       )
 
