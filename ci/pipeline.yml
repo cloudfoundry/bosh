@@ -1265,6 +1265,7 @@ jobs:
       - get: weekly
         trigger: true
       - get: integration-image
+      - get: bosh-ruby-release-image
     - task: bump-gems
       file: ruby-release/ci/tasks/shared/bump-gems.yml
       input_mapping:
@@ -1863,6 +1864,13 @@ resources:
     type: registry-image
     source:
       repository: bosh/security-scanner
+      username: ((dockerhub_username))
+      password: ((dockerhub_password))
+
+  - name: bosh-ruby-release-image
+    type: registry-image
+    source:
+      repository: bosh/ruby-release
       username: ((dockerhub_username))
       password: ((dockerhub_password))
 
