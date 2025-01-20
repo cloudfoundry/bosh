@@ -1,7 +1,7 @@
 module Bosh::Monitor
   class Instance
-    attr_reader :id, :agent_id, :job, :index, :cid, :expects_vm
-    attr_accessor :deployment
+    attr_reader :id, :agent_id, :job, :index, :cid, :expects_vm, :job_state, :has_processes
+    attr_accessor :deployment, :job_state
 
     def initialize(instance_data)
       @logger = Bosh::Monitor.logger
@@ -11,6 +11,8 @@ module Bosh::Monitor
       @index = instance_data['index']
       @cid = instance_data['cid']
       @expects_vm = instance_data['expects_vm']
+      @job_state = instance_data['job_state']
+      @has_processes = instance_data['has_processes']
     end
 
     def self.create(instance_data)
@@ -30,11 +32,11 @@ module Bosh::Monitor
     def name
       if @job
         identifier = "#{@job}(#{@id})"
-        attributes = create_optional_attributes(%i[agent_id index])
+        attributes = create_optional_attributes(%i[agent_id index job_state has_processes])
         attributes += create_mandatory_attributes([:cid])
       else
         identifier = "instance #{@id}"
-        attributes = create_optional_attributes(%i[agent_id job index cid expects_vm])
+        attributes = create_optional_attributes(%i[agent_id job index cid expects_vm job_state has_processes])
       end
 
       "#{@deployment}: #{identifier} [#{attributes.join(', ')}]"

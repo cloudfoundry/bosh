@@ -41,9 +41,9 @@ module Bosh::Monitor
       end
     end
 
-    get '/inactive_instances' do
+    get '/unhealthy_instances' do
       if @instance_manager.director_initial_deployment_sync_done
-        JSON.generate(@instance_manager.inactive_instances)
+        JSON.generate(@instance_manager.unhealthy_instances)
       else
         status(503)
       end

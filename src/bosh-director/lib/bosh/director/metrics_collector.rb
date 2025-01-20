@@ -43,10 +43,10 @@ module Bosh
           docstring: 'Number of unresponsive agents per deployment',
         )
 
-        @inactive_instances = Prometheus::Client.registry.gauge(
-          :bosh_inactive_instances,
+        @unhealthy_instances = Prometheus::Client.registry.gauge(
+          :bosh_unhealthy_instances,
           labels: %i[name],
-          docstring: 'Number of inactive or non-existing instances per deployment',
+          docstring: 'Number of unhealthy instances per deployment',
         )
 
         @scheduler = Rufus::Scheduler.new
@@ -117,7 +117,7 @@ module Bosh
         populate_network_metrics
 
         populate_vm_metrics('/unresponsive_agents', @unresponsive_agents)
-        populate_vm_metrics('/inactive_instances', @inactive_instances)
+        populate_vm_metrics('/unhealthy_instances', @unhealthy_instances)
 
         @logger.info('populated metrics')
       end

@@ -21,6 +21,19 @@ describe Bosh::Monitor::Agent do
     expect(agent.timed_out?).to be(true)
   end
 
+  it 'knows if it is not running' do
+    agent = make_agent('007')
+    allow(agent).to receive(:job_state).and_return('running')
+    allow(agent).to receive(:has_processes).and_return(true)
+    expect(agent.is_not_running?).to be(false)
+
+    allow(agent).to receive(:has_processes).and_return(false)
+    expect(agent.is_not_running?).to be(true)
+
+    allow(agent).to receive(:job_state).and_return('not-running')
+    expect(agent.is_not_running?).to be(true)
+  end
+
   it "knows if it is rogue if it isn't associated with deployment for :rogue_agent_alert seconds" do
     now = Time.now
     agent = make_agent('007')
