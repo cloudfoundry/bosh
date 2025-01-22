@@ -22,15 +22,17 @@ describe Bosh::Monitor::Agent do
   end
 
   it 'knows if it is not running' do
-    agent = make_agent('007')
-    allow(agent).to receive(:job_state).and_return('running')
-    allow(agent).to receive(:has_processes).and_return(true)
-    expect(agent.is_not_running?).to be(false)
 
-    allow(agent).to receive(:has_processes).and_return(false)
+    agent = Bosh::Monitor::Agent.new('007', opts = {job_state: 'running', has_processes: true})
+    expect(agent.is_not_running?).to be(false)
+    
+    agent = Bosh::Monitor::Agent.new('007', opts = {job_state: 'running', has_processes: false})
     expect(agent.is_not_running?).to be(true)
 
-    allow(agent).to receive(:job_state).and_return('not-running')
+    agent = Bosh::Monitor::Agent.new('007', opts = {job_state: 'not-running', has_processes: false})
+    expect(agent.is_not_running?).to be(true)
+
+    agent = Bosh::Monitor::Agent.new('007', opts = {job_state: 'not-running', has_processes: true})
     expect(agent.is_not_running?).to be(true)
   end
 
@@ -66,7 +68,7 @@ describe Bosh::Monitor::Agent do
   describe '#update_instance' do
     context 'when given an instance' do
       let(:instance) do
-        double('instance', job: 'job', index: 1, cid: 'cid', id: 'id')
+        double('instance', job: 'job', index: 1, cid: 'cid', id: 'id', job_state: 'job_state', has_processes: 'has_processes')
       end
 
       it 'populates the corresponding attributes' do
@@ -78,6 +80,8 @@ describe Bosh::Monitor::Agent do
         expect(agent.index).to eq(instance.index)
         expect(agent.cid).to eq(instance.cid)
         expect(agent.instance_id).to eq(instance.id)
+        expect(agent.job_state).to eq(instance.job_state)
+        expect(agent.has_processes).to eq(instance.has_processes)
       end
     end
   end

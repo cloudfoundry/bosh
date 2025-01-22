@@ -24,6 +24,8 @@ module Bosh::Monitor
       @index = opts[:index]
       @cid = opts[:cid]
       @instance_id = opts[:instance_id]
+      @job_state = opts[:job_state]
+      @has_processes = opts[:has_processes]
     end
 
     def name
