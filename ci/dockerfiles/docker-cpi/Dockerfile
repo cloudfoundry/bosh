@@ -14,10 +14,6 @@ RUN docker_gpg="/etc/apt/trusted.gpg.d/docker.gpg" \
       iproute2 \
       xfsprogs
 
-ADD ./install-garden.sh /tmp/install-garden.sh
-RUN /tmp/install-garden.sh \
-    && rm /tmp/install-garden.sh
-
 # https://github.com/docker/cli/issues/4807
 # As of 02/01/2024 a change in the "/etc/init.d/docker" script shipped with docker v25
 # is preventing the cpi image to work.
@@ -37,7 +33,5 @@ RUN curl -o /usr/local/bosh.tgz "$(bosh int /usr/local/bosh-deployment/bosh.yml 
 
 COPY local-releases.yml /usr/local/local-releases.yml
 COPY start-bosh.sh /usr/local/bin/start-bosh
-COPY start-garden.sh /usr/local/bin/start-garden
 
-RUN chmod +x /usr/local/bin/start-bosh \
-    && chmod +x /usr/local/bin/start-garden \
+RUN chmod +x /usr/local/bin/start-bosh
