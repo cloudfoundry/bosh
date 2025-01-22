@@ -224,7 +224,7 @@ describe 'Bosh::Monitor::Director' do
       it 'raises a DirectorError' do
         expect {
         director.get_deployment_instances_full('foo')
-        }.to raise_error(Bosh::Monitor::DirectorError, "Cannot find any task to retrieve vm stats")
+        }.to raise_error(Bosh::Monitor::DirectorError, "Can not find 'location' response header to retrieve the task location")
       end
     end
 
@@ -255,7 +255,7 @@ describe 'Bosh::Monitor::Director' do
         allow(logger).to receive(:warn)
         expect {
         director.get_deployment_instances_full('foo')
-        }.to raise_error(Bosh::Monitor::DirectorError, "Fetching full instance details for deployment foo failed")
+        }.to raise_error(Bosh::Monitor::DirectorError, "Fetching full instance details for deployment 'foo' failed")
       end
     end
   end

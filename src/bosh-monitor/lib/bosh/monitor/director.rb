@@ -36,7 +36,7 @@ module Bosh::Monitor
       sleep_amount_seconds = 1
       location = headers['location']
       unless !location.nil? && location.include?('task')
-        raise DirectorError, "Cannot find any task to retrieve vm stats"
+        raise DirectorError, "Can not find 'location' response header to retrieve the task location"
       end
       counter = 0
       # States are documented here: https://bosh.io/docs/director-api-v1/#list-tasks
@@ -54,7 +54,7 @@ module Bosh::Monitor
         json_output = parse_json(body, Hash)
         state = json_output['state']
         if truthy_states.include?(state) || counter > 5
-          @logger.warn("The number of retries to fetch instance details for deployment #{name} has exceeded. Could not get the expected response from #{location}")
+          @logger.warn("The number of retries to fetch instance details for deployment '#{name}' has exceeded. Could not get the expected response from '#{location}'")
           break
         end
         sleep_amount_seconds = counter + sleep_amount_seconds
@@ -64,7 +64,7 @@ module Bosh::Monitor
       if state == 'done'
         body, status = perform_request(:get, "#{location}/output?type=result")
         if status!= 200 || body.nil? || body.empty?
-          raise DirectorError, "Fetching full instance details for deployment #{name} failed"
+          raise DirectorError, "Fetching full instance details for deployment '#{name}' failed"
         end
         updated_body = "[#{body.chomp.gsub(/\R+/, ',')}]"
         return parse_json(updated_body, Array)
@@ -72,7 +72,7 @@ module Bosh::Monitor
         if recursive_counter > 0
           return updated_body, state
         end
-        @logger.warn("Could not fetch instance details for deployment #{name} in the first attempt, retrying once more ...")
+        @logger.warn("Could not fetch instance details for deployment '#{name}' in the first attempt, retrying once more ...")
         return get_deployment_instances_full(name, recursive_counter + 1)
       end
     end
