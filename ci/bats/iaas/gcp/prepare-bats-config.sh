@@ -66,7 +66,7 @@ properties:
         cloud_properties:
           network_name: "$(terraform_output "network")"
           subnetwork_name: "$(terraform_output "subnetwork")"
-          ephemeral_external_ip: false
+          ephemeral_external_ip: true
           tags: ["bosh-director"]
         dns: [8.8.8.8]
     - name: second
@@ -80,7 +80,7 @@ properties:
         cloud_properties:
           network_name: "$(terraform_output "network")"
           subnetwork_name: "$(terraform_output "second_subnetwork")"
-          ephemeral_external_ip: false
+          ephemeral_external_ip: true
           tags: ["bosh-director"]
         dns: [8.8.8.8]
 EOF
