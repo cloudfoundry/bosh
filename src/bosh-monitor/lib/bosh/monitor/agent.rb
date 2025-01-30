@@ -4,7 +4,7 @@ module Bosh::Monitor
     attr_reader   :discovered_at
     attr_accessor :updated_at
 
-    ATTRIBUTES = %i[deployment job index instance_id cid].freeze
+    ATTRIBUTES = %i[deployment job index instance_id cid job_state has_processes].freeze
 
     ATTRIBUTES.each do |attribute|
       attr_accessor attribute
@@ -24,6 +24,8 @@ module Bosh::Monitor
       @index = opts[:index]
       @cid = opts[:cid]
       @instance_id = opts[:instance_id]
+      @job_state = opts[:job_state]
+      @has_processes = opts[:has_processes]
     end
 
     def name
@@ -51,11 +53,17 @@ module Bosh::Monitor
       (Time.now - @discovered_at) > @intervals.rogue_agent_alert && @deployment.nil?
     end
 
+    def is_not_running?
+      @job_state.to_s != 'running' || @has_processes == false
+    end
+
     def update_instance(instance)
       @job = instance.job
       @index = instance.index
       @cid = instance.cid
       @instance_id = instance.id
+      @job_state = instance.job_state
+      @has_processes = instance.has_processes
     end
   end
 end
