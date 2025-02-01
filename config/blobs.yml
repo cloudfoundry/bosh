@@ -30,10 +30,10 @@ postgres/postgresql-15.10.tar.gz:
   size: 30424979
   object_id: 5c53b760-5049-45ab-4904-23780af31a2f
   sha: sha256:173366605259a83dc189c4327ff4c37254afed65b4f866cbd8a5ef2ea449e8f3
-s3cli/s3cli-0.0.346-linux-amd64:
+s3cli/s3cli-0.0.347-linux-amd64:
   size: 16436762
-  object_id: f1cabdcb-7b20-4e86-6ab1-60764cc9c780
-  sha: sha256:562749d024fcf7c83c8d45be3a7d0b6bb2f8e9107cd2fa11673efe77803b879a
+  object_id: 9f6a23a0-65c2-4293-7f73-08ab0ef3d7a5
+  sha: sha256:88dab8785e7676ecbf2fca4c5723b5cca619d8da158c38155b10ba6b680d8019
 verify-multidigest/verify-multidigest-0.0.525-linux-amd64:
   size: 3548693
   object_id: d1116408-c286-46b6-6070-4f5202b03dc8
