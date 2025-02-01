@@ -109,9 +109,8 @@ GEM
       traces (~> 0.10)
     async-io (1.43.2)
       async
-    async-pool (0.10.2)
+    async-pool (0.10.3)
       async (>= 1.25)
-      traces
     async-rspec (1.17.0)
       rspec (~> 3.0)
       rspec-files (~> 1.0)
