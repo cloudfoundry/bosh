@@ -1,7 +1,5 @@
 require 'integration_support/constants'
 require 'integration_support/database_migrator'
-require 'integration_support/tmux_runner'
-require 'integration_support/shell_runner'
 
 module IntegrationSupport
   class DirectorService
@@ -10,19 +8,19 @@ module IntegrationSupport
 
     DIRECTOR_PATH = File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_DIR, 'bosh-director')
 
-    def initialize(options, logger)
+    def initialize(options:, command_builder_class:, logger:)
       @db_helper = options[:db_helper]
       @logger = logger
       @director_tmp_path = options[:director_tmp_path]
       @director_config = options[:director_config]
       @base_log_path = options[:base_log_path]
       @audit_log_path = options[:audit_log_path]
-      @runner = ENV['TMUX_DEBUG'] ? TmuxRunner.new('bosh-director') : ShellRunner.new
+      @command_builder = command_builder_class.new('bosh-director')
 
       log_location = "#{@base_log_path}.director.out"
 
       @process = Service.new(
-        @runner.run("bundle exec bosh-director -c #{@director_config}"),
+        @command_builder.array_for("bundle exec bosh-director -c #{@director_config}"),
         { output: log_location },
         @logger,
       )
@@ -39,7 +37,7 @@ module IntegrationSupport
 
       @worker_processes = (0..2).map do |index|
         Service.new(
-          @runner.run("bundle exec bosh-director-worker -c #{@director_config} -i #{index}"),
+          @command_builder.array_for("bundle exec bosh-director-worker -c #{@director_config} -i #{index}"),
           { output: "#{@base_log_path}.worker_#{index}.out", env: { 'QUEUE' => 'normal,urgent' } },
           @logger,
         )
@@ -58,7 +56,7 @@ module IntegrationSupport
 
       @process.start
       start_workers
-      system(*@runner.after_start)
+      system(*@command_builder.array_for_post_start)
 
       begin
         # CI does not have enough time to start bosh-director
@@ -74,7 +72,7 @@ module IntegrationSupport
       wait_for_tasks_to_finish
       stop_workers
       @process.stop
-      system(*@runner.kill)
+      system(*@command_builder.array_for_kill)
     end
 
     def hard_stop
@@ -132,9 +130,11 @@ module IntegrationSupport
         when 'mysql2'
           connection_config['ssl_mode'] = 'verify_identity'
           connection_config['sslca'] = db_ca_path
-        when 'postgres'
+        when 'postgresql'
           connection_config['sslmode'] = 'verify-full'
           connection_config['sslrootcert'] = db_ca_path
+        else
+          raise "Invalid db adapter '#{connection_config['adapter']}'"
         end
       end
 
@@ -153,7 +153,7 @@ module IntegrationSupport
     end
 
     def delayed_job_ready?
-      if ENV['TMUX_DEBUG']
+      if @command_builder.is_a?(TmuxCommandBuilder)
         sleep 20
         return true
       end
@@ -181,7 +181,7 @@ module IntegrationSupport
         sleep delay
       end
 
-      return if ENV['TMUX_DEBUG']
+      return if @command_builder.is_a?(TmuxCommandBuilder)
 
       start_monitor_workers
     end

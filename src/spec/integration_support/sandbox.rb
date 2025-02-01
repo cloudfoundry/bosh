@@ -21,6 +21,8 @@ require 'integration_support/gnatsd_manager'
 require 'integration_support/bosh_agent'
 require 'integration_support/uaa_service'
 require 'integration_support/verify_multidigest_manager'
+require 'integration_support/shell_command_builder'
+require 'integration_support/tmux_command_builder'
 
 module IntegrationSupport
   class Sandbox
@@ -168,6 +170,8 @@ module IntegrationSupport
       bosh_cli = ENV.fetch('BOSH_CLI', 'bosh')
       bosh_cli_sha2_mode = ENV['SHA2_MODE'] == 'true'
 
+      command_builder_class = ENV['TMUX_DEBUG'] ? TmuxCommandBuilder : ShellCommandBuilder
+
       log_level = ENV.fetch('LOG_LEVEL', 'DEBUG')
       log_to_stdout = ENV['LOG_STDOUT'] == 'true'
 
@@ -179,6 +183,7 @@ module IntegrationSupport
         env_path: ENV['PATH'],
         gem_home: ENV['GEM_HOME'],
         gem_path: ENV['GEM_PATH'],
+        command_builder_class: command_builder_class,
         log_level: log_level,
         log_to_stdout: log_to_stdout,
         update_vm_strategy: ENV['UPDATE_VM_STRATEGY'],
@@ -193,6 +198,7 @@ module IntegrationSupport
                    env_path:,
                    gem_home:,
                    gem_path:,
+                   command_builder_class:,
                    log_level:,
                    log_to_stdout:,
                    update_vm_strategy:,
@@ -204,7 +210,11 @@ module IntegrationSupport
 
       @debug = debug
 
-      @port_provider = PortProvider.new(test_env_number)
+      @env_path = env_path
+      @gem_home = gem_home
+      @gem_path = gem_path
+
+      @command_builder_class = command_builder_class
 
       @logs_path = sandbox_path('logs')
       FileUtils.mkdir_p(@logs_path)
@@ -213,9 +223,7 @@ module IntegrationSupport
       @logger = Logging.logger(@sandbox_log_file)
       @logger.level = log_level
 
-      @env_path = env_path
-      @gem_home = gem_home
-      @gem_path = gem_path
+      @port_provider = PortProvider.new(test_env_number)
 
       @update_vm_strategy = update_vm_strategy
 
@@ -237,7 +245,7 @@ module IntegrationSupport
       director_config_path = sandbox_path(DirectorService::DEFAULT_DIRECTOR_CONFIG)
       director_tmp_path = sandbox_path('boshdir')
       @director_service = DirectorService.new(
-        {
+        options: {
           db_helper: @db_helper,
           director_port: director_ruby_port,
           base_log_path: base_log_path,
@@ -245,7 +253,8 @@ module IntegrationSupport
           director_config: director_config_path,
           audit_log_path: @logs_path,
         },
-        @logger
+        command_builder_class: @command_builder_class,
+        logger: @logger,
       )
       setup_heath_monitor
 

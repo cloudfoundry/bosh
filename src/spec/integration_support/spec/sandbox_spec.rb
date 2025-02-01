@@ -17,6 +17,7 @@ module IntegrationSupport
         env_path: env_path,
         gem_home: gem_home,
         gem_path: gem_path,
+        command_builder_class: ShellCommandBuilder,
         log_level: 'DEBUG',
         log_to_stdout: false,
         update_vm_strategy: 'create-swap-delete',
