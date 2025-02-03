@@ -7,6 +7,7 @@ module Bosh
       def initialize(config, index = 0)
         @config = config
         @index = index
+        @retry_interval = 5
       end
 
       def prep
@@ -44,7 +45,7 @@ module Bosh
           @delayed_job_worker.start
         rescue StandardError => e
           @delayed_job_worker.logger.error(
-            "Something goes wrong during worker start. Attempt #{@delayed_job_worker_retries}. Error: #{e.inspect}",
+            "Something went wrong during worker start. Attempt #{@delayed_job_worker_retries}. Error: #{e.inspect}",
           )
           while @delayed_job_worker_retries < 10
             @delayed_job_worker_retries += 1
