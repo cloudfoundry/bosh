@@ -40,13 +40,5 @@ module Bosh::Monitor
         status(503)
       end
     end
-
-    get '/unhealthy_instances' do
-      if @instance_manager.director_initial_deployment_sync_done
-        JSON.generate(@instance_manager.unhealthy_instances)
-      else
-        status(503)
-      end
-    end
   end
 end

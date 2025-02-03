@@ -85,35 +85,4 @@ describe Bosh::Monitor::ApiController do
 
     end
   end
-
-  describe '/unhealthy_instances' do
-    let(:unhealthy_instances) do
-      {
-        'first_deployment' => 2,
-        'second_deployment' => 0,
-      }
-    end
-    before do
-      allow(Bosh::Monitor.instance_manager).to receive(:unhealthy_instances).and_return(unhealthy_instances)
-      allow(Bosh::Monitor.instance_manager).to receive(:director_initial_deployment_sync_done).and_return(true)
-    end
-
-    it 'renders the unhealthy instances' do
-      get '/unhealthy_instances'
-      expect(last_response.status).to eq(200)
-      expect(last_response.body).to eq(JSON.generate(unhealthy_instances))
-    end
-
-    context 'When director initial deployment sync has not completed' do
-      before do
-        allow(Bosh::Monitor.instance_manager).to receive(:director_initial_deployment_sync_done).and_return(false)
-      end
-
-      it 'returns 503 when /unhealthy_instances is requested' do
-        get '/unhealthy_instances'
-        expect(last_response.status).to eq(503)
-      end
-
-    end
-  end
 end

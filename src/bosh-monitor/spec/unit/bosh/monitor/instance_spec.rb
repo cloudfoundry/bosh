@@ -17,8 +17,6 @@ describe Bosh::Monitor::Instance do
       'index' => '0',
       'cid' => 'cuuid',
       'expects_vm' => true,
-      'job_state' => 'running',
-      'has_processes' => true
     )
 
     expect(instance).to be_a(Bosh::Monitor::Instance)
@@ -28,8 +26,6 @@ describe Bosh::Monitor::Instance do
     expect(instance.index).to eq('0')
     expect(instance.cid).to eq('cuuid')
     expect(instance.expects_vm).to be_truthy
-    expect(instance.job_state).to eq('running')
-    expect(instance.has_processes).to be_truthy
   end
 
   describe '#vm?' do
@@ -41,8 +37,6 @@ describe Bosh::Monitor::Instance do
           'job' => 'zb',
           'index' => '0',
           'expects_vm' => true,
-          'job_state' => 'running',
-          'has_processes' => false
         )
 
         expect(instance.vm?).to be_falsey
@@ -58,8 +52,6 @@ describe Bosh::Monitor::Instance do
           'index' => '0',
           'cid' => 'cuuid',
           'expects_vm' => true,
-          'job_state' => 'running',
-          'has_processes' => true
         )
 
         expect(instance.vm?).to be_truthy
@@ -76,8 +68,6 @@ describe Bosh::Monitor::Instance do
         'index' => '0',
         'cid' => 'cuuid',
         'expects_vm' => true,
-        'job_state' => 'running',
-        'has_processes' => true
       )
     end
 
@@ -87,7 +77,7 @@ describe Bosh::Monitor::Instance do
 
     context 'instance has all attributes' do
       it 'returns full name' do
-        expect(instance.name).to eq('my_deployment: zb(iuuid) [agent_id=auuid, index=0, job_state=running, has_processes=true, cid=cuuid]')
+        expect(instance.name).to eq('my_deployment: zb(iuuid) [agent_id=auuid, index=0, cid=cuuid]')
       end
     end
 
@@ -101,7 +91,7 @@ describe Bosh::Monitor::Instance do
 
     context 'instance has no job' do
       let(:instance) do
-        Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'index' => '0', 'cid' => 'cuuid', 'expects_vm' => true, 'job_state' => nil, 'has_processes' => false)
+        Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'index' => '0', 'cid' => 'cuuid', 'expects_vm' => true)
       end
 
       it 'returns name without job' do
@@ -111,17 +101,17 @@ describe Bosh::Monitor::Instance do
 
     context 'instance has no index' do
       let(:instance) do
-        Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'cid' => 'cuuid', 'expects_vm' => true, 'job_state' => 'failing', 'has_processes' => false)
+        Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'cid' => 'cuuid', 'expects_vm' => true)
       end
 
       it 'returns name without index' do
-        expect(instance.name).to eq('my_deployment: zb(iuuid) [agent_id=auuid, job_state=failing, cid=cuuid]')
+        expect(instance.name).to eq('my_deployment: zb(iuuid) [agent_id=auuid, cid=cuuid]')
       end
     end
 
     context 'instance has no agent_id' do
       let(:instance) do
-        Bosh::Monitor::Instance.create('id' => 'iuuid', 'job' => 'zb', 'index' => '0', 'cid' => 'cuuid', 'expects_vm' => true, 'job_state' => nil, 'has_processes' => false)
+        Bosh::Monitor::Instance.create('id' => 'iuuid', 'job' => 'zb', 'index' => '0', 'cid' => 'cuuid', 'expects_vm' => true)
       end
 
       it 'returns name without agent_id ' do
@@ -131,7 +121,7 @@ describe Bosh::Monitor::Instance do
 
     context 'instance has no cid' do
       let(:instance) do
-        Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true, 'job_state' => nil, 'has_processes' => false)
+        Bosh::Monitor::Instance.create('id' => 'iuuid', 'agent_id' => 'auuid', 'job' => 'zb', 'index' => '0', 'expects_vm' => true)
       end
 
       it 'returns name without cid' do
