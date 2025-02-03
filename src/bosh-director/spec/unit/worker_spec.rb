@@ -115,5 +115,40 @@ module Bosh::Director
         expect(event.context).to eq({})
       end
     end
+
+    describe 'when worker starts' do 
+      let(:delayed_job_worker) { Delayed::Worker.new }
+      let(:logger) { double(Logging::Logger) }
+
+      before do 
+        allow(logger).to receive(:error)
+        allow(logger).to receive(:info)
+        allow(Delayed::Worker).to receive(:new).and_return(delayed_job_worker) 
+        allow(delayed_job_worker).to receive(:logger).and_return(logger)
+      end
+
+      it 'starts the delayed job worker' do
+        allow(delayed_job_worker).to receive(:start)
+
+        worker.prep
+
+        expect(delayed_job_worker).to receive(:start)
+
+        worker.start
+      end
+
+      it 'retries in case there was an error' do 
+        worker.prep
+
+        expect(delayed_job_worker).to receive(:start).and_raise(StandardError, "some_error").exactly(11).times
+        expect(logger).to receive(:error).with(/Something went wrong during worker start. .*/).exactly(11).times
+        expect(logger).to receive(:error).with(/Max retries reached. .* some_error/)
+        expect(worker).to receive(:sleep).with(5).and_return(0).exactly(10).times
+
+        expect do
+          worker.start
+        end.to raise_exception(StandardError)
+      end
+    end
   end
 end
