@@ -34,12 +34,6 @@ module Bosh::Monitor
 
         @logger.debug("Fetching instances information for '#{deployment_name}'...")
         instances_data = director.get_deployment_instances(deployment_name)
-        instances_data_full = director.get_deployment_instances_full(deployment_name)
-        instances_data_hash = instances_data.to_h {|element| [element['id'], element] }
-        instances_data_full.each do |instance_full|
-          instances_data_hash[instance_full['id']]['job_state'] = instance_full['job_state']
-          instances_data_hash[instance_full['id']]['has_processes'] = !instance_full['processes'].empty?
-        end
         sync_deployment_state(deployment, instances_data)
       end
       @director_initial_deployment_sync_done = true
@@ -125,15 +119,6 @@ module Bosh::Monitor
       end
 
       agents_hash
-    end
-
-    def unhealthy_instances # See: https://bosh.io/docs/director-api-v1/#list-instances-detailed (if job is not runnung => state is unhealthy)
-      instances = {}
-      @deployment_name_to_deployments.each do |name, deployment|
-        instances[name] = deployment.agents.count(&:is_not_running?)
-      end
-
-      instances
     end
 
     def analyze_agents

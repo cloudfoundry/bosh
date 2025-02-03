@@ -4,7 +4,6 @@ module Bosh::Monitor
   describe InstanceManager do
     let(:event_processor) { double(Bosh::Monitor::EventProcessor) }
     let(:manager) { described_class.new(event_processor) }
-    let(:director) { double }
 
     before do
       allow(event_processor).to receive(:process)
@@ -558,41 +557,6 @@ module Bosh::Monitor
         expect do
           manager.setup_events
         end.to raise_error(Bosh::Monitor::PluginError, "Cannot find 'joes_plugin_thing' plugin")
-      end
-    end
-
-    describe '#fetch_deployments' do
-      let(:deployments) { [{ 'name' => 'my_deployment' }] }
-      let(:instances_data) { [{ 'id' => 'instance-1-id', 'job' => 'test-job', 'agent_id' => 'agent-1' }] }
-      let(:instances_data_full) { [{ 'id' => 'instance-1-id', 'job_state' => 'running', 'processes' => [] }] }
-
-      before do
-        allow(director).to receive(:deployments).and_return(deployments)
-        allow(director).to receive(:get_deployment_instances).with('my_deployment').and_return(instances_data)
-        allow(director).to receive(:get_deployment_instances_full).with('my_deployment').and_return(instances_data_full)
-      end
-
-      it 'updates instance data with full instance information' do
-        manager.fetch_deployments(director)
-
-        deployment = manager.instance_variable_get(:@deployment_name_to_deployments)['my_deployment']
-        instance = deployment.instances.find { |i| i.id == 'instance-1-id' }
-
-        expect(instance.job_state).to eq('running')
-        expect(instance.has_processes).to be false
-      end
-    end
-
-    describe '#unhealthy_instances' do
-      it 'can return number of unhealthy instances for each deployment' do
-        instance1 = Bosh::Monitor::Instance.create('id' => 'iuuid1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator', 'job_state' => 'running', 'has_processes' => true)
-        instance2 = Bosh::Monitor::Instance.create('id' => 'iuuid2', 'agent_id' => '008', 'index' => '0', 'job' => 'nats', 'job_state' => 'not-running', 'has_processes' => true)
-        instance3 = Bosh::Monitor::Instance.create('id' => 'iuuid3', 'agent_id' => '009', 'index' => '28', 'job' => 'mysql_node', 'job_state' => 'running', 'has_processes' => false)
-
-        manager.sync_deployments([{ 'name' => 'mycloud' }])
-        manager.sync_agents('mycloud', [instance1, instance2, instance3])
-
-        expect(manager.unhealthy_instances).to eq('mycloud' => 2)
       end
     end
   end
