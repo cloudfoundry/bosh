@@ -19,7 +19,7 @@ module Bosh::Director::Core::Templates
         return true if instance == ""
         begin
           OpenSSL::X509::Certificate.load(instance)
-        rescue OpenSSL::X509::CertificateError => e
+        rescue OpenSSL::X509::CertificateError
           false
         end
       else
