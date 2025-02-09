@@ -52,7 +52,9 @@ module Bosh::Director
       logger.debug("Rendering templates for instance #{instance}")
 
       instance_renderer = Core::Templates::JobInstanceRenderer.new(instance_jobs, loader)
-      rendered_job_instance = instance_renderer.render(get_templates_spec(instance_plan))
+      templates_spec = get_templates_spec(instance_plan)
+      instance_renderer.validate_properties!(templates_spec)
+      rendered_job_instance = instance_renderer.render(templates_spec)
 
       instance_plan.rendered_templates = rendered_job_instance
 
