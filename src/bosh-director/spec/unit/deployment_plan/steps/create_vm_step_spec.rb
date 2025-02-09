@@ -692,6 +692,28 @@ module Bosh
                 subject.perform(report)
               end
             end
+
+            context 'password is specified in cloud_properties' do
+              let(:custom_cloud_properties) do
+                {
+                  'ram' => '4gb',
+                  'disk' => '20gb',
+                  'vcap_password' => 'foo123'
+                }
+              end
+
+              before do
+                allow(instance).to receive(:cloud_properties).and_return(custom_cloud_properties)
+              end
+
+              it 'calls perform with custom cloud_properties' do
+                  expect(cloud_wrapper).to receive(:create_vm) do |_, _, _, _, _, env|
+                    expect(env['bosh']['password']).to eq('foo123')
+                  end.and_return(create_vm_response)
+
+                  subject.perform(report)
+              end
+            end
           end
 
           context 'Config.generate_vm_passwords flag is false' do
