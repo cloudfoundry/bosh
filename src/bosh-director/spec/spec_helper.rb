@@ -148,6 +148,7 @@ SpecHelper.create_and_migrate_database
 
 RSpec.configure do |config|
   config.include(FactoryBot::Syntax::Methods)
+  config.include(CertificateHelpers)
 
   config.around(:each) do |example|
     SpecHelper.reset_database(SpecHelper.database, example)

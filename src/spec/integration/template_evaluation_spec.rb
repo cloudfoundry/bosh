@@ -95,4 +95,36 @@ Error: Unable to render instance groups for deployment. Errors are:
       - Error filling in template 'drain.erb' (line 4: Can't find property '["dynamic_drain_wait1"]')
     EOF
   end
+
+  it 'validates manifest properties' do
+    manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
+    manifest_hash['instance_groups'] = [
+      {
+        'name' => 'validation_group',
+        'jobs' => [
+          {
+            'name' => 'job_with_property_validation',
+            'release' => 'bosh-release',
+            'properties' => {
+              'string_property' => 'string_value',
+              'number_property' => 14,
+            }
+          }
+        ],
+        'vm_type' => 'a',
+        'instances' => 1,
+        'networks' => [{
+          'name' => 'a',
+        }],
+        'stemcell' => 'default',
+      },
+    ]
+    _, exit_code = deploy_from_scratch(manifest_hash: manifest_hash, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config, return_exit_code: true)
+    expect(exit_code).to eq(0)
+    manifest_hash['instance_groups'][0]['jobs'][0]['properties']['string_property'] = 11
+
+    output, exit_code = deploy_simple_manifest(manifest_hash: manifest_hash, cloud_config_hash: SharedSupport::DeploymentManifestHelper.simple_cloud_config, return_exit_code: true, failure_expected: true)
+    expect(exit_code).to eq(1)
+    expect(output).to match('value at `/string_property` is not a string')
+  end
 end

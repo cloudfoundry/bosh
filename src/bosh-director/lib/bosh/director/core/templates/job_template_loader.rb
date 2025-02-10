@@ -39,6 +39,12 @@ module Bosh::Director
         monit_erb_file = File.read(File.join(template_dir, 'monit'))
         monit_source_erb = SourceErb.new('monit', 'monit', monit_erb_file, instance_job.name)
 
+        if File.exist?(File.join(template_dir, 'properties_schema.json'))
+          properties_schema = JSON.load_file(File.join(template_dir, 'properties_schema.json'))
+        else
+          properties_schema = nil
+        end
+
         source_erbs = []
 
         instance_job.model.spec.fetch('templates', {}).each_pair do |src_filepath, dest_filepath|
@@ -49,6 +55,7 @@ module Bosh::Director
         JobTemplateRenderer.new(instance_job: instance_job,
                                 monit_erb: monit_source_erb,
                                 source_erbs: source_erbs,
+                                properties_schema: properties_schema,
                                 logger: @logger,
                                 link_provider_intents: @link_provider_intents,
                                 dns_encoder: @dns_encoder)
