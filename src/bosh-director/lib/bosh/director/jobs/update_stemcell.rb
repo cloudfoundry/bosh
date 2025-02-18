@@ -109,15 +109,7 @@ module Bosh::Director
             upload_suffix = ' (already exists, skipped)' unless needs_upload
             track_and_log("Uploading stemcell #{@name}/#{@version} to the cloud#{cpi_suffix}#{upload_suffix}") do
               if needs_upload
-                tags = {}
-                runtime_configs = Bosh::Director::Api::RuntimeConfigManager.new.list(1, "default")
-                if !runtime_configs.nil? && !runtime_configs[0].nil?
-                  raw = runtime_configs[0]
-                  if !raw.nil? 
-                    hash = raw.to_hash
-                    tags.merge!(hash["tags"])
-                  end
-                end
+                tags = get_tags()
                 stemcell.cid = cloud.create_stemcell(@stemcell_image, @cloud_properties, {"tags" => tags})
                 logger.info("Cloud created stemcell#{cpi_suffix}: #{stemcell.cid}")
               else
@@ -154,6 +146,19 @@ module Bosh::Director
       end
 
       private
+
+      def get_tags()
+        tags = {}
+        runtime_configs = Bosh::Director::Api::RuntimeConfigManager.new.list(1, "default")
+        if !runtime_configs.nil? && !runtime_configs[0].nil?
+          raw = runtime_configs[0]
+          if !raw.nil? 
+            hash = raw.to_hash
+            tags.merge!(hash["tags"])
+          end
+        end
+        return tags
+      end
 
       def verify_sha1
         @multi_digest_verifier.verify(@stemcell_path, @stemcell_sha1)
