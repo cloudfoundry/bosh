@@ -6,11 +6,6 @@ module Bosh::Director
     # 2. VM lifecycle operations (from cloudcheck POV)
     # 3. Error handling
 
-    # This timeout has been made pretty short mainly
-    # to avoid long cloudchecks, however 10 seconds should
-    # still be pretty generous interval for agent to respond.
-    DEFAULT_AGENT_TIMEOUT = 10
-
     def reboot_vm(instance)
       vm = instance.active_vm
 
@@ -150,13 +145,9 @@ module Bosh::Director
       raise Bosh::Director::ProblemHandlerError, message
     end
 
-    def agent_client(agent_id, instance_name, timeout = DEFAULT_AGENT_TIMEOUT, retries = 0)
-      options = {
-        timeout: timeout,
-        retry_methods: { get_state: retries },
-      }
+    def agent_client(agent_id, instance_name)
       @clients ||= {}
-      @clients[agent_id] ||= AgentClient.with_agent_id(agent_id, instance_name, options)
+      @clients[agent_id] ||= AgentClient.with_agent_id(agent_id, instance_name)
     end
 
     def agent_timeout_guard(vm_cid, agent_id, instance_name)
