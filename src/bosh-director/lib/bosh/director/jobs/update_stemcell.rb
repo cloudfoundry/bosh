@@ -150,11 +150,13 @@ module Bosh::Director
       def get_tags()
         tags = {}
         runtime_configs = Bosh::Director::Api::RuntimeConfigManager.new.list(1, "default")
-        if !runtime_configs.nil? && !runtime_configs[0].nil?
+        if !runtime_configs.nil?
           raw = runtime_configs[0]
           if !raw.nil? 
             hash = raw.to_hash
-            tags.merge!(hash["tags"])
+            if !hash.nil? && !hash["tags"].nil? && hash["tags"].is_a(Hash)
+              tags.merge!(hash["tags"])
+            end
           end
         end
         return tags
