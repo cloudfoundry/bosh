@@ -154,7 +154,7 @@ module Bosh::Director
           raw = runtime_configs[0]
           if !raw.nil? 
             hash = raw.to_hash
-            if !hash.nil? && !hash["tags"].nil? && hash["tags"].is_a(Hash)
+            if !hash.nil? && !hash["tags"].nil?
               tags.merge!(hash["tags"])
             end
           end
