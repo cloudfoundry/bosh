@@ -13,6 +13,12 @@ pushd ${BOSH_DEPLOYMENT_PATH} > /dev/null
 
   export BOSH_DIRECTOR_IP="10.245.0.$((10+$node_number))"
 
+  additional_ops_files=""
+  # This is not the stemcell we are deploying bosh with, but the one bosh will be using to deploy deployments
+  if [ "${STEMCELL_OS}" == "ubuntu-noble" ]; then
+    additional_ops_files="-o /usr/local/noble-updates.yml"
+  fi
+
   bosh int bosh.yml \
     -o "$script_dir/inner-bosh-ops.yml" \
     -o jumpbox-user.yml \
@@ -26,6 +32,7 @@ pushd ${BOSH_DEPLOYMENT_PATH} > /dev/null
     -o "${BOSH_DEPLOYMENT_PATH}/misc/source-releases/bosh.yml" \
     -o "$script_dir/latest-bosh-release.yml" \
     -o "$script_dir/deployment-name.yml" \
+    ${additional_ops_files} \
     -v deployment_name="bosh-$node_number" \
     ${@:2} > "${inner_bosh_dir}/bosh-director.yml"
 

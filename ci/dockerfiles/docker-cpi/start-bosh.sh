@@ -175,10 +175,17 @@ function main() {
 
       mkdir -p ${local_bosh_dir}
 
+      additional_ops_files=""
+      # This is not the stemcell we are deploying bosh with, but the one bosh will be using to deploy deployments
+      if [ "${STEMCELL_OS}" == "ubuntu-noble" ]; then
+        additional_ops_files="-o /usr/local/noble-updates.yml"
+      fi
+
       command bosh int bosh.yml \
         -o docker/cpi.yml \
         -o jumpbox-user.yml \
         -o /usr/local/local-releases.yml \
+        ${additional_ops_files} \
         -v director_name=docker \
         -v internal_cidr=10.245.0.0/16 \
         -v internal_gw=10.245.0.1 \
