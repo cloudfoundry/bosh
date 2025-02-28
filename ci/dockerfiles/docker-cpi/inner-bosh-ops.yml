@@ -59,22 +59,24 @@
 
 - type: replace
   path: /instance_groups/name=bosh/jobs/-
-  value: &cpi_job
+  value:
     name: docker_cpi
     release: bosh-docker-cpi
-    properties:
-      docker_cpi:
-        docker:
-          host: ((docker_host))
-          tls: ((docker_tls))
-        agent:
-          mbus: nats://((internal_ip)):4222
-          blobstore:
-            provider: dav
-            options:
-              endpoint: http://((internal_ip)):25250
-              user: agent
-              password: ((blobstore_agent_password))
+
+- type: replace
+  path: /instance_groups/name=bosh/properties/docker_cpi?
+  value:
+    docker:
+      host: ((docker_host))
+      tls: ((docker_tls))
+    agent:
+      mbus: nats://((internal_ip)):4222
+      blobstore:
+        provider: dav
+        options:
+          endpoint: http://((internal_ip)):25250
+          user: agent
+          password: ((blobstore_agent_password))
 
 - type: replace
   path: /instance_groups/name=bosh/properties/director/cpi_job?
