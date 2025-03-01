@@ -1,5 +1,6 @@
 # bosh/integration:main
-FROM ubuntu:jammy
+ARG BASE_IMAGE=ubuntu:jammy
+FROM $BASE_IMAGE
 
 ARG BOSH_CLI_URL
 ARG META4_CLI_URL
