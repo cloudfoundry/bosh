@@ -1,6 +1,7 @@
 # this image builds bosh/docker-cpi
 # it is used across ci to start a bosh in a docker container
-FROM bosh/integration:main
+ARG BASE_IMAGE=bosh/integration:main
+FROM $BASE_IMAGE
 
 RUN docker_gpg="/etc/apt/trusted.gpg.d/docker.gpg" \
     && curl --show-error -sL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o "${docker_gpg}" \

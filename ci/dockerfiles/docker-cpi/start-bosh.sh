@@ -176,8 +176,7 @@ function main() {
       mkdir -p ${local_bosh_dir}
 
       additional_ops_files=""
-      # This is not the stemcell we are deploying bosh with, but the one bosh will be using to deploy deployments
-      if [ "${STEMCELL_OS}" == "ubuntu-noble" ]; then
+      if [ "$(lsb_release -cs)" != "jammy" ]; then
         additional_ops_files="-o /usr/local/noble-updates.yml"
       fi
 
