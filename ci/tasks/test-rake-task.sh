@@ -40,10 +40,7 @@ start_db() {
 
       export MYSQL_ROOT=/var/lib/mysql
       if [ ! -d /var/lib/mysql-src ]; then # Set up MySQL if it's the first time
-        mv "${MYSQL_ROOT}" /var/lib/mysql-src
-        mkdir -p "${MYSQL_ROOT}"
-        mount -t tmpfs -o size=512M tmpfs "${MYSQL_ROOT}"
-        mv /var/lib/mysql-src/* "${MYSQL_ROOT}/"
+        mkdir /var/lib/mysql-src
 
         echo "Copy 'src/spec/assets/sandbox/database/database_server/{private_key,certificate.pem}' to '${MYSQL_ROOT}/'"
         cp bosh/src/spec/assets/sandbox/database/database_server/private_key "${MYSQL_ROOT}/server.key"
@@ -89,7 +86,6 @@ start_db() {
       export POSTGRES_ROOT="/tmp/postgres"
       if [ ! -d "${POSTGRES_ROOT}" ]; then # PostgreSQL hasn't been set up
         mkdir -p "${POSTGRES_ROOT}"
-        mount -t tmpfs -o size=512M tmpfs "${POSTGRES_ROOT}"
 
         export PGDATA="${POSTGRES_ROOT}/data"
         export PGLOGS="/tmp/log/postgres"
