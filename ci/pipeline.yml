@@ -1376,6 +1376,7 @@ jobs:
     - put: bosh
       params:
         repository: bosh-out
+        rebase: true
 
   - name: bump-packages
     serial: true
