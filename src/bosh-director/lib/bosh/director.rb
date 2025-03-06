@@ -78,6 +78,7 @@ require 'bosh/director/package_dependencies_manager'
 
 require 'bosh/director/job_renderer'
 require 'bosh/director/rendered_templates_persister'
+require 'bosh/director/core/templates/job_schema_validator'
 
 require 'bosh/director/audit_logger'
 require 'bosh/director/cycle_helper'

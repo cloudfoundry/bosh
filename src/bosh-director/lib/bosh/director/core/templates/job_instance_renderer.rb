@@ -59,6 +59,15 @@ module Bosh::Director::Core::Templates
       RenderedJobInstance.new(rendered_templates)
     end
 
+    def validate_properties!(spec_object)
+      @instance_jobs.each do |instance_job|
+        job_template_renderer = job_template_renderers[instance_job.name]
+        if job_template_renderer.properties_schema
+          JobSchemaValidator.validate(job_name: instance_job.name, schema: job_template_renderer.properties_schema, properties: spec_object['properties'][instance_job.name])
+        end
+      end
+    end
+
     private
 
     def job_template_renderers

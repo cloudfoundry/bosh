@@ -1,0 +1,8 @@
+---
+name: job_with_property_validation
+templates:
+  properties.yml.erb: properties.yml
+packages: []
+properties:
+  string_property:
+  number_property:

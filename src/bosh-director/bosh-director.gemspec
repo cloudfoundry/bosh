@@ -38,6 +38,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'bosh_cpi'
   spec.add_dependency 'cf-uaa-lib'
   spec.add_dependency 'json'
+  spec.add_dependency 'json_schemer'
   spec.add_dependency 'logging'
   spec.add_dependency 'membrane'
   spec.add_dependency 'nats-pure'

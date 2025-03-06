@@ -9,11 +9,12 @@ require 'common/deep_copy'
 module Bosh::Director::Core::Templates
   class JobTemplateRenderer
 
-    attr_reader :monit_erb, :source_erbs
+    attr_reader :monit_erb, :source_erbs, :properties_schema
 
     def initialize(instance_job:,
                    monit_erb:,
                    source_erbs:,
+                   properties_schema:,
                    logger:,
                    link_provider_intents:,
                    dns_encoder: nil)
@@ -21,6 +22,7 @@ module Bosh::Director::Core::Templates
       @job_name = instance_job.name
       @release = instance_job.release
       @monit_erb = monit_erb
+      @properties_schema = properties_schema
       @source_erbs = source_erbs
       @logger = logger
       @link_provider_intents = link_provider_intents
