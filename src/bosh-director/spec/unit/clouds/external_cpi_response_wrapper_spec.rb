@@ -137,6 +137,8 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
           }
         elsif method == :create_disk
           expected_arguments[1] = { 'type' => '<redacted>' }
+        elsif method == :create_stemcell && cpi_api_version >= 3
+          # expected_arguments[2] = { "tags" => {"any":"value"} }
         end
 
         expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":#{context.to_json},"api_version":#{cpi_api_version}})
@@ -355,6 +357,25 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
 
     it 'raises an exception if the CPI API version is not supported' do
       expect { Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud, 100) }.to raise_error(Bosh::Clouds::NotSupported)
+    end
+  end
+
+  describe 'when cpi_version is >= 3' do
+    let(:cpi_api_version) { 3 }
+    let(:config) { double('Bosh::Director::Config', logger: logger, cpi_task_log: cpi_log_path, preferred_cpi_api_version: 3) }
+    
+    describe '#create_stemcell' do
+
+    let(:cpi_response) { JSON.dump(result: 'fake-result', error: nil, log: 'fake-log') }
+    let(:expected_response) { 'fake-result' }
+
+    it_calls_cpi_method(
+        :create_stemcell,
+        'fake-stemcell-cid',
+        { 'cloud' => 'props' },
+        { 'tags' => {"any": "value"} }
+      )
+
     end
   end
 
