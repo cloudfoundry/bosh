@@ -51,16 +51,13 @@ module Bosh::Clouds
 
 
     def create_stemcell(*args) 
-      result = nil
+      final_args = args.take(2)
 
       if @cpi_api_version >= 3
-        result  = @cpi.create_stemcell(*args.take(3))
-      else 
-        final_args = args.take(2)
-        result =  @cpi.create_stemcell(*final_args)
+        final_args = args
       end
 
-      return result
+      return  @cpi.create_stemcell(*final_args)
     end
 
 
