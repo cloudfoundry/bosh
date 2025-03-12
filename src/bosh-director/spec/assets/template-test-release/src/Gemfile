@@ -6,6 +6,5 @@ gem 'rake'
 gem 'bundler'
 
 group :development, :test do
-  gem 'bosh-template', path: '../../../..'
   gem 'rspec'
 end

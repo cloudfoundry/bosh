@@ -2,8 +2,8 @@ PATH
   remote: bosh-director
   specs:
     bosh-director (0.0.0)
+      activesupport
       bcrypt
-      bosh-template (~> 0.0.0)
       bosh_common (~> 0.0.0)
       bosh_cpi
       cf-uaa-lib
@@ -56,14 +56,6 @@ PATH
       logging
       openssl
       rufus-scheduler
-
-PATH
-  remote: bosh-template
-  specs:
-    bosh-template (0.0.0)
-      activesupport
-      openssl
-      ostruct
 
 PATH
   remote: bosh_common
@@ -346,7 +338,6 @@ DEPENDENCIES
   bosh-director!
   bosh-monitor!
   bosh-nats-sync!
-  bosh-template!
   bosh_common!
   bundle-audit
   factory_bot

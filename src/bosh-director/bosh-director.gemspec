@@ -28,12 +28,13 @@ Gem::Specification.new do |spec|
     'bosh-director-sync-dns',
     'bosh-director-trigger-one-time-sync-dns',
     'bosh-director-worker',
+    'bosh-template',
   ]
   spec.require_paths = ['lib']
 
   spec.add_dependency 'bosh_common',   "~>#{Bosh::Director::VERSION}"
-  spec.add_dependency 'bosh-template', "~>#{Bosh::Director::VERSION}"
 
+  spec.add_dependency 'activesupport'
   spec.add_dependency 'bcrypt'
   spec.add_dependency 'bosh_cpi'
   spec.add_dependency 'cf-uaa-lib'

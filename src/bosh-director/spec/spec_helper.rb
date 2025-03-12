@@ -10,10 +10,14 @@ require 'minitar'
 require 'pg'
 require 'tempfile'
 require 'tmpdir'
+require 'yaml'
 require 'zlib'
 
 require 'db_migrator'
 require 'bosh/director'
+require 'bosh/template'
+
+require 'common/deep_copy'
 
 require 'webmock/rspec'
 
