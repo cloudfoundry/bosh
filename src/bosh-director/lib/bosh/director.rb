@@ -58,6 +58,7 @@ require 'bosh/director/formatter_helper'
 require 'bosh/director/tagged_logger'
 require 'bosh/director/duplicate_detector'
 require 'bosh/director/numerical_value_calculator'
+require 'bosh/director/regex_logging_filter'
 
 require 'bosh/director/version'
 require 'bosh/director/config'

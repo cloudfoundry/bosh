@@ -9,8 +9,6 @@ require 'tmpdir'
 require 'common/common'
 require 'common/exec'
 require 'common/deep_copy'
-require 'common/logging/regex_filter'
-require 'common/logging/filters'
 require 'common/thread_pool'
 
 def asset_path(name)

@@ -2,8 +2,9 @@ require 'fileutils'
 require 'logging'
 require 'socket'
 require 'uri'
-require 'common/logging/filters'
 require 'tmpdir'
+
+require 'bosh/director/thread_formatter'
 require 'common/common'
 require 'common/thread_formatter'
 
@@ -117,8 +118,8 @@ module Bosh::Director
         end
 
         shared_appender.add_filters(
-          Bosh::Common::Logging.null_query_filter,
-          Bosh::Common::Logging.query_redaction_filter,
+          Bosh::Director::RegexLoggingFilter.null_query_filter,
+          Bosh::Director::RegexLoggingFilter.query_redaction_filter,
         )
 
         @logger = Logging::Logger.new('Director')

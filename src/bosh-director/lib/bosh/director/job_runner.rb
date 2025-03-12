@@ -1,5 +1,3 @@
-require 'common/logging/filters'
-
 module Bosh::Director
   class JobRunner
 
@@ -52,7 +50,7 @@ module Bosh::Director
         'DirectorJobRunnerFile',
         filename: debug_log,
         layout: ThreadFormatter.layout,
-        filters: [Bosh::Common::Logging.null_query_filter],
+        filters: [Bosh::Director::RegexLoggingFilter.null_query_filter],
       )
       @task_logger.add_appenders(shared_appender)
       @task_logger.level = Config.logger.level
