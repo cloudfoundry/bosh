@@ -3,30 +3,34 @@ require 'spec_helper'
 describe Bosh::Common do
 
   describe "::symbolize_keys" do
-    ORIGINAL = {
+    let(:original) do
+      {
         "foo1" => "bar",
         :foo2 => "bar",
         "foo3" => {
-            "foo4" => "bar"
+          "foo4" => "bar"
         }
-    }.freeze
+      }.freeze
+    end
 
-    EXPECTED = {
+    let(:expected) do
+      {
         :foo1 => "bar",
         :foo2 => "bar",
         :foo3 => {
-            :foo4 => "bar"
+          :foo4 => "bar"
         }
-    }.freeze
+      }.freeze
+    end
 
     it "should not modify the original hash" do
-      duplicate = ORIGINAL.dup
-      Bosh::Common.symbolize_keys(ORIGINAL)
-      expect(ORIGINAL).to eq(duplicate)
+      duplicate = original.dup
+      Bosh::Common.symbolize_keys(original)
+      expect(original).to eq(duplicate)
     end
 
     it "should return a new hash with all keys as symbols" do
-      expect(Bosh::Common.symbolize_keys(ORIGINAL)).to eq(EXPECTED)
+      expect(Bosh::Common.symbolize_keys(original)).to eq(expected)
     end
   end
 
@@ -54,7 +58,7 @@ describe Bosh::Common do
 
   describe "::retryable" do
     it 'should create an instance of Bosh::Retryable' do
-      opts = {on: StandardError}
+      opts = { on: StandardError }
       retryer = double(Bosh::Retryable)
       block = Proc.new { true }
 
@@ -64,5 +68,4 @@ describe Bosh::Common do
       Bosh::Common.retryable(opts, &block)
     end
   end
-
 end
