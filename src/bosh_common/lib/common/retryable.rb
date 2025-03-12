@@ -1,6 +1,8 @@
-require_relative 'errors'
-
 module Bosh
+  module Common
+    class RetryCountExceeded < StandardError; end
+  end
+
   class Retryable
     def initialize(options = {})
       opts = validate_options(options)

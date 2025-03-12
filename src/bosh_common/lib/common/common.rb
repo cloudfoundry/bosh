@@ -1,4 +1,3 @@
-require 'common/errors'
 require 'common/retryable'
 
 module Bosh
