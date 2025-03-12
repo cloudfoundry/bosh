@@ -1,4 +1,4 @@
-module Bosh::Common::Release
+module Bosh::Director
   class ReleaseDirectory
     def initialize(release_directory)
       @release_directory = release_directory

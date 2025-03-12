@@ -1,9 +1,9 @@
 require 'securerandom'
-require 'common/release/release_directory'
 require 'bosh/version/release_version'
 require 'bosh/director/compiled_release_downloader'
 require 'bosh/director/compiled_release_manifest'
 require 'bosh/director/compiled_package_group'
+require 'bosh/director/release_directory'
 
 module Bosh::Director
   module Jobs
@@ -108,7 +108,7 @@ module Bosh::Director
         output_path = File.join(download_dir, "compiled_release_#{Time.now.to_f}.tar.gz")
         archiver = Core::TarGzipper.new
 
-        release_directory = Bosh::Common::Release::ReleaseDirectory.new(download_dir)
+        release_directory = Bosh::Director::ReleaseDirectory.new(download_dir)
         archiver.compress(download_dir, release_directory.ordered_release_files, output_path)
         tarball_file = File.open(output_path, 'r')
 
