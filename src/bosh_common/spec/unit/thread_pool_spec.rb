@@ -1,17 +1,14 @@
 require 'spec_helper'
 
 describe Bosh::ThreadPool do
-
-  before(:all) do
-    @logger = Logging::Logger.new('ThreadPool')
-  end
+  let(:logger) { double(Logging::Logger).as_null_object }
 
   it "should respect max threads" do
     max = 0
     current = 0
     lock = Mutex.new
 
-    Bosh::ThreadPool.new(:max_threads => 2, :logger => @logger).wrap do |pool|
+    Bosh::ThreadPool.new(max_threads: 2, logger: logger).wrap do |pool|
       4.times do
         pool.process do
           lock.synchronize do
@@ -31,7 +28,7 @@ describe Bosh::ThreadPool do
 
   it "should raise exceptions" do
     expect {
-      Bosh::ThreadPool.new(:max_threads => 2, :logger => @logger).wrap do |pool|
+      Bosh::ThreadPool.new(max_threads: 2, logger: logger).wrap do |pool|
         5.times do |index|
           pool.process do
             sleep(0.050)
@@ -47,7 +44,7 @@ describe Bosh::ThreadPool do
     lock = Mutex.new
 
     expect {
-      Bosh::ThreadPool.new(:max_threads => 1, :logger => @logger).wrap do |pool|
+      Bosh::ThreadPool.new(max_threads: 1, logger: logger).wrap do |pool|
         10.times do |index|
           pool.process do
             lock.synchronize { max = index if index > max }
@@ -60,5 +57,4 @@ describe Bosh::ThreadPool do
 
     expect(max).to eq(4)
   end
-
 end

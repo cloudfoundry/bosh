@@ -62,8 +62,6 @@ PATH
   remote: bosh_common
   specs:
     bosh_common (0.0.0)
-      logging
-      openssl
 
 GEM
   remote: https://rubygems.org/

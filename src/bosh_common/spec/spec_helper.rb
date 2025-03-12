@@ -4,7 +4,6 @@ $LOAD_PATH << SPEC_ROOT
 require File.expand_path('../../spec/shared/spec_helper', SPEC_ROOT)
 
 require 'logging'
-require 'tmpdir'
 
 require 'common/common'
 require 'common/deep_copy'

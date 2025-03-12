@@ -36,7 +36,7 @@ describe Bosh::Common do
 
   describe "::which" do
     let(:path) do
-      ENV['PATH'] + ":#{File.expand_path('../../assets', __FILE__)}"
+      ENV['PATH'] + ":#{asset_path('')}"
     end
 
     it "should return the path when it finds the executable" do
