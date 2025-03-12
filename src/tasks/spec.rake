@@ -12,11 +12,9 @@ namespace :spec do
 
     spec_runner_command =
       if paths =~ /:\d+/ # line number was specified; run with `rspec`
-        "bundle exec rspec #{rspec_opts.join(' ')} #{paths}"
-
-      else
-        # no line number specified; run with `parallel_rspec`
-        "SPEC_OPTS='#{rspec_opts.join(' ')}' bundle exec parallel_rspec --multiply-processes 0.5"
+        "bundle exec rspec #{rspec_opts.join(' ')}"
+      else # no line number specified; run with `parallel_rspec`
+        "SPEC_OPTS='#{rspec_opts.join(' ')}' bundle exec parallel_rspec"
       end
 
     proxy_env = 'https_proxy= http_proxy='

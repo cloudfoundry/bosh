@@ -323,6 +323,7 @@ jobs:
           COVERAGE: false
           DB: postgresql
           RAKE_TASK: spec:integration
+          PARALLEL_TEST_MULTIPLY_PROCESSES: "0.5"
 
   - name: integration-postgres-hotswap
     public: true
