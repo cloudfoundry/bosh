@@ -20,6 +20,7 @@ PATH
       rake
       rufus-scheduler
       securerandom
+      semi_semantic
       sequel
       sinatra
       sinatra-contrib
@@ -63,7 +64,6 @@ PATH
     bosh_common (0.0.0)
       logging
       openssl
-      semi_semantic
 
 GEM
   remote: https://rubygems.org/

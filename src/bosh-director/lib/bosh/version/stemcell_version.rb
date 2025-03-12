@@ -1,7 +1,7 @@
-require 'common/version/semi_semantic_version'
-require 'common/version/parse_error'
+require 'bosh/version/semi_semantic_version'
+require 'bosh/version/parse_error'
 
-module Bosh::Common
+module Bosh
   module Version
     class StemcellVersion < SemiSemanticVersion
 

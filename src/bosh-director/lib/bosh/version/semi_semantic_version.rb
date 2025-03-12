@@ -1,7 +1,7 @@
 require 'semi_semantic/version'
-require 'common/version/parse_error'
+require 'bosh/version/parse_error'
 
-module Bosh::Common
+module Bosh
   module Version
     class UnavailableMethodError < StandardError; end
 

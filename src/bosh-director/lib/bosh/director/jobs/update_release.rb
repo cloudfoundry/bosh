@@ -1,6 +1,6 @@
 require 'pp' # for #pretty_inspect
 require 'securerandom'
-require 'common/version/release_version'
+require 'bosh/version/release_version'
 
 module Bosh::Director
   module Jobs
@@ -98,9 +98,9 @@ module Bosh::Director
         @name = @manifest['name']
 
         begin
-          @version = Bosh::Common::Version::ReleaseVersion.parse(@manifest['version'])
+          @version = Bosh::Version::ReleaseVersion.parse(@manifest['version'])
           logger.info("Formatted version '#{@manifest['version']}' => '#{@version}'") unless @version.to_s == @manifest['version']
-        rescue Bosh::Common::Version::ParseError
+        rescue Bosh::Version::ParseError
           raise ReleaseVersionInvalid, "Release version invalid: #{@manifest['version']}"
         end
 
@@ -356,7 +356,7 @@ module Bosh::Director
         attrs = { release_id: @release_model.id }
         models = Models::ReleaseVersion.filter(attrs).all
         strings = models.map(&:version)
-        list = Bosh::Common::Version::ReleaseVersionList.parse(strings)
+        list = Bosh::Version::ReleaseVersionList.parse(strings)
         list.rebase(@version)
       end
     end

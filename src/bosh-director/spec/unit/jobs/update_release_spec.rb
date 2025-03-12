@@ -355,7 +355,7 @@ module Bosh::Director
       context 'when the release version does not match database valid format' do
         before do
           # Without modifying `VALID_ID` it is not possible to trigger validation from
-          # Sequel because `Bosh::Common::Version::ReleaseVersion` validation would be triggered instead
+          # Sequel because `Bosh::Version::ReleaseVersion` validation would be triggered instead
           stub_const('Bosh::Director::Models::VALID_ID', /^[a-z0-9]+$/i)
         end
 

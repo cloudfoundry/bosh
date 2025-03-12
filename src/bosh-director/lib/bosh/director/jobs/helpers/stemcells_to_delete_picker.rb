@@ -18,7 +18,7 @@ module Bosh::Director::Jobs
 
         stemcells_to_versions_to_delete = unused_stemcells_grouped_by_name.each_pair do |_, versions|
           versions.sort! do |sc1, sc2|
-            Bosh::Common::Version::StemcellVersion.parse(sc1['version']) <=> Bosh::Common::Version::StemcellVersion.parse(sc2['version'])
+            Bosh::Version::StemcellVersion.parse(sc1['version']) <=> Bosh::Version::StemcellVersion.parse(sc2['version'])
           end
           versions.pop(stemcells_to_keep)
         end

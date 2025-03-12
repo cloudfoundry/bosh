@@ -11,12 +11,6 @@ require 'common/exec'
 require 'common/deep_copy'
 require 'common/logging/regex_filter'
 require 'common/logging/filters'
-require 'common/version/bosh_version'
-require 'common/version/release_version'
-require 'common/version/release_version_list'
-require 'common/version/version_list'
-require 'common/version/stemcell_version'
-require 'common/version/stemcell_version_list'
 require 'common/thread_pool'
 
 def asset_path(name)

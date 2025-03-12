@@ -1,6 +1,6 @@
 require 'semi_semantic/parse_error'
 
-module Bosh::Common
+module Bosh
   module Version
     class ParseError < SemiSemantic::ParseError
     end

@@ -20,7 +20,7 @@ require 'zlib'
 
 require 'common/exec'
 require 'bosh/template/evaluation_context'
-require 'common/version/release_version_list'
+require 'bosh/version/release_version_list'
 
 require 'bcrypt'
 require 'delayed_job'

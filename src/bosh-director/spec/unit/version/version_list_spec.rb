@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-module Bosh::Common::Version
+module Bosh::Version
   describe VersionList do
     subject(:version_list) { described_class.parse(versions, SemiSemanticVersion) }
 

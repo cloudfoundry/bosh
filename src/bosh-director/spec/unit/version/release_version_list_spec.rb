@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-module Bosh::Common::Version
+module Bosh::Version
   describe ReleaseVersionList do
     let(:version_list) { described_class.parse(versions) }
 

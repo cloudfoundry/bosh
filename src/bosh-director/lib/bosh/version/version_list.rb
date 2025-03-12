@@ -1,6 +1,6 @@
 require 'semi_semantic/version'
 
-module Bosh::Common
+module Bosh
   module Version
     class VersionList
       include Enumerable

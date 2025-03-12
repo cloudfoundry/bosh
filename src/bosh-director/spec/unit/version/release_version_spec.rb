@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-module Bosh::Common::Version
+module Bosh::Version
   describe ReleaseVersion do
 
     it 'extends SemiSemanticVersion' do
@@ -39,8 +39,8 @@ module Bosh::Common::Version
       context 'with an invalid version' do
         let(:invalid_version_string) { '&' }
 
-        it 'raises a Bosh::Common::Version::ParseError' do
-          expect { described_class.parse(invalid_version_string) }.to raise_error(Bosh::Common::Version::ParseError)
+        it 'raises a Bosh::Version::ParseError' do
+          expect { described_class.parse(invalid_version_string) }.to raise_error(Bosh::Version::ParseError)
         end
       end
     end

@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-module Bosh::Common::Version
+module Bosh::Version
   describe SemiSemanticVersion do
 
     describe 'parse' do
@@ -27,8 +27,8 @@ module Bosh::Common::Version
       context 'with an invalid version' do
         let(:invalid_version_string) { '&' }
 
-        it 'raises a Bosh::Common::Version::ParseError' do
-          expect { described_class.parse(invalid_version_string) }.to raise_error(Bosh::Common::Version::ParseError)
+        it 'raises a Bosh::Version::ParseError' do
+          expect { described_class.parse(invalid_version_string) }.to raise_error(Bosh::Version::ParseError)
         end
       end
     end
@@ -73,7 +73,7 @@ module Bosh::Common::Version
       let(:b) { described_class.parse('1.0.2+dev.10') }
 
       it 'fails when post-release is nil' do
-        expect{a.increment_post_release}.to raise_error(Bosh::Common::Version::UnavailableMethodError)
+        expect{a.increment_post_release}.to raise_error(Bosh::Version::UnavailableMethodError)
       end
 
       it 'creates a new version object with the post-release segment incremented by 1' do

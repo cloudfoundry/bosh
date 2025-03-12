@@ -1,8 +1,8 @@
 require 'semi_semantic/version'
-require 'common/version/stemcell_version'
-require 'common/version/version_list'
+require 'bosh/version/stemcell_version'
+require 'bosh/version/version_list'
 
-module Bosh::Common
+module Bosh
   module Version
     class StemcellVersionList < VersionList
 
