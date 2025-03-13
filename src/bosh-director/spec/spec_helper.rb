@@ -137,7 +137,7 @@ module SpecHelper
                              Logging.appenders.file(
                                "bosh-director-spec-logger-#{Process.pid}",
                                filename: filename,
-                               layout: ThreadFormatter.layout,
+                               layout: Bosh::Director::ThreadFormatter.layout,
                              ),
                            )
                            logger.level = :debug

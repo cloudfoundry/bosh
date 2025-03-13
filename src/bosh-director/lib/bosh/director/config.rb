@@ -6,7 +6,6 @@ require 'tmpdir'
 
 require 'bosh/director/thread_formatter'
 require 'common/common'
-require 'common/thread_formatter'
 
 module Bosh::Director
 
