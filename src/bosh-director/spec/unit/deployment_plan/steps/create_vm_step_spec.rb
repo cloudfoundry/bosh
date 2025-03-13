@@ -33,7 +33,7 @@ module Bosh
           let(:cloud_properties) { { 'ram' => '2gb' } }
           let(:network_cloud_properties) { { 'bandwidth' => '5mbps' } }
           let(:variable_set) { FactoryBot.create(:models_variable_set, deployment: deployment) }
-          let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
+          let(:blobstore) { instance_double(Bosh::Director::Blobstore::BaseClient) }
           let(:stemcell_api_version) { nil }
 
           let(:stemcell_model) do

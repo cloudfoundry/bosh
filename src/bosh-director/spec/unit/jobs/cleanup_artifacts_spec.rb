@@ -42,7 +42,7 @@ module Bosh::Director
     describe '#perform' do
       let(:stage) { instance_double(Bosh::Director::EventLog::Stage) }
       let(:event_log) { EventLog::Log.new }
-      let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient, delete: nil) }
+      let(:blobstore) { instance_double(Bosh::Director::Blobstore::BaseClient, delete: nil) }
       let(:release1) { FactoryBot.create(:models_release, name: 'release-1') }
       let(:release2) { FactoryBot.create(:models_release, name: 'release-2') }
       let(:thread_pool) { ThreadPool.new }

@@ -12,11 +12,11 @@ module Bosh::Director
     let(:dep_pkg1) { instance_double('Bosh::Director::Models::Package', fingerprint: 'dp_fingerprint1', version: '10.1-dev') }
     let(:cache_key) { 'cache_sha1' }
     let(:dep_key) { '[]' }
-    let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
+    let(:blobstore) { instance_double('Bosh::Director::Blobstore::BaseClient') }
 
 
     describe '#delete_blob' do
-      let(:fake_local_blobstore) { instance_double('Bosh::Blobstore::S3cliBlobstoreClient') }
+      let(:fake_local_blobstore) { instance_double('Bosh::Director::Blobstore::S3cliBlobstoreClient') }
       before do
         allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(fake_local_blobstore)
       end

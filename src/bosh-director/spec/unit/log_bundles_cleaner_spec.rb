@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe LogBundlesCleaner do
     subject(:log_bundles_cleaner) { described_class.new(blobstore, 86400, per_spec_logger) } # 1 day
-    let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient', delete: nil) }
+    let(:blobstore) { instance_double('Bosh::Director::Blobstore::BaseClient', delete: nil) }
 
     describe '#register_blobstore_id' do
       it 'keeps track of a log bundle associated with blobstore id' do
@@ -47,7 +47,7 @@ module Bosh::Director
       it 'keeps log bundle in the database if it fails to delete associated blob' do
         expect(blobstore).to receive(:delete)
           .with('fake-very-old-blob-id')
-          .and_raise(Bosh::Blobstore::BlobstoreError)
+          .and_raise(Bosh::Director::Blobstore::BlobstoreError)
 
         expect(blobstore).to receive(:delete).with('fake-old-blob-id').and_return(true)
 
@@ -59,7 +59,7 @@ module Bosh::Director
       it 'deletes log bundle from the database if associated blob is not found' do
         expect(blobstore).to receive(:delete)
           .with('fake-very-old-blob-id')
-          .and_raise(Bosh::Blobstore::NotFound)
+          .and_raise(Bosh::Director::Blobstore::NotFound)
 
         log_bundles_cleaner.clean
         expect(Models::LogBundle.filter(blobstore_id: 'fake-very-old-blob-id').count).to eq(0)

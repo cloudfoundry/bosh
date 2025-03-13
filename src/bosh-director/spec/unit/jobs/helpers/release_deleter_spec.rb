@@ -8,7 +8,7 @@ module Bosh::Director
       let(:package_deleter) { PackageDeleter.new(compiled_package_deleter, blobstore, per_spec_logger) }
       let(:template_deleter) { TemplateDeleter.new(blobstore, per_spec_logger) }
       let(:compiled_package_deleter) { CompiledPackageDeleter.new(blobstore, per_spec_logger) }
-      let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
+      let(:blobstore) { instance_double(Bosh::Director::Blobstore::BaseClient) }
       let(:task) { FactoryBot.create(:models_task, id: 42) }
       let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
       let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}

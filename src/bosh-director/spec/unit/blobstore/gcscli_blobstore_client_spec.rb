@@ -1,7 +1,6 @@
 require 'spec_helper'
-require 'json'
 
-module Bosh::Blobstore
+module Bosh::Director::Blobstore
   describe GcscliBlobstoreClient do
     subject(:client) { described_class.new(options) }
     let!(:base_dir) { Dir.mktmpdir }
@@ -46,7 +45,7 @@ module Bosh::Blobstore
         it 'raises an error' do
           allow(Kernel).to receive(:system).with("/var/vcap/packages/bosh-gcscli/bin/bosh-gcscli", "--v", {:out => "/dev/null", :err => "/dev/null"}).and_return(false)
           expect { described_class.new(options) }.to raise_error(
-              Bosh::Blobstore::BlobstoreError, 'Cannot find gcscli executable. Please specify gcscli_path parameter')
+              Bosh::Director::Blobstore::BlobstoreError, 'Cannot find gcscli executable. Please specify gcscli_path parameter')
         end
       end
 

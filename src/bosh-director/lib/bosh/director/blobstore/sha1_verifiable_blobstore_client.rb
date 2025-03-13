@@ -2,7 +2,7 @@ require 'digest/sha1'
 require 'forwardable'
 require 'open3'
 
-module Bosh
+module Bosh::Director
   module Blobstore
     class Sha1VerifiableBlobstoreClient < BaseClient
       extend Forwardable
@@ -33,13 +33,14 @@ module Bosh
                      :signing_enabled?, :credential_properties,
                      :required_credential_properties_list, :redacted_credential_properties_list,
                      :can_sign_urls?, :headers
+
       private
 
       def check_sha1(expected_sha1, file_to_check)
         begin
           @multi_digest_verifier.verify(file_to_check.path, expected_sha1)
         rescue Bosh::Director::BoshDigest::ShaMismatchError => e
-          raise Bosh::Blobstore::BlobstoreError.new(e)
+          raise Bosh::Director::Blobstore::BlobstoreError.new(e)
         end
       end
     end

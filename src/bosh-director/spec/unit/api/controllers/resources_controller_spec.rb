@@ -43,7 +43,7 @@ module Bosh::Director
         before(:each) { basic_authorize 'admin', 'admin' }
 
         it '404 on missing resource' do
-          allow(blobstore).to(receive(:get)).with('missing_resource', anything).and_raise(Bosh::Blobstore::NotFound)
+          allow(blobstore).to(receive(:get)).with('missing_resource', anything).and_raise(Bosh::Director::Blobstore::NotFound)
           get '/missing_resource'
           expect(last_response.status).to eq(404)
         end

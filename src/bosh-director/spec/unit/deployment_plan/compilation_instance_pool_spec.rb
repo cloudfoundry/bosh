@@ -39,7 +39,7 @@ module Bosh::Director
     let(:task_id) { 42 }
     let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
     let(:trusted_certs) { "Trust me. I know what I'm doing." }
-    let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
+    let(:blobstore) { instance_double(Bosh::Director::Blobstore::BaseClient) }
     let(:vm_creator) do
       VmCreator.new(Config.logger, template_blob_cache, dns_encoder, agent_broadcaster, deployment_plan.link_provider_intents)
     end

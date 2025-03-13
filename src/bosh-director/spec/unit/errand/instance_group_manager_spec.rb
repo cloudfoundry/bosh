@@ -23,7 +23,7 @@ module Bosh::Director
                       name: 'job_name',
                       instance_plans_with_missing_vms: missing_plans)
     end
-    let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
+    let(:blobstore) { instance_double('Bosh::Director::Blobstore::Client') }
 
     let(:instance1) { instance_double(DeploymentPlan::Instance, model: instance1_model) }
     let(:instance2) { instance_double(DeploymentPlan::Instance, model: instance2_model) }

@@ -5,7 +5,7 @@ module Bosh::Director
     describe ReleaseVersionDeleter do
       let(:release_deleter) { ReleaseDeleter.new(package_deleter, template_deleter, event_log, logger) }
       let(:compiled_package_deleter) { double('@todo', :delete => []) }
-      let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient, :delete => true) }
+      let(:blobstore) { instance_double(Bosh::Director::Blobstore::BaseClient, :delete => true) }
       let(:package_deleter) { PackageDeleter.new(compiled_package_deleter, blobstore, logger) }
       let(:template_deleter) { TemplateDeleter.new(blobstore, logger) }
       let(:logger) { Logging::Logger.new('/dev/null') }

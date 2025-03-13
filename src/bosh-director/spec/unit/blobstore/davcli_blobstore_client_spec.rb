@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-module Bosh::Blobstore
+module Bosh::Director::Blobstore
   describe DavcliBlobstoreClient do
     subject { described_class.new(options) }
     let(:options) do
@@ -60,7 +60,7 @@ module Bosh::Blobstore
         it 'raises an error' do
           allow(Kernel).to receive(:system).with(davcli_path.to_s, '-v', out: '/dev/null', err: '/dev/null').and_return(false)
           expect { described_class.new(options) }.to raise_error(
-            Bosh::Blobstore::BlobstoreError, 'Cannot find davcli executable. Please specify davcli_path parameter'
+            Bosh::Director::Blobstore::BlobstoreError, 'Cannot find davcli executable. Please specify davcli_path parameter'
           )
         end
       end

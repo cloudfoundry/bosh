@@ -181,7 +181,7 @@ module Bosh::Director
           def delete_package_blob(logger, desc, package)
             logger.info("Deleting #{desc} '#{package.name}/#{package.version}'")
             BlobUtil.delete_blob(package.blobstore_id)
-          rescue Bosh::Blobstore::BlobstoreError => e
+          rescue Bosh::Director::Blobstore::BlobstoreError => e
             logger.info("Error deleting #{desc} '#{package.blobstore_id}, #{package.name}/#{package.version}': #{e.inspect}")
           end
 

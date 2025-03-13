@@ -6,7 +6,7 @@ module Bosh::Director
     let(:manager) { Api::ResourceManager.new(blobstore) }
 
     it 'raises an error when trying to get non-existing resource' do
-      allow(blobstore).to receive(:get).and_raise(Bosh::Blobstore::NotFound)
+      allow(blobstore).to receive(:get).and_raise(Bosh::Director::Blobstore::NotFound)
 
       expect {
         manager.get_resource('deadbeef')
@@ -15,7 +15,7 @@ module Bosh::Director
 
     it 'raises an error when something went wrong with blobstore' do
       allow(blobstore).to receive(:get).and_raise(
-        Bosh::Blobstore::BlobstoreError.new('bad stuff'))
+        Bosh::Director::Blobstore::BlobstoreError.new('bad stuff'))
 
       expect {
         manager.get_resource('deadbeef')

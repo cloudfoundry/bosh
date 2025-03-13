@@ -128,7 +128,7 @@ module Bosh::Director
 
     let(:compiled_package_finder) { DeploymentPlan::CompiledPackageFinder.new(per_spec_logger) }
 
-    let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
+    let(:blobstore) { instance_double(Bosh::Director::Blobstore::BaseClient) }
 
     let(:director_test_certs) { "these\nare\nthe\ncerts" }
     let(:director_test_certs_sha1) { ::Digest::SHA1.hexdigest director_test_certs }

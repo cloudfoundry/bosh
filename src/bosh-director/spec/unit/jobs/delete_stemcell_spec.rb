@@ -10,7 +10,7 @@ module Bosh::Director
         it_behaves_like 'a DelayedJob job'
       end
 
-      let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
+      let(:blobstore) { instance_double(Bosh::Director::Blobstore::BaseClient) }
       let(:job) { Jobs::DeleteStemcell.new('test_stemcell', 'test_version', blobstore: blobstore) }
 
       context 'when the stemcell is known' do

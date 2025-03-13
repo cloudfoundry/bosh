@@ -6,7 +6,7 @@ module Bosh::Director
       context 'when enable_nats_delivered_templates flag is set to true' do
         subject(:persister) { RenderedTemplatesPersister.new(blobstore, per_spec_logger) }
 
-        let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
+        let(:blobstore) { instance_double('Bosh::Director::Blobstore::BaseClient') }
         let(:instance_plan) { instance_double('Bosh::Director::DeploymentPlan::InstancePlan') }
         let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
 
@@ -109,7 +109,7 @@ module Bosh::Director
       context 'when enable_nats_delivered_templates flag is set to false' do
         subject(:persister) { RenderedTemplatesPersister.new(blobstore, per_spec_logger) }
 
-        let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
+        let(:blobstore) { instance_double('Bosh::Director::Blobstore::BaseClient') }
         let(:instance_plan) { instance_double('Bosh::Director::DeploymentPlan::InstancePlan') }
         let(:instance) { instance_double('Bosh::Director::DeploymentPlan::Instance') }
         let(:instance_model) { instance_double('Bosh::Director::Models::Instance') }

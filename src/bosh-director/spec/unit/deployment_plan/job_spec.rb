@@ -162,7 +162,7 @@ module Bosh
             FactoryBot.create(:models_template, name: 'foo', blobstore_id: 'blobstore-id-1', sha1: file_content_sha1)
           end
           let(:instance) { instance_double(Bosh::Director::App, blobstores: blobstores) }
-          let(:blobstore) { instance_double(Bosh::Blobstore::RetryableBlobstoreClient) }
+          let(:blobstore) { instance_double(Bosh::Director::Blobstore::RetryableBlobstoreClient) }
           let(:blobstores) do
             instance_double(Bosh::Director::Blobstores, blobstore: blobstore)
           end

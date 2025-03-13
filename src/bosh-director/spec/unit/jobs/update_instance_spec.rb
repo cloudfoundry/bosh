@@ -6,7 +6,7 @@ module Bosh::Director
 
     before { fake_locks }
 
-    let(:blobstore) { instance_double(Bosh::Blobstore::Client) }
+    let(:blobstore) { instance_double(Bosh::Director::Blobstore::Client) }
     let(:cloud_config) { FactoryBot.create(:models_config_cloud, :with_manifest) }
     let(:deployment) { FactoryBot.create(:models_deployment, name: 'simple', manifest: YAML.dump(manifest)) }
     let(:instance_state) { 'started' }

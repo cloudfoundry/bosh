@@ -6,7 +6,7 @@ module Bosh::Director
     before do
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
     end
-    let(:blobstore) { instance_double(Bosh::Blobstore::Client) }
+    let(:blobstore) { instance_double(Bosh::Director::Blobstore::Client) }
     let(:instance_deleter) { instance_double(InstanceDeleter) }
     let(:vm_deleter) { instance_double(VmDeleter) }
     let(:dns_enabled) { false }

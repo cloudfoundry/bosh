@@ -35,7 +35,7 @@ module Bosh::Director::DeploymentPlan::Stages
     let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
     let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
     let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
-    let(:blobstore) { instance_double(Bosh::Blobstore::Sha1VerifiableBlobstoreClient) }
+    let(:blobstore) { instance_double(Bosh::Director::Blobstore::Sha1VerifiableBlobstoreClient) }
 
     before do
       release = FactoryBot.create(:models_release, name: 'bosh-release')

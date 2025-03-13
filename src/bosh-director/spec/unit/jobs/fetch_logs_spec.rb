@@ -4,7 +4,7 @@ require 'bosh/director/log_bundles_cleaner'
 module Bosh::Director
   describe Jobs::FetchLogs do
     subject(:fetch_logs) { Jobs::FetchLogs.new(instances, 'filters' => 'filter1,filter2') }
-    let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
+    let(:blobstore) { instance_double('Bosh::Director::Blobstore::BaseClient') }
     let(:task) { FactoryBot.create(:models_task, id: 42) }
     let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
     let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
@@ -52,7 +52,7 @@ module Bosh::Director
           context 'when deleting blob from blobstore fails' do
             it 'cleans the old log bundle if it was not found in the blobstore' do
               old_log_bundle = FactoryBot.create(:models_log_bundle, timestamp: Time.now - 12*24*60*60, blobstore_id: 'previous-fake-blobstore-id') # 12 days
-              expect(blobstore).to receive(:delete).with('previous-fake-blobstore-id').and_raise(Bosh::Blobstore::NotFound)
+              expect(blobstore).to receive(:delete).with('previous-fake-blobstore-id').and_raise(Bosh::Director::Blobstore::NotFound)
 
               fetch_logs.perform
 
@@ -61,7 +61,7 @@ module Bosh::Director
 
             it 'does not clean the old log bundle if any other error is returned' do
               old_log_bundle = FactoryBot.create(:models_log_bundle, timestamp: Time.now - 12*24*60*60, blobstore_id: 'previous-fake-blobstore-id') # 12 days
-              expect(blobstore).to receive(:delete).with('previous-fake-blobstore-id').and_raise(Bosh::Blobstore::NotImplemented)
+              expect(blobstore).to receive(:delete).with('previous-fake-blobstore-id').and_raise(Bosh::Director::Blobstore::NotImplemented)
 
               fetch_logs.perform
 

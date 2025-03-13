@@ -1,7 +1,7 @@
 module Support
   module AppHelpers
     def fake_app
-      client_double = instance_double(Bosh::Blobstore::BaseClient, can_sign_urls?: false)
+      client_double = instance_double(Bosh::Director::Blobstore::BaseClient, can_sign_urls?: false)
 
       blobstores_double = instance_double(Bosh::Director::Blobstores, blobstore: client_double)
 

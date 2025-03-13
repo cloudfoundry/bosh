@@ -27,7 +27,7 @@ module Bosh::Director
         dns_blob = Bosh::Director::Models::Blob.new(blobstore_id: 'dns_blob1', sha1: 'smurf3', type: 'dns').save
         FactoryBot.create(:models_local_dns_blob, created_at: Time.now - 100, blob: dns_blob)
 
-        blobstore = instance_double(Bosh::Blobstore::BaseClient, delete: nil)
+        blobstore = instance_double(Bosh::Director::Blobstore::BaseClient, delete: nil)
         allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
       end
 

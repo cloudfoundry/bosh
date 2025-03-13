@@ -11,7 +11,7 @@ module Bosh::Director
         let(:instance_plan) { instance_double(InstancePlan, instance: deployment_instance) }
         let(:spec) { instance_double(InstanceSpec, as_apply_spec: apply_spec, as_jobless_apply_spec: jobless_apply_spec) }
         let(:report) { Stages::Report.new }
-        let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
+        let(:blobstore) { instance_double(Bosh::Director::Blobstore::BaseClient) }
         let(:apply_spec) do
           {
             'test' => 'apply-me',

@@ -41,7 +41,7 @@ module Bosh::Director
         },
       )
     end
-    let(:blobstore) { instance_double(Bosh::Blobstore::S3cliBlobstoreClient) }
+    let(:blobstore) { instance_double(Bosh::Director::Blobstore::S3cliBlobstoreClient) }
     let(:domain_name) { 'fake-domain-name' }
     let(:agent_broadcaster) { instance_double(AgentBroadcaster) }
 
@@ -362,11 +362,11 @@ module Bosh::Director
 
         context 'when putting to the blobstore fails' do
           it 'fails uploading records' do
-            expect(blobstore).to receive(:create).and_raise(Bosh::Blobstore::BlobstoreError)
+            expect(blobstore).to receive(:create).and_raise(Bosh::Director::Blobstore::BlobstoreError)
 
             expect do
               dns.publish_and_broadcast
-            end.to raise_error(Bosh::Blobstore::BlobstoreError)
+            end.to raise_error(Bosh::Director::Blobstore::BlobstoreError)
           end
         end
 

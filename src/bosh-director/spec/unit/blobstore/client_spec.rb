@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-module Bosh::Blobstore
+module Bosh::Director::Blobstore
   describe Client do
     describe '.create' do
       context 'with known client provider' do
@@ -61,12 +61,12 @@ module Bosh::Blobstore
         end
 
         it 'makes retryable client with s3 client' do
-          wrapped_client = instance_double('Bosh::Blobstore::S3cliBlobstoreClient')
+          wrapped_client = instance_double('Bosh::Director::Blobstore::S3cliBlobstoreClient')
           expect(S3cliBlobstoreClient)
             .to receive(:new)
             .and_return(wrapped_client)
 
-          sha1_verifiable_client = instance_double('Bosh::Blobstore::Sha1VerifiableBlobstoreClient')
+          sha1_verifiable_client = instance_double('Bosh::Director::Blobstore::Sha1VerifiableBlobstoreClient')
           expect(Sha1VerifiableBlobstoreClient)
             .to receive(:new)
             .with(wrapped_client, per_spec_logger)
@@ -77,7 +77,7 @@ module Bosh::Blobstore
             .to receive(:new)
             .and_return(retryable)
 
-          retryable_client = instance_double('Bosh::Blobstore::RetryableBlobstoreClient')
+          retryable_client = instance_double('Bosh::Director::Blobstore::RetryableBlobstoreClient')
           expect(RetryableBlobstoreClient)
             .to receive(:new)
             .with(sha1_verifiable_client, retryable)
@@ -91,12 +91,12 @@ module Bosh::Blobstore
         end
 
         it 'makes retryable client with gcs client' do
-          wrapped_client = instance_double('Bosh::Blobstore::GcscliBlobstoreClient')
+          wrapped_client = instance_double('Bosh::Director::Blobstore::GcscliBlobstoreClient')
           expect(GcscliBlobstoreClient)
             .to receive(:new)
             .and_return(wrapped_client)
 
-          sha1_verifiable_client = instance_double('Bosh::Blobstore::Sha1VerifiableBlobstoreClient')
+          sha1_verifiable_client = instance_double('Bosh::Director::Blobstore::Sha1VerifiableBlobstoreClient')
           expect(Sha1VerifiableBlobstoreClient)
             .to receive(:new)
             .with(wrapped_client, per_spec_logger)
@@ -107,7 +107,7 @@ module Bosh::Blobstore
             .to receive(:new)
             .and_return(retryable)
 
-          retryable_client = instance_double('Bosh::Blobstore::RetryableBlobstoreClient')
+          retryable_client = instance_double('Bosh::Director::Blobstore::RetryableBlobstoreClient')
           expect(RetryableBlobstoreClient)
             .to receive(:new)
             .with(sha1_verifiable_client, retryable)

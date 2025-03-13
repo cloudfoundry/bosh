@@ -16,7 +16,7 @@ module Bosh::Director
     let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
     let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}
     let(:oldest_dns_blob_age) { 5 }
-    let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
+    let(:blobstore) { instance_double(Bosh::Director::Blobstore::BaseClient) }
 
     before do
       allow(Config).to receive(:event_log).and_return(event_log)

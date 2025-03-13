@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Jobs::DeleteRelease do
-    let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
+    let(:blobstore) { instance_double(Bosh::Director::Blobstore::BaseClient) }
 
     describe 'DJ job class expectations' do
       let(:job_type) { :delete_release }

@@ -74,7 +74,7 @@ module Bosh::Director
       )
     end
     let(:instance_model) { FactoryBot.create(:models_instance, deployment: deployment, state: instance_model_state, uuid: 'uuid-1') }
-    let(:blobstore) { instance_double(Bosh::Blobstore::Client) }
+    let(:blobstore) { instance_double(Bosh::Director::Blobstore::Client) }
     let(:agent_client) { instance_double(AgentClient) }
     let(:rendered_job_templates_cleaner) { instance_double(RenderedJobTemplatesCleaner) }
     let(:instance_state) { 'started' }

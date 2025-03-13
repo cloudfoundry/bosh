@@ -1,7 +1,7 @@
 require 'tmpdir'
 require 'securerandom'
 
-module Bosh
+module Bosh::Director
   module Blobstore
     class BaseClient < Client
       attr_reader :logger
@@ -128,7 +128,7 @@ module Bosh
         return if has_all_required_creds
 
         raise(
-          Director::BadConfig,
+          Bosh::Director::BadConfig,
           "Inconsistent blobstore configuration: #{required_credential_properties_list.inspect} are required",
         )
       end

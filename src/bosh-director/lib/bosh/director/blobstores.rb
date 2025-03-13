@@ -12,7 +12,7 @@ module Bosh::Director
     def create_client(hash)
       provider = hash.fetch('provider')
       options = hash.fetch('options')
-      Bosh::Blobstore::Client.safe_create(provider, options)
+      Bosh::Director::Blobstore::Client.safe_create(provider, options)
     end
   end
 end

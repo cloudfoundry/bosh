@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe InstanceUpdater do
-    let(:blobstore_client) { instance_double(Bosh::Blobstore::Client) }
+    let(:blobstore_client) { instance_double(Bosh::Director::Blobstore::Client) }
     let(:deployment_model) { FactoryBot.create(:models_deployment) }
     let(:dns_encoder) { instance_double(DnsEncoder) }
     let(:instance_model) { FactoryBot.create(:models_instance) }

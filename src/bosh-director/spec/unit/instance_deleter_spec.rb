@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe InstanceDeleter do
-    let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
+    let(:blobstore) { instance_double('Bosh::Director::Blobstore::Client') }
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
     let(:delete_job) { Jobs::DeleteDeployment.new('test_deployment', {}) }

@@ -1,9 +1,9 @@
 require 'spec_helper'
 
-module Bosh::Blobstore
+module Bosh::Director::Blobstore
   describe Sha1VerifiableBlobstoreClient do
     subject { described_class.new(wrapped_client, per_spec_logger) }
-    let(:wrapped_client) { instance_double('Bosh::Blobstore::BaseClient') }
+    let(:wrapped_client) { instance_double('Bosh::Director::Blobstore::BaseClient') }
     let(:multidigest_path) { 'some/path/to/binary' }
 
     it_calls_wrapped_client_methods(except: [:get])
@@ -78,7 +78,7 @@ module Bosh::Blobstore
               expect {
                 subject.get('fake-id', file, sha1: 'expectedsha1')
               }.to raise_error(
-                Bosh::Blobstore::BlobstoreError, 'bar'
+                Bosh::Director::Blobstore::BlobstoreError, 'bar'
               )
             end
           end

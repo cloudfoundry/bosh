@@ -21,7 +21,7 @@ module Bosh::Director
       allow(Config).to receive(:event_log).and_return(event_log)
     end
 
-    let(:blobstore) { instance_double('Bosh::Blobstore::Client') }
+    let(:blobstore) { instance_double('Bosh::Director::Blobstore::Client') }
 
     describe 'DJ job class expectations' do
       let(:job_type) { :delete_deployment }

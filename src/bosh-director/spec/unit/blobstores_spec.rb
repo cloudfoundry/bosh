@@ -5,12 +5,12 @@ module Bosh::Director
     subject(:blobstores) { described_class.new(config) }
     let(:config) { Config.load_hash(SpecHelper.director_config_hash) }
 
-    before { allow(Bosh::Blobstore::Client).to receive(:safe_create) }
+    before { allow(Bosh::Director::Blobstore::Client).to receive(:safe_create) }
 
     describe '#blobstore' do
       it 'provides the blobstore client' do
         blobstore_client = double('fake-blobstore-client')
-        expect(Bosh::Blobstore::Client)
+        expect(Bosh::Director::Blobstore::Client)
           .to receive(:safe_create)
           .with('davcli',
                 { 'endpoint' => 'http://127.0.0.1',

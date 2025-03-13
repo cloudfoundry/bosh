@@ -12,7 +12,7 @@ module Bosh::Director
       end
 
       before { allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
-      let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient') }
+      let(:blobstore) { instance_double('Bosh::Director::Blobstore::BaseClient') }
       let(:job_tarball_path) { File.join(release_dir, 'jobs', 'foo-job.tgz') }
 
       let(:job_bits) { create_release_job('foo-job', 'monit', { 'foo-erb' => { 'destination' => 'foo-rendered', 'contents' => 'bar'}}) }
@@ -50,7 +50,7 @@ module Bosh::Director
         it 'does not bail if blobstore deletion fails' do
           File.open(job_tarball_path, 'w') { |f| f.write(job_bits) }
 
-          expect(blobstore).to receive(:delete).and_raise Bosh::Blobstore::BlobstoreError
+          expect(blobstore).to receive(:delete).and_raise Bosh::Director::Blobstore::BlobstoreError
           expect(blobstore).to receive(:create)
 
           saved_job = release_job.update

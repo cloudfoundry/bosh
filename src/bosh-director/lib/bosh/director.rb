@@ -40,17 +40,17 @@ require 'bosh/template/evaluation_context'
 
 require 'bosh/version/release_version_list'
 
-require 'bosh/blobstore_client/errors'
-require 'bosh/blobstore_client/client'
-Bosh::Blobstore.autoload(:BaseClient, 'bosh/blobstore_client/base')
-require 'bosh/blobstore_client/retryable_blobstore_client'
-require 'bosh/blobstore_client/sha1_verifiable_blobstore_client'
-Bosh::Blobstore.autoload(:SimpleBlobstoreClient, 'bosh/blobstore_client/simple_blobstore_client')
-Bosh::Blobstore.autoload(:LocalClient, 'bosh/blobstore_client/local_client')
-Bosh::Blobstore.autoload(:DavcliBlobstoreClient, 'bosh/blobstore_client/davcli_blobstore_client')
-Bosh::Blobstore.autoload(:S3cliBlobstoreClient, 'bosh/blobstore_client/s3cli_blobstore_client')
-Bosh::Blobstore.autoload(:AzurestoragecliBlobstoreClient, 'bosh/blobstore_client/azurestoragecli_blobstore_client')
-Bosh::Blobstore.autoload(:GcscliBlobstoreClient, 'bosh/blobstore_client/gcscli_blobstore_client')
+require 'bosh/director/blobstore/errors'
+require 'bosh/director/blobstore/client'
+Bosh::Director::Blobstore.autoload(:BaseClient, 'bosh/director/blobstore/base')
+require 'bosh/director/blobstore/retryable_blobstore_client'
+require 'bosh/director/blobstore/sha1_verifiable_blobstore_client'
+Bosh::Director::Blobstore.autoload(:SimpleBlobstoreClient, 'bosh/director/blobstore/simple_blobstore_client')
+Bosh::Director::Blobstore.autoload(:LocalClient, 'bosh/director/blobstore/local_client')
+Bosh::Director::Blobstore.autoload(:DavcliBlobstoreClient, 'bosh/director/blobstore/davcli_blobstore_client')
+Bosh::Director::Blobstore.autoload(:S3cliBlobstoreClient, 'bosh/director/blobstore/s3cli_blobstore_client')
+Bosh::Director::Blobstore.autoload(:AzurestoragecliBlobstoreClient, 'bosh/director/blobstore/azurestoragecli_blobstore_client')
+Bosh::Director::Blobstore.autoload(:GcscliBlobstoreClient, 'bosh/director/blobstore/gcscli_blobstore_client')
 
 require 'bosh/director/deep_copy'
 require 'bosh/director/cloud_factory'

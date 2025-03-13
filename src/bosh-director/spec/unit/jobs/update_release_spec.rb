@@ -7,7 +7,7 @@ module Bosh::Director
       allow(Bosh::Director::Config).to receive(:verify_multidigest_path).and_return('some/path')
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
     end
-    let(:blobstore) { instance_double('Bosh::Blobstore::BaseClient', create: true) }
+    let(:blobstore) { instance_double('Bosh::Director::Blobstore::BaseClient', create: true) }
     let(:task) { FactoryBot.create(:models_task, id: 42) }
     let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
     let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }

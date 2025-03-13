@@ -1,6 +1,6 @@
 require 'forwardable'
 
-module Bosh
+module Bosh::Director
   module Blobstore
     class RetryableBlobstoreClient < BaseClient
       extend Forwardable

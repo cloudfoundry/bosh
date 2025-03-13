@@ -18,7 +18,7 @@ module Bosh::Director
       filters
     end
     let(:log) { double('logger') }
-    let(:blobstore) { instance_double(Bosh::Blobstore::BaseClient) }
+    let(:blobstore) { instance_double(Bosh::Director::Blobstore::BaseClient) }
 
     before do
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)

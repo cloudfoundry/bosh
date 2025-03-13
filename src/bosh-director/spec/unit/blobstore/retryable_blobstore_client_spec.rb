@@ -1,9 +1,9 @@
 require 'spec_helper'
 
-module Bosh::Blobstore
+module Bosh::Director::Blobstore
   describe RetryableBlobstoreClient do
     subject { described_class.new(wrapped_client, retryable) }
-    let(:wrapped_client) { instance_double('Bosh::Blobstore::BaseClient') }
+    let(:wrapped_client) { instance_double('Bosh::Director::Blobstore::BaseClient') }
     let(:retryable)      { Bosh::Retryable.new(tries: 2, sleep: 0, on: [BlobstoreError]) }
 
     it_calls_wrapped_client_methods(except: [:get])

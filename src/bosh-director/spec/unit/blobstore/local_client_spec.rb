@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-module Bosh::Blobstore
+module Bosh::Director::Blobstore
   describe LocalClient do
     subject { described_class.new(@options) }
 
