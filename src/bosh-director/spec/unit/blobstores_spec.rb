@@ -19,7 +19,7 @@ module Bosh::Director
           it 'builds a local client' do
             expect(Blobstore::LocalClient).to receive(:new).with(blobstore_config['options'])
 
-            expect(Blobstores.new(config).blobstore).to be_a(Blobstore::Client)
+            Blobstores.new(config)
           end
         end
 
@@ -37,7 +37,7 @@ module Bosh::Director
           it 'returns s3cli client' do
             expect(Blobstore::S3cliBlobstoreClient).to receive(:new).with(blobstore_config['options'])
 
-            expect(Blobstores.new(config).blobstore).to be_a(Blobstore::Client)
+            Blobstores.new(config)
           end
         end
 
@@ -53,7 +53,7 @@ module Bosh::Director
           it 'returns gcscli client' do
             expect(Blobstore::GcscliBlobstoreClient).to receive(:new).with(blobstore_config['options'])
 
-            expect(Blobstores.new(config).blobstore).to be_a(Blobstore::Client)
+            Blobstores.new(config)
           end
         end
 
@@ -73,7 +73,7 @@ module Bosh::Director
           it 'returns davcli client' do
             expect(Blobstore::DavcliBlobstoreClient).to receive(:new).with(blobstore_config['options'])
 
-            expect(Blobstores.new(config).blobstore).to be_a(Blobstore::Client)
+            Blobstores.new(config)
           end
         end
       end

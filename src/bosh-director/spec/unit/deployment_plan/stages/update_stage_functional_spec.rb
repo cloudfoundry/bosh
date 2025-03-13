@@ -35,7 +35,7 @@ module Bosh::Director::DeploymentPlan::Stages
     let(:task) { FactoryBot.create(:models_task, id: 42, username: 'user') }
     let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
     let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
-    let(:blobstore) { instance_double(Bosh::Director::Blobstore::Sha1VerifiableBlobstoreClient) }
+    let(:blobstore) { instance_double(Bosh::Director::Blobstore::Client) }
 
     before do
       release = FactoryBot.create(:models_release, name: 'bosh-release')
@@ -82,9 +82,10 @@ module Bosh::Director::DeploymentPlan::Stages
 
       allow(Bosh::Director::App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)
       allow(blobstore).to receive(:get)
-      allow(Bosh::Director::JobRenderer).to receive(:render_job_instances_with_cache)
       allow(blobstore).to receive(:can_sign_urls?).and_return(false)
       allow(blobstore).to receive(:validate!)
+
+      allow(Bosh::Director::JobRenderer).to receive(:render_job_instances_with_cache)
     end
 
     context 'the director database contains an instance with a static ip but no vm assigned (due to deploy failure)' do

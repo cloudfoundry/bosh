@@ -16,9 +16,9 @@ module Bosh::Director
 
       bare_client = create(provider_string, options)
 
-      sha1_client = Blobstore::Sha1VerifiableBlobstoreClient.new(bare_client, Bosh::Director::Config.logger)
+      sha1_client = Blobstore::Sha1VerifyingClientWrapper.new(bare_client, Bosh::Director::Config.logger)
       retry_config = Bosh::Retryable.new(tries: 6, sleep: 2.0, on: [Blobstore::BlobstoreError])
-      Blobstore::RetryableBlobstoreClient.new(sha1_client, retry_config)
+      Blobstore::RetryableClientWrapper.new(sha1_client, retry_config)
     end
 
     def create(provider_string, options = {})

@@ -42,8 +42,8 @@ require 'bosh/version/release_version_list'
 
 require 'bosh/director/blobstore/errors'
 require 'bosh/director/blobstore/client'
-require 'bosh/director/blobstore/retryable_blobstore_client'
-require 'bosh/director/blobstore/sha1_verifiable_blobstore_client'
+require 'bosh/director/blobstore/retryable_client_wrapper'
+require 'bosh/director/blobstore/sha1_verifying_client_wrapper'
 Bosh::Director::Blobstore.autoload(:LocalClient, 'bosh/director/blobstore/local_client')
 Bosh::Director::Blobstore.autoload(:DavcliBlobstoreClient, 'bosh/director/blobstore/davcli_blobstore_client')
 Bosh::Director::Blobstore.autoload(:S3cliBlobstoreClient, 'bosh/director/blobstore/s3cli_blobstore_client')

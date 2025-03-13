@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 module Bosh::Director::Blobstore
-  describe RetryableBlobstoreClient do
+  describe RetryableClientWrapper do
     subject { described_class.new(wrapped_client, retryable) }
     let(:wrapped_client) { instance_double('Bosh::Director::Blobstore::Client') }
     let(:retryable)      { Bosh::Retryable.new(tries: 2, sleep: 0, on: [BlobstoreError]) }
