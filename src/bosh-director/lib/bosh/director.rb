@@ -27,9 +27,9 @@ require 'nats/io/client'
 require 'openssl'
 require 'delayed_job_sequel'
 
-require 'cloud/external_cpi'
-require 'cloud/external_cpi_response_wrapper'
-require 'cloud/errors'
+require 'clouds/external_cpi'
+require 'clouds/external_cpi_response_wrapper'
+require 'clouds/errors'
 
 require 'common/common'
 require 'common/exec'

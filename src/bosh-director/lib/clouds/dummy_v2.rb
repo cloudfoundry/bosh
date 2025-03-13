@@ -2,7 +2,7 @@ require 'digest/sha1'
 require 'fileutils'
 require 'securerandom'
 require 'membrane'
-require_relative '../cloud/errors'
+require_relative '../clouds/errors'
 
 module Bosh
   module Clouds
