@@ -40,6 +40,10 @@ require 'bosh/template/evaluation_context'
 
 require 'bosh/version/release_version_list'
 
+require 'bosh/director/core_ext/array'
+require 'bosh/director/core_ext/object'
+require 'bosh/director/core_ext/hash'
+
 require 'bosh/director/blobstore/errors'
 require 'bosh/director/blobstore/client'
 require 'bosh/director/blobstore/retryable_client_wrapper'
@@ -67,7 +71,6 @@ require 'bosh/director/dns/local_dns_encoder_manager'
 require 'bosh/director/dns/local_dns_manager'
 require 'bosh/director/dns/dns_records'
 require 'bosh/director/errors'
-require 'bosh/director/ext'
 require 'bosh/director/ip_util'
 require 'bosh/director/ip_addr_or_cidr'
 require 'bosh/director/lock_helper'

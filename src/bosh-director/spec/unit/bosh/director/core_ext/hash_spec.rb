@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'Monkey Patches' do
+describe 'Hash Monkey Patches' do
   describe '#to_openstruct' do
     it 'should convert a complex object to an openstruct' do
       hash = {

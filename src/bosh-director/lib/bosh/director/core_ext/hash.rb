@@ -1,15 +1,3 @@
-class Object
-  def to_openstruct
-    self
-  end
-end
-
-class Array
-  def to_openstruct
-    map { |el| el.to_openstruct }
-  end
-end
-
 class Hash
   def recursive_merge(other)
     self.merge(other) do |_, old_value, new_value|
