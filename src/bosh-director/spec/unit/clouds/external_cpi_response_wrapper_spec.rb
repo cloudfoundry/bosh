@@ -138,7 +138,6 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
         elsif method == :create_disk
           expected_arguments[1] = { 'type' => '<redacted>' }
         elsif method == :create_stemcell && cpi_api_version >= 3
-          # expected_arguments[2] = { "tags" => {"any":"value"} }
         end
 
         expected_stdin = %({"method":"#{method}","arguments":#{arguments.to_json},"context":#{context.to_json},"api_version":#{cpi_api_version}})
