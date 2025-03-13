@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-module Bosh::Common
+module Bosh::Director
   describe DeepCopy do
     it 'does a deep copy of a deeply nested Hash' do
       deeply_nested_hash = {
@@ -16,9 +16,9 @@ module Bosh::Common
 
       expect {
         dup[:level1][:level2][:level3] = 'bar'
-      }.not_to change {
+      }.not_to(change {
         deeply_nested_hash[:level1][:level2][:level3]
-      }
+      })
 
       expect(dup[:object]).not_to be(deeply_nested_hash[:object])
     end
@@ -35,9 +35,9 @@ module Bosh::Common
 
       expect {
         leaf[:level4] = 'bar'
-      }.not_to change {
+      }.not_to(change {
         dup[:level1][:level2].first
-      }
+      })
     end
   end
 end

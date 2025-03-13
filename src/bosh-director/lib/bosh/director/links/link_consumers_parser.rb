@@ -14,7 +14,7 @@ module Bosh::Director::Links
         instance_group_name = get_instance_group_name(deployment_model, manifest_job_spec, instance_group_details)
         @links_manager = Bosh::Director::Links::LinksManager.new(deployment_model.links_serial_id)
 
-        consumes_links = Bosh::Common::DeepCopy.copy(safe_property(manifest_job_spec, 'consumes',
+        consumes_links = Bosh::Director::DeepCopy.copy(safe_property(manifest_job_spec, 'consumes',
                                                                    class: Hash, optional: true, default: {}))
         job_name = safe_property(manifest_job_spec, 'name', class: String)
 

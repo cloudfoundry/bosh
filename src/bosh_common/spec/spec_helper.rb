@@ -6,7 +6,6 @@ require File.expand_path('../../spec/shared/spec_helper', SPEC_ROOT)
 require 'logging'
 
 require 'common/common'
-require 'common/deep_copy'
 require 'common/exec'
 require 'common/thread_pool'
 

@@ -144,12 +144,12 @@ module Bosh::Director
 
     def sanitize_log_message(request)
       if request[:method].to_s == 'upload_blob'
-        cloned_request = Bosh::Common::DeepCopy.copy(request)
+        cloned_request = Bosh::Director::DeepCopy.copy(request)
         cloned_request[:arguments].first['checksum'] = '<redacted>'
         cloned_request[:arguments].first['payload'] = '<redacted>'
         JSON.generate(cloned_request)
       elsif request[:method].to_s == 'update_settings'
-        cloned_request = Bosh::Common::DeepCopy.copy(request)
+        cloned_request = Bosh::Director::DeepCopy.copy(request)
         cloned_request[:arguments].first['mbus'] = '<redacted>'
         cloned_request[:arguments].first['blobstores'] = '<redacted>'
         JSON.generate(cloned_request)

@@ -1,5 +1,3 @@
-require 'common/deep_copy'
-
 module Bosh
   module Director
     module DeploymentPlan
@@ -46,7 +44,7 @@ module Bosh
                 sorted_az_names.each do |az_name|
                   static_ip_to_azs.az_names = [az_name]
                   allocated_ips.allocate(az_name)
-                  candidate_networks_to_static_ips = Bosh::Common::DeepCopy.copy(networks_to_static_ips)
+                  candidate_networks_to_static_ips = Bosh::Director::DeepCopy.copy(networks_to_static_ips)
                   result = try_combination(candidate_networks_to_static_ips, AllocatedIps.new)
                   next if result.nil?
                   return result

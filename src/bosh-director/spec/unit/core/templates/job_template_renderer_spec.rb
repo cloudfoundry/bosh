@@ -58,9 +58,9 @@ module Bosh::Director::Core::Templates
         let(:context_copy) { instance_double('Bosh::Template::EvaluationContext') }
         before do
           allow(Bosh::Template::EvaluationContext).to receive(:new).and_return(context)
-          allow(Bosh::Common::DeepCopy).to receive(:copy).and_call_original
-          allow(Bosh::Common::DeepCopy).to receive(:copy).with(context).and_return(context_copy)
-          allow(Bosh::Common::DeepCopy).to receive(:copy).with(context_copy).and_return(context_copy)
+          allow(Bosh::Director::DeepCopy).to receive(:copy).and_call_original
+          allow(Bosh::Director::DeepCopy).to receive(:copy).with(context).and_return(context_copy)
+          allow(Bosh::Director::DeepCopy).to receive(:copy).with(context_copy).and_return(context_copy)
         end
 
         it 'returns a collection of rendered templates' do

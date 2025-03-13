@@ -565,7 +565,7 @@ module Bosh::Director::Links
     end
 
     def update_addresses(provider_intent_content, preferred_network_name, global_use_dns_entry, link_use_ip_address)
-      provider_intent_content_copy = Bosh::Common::DeepCopy.copy(provider_intent_content)
+      provider_intent_content_copy = Bosh::Director::DeepCopy.copy(provider_intent_content)
       provider_dns_enabled = provider_intent_content_copy['use_dns_addresses']
       if !provider_intent_content_copy.key?('default_network')
         unless link_use_ip_address.nil?

@@ -200,7 +200,7 @@ module Bosh::Clouds
       networks_hash = redacted_arguments[3]
 
       if networks_hash && networks_hash.is_a?(Hash)
-        cloned_networks_hash = Bosh::Common::DeepCopy.copy(networks_hash)
+        cloned_networks_hash = Bosh::Director::DeepCopy.copy(networks_hash)
 
         cloned_networks_hash.each do |_, network_hash|
           cloud_properties = network_hash['cloud_properties']

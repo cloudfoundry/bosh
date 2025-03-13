@@ -38,7 +38,7 @@ module Bosh::Director
       FactoryBot.create(:models_stemcell, name: 'hard', version: '3146.1', operating_system: 'hard-os')
 
       allow(Bosh::Director::ConfigServer::VariablesInterpolator).to receive(:new).and_return(variables_interpolator)
-      allow(variables_interpolator).to receive(:interpolate_cloud_manifest) { |cloud_manifest| Bosh::Common::DeepCopy.copy(cloud_manifest) }
+      allow(variables_interpolator).to receive(:interpolate_cloud_manifest) { |cloud_manifest| Bosh::Director::DeepCopy.copy(cloud_manifest) }
     end
 
     describe '.load_from_model' do

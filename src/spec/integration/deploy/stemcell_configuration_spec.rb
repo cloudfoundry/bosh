@@ -43,7 +43,7 @@ describe 'stemcell configuration', type: :integration do
       bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell.tgz')}")
       bosh_runner.run("upload-stemcell #{asset_path('valid_stemcell_v2.tgz')}")
 
-      stemcell_v1_manifest = Bosh::Common::DeepCopy.copy(manifest_hash)
+      stemcell_v1_manifest = Bosh::Director::DeepCopy.copy(manifest_hash)
       stemcell_v1_manifest['stemcells'].first['version'] = '1'
       deploy_simple_manifest(manifest_hash: stemcell_v1_manifest)
     end

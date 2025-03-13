@@ -78,7 +78,7 @@ module Bosh::Director::ConfigServer
 
       errors = []
       consumer_deployment_name = consumer_variable_set.deployment.name
-      links_spec_copy = Bosh::Common::DeepCopy.copy(links_spec)
+      links_spec_copy = Bosh::Director::DeepCopy.copy(links_spec)
 
       links_spec_copy.each do |link_name, link_spec|
         if link_spec.has_key?('properties') && !link_spec['properties'].nil?

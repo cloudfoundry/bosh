@@ -17,8 +17,6 @@ require 'db_migrator'
 require 'bosh/director'
 require 'bosh/template'
 
-require 'common/deep_copy'
-
 require 'webmock/rspec'
 
 Dir.glob(File.join(SPEC_ROOT, 'support/**/*.rb')).each { |f| require(f) }

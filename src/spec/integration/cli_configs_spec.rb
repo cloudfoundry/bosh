@@ -37,7 +37,7 @@ describe 'cli configs', type: :integration do
     end
 
     it 'does not fail if the uploaded config is a large file' do
-      config = Bosh::Common::DeepCopy.copy(SharedSupport::DeploymentManifestHelper.simple_cloud_config)
+      config = Bosh::Director::DeepCopy.copy(SharedSupport::DeploymentManifestHelper.simple_cloud_config)
 
       (0..10_001).each do |i|
         config["boshbosh#{i}"] = 'smurfsAreBlueGargamelIsBrownPinkpantherIsPinkAndPikachuIsYellow'

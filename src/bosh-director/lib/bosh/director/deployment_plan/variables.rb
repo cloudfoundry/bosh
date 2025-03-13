@@ -1,5 +1,3 @@
-require 'common/deep_copy'
-
 module Bosh::Director::DeploymentPlan
   class Variables
 
@@ -9,7 +7,7 @@ module Bosh::Director::DeploymentPlan
 
     def get_variable(name)
       result = @spec.find { |variable| variable['name'] == name }
-      result ? Bosh::Common::DeepCopy.copy(result) : result
+      result ? Bosh::Director::DeepCopy.copy(result) : result
     end
 
     def contains_variable?(name)
@@ -17,7 +15,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     def spec
-      Bosh::Common::DeepCopy.copy(@spec)
+      Bosh::Director::DeepCopy.copy(@spec)
     end
 
     def add(variables)

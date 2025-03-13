@@ -703,7 +703,7 @@ describe Bosh::Director::Links::LinksParser do
         end
 
         it 'should add correct link providers and link providers intent to the DB' do
-          original_job_spec = Bosh::Common::DeepCopy.copy(job_spec)
+          original_job_spec = Bosh::Director::DeepCopy.copy(job_spec)
 
           expected_provider_params = {
             deployment_model: deployment_plan.model,
@@ -1350,7 +1350,7 @@ describe Bosh::Director::Links::LinksParser do
         end
 
         it 'should add the consumer and consumer intent to the DB' do
-          original_job_spec = Bosh::Common::DeepCopy.copy(job_spec)
+          original_job_spec = Bosh::Director::DeepCopy.copy(job_spec)
 
           expected_consumer_params = {
             deployment_model: deployment_plan.model,

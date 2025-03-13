@@ -53,7 +53,7 @@ describe 'runtime config', type: :integration do
   end
 
   it 'ensures that addon job properties are assigned' do
-    runtime_config = Bosh::Common::DeepCopy.copy(SharedSupport::DeploymentManifestHelper.runtime_config_with_addon)
+    runtime_config = Bosh::Director::DeepCopy.copy(SharedSupport::DeploymentManifestHelper.runtime_config_with_addon)
     runtime_config['addons'][0]['jobs'][0]['properties'] = { 'dummy_with_properties' => { 'echo_value' => 'new_prop_value' } }
     runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
     expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
@@ -97,7 +97,7 @@ describe 'runtime config', type: :integration do
     it 'deploys it after comparing both versions as a string' do
       bosh_runner.run("upload-release #{asset_path('test_release_2.tgz')}")
 
-      runtime_config = Bosh::Common::DeepCopy.copy(SharedSupport::DeploymentManifestHelper.simple_runtime_config('test_release_2', 2,
+      runtime_config = Bosh::Director::DeepCopy.copy(SharedSupport::DeploymentManifestHelper.simple_runtime_config('test_release_2', 2,
                                                                                                               'job_using_pkg_2'))
       runtime_config_file = yaml_file('runtime_config.yml', runtime_config)
       expect(bosh_runner.run("update-runtime-config #{runtime_config_file.path}")).to include('Succeeded')
