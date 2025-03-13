@@ -50,7 +50,7 @@ module Bosh::Director::DeploymentPlan
     let(:current_state) do
       { 'current' => 'state' }
     end
-    let(:blobstore) { instance_double(Bosh::Director::Blobstore::BaseClient, validate!: nil) }
+    let(:blobstore) { instance_double(Bosh::Director::Blobstore::Client, validate!: nil) }
 
     describe '#bind_existing_instance_model' do
       let(:instance_model) { FactoryBot.create(:models_instance, bootstrap: true) }

@@ -2,7 +2,7 @@ require 'forwardable'
 
 module Bosh::Director
   module Blobstore
-    class RetryableBlobstoreClient < BaseClient
+    class RetryableBlobstoreClient < Client
       extend Forwardable
 
       def initialize(client, retryable)

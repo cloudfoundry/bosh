@@ -7,7 +7,7 @@ require 'json'
 
 module Bosh::Director
   module Blobstore
-    class S3cliBlobstoreClient < BaseClient
+    class S3cliBlobstoreClient < Client
       # Blobstore client for S3, using s3cli Go version
       # @param [Hash] options S3connection options
       # @option options [Symbol] bucket_name

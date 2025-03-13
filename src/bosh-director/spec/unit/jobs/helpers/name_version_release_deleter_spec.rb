@@ -11,7 +11,7 @@ module Bosh::Director
       let(:package_deleter) { PackageDeleter.new(compiled_package_deleter, blobstore, per_spec_logger) }
       let(:template_deleter) { TemplateDeleter.new(blobstore, per_spec_logger) }
       let(:compiled_package_deleter) { CompiledPackageDeleter.new(blobstore, per_spec_logger) }
-      let(:blobstore) { instance_double(Bosh::Director::Blobstore::BaseClient) }
+      let(:blobstore) { instance_double(Bosh::Director::Blobstore::Client) }
 
       let(:release) { FactoryBot.create(:models_release, name: 'release-1') }
       let!(:release_version_1) { FactoryBot.create(:models_release_version, version: 1, release: release) }

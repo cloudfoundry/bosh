@@ -4,7 +4,7 @@ module Bosh::Director
   describe RenderedJobTemplatesCleaner do
     subject(:rendered_job_templates) { described_class.new(instance_model, blobstore, per_spec_logger) }
     let(:instance_model) { FactoryBot.create(:models_instance) }
-    let(:blobstore) { instance_double('Bosh::Director::Blobstore::BaseClient') }
+    let(:blobstore) { instance_double('Bosh::Director::Blobstore::Client') }
 
     describe '#clean' do
       let(:stale_archive) do

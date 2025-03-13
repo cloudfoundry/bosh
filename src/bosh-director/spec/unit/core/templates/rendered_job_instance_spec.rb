@@ -178,7 +178,7 @@ module Bosh::Director::Core::Templates
         instance.persist_on_blobstore(blobstore)
       end
 
-      let(:blobstore) { double('Bosh::Director::Blobstore::BaseClient') }
+      let(:blobstore) { double('Bosh::Director::Blobstore::Client') }
 
       let(:templates) { [instance_double('Bosh::Director::Core::Templates::RenderedJobTemplate')] }
 

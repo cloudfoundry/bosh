@@ -1,18 +1,38 @@
 module Bosh::Director
   class Blobstores
+    PROVIDER_NAMES = %w[local s3cli gcscli davcli azurestoragecli]
+
     attr_reader :blobstore
 
     def initialize(config)
-      b_config = config.blobstore_config
-      @blobstore = create_client(b_config)
+      @blobstore = create_client(config.blobstore_config)
     end
 
     private
 
     def create_client(hash)
-      provider = hash.fetch('provider')
+      provider_string = hash.fetch('provider')
       options = hash.fetch('options')
-      Bosh::Director::Blobstore::Client.safe_create(provider, options)
+
+      bare_client = create(provider_string, options)
+
+      sha1_client = Blobstore::Sha1VerifiableBlobstoreClient.new(bare_client, Bosh::Director::Config.logger)
+      retry_config = Bosh::Retryable.new(tries: 6, sleep: 2.0, on: [Blobstore::BlobstoreError])
+      Blobstore::RetryableBlobstoreClient.new(sha1_client, retry_config)
+    end
+
+    def create(provider_string, options = {})
+      unless PROVIDER_NAMES.include?(provider_string)
+        raise Blobstore::BlobstoreError,
+              "Unknown client provider '#{provider_string}', " +
+                "available providers are: #{PROVIDER_NAMES}"
+      end
+
+      Blobstore.const_get(provider_to_classname(provider_string)).new(options)
+    end
+
+    def provider_to_classname(provider_string)
+      provider_string.capitalize + (provider_string == 'local' ? '' : 'Blobstore') + 'Client'
     end
   end
 end

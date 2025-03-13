@@ -2,7 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Jobs::Helpers::StemcellDeleter do
-    let(:blobstore) { instance_double(Bosh::Director::Blobstore::BaseClient) }
+    let(:blobstore) { instance_double(Bosh::Director::Blobstore::Client) }
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
     let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory) }
     let(:stemcell_deleter) { Jobs::Helpers::StemcellDeleter.new(per_spec_logger) }

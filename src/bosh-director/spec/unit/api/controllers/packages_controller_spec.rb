@@ -412,7 +412,7 @@ module Bosh::Director
           get "/blobs/#{blobstore_id}"
         end
 
-        let(:blobstore) { instance_double(Bosh::Director::Blobstore::BaseClient, get: nil) }
+        let(:blobstore) { instance_double(Bosh::Director::Blobstore::Client, get: nil) }
         let(:blobstore_id) { 'blobstore-id' }
 
         before do

@@ -4,7 +4,7 @@ require 'json'
 
 module Bosh::Director
   module Blobstore
-    class GcscliBlobstoreClient < BaseClient
+    class GcscliBlobstoreClient < Client
       EXIT_CODE_OBJECT_FOUND = 0
       EXIT_CODE_OBJECT_NOTFOUND = 3
 

@@ -230,7 +230,7 @@ module Bosh::Director
       end
 
       context 'when creating a tarball' do
-        let(:blobstore_client) { instance_double('Bosh::Director::Blobstore::BaseClient') }
+        let(:blobstore_client) { instance_double('Bosh::Director::Blobstore::Client') }
         let(:archiver) { instance_double('Bosh::Director::Core::TarGzipper') }
         let(:planner_factory) { DeploymentPlan::PlannerFactory.create(per_spec_logger) }
         let(:planner) { planner_factory.create_from_model(deployment_model) }

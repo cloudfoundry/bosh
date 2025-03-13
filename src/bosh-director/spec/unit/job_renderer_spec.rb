@@ -7,7 +7,7 @@ module Bosh::Director
         name: 'test-instance-group',
       )
     end
-    let(:blobstore_client) { instance_double(Bosh::Director::Blobstore::BaseClient) }
+    let(:blobstore_client) { instance_double(Bosh::Director::Blobstore::Client) }
     let(:blobstore_files) { [] }
     let(:cache) { Bosh::Director::Core::Templates::TemplateBlobCache.new }
     let(:encoder) { DnsEncoder.new }

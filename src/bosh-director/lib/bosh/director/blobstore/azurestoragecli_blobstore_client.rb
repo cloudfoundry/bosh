@@ -7,7 +7,7 @@ require 'json'
 
 module Bosh::Director
   module Blobstore
-    class AzurestoragecliBlobstoreClient < BaseClient
+    class AzurestoragecliBlobstoreClient < Client
       # Blobstore client for azure storage account, using azure-storage-cli Go version
       # @param [Hash] options azure storage account connection options
       # @option options [Symbol] account_name

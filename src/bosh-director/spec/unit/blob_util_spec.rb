@@ -12,7 +12,7 @@ module Bosh::Director
     let(:dep_pkg1) { instance_double('Bosh::Director::Models::Package', fingerprint: 'dp_fingerprint1', version: '10.1-dev') }
     let(:cache_key) { 'cache_sha1' }
     let(:dep_key) { '[]' }
-    let(:blobstore) { instance_double('Bosh::Director::Blobstore::BaseClient') }
+    let(:blobstore) { instance_double('Bosh::Director::Blobstore::Client') }
 
 
     describe '#delete_blob' do

@@ -4,7 +4,7 @@ require 'bosh/director/log_bundles_cleaner'
 module Bosh::Director
   describe Jobs::FetchLogs do
     subject(:fetch_logs) { Jobs::FetchLogs.new(instances, 'filters' => 'filter1,filter2') }
-    let(:blobstore) { instance_double('Bosh::Director::Blobstore::BaseClient') }
+    let(:blobstore) { instance_double('Bosh::Director::Blobstore::Client') }
     let(:task) { FactoryBot.create(:models_task, id: 42) }
     let(:task_writer) {Bosh::Director::TaskDBWriter.new(:event_output, task.id)}
     let(:event_log) {Bosh::Director::EventLog::Log.new(task_writer)}

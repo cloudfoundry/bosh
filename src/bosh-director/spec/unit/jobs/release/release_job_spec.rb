@@ -12,7 +12,7 @@ module Bosh::Director
       end
 
       before { allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore) }
-      let(:blobstore) { instance_double('Bosh::Director::Blobstore::BaseClient') }
+      let(:blobstore) { instance_double('Bosh::Director::Blobstore::Client') }
       let(:job_tarball_path) { File.join(release_dir, 'jobs', 'foo-job.tgz') }
 
       let(:job_bits) { create_release_job('foo-job', 'monit', { 'foo-erb' => { 'destination' => 'foo-rendered', 'contents' => 'bar'}}) }

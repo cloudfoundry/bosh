@@ -1,6 +1,6 @@
 module Bosh::Director
   module Blobstore
-    class LocalClient < BaseClient
+    class LocalClient < Client
       CHUNK_SIZE = 1024 * 1024
 
       def initialize(options)

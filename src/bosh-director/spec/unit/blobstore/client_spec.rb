@@ -2,143 +2,286 @@ require 'spec_helper'
 
 module Bosh::Director::Blobstore
   describe Client do
-    describe '.create' do
-      context 'with known client provider' do
-        it 'returns local client' do
-          Dir.mktmpdir do |tmp|
-            expect(Client.create(
-              'local',
-              { blobstore_path: tmp },
-            )).to be_instance_of(LocalClient)
-          end
-        end
+    class TestBaseClient < Bosh::Director::Blobstore::Client
+      def initialize(opts)
+        super(opts)
+      end
 
-        it 'returns s3cli client' do
-          allow(Kernel).to receive(:system).with("/path", "--v", {:out => "/dev/null", :err => "/dev/null"}).and_return(true)
-          expect(Client.create('s3cli', {
-              access_key_id: 'foo',
-              secret_access_key: 'bar',
-              s3cli_path: '/path'
-          })).to be_instance_of(S3cliBlobstoreClient)
-        end
+      def required_credential_properties_list
+        %w[key anotherkey]
+      end
 
-        it 'returns gcscli client' do
-          allow(Kernel).to receive(:system).with("/path", "--v", {:out => "/dev/null", :err => "/dev/null"}).and_return(true)
-          expect(Client.create('gcscli', {
-              gcscli_path: '/path'
-          })).to be_instance_of(GcscliBlobstoreClient)
-        end
+      def redacted_credential_properties_list
+        %w[key]
+      end
+    end
 
-        it 'returns davcli client' do
-          allow(Kernel).to receive(:system).with("/path", "-v", {:out => "/dev/null", :err => "/dev/null"}).and_return(true)
-          expect(Client.create('davcli', {
-            user: 'foo',
-            password: 'bar',
-            endpoint: 'zaksoup.com',
-            davcli_path: '/path'
-          })).to be_instance_of(DavcliBlobstoreClient)
+    let(:options) { {} }
+    subject { TestBaseClient.new(options) }
+
+    it_implements_base_client_interface
+
+    describe '#create' do
+      it 'should raise a NotImplemented exception' do
+        expect { subject.create('contents') }.to raise_error(
+                                                   Bosh::Director::Blobstore::NotImplemented, 'not supported by this blobstore')
+      end
+
+      it 'should raise BlobstoreError exceptions' do
+        expect(subject).to receive(:create_file).and_raise(
+          Bosh::Director::Blobstore::BlobstoreError, 'Could not create object')
+
+        expect { subject.create('contents') }.to raise_error(
+                                                   Bosh::Director::Blobstore::BlobstoreError, 'Could not create object')
+      end
+
+      it 'should trap generic exceptions and raise a BlobstoreError exception' do
+        expect(subject).to receive(:create_file).and_raise(
+          Errno::ECONNRESET, 'Could not create object')
+
+        expect { subject.create('contents') }.to raise_error(
+                                                   Bosh::Director::Blobstore::BlobstoreError,
+                                                   /Errno::ECONNRESET: Connection reset by peer - Could not create object/,
+                                                   )
+      end
+    end
+
+    describe '#get' do
+      it 'allows to pass options optionally' do
+        expect { subject.get('id', 'file') }.to raise_error(Bosh::Director::Blobstore::NotImplemented)
+        expect { subject.get('id', 'file', {}) }.to raise_error(Bosh::Director::Blobstore::NotImplemented)
+      end
+
+      it 'should raise a NotImplemented exception' do
+        expect { subject.get('id', 'file') }.to raise_error(
+                                                  Bosh::Director::Blobstore::NotImplemented, 'not supported by this blobstore')
+      end
+
+      it 'should raise BlobstoreError exceptions' do
+        expect(subject).to receive(:get_file).and_raise(
+          Bosh::Director::Blobstore::BlobstoreError, 'Could not fetch object')
+
+        expect { subject.get('id', 'file') }.to raise_error(
+                                                  Bosh::Director::Blobstore::BlobstoreError, 'Could not fetch object')
+      end
+
+      it 'should trap generic exceptions and raise a BlobstoreError exception' do
+        expect(subject).to receive(:get_file).and_raise(
+          Errno::ECONNRESET, 'Could not fetch object')
+
+        expect { subject.get('id', 'file') }.to raise_error(
+                                                  Bosh::Director::Blobstore::BlobstoreError,
+                                                  /Errno::ECONNRESET: Connection reset by peer - Could not fetch object/,
+                                                  )
+      end
+    end
+
+    describe '#delete' do
+      it 'should raise a NotImplemented exception' do
+        expect { subject.delete('id') }.to raise_error(
+                                             Bosh::Director::Blobstore::NotImplemented, 'not supported by this blobstore')
+      end
+
+      it 'should propagate unexpected exception' do
+        subject.define_singleton_method(:delete_object) { |id| raise Exception.new 'fake-exception' }
+        expect { subject.delete('id') }.to raise_error(
+                                             Exception, 'fake-exception')
+      end
+    end
+
+    describe '#exists?' do
+      it 'should raise a NotImplemented exception' do
+        expect { subject.exists?('id') }.to raise_error(
+                                              Bosh::Director::Blobstore::NotImplemented, 'not supported by this blobstore')
+      end
+
+      it 'should propagate unexpected exception' do
+        subject.define_singleton_method(:object_exists?) { |id| raise Exception.new 'fake-exception' }
+        expect { subject.exists?('id') }.to raise_error(
+                                              Exception, 'fake-exception')
+      end
+    end
+
+    describe '#redact_credentials' do
+      let(:blobstore_hashes) do
+        [
+          {
+            'options' => {
+              'my-key' => 'foo',
+              'my-key-id' => 'bar',
+              'allowed-key' => 'baz',
+            },
+          },
+        ]
+      end
+
+      before do
+        allow(subject).to receive(:redacted_credential_properties_list).and_return(%w[my-key my-key-id])
+      end
+
+      context 'when the blobstore is configured to use signed urls' do
+        let(:options) { { 'enable_signed_urls' => true } }
+
+        it 'redacts the blobstore credentials' do
+          redacted_blobstore_hashes = subject.redact_credentials(blobstore_hashes)
+          expect(redacted_blobstore_hashes).to eq(
+                                                 [
+                                                   {
+                                                     'options' => {
+                                                       'allowed-key' => 'baz',
+                                                     },
+                                                   }
+                                                 ]
+                                               )
         end
       end
 
-      context 'with unknown client provider' do
-        it 'raise an exception' do
-          expect {
-            Client.create('fake-unknown-provider', {})
-          }.to raise_error(/^Unknown client provider 'fake-unknown-provider'/)
+      context 'when the blobstore is not configured to use signed urls' do
+        let(:options) { { 'enable_signed_urls' => false } }
+
+        it 'does not redact the blobstore credentials' do
+          redacted_blobstore_hashes = subject.redact_credentials(blobstore_hashes)
+          expect(redacted_blobstore_hashes).to eq(
+                                                 [
+                                                   {
+                                                     'options' => {
+                                                       'my-key' => 'foo',
+                                                       'my-key-id' => 'bar',
+                                                       'allowed-key' => 'baz',
+                                                     },
+                                                   }
+                                                 ]
+                                               )
         end
       end
     end
 
-    describe '.safe_create' do
-      context 'with known provider' do
-        it 'returns retryable client' do
-          client = described_class.safe_create('s3cli',{
-            access_key_id: 'foo',
-            secret_access_key: 'bar',
-            s3cli_path: true,
-          })
-          expect(client).to be_an_instance_of(RetryableBlobstoreClient)
+    describe 'signed urls' do
+      context 'when enabled' do
+        let(:options) { { 'enable_signed_urls' => true } }
+
+        it 'can be enabled' do
+          expect(subject.signing_enabled?).to eq(true)
         end
 
-        it 'makes retryable client with s3 client' do
-          wrapped_client = instance_double('Bosh::Director::Blobstore::S3cliBlobstoreClient')
-          expect(S3cliBlobstoreClient)
-            .to receive(:new)
-            .and_return(wrapped_client)
-
-          sha1_verifiable_client = instance_double('Bosh::Director::Blobstore::Sha1VerifiableBlobstoreClient')
-          expect(Sha1VerifiableBlobstoreClient)
-            .to receive(:new)
-            .with(wrapped_client, per_spec_logger)
-            .and_return(sha1_verifiable_client)
-
-          retryable = instance_double('Bosh::Retryable')
-          expect(Bosh::Retryable)
-            .to receive(:new)
-            .and_return(retryable)
-
-          retryable_client = instance_double('Bosh::Director::Blobstore::RetryableBlobstoreClient')
-          expect(RetryableBlobstoreClient)
-            .to receive(:new)
-            .with(sha1_verifiable_client, retryable)
-            .and_return(retryable_client)
-
-          expect(described_class.safe_create('s3cli', {
-            access_key_id: 'foo',
-            secret_access_key: 'bar',
-            s3cli_path: true,
-          })).to eq(retryable_client)
+        it 'can respond to redacted_credential_properties_list' do
+          expect(subject.redacted_credential_properties_list).to eq(%w[key])
         end
 
-        it 'makes retryable client with gcs client' do
-          wrapped_client = instance_double('Bosh::Director::Blobstore::GcscliBlobstoreClient')
-          expect(GcscliBlobstoreClient)
-            .to receive(:new)
-            .and_return(wrapped_client)
-
-          sha1_verifiable_client = instance_double('Bosh::Director::Blobstore::Sha1VerifiableBlobstoreClient')
-          expect(Sha1VerifiableBlobstoreClient)
-            .to receive(:new)
-            .with(wrapped_client, per_spec_logger)
-            .and_return(sha1_verifiable_client)
-
-          retryable = instance_double('Bosh::Retryable')
-          expect(Bosh::Retryable)
-            .to receive(:new)
-            .and_return(retryable)
-
-          retryable_client = instance_double('Bosh::Director::Blobstore::RetryableBlobstoreClient')
-          expect(RetryableBlobstoreClient)
-            .to receive(:new)
-            .with(sha1_verifiable_client, retryable)
-            .and_return(retryable_client)
-
-          expect(described_class.safe_create('gcscli', {
-            access_key_id: 'foo',
-            secret_access_key: 'bar',
-            gcscli_path: true,
-          })).to eq(retryable_client)
+        it 'can determine ability to use signed urls based on stemcell api version' do
+          expect(subject.can_sign_urls?(2)).to eq(false)
+          expect(subject.can_sign_urls?(3)).to eq(true)
         end
 
-        it 'makes retryable object with default options' do
-          expect(Bosh::Retryable)
-            .to receive(:new)
-            .with(tries: 6, sleep: 2.0, on: [BlobstoreError])
-            .and_call_original
-          described_class.safe_create('s3cli', {
-            access_key_id: 'foo',
-            secret_access_key: 'bar',
-            s3cli_path: true,
-          })
+        it 'assumes default stemcell api version when absent' do
+          expect(subject.can_sign_urls?(nil)).to eq(false)
+        end
+
+        it 'can generate an object it' do
+          expect(subject.generate_object_id).to_not be_nil
+        end
+
+        context 'agent is not capable of using signed urls' do
+          let(:stemcell_api_version) { 2 }
+
+          it 'raises an error if validation for an agent env without credentials fails' do
+            expect { subject.validate!({}, stemcell_api_version) }.to raise_error(Bosh::Director::BadConfig)
+          end
+
+          it 'raises an error if only partial credentials are available' do
+            expect { subject.validate!({ 'anotherkey' => 'value' }, stemcell_api_version) }
+              .to raise_error(Bosh::Director::BadConfig)
+          end
+
+          it 'validates successfully with all credentials' do
+            subject.validate!({ 'anotherkey' => 'value', 'key' => 'derp' }, stemcell_api_version)
+            subject.validate!({ 'anotherkey' => 'value', 'key' => 'derp', 'extra' => 'value' }, stemcell_api_version)
+          end
+        end
+
+        context 'agent is capable of using signed urls' do
+          let(:stemcell_api_version) { 3 }
+
+          it 'validates successfully regardless of credentials provided' do
+            subject.validate!({ 'anotherkey' => 'value', 'key' => 'derp' }, stemcell_api_version)
+            subject.validate!({ 'anotherkey' => 'value', 'key' => 'derp', 'extra' => 'value' }, stemcell_api_version)
+            subject.validate!({}, stemcell_api_version)
+          end
         end
       end
 
-      context 'with unknown provider' do
-        it 'raise an exception' do
-          expect {
-            described_class.safe_create('fake-unknown-provider', {})
-          }.to raise_error(/^Unknown client provider 'fake-unknown-provider'/)
+      context 'when disabled' do
+        let(:options) { { 'enable_signed_urls' => true } }
+
+        it 'validates successfully when signed URLs are disabled' do
+          subject.validate!({ 'key' => 'value', 'anotherkey' => 'value' }, 3)
         end
+      end
+    end
+
+    context 'with logging' do
+      let(:start_time) { Time.new(2017) }
+      let(:end_time) { Time.new(2018) }
+
+      before do
+        subject.define_singleton_method(:create_file) { |id, file| true }
+        subject.define_singleton_method(:get_file) { |id, file| true }
+        subject.define_singleton_method(:delete_object) { |id| true }
+        subject.define_singleton_method(:object_exists?) { |id| true }
+
+        allow(Bosh::Director::Config).to receive(:logger).and_return(per_spec_logger)
+        allow(per_spec_logger).to receive(:debug)
+        allow(Time).to receive(:now).twice
+        allow(Time).to receive(:now).and_return(start_time, end_time)
+      end
+
+      context '#create' do
+        context 'when the id is not nil' do
+          it 'creates and logs messages with start time and total time' do
+            # Tempfile calls Time.now so need three calls
+            allow(Time).to receive(:now).exactly(3)
+            allow(Time).to receive(:now).and_return(Time.new(2016), start_time, end_time)
+
+            expect(per_spec_logger).to receive(:debug).with("[blobstore] creating 'id' start: #{start_time}").ordered
+            expect(subject).to receive(:create_file).ordered
+            expect(per_spec_logger).to receive(:debug).with("[blobstore] creating 'id' (took #{end_time - start_time})").ordered
+            subject.create(File.new(Tempfile.new.path, 'r'), 'id')
+          end
+        end
+
+        context 'when the id is nil' do
+          it 'creates and logs messages with start time and total time' do
+            expect(per_spec_logger).to receive(:debug).with(/\[blobstore\] creating \'.*temp-path.*\' start: #{Regexp.escape(start_time.to_s)}/).ordered
+            expect(subject).to receive(:create_file).ordered
+            expect(per_spec_logger).to receive(:debug).with(/\[blobstore\] creating \'.*temp-path.*\' \(took #{end_time - start_time}\)/).ordered
+            subject.create('contents')
+          end
+        end
+      end
+
+      it 'gets and logs messages with start time and total time' do
+        expect(per_spec_logger).to receive(:debug).with("[blobstore] getting 'id' start: #{start_time}").ordered
+        expect(per_spec_logger).to receive(:debug).with("[blobstore] getting 'id' (took #{end_time - start_time})").ordered
+        allow(subject).to receive(:get_file).once
+        subject.get('id')
+      end
+
+      it 'deletes and logs messages with start time and total time' do
+        expect(per_spec_logger).to receive(:debug).with("[blobstore] deleting 'oid' start: #{start_time}").ordered
+        expect(subject).to receive(:delete_object).ordered
+        expect(per_spec_logger).to receive(:debug).with("[blobstore] deleting 'oid' (took #{end_time - start_time})").ordered
+        subject.delete('oid')
+      end
+
+      it 'checks the existence of an object and logs messages with start time and total time' do
+        expect(per_spec_logger).to receive(:debug).with("[blobstore] checking existence of 'oid' start: #{start_time}").ordered
+        expect(subject).to receive(:object_exists?).ordered
+        expect(per_spec_logger).to receive(:debug).with("[blobstore] checking existence of 'oid' (took #{end_time - start_time})").ordered
+        subject.exists?('oid')
+      end
+
+      it '#headers is not implemented in base class' do
+        expect { subject.headers }.to raise_error(Bosh::Director::Blobstore::NotImplemented, 'not supported by this blobstore')
       end
     end
   end

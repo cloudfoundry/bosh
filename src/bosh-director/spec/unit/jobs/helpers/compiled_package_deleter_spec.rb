@@ -3,7 +3,7 @@ require 'spec_helper'
 module Bosh::Director
   describe Jobs::Helpers::CompiledPackageDeleter do
     subject(:compiled_package_deleter) { Jobs::Helpers::CompiledPackageDeleter.new(blobstore, per_spec_logger) }
-    let(:blobstore) { instance_double(Bosh::Director::Blobstore::BaseClient) }
+    let(:blobstore) { instance_double(Bosh::Director::Blobstore::Client) }
     let(:event_log) { EventLog::Log.new }
 
     describe '#delete' do

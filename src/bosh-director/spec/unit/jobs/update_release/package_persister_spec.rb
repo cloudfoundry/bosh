@@ -297,7 +297,7 @@ module Bosh::Director
 
         let(:release) { FactoryBot.create(:models_release) }
 
-        let(:blobstore) { instance_double('Bosh::Director::Blobstore::BaseClient', create: true) }
+        let(:blobstore) { instance_double('Bosh::Director::Blobstore::Client', create: true) }
 
         it 'should create simple packages' do
           FileUtils.mkdir_p(File.join(release_dir, 'packages'))

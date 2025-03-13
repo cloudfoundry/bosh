@@ -16,7 +16,7 @@ module Bosh::Director
     let(:agent) { instance_double(AgentClient, wait_until_ready: nil, delete_arp_entries: nil) }
     let(:agent2) { instance_double(AgentClient, wait_until_ready: nil, delete_arp_entries: nil) }
     let(:agent_broadcast) { AgentBroadcaster.new(0.1) }
-    let(:blobstore) { instance_double(Bosh::Director::Blobstore::BaseClient) }
+    let(:blobstore) { instance_double(Bosh::Director::Blobstore::Client) }
 
     before do
       allow(App).to receive_message_chain(:instance, :blobstores, :blobstore).and_return(blobstore)

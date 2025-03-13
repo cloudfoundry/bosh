@@ -4,7 +4,7 @@ require 'json'
 
 module Bosh::Director
   module Blobstore
-    class DavcliBlobstoreClient < BaseClient
+    class DavcliBlobstoreClient < Client
       def initialize(options)
         super(options)
         @davcli_path = @options.fetch(:davcli_path)

@@ -4,7 +4,7 @@ require 'open3'
 
 module Bosh::Director
   module Blobstore
-    class Sha1VerifiableBlobstoreClient < BaseClient
+    class Sha1VerifiableBlobstoreClient < Client
       extend Forwardable
 
       def initialize(client, logger)
