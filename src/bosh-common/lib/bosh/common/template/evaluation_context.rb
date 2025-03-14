@@ -1,18 +1,18 @@
 require 'ostruct'
-require 'bosh/template/evaluation_failed'
-require 'bosh/template/unknown_property'
-require 'bosh/template/unknown_link'
-require 'bosh/template/property_helper'
-require 'bosh/template/evaluation_link_instance'
-require 'bosh/template/evaluation_link'
-require 'bosh/template/manual_link_dns_encoder'
+require 'bosh/common/template/evaluation_failed'
+require 'bosh/common/template/unknown_property'
+require 'bosh/common/template/unknown_link'
+require 'bosh/common/template/property_helper'
+require 'bosh/common/template/evaluation_link_instance'
+require 'bosh/common/template/evaluation_link'
+require 'bosh/common/template/manual_link_dns_encoder'
 
 # Include for backward compatibility within ERB template rendering
 require 'active_support'
 require 'active_support/core_ext/object/blank'
 require 'shellwords'
 
-module Bosh
+module Bosh::Common
   module Template
     # Helper class to evaluate templates. Used by Director, CLI and Agent.
     class EvaluationContext

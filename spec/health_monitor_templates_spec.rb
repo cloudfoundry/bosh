@@ -51,7 +51,7 @@ RSpec.describe 'health_monitor.yml.erb' do
   let(:erb_yaml) { File.read(File.join(RELEASE_ROOT, 'jobs/health_monitor/templates/health_monitor.yml.erb')) }
 
   subject(:parsed_yaml) do
-    binding = Bosh::Template::EvaluationContext.new(deployment_manifest_fragment, nil).get_binding
+    binding = Bosh::Common::Template::EvaluationContext.new(deployment_manifest_fragment, nil).get_binding
     YAML.load(ERB.new(erb_yaml).result(binding))
   end
 

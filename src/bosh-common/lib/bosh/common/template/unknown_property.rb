@@ -1,4 +1,4 @@
-module Bosh
+module Bosh::Common
   module Template
     class UnknownProperty < StandardError
       attr_reader :name

@@ -5,7 +5,7 @@ require 'logging'
 require 'tmpdir'
 require 'yaml'
 
-require 'bosh/template/evaluation_context'
+require 'bosh/common/template/evaluation_context'
 
 require 'integration_support/constants'
 require 'integration_support/service'
@@ -109,7 +109,7 @@ module IntegrationSupport
           dest_path = File.join(installed_uaa_job_path, dst)
           FileUtils.mkdir_p(File.dirname(dest_path))
 
-          evaluation_context = Bosh::Template::EvaluationContext.new(context, nil)
+          evaluation_context = Bosh::Common::Template::EvaluationContext.new(context, nil)
           template = ERB.new(File.read(src_path), trim_mode: "-")
           template_result = template.result(evaluation_context.get_binding)
           File.write(dest_path, template_result)

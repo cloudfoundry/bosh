@@ -2,6 +2,9 @@ PATH
   remote: bosh-common
   specs:
     bosh-common (0.0.0)
+      activesupport
+      openssl
+      ostruct
 
 PATH
   remote: bosh-director
@@ -351,4 +354,4 @@ DEPENDENCIES
   webmock
 
 BUNDLED WITH
-   2.5.23
+   2.6.6

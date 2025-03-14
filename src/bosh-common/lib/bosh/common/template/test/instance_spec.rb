@@ -1,15 +1,15 @@
-module Bosh::Template::Test
+module Bosh::Common::Template::Test
   class InstanceSpec
     def initialize(
-        address: 'my.bosh.com',
-        az: 'az1',
-        bootstrap: false,
-        deployment: 'my-deployment',
-        id: 'xxxxxx-xxxxxxxx-xxxxx',
-        index: 0,
-        ip: '192.168.0.0',
-        name: 'me',
-        networks: {'network1' => {'foo' => 'bar', 'ip' => '192.168.0.0'}}
+      address: 'my.bosh.com',
+      az: 'az1',
+      bootstrap: false,
+      deployment: 'my-deployment',
+      id: 'xxxxxx-xxxxxxxx-xxxxx',
+      index: 0,
+      ip: '192.168.0.0',
+      name: 'me',
+      networks: { 'network1' => { 'foo' => 'bar', 'ip' => '192.168.0.0' } }
     )
       @address = address
       @az = az
@@ -33,7 +33,7 @@ module Bosh::Template::Test
         'ip' => @ip,
         'name' => @name,
         'networks' => @networks,
-        'job' => {'name' => @name}
+        'job' => { 'name' => @name }
       }
     end
   end

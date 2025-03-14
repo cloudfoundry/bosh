@@ -1,4 +1,4 @@
-module Bosh
+module Bosh::Common
   module Template
     class EvaluationFailed < StandardError
     end

@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 RSpec.describe 'director templates' do
-  let(:release) { Bosh::Template::Test::ReleaseDir.new(RELEASE_ROOT) }
+  let(:release) { Bosh::Common::Template::Test::ReleaseDir.new(RELEASE_ROOT) }
   let(:job) { release.job('director') }
   let(:properties) { default_properties }
   let(:default_properties) do

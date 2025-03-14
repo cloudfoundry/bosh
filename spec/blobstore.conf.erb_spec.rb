@@ -468,7 +468,7 @@ server {
     let(:template) { File.read(File.join(RELEASE_ROOT, file_name)) }
 
     let(:rendered_template) do
-      binding = Bosh::Template::EvaluationContext.new(properties, nil).get_binding
+      binding = Bosh::Common::Template::EvaluationContext.new(properties, nil).get_binding
       ERB.new(template).result(binding)
     end
 
@@ -506,7 +506,7 @@ server {
     let(:template) { File.read(File.join(RELEASE_ROOT, file_name)) }
 
     let(:rendered_template) do
-      binding = Bosh::Template::EvaluationContext.new(properties, nil).get_binding
+      binding = Bosh::Common::Template::EvaluationContext.new(properties, nil).get_binding
       ERB.new(template).result(binding)
     end
 

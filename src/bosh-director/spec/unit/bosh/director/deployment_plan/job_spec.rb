@@ -121,7 +121,7 @@ module Bosh
               expect do
                 subject.bind_properties('instance_group_name')
               end.to raise_error(
-                Bosh::Template::InvalidPropertyType,
+                Bosh::Common::Template::InvalidPropertyType,
                 "Property 'deep_property.dont_override' expects a hash, but received 'FalseClass'",
               )
             end
