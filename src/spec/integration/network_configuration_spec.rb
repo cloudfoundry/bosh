@@ -187,7 +187,7 @@ describe 'network configuration', type: :integration do
     context 'when the cloud config has overlapping networks' do
       let(:cloud_config_hash) do
         cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
-        cloud_config_hash['networks'] << Bosh::Common::DeepCopy.copy(cloud_config_hash['networks'][0]).tap do |new_network|
+        cloud_config_hash['networks'] << Bosh::Director::DeepCopy.copy(cloud_config_hash['networks'][0]).tap do |new_network|
           new_network['name'] = 'b'
         end
         cloud_config_hash

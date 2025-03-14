@@ -18,10 +18,6 @@ require 'yaml'
 require 'time'
 require 'zlib'
 
-require 'common/exec'
-require 'bosh/template/evaluation_context'
-require 'common/version/release_version_list'
-
 require 'bcrypt'
 require 'delayed_job'
 require 'sequel'
@@ -31,7 +27,34 @@ require 'nats/io/client'
 require 'openssl'
 require 'delayed_job_sequel'
 
-require 'common/thread_formatter'
+require 'clouds/external_cpi'
+require 'clouds/external_cpi_response_wrapper'
+require 'clouds/errors'
+
+require 'bosh/common'
+require 'bosh/common/exec'
+require 'bosh/common/core_ext/kernel'
+require 'bosh/common/thread_pool'
+
+require 'bosh/template/evaluation_context'
+
+require 'bosh/version/release_version_list'
+
+require 'bosh/director/core_ext/array'
+require 'bosh/director/core_ext/object'
+require 'bosh/director/core_ext/hash'
+
+require 'bosh/director/blobstore/errors'
+require 'bosh/director/blobstore/client'
+require 'bosh/director/blobstore/retryable_client_wrapper'
+require 'bosh/director/blobstore/sha1_verifying_client_wrapper'
+Bosh::Director::Blobstore.autoload(:LocalClient, 'bosh/director/blobstore/local_client')
+Bosh::Director::Blobstore.autoload(:DavcliBlobstoreClient, 'bosh/director/blobstore/davcli_blobstore_client')
+Bosh::Director::Blobstore.autoload(:S3cliBlobstoreClient, 'bosh/director/blobstore/s3cli_blobstore_client')
+Bosh::Director::Blobstore.autoload(:AzurestoragecliBlobstoreClient, 'bosh/director/blobstore/azurestoragecli_blobstore_client')
+Bosh::Director::Blobstore.autoload(:GcscliBlobstoreClient, 'bosh/director/blobstore/gcscli_blobstore_client')
+
+require 'bosh/director/deep_copy'
 require 'bosh/director/cloud_factory'
 require 'bosh/director/az_cloud_factory.rb'
 require 'bosh/director/api'
@@ -48,7 +71,6 @@ require 'bosh/director/dns/local_dns_encoder_manager'
 require 'bosh/director/dns/local_dns_manager'
 require 'bosh/director/dns/dns_records'
 require 'bosh/director/errors'
-require 'bosh/director/ext'
 require 'bosh/director/ip_util'
 require 'bosh/director/ip_addr_or_cidr'
 require 'bosh/director/lock_helper'
@@ -56,8 +78,10 @@ require 'bosh/director/validation_helper'
 require 'bosh/director/download_helper'
 require 'bosh/director/formatter_helper'
 require 'bosh/director/tagged_logger'
+require 'bosh/director/thread_formatter'
 require 'bosh/director/duplicate_detector'
 require 'bosh/director/numerical_value_calculator'
+require 'bosh/director/regex_logging_filter'
 
 require 'bosh/director/version'
 require 'bosh/director/config'
@@ -69,9 +93,6 @@ require 'bosh/director/blob_util'
 require 'bosh/director/digest/bosh_digest'
 
 require 'bosh/director/agent_client'
-require 'cloud/external_cpi'
-require 'cloud/external_cpi_response_wrapper'
-require 'cloud/errors'
 require 'bosh/director/compiled_package_requirement'
 require 'bosh/director/key_generator'
 require 'bosh/director/package_dependencies_manager'
@@ -130,7 +151,6 @@ require 'bosh/director/sequel'
 require 'bosh/director/agent_broadcaster'
 require 'bosh/director/timeout'
 require 'bosh/director/nats_client_cert_generator'
-require 'common/thread_pool'
 
 require 'bosh/director/config_server/deep_hash_replacement'
 require 'bosh/director/config_server/uaa_auth_provider'
@@ -263,22 +283,6 @@ require 'bosh/director/api/route_configuration'
 require 'bosh/director/step_executor'
 require 'bosh/director/metrics_collector'
 require 'bosh/director/strip_deployments_middleware_collector'
-
-require 'common/common'
-
-require 'bosh/blobstore_client/errors'
-require 'bosh/blobstore_client/client'
-
-Bosh::Blobstore.autoload(:BaseClient, 'bosh/blobstore_client/base')
-require 'bosh/blobstore_client/retryable_blobstore_client'
-require 'bosh/blobstore_client/sha1_verifiable_blobstore_client'
-
-Bosh::Blobstore.autoload(:SimpleBlobstoreClient, 'bosh/blobstore_client/simple_blobstore_client')
-Bosh::Blobstore.autoload(:LocalClient, 'bosh/blobstore_client/local_client')
-Bosh::Blobstore.autoload(:DavcliBlobstoreClient, 'bosh/blobstore_client/davcli_blobstore_client')
-Bosh::Blobstore.autoload(:S3cliBlobstoreClient, 'bosh/blobstore_client/s3cli_blobstore_client')
-Bosh::Blobstore.autoload(:AzurestoragecliBlobstoreClient, 'bosh/blobstore_client/azurestoragecli_blobstore_client')
-Bosh::Blobstore.autoload(:GcscliBlobstoreClient, 'bosh/blobstore_client/gcscli_blobstore_client')
 
 # Allow all hostnames, the X-Forwarded-Host header is removed at the nginx layer. CVE-2024-21510
 Sinatra::Base.set(:host_authorization, { permitted_hosts: [] })

@@ -58,7 +58,7 @@ module Bosh::Director::ConfigServer
           Net::HTTPRetriableError,
           OpenSSL::SSL::SSLError,
       ]
-      Bosh::Retryable.new({sleep: 0, tries: 3, on: handled_exceptions})
+      Bosh::Common::Retryable.new({sleep: 0, tries: 3, on: handled_exceptions})
     end
 
     def fetch

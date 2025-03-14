@@ -32,7 +32,7 @@ Gem::Specification.new do |spec|
   ]
   spec.require_paths = ['lib']
 
-  spec.add_dependency 'bosh_common',   "~>#{Bosh::Director::VERSION}"
+  spec.add_dependency 'bosh-common',   "~>#{Bosh::Director::VERSION}"
 
   spec.add_dependency 'activesupport'
   spec.add_dependency 'bcrypt'
@@ -51,6 +51,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'rake'
   spec.add_dependency 'rufus-scheduler'
   spec.add_dependency 'securerandom'
+  spec.add_dependency 'semi_semantic'
   spec.add_dependency 'sequel'
   spec.add_dependency 'sinatra'
   spec.add_dependency 'sinatra-contrib'

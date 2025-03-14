@@ -17,7 +17,7 @@ module Bosh::Director
         sorted_version_tuples = release.versions_dataset.all.map do |version|
           {
             provided: version,
-            parsed: Bosh::Common::Version::ReleaseVersion.parse(version.values[:version])
+            parsed: Bosh::Version::ReleaseVersion.parse(version.values[:version])
           }
         end.sort_by { |rv| rv[:parsed] }
 
@@ -53,8 +53,8 @@ module Bosh::Director
         release_version = dataset.filter(version: version.to_s).first
         if release_version.nil?
           begin
-            new_formatted_version = Bosh::Common::Version::ReleaseVersion.parse(version)
-          rescue Bosh::Common::Version::ParseError
+            new_formatted_version = Bosh::Version::ReleaseVersion.parse(version)
+          rescue Bosh::Version::ParseError
             raise ReleaseVersionInvalid, "Release version invalid: #{version}"
           end
           if version == new_formatted_version.to_s
