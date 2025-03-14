@@ -5,21 +5,16 @@ module Bosh::Common
       attr_reader :output
 
       def initialize(status, command, output = nil)
-        @status = status
-        @command = command
         @output = output
-      end
 
-      def message
-        if @status
-          "command '#{@command}' failed with exit code #{@status}"
-        else
-          "command not found: #{@command}"
-        end
-      end
+        message =
+          if status
+            "command '#{command}' failed with exit code #{status}"
+          else
+            "command not found: #{command}"
+          end
 
-      def to_s
-        message
+        super(message)
       end
     end
   end
