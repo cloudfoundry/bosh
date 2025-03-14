@@ -85,10 +85,10 @@ module Bosh::Director
           it 'should process packages for compiled release' do
             ['fake-name-1.tgz', 'fake-name-2.tgz'].each do |name|
               tgz = "#{release_dir}/compiled_packages/#{name}"
-              allow(Bosh::Exec).to receive(:sh).with(
+              allow(Bosh::Common::Exec).to receive(:sh).with(
                 "tar -tzf #{tgz} 2>&1",
                 on_error: :return,
-              ).and_return(instance_double(Bosh::Exec::Result, failed?: false))
+              ).and_return(instance_double(Bosh::Common::Exec::Result, failed?: false))
               expect(BlobUtil).to receive(:create_blob).with(tgz).and_return(1)
             end
             expect(BlobUtil).to_not receive(:copy_blob)
@@ -166,10 +166,10 @@ module Bosh::Director
               it 'should not copy the existing blob' do
                 ['fake-name-2.tgz'].each do |name|
                   tgz = "#{release_dir}/compiled_packages/#{name}"
-                  allow(Bosh::Exec).to receive(:sh).with(
+                  allow(Bosh::Common::Exec).to receive(:sh).with(
                     "tar -tzf #{tgz} 2>&1",
                     on_error: :return,
-                  ).and_return(instance_double(Bosh::Exec::Result, failed?: false))
+                  ).and_return(instance_double(Bosh::Common::Exec::Result, failed?: false))
                   expect(BlobUtil).to receive(:create_blob).with(tgz).and_return(1)
                 end
                 expect(BlobUtil).to_not receive(:copy_blob)
@@ -202,10 +202,10 @@ module Bosh::Director
               it 'should copy the existing blob' do
                 ['fake-name-1.tgz', 'fake-name-2.tgz'].each do |name|
                   tgz = "#{release_dir}/compiled_packages/#{name}"
-                  allow(Bosh::Exec).to receive(:sh).with(
+                  allow(Bosh::Common::Exec).to receive(:sh).with(
                     "tar -tzf #{tgz} 2>&1",
                     on_error: :return,
-                  ).and_return(instance_double(Bosh::Exec::Result, failed?: false))
+                  ).and_return(instance_double(Bosh::Common::Exec::Result, failed?: false))
                 end
                 expect(BlobUtil).to_not receive(:create_blob)
                 expect(BlobUtil).to receive(:copy_blob).and_return('copied-blob-id')
@@ -260,10 +260,10 @@ module Bosh::Director
 
             it "creates packages that don't already exist" do
               tgz = "#{release_dir}/packages/fake-name-2.tgz"
-              allow(Bosh::Exec).to receive(:sh).with(
+              allow(Bosh::Common::Exec).to receive(:sh).with(
                 "tar -tzf #{tgz} 2>&1",
                 on_error: :return,
-              ).and_return(instance_double(Bosh::Exec::Result, failed?: false))
+              ).and_return(instance_double(Bosh::Common::Exec::Result, failed?: false))
               expect(BlobUtil).to receive(:create_blob).with(tgz).and_return(1)
 
               persist_packages(manifest_packages, false)
@@ -366,8 +366,8 @@ module Bosh::Director
         end
 
         it 'should fail if cannot extract package archive' do
-          result = Bosh::Exec::Result.new('cmd', 'output', 1)
-          expect(Bosh::Exec).to receive(:sh).and_return(result)
+          result = Bosh::Common::Exec::Result.new('cmd', 'output', 1)
+          expect(Bosh::Common::Exec).to receive(:sh).and_return(result)
 
           expect do
             Jobs::UpdateRelease::PackagePersister.create_package(

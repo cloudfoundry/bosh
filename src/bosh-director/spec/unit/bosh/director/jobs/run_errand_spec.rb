@@ -9,7 +9,7 @@ module Bosh::Director
     let(:task_result) { Bosh::Director::TaskDBWriter.new(:result_output, task.id) }
     let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
     let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
-    let(:thread_pool) { double(Bosh::ThreadPool) }
+    let(:thread_pool) { double(Bosh::Common::ThreadPool) }
     let(:instances) { [instance_double(Bosh::Director::Models::Instance, uuid: 'instance-uuid', stopped?: false)] }
     let(:template_blob_cache) { instance_double('Bosh::Director::Core::Templates::TemplateBlobCache') }
     let(:instance_manager) { instance_double(Bosh::Director::Api::InstanceManager) }
@@ -23,7 +23,7 @@ module Bosh::Director
       allow(Config).to receive(:event_log).and_return(event_log)
       allow(Config).to receive(:result).and_return(task_result)
       allow(Config).to receive(:current_job).and_return(job)
-      allow(Bosh::ThreadPool).to receive(:new).and_return(thread_pool)
+      allow(Bosh::Common::ThreadPool).to receive(:new).and_return(thread_pool)
       allow(template_blob_cache).to receive(:clean_cache!)
 
       allow(thread_pool).to receive(:wrap) do |&blk|

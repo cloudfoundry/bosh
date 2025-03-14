@@ -234,8 +234,8 @@ module Bosh::Director
 
       context 'when extracting release fails' do
         before do
-          result = Bosh::Exec::Result.new('cmd', 'output', 1)
-          expect(Bosh::Exec).to receive(:sh).and_return(result)
+          result = Bosh::Common::Exec::Result.new('cmd', 'output', 1)
+          expect(Bosh::Common::Exec).to receive(:sh).and_return(result)
         end
 
         it 'raises an error' do

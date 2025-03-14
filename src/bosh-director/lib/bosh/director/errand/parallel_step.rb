@@ -10,7 +10,7 @@ module Bosh::Director
     end
 
     def prepare
-      Bosh::ThreadPool.new(max_threads: @max_in_flight, logger: Config.logger).wrap do |pool|
+      Bosh::Common::ThreadPool.new(max_threads: @max_in_flight, logger: Config.logger).wrap do |pool|
         @steps.each do |step|
           pool.process { step.prepare }
         end
@@ -23,7 +23,7 @@ module Bosh::Director
       errand_run = Models::ErrandRun.find_or_create(deployment: @deployment_model, errand_name: @errand_name)
       errand_run.update(successful_state_hash: '')
 
-      Bosh::ThreadPool.new(max_threads: @max_in_flight, logger: Config.logger).wrap do |pool|
+      Bosh::Common::ThreadPool.new(max_threads: @max_in_flight, logger: Config.logger).wrap do |pool|
         @steps.each do |step|
           pool.process do
             result = step.run(&checkpoint_block)

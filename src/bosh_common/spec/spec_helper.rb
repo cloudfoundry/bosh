@@ -5,9 +5,9 @@ require File.expand_path('../../spec/shared/spec_helper', SPEC_ROOT)
 
 require 'logging'
 
-require 'common/common'
-require 'common/exec'
-require 'common/thread_pool'
+require 'bosh/common'
+require 'bosh/common/exec'
+require 'bosh/common/thread_pool'
 
 def asset_path(name)
   File.join(SPEC_ROOT, 'assets', name)

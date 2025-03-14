@@ -93,8 +93,8 @@ module Bosh::Director
       end
 
       it 'should fail when it cannot extract job archive' do
-        result = Bosh::Exec::Result.new('cmd', 'output', 1)
-        expect(Bosh::Exec).to receive(:sh).and_return(result)
+        result = Bosh::Common::Exec::Result.new('cmd', 'output', 1)
+        expect(Bosh::Common::Exec).to receive(:sh).and_return(result)
 
         expect { release_job.update }.to raise_error(JobInvalidArchive)
       end

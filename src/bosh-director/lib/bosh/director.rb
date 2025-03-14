@@ -31,10 +31,10 @@ require 'clouds/external_cpi'
 require 'clouds/external_cpi_response_wrapper'
 require 'clouds/errors'
 
-require 'common/common'
-require 'common/exec'
-require 'common/core_ext/kernel'
-require 'common/thread_pool'
+require 'bosh/common'
+require 'bosh/common/exec'
+require 'bosh/common/core_ext/kernel'
+require 'bosh/common/thread_pool'
 
 require 'bosh/template/evaluation_context'
 

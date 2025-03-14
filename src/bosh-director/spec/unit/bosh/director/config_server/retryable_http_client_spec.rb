@@ -51,10 +51,10 @@ describe Bosh::Director::ConfigServer::RetryableHTTPClient do
     end
 
     it 'sets the appropriate exceptions to handle on retryable' do
-      retryable = double("Bosh::Retryable")
+      retryable = double("Bosh::Common::Retryable")
       allow(retryable).to receive(:retryer).and_return(successful_response)
 
-      allow(Bosh::Retryable).to receive(:new).with({sleep: 0, tries: 3, on: handled_connection_exceptions}).and_return(retryable)
+      allow(Bosh::Common::Retryable).to receive(:new).with({sleep: 0, tries: 3, on: handled_connection_exceptions}).and_return(retryable)
 
       subject.get('uri-path')
     end
@@ -93,10 +93,10 @@ describe Bosh::Director::ConfigServer::RetryableHTTPClient do
     end
 
     it 'sets the appropriate exceptions to handle on retryable' do
-      retryable = double("Bosh::Retryable")
+      retryable = double("Bosh::Common::Retryable")
       allow(retryable).to receive(:retryer).and_return(successful_response)
 
-      allow(Bosh::Retryable).to receive(:new).with({sleep: 0, tries: 3, on: handled_connection_exceptions}).and_return(retryable)
+      allow(Bosh::Common::Retryable).to receive(:new).with({sleep: 0, tries: 3, on: handled_connection_exceptions}).and_return(retryable)
 
       subject.post('uri-path', '{body}')
     end

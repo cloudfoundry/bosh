@@ -45,7 +45,7 @@ module Bosh::Director
         track_and_log('Verifying remote stemcell') { verify_sha1 } if @stemcell_sha1
 
         track_and_log('Extracting stemcell archive') do
-          result = Bosh::Exec.sh("tar -C #{stemcell_dir} -xzf #{@stemcell_path} 2>&1", on_error: :return)
+          result = Bosh::Common::Exec.sh("tar -C #{stemcell_dir} -xzf #{@stemcell_path} 2>&1", on_error: :return)
           if result.failed?
             logger.error("Extracting stemcell archive failed in dir #{stemcell_dir}, " \
                          "tar returned #{result.exit_status}, " \

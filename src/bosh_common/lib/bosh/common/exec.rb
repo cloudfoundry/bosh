@@ -1,9 +1,7 @@
-module Bosh; end
+require 'bosh/common/exec/result'
+require 'bosh/common/exec/error'
 
-require 'common/exec/result'
-require 'common/exec/error'
-
-module Bosh
+module Bosh::Common
 
   # Module to execute shell commands using different ways to invoke processes.
   module Exec
@@ -15,9 +13,9 @@ module Bosh
     # A sample way to mock the execution of "ls /":
     #   it "should be possible to mock the result of a command execution" do
     #     cmd = "ls /"
-    #     result = Bosh::Exec::Result.new(cmd, "bin etc var", "", 0)
-    #     Bosh::Exec.should_receive(:sh).with(cmd).and_return(result)
-    #     result = Bosh::Exec.sh(cmd)
+    #     result = Bosh::Common::Exec::Result.new(cmd, "bin etc var", "", 0)
+    #     Bosh::Common::Exec.should_receive(:sh).with(cmd).and_return(result)
+    #     result = Bosh::Common::Exec.sh(cmd)
     #     result.success?.should be(true)
     #   end
     #
@@ -27,13 +25,13 @@ module Bosh
     # @param [String] command shell command to execute
     # @param [Hash] options
     # @option options [Symbol] :on_error if set to :return failing commands
-    #   return [Bosh::Exec::Result] instead of raising [Bosh::Exec::Error]
+    #   return [Bosh::Common::Exec::Result] instead of raising [Bosh::Common::Exec::Error]
     # @option options [Symbol] :yield if set to :on_false it will execute
     #   the block when the command fails, else it will execute the block
     #   only when the command succeeds. Implies :on_error = :return
-    # @yield [Bosh::Exec::Result] command result
-    # @return [Bosh::Exec::Result] command result
-    # @raise [Bosh::Exec::Error] raised when the command isn't found or
+    # @yield [Bosh::Common::Exec::Result] command result
+    # @return [Bosh::Common::Exec::Result] command result
+    # @raise [Bosh::Common::Exec::Error] raised when the command isn't found or
     #   the command exits with a non zero status
     # @example by default execute block only when command succeeds and raise
     #   error on failure
@@ -53,7 +51,7 @@ module Bosh
       opts[:on_error] = :return if opts[:yield] == :on_false
 
       output = %x{#{command}}
-      result = Result.new(command, output, $?.exitstatus)
+      result = Result.new(command, output, $?&.exitstatus)
 
       if result.failed?
         unless opts[:on_error] == :return
@@ -66,7 +64,7 @@ module Bosh
       end
 
       result
-    rescue Errno::ENOENT => e
+    rescue Errno::ENOENT
       msg = "command not found: #{command}"
 
       raise Error.new(nil, command) unless opts[:on_error] == :return
@@ -79,7 +77,7 @@ module Bosh
 
     # Helper method to add sh as a class method when it is included
     def self.included(base)
-      base.extend(Bosh::Exec)
+      base.extend(Exec)
     end
 
     module_function :sh

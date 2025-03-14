@@ -1,6 +1,6 @@
 require 'logger'
 
-module Bosh
+module Bosh::Common
   class ThreadPool
     def initialize(options = {})
       @actions = []
@@ -118,7 +118,5 @@ module Bosh
       end
       @threads.each { |t| t.join }
     end
-
   end
-
 end

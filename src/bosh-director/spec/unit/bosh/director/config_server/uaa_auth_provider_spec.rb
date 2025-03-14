@@ -148,10 +148,10 @@ describe Bosh::Director::ConfigServer::UAAAuthProvider do
           OpenSSL::SSL::SSLError,
       ]
 
-      retryable = double("Bosh::Retryable")
+      retryable = double("Bosh::Common::Retryable")
       allow(retryable).to receive(:retryer).and_return(first_token)
 
-      allow(Bosh::Retryable).to receive(:new).with({sleep:0, tries: 3, on: handled_exceptions}).and_return(retryable)
+      allow(Bosh::Common::Retryable).to receive(:new).with({sleep:0, tries: 3, on: handled_exceptions}).and_return(retryable)
 
       allow(logger).to receive(:error)
       token.auth_header

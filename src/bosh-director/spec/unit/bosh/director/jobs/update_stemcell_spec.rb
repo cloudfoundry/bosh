@@ -289,8 +289,8 @@ describe Bosh::Director::Jobs::UpdateStemcell do
       end
 
       it 'should fail if cannot extract stemcell' do
-        result = Bosh::Exec::Result.new('cmd', 'output', 1)
-        expect(Bosh::Exec).to receive(:sh).and_return(result)
+        result = Bosh::Common::Exec::Result.new('cmd', 'output', 1)
+        expect(Bosh::Common::Exec).to receive(:sh).and_return(result)
 
         expect do
           subject.perform

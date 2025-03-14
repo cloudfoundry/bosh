@@ -1,4 +1,4 @@
-require 'common/retryable'
+require 'bosh/common/retryable'
 
 module Bosh
 
@@ -114,7 +114,7 @@ module Bosh
     #   end
     #
     def retryable(options = {}, &block)
-      Bosh::Retryable.new(options).retryer(&block)
+      Common::Retryable.new(options).retryer(&block)
     end
 
     module_function :retryable

@@ -186,7 +186,7 @@ module Bosh::Director
           end
 
           def validate_tgz(logger, tgz, desc)
-            result = Bosh::Exec.sh("tar -tzf #{tgz} 2>&1", on_error: :return)
+            result = Bosh::Common::Exec.sh("tar -tzf #{tgz} 2>&1", on_error: :return)
             if result.failed?
               logger.error("Extracting #{desc} archive failed, tar returned #{result.exit_status}, output: #{result.output}")
               raise PackageInvalidArchive, "Extracting #{desc} archive failed. Check task debug log for details."

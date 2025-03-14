@@ -71,7 +71,7 @@ module Bosh::Director
       def extract_release
         release_dir = Dir.mktmpdir
 
-        result = Bosh::Exec.sh("tar -C #{release_dir} -xzf #{release_path} 2>&1", on_error: :return)
+        result = Bosh::Common::Exec.sh("tar -C #{release_dir} -xzf #{release_path} 2>&1", on_error: :return)
         if result.failed?
           logger.error("Failed to extract release archive '#{release_path}' into dir '#{release_dir}', tar returned #{result.exit_status}, output: #{result.output})")
           FileUtils.rm_rf(release_dir)

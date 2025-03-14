@@ -5,7 +5,7 @@ require 'uri'
 require 'tmpdir'
 
 require 'bosh/director/thread_formatter'
-require 'common/common'
+require 'bosh/common'
 
 module Bosh::Director
 
