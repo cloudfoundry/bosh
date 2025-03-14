@@ -3,7 +3,7 @@ require 'rubygems/package'
 
 module Bosh::Common
   describe 'gem' do
-    let(:name) { 'bosh_common' }
+    let(:name) { 'bosh-common' }
     let(:spec) { Gem::Specification.load "#{name}.gemspec" }
 
     it 'validates' do

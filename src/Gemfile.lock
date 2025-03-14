@@ -1,10 +1,15 @@
 PATH
+  remote: bosh-common
+  specs:
+    bosh-common (0.0.0)
+
+PATH
   remote: bosh-director
   specs:
     bosh-director (0.0.0)
       activesupport
       bcrypt
-      bosh_common (~> 0.0.0)
+      bosh-common (~> 0.0.0)
       bosh_cpi
       cf-uaa-lib
       json
@@ -57,11 +62,6 @@ PATH
       logging
       openssl
       rufus-scheduler
-
-PATH
-  remote: bosh_common
-  specs:
-    bosh_common (0.0.0)
 
 GEM
   remote: https://rubygems.org/
@@ -333,10 +333,10 @@ PLATFORMS
 
 DEPENDENCIES
   async-rspec
+  bosh-common!
   bosh-director!
   bosh-monitor!
   bosh-nats-sync!
-  bosh_common!
   bundle-audit
   factory_bot
   fakefs

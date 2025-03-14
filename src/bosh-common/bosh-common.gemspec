@@ -2,7 +2,7 @@
 require File.expand_path('../lib/bosh/common/version', __FILE__)
 
 Gem::Specification.new do |spec|
-  spec.name         = 'bosh_common'
+  spec.name         = 'bosh-common'
   spec.version      = Bosh::Common::VERSION
   spec.platform     = Gem::Platform::RUBY
   spec.summary      = 'BOSH common'

@@ -8,6 +8,6 @@ dependencies:
 
 files:
 - bosh-director/**/*
-- bosh_common/**/*
+- bosh-common/**/*
 - vendor/cache/*.gem
 - vendor/cache/extensions/**
