@@ -40,7 +40,10 @@ start_db() {
 
       export MYSQL_ROOT=/var/lib/mysql
       if [ ! -d /var/lib/mysql-src ]; then # Set up MySQL if it's the first time
-        mkdir /var/lib/mysql-src
+        mv "${MYSQL_ROOT}" /var/lib/mysql-src
+        mkdir -p "${MYSQL_ROOT}"
+        mount -t tmpfs -o size=512M tmpfs "${MYSQL_ROOT}"
+        mv /var/lib/mysql-src/* "${MYSQL_ROOT}/"
 
         echo "Copy 'src/spec/assets/sandbox/database/database_server/{private_key,certificate.pem}' to '${MYSQL_ROOT}/'"
         cp bosh/src/spec/assets/sandbox/database/database_server/private_key "${MYSQL_ROOT}/server.key"
