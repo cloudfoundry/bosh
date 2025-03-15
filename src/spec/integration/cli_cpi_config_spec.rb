@@ -43,7 +43,7 @@ describe "cli cpi config", type: :integration do
   end
 
   it 'does not fail when cpi config is very large' do
-    cpi_config = Bosh::Common::DeepCopy.copy(SharedSupport::DeploymentManifestHelper.multi_cpi_config)
+    cpi_config = Bosh::Director::DeepCopy.copy(SharedSupport::DeploymentManifestHelper.multi_cpi_config)
 
     (0..10001).each { |i|
       cpi_config["boshbosh#{i}"] = 'smurfsAreBlueGargamelIsBrownPinkpantherIsPinkAndPikachuIsYellow'

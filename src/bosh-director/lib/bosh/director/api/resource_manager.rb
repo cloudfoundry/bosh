@@ -73,9 +73,9 @@ module Bosh::Director
 
       def blobstore_resource(id)
         yield @blobstore_client
-      rescue Bosh::Blobstore::NotFound
+      rescue Bosh::Director::Blobstore::NotFound
         raise ResourceNotFound, "Resource '#{id}' not found in the blobstore"
-      rescue Bosh::Blobstore::BlobstoreError => e
+      rescue Bosh::Director::Blobstore::BlobstoreError => e
         raise ResourceError, "Blobstore error accessing resource '#{id}': #{e}"
       end
     end

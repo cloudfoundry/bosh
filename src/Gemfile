@@ -3,7 +3,7 @@ source 'https://rubygems.org'
 gem 'bosh-director', path: 'bosh-director'
 gem 'bosh-monitor', path: 'bosh-monitor'
 gem 'bosh-nats-sync', path: 'bosh-nats-sync'
-gem 'bosh_common', path: 'bosh_common'
+gem 'bosh-common', path: 'bosh-common'
 
 gem 'mysql2'
 gem 'pg'

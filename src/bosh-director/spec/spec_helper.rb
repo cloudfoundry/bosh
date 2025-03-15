@@ -15,9 +15,7 @@ require 'zlib'
 
 require 'db_migrator'
 require 'bosh/director'
-require 'bosh/template'
-
-require 'common/deep_copy'
+require 'bosh/common/template'
 
 require 'webmock/rspec'
 
@@ -137,7 +135,7 @@ module SpecHelper
                              Logging.appenders.file(
                                "bosh-director-spec-logger-#{Process.pid}",
                                filename: filename,
-                               layout: ThreadFormatter.layout,
+                               layout: Bosh::Director::ThreadFormatter.layout,
                              ),
                            )
                            logger.level = :debug

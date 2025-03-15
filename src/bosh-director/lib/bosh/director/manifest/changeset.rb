@@ -3,8 +3,8 @@ module Bosh::Director
 
     def initialize(before, after, redacted_before = nil, redacted_after = nil)
       redactor = Redactor.new
-      @redacted_before = redacted_before.nil? ? redactor.redact_properties!(Bosh::Common::DeepCopy.copy(before)) : redacted_before
-      @redacted_after = redacted_after.nil? ? redactor.redact_properties!(Bosh::Common::DeepCopy.copy(after)) : redacted_after
+      @redacted_before = redacted_before.nil? ? redactor.redact_properties!(Bosh::Director::DeepCopy.copy(before)) : redacted_before
+      @redacted_after = redacted_after.nil? ? redactor.redact_properties!(Bosh::Director::DeepCopy.copy(after)) : redacted_after
 
       @before = before
       @after = after

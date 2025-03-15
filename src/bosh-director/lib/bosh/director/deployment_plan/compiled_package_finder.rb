@@ -42,11 +42,11 @@ module Bosh::Director
         ).all
 
         compiled_package_fuzzy_matches = compiled_packages_for_stemcell_os.select do |compiled_package_model|
-          Bosh::Common::Version::StemcellVersion.match(compiled_package_model.stemcell_version, stemcell.version)
+          Bosh::Version::StemcellVersion.match(compiled_package_model.stemcell_version, stemcell.version)
         end
 
         compiled_package_fuzzy_matches.max_by do |compiled_package_model|
-          Bosh::Common::Version::ReleaseVersion.parse(compiled_package_model.stemcell_version).version.release.components[1] || 0
+          Bosh::Version::ReleaseVersion.parse(compiled_package_model.stemcell_version).version.release.components[1] || 0
         end
       end
     end

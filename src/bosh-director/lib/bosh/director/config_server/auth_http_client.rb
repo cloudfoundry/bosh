@@ -49,7 +49,7 @@ module Bosh::Director::ConfigServer
       handled_exceptions = [
           Bosh::Director::UAAAuthorizationError,
       ]
-      Bosh::Retryable.new({sleep: 0, tries: 2, on: handled_exceptions})
+      Bosh::Common::Retryable.new({sleep: 0, tries: 2, on: handled_exceptions})
     end
 
     def set_cert_store(ca_cert_path)

@@ -2,9 +2,9 @@ require 'bosh/director/core/templates'
 require 'bosh/director/core/templates/rendered_job_template'
 require 'bosh/director/core/templates/rendered_file_template'
 require 'bosh/director/core/templates/template_blob_cache'
-require 'bosh/template/evaluation_context'
 require 'bosh/director/formatter_helper'
-require 'common/deep_copy'
+
+require 'bosh/common/template/evaluation_context'
 
 module Bosh::Director::Core::Templates
   class JobTemplateRenderer
@@ -30,7 +30,7 @@ module Bosh::Director::Core::Templates
     end
 
     def render(spec)
-      spec = Bosh::Common::DeepCopy.copy(spec)
+      spec = Bosh::Director::DeepCopy.copy(spec)
 
       if spec['properties_need_filtering']
         spec = pick_job_properties(spec)
@@ -43,15 +43,15 @@ module Bosh::Director::Core::Templates
         'version' => @release.version
       }
 
-      original_template_context = Bosh::Template::EvaluationContext.new(spec, @dns_encoder)
+      original_template_context = Bosh::Common::Template::EvaluationContext.new(spec, @dns_encoder)
 
-      template_context = Bosh::Common::DeepCopy.copy(original_template_context)
+      template_context = Bosh::Director::DeepCopy.copy(original_template_context)
       monit = monit_erb.render(template_context, @logger)
 
       errors = []
 
       rendered_files = source_erbs.map do |source_erb|
-        template_context = Bosh::Common::DeepCopy.copy(original_template_context) unless original_template_context == template_context
+        template_context = Bosh::Director::DeepCopy.copy(original_template_context) unless original_template_context == template_context
 
         begin
           file_contents = source_erb.render(template_context, @logger)

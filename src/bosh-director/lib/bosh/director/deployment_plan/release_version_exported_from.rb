@@ -21,7 +21,7 @@ module Bosh::Director
       def compatible_with?(stemcell)
         return false unless stemcell.os == os
 
-        Bosh::Common::Version::StemcellVersion.match(version, stemcell.version)
+        Bosh::Version::StemcellVersion.match(version, stemcell.version)
       end
     end
   end

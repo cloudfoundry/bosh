@@ -291,7 +291,7 @@ describe 'Links', type: :integration do
       end
 
       let(:second_api_instance_group_spec) do
-        spec = Bosh::Common::DeepCopy.copy(api_instance_group_spec)
+        spec = Bosh::Director::DeepCopy.copy(api_instance_group_spec)
         spec['name'] = 'secondary_instance_group'
         spec
       end
@@ -327,7 +327,7 @@ describe 'Links', type: :integration do
 
     context 'when migrated_from but there is a new job with links added' do
       let(:secondary_aliased_instance_group_spec) do
-        spec = Bosh::Common::DeepCopy.copy(aliased_instance_group_spec)
+        spec = Bosh::Director::DeepCopy.copy(aliased_instance_group_spec)
         spec['name'] = 'secondary_instance_group'
         spec
       end
@@ -368,7 +368,7 @@ describe 'Links', type: :integration do
 
       context 'if deploy fail cross-deployment should still work' do
         let(:secondary_aliased_instance_group_spec) do
-          spec = Bosh::Common::DeepCopy.copy(aliased_instance_group_spec)
+          spec = Bosh::Director::DeepCopy.copy(aliased_instance_group_spec)
           spec['name'] = 'secondary_instance_group'
           spec['jobs'] << {
             'name' => 'provider_fail',
@@ -497,7 +497,7 @@ describe 'Links', type: :integration do
 
       context 'if deploy is missing a property causing it to fail' do
         let(:secondary_aliased_instance_group_spec) do
-          spec = Bosh::Common::DeepCopy.copy(aliased_instance_group_spec)
+          spec = Bosh::Director::DeepCopy.copy(aliased_instance_group_spec)
           spec['name'] = 'secondary_instance_group'
           spec['jobs'] << {
             'name' => 'provider_fail',
@@ -586,7 +586,7 @@ describe 'Links', type: :integration do
 
       context 'if deploy is has a bad az causing it to fail' do
         let(:secondary_aliased_instance_group_spec) do
-          spec = Bosh::Common::DeepCopy.copy(aliased_instance_group_spec)
+          spec = Bosh::Director::DeepCopy.copy(aliased_instance_group_spec)
           spec['name'] = 'secondary_instance_group'
           spec['jobs'] << {
             'name' => 'provider_fail',

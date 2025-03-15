@@ -13,12 +13,12 @@ module Bosh::Director::ConfigServer
     end
 
     def replace_variables(obj_to_be_resolved, variables_paths, variable_values)
-      result = Bosh::Common::DeepCopy.copy(obj_to_be_resolved)
+      result = Bosh::Director::DeepCopy.copy(obj_to_be_resolved)
       errors = []
 
       variables_paths.each do |variables_path|
         config_path = variables_path['path']
-        variable_values_copy = Bosh::Common::DeepCopy.copy(variable_values)
+        variable_values_copy = Bosh::Director::DeepCopy.copy(variable_values)
 
         ret = result
 
@@ -77,12 +77,12 @@ module Bosh::Director::ConfigServer
     def construct_variables_paths(result, obj, path=nil, is_key=false)
       if obj.is_a? Array
         obj.each_with_index do |item, index|
-          new_path = path.nil? ? [] : Bosh::Common::DeepCopy.copy(path)
+          new_path = path.nil? ? [] : Bosh::Director::DeepCopy.copy(path)
           construct_variables_paths(result, item, new_path + [index])
         end
       elsif obj.is_a? Hash
         obj.each do |key, value|
-          new_path = path.nil? ? [] : Bosh::Common::DeepCopy.copy(path)
+          new_path = path.nil? ? [] : Bosh::Director::DeepCopy.copy(path)
           construct_variables_paths(result, value, new_path + [key])
           construct_variables_paths(result, key, new_path, true) if ConfigServerHelper.is_full_variable?(key)
         end
