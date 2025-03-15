@@ -3,7 +3,7 @@ require 'open3'
 
 describe 'bin/bosh-template' do
   subject(:bin_file) do
-    File.expand_path('../../bin/bosh-template', File.dirname(__FILE__))
+    File.expand_path('../../../bin/bosh-template', File.dirname(__FILE__))
   end
 
   let(:template) do
@@ -17,7 +17,6 @@ describe 'bin/bosh-template' do
   let(:context) do
     asset_content('nats.json')
   end
-
 
   it 'correctly renders a realistic nats config template' do
     output = run("#{bin_file} #{template} --context '#{context}'")

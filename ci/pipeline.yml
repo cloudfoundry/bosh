@@ -9,7 +9,6 @@ groups:
       - unit-common
       - unit-monitor
       - unit-nats-sync
-      - unit-template
       - unit-release
       - unit-director-sqlite
       - unit-director-mysql-8
@@ -66,7 +65,6 @@ jobs:
       - unit-common
       - unit-monitor
       - unit-nats-sync
-      - unit-template
       - unit-release
       - unit-director-sqlite
       - unit-director-mysql-8
@@ -136,26 +134,6 @@ jobs:
       params:
         DB: sqlite
         RAKE_TASK: spec:unit:nats_sync
-
-  - name: unit-template
-    public: true
-    serial: true
-    serial_groups: [unit-template]
-    build_logs_to_retain: 250
-    plan:
-    - in_parallel:
-      - get: bosh-ci
-      - get: bosh
-        trigger: true
-        passed: [gate]
-      - get: integration-image
-    - task: test-rake-task
-      timeout: 2h
-      file: bosh-ci/ci/tasks/test-rake-task.yml
-      image: integration-image
-      params:
-        DB: sqlite
-        RAKE_TASK: spec:unit:template
 
   - name: unit-release
     public: true
@@ -391,7 +369,6 @@ jobs:
         - unit-common
         - unit-monitor
         - unit-nats-sync
-        - unit-template
         - unit-release
         - unit-director-sqlite
         - unit-director-mysql-8
