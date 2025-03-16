@@ -17,8 +17,6 @@ require 'set'
 
 require 'async'
 require 'async/http'
-require 'async/io'
-require 'async/io/stream'
 require 'logging'
 require 'nats/io/client'
 require 'puma'

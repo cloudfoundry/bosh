@@ -25,7 +25,7 @@ module Bosh::Monitor
     def connect
       return if @connected
 
-      endpoint = Async::IO::Endpoint.tcp(@host, @port)
+      endpoint = IO::Endpoint.tcp(@host, @port)
       @socket = endpoint.connect
       connection_completed
     rescue
