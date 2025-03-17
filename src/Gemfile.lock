@@ -36,6 +36,7 @@ PATH
       async-http
       cf-uaa-lib
       dogapi
+      io-stream
       logging
       nats-pure
       net-smtp
