@@ -4,7 +4,6 @@ $LOAD_PATH << SPEC_ROOT
 require File.expand_path('../../spec/shared/spec_helper', SPEC_ROOT)
 
 require 'async/rspec'
-require 'async/io'
 require 'tempfile'
 require 'bosh/monitor'
 

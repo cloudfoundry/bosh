@@ -23,8 +23,8 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'async'
   spec.add_dependency 'async-http'
-  spec.add_dependency 'async-io'
   spec.add_dependency 'cf-uaa-lib'
+  spec.add_dependency 'io-stream'
   spec.add_dependency 'logging'
   spec.add_dependency 'nats-pure'
   spec.add_dependency 'openssl'
