@@ -44,7 +44,6 @@ describe Bosh::Director::Jobs::UpdateStemcell do
                          tar.add_file('stemcell.MF', mode: '0644', mtime: 0) { |os, _| os.write(manifest.to_yaml) }
                          tar.add_file('image', mode: '0644', mtime: 0) { |os, _| os.write(stemcell_image_content) }
                        end
-
                        io.close
                      end.string
                    ),
@@ -52,7 +51,21 @@ describe Bosh::Director::Jobs::UpdateStemcell do
       end
     end
 
+
+    let(:runtime_config_manager) { instance_double(Bosh::Director::Api::RuntimeConfigManager) }
+    let(:config) { instance_double(Bosh::Director::Models::Config) }
+    let(:runtime_config_list) do
+      [config]
+    end
+
     before do
+
+      allow(Bosh::Director::Api::RuntimeConfigManager).to receive(:new).and_return(runtime_config_manager)
+      allow(Bosh::Director::Models::Config).to receive(:new).and_return(config)
+      allow(config).to receive(:to_hash).and_return({"tags" => {"any"=> "value"}})
+      allow(runtime_config_manager).to receive(:list).with(1, 'default').and_return(runtime_config_list)
+
+
       allow(Bosh::Director::Config).to receive(:event_log).and_return(event_log)
       allow(Bosh::Director::Config).to receive(:uuid).and_return('meow-uuid')
       allow(Bosh::Director::Config).to receive(:cloud_options).and_return({'provider' => {'path' => '/path/to/default/cpi'}})
@@ -61,6 +74,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
                                                              'meow-uuid',
                                                              instance_of(Logging::Logger),
                                                              stemcell_api_version: nil).and_return(cloud)
+
       allow(cloud).to receive(:request_cpi_api_version=)
       allow(cloud).to receive(:info).and_return('stemcell_formats' => ['dummy'])
 
@@ -319,9 +333,9 @@ describe Bosh::Director::Jobs::UpdateStemcell do
           expect(cloud3).to receive(:info).and_return('stemcell_formats' => ['dummy'])
 
           expect(cloud_factory).to receive(:all_names).exactly(3).times.and_return(%w[cloud1 cloud2 cloud3])
-          expect(cloud_factory).to receive(:get).with('cloud1').and_return(cloud1)
-          expect(cloud_factory).to receive(:get).with('cloud2').and_return(cloud2)
-          expect(cloud_factory).to receive(:get).with('cloud3').and_return(cloud3)
+          expect(cloud_factory).to receive(:get).with('cloud1').and_return(Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud1, 1))
+          expect(cloud_factory).to receive(:get).with('cloud2').and_return(Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud2, 1))
+          expect(cloud_factory).to receive(:get).with('cloud3').and_return(Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud3, 1))
 
           expected_steps = 11
           expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
@@ -369,7 +383,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
         it 'skips creating a stemcell match when a CPI fails' do
           expect(cloud1).to receive(:create_stemcell).with(anything, { 'ram' => '2gb' }).and_raise('I am flaky')
           expect(cloud1).to receive(:info).and_return('stemcell_formats' => ['dummy'])
-          expect(cloud_factory).to receive(:get).with('cloud1').and_return(cloud1)
+          expect(cloud_factory).to receive(:get).with('cloud1').and_return(Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud1, 1))
           expect(cloud_factory).to receive(:all_names).exactly(3).times.and_return(['cloud1'])
 
           expect { subject.perform }.to raise_error 'I am flaky'
@@ -385,9 +399,9 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
           it 'creates one stemcell and one stemcell match per cpi' do
             expect(cloud_factory).to receive(:all_names).exactly(3).times.and_return(%w[cloud1 cloud2 cloud3])
-            expect(cloud_factory).to receive(:get).with('cloud1').and_return(cloud1)
-            expect(cloud_factory).to receive(:get).with('cloud2').and_return(cloud2)
-            expect(cloud_factory).to receive(:get).with('cloud3').and_return(cloud3)
+            expect(cloud_factory).to receive(:get).with('cloud1').and_return(Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud1, 1))
+            expect(cloud_factory).to receive(:get).with('cloud2').and_return(Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud2, 1))
+            expect(cloud_factory).to receive(:get).with('cloud3').and_return(Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud3, 1))
 
             expect(cloud1).to receive(:info).and_return('stemcell_formats' => ['dummy'])
             expect(cloud2).to receive(:info).and_return('stemcell_formats' => ['dummy1'])
@@ -423,7 +437,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
           expect(cloud_factory).to receive(:get_cpi_aliases).with('').and_return([''])
           expect(cloud_factory).to receive(:all_names).exactly(3).times.and_return([''])
-          expect(cloud_factory).to receive(:get).with('').and_return(cloud)
+          expect(cloud_factory).to receive(:get).with('').and_return(Bosh::Clouds::ExternalCpiResponseWrapper.new(cloud, 1))
 
           expected_steps = 5
           expect(event_log).to receive(:begin_stage).with('Update stemcell', expected_steps)
