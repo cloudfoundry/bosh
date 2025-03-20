@@ -75,7 +75,7 @@ module Bosh
 
             begin
               action.call
-            rescue Exception => e
+            rescue Exception => e # rubocop:disable Lint/RescueException
               raise_worker_exception(e)
             end
           end

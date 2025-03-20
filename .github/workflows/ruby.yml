@@ -10,7 +10,6 @@ jobs:
         - common:parallel
         - monitor:parallel
         - nats_sync:parallel
-        - template:parallel
         - release
     steps:
     - uses: actions/checkout@v4

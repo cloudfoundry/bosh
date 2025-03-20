@@ -65,7 +65,7 @@ describe Bosh::Monitor::TcpConnection do
         expect(endpoint).to receive(:connect).and_return(socket).twice
         allow(socket).to receive(:write).with('some-data').and_raise("some-error")
         expect(socket).to receive(:write).with('data-after-initial-socket-was-closed')
-        expect(Async::IO::Endpoint).to receive(:tcp).and_return(endpoint).twice
+        expect(IO::Endpoint).to receive(:tcp).and_return(endpoint).twice
 
         tcp_connection.connect
         expect { tcp_connection.send_data('some-data') }.to_not raise_error

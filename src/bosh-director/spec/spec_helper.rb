@@ -10,10 +10,14 @@ require 'minitar'
 require 'pg'
 require 'tempfile'
 require 'tmpdir'
+require 'yaml'
 require 'zlib'
 
 require 'db_migrator'
 require 'bosh/director'
+require 'bosh/template'
+
+require 'common/deep_copy'
 
 require 'webmock/rspec'
 
@@ -148,6 +152,7 @@ SpecHelper.create_and_migrate_database
 
 RSpec.configure do |config|
   config.include(FactoryBot::Syntax::Methods)
+  config.include(CertificateHelpers)
 
   config.around(:each) do |example|
     SpecHelper.reset_database(SpecHelper.database, example)

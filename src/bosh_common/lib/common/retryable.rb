@@ -31,12 +31,12 @@ module Bosh
         raise Bosh::Common::RetryCountExceeded if @try_count >= @retry_limit
         wait
       end
-    rescue Exception => exception
-      raise unless @matchers.any? { |m| m.matches?(exception) }
-      raise unless exception.message =~ @matching
+    rescue Exception => e # rubocop:disable Lint/RescueException
+      raise unless @matchers.any? { |m| m.matches?(e) }
+      raise unless e.message =~ @matching
       raise if @try_count >= @retry_limit
 
-      @retry_exception = exception
+      @retry_exception = e
       wait
       retry
     ensure
@@ -64,10 +64,10 @@ module Bosh
 
     def wait
       sleep(@sleeper.respond_to?(:call) ? @sleeper.call(@try_count, @retry_exception) : @sleeper)
-    rescue Exception => exception
-      raise unless @matchers.any? { |m| m.matches?(exception) }
+    rescue Exception => e # rubocop:disable Lint/RescueException
+      raise unless @matchers.any? { |m| m.matches?(e) }
       # SignalException could be raised while sleeping, so if you want to catch it,
-      # it need to be passed in the list of exceptions to ignore
+      # it needs to be passed in the list of exceptions to ignore
     end
 
     def exponential_sleeper

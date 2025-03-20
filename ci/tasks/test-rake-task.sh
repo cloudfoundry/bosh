@@ -88,8 +88,7 @@ start_db() {
 
       export POSTGRES_ROOT="/tmp/postgres"
       if [ ! -d "${POSTGRES_ROOT}" ]; then # PostgreSQL hasn't been set up
-        mkdir -p "${POSTGRES_ROOT}"
-        mount -t tmpfs -o size=512M tmpfs "${POSTGRES_ROOT}"
+        run_as postgres mkdir -p "${POSTGRES_ROOT}"
 
         export PGDATA="${POSTGRES_ROOT}/data"
         export PGLOGS="/tmp/log/postgres"

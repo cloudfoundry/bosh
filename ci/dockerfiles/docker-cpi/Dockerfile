@@ -1,6 +1,7 @@
 # this image builds bosh/docker-cpi
 # it is used across ci to start a bosh in a docker container
-FROM bosh/integration:main
+ARG BASE_IMAGE=bosh/integration:main
+FROM $BASE_IMAGE
 
 RUN docker_gpg="/etc/apt/trusted.gpg.d/docker.gpg" \
     && curl --show-error -sL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o "${docker_gpg}" \
@@ -32,6 +33,7 @@ RUN curl -o /usr/local/bosh.tgz "$(bosh int /usr/local/bosh-deployment/bosh.yml 
     && curl -o /usr/local/bpm.tgz "$(bosh int /usr/local/bosh-deployment/bosh.yml --path /releases/name=bpm/url)"
 
 COPY local-releases.yml /usr/local/local-releases.yml
+COPY noble-updates.yml /usr/local/noble-updates.yml
 COPY start-bosh.sh /usr/local/bin/start-bosh
 
 RUN chmod +x /usr/local/bin/start-bosh

@@ -1,0 +1,3 @@
+- path: /instance_groups/name=bosh/properties/docker_cpi/start_containers_with_systemd?
+  type: replace
+  value: true

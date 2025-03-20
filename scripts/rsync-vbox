@@ -28,8 +28,6 @@ main() {
   do-rsync bosh-director bin director
   do-rsync bosh-director db director
   do-rsync bosh-director lib director
-  do-rsync bosh-template bin director
-  do-rsync bosh-template lib director
   do-rsync bosh-monitor lib health_monitor
   do-rsync bosh-monitor bin health_monitor
   do-rsync bosh-nats-sync bin nats

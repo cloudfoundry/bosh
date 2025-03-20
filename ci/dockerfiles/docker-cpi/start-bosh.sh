@@ -175,10 +175,16 @@ function main() {
 
       mkdir -p ${local_bosh_dir}
 
+      additional_ops_files=""
+      if [ "$(lsb_release -cs)" != "jammy" ]; then
+        additional_ops_files="-o /usr/local/noble-updates.yml"
+      fi
+
       command bosh int bosh.yml \
         -o docker/cpi.yml \
         -o jumpbox-user.yml \
         -o /usr/local/local-releases.yml \
+        ${additional_ops_files} \
         -v director_name=docker \
         -v internal_cidr=10.245.0.0/16 \
         -v internal_gw=10.245.0.1 \

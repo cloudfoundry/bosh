@@ -27,6 +27,9 @@ def write_tar(configuration_files, manifest, monit, options)
       monit_file = options[:monit_file] ? options[:monit_file] : 'monit'
       tar.add_file(monit_file, { mode: '0644', mtime: 0 }) { |os, _| os.write(monit) }
     end
+    if options[:properties_schema]
+      tar.add_file('properties_schema.json', { mode: '0644', mtime: 0 }) { |os, _| os.write(options[:properties_schema].to_json) }
+    end
 
     tar.mkdir('templates', { mode: '0755', mtime: 0 })
     configuration_files.each do |path, configuration_file|
@@ -72,55 +75,68 @@ module Bosh::Director::Core::Templates
       let(:dns_encoder) { double('fake dns encoder') }
       let(:release) {double('Bosh::Director::DeploymentPlan::ReleaseVersion', name: 'fake-release-name', version:'0.1')}
       let(:tmp_file) { Tempfile.new('blob') }
+      let(:monit_erb) { instance_double(SourceErb) }
+      let(:job_template_erb) { instance_double(SourceErb) }
+      let(:fake_renderer) { instance_double(JobTemplateRenderer) }
+      let(:job_model) { double('Bosh::Director::Models::Template') }
+      let(:properties_schema) { nil }
+      let(:job_name) { 'fake-job-name-1' }
+      let(:configuration_files) do
+        {
+          'test' => {
+          'destination' => 'test_dst',
+          'contents' => 'test contents' }
+        }
+      end
+      let(:tarball_path) do
+        create_job_tarball(
+          job_name,
+          'monit file erb contents',
+          tmp_file,
+          configuration_files,
+          properties_schema: properties_schema
+        )
+      end
 
-      after :each do
+      let(:job)do
+        double('Bosh::Director::DeploymentPlan::Job',
+          download_blob: tarball_path,
+          name: job_name,
+          blobstore_id: 'blob-id',
+          release: release
+        )
+      end
+
+      before do
+        allow(job).to receive(:model).and_return(job_model)
+      end
+
+      after do
         tmp_file.unlink
       end
 
       it 'returns the jobs template erb objects' do
-        tarball_path = create_job_tarball(
-          'fake-job-name-1',
-          'monit file erb contents',
-          tmp_file,
-          { 'test' => {
-            'destination' => 'test_dst',
-            'contents' => 'test contents' }
-          }
-        )
-
-        job = double('Bosh::Director::DeploymentPlan::Job',
-          download_blob: tarball_path,
-          name: 'fake-job-name-1',
-          blobstore_id: 'blob-id',
-          release: release
-        )
-
-        job_model = double('Bosh::Director::Models::Template')
-        expect(job).to receive(:model).and_return(job_model)
         expect(job_model).to receive(:spec).and_return({ "templates" => { "test" => "test_dst" } })
-
-        monit_erb = instance_double(SourceErb)
-        job_template_erb = instance_double(SourceErb)
-        fake_renderer = instance_double(JobTemplateRenderer)
 
         expect(SourceErb).to receive(:new).with(
           'monit',
           'monit',
           'monit file erb contents',
-          'fake-job-name-1',
+          job_name,
         ).and_return(monit_erb)
 
         expect(SourceErb).to receive(:new).with(
           'test',
           'test_dst',
           'test contents',
-          'fake-job-name-1'
+          job_name
         ).and_return(job_template_erb)
 
         expect(JobTemplateRenderer).to receive(:new).with(
           instance_job: job,
           monit_erb: monit_erb,
           source_erbs: [job_template_erb],
+          properties_schema: nil,
           logger: logger,
           link_provider_intents: link_provider_intents,
           dns_encoder: dns_encoder,
@@ -130,42 +146,32 @@ module Bosh::Director::Core::Templates
         expect(generated_renderer).to eq(fake_renderer)
       end
 
-      it 'includes only monit erb object when no other templates exist' do
-        tarball_path = create_job_tarball('fake-job-name-2', 'monit file erb contents', tmp_file, {})
+      context 'when there are no other templates' do
+        let(:configuration_files) { {} }
 
-        job = double(
-          'Bosh::Director::DeploymentPlan::Job',
-          download_blob: tarball_path,
-          name: 'fake-job-name-2',
-          blobstore_id: 'blob-id',
-          release: release,
-        )
+        it 'includes only monit erb object' do
+          expect(job_model).to receive(:spec).and_return({ "templates" => {} })
 
-        job_model = double('Bosh::Director::Models::Template')
-        expect(job).to receive(:model).and_return(job_model)
-        expect(job_model).to receive(:spec).and_return({ "templates" => {} })
+          expect(SourceErb).to receive(:new).once.with(
+            'monit',
+            'monit',
+            'monit file erb contents',
+            job_name,
+          ).and_return(monit_erb)
 
-        monit_erb = instance_double(SourceErb)
-        fake_renderer = instance_double(JobTemplateRenderer)
+          expect(JobTemplateRenderer).to receive(:new).with(
+            instance_job: job,
+            monit_erb: monit_erb,
+            source_erbs: [],
+            properties_schema: nil,
+            logger: logger,
+            link_provider_intents: link_provider_intents,
+            dns_encoder: dns_encoder,
+          ).and_return fake_renderer
 
-        expect(SourceErb).to receive(:new).once.with(
-          'monit',
-          'monit',
-          'monit file erb contents',
-          'fake-job-name-2',
-        ).and_return(monit_erb)
-
-        expect(JobTemplateRenderer).to receive(:new).with(
-          instance_job: job,
-          monit_erb: monit_erb,
-          source_erbs: [],
-          logger: logger,
-          link_provider_intents: link_provider_intents,
-          dns_encoder: dns_encoder,
-        ).and_return fake_renderer
-
-        generated_renderer = job_template_loader.process(job)
-        expect(generated_renderer).to eq(fake_renderer)
+          generated_renderer = job_template_loader.process(job)
+          expect(generated_renderer).to eq(fake_renderer)
+        end
       end
 
       context 'when the job manifest uses yaml anchors' do
@@ -190,12 +196,32 @@ module Bosh::Director::Core::Templates
             model: double('Bosh::Director::Models::Template', provides: [])
           )
 
-          job_model = double('Bosh::Director::Models::Template')
           expect(job).to receive(:model).and_return(job_model)
           expect(job_model).to receive(:spec).and_return({ "templates" => {} })
 
           job_template_renderer = job_template_loader.process(job)
           expect(job_template_renderer.source_erbs).to eq([])
+        end
+      end
+
+      context 'when the job includes a properties schema' do
+        let(:properties_schema) { {"properties_schema" => "yes"} }
+
+        it 'creates the template renderer with the properties schema' do
+          expect(job_model).to receive(:spec).and_return({ "templates" => { "test" => "test_dst" } })
+
+          expect(JobTemplateRenderer).to receive(:new).with(
+            instance_job: job,
+            monit_erb: anything,
+            source_erbs: anything,
+            properties_schema: properties_schema,
+            logger: logger,
+            link_provider_intents: link_provider_intents,
+            dns_encoder: dns_encoder,
+          ).and_return fake_renderer
+
+          generated_renderer = job_template_loader.process(job)
+          expect(generated_renderer).to eq(fake_renderer)
         end
       end
     end

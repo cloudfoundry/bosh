@@ -41,5 +41,5 @@ pushd "${BOSH_DEPLOYMENT_PATH}" > /dev/null
     --sha1 "$(bosh int bosh.yml -o misc/source-releases/bosh.yml --path /releases/name=bpm/sha1)"
   bosh upload-release "$(bosh int bosh.yml -o jumpbox-user.yml --path /releases/name=os-conf/url)" \
     --sha1 "$(bosh int bosh.yml -o jumpbox-user.yml --path /releases/name=os-conf/sha1)"
-  bosh upload-release https://bosh.io/d/github.com/cloudfoundry/bosh-docker-cpi-release?v=0.0.13 --sha1 49c6ec845e5e7d68720895e6f5a42a0c328a57c3
+  bosh upload-release https://bosh.io/d/github.com/cloudfoundry/bosh-docker-cpi-release?v=0.0.20 --sha1 ec287512ba68dcfb7f8cedad35d226f7551e0558
 popd > /dev/null

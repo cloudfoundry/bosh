@@ -9,7 +9,6 @@ groups:
       - unit-common
       - unit-monitor
       - unit-nats-sync
-      - unit-template
       - unit-release
       - unit-director-sqlite
       - unit-director-mysql-8
@@ -49,10 +48,12 @@ groups:
     - build-main-postgres-15
     - build-main-mysql-8-0
     - build-integration
+    - build-integration-noble
 
   - name: container-cpi-images
     jobs:
     - build-docker-cpi
+    - build-docker-cpi-noble
     - build-warden-cpi
 
 jobs:
@@ -64,7 +65,6 @@ jobs:
       - unit-common
       - unit-monitor
       - unit-nats-sync
-      - unit-template
       - unit-release
       - unit-director-sqlite
       - unit-director-mysql-8
@@ -134,26 +134,6 @@ jobs:
       params:
         DB: sqlite
         RAKE_TASK: spec:unit:nats_sync
-
-  - name: unit-template
-    public: true
-    serial: true
-    serial_groups: [unit-template]
-    build_logs_to_retain: 250
-    plan:
-    - in_parallel:
-      - get: bosh-ci
-      - get: bosh
-        trigger: true
-        passed: [gate]
-      - get: integration-image
-    - task: test-rake-task
-      timeout: 2h
-      file: bosh-ci/ci/tasks/test-rake-task.yml
-      image: integration-image
-      params:
-        DB: sqlite
-        RAKE_TASK: spec:unit:template
 
   - name: unit-release
     public: true
@@ -321,6 +301,7 @@ jobs:
           COVERAGE: false
           DB: postgresql
           RAKE_TASK: spec:integration
+          PARALLEL_TEST_MULTIPLY_PROCESSES: "0.5"
 
   - name: integration-postgres-hotswap
     public: true
@@ -388,7 +369,6 @@ jobs:
         - unit-common
         - unit-monitor
         - unit-nats-sync
-        - unit-template
         - unit-release
         - unit-director-sqlite
         - unit-director-mysql-8
@@ -1158,6 +1138,38 @@ jobs:
       get_params:
         skip_download: true
 
+  - name: build-integration-noble
+    public: true
+    serial: true
+    plan:
+    - get: weekly
+      trigger: true
+    - get: golang-docker-image
+      trigger: true
+    - get: bosh-ci-dockerfiles
+      trigger: true
+    - get: bosh
+    - get: bosh-deployment
+      params:
+        depth: 1
+    - task: build-docker-args
+      file: bosh-ci-dockerfiles/ci/dockerfiles/integration/build-docker-args.yml
+      params:
+        GITHUB_ACCESS_TOKEN: ((github_public_repo_token))
+    - put: integration-image-noble
+      inputs:
+      - bosh-ci-dockerfiles
+      - docker-build-args
+      params:
+        build: .
+        build_args_file: docker-build-args/docker-build-args.json
+        build_args:
+          BASE_IMAGE: ubuntu:noble
+        dockerfile: bosh-ci-dockerfiles/ci/dockerfiles/integration/Dockerfile
+        tag_as_latest: false
+      get_params:
+        skip_download: true
+
   - name: build-main-postgres-13
     public: true
     serial: true
@@ -1230,6 +1242,30 @@ jobs:
       params:
         build: docker-build-context
         tag_as_latest: true
+      get_params:
+        skip_download: true
+
+  - name: build-docker-cpi-noble
+    public: true
+    serial: true
+    plan:
+    - in_parallel:
+      - get: bosh-ci
+      - get: bosh-ci-dockerfiles
+      - get: integration-image-noble
+        trigger: true
+      - get: bosh-deployment
+        trigger: true
+    - task: copy-dependencies
+      file: bosh-ci/ci/tasks/prepare-build-context-for-container-cpi-image.yml
+      params:
+        CONTAINER_CPI_TYPE: docker-cpi
+    - put: docker-cpi-image-noble
+      params:
+        build: docker-build-context
+        build_args:
+          BASE_IMAGE: bosh/integration:noble
+        tag_as_latest: false
       get_params:
         skip_download: true
 
@@ -1318,6 +1354,7 @@ jobs:
     - put: bosh
       params:
         repository: bosh-out
+        rebase: true
 
   - name: bump-packages
     serial: true
@@ -1821,6 +1858,14 @@ resources:
       username: ((dockerhub_username))
       password: ((dockerhub_password))
 
+  - name: integration-image-noble
+    type: docker-image
+    source:
+      repository: bosh/integration
+      tag: noble
+      username: ((dockerhub_username))
+      password: ((dockerhub_password))
+
   - name: integration-mysql-8-0-image
     type: docker-image
     source:
@@ -1850,6 +1895,14 @@ resources:
     source:
       repository: bosh/docker-cpi
       tag: ((branch_name))
+      username: ((dockerhub_username))
+      password: ((dockerhub_password))
+
+  - name: docker-cpi-image-noble
+    type: docker-image
+    source:
+      repository: bosh/docker-cpi
+      tag: noble
       username: ((dockerhub_username))
       password: ((dockerhub_password))
 

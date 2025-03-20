@@ -99,9 +99,9 @@ module Bosh::Monitor::Plugins
       Async do |task|
         stdin, stdout, stderr, wait_thr = Open3.popen3(@cmd)
 
-        @stdin = Async::IO::Stream.new(Async::IO::Generic.new(stdin))
-        @stdout = Async::IO::Stream.new(Async::IO::Generic.new(stdout))
-        @stderr = Async::IO::Stream.new(Async::IO::Generic.new(stderr))
+        @stdin = IO::Stream(stdin)
+        @stdout = IO::Stream(stdout)
+        @stderr = IO::Stream(stderr)
         @wait_thr = wait_thr
 
         task.async do

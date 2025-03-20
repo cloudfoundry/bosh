@@ -1,5 +1,6 @@
 # bosh/integration:main
-FROM ubuntu:jammy
+ARG BASE_IMAGE=ubuntu:jammy
+FROM $BASE_IMAGE
 
 ARG BOSH_CLI_URL
 ARG META4_CLI_URL
@@ -39,7 +40,6 @@ RUN apt-get update -y \
         locales \
         unzip \
         qemu-utils \
-        awscli \
         azure-cli \
         build-essential \
         coreutils \
@@ -145,3 +145,10 @@ RUN uaa_tgz="/usr/local/uaa.tgz" \
     && rm -rf /tmp/uaa-*
 ENV JAVA_HOME="${JAVA_INSTALL_PREFIX}"
 ENV PATH=${JAVA_HOME}/bin:${PATH}
+
+# AWS CLI package exists for Jammy, but not for Noble
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+    && unzip awscliv2.zip \
+    && ./aws/install \
+    && rm -rf ./aws \
+    && rm awscliv2.zip
