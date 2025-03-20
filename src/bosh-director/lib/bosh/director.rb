@@ -35,8 +35,7 @@ require 'bosh/common'
 require 'bosh/common/exec'
 require 'bosh/common/core_ext/kernel'
 require 'bosh/common/thread_pool'
-
-require 'bosh/template/evaluation_context'
+require 'bosh/common/template/evaluation_context'
 
 require 'bosh/version/release_version_list'
 
