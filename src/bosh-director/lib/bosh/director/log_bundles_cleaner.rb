@@ -24,10 +24,10 @@ module Bosh::Director
           bundle.require_modification = false
           @blobstore.delete(bundle.blobstore_id)
           bundle.delete
-        rescue Bosh::Blobstore::BlobstoreError => e
+        rescue Bosh::Director::Blobstore::BlobstoreError => e
           @logger.warn("Could not delete #{bundle.blobstore_id}: #{e.inspect}")
 
-          if e.kind_of?(Bosh::Blobstore::NotFound)
+          if e.kind_of?(Bosh::Director::Blobstore::NotFound)
             bundle.delete
           end
         end

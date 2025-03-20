@@ -4,7 +4,7 @@ describe 'when the deployment manifest file is large', type: :integration do
   with_reset_sandbox_before_each
 
   let(:deployment_manifest) do
-    minimal_manifest = Bosh::Common::DeepCopy.copy(SharedSupport::DeploymentManifestHelper.minimal_manifest)
+    minimal_manifest = Bosh::Director::DeepCopy.copy(SharedSupport::DeploymentManifestHelper.minimal_manifest)
     minimal_manifest['foobar'] = {}
     (0..100_000).each do |i|
       minimal_manifest['foobar']["property#{i}"] = "value#{i}"

@@ -168,7 +168,7 @@ describe 'using director with config server and deployments having variables', t
       end
 
       let(:deployment_name_2) { 'complex' }
-      let(:deploy_2_manifest) { Bosh::Common::DeepCopy.copy(manifest) }
+      let(:deploy_2_manifest) { Bosh::Director::DeepCopy.copy(manifest) }
 
       before do
         deploy_2_manifest['name'] = deployment_name_2

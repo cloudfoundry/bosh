@@ -10,7 +10,7 @@ module Bosh::Director
       @instance_model.stale_rendered_templates_archives.each do |archive|
         begin
           @blobstore.delete(archive.blobstore_id)
-        rescue Bosh::Blobstore::NotFound => e
+        rescue Bosh::Director::Blobstore::NotFound => e
           @logger.debug("Blobstore#delete error: #{e.message}, will ignore this error and delete the db record")
         end
 
@@ -22,7 +22,7 @@ module Bosh::Director
       @instance_model.rendered_templates_archives.each do |archive|
         begin
           @blobstore.delete(archive.blobstore_id)
-        rescue Bosh::Blobstore::NotFound => e
+        rescue Bosh::Director::Blobstore::NotFound => e
           @logger.debug("Blobstore#delete error: #{e.message}, will ignore this error and delete the db record")
         end
 

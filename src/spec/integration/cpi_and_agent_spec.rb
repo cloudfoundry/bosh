@@ -463,7 +463,7 @@ describe 'CPI and Agent:', type: :integration do
 
             context 'when the first deploy fails with a reusable VM', create_swap_delete: true do
               let(:failing_manifest_hash) do
-                failing_manifest_hash = Bosh::Common::DeepCopy.copy(manifest_hash)
+                failing_manifest_hash = Bosh::Director::DeepCopy.copy(manifest_hash)
                 failing_manifest_hash['releases'] = [{ 'name' => 'bosh-release', 'version' => '0.1-dev' }]
                 failing_manifest_hash['instance_groups']
                   .first['persistent_disk_type'] = SharedSupport::DeploymentManifestHelper::DISK_TYPE['name']

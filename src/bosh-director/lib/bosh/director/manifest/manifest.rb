@@ -56,7 +56,7 @@ module Bosh::Director
     def filter_addons(runtime_manifest, deployment)
       return deployment.manifest_hash if runtime_manifest == {} || !runtime_manifest.key?('releases')
 
-      filtered_runtime_manifest = Bosh::Common::DeepCopy.copy(runtime_manifest)
+      filtered_runtime_manifest = Bosh::Director::DeepCopy.copy(runtime_manifest)
       runtime_manifest_parser = Bosh::Director::RuntimeConfig::RuntimeManifestParser.new(Config.logger)
       parsed_runtime_config = runtime_manifest_parser.parse(runtime_manifest)
 
@@ -93,7 +93,7 @@ module Bosh::Director
       runtime_config_hash = runtime_config.raw_manifest
 
       manifest_hash = manifest_hash.nil? ? {} : manifest_hash
-      manifest_hash = Bosh::Common::DeepCopy.copy(manifest_hash)
+      manifest_hash = Bosh::Director::DeepCopy.copy(manifest_hash)
 
       if resolve_interpolation
         variables_interpolator = Bosh::Director::ConfigServer::VariablesInterpolator.new

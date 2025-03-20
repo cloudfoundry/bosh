@@ -1,4 +1,3 @@
-require 'common/deep_copy'
 require 'securerandom'
 
 module Bosh::Director

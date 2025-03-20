@@ -1,5 +1,4 @@
 require 'rspec'
-require 'common/deep_copy'
 
 RSpec::Matchers.define :be_create_swap_deleted do |old_vm|
   match do |new_vm|
@@ -20,7 +19,7 @@ RSpec::Matchers.define :be_sequence_of_calls do |calls:, reference: {}|
   actual_index = 0
   did_fail_match = false
   sequence_length = calls.length
-  original_expected_calls = Bosh::Common::DeepCopy.copy(calls)
+  original_expected_calls = Bosh::Director::DeepCopy.copy(calls)
 
   def highlight_call(calls, index)
     calls.map.with_index do |call, i|

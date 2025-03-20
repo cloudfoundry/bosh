@@ -1,5 +1,3 @@
-require 'common/deep_copy'
-
 module Bosh
   module Director
     module DeploymentPlan
@@ -443,7 +441,7 @@ module Bosh
         def remove_dns_record_name_from_network_settings(network_settings)
           return network_settings if network_settings.nil?
 
-          modified_network_settings = Bosh::Common::DeepCopy.copy(network_settings)
+          modified_network_settings = Bosh::Director::DeepCopy.copy(network_settings)
 
           modified_network_settings.each do |_name, network_setting|
             network_setting.delete_if { |key, _value| key == 'dns_record_name' }
@@ -504,7 +502,7 @@ module Bosh
         def comparable_package_spec(package_spec)
           package_comparison_keys = %w[blobstore_id sha1 name version]
 
-          comparable_package_spec = Bosh::Common::DeepCopy.copy(package_spec)
+          comparable_package_spec = Bosh::Director::DeepCopy.copy(package_spec)
           comparable_package_spec.each do |_name, spec|
             spec.delete_if { |k, _| !package_comparison_keys.include?(k) }
           end

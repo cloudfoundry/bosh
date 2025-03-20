@@ -6,7 +6,7 @@ require 'securerandom'
 require 'tmpdir'
 require 'tempfile'
 
-require 'cloud/dummy'
+require 'clouds/dummy'
 
 require 'integration_support/constants'
 require 'integration_support/service'

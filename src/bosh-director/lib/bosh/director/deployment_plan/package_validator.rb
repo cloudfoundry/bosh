@@ -39,7 +39,7 @@ module Bosh::Director
             ).all
 
             compiled_packages_list = compiled_packages_list.select do |compiled_package|
-              Bosh::Common::Version::StemcellVersion.match(compiled_package.stemcell_version, stemcell.version)
+              Bosh::Version::StemcellVersion.match(compiled_package.stemcell_version, stemcell.version)
             end
 
             add_fault(release_desc, needed_package, stemcell) if compiled_packages_list.empty?

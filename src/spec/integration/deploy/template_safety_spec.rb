@@ -7,7 +7,7 @@ describe 'when a release job modifies a property in the ERB script', type: :inte
   include IntegrationSupport::CreateReleaseOutputParsers
 
   let(:deployment_manifest) do
-    minimal_manifest = Bosh::Common::DeepCopy.copy(SharedSupport::DeploymentManifestHelper.manifest_with_release)
+    minimal_manifest = Bosh::Director::DeepCopy.copy(SharedSupport::DeploymentManifestHelper.manifest_with_release)
 
     minimal_manifest['instance_groups'] = [
       {

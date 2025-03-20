@@ -1,6 +1,6 @@
 module Bosh::Director
 
-  class TaskAppender < Logging::Appender
+  class TaskAppender < ::Logging::Appender
     def initialize(name, opts = {})
       super
       @db_writer = opts.fetch(:db_writer)

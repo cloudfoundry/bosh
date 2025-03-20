@@ -14,9 +14,9 @@ module Bosh::Director::Links
 
         @links_manager = Bosh::Director::Links::LinksManager.new(deployment_model.links_serial_id)
 
-        manifest_provides_links = Bosh::Common::DeepCopy.copy(safe_property(manifest_job_spec, 'provides',
+        manifest_provides_links = Bosh::Director::DeepCopy.copy(safe_property(manifest_job_spec, 'provides',
                                                                             class: Hash, optional: true, default: {}))
-        custom_manifest_providers = Bosh::Common::DeepCopy.copy(safe_property(manifest_job_spec, 'custom_provider_definitions',
+        custom_manifest_providers = Bosh::Director::DeepCopy.copy(safe_property(manifest_job_spec, 'custom_provider_definitions',
                                                                               class: Array, optional: true, default: []))
         job_name = safe_property(manifest_job_spec, 'name', class: String)
 

@@ -1,5 +1,5 @@
 require 'securerandom'
-require 'common/version/stemcell_version_list'
+require 'bosh/version/stemcell_version_list'
 
 module Bosh::Director
   module Api
@@ -110,10 +110,10 @@ module Bosh::Director
 
         versions = stemcells.map(&:version)
 
-        latest_version = Bosh::Common::Version::StemcellVersionList.parse(versions).latest.to_s
+        latest_version = Bosh::Version::StemcellVersionList.parse(versions).latest.to_s
 
         stemcells.find do |stemcell|
-          parsed_version = Bosh::Common::Version::StemcellVersion.parse(stemcell.version).to_s
+          parsed_version = Bosh::Version::StemcellVersion.parse(stemcell.version).to_s
           parsed_version == latest_version
         end
       end

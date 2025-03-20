@@ -1,6 +1,5 @@
 require 'bosh/director/deployment_plan/disk_type'
 require 'forwardable'
-require 'common/deep_copy'
 
 module Bosh::Director
   # Encapsulates essential director data structures retrieved
@@ -85,7 +84,7 @@ module Bosh::Director
         @properties = properties
         @releases = {}
 
-        @uninterpolated_manifest_hash = Bosh::Common::DeepCopy.copy(uninterpolated_manifest_hash)
+        @uninterpolated_manifest_hash = Bosh::Director::DeepCopy.copy(uninterpolated_manifest_hash)
         @raw_manifest_text = raw_manifest_text
         @cloud_configs = cloud_configs
         @runtime_configs = runtime_configs
