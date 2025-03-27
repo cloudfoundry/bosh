@@ -1,6 +1,6 @@
-require 'bosh/template/invalid_property_type'
+require 'bosh/common/template/invalid_property_type'
 
-module Bosh
+module Bosh::Common
   module Template
     module PropertyHelper
       # Copies property with a given name from src to dst.
@@ -15,7 +15,7 @@ module Bosh
 
         keys.each do |key|
           unless src_ref.is_a?(Hash)
-            raise Bosh::Template::InvalidPropertyType,
+            raise Template::InvalidPropertyType,
               "Property '#{name}' expects a hash, but received '#{src_ref.class}'"
           end
           src_ref = src_ref[key]
@@ -78,7 +78,7 @@ module Bosh
 
         keys.each do |key|
           unless properties_ref.is_a?(Hash)
-            raise Bosh::Template::InvalidPropertyType,
+            raise Template::InvalidPropertyType,
                   "Property '#{name}' expects a hash, but received '#{properties_ref.class}'"
           end
           properties_ref = properties_ref[key]

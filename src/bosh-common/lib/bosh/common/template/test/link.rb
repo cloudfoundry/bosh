@@ -1,4 +1,4 @@
-module Bosh::Template::Test
+module Bosh::Common::Template::Test
   class Link
     attr_reader :instances, :name, :properties, :address
 

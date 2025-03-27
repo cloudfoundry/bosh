@@ -1,9 +1,9 @@
-require 'bosh/template/property_helper'
+require 'bosh/common/template/property_helper'
 
 module Bosh::Director
   module DeploymentPlan
     class Job
-      include Bosh::Template::PropertyHelper
+      include Bosh::Common::Template::PropertyHelper
       include ValidationHelper
 
       attr_reader :name
