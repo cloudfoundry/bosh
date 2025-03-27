@@ -9,7 +9,6 @@ module Bosh::Clouds
     end
 
     def current_vm_id(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
-    def create_stemcell(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def delete_stemcell(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def delete_vm(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
     def create_network(*arguments); invoke_cpi_method(__method__.to_s, *arguments); end
@@ -49,6 +48,16 @@ module Bosh::Clouds
 
       response
     end
+
+
+    def create_stemcell(*args) 
+      final_args = args.take(2)
+      if @cpi_api_version >= 3
+        final_args = args
+      end
+      return  @cpi.create_stemcell(*final_args)
+    end
+
 
     def attach_disk(*args)
       cpi_response = @cpi.attach_disk(*args)
