@@ -9,7 +9,7 @@ module Bosh::Director::Core::Templates
 
     describe '#render' do
       let(:context) do
-        Bosh::Template::EvaluationContext.new({}, nil)
+        Bosh::Common::Template::EvaluationContext.new({}, nil)
       end
       let(:logger) { instance_double('Logger') }
 
@@ -21,7 +21,7 @@ module Bosh::Director::Core::Templates
         context 'with ActiveSupport #present?' do
           let(:erb_contents) { '<%= p("property").present? ? "present? is available" : "" %>' }
           let(:context) do
-            Bosh::Template::EvaluationContext.new({ 'properties' => { 'property' => 'value'} }, nil)
+            Bosh::Common::Template::EvaluationContext.new({ 'properties' => { 'property' => 'value'} }, nil)
           end
 
           it 'renders the erb for the given template context' do

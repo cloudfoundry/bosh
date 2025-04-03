@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 RSpec.shared_examples 'rendered postgres* bpm.yml' do
-  let(:release) { Bosh::Template::Test::ReleaseDir.new(RELEASE_ROOT) }
+  let(:release) { Bosh::Common::Template::Test::ReleaseDir.new(RELEASE_ROOT) }
   let(:template) { job.template('config/bpm.yml') }
 
   subject(:rendered_template) do

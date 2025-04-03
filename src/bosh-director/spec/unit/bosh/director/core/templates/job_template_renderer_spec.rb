@@ -54,10 +54,10 @@ module Bosh::Director::Core::Templates
       end
 
       context 'when templates do not contain local properties' do
-        let(:context) { instance_double('Bosh::Template::EvaluationContext') }
-        let(:context_copy) { instance_double('Bosh::Template::EvaluationContext') }
+        let(:context) { instance_double('Bosh::Common::Template::EvaluationContext') }
+        let(:context_copy) { instance_double('Bosh::Common::Template::EvaluationContext') }
         before do
-          allow(Bosh::Template::EvaluationContext).to receive(:new).and_return(context)
+          allow(Bosh::Common::Template::EvaluationContext).to receive(:new).and_return(context)
           allow(Bosh::Director::DeepCopy).to receive(:copy).and_call_original
           allow(Bosh::Director::DeepCopy).to receive(:copy).with(context).and_return(context_copy)
           allow(Bosh::Director::DeepCopy).to receive(:copy).with(context_copy).and_return(context_copy)
@@ -102,12 +102,12 @@ module Bosh::Director::Core::Templates
         end
 
         before do
-          allow(Bosh::Template::EvaluationContext).to receive(:new)
+          allow(Bosh::Common::Template::EvaluationContext).to receive(:new)
         end
 
         it 'should adjust the spec passed to the evaluation context' do
           job_template_renderer.render(spec)
-          expect(Bosh::Template::EvaluationContext).to have_received(:new).with(
+          expect(Bosh::Common::Template::EvaluationContext).to have_received(:new).with(
             {
               'index' => 1,
               'name' => 'instance-group-name',
@@ -255,13 +255,13 @@ module Bosh::Director::Core::Templates
         let(:link_provider_intents) { [provider_intent, another_provider_intent, yet_another_provider_intent] }
 
         before do
-          allow(Bosh::Template::EvaluationContext).to receive(:new)
+          allow(Bosh::Common::Template::EvaluationContext).to receive(:new)
           allow(dns_encoder).to receive(:id_for_group_tuple).and_return('10', '1', '-1')
         end
 
         it 'should have EvaluationContext called with correct spec' do
           job_template_renderer.render(raw_spec)
-          expect(Bosh::Template::EvaluationContext).to have_received(:new).with(modified_spec, dns_encoder).once
+          expect(Bosh::Common::Template::EvaluationContext).to have_received(:new).with(modified_spec, dns_encoder).once
         end
 
         it 'appends a rendered template with deterministic link dns data' do
