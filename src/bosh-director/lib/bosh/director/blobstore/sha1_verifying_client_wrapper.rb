@@ -32,7 +32,7 @@ module Bosh::Director
       def_delegators :@client, :create, :delete, :exists?, :sign,
                      :signing_enabled?, :credential_properties,
                      :required_credential_properties_list, :redacted_credential_properties_list,
-                     :can_sign_urls?, :headers
+                     :can_sign_urls?, :headers, :validate!, :generate_object_id, :redact_credentials
 
       private
 
