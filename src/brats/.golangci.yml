@@ -1,11 +1,12 @@
-# https://golangci-lint.run/usage/configuration/
-run:
-  timeout: 3m # 1m default times out on github-action runners
+version: "2"
 
 linters:
+  default: standard
+
+  settings:
+    errcheck:
+      check-blank: true # assignment to blank identifier: `_ := someFunc()`.
+
+formatters:
   enable:
   - goimports
-
-output:
-  # Sort results by: filepath, line and column.
-  sort-results: true
