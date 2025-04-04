@@ -16,7 +16,7 @@ var _ = PDescribe("Director external database TLS connections", func() {
 		Expect(err).ToNot(HaveOccurred())
 		dbConfig := utils.LoadExternalDBConfig(databaseType, mutualTLSEnabled, tmpCertDir)
 		utils.CreateDB(dbConfig)
-		defer os.RemoveAll(tmpCertDir)
+		defer os.RemoveAll(tmpCertDir) //nolint:errcheck
 		defer utils.DeleteDB(dbConfig)
 
 		realCACertPath := dbConfig.CACertPath

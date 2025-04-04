@@ -38,7 +38,7 @@ var _ = Describe("nginx with ngx_http_stub_status_module compiled", func() {
 		metricsClient := utils.MetricsServerHTTPClient()
 		resp, err := metricsClient.Get(fmt.Sprintf("https://%s:9091/metrics", utils.InnerDirectorIP()))
 		Expect(err).NotTo(HaveOccurred())
-		defer resp.Body.Close()
+		defer resp.Body.Close() //nolint:errcheck
 
 		contents, err := io.ReadAll(resp.Body)
 		Expect(err).NotTo(HaveOccurred())
@@ -49,7 +49,7 @@ var _ = Describe("nginx with ngx_http_stub_status_module compiled", func() {
 
 		apiMetricsResp, err := metricsClient.Get(fmt.Sprintf("https://%s:9091/api_metrics", utils.InnerDirectorIP()))
 		Expect(err).NotTo(HaveOccurred())
-		defer apiMetricsResp.Body.Close()
+		defer apiMetricsResp.Body.Close() //nolint:errcheck
 
 		contents, err = io.ReadAll(apiMetricsResp.Body)
 		Expect(err).NotTo(HaveOccurred())

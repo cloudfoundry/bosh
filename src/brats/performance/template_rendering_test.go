@@ -80,8 +80,8 @@ func GetPrepareAndRenderingDurations(deployOutput []byte) (time.Duration, time.D
 
 func ConvertTimeToDuration(timeAsString string) time.Duration {
 	segments := strings.Split(timeAsString, ":")
-	hours, _ := strconv.Atoi(segments[0])
-	minutes, _ := strconv.Atoi(segments[1])
-	seconds, _ := strconv.Atoi(segments[2])
+	hours, _ := strconv.Atoi(segments[0])   //nolint:errcheck
+	minutes, _ := strconv.Atoi(segments[1]) //nolint:errcheck
+	seconds, _ := strconv.Atoi(segments[2]) //nolint:errcheck
 	return time.Duration(hours)*time.Hour + time.Duration(minutes)*time.Minute + time.Duration(seconds)*time.Second
 }

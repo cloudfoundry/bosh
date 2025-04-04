@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo/v2" //nolint:staticcheck
+	. "github.com/onsi/gomega"    //nolint:staticcheck
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 )
@@ -168,7 +168,7 @@ func DeleteDB(dbConfig *ExternalDBConfig) {
 		return
 	}
 
-	if dbConfig.Type == mysqlDBType {
+	if dbConfig.Type == mysqlDBType { //nolint:staticcheck
 		deleteMySQL(dbConfig)
 	} else if dbConfig.Type == postgresDBType {
 		deletePostgres(dbConfig)
@@ -197,7 +197,7 @@ func CreateDB(dbConfig *ExternalDBConfig) {
 		return
 	}
 
-	if dbConfig.Type == mysqlDBType {
+	if dbConfig.Type == mysqlDBType { //nolint:staticcheck
 		createMySQL(dbConfig)
 	} else if dbConfig.Type == postgresDBType {
 		createPostgres(dbConfig)

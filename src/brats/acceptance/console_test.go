@@ -22,7 +22,7 @@ var _ = Describe("director console", func() {
 	It("allows a user to launch the director console", func() {
 		ptyF, ttyF, err := pty.Open()
 		Expect(err).ShouldNot(HaveOccurred())
-		defer ptyF.Close()
+		defer ptyF.Close() //nolint:errcheck
 
 		consoleCmd := exec.Command(utils.OuterBoshBinaryPath(), "-d", utils.InnerBoshDirectorName(), "ssh", "bosh")
 		consoleCmd.Stdin = ttyF
