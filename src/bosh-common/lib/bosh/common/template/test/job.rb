@@ -1,6 +1,6 @@
 require 'yaml'
 
-module Bosh::Template::Test
+module Bosh::Common::Template::Test
   class Job
     def initialize(release_path, name)
       @release_path = release_path

@@ -1,10 +1,10 @@
 require 'bosh/director/deployment_plan/instance_group_spec_parser'
-require 'bosh/template/property_helper'
+require 'bosh/common/template/property_helper'
 
 module Bosh::Director
   module DeploymentPlan
     class InstanceGroup
-      include Bosh::Template::PropertyHelper
+      include Bosh::Common::Template::PropertyHelper
 
       VALID_LIFECYCLE_PROFILES = %w[service errand].freeze
       DEFAULT_LIFECYCLE_PROFILE = 'service'.freeze

@@ -1,10 +1,10 @@
-require 'bosh/template/property_helper'
+require 'bosh/common/template/property_helper'
 
 module Bosh::Director
   module DeploymentPlan
     class InstanceGroupSpecParser
       include ValidationHelper
-      include Bosh::Template::PropertyHelper
+      include Bosh::Common::Template::PropertyHelper
       include IpUtil
 
       MANUAL_LINK_KEYS = %w[instances properties address].freeze
