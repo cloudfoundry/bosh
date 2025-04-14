@@ -69,6 +69,11 @@ module Bosh::Director
               @logger.debug("Reserving dynamic IP '#{ip}' for manual network '#{reservation.network.name}'")
               reservation.resolve_ip(ip)
               reservation.resolve_type(:dynamic)
+              unless subnet.prefix.nil?
+                prefix = @ip_repo.allocate_dynamic_prefix(reservation, subnet)
+                @logger.debug("Reserving dynamic prefix '#{prefix}' for manual network '#{reservation.network.name}'")
+                reservation.resolve_prefix(prefix)
+              end
               break
             end
           end

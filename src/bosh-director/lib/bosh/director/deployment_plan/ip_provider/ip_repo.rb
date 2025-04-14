@@ -54,6 +54,23 @@ module Bosh::Director::DeploymentPlan
       ip_address.to_i
     end
 
+    def allocate_dynamic_prefix(reservation, subnet)
+      begin
+        cidr = try_to_allocate_dynamic_prefix(reservation, subnet)
+      rescue NoMoreIPsAvailableAndStopRetrying
+        @logger.debug('Failed to allocate dynamic prefix: no more available')
+        return nil
+      rescue IpFoundInDatabaseAndCanBeRetried
+        @logger.debug('Retrying to allocate dynamic prefix: probably a race condition with another deployment')
+        # IP can be taken by other deployment that runs in parallel
+        # retry until succeeds or out of range
+        retry
+      end
+
+      @logger.debug("Allocated dynamic cidr '#{cidr}' for #{reservation.network.name}")
+      cidr.to_i
+    end
+
     def allocate_vip_ip(reservation, subnet)
       begin
         ip_address = try_to_allocate_vip_ip(reservation, subnet)
@@ -95,6 +112,33 @@ module Bosh::Director::DeploymentPlan
       ip_address
     end
 
+    def try_to_allocate_dynamic_prefix(reservation, subnet)
+      @logger.debug("Allocating dynamic prefix for #{reservation.network.name}")
+      addresses_in_use = Set.new(all_ip_addresses)
+
+      first_range_address = subnet.range.to_range.first.to_i - 1
+      addresses_we_cant_allocate = addresses_in_use
+      addresses_we_cant_allocate << first_range_address
+
+      addresses_we_cant_allocate.merge(subnet.restricted_ips.to_a) unless subnet.restricted_ips.empty?
+      addresses_we_cant_allocate.merge(subnet.static_ips.to_a) unless subnet.static_ips.empty?
+
+      addr = find_first_available_address(addresses_we_cant_allocate, first_range_address)
+      prefix = get_first_available_prefix(addr, subnet.prefix)
+
+      @logger.debug("FIRST AVAILABLE PREFIX '#{prefix}' for #{reservation.network.name}")
+
+      cidr = Bosh::Director::IpAddrOrCidr.new(prefix)
+
+      unless subnet.range == cidr || subnet.range.include?(cidr)
+        raise NoMoreIPsAvailableAndStopRetrying
+      end
+
+      save_ip(cidr, reservation, false)
+
+      cidr
+    end
+
     def find_first_available_address(addresses_we_cant_allocate, first_address)
       last_address_we_cant_use = addresses_we_cant_allocate
                                  .to_a
@@ -102,6 +146,10 @@ module Bosh::Director::DeploymentPlan
                                  .sort
                                  .find { |a| !addresses_we_cant_allocate.include?(a + 1) }
       last_address_we_cant_use + 1
+    end
+
+    def get_first_available_prefix(first_available_addr, prefix)
+      "#{first_available_addr}/#{prefix}" 
     end
 
     def try_to_allocate_vip_ip(reservation, subnet)
