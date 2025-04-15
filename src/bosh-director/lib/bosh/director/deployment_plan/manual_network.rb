@@ -55,6 +55,7 @@ module Bosh::Director
         config = {
           "type" => "manual",
           "ip" => ip_or_cidr.to_s,
+          "prefix" => reservation.prefix.to_s,
           "netmask" => subnet.netmask,
           "cloud_properties" => subnet.cloud_properties
         }

@@ -11,7 +11,6 @@ module Bosh::Director::Models
       validates_presence :orphaned_vm_id, allow_nil: true
       validates_presence :task_id
       validates_presence :address_str
-      validates_unique :address_str
       raise 'Invalid type for address_str column' unless address_str.is_a?(String)
     end
 
@@ -46,6 +45,18 @@ module Bosh::Director::Models
         raise "Unexpected address '#{address_str}' (#{info_display})"
       end
       address_str.to_i
+    end
+
+    def ip_prefix
+      if prefix.nil?
+        if Bosh::Director::IpAddrOrCidr.new(address).ipv6?
+          128
+        else
+          32
+        end
+      else
+        prefix
+      end
     end
 
     def to_s
