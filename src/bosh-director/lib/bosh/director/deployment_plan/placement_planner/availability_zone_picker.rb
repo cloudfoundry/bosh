@@ -123,7 +123,7 @@ module Bosh
 
           def populate_network_plans(instance_plan)
             @networks.each do |network|
-              @network_planner.network_plan_with_dynamic_reservation(instance_plan, network).each {|plan| instance_plan.network_plans << plan }
+              instance_plan.network_plans << @network_planner.network_plan_with_dynamic_reservation(instance_plan, network)
             end
           end
 

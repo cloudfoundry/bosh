@@ -341,7 +341,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
     end
 
     it 'should fail when for static reservation' do
-      reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, @network, 1)
+      reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, @network, "1.1.1.1")
       expect {
         @network.network_settings(reservation)
       }.to raise_error Bosh::Director::NetworkReservationWrongType

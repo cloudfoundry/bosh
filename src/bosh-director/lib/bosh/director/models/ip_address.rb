@@ -23,7 +23,7 @@ module Bosh::Director::Models
       [
         "#{instance.deployment.name}.#{instance.job}/#{instance.index}",
         network_name,
-        "#{Bosh::Director::IpAddrOrCidr.new(address_str.to_i)} (#{type})"
+        "#{Bosh::Director::IpAddrOrCidr.new(address_str)} (#{type})"
       ].join(' - ')
     end
 
@@ -35,17 +35,24 @@ module Bosh::Director::Models
       static ? 'static' : 'dynamic'
     end
 
+    def address_int_and_prefix
+      address_and_prefix = address.split('/')
+      [Bosh::Director::IpAddrOrCidr.new(address_and_prefix[0]).to_i, address_and_prefix[1]]
+    end
+
     def address
-      unless address_str.match?(/\A\d+\z/)
-        info_display = ''
-        begin
-          info_display = info
-        rescue StandardError
-          info_display = 'missing_info'
+      if address_str.include?('/')
+        return Bosh::Director::IpAddrOrCidr.new(address_str)
+      else
+        ip = Bosh::Director::IpAddrOrCidr.new(address_str.to_i)
+        if ip.ipv6?
+          prefix = 132
+        else
+          prefix = 32
         end
-        raise "Unexpected address '#{address_str}' (#{info_display})"
+        address_str = Bosh::Director::IpAddrOrCidr.new("#{ip}/#{prefix}")
+        return address_str
       end
-      address_str.to_i
     end
 
     def to_s

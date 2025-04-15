@@ -1,6 +1,6 @@
 module Bosh::Director
   class NetworkReservation
-    attr_reader :ip, :instance_model, :network, :type, :is_prefix_reservation
+    attr_reader :ip, :instance_model, :network, :type
 
     def initialize(instance_model, network)
       @instance_model = instance_model
@@ -19,7 +19,7 @@ module Bosh::Director
     private
 
     def formatted_ip
-      IpAddrOrCidr.new(@ip).to_s if @ip
+      IpAddrOrCidr.new(@ip).to_cidr_s if @ip
     end
   end
 
@@ -28,8 +28,7 @@ module Bosh::Director
 
     def initialize(instance_model, network, ip, network_type)
       super(instance_model, network)
-      @ip = IpAddrOrCidr.new(ip).to_i if ip
-      @is_prefix_reservation = IpAddrOrCidr.new(ip).prefix != 32
+      @ip = IpAddrOrCidr.new(ip) if ip
       @network_type = network_type
       @obsolete = network.instance_of? Bosh::Director::DeploymentPlan::Network
     end
@@ -48,23 +47,31 @@ module Bosh::Director
   end
 
   class DesiredNetworkReservation < NetworkReservation
-    def self.new_dynamic(instance_model, network, prefix_reservation = false)
-      new(instance_model, network, nil, :dynamic, prefix_reservation)
+    def self.new_dynamic(instance_model, network)
+      new(instance_model, network.deployment_network, nil, :dynamic)
     end
 
     def self.new_static(instance_model, network, ip)
-      new(instance_model, network, ip, :static)
+      cidr_ip = "#{IpAddrOrCidr.new(ip)}/#{network.prefix}"
+      new(instance_model, network.deployment_network, cidr_ip, :static)
     end
 
-    def initialize(instance_model, network, ip, type, prefix_reservation)
+    def initialize(instance_model, network, ip, type)
       super(instance_model, network)
-      @ip = IpAddrOrCidr.new(ip).to_i if ip
+      @ip = resolve_ip(ip) if ip
       @type = type
-      @is_prefix_reservation = prefix_reservation
     end
 
     def resolve_ip(ip)
-      @ip = IpAddrOrCidr.new(ip).to_i
+#      if !ip.to_s.match?(/\//)
+      @ip = IpAddrOrCidr.new(ip)
+#      else
+#        if IpAddrOrCidr.new(ip).ipv6?
+#          @ip = IpAddrOrCidr.new("#{ip}/128")
+#        else
+#          @ip = IpAddrOrCidr.new("#{ip}/32")
+#        end
+#      end
     end
 
     def resolve_type(type)

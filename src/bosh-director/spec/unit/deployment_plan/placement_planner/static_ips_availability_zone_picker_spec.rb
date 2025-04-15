@@ -361,8 +361,8 @@ module Bosh::Director::DeploymentPlan
             let(:static_ips) { ['192.168.1.10', '192.168.2.10'] }
             let(:existing_instances) do
               [
-                existing_instance_with_az_and_ips('zone1', ['192.168.1.10']),
-                existing_instance_with_az_and_ips('zone2', ['192.168.2.10']),
+                existing_instance_with_az_and_ips('zone1', ['192.168.1.10/32']),
+                existing_instance_with_az_and_ips('zone2', ['192.168.2.10/32']),
               ]
             end
 
@@ -382,8 +382,8 @@ module Bosh::Director::DeploymentPlan
             let(:static_ips) { ['192.168.1.10', '192.168.2.10'] }
             let(:existing_instances) do
               [
-                existing_instance_with_az_and_ips('zone1', ['192.168.1.10']),
-                existing_instance_with_az_and_ips('zone2', ['192.168.2.10']),
+                existing_instance_with_az_and_ips('zone1', ['192.168.1.10/32']),
+                existing_instance_with_az_and_ips('zone2', ['192.168.2.10/32']),
               ]
             end
             let(:instance_group_availability_zones) { ['zone1'] }
@@ -408,8 +408,8 @@ module Bosh::Director::DeploymentPlan
             let(:static_ips) { ['192.168.1.14', '192.168.2.14'] }
             let(:existing_instances) do
               [
-                existing_instance_with_az_and_ips('zone1', ['192.168.1.10']),
-                existing_instance_with_az_and_ips('zone2', ['192.168.2.10']),
+                existing_instance_with_az_and_ips('zone1', ['192.168.1.10/32']),
+                existing_instance_with_az_and_ips('zone2', ['192.168.2.10/32']),
               ]
             end
             let(:instance_group_availability_zones) { %w[zone1 zone2] }
@@ -487,7 +487,7 @@ module Bosh::Director::DeploymentPlan
             end
             let(:new_subnet_azs) { %w[zone2 zone1] }
             let(:static_ips) { ['192.168.1.10'] }
-            let(:existing_instances) { [existing_instance_with_az_and_ips('zone1', ['192.168.1.10'])] }
+            let(:existing_instances) { [existing_instance_with_az_and_ips('zone1', ['192.168.1.10/32'])] }
 
             it 'reuses AZ that existing instance with static IP belongs to' do
               expect(new_instance_plans).to eq([])
@@ -518,8 +518,8 @@ module Bosh::Director::DeploymentPlan
               let(:static_ips) { ['192.168.1.10', '192.168.1.11', '192.168.1.12', '192.168.1.13'] }
               let(:existing_instances) do
                 [
-                  existing_instance_with_az_and_ips('zone1', ['192.168.1.10']),
-                  existing_instance_with_az_and_ips('zone1', ['192.168.1.12']),
+                  existing_instance_with_az_and_ips('zone1', ['192.168.1.10/32']),
+                  existing_instance_with_az_and_ips('zone1', ['192.168.1.12/32']),
                 ]
               end
               it 'should distribute the instances across the azs taking into account the existing instances' do
@@ -541,8 +541,8 @@ module Bosh::Director::DeploymentPlan
             let(:static_ips) { ['192.168.1.10', '192.168.2.11'] }
             let(:existing_instances) do
               [
-                existing_instance_with_az_and_ips('zone1', ['192.168.1.10']),
-                existing_instance_with_az_and_ips('zone2', ['192.168.2.10']),
+                existing_instance_with_az_and_ips('zone1', ['192.168.1.10/32']),
+                existing_instance_with_az_and_ips('zone2', ['192.168.2.10/32']),
               ]
             end
 
@@ -577,10 +577,10 @@ module Bosh::Director::DeploymentPlan
             context 'when all existing instances match specified static ips' do
               let(:existing_instances) do
                 [
-                  existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '10.10.1.10']),
-                  existing_instance_with_az_and_ips('zone2', ['192.168.2.10', '10.10.2.10']),
-                  existing_instance_with_az_and_ips('zone1', ['192.168.1.11', '10.10.1.11']),
-                  existing_instance_with_az_and_ips('zone2', ['192.168.2.11', '10.10.2.11']),
+                  existing_instance_with_az_and_ips('zone1', ['192.168.1.10/32', '10.10.1.10/32']),
+                  existing_instance_with_az_and_ips('zone2', ['192.168.2.10/32', '10.10.2.10/32']),
+                  existing_instance_with_az_and_ips('zone1', ['192.168.1.11/32', '10.10.1.11/32']),
+                  existing_instance_with_az_and_ips('zone2', ['192.168.2.11/32', '10.10.2.11/32']),
                 ]
               end
 
@@ -614,10 +614,10 @@ module Bosh::Director::DeploymentPlan
             context 'when some existing instances have IPs that are different from the instance group static IPs' do
               let(:existing_instances) do
                 [
-                  existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '10.10.1.10']),
-                  existing_instance_with_az_and_ips('zone2', ['192.168.2.14', '10.10.2.14']),
-                  existing_instance_with_az_and_ips('zone1', ['192.168.1.14', '10.10.1.14']),
-                  existing_instance_with_az_and_ips('zone2', ['192.168.2.11', '10.10.2.11']),
+                  existing_instance_with_az_and_ips('zone1', ['192.168.1.10/32', '10.10.1.10/32']),
+                  existing_instance_with_az_and_ips('zone2', ['192.168.2.14/32', '10.10.2.14/32']),
+                  existing_instance_with_az_and_ips('zone1', ['192.168.1.14/32', '10.10.1.14/32']),
+                  existing_instance_with_az_and_ips('zone2', ['192.168.2.11/32', '10.10.2.11/32']),
                 ]
               end
 
@@ -655,7 +655,7 @@ module Bosh::Director::DeploymentPlan
               let(:desired_instance_count) { 1 }
               let(:existing_instances) do
                 [
-                  existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '10.10.2.10']),
+                  existing_instance_with_az_and_ips('zone1', ['192.168.1.10/32', '10.10.2.10/32']),
                 ]
               end
               let(:a_static_ips) { ['192.168.1.10'] }
@@ -676,8 +676,8 @@ module Bosh::Director::DeploymentPlan
                 let(:desired_instance_count) { 3 }
                 let(:existing_instances) do
                   [
-                    existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '10.10.1.10']),
-                    existing_instance_with_az_and_ips('zone1', ['192.168.1.11', '10.10.1.11']),
+                    existing_instance_with_az_and_ips('zone1', ['192.168.1.10/32', '10.10.1.10/32']),
+                    existing_instance_with_az_and_ips('zone1', ['192.168.1.11/32', '10.10.1.11/32']),
                   ]
                 end
                 let(:a_static_ips) { ['192.168.1.10 - 192.168.1.11', '192.168.2.10'] }
@@ -698,9 +698,9 @@ module Bosh::Director::DeploymentPlan
                 let(:desired_instance_count) { 2 }
                 let(:existing_instances) do
                   [
-                    existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '10.10.1.10']),
-                    existing_instance_with_az_and_ips('zone1', ['192.168.1.11', '10.10.1.11']),
-                    existing_instance_with_az_and_ips('zone2', ['192.168.2.10', '10.10.2.10']),
+                    existing_instance_with_az_and_ips('zone1', ['192.168.1.10/32', '10.10.1.10/32']),
+                    existing_instance_with_az_and_ips('zone1', ['192.168.1.11/32', '10.10.1.11/32']),
+                    existing_instance_with_az_and_ips('zone2', ['192.168.2.10/32', '10.10.2.10/32']),
                   ]
                 end
                 let(:a_static_ips) { ['192.168.1.10', '192.168.2.10'] }
@@ -725,8 +725,8 @@ module Bosh::Director::DeploymentPlan
 
               let(:existing_instances) do
                 [
-                  existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '10.10.2.10']),
-                  existing_instance_with_az_and_ips('zone2', ['192.168.2.10', '10.10.2.11']),
+                  existing_instance_with_az_and_ips('zone1', ['192.168.1.10/32', '10.10.2.10/32']),
+                  existing_instance_with_az_and_ips('zone2', ['192.168.2.10/32', '10.10.2.11/32']),
                 ]
               end
               let(:a_static_ips) { ['192.168.1.10', '192.168.2.10'] }
@@ -765,8 +765,8 @@ module Bosh::Director::DeploymentPlan
                 let(:desired_instance_count) { 2 }
                 let(:existing_instances) do
                   [
-                    existing_instance_with_az_and_ips(nil, ['192.168.1.10', '10.10.1.10']),
-                    existing_instance_with_az_and_ips(nil, ['192.168.2.10', '10.10.2.11']),
+                    existing_instance_with_az_and_ips(nil, ['192.168.1.10/32', '10.10.1.10/32']),
+                    existing_instance_with_az_and_ips(nil, ['192.168.2.10/32', '10.10.2.11/32']),
                   ]
                 end
                 let(:a_static_ips) { ['192.168.1.10', '192.168.2.10'] }
@@ -780,8 +780,8 @@ module Bosh::Director::DeploymentPlan
               context 'when existing instances have AZs' do
                 let(:existing_instances) do
                   [
-                    existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '10.10.1.10']),
-                    existing_instance_with_az_and_ips('zone2', ['192.168.2.10', '10.10.2.11']),
+                    existing_instance_with_az_and_ips('zone1', ['192.168.1.10/32', '10.10.1.10/32']),
+                    existing_instance_with_az_and_ips('zone2', ['192.168.2.10/32', '10.10.2.11/32']),
                   ]
                 end
 
@@ -816,8 +816,8 @@ module Bosh::Director::DeploymentPlan
             let(:desired_instance_count) { 2 }
             let(:existing_instances) do
               [
-                existing_instance_with_az_and_ips('zone1', ['192.168.5.10', '10.10.5.10']),
-                existing_instance_with_az_and_ips('zone1', ['192.168.6.10', '10.10.6.11']),
+                existing_instance_with_az_and_ips('zone1', ['192.168.5.10/32', '10.10.5.10/32']),
+                existing_instance_with_az_and_ips('zone1', ['192.168.6.10/32', '10.10.6.11/32']),
               ]
             end
             let(:a_static_ips) { ['192.168.1.10', '192.168.2.10'] }
@@ -848,7 +848,7 @@ module Bosh::Director::DeploymentPlan
             end
             let(:existing_instances) do
               [
-                existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '192.168.2.10']),
+                existing_instance_with_az_and_ips('zone1', ['192.168.1.10/32', '192.168.2.10/32']),
               ]
             end
             let(:a_static_ips) { ['192.168.1.10 - 192.168.1.11'] }
@@ -882,7 +882,7 @@ module Bosh::Director::DeploymentPlan
 
               let(:existing_instances) do
                 [
-                  existing_instance_with_az_and_ips('zone1', ['192.168.1.10', '192.168.2.10']),
+                  existing_instance_with_az_and_ips('zone1', ['192.168.1.10/32', '192.168.2.10/32']),
                 ]
               end
 
@@ -909,8 +909,8 @@ module Bosh::Director::DeploymentPlan
           let(:static_ips) { ['192.168.1.10', '192.168.2.10'] }
           let(:existing_instances) do
             [
-              existing_instance_with_az_and_ips('zone1', ['192.168.1.10'], 'old-network-name'),
-              existing_instance_with_az_and_ips('zone2', ['192.168.2.10'], 'old-network-name'),
+              existing_instance_with_az_and_ips('zone1', ['192.168.1.10/32'], 'old-network-name'),
+              existing_instance_with_az_and_ips('zone2', ['192.168.2.10/32'], 'old-network-name'),
             ]
           end
 
@@ -952,7 +952,7 @@ module Bosh::Director::DeploymentPlan
       ips.each do |ip|
         instance.add_ip_address(
           FactoryBot.create(:models_ip_address,
-            address_str: IPAddr.new(ip).to_i.to_s,
+            address_str: ip,
             network_name: network_name,
           ),
         )

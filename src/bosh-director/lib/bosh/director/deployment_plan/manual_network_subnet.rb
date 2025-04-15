@@ -77,8 +77,14 @@ module Bosh::Director
             static_ips.add(ip)
           end
 
-          unless prefix.nil?
-            if range.prefix > prefix
+          if prefix.nil?
+            if range.ipv6?
+              prefix = 128
+            else
+              prefix = 32
+            end
+          else
+            if range.prefix > prefix.to_i
               raise NetworkPrefixSizeTooBig, "Prefix size '#{prefix}' is larger than range prefix '#{range.prefix}'"
             end
           end
@@ -106,7 +112,7 @@ module Bosh::Director
         )
       end
 
-      def initialize(network_name, range, gateway, name_servers, cloud_properties, netmask, availability_zone_names, restricted_ips, static_ips, subnet_name = nil, netmask_bits = nil, prefix)
+      def initialize(network_name, range, gateway, name_servers, cloud_properties, netmask, availability_zone_names, restricted_ips, static_ips, subnet_name = nil, netmask_bits = nil, prefix = nil)
         @network_name = network_name
         @name = subnet_name
         @netmask_bits = netmask_bits

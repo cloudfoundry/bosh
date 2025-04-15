@@ -94,7 +94,7 @@ module Bosh::Director
       def network_settings(reservation, default_properties = Network::REQUIRED_DEFAULTS, availability_zone = nil)
         unless reservation.dynamic?
           raise NetworkReservationWrongType,
-            "IP '#{format_ip(reservation.ip)}' on network '#{reservation.network.name}' does not belong to dynamic pool"
+            "IP '#{reservation.ip}' on network '#{reservation.network.name}' does not belong to dynamic pool"
         end
 
         if availability_zone.nil?

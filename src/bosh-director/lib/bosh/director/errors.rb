@@ -225,6 +225,7 @@ module Bosh::Director
   NetworkDeletingUnorphanedError = err(160011)
   NetworkNotFoundError = err(16012)
   NetworkPrefixSizeTooBig = err(16013)
+  NetworkPrefixSizesDiffer = err(16014)
 
   # ResourcePool
   ResourcePoolUnknownNetwork = err(170001)

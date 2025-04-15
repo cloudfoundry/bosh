@@ -328,6 +328,39 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
       expect(subnet.restricted_ips).to include(ip1.to_i)
       expect(subnet.restricted_ips).to include(ip2.to_i)
     end
+
+    it 'should create a subnet spec with prefix' do
+      subnet = make_subnet(
+        {
+          'range' => '192.168.0.0/24',
+          'gateway' => '192.168.0.254',
+          'cloud_properties' => {'foo' => 'bar'},
+          'prefix' => 25
+        },
+        [],
+      )
+
+      expect(subnet.range.to_cidr_s).to eq('192.168.0.0/24')
+      expect(subnet.netmask).to eq('255.255.255.0')
+      expect(subnet.gateway).to eq('192.168.0.254')
+      expect(subnet.prefix).to eq(25)
+      expect(subnet.dns).to eq(nil)
+    end
+
+
+    it 'should fail if the prefix size is larger than the range' do
+      expect { 
+        make_subnet(
+        {
+          'range' => '192.168.0.0/24',
+          'gateway' => '192.168.0.254',
+          'cloud_properties' => {'foo' => 'bar'},
+          'prefix' => 23
+        },
+        [],
+      )}.to raise_error(Bosh::Director::NetworkPrefixSizeTooBig,
+      "Prefix size '23' is larger than range prefix '24'")
+    end
   end
 
   describe :overlaps? do

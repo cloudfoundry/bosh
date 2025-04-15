@@ -3,6 +3,7 @@ module Bosh::Director::DeploymentPlan
     include Bosh::Director::IpUtil
     class IpFoundInDatabaseAndCanBeRetried < StandardError; end
     class NoMoreIPsAvailableAndStopRetrying < StandardError; end
+    class PrefixOutOfRange < StandardError; end
 
     def initialize(logger)
       @logger = Bosh::Director::TaggedLogger.new(logger, 'network-configuration')
@@ -11,7 +12,7 @@ module Bosh::Director::DeploymentPlan
     def delete(ip)
       ip_or_cidr = Bosh::Director::IpAddrOrCidr.new(ip)
 
-      ip_address = Bosh::Director::Models::IpAddress.first(address_str: ip_or_cidr.to_i.to_s)
+      ip_address = Bosh::Director::Models::IpAddress.first(address_str: ip_or_cidr.to_cidr_s)
 
       if ip_address
         @logger.debug("Releasing ip '#{ip_or_cidr}'")
@@ -22,18 +23,19 @@ module Bosh::Director::DeploymentPlan
     end
 
     def add(reservation)
-      ip_or_cidr = Bosh::Director::IpAddrOrCidr.new(reservation.ip)
+      ip_or_cidr = Bosh::Director::IpAddrOrCidr.new(reservation.ip.to_cidr_s)
 
       reservation_type = reservation.network.ip_type(ip_or_cidr)
 
       reserve_with_instance_validation(
         reservation.instance_model,
-        ip_or_cidr,
+        ip_or_cidr.to_cidr_s,
         reservation,
         reservation_type.eql?(:static),
       )
 
       reservation.resolve_type(reservation_type)
+
       @logger.debug("Reserved ip '#{ip_or_cidr}' for #{reservation.network.name} as #{reservation_type}")
     end
 
@@ -51,24 +53,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       @logger.debug("Allocated dynamic IP '#{ip_address}' for #{reservation.network.name}")
-      ip_address.to_i
-    end
-
-    def allocate_dynamic_prefix(reservation, subnet)
-      begin
-        cidr = try_to_allocate_dynamic_prefix(reservation, subnet)
-      rescue NoMoreIPsAvailableAndStopRetrying
-        @logger.debug('Failed to allocate dynamic prefix: no more available')
-        return nil
-      rescue IpFoundInDatabaseAndCanBeRetried
-        @logger.debug('Retrying to allocate dynamic prefix: probably a race condition with another deployment')
-        # IP can be taken by other deployment that runs in parallel
-        # retry until succeeds or out of range
-        retry
-      end
-
-      @logger.debug("Allocated dynamic cidr '#{cidr}' for #{reservation.network.name}")
-      cidr.to_i
+      ip_address
     end
 
     def allocate_vip_ip(reservation, subnet)
@@ -91,90 +76,120 @@ module Bosh::Director::DeploymentPlan
 
     private
 
+    def all_ip_addresses
+      Bosh::Director::Models::IpAddress.select(:address_str).all.map { |a| a.address }
+    end
+    
+    def get_prefix(ip)
+      if Bosh::Director::IpAddrOrCidr.new(ip).ipv6?
+        128
+      else
+        32
+      end
+    end
+
     def try_to_allocate_dynamic_ip(reservation, subnet)
       addresses_in_use = Set.new(all_ip_addresses)
 
-      first_range_address = subnet.range.to_range.first.to_i - 1
-      addresses_we_cant_allocate = addresses_in_use
-      addresses_we_cant_allocate << first_range_address
 
-      addresses_we_cant_allocate.merge(subnet.restricted_ips.to_a) unless subnet.restricted_ips.empty?
-      addresses_we_cant_allocate.merge(subnet.static_ips.to_a) unless subnet.static_ips.empty?
-      addr = find_first_available_address(addresses_we_cant_allocate, first_range_address)
-      ip_address = Bosh::Director::IpAddrOrCidr.new(addr)
+      first_range_address = Bosh::Director::IpAddrOrCidr.new(subnet.range.to_range.first.to_i - 1)
+      
+      addresses_we_cant_allocate = addresses_in_use
+
+      addresses_we_cant_allocate.merge(subnet.restricted_ips.map { |int_ip| Bosh::Director::IpAddrOrCidr.new(int_ip)}) unless subnet.restricted_ips.empty?
+      addresses_we_cant_allocate.merge(subnet.static_ips.map { |int_ip| Bosh::Director::IpAddrOrCidr.new(int_ip)}) unless subnet.static_ips.empty?
+
+      if subnet.range.ipv6?
+        addresses_we_cant_allocate.delete_if { |ipaddr| ipaddr.ipv4? }
+        if subnet.prefix.nil?
+          prefix = 128
+        else
+          prefix = subnet.prefix
+        end
+      else
+        addresses_we_cant_allocate.delete_if { |ipaddr| ipaddr.ipv6? }
+        if subnet.prefix.nil?
+          prefix = 32
+        else
+          prefix = subnet.prefix
+        end
+      end
+
+      ip_address = find_next_available_ip(addresses_we_cant_allocate, first_range_address, prefix)
 
       unless subnet.range == ip_address || subnet.range.include?(ip_address)
         raise NoMoreIPsAvailableAndStopRetrying
       end
 
-      save_ip(ip_address, reservation, false)
+      unless prefix
+        if ip_address.ipv6?
+          host_bits = 128 - prefix
+        else
+          host_bits = 32 - prefix
+        end
+        no_of_addresses = 2**host_bits
+        if subnet.range.last < (ip_address.to_i + no_of_addresses)
+          raise NoMoreIPsAvailableAndStopRetrying
+        end
+      end
+
+      save_ip(ip_address.to_cidr_s, reservation, false)
 
       ip_address
     end
 
-    def try_to_allocate_dynamic_prefix(reservation, subnet)
-      @logger.debug("Allocating dynamic prefix for #{reservation.network.name}")
-      addresses_in_use = Set.new(all_ip_addresses)
+    def find_next_available_ip(ip_entries, first_range_address, prefix)
+      filtered_ips = ip_entries.sort_by { |ip| ip.to_i }.reject { |ip| ip.to_i < first_range_address.to_i } #remove ips that are below subnet range
 
-      first_range_address = subnet.range.to_range.first.to_i - 1
-      addresses_we_cant_allocate = addresses_in_use
-      addresses_we_cant_allocate << first_range_address
+      if prefix == 32 || prefix == 128
+          available_ip = filtered_ips.find { |ip| !filtered_ips.include?(Bosh::Director::IpAddrOrCidr.new(ip.to_i + 1)) }.to_i + 1
 
-      addresses_we_cant_allocate.merge(subnet.restricted_ips.to_a) unless subnet.restricted_ips.empty?
-      addresses_we_cant_allocate.merge(subnet.static_ips.to_a) unless subnet.static_ips.empty?
+          found_cidr = Bosh::Director::IpAddrOrCidr.new("#{Bosh::Director::IpAddrOrCidr.new(available_ip)}/#{prefix}")
+      else
+        current_ip = Bosh::Director::IpAddrOrCidr.new(first_range_address.to_i + 1)
+        found = false
 
-      addr = Bosh::Director::IpAddrOrCidr.new(find_first_available_address(addresses_we_cant_allocate, first_range_address)).to_s
-      cidr_string = get_first_available_prefix(addr, subnet.prefix)
+        while found == false
+          current_prefix = Bosh::Director::IpAddrOrCidr.new("#{current_ip}/#{prefix}")
 
-      @logger.debug("FIRST AVAILABLE PREFIX '#{cidr_string}' for #{reservation.network.name}")
-
-      cidr = Bosh::Director::IpAddrOrCidr.new(cidr_string)
-
-      unless subnet.range == cidr || subnet.range.include?(cidr)
-        raise NoMoreIPsAvailableAndStopRetrying
+          if filtered_ips.any? { |ip| current_prefix.include?(ip) }
+            current_ip = Bosh::Director::IpAddrOrCidr.new(current_ip.to_i + current_prefix.count)
+            filtered_ips.reject{ |ip| ip.to_i < current_ip.to_i }
+          else
+            found_cidr = current_prefix
+            found = true
+          end
+        end
       end
 
-      save_ip(cidr, reservation, false)
-
-      cidr
-    end
-
-    def find_first_available_address(addresses_we_cant_allocate, first_address)
-      last_address_we_cant_use = addresses_we_cant_allocate
-                                 .to_a
-                                 .reject { |a| a < first_address }
-                                 .sort
-                                 .find { |a| !addresses_we_cant_allocate.include?(a + 1) }
-      last_address_we_cant_use + 1
-    end
-
-    def get_first_available_prefix(first_available_addr, prefix)
-      "#{first_available_addr}/#{prefix}"
+      found_cidr
     end
 
     def try_to_allocate_vip_ip(reservation, subnet)
-      addresses_in_use = Set.new(all_ip_addresses)
+      addresses_in_use = Set.new(all_ip_addresses.map { |ip| ip.to_i })
+
+      if Bosh::Director::IpAddrOrCidr.new(subnet.static_ips.first.to_i).ipv6?
+        prefix = 128
+      else
+        prefix = 32
+      end
 
       available_ips = subnet.static_ips - addresses_in_use
 
       raise NoMoreIPsAvailableAndStopRetrying if available_ips.empty?
 
-      ip_address = Bosh::Director::IpAddrOrCidr.new(available_ips.first)
+      ip_address = Bosh::Director::IpAddrOrCidr.new("#{Bosh::Director::IpAddrOrCidr.new(available_ips.first)}/#{prefix}")
 
-      save_ip(ip_address, reservation, false)
+      save_ip(ip_address.to_cidr_s, reservation, false)
 
       ip_address
-    end
-
-    def all_ip_addresses
-      Bosh::Director::Models::IpAddress.select(:address_str).all.map { |a| a.address_str.to_i }
     end
 
     def reserve_with_instance_validation(instance_model, ip, reservation, is_static)
       # try to save IP first before validating its instance to prevent race conditions
       save_ip(ip, reservation, is_static)
     rescue IpFoundInDatabaseAndCanBeRetried
-      ip_address = Bosh::Director::Models::IpAddress.first(address_str: ip.to_i.to_s)
+      ip_address = Bosh::Director::Models::IpAddress.first(address_str: ip.to_s)
 
       retry unless ip_address
 
@@ -204,15 +219,17 @@ module Bosh::Director::DeploymentPlan
     end
 
     def save_ip(ip, reservation, is_static)
+      @logger.debug("Adding IP Address: #{ip} from reservation: #{reservation}")
       ip_address = Bosh::Director::Models::IpAddress.new(
-        address_str: ip.to_i.to_s,
+        address_str: ip,
         network_name: reservation.network.name,
         task_id: Bosh::Director::Config.current_job.task_id,
         static: is_static,
-      )
+        )
       reservation.instance_model.add_ip_address(ip_address)
     rescue Sequel::ValidationFailed, Sequel::DatabaseError => e
       error_message = e.message.downcase
+      @logger.debug("ERROR!!! #{error_message}")
       if error_message.include?('unique') || error_message.include?('duplicate')
         raise IpFoundInDatabaseAndCanBeRetried, e.inspect
       else

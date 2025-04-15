@@ -13,10 +13,16 @@ module Bosh::Director
         managed = Config.network_lifecycle_enabled? && safe_property(network_spec, 'managed', default: false)
         subnet_specs = safe_property(network_spec, 'subnets', class: Array)
         subnets = []
+        prefix = nil
         subnet_specs.each do |subnet_spec|
           new_subnet = ManualNetworkSubnet.parse(name, subnet_spec, availability_zones, managed)
           subnets.each do |subnet|
             raise NetworkOverlappingSubnets, "Network '#{name}' has overlapping subnets" if subnet.overlaps?(new_subnet)
+            if prefix.nil?
+              prefix = subnet.prefix
+            elsif prefix != subnet.prefix
+              raise NetworkPrefixSizesDiffer, "Network '#{name}' has subnets that define different prefixes"
+            end
           end
           subnets << new_subnet
         end
@@ -52,9 +58,14 @@ module Bosh::Director
           raise NetworkReservationInvalidIp, "Provided IP '#{ip_or_cidr}' does not belong to any subnet"
         end
 
+        unless subnet.prefix == ip_or_cidr.prefix
+          raise NetworkReservationInvalidPRefix, "Subnet Prefix #{subnet.prefix} and ip reservation prefix #{ip_or_cidr.prefix} do not match"
+        end
+
         config = {
           "type" => "manual",
           "ip" => ip_or_cidr.to_s,
+          "prefix" => subnet.prefix.to_s,
           "netmask" => subnet.netmask,
           "cloud_properties" => subnet.cloud_properties
         }
