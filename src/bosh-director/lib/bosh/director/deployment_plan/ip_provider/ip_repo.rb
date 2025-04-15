@@ -123,12 +123,12 @@ module Bosh::Director::DeploymentPlan
       addresses_we_cant_allocate.merge(subnet.restricted_ips.to_a) unless subnet.restricted_ips.empty?
       addresses_we_cant_allocate.merge(subnet.static_ips.to_a) unless subnet.static_ips.empty?
 
-      addr = find_first_available_address(addresses_we_cant_allocate, first_range_address)
-      prefix = get_first_available_prefix(addr, subnet.prefix)
+      addr = Bosh::Director::IpAddrOrCidr.new(find_first_available_address(addresses_we_cant_allocate, first_range_address)).to_s
+      cidr_string = get_first_available_prefix(addr, subnet.prefix)
 
-      @logger.debug("FIRST AVAILABLE PREFIX '#{prefix}' for #{reservation.network.name}")
+      @logger.debug("FIRST AVAILABLE PREFIX '#{cidr_string}' for #{reservation.network.name}")
 
-      cidr = Bosh::Director::IpAddrOrCidr.new(prefix)
+      cidr = Bosh::Director::IpAddrOrCidr.new(cidr_string)
 
       unless subnet.range == cidr || subnet.range.include?(cidr)
         raise NoMoreIPsAvailableAndStopRetrying
@@ -149,7 +149,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     def get_first_available_prefix(first_available_addr, prefix)
-      "#{first_available_addr}/#{prefix}" 
+      "#{first_available_addr}/#{prefix}"
     end
 
     def try_to_allocate_vip_ip(reservation, subnet)
@@ -214,7 +214,7 @@ module Bosh::Director::DeploymentPlan
     rescue Sequel::ValidationFailed, Sequel::DatabaseError => e
       error_message = e.message.downcase
       if error_message.include?('unique') || error_message.include?('duplicate')
-        raise IpFoundInDatabaseAndCanBeRetried
+        raise IpFoundInDatabaseAndCanBeRetried, e.inspect
       else
         raise e
       end

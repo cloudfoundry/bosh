@@ -1,6 +1,6 @@
 module Bosh::Director
   class NetworkReservation
-    attr_reader :ip, :instance_model, :network, :type, :prefix
+    attr_reader :ip, :instance_model, :network, :type, :is_prefix_reservation
 
     def initialize(instance_model, network)
       @instance_model = instance_model
@@ -26,10 +26,10 @@ module Bosh::Director
   class ExistingNetworkReservation < NetworkReservation
     attr_reader :network_type, :obsolete
 
-    def initialize(instance_model, network, ip, network_type, prefix)
+    def initialize(instance_model, network, ip, network_type)
       super(instance_model, network)
       @ip = IpAddrOrCidr.new(ip).to_i if ip
-      @prefix = IpAddrOrCidr.new(prefix).to_i if prefix
+      @is_prefix_reservation = IpAddrOrCidr.new(ip).prefix != 32
       @network_type = network_type
       @obsolete = network.instance_of? Bosh::Director::DeploymentPlan::Network
     end
@@ -48,26 +48,23 @@ module Bosh::Director
   end
 
   class DesiredNetworkReservation < NetworkReservation
-    def self.new_dynamic(instance_model, network)
-      new(instance_model, network, nil, :dynamic)
+    def self.new_dynamic(instance_model, network, prefix_reservation = false)
+      new(instance_model, network, nil, :dynamic, prefix_reservation)
     end
 
     def self.new_static(instance_model, network, ip)
       new(instance_model, network, ip, :static)
     end
 
-    def initialize(instance_model, network, ip, type)
+    def initialize(instance_model, network, ip, type, prefix_reservation)
       super(instance_model, network)
       @ip = IpAddrOrCidr.new(ip).to_i if ip
       @type = type
+      @is_prefix_reservation = prefix_reservation
     end
 
     def resolve_ip(ip)
       @ip = IpAddrOrCidr.new(ip).to_i
-    end
-
-    def resolve_prefix(prefix) # prefix assignment is only dynamic, therefore initialization is not possible
-      @prefix = IpAddrOrCidr.new(prefix)
     end
 
     def resolve_type(type)

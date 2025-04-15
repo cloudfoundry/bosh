@@ -65,22 +65,24 @@ module Bosh::Director
           @logger.debug("Allocating dynamic ip for manual network '#{reservation.network.name}'")
 
           filter_subnet_by_instance_az(reservation).each do |subnet|
-            if (ip = @ip_repo.allocate_dynamic_ip(reservation, subnet))
-              @logger.debug("Reserving dynamic IP '#{ip}' for manual network '#{reservation.network.name}'")
+            ip = if reservation.is_prefix_reservation
+              @ip_repo.allocate_dynamic_prefix(reservation, subnet)
+            else
+              @ip_repo.allocate_dynamic_ip(reservation, subnet)
+            end
+
+            @logger.debug("Reserving dynamic IP/prefix '#{ip}' for manual network '#{reservation.network.name}'")
+
+            if ip
               reservation.resolve_ip(ip)
               reservation.resolve_type(:dynamic)
-              unless subnet.prefix.nil?
-                prefix = @ip_repo.allocate_dynamic_prefix(reservation, subnet)
-                @logger.debug("Reserving dynamic prefix '#{prefix}' for manual network '#{reservation.network.name}'")
-                reservation.resolve_prefix(prefix)
-              end
               break
             end
           end
 
           if reservation.ip.nil?
             raise NetworkReservationNotEnoughCapacity,
-              "Failed to reserve IP for '#{reservation.instance_model}' for manual network '#{reservation.network.name}': no more available"
+              "Failed to reserve IP/Prefix for '#{reservation.instance_model}' for manual network '#{reservation.network.name}': no more available"
           end
         else
           @logger.debug("Reserving #{reservation.desc} for manual network '#{reservation.network.name}'")
