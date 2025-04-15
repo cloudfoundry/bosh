@@ -973,7 +973,7 @@ jobs:
             blobstore:
               options:
                 credentials_source: static
-                json_key: '((bosh_release_blobs_gcp_credentials_json))'
+                json_key: '((gcp_json_key))'
       - put: bosh
         params:
           repository: release_repo
@@ -1398,7 +1398,7 @@ jobs:
           blobstore:
             options:
               credentials_source: static
-              json_key: '((bosh_release_blobs_gcp_credentials_json))'
+              json_key: '((gcp_json_key))'
     - task: bump-mariadb-connector
       file: bosh-ci/ci/tasks/bump-mariadb-connector.yml
       input_mapping:
@@ -1412,7 +1412,7 @@ jobs:
           blobstore:
             options:
               credentials_source: static
-              json_key: '((bosh_release_blobs_gcp_credentials_json))'
+              json_key: '((gcp_json_key))'
     - task: bump-postgres-13-package
       file: bosh-ci/ci/tasks/bump-postgres-packages.yml
       input_mapping:
@@ -1426,7 +1426,7 @@ jobs:
           blobstore:
             options:
               credentials_source: static
-              json_key: '((bosh_release_blobs_gcp_credentials_json))'
+              json_key: '((gcp_json_key))'
     - task: bump-postgres-15-package
       file: bosh-ci/ci/tasks/bump-postgres-packages.yml
       input_mapping:
@@ -1440,7 +1440,7 @@ jobs:
           blobstore:
             options:
               credentials_source: static
-              json_key: '((bosh_release_blobs_gcp_credentials_json))'
+              json_key: '((gcp_json_key))'
     - task: bump-ruby-package
       file: ruby-release/ci/tasks/shared/bump-ruby-package.yml
       input_mapping:
@@ -1456,7 +1456,7 @@ jobs:
           blobstore:
             options:
               credentials_source: static
-              json_key: '((bosh_release_blobs_gcp_credentials_json))'
+              json_key: '((gcp_json_key))'
         RUBY_VERSION_PATH: src/.ruby-version
     - task: bump-bosh-blobstore-dav
       file: bosh-ci/ci/tasks/bump-blobstore-cli.yml
@@ -1473,7 +1473,7 @@ jobs:
           blobstore:
             options:
               credentials_source: static
-              json_key: '((bosh_release_blobs_gcp_credentials_json))'
+              json_key: '((gcp_json_key))'
     - task: bump-bosh-blobstore-gcs
       file: bosh-ci/ci/tasks/bump-blobstore-cli.yml
       input_mapping:
@@ -1489,7 +1489,7 @@ jobs:
           blobstore:
             options:
               credentials_source: static
-              json_key: '((bosh_release_blobs_gcp_credentials_json))'
+              json_key: '((gcp_json_key))'
     - task: bump-bosh-blobstore-s3
       file: bosh-ci/ci/tasks/bump-blobstore-cli.yml
       input_mapping:
@@ -1505,7 +1505,7 @@ jobs:
           blobstore:
             options:
               credentials_source: static
-              json_key: '((bosh_release_blobs_gcp_credentials_json))'
+              json_key: '((gcp_json_key))'
     - task: bump-bosh-blobstore-azure-storage
       file: bosh-ci/ci/tasks/bump-blobstore-cli.yml
       input_mapping:
@@ -1521,7 +1521,7 @@ jobs:
           blobstore:
             options:
               credentials_source: static
-              json_key: '((bosh_release_blobs_gcp_credentials_json))'
+              json_key: '((gcp_json_key))'
     - task: bump-verify-multidigest-cli
       file: bosh-ci/ci/tasks/bump-verify-multidigest-cli.yml
       input_mapping:
@@ -1535,7 +1535,7 @@ jobs:
           blobstore:
             options:
               credentials_source: static
-              json_key: '((bosh_release_blobs_gcp_credentials_json))'
+              json_key: '((gcp_json_key))'
     - task: bump-nats-server
       file: bosh-ci/ci/tasks/bump-nats-server.yml
       input_mapping:
@@ -1549,7 +1549,7 @@ jobs:
           blobstore:
             options:
               credentials_source: static
-              json_key: '((bosh_release_blobs_gcp_credentials_json))'
+              json_key: '((gcp_json_key))'
     - put: bosh
       params:
         repository: bosh-out
