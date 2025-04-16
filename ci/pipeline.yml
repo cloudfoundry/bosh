@@ -1116,6 +1116,9 @@ jobs:
       trigger: true
     - get: ubuntu-docker-image
       trigger: true
+    - get: ruby-release
+      trigger: true
+      passed: [bump-packages]
     - get: bosh-ci-dockerfiles
       trigger: true
     - get: bosh
