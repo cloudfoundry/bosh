@@ -17,7 +17,8 @@ module Bosh::Director
                                     deployment,
                                     ip_address.network_name,
                                     ip_address.address,
-                                    'not-dynamic')
+                                    'not-dynamic',
+                                    ip_address.ip_prefix)
         end
 
         unless instance_model.spec.nil?
@@ -54,9 +55,10 @@ module Bosh::Director
         @reservations.delete(reservation)
       end
 
-      def add_existing(instance_model, deployment, network_name, ip, existing_network_type)
+      def add_existing(instance_model, deployment, network_name, ip, existing_network_type, prefix)
         network = find_network(deployment, ip, network_name, instance_model)
-        reservation = ExistingNetworkReservation.new(instance_model, network, ip, existing_network_type)
+        @logger.debug("PREFIX!! #{prefix}")
+        reservation = ExistingNetworkReservation.new(instance_model, network, ip, existing_network_type, prefix)
         deployment.ip_provider.reserve_existing_ips(reservation)
         @reservations << reservation
       end

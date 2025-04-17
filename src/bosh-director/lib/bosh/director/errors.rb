@@ -224,6 +224,7 @@ module Bosh::Director
   NetworkInvalidIpRangeFormat = err(160010)
   NetworkDeletingUnorphanedError = err(160011)
   NetworkNotFoundError = err(16012)
+  NetworkPrefixSizeTooBig = err(16013)
 
   # ResourcePool
   ResourcePoolUnknownNetwork = err(170001)

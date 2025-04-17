@@ -65,6 +65,7 @@ module Bosh::Director
           @logger.debug("Allocating dynamic ip for manual network '#{reservation.network.name}'")
 
           filter_subnet_by_instance_az(reservation).each do |subnet|
+            reservation.resolve_prefix(subnet.prefix)
             if (ip = @ip_repo.allocate_dynamic_ip(reservation, subnet))
               @logger.debug("Reserving dynamic IP '#{ip}' for manual network '#{reservation.network.name}'")
               reservation.resolve_ip(ip)

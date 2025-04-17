@@ -76,6 +76,10 @@ module Bosh::Director::DeploymentPlan
 
     def try_to_allocate_dynamic_ip(reservation, subnet)
       addresses_in_use = Set.new(all_ip_addresses)
+      addresses_in_use2 = Set.new(all_ip_addresses2)
+
+      @logger.debug("ADDRESSES_IN_USE: #{addresses_in_use} ALL_IP_ADDRESSES: #{all_ip_addresses}")
+      @logger.debug("ADDRESSES_IN_USE2: #{addresses_in_use2} ALL_IP_ADDRESSES2: #{all_ip_addresses2}")
 
       first_range_address = subnet.range.to_range.first.to_i - 1
       addresses_we_cant_allocate = addresses_in_use
@@ -104,6 +108,10 @@ module Bosh::Director::DeploymentPlan
       last_address_we_cant_use + 1
     end
 
+    def get_first_available_prefix(first_available_addr, prefix)
+      "#{first_available_addr}/#{prefix}"
+    end
+
     def try_to_allocate_vip_ip(reservation, subnet)
       addresses_in_use = Set.new(all_ip_addresses)
 
@@ -119,7 +127,11 @@ module Bosh::Director::DeploymentPlan
     end
 
     def all_ip_addresses
-      Bosh::Director::Models::IpAddress.select(:address_str).all.map { |a| a.address_str.to_i }
+      Bosh::Director::Models::IpAddress.select(:address_str, :prefix).all.map { |a| [a.address_str.to_i, a.prefix] }
+    end
+
+    def all_ip_addresses2
+      Bosh::Director::Models::IpAddress.select(:address_str, :prefix).all.map { |a| Bosh::Director::IpAddrOrCidr.new("#{a.address_str.to_i}/#{a.prefix}") }
     end
 
     def reserve_with_instance_validation(instance_model, ip, reservation, is_static)
@@ -156,17 +168,20 @@ module Bosh::Director::DeploymentPlan
     end
 
     def save_ip(ip, reservation, is_static)
+      @logger.debug("Adding IP Address: #{ip} from reservation: #{reservation} and #{reservation.prefix}")
       ip_address = Bosh::Director::Models::IpAddress.new(
         address_str: ip.to_i.to_s,
         network_name: reservation.network.name,
         task_id: Bosh::Director::Config.current_job.task_id,
         static: is_static,
+        prefix: reservation.prefix,
       )
       reservation.instance_model.add_ip_address(ip_address)
     rescue Sequel::ValidationFailed, Sequel::DatabaseError => e
       error_message = e.message.downcase
+      @logger.debug("ERROR!!! #{error_message}")
       if error_message.include?('unique') || error_message.include?('duplicate')
-        raise IpFoundInDatabaseAndCanBeRetried
+        raise IpFoundInDatabaseAndCanBeRetried, e.inspect
       else
         raise e
       end
