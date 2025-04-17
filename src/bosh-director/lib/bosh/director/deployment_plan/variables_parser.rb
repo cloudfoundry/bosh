@@ -1,4 +1,4 @@
-require 'bosh/template/property_helper'
+require 'bosh/common/template/property_helper'
 
 module Bosh::Director::DeploymentPlan
   class VariablesSpecParser

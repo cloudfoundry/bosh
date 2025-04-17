@@ -280,7 +280,7 @@ RSpec.describe 'director.yml.erb' do
                 'uaa' => {}
               }
 
-              expect { parsed_yaml['config_server'] }.to raise_error(Bosh::Template::UnknownProperty, "Can't find property '[\"director.config_server.uaa.url\"]'")
+              expect { parsed_yaml['config_server'] }.to raise_error(Bosh::Common::Template::UnknownProperty, "Can't find property '[\"director.config_server.uaa.url\"]'")
             end
 
             it 'throws an error when uaa client id is not defined' do
@@ -294,7 +294,7 @@ RSpec.describe 'director.yml.erb' do
                 }
               }
 
-              expect { parsed_yaml['config_server'] }.to raise_error(Bosh::Template::UnknownProperty, "Can't find property '[\"director.config_server.uaa.client_id\"]'")
+              expect { parsed_yaml['config_server'] }.to raise_error(Bosh::Common::Template::UnknownProperty, "Can't find property '[\"director.config_server.uaa.client_id\"]'")
             end
 
             it 'throws an error when uaa client secret is not defined' do
@@ -308,7 +308,7 @@ RSpec.describe 'director.yml.erb' do
                 }
               }
 
-              expect { parsed_yaml['config_server'] }.to raise_error(Bosh::Template::UnknownProperty, "Can't find property '[\"director.config_server.uaa.client_secret\"]'")
+              expect { parsed_yaml['config_server'] }.to raise_error(Bosh::Common::Template::UnknownProperty, "Can't find property '[\"director.config_server.uaa.client_secret\"]'")
             end
 
             it 'does not throw any error when all the uaa properties are defined' do
@@ -597,9 +597,9 @@ RSpec.describe 'director.yml.erb' do
     end
   end
 
-  describe Bosh::Template::Test do
+  describe Bosh::Common::Template::Test do
     subject(:parsed_yaml) do
-      release = Bosh::Template::Test::ReleaseDir.new(RELEASE_ROOT)
+      release = Bosh::Common::Template::Test::ReleaseDir.new(RELEASE_ROOT)
       job = release.job('director')
       template = job.template('config/director.yml')
       YAML.load(template.render(merged_manifest_properties))
@@ -608,11 +608,11 @@ RSpec.describe 'director.yml.erb' do
     it_behaves_like 'template rendering'
   end
 
-  describe Bosh::Template::EvaluationContext do
+  describe Bosh::Common::Template::EvaluationContext do
     let(:erb_yaml) { File.read(File.join(RELEASE_ROOT, 'jobs/director/templates/director.yml.erb')) }
 
     subject(:parsed_yaml) do
-      binding = Bosh::Template::EvaluationContext.new(
+      binding = Bosh::Common::Template::EvaluationContext.new(
         {
           'job' => {'name' => 'i_like_bosh'},
           'properties' => merged_manifest_properties
@@ -685,7 +685,7 @@ RSpec.describe 'director.yml.erb' do
 
     context 'director.cpi.preferred_api_version' do
       subject(:parsed_yaml) do
-        release = Bosh::Template::Test::ReleaseDir.new(RELEASE_ROOT)
+        release = Bosh::Common::Template::Test::ReleaseDir.new(RELEASE_ROOT)
         job = release.job('director')
         template = job.template('config/director.yml')
         YAML.load(template.render(merged_manifest_properties))

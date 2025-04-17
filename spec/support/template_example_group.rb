@@ -12,7 +12,7 @@ RSpec.shared_examples_for 'a rendered file' do
   let(:template) { File.read(template_file(file_name)) }
 
   subject(:rendered_template) do
-    binding = Bosh::Template::EvaluationContext.new(properties, nil).get_binding
+    binding = Bosh::Common::Template::EvaluationContext.new(properties, nil).get_binding
     ERB.new(template).result(binding)
   end
 

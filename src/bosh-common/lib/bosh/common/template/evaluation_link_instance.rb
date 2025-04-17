@@ -1,6 +1,6 @@
-require 'bosh/template/property_helper'
+require 'bosh/common/template/property_helper'
 
-module Bosh
+module Bosh::Common
   module Template
     class EvaluationLinkInstance
       include PropertyHelper
@@ -39,13 +39,13 @@ module Bosh
       def if_p(*names)
         values = names.map do |name|
           value = lookup_property(@properties, name)
-          return Bosh::Template::EvaluationContext::ActiveElseBlock.new(self) if value.nil?
+          return Template::EvaluationContext::ActiveElseBlock.new(self) if value.nil?
 
           value
         end
 
         yield(*values)
-        Bosh::Template::EvaluationContext::InactiveElseBlock.new
+        Template::EvaluationContext::InactiveElseBlock.new
       end
     end
   end
