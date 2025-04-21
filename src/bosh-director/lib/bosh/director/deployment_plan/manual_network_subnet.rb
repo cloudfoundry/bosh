@@ -5,7 +5,7 @@ module Bosh::Director
       extend IpUtil
 
       attr_reader :network_name, :name, :dns,
-                  :availability_zone_names, :netmask_bits
+                  :availability_zone_names, :netmask_bits, :prefix
       attr_accessor :cloud_properties, :range, :gateway, :restricted_ips,
                     :static_ips, :netmask
 
@@ -17,6 +17,7 @@ module Bosh::Director
         ignore_missing_gateway = Bosh::Director::Config.ignore_missing_gateway
         gateway_property = safe_property(subnet_spec, 'gateway', class: String, optional: ignore_missing_gateway || managed)
         reserved_property = safe_property(subnet_spec, 'reserved', optional: true)
+        prefix = safe_property(subnet_spec, 'prefix', optional: true)
         restricted_ips = Set.new
         static_ips = Set.new
 
@@ -75,6 +76,12 @@ module Bosh::Director
 
             static_ips.add(ip)
           end
+
+          unless prefix.nil?
+            if range.prefix > prefix
+              raise NetworkPrefixSizeTooBig, "Prefix size '#{prefix}' is larger than range prefix '#{range.prefix}'"
+            end
+          end
         end
 
         name_server_parser = NetworkParser::NameServersParser.new
@@ -95,10 +102,11 @@ module Bosh::Director
           static_ips,
           sn_name,
           netmask_bits,
+          prefix
         )
       end
 
-      def initialize(network_name, range, gateway, name_servers, cloud_properties, netmask, availability_zone_names, restricted_ips, static_ips, subnet_name = nil, netmask_bits = nil)
+      def initialize(network_name, range, gateway, name_servers, cloud_properties, netmask, availability_zone_names, restricted_ips, static_ips, subnet_name = nil, netmask_bits = nil, prefix)
         @network_name = network_name
         @name = subnet_name
         @netmask_bits = netmask_bits
@@ -110,6 +118,7 @@ module Bosh::Director
         @availability_zone_names = availability_zone_names
         @restricted_ips = restricted_ips
         @static_ips = static_ips
+        @prefix = prefix
       end
 
       def overlaps?(subnet)

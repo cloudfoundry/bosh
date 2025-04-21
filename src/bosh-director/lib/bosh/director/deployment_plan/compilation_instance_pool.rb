@@ -188,7 +188,10 @@ module Bosh::Director
         end
 
         compilation_network = @deployment_plan.network(@deployment_plan.compilation.network_name)
-        reservation = DesiredNetworkReservation.new_dynamic(instance.model, compilation_network)
+        prefix = job_network.compilation_network.subnets.each do |subnet|
+          subnet.prefix
+        end
+        reservation = DesiredNetworkReservation.new_dynamic(instance.model, compilation_network, prefix)
         desired_instance = DeploymentPlan::DesiredInstance.new(compile_instance_group)
         instance_plan = DeploymentPlan::InstancePlan.new(
           existing_instance: instance.model,

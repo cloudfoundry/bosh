@@ -3,7 +3,7 @@ require 'ipaddr'
 module Bosh
   module Director
     class IpAddrOrCidr
-      delegate :==, :include?, :ipv4?, :ipv6?, :netmask, :to_i, :to_range, :to_string, to: :@ipaddr
+      delegate :==, :include?, :ipv4?, :ipv6?, :netmask, :to_i, :to_range, :to_string, :prefix, to: :@ipaddr
       alias :to_s :to_string
 
       def initialize(ip_or_cidr)

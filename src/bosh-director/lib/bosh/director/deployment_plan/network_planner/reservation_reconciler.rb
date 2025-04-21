@@ -18,7 +18,8 @@ module Bosh::Director::DeploymentPlan
 
           desired_reservation = desired_reservations.find do |reservation|
             reservation_contains_assigned_address?(existing_reservation, reservation) &&
-              (reservation.dynamic? || reservation.ip == existing_reservation.ip)
+              (reservation.dynamic? || reservation.ip == existing_reservation.ip) &&
+              reservation.prefix == existing_reservation.prefix
           end
 
           if desired_reservation
@@ -86,6 +87,7 @@ module Bosh::Director::DeploymentPlan
         existing_reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(
           existing_reservation.instance_model,
           desired_reservation.network,
+          existing_reservation.prefix,
         )
         existing_reservation.resolve_ip(existing_reservation_ip)
         existing_reservation
