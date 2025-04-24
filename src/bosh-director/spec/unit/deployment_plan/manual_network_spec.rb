@@ -163,7 +163,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
 
     context 'when a prefix is maintained for a subnet' do
       let(:network_spec) do
-        cloud_config_hash['networks'].first['prefix'] = '30'
+        cloud_config_hash['networks'].first['subnets'].first['prefix'] = '30'
         cloud_config_hash['networks'].first
       end
 
@@ -176,7 +176,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
 
         expect(manual_network.network_settings(reservation)).to eq(
           'type' => 'manual',
-          'ip' => '192.168.1.2',
+          'ip' => '192.168.1.0',
           'prefix' => '30',
           'netmask' => '255.255.255.0',
           'cloud_properties' => {},

@@ -52,15 +52,17 @@ module Bosh::Director
                 "Can't generate network settings without an IP"
         end
 
-        ip_or_cidr = Bosh::Director::IpAddrOrCidr.new(reservation.ip)
+        ip_or_cidr = reservation.ip
         subnet = find_subnet_containing(reservation.ip)
+
         unless subnet
           raise NetworkReservationInvalidIp, "Provided IP '#{ip_or_cidr}' does not belong to any subnet"
         end
-
-        unless subnet.prefix == ip_or_cidr.prefix
-          raise NetworkReservationInvalidPRefix, "Subnet Prefix #{subnet.prefix} and ip reservation prefix #{ip_or_cidr.prefix} do not match"
+        
+        unless subnet.prefix.to_i == ip_or_cidr.prefix.to_i
+          raise NetworkReservationInvalidPrefix, "Subnet Prefix #{subnet.prefix} and ip reservation prefix #{ip_or_cidr.prefix} do not match"
         end
+
 
         config = {
           "type" => "manual",

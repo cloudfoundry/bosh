@@ -64,7 +64,7 @@ module Bosh::Director
 
     def resolve_ip(ip)
 #      if !ip.to_s.match?(/\//)
-      @ip = IpAddrOrCidr.new(ip)
+      @ip = IpAddrOrCidr.new(ip.to_cidr_s)
 #      else
 #        if IpAddrOrCidr.new(ip).ipv6?
 #          @ip = IpAddrOrCidr.new("#{ip}/128")

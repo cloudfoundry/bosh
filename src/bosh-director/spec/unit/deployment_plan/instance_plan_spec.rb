@@ -295,7 +295,7 @@ module Bosh::Director::DeploymentPlan
             allow(per_spec_logger).to receive(:debug)
             expect(per_spec_logger).to receive(:debug).with(
               'networks_changed? obsolete reservations: ' \
-              "[{type=dynamic, ip=10.0.0.5, network=existing-network, instance=#{instance_model}}]",
+              "[{type=dynamic, ip=10.0.0.5/32, network=existing-network, instance=#{instance_model}}]",
             )
             instance_plan.networks_changed?
           end
@@ -317,7 +317,7 @@ module Bosh::Director::DeploymentPlan
             allow(per_spec_logger).to receive(:debug)
             expect(per_spec_logger).to receive(:debug).with(
               'networks_changed? desired reservations: ' \
-              "[{type=dynamic, ip=10.0.0.5, network=existing-network, instance=#{instance_model}}]",
+              "[{type=dynamic, ip=10.0.0.5/32, network=existing-network, instance=#{instance_model}}]",
             )
             instance_plan.networks_changed?
           end
@@ -373,6 +373,7 @@ module Bosh::Director::DeploymentPlan
             'a' => {
               'type' => 'manual',
               'ip' => '192.168.1.3',
+              'prefix' => '32',
               'netmask' => '255.255.255.0',
               'cloud_properties' => {},
               'default' => %w[dns gateway],
@@ -1545,6 +1546,7 @@ module Bosh::Director::DeploymentPlan
           'a' => {
             'type' => 'manual',
             'ip' => '192.168.1.3',
+            'prefix' => '32',
             'netmask' => '255.255.255.0',
             'cloud_properties' => {},
             'dns' => ['192.168.1.1', '192.168.1.2'],
@@ -2061,8 +2063,8 @@ module Bosh::Director::DeploymentPlan
 
       let(:network_plans) { [plan1, plan2, plan3, plan4] }
 
-      let(:ip1) { IPAddr.new('192.168.1.25').to_i }
-      let(:ip2) { IPAddr.new('192.168.1.26').to_i }
+      let(:ip1) { IPAddr.new('192.168.1.25/32') }
+      let(:ip2) { IPAddr.new('192.168.1.26/32') }
 
       let(:ip_address1) { FactoryBot.create(:models_ip_address, address_str: ip1.to_s) }
       let(:ip_address2) { FactoryBot.create(:models_ip_address, address_str: ip2.to_s) }
