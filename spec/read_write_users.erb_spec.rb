@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 RSpec.shared_examples 'rendered *_users.erb' do
-  let(:release) { Bosh::Template::Test::ReleaseDir.new(RELEASE_ROOT) }
+  let(:release) { Bosh::Common::Template::Test::ReleaseDir.new(RELEASE_ROOT) }
   let(:job) { release.job('blobstore') }
   let(:template) { job.template(rendered_erb_file_name) }
 

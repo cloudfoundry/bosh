@@ -28,7 +28,6 @@ Gem::Specification.new do |spec|
     'bosh-director-sync-dns',
     'bosh-director-trigger-one-time-sync-dns',
     'bosh-director-worker',
-    'bosh-template',
   ]
   spec.require_paths = ['lib']
 

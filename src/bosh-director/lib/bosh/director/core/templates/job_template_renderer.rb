@@ -2,8 +2,9 @@ require 'bosh/director/core/templates'
 require 'bosh/director/core/templates/rendered_job_template'
 require 'bosh/director/core/templates/rendered_file_template'
 require 'bosh/director/core/templates/template_blob_cache'
-require 'bosh/template/evaluation_context'
 require 'bosh/director/formatter_helper'
+
+require 'bosh/common/template/evaluation_context'
 
 module Bosh::Director::Core::Templates
   class JobTemplateRenderer
@@ -42,7 +43,7 @@ module Bosh::Director::Core::Templates
         'version' => @release.version
       }
 
-      original_template_context = Bosh::Template::EvaluationContext.new(spec, @dns_encoder)
+      original_template_context = Bosh::Common::Template::EvaluationContext.new(spec, @dns_encoder)
 
       template_context = Bosh::Director::DeepCopy.copy(original_template_context)
       monit = monit_erb.render(template_context, @logger)

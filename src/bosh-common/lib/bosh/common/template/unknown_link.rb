@@ -1,4 +1,4 @@
-module Bosh
+module Bosh::Common
   module Template
     class UnknownLink < StandardError
       def initialize(name)

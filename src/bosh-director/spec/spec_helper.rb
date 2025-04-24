@@ -15,7 +15,7 @@ require 'zlib'
 
 require 'db_migrator'
 require 'bosh/director'
-require 'bosh/template'
+require 'bosh/common/template'
 
 require 'webmock/rspec'
 

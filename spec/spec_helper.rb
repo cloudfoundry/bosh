@@ -8,9 +8,9 @@ require 'openssl'
 require 'tempfile'
 require 'yaml'
 
-require 'bosh/template/evaluation_context'
+require 'bosh/common/template/evaluation_context'
 
-require 'bosh/template/test'
+require 'bosh/common/template/test'
 
 require_relative './support/template_example_group'
 
