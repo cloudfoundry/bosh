@@ -219,9 +219,9 @@ module Bosh::Director::DeploymentPlan
     end
 
     def save_ip(ip, reservation, is_static)
-      @logger.debug("Adding IP Address: #{ip} from reservation: #{reservation}")
+      @logger.debug("Adding IP Address: #{ip.to_cidr_s} from reservation: #{reservation}")
       ip_address = Bosh::Director::Models::IpAddress.new(
-        address_str: ip,
+        address_str: ip.to_cidr_s,
         network_name: reservation.network.name,
         task_id: Bosh::Director::Config.current_job.task_id,
         static: is_static,
