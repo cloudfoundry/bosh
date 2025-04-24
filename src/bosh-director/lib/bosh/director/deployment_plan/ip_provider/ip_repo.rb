@@ -23,7 +23,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     def add(reservation)
-      ip_or_cidr = Bosh::Director::IpAddrOrCidr.new(reservation.ip.to_cidr_s)
+      ip_or_cidr = reservation.ip
 
       reservation_type = reservation.network.ip_type(ip_or_cidr)
 
@@ -52,7 +52,7 @@ module Bosh::Director::DeploymentPlan
         retry
       end
 
-      @logger.debug("Allocated dynamic IP '#{ip_address}' for #{reservation.network.name}")
+      @logger.debug("Allocated dynamic IP '#{ip_address.to_cidr_s}' for #{reservation.network.name}")
       ip_address
     end
 
@@ -187,9 +187,9 @@ module Bosh::Director::DeploymentPlan
 
     def reserve_with_instance_validation(instance_model, ip, reservation, is_static)
       # try to save IP first before validating its instance to prevent race conditions
-      save_ip(ip, reservation, is_static)
+      save_ip(ip.to_cidr_s, reservation, is_static)
     rescue IpFoundInDatabaseAndCanBeRetried
-      ip_address = Bosh::Director::Models::IpAddress.first(address_str: ip.to_s)
+      ip_address = Bosh::Director::Models::IpAddress.first(address_str: ip.to_cidr_s)
 
       retry unless ip_address
 
