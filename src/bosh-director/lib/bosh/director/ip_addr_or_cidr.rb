@@ -22,7 +22,7 @@ module Bosh
       end
 
       def to_cidr_s
-        "#{@ipaddr}/#{@ipaddr.prefix}"
+        "#{@ipaddr.to_string}/#{@ipaddr.prefix}"
       end
 
       private
