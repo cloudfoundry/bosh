@@ -48,12 +48,12 @@ module Bosh::Director
 
   class DesiredNetworkReservation < NetworkReservation
     def self.new_dynamic(instance_model, network)
-      new(instance_model, network.deployment_network, nil, :dynamic)
+      new(instance_model, network, nil, :dynamic)
     end
 
     def self.new_static(instance_model, network, ip)
       cidr_ip = "#{IpAddrOrCidr.new(ip)}/#{network.prefix}"
-      new(instance_model, network.deployment_network, cidr_ip, :static)
+      new(instance_model, network, cidr_ip, :static)
     end
 
     def initialize(instance_model, network, ip, type)

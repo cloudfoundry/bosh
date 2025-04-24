@@ -28,7 +28,6 @@ module Bosh::Director::DeploymentPlan
         per_spec_logger
       )
     end
-    let(:job_network) {JobNetwork.new(nil, nil, nil, network)}
     let(:subnet) do
       ManualNetworkSubnet.parse(
         network.name,
@@ -61,7 +60,6 @@ module Bosh::Director::DeploymentPlan
         per_spec_logger
       )
     end
-    let(:job_other_network) {JobNetwork.new(nil, nil, nil, other_network)}
     let(:other_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, other_network) }
     let(:other_subnet) do
       ManualNetworkSubnet.parse(
@@ -79,7 +77,7 @@ module Bosh::Director::DeploymentPlan
 
     context :add do
       def dynamic_reservation_with_ip(ip)
-        reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, JobNetwork.new(nil, nil, nil, network_without_static_pool))
+        reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network_without_static_pool)
         reservation.resolve_ip(ip)
         ip_repo.add(reservation)
 
@@ -95,7 +93,7 @@ module Bosh::Director::DeploymentPlan
         context 'from Static to Dynamic' do
           it 'updates type of reservation' do
             network_spec['subnets'].first['static'] = ['192.168.1.5']
-            static_reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, job_network, '192.168.1.5')
+            static_reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, network, '192.168.1.5')
             ip_repo.add(static_reservation)
 
             expect(Bosh::Director::Models::IpAddress.count).to eq(1)
@@ -123,7 +121,7 @@ module Bosh::Director::DeploymentPlan
             expect(original_address.static).to eq(false)
 
             network_spec['subnets'].first['static'] = ['192.168.1.5']
-            static_reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, job_network, '192.168.1.5')
+            static_reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, network, '192.168.1.5')
             ip_repo.add(static_reservation)
 
             expect(Bosh::Director::Models::IpAddress.count).to eq(1)
@@ -157,7 +155,7 @@ module Bosh::Director::DeploymentPlan
       context 'when reservation changes network' do
         it 'updates network name' do
           network_spec['subnets'].first['static'] = ['192.168.1.5']
-          static_reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, job_network, '192.168.1.5')
+          static_reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, network, '192.168.1.5')
           ip_repo.add(static_reservation)
 
           expect(Bosh::Director::Models::IpAddress.count).to eq(1)
@@ -165,7 +163,7 @@ module Bosh::Director::DeploymentPlan
           expect(original_address.static).to eq(true)
           expect(original_address.network_name).to eq(network.name)
 
-          static_reservation_on_another_network = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, job_other_network, '192.168.1.5')
+          static_reservation_on_another_network = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, other_network, '192.168.1.5')
           ip_repo.add(static_reservation_on_another_network)
 
           expect(Bosh::Director::Models::IpAddress.count).to eq(1)
@@ -184,7 +182,7 @@ module Bosh::Director::DeploymentPlan
           end
 
           network_spec['subnets'].first['static'] = ['192.168.1.5']
-          reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, job_network, '192.168.1.5')
+          reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, network, '192.168.1.5')
           ip_repo.add(reservation)
 
           saved_address = Bosh::Director::Models::IpAddress.order(:address_str).last
@@ -200,8 +198,8 @@ module Bosh::Director::DeploymentPlan
           network_spec['subnets'].first['static'] = ['192.168.1.5']
 
           other_instance_model = FactoryBot.create(:models_instance, availability_zone: 'az-2')
-          original_static_network_reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, job_network, '192.168.1.5')
-          new_static_network_reservation = Bosh::Director::DesiredNetworkReservation.new_static(other_instance_model, job_network, '192.168.1.5')
+          original_static_network_reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, network, '192.168.1.5')
+          new_static_network_reservation = Bosh::Director::DesiredNetworkReservation.new_static(other_instance_model, network, '192.168.1.5')
 
           ip_repo.add(original_static_network_reservation)
 
@@ -214,8 +212,8 @@ module Bosh::Director::DeploymentPlan
           network_spec['subnets'].first['static'] = ['192.168.1.5']
 
           other_instance_model = FactoryBot.create(:models_instance, availability_zone: 'az-2')
-          original_static_network_reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, job_network, '192.168.1.5')
-          new_static_network_reservation = Bosh::Director::DesiredNetworkReservation.new_static(other_instance_model, job_network, '192.168.1.5')
+          original_static_network_reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, network, '192.168.1.5')
+          new_static_network_reservation = Bosh::Director::DesiredNetworkReservation.new_static(other_instance_model, network, '192.168.1.5')
 
           ip_repo.add(original_static_network_reservation)
 
@@ -230,7 +228,7 @@ module Bosh::Director::DeploymentPlan
         it 'should succeed if it is reserved by the same instance' do
           network_spec['subnets'].first['static'] = ['192.168.1.5']
 
-          static_network_reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, job_network, '192.168.1.5')
+          static_network_reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, network, '192.168.1.5')
 
           ip_repo.add(static_network_reservation)
 
@@ -242,7 +240,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe :allocate_dynamic_ip do
-      let(:reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, job_network) }
+      let(:reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network) }
 
       context 'when there are no IPs reserved' do
         it 'returns the first in the range' do
@@ -292,13 +290,13 @@ module Bosh::Director::DeploymentPlan
         it 'returns first non-reserved IP' do
           network_spec['subnets'].first['static'] = ['192.168.1.2', '192.168.1.4']
 
-          reservation_1 = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, job_network, '192.168.1.2')
-          reservation_2 = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, job_network, '192.168.1.4')
+          reservation_1 = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, network, '192.168.1.2')
+          reservation_2 = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, network, '192.168.1.4')
 
           ip_repo.add(reservation_1)
           ip_repo.add(reservation_2)
 
-          reservation_3 = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, job_network)
+          reservation_3 = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network)
           ip_address = ip_repo.allocate_dynamic_ip(reservation_3, subnet)
 
           expect(ip_address).to eq(cidr_ip('192.168.1.3'))
@@ -330,7 +328,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when a prefix is assigned to the subnet' do
-        let(:reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, job_network) }
+        let(:reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network) }
         it 'reserves the prefix' do
           ip_address = ip_repo.allocate_dynamic_ip(reservation, subnet_with_prefix)
 
@@ -430,7 +428,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe :allocate_vip_ip do
-      let(:reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, job_network) }
+      let(:reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network) }
 
       let(:network) do
         VipNetwork.parse(
@@ -488,7 +486,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when there are no available vips' do
-        let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, job_network) }
+        let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network) }
 
         before do
           ip_repo.allocate_vip_ip(existing_reservation, network.subnets.first)
@@ -536,7 +534,7 @@ module Bosh::Director::DeploymentPlan
       before do
         network_spec['subnets'].first['static'] = ['192.168.1.5']
 
-        reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, job_network, '192.168.1.5')
+        reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, network, '192.168.1.5')
         ip_repo.add(reservation)
       end
 

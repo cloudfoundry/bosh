@@ -101,80 +101,6 @@ module Bosh::Director::DeploymentPlan
                                                      deployment_network: manifest_networks.first                                    ),
         )
         expect(networks.first.static_ips).to eq([to_ipaddr('192.168.1.1'), to_ipaddr('192.168.1.2')])
-        expect(networks.first.prefix).to eq(32)
-      end
-    end
-
-    context 'when called with a valid instance group spec and the subnet defines a prefix' do
-      let(:subnet_spec) do
-        {
-          'range' => '192.168.1.0/24',
-          'gateway' => '192.168.1.1',
-          'prefix' => '25',
-        }
-      end
-      let(:manifest_networks) { [ManualNetwork.new('a', [ManualNetworkSubnet.parse('a', subnet_spec, "")], per_spec_logger)] }
-
-      let(:instance_group_spec) do
-        instance_group = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups['instance_groups'].first
-        instance_group['networks'] = [{
-          'name' => 'a',
-          'static_ips' => ['192.168.1.1', '192.168.1.2'],
-        }]
-        instance_group
-      end
-
-
-      it 'adds the prefix' do
-        networks = instance_group_networks_parser.parse(instance_group_spec, 'instance-group-name', manifest_networks)
-
-        expect(networks.count).to eq(1)
-        expect(networks.first).to be_an_instance_group_network(
-                                    FactoryBot.build(:deployment_plan_job_network,
-                                                     name: 'a',
-                                                     static_ips: ['192.168.1.1', '192.168.1.2'],
-                                                     default_for: %w[dns gateway],
-                                                     deployment_network: manifest_networks.first
-                                    ),
-        )
-        expect(networks.first.static_ips).to eq([ip_to_i('192.168.1.1'), ip_to_i('192.168.1.2')])
-        expect(networks.first.prefix).to eq('25')
-      end
-    end
-
-    context 'when called with a valid instance group spec for ipv6 without prefix' do
-      let(:subnet_spec) do
-        {
-          'range' => '2001:0db8:1234::/32',
-          'gateway' => '2001:0db8:1234::1',
-        }
-      end
-      let(:manifest_networks) { [ManualNetwork.new('a', [ManualNetworkSubnet.parse('a', subnet_spec, "")], per_spec_logger)] }
-
-      let(:instance_group_spec) do
-        instance_group = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups['instance_groups'].first
-        instance_group['networks'] = [{
-          'name' => 'a',
-          'static_ips' => ['2001:0db8:1234::2', '2001:0db8:1234::3'],
-        }]
-        instance_group
-      end
-
-
-      it 'adds the /128 prefix for a single ip address' do
-        networks = instance_group_networks_parser.parse(instance_group_spec, 'instance-group-name', manifest_networks)
-
-        expect(networks.count).to eq(1)
-        expect(networks.first).to be_an_instance_group_network(
-                                    FactoryBot.build(:deployment_plan_job_network,
-                                                     name: 'a',
-                                                     static_ips: ['2001:0db8:1234:0000:0000:0000:0000:0002', '2001:0db8:1234:0000:0000:0000:0000:0003'],
-                                                     default_for: %w[dns gateway],
-                                                     deployment_network: manifest_networks.first
-                                    ),
-        )
-        expect(networks.first.static_ips).to eq([to_ipaddr('2001:0db8:1234:0000:0000:0000:0000:0002'), to_ipaddr('2001:0db8:1234:0000:0000:0000:0000:0003')])
-        expect(networks.first.prefix).to eq(128)
       end
     end
 
@@ -182,7 +108,7 @@ module Bosh::Director::DeploymentPlan
       match do |actual|
         actual.name == expected.name &&
           actual.static_ips == expected.static_ips.map { |ip| IPAddr.new(ip) } &&
-          actual.deployment_network == expected.deployment_network && actual.prefix == expected.prefix
+          actual.deployment_network == expected.deployment_network
       end
     end
   end
