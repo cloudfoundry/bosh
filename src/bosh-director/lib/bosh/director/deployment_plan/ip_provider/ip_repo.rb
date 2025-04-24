@@ -29,7 +29,7 @@ module Bosh::Director::DeploymentPlan
 
       reserve_with_instance_validation(
         reservation.instance_model,
-        ip_or_cidr.to_cidr_s,
+        ip_or_cidr,
         reservation,
         reservation_type.eql?(:static),
       )

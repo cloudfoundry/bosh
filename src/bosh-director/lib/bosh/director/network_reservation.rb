@@ -28,7 +28,7 @@ module Bosh::Director
 
     def initialize(instance_model, network, ip, network_type)
       super(instance_model, network)
-      @ip = IpAddrOrCidr.new(ip) if ip
+      @ip = ip if ip
       @network_type = network_type
       @obsolete = network.instance_of? Bosh::Director::DeploymentPlan::Network
     end
@@ -64,7 +64,7 @@ module Bosh::Director
 
     def resolve_ip(ip)
 #      if !ip.to_s.match?(/\//)
-      @ip = IpAddrOrCidr.new(ip.to_cidr_s)
+      @ip = IpAddrOrCidr.new(ip)
 #      else
 #        if IpAddrOrCidr.new(ip).ipv6?
 #          @ip = IpAddrOrCidr.new("#{ip}/128")

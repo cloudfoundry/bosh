@@ -120,7 +120,7 @@ module Bosh::Director::DeploymentPlan
     let(:network) { ManualNetwork.parse(network_spec, [availability_zone], per_spec_logger) }
     let(:reservation) do
       reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network)
-      reservation.resolve_ip('192.168.1.3')
+      reservation.resolve_ip('192.168.1.3/32')
       reservation
     end
     let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
@@ -2035,7 +2035,7 @@ module Bosh::Director::DeploymentPlan
     describe '#remove_network_plans_for_ips' do
       let(:plan1) do
         reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network)
-        reservation.resolve_ip('192.168.1.25')
+        reservation.resolve_ip('192.168.1.25/32')
 
         NetworkPlanner::Plan.new(reservation: reservation, existing: false, obsolete: true)
       end
