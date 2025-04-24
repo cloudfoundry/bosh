@@ -165,6 +165,7 @@ module Bosh::Director
   NetworkReservationIpOutsideSubnet = err(130012)
   NetworkReservationIpReserved = err(130013)
   NetworkReservationVipMisconfigured = err(130014)
+  NetworkReservationInvalidPrefix = err(130015)
 
   # Manifest parsing: instance group section
   InstanceGroupMissingRelease = err(140001)
