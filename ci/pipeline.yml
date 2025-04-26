@@ -1623,24 +1623,32 @@ resources:
     source:
       regexp: davcli-(.*)-linux-amd64
       bucket: bosh-davcli-artifacts
+      access_key_id: ((bosh_davcli_pipeline_aws_access_key.username))
+      secret_access_key: ((bosh_davcli_pipeline_aws_access_key.password))
 
   - name: bosh-blobstore-gcs
     type: s3
     source:
       regexp: bosh-gcscli-(.*)-linux-amd64
       bucket: bosh-gcscli-artifacts
+      access_key_id: ((bosh_gcscli_pipeline_aws_access_key.username))
+      secret_access_key: ((bosh_gcscli_pipeline_aws_access_key.password))
 
   - name: bosh-blobstore-s3
     type: s3
     source:
       regexp: s3cli-(.*)-linux-amd64
       bucket: bosh-s3cli-artifacts
+      access_key_id: ((bosh_s3cli_pipeline_aws_access_key.username))
+      secret_access_key: ((bosh_s3cli_pipeline_aws_access_key.password))
 
   - name: bosh-blobstore-azure-storage
     type: s3
     source:
       regexp: azure-storage-cli-(.*)-linux-amd64
       bucket: bosh-azure-storage-cli-artifacts
+      access_key_id: ((bosh_azure_storage_cli_pipeline_aws_access_key.username))
+      secret_access_key: ((bosh_azure_storage_cli_pipeline_aws_access_key.password))
 
   - name: verify-multidigest-cli
     type: gcs-resource
