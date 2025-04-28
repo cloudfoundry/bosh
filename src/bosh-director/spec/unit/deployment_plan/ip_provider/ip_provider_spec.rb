@@ -161,7 +161,7 @@ module Bosh::Director::DeploymentPlan
             Bosh::Director::ExistingNetworkReservation.new(
               instance_model,
               manual_network,
-              '192.168.1.2',
+              '192.168.1.2/32',
               'manual',
             )
           end
@@ -468,7 +468,7 @@ module Bosh::Director::DeploymentPlan
 
               it 'adds the ip address to the ip repository' do
                 ip_provider.reserve(reservation)
-                expect(reservation.ip).to eq(IPAddr.new('1.1.1.1').to_i)
+                expect(reservation.ip).to eq('1.1.1.1')
               end
             end
 
@@ -477,7 +477,7 @@ module Bosh::Director::DeploymentPlan
 
               it 'allocates an ip address for the reservation' do
                 ip_provider.reserve(reservation)
-                expect(reservation.ip).to eq(IPAddr.new('1.1.1.1').to_i)
+                expect(reservation.ip).to eq('1.1.1.1')
               end
 
               context 'and there are no available vips' do

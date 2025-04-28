@@ -537,7 +537,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
 
   describe :validate_reference_from_job do
     it 'returns true if job has a valid network spec' do
-      dynamic_network = Bosh::Director::DeploymentPlan::DynamicNetwork.new('dynamic', [], logger)
+      dynamic_network = Bosh::Director::DeploymentPlan::DynamicNetwork.new('dynamic', [], '32', logger)
       job_network_spec = {'name' => 'dynamic'}
 
       expect {
@@ -547,7 +547,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
 
     context 'when network is dynamic but job network spec uses static ips' do
       it 'raises StaticIPNotSupportedOnDynamicNetwork' do
-        dynamic_network = Bosh::Director::DeploymentPlan::DynamicNetwork.new('dynamic', [], logger)
+        dynamic_network = Bosh::Director::DeploymentPlan::DynamicNetwork.new('dynamic', [], '32', logger)
         job_network_spec = {
           'name' => 'dynamic',
           'static_ips' => ['192.168.1.10']

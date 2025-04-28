@@ -25,7 +25,7 @@ module Bosh::Director::Models
     private
 
     def manual_or_vip_ips
-      ip_addresses.map(&:formatted_ip)
+      ip_addresses.map(&:base_address)
     end
 
     def dynamic_ips

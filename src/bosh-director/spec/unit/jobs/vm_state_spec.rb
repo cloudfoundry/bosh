@@ -55,12 +55,12 @@ module Bosh::Director
         FactoryBot.create(:models_ip_address,
           instance_id: instance.id,
           vm_id: vm.id,
-          address_str: IPAddr.new('1.1.1.1').to_i.to_s,
+          address_str: Bosh::Director::IpAddrOrCidr.new('1.1.1.1').to_cidr_s,
           task_id: '12345',
         )
         expect(agent).to receive(:get_state).with('full').and_return(
           'vm_cid' => 'fake-vm-cid',
-          'networks' => { 'test' => { 'ip' => '1.1.1.1' } },
+          'networks' => { 'test' => { 'ip' => '1.1.1.1/32' } },
           'agent_id' => 'fake-agent-id',
           'job_state' => 'running',
         )
@@ -68,7 +68,7 @@ module Bosh::Director
         job.perform
 
         status = JSON.parse(Models::Task.first(id: task.id).result_output)
-        expect(status['ips']).to eq(['1.1.1.1'])
+        expect(status['ips']).to eq(['1.1.1.1/32'])
         expect(status['vm_cid']).to eq('fake-vm-cid')
         expect(status['active']).to eq(true)
         expect(status['agent_id']).to eq('fake-agent-id')
@@ -82,13 +82,13 @@ module Bosh::Director
           FactoryBot.create(:models_ip_address,
             instance_id: instance.id,
             vm_id: vm.id,
-            address_str: IPAddr.new('1.1.1.1').to_i.to_s,
+            address_str: Bosh::Director::IpAddrOrCidr.new('1.1.1.1').to_cidr_s,
             task_id: '12345',
           )
           FactoryBot.create(:models_ip_address,
             instance_id: instance.id,
             vm_id: vm.id,
-            address_str: IPAddr.new('2.2.2.2').to_i.to_s,
+            address_str: Bosh::Director::IpAddrOrCidr.new('2.2.2.2').to_cidr_s,
             task_id: '12345',
           )
         end
@@ -98,13 +98,13 @@ module Bosh::Director
 
           job.perform
           status = JSON.parse(Models::Task.first(id: task.id).result_output)
-          expect(status['ips']).to eq(['1.1.1.1', '2.2.2.2'])
+          expect(status['ips']).to eq(['1.1.1.1/32', '2.2.2.2/32'])
         end
       end
 
       context "when 'ip_addresses' is empty for instance" do
         before do
-          vm.network_spec = { 'a' => { 'ip' => '3.3.3.3' }, 'b' => { 'ip' => '4.4.4.4' } }
+          vm.network_spec = { 'a' => { 'ip' => '3.3.3.3/32' }, 'b' => { 'ip' => '4.4.4.4/32' } }
           vm.save
           instance.spec = { 'networks' => { 'a' => { 'ip' => '1.1.1.1' }, 'b' => { 'ip' => '2.2.2.2' } } }
           instance.save
@@ -116,7 +116,7 @@ module Bosh::Director
           job.perform
 
           status = JSON.parse(Models::Task.first(id: task.id).result_output)
-          expect(status['ips']).to eq(['3.3.3.3', '4.4.4.4'])
+          expect(status['ips']).to eq(['3.3.3.3/32', '4.4.4.4/32'])
         end
       end
 
@@ -125,19 +125,19 @@ module Bosh::Director
           FactoryBot.create(:models_ip_address,
             instance_id: instance.id,
             vm_id: vm.id,
-            address_str: IPAddr.new('1.1.1.1').to_i.to_s,
+            address_str: Bosh::Director::IpAddrOrCidr.new('1.1.1.1').to_cidr_s,
             task_id: '12345',
           )
           FactoryBot.create(:models_ip_address,
             instance_id: instance.id,
             vm_id: vm.id,
-            address_str: IPAddr.new('2.2.2.2').to_i.to_s,
+            address_str: Bosh::Director::IpAddrOrCidr.new('2.2.2.2').to_cidr_s,
             task_id: '12345',
           )
 
           vm.network_spec = {
-            'a' => { 'ip' => '3.3.3.3' },
-            'b' => { 'ip' => '4.4.4.4' },
+            'a' => { 'ip' => '3.3.3.3/32' },
+            'b' => { 'ip' => '4.4.4.4/32' },
           }
           vm.save
 
@@ -158,8 +158,8 @@ module Bosh::Director
           status = JSON.parse(Models::Task.first(id: task.id).result_output)
 
           expect(status['ips']).to contain_exactly(
-                                     '1.1.1.1', '2.2.2.2', # Static
-                                     '3.3.3.3', '4.4.4.4', # Dynamic
+                                     '1.1.1.1/32', '2.2.2.2/32', # Static
+                                     '3.3.3.3/32', '4.4.4.4/32', # Dynamic
                                    )
         end
       end
@@ -168,7 +168,7 @@ module Bosh::Director
         FactoryBot.create(:models_ip_address,
           instance_id: instance.id,
           vm_id: vm.id,
-          address_str: IPAddr.new('1.1.1.1').to_i.to_s,
+          address_str: Bosh::Director::IpAddrOrCidr.new('1.1.1.1').to_cidr_s,
           task_id: '12345',
         )
         stub_agent_get_state_to_return_state_with_vitals
@@ -176,7 +176,7 @@ module Bosh::Director
         job.perform
 
         status = JSON.parse(Models::Task.first(id: task.id).result_output)
-        expect(status['ips']).to eq(['1.1.1.1'])
+        expect(status['ips']).to eq(['1.1.1.1/32'])
         expect(status['vm_cid']).to eq('fake-vm-cid')
         expect(status['active']).to eq(true)
         expect(status['agent_id']).to eq('fake-agent-id')
@@ -380,7 +380,7 @@ module Bosh::Director
         job.perform
 
         status = JSON.parse(Models::Task.first(id: task.id).result_output)
-        expect(status['ips']).to eq(['1.1.1.1'])
+        expect(status['ips']).to eq(['1.1.1.1/32'])
         expect(status['vm_cid']).to eq('fake-vm-cid')
         expect(status['active']).to eq(true)
         expect(status['agent_id']).to eq('fake-agent-id')
@@ -465,7 +465,7 @@ module Bosh::Director
             results.sort_by! { |r| r['ips'][0] }
 
             status = results[0]
-            expect(status['ips']).to eq(['1.1.1.1'])
+            expect(status['ips']).to eq(['1.1.1.1/32'])
             expect(status['vm_cid']).to eq('fake-vm-cid')
             expect(status['active']).to eq(true)
             expect(status['agent_id']).to eq('fake-agent-id')
@@ -475,7 +475,7 @@ module Bosh::Director
                                                { 'name' => 'fake-process-2', 'state' => 'failing' }])
 
             status = results[1]
-            expect(status['ips']).to eq(['1.1.1.2'])
+            expect(status['ips']).to eq(['1.1.1.2/32'])
             expect(status['vm_cid']).to eq('fake-vm-cid-2')
             expect(status['active']).to eq(false)
             expect(status['agent_id']).to eq('other_agent_id')
@@ -495,7 +495,7 @@ module Bosh::Director
 
             expect(results.length).to eq(1)
             status = JSON.parse(results[0])
-            expect(status['ips']).to eq(['1.1.1.1'])
+            expect(status['ips']).to eq(['1.1.1.1/32'])
             expect(status['vm_cid']).to eq('fake-vm-cid')
             expect(status['active']).to eq(true)
             expect(status['agent_id']).to eq('fake-agent-id')

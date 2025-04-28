@@ -89,7 +89,7 @@ module Bosh::Director
       end
 
       def prefix # for now the prefix should be considered the same for all subnets
-        @subnets.first.prefix
+          @subnets.first.prefix
       end
     end
   end

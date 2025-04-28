@@ -28,7 +28,7 @@ module Bosh::Director
 
     def initialize(instance_model, network, ip, network_type)
       super(instance_model, network)
-      @ip = ip if ip
+      @ip = IpAddrOrCidr.new(ip) if ip
       @network_type = network_type
       @obsolete = network.instance_of? Bosh::Director::DeploymentPlan::Network
     end

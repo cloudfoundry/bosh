@@ -250,7 +250,7 @@ module Bosh
             instance_az = instance_plan.desired_instance.az
             instance_az_name = instance_az.nil? ? nil : instance_az.name
 
-            ip_az_names = @networks_to_static_ips.find_by_network_and_ip(network, ip_address.to_i).az_names
+            ip_az_names = @networks_to_static_ips.find_by_network_and_ip(network, ip_address).az_names
             if ip_az_names.include?(instance_az_name)
               instance_plan.network_plans << @network_planner.network_plan_with_static_reservation(instance_plan, network, ip_address)
             end

@@ -1453,7 +1453,7 @@ module Bosh::Director
                   ip_addresses_params = {
                     'instance_id' => instance.id,
                     'task_id' => i.to_s,
-                    'address_str' => ip_to_i("1.2.#{i}.#{j}").to_s,
+                    'address_str' => ("1.2.#{i}.#{j}/32").to_s,
                     'vm_id' => vm.id,
                   }
                   Models::IpAddress.create(ip_addresses_params)
@@ -1504,7 +1504,7 @@ module Bosh::Director
                   'cid' => "cid-#{i}",
                   'instance_id' => instance.id,
                   'created_at' => time,
-                  'network_spec' => {'network1' => {'ip' => "1.2.3.#{i}"}},
+                  'network_spec' => {'network1' => {'ip' => "1.2.3.#{i}", 'prefix' => '32'}},
                 }
 
                 vm = Models::Vm.create(vm_params)
@@ -1558,8 +1558,8 @@ module Bosh::Director
                 'created_at' => time,
                 'instance_id' => instance.id,
                 'network_spec' => {
-                  'network1' => { 'ip' => network_spec_ip },
-                  'network2' => { 'ip' => vip },
+                  'network1' => { 'ip' => network_spec_ip, 'prefix' => '32' },
+                  'network2' => { 'ip' => vip, 'prefix' => '32'},
                 },
               }
 
@@ -1567,7 +1567,7 @@ module Bosh::Director
               instance.active_vm = vm
 
               ip_addresses_params = {
-                'address_str' => ip_to_i(vip).to_s,
+                'address_str' => "#{vip}/32",
                 'instance_id' => instance.id,
                 'task_id' => '1',
                 'vm_id' => vm.id,

@@ -377,6 +377,27 @@ module Bosh::Director::DeploymentPlan
             end
           end
 
+          context 'when all existing instances match static IPs and AZs but the ips are still stored as integer format' do
+            let(:desired_instance_count) { 2 }
+            let(:static_ips) { ['192.168.1.10', '192.168.2.10'] }
+            let(:existing_instances) do
+              [
+                existing_instance_with_az_and_ips('zone1', ['3232235786']),
+                existing_instance_with_az_and_ips('zone2', ['3232236042']),
+              ]
+            end
+
+            it 'reuses existing instances' do
+              expect(new_instance_plans).to eq([])
+              expect(obsolete_instance_plans).to eq([])
+              expect(existing_instance_plans.size).to eq(2)
+              expect(existing_instance_plans[0].desired_instance.az.name).to eq('zone1')
+              expect(existing_instance_plans[0].network_plans.map(&:reservation).map(&:ip)).to eq([ip_to_i('192.168.1.10')])
+              expect(existing_instance_plans[1].desired_instance.az.name).to eq('zone2')
+              expect(existing_instance_plans[1].network_plans.map(&:reservation).map(&:ip)).to eq([ip_to_i('192.168.2.10')])
+            end
+          end
+
           context 'when existing instance static IP was moved to another AZ' do
             let(:desired_instance_count) { 2 }
             let(:static_ips) { ['192.168.1.10', '192.168.2.10'] }

@@ -59,7 +59,9 @@ module Bosh::Director::DeploymentPlan
             192.168.1.12
             192.168.1.13
             192.168.1.14
-          ]
+          ],
+          nil, nil,
+          '32'
         ),
         ManualNetworkSubnet.new(
           'network_A',
@@ -71,7 +73,9 @@ module Bosh::Director::DeploymentPlan
             10.10.1.12
             10.10.1.13
             10.10.1.14
-          ]
+          ],
+          nil, nil,
+          '32'
         ),
         ManualNetworkSubnet.new(
           'network_A',
@@ -83,7 +87,9 @@ module Bosh::Director::DeploymentPlan
             10.0.1.12
             10.0.1.13
             10.0.1.14
-          ]
+          ],
+          nil, nil,
+          '32'
         ),
       ]
     end

@@ -101,19 +101,11 @@ module Bosh::Director::DeploymentPlan
 
       if subnet.range.ipv6?
         addresses_we_cant_allocate.delete_if { |ipaddr| ipaddr.ipv4? }
-        if subnet.prefix.nil?
-          prefix = 128
-        else
-          prefix = subnet.prefix
-        end
       else
         addresses_we_cant_allocate.delete_if { |ipaddr| ipaddr.ipv6? }
-        if subnet.prefix.nil?
-          prefix = 32
-        else
-          prefix = subnet.prefix
-        end
       end
+
+      prefix = subnet.prefix
 
       ip_address = find_next_available_ip(addresses_we_cant_allocate, first_range_address, prefix)
 

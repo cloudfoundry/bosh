@@ -91,7 +91,7 @@ module Bosh
           def claim_in_az(ip, az_name)
             @networks_to_static_ips.each do |_, static_ips_to_azs|
               static_ips_to_azs.each do |static_ip_to_azs|
-                if static_ip_to_azs.ip == ip.to_i
+                if static_ip_to_azs.ip == ip
                   static_ip_to_azs.claimed = true
                   static_ip_to_azs.az_names = [az_name]
                 end

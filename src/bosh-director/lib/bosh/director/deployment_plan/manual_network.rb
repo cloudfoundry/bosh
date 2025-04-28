@@ -63,11 +63,10 @@ module Bosh::Director
           raise NetworkReservationInvalidPrefix, "Subnet Prefix #{subnet.prefix} and ip reservation prefix #{ip_or_cidr.prefix} do not match"
         end
 
-
         config = {
           "type" => "manual",
           "ip" => ip_or_cidr.to_s,
-          "prefix" => subnet.prefix.to_s,
+          "prefix" => ip_or_cidr.prefix.to_s,
           "netmask" => subnet.netmask,
           "cloud_properties" => subnet.cloud_properties
         }
