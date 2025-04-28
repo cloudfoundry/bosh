@@ -1356,7 +1356,7 @@ module Bosh::Director
                 'state' => 'started',
                 'uuid' => "instance-#{i}",
                 'variable_set_id' => (Models::VariableSet.create(deployment: deployment).id),
-                'spec' => {'networks' => {'network1' => {'ip' => "#{i}.#{i}.#{i}.#{i}"}}},
+                'spec' => {'networks' => {'network1' => {'ip' => "#{i}.#{i}.#{i}.#{i}", 'prefix' => '32'}}},
               }
 
               instance_params['availability_zone'] = 'az0' if i == 0
@@ -1368,7 +1368,7 @@ module Bosh::Director
                   'cid' => "cid-#{i}-#{j}",
                   'instance_id' => instance.id,
                   'created_at' => time,
-                  'network_spec' => {'network1' => {'ip' => "#{i}.#{i}.#{j}.#{j}"}},
+                  'network_spec' => {'network1' => {'ip' => "#{i}.#{i}.#{j}.#{j}", 'prefix' => '32'}},
                 }
 
                 vm = Models::Vm.create(vm_params)
@@ -1396,7 +1396,7 @@ module Bosh::Director
                 'id' => "instance-#{instance_idx}",
                 'active' => vm_is_active,
                 'az' => {0 => 'az0', 1 => 'az1', nil => nil}[instance_idx],
-                'ips' => ["#{instance_idx}.#{instance_idx}.#{vm_by_instance}.#{vm_by_instance}"],
+                'ips' => ["#{instance_idx}.#{instance_idx}.#{vm_by_instance}.#{vm_by_instance}/32"],
                 'vm_created_at' => time.utc.iso8601,
                 'permanent_nats_credentials' => false,
               )
@@ -1478,7 +1478,7 @@ module Bosh::Director
                   'id' => "instance-#{instance_idx}",
                   'active' => vm_is_active,
                   'az' => { 0 => 'az0', 1 => 'az1', nil => nil }[instance_idx],
-                  'ips' => ["1.2.#{instance_idx}.#{vm_by_instance}"],
+                  'ips' => ["1.2.#{instance_idx}.#{vm_by_instance}/32"],
                   'vm_created_at' => time.utc.iso8601,
                   'permanent_nats_credentials' => false,
                 )
@@ -1529,7 +1529,7 @@ module Bosh::Director
                   'id' => "instance-#{i}",
                   'active' => vm_is_active,
                   'az' => {0 => 'az0', 1 => 'az1', nil => nil}[i],
-                  'ips' => ["1.2.3.#{i}"],
+                  'ips' => ["1.2.3.#{i}/32"],
                   'vm_created_at' => time.utc.iso8601,
                   'permanent_nats_credentials' => false,
                 )
@@ -1587,7 +1587,7 @@ module Bosh::Director
                 'cid' => 'cid',
                 'id' => 'instance-id',
                 'index' => 0,
-                'ips' => [vip, network_spec_ip],
+                'ips' => ["#{vip}/32", "#{network_spec_ip}/32"],
                 'job' => 'job',
                 'vm_created_at' => time.utc.iso8601,
                 'permanent_nats_credentials' => false,

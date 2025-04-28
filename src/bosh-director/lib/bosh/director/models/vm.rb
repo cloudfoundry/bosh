@@ -25,11 +25,11 @@ module Bosh::Director::Models
     private
 
     def manual_or_vip_ips
-      ip_addresses.map(&:base_address)
+      ip_addresses.map(&:formatted_ip)
     end
 
     def dynamic_ips
-      network_spec.map { |_, network| network['ip'] }
+      network_spec.map { |_, network| "#{network['ip']}/#{network['prefix']}" }
     end
   end
 end
