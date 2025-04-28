@@ -75,17 +75,17 @@ module Bosh::Director
             ip_in_subnet = network.subnets.find { |snet| snet.is_reservable?(cidr_ip) }
             next unless ip_in_subnet
 
-            @logger.debug("Registering existing reservation with IP '#{format_ip(cidr_ip)}' for instance '#{instance_model}'"\
+            @logger.debug("Registering existing reservation with IP '#{format_cidr_ip(cidr_ip)}' for instance '#{instance_model}'"\
               "on network '#{network.name}'")
             return network
           end
         elsif network_match_on_name # dynamic and static vip
-          @logger.debug("Registering existing reservation with IP '#{format_ip(cidr_ip)}' for instance '#{instance_model}'"\
+          @logger.debug("Registering existing reservation with IP '#{format_cidr_ip(cidr_ip)}' for instance '#{instance_model}'"\
             "on network '#{network_name}'")
           return network_match_on_name
         end
 
-        @logger.debug("Failed to find network #{network_name} or a network with valid subnets for #{format_ip(cidr_ip)},"\
+        @logger.debug("Failed to find network #{network_name} or a network with valid subnets for #{format_cidr_ip(cidr_ip)},"\
           'reservation will be marked as obsolete')
         Network.new(network_name, nil)
       end

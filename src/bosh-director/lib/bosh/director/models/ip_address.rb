@@ -39,11 +39,6 @@ module Bosh::Director::Models
       static ? 'static' : 'dynamic'
     end
 
-    def address_int_and_prefix
-      address_and_prefix = address.split('/')
-      [Bosh::Director::IpAddrOrCidr.new(address_and_prefix[0]).to_i, address_and_prefix[1]]
-    end
-
     def address
       unless address_str.include?('/') || address_str.match?(/\A\d+\z/)
         info_display = ''

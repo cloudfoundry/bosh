@@ -54,15 +54,15 @@ module Bosh::Director
 
     describe 'create_from_db' do
       context 'when there are IP addresses in db' do
-        let(:ip1) { IPAddr.new('192.168.0.1').to_i }
-        let(:ip2) { IPAddr.new('192.168.0.2').to_i }
+        let(:ip1) { Bosh::Director::IpAddrOrCidr.new('192.168.0.1/32') }
+        let(:ip2) { Bosh::Director::IpAddrOrCidr.new('192.168.0.2/32') }
 
         let(:ip_model1) do
-          FactoryBot.create(:models_ip_address, address_str: ip1.to_s, instance: instance_model, network_name: 'fake-network')
+          FactoryBot.create(:models_ip_address, address_str: ip1.to_cidr_s, instance: instance_model, network_name: 'fake-network')
         end
 
         let(:ip_model2) do
-          FactoryBot.create(:models_ip_address, address_str: ip2.to_s, instance: instance_model, network_name: 'fake-network')
+          FactoryBot.create(:models_ip_address, address_str: ip2.to_cidr_s, instance: instance_model, network_name: 'fake-network')
         end
 
         context 'when there is a last VM with IP addresses' do
@@ -209,7 +209,7 @@ module Bosh::Director
         end
 
         let(:dynamic_network) do
-          DeploymentPlan::DynamicNetwork.new('dynamic-network', [], per_spec_logger)
+          DeploymentPlan::DynamicNetwork.new('dynamic-network', [], '32', per_spec_logger)
         end
         before do
           allow(deployment).to receive(:network).with('dynamic-network').and_return(dynamic_network)

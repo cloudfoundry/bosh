@@ -9,7 +9,7 @@ module Bosh
       def initialize(ip_or_cidr)
         @ipaddr =
           if ip_or_cidr.kind_of?(IpAddrOrCidr)
-            IPAddr.new(ip_or_cidr.to_s)
+            IPAddr.new(ip_or_cidr.to_cidr_s)
           elsif ip_or_cidr.kind_of?(Integer)
             IPAddr.new(ip_or_cidr, inet_type_for(ip_or_cidr))
           else
