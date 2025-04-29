@@ -17,6 +17,24 @@ module Bosh
           end
       end
 
+      def each_base_address(prefix_length)
+        # Determine the base address for the given prefix_length
+        # We assume the prefix_length is a valid integer within the subnet
+        if @ipaddr.ipv4?
+          bits = 32
+        elsif @ipaddr.ipv6?
+          bits = 128
+        end
+        step_size = 2**(bits - prefix_length) # Calculate number of addresses per subnet
+        base_address_int = @ipaddr.to_i
+    
+        # Yield each base address in this network
+        while base_address_int <= @ipaddr.to_range.last.to_i
+          yield base_address_int
+          base_address_int += step_size
+        end
+      end
+
       def count
         (@ipaddr.to_range.last.to_i - @ipaddr.to_range.first.to_i) + 1
       end

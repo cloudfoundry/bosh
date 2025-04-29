@@ -227,6 +227,7 @@ module Bosh::Director
   NetworkNotFoundError = err(16012)
   NetworkPrefixSizeTooBig = err(16013)
   NetworkPrefixSizesDiffer = err(16014)
+  NetworkPrefixStaticIpNotBaseAddress = err(16015)
 
   # ResourcePool
   ResourcePoolUnknownNetwork = err(170001)

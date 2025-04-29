@@ -79,18 +79,9 @@ module Bosh::Director::DeploymentPlan
     def all_ip_addresses
       Bosh::Director::Models::IpAddress.select(:address_str).all.map { |a| a.address }
     end
-    
-    def get_prefix(ip)
-      if Bosh::Director::IpAddrOrCidr.new(ip).ipv6?
-        128
-      else
-        32
-      end
-    end
 
     def try_to_allocate_dynamic_ip(reservation, subnet)
       addresses_in_use = Set.new(all_ip_addresses)
-
 
       first_range_address = Bosh::Director::IpAddrOrCidr.new(subnet.range.to_range.first.to_i - 1)
       
@@ -133,24 +124,18 @@ module Bosh::Director::DeploymentPlan
     def find_next_available_ip(ip_entries, first_range_address, prefix)
       filtered_ips = ip_entries.sort_by { |ip| ip.to_i }.reject { |ip| ip.to_i < first_range_address.to_i } #remove ips that are below subnet range
 
-      if prefix == 32 || prefix == 128
-          available_ip = filtered_ips.find { |ip| !filtered_ips.include?(Bosh::Director::IpAddrOrCidr.new(ip.to_i + 1)) }.to_i + 1
+      current_ip = Bosh::Director::IpAddrOrCidr.new(first_range_address.to_i + 1)
+      found = false
 
-          found_cidr = Bosh::Director::IpAddrOrCidr.new("#{Bosh::Director::IpAddrOrCidr.new(available_ip)}/#{prefix}")
-      else
-        current_ip = Bosh::Director::IpAddrOrCidr.new(first_range_address.to_i + 1)
-        found = false
+      while found == false
+        current_prefix = Bosh::Director::IpAddrOrCidr.new("#{current_ip}/#{prefix}")
 
-        while found == false
-          current_prefix = Bosh::Director::IpAddrOrCidr.new("#{current_ip}/#{prefix}")
-
-          if filtered_ips.any? { |ip| current_prefix.include?(ip) }
-            current_ip = Bosh::Director::IpAddrOrCidr.new(current_ip.to_i + current_prefix.count)
-            filtered_ips.reject{ |ip| ip.to_i < current_ip.to_i }
-          else
-            found_cidr = current_prefix
-            found = true
-          end
+        if filtered_ips.any? { |ip| current_prefix.include?(ip) }
+          current_ip = Bosh::Director::IpAddrOrCidr.new(current_ip.to_i + current_prefix.count)
+          filtered_ips.reject{ |ip| ip.to_i < current_ip.to_i }
+        else
+          found_cidr = current_prefix
+          found = true
         end
       end
 

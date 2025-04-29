@@ -361,6 +361,21 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
       )}.to raise_error(Bosh::Director::NetworkPrefixSizeTooBig,
       "Prefix size '23' is larger than range prefix '24'")
     end
+
+    it 'should fail if a static ip provided is not a base address of the prefix' do
+      expect {
+        make_subnet(
+        {
+          'range' => '192.168.0.0/24',
+          'gateway' => '192.168.0.254',
+          'static' => ['192.168.0.64','192.168.0.128','192.168.0.191'],
+          'cloud_properties' => {'foo' => 'bar'},
+          'prefix' => 26
+        },
+        [],
+      )}.to raise_error(Bosh::Director::NetworkPrefixStaticIpNotBaseAddress,
+      "Static IP '192.168.0.191' is not a base address of the prefix '26'")
+    end
   end
 
   describe :overlaps? do

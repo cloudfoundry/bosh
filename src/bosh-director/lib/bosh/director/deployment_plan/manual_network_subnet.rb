@@ -52,7 +52,7 @@ module Bosh::Director
 
           each_ip(reserved_property) do |ip|
             unless range.include?(ip)
-              raise NetworkReservedIpOutOfRange, "Reserved IP '#{format_ip(ip)}' is out of " \
+              raise NetworkReservedIpOutOfRange, "Reserved IP '#{to_ipaddr(ip)}' is out of " \
                 "network '#{network_name}' range"
             end
 
@@ -86,6 +86,16 @@ module Bosh::Director
           else
             if range.prefix > prefix.to_i
               raise NetworkPrefixSizeTooBig, "Prefix size '#{prefix}' is larger than range prefix '#{range.prefix}'"
+            end
+            # if a prefix is provided the static ips can only be the base_addresses of the prefix otherwise we through an error
+            static_ips.each do |static_ip|
+              range.each_base_address(prefix) do |base_address_int|
+               if static_ip == base_address_int
+                 break
+               elsif static_ip < base_address_int
+                 raise NetworkPrefixStaticIpNotBaseAddress, "Static IP '#{to_ipaddr(static_ip)}' is not a base address of the prefix '#{prefix}'"
+               end
+              end
             end
           end
         end
