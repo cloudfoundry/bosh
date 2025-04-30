@@ -148,7 +148,13 @@ module Bosh::Director
       end
 
       def is_reservable?(ip)
-        range.include?(ip) && !restricted_ips.include?(ip.to_i)
+        restricted_ips.reject! { |restricted_ip| restricted_ip.to_i < ip.to_range.first.to_i }
+        restricted_ips.reject! { |restricted_ip| restricted_ip.to_i > ip.to_range.last.to_i }
+        restricted_ips_contain_ip_from_prefix = false
+        if !restricted_ips.empty?
+          restricted_ips_contain_ip_from_prefix = true
+        end
+        range.include?(ip.to_cidr_s) && !restricted_ips_contain_ip_from_prefix
       end
 
       def self.parse_properties_from_database(network_name, subnet_name)

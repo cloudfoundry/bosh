@@ -31,7 +31,7 @@ module Bosh::Director
       end
 
       def is_reservable?(ip)
-        @static_ips.include?(ip)
+        @static_ips.include?(ip.to_i)
       end
     end
   end

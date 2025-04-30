@@ -98,27 +98,16 @@ module Bosh::Director::DeploymentPlan
 
       prefix = subnet.prefix
 
-      ip_address = find_next_available_ip(addresses_we_cant_allocate, first_range_address, prefix)
+      ip_address_cidr = find_next_available_ip(addresses_we_cant_allocate, first_range_address, prefix)
 
-      unless subnet.range == ip_address || subnet.range.include?(ip_address)
-        raise NoMoreIPsAvailableAndStopRetrying
+      if !(subnet.range == ip_address_cidr || subnet.range.include?(ip_address_cidr)) ||
+        subnet.range.to_range.last.to_i < (ip_address_cidr.to_i + ip_address_cidr.count)
+       raise NoMoreIPsAvailableAndStopRetrying
       end
 
-      unless prefix
-        if ip_address.ipv6?
-          host_bits = 128 - prefix
-        else
-          host_bits = 32 - prefix
-        end
-        no_of_addresses = 2**host_bits
-        if subnet.range.last < (ip_address.to_i + no_of_addresses)
-          raise NoMoreIPsAvailableAndStopRetrying
-        end
-      end
+      save_ip(ip_address_cidr.to_cidr_s, reservation, false)
 
-      save_ip(ip_address.to_cidr_s, reservation, false)
-
-      ip_address
+      ip_address_cidr
     end
 
     def find_next_available_ip(ip_entries, first_range_address, prefix)
@@ -131,8 +120,13 @@ module Bosh::Director::DeploymentPlan
         current_prefix = Bosh::Director::IpAddrOrCidr.new("#{current_ip}/#{prefix}")
 
         if filtered_ips.any? { |ip| current_prefix.include?(ip) }
-          current_ip = Bosh::Director::IpAddrOrCidr.new(current_ip.to_i + current_prefix.count)
-          filtered_ips.reject{ |ip| ip.to_i < current_ip.to_i }
+          filtered_ips.reject! { |ip| ip.to_i < current_prefix.to_i }
+          actual_ip_prefix = filtered_ips.first.count
+          if actual_ip_prefix > current_prefix.count
+            current_ip = Bosh::Director::IpAddrOrCidr.new(current_ip.to_i + actual_ip_prefix)
+          else
+            current_ip = Bosh::Director::IpAddrOrCidr.new(current_ip.to_i + current_prefix.count)
+          end
         else
           found_cidr = current_prefix
           found = true

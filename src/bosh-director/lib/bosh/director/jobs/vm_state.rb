@@ -58,6 +58,7 @@ module Bosh::Director
           disk_cid: instance.managed_persistent_disk_cid,
           disk_cids: instance.active_persistent_disks.collection.map { |d| d.model.disk_cid },
           ips: vm&.ips || [],
+          ips_cidr: vm&.ips_cidr || [],
           agent_id: vm&.agent_id,
           job_name: instance.job,
           index: instance.index,

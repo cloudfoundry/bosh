@@ -1396,7 +1396,8 @@ module Bosh::Director
                 'id' => "instance-#{instance_idx}",
                 'active' => vm_is_active,
                 'az' => {0 => 'az0', 1 => 'az1', nil => nil}[instance_idx],
-                'ips' => ["#{instance_idx}.#{instance_idx}.#{vm_by_instance}.#{vm_by_instance}/32"],
+                'ips' => ["#{instance_idx}.#{instance_idx}.#{vm_by_instance}.#{vm_by_instance}"],
+                'ips_cidr' => ["#{instance_idx}.#{instance_idx}.#{vm_by_instance}.#{vm_by_instance}/32"],
                 'vm_created_at' => time.utc.iso8601,
                 'permanent_nats_credentials' => false,
               )
@@ -1478,7 +1479,71 @@ module Bosh::Director
                   'id' => "instance-#{instance_idx}",
                   'active' => vm_is_active,
                   'az' => { 0 => 'az0', 1 => 'az1', nil => nil }[instance_idx],
-                  'ips' => ["1.2.#{instance_idx}.#{vm_by_instance}/32"],
+                  'ips' => ["1.2.#{instance_idx}.#{vm_by_instance}"],
+                  'ips_cidr' => ["1.2.#{instance_idx}.#{vm_by_instance}/32"],
+                  'vm_created_at' => time.utc.iso8601,
+                  'permanent_nats_credentials' => false,
+                )
+              end
+            end
+
+            it 'returns ip addresses with prefix as ips_cidr for a vm' do
+              9.times do |i|
+                instance_params = {
+                  'deployment_id' => deployment.id,
+                  'job' => "job-#{i}",
+                  'index' => i,
+                  'state' => 'started',
+                  'uuid' => "instance-#{i}",
+                  'variable_set_id' => (Models::VariableSet.create(deployment: deployment).id)
+                }
+
+                instance_params['availability_zone'] = 'az0' if i == 0
+                instance_params['availability_zone'] = 'az1' if i == 1
+                instance = Models::Instance.create(instance_params)
+
+                vm_params = {
+                  'agent_id' => "agent-#{i}",
+                  'cid' => "cid-#{i}",
+                  'instance_id' => instance.id,
+                  'created_at' => time,
+                }
+
+                vm = Models::Vm.create(vm_params)
+
+                if j == 0
+                  instance.active_vm = vm
+                end
+
+                ip_addresses_params = {
+                  'instance_id' => instance.id,
+                  'task_id' => i.to_s,
+                  'address_str' => ("1.2.#{i}.#{j}/32").to_s,
+                  'vm_id' => vm.id,
+                }
+                Models::IpAddress.create(ip_addresses_params)
+              end
+
+              get '/test_deployment/vms'
+
+              expect(last_response.status).to eq(200)
+              body = JSON.parse(last_response.body)
+              expect(body.size).to eq(18)
+
+              body.sort_by { |instance| instance['agent_id'] }.each_with_index do |instance_with_vm, i|
+                instance_idx = i / 2
+                vm_by_instance = i % 2
+                vm_is_active = vm_by_instance == 0
+                expect(instance_with_vm).to eq(
+                  'agent_id' => "agent-#{instance_idx}-#{vm_by_instance}",
+                  'job' => "job-#{instance_idx}",
+                  'index' => instance_idx,
+                  'cid' => "cid-#{instance_idx}-#{vm_by_instance}",
+                  'id' => "instance-#{instance_idx}",
+                  'active' => vm_is_active,
+                  'az' => { 0 => 'az0', 1 => 'az1', nil => nil }[instance_idx],
+                  'ips' => ["1.2.#{instance_idx}.#{vm_by_instance}"],
+                  'ips_cidr' => ["1.2.#{instance_idx}.#{vm_by_instance}/32"],
                   'vm_created_at' => time.utc.iso8601,
                   'permanent_nats_credentials' => false,
                 )
@@ -1529,7 +1594,8 @@ module Bosh::Director
                   'id' => "instance-#{i}",
                   'active' => vm_is_active,
                   'az' => {0 => 'az0', 1 => 'az1', nil => nil}[i],
-                  'ips' => ["1.2.3.#{i}/32"],
+                  'ips' => ["1.2.3.#{i}"],
+                  'ips_cidr' => ["1.2.3.#{i}/32"],
                   'vm_created_at' => time.utc.iso8601,
                   'permanent_nats_credentials' => false,
                 )
@@ -1587,7 +1653,8 @@ module Bosh::Director
                 'cid' => 'cid',
                 'id' => 'instance-id',
                 'index' => 0,
-                'ips' => ["#{vip}/32", "#{network_spec_ip}/32"],
+                'ips' => ["#{vip}", "#{network_spec_ip}"],
+                'ips_cidr' => ["#{vip}/32", "#{network_spec_ip}/32"],
                 'job' => 'job',
                 'vm_created_at' => time.utc.iso8601,
                 'permanent_nats_credentials' => false,
@@ -1666,6 +1733,7 @@ module Bosh::Director
                     'id' => "instance-#{i}",
                     'az' => {0 => 'az0', 1 => 'az1', nil => nil}[i],
                     'ips' => [],
+                    'ips_cidr' => [],
                     'vm_created_at' => time.utc.iso8601,
                     'expects_vm' => true
                   )
@@ -1678,6 +1746,7 @@ module Bosh::Director
                     'id' => "instance-#{i}",
                     'az' => {0 => 'az0', 1 => 'az1', nil => nil}[i],
                     'ips' => [],
+                    'ips_cidr' => [],
                     'vm_created_at' => nil,
                     'expects_vm' => true
                   )
@@ -1725,6 +1794,7 @@ module Bosh::Director
                                           'id' => "instance-#{i}",
                                           'az' => {0 => 'az0', 1 => 'az1', nil => nil}[i],
                                           'ips' => [],
+                                          'ips_cidr' => [],
                                           'vm_created_at' => nil,
                                           'expects_vm' => true
                                       )
@@ -1763,6 +1833,7 @@ module Bosh::Director
                                           'id' => "instance-#{i}",
                                           'az' => {0 => 'az0', 1 => 'az1', nil => nil}[i],
                                           'ips' => [],
+                                          'ips_cidr' => [],
                                           'vm_created_at' => nil,
                                           'expects_vm' => true
                                       )
@@ -1806,6 +1877,7 @@ module Bosh::Director
                                          'id' => 'instance-1',
                                          'az' => nil,
                                          'ips' => [],
+                                         'ips_cidr' => [],
                                          'vm_created_at' => nil,
                                          'expects_vm' => true
                                      )
@@ -1830,6 +1902,7 @@ module Bosh::Director
                                          'id' => 'instance-1',
                                          'az' => nil,
                                          'ips' => [],
+                                         'ips_cidr' => [],
                                          'vm_created_at' => nil,
                                          'expects_vm' => false
                                      )
@@ -1856,6 +1929,7 @@ module Bosh::Director
                                        'id' => 'instance-1',
                                        'az' => nil,
                                        'ips' => [],
+                                       'ips_cidr' => [],
                                        'vm_created_at' => nil,
                                        'expects_vm' => false
                                    )

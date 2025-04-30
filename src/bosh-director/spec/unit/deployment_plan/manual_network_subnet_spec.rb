@@ -349,7 +349,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
 
 
     it 'should fail if the prefix size is larger than the range' do
-      expect { 
+      expect {
         make_subnet(
         {
           'range' => '192.168.0.0/24',
@@ -445,26 +445,34 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
         let(:reserved) { ['192.168.0.50-192.168.0.60'] }
 
         it 'returns false' do
-          expect(subnet.is_reservable?(IPAddr.new('192.168.0.55'))).to be_falsey
+          expect(subnet.is_reservable?(Bosh::Director::IpAddrOrCidr.new('192.168.0.55'))).to be_falsey
         end
       end
 
       context 'when subnet reserved does not include IP' do
         it 'returns true' do
-          expect(subnet.is_reservable?(IPAddr.new('192.168.0.55'))).to be_truthy
+          expect(subnet.is_reservable?(Bosh::Director::IpAddrOrCidr.new('192.168.0.55'))).to be_truthy
+        end
+      end
+
+      context 'when subnet reserved does not include any address of a cidr' do
+        it 'returns true' do
+          let(:reserved) { ['192.168.0.50-192.168.0.60'] }
+
+          expect(subnet.is_reservable?(Bosh::Director::IpAddrOrCidr.new('192.168.0.55'))).to be_truthy
         end
       end
     end
 
     context 'when subnet range does not include IP' do
       it 'returns false' do
-        expect(subnet.is_reservable?(IPAddr.new('192.168.10.55'))).to be_falsey
+        expect(subnet.is_reservable?(Bosh::Director::IpAddrOrCidr.new('192.168.10.55'))).to be_falsey
       end
     end
 
     context 'when subnet range is not the same IP version' do
       it 'returns false' do
-        expect(subnet.is_reservable?(IPAddr.new('f1ee:0000:0000:0000:0000:0000:0000:0001'))).to be_falsey
+        expect(subnet.is_reservable?(Bosh::Director::IpAddrOrCidr.new('f1ee:0000:0000:0000:0000:0000:0000:0001'))).to be_falsey
       end
     end
   end

@@ -618,9 +618,6 @@ module Bosh::Director
       end
 
       def create_vm_response(instance, vm)
-        cidr_ips = vm&.ips || []
-        ips = cidr_ips.map{ | cidr_ip | cidr_ip.split('/')[0] }
-
         {
           'agent_id' => vm&.agent_id,
           'cid' => vm&.cid,
@@ -628,8 +625,8 @@ module Bosh::Director
           'index' => instance.index,
           'id' => instance.uuid,
           'az' => instance.availability_zone,
-          'ips' => ips,
-          'ips_cidr' => cidr_ips,
+          'ips' => vm&.ips || [],
+          'ips_cidr' => vm&.ips_cidr || [],
           'vm_created_at' => vm&.created_at&.utc&.iso8601,
         }
       end

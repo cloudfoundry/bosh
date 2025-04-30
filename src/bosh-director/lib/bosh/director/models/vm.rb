@@ -19,6 +19,10 @@ module Bosh::Director::Models
     end
 
     def ips
+      ips_cidr.map{ | cidr_ip | cidr_ip.split('/')[0] }
+    end
+
+    def ips_cidr
       manual_or_vip_ips.concat(dynamic_ips).uniq
     end
 
