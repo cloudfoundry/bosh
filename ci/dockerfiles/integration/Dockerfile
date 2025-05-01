@@ -47,6 +47,7 @@ RUN apt-get update -y \
         awscli \
         azure-cli \
         build-essential \
+        ca-certificates \
         coreutils \
         dnsutils \
         git \
