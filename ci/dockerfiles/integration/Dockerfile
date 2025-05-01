@@ -35,9 +35,10 @@ RUN apt-get update -y \
       | tee /etc/apt/trusted.gpg.d/microsoft.gpg > /dev/null \
     && echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $(lsb_release -cs) main" \
       | tee /etc/apt/sources.list.d/azure-cli.list \
-    && export GCLOUD_KEYFILE="/usr/share/keyrings/cloud.google.gpg" \
-    && curl -fSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring "${GCLOUD_KEYFILE}" add - \
-    && echo "deb [signed-by=${GCLOUD_KEYFILE}] https://packages.cloud.google.com/apt cloud-sdk main" > /etc/apt/sources.list.d/google-cloud-sdk.list \
+    && curl -sL https://packages.cloud.google.com/apt/doc/apt-key.gpg \
+      | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
+      | tee /etc/apt/sources.list.d/google-cloud-sdk.list \
     && apt-get update -y \
     && apt-get install -y --no-install-recommends \
         locales \
