@@ -44,7 +44,6 @@ RUN apt-get update -y \
         locales \
         unzip \
         qemu-utils \
-        awscli \
         azure-cli \
         build-essential \
         ca-certificates \
