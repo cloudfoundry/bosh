@@ -10,6 +10,6 @@ jobs:
     - uses: actions/setup-go@v5
       with:
         go-version-file: src/brats/go.mod
-    - uses: golangci/golangci-lint-action@v7
+    - uses: golangci/golangci-lint-action@v8
       with:
         working-directory: src/brats/
