@@ -47,7 +47,7 @@ module Bosh::Director::Models
       end
 
       it 'returns all ips for the vm' do
-        expect(vm.ips).to match_array(['1.1.1.1/32', '1.1.1.2/32', '1.1.1.3/32'])
+        expect(vm.ips).to match_array(['1.1.1.1', '1.1.1.2', '1.1.1.3'])
       end
     end
   end

@@ -67,7 +67,7 @@ describe Bosh::Director::IpUtil do
 
   describe 'format_ip' do
     it 'converts integer to CIDR IP' do
-      expect(ip_util_includer.format_ip(168427582)).to eq('10.10.0.62')
+      expect(ip_util_includer.format_ip(168427582)).to eq('10.10.0.62/32')
     end
   end
 

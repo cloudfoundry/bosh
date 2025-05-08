@@ -7,7 +7,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
   subject(:instance_repository) { Bosh::Director::DeploymentPlan::InstanceRepository.new(logger, variables_interpolator) }
   let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
-  let(:network) { Bosh::Director::DeploymentPlan::DynamicNetwork.new('name-7', [], logger) }
+  let(:network) { Bosh::Director::DeploymentPlan::DynamicNetwork.new('name-7', [], '32', logger) }
 
   let(:deployment_plan) do
     ip_repo = Bosh::Director::DeploymentPlan::IpRepo.new(logger)

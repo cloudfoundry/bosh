@@ -21,7 +21,7 @@ module Bosh::Director
     # @param [Integer] ip Integer IP representation
     # @return [String] Human-readable IP representation
     def format_ip(ip)
-      to_ipaddr(ip).to_cidr_s
+      to_ipaddr(ip)
     end
 
     def format_cidr_ip(ip)
