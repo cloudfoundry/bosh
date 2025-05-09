@@ -55,7 +55,7 @@ module Bosh::Director::Models
       else address_str.match?(/\A\d+\z/)
         ip = Bosh::Director::IpAddrOrCidr.new(address_str.to_i)
         if ip.ipv6?
-          prefix = 132
+          prefix = 128
         else
           prefix = 32
         end
