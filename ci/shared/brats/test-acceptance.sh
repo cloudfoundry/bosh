@@ -14,7 +14,7 @@ fi
 export BOSH_DEPLOYMENT_PATH
 
 if [ ! -f /tmp/local-bosh/director/env ]; then
-  source "${bosh_ci_dir}/ci/dockerfiles/docker-cpi/start-bosh.sh"
+  source "${bosh_ci_dir}/ci/dockerfiles/docker-cpi/start-bosh.sh" -o "${bosh_ci_dir}/ci/dockerfiles/docker-cpi/gcp-internal-dns-ops.yml"
 fi
 source /tmp/local-bosh/director/env
 

@@ -30,6 +30,7 @@ pushd ${BOSH_DEPLOYMENT_PATH} > /dev/null
 
   bosh int bosh.yml \
     -o "$script_dir/inner-bosh-ops.yml" \
+    -o "$script_dir/gcp-internal-dns-ops.yml" \
     -o jumpbox-user.yml \
     -o experimental/bpm.yml \
     -v director_name=docker-inner \
