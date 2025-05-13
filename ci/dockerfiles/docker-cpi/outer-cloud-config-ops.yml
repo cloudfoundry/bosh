@@ -97,3 +97,7 @@
 - type: replace
   path: /networks/name=default/subnets/0/range?
   value: 10.245.0.0/24
+
+- path: /networks/name=default/subnets/0/dns?
+  type: replace
+  value: [169.254.169.254] #GCP's internal DNS
