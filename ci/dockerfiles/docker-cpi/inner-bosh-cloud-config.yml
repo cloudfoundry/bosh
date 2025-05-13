@@ -17,7 +17,7 @@ networks:
   subnets:
   - azs: [z1, z2, z3]
     range: 10.245.((node_number)).0/22
-    dns: [8.8.8.8]
+    dns: [169.254.169.254]
     # IPs that will not be used for anything
     reserved: [10.245.((node_number)).2-10.245.((node_number)).10]
     gateway: 10.245.((node_number)).1

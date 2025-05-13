@@ -110,7 +110,7 @@ function start_docker() {
     mount -o remount,rw /proc/sys
   fi
 
-  local mtu=$(cat /sys/class/net/$(ip route get 8.8.8.8|awk '{ print $5 }')/mtu)
+  local mtu=$(cat /sys/class/net/$(ip route get 169.254.169.254|awk '{ print $5 }')/mtu)
 
   [[ ! -d /etc/docker ]] && mkdir /etc/docker
   cat <<EOF > /etc/docker/daemon.json
