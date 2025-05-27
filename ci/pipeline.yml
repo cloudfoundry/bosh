@@ -259,7 +259,9 @@ jobs:
             type: docker-image
             source:
               tag: ((branch_name))
-              repository: bosh/integration
+              repository: ghcr.io/cloudfoundry/bosh/integration
+              username: ((github_read_write_packages.username))
+              password: ((github_read_write_packages.password))
           run:
             path: /bin/bash
             args:
@@ -1864,65 +1866,65 @@ resources:
   - name: integration-image
     type: docker-image
     source:
-      repository: bosh/integration
+      repository: ghcr.io/cloudfoundry/bosh/integration
       tag: ((branch_name))
-      username: ((dockerhub_username))
-      password: ((dockerhub_password))
+      username: ((github_read_write_packages.username))
+      password: ((github_read_write_packages.password))
 
   - name: integration-image-noble
     type: docker-image
     source:
-      repository: bosh/integration
+      repository: ghcr.io/cloudfoundry/bosh/integration
       tag: noble
-      username: ((dockerhub_username))
-      password: ((dockerhub_password))
+      username: ((github_read_write_packages.username))
+      password: ((github_read_write_packages.password))
 
   - name: integration-mysql-8-0-image
     type: docker-image
     source:
-      repository: bosh/main-mysql-8.0
+      repository: ghcr.io/cloudfoundry/bosh/main-mysql-8.0
       tag: ((branch_name))
-      username: ((dockerhub_username))
-      password: ((dockerhub_password))
+      username: ((github_read_write_packages.username))
+      password: ((github_read_write_packages.password))
 
   - name: integration-postgres-13-image
     type: docker-image
     source:
-      repository: bosh/main-postgres-13
+      repository: ghcr.io/cloudfoundry/bosh/main-postgres-13
       tag: ((branch_name))
-      username: ((dockerhub_username))
-      password: ((dockerhub_password))
+      username: ((github_read_write_packages.username))
+      password: ((github_read_write_packages.password))
 
   - name: integration-postgres-15-image
     type: docker-image
     source:
-      repository: bosh/main-postgres-15
+      repository: ghcr.io/cloudfoundry/bosh/main-postgres-15
       tag: ((branch_name))
-      username: ((dockerhub_username))
-      password: ((dockerhub_password))
+      username: ((github_read_write_packages.username))
+      password: ((github_read_write_packages.password))
 
   - name: docker-cpi-image
     type: docker-image
     source:
-      repository: bosh/docker-cpi
+      repository: ghcr.io/cloudfoundry/bosh/docker-cpi
       tag: ((branch_name))
-      username: ((dockerhub_username))
-      password: ((dockerhub_password))
+      username: ((github_read_write_packages.username))
+      password: ((github_read_write_packages.password))
 
   - name: docker-cpi-image-noble
     type: docker-image
     source:
-      repository: bosh/docker-cpi
+      repository: ghcr.io/cloudfoundry/bosh/docker-cpi
       tag: noble
-      username: ((dockerhub_username))
-      password: ((dockerhub_password))
+      username: ((github_read_write_packages.username))
+      password: ((github_read_write_packages.password))
 
   - name: bosh-cli-registry-image
     type: registry-image
     source:
-      repository: bosh/cli
-      username: ((dockerhub_username))
-      password: ((dockerhub_password))
+      repository: ghcr.io/cloudfoundry/bosh/cli
+      username: ((github_read_write_packages.username))
+      password: ((github_read_write_packages.password))
 
   - name: bosh-security-scanner-registry-image
     type: registry-image
@@ -1957,9 +1959,9 @@ resources:
   - name: warden-cpi-image
     type: docker-image
     source:
-      repository: bosh/warden-cpi
-      username: ((dockerhub_username))
-      password: ((dockerhub_password))
+      repository: ghcr.io/cloudfoundry/bosh/warden-cpi
+      username: ((github_read_write_packages.username))
+      password: ((github_read_write_packages.password))
 
   - name: last-released-bosh-release
     type: bosh-io-release

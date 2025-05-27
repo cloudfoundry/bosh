@@ -1,4 +1,4 @@
-# bosh/integration:main
+# ghcr.io/cloudfoundry/bosh/integration:main
 ARG BASE_IMAGE=ubuntu:jammy
 FROM $BASE_IMAGE
 
@@ -48,6 +48,7 @@ RUN apt-get update -y \
         build-essential \
         ca-certificates \
         coreutils \
+        default-libmysqlclient-dev \
         dnsutils \
         git \
         git-lfs \
@@ -55,19 +56,26 @@ RUN apt-get update -y \
         gpg-agent \
         jq \
         libcurl4-openssl-dev \
+        libpcap-dev \
         libpq-dev \
         libreadline-dev \
         libsqlite3-dev \
         libssl-dev \
+        lsof \
         netcat-openbsd \
+        psmisc \
         rsyslog \
+        sshpass \
+        strace \
         sqlite3 \
         sudo \
         tar \
         wget \
         xvfb \
+        zlib1g-dev \
         vim \
         openssh-client \
+        openssh-server \
         clang \
         clang-14 \
         lib32gcc-s1 \
@@ -131,9 +139,8 @@ ENV PATH=${GEM_HOME}/bin:${PATH}
 
 
 # Add Golang
-COPY --from=golang:latest /usr/local/go /usr/local/go
-ENV GOROOT=/usr/local/go
-ENV PATH=/usr/local/go/bin:${PATH}
+COPY --from=ghcr.io/cloudfoundry/golang-release /var/vcap/packages/golang-1-linux /usr/local/go
+ENV GOROOT=/usr/local/go PATH=/usr/local/go/bin:$PATH
 
 
 # Install UAA && Java
