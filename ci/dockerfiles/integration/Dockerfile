@@ -139,7 +139,7 @@ ENV PATH=${GEM_HOME}/bin:${PATH}
 
 
 # Add Golang
-COPY --from=ghcr.io/cloudfoundry/golang-release /var/vcap/packages/golang-1-linux /usr/local/go
+COPY --from=ghcr.io/cloudfoundry/golang-release:latest /var/vcap/packages/golang-1-linux /usr/local/go
 ENV GOROOT=/usr/local/go PATH=/usr/local/go/bin:$PATH
 
 
