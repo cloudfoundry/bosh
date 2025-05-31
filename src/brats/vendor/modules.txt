@@ -1,7 +1,7 @@
 # github.com/creack/pty v1.1.15
 ## explicit; go 1.13
 github.com/creack/pty
-# github.com/go-logr/logr v1.4.2
+# github.com/go-logr/logr v1.4.3
 ## explicit; go 1.18
 github.com/go-logr/logr
 github.com/go-logr/logr/funcr
