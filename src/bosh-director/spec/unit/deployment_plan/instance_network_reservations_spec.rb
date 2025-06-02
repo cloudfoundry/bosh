@@ -165,7 +165,7 @@ module Bosh::Director
 
         context 'when the network name saved in the database is of type Vip Static (ips in instance groups)' do
           let(:network_with_subnets) { [] }
-          let(:static_vip_network) { DeploymentPlan::VipNetwork.new('dummy', nil, [], nil) }
+          let(:static_vip_network) { DeploymentPlan::VipNetwork.new('dummy', nil, [], nil, nil) }
 
           before do
             instance_model.add_ip_address(ip_model1)

@@ -102,7 +102,7 @@ module Bosh::Director::DeploymentPlan
 
           context 'when reservation is on dynamic network with no IP address' do
             it 'does not fail to release it' do
-              dynamic_network = DynamicNetwork.new('my-manual-network', [], per_spec_logger)
+              dynamic_network = DynamicNetwork.new('my-manual-network', [], nil, per_spec_logger)
               reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, dynamic_network)
 
               expect do
@@ -127,7 +127,7 @@ module Bosh::Director::DeploymentPlan
 
       describe :reserve_existing_ips do
         context 'when dynamic network' do
-          let(:dynamic_network) { Bosh::Director::DeploymentPlan::DynamicNetwork.new('fake-dynamic-network', [], per_spec_logger) }
+          let(:dynamic_network) { Bosh::Director::DeploymentPlan::DynamicNetwork.new('fake-dynamic-network', [], nil, per_spec_logger) }
           let(:existing_network_reservation) do
             Bosh::Director::ExistingNetworkReservation.new(
               instance_model,

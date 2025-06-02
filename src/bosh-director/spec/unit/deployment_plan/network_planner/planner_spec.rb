@@ -23,7 +23,7 @@ module Bosh::Director::DeploymentPlan
         ),
       ]
     end
-    let(:deployment_network) { ManualNetwork.new('network_A', deployment_subnets, nil) }
+    let(:deployment_network) { ManualNetwork.new('network_A', deployment_subnets, nil, nil) }
     let(:instance_group_network) { FactoryBot.build(:deployment_plan_job_network, name: 'network_A', deployment_network: deployment_network) }
 
     describe 'network_plan_with_dynamic_reservation' do

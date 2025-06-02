@@ -327,10 +327,10 @@ module Bosh::Director::DeploymentPlan
               network_plans[network_plan.reservation.network.name] << format_ip(network_plan.reservation.ip)
             end
 
-            expect(network_plans['a']).to match_array(['192.168.1.10', '192.168.1.11', '192.168.1.12', '192.168.2.10'])
-            expect(network_plans['b']).to match_array(['10.10.1.10', '10.10.1.11', '10.10.2.10', '10.10.2.11'])
-            expect(network_plans['c']).to match_array(['172.16.1.10', '172.16.2.12', '172.16.2.10', '172.16.2.11'])
-            expect(network_plans['d']).to match_array(['64.8.1.10', '64.8.2.10', '64.8.3.10', '64.8.3.11'])
+            expect(network_plans['a']).to match_array([Bosh::Director::IpAddrOrCidr.new('192.168.1.10'), Bosh::Director::IpAddrOrCidr.new('192.168.1.11'), Bosh::Director::IpAddrOrCidr.new('192.168.1.12'), Bosh::Director::IpAddrOrCidr.new('192.168.2.10')])
+            expect(network_plans['b']).to match_array([Bosh::Director::IpAddrOrCidr.new('10.10.1.10'), Bosh::Director::IpAddrOrCidr.new('10.10.1.11'), Bosh::Director::IpAddrOrCidr.new('10.10.2.10'), Bosh::Director::IpAddrOrCidr.new('10.10.2.11')])
+            expect(network_plans['c']).to match_array([Bosh::Director::IpAddrOrCidr.new('172.16.1.10'), Bosh::Director::IpAddrOrCidr.new('172.16.2.12'), Bosh::Director::IpAddrOrCidr.new('172.16.2.10'), Bosh::Director::IpAddrOrCidr.new('172.16.2.11')])
+            expect(network_plans['d']).to match_array([Bosh::Director::IpAddrOrCidr.new('64.8.1.10'), Bosh::Director::IpAddrOrCidr.new('64.8.2.10'), Bosh::Director::IpAddrOrCidr.new('64.8.3.10'), Bosh::Director::IpAddrOrCidr.new('64.8.3.11')])
 
             expect(new_instance_plans.map(&:desired_instance).map(&:az).map(&:name)).to match_array(%w[z1 z2 z3 z4])
           end

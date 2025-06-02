@@ -764,7 +764,7 @@ describe 'Bosh::Director::DeploymentPlan::InstancePlanner' do
       fake_job
     end
 
-    let(:manual_network) { Bosh::Director::DeploymentPlan::ManualNetwork.new('fake-network', [subnet], logger) }
+    let(:manual_network) { Bosh::Director::DeploymentPlan::ManualNetwork.new('fake-network', [subnet], nil, logger) }
     let(:subnet) do
       Bosh::Director::DeploymentPlan::ManualNetworkSubnet.new(
         'fake-network',
