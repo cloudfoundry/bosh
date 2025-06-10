@@ -19,7 +19,13 @@ module Bosh::Director::Models
     end
 
     def ips
-      ips_cidr.map{ | cidr_ip | cidr_ip.split('/')[0] }
+      ips_cidr.map do | cidr_ip |
+       if ( cidr_ip.include?(':') && cidr_ip.include?('/128') ) || ( cidr_ip.include?('.')  && cidr_ip.include?('/32') )
+        cidr_ip.split('/')[0]
+       else
+        cidr_ip
+       end
+      end
     end
 
     def ips_cidr
