@@ -18,11 +18,12 @@ module Bosh::Director
           new_subnet = ManualNetworkSubnet.parse(name, subnet_spec, availability_zones, managed)
           subnets.each do |subnet|
             raise NetworkOverlappingSubnets, "Network '#{name}' has overlapping subnets" if subnet.overlaps?(new_subnet)
-            if prefix.nil?
-              prefix = subnet.prefix
-            elsif prefix != subnet.prefix
+            if prefix != subnet.prefix
               raise NetworkPrefixSizesDiffer, "Network '#{name}' has subnets that define different prefixes"
             end
+          end
+          if prefix.nil?
+            prefix = new_subnet.prefix
           end
           subnets << new_subnet
         end
