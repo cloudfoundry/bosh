@@ -38,7 +38,7 @@ describe Bosh::Director::IpUtil do
     end
 
     it 'should not accept invalid input' do
-      expect { ip_util_includer.each_ip('1.2.4') }.to raise_error(Bosh::Director::NetworkInvalidIpRangeFormat, /invalid address/)
+      expect { ip_util_includer.each_ip('1.2.4') }.to raise_error(Bosh::Director::NetworkInvalidIpRangeFormat, /Invalid IP or CIDR format/)
     end
 
     it 'should ignore nil values' do
