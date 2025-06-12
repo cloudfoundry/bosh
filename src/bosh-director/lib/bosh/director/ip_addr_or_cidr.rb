@@ -13,7 +13,11 @@ module Bosh
           elsif ip_or_cidr.kind_of?(Integer)
             IPAddr.new(ip_or_cidr, inet_type_for(ip_or_cidr))
           else
-            IPAddr.new(ip_or_cidr)
+            begin
+              IPAddr.new(ip_or_cidr)
+            rescue IPAddr::InvalidAddressError => e
+              raise e, "Invalid IP or CIDR format: #{ip_or_cidr}"
+            end
           end
       end
 

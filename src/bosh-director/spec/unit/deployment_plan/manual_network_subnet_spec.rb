@@ -456,10 +456,10 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
       end
 
       context 'when subnet reserved does not include any address of a cidr' do
-        it 'returns true' do
-          let(:reserved) { ['192.168.0.50-192.168.0.60'] }
+        let(:reserved) { ['192.168.0.50-192.168.0.60'] }
 
-          expect(subnet.is_reservable?(Bosh::Director::IpAddrOrCidr.new('192.168.0.55'))).to be_truthy
+        it 'returns true' do
+          expect(subnet.is_reservable?(Bosh::Director::IpAddrOrCidr.new('192.168.0.62/31'))).to be_truthy
         end
       end
     end

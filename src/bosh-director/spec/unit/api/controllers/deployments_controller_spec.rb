@@ -1501,27 +1501,28 @@ module Bosh::Director
                 instance_params['availability_zone'] = 'az0' if i == 0
                 instance_params['availability_zone'] = 'az1' if i == 1
                 instance = Models::Instance.create(instance_params)
+                2.times do |j|
+                  vm_params = {
+                    'agent_id' => "agent-#{i}-#{j}",
+                    'cid' => "cid-#{i}-#{j}",
+                    'instance_id' => instance.id,
+                    'created_at' => time,
+                  }
 
-                vm_params = {
-                  'agent_id' => "agent-#{i}",
-                  'cid' => "cid-#{i}",
-                  'instance_id' => instance.id,
-                  'created_at' => time,
-                }
+                  vm = Models::Vm.create(vm_params)
 
-                vm = Models::Vm.create(vm_params)
+                  if j == 0
+                    instance.active_vm = vm
+                  end
 
-                if j == 0
-                  instance.active_vm = vm
+                  ip_addresses_params = {
+                    'instance_id' => instance.id,
+                    'task_id' => i.to_s,
+                    'address_str' => ("1.2.#{i}.#{j}/32").to_s,
+                    'vm_id' => vm.id,
+                  }
+                  Models::IpAddress.create(ip_addresses_params)
                 end
-
-                ip_addresses_params = {
-                  'instance_id' => instance.id,
-                  'task_id' => i.to_s,
-                  'address_str' => ("1.2.#{i}.#{j}/32").to_s,
-                  'vm_id' => vm.id,
-                }
-                Models::IpAddress.create(ip_addresses_params)
               end
 
               get '/test_deployment/vms'
