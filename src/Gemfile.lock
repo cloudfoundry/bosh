@@ -146,7 +146,7 @@ GEM
     drb (2.2.3)
     et-orbi (1.2.11)
       tzinfo
-    factory_bot (6.5.3)
+    factory_bot (6.5.4)
       activesupport (>= 6.1.0)
     fakefs (3.0.0)
     ffi (1.17.2)
@@ -163,7 +163,7 @@ GEM
     i18n (1.14.7)
       concurrent-ruby (~> 1.0)
     io-endpoint (0.15.2)
-    io-event (1.10.2)
+    io-event (1.11.0)
     io-stream (0.6.1)
     json (2.12.2)
     json_schemer (2.4.0)
