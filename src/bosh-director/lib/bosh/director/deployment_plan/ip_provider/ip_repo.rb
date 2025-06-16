@@ -15,10 +15,10 @@ module Bosh::Director::DeploymentPlan
       ip_address = Bosh::Director::Models::IpAddress.first(address_str: ip_or_cidr.to_cidr_s)
 
       if ip_address
-        @logger.debug("Releasing ip '#{ip_or_cidr}'")
+        @logger.debug("Releasing ip '#{ip_or_cidr.to_cidr_s}'")
         ip_address.destroy
       else
-        @logger.debug("Skipping releasing ip '#{ip_or_cidr}': not reserved")
+        @logger.debug("Skipping releasing ip '#{ip_or_cidr.to_cidr_s}': not reserved")
       end
     end
 
@@ -71,7 +71,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       @logger.debug("Allocated vip IP '#{ip_address}' for #{reservation.network.name}")
-      ip_address.to_i
+      ip_address
     end
 
     private
@@ -84,7 +84,7 @@ module Bosh::Director::DeploymentPlan
       addresses_in_use = Set.new(all_ip_addresses)
 
       first_range_address = Bosh::Director::IpAddrOrCidr.new(subnet.range.to_range.first.to_i - 1)
-      
+
       addresses_we_cant_allocate = addresses_in_use
 
       addresses_we_cant_allocate.merge(subnet.restricted_ips.map { |int_ip| Bosh::Director::IpAddrOrCidr.new(int_ip)}) unless subnet.restricted_ips.empty?
