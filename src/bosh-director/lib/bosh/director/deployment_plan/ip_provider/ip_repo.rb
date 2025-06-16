@@ -36,7 +36,7 @@ module Bosh::Director::DeploymentPlan
 
       reservation.resolve_type(reservation_type)
 
-      @logger.debug("Reserved ip '#{ip_or_cidr}' for #{reservation.network.name} as #{reservation_type}")
+      @logger.debug("Reserved ip '#{ip_or_cidr.to_cidr_s}' for #{reservation.network.name} as #{reservation_type}")
     end
 
     def allocate_dynamic_ip(reservation, subnet)
