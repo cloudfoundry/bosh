@@ -104,6 +104,19 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
           )
         }.to raise_error(Bosh::Director::NetworkInvalidProperty, "Network 'foo' must not specify 'azs'.")
       end
+
+      it "raises error when 'prefix' is present on the network spec" do
+        expect {
+          Bosh::Director::DeploymentPlan::DynamicNetwork.parse(
+            {
+              'name' => 'foo',
+              'prefix' => '28'
+            },
+            [Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-zone', {})],
+            logger
+          )
+        }.to raise_error(Bosh::Director::NetworkInvalidProperty, "Network 'foo' must not specify 'prefix'.")
+      end
     end
 
     context 'with a manifest specifying subnets' do
@@ -240,6 +253,30 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
               logger
           )
         }.to raise_error(Bosh::Director::ValidationInvalidType)
+      end
+
+      it 'raises error when prefix is defined' do
+        expect {
+          Bosh::Director::DeploymentPlan::DynamicNetwork.parse(
+              {
+                  'name' => 'foo',
+                  'subnets' => [
+                      {
+                          'dns' => %w[1.2.3.4 5.6.7.8],
+                          'cloud_properties' => {
+                            'foz' => 'baz'
+                          },
+                          'az' => 'foz-zone',
+                          'prefix' => 28
+                      },
+                  ]
+              },
+              [
+                  Bosh::Director::DeploymentPlan::AvailabilityZone.new('foz-zone', {}),
+              ],
+              logger
+          )
+        }.to raise_error(Bosh::Director::NetworkInvalidProperty,  "Prefix property is not supported for dynamic networks.")
       end
 
       it 'raises error when dns is present at the top level' do

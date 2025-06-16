@@ -626,7 +626,6 @@ module Bosh::Director
           'id' => instance.uuid,
           'az' => instance.availability_zone,
           'ips' => vm&.ips || [],
-          'ips_cidr' => vm&.ips_cidr || [],
           'vm_created_at' => vm&.created_at&.utc&.iso8601,
         }
       end

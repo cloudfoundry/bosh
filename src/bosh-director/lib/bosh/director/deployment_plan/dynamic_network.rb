@@ -13,38 +13,31 @@ module Bosh::Director
         validate_network_has_no_key('az', name, network_spec)
         validate_network_has_no_key('azs', name, network_spec)
         validate_network_has_no_key('managed', name, network_spec)
+        validate_network_has_no_key('prefix', name, network_spec)
 
         if network_spec.has_key?('subnets')
           validate_network_has_no_key_while_subnets_present('dns', name, network_spec)
           validate_network_has_no_key_while_subnets_present('cloud_properties', name, network_spec)
-          validate_network_has_no_key_while_subnets_present('prefix', name, network_spec)
 
           subnets = network_spec['subnets'].map do |subnet_properties|
             name_servers = name_server_parser.parse(subnet_properties['name'], subnet_properties)
             cloud_properties = safe_property(subnet_properties, 'cloud_properties', class: Hash, default: {})
-            prefix = safe_property(subnet_properties, 'prefix', class: Hash, default: {})
-            if prefix.empty? || prefix.nil?
-              prefix = 32
+            prefix = safe_property(subnet_properties, 'prefix', class: Integer, default: nil)
+            if prefix.nil?
+              prefix = 32 # we need to set the ipv4 default value (dynamic networks only support ipv4)
+            else
+              raise NetworkInvalidProperty, "Prefix property is not supported for dynamic networks."
             end
             subnet_availability_zones = parse_availability_zones(subnet_properties, availability_zones, name)
             DynamicNetworkSubnet.new(name_servers, cloud_properties, subnet_availability_zones, prefix)
           end
         else
           cloud_properties = safe_property(network_spec, 'cloud_properties', class: Hash, default: {})
-          prefix = safe_property(network_spec, 'prefix', class: Hash, default: {})
-          if prefix.empty? || prefix.nil?
-            prefix = 32
-          end
+          prefix = 32 # we need to set the ipv4 default value (dynamic networks only support ipv4)
+
           name_servers = name_server_parser.parse(network_spec['name'], network_spec)
           subnets = [DynamicNetworkSubnet.new(name_servers, cloud_properties, nil, prefix)]
         end
-
-        unless subnets.empty?
-          prefix = subnets.first.prefix
-        else
-          prefix = 32
-        end
-
 
         new(name, subnets, logger, prefix)
       end
