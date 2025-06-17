@@ -167,7 +167,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
         cloud_config_hash['networks'].first
       end
 
-      it 'should set the correct prefix if one is maintained for the subnet' do
+      it 'should set the correct prefix' do
         reservation = Bosh::Director::DesiredNetworkReservation.new_static(
           instance_model,
           manual_network,
