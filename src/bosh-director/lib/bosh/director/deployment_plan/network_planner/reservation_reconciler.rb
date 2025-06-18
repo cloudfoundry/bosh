@@ -96,6 +96,8 @@ module Bosh::Director::DeploymentPlan
 
         return false if desired_reservation.network.is_a?(DynamicNetwork) || existing_reservation.network.is_a?(DynamicNetwork)
 
+        return false if desired_reservation.network.prefix != existing_reservation.network.prefix
+
         desired_reservation.network.subnets.any? do |subnet|
           if existing_reservation.instance_model.availability_zone != '' && !subnet.availability_zone_names.nil?
             next unless subnet.availability_zone_names.include?(existing_reservation.instance_model.availability_zone)
