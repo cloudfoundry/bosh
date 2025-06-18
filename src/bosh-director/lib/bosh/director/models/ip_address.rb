@@ -30,7 +30,7 @@ module Bosh::Director::Models
     def formatted_ip
       address.to_cidr_s
     end
-    
+
     def base_address
       address.to_string
     end
@@ -50,18 +50,7 @@ module Bosh::Director::Models
         raise "Unexpected address '#{address_str}' (#{info_display})"
       end
 
-      if address_str.include?('/')
-        return Bosh::Director::IpAddrOrCidr.new(address_str)
-      else address_str.match?(/\A\d+\z/)
-        ip = Bosh::Director::IpAddrOrCidr.new(address_str.to_i)
-        if ip.ipv6?
-          prefix = 128
-        else
-          prefix = 32
-        end
-        address_str = Bosh::Director::IpAddrOrCidr.new("#{ip}/#{prefix}")
-        return address_str
-      end
+      return Bosh::Director::IpAddrOrCidr.new(address_str)
     end
 
     def to_s
