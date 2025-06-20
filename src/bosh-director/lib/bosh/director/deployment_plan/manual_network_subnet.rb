@@ -148,7 +148,7 @@ module Bosh::Director
       end
 
       def is_reservable?(ip)
-        not_reservable_ips = restricted_ips
+        not_reservable_ips = restricted_ips.dup
         not_reservable_ips.reject! { |not_reservable_ip| not_reservable_ip.to_i < ip.to_range.first.to_i }
         not_reservable_ips.reject! { |not_reservable_ip| not_reservable_ip.to_i > ip.to_range.last.to_i }
         not_reservable_ips_contain_ip_from_prefix = false
