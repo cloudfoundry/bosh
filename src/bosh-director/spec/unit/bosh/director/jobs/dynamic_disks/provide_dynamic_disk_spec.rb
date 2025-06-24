@@ -43,10 +43,11 @@ module Bosh::Director
       context 'when disk exists' do
         let!(:disk) do
           FactoryBot.create(
-           :models_dynamic_disk,
+            :models_dynamic_disk,
             name: disk_name,
             disk_cid: disk_cid,
             deployment: vm.instance.deployment,
+            disk_pool_name: disk_pool_name,
           )
         end
 
@@ -79,6 +80,8 @@ module Bosh::Director
           expect(model.size).to eq(disk_size)
           expect(model.deployment_id).to eq(vm.instance.deployment.id)
           expect(model.disk_pool_name).to eq(disk_pool_name)
+          expect(model.cpi).to eq(vm.cpi)
+          expect(model.availability_zone).to eq(vm.instance.availability_zone)
           expect(model.metadata).to eq(metadata)
         end
       end
@@ -90,7 +93,8 @@ module Bosh::Director
             name: disk_name,
             disk_cid: disk_cid,
             deployment: vm.instance.deployment,
-            )
+            disk_pool_name: disk_pool_name,
+          )
         end
 
         it 'returns an error from attach_disk call' do
@@ -132,9 +136,9 @@ module Bosh::Director
           expect(cloud).to receive(:set_disk_metadata).with(
             'fake-disk-cid',
             {
-              "deployment"=> vm.instance.deployment.name,
-              "director"=>'fake-director-name',
-              "fake-key"=>"fake-value"
+              "deployment" => vm.instance.deployment.name,
+              "director" => 'fake-director-name',
+              "fake-key" => "fake-value"
             }
           )
           expect(cloud).to receive(:attach_disk).with('fake-vm-cid', 'fake-disk-cid').and_return(disk_hint)
