@@ -15,11 +15,14 @@ module Bosh::Director
       expect(db[:dynamic_disks].columns).to include(
         :id,
         :deployment_id,
+        :vm_id,
         :disk_cid,
         :name,
         :disk_pool_name,
+        :cpi,
         :size,
-        :metadata_json
+        :metadata_json,
+        :availability_zone
       )
     end
   end
