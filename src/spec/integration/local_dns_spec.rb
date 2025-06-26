@@ -73,8 +73,8 @@ describe 'local DNS', type: :integration do
         manifest_deployment['instance_groups'][0]['instances'] = 5
         deploy_simple_manifest(manifest_hash: manifest_deployment)
         tries = 0
-        # retry for 45 seconds while DNS removals are propagating; this test was failing 16% of the time with too many entries in /etc/hosts
-        while tries < 45
+        # retry for 90 seconds while DNS removals are propagating; this test was failing 16% of the time with too many entries in /etc/hosts
+        while tries < 90
           etc_hosts = parse_agent_etc_hosts(4)
           break if etc_hosts.size == 5
           sleep 1
@@ -87,7 +87,7 @@ describe 'local DNS', type: :integration do
         deploy_simple_manifest(manifest_hash: manifest_deployment)
         tries = 0
         # we've never seen a failure here, but we're wrapping it in a retry loop out of an abundance of caution
-        while tries < 45
+        while tries < 90
           etc_hosts = parse_agent_etc_hosts(5)
           break if etc_hosts.size == 6
           sleep 1

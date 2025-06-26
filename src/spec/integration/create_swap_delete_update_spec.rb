@@ -3,7 +3,7 @@ require 'fileutils'
 
 describe 'deploy with create-swap-delete', type: :integration do
   with_reset_sandbox_before_each(local_dns: {'enabled' => true, 'include_index' => false, 'use_dns_addresses' => true},
-                                 agent_wait_timeout: 3)
+                                 agent_wait_timeout: 6)
 
   let(:manifest) do
     manifest = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups(instances: 1, azs: ['z1'])

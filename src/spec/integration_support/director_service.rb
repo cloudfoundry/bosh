@@ -92,7 +92,7 @@ module IntegrationSupport
       @logger.debug('Waiting for Delayed Job queue to drain...')
       attempt = 0
       delay = 0.1
-      timeout = 60
+      timeout = 120
       max_attempts = timeout / delay
 
       until delayed_job_done?

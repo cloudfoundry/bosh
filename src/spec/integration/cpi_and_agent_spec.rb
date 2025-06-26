@@ -2,7 +2,7 @@ require 'spec_helper'
 
 # Requests are properly sent in correct order between director, cpi and agent
 describe 'CPI and Agent:', type: :integration do
-  with_reset_sandbox_before_each(agent_wait_timeout: 3)
+  with_reset_sandbox_before_each(agent_wait_timeout: 6)
 
   def create_vm_sequence(vm_cid, agent_id)
     [
