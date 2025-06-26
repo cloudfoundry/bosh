@@ -29,7 +29,7 @@ module Bosh
         elsif @ipaddr.ipv6?
           bits = 128
         end
-        step_size = 2**(bits - prefix_length) # Calculate number of addresses per subnet
+        step_size = 2**(bits - prefix_length.to_i) # Calculate number of addresses per subnet
         base_address_int = @ipaddr.to_i
     
         # Yield each base address in this network
