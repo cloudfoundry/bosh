@@ -5,7 +5,7 @@ module Bosh::Director
       extend IpUtil
 
       attr_reader :network_name, :name, :dns,
-                  :availability_zone_names, :netmask_bits
+                  :availability_zone_names, :netmask_bits, :prefix
       attr_accessor :cloud_properties, :range, :gateway, :restricted_ips,
                     :static_ips, :netmask
 
@@ -17,6 +17,7 @@ module Bosh::Director
         ignore_missing_gateway = Bosh::Director::Config.ignore_missing_gateway
         gateway_property = safe_property(subnet_spec, 'gateway', class: String, optional: ignore_missing_gateway || managed)
         reserved_property = safe_property(subnet_spec, 'reserved', optional: true)
+        prefix = safe_property(subnet_spec, 'prefix', optional: true)
         restricted_ips = Set.new
         static_ips = Set.new
 
@@ -51,7 +52,7 @@ module Bosh::Director
 
           each_ip(reserved_property) do |ip|
             unless range.include?(ip)
-              raise NetworkReservedIpOutOfRange, "Reserved IP '#{format_ip(ip)}' is out of " \
+              raise NetworkReservedIpOutOfRange, "Reserved IP '#{to_ipaddr(ip)}' is out of " \
                 "network '#{network_name}' range"
             end
 
@@ -75,6 +76,28 @@ module Bosh::Director
 
             static_ips.add(ip)
           end
+
+          if prefix.nil?
+            if range.ipv6?
+              prefix = "128"
+            else
+              prefix = "32"
+            end
+          else
+            if range.prefix > prefix.to_i
+              raise NetworkPrefixSizeTooBig, "Prefix size '#{prefix}' is larger than range prefix '#{range.prefix}'"
+            end
+            # if a prefix is provided the static ips can only be the base_addresses of the prefix otherwise we through an error
+            static_ips.each do |static_ip|
+              range.each_base_address(prefix) do |base_address_int|
+               if static_ip == base_address_int
+                 break
+               elsif static_ip < base_address_int
+                 raise NetworkPrefixStaticIpNotBaseAddress, "Static IP '#{to_ipaddr(static_ip)}' is not a base address of the prefix '#{prefix}'"
+               end
+              end
+            end
+          end
         end
 
         name_server_parser = NetworkParser::NameServersParser.new
@@ -95,10 +118,11 @@ module Bosh::Director
           static_ips,
           sn_name,
           netmask_bits,
+          prefix
         )
       end
 
-      def initialize(network_name, range, gateway, name_servers, cloud_properties, netmask, availability_zone_names, restricted_ips, static_ips, subnet_name = nil, netmask_bits = nil)
+      def initialize(network_name, range, gateway, name_servers, cloud_properties, netmask, availability_zone_names, restricted_ips, static_ips, subnet_name = nil, netmask_bits = nil, prefix = nil)
         @network_name = network_name
         @name = subnet_name
         @netmask_bits = netmask_bits
@@ -110,6 +134,7 @@ module Bosh::Director
         @availability_zone_names = availability_zone_names
         @restricted_ips = restricted_ips
         @static_ips = static_ips
+        @prefix = prefix.to_s
       end
 
       def overlaps?(subnet)
@@ -123,7 +148,14 @@ module Bosh::Director
       end
 
       def is_reservable?(ip)
-        range.include?(ip) && !restricted_ips.include?(ip.to_i)
+        not_reservable_ips = restricted_ips.dup
+        not_reservable_ips.reject! { |not_reservable_ip| not_reservable_ip.to_i < ip.to_range.first.to_i }
+        not_reservable_ips.reject! { |not_reservable_ip| not_reservable_ip.to_i > ip.to_range.last.to_i }
+        not_reservable_ips_contain_ip_from_prefix = false
+        if !not_reservable_ips.empty?
+          not_reservable_ips_contain_ip_from_prefix = true
+        end
+        range.include?(ip.to_cidr_s) && !not_reservable_ips_contain_ip_from_prefix
       end
 
       def self.parse_properties_from_database(network_name, subnet_name)
