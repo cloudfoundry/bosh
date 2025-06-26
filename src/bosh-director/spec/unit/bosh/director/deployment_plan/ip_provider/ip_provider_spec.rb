@@ -102,7 +102,7 @@ module Bosh::Director::DeploymentPlan
 
           context 'when reservation is on dynamic network with no IP address' do
             it 'does not fail to release it' do
-              dynamic_network = DynamicNetwork.new('my-manual-network', [], per_spec_logger)
+              dynamic_network = DynamicNetwork.new('my-manual-network', [], nil, per_spec_logger)
               reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, dynamic_network)
 
               expect do
@@ -127,7 +127,7 @@ module Bosh::Director::DeploymentPlan
 
       describe :reserve_existing_ips do
         context 'when dynamic network' do
-          let(:dynamic_network) { Bosh::Director::DeploymentPlan::DynamicNetwork.new('fake-dynamic-network', [], per_spec_logger) }
+          let(:dynamic_network) { Bosh::Director::DeploymentPlan::DynamicNetwork.new('fake-dynamic-network', [], nil, per_spec_logger) }
           let(:existing_network_reservation) do
             Bosh::Director::ExistingNetworkReservation.new(
               instance_model,
@@ -161,7 +161,7 @@ module Bosh::Director::DeploymentPlan
             Bosh::Director::ExistingNetworkReservation.new(
               instance_model,
               manual_network,
-              '192.168.1.2',
+              '192.168.1.2/32',
               'manual',
             )
           end
@@ -289,7 +289,7 @@ module Bosh::Director::DeploymentPlan
 
                   it 'raises an error' do
                     reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, manual_network)
-                    reservation.resolve_ip(IPAddr.new('192.168.1.11').to_i)
+                    reservation.resolve_ip(Bosh::Director::IpAddrOrCidr.new('192.168.1.11'))
                     expect do
                       ip_provider.reserve(reservation)
                     end.to raise_error Bosh::Director::NetworkReservationIpReserved,
@@ -307,7 +307,7 @@ module Bosh::Director::DeploymentPlan
                     expect {
                       ip_provider.reserve(reservation)
                     }.to raise_error Bosh::Director::NetworkReservationWrongType,
-                        "IP '192.168.1.2' on network 'my-manual-network' does not belong to dynamic pool"
+                        "IP '192.168.1.2/32' on network 'my-manual-network' does not belong to dynamic pool"
                   end
                 end
               end
@@ -348,7 +348,7 @@ module Bosh::Director::DeploymentPlan
                     expect {
                       ip_provider.reserve(reservation)
                     }.to raise_error Bosh::Director::NetworkReservationWrongType,
-                        "IP '192.168.1.2' on network 'my-manual-network' does not belong to dynamic pool"
+                        "IP '192.168.1.2/32' on network 'my-manual-network' does not belong to dynamic pool"
                   end
                 end
               end
@@ -468,7 +468,7 @@ module Bosh::Director::DeploymentPlan
 
               it 'adds the ip address to the ip repository' do
                 ip_provider.reserve(reservation)
-                expect(reservation.ip).to eq(IPAddr.new('1.1.1.1').to_i)
+                expect(reservation.ip).to eq('1.1.1.1')
               end
             end
 
@@ -477,7 +477,7 @@ module Bosh::Director::DeploymentPlan
 
               it 'allocates an ip address for the reservation' do
                 ip_provider.reserve(reservation)
-                expect(reservation.ip).to eq(IPAddr.new('1.1.1.1').to_i)
+                expect(reservation.ip).to eq('1.1.1.1')
               end
 
               context 'and there are no available vips' do

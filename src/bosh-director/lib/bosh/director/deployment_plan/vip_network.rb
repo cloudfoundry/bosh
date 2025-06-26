@@ -6,7 +6,7 @@ module Bosh::Director
 
       # @return [Hash] Network cloud properties
       attr_reader :cloud_properties
-      attr_reader :subnets
+      attr_reader :subnets, :prefix
 
       def self.parse(network_spec, availability_zones, logger)
         name = safe_property(network_spec, 'name', class: String)
@@ -15,8 +15,14 @@ module Bosh::Director
           DeploymentPlan::VipNetworkSubnet.parse(subnet_spec, name, availability_zones)
         end
 
+        unless subnets.empty?
+          prefix = subnets.first.prefix
+        else
+          prefix = "32"
+        end
+
         cloud_properties = safe_property(network_spec, 'cloud_properties', class: Hash, default: {})
-        new(name, cloud_properties, subnets, logger)
+        new(name, cloud_properties, subnets, prefix, logger)
       end
 
       ##
@@ -25,10 +31,11 @@ module Bosh::Director
       # @param [Hash] network_spec parsed from the cloud config
       # @param [VipNetworkSubnet] vip network subnets parsed from the cloud config
       # @param [Logger] logger
-      def initialize(name, cloud_properties, subnets, logger)
+      def initialize(name, cloud_properties, subnets, prefix, logger)
         super(name, logger)
         @cloud_properties = cloud_properties
         @subnets = subnets
+        @prefix = prefix
         @logger = TaggedLogger.new(logger, 'network-configuration')
       end
 
