@@ -120,10 +120,10 @@ module Bosh::Director::DeploymentPlan
     let(:network) { ManualNetwork.parse(network_spec, [availability_zone], per_spec_logger) }
     let(:reservation) do
       reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network)
-      reservation.resolve_ip('192.168.1.3')
+      reservation.resolve_ip('192.168.1.3/32')
       reservation
     end
-    let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
+    let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az'], '32') }
     let(:network_plans) do
       [
         NetworkPlanner::Plan.new(reservation: reservation, existing: true),
@@ -205,8 +205,7 @@ module Bosh::Director::DeploymentPlan
 
     describe 'networks_changed?' do
       context 'when the instance plan has desired network plans' do
-        let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
-        let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], per_spec_logger) }
+        let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], '32', per_spec_logger) }
         let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
         let(:network_plans) do
           [
@@ -295,7 +294,7 @@ module Bosh::Director::DeploymentPlan
             allow(per_spec_logger).to receive(:debug)
             expect(per_spec_logger).to receive(:debug).with(
               'networks_changed? obsolete reservations: ' \
-              "[{type=dynamic, ip=10.0.0.5, network=existing-network, instance=#{instance_model}}]",
+              "[{type=dynamic, ip=10.0.0.5/32, network=existing-network, instance=#{instance_model}}]",
             )
             instance_plan.networks_changed?
           end
@@ -317,7 +316,7 @@ module Bosh::Director::DeploymentPlan
             allow(per_spec_logger).to receive(:debug)
             expect(per_spec_logger).to receive(:debug).with(
               'networks_changed? desired reservations: ' \
-              "[{type=dynamic, ip=10.0.0.5, network=existing-network, instance=#{instance_model}}]",
+              "[{type=dynamic, ip=10.0.0.5/32, network=existing-network, instance=#{instance_model}}]",
             )
             instance_plan.networks_changed?
           end
@@ -335,8 +334,7 @@ module Bosh::Director::DeploymentPlan
 
     describe 'network_settings_changed?' do
       context 'when the instance plan has desired network plans' do
-        let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
-        let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], per_spec_logger) }
+        let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], '32', per_spec_logger) }
         let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
         let(:network_plans) do
           [
@@ -373,6 +371,7 @@ module Bosh::Director::DeploymentPlan
             'a' => {
               'type' => 'manual',
               'ip' => '192.168.1.3',
+              'prefix' => '32',
               'netmask' => '255.255.255.0',
               'cloud_properties' => {},
               'default' => %w[dns gateway],
@@ -400,7 +399,7 @@ module Bosh::Director::DeploymentPlan
               },
             }
           end
-          let(:subnet) { DynamicNetworkSubnet.new('8.8.8.8', subnet_cloud_properties, ['foo-az']) }
+          let(:subnet) { DynamicNetworkSubnet.new('8.8.8.8', subnet_cloud_properties, ['foo-az'], '32') }
           let(:network_plans) { [NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true)] }
           let(:subnet_cloud_properties) do
             {}
@@ -517,8 +516,8 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when the vm type name has changed' do
-        let(:subnet) { DynamicNetworkSubnet.new(['10.0.0.1'], {}, ['foo-az']) }
-        let(:existing_network) { DynamicNetwork.new('a', [subnet], per_spec_logger) }
+        let(:subnet) { DynamicNetworkSubnet.new(['10.0.0.1'], {}, ['foo-az'], '32') }
+        let(:existing_network) { DynamicNetwork.new('a', [subnet], '32', per_spec_logger) }
         let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
 
         let(:network_plans) { [NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true)] }
@@ -560,8 +559,7 @@ module Bosh::Director::DeploymentPlan
       context 'when the network has changed' do
         # everything else should be the same
         let(:availability_zone) { AvailabilityZone.new('foo-az', 'old' => 'value') }
-        let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
-        let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], per_spec_logger) }
+        let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], '32', per_spec_logger) }
         let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
 
         let(:network_plans) do
@@ -891,8 +889,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when the vm type name has changed' do
-        let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
-        let(:existing_network) { DynamicNetwork.new('a', [subnet], per_spec_logger) }
+        let(:existing_network) { DynamicNetwork.new('a', [subnet], '32', per_spec_logger) }
         let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
 
         let(:network_plans) { [NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true)] }
@@ -934,8 +931,7 @@ module Bosh::Director::DeploymentPlan
       context 'when the network has changed' do
         # everything else should be the same
         let(:availability_zone) { AvailabilityZone.new('foo-az', 'old' => 'value') }
-        let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
-        let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], per_spec_logger) }
+        let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], '32', per_spec_logger) }
         let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
 
         let(:network_plans) do
@@ -1039,8 +1035,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when the vm type name has changed' do
-        let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
-        let(:existing_network) { DynamicNetwork.new('a', [subnet], per_spec_logger) }
+        let(:existing_network) { DynamicNetwork.new('a', [subnet], '32', per_spec_logger) }
         let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
 
         let(:network_plans) { [NetworkPlanner::Plan.new(reservation: existing_reservation, existing: true)] }
@@ -1123,8 +1118,7 @@ module Bosh::Director::DeploymentPlan
       context 'when the network has changed' do
         # everything else should be the same
         let(:availability_zone) { AvailabilityZone.new('foo-az', 'old' => 'value') }
-        let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
-        let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], per_spec_logger) }
+        let(:existing_network) { DynamicNetwork.new('existing-network', [subnet], '32', per_spec_logger) }
         let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
 
         let(:network_plans) do
@@ -1277,8 +1271,8 @@ module Bosh::Director::DeploymentPlan
     end
 
     describe '#persist_current_spec' do
-      let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az']) }
-      let(:existing_network) { DynamicNetwork.new('a', [subnet], per_spec_logger) }
+      let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az'], '32') }
+      let(:existing_network) { DynamicNetwork.new('a', [subnet], '32', per_spec_logger) }
       let(:existing_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(existing_instance, existing_network) }
 
       let(:network_plans) do
@@ -1545,6 +1539,7 @@ module Bosh::Director::DeploymentPlan
           'a' => {
             'type' => 'manual',
             'ip' => '192.168.1.3',
+            'prefix' => '32',
             'netmask' => '255.255.255.0',
             'cloud_properties' => {},
             'dns' => ['192.168.1.1', '192.168.1.2'],
@@ -2033,7 +2028,7 @@ module Bosh::Director::DeploymentPlan
     describe '#remove_network_plans_for_ips' do
       let(:plan1) do
         reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network)
-        reservation.resolve_ip('192.168.1.25')
+        reservation.resolve_ip('192.168.1.25/32')
 
         NetworkPlanner::Plan.new(reservation: reservation, existing: false, obsolete: true)
       end
@@ -2061,8 +2056,8 @@ module Bosh::Director::DeploymentPlan
 
       let(:network_plans) { [plan1, plan2, plan3, plan4] }
 
-      let(:ip1) { IPAddr.new('192.168.1.25').to_i }
-      let(:ip2) { IPAddr.new('192.168.1.26').to_i }
+      let(:ip1) { IPAddr.new('192.168.1.25/32') }
+      let(:ip2) { IPAddr.new('192.168.1.26/32') }
 
       let(:ip_address1) { FactoryBot.create(:models_ip_address, address_str: ip1.to_s) }
       let(:ip_address2) { FactoryBot.create(:models_ip_address, address_str: ip2.to_s) }

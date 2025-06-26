@@ -39,11 +39,11 @@ module Bosh::Director::Models
     end
 
     describe '#ips' do
-      let!(:ip_address) { FactoryBot.create(:models_ip_address, vm: vm, address_str: IPAddr.new('1.1.1.1').to_i.to_s) }
-      let!(:ip_address2) { FactoryBot.create(:models_ip_address, vm: vm, address_str: IPAddr.new('1.1.1.2').to_i.to_s) }
+      let!(:ip_address) { FactoryBot.create(:models_ip_address, vm: vm, address_str: Bosh::Director::IpAddrOrCidr.new('1.1.1.1/32').to_cidr_s) }
+      let!(:ip_address2) { FactoryBot.create(:models_ip_address, vm: vm, address_str: Bosh::Director::IpAddrOrCidr.new('1.1.1.2/32').to_cidr_s) }
 
       before do
-        vm.network_spec = { 'some' => { 'ip' => '1.1.1.3' } }
+        vm.network_spec = { 'some' => { 'ip' => '1.1.1.3/32' } }
       end
 
       it 'returns all ips for the vm' do

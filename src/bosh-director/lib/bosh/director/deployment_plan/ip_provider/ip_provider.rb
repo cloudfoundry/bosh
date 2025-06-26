@@ -66,7 +66,7 @@ module Bosh::Director
 
           filter_subnet_by_instance_az(reservation).each do |subnet|
             if (ip = @ip_repo.allocate_dynamic_ip(reservation, subnet))
-              @logger.debug("Reserving dynamic IP '#{ip}' for manual network '#{reservation.network.name}'")
+              @logger.debug("Reserving dynamic IP '#{ip.to_cidr_s}' for manual network '#{reservation.network.name}'")
               reservation.resolve_ip(ip)
               reservation.resolve_type(:dynamic)
               break
@@ -81,7 +81,7 @@ module Bosh::Director
           @logger.debug("Reserving #{reservation.desc} for manual network '#{reservation.network.name}'")
 
           if (subnet = reservation.network.find_subnet_containing(reservation.ip))
-            if subnet.restricted_ips.include?(reservation.ip)
+            if subnet.restricted_ips.include?(reservation.ip.to_i)
               message = "Failed to reserve IP '#{format_ip(reservation.ip)}' for network '#{subnet.network_name}': IP belongs to reserved range"
               @logger.error(message)
               raise Bosh::Director::NetworkReservationIpReserved, message
@@ -99,7 +99,8 @@ module Bosh::Director
         @ip_repo.add(reservation)
 
         subnet_az_names = subnet.availability_zone_names.to_a.join(', ')
-        if subnet.static_ips.include?(reservation.ip)
+
+        if subnet.static_ips.include?(reservation.ip.to_i)
           reservation.resolve_type(:static)
           @logger.debug("Found subnet with azs '#{subnet_az_names}' for #{format_ip(reservation.ip)}. Reserved as static network reservation.")
         else

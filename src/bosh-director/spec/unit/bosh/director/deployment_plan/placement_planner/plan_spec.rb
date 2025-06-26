@@ -46,7 +46,7 @@ module Bosh::Director::DeploymentPlan
     let(:deployment) { instance_double(Planner, model: deployment_model, skip_drain: SkipDrain.new(true)) }
     let(:deployment_model) { FactoryBot.create(:models_deployment) }
 
-    let(:deployment_network) { ManualNetwork.new('network_A', deployment_subnets, nil) }
+    let(:deployment_network) { ManualNetwork.new('network_A', deployment_subnets, nil, nil) }
     let(:deployment_subnets) do
       [
         ManualNetworkSubnet.new(
@@ -59,7 +59,9 @@ module Bosh::Director::DeploymentPlan
             192.168.1.12
             192.168.1.13
             192.168.1.14
-          ]
+          ],
+          nil, nil,
+          '32'
         ),
         ManualNetworkSubnet.new(
           'network_A',
@@ -71,7 +73,9 @@ module Bosh::Director::DeploymentPlan
             10.10.1.12
             10.10.1.13
             10.10.1.14
-          ]
+          ],
+          nil, nil,
+          '32'
         ),
         ManualNetworkSubnet.new(
           'network_A',
@@ -83,7 +87,9 @@ module Bosh::Director::DeploymentPlan
             10.0.1.12
             10.0.1.13
             10.0.1.14
-          ]
+          ],
+          nil, nil,
+          '32'
         ),
       ]
     end

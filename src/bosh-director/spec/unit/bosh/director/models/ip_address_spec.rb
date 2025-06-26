@@ -5,7 +5,7 @@ module Bosh::Director::Models
     subject(:ip_address) do
       IpAddress.new(instance: instance,
                     network_name: 'foonetwork',
-                    address_str: IPAddr.new('10.10.0.1').to_i.to_s,
+                    address_str: Bosh::Director::IpAddrOrCidr.new('10.10.0.1/32').to_cidr_s,
                     task_id: 'fake-task-id',
                     static: true,
                     vm: vm)
@@ -16,7 +16,7 @@ module Bosh::Director::Models
 
     context '#info' do
       it 'should display debugging information (job, index, network name and ip address)' do
-        expect(ip_address.info).to eq('foodeployment.foojob/1 - foonetwork - 10.10.0.1 (static)')
+        expect(ip_address.info).to eq('foodeployment.foojob/1 - foonetwork - 10.10.0.1/32 (static)')
       end
     end
 

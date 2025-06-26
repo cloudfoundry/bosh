@@ -13,6 +13,7 @@ module Bosh::Director
         validate_network_has_no_key('az', name, network_spec)
         validate_network_has_no_key('azs', name, network_spec)
         validate_network_has_no_key('managed', name, network_spec)
+        validate_network_has_no_key('prefix', name, network_spec)
 
         if network_spec.has_key?('subnets')
           validate_network_has_no_key_while_subnets_present('dns', name, network_spec)
@@ -21,16 +22,24 @@ module Bosh::Director
           subnets = network_spec['subnets'].map do |subnet_properties|
             name_servers = name_server_parser.parse(subnet_properties['name'], subnet_properties)
             cloud_properties = safe_property(subnet_properties, 'cloud_properties', class: Hash, default: {})
+            prefix = safe_property(subnet_properties, 'prefix', class: Integer, default: nil)
+            if prefix.nil?
+              prefix = 32 # we need to set the ipv4 default value (dynamic networks only support ipv4)
+            else
+              raise NetworkInvalidProperty, "Prefix property is not supported for dynamic networks."
+            end
             subnet_availability_zones = parse_availability_zones(subnet_properties, availability_zones, name)
-            DynamicNetworkSubnet.new(name_servers, cloud_properties, subnet_availability_zones)
+            DynamicNetworkSubnet.new(name_servers, cloud_properties, subnet_availability_zones, prefix)
           end
         else
           cloud_properties = safe_property(network_spec, 'cloud_properties', class: Hash, default: {})
+          prefix = 32 # we need to set the ipv4 default value (dynamic networks only support ipv4)
+
           name_servers = name_server_parser.parse(network_spec['name'], network_spec)
-          subnets = [DynamicNetworkSubnet.new(name_servers, cloud_properties, nil)]
+          subnets = [DynamicNetworkSubnet.new(name_servers, cloud_properties, nil, prefix)]
         end
 
-        new(name, subnets, logger)
+        new(name, subnets, logger, prefix)
       end
 
       def self.validate_network_has_no_key_while_subnets_present(key, name, network_spec)
@@ -77,9 +86,10 @@ module Bosh::Director
         end
       end
 
-      def initialize(name, subnets, logger)
+      def initialize(name, subnets, prefix, logger)
         super(name, logger)
         @subnets = subnets
+        @prefix = prefix
       end
 
       attr_reader :subnets
@@ -94,7 +104,7 @@ module Bosh::Director
       def network_settings(reservation, default_properties = Network::REQUIRED_DEFAULTS, availability_zone = nil)
         unless reservation.dynamic?
           raise NetworkReservationWrongType,
-            "IP '#{format_ip(reservation.ip)}' on network '#{reservation.network.name}' does not belong to dynamic pool"
+            "IP '#{reservation.ip}' on network '#{reservation.network.name}' does not belong to dynamic pool"
         end
 
         if availability_zone.nil?

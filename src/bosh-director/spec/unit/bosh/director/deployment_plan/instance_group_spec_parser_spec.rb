@@ -32,7 +32,7 @@ module Bosh::Director
         )
       end
       let(:deployment_model) { FactoryBot.create(:models_deployment) }
-      let(:network) { ManualNetwork.new('fake-network-name', [], per_spec_logger) }
+      let(:network) { ManualNetwork.new('fake-network-name', [], '32', per_spec_logger) }
       let(:task) { FactoryBot.create(:models_task, id: 42) }
       let(:task_writer) { Bosh::Director::TaskDBWriter.new(:event_output, task.id) }
       let(:event_log) { Bosh::Director::EventLog::Log.new(task_writer) }
@@ -1002,7 +1002,7 @@ module Bosh::Director
               instance_group_spec['instances'] = 3
               instance_group_spec['networks'].first['default'] = %w[gateway dns]
               instance_group_spec['networks'] << instance_group_spec['networks'].first.merge('name' => 'duped-network') # dupe it
-              duped_network = ManualNetwork.new('duped-network', [], per_spec_logger)
+              duped_network = ManualNetwork.new('duped-network', [], '32', per_spec_logger)
               allow(deployment_plan).to receive(:networks).and_return([duped_network, network])
 
               expect do
@@ -1029,7 +1029,7 @@ module Bosh::Director
             end
 
             context 'when there are two networks, each being a separate default' do
-              let(:network2) { ManualNetwork.new('fake-network-name-2', [], per_spec_logger) }
+              let(:network2) { ManualNetwork.new('fake-network-name-2', [], '32', per_spec_logger) }
 
               it 'picks the only network as default' do
                 instance_group_spec['networks'].first['default'] = ['dns']

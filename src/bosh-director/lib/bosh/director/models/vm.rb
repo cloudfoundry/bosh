@@ -19,6 +19,16 @@ module Bosh::Director::Models
     end
 
     def ips
+      ips_cidr.map do | cidr_ip |
+       if ( cidr_ip.include?(':') && cidr_ip.include?('/128') ) || ( cidr_ip.include?('.')  && cidr_ip.include?('/32') )
+        cidr_ip.split('/')[0]
+       else
+        cidr_ip
+       end
+      end
+    end
+
+    def ips_cidr
       manual_or_vip_ips.concat(dynamic_ips).uniq
     end
 
@@ -29,7 +39,15 @@ module Bosh::Director::Models
     end
 
     def dynamic_ips
-      network_spec.map { |_, network| network['ip'] }
+      network_spec.map do |_, network|
+        prefix = network['prefix'].to_s
+        if network['ip'].include?(':') && prefix.empty?
+          prefix = '128'
+        elsif network['ip'].include?('.') && prefix.empty?
+          prefix = '32'
+        end
+        "#{network['ip']}/#{prefix}"
+      end
     end
   end
 end

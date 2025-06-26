@@ -141,13 +141,15 @@ module Bosh
 
           def create_instance_plan_based_on_existing_ips(desired_instances, existing_instance_model)
             instance_plan = nil
+
             @job_networks.each do |network|
               next unless network.static?
               instance_ips_on_network = find_instance_ips_on_network(existing_instance_model, network)
               network_plan = nil
 
               instance_ips_on_network.each do |instance_ip|
-                ip_address = instance_ip.address
+                ip_address = instance_ip.address.to_i
+
                 # Instance is using IP in static IPs list, we have to use this instance
                 @logger.debug("Existing instance '#{instance_name(existing_instance_model)}' is using static IP '#{format_ip(ip_address)}' on network '#{network.name}'")
                 if instance_plan.nil?
@@ -192,7 +194,8 @@ module Bosh
           end
 
           def assign_az_based_on_ip(desired_instance, existing_instance_model, network, ip_address)
-            ip_az_names = @networks_to_static_ips.find_by_network_and_ip(network, ip_address).az_names
+            ip_az_names = @networks_to_static_ips.find_by_network_and_ip(network, ip_address.to_i).az_names
+
             if ip_az_names.include?(existing_instance_model.availability_zone)
               az_name = existing_instance_model.availability_zone
               @logger.debug("Instance '#{instance_name(existing_instance_model)}' belongs to az '#{az_name}' that is in subnet az list, reusing instance az.")
@@ -246,6 +249,7 @@ module Bosh
           def create_network_plan_with_ip(instance_plan, network, ip_address)
             instance_az = instance_plan.desired_instance.az
             instance_az_name = instance_az.nil? ? nil : instance_az.name
+
             ip_az_names = @networks_to_static_ips.find_by_network_and_ip(network, ip_address).az_names
             if ip_az_names.include?(instance_az_name)
               instance_plan.network_plans << @network_planner.network_plan_with_static_reservation(instance_plan, network, ip_address)

@@ -36,7 +36,7 @@ module Bosh::Director::Core::Templates
           allow(logger).to receive(:debug)
         end
 
-        let(:original_error) { "undefined method `no_method' for nil" }
+        let(:original_error) { "undefined method `no_method' for nil:NilClass" }
 
         let(:expected_message) do
           "Error filling in template 'source-filename.erb' (line 1: #{original_error})"
