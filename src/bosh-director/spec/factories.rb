@@ -170,7 +170,7 @@ FactoryBot.define do
   factory :models_ip_address, class: Bosh::Director::Models::IpAddress do
     sequence(:network_name) { |i| "ip-address-network-name-#{i}" }
     sequence(:task_id) { |i| "ip-address-task-id-#{i}" }
-    address_str { IPAddr.new(Random.rand(IPAddr::IN4MASK.to_i), Socket::AF_INET).to_i.to_s }
+    address_str { Bosh::Director::IpAddrOrCidr.new(Random.rand(IPAddr::IN4MASK)).to_cidr_s }
     static { false }
     created_at { Time.now }
     association :instance, factory: :models_instance, strategy: :create

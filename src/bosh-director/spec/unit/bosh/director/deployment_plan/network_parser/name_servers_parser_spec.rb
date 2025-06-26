@@ -16,7 +16,7 @@ module Bosh::Director
       it "should raise an error if a DNS server isn't specified with as an IP" do
         expect {
           name_servers_parser.parse('network', {'dns' => %w[1.2.3.4 foo.bar]})
-        }.to raise_error(/invalid address/)
+        }.to raise_error(/Invalid IP or CIDR format/)
       end
 
       it 'returns an array containing the nameserver address' do

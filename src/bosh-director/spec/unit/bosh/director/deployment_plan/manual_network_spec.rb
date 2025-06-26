@@ -133,6 +133,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
       expect(manual_network.network_settings(reservation, [])).to eq(
         'type' => 'manual',
         'ip' => '192.168.1.2',
+        'prefix' => '32',
         'netmask' => '255.255.255.0',
         'cloud_properties' => {},
         'gateway' => '192.168.1.1',
@@ -151,12 +152,39 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
       expect(manual_network.network_settings(reservation)).to eq(
         'type' => 'manual',
         'ip' => '192.168.1.2',
+        'prefix' => '32',
         'netmask' => '255.255.255.0',
         'cloud_properties' => {},
         'gateway' => '192.168.1.1',
         'dns' => ['192.168.1.1', '192.168.1.2'],
         'default' => %w[dns gateway],
       )
+    end
+
+    context 'when a prefix is maintained for a subnet' do
+      let(:network_spec) do
+        cloud_config_hash['networks'].first['subnets'].first['prefix'] = '30'
+        cloud_config_hash['networks'].first
+      end
+
+      it 'should set the correct prefix' do
+        reservation = Bosh::Director::DesiredNetworkReservation.new_static(
+          instance_model,
+          manual_network,
+          '192.168.1.2',
+        )
+
+        expect(manual_network.network_settings(reservation)).to eq(
+          'type' => 'manual',
+          'ip' => '192.168.1.0',
+          'prefix' => '30',
+          'netmask' => '255.255.255.0',
+          'cloud_properties' => {},
+          'gateway' => '192.168.1.1',
+          'dns' => ['192.168.1.1', '192.168.1.2'],
+          'default' => %w[dns gateway],
+        )
+      end
     end
 
     it 'should fail when there is no IP' do
