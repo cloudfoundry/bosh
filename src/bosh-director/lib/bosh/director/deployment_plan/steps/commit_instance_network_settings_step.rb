@@ -11,7 +11,7 @@ module Bosh::Director
 
           next if ip.nil?
 
-          ip_model = Models::IpAddress.find(address_str: ip.to_s)
+          ip_model = Models::IpAddress.find(address_str: ip.to_cidr_s)
           ip_model&.update(vm: report.vm)
         end
       end

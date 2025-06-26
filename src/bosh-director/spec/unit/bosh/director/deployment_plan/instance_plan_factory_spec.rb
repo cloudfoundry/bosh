@@ -45,7 +45,7 @@ module Bosh::Director
 
       let(:range) { IPAddr.new('192.168.1.1/24') }
       let(:manual_network_subnet) { ManualNetworkSubnet.new('name-7', range, nil, nil, nil, nil, nil, [], []) }
-      let(:network) { Bosh::Director::DeploymentPlan::ManualNetwork.new('name-7', [manual_network_subnet], per_spec_logger) }
+      let(:network) { Bosh::Director::DeploymentPlan::ManualNetwork.new('name-7', [manual_network_subnet], '32', per_spec_logger) }
       let(:ip_repo) { Bosh::Director::DeploymentPlan::IpRepo.new(per_spec_logger) }
       let(:deployment_plan) do
         instance_double(

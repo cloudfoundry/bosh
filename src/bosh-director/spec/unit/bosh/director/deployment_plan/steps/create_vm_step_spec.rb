@@ -146,8 +146,8 @@ module Bosh
           end
 
           let(:reservation) do
-            subnet = Bosh::Director::DeploymentPlan::DynamicNetworkSubnet.new('dns', network_cloud_properties, ['az-1'])
-            network = Bosh::Director::DeploymentPlan::DynamicNetwork.new('name', [subnet], per_spec_logger)
+            subnet = Bosh::Director::DeploymentPlan::DynamicNetworkSubnet.new('dns', network_cloud_properties, ['az-1'], '32')
+            network = Bosh::Director::DeploymentPlan::DynamicNetwork.new('name', [subnet], '32', per_spec_logger)
             reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network)
             reservation
           end

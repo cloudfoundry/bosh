@@ -70,7 +70,7 @@ module Bosh::Director
       end
 
       context 'IPv6' do
-        let(:input) { 'fd00::/8' }
+        let(:input) { 'fd00:0000:0000:0000:0000:0000:0000:0000/8' }
 
         it 'returns a string representing the IP' do
           expect(ip_addr_or_cidr.to_cidr_s).to eq(input)

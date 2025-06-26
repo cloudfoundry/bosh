@@ -19,7 +19,7 @@ module Bosh::Director
     private
 
     def formatted_ip
-      IpAddrOrCidr.new(@ip).to_s if @ip
+      IpAddrOrCidr.new(@ip).to_cidr_s if @ip
     end
   end
 
@@ -28,7 +28,7 @@ module Bosh::Director
 
     def initialize(instance_model, network, ip, network_type)
       super(instance_model, network)
-      @ip = IpAddrOrCidr.new(ip).to_i if ip
+      @ip = IpAddrOrCidr.new(ip) if ip
       @network_type = network_type
       @obsolete = network.instance_of? Bosh::Director::DeploymentPlan::Network
     end
@@ -52,17 +52,18 @@ module Bosh::Director
     end
 
     def self.new_static(instance_model, network, ip)
-      new(instance_model, network, ip, :static)
+      cidr_ip = "#{IpAddrOrCidr.new(ip)}/#{network.prefix}"
+      new(instance_model, network, cidr_ip, :static)
     end
 
     def initialize(instance_model, network, ip, type)
       super(instance_model, network)
-      @ip = IpAddrOrCidr.new(ip).to_i if ip
+      @ip = resolve_ip(ip) if ip
       @type = type
     end
 
     def resolve_ip(ip)
-      @ip = IpAddrOrCidr.new(ip).to_i
+      @ip = IpAddrOrCidr.new(ip)
     end
 
     def resolve_type(type)
