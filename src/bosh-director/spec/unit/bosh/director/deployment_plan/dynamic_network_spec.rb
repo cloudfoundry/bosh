@@ -104,6 +104,19 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
           )
         }.to raise_error(Bosh::Director::NetworkInvalidProperty, "Network 'foo' must not specify 'azs'.")
       end
+
+      it "raises error when 'prefix' is present on the network spec" do
+        expect {
+          Bosh::Director::DeploymentPlan::DynamicNetwork.parse(
+            {
+              'name' => 'foo',
+              'prefix' => '28'
+            },
+            [Bosh::Director::DeploymentPlan::AvailabilityZone.new('foo-zone', {})],
+            logger
+          )
+        }.to raise_error(Bosh::Director::NetworkInvalidProperty, "Network 'foo' must not specify 'prefix'.")
+      end
     end
 
     context 'with a manifest specifying subnets' do
@@ -242,6 +255,30 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
         }.to raise_error(Bosh::Director::ValidationInvalidType)
       end
 
+      it 'raises error when prefix is defined' do
+        expect {
+          Bosh::Director::DeploymentPlan::DynamicNetwork.parse(
+              {
+                  'name' => 'foo',
+                  'subnets' => [
+                      {
+                          'dns' => %w[1.2.3.4 5.6.7.8],
+                          'cloud_properties' => {
+                            'foz' => 'baz'
+                          },
+                          'az' => 'foz-zone',
+                          'prefix' => 28
+                      },
+                  ]
+              },
+              [
+                  Bosh::Director::DeploymentPlan::AvailabilityZone.new('foz-zone', {}),
+              ],
+              logger
+          )
+        }.to raise_error(Bosh::Director::NetworkInvalidProperty,  "Prefix property is not supported for dynamic networks.")
+      end
+
       it 'raises error when dns is present at the top level' do
         expect {
           Bosh::Director::DeploymentPlan::DynamicNetwork.parse(
@@ -341,7 +378,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
     end
 
     it 'should fail when for static reservation' do
-      reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, @network, 1)
+      reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, @network, "1.1.1.1")
       expect {
         @network.network_settings(reservation)
       }.to raise_error Bosh::Director::NetworkReservationWrongType
@@ -537,7 +574,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
 
   describe :validate_reference_from_job do
     it 'returns true if job has a valid network spec' do
-      dynamic_network = Bosh::Director::DeploymentPlan::DynamicNetwork.new('dynamic', [], logger)
+      dynamic_network = Bosh::Director::DeploymentPlan::DynamicNetwork.new('dynamic', [], '32', logger)
       job_network_spec = {'name' => 'dynamic'}
 
       expect {
@@ -547,7 +584,7 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
 
     context 'when network is dynamic but job network spec uses static ips' do
       it 'raises StaticIPNotSupportedOnDynamicNetwork' do
-        dynamic_network = Bosh::Director::DeploymentPlan::DynamicNetwork.new('dynamic', [], logger)
+        dynamic_network = Bosh::Director::DeploymentPlan::DynamicNetwork.new('dynamic', [], '32', logger)
         job_network_spec = {
           'name' => 'dynamic',
           'static_ips' => ['192.168.1.10']
