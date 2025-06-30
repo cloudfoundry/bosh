@@ -22,7 +22,7 @@ module Bosh::Director
         },
         {
           filename: '20250618102610_migrate_ip_address_representation_from_integer_to_cidr_notation.rb',
-          sha1: 'd46a761745beff513dd3dbb80ed80f97f15cea8e',
+          sha1: '4133b36632a30d88c2e264cc112ede34640d0327',
         },
       ]
     end
