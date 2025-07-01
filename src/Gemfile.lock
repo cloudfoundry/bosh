@@ -164,7 +164,7 @@ GEM
       concurrent-ruby (~> 1.0)
     io-endpoint (0.15.2)
     io-event (1.11.0)
-    io-stream (0.8.0)
+    io-stream (0.10.0)
     json (2.12.2)
     json_schemer (2.4.0)
       bigdecimal
@@ -214,7 +214,7 @@ GEM
     prometheus-client (4.2.4)
       base64
     protocol-hpack (1.5.1)
-    protocol-http (0.50.1)
+    protocol-http (0.51.0)
     protocol-http1 (0.34.0)
       protocol-http (~> 0.22)
     protocol-http2 (0.22.1)
@@ -282,7 +282,7 @@ GEM
       fugit (~> 1.1, >= 1.11.1)
     securerandom (0.4.1)
     semi_semantic (1.2.0)
-    sequel (5.93.0)
+    sequel (5.94.0)
       bigdecimal
     simplecov (0.22.0)
       docile (~> 1.1)
@@ -304,7 +304,7 @@ GEM
       rack-protection (= 4.1.1)
       sinatra (= 4.1.1)
       tilt (~> 2.0)
-    sqlite3 (2.7.0)
+    sqlite3 (2.7.1)
       mini_portile2 (~> 2.8.0)
     sys-filesystem (1.5.3)
       ffi (~> 1.1)
