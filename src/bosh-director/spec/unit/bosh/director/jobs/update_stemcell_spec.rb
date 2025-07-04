@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Bosh::Director::Jobs::UpdateStemcell do
   before do
-    allow(Bosh::Director::Config).to receive(:preferred_cpi_api_version).and_return(2)
+    allow(Bosh::Director::Config).to receive(:preferred_cpi_api_version).and_return(3)
   end
 
   describe 'DJ job class expectations' do
@@ -62,7 +62,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
       allow(Bosh::Director::Api::RuntimeConfigManager).to receive(:new).and_return(runtime_config_manager)
       allow(Bosh::Director::Models::Config).to receive(:new).and_return(config)
-      allow(config).to receive(:to_hash).and_return({"tags" => {"any"=> "value"}})
+      allow(config).to receive(:to_hash).and_return({:content => "---\ntags:\n  test-tag: test-value\n"})
       allow(runtime_config_manager).to receive(:list).with(1, 'default').and_return(runtime_config_list)
 
 
