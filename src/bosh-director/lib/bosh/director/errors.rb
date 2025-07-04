@@ -165,6 +165,7 @@ module Bosh::Director
   NetworkReservationIpOutsideSubnet = err(130012)
   NetworkReservationIpReserved = err(130013)
   NetworkReservationVipMisconfigured = err(130014)
+  NetworkReservationInvalidPrefix = err(130015)
 
   # Manifest parsing: instance group section
   InstanceGroupMissingRelease = err(140001)
@@ -224,6 +225,9 @@ module Bosh::Director
   NetworkInvalidIpRangeFormat = err(160010)
   NetworkDeletingUnorphanedError = err(160011)
   NetworkNotFoundError = err(16012)
+  NetworkPrefixSizeTooBig = err(16013)
+  NetworkPrefixSizesDiffer = err(16014)
+  NetworkPrefixStaticIpNotBaseAddress = err(16015)
 
   # ResourcePool
   ResourcePoolUnknownNetwork = err(170001)
