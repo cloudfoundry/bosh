@@ -163,7 +163,7 @@ GEM
     i18n (1.14.7)
       concurrent-ruby (~> 1.0)
     io-endpoint (0.15.2)
-    io-event (1.11.0)
+    io-event (1.11.2)
     io-stream (0.10.0)
     json (2.12.2)
     json_schemer (2.4.0)
