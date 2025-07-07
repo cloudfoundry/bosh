@@ -691,7 +691,7 @@ RSpec.describe 'director.yml.erb' do
         YAML.load(template.render(merged_manifest_properties))
       end
 
-      let(:max_cpi_api_version) { 2 }
+      let(:max_cpi_api_version) { 3 }
 
       before do
         merged_manifest_properties['director']['cpi_job'] = 'test-cpi'
