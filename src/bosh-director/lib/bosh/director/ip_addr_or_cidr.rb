@@ -3,7 +3,9 @@ require 'ipaddr'
 module Bosh
   module Director
     class IpAddrOrCidr
-      delegate :==, :include?, :ipv4?, :ipv6?, :netmask, :to_i, :to_range, :to_string, :prefix, to: :@ipaddr
+      include Comparable
+
+      delegate :==, :include?, :ipv4?, :ipv6?, :netmask, :mask, :to_i, :to_range, :to_string, :prefix, :succ, :<=>, to: :@ipaddr
       alias :to_s :to_string
 
       def initialize(ip_or_cidr)
@@ -22,17 +24,14 @@ module Bosh
       end
 
       def each_base_address(prefix_length)
-        # Determine the base address for the given prefix_length
-        # We assume the prefix_length is a valid integer within the subnet
         if @ipaddr.ipv4?
           bits = 32
         elsif @ipaddr.ipv6?
           bits = 128
         end
-        step_size = 2**(bits - prefix_length.to_i) # Calculate number of addresses per subnet
+        step_size = 2**(bits - prefix_length.to_i)
         base_address_int = @ipaddr.to_i
-    
-        # Yield each base address in this network
+
         while base_address_int <= @ipaddr.to_range.last.to_i
           yield base_address_int
           base_address_int += step_size
@@ -45,6 +44,27 @@ module Bosh
 
       def to_cidr_s
         "#{@ipaddr.to_string}/#{@ipaddr.prefix}"
+      end
+
+      def to_range
+        @ipaddr.to_range
+      end
+
+      def succ
+        next_ip = @ipaddr.succ
+        Bosh::Director::IpAddrOrCidr.new(next_ip.to_i)
+      end
+
+      def <=>(other)
+        @ipaddr.to_i <=> other.to_i
+      end
+
+      def last
+        Bosh::Director::IpAddrOrCidr.new(@ipaddr.to_range.last.to_i)
+      end
+
+      def first
+        Bosh::Director::IpAddrOrCidr.new(@ipaddr.to_range.first.to_i)
       end
 
       private
