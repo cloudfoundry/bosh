@@ -31,7 +31,7 @@ module Bosh::Director
       end
 
       def is_reservable?(ip)
-        @static_ips.include?(ip.to_i)
+        VipNetworkSubnet.ip_in_array?(ip, @static_ips)
       end
     end
   end
