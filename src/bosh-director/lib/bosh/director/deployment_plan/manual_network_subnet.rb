@@ -34,7 +34,7 @@ module Bosh::Director
           end
 
           netmask = range.netmask
-          broadcast = range.to_range.last
+          broadcast = range.last
 
           if gateway_property
             gateway = Bosh::Director::IpAddrOrCidr.new(gateway_property)
@@ -46,11 +46,11 @@ module Bosh::Director
 
           static_property = safe_property(subnet_spec, 'static', optional: true)
 
-          restricted_ips.add(gateway.to_i) if gateway
-          restricted_ips.add(range.to_i)
-          restricted_ips.add(broadcast.to_i)
+          restricted_ips.add(gateway) if gateway
+          restricted_ips.add(range.first)
+          restricted_ips.add(broadcast)
 
-          each_ip(reserved_property) do |ip|
+          each_ip(reserved_property, false) do |ip|
             unless range.include?(ip)
               raise NetworkReservedIpOutOfRange, "Reserved IP '#{to_ipaddr(ip)}' is out of " \
                 "network '#{network_name}' range"
@@ -65,8 +65,15 @@ module Bosh::Director
             end
           end
 
+          restricted_ips.reject! do |ip|
+            restricted_ips.any? do |other_ip| 
+              includes = other_ip.include?(ip) rescue false
+              includes && other_ip.prefix < ip.prefix
+            end
+          end
+
           each_ip(static_property) do |ip|
-            if restricted_ips.include?(ip)
+            if ip_in_array?(ip, restricted_ips)
               raise NetworkStaticIpOutOfRange, "Static IP '#{to_ipaddr(ip)}' is in network '#{network_name}' reserved range"
             end
 
@@ -90,9 +97,9 @@ module Bosh::Director
             # if a prefix is provided the static ips can only be the base_addresses of the prefix otherwise we through an error
             static_ips.each do |static_ip|
               range.each_base_address(prefix) do |base_address_int|
-               if static_ip == base_address_int
+               if static_ip.to_i == base_address_int
                  break
-               elsif static_ip < base_address_int
+               elsif static_ip.to_i < base_address_int
                  raise NetworkPrefixStaticIpNotBaseAddress, "Static IP '#{to_ipaddr(static_ip)}' is not a base address of the prefix '#{prefix}'"
                end
               end
@@ -148,14 +155,13 @@ module Bosh::Director
       end
 
       def is_reservable?(ip)
-        not_reservable_ips = restricted_ips.dup
-        not_reservable_ips.reject! { |not_reservable_ip| not_reservable_ip.to_i < ip.to_range.first.to_i }
-        not_reservable_ips.reject! { |not_reservable_ip| not_reservable_ip.to_i > ip.to_range.last.to_i }
-        not_reservable_ips_contain_ip_from_prefix = false
-        if !not_reservable_ips.empty?
-          not_reservable_ips_contain_ip_from_prefix = true
+        restricted_ips.each do | restricted_ip |
+          return false if restricted_ip.include?(ip)
+          rescue IPAddr::InvalidAddressError  # when ip versions are not the same
+          return false
         end
-        range.include?(ip.to_cidr_s) && !not_reservable_ips_contain_ip_from_prefix
+
+        range.include?(ip.to_range.first) && range.include?(ip.to_range.last)
       end
 
       def self.parse_properties_from_database(network_name, subnet_name)

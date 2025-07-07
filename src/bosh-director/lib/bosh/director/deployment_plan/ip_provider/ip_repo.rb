@@ -87,8 +87,8 @@ module Bosh::Director::DeploymentPlan
 
       addresses_we_cant_allocate = addresses_in_use
 
-      addresses_we_cant_allocate.merge(subnet.restricted_ips.map { |int_ip| Bosh::Director::IpAddrOrCidr.new(int_ip)}) unless subnet.restricted_ips.empty?
-      addresses_we_cant_allocate.merge(subnet.static_ips.map { |int_ip| Bosh::Director::IpAddrOrCidr.new(int_ip)}) unless subnet.static_ips.empty?
+      addresses_we_cant_allocate.merge(subnet.restricted_ips) unless subnet.restricted_ips.empty?
+      addresses_we_cant_allocate.merge(subnet.static_ips) unless subnet.static_ips.empty?
 
       if subnet.range.ipv6?
         addresses_we_cant_allocate.delete_if { |ipaddr| ipaddr.ipv4? }
@@ -110,8 +110,8 @@ module Bosh::Director::DeploymentPlan
       ip_address_cidr
     end
 
-    def find_next_available_ip(ip_entries, first_range_address, prefix)
-      filtered_ips = ip_entries.sort_by { |ip| ip.to_i }.reject { |ip| ip.to_i < first_range_address.to_i } #remove ips that are below subnet range
+    def find_next_available_ip(addresses_we_cant_allocate, first_range_address, prefix)
+      filtered_ips = addresses_we_cant_allocate.sort_by { |ip| ip.to_i }.reject { |ip| ip.to_i < first_range_address.to_i } #remove ips that are below subnet range
 
       current_ip = Bosh::Director::IpAddrOrCidr.new(first_range_address.to_i + 1)
       found = false
@@ -145,7 +145,7 @@ module Bosh::Director::DeploymentPlan
         prefix = 32
       end
 
-      available_ips = subnet.static_ips - addresses_in_use
+      available_ips = subnet.static_ips.map(&:to_i).to_set - addresses_in_use
 
       raise NoMoreIPsAvailableAndStopRetrying if available_ips.empty?
 
@@ -200,7 +200,6 @@ module Bosh::Director::DeploymentPlan
       reservation.instance_model.add_ip_address(ip_address)
     rescue Sequel::ValidationFailed, Sequel::DatabaseError => e
       error_message = e.message.downcase
-      @logger.debug("ERROR!!! #{error_message}")
       if error_message.include?('unique') || error_message.include?('duplicate')
         raise IpFoundInDatabaseAndCanBeRetried, e.inspect
       else
