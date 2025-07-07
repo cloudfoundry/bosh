@@ -173,7 +173,9 @@ module Bosh
 
         network.subnets.each do |subnet|
           total_static += subnet.static_ips.size
-          total_restricted += subnet.restricted_ips.size
+          subnet.restricted_ips.each do |ip_addr_or_cidr|
+            total_restricted += ip_addr_or_cidr.count
+          end
           total_available += subnet.range.count
         end
 
