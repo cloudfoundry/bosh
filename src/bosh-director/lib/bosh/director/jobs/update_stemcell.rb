@@ -1,4 +1,5 @@
 require 'securerandom'
+require 'yaml'
 
 module Bosh::Director
   module Jobs
@@ -152,10 +153,14 @@ module Bosh::Director
         runtime_configs = Bosh::Director::Api::RuntimeConfigManager.new.list(1, "default")
         if !runtime_configs.nil?
           raw = runtime_configs[0]
-          if !raw.nil? 
-            hash = raw.to_hash
-            if !hash.nil? && !hash["tags"].nil?
-              tags.merge!(hash["tags"])
+          if !raw.nil?
+            raw_hash = raw.to_hash
+            if !raw_hash.nil?
+              raw_hash_content = raw_hash[:content]
+              hash = YAML.safe_load(raw_hash_content)
+              if !hash.nil? && !hash["tags"].nil?
+                tags.merge!(hash["tags"])
+              end
             end
           end
         end
