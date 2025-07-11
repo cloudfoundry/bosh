@@ -157,9 +157,9 @@ module Bosh::Director
           subnet.gateway = Bosh::Director::IpAddrOrCidr.new(db_subnet.gateway)
           subnet.netmask = subnet.range.netmask
 
-          subnet.restricted_ips.add(subnet.gateway.to_i) if subnet.gateway
-          subnet.restricted_ips.add(subnet.range.to_i)
-          subnet.restricted_ips.add(subnet.range.to_range.last.to_i)
+          subnet.restricted_ips.add(subnet.gateway) if subnet.gateway
+          subnet.restricted_ips.add(subnet.range)
+          subnet.restricted_ips.add(subnet.range.to_range.last)
           each_ip(JSON.parse(db_subnet.reserved)) do |ip|
             unless subnet.range.include?(ip)
               raise NetworkReservedIpOutOfRange,

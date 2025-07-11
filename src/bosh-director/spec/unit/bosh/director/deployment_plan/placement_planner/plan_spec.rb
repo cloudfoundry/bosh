@@ -46,44 +46,50 @@ module Bosh::Director::DeploymentPlan
     let(:deployment) { instance_double(Planner, model: deployment_model, skip_drain: SkipDrain.new(true)) }
     let(:deployment_model) { FactoryBot.create(:models_deployment) }
 
-    let(:deployment_network) { ManualNetwork.new('network_A', deployment_subnets, nil) }
+    let(:deployment_network) { ManualNetwork.new('network_A', deployment_subnets, nil, nil) }
     let(:deployment_subnets) do
       [
         ManualNetworkSubnet.new(
           'network_A',
           IPAddr.new('192.168.1.0/24'),
           nil, nil, nil, nil, ['zone_1'], [],
-          %w[
-            192.168.1.10
-            192.168.1.11
-            192.168.1.12
-            192.168.1.13
-            192.168.1.14
-          ]
+          [
+            Bosh::Director::IpAddrOrCidr.new('192.168.1.10'),
+            Bosh::Director::IpAddrOrCidr.new('192.168.1.11'),
+            Bosh::Director::IpAddrOrCidr.new('192.168.1.12'),
+            Bosh::Director::IpAddrOrCidr.new('192.168.1.13'),
+            Bosh::Director::IpAddrOrCidr.new('192.168.1.14'),
+          ],
+          nil, nil,
+          '32'
         ),
         ManualNetworkSubnet.new(
           'network_A',
           IPAddr.new('10.10.1.0/24'),
           nil, nil, nil, nil, ['zone_2'], [],
-          %w[
-            10.10.1.10
-            10.10.1.11
-            10.10.1.12
-            10.10.1.13
-            10.10.1.14
-          ]
+          [
+            Bosh::Director::IpAddrOrCidr.new('10.10.1.10'),
+            Bosh::Director::IpAddrOrCidr.new('10.10.1.11'),
+            Bosh::Director::IpAddrOrCidr.new('10.10.1.12'),
+            Bosh::Director::IpAddrOrCidr.new('10.10.1.13'),
+            Bosh::Director::IpAddrOrCidr.new('10.10.1.14'),
+          ],
+          nil, nil,
+          '32'
         ),
         ManualNetworkSubnet.new(
           'network_A',
           IPAddr.new('10.0.1.0/24'),
           nil, nil, nil, nil, ['zone_3'], [],
-          %w[
-            10.0.1.10
-            10.0.1.11
-            10.0.1.12
-            10.0.1.13
-            10.0.1.14
-          ]
+          [
+            Bosh::Director::IpAddrOrCidr.new('10.0.1.10'),
+            Bosh::Director::IpAddrOrCidr.new('10.0.1.11'),
+            Bosh::Director::IpAddrOrCidr.new('10.0.1.12'),
+            Bosh::Director::IpAddrOrCidr.new('10.0.1.13'),
+            Bosh::Director::IpAddrOrCidr.new('10.0.1.14'),
+          ],
+          nil, nil,
+          '32'
         ),
       ]
     end
@@ -96,7 +102,13 @@ module Bosh::Director::DeploymentPlan
     end
 
     context 'when job networks include static IPs' do
-      let(:job_static_ips) { ['192.168.1.10', '192.168.1.11', '10.10.1.10'] }
+      let(:job_static_ips) do
+        [
+          Bosh::Director::IpAddrOrCidr.new('192.168.1.10'), 
+          Bosh::Director::IpAddrOrCidr.new('192.168.1.11'), 
+          Bosh::Director::IpAddrOrCidr.new('10.10.1.10')
+        ]
+      end
 
       it 'places the instances in azs there static IPs are in order of their indexes' do
         expect(instance_plans.select(&:new?).map(&:desired_instance).map(&:az)).to eq([zone_1])

@@ -338,7 +338,7 @@ module Bosh::Director::DeploymentPlan
           }
         end
         let(:subnet) { ManualNetworkSubnet.parse(network_spec['name'], subnet_spec, [availability_zone]) }
-        let(:network) { ManualNetwork.new(network_spec['name'], [subnet], per_spec_logger) }
+        let(:network) { ManualNetwork.new(network_spec['name'], [subnet], nil, per_spec_logger) }
 
         it 'returns a valid instance template_spec' do
           network_name = network_spec['name']
