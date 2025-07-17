@@ -1356,7 +1356,7 @@ module Bosh::Director
                 'state' => 'started',
                 'uuid' => "instance-#{i}",
                 'variable_set_id' => (Models::VariableSet.create(deployment: deployment).id),
-                'spec' => {'networks' => {'network1' => {'ip' => "#{i}.#{i}.#{i}.#{i}"}}},
+                'spec' => {'networks' => {'network1' => {'ip' => "#{i}.#{i}.#{i}.#{i}", 'prefix' => '32'}}},
               }
 
               instance_params['availability_zone'] = 'az0' if i == 0
@@ -1368,7 +1368,7 @@ module Bosh::Director
                   'cid' => "cid-#{i}-#{j}",
                   'instance_id' => instance.id,
                   'created_at' => time,
-                  'network_spec' => {'network1' => {'ip' => "#{i}.#{i}.#{j}.#{j}"}},
+                  'network_spec' => {'network1' => {'ip' => "#{i}.#{i}.#{j}.#{j}", 'prefix' => '32'}},
                 }
 
                 vm = Models::Vm.create(vm_params)
@@ -1453,7 +1453,7 @@ module Bosh::Director
                   ip_addresses_params = {
                     'instance_id' => instance.id,
                     'task_id' => i.to_s,
-                    'address_str' => ip_to_i("1.2.#{i}.#{j}").to_s,
+                    'address_str' => ("1.2.#{i}.#{j}/32").to_s,
                     'vm_id' => vm.id,
                   }
                   Models::IpAddress.create(ip_addresses_params)
@@ -1485,6 +1485,69 @@ module Bosh::Director
               end
             end
 
+            it 'returns ip addresses with prefix if prefix differs from 32 or 128 for a vm' do
+              9.times do |i|
+                instance_params = {
+                  'deployment_id' => deployment.id,
+                  'job' => "job-#{i}",
+                  'index' => i,
+                  'state' => 'started',
+                  'uuid' => "instance-#{i}",
+                  'variable_set_id' => (Models::VariableSet.create(deployment: deployment).id)
+                }
+
+                instance_params['availability_zone'] = 'az0' if i == 0
+                instance_params['availability_zone'] = 'az1' if i == 1
+                instance = Models::Instance.create(instance_params)
+                2.times do |j|
+                  vm_params = {
+                    'agent_id' => "agent-#{i}-#{j}",
+                    'cid' => "cid-#{i}-#{j}",
+                    'instance_id' => instance.id,
+                    'created_at' => time,
+                  }
+
+                  vm = Models::Vm.create(vm_params)
+
+                  if j == 0
+                    instance.active_vm = vm
+                  end
+
+                  ip_addresses_params = {
+                    'instance_id' => instance.id,
+                    'task_id' => i.to_s,
+                    'address_str' => ("1.2.#{i}.#{j*16}/28").to_s,
+                    'vm_id' => vm.id,
+                  }
+                  Models::IpAddress.create(ip_addresses_params)
+                end
+              end
+
+              get '/test_deployment/vms'
+
+              expect(last_response.status).to eq(200)
+              body = JSON.parse(last_response.body)
+              expect(body.size).to eq(18)
+
+              body.sort_by { |instance| instance['agent_id'] }.each_with_index do |instance_with_vm, i|
+                instance_idx = i / 2
+                vm_by_instance = i % 2
+                vm_is_active = vm_by_instance == 0
+                expect(instance_with_vm).to eq(
+                  'agent_id' => "agent-#{instance_idx}-#{vm_by_instance}",
+                  'job' => "job-#{instance_idx}",
+                  'index' => instance_idx,
+                  'cid' => "cid-#{instance_idx}-#{vm_by_instance}",
+                  'id' => "instance-#{instance_idx}",
+                  'active' => vm_is_active,
+                  'az' => { 0 => 'az0', 1 => 'az1', nil => nil }[instance_idx],
+                  'ips' => ["1.2.#{instance_idx}.#{vm_by_instance*16}/28"],
+                  'vm_created_at' => time.utc.iso8601,
+                  'permanent_nats_credentials' => false,
+                )
+              end
+            end
+
             it 'returns network spec ip addresses' do
               15.times do |i|
                 instance_params = {
@@ -1504,7 +1567,7 @@ module Bosh::Director
                   'cid' => "cid-#{i}",
                   'instance_id' => instance.id,
                   'created_at' => time,
-                  'network_spec' => {'network1' => {'ip' => "1.2.3.#{i}"}},
+                  'network_spec' => {'network1' => {'ip' => "1.2.3.#{i}", 'prefix' => '32'}},
                 }
 
                 vm = Models::Vm.create(vm_params)
@@ -1558,8 +1621,8 @@ module Bosh::Director
                 'created_at' => time,
                 'instance_id' => instance.id,
                 'network_spec' => {
-                  'network1' => { 'ip' => network_spec_ip },
-                  'network2' => { 'ip' => vip },
+                  'network1' => { 'ip' => network_spec_ip, 'prefix' => '32' },
+                  'network2' => { 'ip' => vip, 'prefix' => '32'},
                 },
               }
 
@@ -1567,7 +1630,7 @@ module Bosh::Director
               instance.active_vm = vm
 
               ip_addresses_params = {
-                'address_str' => ip_to_i(vip).to_s,
+                'address_str' => "#{vip}/32",
                 'instance_id' => instance.id,
                 'task_id' => '1',
                 'vm_id' => vm.id,
@@ -1587,7 +1650,7 @@ module Bosh::Director
                 'cid' => 'cid',
                 'id' => 'instance-id',
                 'index' => 0,
-                'ips' => [vip, network_spec_ip],
+                'ips' => ["#{vip}", "#{network_spec_ip}"],
                 'job' => 'job',
                 'vm_created_at' => time.utc.iso8601,
                 'permanent_nats_credentials' => false,
