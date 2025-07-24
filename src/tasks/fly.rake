@@ -103,8 +103,6 @@ namespace :fly do
   def execute(task, command_options = nil, additional_env = {})
     env = prepare_env(additional_env)
 
-    sh("#{env} fly #{concourse_target} sync")
-
     execute_cmd = [
       'execute',
       concourse_tag,
