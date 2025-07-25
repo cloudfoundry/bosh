@@ -86,9 +86,9 @@ module Bosh::Director
 
           if prefix.nil?
             if range.ipv6?
-              prefix = "128"
+              prefix = Network::IPV6_DEFAULT_PREFIX_SIZE
             else
-              prefix = "32"
+              prefix = Network::IPV4_DEFAULT_PREFIX_SIZE
             end
           else
             if range.prefix > prefix.to_i
