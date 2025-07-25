@@ -43,7 +43,7 @@ module Bosh
       end
 
       def to_cidr_s
-        "#{@ipaddr.to_string}/#{@ipaddr.prefix}"
+        "#{@ipaddr}/#{@ipaddr.prefix}"
       end
 
       def to_range
