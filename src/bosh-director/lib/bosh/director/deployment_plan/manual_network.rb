@@ -60,7 +60,7 @@ module Bosh::Director
         unless subnet
           raise NetworkReservationInvalidIp, "Provided IP '#{ip_or_cidr}' does not belong to any subnet"
         end
-        
+
         unless subnet.prefix.to_i == ip_or_cidr.prefix.to_i
           raise NetworkReservationInvalidPrefix, "Subnet Prefix #{subnet.prefix} and ip reservation prefix #{ip_or_cidr.prefix} do not match"
         end

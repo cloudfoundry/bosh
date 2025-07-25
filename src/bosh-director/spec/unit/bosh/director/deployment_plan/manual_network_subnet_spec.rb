@@ -94,8 +94,8 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
       expect(subnet.netmask).to eq('ffff:ffff:ffff:ffff:0000:0000:0000:0000')
       expect(subnet.gateway).to eq('fdab:d85c:118d:8a46:0000:0000:0000:0001')
       expect(subnet.dns).to eq([
-        "2001:4860:4860:0000:0000:0000:0000:8888",
-        "2001:4860:4860:0000:0000:0000:0000:8844",
+        "2001:4860:4860::8888",
+        "2001:4860:4860::8844",
       ])
     end
 
