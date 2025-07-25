@@ -55,7 +55,7 @@ module Bosh::Director
         FactoryBot.create(:models_ip_address,
           instance_id: instance.id,
           vm_id: vm.id,
-          address_str: IPAddr.new('1.1.1.1').to_i.to_s,
+          address_str: Bosh::Director::IpAddrOrCidr.new('1.1.1.1').to_cidr_s,
           task_id: '12345',
         )
         expect(agent).to receive(:get_state).with('full').and_return(
@@ -82,13 +82,13 @@ module Bosh::Director
           FactoryBot.create(:models_ip_address,
             instance_id: instance.id,
             vm_id: vm.id,
-            address_str: IPAddr.new('1.1.1.1').to_i.to_s,
+            address_str: Bosh::Director::IpAddrOrCidr.new('1.1.1.1').to_cidr_s,
             task_id: '12345',
           )
           FactoryBot.create(:models_ip_address,
             instance_id: instance.id,
             vm_id: vm.id,
-            address_str: IPAddr.new('2.2.2.2').to_i.to_s,
+            address_str: Bosh::Director::IpAddrOrCidr.new('2.2.2.2').to_cidr_s,
             task_id: '12345',
           )
         end
@@ -104,7 +104,7 @@ module Bosh::Director
 
       context "when 'ip_addresses' is empty for instance" do
         before do
-          vm.network_spec = { 'a' => { 'ip' => '3.3.3.3' }, 'b' => { 'ip' => '4.4.4.4' } }
+          vm.network_spec = { 'a' => { 'ip' => '3.3.3.3/32' }, 'b' => { 'ip' => '4.4.4.4/32' } }
           vm.save
           instance.spec = { 'networks' => { 'a' => { 'ip' => '1.1.1.1' }, 'b' => { 'ip' => '2.2.2.2' } } }
           instance.save
@@ -125,19 +125,19 @@ module Bosh::Director
           FactoryBot.create(:models_ip_address,
             instance_id: instance.id,
             vm_id: vm.id,
-            address_str: IPAddr.new('1.1.1.1').to_i.to_s,
+            address_str: Bosh::Director::IpAddrOrCidr.new('1.1.1.1').to_cidr_s,
             task_id: '12345',
           )
           FactoryBot.create(:models_ip_address,
             instance_id: instance.id,
             vm_id: vm.id,
-            address_str: IPAddr.new('2.2.2.2').to_i.to_s,
+            address_str: Bosh::Director::IpAddrOrCidr.new('2.2.2.2').to_cidr_s,
             task_id: '12345',
           )
 
           vm.network_spec = {
-            'a' => { 'ip' => '3.3.3.3' },
-            'b' => { 'ip' => '4.4.4.4' },
+            'a' => { 'ip' => '3.3.3.3/32' },
+            'b' => { 'ip' => '4.4.4.4/32' },
           }
           vm.save
 
@@ -168,7 +168,7 @@ module Bosh::Director
         FactoryBot.create(:models_ip_address,
           instance_id: instance.id,
           vm_id: vm.id,
-          address_str: IPAddr.new('1.1.1.1').to_i.to_s,
+          address_str: Bosh::Director::IpAddrOrCidr.new('1.1.1.1').to_cidr_s,
           task_id: '12345',
         )
         stub_agent_get_state_to_return_state_with_vitals
@@ -359,7 +359,7 @@ module Bosh::Director
         FactoryBot.create(:models_ip_address,
           instance_id: instance.id,
           vm_id: vm.id,
-          address_str: IPAddr.new('1.1.1.1').to_i.to_s,
+          address_str: Bosh::Director::IpAddrOrCidr.new('1.1.1.1').to_cidr_s,
           task_id: '12345',
         )
         instance.update(spec: { 'vm_type' => { 'name' => 'fake-vm-type', 'cloud_properties' => {} } })
@@ -440,13 +440,13 @@ module Bosh::Director
           FactoryBot.create(:models_ip_address,
             instance_id: instance.id,
             vm_id: vm.id,
-            address_str: IPAddr.new('1.1.1.1').to_i.to_s,
+            address_str: Bosh::Director::IpAddrOrCidr.new('1.1.1.1').to_cidr_s,
             task_id: '12345',
           )
           FactoryBot.create(:models_ip_address,
             instance_id: instance.id,
             vm_id: inactive_vm.id,
-            address_str: IPAddr.new('1.1.1.2').to_i.to_s,
+            address_str: Bosh::Director::IpAddrOrCidr.new('1.1.1.2').to_cidr_s,
             task_id: '12345',
           )
           allow(AgentClient).to receive(:with_agent_id).with('other_agent_id', anything, timeout: 5).and_return(lazy_agent)

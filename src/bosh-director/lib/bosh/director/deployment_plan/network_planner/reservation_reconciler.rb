@@ -22,6 +22,7 @@ module Bosh::Director::DeploymentPlan
           end
 
           if desired_reservation
+
             @logger.debug(
               "For desired reservation #{desired_reservation} found existing reservation " \
               "on the same network #{existing_reservation}",
@@ -95,6 +96,8 @@ module Bosh::Director::DeploymentPlan
         return true if existing_reservation.network == desired_reservation.network
 
         return false if desired_reservation.network.is_a?(DynamicNetwork) || existing_reservation.network.is_a?(DynamicNetwork)
+
+        return false if desired_reservation.network.prefix != existing_reservation.network.prefix
 
         desired_reservation.network.subnets.any? do |subnet|
           if existing_reservation.instance_model.availability_zone != '' && !subnet.availability_zone_names.nil?

@@ -16,7 +16,7 @@ module Bosh
               subnets = job_network.deployment_network.subnets
 
               job_network.static_ips.each do |static_ip|
-                subnet_for_ip = subnets.find { |subnet| subnet.static_ips.include?(static_ip) }
+                subnet_for_ip = subnets.find { |subnet| ip_in_array?(static_ip, subnet.static_ips) }
                 if subnet_for_ip.nil?
                   raise InstanceGroupNetworkInstanceIpMismatch,
                     "Instance group '#{job_name}' with network '#{job_network.name}' declares static ip '#{format_ip(static_ip)}', " +
