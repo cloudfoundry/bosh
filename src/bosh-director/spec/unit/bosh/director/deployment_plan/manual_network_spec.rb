@@ -8,6 +8,13 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     cloud_config['networks'].first['subnets'].first['static'] = static_ips
     cloud_config
   end
+  let(:cloud_config_hash_ipv6) do
+    cloud_config = SharedSupport::DeploymentManifestHelper.simple_cloud_config_ipv6
+    cloud_config['networks'].first['subnets'].first['range'] = network_range_ipv6
+    cloud_config['networks'].first['subnets'].first['reserved'] << '2001:db8::3'
+    cloud_config['networks'].first['subnets'].first['static'] = static_ips
+    cloud_config
+  end
   let(:manifest_hash) do
     manifest = SharedSupport::DeploymentManifestHelper.minimal_manifest
     manifest['stemcells'].first['version'] = 1
@@ -15,8 +22,10 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
   end
   let(:manifest) { Bosh::Director::Manifest.new(manifest_hash, YAML.dump(manifest_hash), cloud_config_hash, nil) }
   let(:network_range) { '192.168.1.0/24' }
+  let(:network_range_ipv6) { '2001:db8::/32' }
   let(:static_ips) { [] }
   let(:network_spec) { cloud_config_hash['networks'].first }
+  let(:network_spec_ipv6) { cloud_config_hash_ipv6['networks'].first }
   let(:planner_factory) do
     Bosh::Director::DeploymentPlan::PlannerFactory.create(Bosh::Director::Config.logger)
   end
@@ -32,6 +41,17 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
   let(:manual_network) do
     Bosh::Director::DeploymentPlan::ManualNetwork.parse(
       network_spec,
+      [
+        Bosh::Director::DeploymentPlan::AvailabilityZone.new('zone_1', {}),
+        Bosh::Director::DeploymentPlan::AvailabilityZone.new('zone_2', {}),
+      ],
+      per_spec_logger,
+    )
+  end
+
+  let(:manual_network_ipv6) do
+    Bosh::Director::DeploymentPlan::ManualNetwork.parse(
+      network_spec_ipv6,
       [
         Bosh::Director::DeploymentPlan::AvailabilityZone.new('zone_1', {}),
         Bosh::Director::DeploymentPlan::AvailabilityZone.new('zone_2', {}),
@@ -122,6 +142,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
     before do
       # manual_network needs to be evaluated before instance_model for unclear reasons
       manual_network
+      manual_network_ipv6
     end
     it 'should provide the network settings from the subnet' do
       reservation = Bosh::Director::DesiredNetworkReservation.new_static(
@@ -138,6 +159,25 @@ describe Bosh::Director::DeploymentPlan::ManualNetwork do
         'cloud_properties' => {},
         'gateway' => '192.168.1.1',
         'dns' => ['192.168.1.1', '192.168.1.2'],
+        'default' => [],
+      )
+    end
+
+    it 'should provide the network settings from the subnet for ipv6' do
+      reservation = Bosh::Director::DesiredNetworkReservation.new_static(
+        instance_model,
+        manual_network_ipv6,
+        '2001:db8::2',
+      )
+
+      expect(manual_network_ipv6.network_settings(reservation, [])).to eq(
+        'type' => 'manual',
+        'ip' => '2001:db8::2',
+        'prefix' => '128',
+        'netmask' => 'ffff:ffff:0000:0000:0000:0000:0000:0000',
+        'cloud_properties' => {},
+        'gateway' => '2001:db8::1',
+        'dns' => ['fd00:ec2::253'],
         'default' => [],
       )
     end

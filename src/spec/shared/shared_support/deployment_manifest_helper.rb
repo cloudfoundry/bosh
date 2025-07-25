@@ -17,6 +17,13 @@ module SharedSupport
       )
     end
 
+    def self.simple_cloud_config_ipv6
+      minimal_cloud_config.merge(
+        'networks' => [network_ipv6],
+        'vm_types' => [vm_type],
+      )
+    end
+
     def self.minimal_cloud_config
       {
         'networks' => [{
@@ -42,6 +49,13 @@ module SharedSupport
       }.merge!(options)
     end
 
+    def self.network_ipv6(options = {})
+      {
+        'name' => 'a',
+        'subnets' => [subnet_ipv6],
+      }.merge!(options)
+    end
+
     # TODO: used by bosh-director
     def self.subnet(options = {})
       {
@@ -49,6 +63,18 @@ module SharedSupport
         'gateway' => '192.168.1.1',
         'dns' => ['192.168.1.1', '192.168.1.2'],
         'static' => ['192.168.1.10'],
+        'reserved' => [],
+        'cloud_properties' => {},
+      }.merge!(options)
+    end
+
+    # TODO: used by bosh-director
+    def self.subnet_ipv6(options = {})
+      {
+        'range' => '2001:db8::/112',
+        'gateway' => '2001:db8::1',
+        'dns' => ['fd00:ec2::253'],
+        'static' => ['2001:db8::10'],
         'reserved' => [],
         'cloud_properties' => {},
       }.merge!(options)

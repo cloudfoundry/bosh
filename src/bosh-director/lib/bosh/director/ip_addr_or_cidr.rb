@@ -5,8 +5,8 @@ module Bosh
     class IpAddrOrCidr
       include Comparable
 
-      delegate :==, :include?, :ipv4?, :ipv6?, :netmask, :mask, :to_i, :to_range, :to_string, :prefix, :succ, :<=>, to: :@ipaddr
-      alias :to_s :to_string
+      delegate :==, :include?, :ipv4?, :ipv6?, :netmask, :mask, :to_i, :to_range, :to_s, :to_string, :prefix, :succ, :<=>, to: :@ipaddr
+      alias :to_s :to_s
 
       def initialize(ip_or_cidr)
         @ipaddr =
@@ -43,7 +43,7 @@ module Bosh
       end
 
       def to_cidr_s
-        "#{@ipaddr.to_string}/#{@ipaddr.prefix}"
+        "#{@ipaddr}/#{@ipaddr.prefix}"
       end
 
       def to_range
