@@ -20,6 +20,7 @@ module Bosh::Director
         prefix = safe_property(subnet_spec, 'prefix', optional: true)
         restricted_ips = Set.new
         static_ips = Set.new
+        static_cidrs = Set.new
 
         if managed && !range_property
           range_property, gateway_property, reserved_property = parse_properties_from_database(network_name, sn_name)
@@ -72,7 +73,7 @@ module Bosh::Director
             end
           end
 
-          each_ip(static_property) do |ip|
+          each_ip(static_property, false) do |ip|
             if ip_in_array?(ip, restricted_ips)
               raise NetworkStaticIpOutOfRange, "Static IP '#{to_ipaddr(ip)}' is in network '#{network_name}' reserved range"
             end
@@ -81,7 +82,7 @@ module Bosh::Director
               raise NetworkStaticIpOutOfRange, "Static IP '#{to_ipaddr(ip)}' is out of network '#{network_name}' range"
             end
 
-            static_ips.add(ip)
+            static_cidrs.add(ip)
           end
 
           if prefix.nil?
@@ -94,14 +95,17 @@ module Bosh::Director
             if range.prefix > prefix.to_i
               raise NetworkPrefixSizeTooBig, "Prefix size '#{prefix}' is larger than range prefix '#{range.prefix}'"
             end
-            # if a prefix is provided the static ips can only be the base_addresses of the prefix otherwise we through an error
-            static_ips.each do |static_ip|
-              range.each_base_address(prefix) do |base_address_int|
-               if static_ip.to_i == base_address_int
-                 break
-               elsif static_ip.to_i < base_address_int
-                 raise NetworkPrefixStaticIpNotBaseAddress, "Static IP '#{to_ipaddr(static_ip)}' is not a base address of the prefix '#{prefix}'"
-               end
+          end
+
+          if prefix == Network::IPV6_DEFAULT_PREFIX_SIZE || prefix == Network::IPV4_DEFAULT_PREFIX_SIZE
+            static_ips = static_cidrs
+          else
+            static_cidrs.each do |static_cidr|
+              static_cidr.each_base_address(prefix) do |base_address_int|
+                if static_cidr.include?(base_address_int)
+                  static_ips.add(Bosh::Director::IpAddrOrCidr.new(base_address_int))
+                end
+                break if static_cidr.last.to_i <= base_address_int
               end
             end
           end
