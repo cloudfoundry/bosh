@@ -362,9 +362,11 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
       "Prefix size '23' is larger than range prefix '24'")
     end
 
-    it 'should fail if a static ip provided is not a base address of the prefix' do
-      expect {
-        make_subnet(
+    it 'should ignore static ips which are not a base address of the prefix' do
+      ip1 = Bosh::Director::IpAddrOrCidr.new('192.168.0.64')
+      ip2 = Bosh::Director::IpAddrOrCidr.new('192.168.0.128')
+
+      subnet = make_subnet(
         {
           'range' => '192.168.0.0/24',
           'gateway' => '192.168.0.254',
@@ -373,8 +375,28 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
           'prefix' => '26'
         },
         [],
-      )}.to raise_error(Bosh::Director::NetworkPrefixStaticIpNotBaseAddress,
-      "Static IP '192.168.0.191' is not a base address of the prefix '26'")
+      )
+
+      expect(subnet.static_ips).to eq(Set.new([ip1, ip2]))
+    end
+
+    it 'should find the correct base address of the prefix from static ip ranges' do
+      ip1 = Bosh::Director::IpAddrOrCidr.new('192.168.0.32')
+      ip2 = Bosh::Director::IpAddrOrCidr.new('192.168.0.64')
+      ip3 = Bosh::Director::IpAddrOrCidr.new('192.168.0.96')
+
+      subnet = make_subnet(
+        {
+          'range' => '192.168.0.0/24',
+          'gateway' => '192.168.0.254',
+          'static' => ['192.168.0.30-192.168.0.40','192.168.0.96/26'],
+          'cloud_properties' => {'foo' => 'bar'},
+          'prefix' => '27'
+        },
+        [],
+      )
+
+      expect(subnet.static_ips).to eq(Set.new([ip1, ip2, ip3]))
     end
   end
 
