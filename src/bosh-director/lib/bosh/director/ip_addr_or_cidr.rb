@@ -32,10 +32,24 @@ module Bosh
         step_size = 2**(bits - prefix_length.to_i)
         base_address_int = @ipaddr.to_i
 
+        first_base_address_int = Bosh::Director::IpAddrOrCidr.new("#{@ipaddr}/#{prefix_length}").to_i
+
+        if base_address_int != first_base_address_int
+          base_address_int += step_size
+        end
+
         while base_address_int <= @ipaddr.to_range.last.to_i
           yield base_address_int
           base_address_int += step_size
         end
+      end
+
+      def eql?(other)
+        self == other
+      end
+
+      def hash
+        @ipaddr.hash
       end
 
       def count
