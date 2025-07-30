@@ -23,7 +23,7 @@ module Bosh::Director::Models
       [
         "#{instance.deployment.name}.#{instance.job}/#{instance.index}",
         network_name,
-        "#{Bosh::Director::IpAddrOrCidr.new(address_str).to_s} (#{type})"
+        "#{Bosh::Director::IpAddrOrCidr.new(address_str)} (#{type})"
       ].join(' - ')
     end
 

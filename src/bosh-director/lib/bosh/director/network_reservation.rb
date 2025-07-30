@@ -15,12 +15,6 @@ module Bosh::Director
     def dynamic?
       type == :dynamic
     end
-
-    private
-
-    def formatted_ip
-      IpAddrOrCidr.new(@ip).to_s if @ip
-    end
   end
 
   class ExistingNetworkReservation < NetworkReservation
@@ -38,11 +32,11 @@ module Bosh::Director
     end
 
     def desc
-      "existing reservation#{@ip.nil? ? '' : " with IP '#{formatted_ip}' for instance #{@instance_model}"}"
+      "existing reservation#{@ip.nil? ? '' : " with IP '#{@ip}' for instance #{@instance_model}"}"
     end
 
     def to_s
-      "{ip=#{formatted_ip}, network=#{@network.name}, instance=#{@instance_model}, type=#{type}}"
+      "{ip=#{@ip}, network=#{@network.name}, instance=#{@instance_model}, type=#{type}}"
     end
   end
 
@@ -69,18 +63,18 @@ module Bosh::Director
     def resolve_type(type)
       if @type != type
         raise NetworkReservationWrongType,
-          "IP '#{formatted_ip}' on network '#{@network.name}' does not belong to #{@type} pool"
+          "IP '#{@ip}' on network '#{@network.name}' does not belong to #{@type} pool"
       end
 
       @type = type
     end
 
     def desc
-      "#{type} reservation with IP '#{formatted_ip}' for instance #{@instance_model}"
+      "#{type} reservation with IP '#{@ip}' for instance #{@instance_model}"
     end
 
     def to_s
-      "{type=#{type}, ip=#{formatted_ip}, network=#{@network.name}, instance=#{@instance_model}}"
+      "{type=#{type}, ip=#{@ip}, network=#{@network.name}, instance=#{@instance_model}}"
     end
   end
 end
