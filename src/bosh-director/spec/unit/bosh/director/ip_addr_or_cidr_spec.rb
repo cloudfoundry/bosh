@@ -60,12 +60,12 @@ module Bosh::Director
       end
     end
 
-    describe '#to_cidr_s' do
+    describe '#to_s' do
       context 'IPv4' do
         let(:input) { '192.168.0.0/24' }
 
         it 'returns a string representing the IP' do
-          expect(ip_addr_or_cidr.to_cidr_s).to eq(input)
+          expect(ip_addr_or_cidr.to_s).to eq(input)
         end
       end
 
@@ -73,7 +73,7 @@ module Bosh::Director
         let(:input) { 'fd00::/8' }
 
         it 'returns a string representing the IP' do
-          expect(ip_addr_or_cidr.to_cidr_s).to eq(input)
+          expect(ip_addr_or_cidr.to_s).to eq(input)
         end
       end
     end
@@ -96,12 +96,12 @@ module Bosh::Director
       end
     end
 
-    describe '#to_s' do
+    describe '#base_addr' do
       context 'IPv4' do
         let(:input) { '10.20.0.32' }
 
         it 'returns a string representing the IP' do
-          expect(ip_addr_or_cidr.to_s).to eq(input)
+          expect(ip_addr_or_cidr.base_addr).to eq(input)
         end
       end
 
@@ -109,25 +109,25 @@ module Bosh::Director
         let(:input) { '2001:db8:85a3:7334:8a2e::' }
 
         it 'returns a string representing the IP' do
-          expect(ip_addr_or_cidr.to_s).to eq(input)
+          expect(ip_addr_or_cidr.base_addr).to eq(input)
         end
       end
     end
 
-    describe '#to_string' do
+    describe '#to_s' do
       context 'IPv4' do
-        let(:input) { '10.20.0.32' }
+        let(:input) { '10.20.0.32/32' }
 
         it 'returns a string representing the IP' do
-          expect(ip_addr_or_cidr.to_string).to eq(input)
+          expect(ip_addr_or_cidr.to_s).to eq(input)
         end
       end
 
       context 'IPv6' do
-        let(:input) { '2001:0db8:85a3:7334:8a2e:0000:0000:0000' }
+        let(:input) { '2001:db8:85a3:7334:8a2e::/128' }
 
         it 'returns a string representing the IP' do
-          expect(ip_addr_or_cidr.to_string).to eq(input)
+          expect(ip_addr_or_cidr.to_s).to eq(input)
         end
       end
     end

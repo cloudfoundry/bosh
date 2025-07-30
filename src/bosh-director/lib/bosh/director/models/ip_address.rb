@@ -23,16 +23,12 @@ module Bosh::Director::Models
       [
         "#{instance.deployment.name}.#{instance.job}/#{instance.index}",
         network_name,
-        "#{Bosh::Director::IpAddrOrCidr.new(address_str).to_cidr_s} (#{type})"
+        "#{Bosh::Director::IpAddrOrCidr.new(address_str).to_s} (#{type})"
       ].join(' - ')
     end
 
     def formatted_ip
-      address.to_cidr_s
-    end
-
-    def base_address
-      address.to_string
+      address.to_s
     end
 
     def type

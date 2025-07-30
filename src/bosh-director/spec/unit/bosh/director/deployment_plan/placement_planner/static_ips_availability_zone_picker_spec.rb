@@ -59,7 +59,7 @@ module Bosh::Director::DeploymentPlan
     def make_subnet_spec(range, static_ips, zone_names)
       spec = {
         'range' => range,
-        'gateway' => IPAddr.new(range).to_range.to_a[1].to_string,
+        'gateway' => IPAddr.new(range).to_range.to_a[1].to_s,
         'dns' => ['8.8.8.8'],
         'static' => static_ips,
         'reserved' => [],
@@ -324,7 +324,7 @@ module Bosh::Director::DeploymentPlan
             network_plans = {}
             new_instance_plans.map(&:network_plans).flatten.each do |network_plan|
               network_plans[network_plan.reservation.network.name] ||= []
-              network_plans[network_plan.reservation.network.name] << format_ip(network_plan.reservation.ip)
+              network_plans[network_plan.reservation.network.name] << base_addr(network_plan.reservation.ip)
             end
 
             expect(network_plans['a']).to match_array([Bosh::Director::IpAddrOrCidr.new('192.168.1.10'), Bosh::Director::IpAddrOrCidr.new('192.168.1.11'), Bosh::Director::IpAddrOrCidr.new('192.168.1.12'), Bosh::Director::IpAddrOrCidr.new('192.168.2.10')])

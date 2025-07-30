@@ -53,7 +53,7 @@ module Bosh::Director
 
           each_ip(reserved_property, false) do |ip|
             unless range.include?(ip)
-              raise NetworkReservedIpOutOfRange, "Reserved IP '#{to_ipaddr(ip)}' is out of " \
+              raise NetworkReservedIpOutOfRange, "Reserved IP '#{base_addr(ip)}' is out of " \
                 "network '#{network_name}' range"
             end
 
@@ -75,11 +75,11 @@ module Bosh::Director
 
           each_ip(static_property, false) do |ip|
             if ip_in_array?(ip, restricted_ips)
-              raise NetworkStaticIpOutOfRange, "Static IP '#{to_ipaddr(ip)}' is in network '#{network_name}' reserved range"
+              raise NetworkStaticIpOutOfRange, "Static IP '#{base_addr(ip)}' is in network '#{network_name}' reserved range"
             end
 
             unless range.include?(ip)
-              raise NetworkStaticIpOutOfRange, "Static IP '#{to_ipaddr(ip)}' is out of network '#{network_name}' range"
+              raise NetworkStaticIpOutOfRange, "Static IP '#{base_addr(ip)}' is out of network '#{network_name}' range"
             end
 
             static_cidrs.add(ip)
@@ -101,11 +101,11 @@ module Bosh::Director
             static_ips = static_cidrs
           else
             static_cidrs.each do |static_cidr|
-              static_cidr.each_base_address(prefix) do |base_address_int|
-                if static_cidr.include?(base_address_int)
-                  static_ips.add(Bosh::Director::IpAddrOrCidr.new(base_address_int))
+              static_cidr.each_base_addr(prefix) do |base_addr_int|
+                if static_cidr.include?(base_addr_int)
+                  static_ips.add(Bosh::Director::IpAddrOrCidr.new(base_addr_int))
                 end
-                break if static_cidr.last.to_i <= base_address_int
+                break if static_cidr.last.to_i <= base_addr_int
               end
             end
           end

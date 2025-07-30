@@ -58,11 +58,11 @@ module Bosh::Director
         let(:ip2) { Bosh::Director::IpAddrOrCidr.new('192.168.0.2/32') }
 
         let(:ip_model1) do
-          FactoryBot.create(:models_ip_address, address_str: ip1.to_cidr_s, instance: instance_model, network_name: 'fake-network')
+          FactoryBot.create(:models_ip_address, address_str: ip1.to_s, instance: instance_model, network_name: 'fake-network')
         end
 
         let(:ip_model2) do
-          FactoryBot.create(:models_ip_address, address_str: ip2.to_cidr_s, instance: instance_model, network_name: 'fake-network')
+          FactoryBot.create(:models_ip_address, address_str: ip2.to_s, instance: instance_model, network_name: 'fake-network')
         end
 
         context 'when there is a last VM with IP addresses' do

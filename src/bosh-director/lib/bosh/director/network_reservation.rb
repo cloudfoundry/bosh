@@ -19,7 +19,7 @@ module Bosh::Director
     private
 
     def formatted_ip
-      IpAddrOrCidr.new(@ip).to_cidr_s if @ip
+      IpAddrOrCidr.new(@ip).to_s if @ip
     end
   end
 
@@ -52,7 +52,7 @@ module Bosh::Director
     end
 
     def self.new_static(instance_model, network, ip)
-      cidr_ip = "#{IpAddrOrCidr.new(ip)}/#{network.prefix}"
+      cidr_ip = "#{IpAddrOrCidr.new(ip).base_addr}/#{network.prefix}"
       new(instance_model, network, cidr_ip, :static)
     end
 

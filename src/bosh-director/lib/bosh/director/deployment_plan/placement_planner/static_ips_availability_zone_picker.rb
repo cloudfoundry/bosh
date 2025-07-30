@@ -133,7 +133,7 @@ module Bosh
                     'Failed to distribute static IPs to satisfy existing instance reservations'
             end
 
-            @logger.debug("Claiming IP '#{format_ip(static_ip_to_azs.ip)}' on network #{network.name} and az '#{desired_instance.availability_zone}' for instance '#{instance}'")
+            @logger.debug("Claiming IP '#{base_addr(static_ip_to_azs.ip)}' on network #{network.name} and az '#{desired_instance.availability_zone}' for instance '#{instance}'")
             @networks_to_static_ips.claim_in_az(static_ip_to_azs.ip, desired_instance.availability_zone)
 
             @network_planner.network_plan_with_static_reservation(instance_plan, network, static_ip_to_azs.ip)
@@ -151,7 +151,7 @@ module Bosh
                 ip_address = instance_ip.address.to_i
 
                 # Instance is using IP in static IPs list, we have to use this instance
-                @logger.debug("Existing instance '#{instance_name(existing_instance_model)}' is using static IP '#{format_ip(ip_address)}' on network '#{network.name}'")
+                @logger.debug("Existing instance '#{instance_name(existing_instance_model)}' is using static IP '#{base_addr(ip_address)}' on network '#{network.name}'")
                 if instance_plan.nil?
                   desired_instance = desired_instances.shift
                   instance_plan = create_existing_instance_plan_with_az(desired_instance, existing_instance_model, network, ip_address)
@@ -201,7 +201,7 @@ module Bosh
               @logger.debug("Instance '#{instance_name(existing_instance_model)}' belongs to az '#{az_name}' that is in subnet az list, reusing instance az.")
             else
               raise Bosh::Director::NetworkReservationError,
-                "Existing instance '#{instance_name(existing_instance_model)}' is using IP '#{format_ip(ip_address)}' in availability zone '#{existing_instance_model.availability_zone}'"
+                "Existing instance '#{instance_name(existing_instance_model)}' is using IP '#{base_addr(ip_address)}' in availability zone '#{existing_instance_model.availability_zone}'"
             end
             desired_instance.az = to_az(az_name)
           end
