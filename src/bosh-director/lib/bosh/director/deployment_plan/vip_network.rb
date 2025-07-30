@@ -18,7 +18,7 @@ module Bosh::Director
         unless subnets.empty?
           prefix = subnets.first.prefix
         else
-          prefix = "32"
+          prefix = Network::IPV4_DEFAULT_PREFIX_SIZE
         end
 
         cloud_properties = safe_property(network_spec, 'cloud_properties', class: Hash, default: {})
