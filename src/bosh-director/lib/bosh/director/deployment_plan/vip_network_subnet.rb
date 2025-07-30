@@ -11,7 +11,7 @@ module Bosh::Director
 
         prefix = safe_property(subnet_spec, 'prefix', optional: true)
         if prefix.nil?
-          prefix = "32"
+          prefix = Network::IPV4_DEFAULT_PREFIX_SIZE
         end
 
         static_property = safe_property(subnet_spec, 'static', class: Array, default: [])
