@@ -71,12 +71,12 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
         let(:ip_address) { Bosh::Director::IpAddrOrCidr.new('1.1.1.1') }
 
         before do
-          existing_instance.add_ip_address(FactoryBot.create(:models_ip_address, address_str: ip_address.to_cidr_s))
+          existing_instance.add_ip_address(FactoryBot.create(:models_ip_address, address_str: ip_address.to_s))
         end
 
         it 'is using reservation from database' do
           instance = instance_repository.fetch_existing(existing_instance, {}, desired_instance)
-          expect(instance.existing_network_reservations.map(&:ip)).to eq([ip_address.to_cidr_s])
+          expect(instance.existing_network_reservations.map(&:ip)).to eq([ip_address.to_s])
         end
       end
     end
@@ -205,12 +205,12 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
         let(:ip_address) { Bosh::Director::IpAddrOrCidr.new('1.1.1.1') }
 
         before do
-          existing_instance.add_ip_address(FactoryBot.create(:models_ip_address, address_str: ip_address.to_cidr_s))
+          existing_instance.add_ip_address(FactoryBot.create(:models_ip_address, address_str: ip_address.to_s))
         end
 
         it 'is using reservation from database' do
           instance = instance_repository.fetch_obsolete_existing(existing_instance, {}, deployment_plan)
-          expect(instance.existing_network_reservations.map(&:ip)).to eq([ip_address.to_cidr_s])
+          expect(instance.existing_network_reservations.map(&:ip)).to eq([ip_address.to_s])
         end
       end
     end

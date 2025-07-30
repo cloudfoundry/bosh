@@ -66,7 +66,7 @@ module Bosh::Director
 
           filter_subnet_by_instance_az(reservation).each do |subnet|
             if (ip = @ip_repo.allocate_dynamic_ip(reservation, subnet))
-              @logger.debug("Reserving dynamic IP '#{ip.to_cidr_s}' for manual network '#{reservation.network.name}'")
+              @logger.debug("Reserving dynamic IP '#{base_addr(ip)}' for manual network '#{reservation.network.name}'")
               reservation.resolve_ip(ip)
               reservation.resolve_type(:dynamic)
               break
@@ -82,7 +82,7 @@ module Bosh::Director
 
           if (subnet = reservation.network.find_subnet_containing(reservation.ip))
             if ip_in_array?(reservation.ip, subnet.restricted_ips)
-              message = "Failed to reserve IP '#{format_ip(reservation.ip)}' for network '#{subnet.network_name}': IP belongs to reserved range"
+              message = "Failed to reserve IP '#{base_addr(reservation.ip)}' for network '#{subnet.network_name}': IP belongs to reserved range"
               @logger.error(message)
               raise Bosh::Director::NetworkReservationIpReserved, message
             end
@@ -90,7 +90,7 @@ module Bosh::Director
             reserve_manual_with_subnet(reservation, subnet)
           else
             raise NetworkReservationIpOutsideSubnet,
-              "Provided static IP '#{format_ip(reservation.ip)}' does not belong to any subnet in network '#{reservation.network.name}'"
+              "Provided static IP '#{base_addr(reservation.ip)}' does not belong to any subnet in network '#{reservation.network.name}'"
           end
         end
       end
@@ -102,10 +102,10 @@ module Bosh::Director
 
         if ip_in_array?(reservation.ip, subnet.static_ips)
           reservation.resolve_type(:static)
-          @logger.debug("Found subnet with azs '#{subnet_az_names}' for #{format_ip(reservation.ip)}. Reserved as static network reservation.")
+          @logger.debug("Found subnet with azs '#{subnet_az_names}' for #{base_addr(reservation.ip)}. Reserved as static network reservation.")
         else
           reservation.resolve_type(:dynamic)
-          @logger.debug("Found subnet with azs '#{subnet_az_names}' for #{format_ip(reservation.ip)}. Reserved as dynamic network reservation.")
+          @logger.debug("Found subnet with azs '#{subnet_az_names}' for #{base_addr(reservation.ip)}. Reserved as dynamic network reservation.")
         end
       end
 

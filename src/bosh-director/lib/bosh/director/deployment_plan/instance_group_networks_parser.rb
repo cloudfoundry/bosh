@@ -58,7 +58,7 @@ module Bosh::Director
           each_ip(static_ips_raw) do |ip|
             if static_ips.include?(ip)
               raise JobInvalidStaticIPs,
-                    "Instance group '#{instance_group_name}' specifies static IP '#{format_ip(ip)}' more than once"
+                    "Instance group '#{instance_group_name}' specifies static IP '#{base_addr(ip)}' more than once"
             end
 
             static_ips.push(ip)

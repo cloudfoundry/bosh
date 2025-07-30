@@ -5,7 +5,7 @@ module Bosh::Director::Models
     subject(:ip_address) do
       IpAddress.new(instance: instance,
                     network_name: 'foonetwork',
-                    address_str: Bosh::Director::IpAddrOrCidr.new('10.10.0.1/32').to_cidr_s,
+                    address_str: Bosh::Director::IpAddrOrCidr.new('10.10.0.1/32').to_s,
                     task_id: 'fake-task-id',
                     static: true,
                     vm: vm)

@@ -18,14 +18,12 @@ module Bosh::Director
       Bosh::Director::IpAddrOrCidr.new(ip)
     end
 
-    # @param [Integer] ip Integer IP representation
-    # @return [String] Human-readable IP representation
-    def format_ip(ip)
-      to_ipaddr(ip)
+    def base_addr(ip)
+      Bosh::Director::IpAddrOrCidr.new(ip).base_addr
     end
 
     def format_cidr_ip(ip)
-      ip.to_cidr_s
+      ip.to_s
     end
 
     def ip_address?(ip)
@@ -85,7 +83,7 @@ module Bosh::Director
         mask = current_ip.ipv4? ? 32 : 128
 
         while mask >= 0
-          potential_subnet = Bosh::Director::IpAddrOrCidr.new("#{current_ip}/#{mask}")
+          potential_subnet = Bosh::Director::IpAddrOrCidr.new("#{current_ip.base_addr}/#{mask}")
 
           first_ip_in_range = potential_subnet.first
           last_ip_in_range = potential_subnet.last
@@ -98,7 +96,7 @@ module Bosh::Director
 
           if first_ip_in_range < current_ip || ( first_ip_in_range == current_ip && last_ip_in_range >= last_ip )
             previous_mask = mask + 1
-            found_subnet = Bosh::Director::IpAddrOrCidr.new("#{current_ip}/#{previous_mask}")
+            found_subnet = Bosh::Director::IpAddrOrCidr.new("#{current_ip.base_addr}/#{previous_mask}")
             cidr_blocks << found_subnet
             current_ip = found_subnet.last.succ
             break

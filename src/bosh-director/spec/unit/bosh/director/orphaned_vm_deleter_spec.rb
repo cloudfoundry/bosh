@@ -20,7 +20,7 @@ module Bosh
           Bosh::Director::Models::IpAddress.create(
             orphaned_vm: orphaned_vm1,
             network_name: 'my-manual-network',
-            address_str: Bosh::Director::IpAddrOrCidr.new('127.0.0.2/32').to_cidr_s,
+            address_str: Bosh::Director::IpAddrOrCidr.new('127.0.0.2/32').to_s,
             task_id: 1,
           )
         end
@@ -38,7 +38,7 @@ module Bosh
           Bosh::Director::Models::IpAddress.create(
             orphaned_vm: orphaned_vm2,
             network_name: 'my-manual-network',
-            address_str: Bosh::Director::IpAddrOrCidr.new('127.0.0.1/32').to_cidr_s,
+            address_str: Bosh::Director::IpAddrOrCidr.new('127.0.0.1/32').to_s,
             task_id: 1,
           )
         end

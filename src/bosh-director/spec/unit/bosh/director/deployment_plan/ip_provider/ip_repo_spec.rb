@@ -186,7 +186,7 @@ module Bosh::Director::DeploymentPlan
           ip_repo.add(reservation)
 
           saved_address = Bosh::Director::Models::IpAddress.order(:address_str).last
-          expect(saved_address.address_str).to eq(cidr_ip('192.168.1.5').to_cidr_s)
+          expect(saved_address.address_str).to eq(cidr_ip('192.168.1.5').to_s)
           expect(saved_address.network_name).to eq('my-manual-network')
           expect(saved_address.task_id).to eq('fake-task-id')
           expect(saved_address.created_at).to_not be_nil
@@ -392,17 +392,17 @@ module Bosh::Director::DeploymentPlan
           original_saves = {}
           ips.each do |ip|
             ip_address = Bosh::Director::Models::IpAddress.new(
-              address_str: ip.to_cidr_s,
+              address_str: ip.to_s,
               network_name: 'my-manual-network',
               instance: instance_model,
               task_id: Bosh::Director::Config.current_job.task_id
             )
             original_save = ip_address.method(:save)
-            original_saves[ip.to_cidr_s] = original_save
+            original_saves[ip.to_s] = original_save
           end
 
           allow_any_instance_of(Bosh::Director::Models::IpAddress).to receive(:save) do |model|
-            if ips.map(&:to_cidr_s).include?(model.address_str)
+            if ips.map(&:to_s).include?(model.address_str)
               original_save = original_saves[model.address_str]
               original_save.call
               raise fail_error
@@ -498,11 +498,11 @@ module Bosh::Director::DeploymentPlan
       it 'reserves the next available vip and saves it in the database' do
         expect do
           ip = ip_repo.allocate_vip_ip(reservation, network.subnets.first)
-          expect(ip).to eq(cidr_ip('69.69.69.69'))
+          expect(ip).to eq(cidr_ip('69.69.69.69').base_addr)
         end.to change { Bosh::Director::Models::IpAddress.count }.by(1)
 
         ip_address = instance_model.ip_addresses.first
-        expect(ip_address.address_str).to eq(cidr_ip('69.69.69.69').to_cidr_s)
+        expect(ip_address.address_str).to eq(cidr_ip('69.69.69.69').to_s)
       end
 
       context 'when there are no vips defined in the network' do
@@ -557,7 +557,7 @@ module Bosh::Director::DeploymentPlan
 
           it 'retries to allocate the vip' do
             ip = ip_repo.allocate_vip_ip(reservation, network.subnets.first)
-            expect(ip).to eq(cidr_ip('69.69.69.69'))
+            expect(ip).to eq(cidr_ip('69.69.69.69').base_addr)
           end
         end
 
