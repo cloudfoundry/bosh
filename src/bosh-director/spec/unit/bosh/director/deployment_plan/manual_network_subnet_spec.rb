@@ -24,7 +24,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
         [],
       )
 
-      expect(subnet.range.to_cidr_s).to eq('192.168.0.0/24')
+      expect(subnet.range.to_s).to eq('192.168.0.0/24')
       expect(subnet.netmask).to eq('255.255.255.0')
       expect(subnet.gateway).to eq('192.168.0.254')
       expect(subnet.dns).to eq(nil)
@@ -41,7 +41,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
         [],
       )
 
-      expect(subnet.range.to_cidr_s).to eq('192.168.0.0/24')
+      expect(subnet.range.to_s).to eq('192.168.0.0/24')
       expect(subnet.netmask).to eq('255.255.255.0')
       expect(subnet.gateway).to eq('192.168.0.254')
       expect(subnet.dns).to eq(nil)
@@ -175,7 +175,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
         []
       )
 
-      expect(subnet.gateway.to_s).to eq('192.168.0.254')
+      expect(subnet.gateway.base_addr).to eq('192.168.0.254')
     end
 
     it 'should make sure gateway is a single ip' do
@@ -340,7 +340,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
         [],
       )
 
-      expect(subnet.range.to_cidr_s).to eq('192.168.0.0/24')
+      expect(subnet.range.to_s).to eq('192.168.0.0/24')
       expect(subnet.netmask).to eq('255.255.255.0')
       expect(subnet.gateway).to eq('192.168.0.254')
       expect(subnet.prefix).to eq('25')

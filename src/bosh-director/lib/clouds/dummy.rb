@@ -95,7 +95,7 @@ module Bosh
             elsif cloud_properties['az_name']
               ip_address = cmd.ip_address_for_az(cloud_properties['az_name'])
             else
-              ip_address =  IPAddr.new(rand(0..IPAddr::IN4MASK), Socket::AF_INET).to_string
+              ip_address =  IPAddr.new(rand(0..IPAddr::IN4MASK), Socket::AF_INET).to_s
             end
 
             if ip_address

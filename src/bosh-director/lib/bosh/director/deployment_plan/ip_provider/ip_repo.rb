@@ -12,13 +12,13 @@ module Bosh::Director::DeploymentPlan
     def delete(ip)
       ip_or_cidr = Bosh::Director::IpAddrOrCidr.new(ip)
 
-      ip_address = Bosh::Director::Models::IpAddress.first(address_str: ip_or_cidr.to_cidr_s)
+      ip_address = Bosh::Director::Models::IpAddress.first(address_str: ip_or_cidr.to_s)
 
       if ip_address
-        @logger.debug("Releasing ip '#{ip_or_cidr.to_cidr_s}'")
+        @logger.debug("Releasing ip '#{ip_or_cidr}'")
         ip_address.destroy
       else
-        @logger.debug("Skipping releasing ip '#{ip_or_cidr.to_cidr_s}': not reserved")
+        @logger.debug("Skipping releasing ip '#{ip_or_cidr}': not reserved")
       end
     end
 
@@ -36,7 +36,7 @@ module Bosh::Director::DeploymentPlan
 
       reservation.resolve_type(reservation_type)
 
-      @logger.debug("Reserved ip '#{ip_or_cidr.to_cidr_s}' for #{reservation.network.name} as #{reservation_type}")
+      @logger.debug("Reserved ip '#{ip_or_cidr}' for #{reservation.network.name} as #{reservation_type}")
     end
 
     def allocate_dynamic_ip(reservation, subnet)
@@ -52,7 +52,7 @@ module Bosh::Director::DeploymentPlan
         retry
       end
 
-      @logger.debug("Allocated dynamic IP '#{ip_address.to_cidr_s}' for #{reservation.network.name}")
+      @logger.debug("Allocated dynamic IP '#{ip_address}' for #{reservation.network.name}")
       ip_address
     end
 
@@ -105,7 +105,7 @@ module Bosh::Director::DeploymentPlan
        raise NoMoreIPsAvailableAndStopRetrying
       end
 
-      save_ip(ip_address_cidr.to_cidr_s, reservation, false)
+      save_ip(ip_address_cidr.to_s, reservation, false)
 
       ip_address_cidr
     end
@@ -117,7 +117,7 @@ module Bosh::Director::DeploymentPlan
       found = false
 
       while found == false
-        current_prefix = Bosh::Director::IpAddrOrCidr.new("#{current_ip}/#{prefix}")
+        current_prefix = Bosh::Director::IpAddrOrCidr.new("#{current_ip.base_addr}/#{prefix}")
 
         if filtered_ips.any? { |ip| current_prefix.include?(ip) }
           filtered_ips.reject! { |ip| ip.to_i < current_prefix.to_i }
@@ -149,18 +149,18 @@ module Bosh::Director::DeploymentPlan
 
       raise NoMoreIPsAvailableAndStopRetrying if available_ips.empty?
 
-      ip_address = Bosh::Director::IpAddrOrCidr.new("#{Bosh::Director::IpAddrOrCidr.new(available_ips.first)}/#{prefix}")
+      ip_address = Bosh::Director::IpAddrOrCidr.new("#{Bosh::Director::IpAddrOrCidr.new(available_ips.first).base_addr}/#{prefix}")
 
-      save_ip(ip_address.to_cidr_s, reservation, false)
+      save_ip(ip_address.to_s, reservation, false)
 
       ip_address
     end
 
     def reserve_with_instance_validation(instance_model, ip, reservation, is_static)
       # try to save IP first before validating its instance to prevent race conditions
-      save_ip(ip.to_cidr_s, reservation, is_static)
+      save_ip(ip.to_s, reservation, is_static)
     rescue IpFoundInDatabaseAndCanBeRetried
-      ip_address = Bosh::Director::Models::IpAddress.first(address_str: ip.to_cidr_s)
+      ip_address = Bosh::Director::Models::IpAddress.first(address_str: ip.to_s)
 
       retry unless ip_address
 

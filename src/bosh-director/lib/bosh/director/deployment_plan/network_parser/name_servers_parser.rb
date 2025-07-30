@@ -18,7 +18,7 @@ module Bosh::Director
                       "Invalid DNS for network '#{network}': must be a single IP"
               end
 
-              servers << dns.to_s
+              servers << dns.base_addr
             end
           end
 

@@ -175,9 +175,9 @@ describe Bosh::Director::IpUtil do
     end
   end
 
-  describe 'format_ip' do
+  describe 'base_addr' do
     it 'converts integer to CIDR IP' do
-      expect(ip_util_includer.format_ip(168427582)).to eq('10.10.0.62/32')
+      expect(ip_util_includer.base_addr(168427582)).to eq('10.10.0.62')
     end
   end
 
