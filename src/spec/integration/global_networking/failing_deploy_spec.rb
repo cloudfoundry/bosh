@@ -4,7 +4,7 @@ require 'ipaddr'
 def make_subnet_spec(range, static_ips, zone_names = nil)
   spec = {
     'range' => range,
-    'gateway' => IPAddr.new(range).to_range.to_a[1].to_string,
+    'gateway' => IPAddr.new(range).to_range.to_a[1].to_s,
     'dns' => ['8.8.8.8'],
     'static' => static_ips,
     'reserved' => [],

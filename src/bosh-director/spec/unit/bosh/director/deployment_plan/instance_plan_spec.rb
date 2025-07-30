@@ -120,7 +120,7 @@ module Bosh::Director::DeploymentPlan
     let(:network) { ManualNetwork.parse(network_spec, [availability_zone], per_spec_logger) }
     let(:reservation) do
       reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network)
-      reservation.resolve_ip('192.168.1.3/32')
+      reservation.resolve_ip('192.168.1.3')
       reservation
     end
     let(:subnet) { DynamicNetworkSubnet.new('10.0.0.1', {}, ['foo-az'], '32') }
@@ -2028,7 +2028,7 @@ module Bosh::Director::DeploymentPlan
     describe '#remove_network_plans_for_ips' do
       let(:plan1) do
         reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network)
-        reservation.resolve_ip('192.168.1.25/32')
+        reservation.resolve_ip('192.168.1.25')
 
         NetworkPlanner::Plan.new(reservation: reservation, existing: false, obsolete: true)
       end
@@ -2056,8 +2056,8 @@ module Bosh::Director::DeploymentPlan
 
       let(:network_plans) { [plan1, plan2, plan3, plan4] }
 
-      let(:ip1) { IPAddr.new('192.168.1.25/32') }
-      let(:ip2) { IPAddr.new('192.168.1.26/32') }
+      let(:ip1) { IPAddr.new('192.168.1.25') }
+      let(:ip2) { IPAddr.new('192.168.1.26') }
 
       let(:ip_address1) { FactoryBot.create(:models_ip_address, address_str: ip1.to_s) }
       let(:ip_address2) { FactoryBot.create(:models_ip_address, address_str: ip2.to_s) }

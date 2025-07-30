@@ -5,13 +5,12 @@ module Bosh
     class IpAddrOrCidr
       include Comparable
 
-      delegate :==, :include?, :ipv4?, :ipv6?, :netmask, :mask, :to_i, :to_range, :to_s, :to_string, :prefix, :succ, :<=>, to: :@ipaddr
-      alias :to_s :to_s
+      delegate :==, :include?, :ipv4?, :ipv6?, :netmask, :mask, :to_i, :to_range, :prefix, :succ, :<=>, to: :@ipaddr
 
       def initialize(ip_or_cidr)
         @ipaddr =
           if ip_or_cidr.kind_of?(IpAddrOrCidr)
-            IPAddr.new(ip_or_cidr.to_cidr_s)
+            IPAddr.new(ip_or_cidr.to_s)
           elsif ip_or_cidr.kind_of?(Integer)
             IPAddr.new(ip_or_cidr, inet_type_for(ip_or_cidr))
           else
@@ -23,24 +22,24 @@ module Bosh
           end
       end
 
-      def each_base_address(prefix_length)
+      def each_base_addr(prefix_length)
         if @ipaddr.ipv4?
           bits = 32
         elsif @ipaddr.ipv6?
           bits = 128
         end
         step_size = 2**(bits - prefix_length.to_i)
-        base_address_int = @ipaddr.to_i
+        base_addr_int = @ipaddr.to_i
 
-        first_base_address_int = Bosh::Director::IpAddrOrCidr.new("#{@ipaddr}/#{prefix_length}").to_i
+        first_base_addr_int = Bosh::Director::IpAddrOrCidr.new("#{@ipaddr}/#{prefix_length}").to_i
 
-        if base_address_int != first_base_address_int
-          base_address_int += step_size
+        if base_addr_int != first_base_addr_int
+          base_addr_int += step_size
         end
 
-        while base_address_int <= @ipaddr.to_range.last.to_i
-          yield base_address_int
-          base_address_int += step_size
+        while base_addr_int <= @ipaddr.to_range.last.to_i
+          yield base_addr_int
+          base_addr_int += step_size
         end
       end
 
@@ -56,8 +55,12 @@ module Bosh
         (@ipaddr.to_range.last.to_i - @ipaddr.to_range.first.to_i) + 1
       end
 
-      def to_cidr_s
+      def to_s
         "#{@ipaddr}/#{@ipaddr.prefix}"
+      end
+
+      def base_addr
+        @ipaddr.to_s
       end
 
       def to_range

@@ -5,7 +5,7 @@ Sequel.migration do
       integer_representation = row[:address_str].to_i
 
       # Convert the integer to IPAddr object
-      cidr_notation = Bosh::Director::IpAddrOrCidr.new(integer_representation).to_cidr_s
+      cidr_notation = Bosh::Director::IpAddrOrCidr.new(integer_representation).to_s
 
       # Update the row with the new CIDR notation
       from(:ip_addresses).where(id: row[:id]).update(address_str: cidr_notation)

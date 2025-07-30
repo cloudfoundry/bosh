@@ -67,7 +67,7 @@ module Bosh::Director
 
         config = {
           "type" => "manual",
-          "ip" => ip_or_cidr.to_s,
+          "ip" => ip_or_cidr.base_addr,
           "prefix" => ip_or_cidr.prefix.to_s,
           "netmask" => subnet.netmask,
           "cloud_properties" => subnet.cloud_properties
@@ -78,7 +78,7 @@ module Bosh::Director
         end
 
         config["dns"] = subnet.dns if subnet.dns
-        config["gateway"] = subnet.gateway.to_s if subnet.gateway
+        config["gateway"] = subnet.gateway.base_addr if subnet.gateway
         config
       end
 

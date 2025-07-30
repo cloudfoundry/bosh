@@ -120,7 +120,7 @@ module Bosh::Director
           network_address_properties = network_create_results[1]
           network_cloud_properties = network_create_results[2]
 
-          range = subnet.range ? subnet.range.to_cidr_s : network_address_properties['range']
+          range = subnet.range ? subnet.range.to_s : network_address_properties['range']
           gw = subnet.gateway ? subnet.gateway : network_address_properties['gateway']
 
           reserved_ips = network_address_properties.fetch('reserved', [])
@@ -145,8 +145,8 @@ module Bosh::Director
             'cloud_properties' => {},
           }
           cpi_input['cloud_properties'] = az_cloud_props.merge(subnet.cloud_properties) if subnet.cloud_properties
-          cpi_input['range'] = subnet.range.to_cidr_s if subnet.range
-          cpi_input['gateway'] = subnet.gateway.to_s if subnet.gateway
+          cpi_input['range'] = subnet.range.to_s if subnet.range
+          cpi_input['gateway'] = subnet.gateway.base_addr if subnet.gateway
           cpi_input['netmask_bits'] = subnet.netmask_bits if subnet.netmask_bits
           cpi_input
         end

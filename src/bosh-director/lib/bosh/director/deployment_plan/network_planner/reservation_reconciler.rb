@@ -9,6 +9,7 @@ module Bosh::Director::DeploymentPlan
       def reconcile(existing_reservations)
         unplaced_existing_reservations = Set.new(existing_reservations)
         existing_network_plans = []
+
         desired_reservations = @instance_plan.network_plans.map(&:reservation)
         reconciled_reservations = []
 
