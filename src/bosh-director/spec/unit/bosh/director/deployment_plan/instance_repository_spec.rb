@@ -116,7 +116,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
       expect(instance.state).to eq('started')
       expect(instance.current_job_state).to eq('stopped')
       expect(instance.existing_network_reservations.count).to eq(1)
-      expect(instance.existing_network_reservations.first.ip).to eq(ip_to_i('192.168.50.6'))
+      expect(instance.existing_network_reservations.first.ip).to eq(to_ipaddr('192.168.50.6'))
     end
   end
 

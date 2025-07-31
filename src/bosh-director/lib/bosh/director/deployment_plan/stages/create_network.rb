@@ -163,7 +163,7 @@ module Bosh::Director
           each_ip(JSON.parse(db_subnet.reserved)) do |ip|
             unless subnet.range.include?(ip)
               raise NetworkReservedIpOutOfRange,
-                    "Reserved IP '#{to_ipaddr(ip)}' is out of subnet '#{subnet.name}' range"
+                    "Reserved IP '#{ip}' is out of subnet '#{subnet.name}' range"
             end
             subnet.restricted_ips.add(ip)
           end

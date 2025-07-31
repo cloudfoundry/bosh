@@ -261,7 +261,7 @@ module Bosh::Director
               expect(use_existing).to eq(true)
               expect(instance_plan.network_plans.count).to eq(1)
               expect(instance_plan.network_plans.first.existing?).to eq(true)
-              expect(instance_plan.network_plans.first.reservation.ip).to eq(ip_to_i('192.1.3.4'))
+              expect(instance_plan.network_plans.first.reservation.ip).to eq(to_ipaddr('192.1.3.4'))
             end
 
             expect(rendered_templates_persister).to receive(:persist)
