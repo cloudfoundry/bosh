@@ -23,12 +23,12 @@ module Bosh::Director::Models
       [
         "#{instance.deployment.name}.#{instance.job}/#{instance.index}",
         network_name,
-        "#{Bosh::Director::IpAddrOrCidr.new(address_str.to_i)} (#{type})"
+        "#{Bosh::Director::IpAddrOrCidr.new(address_str)} (#{type})"
       ].join(' - ')
     end
 
     def formatted_ip
-      Bosh::Director::IpAddrOrCidr.new(address).to_s
+      address.to_s
     end
 
     def type
@@ -36,7 +36,7 @@ module Bosh::Director::Models
     end
 
     def address
-      unless address_str.match?(/\A\d+\z/)
+      unless address_str.include?('/') || address_str.match?(/\A\d+\z/)
         info_display = ''
         begin
           info_display = info
@@ -45,7 +45,8 @@ module Bosh::Director::Models
         end
         raise "Unexpected address '#{address_str}' (#{info_display})"
       end
-      address_str.to_i
+
+      return Bosh::Director::IpAddrOrCidr.new(address_str)
     end
 
     def to_s

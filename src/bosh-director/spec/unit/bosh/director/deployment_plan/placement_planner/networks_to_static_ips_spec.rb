@@ -104,10 +104,17 @@ module Bosh::Director::DeploymentPlan
               'network_A',
               IPAddr.new('192.168.1.0/24'),
               nil, nil, nil, nil, subnet_azs, [],
-              ['192.168.1.10', '192.168.1.11', '192.168.1.12', '192.168.1.13', '192.168.1.14'])
+              [
+                Bosh::Director::IpAddrOrCidr.new('192.168.1.10'), 
+                Bosh::Director::IpAddrOrCidr.new('192.168.1.11'), 
+                Bosh::Director::IpAddrOrCidr.new('192.168.1.12'), 
+                Bosh::Director::IpAddrOrCidr.new('192.168.1.13'),
+                Bosh::Director::IpAddrOrCidr.new('192.168.1.14')
+              ]
+              )
           ]
         end
-        let(:deployment_network) { ManualNetwork.new('network_A', deployment_subnets, nil) }
+        let(:deployment_network) { ManualNetwork.new('network_A', deployment_subnets, '32', nil) }
         let(:job_networks) do
           [FactoryBot.build(:deployment_plan_job_network, name: 'network_A', static_ips: job_static_ips, deployment_network: deployment_network)]
         end

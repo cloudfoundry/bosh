@@ -7,6 +7,8 @@ module Bosh::Director
 
       REQUIRED_DEFAULTS = %w(dns gateway).sort
       OPTIONAL_DEFAULTS = %w(addressable).sort
+      IPV4_DEFAULT_PREFIX_SIZE = 32
+      IPV6_DEFAULT_PREFIX_SIZE = 128
 
       # @return [String] network name
       attr_accessor :name
@@ -86,6 +88,10 @@ module Bosh::Director
 
       def availability_zones
         @subnets.map(&:availability_zone_names).flatten.uniq
+      end
+
+      def prefix # for now the prefix should be considered the same for all subnets
+          @subnets.first.prefix
       end
     end
   end

@@ -20,6 +20,10 @@ module Bosh::Director
           filename: '20240319204601_remove_dns_records_from_instances.rb',
           sha1: 'bb637d410772d09caabdb68a1126fbc9f9b4deec',
         },
+        {
+          filename: '20250618102610_migrate_ip_address_representation_from_integer_to_cidr_notation.rb',
+          sha1: '36adc8ddf15cb83f2d4c0a2c6eb72719b9251754',
+        },
       ]
     end
 

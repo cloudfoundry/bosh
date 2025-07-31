@@ -13,24 +13,32 @@ module Bosh::Director
         managed = Config.network_lifecycle_enabled? && safe_property(network_spec, 'managed', default: false)
         subnet_specs = safe_property(network_spec, 'subnets', class: Array)
         subnets = []
+        prefix = nil
         subnet_specs.each do |subnet_spec|
           new_subnet = ManualNetworkSubnet.parse(name, subnet_spec, availability_zones, managed)
           subnets.each do |subnet|
             raise NetworkOverlappingSubnets, "Network '#{name}' has overlapping subnets" if subnet.overlaps?(new_subnet)
+            if prefix != subnet.prefix
+              raise NetworkPrefixSizesDiffer, "Network '#{name}' has subnets that define different prefixes"
+            end
+          end
+          if prefix.nil?
+            prefix = new_subnet.prefix
           end
           subnets << new_subnet
         end
         validate_all_subnets_use_azs(subnets, name)
-        new(name, subnets, logger, managed)
+        new(name, subnets, prefix, logger, managed)
       end
 
       def managed?
         @managed
       end
 
-      def initialize(name, subnets, logger, managed = false)
+      def initialize(name, subnets, prefix, logger, managed = false)
         super(name, TaggedLogger.new(logger, 'network-configuration'))
         @subnets = subnets
+        @prefix = prefix
         @managed = managed
       end
 
@@ -46,15 +54,21 @@ module Bosh::Director
                 "Can't generate network settings without an IP"
         end
 
-        ip_or_cidr = Bosh::Director::IpAddrOrCidr.new(reservation.ip)
+        ip_or_cidr = reservation.ip
         subnet = find_subnet_containing(reservation.ip)
+
         unless subnet
           raise NetworkReservationInvalidIp, "Provided IP '#{ip_or_cidr}' does not belong to any subnet"
         end
 
+        unless subnet.prefix.to_i == ip_or_cidr.prefix.to_i
+          raise NetworkReservationInvalidPrefix, "Subnet Prefix #{subnet.prefix} and ip reservation prefix #{ip_or_cidr.prefix} do not match"
+        end
+
         config = {
           "type" => "manual",
-          "ip" => ip_or_cidr.to_s,
+          "ip" => ip_or_cidr.base_addr,
+          "prefix" => ip_or_cidr.prefix.to_s,
           "netmask" => subnet.netmask,
           "cloud_properties" => subnet.cloud_properties
         }
@@ -64,13 +78,13 @@ module Bosh::Director
         end
 
         config["dns"] = subnet.dns if subnet.dns
-        config["gateway"] = subnet.gateway.to_s if subnet.gateway
+        config["gateway"] = subnet.gateway.base_addr if subnet.gateway
         config
       end
 
       def ip_type(cidr_ip)
         static_ips = @subnets.map { |subnet| subnet.static_ips.to_a }.flatten
-        static_ips.include?(cidr_ip.to_i) ? :static : :dynamic
+        ip_in_array?(cidr_ip, static_ips) ? :static : :dynamic
       end
 
       def find_az_names_for_ip(ip)

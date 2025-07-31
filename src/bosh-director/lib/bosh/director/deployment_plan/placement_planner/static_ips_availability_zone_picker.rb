@@ -52,7 +52,7 @@ module Bosh
               existing_instance_model.ip_addresses.each do |ip_address|
                 ignored_vm_network = @job_networks.select { |n| n.name == ip_address.network_name }.first
 
-                if !ignored_vm_network.static_ips.include?(ip_address.address)
+                if !ip_in_array?(ip_address.address, ignored_vm_network.static_ips)
                   raise DeploymentIgnoredInstancesModification, "In instance group '#{@job_name}', an attempt was made to remove a static ip"+
                       ' that is used by an ignored instance. This operation is not allowed.'
                 end
@@ -133,7 +133,7 @@ module Bosh
                     'Failed to distribute static IPs to satisfy existing instance reservations'
             end
 
-            @logger.debug("Claiming IP '#{format_ip(static_ip_to_azs.ip)}' on network #{network.name} and az '#{desired_instance.availability_zone}' for instance '#{instance}'")
+            @logger.debug("Claiming IP '#{base_addr(static_ip_to_azs.ip)}' on network #{network.name} and az '#{desired_instance.availability_zone}' for instance '#{instance}'")
             @networks_to_static_ips.claim_in_az(static_ip_to_azs.ip, desired_instance.availability_zone)
 
             @network_planner.network_plan_with_static_reservation(instance_plan, network, static_ip_to_azs.ip)
@@ -141,15 +141,17 @@ module Bosh
 
           def create_instance_plan_based_on_existing_ips(desired_instances, existing_instance_model)
             instance_plan = nil
+
             @job_networks.each do |network|
               next unless network.static?
               instance_ips_on_network = find_instance_ips_on_network(existing_instance_model, network)
               network_plan = nil
 
               instance_ips_on_network.each do |instance_ip|
-                ip_address = instance_ip.address
+                ip_address = instance_ip.address.to_i
+
                 # Instance is using IP in static IPs list, we have to use this instance
-                @logger.debug("Existing instance '#{instance_name(existing_instance_model)}' is using static IP '#{format_ip(ip_address)}' on network '#{network.name}'")
+                @logger.debug("Existing instance '#{instance_name(existing_instance_model)}' is using static IP '#{base_addr(ip_address)}' on network '#{network.name}'")
                 if instance_plan.nil?
                   desired_instance = desired_instances.shift
                   instance_plan = create_existing_instance_plan_with_az(desired_instance, existing_instance_model, network, ip_address)
@@ -176,7 +178,7 @@ module Bosh
           end
 
           def find_instance_ips_on_network(existing_instance_model, network)
-            existing_instance_model.ip_addresses.select { |ip_address| network.static_ips.include?(ip_address.address) }
+            existing_instance_model.ip_addresses.select { |ip_address| ip_in_array?(ip_address.address, network.static_ips) }
           end
 
           def already_has_instance_plan?(existing_instance_model, instance_plans)
@@ -192,13 +194,14 @@ module Bosh
           end
 
           def assign_az_based_on_ip(desired_instance, existing_instance_model, network, ip_address)
-            ip_az_names = @networks_to_static_ips.find_by_network_and_ip(network, ip_address).az_names
+            ip_az_names = @networks_to_static_ips.find_by_network_and_ip(network, ip_address.to_i).az_names
+
             if ip_az_names.include?(existing_instance_model.availability_zone)
               az_name = existing_instance_model.availability_zone
               @logger.debug("Instance '#{instance_name(existing_instance_model)}' belongs to az '#{az_name}' that is in subnet az list, reusing instance az.")
             else
               raise Bosh::Director::NetworkReservationError,
-                "Existing instance '#{instance_name(existing_instance_model)}' is using IP '#{format_ip(ip_address)}' in availability zone '#{existing_instance_model.availability_zone}'"
+                "Existing instance '#{instance_name(existing_instance_model)}' is using IP '#{base_addr(ip_address)}' in availability zone '#{existing_instance_model.availability_zone}'"
             end
             desired_instance.az = to_az(az_name)
           end
@@ -246,6 +249,7 @@ module Bosh
           def create_network_plan_with_ip(instance_plan, network, ip_address)
             instance_az = instance_plan.desired_instance.az
             instance_az_name = instance_az.nil? ? nil : instance_az.name
+
             ip_az_names = @networks_to_static_ips.find_by_network_and_ip(network, ip_address).az_names
             if ip_az_names.include?(instance_az_name)
               instance_plan.network_plans << @network_planner.network_plan_with_static_reservation(instance_plan, network, ip_address)

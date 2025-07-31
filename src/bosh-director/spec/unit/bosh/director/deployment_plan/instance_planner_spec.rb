@@ -590,7 +590,7 @@ describe 'Bosh::Director::DeploymentPlan::InstancePlanner' do
         expect(existing_instance_plan.network_plans.size).to eq(1)
         vip_network_plan = existing_instance_plan.network_plans.first
         expect(vip_network_plan.reservation.network).to eq(vip_network)
-        expect(vip_network_plan.reservation.ip).to eq(ip_to_i('68.68.68.68'))
+        expect(vip_network_plan.reservation.ip).to eq(to_ipaddr('68.68.68.68'))
       end
     end
   end
@@ -747,7 +747,7 @@ describe 'Bosh::Director::DeploymentPlan::InstancePlanner' do
 
     before do
       FactoryBot.create(:models_ip_address,
-        address_str: ip_to_i('192.168.1.5').to_s,
+        address_str: Bosh::Director::IpAddrOrCidr.new('192.168.1.5').to_s,
         network_name: 'fake-network',
         instance: existing_instance_model,
       )
@@ -764,7 +764,7 @@ describe 'Bosh::Director::DeploymentPlan::InstancePlanner' do
       fake_job
     end
 
-    let(:manual_network) { Bosh::Director::DeploymentPlan::ManualNetwork.new('fake-network', [subnet], logger) }
+    let(:manual_network) { Bosh::Director::DeploymentPlan::ManualNetwork.new('fake-network', [subnet], nil, logger) }
     let(:subnet) do
       Bosh::Director::DeploymentPlan::ManualNetworkSubnet.new(
         'fake-network',

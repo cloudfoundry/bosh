@@ -17,6 +17,13 @@ module SharedSupport
       )
     end
 
+    def self.simple_cloud_config_ipv6
+      minimal_cloud_config.merge(
+        'networks' => [network_ipv6],
+        'vm_types' => [vm_type],
+      )
+    end
+
     def self.minimal_cloud_config
       {
         'networks' => [{
@@ -42,6 +49,13 @@ module SharedSupport
       }.merge!(options)
     end
 
+    def self.network_ipv6(options = {})
+      {
+        'name' => 'a',
+        'subnets' => [subnet_ipv6],
+      }.merge!(options)
+    end
+
     # TODO: used by bosh-director
     def self.subnet(options = {})
       {
@@ -49,6 +63,18 @@ module SharedSupport
         'gateway' => '192.168.1.1',
         'dns' => ['192.168.1.1', '192.168.1.2'],
         'static' => ['192.168.1.10'],
+        'reserved' => [],
+        'cloud_properties' => {},
+      }.merge!(options)
+    end
+
+    # TODO: used by bosh-director
+    def self.subnet_ipv6(options = {})
+      {
+        'range' => '2001:db8::/112',
+        'gateway' => '2001:db8::1',
+        'dns' => ['fd00:ec2::253'],
+        'static' => ['2001:db8::10'],
         'reserved' => [],
         'cloud_properties' => {},
       }.merge!(options)
@@ -991,7 +1017,7 @@ module SharedSupport
       range_string = opts.fetch(:range, '192.168.1.0/24')
 
       range_ip_addr = IPAddr.new(range_string)
-      ip_range = range_ip_addr.to_range.to_a.map(&:to_string)
+      ip_range = range_ip_addr.to_range.to_a.map(&:to_s)
       ip_range_shift = opts.fetch(:shift_ip_range_by, 0)
       available_ips = opts.fetch(:available_ips)
       raise "not enough IPs, don't be so greedy" if available_ips > ip_range.size

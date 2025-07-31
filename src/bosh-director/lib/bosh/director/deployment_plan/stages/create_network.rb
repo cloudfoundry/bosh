@@ -120,7 +120,7 @@ module Bosh::Director
           network_address_properties = network_create_results[1]
           network_cloud_properties = network_create_results[2]
 
-          range = subnet.range ? subnet.range.to_cidr_s : network_address_properties['range']
+          range = subnet.range ? subnet.range.to_s : network_address_properties['range']
           gw = subnet.gateway ? subnet.gateway : network_address_properties['gateway']
 
           reserved_ips = network_address_properties.fetch('reserved', [])
@@ -145,8 +145,8 @@ module Bosh::Director
             'cloud_properties' => {},
           }
           cpi_input['cloud_properties'] = az_cloud_props.merge(subnet.cloud_properties) if subnet.cloud_properties
-          cpi_input['range'] = subnet.range.to_cidr_s if subnet.range
-          cpi_input['gateway'] = subnet.gateway.to_s if subnet.gateway
+          cpi_input['range'] = subnet.range.to_s if subnet.range
+          cpi_input['gateway'] = subnet.gateway.base_addr if subnet.gateway
           cpi_input['netmask_bits'] = subnet.netmask_bits if subnet.netmask_bits
           cpi_input
         end
@@ -157,13 +157,13 @@ module Bosh::Director
           subnet.gateway = Bosh::Director::IpAddrOrCidr.new(db_subnet.gateway)
           subnet.netmask = subnet.range.netmask
 
-          subnet.restricted_ips.add(subnet.gateway.to_i) if subnet.gateway
-          subnet.restricted_ips.add(subnet.range.to_i)
-          subnet.restricted_ips.add(subnet.range.to_range.last.to_i)
+          subnet.restricted_ips.add(subnet.gateway) if subnet.gateway
+          subnet.restricted_ips.add(subnet.range)
+          subnet.restricted_ips.add(subnet.range.to_range.last)
           each_ip(JSON.parse(db_subnet.reserved)) do |ip|
             unless subnet.range.include?(ip)
               raise NetworkReservedIpOutOfRange,
-                    "Reserved IP '#{to_ipaddr(ip)}' is out of subnet '#{subnet.name}' range"
+                    "Reserved IP '#{ip}' is out of subnet '#{subnet.name}' range"
             end
             subnet.restricted_ips.add(ip)
           end

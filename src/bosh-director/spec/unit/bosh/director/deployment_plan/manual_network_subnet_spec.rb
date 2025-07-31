@@ -24,7 +24,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
         [],
       )
 
-      expect(subnet.range.to_cidr_s).to eq('192.168.0.0/24')
+      expect(subnet.range.to_s).to eq('192.168.0.0/24')
       expect(subnet.netmask).to eq('255.255.255.0')
       expect(subnet.gateway).to eq('192.168.0.254')
       expect(subnet.dns).to eq(nil)
@@ -41,7 +41,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
         [],
       )
 
-      expect(subnet.range.to_cidr_s).to eq('192.168.0.0/24')
+      expect(subnet.range.to_s).to eq('192.168.0.0/24')
       expect(subnet.netmask).to eq('255.255.255.0')
       expect(subnet.gateway).to eq('192.168.0.254')
       expect(subnet.dns).to eq(nil)
@@ -94,8 +94,8 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
       expect(subnet.netmask).to eq('ffff:ffff:ffff:ffff:0000:0000:0000:0000')
       expect(subnet.gateway).to eq('fdab:d85c:118d:8a46:0000:0000:0000:0001')
       expect(subnet.dns).to eq([
-        "2001:4860:4860:0000:0000:0000:0000:8888",
-        "2001:4860:4860:0000:0000:0000:0000:8844",
+        "2001:4860:4860::8888",
+        "2001:4860:4860::8844",
       ])
     end
 
@@ -175,7 +175,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
         []
       )
 
-      expect(subnet.gateway.to_s).to eq('192.168.0.254')
+      expect(subnet.gateway.base_addr).to eq('192.168.0.254')
     end
 
     it 'should make sure gateway is a single ip' do
@@ -328,6 +328,76 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
       expect(subnet.restricted_ips).to include(ip1.to_i)
       expect(subnet.restricted_ips).to include(ip2.to_i)
     end
+
+    it 'should create a subnet spec with prefix' do
+      subnet = make_subnet(
+        {
+          'range' => '192.168.0.0/24',
+          'gateway' => '192.168.0.254',
+          'cloud_properties' => {'foo' => 'bar'},
+          'prefix' => '25'
+        },
+        [],
+      )
+
+      expect(subnet.range.to_s).to eq('192.168.0.0/24')
+      expect(subnet.netmask).to eq('255.255.255.0')
+      expect(subnet.gateway).to eq('192.168.0.254')
+      expect(subnet.prefix).to eq('25')
+      expect(subnet.dns).to eq(nil)
+    end
+
+
+    it 'should fail if the prefix size is larger than the range' do
+      expect {
+        make_subnet(
+        {
+          'range' => '192.168.0.0/24',
+          'gateway' => '192.168.0.254',
+          'cloud_properties' => {'foo' => 'bar'},
+          'prefix' => '23'
+        },
+        [],
+      )}.to raise_error(Bosh::Director::NetworkPrefixSizeTooBig,
+      "Prefix size '23' is larger than range prefix '24'")
+    end
+
+    it 'should ignore static ips which are not a base address of the prefix' do
+      ip1 = Bosh::Director::IpAddrOrCidr.new('192.168.0.64')
+      ip2 = Bosh::Director::IpAddrOrCidr.new('192.168.0.128')
+
+      subnet = make_subnet(
+        {
+          'range' => '192.168.0.0/24',
+          'gateway' => '192.168.0.254',
+          'static' => ['192.168.0.64','192.168.0.128','192.168.0.191'],
+          'cloud_properties' => {'foo' => 'bar'},
+          'prefix' => '26'
+        },
+        [],
+      )
+
+      expect(subnet.static_ips).to eq(Set.new([ip1, ip2]))
+    end
+
+    it 'should find the correct base address of the prefix from static ip ranges' do
+      ip1 = Bosh::Director::IpAddrOrCidr.new('192.168.0.32')
+      ip2 = Bosh::Director::IpAddrOrCidr.new('192.168.0.64')
+      ip3 = Bosh::Director::IpAddrOrCidr.new('192.168.0.96')
+
+      subnet = make_subnet(
+        {
+          'range' => '192.168.0.0/24',
+          'gateway' => '192.168.0.254',
+          'static' => ['192.168.0.30-192.168.0.40','192.168.0.96/26'],
+          'cloud_properties' => {'foo' => 'bar'},
+          'prefix' => '27'
+        },
+        [],
+      )
+
+      expect(subnet.static_ips).to eq(Set.new([ip1, ip2, ip3]))
+    end
   end
 
   describe :overlaps? do
@@ -397,26 +467,34 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
         let(:reserved) { ['192.168.0.50-192.168.0.60'] }
 
         it 'returns false' do
-          expect(subnet.is_reservable?(IPAddr.new('192.168.0.55'))).to be_falsey
+          expect(subnet.is_reservable?(Bosh::Director::IpAddrOrCidr.new('192.168.0.55'))).to be_falsey
         end
       end
 
       context 'when subnet reserved does not include IP' do
         it 'returns true' do
-          expect(subnet.is_reservable?(IPAddr.new('192.168.0.55'))).to be_truthy
+          expect(subnet.is_reservable?(Bosh::Director::IpAddrOrCidr.new('192.168.0.55'))).to be_truthy
+        end
+      end
+
+      context 'when subnet reserved does not include any address of a cidr' do
+        let(:reserved) { ['192.168.0.50-192.168.0.60'] }
+
+        it 'returns true' do
+          expect(subnet.is_reservable?(Bosh::Director::IpAddrOrCidr.new('192.168.0.62/31'))).to be_truthy
         end
       end
     end
 
     context 'when subnet range does not include IP' do
       it 'returns false' do
-        expect(subnet.is_reservable?(IPAddr.new('192.168.10.55'))).to be_falsey
+        expect(subnet.is_reservable?(Bosh::Director::IpAddrOrCidr.new('192.168.10.55'))).to be_falsey
       end
     end
 
     context 'when subnet range is not the same IP version' do
       it 'returns false' do
-        expect(subnet.is_reservable?(IPAddr.new('f1ee:0000:0000:0000:0000:0000:0000:0001'))).to be_falsey
+        expect(subnet.is_reservable?(Bosh::Director::IpAddrOrCidr.new('f1ee:0000:0000:0000:0000:0000:0000:0001'))).to be_falsey
       end
     end
   end

@@ -5,7 +5,7 @@ module Bosh::Director
       extend IpUtil
 
       attr_reader :network_name, :name, :dns,
-                  :availability_zone_names, :netmask_bits
+                  :availability_zone_names, :netmask_bits, :prefix
       attr_accessor :cloud_properties, :range, :gateway, :restricted_ips,
                     :static_ips, :netmask
 
@@ -17,8 +17,10 @@ module Bosh::Director
         ignore_missing_gateway = Bosh::Director::Config.ignore_missing_gateway
         gateway_property = safe_property(subnet_spec, 'gateway', class: String, optional: ignore_missing_gateway || managed)
         reserved_property = safe_property(subnet_spec, 'reserved', optional: true)
+        prefix = safe_property(subnet_spec, 'prefix', optional: true)
         restricted_ips = Set.new
         static_ips = Set.new
+        static_cidrs = Set.new
 
         if managed && !range_property
           range_property, gateway_property, reserved_property = parse_properties_from_database(network_name, sn_name)
@@ -33,7 +35,7 @@ module Bosh::Director
           end
 
           netmask = range.netmask
-          broadcast = range.to_range.last
+          broadcast = range.last
 
           if gateway_property
             gateway = Bosh::Director::IpAddrOrCidr.new(gateway_property)
@@ -45,13 +47,13 @@ module Bosh::Director
 
           static_property = safe_property(subnet_spec, 'static', optional: true)
 
-          restricted_ips.add(gateway.to_i) if gateway
-          restricted_ips.add(range.to_i)
-          restricted_ips.add(broadcast.to_i)
+          restricted_ips.add(gateway) if gateway
+          restricted_ips.add(range.first)
+          restricted_ips.add(broadcast)
 
-          each_ip(reserved_property) do |ip|
+          each_ip(reserved_property, false) do |ip|
             unless range.include?(ip)
-              raise NetworkReservedIpOutOfRange, "Reserved IP '#{format_ip(ip)}' is out of " \
+              raise NetworkReservedIpOutOfRange, "Reserved IP '#{base_addr(ip)}' is out of " \
                 "network '#{network_name}' range"
             end
 
@@ -64,16 +66,48 @@ module Bosh::Director
             end
           end
 
-          each_ip(static_property) do |ip|
-            if restricted_ips.include?(ip)
-              raise NetworkStaticIpOutOfRange, "Static IP '#{to_ipaddr(ip)}' is in network '#{network_name}' reserved range"
+          restricted_ips.reject! do |ip|
+            restricted_ips.any? do |other_ip| 
+              includes = other_ip.include?(ip) rescue false
+              includes && other_ip.prefix < ip.prefix
+            end
+          end
+
+          each_ip(static_property, false) do |ip|
+            if ip_in_array?(ip, restricted_ips)
+              raise NetworkStaticIpOutOfRange, "Static IP '#{base_addr(ip)}' is in network '#{network_name}' reserved range"
             end
 
             unless range.include?(ip)
-              raise NetworkStaticIpOutOfRange, "Static IP '#{to_ipaddr(ip)}' is out of network '#{network_name}' range"
+              raise NetworkStaticIpOutOfRange, "Static IP '#{base_addr(ip)}' is out of network '#{network_name}' range"
             end
 
-            static_ips.add(ip)
+            static_cidrs.add(ip)
+          end
+
+          if prefix.nil?
+            if range.ipv6?
+              prefix = Network::IPV6_DEFAULT_PREFIX_SIZE
+            else
+              prefix = Network::IPV4_DEFAULT_PREFIX_SIZE
+            end
+          else
+            if range.prefix > prefix.to_i
+              raise NetworkPrefixSizeTooBig, "Prefix size '#{prefix}' is larger than range prefix '#{range.prefix}'"
+            end
+          end
+
+          if prefix == Network::IPV6_DEFAULT_PREFIX_SIZE || prefix == Network::IPV4_DEFAULT_PREFIX_SIZE
+            static_ips = static_cidrs
+          else
+            static_cidrs.each do |static_cidr|
+              static_cidr.each_base_addr(prefix) do |base_addr_int|
+                if static_cidr.include?(base_addr_int)
+                  static_ips.add(Bosh::Director::IpAddrOrCidr.new(base_addr_int))
+                end
+                break if static_cidr.last.to_i <= base_addr_int
+              end
+            end
           end
         end
 
@@ -95,10 +129,11 @@ module Bosh::Director
           static_ips,
           sn_name,
           netmask_bits,
+          prefix
         )
       end
 
-      def initialize(network_name, range, gateway, name_servers, cloud_properties, netmask, availability_zone_names, restricted_ips, static_ips, subnet_name = nil, netmask_bits = nil)
+      def initialize(network_name, range, gateway, name_servers, cloud_properties, netmask, availability_zone_names, restricted_ips, static_ips, subnet_name = nil, netmask_bits = nil, prefix = nil)
         @network_name = network_name
         @name = subnet_name
         @netmask_bits = netmask_bits
@@ -110,6 +145,7 @@ module Bosh::Director
         @availability_zone_names = availability_zone_names
         @restricted_ips = restricted_ips
         @static_ips = static_ips
+        @prefix = prefix.to_s
       end
 
       def overlaps?(subnet)
@@ -123,7 +159,13 @@ module Bosh::Director
       end
 
       def is_reservable?(ip)
-        range.include?(ip) && !restricted_ips.include?(ip.to_i)
+        restricted_ips.each do | restricted_ip |
+          return false if restricted_ip.include?(ip)
+          rescue IPAddr::InvalidAddressError  # when ip versions are not the same
+          return false
+        end
+
+        range.include?(ip.to_range.first) && range.include?(ip.to_range.last)
       end
 
       def self.parse_properties_from_database(network_name, subnet_name)

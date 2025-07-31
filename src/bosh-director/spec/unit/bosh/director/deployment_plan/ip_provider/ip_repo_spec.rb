@@ -36,6 +36,22 @@ module Bosh::Director::DeploymentPlan
       )
     end
 
+    let(:subnet_with_prefix) do
+      ManualNetworkSubnet.parse(
+        network.name,
+        network_spec['subnets'].first.merge('prefix' => '31'),
+        availability_zones,
+      )
+    end
+
+    let(:subnet_with_too_big_prefix) do
+      ManualNetworkSubnet.parse(
+        network.name,
+        network_spec['subnets'].first.merge('prefix' => '30'),
+        availability_zones,
+      )
+    end
+
     let(:other_network_spec) { network_spec.merge('name' => 'my-other-manual-network') }
     let(:other_network) do
       ManualNetwork.parse(
@@ -56,7 +72,7 @@ module Bosh::Director::DeploymentPlan
     before { fake_job }
 
     def cidr_ip(ip)
-      IPAddr.new(ip).to_i
+      Bosh::Director::IpAddrOrCidr.new(ip)
     end
 
     context :add do
@@ -97,6 +113,7 @@ module Bosh::Director::DeploymentPlan
         context 'from Dynamic to Static' do
           it 'update type of reservation' do
             dynamic_reservation = dynamic_reservation_with_ip('192.168.1.5')
+
             ip_repo.add(dynamic_reservation)
 
             expect(Bosh::Director::Models::IpAddress.count).to eq(1)
@@ -310,6 +327,66 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
+      context 'when a prefix is assigned to the subnet' do
+        let(:reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network) }
+        it 'reserves the prefix address' do
+          ip_address = ip_repo.allocate_dynamic_ip(reservation, subnet_with_prefix)
+
+          expect(ip_address).to eq(cidr_ip('192.168.1.2/31'))
+        end
+
+        it 'reserves the next available prefix address' do
+          ip_address = ip_repo.allocate_dynamic_ip(other_reservation, other_subnet)
+
+          expected_ip_address = cidr_ip('192.168.1.2')
+          expect(ip_address).to eq(expected_ip_address)
+
+          ip_address = ip_repo.allocate_dynamic_ip(reservation, subnet_with_prefix)
+
+          expected_ip_address = cidr_ip('192.168.1.4/31')
+          expect(ip_address).to eq(expected_ip_address)
+
+          ip_address = ip_repo.allocate_dynamic_ip(other_reservation, other_subnet)
+
+          expected_ip_address = cidr_ip('192.168.1.3')
+          expect(ip_address).to eq(expected_ip_address)
+
+          ip_address = ip_repo.allocate_dynamic_ip(other_reservation, other_subnet)
+
+          expected_ip_address = cidr_ip('192.168.1.6')
+          expect(ip_address).to eq(expected_ip_address)
+        end
+
+        it 'should stop retrying and return nil if no sufficient range is available' do
+          ip_address = ip_repo.allocate_dynamic_ip(other_reservation, other_subnet)
+
+          expected_ip_address = cidr_ip('192.168.1.2')
+          expect(ip_address).to eq(expected_ip_address)
+
+          ip_address = ip_repo.allocate_dynamic_ip(reservation, subnet_with_prefix)
+
+          expected_ip_address = cidr_ip('192.168.1.4/31')
+          expect(ip_address).to eq(expected_ip_address)
+
+          ip_address = ip_repo.allocate_dynamic_ip(other_reservation, other_subnet)
+
+          expected_ip_address = cidr_ip('192.168.1.3')
+          expect(ip_address).to eq(expected_ip_address)
+
+          expect do
+            ip_address = ip_repo.allocate_dynamic_ip(other_reservation, subnet_with_prefix)
+            expect(ip_address).to be_nil
+          end.not_to(change { Bosh::Director::Models::IpAddress.count })
+        end
+
+        it 'should stop retrying and return nil if no sufficient range is available' do
+          expect do
+            ip = ip_repo.allocate_dynamic_ip(reservation, subnet_with_too_big_prefix)
+            expect(ip).to be_nil
+          end.not_to(change { Bosh::Director::Models::IpAddress.count })
+        end
+      end
+
       context 'when reserving IP fails' do
         def fail_saving_ips(ips, fail_error)
           original_saves = {}
@@ -421,11 +498,11 @@ module Bosh::Director::DeploymentPlan
       it 'reserves the next available vip and saves it in the database' do
         expect do
           ip = ip_repo.allocate_vip_ip(reservation, network.subnets.first)
-          expect(ip).to eq(cidr_ip('69.69.69.69'))
+          expect(ip).to eq(cidr_ip('69.69.69.69').base_addr)
         end.to change { Bosh::Director::Models::IpAddress.count }.by(1)
 
         ip_address = instance_model.ip_addresses.first
-        expect(ip_address.address_str.to_i).to eq(cidr_ip('69.69.69.69'))
+        expect(ip_address.address_str).to eq(cidr_ip('69.69.69.69').to_s)
       end
 
       context 'when there are no vips defined in the network' do
@@ -480,7 +557,7 @@ module Bosh::Director::DeploymentPlan
 
           it 'retries to allocate the vip' do
             ip = ip_repo.allocate_vip_ip(reservation, network.subnets.first)
-            expect(ip).to eq(cidr_ip('69.69.69.69'))
+            expect(ip).to eq(cidr_ip('69.69.69.69').base_addr)
           end
         end
 
@@ -506,7 +583,7 @@ module Bosh::Director::DeploymentPlan
 
       it 'deletes IP address' do
         expect {
-          ip_repo.delete('192.168.1.5')
+          ip_repo.delete('192.168.1.5/32')
         }.to change {
             Bosh::Director::Models::IpAddress.all.size
           }.by(-1)
