@@ -235,7 +235,7 @@ module Bosh::Director::DeploymentPlan
 
             expect(existing_plans[0].reservation.network.name).to eq('global-vip-network')
             expect(existing_plans[0].reservation.instance_model).to eq(instance_model)
-            expect(to_ipaddr(existing_plans[0].reservation.ip)).to eq('192.168.1.2')
+            expect(existing_plans[0].reservation.ip).to eq('192.168.1.2')
           end
         end
 
@@ -255,7 +255,7 @@ module Bosh::Director::DeploymentPlan
 
             expect(existing_plans[0].reservation.network.name).to eq('my-network-2')
             expect(existing_plans[0].reservation.instance_model).to eq(instance_model)
-            expect(to_ipaddr(existing_plans[0].reservation.ip)).to eq('192.168.1.2')
+            expect(existing_plans[0].reservation.ip).to eq('192.168.1.2')
           end
 
           context 'and the new network does not match az' do
@@ -417,11 +417,11 @@ module Bosh::Director::DeploymentPlan
             desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
 
             expect(obsolete_plans.count).to eq(1)
-            expect(to_ipaddr(obsolete_plans.first.reservation.ip)).to eq('192.168.1.2')
+            expect(obsolete_plans.first.reservation.ip).to eq('192.168.1.2')
             expect(existing_plans.count).to eq(1)
-            expect(to_ipaddr(existing_plans.first.reservation.ip)).to eq('192.168.1.3')
+            expect(existing_plans.first.reservation.ip).to eq('192.168.1.3')
             expect(desired_plans.count).to eq(1)
-            expect(to_ipaddr(desired_plans.first.reservation.ip)).to eq('192.168.1.4')
+            expect(desired_plans.first.reservation.ip).to eq('192.168.1.4')
           end
         end
       end
@@ -440,7 +440,7 @@ module Bosh::Director::DeploymentPlan
           desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
 
           expect(obsolete_plans.count).to eq(1)
-          expect(to_ipaddr(obsolete_plans.first.reservation.ip)).to eq('192.168.1.2')
+          expect(obsolete_plans.first.reservation.ip).to eq('192.168.1.2')
           expect(existing_plans.count).to eq(0)
           expect(desired_plans.count).to eq(1)
           expect(desired_plans.first.reservation.type).to eq(:dynamic)
@@ -487,7 +487,7 @@ module Bosh::Director::DeploymentPlan
 
           expect(obsolete_plans.count).to eq(0)
           expect(existing_plans.count).to eq(1)
-          expect(to_ipaddr(existing_plans.first.reservation.ip)).to eq('192.168.1.2/32')
+          expect(existing_plans.first.reservation.ip).to eq('192.168.1.2/32')
           expect(desired_plans.count).to eq(0)
         end
       end
