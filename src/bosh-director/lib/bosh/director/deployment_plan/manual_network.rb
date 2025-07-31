@@ -84,7 +84,7 @@ module Bosh::Director
 
       def ip_type(cidr_ip)
         static_ips = @subnets.map { |subnet| subnet.static_ips.to_a }.flatten
-        static_ips.include?(cidr_ip.to_i) ? :static : :dynamic
+        ip_in_array?(cidr_ip, static_ips) ? :static : :dynamic
       end
 
       def find_az_names_for_ip(ip)

@@ -3,7 +3,6 @@ require 'spec_helper'
 module Bosh::Director
   describe DeploymentPlan::NetworkPlanner::VipPlanner do
     include IpUtil
-
     subject(:planner) { DeploymentPlan::NetworkPlanner::VipPlanner.new(network_planner, per_spec_logger) }
 
     let(:network_planner) { DeploymentPlan::NetworkPlanner::Planner.new(per_spec_logger) }
@@ -69,17 +68,17 @@ module Bosh::Director
       end
 
       context 'and there are static ips defined only on the job network' do
-        let(:instance_group_static_ips1) { [ip_to_i('68.68.68.68'), ip_to_i('69.69.69.69')] }
-        let(:instance_group_static_ips2) { [ip_to_i('77.77.77.77'), ip_to_i('79.79.79.79')] }
+        let(:instance_group_static_ips1) { [to_ipaddr('68.68.68.68'), to_ipaddr('69.69.69.69')] }
+        let(:instance_group_static_ips2) { [to_ipaddr('77.77.77.77'), to_ipaddr('79.79.79.79')] }
         let(:vip_network_spec1) { { 'name' => 'vip-network-1' } }
         let(:vip_network_spec2) { { 'name' => 'vip-network-2' } }
 
         it 'creates network plans with static IP from each vip network' do
           planner.add_vip_network_plans(instance_plans, vip_networks)
-          expect(instance_plan.network_plans[0].reservation.ip).to eq(ip_to_i('68.68.68.68'))
+          expect(instance_plan.network_plans[0].reservation.ip).to eq(to_ipaddr('68.68.68.68'))
           expect(instance_plan.network_plans[0].reservation.network).to eq(vip_deployment_network1)
 
-          expect(instance_plan.network_plans[1].reservation.ip).to eq(ip_to_i('77.77.77.77'))
+          expect(instance_plan.network_plans[1].reservation.ip).to eq(to_ipaddr('77.77.77.77'))
           expect(instance_plan.network_plans[1].reservation.network).to eq(vip_deployment_network2)
         end
 
@@ -101,10 +100,10 @@ module Bosh::Director
 
             it 'assigns vip static IP that instance is currently using' do
               planner.add_vip_network_plans(instance_plans, vip_networks)
-              expect(instance_plan.network_plans[0].reservation.ip).to eq(ip_to_i('69.69.69.69'))
+              expect(instance_plan.network_plans[0].reservation.ip).to eq(to_ipaddr('69.69.69.69'))
               expect(instance_plan.network_plans[0].reservation.network).to eq(vip_deployment_network1)
 
-              expect(instance_plan.network_plans[1].reservation.ip).to eq(ip_to_i('79.79.79.79'))
+              expect(instance_plan.network_plans[1].reservation.ip).to eq(to_ipaddr('79.79.79.79'))
               expect(instance_plan.network_plans[1].reservation.network).to eq(vip_deployment_network2)
             end
           end
@@ -127,10 +126,10 @@ module Bosh::Director
             it 'picks new IP for instance' do
               planner.add_vip_network_plans(instance_plans, vip_networks)
               instance_plan = instance_plans.first
-              expect(instance_plan.network_plans[0].reservation.ip).to eq(ip_to_i('68.68.68.68'))
+              expect(instance_plan.network_plans[0].reservation.ip).to eq(to_ipaddr('68.68.68.68'))
               expect(instance_plan.network_plans[0].reservation.network).to eq(vip_deployment_network1)
 
-              expect(instance_plan.network_plans[1].reservation.ip).to eq(ip_to_i('79.79.79.79'))
+              expect(instance_plan.network_plans[1].reservation.ip).to eq(to_ipaddr('79.79.79.79'))
               expect(instance_plan.network_plans[1].reservation.network).to eq(vip_deployment_network2)
             end
           end
@@ -157,15 +156,15 @@ module Bosh::Director
             it 'properly assigns vip IPs based on current instance IPs' do
               planner.add_vip_network_plans(instance_plans, vip_networks)
               first_instance_plan = instance_plans[0]
-              expect(first_instance_plan.network_plans[0].reservation.ip).to eq(ip_to_i('69.69.69.69'))
+              expect(first_instance_plan.network_plans[0].reservation.ip).to eq(to_ipaddr('69.69.69.69'))
               expect(first_instance_plan.network_plans[0].reservation.network).to eq(vip_deployment_network1)
-              expect(first_instance_plan.network_plans[1].reservation.ip).to eq(ip_to_i('79.79.79.79'))
+              expect(first_instance_plan.network_plans[1].reservation.ip).to eq(to_ipaddr('79.79.79.79'))
               expect(first_instance_plan.network_plans[1].reservation.network).to eq(vip_deployment_network2)
 
               second_instance_plan = instance_plans[1]
-              expect(second_instance_plan.network_plans[0].reservation.ip).to eq(ip_to_i('68.68.68.68'))
+              expect(second_instance_plan.network_plans[0].reservation.ip).to eq(to_ipaddr('68.68.68.68'))
               expect(second_instance_plan.network_plans[0].reservation.network).to eq(vip_deployment_network1)
-              expect(second_instance_plan.network_plans[1].reservation.ip).to eq(ip_to_i('77.77.77.77'))
+              expect(second_instance_plan.network_plans[1].reservation.ip).to eq(to_ipaddr('77.77.77.77'))
               expect(second_instance_plan.network_plans[1].reservation.network).to eq(vip_deployment_network2)
             end
           end
@@ -201,7 +200,7 @@ module Bosh::Director
       end
 
       context 'and there are static ips defined on the job network and in the network in the cloud config' do
-        let(:instance_group_static_ips1) { [ip_to_i('68.68.68.68'), ip_to_i('69.69.69.69')] }
+        let(:instance_group_static_ips1) { [to_ipaddr('68.68.68.68'), to_ipaddr('69.69.69.69')] }
         let(:instance_group_static_ips2) { [] }
         let(:vip_network_spec1) { { 'name' => 'vip-network-1', 'subnets' => [{ 'static' => ['1.1.1.1'] }] } }
         let(:vip_network_spec2) { { 'name' => 'vip-network-2' } }

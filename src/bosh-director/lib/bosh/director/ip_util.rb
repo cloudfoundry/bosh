@@ -10,20 +10,12 @@ module Bosh::Director
       raise NetworkInvalidIpRangeFormat, e.message
     end
 
-    def ip_to_i(ip)
-      to_ipaddr(ip).to_i
-    end
-
     def to_ipaddr(ip)
       Bosh::Director::IpAddrOrCidr.new(ip)
     end
 
     def base_addr(ip)
       Bosh::Director::IpAddrOrCidr.new(ip).base_addr
-    end
-
-    def format_cidr_ip(ip)
-      ip.to_s
     end
 
     def ip_address?(ip)
