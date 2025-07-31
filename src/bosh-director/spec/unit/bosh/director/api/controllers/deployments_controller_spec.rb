@@ -1763,14 +1763,7 @@ module Bosh::Director
 
                   instance_params['availability_zone'] = 'az0' if i == 0
                   instance_params['availability_zone'] = 'az1' if i == 1
-                  instance = Models::Instance.create(instance_params)
-
-                  ip_addresses_params  = {
-                    'instance_id' => instance.id,
-                    'task_id' => "#{i}",
-                    'address_str' => ip_to_i("1.2.3.#{i}").to_s,
-                  }
-                  Models::IpAddress.create(ip_addresses_params)
+                  Models::Instance.create(instance_params)
                 end
 
                 get '/test_deployment/instances'

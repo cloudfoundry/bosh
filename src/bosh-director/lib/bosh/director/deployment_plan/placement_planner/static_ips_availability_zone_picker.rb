@@ -52,7 +52,7 @@ module Bosh
               existing_instance_model.ip_addresses.each do |ip_address|
                 ignored_vm_network = @job_networks.select { |n| n.name == ip_address.network_name }.first
 
-                if !ignored_vm_network.static_ips.include?(ip_address.address)
+                if !ip_in_array?(ip_address.address, ignored_vm_network.static_ips)
                   raise DeploymentIgnoredInstancesModification, "In instance group '#{@job_name}', an attempt was made to remove a static ip"+
                       ' that is used by an ignored instance. This operation is not allowed.'
                 end
@@ -178,7 +178,7 @@ module Bosh
           end
 
           def find_instance_ips_on_network(existing_instance_model, network)
-            existing_instance_model.ip_addresses.select { |ip_address| network.static_ips.include?(ip_address.address) }
+            existing_instance_model.ip_addresses.select { |ip_address| ip_in_array?(ip_address.address, network.static_ips) }
           end
 
           def already_has_instance_plan?(existing_instance_model, instance_plans)

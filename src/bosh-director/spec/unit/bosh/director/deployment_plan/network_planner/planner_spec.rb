@@ -40,7 +40,7 @@ module Bosh::Director::DeploymentPlan
         network_plan = planner.network_plan_with_static_reservation(instance_plan, instance_group_network, '192.168.2.10')
         expect(network_plan.reservation.static?).to be_truthy
         expect(network_plan.reservation.instance_model).to eq(instance_model)
-        expect(network_plan.reservation.ip).to eq(ip_to_i('192.168.2.10'))
+        expect(network_plan.reservation.ip).to eq(to_ipaddr('192.168.2.10'))
         expect(network_plan.reservation.network).to eq(deployment_network)
       end
     end

@@ -590,7 +590,7 @@ describe 'Bosh::Director::DeploymentPlan::InstancePlanner' do
         expect(existing_instance_plan.network_plans.size).to eq(1)
         vip_network_plan = existing_instance_plan.network_plans.first
         expect(vip_network_plan.reservation.network).to eq(vip_network)
-        expect(vip_network_plan.reservation.ip).to eq(ip_to_i('68.68.68.68'))
+        expect(vip_network_plan.reservation.ip).to eq(to_ipaddr('68.68.68.68'))
       end
     end
   end
