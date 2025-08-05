@@ -47,6 +47,7 @@ module Bosh::Director
           instance_group_static_ips1,
           [],
           vip_deployment_network1,
+          nil
         )
       end
 
@@ -56,6 +57,7 @@ module Bosh::Director
           instance_group_static_ips2,
           [],
           vip_deployment_network2,
+          nil
         )
       end
 
