@@ -196,6 +196,38 @@ module Bosh::Director
         end
       end
 
+      context 'when there are a nic_groups in db' do
+        let(:ip1) { to_ipaddr('192.168.0.1/32') }
+        let(:ip2) { to_ipaddr('192.168.0.2/32') }
+
+        let(:ip_model1) do
+          FactoryBot.create(:models_ip_address, address_str: ip1.to_s, instance: instance_model, network_name: 'fake-network', nic_group: 1)
+        end
+
+        let(:ip_model2) do
+          FactoryBot.create(:models_ip_address, address_str: ip2.to_s, instance: instance_model, network_name: 'fake-network', nic_group: 2)
+        end
+
+
+        context 'when there is a last VM with IP addresses' do
+          before do
+            vm1 = FactoryBot.create(:models_vm, instance: instance_model)
+            vm2 = FactoryBot.create(:models_vm, instance: instance_model)
+
+            vm2.add_ip_address(ip_model1)
+            vm2.add_ip_address(ip_model2)
+
+            instance_model.add_vm vm1
+            instance_model.add_vm vm2
+          end
+
+          it 'creates reservations from the last VM associated with an instance' do
+            reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, per_spec_logger)
+            expect(reservations.map(&:nic_group)).to eq([1, 2])
+          end
+        end
+      end
+
       context 'when instance has dynamic networks in spec' do
         let(:instance_model) { FactoryBot.create(:models_instance, deployment: deployment_model, spec: instance_spec) }
         let(:instance_spec) do
@@ -203,7 +235,8 @@ module Bosh::Director
             'networks' => {
               'dynamic-network' => {
                 'type' => 'dynamic',
-                'ip' => '10.10.0.10'
+                'ip' => '10.10.0.10',
+                'nic_group' => '1',
               }
             }
           }
@@ -220,6 +253,7 @@ module Bosh::Director
           reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, per_spec_logger)
           expect(reservations.first).to_not be_nil
           expect(reservations.first.ip).to eq(IPAddr.new('10.10.0.10').to_i)
+          expect(reservations.first.nic_group).to eq(1)
         end
       end
     end

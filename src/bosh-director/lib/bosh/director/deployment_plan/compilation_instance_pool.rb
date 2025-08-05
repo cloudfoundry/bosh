@@ -188,7 +188,7 @@ module Bosh::Director
         end
 
         compilation_network = @deployment_plan.network(@deployment_plan.compilation.network_name)
-        reservation = DesiredNetworkReservation.new_dynamic(instance.model, compilation_network)
+        reservation = DesiredNetworkReservation.new_dynamic(instance.model, compilation_network, nil)
         @logger.debug("Creating new dynamic reservation #{reservation.inspect} for instance '#{instance}' and compile instance group '#{compile_instance_group}'")
         desired_instance = DeploymentPlan::DesiredInstance.new(compile_instance_group)
         instance_plan = DeploymentPlan::InstancePlan.new(
