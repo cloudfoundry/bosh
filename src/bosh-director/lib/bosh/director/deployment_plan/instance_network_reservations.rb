@@ -2,7 +2,7 @@ module Bosh::Director
   module DeploymentPlan
     class InstanceNetworkReservations
       include Enumerable
-      include IpUtil
+      extend IpUtil
 
       def self.create_from_db(instance_model, deployment, logger)
         reservations = new(logger)
@@ -24,7 +24,7 @@ module Bosh::Director
           # Dynamic network reservations are not saved in DB, recreating from instance spec
           instance_model.spec.fetch('networks', []).each do |network_name, network_config|
             next unless network_config['type'] == 'dynamic'
-            reservations.add_existing(instance_model, deployment, network_name, Bosh::Director::IpAddrOrCidr.new("#{network_config['ip']}"), network_config['type'])
+            reservations.add_existing(instance_model, deployment, network_name, to_ipaddr("#{network_config['ip']}"), network_config['type'])
           end
         end
 

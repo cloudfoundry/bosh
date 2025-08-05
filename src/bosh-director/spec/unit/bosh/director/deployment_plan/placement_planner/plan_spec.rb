@@ -1,146 +1,149 @@
 require 'spec_helper'
 
-module Bosh::Director::DeploymentPlan
-  describe PlacementPlanner::Plan do
-    subject(:plan) { PlacementPlanner::Plan.new(instance_plan_factory, network_planner, per_spec_logger) }
-    let(:network_planner) { NetworkPlanner::Planner.new(per_spec_logger) }
-    let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
+module Bosh::Director
+  module DeploymentPlan
+    describe PlacementPlanner::Plan do
+      include IpUtil
+      subject(:plan) { PlacementPlanner::Plan.new(instance_plan_factory, network_planner, per_spec_logger) }
+      let(:network_planner) { NetworkPlanner::Planner.new(per_spec_logger) }
+      let(:variables_interpolator) { instance_double(Bosh::Director::ConfigServer::VariablesInterpolator) }
 
-    let(:instance_plan_factory) do
-      InstancePlanFactory.new(
-        instance_repo,
-        {},
-        deployment,
-        index_assigner,
-        variables_interpolator,
-        [],
-      )
-    end
+      let(:instance_plan_factory) do
+        InstancePlanFactory.new(
+          instance_repo,
+          {},
+          deployment,
+          index_assigner,
+          variables_interpolator,
+          [],
+        )
+      end
 
-    let(:index_assigner) { PlacementPlanner::IndexAssigner.new(deployment_model) }
-    let(:instance_repo) { Bosh::Director::DeploymentPlan::InstanceRepository.new(per_spec_logger, variables_interpolator) }
-    let(:instance_plans) do
-      plan.create_instance_plans(desired, existing, job_networks, availability_zones, 'jobname')
-    end
-    let(:availability_zones) { [zone_1, zone_2] }
-    let(:zone_1) { AvailabilityZone.new('zone_1', {}) }
-    let(:zone_2) { AvailabilityZone.new('zone_2', {}) }
-    let(:zone_3) { AvailabilityZone.new('zone_3', {}) }
+      let(:index_assigner) { PlacementPlanner::IndexAssigner.new(deployment_model) }
+      let(:instance_repo) { Bosh::Director::DeploymentPlan::InstanceRepository.new(per_spec_logger, variables_interpolator) }
+      let(:instance_plans) do
+        plan.create_instance_plans(desired, existing, job_networks, availability_zones, 'jobname')
+      end
+      let(:availability_zones) { [zone_1, zone_2] }
+      let(:zone_1) { AvailabilityZone.new('zone_1', {}) }
+      let(:zone_2) { AvailabilityZone.new('zone_2', {}) }
+      let(:zone_3) { AvailabilityZone.new('zone_3', {}) }
 
-    let(:instance_group) { FactoryBot.build(:deployment_plan_instance_group) }
+      let(:instance_group) { FactoryBot.build(:deployment_plan_instance_group) }
 
-    let(:desired) do
-      [
-        DesiredInstance.new(instance_group, deployment),
-        DesiredInstance.new(instance_group, deployment),
-        DesiredInstance.new(instance_group, deployment),
-      ]
-    end
-    let(:existing) do
-      [
-        existing_instance_with_az(2, zone_1.name),
-        existing_instance_with_az(0, zone_3.name),
-        existing_instance_with_az(1, zone_2.name),
-      ]
-    end
-    let(:deployment) { instance_double(Planner, model: deployment_model, skip_drain: SkipDrain.new(true)) }
-    let(:deployment_model) { FactoryBot.create(:models_deployment) }
-
-    let(:deployment_network) { ManualNetwork.new('network_A', deployment_subnets, nil, nil) }
-    let(:deployment_subnets) do
-      [
-        ManualNetworkSubnet.new(
-          'network_A',
-          IPAddr.new('192.168.1.0/24'),
-          nil, nil, nil, nil, ['zone_1'], [],
-          [
-            Bosh::Director::IpAddrOrCidr.new('192.168.1.10'),
-            Bosh::Director::IpAddrOrCidr.new('192.168.1.11'),
-            Bosh::Director::IpAddrOrCidr.new('192.168.1.12'),
-            Bosh::Director::IpAddrOrCidr.new('192.168.1.13'),
-            Bosh::Director::IpAddrOrCidr.new('192.168.1.14'),
-          ],
-          nil, nil,
-          '32'
-        ),
-        ManualNetworkSubnet.new(
-          'network_A',
-          IPAddr.new('10.10.1.0/24'),
-          nil, nil, nil, nil, ['zone_2'], [],
-          [
-            Bosh::Director::IpAddrOrCidr.new('10.10.1.10'),
-            Bosh::Director::IpAddrOrCidr.new('10.10.1.11'),
-            Bosh::Director::IpAddrOrCidr.new('10.10.1.12'),
-            Bosh::Director::IpAddrOrCidr.new('10.10.1.13'),
-            Bosh::Director::IpAddrOrCidr.new('10.10.1.14'),
-          ],
-          nil, nil,
-          '32'
-        ),
-        ManualNetworkSubnet.new(
-          'network_A',
-          IPAddr.new('10.0.1.0/24'),
-          nil, nil, nil, nil, ['zone_3'], [],
-          [
-            Bosh::Director::IpAddrOrCidr.new('10.0.1.10'),
-            Bosh::Director::IpAddrOrCidr.new('10.0.1.11'),
-            Bosh::Director::IpAddrOrCidr.new('10.0.1.12'),
-            Bosh::Director::IpAddrOrCidr.new('10.0.1.13'),
-            Bosh::Director::IpAddrOrCidr.new('10.0.1.14'),
-          ],
-          nil, nil,
-          '32'
-        ),
-      ]
-    end
-    let(:job_networks) do
-      [FactoryBot.build(:deployment_plan_job_network, name: 'network_A', static_ips: job_static_ips, deployment_network: deployment_network)]
-    end
-
-    before do
-      FactoryBot.create(:models_variable_set, deployment: deployment_model)
-    end
-
-    context 'when job networks include static IPs' do
-      let(:job_static_ips) do
+      let(:desired) do
         [
-          Bosh::Director::IpAddrOrCidr.new('192.168.1.10'), 
-          Bosh::Director::IpAddrOrCidr.new('192.168.1.11'), 
-          Bosh::Director::IpAddrOrCidr.new('10.10.1.10')
+          DesiredInstance.new(instance_group, deployment),
+          DesiredInstance.new(instance_group, deployment),
+          DesiredInstance.new(instance_group, deployment),
         ]
       end
-
-      it 'places the instances in azs there static IPs are in order of their indexes' do
-        expect(instance_plans.select(&:new?).map(&:desired_instance).map(&:az)).to eq([zone_1])
-
-        expect(instance_plans.select(&:existing?).map(&:desired_instance).map(&:az)).to match_array([zone_1, zone_2])
-        expect(instance_plans.select(&:existing?).map(&:existing_instance)).to match_array([existing[0], existing[2]])
-        expect(instance_plans.select(&:existing?).map(&:desired_instance)).to match_array([desired[0], desired[1]])
-
-        expect(instance_plans.select(&:obsolete?).map(&:existing_instance)).to match_array([existing[1]])
+      let(:existing) do
+        [
+          existing_instance_with_az(2, zone_1.name),
+          existing_instance_with_az(0, zone_3.name),
+          existing_instance_with_az(1, zone_2.name),
+        ]
       end
-    end
+      let(:deployment) { instance_double(Planner, model: deployment_model, skip_drain: SkipDrain.new(true)) }
+      let(:deployment_model) { FactoryBot.create(:models_deployment) }
 
-    context 'when job networks do not include static IPs' do
-      let(:job_static_ips) { nil }
-
-      it 'evenly distributes the instances' do
-        expect(instance_plans.select(&:new?).map(&:desired_instance).map(&:az)).to eq([zone_1])
-
-        expect(instance_plans.select(&:existing?).map(&:existing_instance)).to match_array([existing[0], existing[2]])
-        expect(instance_plans.select(&:existing?).map(&:desired_instance)).to match_array([desired[0], desired[1]])
-        expect(instance_plans.select(&:existing?).map(&:desired_instance).map(&:az)).to eq([zone_1, zone_2])
-
-        expect(instance_plans.select(&:obsolete?).map(&:existing_instance)).to match_array([existing[1]])
+      let(:deployment_network) { ManualNetwork.new('network_A', deployment_subnets, nil, nil) }
+      let(:deployment_subnets) do
+        [
+          ManualNetworkSubnet.new(
+            'network_A',
+            IPAddr.new('192.168.1.0/24'),
+            nil, nil, nil, nil, ['zone_1'], [],
+            [
+              to_ipaddr('192.168.1.10'),
+              to_ipaddr('192.168.1.11'),
+              to_ipaddr('192.168.1.12'),
+              to_ipaddr('192.168.1.13'),
+              to_ipaddr('192.168.1.14'),
+            ],
+            nil, nil,
+            '32'
+          ),
+          ManualNetworkSubnet.new(
+            'network_A',
+            IPAddr.new('10.10.1.0/24'),
+            nil, nil, nil, nil, ['zone_2'], [],
+            [
+              to_ipaddr('10.10.1.10'),
+              to_ipaddr('10.10.1.11'),
+              to_ipaddr('10.10.1.12'),
+              to_ipaddr('10.10.1.13'),
+              to_ipaddr('10.10.1.14'),
+            ],
+            nil, nil,
+            '32'
+          ),
+          ManualNetworkSubnet.new(
+            'network_A',
+            IPAddr.new('10.0.1.0/24'),
+            nil, nil, nil, nil, ['zone_3'], [],
+            [
+              to_ipaddr('10.0.1.10'),
+              to_ipaddr('10.0.1.11'),
+              to_ipaddr('10.0.1.12'),
+              to_ipaddr('10.0.1.13'),
+              to_ipaddr('10.0.1.14'),
+            ],
+            nil, nil,
+            '32'
+          ),
+        ]
       end
-    end
+      let(:job_networks) do
+        [FactoryBot.build(:deployment_plan_job_network, name: 'network_A', static_ips: job_static_ips, deployment_network: deployment_network)]
+      end
 
-    def existing_instance_with_az(index, az)
-      FactoryBot.create(:models_instance, index: index, availability_zone: az)
-    end
+      before do
+        FactoryBot.create(:models_variable_set, deployment: deployment_model)
+      end
 
-    def desired_instance(zone = nil)
-      DesiredInstance.new(instance_group, nil, zone, nil)
+      context 'when job networks include static IPs' do
+        let(:job_static_ips) do
+          [
+            to_ipaddr('192.168.1.10'), 
+            to_ipaddr('192.168.1.11'), 
+            to_ipaddr('10.10.1.10')
+          ]
+        end
+
+        it 'places the instances in azs there static IPs are in order of their indexes' do
+          expect(instance_plans.select(&:new?).map(&:desired_instance).map(&:az)).to eq([zone_1])
+
+          expect(instance_plans.select(&:existing?).map(&:desired_instance).map(&:az)).to match_array([zone_1, zone_2])
+          expect(instance_plans.select(&:existing?).map(&:existing_instance)).to match_array([existing[0], existing[2]])
+          expect(instance_plans.select(&:existing?).map(&:desired_instance)).to match_array([desired[0], desired[1]])
+
+          expect(instance_plans.select(&:obsolete?).map(&:existing_instance)).to match_array([existing[1]])
+        end
+      end
+
+      context 'when job networks do not include static IPs' do
+        let(:job_static_ips) { nil }
+
+        it 'evenly distributes the instances' do
+          expect(instance_plans.select(&:new?).map(&:desired_instance).map(&:az)).to eq([zone_1])
+
+          expect(instance_plans.select(&:existing?).map(&:existing_instance)).to match_array([existing[0], existing[2]])
+          expect(instance_plans.select(&:existing?).map(&:desired_instance)).to match_array([desired[0], desired[1]])
+          expect(instance_plans.select(&:existing?).map(&:desired_instance).map(&:az)).to eq([zone_1, zone_2])
+
+          expect(instance_plans.select(&:obsolete?).map(&:existing_instance)).to match_array([existing[1]])
+        end
+      end
+
+      def existing_instance_with_az(index, az)
+        FactoryBot.create(:models_instance, index: index, availability_zone: az)
+      end
+
+      def desired_instance(zone = nil)
+        DesiredInstance.new(instance_group, nil, zone, nil)
+      end
     end
   end
 end

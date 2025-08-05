@@ -153,8 +153,8 @@ module Bosh::Director
 
         def populate_subnet_properties(subnet, db_subnet)
           subnet.cloud_properties = JSON.parse(db_subnet.cloud_properties)
-          subnet.range = Bosh::Director::IpAddrOrCidr.new(db_subnet.range)
-          subnet.gateway = Bosh::Director::IpAddrOrCidr.new(db_subnet.gateway)
+          subnet.range = to_ipaddr(db_subnet.range)
+          subnet.gateway = to_ipaddr(db_subnet.gateway)
           subnet.netmask = subnet.range.netmask
 
           subnet.restricted_ips.add(subnet.gateway) if subnet.gateway
