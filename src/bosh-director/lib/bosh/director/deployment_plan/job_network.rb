@@ -1,13 +1,14 @@
 module Bosh::Director
   module DeploymentPlan
     class JobNetwork
-      attr_reader :name, :static_ips, :deployment_network
+      attr_reader :name, :static_ips, :deployment_network, :nic_group
 
-      def initialize(name, static_ips, default_for, deployment_network)
+      def initialize(name, static_ips, default_for, deployment_network, nic_group)
         @name = name
         @static_ips = static_ips
         @default_for = default_for
         @deployment_network = deployment_network
+        @nic_group = nic_group&.to_i
       end
 
       def availability_zones

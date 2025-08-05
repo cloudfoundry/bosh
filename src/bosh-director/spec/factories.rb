@@ -23,9 +23,10 @@ FactoryBot.define do
     name { 'job-network-name' }
     static_ips { [] }
     default_for { [] }
+    nic_group { nil }
     association :deployment_network, factory: :deployment_plan_manual_network, strategy: :build
 
-    initialize_with { new(name, static_ips, default_for, deployment_network) }
+    initialize_with { new(name, static_ips, default_for, deployment_network, nic_group) }
   end
 
   factory :deployment_plan_instance_group, class: Bosh::Director::DeploymentPlan::InstanceGroup do
@@ -173,6 +174,7 @@ FactoryBot.define do
     address_str { Bosh::Director::IpAddrOrCidr.new(Random.rand(IPAddr::IN4MASK)).to_s }
     static { false }
     created_at { Time.now }
+    nic_group { nil }
     association :instance, factory: :models_instance, strategy: :create
   end
 

@@ -33,12 +33,13 @@ module Bosh::Director
         network_specs.map do |network_spec|
           network_name = safe_property(network_spec, 'name', class: String)
           default_for = safe_property(network_spec, 'default', class: Array, default: [])
+          nic_group = safe_property(network_spec, 'nic_group', class: String, default: nil)
           static_ips = parse_static_ips(network_spec['static_ips'], instance_group_name)
 
           deployment_network = look_up_deployment_network(manifest_networks, instance_group_name, network_name)
           deployment_network.validate_reference_from_job!(network_spec, instance_group_name)
 
-          JobNetwork.new(network_name, static_ips, default_for, deployment_network)
+          JobNetwork.new(network_name, static_ips, default_for, deployment_network, nic_group)
         end
       end
 
