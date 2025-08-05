@@ -10,7 +10,7 @@ module Bosh::Director::DeploymentPlan
     end
 
     def delete(ip)
-      ip_or_cidr = Bosh::Director::IpAddrOrCidr.new(ip)
+      ip_or_cidr = to_ipaddr(ip)
 
       ip_address = Bosh::Director::Models::IpAddress.first(address_str: ip_or_cidr.to_s)
 
@@ -83,7 +83,7 @@ module Bosh::Director::DeploymentPlan
     def try_to_allocate_dynamic_ip(reservation, subnet)
       addresses_in_use = Set.new(all_ip_addresses)
 
-      first_range_address = Bosh::Director::IpAddrOrCidr.new(subnet.range.to_range.first.to_i - 1)
+      first_range_address = to_ipaddr(subnet.range.to_range.first.to_i - 1)
 
       addresses_we_cant_allocate = addresses_in_use
 
@@ -113,19 +113,19 @@ module Bosh::Director::DeploymentPlan
     def find_next_available_ip(addresses_we_cant_allocate, first_range_address, prefix)
       filtered_ips = addresses_we_cant_allocate.sort_by { |ip| ip.to_i }.reject { |ip| ip.to_i < first_range_address.to_i } #remove ips that are below subnet range
 
-      current_ip = Bosh::Director::IpAddrOrCidr.new(first_range_address.to_i + 1)
+      current_ip = to_ipaddr(first_range_address.to_i + 1)
       found = false
 
       while found == false
-        current_prefix = Bosh::Director::IpAddrOrCidr.new("#{current_ip.base_addr}/#{prefix}")
+        current_prefix = to_ipaddr("#{current_ip.base_addr}/#{prefix}")
 
         if filtered_ips.any? { |ip| current_prefix.include?(ip) }
           filtered_ips.reject! { |ip| ip.to_i < current_prefix.to_i }
           actual_ip_prefix = filtered_ips.first.count
           if actual_ip_prefix > current_prefix.count
-            current_ip = Bosh::Director::IpAddrOrCidr.new(current_ip.to_i + actual_ip_prefix)
+            current_ip = to_ipaddr(current_ip.to_i + actual_ip_prefix)
           else
-            current_ip = Bosh::Director::IpAddrOrCidr.new(current_ip.to_i + current_prefix.count)
+            current_ip = to_ipaddr(current_ip.to_i + current_prefix.count)
           end
         else
           found_cidr = current_prefix
@@ -139,7 +139,7 @@ module Bosh::Director::DeploymentPlan
     def try_to_allocate_vip_ip(reservation, subnet)
       addresses_in_use = Set.new(all_ip_addresses.map { |ip| ip.to_i })
 
-      if Bosh::Director::IpAddrOrCidr.new(subnet.static_ips.first.to_i).ipv6?
+      if to_ipaddr(subnet.static_ips.first.to_i).ipv6?
         prefix = 128
       else
         prefix = 32
@@ -149,7 +149,7 @@ module Bosh::Director::DeploymentPlan
 
       raise NoMoreIPsAvailableAndStopRetrying if available_ips.empty?
 
-      ip_address = Bosh::Director::IpAddrOrCidr.new("#{Bosh::Director::IpAddrOrCidr.new(available_ips.first).base_addr}/#{prefix}")
+      ip_address = to_ipaddr("#{to_ipaddr(available_ips.first).base_addr}/#{prefix}")
 
       save_ip(ip_address.to_s, reservation, false)
 

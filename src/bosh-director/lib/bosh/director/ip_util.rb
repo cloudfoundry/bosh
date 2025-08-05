@@ -15,11 +15,11 @@ module Bosh::Director
     end
 
     def base_addr(ip)
-      Bosh::Director::IpAddrOrCidr.new(ip).base_addr
+      to_ipaddr(ip).base_addr
     end
 
     def ip_address?(ip)
-      ip_address = Bosh::Director::IpAddrOrCidr.new(ip)
+      ip_address = to_ipaddr(ip)
 
       ip_address.ipv4? || ip_address.ipv6?
     rescue
@@ -27,7 +27,7 @@ module Bosh::Director
     end
 
     def ip_in_array?(ip_to_check, ip_objects_array)
-      ip_to_check = Bosh::Director::IpAddrOrCidr.new(ip_to_check)
+      ip_to_check = to_ipaddr(ip_to_check)
 
       ip_objects_array.any? do |ip_object|
         ip_object.include?(ip_to_check)
@@ -43,16 +43,16 @@ module Bosh::Director
 
       if parts.size == 1
         if expanded
-          cidr_range = Bosh::Director::IpAddrOrCidr.new(parts[0]).to_range
-          first_ip = Bosh::Director::IpAddrOrCidr.new(cidr_range.first.to_i)
-          last_ip = Bosh::Director::IpAddrOrCidr.new(cidr_range.last.to_i)
+          cidr_range = to_ipaddr(parts[0]).to_range
+          first_ip = to_ipaddr(cidr_range.first.to_i)
+          last_ip = to_ipaddr(cidr_range.last.to_i)
           (first_ip .. last_ip)
         else
-          [Bosh::Director::IpAddrOrCidr.new(parts[0])]
+          [to_ipaddr(parts[0])]
         end
       elsif parts.size == 2
-        first_ip = Bosh::Director::IpAddrOrCidr.new(parts[0])
-        last_ip = Bosh::Director::IpAddrOrCidr.new(parts[1])
+        first_ip = to_ipaddr(parts[0])
+        last_ip = to_ipaddr(parts[1])
         unless first_ip.count == 1 && last_ip.count == 1
           raise NetworkInvalidIpRangeFormat, "Invalid IP range format: #{range_string}"
         end
@@ -75,7 +75,7 @@ module Bosh::Director
         mask = current_ip.ipv4? ? 32 : 128
 
         while mask >= 0
-          potential_subnet = Bosh::Director::IpAddrOrCidr.new("#{current_ip.base_addr}/#{mask}")
+          potential_subnet = to_ipaddr("#{current_ip.base_addr}/#{mask}")
 
           first_ip_in_range = potential_subnet.first
           last_ip_in_range = potential_subnet.last
@@ -88,7 +88,7 @@ module Bosh::Director
 
           if first_ip_in_range < current_ip || ( first_ip_in_range == current_ip && last_ip_in_range >= last_ip )
             previous_mask = mask + 1
-            found_subnet = Bosh::Director::IpAddrOrCidr.new("#{current_ip.base_addr}/#{previous_mask}")
+            found_subnet = to_ipaddr("#{current_ip.base_addr}/#{previous_mask}")
             cidr_blocks << found_subnet
             current_ip = found_subnet.last.succ
             break

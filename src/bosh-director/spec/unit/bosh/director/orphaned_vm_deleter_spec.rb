@@ -3,6 +3,7 @@ require 'spec_helper'
 module Bosh
   module Director
     describe OrphanedVMDeleter do
+      include IpUtil
       subject { OrphanedVMDeleter.new(per_spec_logger) }
 
       describe '#delete_all' do
@@ -20,7 +21,7 @@ module Bosh
           Bosh::Director::Models::IpAddress.create(
             orphaned_vm: orphaned_vm1,
             network_name: 'my-manual-network',
-            address_str: Bosh::Director::IpAddrOrCidr.new('127.0.0.2/32').to_s,
+            address_str: to_ipaddr('127.0.0.2/32').to_s,
             task_id: 1,
           )
         end
@@ -38,7 +39,7 @@ module Bosh
           Bosh::Director::Models::IpAddress.create(
             orphaned_vm: orphaned_vm2,
             network_name: 'my-manual-network',
-            address_str: Bosh::Director::IpAddrOrCidr.new('127.0.0.1/32').to_s,
+            address_str: to_ipaddr('127.0.0.1/32').to_s,
             task_id: 1,
           )
         end

@@ -14,7 +14,7 @@ describe Bosh::Director::IpUtil do
       it 'should handle single ip' do
         counter = 0
         ip_util_includer.each_ip('1.2.3.4') do |ip|
-          expect(ip).to eq(Bosh::Director::IpAddrOrCidr.new(IPAddr.new('1.2.3.4').to_i))
+          expect(ip).to eq(to_ipaddr('1.2.3.4').to_i)
           counter += 1
         end
         expect(counter).to eq(1)
@@ -23,7 +23,7 @@ describe Bosh::Director::IpUtil do
       it 'should handle a range' do
         counter = 0
         ip_util_includer.each_ip('1.0.0.0/24') do |ip|
-          expect(ip).to eq(Bosh::Director::IpAddrOrCidr.new(IPAddr.new('1.0.0.0').to_i + counter))
+          expect(ip).to eq(to_ipaddr('1.0.0.0').to_i + counter)
           counter += 1
         end
         expect(counter).to eq(256)
@@ -32,7 +32,7 @@ describe Bosh::Director::IpUtil do
       it 'should handle a differently formatted range' do
         counter = 0
         ip_util_includer.each_ip('1.0.0.0 - 1.0.1.0') do |ip|
-          expect(ip).to eq(Bosh::Director::IpAddrOrCidr.new(IPAddr.new('1.0.0.0').to_i + counter))
+          expect(ip).to eq(to_ipaddr('1.0.0.0').to_i + counter)
           counter += 1
         end
         expect(counter).to eq(257)
@@ -43,7 +43,7 @@ describe Bosh::Director::IpUtil do
       it 'should handle a range' do
         counter = 0
         ip_util_includer.each_ip('1.0.0.0/24', false) do |ip|
-          expect(ip).to eq(Bosh::Director::IpAddrOrCidr.new(IPAddr.new('1.0.0.0').to_i + counter))
+          expect(ip).to eq(to_ipaddr('1.0.0.0').to_i + counter)
           expect(ip.prefix).to eq(24)
           counter += 1
         end
@@ -54,10 +54,10 @@ describe Bosh::Director::IpUtil do
         counter = 0
         ip_util_includer.each_ip('1.0.0.0 - 1.0.1.0', false) do |ip|
           if counter == 0
-            expect(ip).to eq(Bosh::Director::IpAddrOrCidr.new("1.0.0.0"))
+            expect(ip).to eq(to_ipaddr("1.0.0.0"))
             expect(ip.prefix).to eq(24)
           elsif counter == 1
-              expect(ip).to eq(Bosh::Director::IpAddrOrCidr.new("1.0.1.0"))
+              expect(ip).to eq(to_ipaddr("1.0.1.0"))
               expect(ip.prefix).to eq(32)
           else
             raise "Unexpected counter value: #{counter}"
@@ -72,28 +72,28 @@ describe Bosh::Director::IpUtil do
         counter = 0
         ip_util_includer.each_ip('1.0.0.5 - 1.0.0.98', false) do |ip|
           if counter == 0
-            expect(ip).to eq(Bosh::Director::IpAddrOrCidr.new(IPAddr.new('1.0.0.5').to_i))
+            expect(ip).to eq(to_ipaddr('1.0.0.5').to_i)
             expect(ip.prefix).to eq(32)
           elsif counter == 1
-            expect(ip).to eq(Bosh::Director::IpAddrOrCidr.new(IPAddr.new('1.0.0.6').to_i))
+            expect(ip).to eq(to_ipaddr('1.0.0.6').to_i)
             expect(ip.prefix).to eq(31)
           elsif counter == 2
-            expect(ip).to eq(Bosh::Director::IpAddrOrCidr.new(IPAddr.new('1.0.0.8').to_i))
+            expect(ip).to eq(to_ipaddr('1.0.0.8').to_i)
             expect(ip.prefix).to eq(29)
           elsif counter == 3
-            expect(ip).to eq(Bosh::Director::IpAddrOrCidr.new(IPAddr.new('1.0.0.16').to_i))
+            expect(ip).to eq(to_ipaddr('1.0.0.16').to_i)
             expect(ip.prefix).to eq(28)
           elsif counter == 4
-            expect(ip).to eq(Bosh::Director::IpAddrOrCidr.new(IPAddr.new('1.0.0.32').to_i))
+            expect(ip).to eq(to_ipaddr('1.0.0.32').to_i)
             expect(ip.prefix).to eq(27)
           elsif counter == 5
-            expect(ip).to eq(Bosh::Director::IpAddrOrCidr.new(IPAddr.new('1.0.0.64').to_i))
+            expect(ip).to eq(to_ipaddr('1.0.0.64').to_i)
             expect(ip.prefix).to eq(27)
           elsif counter == 6
-            expect(ip).to eq(Bosh::Director::IpAddrOrCidr.new(IPAddr.new('1.0.0.96').to_i))
+            expect(ip).to eq(to_ipaddr('1.0.0.96').to_i)
             expect(ip.prefix).to eq(31)
           elsif counter == 7
-            expect(ip).to eq(Bosh::Director::IpAddrOrCidr.new(IPAddr.new('1.0.0.98').to_i))
+            expect(ip).to eq(to_ipaddr('1.0.0.98').to_i)
             expect(ip.prefix).to eq(32)
           else
             raise "Unexpected counter value: #{counter}"
@@ -108,19 +108,19 @@ describe Bosh::Director::IpUtil do
         counter = 0
         ip_util_includer.each_ip('2001:db8::5 - 2001:db8::e', false) do |ip|
           if counter == 0
-            expect(ip).to eq(Bosh::Director::IpAddrOrCidr.new(IPAddr.new('2001:db8::5').to_i + counter))
+            expect(ip).to eq(to_ipaddr('2001:db8::5').to_i + counter)
             expect(ip.prefix).to eq(128)
           elsif counter == 1
-            expect(ip).to eq(Bosh::Director::IpAddrOrCidr.new(IPAddr.new('2001:db8::6').to_i))
+            expect(ip).to eq(to_ipaddr('2001:db8::6').to_i)
             expect(ip.prefix).to eq(127)
           elsif counter == 2
-            expect(ip).to eq(Bosh::Director::IpAddrOrCidr.new(IPAddr.new('2001:db8::8').to_i))
+            expect(ip).to eq(to_ipaddr('2001:db8::8').to_i)
             expect(ip.prefix).to eq(126)
           elsif counter == 3
-            expect(ip).to eq(Bosh::Director::IpAddrOrCidr.new(IPAddr.new('2001:db8::c').to_i))
+            expect(ip).to eq(to_ipaddr('2001:db8::c').to_i)
             expect(ip.prefix).to eq(127)
           elsif counter == 4
-            expect(ip).to eq(Bosh::Director::IpAddrOrCidr.new(IPAddr.new('2001:db8::e').to_i))
+            expect(ip).to eq(to_ipaddr('2001:db8::e').to_i)
             expect(ip.prefix).to eq(128)
           else
             raise "Unexpected counter value: #{counter}"
@@ -135,7 +135,7 @@ describe Bosh::Director::IpUtil do
         counter = 0
         ip_util_includer.each_ip('2001:db8:: - 2001:db8::ff', false) do |ip|
           if counter == 0
-            expect(ip).to eq(Bosh::Director::IpAddrOrCidr.new(IPAddr.new('2001:db8::').to_i))
+            expect(ip).to eq(to_ipaddr('2001:db8::').to_i)
             expect(ip.prefix).to eq(120)
           else
             raise "Unexpected counter value: #{counter}"
@@ -154,7 +154,7 @@ describe Bosh::Director::IpUtil do
     it 'should ignore nil values' do
       counter = 0
       ip_util_includer.each_ip(nil) do |ip|
-        expect(ip).to eq(Bosh::Director::IpAddrOrCidr.new(IPAddr.new('1.2.3.4').to_i))
+        expect(ip).to eq(to_ipaddr('1.2.3.4').to_i)
         counter += 1
       end
       expect(counter).to eq(0)

@@ -4,6 +4,7 @@ module Bosh::Director
   module DeploymentPlan
     module Steps
       describe CommitInstanceNetworkSettingsStep do
+        include IpUtil
         subject(:step) { described_class.new }
         let(:report) { Stages::Report.new.tap { |report| report.vm = vm } }
         let(:network_plans) do
@@ -18,9 +19,9 @@ module Bosh::Director
         let(:obsolete_ip_address_string) { '2.2.2.2/32' }
         let(:desired_ip_address_string) { '3.3.3.3/32' }
 
-        let(:existing_reservation) { instance_double(NetworkReservation, ip: Bosh::Director::IpAddrOrCidr.new(existing_ip_address_string)) }
-        let(:obsolete_reservation) { instance_double(NetworkReservation, ip: Bosh::Director::IpAddrOrCidr.new(obsolete_ip_address_string)) }
-        let(:desired_reservation) { instance_double(NetworkReservation, ip: Bosh::Director::IpAddrOrCidr.new(desired_ip_address_string)) }
+        let(:existing_reservation) { instance_double(NetworkReservation, ip: to_ipaddr(existing_ip_address_string)) }
+        let(:obsolete_reservation) { instance_double(NetworkReservation, ip: to_ipaddr(obsolete_ip_address_string)) }
+        let(:desired_reservation) { instance_double(NetworkReservation, ip: to_ipaddr(desired_ip_address_string)) }
 
         let!(:existing_ip_address) { FactoryBot.create(:models_ip_address, address_str: existing_ip_address_string) }
         let!(:obsolete_ip_address) { FactoryBot.create(:models_ip_address, address_str: obsolete_ip_address_string) }

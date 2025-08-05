@@ -4,6 +4,7 @@ module Bosh::Director
     RUNTIME_LEVEL = :runtime
 
     class Addon
+      include IpUtil
       extend ValidationHelper
 
       attr_reader :name

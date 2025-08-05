@@ -5,7 +5,6 @@ module Bosh::Director
     class InstanceGroupSpecParser
       include ValidationHelper
       include Bosh::Common::Template::PropertyHelper
-      include IpUtil
 
       MANUAL_LINK_KEYS = %w[instances properties address].freeze
 
