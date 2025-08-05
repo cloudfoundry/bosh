@@ -2,6 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Jobs::VmState do
+    include IpUtil
     def stub_agent_get_state_to_return_state_with_vitals
       expect(agent).to receive(:get_state).with('full').and_return(
         'vm_cid' => 'fake-vm-cid',
@@ -55,7 +56,7 @@ module Bosh::Director
         FactoryBot.create(:models_ip_address,
           instance_id: instance.id,
           vm_id: vm.id,
-          address_str: Bosh::Director::IpAddrOrCidr.new('1.1.1.1').to_s,
+          address_str: to_ipaddr('1.1.1.1').to_s,
           task_id: '12345',
         )
         expect(agent).to receive(:get_state).with('full').and_return(
@@ -82,13 +83,13 @@ module Bosh::Director
           FactoryBot.create(:models_ip_address,
             instance_id: instance.id,
             vm_id: vm.id,
-            address_str: Bosh::Director::IpAddrOrCidr.new('1.1.1.1').to_s,
+            address_str: to_ipaddr('1.1.1.1').to_s,
             task_id: '12345',
           )
           FactoryBot.create(:models_ip_address,
             instance_id: instance.id,
             vm_id: vm.id,
-            address_str: Bosh::Director::IpAddrOrCidr.new('2.2.2.2').to_s,
+            address_str: to_ipaddr('2.2.2.2').to_s,
             task_id: '12345',
           )
         end
@@ -125,13 +126,13 @@ module Bosh::Director
           FactoryBot.create(:models_ip_address,
             instance_id: instance.id,
             vm_id: vm.id,
-            address_str: Bosh::Director::IpAddrOrCidr.new('1.1.1.1').to_s,
+            address_str: to_ipaddr('1.1.1.1').to_s,
             task_id: '12345',
           )
           FactoryBot.create(:models_ip_address,
             instance_id: instance.id,
             vm_id: vm.id,
-            address_str: Bosh::Director::IpAddrOrCidr.new('2.2.2.2').to_s,
+            address_str: to_ipaddr('2.2.2.2').to_s,
             task_id: '12345',
           )
 
@@ -168,7 +169,7 @@ module Bosh::Director
         FactoryBot.create(:models_ip_address,
           instance_id: instance.id,
           vm_id: vm.id,
-          address_str: Bosh::Director::IpAddrOrCidr.new('1.1.1.1').to_s,
+          address_str: to_ipaddr('1.1.1.1').to_s,
           task_id: '12345',
         )
         stub_agent_get_state_to_return_state_with_vitals
@@ -359,7 +360,7 @@ module Bosh::Director
         FactoryBot.create(:models_ip_address,
           instance_id: instance.id,
           vm_id: vm.id,
-          address_str: Bosh::Director::IpAddrOrCidr.new('1.1.1.1').to_s,
+          address_str: to_ipaddr('1.1.1.1').to_s,
           task_id: '12345',
         )
         instance.update(spec: { 'vm_type' => { 'name' => 'fake-vm-type', 'cloud_properties' => {} } })
@@ -440,13 +441,13 @@ module Bosh::Director
           FactoryBot.create(:models_ip_address,
             instance_id: instance.id,
             vm_id: vm.id,
-            address_str: Bosh::Director::IpAddrOrCidr.new('1.1.1.1').to_s,
+            address_str: to_ipaddr('1.1.1.1').to_s,
             task_id: '12345',
           )
           FactoryBot.create(:models_ip_address,
             instance_id: instance.id,
             vm_id: inactive_vm.id,
-            address_str: Bosh::Director::IpAddrOrCidr.new('1.1.1.2').to_s,
+            address_str: to_ipaddr('1.1.1.2').to_s,
             task_id: '12345',
           )
           allow(AgentClient).to receive(:with_agent_id).with('other_agent_id', anything, timeout: 5).and_return(lazy_agent)

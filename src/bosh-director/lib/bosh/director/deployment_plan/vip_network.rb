@@ -52,7 +52,7 @@ module Bosh::Director
 
         {
           'type' => 'vip',
-          'ip' => Bosh::Director::IpAddrOrCidr.new(reservation.ip).base_addr,
+          'ip' => to_ipaddr(reservation.ip).base_addr,
           'cloud_properties' => @cloud_properties,
         }
       end

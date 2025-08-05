@@ -1,6 +1,7 @@
 require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
+  include Bosh::Director::IpUtil
   before { @network = instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
 
   def make_subnet(properties, availability_zones)
@@ -363,8 +364,8 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
     end
 
     it 'should ignore static ips which are not a base address of the prefix' do
-      ip1 = Bosh::Director::IpAddrOrCidr.new('192.168.0.64')
-      ip2 = Bosh::Director::IpAddrOrCidr.new('192.168.0.128')
+      ip1 = to_ipaddr('192.168.0.64')
+      ip2 = to_ipaddr('192.168.0.128')
 
       subnet = make_subnet(
         {
@@ -381,9 +382,9 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
     end
 
     it 'should find the correct base address of the prefix from static ip ranges' do
-      ip1 = Bosh::Director::IpAddrOrCidr.new('192.168.0.32')
-      ip2 = Bosh::Director::IpAddrOrCidr.new('192.168.0.64')
-      ip3 = Bosh::Director::IpAddrOrCidr.new('192.168.0.96')
+      ip1 = to_ipaddr('192.168.0.32')
+      ip2 = to_ipaddr('192.168.0.64')
+      ip3 = to_ipaddr('192.168.0.96')
 
       subnet = make_subnet(
         {
@@ -467,13 +468,13 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
         let(:reserved) { ['192.168.0.50-192.168.0.60'] }
 
         it 'returns false' do
-          expect(subnet.is_reservable?(Bosh::Director::IpAddrOrCidr.new('192.168.0.55'))).to be_falsey
+          expect(subnet.is_reservable?(to_ipaddr('192.168.0.55'))).to be_falsey
         end
       end
 
       context 'when subnet reserved does not include IP' do
         it 'returns true' do
-          expect(subnet.is_reservable?(Bosh::Director::IpAddrOrCidr.new('192.168.0.55'))).to be_truthy
+          expect(subnet.is_reservable?(to_ipaddr('192.168.0.55'))).to be_truthy
         end
       end
 
@@ -481,20 +482,20 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
         let(:reserved) { ['192.168.0.50-192.168.0.60'] }
 
         it 'returns true' do
-          expect(subnet.is_reservable?(Bosh::Director::IpAddrOrCidr.new('192.168.0.62/31'))).to be_truthy
+          expect(subnet.is_reservable?(to_ipaddr('192.168.0.62/31'))).to be_truthy
         end
       end
     end
 
     context 'when subnet range does not include IP' do
       it 'returns false' do
-        expect(subnet.is_reservable?(Bosh::Director::IpAddrOrCidr.new('192.168.10.55'))).to be_falsey
+        expect(subnet.is_reservable?(to_ipaddr('192.168.10.55'))).to be_falsey
       end
     end
 
     context 'when subnet range is not the same IP version' do
       it 'returns false' do
-        expect(subnet.is_reservable?(Bosh::Director::IpAddrOrCidr.new('f1ee:0000:0000:0000:0000:0000:0000:0001'))).to be_falsey
+        expect(subnet.is_reservable?(to_ipaddr('f1ee:0000:0000:0000:0000:0000:0000:0001'))).to be_falsey
       end
     end
   end
