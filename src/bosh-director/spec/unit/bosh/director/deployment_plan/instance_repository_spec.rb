@@ -68,7 +68,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
 
     describe 'binding existing reservations' do
       context 'when instance has reservations in db' do
-        let(:ip_address) { Bosh::Director::IpAddrOrCidr.new('1.1.1.1') }
+        let(:ip_address) { to_ipaddr('1.1.1.1') }
 
         before do
           existing_instance.add_ip_address(FactoryBot.create(:models_ip_address, address_str: ip_address.to_s))
@@ -202,7 +202,7 @@ describe Bosh::Director::DeploymentPlan::InstanceRepository do
     end
     context 'binding existing reservations' do
       context 'when instance has reservations in db' do
-        let(:ip_address) { Bosh::Director::IpAddrOrCidr.new('1.1.1.1') }
+        let(:ip_address) { to_ipaddr('1.1.1.1') }
 
         before do
           existing_instance.add_ip_address(FactoryBot.create(:models_ip_address, address_str: ip_address.to_s))

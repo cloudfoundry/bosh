@@ -27,7 +27,7 @@ module Bosh::Director
         end
 
         if range_property
-          range = Bosh::Director::IpAddrOrCidr.new(range_property)
+          range = to_ipaddr(range_property)
 
           if range.count <= 1
             raise NetworkInvalidRange, "Invalid network range '#{range_property}', " \
@@ -38,7 +38,7 @@ module Bosh::Director
           broadcast = range.last
 
           if gateway_property
-            gateway = Bosh::Director::IpAddrOrCidr.new(gateway_property)
+            gateway = to_ipaddr(gateway_property)
             invalid_gateway(network_name, 'must be a single IP') unless gateway.count == 1
             invalid_gateway(network_name, 'must be inside the range') unless range.include?(gateway)
             invalid_gateway(network_name, "can't be the network id") if gateway == range
@@ -103,7 +103,7 @@ module Bosh::Director
             static_cidrs.each do |static_cidr|
               static_cidr.each_base_addr(prefix) do |base_addr_int|
                 if static_cidr.include?(base_addr_int)
-                  static_ips.add(Bosh::Director::IpAddrOrCidr.new(base_addr_int))
+                  static_ips.add(to_ipaddr(base_addr_int))
                 end
                 break if static_cidr.last.to_i <= base_addr_int
               end

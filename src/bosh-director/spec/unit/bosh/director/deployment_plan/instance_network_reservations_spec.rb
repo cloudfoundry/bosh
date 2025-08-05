@@ -2,6 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DeploymentPlan::InstanceNetworkReservations do
+    include Bosh::Director::IpUtil
     let(:deployment_model) { FactoryBot.create(:models_deployment, name: 'foo-deployment') }
     let(:cloud_config) { FactoryBot.create(:models_config_cloud, :with_manifest) }
     let(:runtime_config) { FactoryBot.create(:models_config_runtime) }
@@ -54,8 +55,8 @@ module Bosh::Director
 
     describe 'create_from_db' do
       context 'when there are IP addresses in db' do
-        let(:ip1) { Bosh::Director::IpAddrOrCidr.new('192.168.0.1/32') }
-        let(:ip2) { Bosh::Director::IpAddrOrCidr.new('192.168.0.2/32') }
+        let(:ip1) { to_ipaddr('192.168.0.1/32') }
+        let(:ip2) { to_ipaddr('192.168.0.2/32') }
 
         let(:ip_model1) do
           FactoryBot.create(:models_ip_address, address_str: ip1.to_s, instance: instance_model, network_name: 'fake-network')
