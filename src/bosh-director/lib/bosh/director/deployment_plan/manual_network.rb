@@ -77,6 +77,11 @@ module Bosh::Director
           config["default"] = default_properties.sort
         end
 
+        nic_group = reservation.nic_group
+        if nic_group
+          config["nic_group"] = nic_group.to_s
+        end
+
         config["dns"] = subnet.dns if subnet.dns
         config["gateway"] = subnet.gateway.base_addr if subnet.gateway
         config

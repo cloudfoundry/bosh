@@ -196,6 +196,7 @@ module Bosh::Director::DeploymentPlan
         network_name: reservation.network.name,
         task_id: Bosh::Director::Config.current_job.task_id,
         static: is_static,
+        nic_group: reservation.nic_group,
         )
       reservation.instance_model.add_ip_address(ip_address)
     rescue Sequel::ValidationFailed, Sequel::DatabaseError => e
