@@ -97,16 +97,12 @@ module Bosh::Director
             end
           end
 
-          if prefix == Network::IPV6_DEFAULT_PREFIX_SIZE || prefix == Network::IPV4_DEFAULT_PREFIX_SIZE
-            static_ips = static_cidrs
-          else
-            static_cidrs.each do |static_cidr|
-              static_cidr.each_base_addr(prefix) do |base_addr_int|
-                if static_cidr.include?(base_addr_int)
-                  static_ips.add(to_ipaddr(base_addr_int))
-                end
-                break if static_cidr.last.to_i <= base_addr_int
+          static_cidrs.each do |static_cidr|
+            static_cidr.each_base_addr(prefix) do |base_addr_int|
+              if static_cidr.include?(base_addr_int)
+                static_ips.add(to_ipaddr(base_addr_int))
               end
+              break if static_cidr.last.to_i <= base_addr_int
             end
           end
         end
