@@ -88,7 +88,7 @@ module Bosh::Director::DeploymentPlan
         existing_reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(
           existing_reservation.instance_model,
           desired_reservation.network,
-          existing_reservation.nic_group,
+          desired_reservation.nic_group,
         )
         existing_reservation.resolve_ip(existing_reservation_ip)
         existing_reservation
