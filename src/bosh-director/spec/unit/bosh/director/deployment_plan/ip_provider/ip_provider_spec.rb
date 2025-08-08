@@ -295,7 +295,7 @@ module Bosh::Director
                       expect do
                         ip_provider.reserve(reservation)
                       end.to raise_error Bosh::Director::NetworkReservationIpReserved,
-                                        "Failed to reserve IP '192.168.1.11' for network 'my-manual-network': IP belongs to "\
+                                        "Failed to reserve IP '192.168.1.11/32' for network 'my-manual-network': IP belongs to "\
                                         'reserved range'
                     end
                   end
@@ -338,7 +338,7 @@ module Bosh::Director
                       expect {
                         ip_provider.reserve(reservation)
                       }.to raise_error Bosh::Director::NetworkReservationIpReserved,
-                          "Failed to reserve IP '192.168.1.11' for network 'my-manual-network': IP belongs to reserved range"
+                          "Failed to reserve IP '192.168.1.11/32' for network 'my-manual-network': IP belongs to reserved range"
                     end
                   end
 
@@ -394,7 +394,7 @@ module Bosh::Director
                   it 'fails to reserve the reservation' do
                     expect {
                       ip_provider.reserve(reservation)
-                    }.to raise_error Bosh::Director::NetworkReservationIpReserved, "Failed to reserve IP '192.168.1.6' for network 'my-manual-network': IP belongs to reserved range"
+                    }.to raise_error Bosh::Director::NetworkReservationIpReserved, "Failed to reserve IP '192.168.1.6/32' for network 'my-manual-network': IP belongs to reserved range"
                   end
                 end
               end

@@ -57,8 +57,8 @@ describe Bosh::Director::IpUtil do
             expect(ip).to eq(to_ipaddr("1.0.0.0"))
             expect(ip.prefix).to eq(24)
           elsif counter == 1
-              expect(ip).to eq(to_ipaddr("1.0.1.0"))
-              expect(ip.prefix).to eq(32)
+            expect(ip).to eq(to_ipaddr("1.0.1.0"))
+            expect(ip.prefix).to eq(32)
           else
             raise "Unexpected counter value: #{counter}"
           end
@@ -172,12 +172,6 @@ describe Bosh::Director::IpUtil do
         expect { ip_util_includer.each_ip(range) }.to raise_error Bosh::Director::NetworkInvalidIpRangeFormat,
                                                          "Invalid IP range format: #{range}"
       end
-    end
-  end
-
-  describe 'base_addr' do
-    it 'converts integer to CIDR IP' do
-      expect(ip_util_includer.base_addr(168427582)).to eq('10.10.0.62')
     end
   end
 

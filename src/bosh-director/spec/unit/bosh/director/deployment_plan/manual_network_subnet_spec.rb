@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
-  include Bosh::Director::IpUtil
+include Bosh::Director::IpUtil
   before { @network = instance_double('Bosh::Director::DeploymentPlan::Network', name: 'net_a') }
 
   def make_subnet(properties, availability_zones)
@@ -29,6 +29,31 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
       expect(subnet.netmask).to eq('255.255.255.0')
       expect(subnet.gateway).to eq('192.168.0.254')
       expect(subnet.dns).to eq(nil)
+    end
+
+    it 'should create a subnet spec with restricted_ips in cidr format' do
+      allow(Bosh::Director::Config).to receive(:director_ips).and_return([to_ipaddr('10.0.3.11').to_s])
+
+      subnet = make_subnet(
+        {
+          'dns' => ['10.0.0.2'],
+          'gateway' => '10.0.3.1',
+          'range' => '10.0.3.0/24',
+          'reserved' => [
+           '10.0.3.0 - 10.0.3.35',
+           '10.0.3.242 - 10.0.3.255']
+        },
+        [],
+      )
+
+      expected_restricted_ips = Set.new([to_ipaddr('10.0.3.0/27'), to_ipaddr('10.0.3.32/30'), to_ipaddr('10.0.3.242/31'), to_ipaddr('10.0.3.244/30'), to_ipaddr('10.0.3.248/29') ])
+
+      expect(subnet.range.to_s).to eq('10.0.3.0/24')
+      expect(subnet.netmask).to eq('255.255.255.0')
+      expect(subnet.gateway).to eq('10.0.3.1')
+      expect(subnet.dns).to eq(['10.0.0.2'])
+      expect(subnet.restricted_ips).to eq(expected_restricted_ips)
+
     end
 
     it 'should create valid subnet spec for managed networks' do
@@ -261,7 +286,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
           []
         )
       }.to raise_error(Bosh::Director::NetworkReservedIpOutOfRange,
-          "Reserved IP '192.167.0.5' is out of " +
+          "Reserved IP '192.167.0.5/32' is out of " +
             "network 'net_a' range")
     end
 
@@ -291,7 +316,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
           []
         )
       }.to raise_error(Bosh::Director::NetworkStaticIpOutOfRange,
-          "Static IP '192.167.0.5' is out of " +
+          "Static IP '192.167.0.5/32' is out of " +
             "network 'net_a' range")
     end
 
@@ -308,7 +333,7 @@ describe Bosh::Director::DeploymentPlan::ManualNetworkSubnet do
           []
         )
       }.to raise_error(Bosh::Director::NetworkStaticIpOutOfRange,
-          "Static IP '192.168.0.5' is in network 'net_a' reserved range")
+          "Static IP '192.168.0.5/32' is in network 'net_a' reserved range")
     end
 
     it 'should include the directors ip addresses in the reserved range' do
