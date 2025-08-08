@@ -27,7 +27,7 @@ describe Bosh::Director::DeploymentPlan::VipNetworkSubnet do
       expect(vip_subnet.static_ips.size).to eq(5)
 
       vip_static_ips = vip_subnet.static_ips.map do |static_ip|
-        base_addr(static_ip)
+        to_ipaddr(static_ip)
       end
       expect(vip_static_ips).to include(
         '69.69.69.69',

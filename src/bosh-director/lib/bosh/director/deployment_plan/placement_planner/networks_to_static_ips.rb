@@ -19,7 +19,7 @@ module Bosh
                 subnet_for_ip = subnets.find { |subnet| ip_in_array?(static_ip, subnet.static_ips) }
                 if subnet_for_ip.nil?
                   raise InstanceGroupNetworkInstanceIpMismatch,
-                    "Instance group '#{job_name}' with network '#{job_network.name}' declares static ip '#{base_addr(static_ip)}', " +
+                    "Instance group '#{job_name}' with network '#{job_network.name}' declares static ip '#{static_ip}', " +
                       "which belongs to no subnet"
                 end
                 az_names = subnet_for_ip.availability_zone_names.nil? ? [nil] : subnet_for_ip.availability_zone_names
@@ -59,7 +59,7 @@ module Bosh
 
               if non_desired_ip_to_az
                 raise JobStaticIpsFromInvalidAvailabilityZone,
-                  "Instance group '#{@job_name}' declares static ip '#{base_addr(non_desired_ip_to_az.ip)}' which does not belong to any of the instance group's availability zones."
+                  "Instance group '#{@job_name}' declares static ip '#{non_desired_ip_to_az.ip}' which does not belong to any of the instance group's availability zones."
               end
             end
           end
