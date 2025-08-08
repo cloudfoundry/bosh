@@ -14,10 +14,6 @@ module Bosh::Director
       Bosh::Director::IpAddrOrCidr.new(ip)
     end
 
-    def base_addr(ip)
-      to_ipaddr(ip).base_addr
-    end
-
     def ip_address?(ip)
       ip_address = to_ipaddr(ip)
 

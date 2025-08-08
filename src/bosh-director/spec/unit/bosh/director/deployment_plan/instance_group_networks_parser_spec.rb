@@ -66,7 +66,7 @@ module Bosh::Director::DeploymentPlan
       it 'raises an error' do
         expect do
           instance_group_networks_parser.parse(instance_group_spec, 'instance-group-name', manifest_networks)
-        end.to raise_error Bosh::Director::JobInvalidStaticIPs, "Instance group 'instance-group-name' specifies static IP '192.168.1.2' more than once"
+        end.to raise_error Bosh::Director::JobInvalidStaticIPs, "Instance group 'instance-group-name' specifies static IP '192.168.1.2/32' more than once"
       end
     end
 
