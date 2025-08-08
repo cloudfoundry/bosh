@@ -179,7 +179,7 @@ module Bosh::Director::DeploymentPlan
             expect { instance_plans }.to raise_error(
               Bosh::Director::InstanceGroupNetworkInstanceIpMismatch,
               "Instance group 'fake-instance-group' with network 'a' " \
-              "declares static ip '192.168.3.5', which belongs to no subnet",
+              "declares static ip '192.168.3.5/32', which belongs to no subnet",
             )
           end
         end
@@ -324,7 +324,7 @@ module Bosh::Director::DeploymentPlan
             network_plans = {}
             new_instance_plans.map(&:network_plans).flatten.each do |network_plan|
               network_plans[network_plan.reservation.network.name] ||= []
-              network_plans[network_plan.reservation.network.name] << base_addr(network_plan.reservation.ip)
+              network_plans[network_plan.reservation.network.name] << to_ipaddr(network_plan.reservation.ip)
             end
 
             expect(network_plans['a']).to match_array([to_ipaddr('192.168.1.10'), to_ipaddr('192.168.1.11'), to_ipaddr('192.168.1.12'), to_ipaddr('192.168.2.10')])
@@ -419,7 +419,7 @@ module Bosh::Director::DeploymentPlan
               end.to raise_error(
                 Bosh::Director::NetworkReservationError,
                 "Existing instance 'fake-instance-group/#{existing_instances[1].index}' " \
-                "is using IP '192.168.2.10' in availability zone 'zone2'",
+                "is using IP '192.168.2.10/32' in availability zone 'zone2'",
               )
             end
           end
@@ -529,7 +529,7 @@ module Bosh::Director::DeploymentPlan
                 end.to raise_error(
                   Bosh::Director::NetworkReservationError,
                   "Existing instance 'fake-instance-group/#{existing_instances[0].index}' " \
-                  "is using IP '192.168.1.10' in availability zone 'zone1'",
+                  "is using IP '192.168.1.10/32' in availability zone 'zone1'",
                 )
               end
             end
@@ -812,7 +812,7 @@ module Bosh::Director::DeploymentPlan
                   end.to raise_error(
                     Bosh::Director::NetworkReservationError,
                     "Existing instance 'fake-instance-group/#{existing_instances[0].index}' " \
-                    "is using IP '192.168.1.10' in availability zone 'zone1'",
+                    "is using IP '192.168.1.10/32' in availability zone 'zone1'",
                   )
                 end
               end

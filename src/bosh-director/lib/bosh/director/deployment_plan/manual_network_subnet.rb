@@ -53,7 +53,7 @@ module Bosh::Director
 
           each_ip(reserved_property, false) do |ip|
             unless range.include?(ip)
-              raise NetworkReservedIpOutOfRange, "Reserved IP '#{base_addr(ip)}' is out of " \
+              raise NetworkReservedIpOutOfRange, "Reserved IP '#{ip}' is out of " \
                 "network '#{network_name}' range"
             end
 
@@ -67,7 +67,7 @@ module Bosh::Director
           end
 
           restricted_ips.reject! do |ip|
-            restricted_ips.any? do |other_ip| 
+            restricted_ips.any? do |other_ip|
               includes = other_ip.include?(ip) rescue false
               includes && other_ip.prefix < ip.prefix
             end
@@ -75,11 +75,11 @@ module Bosh::Director
 
           each_ip(static_property, false) do |ip|
             if ip_in_array?(ip, restricted_ips)
-              raise NetworkStaticIpOutOfRange, "Static IP '#{base_addr(ip)}' is in network '#{network_name}' reserved range"
+              raise NetworkStaticIpOutOfRange, "Static IP '#{ip}' is in network '#{network_name}' reserved range"
             end
 
             unless range.include?(ip)
-              raise NetworkStaticIpOutOfRange, "Static IP '#{base_addr(ip)}' is out of network '#{network_name}' range"
+              raise NetworkStaticIpOutOfRange, "Static IP '#{ip}' is out of network '#{network_name}' range"
             end
 
             static_cidrs.add(ip)
