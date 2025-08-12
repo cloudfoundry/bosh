@@ -493,7 +493,6 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when there are new reservations' do
-        let(:dynamic_network_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network) }
         let(:desired_reservations) do
           [
             Bosh::Director::DesiredNetworkReservation.new_static(instance_model, network, '192.168.1.2/32'),
@@ -520,7 +519,6 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when there is no desired reservations' do
-        let(:dynamic_network_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, network) }
         let(:desired_reservations) { [] }
 
         before do
@@ -528,7 +526,7 @@ module Bosh::Director::DeploymentPlan
           existing_reservations[1].resolve_type(:dynamic)
         end
 
-        it 'should return desired network plans for the new reservations' do
+        it 'should return obsolete network plans for the new reservations' do
           network_plans = network_planner.reconcile(existing_reservations)
           existing_plans = network_plans.select(&:existing?)
           obsolete_plans = network_plans.select(&:obsolete?)
@@ -537,6 +535,33 @@ module Bosh::Director::DeploymentPlan
           expect(existing_plans.count).to eq(0)
           expect(desired_plans.count).to eq(0)
           expect(obsolete_plans.count).to eq(2)
+        end
+      end
+
+      context 'when the nic group differs for an existing and desired reservation' do
+        let(:desired_reservation_with_nic_group_2) { Bosh::Director::DesiredNetworkReservation.new_static(instance_model, network, '192.168.1.2/32', 2) }
+        let(:existing_reservation_with_nic_group_1) { Bosh::Director::ExistingNetworkReservation.new(instance_model, network, '192.168.1.2/32', 'manual', 1) }
+
+        let(:desired_reservations) do
+          [
+            desired_reservation_with_nic_group_2,
+          ]
+        end
+
+        before do
+          existing_reservation_with_nic_group_1.resolve_type(:static)
+        end
+
+        it 'should have the updated nic_group in the existing plans network reservation' do
+          network_plans = network_planner.reconcile([existing_reservation_with_nic_group_1])
+          existing_plans = network_plans.select(&:existing?)
+          obsolete_plans = network_plans.select(&:obsolete?)
+          desired_plans = network_plans.reject(&:existing?).reject(&:obsolete?)
+
+          expect(existing_plans.count).to eq(1)
+          expect(existing_plans.first.reservation.nic_group).to eq(2)
+          expect(desired_plans.count).to eq(0)
+          expect(obsolete_plans.count).to eq(0)
         end
       end
     end
