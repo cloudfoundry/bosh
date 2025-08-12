@@ -37,7 +37,7 @@ module Bosh::Director
     end
 
     def to_s
-      "{ip=#{@ip}, network=#{@network.name}, instance=#{@instance_model}, type=#{type}}"
+      "{ip=#{@ip}, network=#{@network.name}, instance=#{@instance_model}, type=#{type}, nic_group=#{@nic_group}}"
     end
   end
 
@@ -75,7 +75,7 @@ module Bosh::Director
     end
 
     def to_s
-      "{type=#{type}, ip=#{@ip}, network=#{@network.name}, instance=#{@instance_model}}"
+      "{type=#{type}, ip=#{@ip}, network=#{@network.name}, instance=#{@instance_model}, nic_group=#{@nic_group}}"
     end
   end
 end
