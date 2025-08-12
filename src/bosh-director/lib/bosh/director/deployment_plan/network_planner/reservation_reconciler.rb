@@ -37,7 +37,7 @@ module Bosh::Director::DeploymentPlan
 
               unplaced_existing_reservations.delete(existing_reservation)
 
-              if existing_reservation.network != desired_reservation.network
+              if existing_reservation.network != desired_reservation.network || desired_reservation.nic_group != existing_reservation.nic_group
                 existing_reservation = switch_existing_reservation_network(desired_reservation, existing_reservation)
               end
 

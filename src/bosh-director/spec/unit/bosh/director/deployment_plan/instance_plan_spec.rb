@@ -294,7 +294,7 @@ module Bosh::Director::DeploymentPlan
             allow(per_spec_logger).to receive(:debug)
             expect(per_spec_logger).to receive(:debug).with(
               'networks_changed? obsolete reservations: ' \
-              "[{type=dynamic, ip=10.0.0.5/32, network=existing-network, instance=#{instance_model}}]",
+              "[{type=dynamic, ip=10.0.0.5/32, network=existing-network, instance=#{instance_model}, nic_group=}]",
             )
             instance_plan.networks_changed?
           end
@@ -316,7 +316,29 @@ module Bosh::Director::DeploymentPlan
             allow(per_spec_logger).to receive(:debug)
             expect(per_spec_logger).to receive(:debug).with(
               'networks_changed? desired reservations: ' \
-              "[{type=dynamic, ip=10.0.0.5/32, network=existing-network, instance=#{instance_model}}]",
+              "[{type=dynamic, ip=10.0.0.5/32, network=existing-network, instance=#{instance_model}, nic_group=}]",
+            )
+            instance_plan.networks_changed?
+          end
+        end
+
+        context 'when there are desired plans with nic group specified' do
+          let(:network_plans) do
+            [
+              NetworkPlanner::Plan.new(reservation: desired_reservation),
+            ]
+          end
+          let(:desired_reservation) do
+            reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, existing_network, 1)
+            reservation.resolve_ip('10.0.0.5')
+            reservation
+          end
+
+          it 'logs' do
+            allow(per_spec_logger).to receive(:debug)
+            expect(per_spec_logger).to receive(:debug).with(
+              'networks_changed? desired reservations: ' \
+              "[{type=dynamic, ip=10.0.0.5/32, network=existing-network, instance=#{instance_model}, nic_group=1}]",
             )
             instance_plan.networks_changed?
           end
