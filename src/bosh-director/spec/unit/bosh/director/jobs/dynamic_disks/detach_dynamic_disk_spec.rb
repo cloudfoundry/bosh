@@ -56,7 +56,9 @@ module Bosh::Director
             expect(cloud).to receive(:detach_disk).with(vm.cid, disk_cid)
             expect(agent_client).to receive(:remove_dynamic_disk).with(disk_cid)
             expect(detach_dynamic_disk_job.perform).to eq("detached disk `#{disk_cid}` from vm `#{vm.cid}`")
-            expect(Models::DynamicDisk.find(disk_cid: disk_cid).vm_id).to be_nil
+            updated_disk_model = Models::DynamicDisk.find(disk_cid: disk_cid)
+            expect(updated_disk_model.vm_id).to be_nil
+            expect(updated_disk_model.disk_hint).to be_empty
           end
 
           context 'when disk is already detached' do

@@ -5,7 +5,7 @@ module Bosh::Director
     class DynamicDisksController < BaseController
       include ValidationHelper
 
-      post '/provide', consumes: :json do
+      post '/provide', scope: :update_dynamic_disks, consumes: :json do
         request_hash = JSON.parse(request.body.read)
 
         instance_id = safe_property(request_hash, 'instance_id', class: String, min_length: 1)
@@ -24,7 +24,7 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      post '/:disk_name/detach', scope: :manage_dynamic_disks do
+      post '/:disk_name/detach', scope: :update_dynamic_disks do
         disk_name = safe_property(params, 'disk_name', class: String, min_length: 1)
 
         task = JobQueue.new.enqueue(
@@ -37,7 +37,7 @@ module Bosh::Director
         redirect "/tasks/#{task.id}"
       end
 
-      delete '/:disk_name', scope: :manage_dynamic_disks do
+      delete '/:disk_name', scope: :delete_dynamic_disks do
         disk_name = safe_property(params, 'disk_name', class: String, min_length: 1)
 
         task = JobQueue.new.enqueue(

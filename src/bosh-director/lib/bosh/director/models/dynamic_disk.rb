@@ -8,6 +8,15 @@ module Bosh::Director::Models
       validates_unique [:name, :disk_cid]
     end
 
+    def disk_hint
+      result = disk_hint_json
+      result ? JSON.parse(result) : nil
+    end
+
+    def disk_hint=(disk_hint)
+      self.disk_hint_json = JSON.generate(disk_hint)
+    end
+
     def metadata
       result = self.metadata_json
       result ? JSON.parse(result) : {}

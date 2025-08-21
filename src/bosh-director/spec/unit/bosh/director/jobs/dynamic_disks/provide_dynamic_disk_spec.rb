@@ -8,7 +8,7 @@ module Bosh::Director
     let(:disk_cloud_properties) { { 'fake-disk-cloud-property-key' => 'fake-disk-cloud-property-value' } }
     let(:disk_size) { 1000 }
     let(:metadata) { { 'fake-key' => 'fake-value' } }
-    let(:disk_hint) { 'fake-disk-hint' }
+    let(:disk_hint) { { "id" => "fake-disk-id" } }
 
     let(:agent_client) { instance_double(AgentClient) }
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
@@ -16,7 +16,14 @@ module Bosh::Director
     let(:instance) { FactoryBot.create(:models_instance) }
     let!(:vm) { FactoryBot.create(:models_vm, instance: instance, active: true) }
 
-    let(:provide_dynamic_disk_job) { Jobs::DynamicDisks::ProvideDynamicDisk.new(instance.id, disk_name, disk_pool_name, disk_size, metadata) }
+    let(:task_result) { TaskDBWriter.new(:result_output, task.id) }
+    let(:task) {FactoryBot.create(:models_task, id: 42, username: 'user')}
+
+    def parsed_task_result
+      JSON.parse(Models::Task.first(id: 42).result_output)
+    end
+
+    let(:provide_dynamic_disk_job) { Jobs::DynamicDisks::ProvideDynamicDisk.new(instance.uuid, disk_name, disk_pool_name, disk_size, metadata) }
 
     let!(:cloud_config) do
       FactoryBot.create(:models_config_cloud, content: YAML.dump(
@@ -30,15 +37,17 @@ module Bosh::Director
         )
       ))
     end
-    let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory, get: cloud) }
+    let(:cloud_factory) { instance_double(CloudFactory, get: cloud) }
 
     before do
-      allow(Bosh::Director::Config).to receive(:name).and_return('fake-director-name')
-      allow(Bosh::Director::Config).to receive(:cloud_options).and_return('provider' => { 'path' => '/path/to/default/cpi' })
-      allow(Bosh::Director::Config).to receive(:preferred_cpi_api_version).and_return(2)
+      allow(Config).to receive(:name).and_return('fake-director-name')
+      allow(Config).to receive(:cloud_options).and_return('provider' => { 'path' => '/path/to/default/cpi' })
+      allow(Config).to receive(:preferred_cpi_api_version).and_return(2)
+      allow(Config).to receive(:result).and_return(task_result)
       allow(CloudFactory).to receive(:create).and_return(cloud_factory)
       allow(cloud).to receive(:respond_to?).with(:set_disk_metadata).and_return(false)
       allow(AgentClient).to receive(:with_agent_id).with(vm.agent_id, instance.name).and_return(agent_client)
+      allow(provide_dynamic_disk_job).to receive(:task_id).and_return(task.id)
     end
 
     describe '#perform' do
@@ -58,6 +67,7 @@ module Bosh::Director
           expect(cloud).to receive(:attach_disk).with(vm.cid, disk_cid).and_return(disk_hint)
           expect(agent_client).to receive(:add_dynamic_disk).with(disk_cid, disk_hint)
           expect(provide_dynamic_disk_job.perform).to eq("attached disk `#{disk_name}` to `#{vm.cid}` in deployment `#{vm.instance.deployment.name}`")
+          expect(parsed_task_result).to eq({'disk_cid' => disk_cid})
 
           model = Models::DynamicDisk.where(disk_cid: disk_cid).first
           expect(model.vm).to eq(vm)
@@ -67,12 +77,13 @@ module Bosh::Director
 
       context 'when disk does not exist' do
         it 'creates the disk and attaches it to VM' do
-          expect(cloud).to receive(:create_disk).with(disk_size, disk_cloud_properties, vm.cid).and_return(disk_cid)
-          expect(cloud).to receive(:respond_to?).with(:set_disk_metadata).and_return(false)
+          expected_cloud_properties = disk_cloud_properties.merge('name' => 'fake-disk-name')
+          expect(cloud).to receive(:create_disk).with(disk_size, expected_cloud_properties, vm.cid).and_return(disk_cid)
           expect(cloud).to receive(:attach_disk).with(vm.cid, disk_cid).and_return(disk_hint)
 
           expect(agent_client).to receive(:add_dynamic_disk).with(disk_cid, disk_hint)
           expect(provide_dynamic_disk_job.perform).to eq("attached disk `#{disk_name}` to `#{vm.cid}` in deployment `#{vm.instance.deployment.name}`")
+          expect(parsed_task_result).to eq({'disk_cid' => disk_cid})
 
           model = Models::DynamicDisk.where(disk_cid: disk_cid).first
           expect(model.name).to eq(disk_name)
@@ -124,7 +135,8 @@ module Bosh::Director
 
       context 'when cpi supports set_disk_metadata' do
         it 'sets disk metadata' do
-          expect(cloud).to receive(:create_disk).with(disk_size, disk_cloud_properties, vm.cid).and_return('fake-disk-cid')
+          expected_cloud_properties = disk_cloud_properties.merge('name' => 'fake-disk-name')
+          expect(cloud).to receive(:create_disk).with(disk_size, expected_cloud_properties, vm.cid).and_return('fake-disk-cid')
           expect(cloud).to receive(:respond_to?).with(:set_disk_metadata).and_return(true)
           expect(cloud).to receive(:set_disk_metadata).with(
             'fake-disk-cid',
@@ -165,7 +177,8 @@ module Bosh::Director
         end
 
         it 'gets the disk cloud properties from the latest cloud config for those teams' do
-          expect(cloud).to receive(:create_disk).with(disk_size, disk_cloud_properties, vm.cid).and_return(disk_cid)
+          expected_cloud_properties = disk_cloud_properties.merge('name' => 'fake-disk-name')
+          expect(cloud).to receive(:create_disk).with(disk_size, expected_cloud_properties, vm.cid).and_return(disk_cid)
           expect(cloud).to receive(:attach_disk).with(vm.cid, disk_cid).and_return(disk_hint)
           expect(agent_client).to receive(:add_dynamic_disk).with(disk_cid, disk_hint)
           expect(provide_dynamic_disk_job.perform).to eq("attached disk `#{disk_name}` to `#{vm.cid}` in deployment `#{vm.instance.deployment.name}`")
@@ -184,7 +197,7 @@ module Bosh::Director
         let(:vm) { FactoryBot.create(:models_vm, instance: instance, active: false) }
 
         it 'responds with error' do
-          expect { provide_dynamic_disk_job.perform }.to raise_error("no active vm found for instance `#{instance.id}`")
+          expect { provide_dynamic_disk_job.perform }.to raise_error("no active vm found for instance `#{instance.uuid}`")
         end
       end
 
@@ -192,7 +205,7 @@ module Bosh::Director
         let(:vm) { FactoryBot.create(:models_vm) }
 
         it 'responds with error' do
-          expect { provide_dynamic_disk_job.perform }.to raise_error("no active vm found for instance `#{instance.id}`")
+          expect { provide_dynamic_disk_job.perform }.to raise_error("no active vm found for instance `#{instance.uuid}`")
         end
       end
     end
