@@ -12,7 +12,7 @@ authorization {
     {
       user: "C=USA, O=Cloud Foundry, CN=default.director.bosh-internal"
       permissions: {
-        publish: [ "agent.*", "hm.director.alert" ]
+        publish: [ "agent.*", "agent.inbox.>", "hm.director.alert" ]
         subscribe: [ "director.>" ]
       }
     },

@@ -42,5 +42,16 @@ module Bosh::Director
     rescue Bosh::Clouds::NotImplemented => e
        @logger.debug(e.inspect)
     end
+
+    def update_dynamic_disk_metadata(cloud, disk, metadata)
+      if cloud.respond_to?(:set_disk_metadata)
+        metadata = metadata.merge(@director_metadata)
+        metadata['deployment'] = disk.deployment.name
+
+        cloud.set_disk_metadata(disk.disk_cid, metadata)
+      end
+    rescue Bosh::Clouds::NotImplemented => e
+      @logger.debug(e.inspect)
+    end
   end
 end
