@@ -22,18 +22,18 @@ module Bosh::Director
 
       def perform
         vm = Models::Vm.find(agent_id: @agent_id)
-        raise "vm for agent `#{@agent_id}` not found" unless vm
+        raise "vm for agent `#{@agent_id}` not found" if vm.nil?
+
         cloud_properties = find_disk_cloud_properties(vm.instance, @disk_pool_name)
         cloud = Bosh::Director::CloudFactory.create.get(vm.cpi)
-        disk_model = Models::DynamicDisk.find(name: @disk_name)
 
-        if disk_model == nil
+        disk_model = Models::DynamicDisk.find(name: @disk_name)
+        if disk_model.nil?
           disk_cid = cloud.create_disk(@disk_size, cloud_properties, vm.cid)
           disk_model = Models::DynamicDisk.create(
             name: @disk_name,
             disk_cid: disk_cid,
             deployment_id: vm.instance.deployment.id,
-            availability_zone: vm.instance.availability_zone,
             size: @disk_size,
             disk_pool_name: @disk_pool_name,
             cpi: vm.cpi,
@@ -42,7 +42,9 @@ module Bosh::Director
         end
 
         disk_hint = cloud.attach_disk(vm.cid, disk_model.disk_cid)
-        if @metadata != nil
+        disk_model.update(vm_id: vm.id, availability_zone: vm.instance.availability_zone)
+
+        unless @metadata.nil?
           MetadataUpdater.build.update_dynamic_disk_metadata(cloud, disk_model, @metadata)
         end
 
@@ -53,7 +55,7 @@ module Bosh::Director
         }
         nats_rpc.send_message(@reply, response)
 
-        "attached disk '#{@disk_name}' to '#{vm.cid}' in deployment '#{vm.instance.deployment.name}'"
+        "attached disk `#{@disk_name}` to `#{vm.cid}` in deployment `#{vm.instance.deployment.name}`"
       rescue => e
         nats_rpc.send_message(@reply, { 'error' => e.message })
         raise e

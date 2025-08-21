@@ -39,7 +39,7 @@ module Bosh::Director
           expect(nats_rpc).to receive(:send_message).with(reply, {
             'error' => nil
           })
-          expect(delete_dynamic_disk_job.perform).to eq("deleted disk '#{disk_name}'")
+          expect(delete_dynamic_disk_job.perform).to eq("deleted disk `#{disk_cid}`")
           expect(Models::DynamicDisk.where(disk_cid: disk_cid).count).to eq(0)
         end
       end
@@ -64,7 +64,7 @@ module Bosh::Director
           expect(nats_rpc).to receive(:send_message).with(reply, {
             'error' => nil
           })
-          expect(delete_dynamic_disk_job.perform).to eq("deleted disk '#{disk_name}'")
+          expect(delete_dynamic_disk_job.perform).to eq("deleted disk `#{disk_cid}`")
           expect(Models::DynamicDisk.where(disk_cid: disk_cid).count).to eq(0)
         end
 
@@ -73,9 +73,9 @@ module Bosh::Director
             expect(cloud).to receive(:delete_disk).with(disk_cid).and_raise('some-error')
 
             expect(nats_rpc).to receive(:send_message).with(reply, {
-              'error' => "some-error"
+              'error' => 'some-error'
             })
-            expect { delete_dynamic_disk_job.perform }.to raise_error("some-error")
+            expect { delete_dynamic_disk_job.perform }.to raise_error('some-error')
           end
         end
       end
@@ -86,7 +86,7 @@ module Bosh::Director
           expect(nats_rpc).to receive(:send_message).with(reply, {
             'error' => nil
           })
-          expect(delete_dynamic_disk_job.perform).to eq("deleted disk '#{disk_name}'")
+          expect(delete_dynamic_disk_job.perform).to eq("disk with name `#{disk_name}` was already deleted")
         end
       end
     end

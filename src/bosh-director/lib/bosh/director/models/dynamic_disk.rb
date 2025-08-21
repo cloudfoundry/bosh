@@ -1,6 +1,7 @@
 module Bosh::Director::Models
   class DynamicDisk < Sequel::Model(Bosh::Director::Config.db)
     many_to_one :deployment
+    many_to_one :vm
 
     def validate
       validates_presence [:name, :disk_cid]

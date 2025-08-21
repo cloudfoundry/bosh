@@ -38,7 +38,7 @@ rack_app = Puma::Rack::Builder.app do
     map(route) { run controller }
   end
 
-  Bosh::Director::DynamicDiskManager.new(Bosh::Director::Config.logger).setup_events
+  Bosh::Director::ApiNats.setup_events
 end
 
 puma_configuration = Puma::Configuration.new do |user_config|

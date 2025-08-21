@@ -282,7 +282,7 @@ require 'bosh/director/api/controllers/link_address_controller'
 require 'bosh/director/api/controllers/deployed_variables_controller'
 require 'bosh/director/api/route_configuration'
 
-require 'bosh/director/api_nats/api'
+require 'bosh/director/api_nats/api_nats'
 require 'bosh/director/api_nats/dynamic_disk_controller'
 
 require 'bosh/director/step_executor'
