@@ -28,7 +28,7 @@ module Bosh::Director
 
         cloud.detach_disk(disk_model.vm.cid, disk_model.disk_cid)
 
-        disk_model.update(vm_id: nil)
+        disk_model.update(vm_id: nil, disk_hint: '')
 
         "detached disk `#{disk_model.disk_cid}` from vm `#{vm_cid}`"
       rescue Bosh::Clouds::DiskNotAttached

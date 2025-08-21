@@ -18,7 +18,7 @@ module Bosh::Director
       end
 
       def perform
-        instance = Models::Instance.find(id: @instance_id)
+        instance = Models::Instance.find(uuid: @instance_id)
         raise "instance `#{@instance_id}` not found" if instance.nil?
 
         vm = instance.active_vm
@@ -29,6 +29,7 @@ module Bosh::Director
 
         disk_model = Models::DynamicDisk.find(name: @disk_name)
         if disk_model.nil?
+          cloud_properties['name'] = @disk_name
           disk_cid = cloud.create_disk(@disk_size, cloud_properties, vm.cid)
           disk_model = Models::DynamicDisk.create(
             name: @disk_name,
@@ -37,19 +38,32 @@ module Bosh::Director
             size: @disk_size,
             disk_pool_name: @disk_pool_name,
             cpi: vm.cpi,
-            metadata: @metadata,
           )
         end
 
-        disk_hint = cloud.attach_disk(vm.cid, disk_model.disk_cid)
-        disk_model.update(vm_id: vm.id, availability_zone: vm.instance.availability_zone)
-
-        unless @metadata.nil?
-          MetadataUpdater.build.update_dynamic_disk_metadata(cloud, disk_model, @metadata)
+        if disk_model.vm.nil?
+          disk_hint = cloud.attach_disk(vm.cid, disk_model.disk_cid)
+          disk_model.update(vm_id: vm.id, availability_zone: vm.instance.availability_zone, disk_hint: disk_hint)
+        else
+          if disk_model.vm.id != vm.id
+            raise "disk is attached to a different vm `#{disk_model.vm.cid}`"
+          end
         end
 
-        agent_client = AgentClient.with_agent_id(vm.agent_id, instance.name)
-        agent_client.add_dynamic_disk(disk_model.disk_cid, disk_hint)
+        if !@metadata.nil? && disk_model.metadata != @metadata
+          MetadataUpdater.build.update_dynamic_disk_metadata(cloud, disk_model, @metadata)
+          disk_model.update(metadata: @metadata)
+        end
+
+        unless disk_model.disk_hint.nil?
+          agent_client = AgentClient.with_agent_id(vm.agent_id, instance.name)
+          agent_client.add_dynamic_disk(disk_model.disk_cid, disk_model.disk_hint)
+        end
+
+        disk_info = { "disk_cid": disk_model.disk_cid }
+
+        task_result.write(JSON.generate(disk_info))
+        task_result.write("\n")
 
         "attached disk `#{@disk_name}` to `#{vm.cid}` in deployment `#{vm.instance.deployment.name}`"
       end

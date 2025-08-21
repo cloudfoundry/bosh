@@ -24,19 +24,19 @@ module Bosh::Director
       describe 'POST', '/provide' do
         let(:content) do
           JSON.generate({
-                      'instance_id' => instance_id,
-                      'disk_pool_name' => disk_pool_name,
-                      'disk_name' => disk_name,
-                      'disk_size' => disk_size,
-                      'metadata' => metadata
-                    })
+                          'instance_id' => instance_id,
+                          'disk_pool_name' => disk_pool_name,
+                          'disk_name' => disk_name,
+                          'disk_size' => disk_size,
+                          'metadata' => metadata
+                        })
         end
 
         context 'when user is reader' do
           before { basic_authorize('reader', 'reader') }
 
           it 'forbids access' do
-            expect(post('/provide', content, {'CONTENT_TYPE' => 'application/json'}).status).to eq(401)
+            expect(post('/provide', content, { 'CONTENT_TYPE' => 'application/json' }).status).to eq(401)
           end
         end
 
@@ -81,7 +81,7 @@ module Bosh::Director
                 expect(JSON.parse(last_response.body)).to eq(
                                                             'code' => 40002,
                                                             'description' => "'disk_pool_name' length (0) should be greater than 1",
-                                                            )
+                                                          )
               end
             end
 
@@ -95,7 +95,7 @@ module Bosh::Director
                 expect(JSON.parse(last_response.body)).to eq(
                                                             'code' => 40000,
                                                             'description' => "Property 'disk_name' value (nil) did not match the required type 'String'",
-                                                            )
+                                                          )
               end
             end
 
@@ -123,7 +123,7 @@ module Bosh::Director
                 expect(JSON.parse(last_response.body)).to eq(
                                                             'code' => 40000,
                                                             'description' => "Property 'disk_size' value (nil) did not match the required type 'Integer'",
-                                                            )
+                                                          )
               end
             end
 
@@ -137,7 +137,7 @@ module Bosh::Director
                 expect(JSON.parse(last_response.body)).to eq(
                                                             'code' => 40002,
                                                             'description' => "'disk_size' value (0) should be greater than 1",
-                                                            )
+                                                          )
               end
             end
           end
@@ -153,6 +153,23 @@ module Bosh::Director
           end
         end
 
+        context 'when user has bosh.dynamic_disks.update scope' do
+          before { basic_authorize('dynamic-disks-updater', 'dynamic-disks-updater') }
+
+          it 'enqueues a ProvideDynamicDisk task' do
+            expect_any_instance_of(Bosh::Director::JobQueue).to receive(:enqueue).with(
+              'dynamic-disks-updater',
+              Jobs::DynamicDisks::DetachDynamicDisk,
+              'detach dynamic disk',
+              ['disk_name'],
+            ).and_call_original
+
+            post '/disk_name/detach'
+
+            expect_redirect_to_queued_task(last_response)
+          end
+        end
+
         context 'user has admin permissions' do
           before { authorize 'admin', 'admin' }
 
@@ -162,7 +179,7 @@ module Bosh::Director
               Jobs::DynamicDisks::DetachDynamicDisk,
               'detach dynamic disk',
               ['disk_name'],
-              ).and_call_original
+            ).and_call_original
 
             post '/disk_name/detach'
 
@@ -180,6 +197,31 @@ module Bosh::Director
           end
         end
 
+        context 'when user has bosh.dynamic_disks.update scope' do
+          before { basic_authorize('dynamic-disks-updater', 'dynamic-disks-updater') }
+
+          it 'forbids access' do
+            expect(delete('/disk_name').status).to eq(401)
+          end
+        end
+
+        context 'when user has bosh.dynamic_disks.delete scope' do
+          before { authorize 'dynamic-disks-deleter', 'dynamic-disks-deleter' }
+
+          it 'enqueues a ProvideDynamicDisk task' do
+            expect_any_instance_of(Bosh::Director::JobQueue).to receive(:enqueue).with(
+              'dynamic-disks-deleter',
+              Jobs::DynamicDisks::DeleteDynamicDisk,
+              'delete dynamic disk',
+              ['disk_name'],
+            ).and_call_original
+
+            delete '/disk_name'
+
+            expect_redirect_to_queued_task(last_response)
+          end
+        end
+
         context 'user has admin permissions' do
           before { authorize 'admin', 'admin' }
 
@@ -189,13 +231,12 @@ module Bosh::Director
               Jobs::DynamicDisks::DeleteDynamicDisk,
               'delete dynamic disk',
               ['disk_name'],
-              ).and_call_original
+            ).and_call_original
 
             delete '/disk_name'
 
             expect_redirect_to_queued_task(last_response)
           end
-
         end
       end
     end
