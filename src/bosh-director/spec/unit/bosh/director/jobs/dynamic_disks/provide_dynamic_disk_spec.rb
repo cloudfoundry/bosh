@@ -51,14 +51,19 @@ module Bosh::Director
           )
         end
 
-        it 'attaches the disk to VM' do
-          expect(cloud).to receive(:attach_disk).with('fake-vm-cid', disk_cid).and_return(disk_hint)
+        it 'attaches the disk to VM and updates disk vm and availability zone' do
+          expect(cloud).not_to receive(:create_disk)
+          expect(cloud).to receive(:attach_disk).with(vm.cid, disk_cid).and_return(disk_hint)
           expect(nats_rpc).to receive(:send_message).with(reply, {
             'error' => nil,
             'disk_name' => disk_name,
             'disk_hint' => disk_hint,
           })
-          expect(provide_dynamic_disk_job.perform).to eq("attached disk '#{disk_name}' to '#{vm.cid}' in deployment '#{vm.instance.deployment.name}'")
+          expect(provide_dynamic_disk_job.perform).to eq("attached disk `#{disk_name}` to `#{vm.cid}` in deployment `#{vm.instance.deployment.name}`")
+
+          model = Models::DynamicDisk.where(disk_cid: disk_cid).first
+          expect(model.vm).to eq(vm)
+          expect(model.availability_zone).to eq(vm.instance.availability_zone)
         end
       end
 
@@ -66,21 +71,22 @@ module Bosh::Director
         it 'creates the disk and attaches it to VM' do
           expect(cloud).to receive(:create_disk).with(disk_size, disk_cloud_properties, vm.cid).and_return(disk_cid)
           expect(cloud).to receive(:respond_to?).with(:set_disk_metadata).and_return(false)
-          expect(cloud).to receive(:attach_disk).with('fake-vm-cid', disk_cid).and_return(disk_hint)
+          expect(cloud).to receive(:attach_disk).with(vm.cid, disk_cid).and_return(disk_hint)
 
           expect(nats_rpc).to receive(:send_message).with(reply, {
             'error' => nil,
             'disk_name' => disk_name,
             'disk_hint' => disk_hint,
           })
-          expect(provide_dynamic_disk_job.perform).to eq("attached disk '#{disk_name}' to '#{vm.cid}' in deployment '#{vm.instance.deployment.name}'")
+          expect(provide_dynamic_disk_job.perform).to eq("attached disk `#{disk_name}` to `#{vm.cid}` in deployment `#{vm.instance.deployment.name}`")
 
-          model = Models::DynamicDisk.where(disk_cid: 'fake-disk-cid').first
+          model = Models::DynamicDisk.where(disk_cid: disk_cid).first
           expect(model.name).to eq(disk_name)
           expect(model.size).to eq(disk_size)
           expect(model.deployment_id).to eq(vm.instance.deployment.id)
           expect(model.disk_pool_name).to eq(disk_pool_name)
           expect(model.cpi).to eq(vm.cpi)
+          expect(model.vm).to eq(vm)
           expect(model.availability_zone).to eq(vm.instance.availability_zone)
           expect(model.metadata).to eq(metadata)
         end
@@ -98,12 +104,12 @@ module Bosh::Director
         end
 
         it 'returns an error from attach_disk call' do
-          expect(cloud).to receive(:attach_disk).with('fake-vm-cid', disk_cid).and_raise('Disk not found')
+          expect(cloud).to receive(:attach_disk).with(vm.cid, disk_cid).and_raise('some-error')
 
           expect(nats_rpc).to receive(:send_message).with(reply, {
-            'error' => "Disk not found"
+            'error' => 'some-error'
           })
-          expect { provide_dynamic_disk_job.perform }.to raise_error("Disk not found")
+          expect { provide_dynamic_disk_job.perform }.to raise_error('some-error')
         end
       end
 
@@ -148,7 +154,7 @@ module Bosh::Director
             'disk_name' => disk_name,
             'disk_hint' => disk_hint,
           })
-          expect(provide_dynamic_disk_job.perform).to eq("attached disk '#{disk_name}' to '#{vm.cid}' in deployment '#{vm.instance.deployment.name}'")
+          expect(provide_dynamic_disk_job.perform).to eq("attached disk `#{disk_name}` to `#{vm.cid}` in deployment `#{vm.instance.deployment.name}`")
         end
       end
 
@@ -176,14 +182,14 @@ module Bosh::Director
         end
 
         it 'gets the disk cloud properties from the latest cloud config for those teams' do
-          expect(cloud).to receive(:create_disk).with(disk_size, disk_cloud_properties, vm.cid).and_return('fake-disk-cid')
-          expect(cloud).to receive(:attach_disk).with('fake-vm-cid', 'fake-disk-cid').and_return(disk_hint)
+          expect(cloud).to receive(:create_disk).with(disk_size, disk_cloud_properties, vm.cid).and_return(disk_cid)
+          expect(cloud).to receive(:attach_disk).with(vm.cid, disk_cid).and_return(disk_hint)
           expect(nats_rpc).to receive(:send_message).with(reply, {
             'error' => nil,
             'disk_name' => disk_name,
             'disk_hint' => disk_hint,
           })
-          expect(provide_dynamic_disk_job.perform).to eq("attached disk '#{disk_name}' to '#{vm.cid}' in deployment '#{vm.instance.deployment.name}'")
+          expect(provide_dynamic_disk_job.perform).to eq("attached disk `#{disk_name}` to `#{vm.cid}` in deployment `#{vm.instance.deployment.name}`")
         end
       end
 
