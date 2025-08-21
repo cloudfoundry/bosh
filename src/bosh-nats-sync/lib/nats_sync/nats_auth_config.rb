@@ -12,7 +12,7 @@ module NATSSync
       {
         'user' => @director_subject,
         'permissions' => {
-          'publish' => %w[agent.* hm.director.alert],
+          'publish' => %w[agent.* agent.inbox.> hm.director.alert],
           'subscribe' => ['director.>'],
         },
       }
@@ -37,8 +37,9 @@ module NATSSync
             "hm.agent.alert.#{agent_id}",
             "hm.agent.shutdown.#{agent_id}",
             "director.*.#{agent_id}.*",
+            "director.agent.disk.*.#{agent_id}",
           ],
-          "subscribe": ["agent.#{agent_id}"],
+          "subscribe": ["agent.#{agent_id}", "agent.inbox.#{agent_id}.>"],
         },
       }
     end

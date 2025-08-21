@@ -179,6 +179,38 @@ describe Bosh::Director::ValidationHelper do
     end
   end
 
+  describe 'when length is constrained' do
+    it 'should pass if strings do not have constraints' do
+      expect(obj.safe_property({ 'test' => '' }, 'test', class: String)).to eql('')
+    end
+
+    it 'should pass if strings pass min constraints' do
+      expect(obj.safe_property({ 'test' => 'abc' }, 'test', min_length: 2)).to eql('abc')
+    end
+
+    it 'should pass if strings pass max constraints' do
+      expect(obj.safe_property({ 'test' => 'abc' }, 'test', max_length: 4)).to eql('abc')
+    end
+
+    it 'should fail if strings do not pass min constraints' do
+      expect do
+        expect(obj.safe_property({ 'test' => 'abc' }, 'test', min_length: 4)).to eql('abc')
+      end.to raise_error(
+        Bosh::Director::ValidationViolatedMin,
+        "'test' length (3) should be greater than 4",
+      )
+    end
+
+    it 'should fail if strings do not pass max constraints' do
+      expect do
+        expect(obj.safe_property({ 'test' => 'abc' }, 'test', max_length: 2)).to eql('abc')
+      end.to raise_error(
+        Bosh::Director::ValidationViolatedMax,
+        "'test' length (3) should be less than 2",
+      )
+    end
+  end
+
   describe 'when numeric constraints' do
     it 'should pass if numbers do not have constraints' do
       expect(obj.safe_property({ 'test' => 1 }, 'test', class: Numeric)).to eql(1)
