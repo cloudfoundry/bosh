@@ -2,8 +2,6 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Jobs::DynamicDisks::ProvideDynamicDisk do
-    let(:agent_id) { 'fake-agent-id' }
-    let(:reply) { 'inbox.fake' }
     let(:disk_name) { 'fake-disk-name' }
     let(:disk_cid) { 'fake-disk-cid' }
     let(:disk_pool_name) { 'fake-disk-pool-name' }
@@ -12,10 +10,14 @@ module Bosh::Director
     let(:metadata) { { 'fake-key' => 'fake-value' } }
     let(:disk_hint) { 'fake-disk-hint' }
 
-    let(:nats_rpc) { instance_double(Bosh::Director::NatsRpc) }
+    let(:agent_client) { instance_double(AgentClient) }
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
-    let(:provide_dynamic_disk_job) { Jobs::DynamicDisks::ProvideDynamicDisk.new(agent_id, reply, disk_name, disk_pool_name, disk_size, metadata) }
-    let!(:vm) { FactoryBot.create(:models_vm, agent_id: agent_id, cid: 'fake-vm-cid') }
+
+    let(:instance) { FactoryBot.create(:models_instance) }
+    let!(:vm) { FactoryBot.create(:models_vm, instance: instance, active: true) }
+
+    let(:provide_dynamic_disk_job) { Jobs::DynamicDisks::ProvideDynamicDisk.new(instance.id, disk_name, disk_pool_name, disk_size, metadata) }
+
     let!(:cloud_config) do
       FactoryBot.create(:models_config_cloud, content: YAML.dump(
         SharedSupport::DeploymentManifestHelper.simple_cloud_config.merge(
@@ -31,12 +33,12 @@ module Bosh::Director
     let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory, get: cloud) }
 
     before do
-      allow(Config).to receive(:nats_rpc).and_return(nats_rpc)
       allow(Bosh::Director::Config).to receive(:name).and_return('fake-director-name')
       allow(Bosh::Director::Config).to receive(:cloud_options).and_return('provider' => { 'path' => '/path/to/default/cpi' })
       allow(Bosh::Director::Config).to receive(:preferred_cpi_api_version).and_return(2)
       allow(CloudFactory).to receive(:create).and_return(cloud_factory)
       allow(cloud).to receive(:respond_to?).with(:set_disk_metadata).and_return(false)
+      allow(AgentClient).to receive(:with_agent_id).with(vm.agent_id, instance.name).and_return(agent_client)
     end
 
     describe '#perform' do
@@ -54,11 +56,7 @@ module Bosh::Director
         it 'attaches the disk to VM and updates disk vm and availability zone' do
           expect(cloud).not_to receive(:create_disk)
           expect(cloud).to receive(:attach_disk).with(vm.cid, disk_cid).and_return(disk_hint)
-          expect(nats_rpc).to receive(:send_message).with(reply, {
-            'error' => nil,
-            'disk_name' => disk_name,
-            'disk_hint' => disk_hint,
-          })
+          expect(agent_client).to receive(:add_dynamic_disk).with(disk_cid, disk_hint)
           expect(provide_dynamic_disk_job.perform).to eq("attached disk `#{disk_name}` to `#{vm.cid}` in deployment `#{vm.instance.deployment.name}`")
 
           model = Models::DynamicDisk.where(disk_cid: disk_cid).first
@@ -73,11 +71,7 @@ module Bosh::Director
           expect(cloud).to receive(:respond_to?).with(:set_disk_metadata).and_return(false)
           expect(cloud).to receive(:attach_disk).with(vm.cid, disk_cid).and_return(disk_hint)
 
-          expect(nats_rpc).to receive(:send_message).with(reply, {
-            'error' => nil,
-            'disk_name' => disk_name,
-            'disk_hint' => disk_hint,
-          })
+          expect(agent_client).to receive(:add_dynamic_disk).with(disk_cid, disk_hint)
           expect(provide_dynamic_disk_job.perform).to eq("attached disk `#{disk_name}` to `#{vm.cid}` in deployment `#{vm.instance.deployment.name}`")
 
           model = Models::DynamicDisk.where(disk_cid: disk_cid).first
@@ -105,10 +99,6 @@ module Bosh::Director
 
         it 'returns an error from attach_disk call' do
           expect(cloud).to receive(:attach_disk).with(vm.cid, disk_cid).and_raise('some-error')
-
-          expect(nats_rpc).to receive(:send_message).with(reply, {
-            'error' => 'some-error'
-          })
           expect { provide_dynamic_disk_job.perform }.to raise_error('some-error')
         end
       end
@@ -128,9 +118,6 @@ module Bosh::Director
         end
 
         it 'responds with error' do
-          expect(nats_rpc).to receive(:send_message).with(reply, {
-            'error' => "Could not find disk pool by name `fake-disk-pool-name`"
-          })
           expect { provide_dynamic_disk_job.perform }.to raise_error("Could not find disk pool by name `fake-disk-pool-name`")
         end
       end
@@ -147,13 +134,9 @@ module Bosh::Director
               "fake-key" => "fake-value"
             }
           )
-          expect(cloud).to receive(:attach_disk).with('fake-vm-cid', 'fake-disk-cid').and_return(disk_hint)
+          expect(cloud).to receive(:attach_disk).with(vm.cid, disk_cid).and_return(disk_hint)
 
-          expect(nats_rpc).to receive(:send_message).with(reply, {
-            'error' => nil,
-            'disk_name' => disk_name,
-            'disk_hint' => disk_hint,
-          })
+          expect(agent_client).to receive(:add_dynamic_disk).with(disk_cid, disk_hint)
           expect(provide_dynamic_disk_job.perform).to eq("attached disk `#{disk_name}` to `#{vm.cid}` in deployment `#{vm.instance.deployment.name}`")
         end
       end
@@ -184,23 +167,32 @@ module Bosh::Director
         it 'gets the disk cloud properties from the latest cloud config for those teams' do
           expect(cloud).to receive(:create_disk).with(disk_size, disk_cloud_properties, vm.cid).and_return(disk_cid)
           expect(cloud).to receive(:attach_disk).with(vm.cid, disk_cid).and_return(disk_hint)
-          expect(nats_rpc).to receive(:send_message).with(reply, {
-            'error' => nil,
-            'disk_name' => disk_name,
-            'disk_hint' => disk_hint,
-          })
+          expect(agent_client).to receive(:add_dynamic_disk).with(disk_cid, disk_hint)
           expect(provide_dynamic_disk_job.perform).to eq("attached disk `#{disk_name}` to `#{vm.cid}` in deployment `#{vm.instance.deployment.name}`")
         end
       end
 
-      context 'when VM cannot be found' do
-        let!(:vm) { FactoryBot.create(:models_vm, agent_id: 'different-agent-id', cid: 'fake-vm-cid') }
+      context 'when instance cannot be found' do
+        let(:provide_dynamic_disk_job) { Jobs::DynamicDisks::ProvideDynamicDisk.new('unknown-instance-id', disk_name, disk_pool_name, disk_size, metadata) }
 
         it 'responds with error' do
-          expect(nats_rpc).to receive(:send_message).with(reply, {
-            'error' => "vm for agent `fake-agent-id` not found"
-          })
-          expect { provide_dynamic_disk_job.perform }.to raise_error("vm for agent `fake-agent-id` not found")
+          expect { provide_dynamic_disk_job.perform }.to raise_error("instance `unknown-instance-id` not found")
+        end
+      end
+
+      context 'when active vm for instance cannot be found' do
+        let(:vm) { FactoryBot.create(:models_vm, instance: instance, active: false) }
+
+        it 'responds with error' do
+          expect { provide_dynamic_disk_job.perform }.to raise_error("no active vm found for instance `#{instance.id}`")
+        end
+      end
+
+      context 'when instance has no vms' do
+        let(:vm) { FactoryBot.create(:models_vm) }
+
+        it 'responds with error' do
+          expect { provide_dynamic_disk_job.perform }.to raise_error("no active vm found for instance `#{instance.id}`")
         end
       end
     end

@@ -9,11 +9,8 @@ module Bosh::Director
         :provide_dynamic_disk
       end
 
-      def initialize(agent_id, reply, disk_name, disk_pool_name, disk_size, metadata)
-        super()
-        @agent_id = agent_id
-        @reply = reply
-
+      def initialize(instance_id, disk_name, disk_pool_name, disk_size, metadata)
+        @instance_id = instance_id
         @disk_name = disk_name
         @disk_pool_name = disk_pool_name
         @disk_size = disk_size
@@ -21,10 +18,13 @@ module Bosh::Director
       end
 
       def perform
-        vm = Models::Vm.find(agent_id: @agent_id)
-        raise "vm for agent `#{@agent_id}` not found" if vm.nil?
+        instance = Models::Instance.find(id: @instance_id)
+        raise "instance `#{@instance_id}` not found" if instance.nil?
 
-        cloud_properties = find_disk_cloud_properties(vm.instance, @disk_pool_name)
+        vm = instance.active_vm
+        raise "no active vm found for instance `#{@instance_id}`" if vm.nil?
+
+        cloud_properties = find_disk_cloud_properties(instance, @disk_pool_name)
         cloud = Bosh::Director::CloudFactory.create.get(vm.cpi)
 
         disk_model = Models::DynamicDisk.find(name: @disk_name)
@@ -33,7 +33,7 @@ module Bosh::Director
           disk_model = Models::DynamicDisk.create(
             name: @disk_name,
             disk_cid: disk_cid,
-            deployment_id: vm.instance.deployment.id,
+            deployment_id: instance.deployment.id,
             size: @disk_size,
             disk_pool_name: @disk_pool_name,
             cpi: vm.cpi,
@@ -48,17 +48,10 @@ module Bosh::Director
           MetadataUpdater.build.update_dynamic_disk_metadata(cloud, disk_model, @metadata)
         end
 
-        response = {
-          'error' => nil,
-          'disk_name' => @disk_name,
-          'disk_hint' => disk_hint,
-        }
-        nats_rpc.send_message(@reply, response)
+        agent_client = AgentClient.with_agent_id(vm.agent_id, instance.name)
+        agent_client.add_dynamic_disk(disk_model.disk_cid, disk_hint)
 
         "attached disk `#{@disk_name}` to `#{vm.cid}` in deployment `#{vm.instance.deployment.name}`"
-      rescue => e
-        nats_rpc.send_message(@reply, { 'error' => e.message })
-        raise e
       end
     end
   end

@@ -90,7 +90,7 @@ describe 'nats.cfg.erb' do
               user: "C=USA, O=Cloud Foundry, CN=default.director.bosh-internal"
               permissions: {
                 publish: [ "agent.*", "hm.director.alert" ]
-                subscribe: [ "director.>", "director.agent.disk.*" ]
+                subscribe: [ "director.>" ]
               }
             },
             {

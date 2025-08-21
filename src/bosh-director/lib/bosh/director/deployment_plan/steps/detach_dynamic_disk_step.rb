@@ -13,6 +13,10 @@ module Bosh::Director
           cloud = CloudFactory.create.get(@disk.cpi, @disk.vm.stemcell_api_version)
           @logger.info("Detaching dynamic disk #{@disk.disk_cid}")
 
+          instance_name = @disk.vm.instance.nil? ? nil : @disk.vm.instance.name
+          agent_client = AgentClient.with_agent_id(@disk.vm.agent_id, instance_name)
+          agent_client.remove_dynamic_disk(@disk.disk_cid)
+
           cloud.detach_disk(@disk.vm.cid, @disk.disk_cid)
           @disk.update(vm_id: nil)
         rescue Bosh::Clouds::DiskNotAttached

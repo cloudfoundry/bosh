@@ -2,25 +2,24 @@ require 'spec_helper'
 
 module Bosh::Director
   describe Jobs::DynamicDisks::DetachDynamicDisk do
-    let(:agent_id) { 'fake-agent-id' }
-    let(:reply) { 'inbox.fake' }
     let(:disk_name) { 'fake-disk-name' }
     let(:disk_cid) { 'fake-disk-cid' }
     let(:disk_pool_name) { 'fake-disk-pool-name' }
 
-    let(:nats_rpc) { instance_double(Bosh::Director::NatsRpc) }
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
-    let(:detach_dynamic_disk_job) { Jobs::DynamicDisks::DetachDynamicDisk.new(reply, disk_name) }
-    let!(:vm) { FactoryBot.create(:models_vm, agent_id: agent_id, cid: 'fake-vm-cid') }
+    let(:agent_client) { instance_double(AgentClient) }
+    let(:detach_dynamic_disk_job) { Jobs::DynamicDisks::DetachDynamicDisk.new(disk_name) }
+    let!(:vm) { FactoryBot.create(:models_vm, instance: instance) }
+    let(:instance) { FactoryBot.create(:models_instance) }
     let(:cloud_factory) { instance_double(Bosh::Director::CloudFactory, get: cloud) }
 
     before do
-      allow(Config).to receive(:nats_rpc).and_return(nats_rpc)
       allow(Bosh::Director::Config).to receive(:name).and_return('fake-director-name')
       allow(Bosh::Director::Config).to receive(:cloud_options).and_return('provider' => { 'path' => '/path/to/default/cpi' })
       allow(Bosh::Director::Config).to receive(:preferred_cpi_api_version).and_return(2)
       allow(CloudFactory).to receive(:create).and_return(cloud_factory)
       allow(cloud).to receive(:has_disk).and_return(true)
+      allow(AgentClient).to receive(:with_agent_id).with(vm.agent_id, instance.name).and_return(agent_client)
     end
 
     describe '#perform' do
@@ -37,9 +36,6 @@ module Bosh::Director
           end
 
           it 'does not detach the disk' do
-            expect(nats_rpc).to receive(:send_message).with(reply, {
-              'error' => nil
-            })
             expect(detach_dynamic_disk_job.perform).to eq("disk `#{disk_cid}` was already detached")
           end
         end
@@ -58,19 +54,15 @@ module Bosh::Director
 
           it 'detaches the disk' do
             expect(cloud).to receive(:detach_disk).with(vm.cid, disk_cid)
-            expect(nats_rpc).to receive(:send_message).with(reply, {
-              'error' => nil
-            })
+            expect(agent_client).to receive(:remove_dynamic_disk).with(disk_cid)
             expect(detach_dynamic_disk_job.perform).to eq("detached disk `#{disk_cid}` from vm `#{vm.cid}`")
             expect(Models::DynamicDisk.find(disk_cid: disk_cid).vm_id).to be_nil
           end
 
           context 'when disk is already detached' do
-            it 'returns an error' do
+            it 'does not return an error' do
               expect(cloud).to receive(:detach_disk).with(vm.cid, disk_cid).and_raise(Bosh::Clouds::DiskNotAttached.new(false))
-              expect(nats_rpc).to receive(:send_message).with(reply, {
-                'error' => nil
-              })
+              expect(agent_client).to receive(:remove_dynamic_disk).with(disk_cid)
               expect(detach_dynamic_disk_job.perform).to eq("disk `#{disk_cid}` was already detached")
               expect(Models::DynamicDisk.find(disk_cid: disk_cid).vm_id).to be_nil
             end
@@ -79,10 +71,7 @@ module Bosh::Director
       end
 
       context 'when disk does not exist in database' do
-        it 'returns an error' do
-          expect(nats_rpc).to receive(:send_message).with(reply, {
-            'error' => "disk `#{disk_name}` can not be found in the database"
-          })
+        it 'raises an error' do
           expect { detach_dynamic_disk_job.perform }.to raise_error("disk `#{disk_name}` can not be found in the database")
         end
       end

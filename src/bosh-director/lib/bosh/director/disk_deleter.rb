@@ -1,5 +1,4 @@
 module Bosh::Director
-  # Coordinates the safe deletion of an instance and all associates resources.
   class DiskDeleter
     def initialize(logger, disk_manager, options = {})
       @disk_manager = disk_manager
