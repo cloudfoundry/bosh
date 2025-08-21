@@ -65,6 +65,10 @@ module Bosh::Director
       end
     end
 
+    def delete_dynamic_disk(disk)
+      DeploymentPlan::Steps::DeleteDynamicDiskStep.new(disk).perform(step_report)
+    end
+
     def attach_disk(disk, tags)
       report = step_report
       DeploymentPlan::Steps::AttachDiskStep.new(disk, tags).perform(report)

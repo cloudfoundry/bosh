@@ -292,6 +292,8 @@ FactoryBot.define do
   factory :models_dynamic_disk, class: Bosh::Director::Models::DynamicDisk do
     sequence(:name) { |i| "dynamic-disk-name-#{i}" }
     sequence(:disk_cid) { |i| "dynamic-disk-cid-#{i}" }
+    sequence(:disk_pool_name) { |i| "dynamic-disk-pool-name-#{i}" }
+    sequence(:cpi) { |i| "dynamic-disk-cpi-#{i}" }
     sequence(:size) { |i| 1024 + i }
     association :deployment, factory: :models_deployment, strategy: :create
   end

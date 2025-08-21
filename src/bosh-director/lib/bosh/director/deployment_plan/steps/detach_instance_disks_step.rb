@@ -13,6 +13,10 @@ module Bosh::Director
           @instance_model.persistent_disks.each do |disk|
             DetachDiskStep.new(disk).perform(report)
           end
+
+          @instance_model.active_vm.dynamic_disks.each do |disk|
+            DetachDynamicDiskStep.new(disk).perform(report)
+          end
         end
       end
     end
