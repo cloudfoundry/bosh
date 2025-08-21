@@ -88,6 +88,8 @@ module Bosh::Director
         expected_scope << bosh_team_admin_scopes(user_scopes)
       when :read, :upload_releases, :upload_stemcells
         expected_scope << director_permissions[permission]
+      when :manage_dynamic_disks
+        expected_scope << bosh_team_admin_scopes(user_scopes)
       else
         raise ArgumentError, "Unexpected permission for director: #{permission}"
       end

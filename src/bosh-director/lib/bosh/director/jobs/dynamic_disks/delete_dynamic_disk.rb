@@ -9,9 +9,7 @@ module Bosh::Director
         :delete_dynamic_disk
       end
 
-      def initialize(reply, disk_name)
-        super()
-        @reply = reply
+      def initialize(disk_name)
         @disk_name = disk_name
       end
 
@@ -26,10 +24,6 @@ module Bosh::Director
         disk_model.destroy
 
         "deleted disk `#{disk_cid}`"
-      rescue => e
-        raise e
-      ensure
-        nats_rpc.send_message(@reply, { 'error' => e&.message })
       end
     end
   end

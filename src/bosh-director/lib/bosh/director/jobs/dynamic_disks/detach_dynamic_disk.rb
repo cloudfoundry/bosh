@@ -9,9 +9,7 @@ module Bosh::Director
         :detach_dynamic_disk
       end
 
-      def initialize(reply, disk_name)
-        super()
-        @reply = reply
+      def initialize( disk_name)
         @disk_name = disk_name
       end
 
@@ -23,17 +21,19 @@ module Bosh::Director
 
         cloud = Bosh::Director::CloudFactory.create.get(disk_model.cpi, disk_model.vm.stemcell_api_version)
         vm_cid = disk_model.vm.cid
+
+        instance_name = disk_model.vm.instance.nil? ? nil : disk_model.vm.instance.name
+        agent_client = AgentClient.with_agent_id(disk_model.vm.agent_id, instance_name)
+        agent_client.remove_dynamic_disk(disk_model.disk_cid)
+
         cloud.detach_disk(disk_model.vm.cid, disk_model.disk_cid)
+
         disk_model.update(vm_id: nil)
 
         "detached disk `#{disk_model.disk_cid}` from vm `#{vm_cid}`"
       rescue Bosh::Clouds::DiskNotAttached
         disk_model.update(vm_id: nil)
         "disk `#{disk_model.disk_cid}` was already detached"
-      rescue => e
-        raise e
-      ensure
-        nats_rpc.send_message(@reply, { 'error' => e&.message })
       end
     end
   end

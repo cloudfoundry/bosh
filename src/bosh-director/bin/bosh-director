@@ -37,8 +37,6 @@ rack_app = Puma::Rack::Builder.app do
   route_configuration.controllers.each do |route, controller|
     map(route) { run controller }
   end
-
-  Bosh::Director::ApiNats.setup_events
 end
 
 puma_configuration = Puma::Configuration.new do |user_config|

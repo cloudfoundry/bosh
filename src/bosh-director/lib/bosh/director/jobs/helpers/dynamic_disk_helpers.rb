@@ -12,10 +12,6 @@ module Bosh::Director
 
         cloud_config_disk_type.cloud_properties
       end
-
-      def nats_rpc
-        Config.nats_rpc
-      end
     end
   end
 end
