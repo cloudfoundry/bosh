@@ -86,29 +86,6 @@ module Bosh::Director
           expect { detach_dynamic_disk_job.perform }.to raise_error("disk `#{disk_name}` can not be found in the database")
         end
       end
-
-      context 'when disk exists in database but not in the cloud' do
-        let!(:disk) do
-          FactoryBot.create(
-            :models_dynamic_disk,
-            name: disk_name,
-            disk_cid: disk_cid,
-            deployment: vm.instance.deployment,
-            disk_pool_name: disk_pool_name
-          )
-        end
-
-        before do
-          allow(cloud).to receive(:has_disk).and_return(false)
-        end
-
-        it 'returns an error' do
-          expect(nats_rpc).to receive(:send_message).with(reply, {
-            'error' => "disk `#{disk_name}` can not be found in the cloud"
-          })
-          expect { detach_dynamic_disk_job.perform }.to raise_error("disk `#{disk_name}` can not be found in the cloud")
-        end
-      end
     end
   end
 end

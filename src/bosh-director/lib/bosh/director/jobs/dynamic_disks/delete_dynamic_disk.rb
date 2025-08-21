@@ -17,25 +17,19 @@ module Bosh::Director
 
       def perform
         disk_model = Models::DynamicDisk.find(name: @disk_name)
-        unless disk_model.nil?
-          cloud = Bosh::Director::CloudFactory.create.get(disk_model.cpi)
-          if cloud.has_disk(disk_model.disk_cid)
-            cloud.delete_disk(disk_model.disk_cid)
-          end
-          Models::DynamicDisk.where(id: disk_model.id).delete
-        end
+        return "disk with name `#{@disk_name}` was already deleted" if disk_model.nil?
 
-        response = { 'error' => nil }
-        nats_rpc.send_message(@reply, response)
+        cloud = Bosh::Director::CloudFactory.create.get(disk_model.cpi)
+        disk_cid = disk_model.disk_cid
 
-        if disk_model.nil?
-          "disk with name `#{@disk_name}` was already deleted"
-        else
-          "deleted disk `#{disk_model.disk_cid}`"
-        end
+        cloud.delete_disk(disk_cid) if cloud.has_disk(disk_cid)
+        disk_model.destroy
+
+        "deleted disk `#{disk_cid}`"
       rescue => e
-        nats_rpc.send_message(@reply, { 'error' => e.message })
         raise e
+      ensure
+        nats_rpc.send_message(@reply, { 'error' => e&.message })
       end
     end
   end

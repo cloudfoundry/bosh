@@ -778,6 +778,22 @@ module Bosh::Director
       end
     end
 
+    describe '#delete_dynamic_disk' do
+      let!(:dynamic_disk) { FactoryBot.create(:models_dynamic_disk, vm: instance_model.active_vm) }
+      before do
+        allow(cloud_factory).to receive(:get).with(dynamic_disk.cpi).and_return(cloud)
+        allow(cloud).to receive(:has_disk).and_return(true)
+      end
+
+      it 'deletes disks for instance' do
+        expect(Models::DynamicDisk.all.size).to eq(1)
+        allow(cloud).to receive(:delete_disk).with(dynamic_disk.disk_cid)
+
+        disk_manager.delete_dynamic_disk(dynamic_disk)
+        expect(Models::DynamicDisk.all.size).to eq(0)
+      end
+    end
+
     describe '#attach_disks_if_needed' do
       let(:cloud_for_set_disk_metadata) { instance_double(Bosh::Clouds::ExternalCpi) }
 
