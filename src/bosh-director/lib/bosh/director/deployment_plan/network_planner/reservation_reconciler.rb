@@ -9,6 +9,7 @@ module Bosh::Director::DeploymentPlan
       def reconcile(existing_reservations)
         unplaced_existing_reservations = Set.new(existing_reservations)
         existing_network_plans = []
+
         desired_reservations = @instance_plan.network_plans.map(&:reservation)
         reconciled_reservations = []
 
@@ -22,6 +23,7 @@ module Bosh::Director::DeploymentPlan
           end
 
           if desired_reservation
+
             @logger.debug(
               "For desired reservation #{desired_reservation} found existing reservation " \
               "on the same network #{existing_reservation}",
@@ -35,7 +37,7 @@ module Bosh::Director::DeploymentPlan
 
               unplaced_existing_reservations.delete(existing_reservation)
 
-              if existing_reservation.network != desired_reservation.network
+              if existing_reservation.network != desired_reservation.network || desired_reservation.nic_group != existing_reservation.nic_group
                 existing_reservation = switch_existing_reservation_network(desired_reservation, existing_reservation)
               end
 
@@ -86,6 +88,7 @@ module Bosh::Director::DeploymentPlan
         existing_reservation = Bosh::Director::DesiredNetworkReservation.new_dynamic(
           existing_reservation.instance_model,
           desired_reservation.network,
+          desired_reservation.nic_group,
         )
         existing_reservation.resolve_ip(existing_reservation_ip)
         existing_reservation
@@ -95,6 +98,8 @@ module Bosh::Director::DeploymentPlan
         return true if existing_reservation.network == desired_reservation.network
 
         return false if desired_reservation.network.is_a?(DynamicNetwork) || existing_reservation.network.is_a?(DynamicNetwork)
+
+        return false if desired_reservation.network.prefix != existing_reservation.network.prefix
 
         desired_reservation.network.subnets.any? do |subnet|
           if existing_reservation.instance_model.availability_zone != '' && !subnet.availability_zone_names.nil?
