@@ -50,6 +50,7 @@ RUN apt-get update -y \
         coreutils \
         default-libmysqlclient-dev \
         dnsutils \
+        file \
         git \
         git-lfs \
         google-cloud-cli \
