@@ -1,6 +1,5 @@
 module Bosh::Director
   module CloudcheckHelper
-    include IpUtil
     # Helper functions that come in handy for
     # cloudcheck:
     # 1. VM/agent interactions
