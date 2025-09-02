@@ -6,7 +6,7 @@ module Bosh::Director
       @instance_model = instance_model
       @network = network
       @ip = nil
-      @nic_group = nic_group.to_i if nic_group
+      @nic_group = nic_group&.to_i
     end
 
     def static?

@@ -1516,7 +1516,7 @@ module Bosh::Director
                   ip_addresses_params = {
                     'instance_id' => instance.id,
                     'task_id' => i.to_s,
-                    'address_str' => ("1.2.#{i}.#{j*16}/28").to_s,
+                    'address_str' => "1.2.#{i}.#{j*16}/28",
                     'vm_id' => vm.id,
                   }
                   Models::IpAddress.create(ip_addresses_params)
