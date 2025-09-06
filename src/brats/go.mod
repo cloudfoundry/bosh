@@ -4,7 +4,7 @@ go 1.23.0
 
 require (
 	github.com/creack/pty v1.1.15
-	github.com/onsi/ginkgo/v2 v2.25.2
+	github.com/onsi/ginkgo/v2 v2.25.3
 	github.com/onsi/gomega v1.38.2
 )
 
