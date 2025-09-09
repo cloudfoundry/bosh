@@ -2,6 +2,7 @@ require 'spec_helper'
 
 module Bosh::Director
   describe DeploymentPlan::InstanceNetworkReservations do
+    include Bosh::Director::IpUtil
     let(:deployment_model) { FactoryBot.create(:models_deployment, name: 'foo-deployment') }
     let(:cloud_config) { FactoryBot.create(:models_config_cloud, :with_manifest) }
     let(:runtime_config) { FactoryBot.create(:models_config_runtime) }
@@ -54,8 +55,8 @@ module Bosh::Director
 
     describe 'create_from_db' do
       context 'when there are IP addresses in db' do
-        let(:ip1) { IPAddr.new('192.168.0.1').to_i }
-        let(:ip2) { IPAddr.new('192.168.0.2').to_i }
+        let(:ip1) { to_ipaddr('192.168.0.1/32') }
+        let(:ip2) { to_ipaddr('192.168.0.2/32') }
 
         let(:ip_model1) do
           FactoryBot.create(:models_ip_address, address_str: ip1.to_s, instance: instance_model, network_name: 'fake-network')
@@ -165,7 +166,7 @@ module Bosh::Director
 
         context 'when the network name saved in the database is of type Vip Static (ips in instance groups)' do
           let(:network_with_subnets) { [] }
-          let(:static_vip_network) { DeploymentPlan::VipNetwork.new('dummy', nil, [], nil) }
+          let(:static_vip_network) { DeploymentPlan::VipNetwork.new('dummy', nil, [], nil, nil) }
 
           before do
             instance_model.add_ip_address(ip_model1)
@@ -195,6 +196,38 @@ module Bosh::Director
         end
       end
 
+      context 'when there are a nic_groups in db' do
+        let(:ip1) { to_ipaddr('192.168.0.1/32') }
+        let(:ip2) { to_ipaddr('192.168.0.2/32') }
+
+        let(:ip_model1) do
+          FactoryBot.create(:models_ip_address, address_str: ip1.to_s, instance: instance_model, network_name: 'fake-network', nic_group: 1)
+        end
+
+        let(:ip_model2) do
+          FactoryBot.create(:models_ip_address, address_str: ip2.to_s, instance: instance_model, network_name: 'fake-network', nic_group: 2)
+        end
+
+
+        context 'when there is a last VM with IP addresses' do
+          before do
+            vm1 = FactoryBot.create(:models_vm, instance: instance_model)
+            vm2 = FactoryBot.create(:models_vm, instance: instance_model)
+
+            vm2.add_ip_address(ip_model1)
+            vm2.add_ip_address(ip_model2)
+
+            instance_model.add_vm vm1
+            instance_model.add_vm vm2
+          end
+
+          it 'creates reservations from the last VM associated with an instance' do
+            reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, per_spec_logger)
+            expect(reservations.map(&:nic_group)).to eq([1, 2])
+          end
+        end
+      end
+
       context 'when instance has dynamic networks in spec' do
         let(:instance_model) { FactoryBot.create(:models_instance, deployment: deployment_model, spec: instance_spec) }
         let(:instance_spec) do
@@ -202,14 +235,15 @@ module Bosh::Director
             'networks' => {
               'dynamic-network' => {
                 'type' => 'dynamic',
-                'ip' => '10.10.0.10'
+                'ip' => '10.10.0.10',
+                'nic_group' => '1',
               }
             }
           }
         end
 
         let(:dynamic_network) do
-          DeploymentPlan::DynamicNetwork.new('dynamic-network', [], per_spec_logger)
+          DeploymentPlan::DynamicNetwork.new('dynamic-network', [], '32', per_spec_logger)
         end
         before do
           allow(deployment).to receive(:network).with('dynamic-network').and_return(dynamic_network)
@@ -219,6 +253,7 @@ module Bosh::Director
           reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, per_spec_logger)
           expect(reservations.first).to_not be_nil
           expect(reservations.first.ip).to eq(IPAddr.new('10.10.0.10').to_i)
+          expect(reservations.first.nic_group).to eq(1)
         end
       end
     end
