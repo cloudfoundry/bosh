@@ -22,20 +22,21 @@ module Bosh::Director
           subnets = network_spec['subnets'].map do |subnet_properties|
             name_servers = name_server_parser.parse(subnet_properties['name'], subnet_properties)
             cloud_properties = safe_property(subnet_properties, 'cloud_properties', class: Hash, default: {})
-            prefix = safe_property(subnet_properties, 'prefix', class: Integer, default: IPV4_DEFAULT_PREFIX_SIZE)
-            raise NetworkInvalidProperty, "Prefix property is not supported for dynamic networks." unless prefix == IPV4_DEFAULT_PREFIX_SIZE
+            prefix = safe_property(subnet_properties, 'prefix', class: Integer, default: Network::IPV4_DEFAULT_PREFIX_SIZE)
+            raise NetworkInvalidProperty, "Prefix property is not supported for dynamic networks." unless prefix == Network::IPV4_DEFAULT_PREFIX_SIZE
             subnet_availability_zones = parse_availability_zones(subnet_properties, availability_zones, name)
             DynamicNetworkSubnet.new(name_servers, cloud_properties, subnet_availability_zones, prefix)
           end
         else
           cloud_properties = safe_property(network_spec, 'cloud_properties', class: Hash, default: {})
-          prefix = IPV4_DEFAULT_PREFIX_SIZE # we need to set the ipv4 default value (dynamic networks only support ipv4)
+          # We need to set the IPv4 default value (dynamic networks only support IPv4)
+          prefix = Network::IPV4_DEFAULT_PREFIX_SIZE
 
           name_servers = name_server_parser.parse(network_spec['name'], network_spec)
           subnets = [DynamicNetworkSubnet.new(name_servers, cloud_properties, nil, prefix)]
         end
 
-        new(name, subnets, logger, prefix)
+        new(name, subnets, prefix, logger)
       end
 
       def self.validate_network_has_no_key_while_subnets_present(key, name, network_spec)

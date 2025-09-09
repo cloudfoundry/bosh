@@ -19,12 +19,12 @@ module Bosh::Director::Models
     end
 
     def ips
-      ips_cidr.map do | cidr_ip |
-       if ( cidr_ip.include?(':') && cidr_ip.include?("/#{Bosh::Director::DeploymentPlan::Network::IPV6_DEFAULT_PREFIX_SIZE}") ) || ( cidr_ip.include?('.')  && cidr_ip.include?("/#{Bosh::Director::DeploymentPlan::Network::IPV4_DEFAULT_PREFIX_SIZE}") )
-        cidr_ip.split('/')[0]
-       else
-        cidr_ip
-       end
+      ips_cidr.map do |cidr_ip|
+        if ( cidr_ip.include?(':') && cidr_ip.include?("/#{Bosh::Director::DeploymentPlan::Network::IPV6_DEFAULT_PREFIX_SIZE}") ) || ( cidr_ip.include?('.')  && cidr_ip.include?("/#{Bosh::Director::DeploymentPlan::Network::IPV4_DEFAULT_PREFIX_SIZE}") )
+          cidr_ip.split('/')[0]
+        else
+          cidr_ip
+        end
       end
     end
 
@@ -40,13 +40,16 @@ module Bosh::Director::Models
 
     def dynamic_ips
       network_spec.map do |_, network|
+        ip = network['ip']
         prefix = network['prefix'].to_s
-        if network['ip'].include?(':') && prefix.empty?
-          prefix = Bosh::Director::DeploymentPlan::Network::IPV6_DEFAULT_PREFIX_SIZE
-        elsif network['ip'].include?('.') && prefix.empty?
-          prefix = Bosh::Director::DeploymentPlan::Network::IPV4_DEFAULT_PREFIX_SIZE
+        
+        if prefix.empty?
+          prefix = ip.include?(':') ? 
+            Bosh::Director::DeploymentPlan::Network::IPV6_DEFAULT_PREFIX_SIZE :
+            Bosh::Director::DeploymentPlan::Network::IPV4_DEFAULT_PREFIX_SIZE
         end
-        "#{network['ip']}/#{prefix}"
+        
+        "#{ip}/#{prefix}"
       end
     end
   end
