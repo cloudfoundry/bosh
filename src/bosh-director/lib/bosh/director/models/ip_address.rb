@@ -49,7 +49,7 @@ module Bosh::Director
           raise "Unexpected address '#{address_str}' (#{info_display})"
         end
 
-        return to_ipaddr(address_str)
+        to_ipaddr(address_str)
       end
 
       def to_s
