@@ -42,13 +42,13 @@ module Bosh::Director::Models
       network_spec.map do |_, network|
         ip = network['ip']
         prefix = network['prefix'].to_s
-        
+
         if prefix.empty?
           prefix = ip.include?(':') ? 
             Bosh::Director::DeploymentPlan::Network::IPV6_DEFAULT_PREFIX_SIZE :
             Bosh::Director::DeploymentPlan::Network::IPV4_DEFAULT_PREFIX_SIZE
         end
-        
+
         "#{ip}/#{prefix}"
       end
     end
