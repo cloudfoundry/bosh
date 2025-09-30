@@ -64,6 +64,7 @@
 
     ```bash
     cd ~/workspace/bosh/src
+    git lfs pull
     bundle install
     ```
 
