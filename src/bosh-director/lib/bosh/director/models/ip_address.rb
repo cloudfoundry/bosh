@@ -34,6 +34,15 @@ module Bosh::Director
         address.to_s
       end
 
+      def formatted_ip_without_prefix_for_single_ips
+        if ( formatted_ip.include?(':') && formatted_ip.include?("/#{Bosh::Director::DeploymentPlan::Network::IPV6_DEFAULT_PREFIX_SIZE}") ) ||
+          ( formatted_ip.include?('.')  && formatted_ip.include?("/#{Bosh::Director::DeploymentPlan::Network::IPV4_DEFAULT_PREFIX_SIZE}") )
+          formatted_ip.split('/')[0]
+        else
+          formatted_ip
+        end
+      end
+
       def type
         static ? 'static' : 'dynamic'
       end

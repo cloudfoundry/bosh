@@ -2078,15 +2078,15 @@ module Bosh::Director::DeploymentPlan
 
       let(:network_plans) { [plan1, plan2, plan3, plan4] }
 
-      let(:ip1) { IPAddr.new('192.168.1.25') }
-      let(:ip2) { IPAddr.new('192.168.1.26') }
+      let(:ip1) { Bosh::Director::IpAddrOrCidr.new('192.168.1.25') }
+      let(:ip2) { Bosh::Director::IpAddrOrCidr.new('192.168.1.26') }
 
       let(:ip_address1) { FactoryBot.create(:models_ip_address, address_str: ip1.to_s) }
       let(:ip_address2) { FactoryBot.create(:models_ip_address, address_str: ip2.to_s) }
 
       describe 'when there are ips specified' do
         it 'releases obsolete network plans of the specified ips' do
-          instance_plan.remove_obsolete_network_plans_for_ips([ip_address1.address_str, ip_address2.address_str])
+          instance_plan.remove_obsolete_network_plans_for_ips([ip_address1.address, ip_address2.address])
           expect(instance_plan.network_plans).to contain_exactly(plan3, plan4)
         end
       end

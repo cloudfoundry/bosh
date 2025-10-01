@@ -102,7 +102,7 @@ module Bosh::Director
 
             it 'orphans' do
               expect(orphan_step).to have_received(:perform).with(instance_report)
-              expect(instance_plan).to have_received(:remove_obsolete_network_plans_for_ips).with([ip_address.address_str])
+              expect(instance_plan).to have_received(:remove_obsolete_network_plans_for_ips).with([ip_address.address])
             end
 
             it 'updates instance settings' do
