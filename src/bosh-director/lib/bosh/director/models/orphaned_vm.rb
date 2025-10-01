@@ -9,7 +9,7 @@ module Bosh::Director::Models
           'cid' => vm.cid,
           'deployment_name' => vm.deployment_name,
           'instance_name' => vm.instance_name,
-          'ip_addresses' => vm.ip_addresses.map(&:formatted_ip),
+          'ip_addresses' => vm.ip_addresses.map(&:formatted_ip_without_prefix_for_single_ips),
           'orphaned_at' => vm.orphaned_at.to_s,
         }
       end

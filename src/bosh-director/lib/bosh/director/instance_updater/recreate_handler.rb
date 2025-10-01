@@ -62,7 +62,7 @@ module Bosh::Director
 
       def orphan_inactive_vms
         inactive_vms.each do |inactive_vm|
-          ips = inactive_vm.ip_addresses.map(&:address_str)
+          ips = inactive_vm.ip_addresses.map(&:address)
           DeploymentPlan::Steps::OrphanVmStep.new(inactive_vm).perform(instance_report)
           instance_plan.remove_obsolete_network_plans_for_ips(ips)
         end

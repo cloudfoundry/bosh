@@ -35,22 +35,11 @@ module Bosh::Director::Models
     private
 
     def manual_or_vip_ips
-      ip_addresses.map(&:formatted_ip)
+      ip_addresses.map(&:formatted_ip_without_prefix_for_single_ips)
     end
 
     def dynamic_ips
-      network_spec.map do |_, network|
-        ip = network['ip']
-        prefix = network['prefix'].to_s
-
-        if prefix.empty?
-          prefix = ip.include?(':') ? 
-            Bosh::Director::DeploymentPlan::Network::IPV6_DEFAULT_PREFIX_SIZE :
-            Bosh::Director::DeploymentPlan::Network::IPV4_DEFAULT_PREFIX_SIZE
-        end
-
-        "#{ip}/#{prefix}"
-      end
+      network_spec.map { |_, network| network['ip'] }
     end
   end
 end

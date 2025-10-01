@@ -219,7 +219,7 @@ module Bosh
         end
 
         def remove_obsolete_network_plans_for_ips(ips)
-          network_plans.delete_if { |plan| ips.include?(plan.reservation.ip.base_addr) }
+          network_plans.delete_if { |plan| ips.include?(plan.reservation.ip) }
         end
 
         def release_obsolete_network_plans(ip_provider)

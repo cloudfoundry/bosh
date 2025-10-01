@@ -158,8 +158,8 @@ module Bosh::Director
           subnet.netmask = subnet.range.netmask
 
           subnet.restricted_ips.add(subnet.gateway) if subnet.gateway
-          subnet.restricted_ips.add(subnet.range)
-          subnet.restricted_ips.add(subnet.range.to_range.last)
+          subnet.restricted_ips.add(subnet.range.first)
+          subnet.restricted_ips.add(subnet.range.last)
           each_ip(JSON.parse(db_subnet.reserved)) do |ip|
             unless subnet.range.include?(ip)
               raise NetworkReservedIpOutOfRange,
