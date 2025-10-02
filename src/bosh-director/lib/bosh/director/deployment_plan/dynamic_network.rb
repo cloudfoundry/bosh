@@ -86,7 +86,7 @@ module Bosh::Director
       def initialize(name, subnets, prefix, logger)
         super(name, logger)
         @subnets = subnets
-        @prefix = prefix
+        @prefix = prefix.to_s
       end
 
       attr_reader :subnets
