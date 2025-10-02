@@ -83,7 +83,7 @@ describe 'failing deploy', type: :integration do
       static_ips: ['192.168.1.10'],
     )
     second_deploy_output = deploy_simple_manifest(manifest_hash: second_manifest_hash, failure_expected: true)
-    expect(second_deploy_output).to match(%r{Failed to reserve IP '192.168.1.10' for instance 'foobar\/[a-z0-9\-]+ \(0\)':})
+    expect(second_deploy_output).to match(%r{Failed to reserve IP '192.168.1.10/32' for instance 'foobar\/[a-z0-9\-]+ \(0\)':})
     expect(second_deploy_output).to match(%r{already reserved by instance 'foobar\/[a-z0-9\-]+' from deployment 'first'})
 
     deploy_simple_manifest(manifest_hash: first_manifest_hash)
