@@ -295,7 +295,7 @@ describe 'global networking', type: :integration do
 
       instances = director.instances(deployment_name: 'my-deploy')
       expect(output).to include(
-        "Failed to reserve IP '192.168.1.11' for instance " \
+        "Failed to reserve IP '192.168.1.11/32' for instance " \
         "'first-instance-group/#{instances[0].id} (0)': already reserved by instance " \
         "'second-instance-group/#{instances[1].id}' from deployment 'my-deploy'",
       )
@@ -337,7 +337,7 @@ describe 'global networking', type: :integration do
 
       # all IPs still reserved
       expect(exit_code).not_to eq(0)
-      expect(output).to match(%r{Failed to reserve IP '192.168.1.10' for instance 'first-instance-group\/[a-z0-9\-]+ \(0\)': already reserved by instance 'first-instance-group\/[a-z0-9\-]+' from deployment 'my-deploy'})
+      expect(output).to match(%r{Failed to reserve IP '192.168.1.10/32' for instance 'first-instance-group\/[a-z0-9\-]+ \(0\)': already reserved by instance 'first-instance-group\/[a-z0-9\-]+' from deployment 'my-deploy'})
     end
 
     it 'releases IP when subnet range is changed to no longer include it' do
