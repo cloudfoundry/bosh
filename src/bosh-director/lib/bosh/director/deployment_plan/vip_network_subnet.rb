@@ -27,7 +27,7 @@ module Bosh::Director
       def initialize(static_ips, availability_zone_names, prefix)
         @static_ips = static_ips
         @availability_zone_names = availability_zone_names
-        @prefix = prefix.to_s
+        @prefix = prefix
       end
 
       def is_reservable?(ip)
