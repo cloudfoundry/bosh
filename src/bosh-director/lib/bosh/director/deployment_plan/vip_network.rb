@@ -35,7 +35,7 @@ module Bosh::Director
         super(name, logger)
         @cloud_properties = cloud_properties
         @subnets = subnets
-        @prefix = prefix
+        @prefix = prefix.to_s
         @logger = TaggedLogger.new(logger, 'network-configuration')
       end
 
