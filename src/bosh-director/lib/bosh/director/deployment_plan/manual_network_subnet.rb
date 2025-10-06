@@ -62,6 +62,9 @@ module Bosh::Director
 
           Config.director_ips&.each do |cidr|
             each_ip(cidr) do |ip|
+              if ip.ipv4? != range.ipv4?
+                next
+              end
               restricted_ips.add(ip)
             end
           end

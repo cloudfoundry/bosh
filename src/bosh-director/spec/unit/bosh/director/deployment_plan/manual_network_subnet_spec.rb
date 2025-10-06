@@ -351,8 +351,27 @@ include Bosh::Director::IpUtil
         [],
       )
 
-      expect(subnet.restricted_ips).to include(ip1.to_i)
-      expect(subnet.restricted_ips).to include(ip2.to_i)
+      expect(subnet.restricted_ips).to include(ip1)
+      expect(subnet.restricted_ips).to include(ip2)
+    end
+
+    it 'should only include the directors ip addresses in the reserved range if the ip versions match' do
+      ip1 = IPAddr.new('192.168.1.1')
+      ip2 = IPAddr.new('2001:db8::2')
+
+      allow(Bosh::Director::Config).to receive(:director_ips).and_return([ip1.to_s, ip2.to_s])
+      subnet = make_subnet(
+        {
+          'range' => '2001:db8::/32',
+          'reserved' => [],
+          'gateway' => '2001:db8::1',
+          'cloud_properties' => { 'foo' => 'bar' },
+        },
+        [],
+      )
+
+      expect(subnet.restricted_ips).to_not include(ip1)
+      expect(subnet.restricted_ips).to include(ip2)
     end
 
     it 'should create a subnet spec with prefix' do
