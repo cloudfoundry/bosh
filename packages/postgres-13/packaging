@@ -3,7 +3,7 @@ set -e -x
 tar xzf postgres/postgresql-13.*.tar.gz
 
 pushd postgresql-*
-  ./configure --prefix=${BOSH_INSTALL_TARGET}
+  ./configure --with-openssl --prefix=${BOSH_INSTALL_TARGET}
 
   pushd src/bin/pg_config
     make
