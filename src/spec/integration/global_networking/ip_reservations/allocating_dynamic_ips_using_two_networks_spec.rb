@@ -45,7 +45,6 @@ describe 'global networking', type: :integration do
     end
 
     context 'when using two networks' do
-      context 'when range does not include one of IPs' do
         def make_network_spec(first_subnet, second_subnet)
           [
             {
@@ -68,6 +67,7 @@ describe 'global networking', type: :integration do
           instance_group_spec
         end
 
+      context 'when range does not include one of IPs' do
         it 'redeploys VM updating IP that does not belong to range and keeping another IP', no_create_swap_delete: true do
           first_subnet = SharedSupport::DeploymentManifestHelper.make_subnet(available_ips: 2, range: '192.168.1.0/24') # 1 for compilation
           second_subnet = SharedSupport::DeploymentManifestHelper.make_subnet(available_ips: 1, range: '10.10.0.0/24')
@@ -94,6 +94,33 @@ describe 'global networking', type: :integration do
           instances = director.instances
           expect(instances.size).to eq(1)
           expect(instances.map(&:ips).flatten).to match_array(['192.168.1.2', '10.10.0.3'])
+        end
+      end
+
+      context 'when ip versions are different (ipv4 <-> ipv6)' do
+        it 'does not redeploy VM if no changes are done', no_create_swap_delete: true do
+          first_subnet = SharedSupport::DeploymentManifestHelper.make_subnet(available_ips: 2, range: '192.168.1.0/24') # 1 for compilation
+          second_subnet = SharedSupport::DeploymentManifestHelper.make_subnet(available_ips: 1, range: '2001:db8::/120')
+
+          cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
+          cloud_config_hash['networks'] = make_network_spec(first_subnet, second_subnet)
+          cloud_config_hash['compilation']['network'] = 'first'
+          upload_cloud_config(cloud_config_hash: cloud_config_hash)
+
+          manifest_hash = SharedSupport::DeploymentManifestHelper.simple_manifest_with_instance_groups
+          manifest_hash['instance_groups'] = [instance_group_with_two_networks]
+          deploy_simple_manifest(manifest_hash: manifest_hash)
+
+          instances = director.instances
+          expect(instances.size).to eq(1)
+          expect(instances.map(&:ips).flatten).to match_array(['192.168.1.2', '2001:db8::2'])
+
+          output = deploy_simple_manifest(manifest_hash: manifest_hash)
+
+          expect(output).to_not match(/executing pre-stop/)
+          instances = director.instances
+          expect(instances.size).to eq(1)
+          expect(instances.map(&:ips).flatten).to match_array(['192.168.1.2', '2001:db8::2'])
         end
       end
     end
