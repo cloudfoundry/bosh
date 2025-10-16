@@ -229,6 +229,8 @@ builds:
     version: "211"
   3e502b40-8bd6-4582-4835-3807e50c65cb:
     version: 282.0.1
+  3e6efeba-f303-48e3-4b3d-c90335893d9c:
+    version: 282.0.10
   3e9df918-6c4b-4e59-44e6-1766ee713233:
     version: 264.7.0
   3f36e5523e474c55424543334971ddbf578a354f:
