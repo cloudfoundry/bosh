@@ -96,6 +96,13 @@ module Bosh::Director::DeploymentPlan
         addresses_we_cant_allocate.delete_if { |ipaddr| ipaddr.ipv6? }
       end
 
+      addresses_we_cant_allocate.reject! do |ip|
+        addresses_we_cant_allocate.any? do |other_ip|
+          includes = other_ip.include?(ip) rescue false
+          includes && other_ip.prefix < ip.prefix
+        end
+      end
+
       ip_address_cidr = find_next_available_ip(addresses_we_cant_allocate, first_range_address, subnet.prefix)
 
       if !(subnet.range == ip_address_cidr || subnet.range.include?(ip_address_cidr))
