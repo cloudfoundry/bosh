@@ -39,10 +39,9 @@ module Bosh::Clouds
       cpi_response = @cpi.create_vm(*args)
 
       response = []
-      case @cpi_api_version
-      when 2
+      if @cpi_api_version >= 2
         response = cpi_response
-      when 1
+      else
         response << cpi_response
       end
 
@@ -62,11 +61,10 @@ module Bosh::Clouds
     def attach_disk(*args)
       cpi_response = @cpi.attach_disk(*args)
 
-      case @cpi_api_version
-      when 2
+      if @cpi_api_version >= 2
         raise Bosh::Clouds::AttachDiskResponseError, 'No disk_hint' if cpi_response.nil? || cpi_response.empty?
         cpi_response
-      when 1
+      else
         nil
       end
     end

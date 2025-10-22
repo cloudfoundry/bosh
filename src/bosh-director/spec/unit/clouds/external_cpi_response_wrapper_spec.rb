@@ -11,7 +11,7 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
   let(:cpi_log_path) { '/var/vcap/task/5/cpi' }
 
   let(:logger) { double(:logger, debug: nil) }
-  let(:config) { double('Bosh::Director::Config', logger: logger, cpi_task_log: cpi_log_path, preferred_cpi_api_version: 2) }
+  let(:config) { double('Bosh::Director::Config', logger: logger, cpi_task_log: cpi_log_path, preferred_cpi_api_version: 3) }
   let(:cloud) { Bosh::Clouds::ExternalCpi.new('/path/to/fake-cpi/bin/cpi', 'fake-director-uuid', logger) }
 
   let(:wait_thread) do
@@ -377,8 +377,8 @@ describe Bosh::Clouds::ExternalCpiResponseWrapper do
     end
   end
 
-  describe 'when cpi_version is 2' do
-    let(:cpi_api_version) { 2 }
+  describe 'when cpi_version is 2 or higher' do
+    let(:cpi_api_version) { 3 }
 
     describe '#create_vm' do
       let(:redacted_network_settings) { nil }
