@@ -297,7 +297,6 @@ module Bosh::Director
             ip_address = ip_repo.allocate_dynamic_ip(reservation, subnet)
             expected_ip_address = cidr_ip('192.168.1.13')
             expect(ip_address).to eq(expected_ip_address)
-
           end
         end
 
