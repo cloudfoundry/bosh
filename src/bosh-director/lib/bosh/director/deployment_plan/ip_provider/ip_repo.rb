@@ -98,7 +98,7 @@ module Bosh::Director::DeploymentPlan
 
       addresses_we_cant_allocate.reject! do |ip|
         addresses_we_cant_allocate.any? do |other_ip|
-          includes = other_ip.include?(ip) rescue false
+          includes = other_ip.include?(ip)
           includes && other_ip.prefix < ip.prefix
         end
       end
