@@ -70,7 +70,7 @@ module Bosh::Director
         cached_blob_path = @template_blob_cache.download_blob(instance_job)
         template_dir = Dir.mktmpdir('template_dir')
 
-        output = `tar -C #{template_dir} -xzf #{cached_blob_path} 2>&1`
+        output = `tar -C #{template_dir} -xf #{cached_blob_path} 2>&1`
         if $?.exitstatus != 0
           raise Bosh::Director::JobTemplateUnpackFailed,
             "Cannot unpack '#{instance_job.name}' job blob, " +

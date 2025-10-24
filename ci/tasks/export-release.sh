@@ -5,8 +5,8 @@ bosh_repo_dir="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../" && pwd)"
 main() {
   set -eu
 
-  tar -xzf release/*.tgz "$( tar -tzf release/*.tgz | grep 'release.MF' )"
-  tar -xzf stemcell/*.tgz "$( tar -tzf stemcell/*.tgz | grep 'stemcell.MF' )"
+  tar -xf release/*.tgz "$( tar -tzf release/*.tgz | grep 'release.MF' )"
+  tar -xf stemcell/*.tgz "$( tar -tzf stemcell/*.tgz | grep 'stemcell.MF' )"
 
   export STEMCELL_OS=$( grep -E '^operating_system: ' stemcell.MF | awk '{print $2}' | tr -d "\"'" )
   local RELEASE_NAME=$( grep -E '^name: ' release.MF | awk '{print $2}' | tr -d "\"'" )
