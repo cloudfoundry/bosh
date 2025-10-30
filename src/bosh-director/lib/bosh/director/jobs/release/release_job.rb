@@ -49,7 +49,7 @@ module Bosh::Director
       FileUtils.mkdir_p(job_dir)
 
       desc = "job '#{name}/#{@version}'"
-      result = Bosh::Common::Exec.sh("tar -C #{job_dir} -xzf #{job_tgz} 2>&1", :on_error => :return)
+      result = Bosh::Common::Exec.sh("tar -C #{job_dir} -xf #{job_tgz} 2>&1", :on_error => :return)
       if result.failed?
         @logger.error("Extracting #{desc} archive failed in dir #{job_dir}, " +
           "tar returned #{result.exit_status}, " +
