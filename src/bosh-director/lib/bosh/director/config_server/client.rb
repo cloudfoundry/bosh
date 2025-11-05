@@ -437,7 +437,7 @@ module Bosh::Director::ConfigServer
       begin
         parsed_response_body = JSON.parse(response.body)
       rescue JSON::ParserError
-        raise Bosh::Director::ConfigServerGenerationError, "Config Server returned a NON-JSON body while generating value for '#{get_name_root(name)}' with type '#{type}'"
+        raise Bosh::Director::ConfigServerGenerationError, "Config Server returned a NON-JSON body while generating value for '#{get_name_root(name)}' with type '#{type}'. Response body was: '#{response.body}'"
       end
 
       unless response.is_a? Net::HTTPSuccess
