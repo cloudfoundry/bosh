@@ -1988,7 +1988,7 @@ module Bosh::Director::ConfigServer
                 client.generate_values(variables_obj, deployment_name)
               end.to raise_error(
                 Bosh::Director::ConfigServerGenerationError,
-                "Config Server returned a NON-JSON body while generating value for '/smurf_director_name/deployment_name/placeholder_a' with type 'password'",
+                "Config Server returned a NON-JSON body while generating value for '/smurf_director_name/deployment_name/placeholder_a' with type 'password'. Response body was: 'NOT JSON!!!'",
               )
             end
           end
