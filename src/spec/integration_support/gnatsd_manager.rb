@@ -23,7 +23,7 @@ module IntegrationSupport
 
       Dir.chdir(IntegrationSupport::Constants::BOSH_REPO_ROOT) do
         run_command('bosh sync-blobs')
-        run_command('tar -zxvf blobs/nats/nats-server-*.tar.gz -C /tmp')
+        run_command('tar -xvf blobs/nats/nats-server-*.tar.gz -C /tmp')
         run_command("cp /tmp/nats-server-*/nats-server #{executable_path}")
         run_command("chmod +x #{executable_path}")
       end
