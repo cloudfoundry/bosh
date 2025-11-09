@@ -40,6 +40,9 @@ module Bosh::Director
       # @return [Boolean] Indicates whether VMs should be recreated
       attr_reader :recreate
 
+      # @return [DateTime] Recreate vms created before this timestamp
+      attr_reader :recreate_older_than
+
       # @return [Boolean] Indicates whether persistent disks should be recreated
       attr_reader :recreate_persistent_disks
 
@@ -101,6 +104,7 @@ module Bosh::Director
 
         @is_deploy_action = !!options['is_deploy_action']
         @recreate = !!options['recreate']
+        @recreate_older_than = options['recreate_older_than']
         @recreate_persistent_disks = options['recreate_persistent_disks'] == true
         @fix = !!options['fix']
 

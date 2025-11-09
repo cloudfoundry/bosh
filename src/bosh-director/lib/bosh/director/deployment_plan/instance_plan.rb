@@ -12,6 +12,7 @@ module Bosh
                        network_plans: [],
                        skip_drain: false,
                        recreate_deployment: false,
+                       recreate_older_than: nil,
                        recreate_persistent_disks: false,
                        use_dns_addresses: false,
                        use_short_dns_addresses: false,
@@ -26,6 +27,7 @@ module Bosh
           @network_plans = network_plans
           @skip_drain = skip_drain
           @recreate_deployment = recreate_deployment
+          @recreate_older_than = recreate_older_than
           @recreate_persistent_disks = recreate_persistent_disks
           @use_dns_addresses = use_dns_addresses
           @use_short_dns_addresses = use_short_dns_addresses
@@ -122,8 +124,13 @@ module Bosh
         end
 
         def recreation_requested?
-          if @recreate_deployment
+          @logger.info("recreation_requested?: #{@recreate_deployment}; #{@recreate_older_than}; #{instance_model.active_vm}; #{@instance_model&.active_vm&.created_at}")
+          if @recreate_deployment && @recreate_older_than.nil?
             @logger.debug("#{__method__} job deployment is configured with \"recreate\" state")
+            true
+          elsif @recreate_deployment && @recreate_older_than && instance_model.active_vm && @recreate_older_than > instance_model.active_vm.created_at
+            # TODO handle the edge case of vm failing mid deploy; after create
+            @logger.debug("#{__method__} job deployment is configured with \"recreate\" state and instance ")
             true
           elsif unresponsive_agent?
             @logger.debug("#{__method__} instance should be recreated because of unresponsive agent")

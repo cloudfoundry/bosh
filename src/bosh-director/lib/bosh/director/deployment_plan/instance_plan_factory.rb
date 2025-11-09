@@ -17,6 +17,7 @@ module Bosh
           @deployment_plan = deployment_plan
           @instance_repo = instance_repo
           @recreate_deployment = options.fetch('recreate', false)
+          @recreate_older_than = options.fetch('recreate_older_than')
           @recreate_persistent_disks = options.fetch('recreate_persistent_disks', false)
           @states_by_existing_instance = states_by_existing_instance
           @index_assigner = index_assigner
@@ -38,6 +39,7 @@ module Bosh
             instance: instance,
             skip_drain: @deployment_plan.skip_drain.for_job(existing_instance_model.job),
             recreate_deployment: @recreate_deployment,
+            recreate_older_than: @recreate_older_than,
             use_dns_addresses: @use_dns_addresses,
             use_short_dns_addresses: @use_short_dns_addresses,
             use_link_dns_addresses: @use_link_dns_addresses,
@@ -58,6 +60,7 @@ module Bosh
             instance: instance,
             skip_drain: @deployment_plan.skip_drain.for_job(desired_instance.instance_group.name),
             recreate_deployment: @recreate_deployment,
+            recreate_older_than: @recreate_older_than,
             recreate_persistent_disks: @recreate_persistent_disks,
             use_dns_addresses: @use_dns_addresses,
             use_short_dns_addresses: @use_short_dns_addresses,
@@ -78,6 +81,7 @@ module Bosh
             instance: instance,
             skip_drain: @deployment_plan.skip_drain.for_job(desired_instance.instance_group.name),
             recreate_deployment: @recreate_deployment,
+            recreate_older_than: @recreate_older_than,
             use_dns_addresses: @use_dns_addresses,
             use_short_dns_addresses: @use_short_dns_addresses,
             use_link_dns_addresses: @use_link_dns_addresses,

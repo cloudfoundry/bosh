@@ -64,6 +64,7 @@ module Bosh
           plan_options = {
             'is_deploy_action' => !!options['deploy'],
             'recreate' => !!options['recreate'],
+            'recreate_older_than' => validate_and_get_datetime_argument(options['recreate_older_than'], 'recreate_older_than'),
             'recreate_persistent_disks' => options['recreate_persistent_disks'] == true,
             'fix' => !!options['fix'],
             'skip_drain' => options['skip_drain'],
@@ -141,6 +142,15 @@ module Bosh
         def validate_and_get_argument(arg, type)
           raise "#{type} value should be integer or percent" unless arg =~ /^\d+%$|\A[-+]?[0-9]+\z/ || arg.nil?
           arg
+        end
+
+        def validate_and_get_datetime_argument(arg, field)
+          return nil if arg.nil?
+          begin
+            DateTime.rfc3339(arg)
+          rescue ArgumentError
+            raise "#{field} must be a valid rfc3339 string"
+          end
         end
       end
     end
