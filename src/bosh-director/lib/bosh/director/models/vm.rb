@@ -25,11 +25,11 @@ module Bosh::Director::Models
         else
           cidr_ip
         end
-      end
+      end.uniq.sort_by { |ip| Bosh::Director::IpAddrOrCidr.new(ip).to_i }
     end
 
     def ips_cidr
-      manual_or_vip_ips.concat(dynamic_ips).uniq
+      manual_or_vip_ips.concat(dynamic_ips)
     end
 
     private
@@ -39,7 +39,7 @@ module Bosh::Director::Models
     end
 
     def dynamic_ips
-      network_spec.map { |_, network| network['ip'] }
+      network_spec.map { |_, network| "#{network['ip']}/#{network['prefix']}" }
     end
   end
 end

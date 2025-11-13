@@ -43,13 +43,14 @@ module Bosh::Director
       describe '#ips' do
         let!(:ip_address) { FactoryBot.create(:models_ip_address, vm: vm, address_str: to_ipaddr('1.1.1.1/32').to_s) }
         let!(:ip_address2) { FactoryBot.create(:models_ip_address, vm: vm, address_str: to_ipaddr('1.1.1.2/32').to_s) }
+        let!(:ip_address3) { FactoryBot.create(:models_ip_address, vm: vm, address_str: to_ipaddr('1.1.1.16/28').to_s) }
 
         before do
-          vm.network_spec = { 'some' => { 'ip' => '1.1.1.3/32' } }
+          vm.network_spec = { 'some' => { 'ip' => '2001:db8::1', 'prefix' => '64' }, 'some_other' => { 'ip' => '1.1.1.4', 'prefix' => '32' } }
         end
 
-        it 'returns all ips for the vm' do
-          expect(vm.ips).to match_array(['1.1.1.1', '1.1.1.2', '1.1.1.3'])
+        it 'returns ips without prefix for single ips and with prefix for prefix ips order by size of the integer representation' do
+          expect(vm.ips).to match_array(['1.1.1.1', '1.1.1.2', '1.1.1.16/28', '1.1.1.4', '2001:db8::1/64'])
         end
       end
     end
