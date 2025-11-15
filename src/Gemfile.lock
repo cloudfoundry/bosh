@@ -183,7 +183,7 @@ GEM
     metrics (0.15.0)
     mini_portile2 (2.8.9)
     minitar (1.1.0)
-    minitest (5.26.0)
+    minitest (5.26.1)
     mtrc (0.0.4)
     multi_json (1.17.0)
     mustermann (3.0.4)
