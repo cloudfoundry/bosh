@@ -108,8 +108,9 @@ describe Bosh::Director::ProblemHandlers::InactiveDisk do
       }.to raise_error(Bosh::Director::ProblemHandlerError, 'Disk is currently in use')
     end
 
-    it 'detaches disk from VM and deletes it and its snapshots from DB (if instance has VM)' do
+    it 'detaches disk from VM with VM lock and deletes it and its snapshots from DB (if instance has VM)' do
       expect(@agent).to receive(:list_disk).and_return(['other-disk'])
+      expect(@handler).to receive(:with_vm_lock).with(@instance.vm_cid).and_yield
       expect(cloud).to receive(:detach_disk).with(@instance.vm_cid, 'disk-cid')
       expect(cloud_factory).to receive(:get).with(@instance.active_vm.cpi, 25).and_return(cloud)
       @handler.apply_resolution(:delete_disk)

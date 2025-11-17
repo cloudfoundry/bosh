@@ -1,6 +1,8 @@
 module Bosh::Director
   module Jobs::Helpers
     module DynamicDiskHelpers
+      VM_LOCK_TIMEOUT = 60
+
       def find_disk_cloud_properties(instance, disk_pool_name)
         teams = instance.deployment.teams
         configs = Models::Config.latest_set_for_teams('cloud', *teams)

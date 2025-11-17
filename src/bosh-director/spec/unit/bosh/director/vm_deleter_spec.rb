@@ -8,6 +8,7 @@ module Bosh
       let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
       let(:cloud_factory) { instance_double(CloudFactory) }
       let(:deployment) { FactoryBot.create(:models_deployment, name: 'deployment_name') }
+      let(:current_job) { instance_double(Bosh::Director::Jobs::CloudCheck::ApplyResolutions, username: 'user', task_id: 42) }
       let(:vm_model) { FactoryBot.create(:models_vm, cid: 'vm-cid', instance_id: instance_model.id, cpi: 'cpi1') }
       let(:instance_model) do
         FactoryBot.create(:models_instance,
@@ -30,6 +31,7 @@ module Bosh
 
         allow(CloudFactory).to receive(:create).and_return(cloud_factory)
         allow(cloud_factory).to receive(:get).with(nil, nil).and_return(cloud)
+        allow(Bosh::Director::Config).to receive(:current_job).and_return(current_job)
       end
 
       describe '#delete_for_instance' do
@@ -95,8 +97,9 @@ module Bosh
             allow(cloud_factory).to receive(:get).with('cpi1', 25).and_return(cloud)
           end
 
-          it 'calls delete_vm' do
+          it 'calls delete_vm with vm lock' do
             expect(per_spec_logger).to receive(:info).with('Deleting VM')
+            expect(per_spec_logger).to receive(:info).with("Acquiring VM lock on vm-cid")
             expect(cloud).to receive(:delete_vm).with(vm_model.cid)
             subject.delete_vm_by_cid(vm_model.cid, 25, 'cpi1')
           end

@@ -1,5 +1,7 @@
 module Bosh::Director
   class VmDeleter
+    include LockHelper
+
     def initialize(logger, force = false, enable_virtual_delete_vm = false)
       @logger = logger
       @error_ignorer = ErrorIgnorer.new(force, @logger)
@@ -20,7 +22,7 @@ module Bosh::Director
       @logger.info('Deleting VM')
       @error_ignorer.with_force_check do
         cloud_factory = CloudFactory.create
-        cloud_factory.get(cpi_name, stemcell_api_version).delete_vm(cid) unless @enable_virtual_delete_vm
+        with_vm_lock(cid) { cloud_factory.get(cpi_name, stemcell_api_version).delete_vm(cid) } unless @enable_virtual_delete_vm
       end
     end
 

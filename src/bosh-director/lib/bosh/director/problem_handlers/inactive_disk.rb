@@ -81,7 +81,7 @@ module Bosh::Director
         if active_vm
           begin
             cloud = CloudFactory.create.get(active_vm.cpi, active_vm.stemcell_api_version)
-            cloud.detach_disk(active_vm.cid, @disk.disk_cid)
+            with_vm_lock(active_vm.cid) { cloud.detach_disk(active_vm.cid, @disk.disk_cid) }
           rescue => e
             # We are going to delete this disk anyway
             # and we know it's not in use, so we can ignore

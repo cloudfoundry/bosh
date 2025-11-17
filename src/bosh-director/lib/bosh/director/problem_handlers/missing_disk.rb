@@ -75,7 +75,7 @@ module Bosh::Director
 
           begin
             @logger.debug('Sending cpi request: detach_disk')
-            cloud.detach_disk(@instance.vm_cid, @disk.disk_cid)
+            with_vm_lock(@instance.vm_cid) {  cloud.detach_disk(@instance.vm_cid, @disk.disk_cid) }
           rescue Bosh::Clouds::DiskNotAttached, Bosh::Clouds::DiskNotFound
           end
         end

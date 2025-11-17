@@ -16,6 +16,12 @@ module Bosh::Director
       Models::Lock.where { Sequel.like(:name, 'lock:deployment:%') & (expired_at > Time.now) }.all
     end
 
+    def with_vm_lock(vm_cid, opts = {})
+      timeout = opts[:timeout] || 10
+      Config.logger.info("Acquiring VM lock on #{vm_cid}")
+      Lock.new("lock:vm:#{vm_cid}", timeout: timeout).lock { yield }
+    end
+
     def with_network_lock(name, opts = {})
       timeout = opts[:timeout] || 10
       Config.logger.info("Acquiring network lock on #{name}")
