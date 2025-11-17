@@ -53,6 +53,7 @@ module Bosh::Director
           end
 
           it 'detaches the disk' do
+            expect(detach_dynamic_disk_job).to receive(:with_vm_lock).with(vm.cid, timeout: 60).and_yield
             expect(cloud).to receive(:detach_disk).with(vm.cid, disk_cid)
             expect(agent_client).to receive(:remove_dynamic_disk).with(disk_cid)
             expect(detach_dynamic_disk_job.perform).to eq("detached disk `#{disk_cid}` from vm `#{vm.cid}`")
@@ -63,6 +64,7 @@ module Bosh::Director
 
           context 'when disk is already detached' do
             it 'does not return an error' do
+              expect(detach_dynamic_disk_job).to receive(:with_vm_lock).with(vm.cid, timeout: 60).and_yield
               expect(cloud).to receive(:detach_disk).with(vm.cid, disk_cid).and_raise(Bosh::Clouds::DiskNotAttached.new(false))
               expect(agent_client).to receive(:remove_dynamic_disk).with(disk_cid)
               expect(detach_dynamic_disk_job.perform).to eq("disk `#{disk_cid}` was already detached")

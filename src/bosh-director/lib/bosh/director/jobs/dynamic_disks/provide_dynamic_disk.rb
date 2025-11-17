@@ -2,6 +2,7 @@ module Bosh::Director
   module Jobs::DynamicDisks
     class ProvideDynamicDisk < Jobs::BaseJob
       include Jobs::Helpers::DynamicDiskHelpers
+      include LockHelper
 
       @queue = :normal
 
@@ -42,7 +43,7 @@ module Bosh::Director
         end
 
         if disk_model.vm.nil?
-          disk_hint = cloud.attach_disk(vm.cid, disk_model.disk_cid)
+          disk_hint = with_vm_lock(vm.cid, timeout: VM_LOCK_TIMEOUT) { cloud.attach_disk(vm.cid, disk_model.disk_cid) }
           disk_model.update(vm_id: vm.id, availability_zone: vm.instance.availability_zone, disk_hint: disk_hint)
         else
           if disk_model.vm.id != vm.id

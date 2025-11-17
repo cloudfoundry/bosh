@@ -2,6 +2,7 @@ module Bosh::Director
   module Jobs::DynamicDisks
     class DetachDynamicDisk < Jobs::BaseJob
       include Jobs::Helpers::DynamicDiskHelpers
+      include LockHelper
 
       @queue = :normal
 
@@ -26,7 +27,7 @@ module Bosh::Director
         agent_client = AgentClient.with_agent_id(disk_model.vm.agent_id, instance_name)
         agent_client.remove_dynamic_disk(disk_model.disk_cid)
 
-        cloud.detach_disk(disk_model.vm.cid, disk_model.disk_cid)
+        with_vm_lock(vm_cid, timeout: VM_LOCK_TIMEOUT) { cloud.detach_disk(vm_cid, disk_model.disk_cid) }
 
         disk_model.update(vm_id: nil, disk_hint: '')
 

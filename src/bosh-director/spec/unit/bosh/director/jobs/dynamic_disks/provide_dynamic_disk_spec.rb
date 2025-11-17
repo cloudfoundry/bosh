@@ -64,6 +64,7 @@ module Bosh::Director
 
         it 'attaches the disk to VM and updates disk vm and availability zone' do
           expect(cloud).not_to receive(:create_disk)
+          expect(provide_dynamic_disk_job).to receive(:with_vm_lock).with(vm.cid, timeout: 60).and_yield
           expect(cloud).to receive(:attach_disk).with(vm.cid, disk_cid).and_return(disk_hint)
           expect(agent_client).to receive(:add_dynamic_disk).with(disk_cid, disk_hint)
           expect(provide_dynamic_disk_job.perform).to eq("attached disk `#{disk_name}` to `#{vm.cid}` in deployment `#{vm.instance.deployment.name}`")
@@ -79,6 +80,7 @@ module Bosh::Director
         it 'creates the disk and attaches it to VM' do
           expected_cloud_properties = disk_cloud_properties.merge('name' => 'fake-disk-name')
           expect(cloud).to receive(:create_disk).with(disk_size, expected_cloud_properties, vm.cid).and_return(disk_cid)
+          expect(provide_dynamic_disk_job).to receive(:with_vm_lock).with(vm.cid, timeout: 60).and_yield
           expect(cloud).to receive(:attach_disk).with(vm.cid, disk_cid).and_return(disk_hint)
 
           expect(agent_client).to receive(:add_dynamic_disk).with(disk_cid, disk_hint)
@@ -109,6 +111,7 @@ module Bosh::Director
         end
 
         it 'returns an error from attach_disk call' do
+          expect(provide_dynamic_disk_job).to receive(:with_vm_lock).with(vm.cid, timeout: 60).and_yield
           expect(cloud).to receive(:attach_disk).with(vm.cid, disk_cid).and_raise('some-error')
           expect { provide_dynamic_disk_job.perform }.to raise_error('some-error')
         end
@@ -146,6 +149,7 @@ module Bosh::Director
               "fake-key" => "fake-value"
             }
           )
+          expect(provide_dynamic_disk_job).to receive(:with_vm_lock).with(vm.cid, timeout: 60).and_yield
           expect(cloud).to receive(:attach_disk).with(vm.cid, disk_cid).and_return(disk_hint)
 
           expect(agent_client).to receive(:add_dynamic_disk).with(disk_cid, disk_hint)
@@ -179,6 +183,7 @@ module Bosh::Director
         it 'gets the disk cloud properties from the latest cloud config for those teams' do
           expected_cloud_properties = disk_cloud_properties.merge('name' => 'fake-disk-name')
           expect(cloud).to receive(:create_disk).with(disk_size, expected_cloud_properties, vm.cid).and_return(disk_cid)
+          expect(provide_dynamic_disk_job).to receive(:with_vm_lock).with(vm.cid, timeout: 60).and_yield
           expect(cloud).to receive(:attach_disk).with(vm.cid, disk_cid).and_return(disk_hint)
           expect(agent_client).to receive(:add_dynamic_disk).with(disk_cid, disk_hint)
           expect(provide_dynamic_disk_job.perform).to eq("attached disk `#{disk_name}` to `#{vm.cid}` in deployment `#{vm.instance.deployment.name}`")
