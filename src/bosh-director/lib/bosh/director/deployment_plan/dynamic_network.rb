@@ -9,6 +9,7 @@ module Bosh::Director
         Canonicalizer.canonicalize(name)
         logger = TaggedLogger.new(logger, 'network-configuration')
         name_server_parser = NetworkParser::NameServersParser.new
+        prefix = Network::IPV4_DEFAULT_PREFIX_SIZE
 
         validate_network_has_no_key('az', name, network_spec)
         validate_network_has_no_key('azs', name, network_spec)
@@ -22,15 +23,14 @@ module Bosh::Director
           subnets = network_spec['subnets'].map do |subnet_properties|
             name_servers = name_server_parser.parse(subnet_properties['name'], subnet_properties)
             cloud_properties = safe_property(subnet_properties, 'cloud_properties', class: Hash, default: {})
-            prefix = safe_property(subnet_properties, 'prefix', class: Integer, default: Network::IPV4_DEFAULT_PREFIX_SIZE)
-            raise NetworkInvalidProperty, "Prefix property is not supported for dynamic networks." unless prefix == Network::IPV4_DEFAULT_PREFIX_SIZE
+            subnet_prefix = safe_property(subnet_properties, 'prefix', class: Integer, default: Network::IPV4_DEFAULT_PREFIX_SIZE)
+            raise NetworkInvalidProperty, "Prefix property is not supported for dynamic networks." unless subnet_prefix == Network::IPV4_DEFAULT_PREFIX_SIZE
             subnet_availability_zones = parse_availability_zones(subnet_properties, availability_zones, name)
             DynamicNetworkSubnet.new(name_servers, cloud_properties, subnet_availability_zones, prefix)
           end
         else
           cloud_properties = safe_property(network_spec, 'cloud_properties', class: Hash, default: {})
           # We need to set the IPv4 default value (dynamic networks only support IPv4)
-          prefix = Network::IPV4_DEFAULT_PREFIX_SIZE
 
           name_servers = name_server_parser.parse(network_spec['name'], network_spec)
           subnets = [DynamicNetworkSubnet.new(name_servers, cloud_properties, nil, prefix)]
@@ -116,7 +116,8 @@ module Bosh::Director
 
         config = {
           "type" => "dynamic",
-          "cloud_properties" => subnet.cloud_properties
+          "cloud_properties" => subnet.cloud_properties,
+          "prefix" => @prefix.to_s,
         }
         config["dns"] = subnet.dns if subnet.dns
 

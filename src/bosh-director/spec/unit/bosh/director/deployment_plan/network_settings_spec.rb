@@ -79,7 +79,9 @@ module Bosh::Director::DeploymentPlan
                 'default' => ['gateway'],
                 'ip' => '10.0.0.6',
                 'netmask' => '255.255.255.0',
-                'gateway' => '10.0.0.1'}
+                'gateway' => '10.0.0.1',
+                'prefix' => '32'
+              }
             })
         end
       end

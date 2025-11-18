@@ -54,6 +54,7 @@ module Bosh::Director
           'type' => 'vip',
           'ip' => to_ipaddr(reservation.ip).base_addr,
           'cloud_properties' => @cloud_properties,
+          'prefix' => @prefix
         }
       end
 

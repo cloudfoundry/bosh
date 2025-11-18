@@ -363,7 +363,8 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
       expect(@network.network_settings(reservation,[])).to eq({
             'type' => 'dynamic',
             'cloud_properties' => {'foz' => 'baz'},
-            'default' => []
+            'default' => [],
+            'prefix' => '32',
           })
     end
 
@@ -373,7 +374,8 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
       expect(@network.network_settings(reservation)).to eq({
             'type' => 'dynamic',
             'cloud_properties' => {'foz' => 'baz'},
-            'default' => ['dns', 'gateway']
+            'default' => ['dns', 'gateway'],
+            'prefix' => '32'
           })
     end
 
@@ -424,13 +426,15 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
           expect(network.network_settings(reservation, [], az1)).to eq({
                 'type' => 'dynamic',
                 'cloud_properties' => {'subnet_key' => 'subnet_value'},
-                'default' => []
+                'default' => [],
+                'prefix' => '32'
               })
 
           expect(network.network_settings(reservation, [], az2)).to eq({
                 'type' => 'dynamic',
                 'cloud_properties' => {'subnet_key' => 'subnet_value'},
-                'default' => []
+                'default' => [],
+                'prefix' => '32'
               })
         end
 
@@ -464,7 +468,8 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
           expect(network.network_settings(reservation, [])).to eq({
                 'type' => 'dynamic',
                 'cloud_properties' => {'subnet_key' => 'subnet_value'},
-                'default' => []
+                'default' => [],
+                'prefix' => '32'
               })
         end
       end
@@ -491,7 +496,8 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
           expect(network.network_settings(reservation, [], az2)).to eq({
                 'type' => 'dynamic',
                 'cloud_properties' => {'subnet_key' => 'subnet_value2'},
-                'default' => []
+                'default' => [],
+                'prefix' => '32'
               })
         end
 
@@ -501,7 +507,8 @@ describe Bosh::Director::DeploymentPlan::DynamicNetwork do
           expect(network.network_settings(reservation, [])).to eq({
                 'type' => 'dynamic',
                 'cloud_properties' => {'subnet_key' => 'subnet_value'},
-                'default' => []
+                'default' => [],
+                'prefix' => '32'
               })
         end
 
