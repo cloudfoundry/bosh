@@ -39,7 +39,9 @@ module Bosh::Director::Models
     end
 
     def dynamic_ips
-      network_spec.map { |_, network| "#{network['ip']}/#{network['prefix']}" }
+      network_spec.map do |_, network|
+        network['prefix'].nil? || network['prefix'].empty? ? network['ip'] : "#{network['ip']}/#{network['prefix']}"
+      end
     end
   end
 end
