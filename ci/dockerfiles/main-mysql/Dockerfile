@@ -1,5 +1,5 @@
-ARG BRANCH
-FROM bosh/integration:${BRANCH}
+ARG BASE_IMAGE
+FROM $BASE_IMAGE
 
 # Install Dependencies
 RUN echo 'mysql-server mysql-server/root_password password password' | debconf-set-selections

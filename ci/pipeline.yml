@@ -1116,7 +1116,7 @@ jobs:
       params:
         bump: patch
 
-  - name: build-integration
+  - name: build-integration-jammy
     public: true
     serial: true
     plan:
@@ -1147,12 +1147,14 @@ jobs:
       params:
         build: .
         build_args_file: docker-build-args/docker-build-args.json
+        build_args:
+          BASE_IMAGE: *ubuntu_base_jammy
         dockerfile: bosh-ci-dockerfiles/ci/dockerfiles/integration/Dockerfile
-        tag_as_latest: true
+        tag_as_latest: false
       get_params:
         skip_download: true
 
-  - name: build-integration-noble
+  - name: build-integration
     public: true
     serial: true
     plan:
@@ -1180,7 +1182,7 @@ jobs:
         build_args:
           BASE_IMAGE: *ubuntu_base
         dockerfile: bosh-ci-dockerfiles/ci/dockerfiles/integration/Dockerfile
-        tag_as_latest: false
+        tag_as_latest: true
       get_params:
         skip_download: true
 
@@ -1198,7 +1200,7 @@ jobs:
           build: "bosh-ci-dockerfiles/ci/dockerfiles/main-postgres"
           build_args:
             DB_VERSION: "13"
-            BRANCH: ((branch_name))
+            BASE_IMAGE: *integration_image
         get_params:
           skip_download: true
 
@@ -1216,7 +1218,7 @@ jobs:
           build: "bosh-ci-dockerfiles/ci/dockerfiles/main-postgres"
           build_args:
             DB_VERSION: "15"
-            BRANCH: ((branch_name))
+            BASE_IMAGE: *integration_image
         get_params:
           skip_download: true
 
@@ -1233,7 +1235,7 @@ jobs:
           tag_as_latest: true
           build: "bosh-ci-dockerfiles/ci/dockerfiles/main-mysql"
           build_args:
-            BRANCH: ((branch_name))
+            BASE_IMAGE: *integration_image
         get_params:
           skip_download: true
 
@@ -1258,7 +1260,7 @@ jobs:
         build: docker-build-context
         build_args:
           BASE_IMAGE: *integration_image
-        tag_as_latest: false
+        tag_as_latest: true
       get_params:
         skip_download: true
 
@@ -1284,7 +1286,7 @@ jobs:
         build: docker-build-context
         build_args:
           BASE_IMAGE: *integration_image_jammy
-        tag_as_latest: true
+        tag_as_latest: false
       get_params:
         skip_download: true
 
@@ -1335,7 +1337,7 @@ jobs:
         build: docker-build-context
         build_args:
           BASE_IMAGE: *integration_image_jammy
-        tag_as_latest: true
+        tag_as_latest: false
       get_params:
         skip_download: true
 
