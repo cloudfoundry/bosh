@@ -143,6 +143,7 @@ module Bosh::Director::DeploymentPlan
           'type' => 'dynamic',
           'cloud_properties' => network_spec['subnets'].first['cloud_properties'],
           'default' => ['gateway'],
+          'prefix' => '32',
         )
 
         expect(spec['packages']).to eq(packages)
@@ -182,6 +183,7 @@ module Bosh::Director::DeploymentPlan
           'type' => 'dynamic',
           'cloud_properties' => network_spec['subnets'].first['cloud_properties'],
           'default' => ['gateway'],
+          'prefix' => '32',
         )
 
         expect(spec['packages']).to eq(packages)
@@ -470,6 +472,7 @@ module Bosh::Director::DeploymentPlan
               'type' => 'dynamic',
               'cloud_properties' => { 'foo' => 'bar' },
               'default' => ['gateway'],
+              'prefix' => '32',
             },
           },
           'vm_type' => {

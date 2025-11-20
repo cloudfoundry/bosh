@@ -54,6 +54,7 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
         'cloud_properties' => {
           'foz' => 'baz',
         },
+        'prefix' => '32',
       )
     end
 

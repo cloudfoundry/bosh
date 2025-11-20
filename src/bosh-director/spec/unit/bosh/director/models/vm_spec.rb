@@ -52,6 +52,16 @@ module Bosh::Director
         it 'returns ips without prefix for single ips and with prefix for prefix ips order by size of the integer representation' do
           expect(vm.ips).to match_array(['1.1.1.1', '1.1.1.2', '1.1.1.16/28', '1.1.1.4', '2001:db8::1/64'])
         end
+
+        context 'with old VMs that do not have a prefix' do
+          before do
+            vm.network_spec = { 'some' => { 'ip' => '2001:db8::1' }, 'some_other' => { 'ip' => '1.1.1.4' } }
+          end
+
+          it 'returns ips without prefix for single ips and with prefix for prefix ips order by size of the integer representation' do
+            expect(vm.ips).to match_array(['1.1.1.1', '1.1.1.2', '1.1.1.16/28', '1.1.1.4', '2001:db8::1'])
+          end
+        end
       end
     end
   end

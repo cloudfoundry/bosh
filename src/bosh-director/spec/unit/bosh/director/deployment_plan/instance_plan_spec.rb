@@ -155,7 +155,7 @@ module Bosh::Director::DeploymentPlan
       plan
     end
     let(:network_settings) do
-      { 'a' => { 'type' => 'dynamic', 'cloud_properties' => {}, 'dns' => ['10.0.0.1'], 'default' => %w[dns gateway] } }
+      { 'a' => { 'type' => 'dynamic', 'cloud_properties' => {}, 'dns' => ['10.0.0.1'], 'default' => %w[dns gateway], 'prefix' => '32' } }
     end
 
     before do
@@ -370,11 +370,13 @@ module Bosh::Director::DeploymentPlan
               'type' => 'dynamic',
               'cloud_properties' => {},
               'dns' => '10.0.0.1',
+              'prefix' => '32',
             },
             'obsolete-network' => {
               'type' => 'dynamic',
               'cloud_properties' => {},
               'dns' => '10.0.0.1',
+              'prefix' => '32',
             },
           }
         end
@@ -388,6 +390,7 @@ module Bosh::Director::DeploymentPlan
             'existing-network' => {
               'type' => 'dynamic',
               'cloud_properties' => {},
+              'prefix' => '32',
               'dns' => '10.0.0.1',
             },
             'a' => {

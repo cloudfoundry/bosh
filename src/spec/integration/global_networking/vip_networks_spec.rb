@@ -55,7 +55,7 @@ describe 'vip networks', type: :integration do
 
       original_instances = director.instances
       expect(original_instances.size).to eq(1)
-      expect(original_instances.first.ips).to eq(['192.168.1.2', '69.69.69.69'])
+      expect(original_instances.first.ips).to eq(['69.69.69.69', '192.168.1.2'])
 
       deploy_simple_manifest(manifest_hash: updated_simple_manifest, recreate: true)
 
@@ -64,10 +64,10 @@ describe 'vip networks', type: :integration do
 
       instance_with_original_vip = new_instances.find { |new_instance| new_instance.ips.include?('69.69.69.69') }
       expect(instance_with_original_vip.id).to eq(original_instances.first.id)
-      expect(instance_with_original_vip.ips).to eq(['192.168.1.2', '69.69.69.69'])
+      expect(instance_with_original_vip.ips).to eq(['69.69.69.69', '192.168.1.2'])
 
       instance_with_new_vip = new_instances.find { |new_instance| new_instance.ips.include?('68.68.68.68') }
-      expect(instance_with_new_vip.ips).to eq(['192.168.1.3', '68.68.68.68'])
+      expect(instance_with_new_vip.ips).to eq(['68.68.68.68', '192.168.1.3'])
     end
 
     it 'shows no change on update' do
@@ -93,10 +93,10 @@ describe 'vip networks', type: :integration do
       expect(new_instances.size).to eq(2)
 
       vm1 = new_instances.find { |new_instance| new_instance.ips.include?('69.69.69.69') }
-      expect(vm1.ips).to eq(['192.168.1.2', '69.69.69.69'])
+      expect(vm1.ips).to eq(['69.69.69.69', '192.168.1.2'])
 
       vm2 = new_instances.find { |new_instance| new_instance.ips.include?('68.68.68.68') }
-      expect(vm2.ips).to eq(['192.168.1.3', '68.68.68.68'])
+      expect(vm2.ips).to eq(['68.68.68.68', '192.168.1.3'])
     end
   end
 
@@ -131,7 +131,7 @@ describe 'vip networks', type: :integration do
 
       original_instances = director.instances
       expect(original_instances.size).to eq(1)
-      expect(original_instances.first.ips).to eq(['192.168.1.2', '69.69.69.69'])
+      expect(original_instances.first.ips).to eq(['69.69.69.69', '192.168.1.2'])
 
       cloud_config_hash['networks'][1]['subnets'] = [{ 'static' => ['68.68.68.68', '69.69.69.69'] }]
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
@@ -142,10 +142,10 @@ describe 'vip networks', type: :integration do
 
       instance_with_original_vip = new_instances.find { |new_instance| new_instance.ips.include?('69.69.69.69') }
       expect(instance_with_original_vip.id).to eq(original_instances.first.id)
-      expect(instance_with_original_vip.ips).to eq(['192.168.1.2', '69.69.69.69'])
+      expect(instance_with_original_vip.ips).to eq(['69.69.69.69', '192.168.1.2'])
 
       instance_with_new_vip = new_instances.find { |new_instance| new_instance.ips.include?('68.68.68.68') }
-      expect(instance_with_new_vip.ips).to eq(['192.168.1.3', '68.68.68.68'])
+      expect(instance_with_new_vip.ips).to eq(['68.68.68.68', '192.168.1.3'])
     end
 
     it 'updates when the cloud config is changed', no_create_swap_delete: true do
@@ -153,7 +153,7 @@ describe 'vip networks', type: :integration do
 
       original_instances = director.instances
       expect(original_instances.size).to eq(1)
-      expect(original_instances.first.ips).to eq(['192.168.1.2', '69.69.69.69'])
+      expect(original_instances.first.ips).to eq(['69.69.69.69', '192.168.1.2'])
 
       cloud_config_hash['networks'][1]['subnets'] = [{ 'static' => ['68.68.68.68'] }]
       upload_cloud_config(cloud_config_hash: cloud_config_hash)
@@ -161,7 +161,7 @@ describe 'vip networks', type: :integration do
 
       new_instances = director.instances
       expect(new_instances.size).to eq(1)
-      expect(new_instances.first.ips).to eq(['192.168.1.2', '68.68.68.68'])
+      expect(new_instances.first.ips).to eq(['68.68.68.68', '192.168.1.2'])
     end
 
     it 'successfully releases ip addresses after deletion', no_create_swap_delete: true do
@@ -169,14 +169,14 @@ describe 'vip networks', type: :integration do
 
       original_instances = director.instances
       expect(original_instances.size).to eq(1)
-      expect(original_instances.first.ips).to eq(['192.168.1.2', '69.69.69.69'])
+      expect(original_instances.first.ips).to eq(['69.69.69.69', '192.168.1.2'])
 
       bosh_runner.run('delete-deployment', deployment_name: 'simple')
 
       deploy_simple_manifest(manifest_hash: simple_manifest, recreate: true)
       new_instances = director.instances
       expect(new_instances.size).to eq(1)
-      expect(new_instances.first.ips).to eq(['192.168.1.2', '69.69.69.69'])
+      expect(new_instances.first.ips).to eq(['69.69.69.69', '192.168.1.2'])
     end
 
     it 'reuses ips when the network is renamed in cloud config' do
@@ -184,7 +184,7 @@ describe 'vip networks', type: :integration do
 
       original_instances = director.instances
       expect(original_instances.size).to eq(1)
-      expect(original_instances.first.ips).to eq(['192.168.1.2', '69.69.69.69'])
+      expect(original_instances.first.ips).to eq(['69.69.69.69', '192.168.1.2'])
 
       cloud_config_hash['networks'][1]['name'] = 'vip-network2'
       cloud_config_hash['networks'][1]['subnets'] = [{ 'static' => ['68.68.68.68', '69.69.69.69'] }]
@@ -199,7 +199,7 @@ describe 'vip networks', type: :integration do
       deploy_simple_manifest(manifest_hash: manifest_with_renamed_vip_network)
       new_instances = director.instances
       expect(new_instances.size).to eq(1)
-      expect(new_instances.first.ips).to eq(['192.168.1.2', '69.69.69.69'])
+      expect(new_instances.first.ips).to eq(['69.69.69.69', '192.168.1.2'])
     end
   end
 
@@ -231,9 +231,9 @@ describe 'vip networks', type: :integration do
       expect(original_instances.size).to eq(2)
 
       instance_with_first_vip = original_instances.find { |instance| instance.ips.include?('69.69.69.69') }
-      expect(instance_with_first_vip.ips).to eq(['192.168.1.2', '69.69.69.69'])
+      expect(instance_with_first_vip.ips).to eq(['69.69.69.69', '192.168.1.2'])
       instance_with_second_vip = original_instances.find { |instance| instance.ips.include?('68.68.68.68') }
-      expect(instance_with_second_vip.ips).to eq(['192.168.1.3', '68.68.68.68'])
+      expect(instance_with_second_vip.ips).to eq(['68.68.68.68', '192.168.1.3'])
 
       cloud_config_hash['networks'] << {
         'name' => 'vip-network-cc',
@@ -251,11 +251,11 @@ describe 'vip networks', type: :integration do
 
       new_instance_with_first_vip = new_instances.find { |new_instance| new_instance.ips.include?('69.69.69.69') }
       expect(new_instance_with_first_vip.id).to eq(instance_with_first_vip.id)
-      expect(new_instance_with_first_vip.ips).to eq(['192.168.1.2', '69.69.69.69'])
+      expect(new_instance_with_first_vip.ips).to eq(['69.69.69.69', '192.168.1.2'])
 
       new_instance_with_second_vip = new_instances.find { |new_instance| new_instance.ips.include?('68.68.68.68') }
       expect(new_instance_with_second_vip.id).to eq(instance_with_second_vip.id)
-      expect(new_instance_with_second_vip.ips).to eq(['192.168.1.3', '68.68.68.68'])
+      expect(new_instance_with_second_vip.ips).to eq(['68.68.68.68', '192.168.1.3'])
     end
   end
 end

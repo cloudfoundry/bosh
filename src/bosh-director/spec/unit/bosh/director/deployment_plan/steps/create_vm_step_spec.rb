@@ -762,6 +762,7 @@ module Bosh
                   'cloud_properties' => network_cloud_properties,
                   'dns' => 'dns',
                   'default' => ['gateway'],
+                  'prefix' => '32'
                 },
               }
             end
@@ -773,6 +774,7 @@ module Bosh
                   'cloud_properties' => resolved_network_cloud_properties,
                   'dns' => 'dns',
                   'default' => ['gateway'],
+                  'prefix' => '32'
                 },
               }
             end
