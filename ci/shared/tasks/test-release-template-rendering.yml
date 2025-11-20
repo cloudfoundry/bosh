@@ -20,11 +20,6 @@
 
 platform: linux
 
-image_resource:
-  type: registry-image
-  source:
-    repository: bosh/warden-cpi
-
 inputs:
 - name: bosh
 - name: release

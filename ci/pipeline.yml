@@ -96,9 +96,9 @@ jobs:
         passed: [gate]
       - get: integration-image
     - task: test-rake-task
-      timeout: 2h
       file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-image
+      timeout: 2h
       params:
         DB: sqlite
         RAKE_TASK: spec:unit:common
@@ -116,9 +116,9 @@ jobs:
         passed: [gate]
       - get: integration-image
     - task: test-rake-task
-      timeout: 2h
       file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-image
+      timeout: 2h
       params:
         DB: sqlite
         RAKE_TASK: spec:unit:monitor
@@ -136,9 +136,9 @@ jobs:
         passed: [gate]
       - get: integration-image
     - task: test-rake-task
-      timeout: 2h
       file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-image
+      timeout: 2h
       params:
         DB: sqlite
         RAKE_TASK: spec:unit:nats_sync
@@ -156,9 +156,9 @@ jobs:
         passed: [gate]
       - get: integration-image
     - task: test-rake-task
-      timeout: 2h
       file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-image
+      timeout: 2h
       params:
         DB: sqlite
         RAKE_TASK: spec:unit:release
@@ -176,9 +176,9 @@ jobs:
         passed: [gate]
       - get: integration-image
     - task: test-rake-task
-      timeout: 2h
       file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-image
+      timeout: 2h
       params:
         DB: sqlite
         RAKE_TASK: spec:unit:director
@@ -196,10 +196,10 @@ jobs:
         trigger: true
       - get: integration-mysql-8-0-image
     - task: test-rake-task
-      timeout: 2h
-      privileged: true
       file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-mysql-8-0-image
+      timeout: 2h
+      privileged: true
       params:
         COVERAGE: false
         DB: mysql
@@ -218,10 +218,10 @@ jobs:
         trigger: true
       - get: integration-postgres-13-image
     - task: test-rake-task
-      timeout: 2h
-      privileged: true
       file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-postgres-13-image
+      timeout: 2h
+      privileged: true
       params:
         COVERAGE: false
         DB: postgresql
@@ -240,10 +240,10 @@ jobs:
         trigger: true
       - get: integration-postgres-15-image
     - task: test-rake-task
-      timeout: 2h
-      privileged: true
       file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-postgres-15-image
+      timeout: 2h
+      privileged: true
       params:
         COVERAGE: false
         DB: postgresql
@@ -304,9 +304,9 @@ jobs:
         - get: integration-postgres-15-image
         - get: config-server
       - task: tests
-        privileged: true
         file: bosh-ci/ci/tasks/test-rake-task.yml
         image: integration-postgres-15-image
+        privileged: true
         params:
           COVERAGE: false
           DB: postgresql
@@ -333,9 +333,9 @@ jobs:
         - get: integration-postgres-15-image
         - get: config-server
       - task: tests
-        privileged: true
         file: bosh-ci/ci/tasks/test-rake-task.yml
         image: integration-postgres-15-image
+        privileged: true
         params:
           DB: postgresql
           RAKE_TASK: spec:integration
@@ -361,9 +361,9 @@ jobs:
         - get: integration-mysql-8-0-image
         - get: config-server
       - task: tests
-        privileged: true
         file: bosh-ci/ci/tasks/test-rake-task.yml
         image: integration-mysql-8-0-image
+        privileged: true
         params:
           COVERAGE: false
           DB: mysql
@@ -416,8 +416,8 @@ jobs:
         trigger: true
       - get: docker-cpi-image
     - task: export-release
-      image: docker-cpi-image
       file: bosh-ci/ci/tasks/export-release.yml
+      image: docker-cpi-image
       privileged: true
     - put: bosh-compiled-candidate-jammy
       params:
@@ -629,8 +629,8 @@ jobs:
             database_username: ((brats_database_user.username))
             database_password: ((brats_database_user.password))
       - task: test-brats-acceptance
-        image: docker-cpi-image
         file: bosh-ci/ci/shared/brats/test-acceptance.yml
+        image: docker-cpi-image
         input_mapping:
           database-metadata: brats-terraform
         privileged: true
@@ -688,8 +688,8 @@ jobs:
       - get: integration-image
     - do:
       - task: test-brats-utils
-        image: integration-image
         file: bosh-ci/ci/shared/brats/test-utils.yml
+        image: integration-image
         privileged: true
 
   - name: bosh-disaster-recovery-acceptance-tests
@@ -761,8 +761,8 @@ jobs:
           DEPLOY_ARGS: |-
             -o bosh-deployment/external-ip-not-recommended.yml
       - task: deploy-zookeeper
-        image: integration-image
         file: bosh-ci/ci/tasks/deploy-zookeeper.yml
+        image: integration-image
         params:
           CPI: gcp
       - task: upgrade-to-current-version
@@ -969,8 +969,8 @@ jobs:
           trigger: true
         - get: release-notes
       - task: prepare-release
-        image: integration-image
         file: bosh-ci/ci/tasks/prepare-release.yml
+        image: integration-image
       - task: create-final-release
         image: bosh-cli-registry-image
         file: bosh-shared-ci/tasks/release/create-final-release.yml
@@ -1137,6 +1137,7 @@ jobs:
         depth: 1
     - task: build-docker-args
       file: bosh-ci-dockerfiles/ci/dockerfiles/integration/build-docker-args.yml
+      image: integration-image
       params:
         GITHUB_ACCESS_TOKEN: ((github_public_repo_token))
     - put: integration-image
@@ -1249,6 +1250,7 @@ jobs:
         trigger: true
     - task: copy-dependencies
       file: bosh-ci/ci/tasks/prepare-build-context-for-container-cpi-image.yml
+      image: integration-image
       params:
         CONTAINER_CPI_TYPE: docker-cpi
     - put: docker-cpi-image
@@ -1299,6 +1301,7 @@ jobs:
         trigger: true
     - task: copy-dependencies
       file: bosh-ci/ci/tasks/prepare-build-context-for-container-cpi-image.yml
+      image: integration-image
       params:
         CONTAINER_CPI_TYPE: warden-cpi
     - put: warden-cpi-image
@@ -1324,6 +1327,7 @@ jobs:
         trigger: true
     - task: copy-dependencies
       file: bosh-ci/ci/tasks/prepare-build-context-for-container-cpi-image.yml
+      image: integration-image
       params:
         CONTAINER_CPI_TYPE: warden-cpi
     - put: warden-cpi-image-jammy
@@ -1360,9 +1364,9 @@ jobs:
         VENDOR: true
         VENDOR_PATH: vendor/cache
     - task: test
-      timeout: 2h
       file: bosh-ci/ci/tasks/test-rake-task.yml
       image: integration-image
+      timeout: 2h
       input_mapping:
         bosh: bosh-out
       params:
@@ -1392,9 +1396,10 @@ jobs:
       params:
         SOURCE_PATH: src/brats/
     - task: lint-brats
+      file: bosh-ci/ci/tasks/lint-brats.yml
+      image: integration-image
       input_mapping:
         bosh: bosh-out
-      file: bosh-ci/ci/tasks/lint-brats.yml
     - put: bosh
       params:
         repository: bosh-out
@@ -1445,6 +1450,7 @@ jobs:
               json_key: '((gcp_json_key))'
     - task: bump-mariadb-connector
       file: bosh-ci/ci/tasks/bump-mariadb-connector.yml
+      image: integration-image
       input_mapping:
         bosh: bosh-out
       output_mapping:
@@ -1459,6 +1465,7 @@ jobs:
               json_key: '((gcp_json_key))'
     - task: bump-postgres-13-package
       file: bosh-ci/ci/tasks/bump-postgres-packages.yml
+      image: integration-image
       input_mapping:
         bosh: bosh-out
         postgres-src: postgres-13-src
@@ -1473,6 +1480,7 @@ jobs:
               json_key: '((gcp_json_key))'
     - task: bump-postgres-15-package
       file: bosh-ci/ci/tasks/bump-postgres-packages.yml
+      image: integration-image
       input_mapping:
         bosh: bosh-out
         postgres-src: postgres-15-src
@@ -1504,6 +1512,7 @@ jobs:
         RUBY_VERSION_PATH: src/.ruby-version
     - task: bump-bosh-blobstore-dav
       file: bosh-ci/ci/tasks/bump-blobstore-cli.yml
+      image: integration-image
       input_mapping:
         bosh: bosh-out
         bosh-blobstore-cli: bosh-blobstore-dav
@@ -1520,6 +1529,7 @@ jobs:
               json_key: '((gcp_json_key))'
     - task: bump-bosh-blobstore-gcs
       file: bosh-ci/ci/tasks/bump-blobstore-cli.yml
+      image: integration-image
       input_mapping:
         bosh: bosh-out
         bosh-blobstore-cli: bosh-blobstore-gcs
@@ -1536,6 +1546,7 @@ jobs:
               json_key: '((gcp_json_key))'
     - task: bump-bosh-blobstore-s3
       file: bosh-ci/ci/tasks/bump-blobstore-cli.yml
+      image: integration-image
       input_mapping:
         bosh: bosh-out
         bosh-blobstore-cli: bosh-blobstore-s3
@@ -1552,6 +1563,7 @@ jobs:
               json_key: '((gcp_json_key))'
     - task: bump-bosh-blobstore-azure-storage
       file: bosh-ci/ci/tasks/bump-blobstore-cli.yml
+      image: integration-image
       input_mapping:
         bosh: bosh-out
         bosh-blobstore-cli: bosh-blobstore-azure-storage
@@ -1568,6 +1580,7 @@ jobs:
               json_key: '((gcp_json_key))'
     - task: bump-verify-multidigest-cli
       file: bosh-ci/ci/tasks/bump-verify-multidigest-cli.yml
+      image: integration-image
       input_mapping:
         bosh: bosh-out
       output_mapping:
@@ -1582,6 +1595,7 @@ jobs:
               json_key: '((gcp_json_key))'
     - task: bump-nats-server
       file: bosh-ci/ci/tasks/bump-nats-server.yml
+      image: integration-image
       input_mapping:
         bosh: bosh-out
       output_mapping:
