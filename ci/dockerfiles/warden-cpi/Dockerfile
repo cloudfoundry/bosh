@@ -1,4 +1,5 @@
-FROM bosh/integration:main
+ARG BASE_IMAGE=ghcr.io/cloudfoundry/bosh/integration:main
+FROM $BASE_IMAGE
 
 RUN apt-get update -y \
     && apt-get -y install --no-install-recommends \
