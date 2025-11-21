@@ -1,4 +1,6 @@
 ---
+platform: linux
+
 inputs:
   - name: bosh-ci
 
