@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -eu -o pipefail
 
+# install needed dependencies so that this task can be run on a stock ubuntu image
+apt-get update -y
+apt-get install -y ca-certificates curl jq
+
 bosh_cli_url="$(curl -H "Authorization: token ${GITHUB_ACCESS_TOKEN}" -s https://api.github.com/repos/cloudfoundry/bosh-cli/releases/latest \
                 | jq -r '.assets[] | select(.name | contains ("linux-amd64")) | .browser_download_url')"
 meta4_cli_url="$(curl -H "Authorization: token ${GITHUB_ACCESS_TOKEN}" -s https://api.github.com/repos/dpb587/metalink/releases/latest \
