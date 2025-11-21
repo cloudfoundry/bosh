@@ -12,7 +12,7 @@ jobs:
         - nats_sync:parallel
         - release
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with: { lfs: true}
     - uses: ruby/setup-ruby@v1
       with: { working-directory: src/ }
@@ -29,7 +29,7 @@ jobs:
         - mysql
         - postgresql
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with: { lfs: true}
     - uses: ruby/setup-ruby@v1
       with: { working-directory: src/ }
