@@ -77,19 +77,6 @@ RUN apt-get update -y \
         vim \
         openssh-client \
         openssh-server \
-        clang \
-        clang-14 \
-        lib32gcc-s1 \
-        lib32stdc++6 \
-        libc6-i386 \
-        libclang-common-14-dev \
-        libclang-cpp14 \
-        libclang1-14 \
-        libgc1 \
-        libllvm14 \
-        libobjc-11-dev \
-        libobjc4 \
-        llvm-14-linker-tools \
         mysql-client \
         libmysqlclient-dev \
         postgresql-client-${POSTGRES_MAJOR_VERSION} \
@@ -120,7 +107,6 @@ RUN yq_cli_path="/usr/local/bin/yq" \
     && chmod +x "${yq_cli_path}"
 
 
-ENV CC="/usr/bin/clang" CXX="/usr/bin/clang++"
 RUN cd /tmp  \
     && curl --show-error -sL "${RUBY_INSTALL_URL}" \
       | tar -xzf - \
@@ -132,7 +118,6 @@ RUN cd /tmp  \
     && NUM_CPUS=$(grep -c ^processor /proc/cpuinfo) \
     && ruby-install --jobs=${NUM_CPUS} --cleanup --system ruby ${RUBY_VERSION} \
       -- --disable-install-doc --disable-install-rdoc \
-      -- CC=clang \
     && gem update --system \
     && bundle config --global path "${GEM_HOME}" \
     && bundle config --global bin "${GEM_HOME}/bin"
