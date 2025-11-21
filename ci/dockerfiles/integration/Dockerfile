@@ -1,5 +1,5 @@
 # ghcr.io/cloudfoundry/bosh/integration:main
-ARG BASE_IMAGE=ubuntu:jammy
+ARG BASE_IMAGE
 FROM $BASE_IMAGE
 
 ARG BOSH_CLI_URL

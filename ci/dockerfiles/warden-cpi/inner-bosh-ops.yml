@@ -86,6 +86,7 @@
           password: ((blobstore_agent_password))
       mbus: nats://((internal_ip)):4222
     host_ip: ((internal_ip))
+    start_containers_with_systemd: true
     warden:
       connect_address: 127.0.0.1:7777
       connect_network: tcp

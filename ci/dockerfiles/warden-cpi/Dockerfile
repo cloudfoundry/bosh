@@ -1,4 +1,5 @@
-FROM bosh/integration:main
+ARG BASE_IMAGE
+FROM $BASE_IMAGE
 
 RUN apt-get update -y \
     && apt-get -y install --no-install-recommends \
