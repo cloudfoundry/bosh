@@ -49,4 +49,44 @@ describe Bosh::Monitor::Plugins::Riemann do
       @plugin.process(heartbeat)
     end
   end
+
+  it 'includes process_length in heartbeat events sent to Riemann' do
+    heartbeat = make_heartbeat(process_length: 42)
+
+    Sync do
+      expect(@plugin.run).to be(true)
+
+      allow(@client).to receive(:<<)
+      
+      # Verify that process_length is attached to events
+      expect(@client).to receive(:<<).at_least(1).times do |event|
+        expect(event[:service]).to eq('bosh.hm')
+        expect(event[:process_length]).to eq(42)
+        expect(event[:name]).not_to be_nil
+        expect(event[:metric]).not_to be_nil
+      end
+
+      @plugin.process(heartbeat)
+    end
+  end
+
+  it 'omits process_length when not present in heartbeat' do
+    heartbeat = make_heartbeat
+
+    Sync do
+      expect(@plugin.run).to be(true)
+
+      allow(@client).to receive(:<<)
+      
+      # Verify that process_length is NOT attached to events
+      expect(@client).to receive(:<<).at_least(1).times do |event|
+        expect(event[:service]).to eq('bosh.hm')
+        expect(event).not_to have_key(:process_length)
+        expect(event[:name]).not_to be_nil
+        expect(event[:metric]).not_to be_nil
+      end
+
+      @plugin.process(heartbeat)
+    end
+  end
 end
