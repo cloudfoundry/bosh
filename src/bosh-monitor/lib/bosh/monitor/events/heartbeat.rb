@@ -65,7 +65,7 @@ module Bosh::Monitor
       end
 
       def to_hash
-        {
+        result = {
           kind: 'heartbeat',
           id: @id,
           timestamp: @timestamp.to_i,
@@ -79,6 +79,9 @@ module Bosh::Monitor
           teams: @teams,
           metrics: @metrics.map(&:to_hash),
         }
+        # Include process_length if present in attributes
+        result[:process_length] = @attributes['process_length'] if @attributes.key?('process_length')
+        result
       end
 
       def to_json(*_args)
