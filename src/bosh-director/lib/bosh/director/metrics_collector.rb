@@ -40,7 +40,13 @@ module Bosh
         @unresponsive_agents = Prometheus::Client.registry.gauge(
           :bosh_unresponsive_agents,
           labels: %i[name],
-          docstring: 'Number of unresponsive agents per deployment',
+          docstring: "Number of unresponsive agents per deployment",
+        )
+
+        @unhealthy_agents = Prometheus::Client.registry.gauge(
+          :bosh_unhealthy_agents,
+          labels: %i[name],
+          docstring: "Number of unhealthy agents (job_state != running AND process_length == 0) per deployment",
         )
         @scheduler = Rufus::Scheduler.new
       end
@@ -135,6 +141,26 @@ module Bosh
         removed_deployments = existing_deployment_names - unresponsive_agent_counts.keys
         removed_deployments.each do |deployment|
           @unresponsive_agents.set(0, labels: { name: deployment })
+        end
+
+        # Fetch and populate unhealthy_agents metrics
+        response_unhealthy = Net::HTTP.get_response("127.0.0.1", "/unhealthy_agents", @config.health_monitor_port)
+        return unless response_unhealthy.is_a?(Net::HTTPSuccess)
+
+        unhealthy_agent_counts = JSON.parse(response_unhealthy.body)
+        return unless unhealthy_agent_counts.is_a?(Hash)
+
+        existing_unhealthy_deployment_names = @unhealthy_agents.values.map do |key, _|
+          key[:name]
+        end
+
+        unhealthy_agent_counts.each do |deployment, count|
+          @unhealthy_agents.set(count, labels: { name: deployment })
+        end
+
+        removed_unhealthy_deployments = existing_unhealthy_deployment_names - unhealthy_agent_counts.keys
+        removed_unhealthy_deployments.each do |deployment|
+          @unhealthy_agents.set(0, labels: { name: deployment })
         end
       end
 

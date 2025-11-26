@@ -82,7 +82,36 @@ describe Bosh::Monitor::ApiController do
         get '/unresponsive_agents'
         expect(last_response.status).to eq(503)
       end
+    end
+  end
 
+  describe "/unhealthy_agents" do
+    let(:unhealthy_agents) do
+      {
+        "first_deployment" => 3,
+        "second_deployment" => 1,
+      }
+    end
+    before do
+      allow(Bosh::Monitor.instance_manager).to receive(:unhealthy_agents).and_return(unhealthy_agents)
+      allow(Bosh::Monitor.instance_manager).to receive(:director_initial_deployment_sync_done).and_return(true)
+    end
+
+    it "renders the unhealthy agents" do
+      get "/unhealthy_agents"
+      expect(last_response.status).to eq(200)
+      expect(last_response.body).to eq(JSON.generate(unhealthy_agents))
+    end
+
+    context "When director initial deployment sync has not completed" do
+      before do
+        allow(Bosh::Monitor.instance_manager).to receive(:director_initial_deployment_sync_done).and_return(false)
+      end
+
+      it "returns 503 when /unhealthy_agents is requested" do
+        get "/unhealthy_agents"
+        expect(last_response.status).to eq(503)
+      end
     end
   end
 end

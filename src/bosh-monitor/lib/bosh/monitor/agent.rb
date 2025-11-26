@@ -1,8 +1,10 @@
 module Bosh::Monitor
   class Agent
-    attr_reader   :id
-    attr_reader   :discovered_at
+    attr_reader :id
+    attr_reader :discovered_at
     attr_accessor :updated_at
+    attr_accessor :job_state
+    attr_accessor :process_length
 
     ATTRIBUTES = %i[deployment job index instance_id cid].freeze
 

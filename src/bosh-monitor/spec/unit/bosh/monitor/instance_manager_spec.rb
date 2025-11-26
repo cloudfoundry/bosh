@@ -84,7 +84,7 @@ module Bosh::Monitor
               manager.sync_deployment_state({ 'name' => 'mycloud', 'teams' => ['ateam'] }, cloud1)
 
               expect(event_processor).to receive(:process).with(
-                 :heartbeat,
+                :heartbeat,
                 { 'timestamp' => an_instance_of(Integer),
                   'agent_id' => '007',
                   'deployment' => 'mycloud',
@@ -273,7 +273,43 @@ module Bosh::Monitor
           expect(manager.unresponsive_agents).to eq('mycloud' => 0)
           ts = Time.now
           allow(Time).to receive(:now).and_return(ts + Bosh::Monitor.intervals.agent_timeout + 10)
-          expect(manager.unresponsive_agents).to eq('mycloud' => 3)
+          expect(manager.unresponsive_agents).to eq("mycloud" => 3)
+        end
+      end
+
+      describe "#unhealthy_agents" do
+        it "can return number of unhealthy agents (job_state != running AND process_length == 0) for each deployment" do
+          instance1 = Bosh::Monitor::Instance.create("id" => "iuuid1", "agent_id" => "007", "index" => "0", "job" => "mutator")
+          instance2 = Bosh::Monitor::Instance.create("id" => "iuuid2", "agent_id" => "008", "index" => "0", "job" => "nats")
+          instance3 = Bosh::Monitor::Instance.create("id" => "iuuid3", "agent_id" => "009", "index" => "28", "job" => "mysql_node")
+
+          manager.sync_deployments([{ "name" => "mycloud" }])
+          manager.sync_agents("mycloud", [instance1, instance2, instance3])
+
+          # Initially all agents are healthy
+          expect(manager.unhealthy_agents).to eq("mycloud" => 0)
+
+          # Set agent job_state != 'running' and process_length == 0 (unhealthy)
+          agent1 = manager.get_agents_for_deployment("mycloud")["007"]
+          agent1.job_state = "stopped"
+          agent1.process_length = 0
+          expect(manager.unhealthy_agents).to eq("mycloud" => 1)
+
+          # Set another agent to same state
+          agent2 = manager.get_agents_for_deployment("mycloud")["008"]
+          agent2.job_state = "failing"
+          agent2.process_length = 0
+          expect(manager.unhealthy_agents).to eq("mycloud" => 2)
+
+          # Agent with job_state='running' should not count as unhealthy
+          agent3 = manager.get_agents_for_deployment("mycloud")["009"]
+          agent3.job_state = "running"
+          agent3.process_length = 0
+          expect(manager.unhealthy_agents).to eq("mycloud" => 2)
+
+          # Agent with process_length > 0 should not count as unhealthy even if job_state != 'running'
+          agent1.process_length = 5
+          expect(manager.unhealthy_agents).to eq("mycloud" => 1)
         end
       end
 
