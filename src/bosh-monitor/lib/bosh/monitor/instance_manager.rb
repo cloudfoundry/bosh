@@ -121,6 +121,17 @@ module Bosh::Monitor
       agents_hash
     end
 
+    def unhealthy_agents
+      agents_hash = {}
+      @deployment_name_to_deployments.each do |name, deployment|
+        agents_hash[name] = deployment.agents.count do |agent|
+          agent.job_state && agent.job_state != "running" && agent.process_length == 0
+        end
+      end
+
+      agents_hash
+    end
+
     def analyze_agents
       @logger.info('Analyzing agents...')
       started = Time.now
@@ -325,7 +336,11 @@ module Bosh::Monitor
         message['instance_id'] = agent.instance_id
         message['teams'] = deployment ? deployment.teams : []
 
-        return if message['instance_id'].nil? || message['job'].nil? || message['deployment'].nil?
+        # Store job_state and process_length on the agent for unhealthy detection
+        agent.job_state = message["job_state"]
+        agent.process_length = message["process_length"]
+
+        return if message["instance_id"].nil? || message["job"].nil? || message["deployment"].nil?
       end
 
       @processor.process(:heartbeat, message)

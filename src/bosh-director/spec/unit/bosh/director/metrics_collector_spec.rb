@@ -34,7 +34,9 @@ module Bosh::Director
       allow(resurrector_manager).to receive(:pause_for_all?).and_return(false, true, false)
       allow(Api::ConfigManager).to receive(:deploy_config_enabled?).and_return(true, false)
       stub_request(:get, /unresponsive_agents/)
-        .to_return(status: 200, body: JSON.dump('flaky_deployment' => 1, 'good_deployment' => 0))
+        .to_return(status: 200, body: JSON.dump("flaky_deployment" => 1, "good_deployment" => 0))
+      stub_request(:get, /unhealthy_agents/)
+        .to_return(status: 200, body: JSON.dump("flaky_deployment" => 2, "good_deployment" => 0))
     end
 
     after do
@@ -44,9 +46,10 @@ module Bosh::Director
       Prometheus::Client.registry.unregister(:bosh_networks_dynamic_ips_total)
       Prometheus::Client.registry.unregister(:bosh_networks_dynamic_free_ips_total)
       Prometheus::Client.registry.unregister(:bosh_unresponsive_agents)
+      Prometheus::Client.registry.unregister(:bosh_unhealthy_agents)
     end
 
-    describe '#prep' do
+    describe "#prep" do
       let(:db_migrator) { instance_double(DBMigrator) }
       let(:db) { instance_double(Sequel::Database) }
       let(:logger) { double(Logging::Logger) }
@@ -180,7 +183,7 @@ module Bosh::Director
             'networks' => [older_network_spec],
             'vm_extensions' => [],
             'compilation' => { 'az' => 'az-1', 'network' => manual_network_spec['name'], 'workers' => 3 },
-          ))
+                                                  ))
 
           FactoryBot.create(:models_config_cloud, name: 'some-cloud-config', content: YAML.dump(
             'azs' => [az],
@@ -189,7 +192,7 @@ module Bosh::Director
             'networks' => [dynamic_network_spec, manual_network_spec, vip_network_spec, weird_name_network_spec],
             'vm_extensions' => [],
             'compilation' => { 'az' => 'az-1', 'network' => manual_network_spec['name'], 'workers' => 3 },
-          ))
+                                                  ))
         end
 
         it 'emits the total number of dynamic IPs in the network' do
@@ -219,8 +222,8 @@ module Bosh::Director
 
           before do
             FactoryBot.create(:models_ip_address,
-              instance_id: instance.id,
-              vm_id: vm.id,
+                              instance_id: instance.id,
+                              vm_id: vm.id,
               address_str: IPAddr.new('192.168.1.5').to_i.to_s,
               network_name: manual_network_spec['name'],
               static: false,
@@ -236,8 +239,8 @@ module Bosh::Director
           context 'when deployed VMs are using static ips' do
             before do
               FactoryBot.create(:models_ip_address,
-                instance_id: instance.id,
-                vm_id: vm.id,
+                                instance_id: instance.id,
+                                vm_id: vm.id,
                 address_str: IPAddr.new('192.168.1.4').to_i.to_s,
                 network_name: manual_network_spec['name'],
                 static: true,
@@ -261,7 +264,7 @@ module Bosh::Director
                 'disk_types' => [],
                 'vm_extensions' => [],
                 'networks' => [],
-              ))
+                                                      ))
             end
 
             it 'can still get metrics without errors' do
@@ -293,9 +296,18 @@ module Bosh::Director
           expect(metric.get(labels: { name: 'good_deployment' })).to eq(0)
         end
 
-        context 'when the health monitor returns a non 200 response' do
+        it "emits the number of unhealthy agents for each deployment" do
+          metrics_collector.start
+          metric = Prometheus::Client.registry.get(:bosh_unhealthy_agents)
+          expect(metric.get(labels: { name: "flaky_deployment" })).to eq(2)
+          expect(metric.get(labels: { name: "good_deployment" })).to eq(0)
+        end
+
+        context "when the health monitor returns a non 200 response" do
           before do
-            stub_request(:get, '127.0.0.1:12345/unresponsive_agents')
+            stub_request(:get, "127.0.0.1:12345/unresponsive_agents")
+              .to_return(status: 404)
+            stub_request(:get, "127.0.0.1:12345/unhealthy_agents")
               .to_return(status: 404)
           end
 
@@ -303,18 +315,24 @@ module Bosh::Director
             metrics_collector.start
             metric = Prometheus::Client.registry.get(:bosh_unresponsive_agents)
             expect(metric.values).to be_empty
+            metric = Prometheus::Client.registry.get(:bosh_unhealthy_agents)
+            expect(metric.values).to be_empty
           end
         end
 
         context 'when the health monitor returns a non-json response' do
           before do
-            stub_request(:get, '127.0.0.1:12345/unresponsive_agents')
-              .to_return(status: 200, body: JSON.dump('bad response'))
+            stub_request(:get, "127.0.0.1:12345/unresponsive_agents")
+              .to_return(status: 200, body: JSON.dump("bad response"))
+            stub_request(:get, "127.0.0.1:12345/unhealthy_agents")
+              .to_return(status: 200, body: JSON.dump("bad response"))
           end
 
           it 'does not emit the vm metrics' do
             metrics_collector.start
             metric = Prometheus::Client.registry.get(:bosh_unresponsive_agents)
+            expect(metric.values).to be_empty
+            metric = Prometheus::Client.registry.get(:bosh_unhealthy_agents)
             expect(metric.values).to be_empty
           end
         end
@@ -322,17 +340,23 @@ module Bosh::Director
         context 'when a deployment is deleted after metrics are gathered' do
           before do
             stub_request(:get, /unresponsive_agents/)
-              .to_return(status: 200, body: JSON.dump('flaky_deployment' => 1, 'good_deployment' => 0))
+              .to_return(status: 200, body: JSON.dump("flaky_deployment" => 1, "good_deployment" => 0))
+            stub_request(:get, /unhealthy_agents/)
+              .to_return(status: 200, body: JSON.dump("flaky_deployment" => 2, "good_deployment" => 0))
             metrics_collector.start
 
             stub_request(:get, /unresponsive_agents/)
-              .to_return(status: 200, body: JSON.dump('good_deployment' => 0))
+              .to_return(status: 200, body: JSON.dump("good_deployment" => 0))
+            stub_request(:get, /unhealthy_agents/)
+              .to_return(status: 200, body: JSON.dump("good_deployment" => 0))
             scheduler.tick
           end
 
           it 'resets the metrics for the deleted deployment' do
             metric = Prometheus::Client.registry.get(:bosh_unresponsive_agents)
-            expect(metric.get(labels: { name: 'flaky_deployment' })).to eq(0)
+            expect(metric.get(labels: { name: "flaky_deployment" })).to eq(0)
+            metric = Prometheus::Client.registry.get(:bosh_unhealthy_agents)
+            expect(metric.get(labels: { name: "flaky_deployment" })).to eq(0)
           end
         end
       end

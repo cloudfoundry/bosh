@@ -11,9 +11,9 @@ module Bosh::Monitor
         @id = @attributes['id']
         @timestamp = begin
                        Time.at(@attributes['timestamp'])
-                     rescue StandardError
+          rescue StandardError
                        @attributes['timestamp']
-                     end
+          end
 
         @deployment = @attributes['deployment']
         @agent_id = @attributes['agent_id']
@@ -80,7 +80,8 @@ module Bosh::Monitor
           metrics: @metrics.map(&:to_hash),
         }
         # Include process_length if present in attributes
-        result[:process_length] = @attributes['process_length'] if @attributes.key?('process_length')
+        result[:process_length] = @attributes["process_length"] if @attributes.key?("process_length")
+
         result
       end
 

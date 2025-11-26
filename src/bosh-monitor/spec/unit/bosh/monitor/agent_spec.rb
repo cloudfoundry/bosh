@@ -66,6 +66,17 @@ describe Bosh::Monitor::Agent do
         expect(agent.cid).to eq(instance.cid)
         expect(agent.instance_id).to eq(instance.id)
       end
+
+      it "does not modify job_state or process_length when updating instance" do
+        agent = make_agent("agent_with_instance")
+        agent.job_state = "running"
+        agent.process_length = 3
+
+        agent.update_instance(instance)
+
+        expect(agent.job_state).to eq("running")
+        expect(agent.process_length).to eq(3)
+      end
     end
   end
 end

@@ -33,23 +33,11 @@ module Bosh::Monitor
       def process_heartbeat(event)
         payload = event.to_hash.merge(service: 'bosh.hm')
         payload.delete :vitals
-
-        # Extract process_length if present (support symbol or string keys)
-        process_length = if payload.key?(:process_length)
-                           payload[:process_length]
-                         elsif payload.key?('process_length')
-                           payload['process_length']
-                         end
-
         event.metrics.each do |metric|
-          data = payload.merge(
+          client << payload.merge(
             name: metric.name,
             metric: metric.value,
           )
-          # attach process_length as additional attribute when present
-          data[:process_length] = process_length unless process_length.nil?
-
-          client << data
         rescue StandardError => e
           logger.error("Error sending riemann event: #{e}")
         end
