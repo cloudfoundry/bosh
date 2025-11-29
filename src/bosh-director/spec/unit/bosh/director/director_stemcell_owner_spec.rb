@@ -5,48 +5,107 @@ module Bosh::Director
     subject { DirectorStemcellOwner.new }
 
     before do
-      allow(Etc).to receive(:uname).and_return({ version: version_string })
+      allow(File).to receive(:exist?).with('/var/vcap/bosh/etc/operating_system').and_return(operating_system_exists)
+      allow(File).to receive(:read).with('/var/vcap/bosh/etc/operating_system').and_return(operating_system_content) if operating_system_exists
+      allow(File).to receive(:exist?).with('/etc/os-release').and_return(os_release_exists)
+      allow(File).to receive(:readlines).with('/etc/os-release').and_return(os_release_content) if os_release_exists
     end
 
-    let(:version_string) { '#35~16.04.1-Ubuntu SMP Fri Aug 10 21:54:34 UTC 2018' }
+    let(:operating_system_exists) { false }
+    let(:operating_system_content) { '' }
+    let(:os_release_exists) { false }
+    let(:os_release_content) { [] }
 
     describe '#stemcell_os' do
-      context 'trusty' do
-        let(:version_string) { '#35~14.04.1-Ubuntu SMP Fri Aug 10 21:54:34 UTC 2018' }
+      context 'when operating_system file exists' do
+        let(:operating_system_exists) { true }
+        let(:operating_system_content) { "ubuntu\n" }
+        let(:os_release_exists) { true }
 
-        it 'should be ubuntu-trusty' do
-          expect(subject.stemcell_os).to eq('ubuntu-trusty')
+        context 'jammy' do
+          let(:os_release_content) do
+            <<~OS_RELEASE.lines
+              NAME="Ubuntu"
+              VERSION="22.04.1 LTS (Jammy Jellyfish)"
+              ID=ubuntu
+              UBUNTU_CODENAME=jammy
+            OS_RELEASE
+          end
+
+          it 'should read os from operating_system file and codename from os-release' do
+            expect(subject.stemcell_os).to eq('ubuntu-jammy')
+          end
+        end
+
+        context 'noble' do
+          let(:os_release_content) do
+            <<~OS_RELEASE.lines
+              NAME="Ubuntu"
+              VERSION="24.04 LTS (Noble Numbat)"
+              ID=ubuntu
+              UBUNTU_CODENAME=noble
+            OS_RELEASE
+          end
+
+          it 'should read os from operating_system file and codename from os-release' do
+            expect(subject.stemcell_os).to eq('ubuntu-noble')
+          end
         end
       end
 
-      context 'xenial' do
-        let(:version_string) { '#35~16.04.1-Ubuntu SMP Fri Aug 10 21:54:34 UTC 2018' }
+      context 'when operating_system file does not exist but os-release does' do
+        let(:operating_system_exists) { false }
+        let(:os_release_exists) { true }
 
-        it 'should be ubuntu-xenial' do
-          expect(subject.stemcell_os).to eq('ubuntu-xenial')
+        context 'fallback to os-release for both os and codename' do
+          let(:os_release_content) do
+            <<~OS_RELEASE.lines
+              NAME="Ubuntu"
+              VERSION="22.04 LTS (Jammy Jellyfish)"
+              ID=ubuntu
+              UBUNTU_CODENAME=jammy
+            OS_RELEASE
+          end
+
+          it 'should read both from os-release file' do
+            expect(subject.stemcell_os).to eq('ubuntu-jammy')
+          end
+        end
+
+        context 'os-release with bionic' do
+          let(:os_release_content) do
+            <<~OS_RELEASE.lines
+              ID=ubuntu
+              UBUNTU_CODENAME=bionic
+            OS_RELEASE
+          end
+
+          it 'should be ubuntu-bionic' do
+            expect(subject.stemcell_os).to eq('ubuntu-bionic')
+          end
         end
       end
 
-      context 'bionic' do
-        let(:version_string) { '#35~18.04.1-Ubuntu SMP Fri Aug 10 21:54:34 UTC 2018' }
+      context 'when neither file exists' do
+        let(:operating_system_exists) { false }
+        let(:os_release_exists) { false }
 
-        it 'should be ubuntu-bionic' do
-          expect(subject.stemcell_os).to eq('ubuntu-bionic')
+        it 'should return dash' do
+          expect(subject.stemcell_os).to eq('-')
         end
       end
 
-      context 'other ubuntu' do
-        let(:version_string) { '#35~12.04.1-Ubuntu SMP Fri Aug 10 21:54:34 UTC 2018' }
-
-        it 'should be the raw number' do
-          expect(subject.stemcell_os).to eq('ubuntu-12.04.1')
+      context 'when os-release exists but has no codename' do
+        let(:operating_system_exists) { false }
+        let(:os_release_exists) { true }
+        let(:os_release_content) do
+          <<~OS_RELEASE.lines
+            ID=ubuntu
+            VERSION_ID="22.04"
+          OS_RELEASE
         end
-      end
 
-      context 'other' do
-        let(:version_string) { 'some random version string' }
-
-        it 'should be a dash' do
+        it 'should return dash when codename is missing' do
           expect(subject.stemcell_os).to eq('-')
         end
       end
@@ -57,6 +116,7 @@ module Bosh::Director
         before do
           allow(File).to receive(:read).with('/var/vcap/bosh/etc/stemcell_version').and_return("123.45\n")
           allow(File).to receive(:exist?).with('/var/vcap/bosh/etc/stemcell_version').and_return(true)
+          allow(File).to receive(:exist?).with('/etc/os-release').and_call_original
         end
 
         it 'returns the stemcell_version specified in the config' do
@@ -67,6 +127,7 @@ module Bosh::Director
       context 'there is no file' do
         before do
           allow(File).to receive(:exist?).with('/var/vcap/bosh/etc/stemcell_version').and_return(false)
+          allow(File).to receive(:exist?).with('/etc/os-release').and_call_original
         end
 
         it 'returns -' do
@@ -78,6 +139,7 @@ module Bosh::Director
         before do
           allow(File).to receive(:read).with('/var/vcap/bosh/etc/stemcell_version').and_return("123.45\n")
           allow(File).to receive(:exist?).with('/var/vcap/bosh/etc/stemcell_version').and_return(true)
+          allow(File).to receive(:exist?).with('/etc/os-release').and_call_original
         end
 
         it 'returns the stemcell_version specified in the config' do
