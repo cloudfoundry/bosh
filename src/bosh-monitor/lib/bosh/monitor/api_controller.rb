@@ -48,5 +48,13 @@ module Bosh::Monitor
         status(503)
       end
     end
+
+    get '/total_available_agents' do
+      if @instance_manager.director_initial_deployment_sync_done
+        JSON.generate(@instance_manager.total_available_agents)
+      else
+        status(503)
+      end
+    end
   end
 end
