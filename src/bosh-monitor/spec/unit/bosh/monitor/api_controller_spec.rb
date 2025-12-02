@@ -114,4 +114,35 @@ describe Bosh::Monitor::ApiController do
       end
     end
   end
+
+  describe "/total_available_agents" do
+    let(:available_agents) do
+      {
+        "first_deployment" => 5,
+        "second_deployment" => 2,
+      }
+    end
+
+    before do
+      allow(Bosh::Monitor.instance_manager).to receive(:total_available_agents).and_return(available_agents)
+      allow(Bosh::Monitor.instance_manager).to receive(:director_initial_deployment_sync_done).and_return(true)
+    end
+
+    it "renders the total available agents" do
+      get "/total_available_agents"
+      expect(last_response.status).to eq(200)
+      expect(last_response.body).to eq(JSON.generate(available_agents))
+    end
+
+    context "When director initial deployment sync has not completed" do
+      before do
+        allow(Bosh::Monitor.instance_manager).to receive(:director_initial_deployment_sync_done).and_return(false)
+      end
+
+      it "returns 503 when /total_available_agents is requested" do
+        get "/total_available_agents"
+        expect(last_response.status).to eq(503)
+      end
+    end
+  end
 end
