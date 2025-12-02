@@ -128,7 +128,7 @@ describe Bosh::Monitor::ApiController do
       allow(Bosh::Monitor.instance_manager).to receive(:director_initial_deployment_sync_done).and_return(true)
     end
 
-    it "renders the total available agents" do
+    it "renders the total available agents (all agents, no criteria)" do
       get "/total_available_agents"
       expect(last_response.status).to eq(200)
       expect(last_response.body).to eq(JSON.generate(available_agents))

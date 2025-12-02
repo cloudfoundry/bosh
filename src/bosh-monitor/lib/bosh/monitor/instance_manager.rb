@@ -137,9 +137,8 @@ module Bosh::Monitor
     def total_available_agents
       agents_hash = {}
       @deployment_name_to_deployments.each do |name, deployment|
-        agents_hash[name] = deployment.agents.count do |agent|
-          !agent.timed_out? && !agent.rogue?
-        end
+        # Count all agents for the deployment (no additional criteria)
+        agents_hash[name] = deployment.agents.count
       end
 
       agents_hash
