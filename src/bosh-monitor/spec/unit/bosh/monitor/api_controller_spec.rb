@@ -145,4 +145,35 @@ describe Bosh::Monitor::ApiController do
       end
     end
   end
+
+  describe "/failing_agents" do
+    let(:failing_agents) do
+      {
+        "first_deployment" => 2,
+        "second_deployment" => 0,
+      }
+    end
+
+    before do
+      allow(Bosh::Monitor.instance_manager).to receive(:failing_agents).and_return(failing_agents)
+      allow(Bosh::Monitor.instance_manager).to receive(:director_initial_deployment_sync_done).and_return(true)
+    end
+
+    it "renders failing agents" do
+      get "/failing_agents"
+      expect(last_response.status).to eq(200)
+      expect(last_response.body).to eq(JSON.generate(failing_agents))
+    end
+
+    context "When director initial deployment sync has not completed" do
+      before do
+        allow(Bosh::Monitor.instance_manager).to receive(:director_initial_deployment_sync_done).and_return(false)
+      end
+
+      it "returns 503 when /failing_agents is requested" do
+        get "/failing_agents"
+        expect(last_response.status).to eq(503)
+      end
+    end
+  end
 end

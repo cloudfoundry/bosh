@@ -56,5 +56,13 @@ module Bosh::Monitor
         status(503)
       end
     end
+
+    get '/failing_agents' do
+      if @instance_manager.director_initial_deployment_sync_done
+        JSON.generate(@instance_manager.failing_agents)
+      else
+        status(503)
+      end
+    end
   end
 end
