@@ -132,14 +132,23 @@ module Bosh::Monitor
       agents_hash
     end
 
-    # Returns a hash of deployment_name => count of agents that are available.
-    # "Available" here means agent is not timed out and is not considered rogue.
+    def failing_agents
+      agents_hash = {}
+      @deployment_name_to_deployments.each do |name, deployment|
+        agents_hash[name] = deployment.agents.count { |agent| agent.job_state == 'failing' }
+      end
+
+      agents_hash
+    end
+
     def total_available_agents
       agents_hash = {}
       @deployment_name_to_deployments.each do |name, deployment|
-        # Count all agents for the deployment (no additional criteria)
+        # Count all agents for the deployment
         agents_hash[name] = deployment.agents.count
       end
+
+      agents_hash['unmanaged'] = @unmanaged_agents.keys.size
 
       agents_hash
     end

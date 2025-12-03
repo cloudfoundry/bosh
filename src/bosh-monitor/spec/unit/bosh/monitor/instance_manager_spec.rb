@@ -313,6 +313,29 @@ module Bosh::Monitor
         end
       end
 
+      describe '#total_available_agents' do
+        it 'counts all agents for each deployment and includes unmanaged agents' do
+          instance1 = Bosh::Monitor::Instance.create('id' => 'iuuid1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator')
+          instance2 = Bosh::Monitor::Instance.create('id' => 'iuuid2', 'agent_id' => '008', 'index' => '0', 'job' => 'nats')
+
+          manager.sync_deployments([{ 'name' => 'mycloud' }])
+          manager.sync_agents('mycloud', [instance1, instance2])
+
+          # Initially both agents are present
+          expect(manager.total_available_agents).to include('mycloud' => 2)
+
+          # Add an unmanaged (rogue) agent via heartbeat processing
+          manager.process_event(:heartbeat, 'hm.agent.heartbeat.unmanaged-1')
+          expect(manager.total_available_agents['unmanaged']).to eq(1)
+
+          # Simulate timed out agents -- they should still be counted as part of the deployment total
+          ts = Time.now
+          allow(Time).to receive(:now).and_return(ts + Bosh::Monitor.intervals.agent_timeout + 100)
+          expect(manager.unresponsive_agents['mycloud']).to eq(2)
+          expect(manager.total_available_agents).to include('mycloud' => 2)
+        end
+      end
+
       describe '#analyze_agents' do
         let(:instance_1) { Bosh::Monitor::Instance.create('id' => 'instance-uuid-1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator') }
         let(:instance_2) { Bosh::Monitor::Instance.create('id' => 'instance-uuid-2', 'agent_id' => '008', 'index' => '1', 'job' => 'mutator') }
