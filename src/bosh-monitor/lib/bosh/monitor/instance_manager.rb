@@ -125,7 +125,7 @@ module Bosh::Monitor
       agents_hash = {}
       @deployment_name_to_deployments.each do |name, deployment|
         agents_hash[name] = deployment.agents.count do |agent|
-          agent.job_state && agent.job_state != "running" && agent.process_length == 0
+          agent.job_state && agent.job_state = "running" && agent.process_length == 0
         end
       end
 
