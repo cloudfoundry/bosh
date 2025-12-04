@@ -61,7 +61,7 @@ module Bosh::Director
       Prometheus::Client.registry.unregister(:bosh_unknown_instances)
     end
 
-    describe "#prep" do
+    describe '#prep' do
       let(:db_migrator) { instance_double(DBMigrator) }
       let(:db) { instance_double(Sequel::Database) }
       let(:logger) { double(Logging::Logger) }
@@ -195,7 +195,7 @@ module Bosh::Director
             'networks' => [older_network_spec],
             'vm_extensions' => [],
             'compilation' => { 'az' => 'az-1', 'network' => manual_network_spec['name'], 'workers' => 3 },
-                                                  ))
+          ))
 
           FactoryBot.create(:models_config_cloud, name: 'some-cloud-config', content: YAML.dump(
             'azs' => [az],
@@ -204,7 +204,7 @@ module Bosh::Director
             'networks' => [dynamic_network_spec, manual_network_spec, vip_network_spec, weird_name_network_spec],
             'vm_extensions' => [],
             'compilation' => { 'az' => 'az-1', 'network' => manual_network_spec['name'], 'workers' => 3 },
-                                                  ))
+          ))
         end
 
         it 'emits the total number of dynamic IPs in the network' do
@@ -234,8 +234,8 @@ module Bosh::Director
 
           before do
             FactoryBot.create(:models_ip_address,
-                              instance_id: instance.id,
-                              vm_id: vm.id,
+              instance_id: instance.id,
+              vm_id: vm.id,
               address_str: IPAddr.new('192.168.1.5').to_i.to_s,
               network_name: manual_network_spec['name'],
               static: false,
@@ -251,8 +251,8 @@ module Bosh::Director
           context 'when deployed VMs are using static ips' do
             before do
               FactoryBot.create(:models_ip_address,
-                                instance_id: instance.id,
-                                vm_id: vm.id,
+                instance_id: instance.id,
+                vm_id: vm.id,
                 address_str: IPAddr.new('192.168.1.4').to_i.to_s,
                 network_name: manual_network_spec['name'],
                 static: true,
@@ -276,7 +276,7 @@ module Bosh::Director
                 'disk_types' => [],
                 'vm_extensions' => [],
                 'networks' => [],
-                                                      ))
+              ))
             end
 
             it 'can still get metrics without errors' do
