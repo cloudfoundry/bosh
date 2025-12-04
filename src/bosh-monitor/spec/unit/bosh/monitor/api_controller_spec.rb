@@ -146,8 +146,8 @@ describe Bosh::Monitor::ApiController do
     end
   end
 
-  describe "/failing_agents" do
-    let(:failing_agents) do
+  describe "/failing_instances" do
+    let(:failing_instances) do
       {
         "first_deployment" => 2,
         "second_deployment" => 0,
@@ -155,14 +155,14 @@ describe Bosh::Monitor::ApiController do
     end
 
     before do
-      allow(Bosh::Monitor.instance_manager).to receive(:failing_agents).and_return(failing_agents)
+      allow(Bosh::Monitor.instance_manager).to receive(:failing_instances).and_return(failing_instances)
       allow(Bosh::Monitor.instance_manager).to receive(:director_initial_deployment_sync_done).and_return(true)
     end
 
-    it "renders failing agents" do
-      get "/failing_agents"
+    it "renders failing instances" do
+      get "/failing_instances"
       expect(last_response.status).to eq(200)
-      expect(last_response.body).to eq(JSON.generate(failing_agents))
+      expect(last_response.body).to eq(JSON.generate(failing_instances))
     end
 
     context "When director initial deployment sync has not completed" do
@@ -170,8 +170,70 @@ describe Bosh::Monitor::ApiController do
         allow(Bosh::Monitor.instance_manager).to receive(:director_initial_deployment_sync_done).and_return(false)
       end
 
-      it "returns 503 when /failing_agents is requested" do
-        get "/failing_agents"
+      it "returns 503 when /failing_instances is requested" do
+        get "/failing_instances"
+        expect(last_response.status).to eq(503)
+      end
+    end
+  end
+
+  describe "/stopped_instances" do
+    let(:stopped_instances) do
+      {
+        "first_deployment" => 1,
+        "second_deployment" => 0,
+      }
+    end
+
+    before do
+      allow(Bosh::Monitor.instance_manager).to receive(:stopped_instances).and_return(stopped_instances)
+      allow(Bosh::Monitor.instance_manager).to receive(:director_initial_deployment_sync_done).and_return(true)
+    end
+
+    it "renders stopped instances" do
+      get "/stopped_instances"
+      expect(last_response.status).to eq(200)
+      expect(last_response.body).to eq(JSON.generate(stopped_instances))
+    end
+
+    context "When director initial deployment sync has not completed" do
+      before do
+        allow(Bosh::Monitor.instance_manager).to receive(:director_initial_deployment_sync_done).and_return(false)
+      end
+
+      it "returns 503 when /stopped_instances is requested" do
+        get "/stopped_instances"
+        expect(last_response.status).to eq(503)
+      end
+    end
+  end
+
+  describe "/unknown_instances" do
+    let(:unknown_instances) do
+      {
+        "first_deployment" => 0,
+        "second_deployment" => 1,
+      }
+    end
+
+    before do
+      allow(Bosh::Monitor.instance_manager).to receive(:unknown_instances).and_return(unknown_instances)
+      allow(Bosh::Monitor.instance_manager).to receive(:director_initial_deployment_sync_done).and_return(true)
+    end
+
+    it "renders unknown instances" do
+      get "/unknown_instances"
+      expect(last_response.status).to eq(200)
+      expect(last_response.body).to eq(JSON.generate(unknown_instances))
+    end
+
+    context "When director initial deployment sync has not completed" do
+      before do
+        allow(Bosh::Monitor.instance_manager).to receive(:director_initial_deployment_sync_done).and_return(false)
+      end
+
+      it "returns 503 when /unknown_instances is requested" do
+        get "/unknown_instances"
         expect(last_response.status).to eq(503)
       end
     end
