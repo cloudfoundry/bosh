@@ -278,7 +278,7 @@ module Bosh::Monitor
       end
 
       describe "#unhealthy_agents" do
-        it "can return number of unhealthy agents (job_state != running AND process_length == 0) for each deployment" do
+        it "can return number of unhealthy agents (job_state == 'running' AND process_length == 0) for each deployment" do
           instance1 = Bosh::Monitor::Instance.create("id" => "iuuid1", "agent_id" => "007", "index" => "0", "job" => "mutator")
           instance2 = Bosh::Monitor::Instance.create("id" => "iuuid2", "agent_id" => "008", "index" => "0", "job" => "nats")
           instance3 = Bosh::Monitor::Instance.create("id" => "iuuid3", "agent_id" => "009", "index" => "28", "job" => "mysql_node")
@@ -289,25 +289,25 @@ module Bosh::Monitor
           # Initially all agents are healthy
           expect(manager.unhealthy_agents).to eq("mycloud" => 0)
 
-          # Set agent job_state != 'running' and process_length == 0 (unhealthy)
+          # Set agent job_state == 'running' and process_length == 0 (unhealthy)
           agent1 = manager.get_agents_for_deployment("mycloud")["007"]
-          agent1.job_state = "stopped"
+          agent1.job_state = "running"
           agent1.process_length = 0
           expect(manager.unhealthy_agents).to eq("mycloud" => 1)
 
           # Set another agent to same state
           agent2 = manager.get_agents_for_deployment("mycloud")["008"]
-          agent2.job_state = "failing"
+          agent2.job_state = "running"
           agent2.process_length = 0
           expect(manager.unhealthy_agents).to eq("mycloud" => 2)
 
-          # Agent with job_state='running' should not count as unhealthy
+          # Agent with job_state != 'running' should not count as unhealthy
           agent3 = manager.get_agents_for_deployment("mycloud")["009"]
-          agent3.job_state = "running"
+          agent3.job_state = "stopped"
           agent3.process_length = 0
           expect(manager.unhealthy_agents).to eq("mycloud" => 2)
 
-          # Agent with process_length > 0 should not count as unhealthy even if job_state != 'running'
+          # Agent with process_length > 0 should not count as unhealthy even if job_state == 'running'
           agent1.process_length = 5
           expect(manager.unhealthy_agents).to eq("mycloud" => 1)
         end
@@ -333,6 +333,62 @@ module Bosh::Monitor
           allow(Time).to receive(:now).and_return(ts + Bosh::Monitor.intervals.agent_timeout + 100)
           expect(manager.unresponsive_agents['mycloud']).to eq(2)
           expect(manager.total_available_agents).to include('mycloud' => 2)
+        end
+      end
+
+      describe '#failing_instances' do
+        it 'counts agents with job_state == failing for each deployment' do
+          instance1 = Bosh::Monitor::Instance.create('id' => 'iuuid1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator')
+          instance2 = Bosh::Monitor::Instance.create('id' => 'iuuid2', 'agent_id' => '008', 'index' => '0', 'job' => 'nats')
+
+          manager.sync_deployments([{ 'name' => 'mycloud' }])
+          manager.sync_agents('mycloud', [instance1, instance2])
+
+          # Initially none are failing
+          expect(manager.failing_instances).to eq('mycloud' => 0)
+
+          agent1 = manager.get_agents_for_deployment('mycloud')['007']
+          agent1.job_state = 'failing'
+
+          expect(manager.failing_instances).to eq('mycloud' => 1)
+        end
+      end
+
+      describe '#stopped_instances' do
+        it 'counts agents with job_state == stopped for each deployment' do
+          instance1 = Bosh::Monitor::Instance.create('id' => 'iuuid1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator')
+          instance2 = Bosh::Monitor::Instance.create('id' => 'iuuid2', 'agent_id' => '008', 'index' => '0', 'job' => 'nats')
+
+          manager.sync_deployments([{ 'name' => 'mycloud' }])
+          manager.sync_agents('mycloud', [instance1, instance2])
+
+          # Initially none are stopped
+          expect(manager.stopped_instances).to eq('mycloud' => 0)
+
+          agent2 = manager.get_agents_for_deployment('mycloud')['008']
+          agent2.job_state = 'stopped'
+
+          expect(manager.stopped_instances).to eq('mycloud' => 1)
+        end
+      end
+
+      describe '#unknown_instances' do
+        it 'counts agents with unknown (nil) job_state for each deployment' do
+          instance1 = Bosh::Monitor::Instance.create('id' => 'iuuid1', 'agent_id' => '007', 'index' => '0', 'job' => 'mutator')
+          instance2 = Bosh::Monitor::Instance.create('id' => 'iuuid2', 'agent_id' => '008', 'index' => '0', 'job' => 'nats')
+
+          manager.sync_deployments([{ 'name' => 'mycloud' }])
+          manager.sync_agents('mycloud', [instance1, instance2])
+
+          # Ensure both have a defined state first
+          manager.get_agents_for_deployment('mycloud').each_value { |a| a.job_state = 'running' }
+          expect(manager.unknown_instances).to eq('mycloud' => 0)
+
+          # Set one to unknown
+          agent1 = manager.get_agents_for_deployment('mycloud')['007']
+          agent1.job_state = nil
+
+          expect(manager.unknown_instances).to eq('mycloud' => 1)
         end
       end
 
