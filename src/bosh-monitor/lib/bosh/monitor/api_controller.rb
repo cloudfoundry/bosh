@@ -57,9 +57,25 @@ module Bosh::Monitor
       end
     end
 
-    get '/failing_agents' do
+    get '/failing_instances' do
       if @instance_manager.director_initial_deployment_sync_done
-        JSON.generate(@instance_manager.failing_agents)
+        JSON.generate(@instance_manager.failing_instances)
+      else
+        status(503)
+      end
+    end
+
+    get '/stopped_instances' do
+      if @instance_manager.director_initial_deployment_sync_done
+        JSON.generate(@instance_manager.stopped_instances)
+      else
+        status(503)
+      end
+    end
+
+    get '/unknown_instances' do
+      if @instance_manager.director_initial_deployment_sync_done
+        JSON.generate(@instance_manager.unknown_instances)
       else
         status(503)
       end
