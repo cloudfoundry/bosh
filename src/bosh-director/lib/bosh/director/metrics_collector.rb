@@ -40,34 +40,34 @@ module Bosh
         @unresponsive_agents = Prometheus::Client.registry.gauge(
           :bosh_unresponsive_agents,
           labels: %i[name],
-          docstring: "Number of unresponsive agents per deployment",
+          docstring: 'Number of unresponsive agents per deployment',
         )
 
         @unhealthy_agents = Prometheus::Client.registry.gauge(
           :bosh_unhealthy_agents,
           labels: %i[name],
-          docstring: "Number of unhealthy agents (job_state = running AND process_length == 0) per deployment",
+          docstring: 'Number of unhealthy agents (job_state = running AND process_length == 0) per deployment',
         )
         @total_available_agents = Prometheus::Client.registry.gauge(
           :bosh_total_available_agents,
           labels: %i[name],
-          docstring: "Number of total available agents (all agents, no criteria) per deployment",
+          docstring: 'Number of total available agents (all agents, no criteria) per deployment',
         )
         @failing_instances = Prometheus::Client.registry.gauge(
           :bosh_failing_instances,
           labels: %i[name],
-          docstring: "Number of failing instances (job_state == 'failing') per deployment",
+          docstring: 'Number of failing instances (job_state == "failing") per deployment',
         )
         @stopped_instances = Prometheus::Client.registry.gauge(
           :bosh_stopped_instances,
           labels: %i[name],
-          docstring: "Number of instances with job_state == 'stopped' per deployment",
+          docstring: 'Number of instances with job_state == "stopped" per deployment',
         )
 
         @unknown_instances = Prometheus::Client.registry.gauge(
           :bosh_unknown_instances,
           labels: %i[name],
-          docstring: "Number of instances with unknown job_state per deployment",
+          docstring: 'Number of instances with unknown job_state per deployment',
         )
         @scheduler = Rufus::Scheduler.new
       end
