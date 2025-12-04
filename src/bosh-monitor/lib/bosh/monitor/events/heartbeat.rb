@@ -11,9 +11,9 @@ module Bosh::Monitor
         @id = @attributes['id']
         @timestamp = begin
                        Time.at(@attributes['timestamp'])
-          rescue StandardError
+                     rescue StandardError
                        @attributes['timestamp']
-          end
+                     end
 
         @deployment = @attributes['deployment']
         @agent_id = @attributes['agent_id']

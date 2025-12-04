@@ -46,15 +46,15 @@ module Bosh
         @unhealthy_agents = Prometheus::Client.registry.gauge(
           :bosh_unhealthy_agents,
           labels: %i[name],
-          docstring: "Number of unhealthy agents (job_state != running AND process_length == 0) per deployment",
+          docstring: "Number of unhealthy agents (job_state = running AND process_length == 0) per deployment",
         )
         @total_available_agents = Prometheus::Client.registry.gauge(
           :bosh_total_available_agents,
           labels: %i[name],
           docstring: "Number of total available agents (all agents, no criteria) per deployment",
         )
-        @failing_clients = Prometheus::Client.registry.gauge(
-          :bosh_failing_clients,
+        @failing_instances = Prometheus::Client.registry.gauge(
+          :bosh_failing_instances,
           labels: %i[name],
           docstring: "Number of failing instances (job_state == 'failing') per deployment",
         )
@@ -207,15 +207,15 @@ module Bosh
         if response_failing.is_a?(Net::HTTPSuccess)
           failing_counts = JSON.parse(response_failing.body) rescue nil
           if failing_counts.is_a?(Hash)
-            existing_failing_deployment_names = @failing_clients.values.map { |key, _| key[:name] }
+            existing_failing_deployment_names = @failing_instances.values.map { |key, _| key[:name] }
 
             failing_counts.each do |deployment, count|
-              @failing_clients.set(count, labels: { name: deployment })
+              @failing_instances.set(count, labels: { name: deployment })
             end
 
             removed_failing_deployments = existing_failing_deployment_names - failing_counts.keys
             removed_failing_deployments.each do |deployment|
-              @failing_clients.set(0, labels: { name: deployment })
+              @failing_instances.set(0, labels: { name: deployment })
             end
           end
         end
