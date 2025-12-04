@@ -464,6 +464,7 @@ jobs:
                   BAT_INFRASTRUCTURE: gcp
                   GCP_JSON_KEY: ((gcp_json_key))
                   DEPLOY_ARGS: |-
+                    -o bosh-deployment/misc/source-releases/bpm.yml
                     -o bosh-deployment/external-ip-not-recommended.yml
               - task: prepare-bats-config
                 file: bosh-ci/ci/bats/iaas/gcp/prepare-bats-config.yml
@@ -551,6 +552,7 @@ jobs:
                   BAT_INFRASTRUCTURE: gcp
                   GCP_JSON_KEY: ((gcp_json_key))
                   DEPLOY_ARGS: |-
+                    -o bosh-deployment/misc/source-releases/bpm.yml
                     -o bosh-deployment/external-ip-not-recommended.yml
                     -o bosh-ci/ci/bats/ops/use-custom-stemcell.yml
               - task: prepare-bats-config
