@@ -48,6 +48,27 @@ module Bosh
           labels: %i[name],
           docstring: "Number of unhealthy agents (job_state != running AND process_length == 0) per deployment",
         )
+        @total_available_agents = Prometheus::Client.registry.gauge(
+          :bosh_total_available_agents,
+          labels: %i[name],
+          docstring: "Number of total available agents (all agents, no criteria) per deployment",
+        )
+        @failing_clients = Prometheus::Client.registry.gauge(
+          :bosh_failing_clients,
+          labels: %i[name],
+          docstring: "Number of failing instances (job_state == 'failing') per deployment",
+        )
+        @stopped_instances = Prometheus::Client.registry.gauge(
+          :bosh_stopped_instances,
+          labels: %i[name],
+          docstring: "Number of instances with job_state == 'stopped' per deployment",
+        )
+
+        @unknown_instances = Prometheus::Client.registry.gauge(
+          :bosh_unknown_instances,
+          labels: %i[name],
+          docstring: "Number of instances with unknown job_state per deployment",
+        )
         @scheduler = Rufus::Scheduler.new
       end
 
@@ -161,6 +182,78 @@ module Bosh
         removed_unhealthy_deployments = existing_unhealthy_deployment_names - unhealthy_agent_counts.keys
         removed_unhealthy_deployments.each do |deployment|
           @unhealthy_agents.set(0, labels: { name: deployment })
+        end
+
+        # Fetch and populate total_available_agents metrics
+        response_total = Net::HTTP.get_response('127.0.0.1', '/total_available_agents', @config.health_monitor_port)
+        if response_total.is_a?(Net::HTTPSuccess)
+          total_agent_counts = JSON.parse(response_total.body) rescue nil
+          if total_agent_counts.is_a?(Hash)
+            existing_total_deployment_names = @total_available_agents.values.map { |key, _| key[:name] }
+
+            total_agent_counts.each do |deployment, count|
+              @total_available_agents.set(count, labels: { name: deployment })
+            end
+
+            removed_total_deployments = existing_total_deployment_names - total_agent_counts.keys
+            removed_total_deployments.each do |deployment|
+              @total_available_agents.set(0, labels: { name: deployment })
+            end
+          end
+        end
+
+        # Fetch and populate failing_instances metrics
+        response_failing = Net::HTTP.get_response('127.0.0.1', '/failing_instances', @config.health_monitor_port)
+        if response_failing.is_a?(Net::HTTPSuccess)
+          failing_counts = JSON.parse(response_failing.body) rescue nil
+          if failing_counts.is_a?(Hash)
+            existing_failing_deployment_names = @failing_clients.values.map { |key, _| key[:name] }
+
+            failing_counts.each do |deployment, count|
+              @failing_clients.set(count, labels: { name: deployment })
+            end
+
+            removed_failing_deployments = existing_failing_deployment_names - failing_counts.keys
+            removed_failing_deployments.each do |deployment|
+              @failing_clients.set(0, labels: { name: deployment })
+            end
+          end
+        end
+
+        # Fetch and populate stopped_instances metrics
+        response_stopped = Net::HTTP.get_response('127.0.0.1', '/stopped_instances', @config.health_monitor_port)
+        if response_stopped.is_a?(Net::HTTPSuccess)
+          stopped_counts = JSON.parse(response_stopped.body) rescue nil
+          if stopped_counts.is_a?(Hash)
+            existing_stopped_deployment_names = @stopped_instances.values.map { |key, _| key[:name] }
+
+            stopped_counts.each do |deployment, count|
+              @stopped_instances.set(count, labels: { name: deployment })
+            end
+
+            removed_stopped_deployments = existing_stopped_deployment_names - stopped_counts.keys
+            removed_stopped_deployments.each do |deployment|
+              @stopped_instances.set(0, labels: { name: deployment })
+            end
+          end
+        end
+
+        # Fetch and populate unknown_instances metrics
+        response_unknown = Net::HTTP.get_response('127.0.0.1', '/unknown_instances', @config.health_monitor_port)
+        if response_unknown.is_a?(Net::HTTPSuccess)
+          unknown_counts = JSON.parse(response_unknown.body) rescue nil
+          if unknown_counts.is_a?(Hash)
+            existing_unknown_deployment_names = @unknown_instances.values.map { |key, _| key[:name] }
+
+            unknown_counts.each do |deployment, count|
+              @unknown_instances.set(count, labels: { name: deployment })
+            end
+
+            removed_unknown_deployments = existing_unknown_deployment_names - unknown_counts.keys
+            removed_unknown_deployments.each do |deployment|
+              @unknown_instances.set(0, labels: { name: deployment })
+            end
+          end
         end
       end
 

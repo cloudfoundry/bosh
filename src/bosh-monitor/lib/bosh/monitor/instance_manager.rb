@@ -131,8 +131,7 @@ module Bosh::Monitor
 
       agents_hash
     end
-
-    def failing_agents
+    def failing_instances
       agents_hash = {}
       @deployment_name_to_deployments.each do |name, deployment|
         agents_hash[name] = deployment.agents.count { |agent| agent.job_state == 'failing' }
@@ -141,13 +140,32 @@ module Bosh::Monitor
       agents_hash
     end
 
+    def stopped_instances
+      agents_hash = {}
+      @deployment_name_to_deployments.each do |name, deployment|
+        agents_hash[name] = deployment.agents.count { |agent| agent.job_state == 'stopped' }
+      end
+
+      agents_hash
+    end
+
+    def unknown_instances
+      agents_hash = {}
+      @deployment_name_to_deployments.each do |name, deployment|
+        agents_hash[name] = deployment.agents.count { |agent| agent.job_state.nil? }
+      end
+
+      agents_hash
+    end
+
     def total_available_agents
       agents_hash = {}
       @deployment_name_to_deployments.each do |name, deployment|
-        # Count all agents for the deployment
+        # Count all agents for the deployment (no additional criteria)
         agents_hash[name] = deployment.agents.count
       end
 
+      # Include unmanaged (rogue) agents in the aggregate under 'unmanaged'
       agents_hash['unmanaged'] = @unmanaged_agents.keys.size
 
       agents_hash
