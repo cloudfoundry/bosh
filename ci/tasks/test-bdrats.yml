@@ -6,7 +6,6 @@ inputs:
 - name: stemcell
 - name: bosh-release
 - name: bosh-disaster-recovery-acceptance-tests
-  path: gopath/src/github.com/cloudfoundry-incubator/bosh-disaster-recovery-acceptance-tests
 - name: bbr-cli-binary
 - name: bosh-deployment
   optional: true
