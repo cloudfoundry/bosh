@@ -278,7 +278,7 @@ module Bosh::Monitor
       end
 
       describe "#unhealthy_agents" do
-        it "can return number of unhealthy agents (job_state == 'running' AND process_length == 0) for each deployment" do
+        it "can return number of unhealthy agents (job_state == 'running' AND number_of_processes == 0) for each deployment" do
           instance1 = Bosh::Monitor::Instance.create("id" => "iuuid1", "agent_id" => "007", "index" => "0", "job" => "mutator")
           instance2 = Bosh::Monitor::Instance.create("id" => "iuuid2", "agent_id" => "008", "index" => "0", "job" => "nats")
           instance3 = Bosh::Monitor::Instance.create("id" => "iuuid3", "agent_id" => "009", "index" => "28", "job" => "mysql_node")
@@ -289,26 +289,26 @@ module Bosh::Monitor
           # Initially all agents are healthy
           expect(manager.unhealthy_agents).to eq("mycloud" => 0)
 
-          # Set agent job_state == 'running' and process_length == 0 (unhealthy)
+          # Set agent job_state == 'running' and number_of_processes == 0 (unhealthy)
           agent1 = manager.get_agents_for_deployment("mycloud")["007"]
           agent1.job_state = "running"
-          agent1.process_length = 0
+          agent1.number_of_processes = 0
           expect(manager.unhealthy_agents).to eq("mycloud" => 1)
 
           # Set another agent to same state
           agent2 = manager.get_agents_for_deployment("mycloud")["008"]
           agent2.job_state = "running"
-          agent2.process_length = 0
+          agent2.number_of_processes = 0
           expect(manager.unhealthy_agents).to eq("mycloud" => 2)
 
           # Agent with job_state != 'running' should not count as unhealthy
           agent3 = manager.get_agents_for_deployment("mycloud")["009"]
           agent3.job_state = "stopped"
-          agent3.process_length = 0
+          agent3.number_of_processes = 0
           expect(manager.unhealthy_agents).to eq("mycloud" => 2)
 
-          # Agent with process_length > 0 should not count as unhealthy even if job_state == 'running'
-          agent1.process_length = 5
+          # Agent with number_of_processes > 0 should not count as unhealthy even if job_state == 'running'
+          agent1.number_of_processes = 5
           expect(manager.unhealthy_agents).to eq("mycloud" => 1)
         end
       end

@@ -4,7 +4,7 @@ module Bosh::Monitor
     attr_reader   :discovered_at
     attr_accessor :updated_at
     attr_accessor :job_state
-    attr_accessor :process_length
+    attr_accessor :number_of_processes
 
     ATTRIBUTES = %i[deployment job index instance_id cid].freeze
 

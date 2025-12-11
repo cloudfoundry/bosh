@@ -79,8 +79,8 @@ module Bosh::Monitor
           teams: @teams,
           metrics: @metrics.map(&:to_hash),
         }
-        # Include process_length if present in attributes
-        result[:process_length] = @attributes["process_length"] if @attributes.key?("process_length")
+        # Include number_of_processes if present in attributes
+        result[:number_of_processes] = @attributes["number_of_processes"] if @attributes.key?("number_of_processes")
 
         result
       end
