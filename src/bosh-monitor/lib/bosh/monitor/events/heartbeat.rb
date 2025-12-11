@@ -65,7 +65,7 @@ module Bosh::Monitor
       end
 
       def to_hash
-        {
+        result = {
           kind: 'heartbeat',
           id: @id,
           timestamp: @timestamp.to_i,
@@ -79,6 +79,10 @@ module Bosh::Monitor
           teams: @teams,
           metrics: @metrics.map(&:to_hash),
         }
+        # Include number_of_processes if present in attributes
+        result[:number_of_processes] = @attributes["number_of_processes"] if @attributes.key?("number_of_processes")
+
+        result
       end
 
       def to_json(*_args)
