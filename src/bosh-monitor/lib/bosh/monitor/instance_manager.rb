@@ -125,7 +125,7 @@ module Bosh::Monitor
       agents_hash = {}
       @deployment_name_to_deployments.each do |name, deployment|
         agents_hash[name] = deployment.agents.count do |agent|
-          agent.job_state && agent.job_state == "running" && agent.process_length == 0
+          agent.job_state && agent.job_state == "running" && agent.number_of_processes == 0
         end
       end
 
@@ -375,9 +375,9 @@ module Bosh::Monitor
         message['instance_id'] = agent.instance_id
         message['teams'] = deployment ? deployment.teams : []
 
-        # Store job_state and process_length on the agent for unhealthy detection
+        # Store job_state and number_of_processes on the agent for unhealthy detection
         agent.job_state = message["job_state"]
-        agent.process_length = message["process_length"]
+        agent.number_of_processes = message["number_of_processes"]
 
         return if message["instance_id"].nil? || message["job"].nil? || message["deployment"].nil?
       end
