@@ -4,7 +4,7 @@ module Bosh::Director
       include Jobs::Helpers::DynamicDiskHelpers
       include LockHelper
 
-      @queue = :normal
+      @queue = :dynamic_disks
 
       def self.job_type
         :detach_dynamic_disk

@@ -50,6 +50,12 @@ module Bosh::Director
       allow(provide_dynamic_disk_job).to receive(:task_id).and_return(task.id)
     end
 
+    describe 'DJ job class expectations' do
+      let(:job_type) { :provide_dynamic_disk }
+      let(:queue) { :dynamic_disks }
+      it_behaves_like 'a DelayedJob job'
+    end
+
     describe '#perform' do
       context 'when disk exists' do
         let!(:disk) do

@@ -18,7 +18,7 @@ mkdir -p $LOG_DIR
 export BOSH_DIRECTOR_LOG_FILE=$LOG_DIR/drain.workers.stdout.log
 
 stop_worker() {
-  pidfile=/var/vcap/sys/run/director/worker_$1.pid
+  pidfile=/var/vcap/sys/run/director/$1.pid
 
   if [ -f "$pidfile" ] ; then
     pid="$( cat "$pidfile" )"
@@ -33,16 +33,25 @@ stop_dedicated_worker () { stop_worker "$@"; }
 
 <% (1..p('director.workers')).each do |index| %>
   <% if index > dedicated_workers %>
-    stop_worker <%= index %>
+    stop_worker worker_<%= index %>
   <% end %>
+<% end %>
+
+<% (1..p('director.dynamic_disks_workers')).each do |index| %>
+  stop_worker dynamic_disks_worker_<%= index %>
 <% end %>
 
 <% if dedicated_workers > 0 %>
   /var/vcap/packages/director/bin/bosh-director-drain-workers -c /var/vcap/jobs/director/config/director.yml --queue normal \
     2>>$LOG_DIR/drain.stderr.log
 
+  <% if p('director.dynamic_disks_workers') > 0 %>
+      /var/vcap/packages/director/bin/bosh-director-drain-workers -c /var/vcap/jobs/director/config/director.yml --queue dynamic_disks \
+        2>>$LOG_DIR/drain.stderr.log
+  <% end %>
+
   <% (1..dedicated_workers).each do |index| %>
-    stop_dedicated_worker <%= index %>
+    stop_dedicated_worker worker_<%= index %>
   <% end %>
 <% end %>
 

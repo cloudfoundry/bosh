@@ -271,25 +271,52 @@ RSpec.describe 'director templates' do
       let(:rendered_template) { template.render(properties) }
 
       let(:enable_dedicated_status_worker) { false }
+      let(:dynamic_disks_workers) { 0 }
       let(:properties) do
         properties = default_properties.dup
         properties['director']['enable_dedicated_status_worker'] = enable_dedicated_status_worker
+        properties['director']['dynamic_disks_workers'] = dynamic_disks_workers
         properties
       end
 
-      it 'renders' do
-        expect(rendered_template).to match(/.+stop_worker 1.+stop_worker 2.+stop_worker 3/m)
-        expect(rendered_template).to include('bosh-director-drain-workers')
+      it 'renders to drain all jobs' do
+        expect(rendered_template).to match(/.+stop_worker worker_1.+stop_worker worker_2.+stop_worker worker_3/m)
+        expect(rendered_template).to include('bosh-director-drain-workers -c /var/vcap/jobs/director/config/director.yml')
+        expect(rendered_template).to_not include('--queue normal')
+        expect(rendered_template).to_not include('--queue dynamic_disks')
+      end
+
+      context 'dynamic disks workers' do
+        let(:dynamic_disks_workers) { 2 }
+
+        it 'renders to drain all jobs' do
+          expect(rendered_template).to match(/.+stop_worker worker_2.+stop_worker worker_3.+.+stop_worker dynamic_disks_worker_1.+stop_worker dynamic_disks_worker_2/m)
+
+          expect(rendered_template).to include('bosh-director-drain-workers -c /var/vcap/jobs/director/config/director.yml')
+          expect(rendered_template).to_not include('--queue normal')
+          expect(rendered_template).to_not include('--queue dynamic_disks')
+        end
       end
 
       context 'dedicated status workers' do
         let(:enable_dedicated_status_worker) { true }
 
-        it 'renders' do
-          expect(rendered_template).to match(/.+stop_worker 2.+stop_worker 3.+stop_dedicated_worker 1/m)
+        it 'renders to drain normal jobs and then the rest' do
+          expect(rendered_template).to match(/.+stop_worker worker_2.+stop_worker worker_3.+stop_dedicated_worker worker_1/m)
 
-          expect(rendered_template).to include('--queue normal')
-          expect(rendered_template).to include('bosh-director-drain-workers')
+          expect(rendered_template).to include('bosh-director-drain-workers -c /var/vcap/jobs/director/config/director.yml --queue normal')
+          expect(rendered_template).to_not include('bosh-director-drain-workers -c /var/vcap/jobs/director/config/director.yml --queue dynamic_disks')
+        end
+
+        context 'dynamic disks workers' do
+          let(:dynamic_disks_workers) { 2 }
+
+          it 'renders to drain normal jobs, then dynamic_disks jobs and then the rest' do
+            expect(rendered_template).to match(/.+stop_worker worker_2.+stop_worker worker_3.+.+stop_worker dynamic_disks_worker_1.+stop_worker dynamic_disks_worker_2.+stop_dedicated_worker worker_1/m)
+
+            expect(rendered_template).to include('bosh-director-drain-workers -c /var/vcap/jobs/director/config/director.yml --queue normal')
+            expect(rendered_template).to include('bosh-director-drain-workers -c /var/vcap/jobs/director/config/director.yml --queue dynamic_disks')
+          end
         end
       end
     end
@@ -435,6 +462,30 @@ RSpec.describe 'director templates' do
               "director.db.tls.cert.certificate": "0"
             }
           JSON
+        end
+      end
+    end
+
+    describe 'worker_ctl' do
+      let(:template) { job.template('bin/worker_ctl') }
+      let(:rendered_template) { template.render(properties) }
+
+      let(:enable_dedicated_status_worker) { false }
+      let(:properties) do
+        properties = default_properties.dup
+        properties['director']['enable_dedicated_status_worker'] = enable_dedicated_status_worker
+        properties
+      end
+
+      it 'renders' do
+        expect(rendered_template).to include('export QUEUE="${3:-normal,urgent}"')
+      end
+
+      context 'dedicated status workers' do
+        let(:enable_dedicated_status_worker) { true }
+
+        it 'renders' do
+          expect(rendered_template).to include('export QUEUE="urgent"')
         end
       end
     end

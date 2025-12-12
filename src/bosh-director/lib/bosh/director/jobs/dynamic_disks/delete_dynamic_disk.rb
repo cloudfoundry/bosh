@@ -3,7 +3,7 @@ module Bosh::Director
     class DeleteDynamicDisk < Jobs::BaseJob
       include Jobs::Helpers::DynamicDiskHelpers
 
-      @queue = :normal
+      @queue = :dynamic_disks
 
       def self.job_type
         :delete_dynamic_disk
