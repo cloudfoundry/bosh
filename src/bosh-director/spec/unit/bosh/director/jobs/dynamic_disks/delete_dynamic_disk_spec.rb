@@ -19,6 +19,12 @@ module Bosh::Director
       allow(cloud).to receive(:has_disk).and_return(false)
     end
 
+    describe 'DJ job class expectations' do
+      let(:job_type) { :delete_dynamic_disk }
+      let(:queue) { :dynamic_disks }
+      it_behaves_like 'a DelayedJob job'
+    end
+
     describe '#perform' do
       context 'when disk exists in database but not in the cloud' do
         let!(:disk) do

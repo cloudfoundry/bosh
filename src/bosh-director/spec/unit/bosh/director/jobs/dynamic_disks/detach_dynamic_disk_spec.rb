@@ -22,6 +22,12 @@ module Bosh::Director
       allow(AgentClient).to receive(:with_agent_id).with(vm.agent_id, instance.name).and_return(agent_client)
     end
 
+    describe 'DJ job class expectations' do
+      let(:job_type) { :detach_dynamic_disk }
+      let(:queue) { :dynamic_disks }
+      it_behaves_like 'a DelayedJob job'
+    end
+
     describe '#perform' do
       context 'when disk exists in database' do
         context 'when disk has no vm assigned' do

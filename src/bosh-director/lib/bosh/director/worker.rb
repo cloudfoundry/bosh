@@ -4,9 +4,9 @@ require 'delayed_job'
 module Bosh
   module Director
     class Worker
-      def initialize(config, index = 0)
+      def initialize(config, name)
         @config = config
-        @index = index
+        @name = name
         @retry_interval = 5
       end
 
@@ -36,7 +36,7 @@ module Bosh
       end
 
       def start
-        @delayed_job_worker.name = "worker_#{@index}"
+        @delayed_job_worker.name = @name
         @delayed_job_worker.logger.info("Starting worker #{@delayed_job_worker.name}.")
         Bosh::Director::Config.log_director_start_event('worker', @delayed_job_worker.name, {})
 
