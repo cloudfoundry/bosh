@@ -1,0 +1,224 @@
+require 'spec_helper'
+
+module Bosh::Director
+  describe Jobs::DynamicDisks::ProvideDynamicDisk do
+    let(:disk_name) { 'fake-disk-name' }
+    let(:disk_cid) { 'fake-disk-cid' }
+    let(:disk_pool_name) { 'fake-disk-pool-name' }
+    let(:disk_cloud_properties) { { 'fake-disk-cloud-property-key' => 'fake-disk-cloud-property-value' } }
+    let(:disk_size) { 1000 }
+    let(:metadata) { { 'fake-key' => 'fake-value' } }
+    let(:disk_hint) { { "id" => "fake-disk-id" } }
+
+    let(:agent_client) { instance_double(AgentClient) }
+    let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
+
+    let(:instance) { FactoryBot.create(:models_instance) }
+    let!(:vm) { FactoryBot.create(:models_vm, instance: instance, active: true) }
+
+    let(:task_result) { TaskDBWriter.new(:result_output, task.id) }
+    let(:task) {FactoryBot.create(:models_task, id: 42, username: 'user')}
+
+    def parsed_task_result
+      JSON.parse(Models::Task.first(id: 42).result_output)
+    end
+
+    let(:provide_dynamic_disk_job) { Jobs::DynamicDisks::ProvideDynamicDisk.new(instance.uuid, disk_name, disk_pool_name, disk_size, metadata) }
+
+    let!(:cloud_config) do
+      FactoryBot.create(:models_config_cloud, content: YAML.dump(
+        SharedSupport::DeploymentManifestHelper.simple_cloud_config.merge(
+          'disk_types' => [
+            { 'name' => disk_pool_name,
+              'disk_size' => 1024,
+              'cloud_properties' => disk_cloud_properties
+            }
+          ]
+        )
+      ))
+    end
+    let(:cloud_factory) { instance_double(CloudFactory, get: cloud) }
+
+    before do
+      allow(Config).to receive(:name).and_return('fake-director-name')
+      allow(Config).to receive(:cloud_options).and_return('provider' => { 'path' => '/path/to/default/cpi' })
+      allow(Config).to receive(:preferred_cpi_api_version).and_return(2)
+      allow(Config).to receive(:result).and_return(task_result)
+      allow(CloudFactory).to receive(:create).and_return(cloud_factory)
+      allow(cloud).to receive(:respond_to?).with(:set_disk_metadata).and_return(false)
+      allow(AgentClient).to receive(:with_agent_id).with(vm.agent_id, instance.name).and_return(agent_client)
+      allow(provide_dynamic_disk_job).to receive(:task_id).and_return(task.id)
+    end
+
+    describe 'DJ job class expectations' do
+      let(:job_type) { :provide_dynamic_disk }
+      let(:queue) { :dynamic_disks }
+      it_behaves_like 'a DelayedJob job'
+    end
+
+    describe '#perform' do
+      context 'when disk exists' do
+        let!(:disk) do
+          FactoryBot.create(
+            :models_dynamic_disk,
+            name: disk_name,
+            disk_cid: disk_cid,
+            deployment: vm.instance.deployment,
+            disk_pool_name: disk_pool_name,
+          )
+        end
+
+        it 'attaches the disk to VM and updates disk vm and availability zone' do
+          expect(cloud).not_to receive(:create_disk)
+          expect(provide_dynamic_disk_job).to receive(:with_vm_lock).with(vm.cid, timeout: 60).and_yield
+          expect(cloud).to receive(:attach_disk).with(vm.cid, disk_cid).and_return(disk_hint)
+          expect(agent_client).to receive(:add_dynamic_disk).with(disk_cid, disk_hint)
+          expect(provide_dynamic_disk_job.perform).to eq("attached disk `#{disk_name}` to `#{vm.cid}` in deployment `#{vm.instance.deployment.name}`")
+          expect(parsed_task_result).to eq({'disk_cid' => disk_cid})
+
+          model = Models::DynamicDisk.where(disk_cid: disk_cid).first
+          expect(model.vm).to eq(vm)
+          expect(model.availability_zone).to eq(vm.instance.availability_zone)
+        end
+      end
+
+      context 'when disk does not exist' do
+        it 'creates the disk and attaches it to VM' do
+          expected_cloud_properties = disk_cloud_properties.merge('name' => 'fake-disk-name')
+          expect(cloud).to receive(:create_disk).with(disk_size, expected_cloud_properties, vm.cid).and_return(disk_cid)
+          expect(provide_dynamic_disk_job).to receive(:with_vm_lock).with(vm.cid, timeout: 60).and_yield
+          expect(cloud).to receive(:attach_disk).with(vm.cid, disk_cid).and_return(disk_hint)
+
+          expect(agent_client).to receive(:add_dynamic_disk).with(disk_cid, disk_hint)
+          expect(provide_dynamic_disk_job.perform).to eq("attached disk `#{disk_name}` to `#{vm.cid}` in deployment `#{vm.instance.deployment.name}`")
+          expect(parsed_task_result).to eq({'disk_cid' => disk_cid})
+
+          model = Models::DynamicDisk.where(disk_cid: disk_cid).first
+          expect(model.name).to eq(disk_name)
+          expect(model.size).to eq(disk_size)
+          expect(model.deployment_id).to eq(vm.instance.deployment.id)
+          expect(model.disk_pool_name).to eq(disk_pool_name)
+          expect(model.cpi).to eq(vm.cpi)
+          expect(model.vm).to eq(vm)
+          expect(model.availability_zone).to eq(vm.instance.availability_zone)
+          expect(model.metadata).to eq(metadata)
+        end
+      end
+
+      context 'when disk exists in database but not in the cloud' do
+        let!(:disk) do
+          FactoryBot.create(
+            :models_dynamic_disk,
+            name: disk_name,
+            disk_cid: disk_cid,
+            deployment: vm.instance.deployment,
+            disk_pool_name: disk_pool_name,
+          )
+        end
+
+        it 'returns an error from attach_disk call' do
+          expect(provide_dynamic_disk_job).to receive(:with_vm_lock).with(vm.cid, timeout: 60).and_yield
+          expect(cloud).to receive(:attach_disk).with(vm.cid, disk_cid).and_raise('some-error')
+          expect { provide_dynamic_disk_job.perform }.to raise_error('some-error')
+        end
+      end
+
+      context 'when disk type can not be found in cloud config' do
+        let!(:cloud_config) do
+          FactoryBot.create(:models_config_cloud, content: YAML.dump(
+            SharedSupport::DeploymentManifestHelper.simple_cloud_config.merge(
+              'disk_types' => [
+                { 'name' => 'different-disk-type',
+                  'disk_size' => 1024,
+                  'cloud_properties' => {}
+                }
+              ]
+            )
+          ))
+        end
+
+        it 'responds with error' do
+          expect { provide_dynamic_disk_job.perform }.to raise_error("Could not find disk pool by name `fake-disk-pool-name`")
+        end
+      end
+
+      context 'when cpi supports set_disk_metadata' do
+        it 'sets disk metadata' do
+          expected_cloud_properties = disk_cloud_properties.merge('name' => 'fake-disk-name')
+          expect(cloud).to receive(:create_disk).with(disk_size, expected_cloud_properties, vm.cid).and_return('fake-disk-cid')
+          expect(cloud).to receive(:respond_to?).with(:set_disk_metadata).and_return(true)
+          expect(cloud).to receive(:set_disk_metadata).with(
+            'fake-disk-cid',
+            {
+              "deployment" => vm.instance.deployment.name,
+              "director" => 'fake-director-name',
+              "fake-key" => "fake-value"
+            }
+          )
+          expect(provide_dynamic_disk_job).to receive(:with_vm_lock).with(vm.cid, timeout: 60).and_yield
+          expect(cloud).to receive(:attach_disk).with(vm.cid, disk_cid).and_return(disk_hint)
+
+          expect(agent_client).to receive(:add_dynamic_disk).with(disk_cid, disk_hint)
+          expect(provide_dynamic_disk_job.perform).to eq("attached disk `#{disk_name}` to `#{vm.cid}` in deployment `#{vm.instance.deployment.name}`")
+        end
+      end
+
+      context 'when teams are set on the deployment' do
+        let(:team_1) { FactoryBot.create(:models_team, name: 'team-1') }
+        let(:team_2) { FactoryBot.create(:models_team, name: 'team-2') }
+        let(:other_team) { FactoryBot.create(:models_team, name: 'other_team') }
+        let(:other_disk_cloud_properties) { { 'other-disk-cloud-properties' => {} } }
+        let!(:latest_other_cloud_config) do
+          FactoryBot.create(:models_config_cloud, team_id: other_team.id, content: YAML.dump(
+            SharedSupport::DeploymentManifestHelper.simple_cloud_config.merge(
+              'disk_types' => [
+                { 'name' => disk_pool_name,
+                  'disk_size' => 1024,
+                  'cloud_properties' => other_disk_cloud_properties,
+                }
+              ]
+            )
+          ))
+        end
+
+        before do
+          vm.instance.deployment.update(teams: [team_1, team_2])
+          cloud_config.update(team_id: team_1.id)
+        end
+
+        it 'gets the disk cloud properties from the latest cloud config for those teams' do
+          expected_cloud_properties = disk_cloud_properties.merge('name' => 'fake-disk-name')
+          expect(cloud).to receive(:create_disk).with(disk_size, expected_cloud_properties, vm.cid).and_return(disk_cid)
+          expect(provide_dynamic_disk_job).to receive(:with_vm_lock).with(vm.cid, timeout: 60).and_yield
+          expect(cloud).to receive(:attach_disk).with(vm.cid, disk_cid).and_return(disk_hint)
+          expect(agent_client).to receive(:add_dynamic_disk).with(disk_cid, disk_hint)
+          expect(provide_dynamic_disk_job.perform).to eq("attached disk `#{disk_name}` to `#{vm.cid}` in deployment `#{vm.instance.deployment.name}`")
+        end
+      end
+
+      context 'when instance cannot be found' do
+        let(:provide_dynamic_disk_job) { Jobs::DynamicDisks::ProvideDynamicDisk.new('unknown-instance-id', disk_name, disk_pool_name, disk_size, metadata) }
+
+        it 'responds with error' do
+          expect { provide_dynamic_disk_job.perform }.to raise_error("instance `unknown-instance-id` not found")
+        end
+      end
+
+      context 'when active vm for instance cannot be found' do
+        let(:vm) { FactoryBot.create(:models_vm, instance: instance, active: false) }
+
+        it 'responds with error' do
+          expect { provide_dynamic_disk_job.perform }.to raise_error("no active vm found for instance `#{instance.uuid}`")
+        end
+      end
+
+      context 'when instance has no vms' do
+        let(:vm) { FactoryBot.create(:models_vm) }
+
+        it 'responds with error' do
+          expect { provide_dynamic_disk_job.perform }.to raise_error("no active vm found for instance `#{instance.uuid}`")
+        end
+      end
+    end
+  end
+end

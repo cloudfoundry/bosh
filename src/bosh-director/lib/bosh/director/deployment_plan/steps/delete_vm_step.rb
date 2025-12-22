@@ -2,6 +2,8 @@ module Bosh::Director
   module DeploymentPlan
     module Steps
       class DeleteVmStep
+        include LockHelper
+
         def initialize(store_event = true, force = false, enable_virtual_delete_vm = false)
           @store_event = store_event
           @logger = Config.logger
@@ -24,7 +26,7 @@ module Bosh::Director
               cloud = CloudFactory.create.get(vm.cpi, vm.stemcell_api_version)
 
               begin
-                cloud.delete_vm(vm_cid) unless @enable_virtual_delete_vm
+                with_vm_lock(vm_cid) { cloud.delete_vm(vm_cid) } unless @enable_virtual_delete_vm
               rescue Bosh::Clouds::VMNotFound
                 @logger.warn("VM '#{vm_cid}' might have already been deleted from the cloud")
               end

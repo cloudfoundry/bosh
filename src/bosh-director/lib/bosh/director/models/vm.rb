@@ -2,6 +2,7 @@ module Bosh::Director::Models
   class Vm < Sequel::Model(Bosh::Director::Config.db)
     many_to_one :instance
     one_to_many :ip_addresses
+    one_to_many :dynamic_disks
 
     def before_destroy
       ip_addresses_dataset.each do |ip_address|

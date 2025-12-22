@@ -86,7 +86,7 @@ module Bosh::Director
         expected_scope << bosh_team_admin_scopes(user_scopes)
       when :update_configs
         expected_scope << bosh_team_admin_scopes(user_scopes)
-      when :read, :upload_releases, :upload_stemcells
+      when :read, :upload_releases, :upload_stemcells, :update_dynamic_disks, :delete_dynamic_disks
         expected_scope << director_permissions[permission]
       else
         raise ArgumentError, "Unexpected permission for director: #{permission}"
@@ -111,6 +111,8 @@ module Bosh::Director
         admin: ['bosh.admin', "bosh.#{@uuid_provider.uuid}.admin"],
         upload_stemcells: ['bosh.stemcells.upload'],
         upload_releases: ['bosh.releases.upload'],
+        update_dynamic_disks: ['bosh.dynamic_disks.update'],
+        delete_dynamic_disks: ['bosh.dynamic_disks.delete'],
       }
     end
 

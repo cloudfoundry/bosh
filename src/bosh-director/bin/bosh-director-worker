@@ -6,7 +6,7 @@ require 'bosh/director/worker'
 require 'bosh/director/config'
 
 config_file = nil
-index = nil
+name = nil
 
 begin
   opts = OptionParser.new do |op|
@@ -14,8 +14,8 @@ begin
       config_file = opt
     end
 
-    op.on('-i', '--index [ARG]', Integer, 'Worker Index') do |opt|
-      index = opt
+    op.on('-n', '--name [ARG]', 'Worker Name') do |opt|
+      name = opt
     end
   end
 
@@ -23,7 +23,7 @@ begin
 
   config_file ||= ::File.expand_path('../../config/bosh-director.yml', __FILE__)
 
-  Bosh::Director::Config.audit_filename = "audit_worker_#{index}.log"
+  Bosh::Director::Config.audit_filename = "audit_#{name}.log"
 
   config = Bosh::Director::Config.load_file(config_file)
 
@@ -31,7 +31,7 @@ begin
 
   config.db
 
-  worker = Bosh::Director::Worker.new(config, index)
+  worker = Bosh::Director::Worker.new(config, name)
   worker.prep
   worker.start
 end

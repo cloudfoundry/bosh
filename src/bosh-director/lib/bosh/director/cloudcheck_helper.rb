@@ -1,5 +1,7 @@
 module Bosh::Director
   module CloudcheckHelper
+    include LockHelper
+
     # Helper functions that come in handy for
     # cloudcheck:
     # 1. VM/agent interactions
@@ -10,7 +12,7 @@ module Bosh::Director
       vm = instance.active_vm
 
       cloud = CloudFactory.create.get(vm.cpi)
-      cloud.reboot_vm(vm.cid)
+      with_vm_lock(vm.cid) { cloud.reboot_vm(vm.cid) }
 
       begin
         agent_client(instance.agent_id, instance.name).wait_until_ready
