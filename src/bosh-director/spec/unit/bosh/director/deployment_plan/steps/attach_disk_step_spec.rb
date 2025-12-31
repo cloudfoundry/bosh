@@ -19,6 +19,7 @@ module Bosh::Director
         let(:meta_updater) { instance_double(MetadataUpdater, update_disk_metadata: nil) }
         let(:report) { instance_double(Stages::Report).as_null_object }
         let(:agent_client) { instance_double(AgentClient).as_null_object }
+        let(:job) { instance_double(Bosh::Director::Jobs::BaseJob, username: 'user', task_id: 42) }
 
         before do
           allow(CloudFactory).to receive(:create).and_return(cloud_factory)
@@ -27,9 +28,11 @@ module Bosh::Director
           allow(cloud).to receive(:attach_disk)
           allow(MetadataUpdater).to receive(:build).and_return(meta_updater)
           allow(AgentClient).to receive(:with_agent_id).and_return(agent_client)
+          allow(Config).to receive(:current_job).and_return(job)
         end
 
-        it 'calls out to cpi associated with disk to attach disk' do
+        it 'calls out to cpi associated with disk to attach disk with vm lock' do
+          expect(step).to receive(:with_vm_lock).with(vm.cid).and_yield
           expect(cloud_factory).to receive(:get).with(disk&.cpi, stemcell_api_version).once.and_return(cloud)
           expect(cloud).to receive(:attach_disk).with(vm.cid, disk.disk_cid)
 
@@ -68,6 +71,7 @@ module Bosh::Director
         end
 
         it 'logs notification of attaching' do
+          expect(per_spec_logger).to receive(:info).with("Acquiring VM lock on #{vm.cid}")
           expect(per_spec_logger).to receive(:info).with("Attaching disk #{disk.disk_cid}")
 
           step.perform(report)
