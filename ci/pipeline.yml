@@ -4,9 +4,6 @@ anchors:
   - &brats_env_name brats-bosh-main
   - &ubuntu_base ubuntu:noble
   - &integration_image ghcr.io/cloudfoundry/bosh/integration
-  # TODO: delete once all pipelines work w/ Noble
-  - &ubuntu_base_jammy ubuntu:jammy
-  - &integration_image_jammy ghcr.io/cloudfoundry/bosh/integration:jammy
 
 groups:
   - name: bosh
@@ -57,14 +54,11 @@ groups:
       - build-main-postgres-15
       - build-main-mysql-8-0
       - build-integration
-      - build-integration-jammy
 
   - name: container-cpi-images
     jobs:
       - build-docker-cpi
-      - build-docker-cpi-jammy
       - build-warden-cpi
-      - build-warden-cpi-jammy
 
 jobs:
   - name: gate
@@ -1162,45 +1156,6 @@ jobs:
         get_params:
           skip_download: true
 
-  # TODO: delete once all pipelines work w/ Noble
-  - name: build-integration-jammy
-    public: true
-    serial: true
-    plan:
-      - get: weekly
-        trigger: true
-      - get: golang-docker-image
-        trigger: true
-      - get: ubuntu-docker-image
-        trigger: true
-      - get: ruby-release
-        trigger: true
-        passed: [ bump-packages ]
-      - get: bosh-ci-dockerfiles
-        trigger: true
-      - get: bosh
-      - get: bosh-deployment
-        params:
-          depth: 1
-      - task: build-docker-args
-        file: bosh-ci-dockerfiles/ci/dockerfiles/integration/build-docker-args.yml
-        image: ubuntu-docker-image
-        params:
-          GITHUB_ACCESS_TOKEN: ((github_public_repo_token))
-      - put: integration-image-jammy
-        inputs:
-          - bosh-ci-dockerfiles
-          - docker-build-args
-        params:
-          build: .
-          build_args_file: docker-build-args/docker-build-args.json
-          build_args:
-            BASE_IMAGE: *ubuntu_base_jammy
-          dockerfile: bosh-ci-dockerfiles/ci/dockerfiles/integration/Dockerfile
-          tag_as_latest: false
-        get_params:
-          skip_download: true
-
   - name: build-main-postgres-13
     public: true
     serial: true
@@ -1279,33 +1234,6 @@ jobs:
         get_params:
           skip_download: true
 
-  # TODO: delete once all pipelines work w/ Noble
-  - name: build-docker-cpi-jammy
-    public: true
-    serial: true
-    plan:
-      - in_parallel:
-          - get: bosh-ci
-          - get: integration-image
-          - get: bosh-ci-dockerfiles
-          - get: integration-image-jammy
-            trigger: true
-          - get: bosh-deployment
-            trigger: true
-      - task: copy-dependencies
-        file: bosh-ci/ci/tasks/prepare-build-context-for-container-cpi-image.yml
-        image: integration-image
-        params:
-          CONTAINER_CPI_TYPE: docker-cpi
-      - put: docker-cpi-image-jammy
-        params:
-          build: docker-build-context
-          build_args:
-            BASE_IMAGE: *integration_image_jammy
-          tag_as_latest: false
-        get_params:
-          skip_download: true
-
   - name: build-warden-cpi
     public: true
     serial: true
@@ -1328,33 +1256,6 @@ jobs:
           build_args:
             BASE_IMAGE: *integration_image
           tag_as_latest: true
-        get_params:
-          skip_download: true
-
-  # TODO: delete once all pipelines work w/ Noble
-  - name: build-warden-cpi-jammy
-    public: true
-    serial: true
-    plan:
-      - in_parallel:
-          - get: bosh-ci
-          - get: integration-image
-          - get: bosh-ci-dockerfiles
-          - get: integration-image-jammy
-            trigger: true
-          - get: bosh-deployment
-            trigger: true
-      - task: copy-dependencies
-        file: bosh-ci/ci/tasks/prepare-build-context-for-container-cpi-image.yml
-        image: integration-image
-        params:
-          CONTAINER_CPI_TYPE: warden-cpi
-      - put: warden-cpi-image-jammy
-        params:
-          build: docker-build-context
-          build_args:
-            BASE_IMAGE: *integration_image_jammy
-          tag_as_latest: false
         get_params:
           skip_download: true
 
@@ -1946,14 +1847,6 @@ resources:
       username: ((github_read_write_packages.username))
       password: ((github_read_write_packages.password))
 
-  - name: integration-image-jammy
-    type: docker-image
-    source:
-      repository: ghcr.io/cloudfoundry/bosh/integration
-      tag: jammy
-      username: ((github_read_write_packages.username))
-      password: ((github_read_write_packages.password))
-
   - name: integration-mysql-8-0-image
     type: docker-image
     source:
@@ -1983,15 +1876,6 @@ resources:
     source:
       repository: ghcr.io/cloudfoundry/bosh/docker-cpi
       tag: *branch_name
-      username: ((github_read_write_packages.username))
-      password: ((github_read_write_packages.password))
-
-  # TODO: delete once all pipelines work w/ Noble
-  - name: docker-cpi-image-jammy
-    type: docker-image
-    source:
-      repository: ghcr.io/cloudfoundry/bosh/docker-cpi
-      tag: jammy
       username: ((github_read_write_packages.username))
       password: ((github_read_write_packages.password))
 
@@ -2036,15 +1920,6 @@ resources:
     type: docker-image
     source:
       repository: ghcr.io/cloudfoundry/bosh/warden-cpi
-      username: ((github_read_write_packages.username))
-      password: ((github_read_write_packages.password))
-
-  # TODO: delete once all pipelines work w/ Noble
-  - name: warden-cpi-image-jammy
-    type: docker-image
-    source:
-      repository: ghcr.io/cloudfoundry/bosh/warden-cpi
-      tag: jammy
       username: ((github_read_write_packages.username))
       password: ((github_read_write_packages.password))
 
