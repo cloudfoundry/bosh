@@ -1,5 +1,7 @@
 ---
 anchors:
+  - &branch_name main
+  - &brats_env_name brats-bosh-main
   - &ubuntu_base ubuntu:noble
   - &integration_image ghcr.io/cloudfoundry/bosh/integration
   # TODO: delete once all pipelines work w/ Noble
@@ -26,14 +28,14 @@ groups:
       - integration-postgres-hotswap
       - integration-mysql
       - candidate-release
-      - compile-bosh-dev-release-jammy
-      - bats-ubuntu-jammy
+      - create-bosh-candidate-release-compiled
+      - bats
       - bats-cleanup-leftovers
-      - bats-fips-ubuntu-jammy
+      - bats-fips
       - bats-fips-cleanup-leftovers
-      - brats-acceptance-ubuntu-jammy
-      - brats-utils-ubuntu-jammy
-      - brats-performance-ubuntu-jammy
+      - brats-acceptance
+      - brats-utils
+      - brats-performance
       - bosh-disaster-recovery-acceptance-tests
       - upgrade-postgres
       - upgrade-postgres-cleanup-leftovers
@@ -266,7 +268,7 @@ jobs:
           image_resource:
             type: docker-image
             source:
-              tag: ((branch_name))
+              tag: *branch_name
               repository: ghcr.io/cloudfoundry/bosh/integration
               username: ((github_read_write_packages.username))
               password: ((github_read_write_packages.password))
@@ -401,7 +403,7 @@ jobs:
           file: "release/bosh-dev-release.tgz"
 
 
-  - name: compile-bosh-dev-release-jammy
+  - name: create-bosh-candidate-release-compiled
     plan:
       - in_parallel:
           - get: bosh-ci
@@ -419,26 +421,26 @@ jobs:
         file: bosh-ci/ci/tasks/export-release.yml
         image: docker-cpi-image
         privileged: true
-      - put: bosh-compiled-candidate-jammy
+      - put: bosh-candidate-release-compiled
         params:
           file: "compiled-release/*.tgz"
 
-  - name: bats-ubuntu-jammy
+  - name: bats
     serial: true
-    serial_groups: [ bats-ubuntu-jammy ]
+    serial_groups: [ bats ]
     plan:
       - do:
           - in_parallel:
               - get: bosh-ci
               - get: integration-image
               - get: bosh-candidate-release-tarballs
-                passed: [ compile-bosh-dev-release-jammy ]
+                passed: [ create-bosh-candidate-release-compiled ]
               - get: bosh-release
-                resource: bosh-compiled-candidate-jammy
+                resource: bosh-candidate-release-compiled
                 trigger: true
-                passed: [ compile-bosh-dev-release-jammy ]
+                passed: [ create-bosh-candidate-release-compiled ]
               - get: stemcell
-                resource: gcp-ubuntu-jammy
+                resource: gcp-stemcell
               - get: bosh-cli
                 params:
                   globs:
@@ -446,14 +448,14 @@ jobs:
               - get: bats
               - get: bosh-deployment
               - get: bosh
-                passed: [ compile-bosh-dev-release-jammy ]
+                passed: [ create-bosh-candidate-release-compiled ]
           - put: terraform
             resource: gcp-terraform
             params:
-              env_name: bats-ubuntu-jammy
+              env_name: bats
               terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
               vars:
-                name: bats-ubuntu-jammy
+                name: bats
           - do:
               - task: deploy-director
                 file: bosh-ci/ci/bats/tasks/deploy-director.yml
@@ -470,7 +472,7 @@ jobs:
                 file: bosh-ci/ci/bats/iaas/gcp/prepare-bats-config.yml
                 image: integration-image
                 params:
-                  STEMCELL_NAME: bosh-google-kvm-ubuntu-jammy-go_agent
+                  STEMCELL_NAME: bosh-google-kvm-ubuntu-noble
               - task: run-bats
                 file: bats/ci/tasks/run-bats.yml
                 image: integration-image
@@ -484,20 +486,20 @@ jobs:
               no_get: true
               params:
                 action: destroy
-                env_name: bats-ubuntu-jammy
+                env_name: bats
                 terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
                 vars:
-                  name: bats-ubuntu-jammy
+                  name: bats
             - task: cleanup-leftover-environments
               file: bosh-ci/ci/tasks/cleanup-leftovers.yml
               image: integration-image
               params:
-                LEFTOVERS_PREFIX: bats-ubuntu-jammy
+                LEFTOVERS_PREFIX: bats
                 GCP_JSON_KEY: ((gcp_json_key))
 
   - name: bats-cleanup-leftovers
     serial: true
-    serial_groups: [ bats-ubuntu-jammy ]
+    serial_groups: [ bats ]
     plan:
       - in_parallel:
           - get: bosh-ci
@@ -508,25 +510,25 @@ jobs:
         file: bosh-ci/ci/tasks/cleanup-leftovers.yml
         image: integration-image
         params:
-          LEFTOVERS_PREFIX: bats-ubuntu-jammy
+          LEFTOVERS_PREFIX: bats
           GCP_JSON_KEY: ((gcp_json_key))
 
-  - name: bats-fips-ubuntu-jammy
+  - name: bats-fips
     serial: true
-    serial_groups: [ bats-fips-ubuntu-jammy ]
+    serial_groups: [ bats-fips ]
     plan:
       - do:
           - in_parallel:
               - get: bosh-ci
               - get: integration-image
               - get: bosh-candidate-release-tarballs
-                passed: [ compile-bosh-dev-release-jammy ]
+                passed: [ create-bosh-candidate-release-compiled ]
               - get: bosh-release
-                resource: bosh-compiled-candidate-jammy
+                resource: bosh-candidate-release-compiled
                 trigger: true
-                passed: [ compile-bosh-dev-release-jammy ]
+                passed: [ create-bosh-candidate-release-compiled ]
               - get: stemcell
-                resource: gcp-ubuntu-jammy-fips
+                resource: gcp-stemcell-fips
               - get: bosh-cli
                 params:
                   globs:
@@ -534,14 +536,14 @@ jobs:
               - get: bats
               - get: bosh-deployment
               - get: bosh
-                passed: [ compile-bosh-dev-release-jammy ]
+                passed: [ create-bosh-candidate-release-compiled ]
           - put: terraform
             resource: gcp-terraform
             params:
-              env_name: bats-fips-ubuntu-jammy
+              env_name: bats-fips
               terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
               vars:
-                name: bats-fips-ubuntu-jammy
+                name: bats-fips
           - do:
               - task: deploy-director
                 file: bosh-ci/ci/bats/tasks/deploy-director.yml
@@ -573,20 +575,20 @@ jobs:
               no_get: true
               params:
                 action: destroy
-                env_name: bats-fips-ubuntu-jammy
+                env_name: bats-fips
                 terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
                 vars:
-                  name: bats-fips-ubuntu-jammy
+                  name: bats-fips
             - task: cleanup-leftover-environments
               file: bosh-ci/ci/tasks/cleanup-leftovers.yml
               image: integration-image
               params:
-                LEFTOVERS_PREFIX: bats-fips-ubuntu-jammy
+                LEFTOVERS_PREFIX: bats-fips
                 GCP_JSON_KEY: ((gcp_json_key))
 
   - name: bats-fips-cleanup-leftovers
     serial: true
-    serial_groups: [ bats-fips-ubuntu-jammy ]
+    serial_groups: [ bats-fips ]
     plan:
       - in_parallel:
           - get: bosh-ci
@@ -597,34 +599,36 @@ jobs:
         file: bosh-ci/ci/tasks/cleanup-leftovers.yml
         image: integration-image
         params:
-          LEFTOVERS_PREFIX: bats-fips-ubuntu-jammy
+          LEFTOVERS_PREFIX: bats-fips
           GCP_JSON_KEY: ((gcp_json_key))
 
-  - name: brats-acceptance-ubuntu-jammy
+  - name: brats-acceptance
     serial: true
     plan:
       - in_parallel:
           - get: bosh-ci
           - get: integration-image
           - get: bosh
-            passed: [ compile-bosh-dev-release-jammy ]
+            passed: [ create-bosh-candidate-release-compiled ]
           - get: bosh-dns-release
           - get: stemcell
             resource: warden-stemcell
           - get: bosh-candidate-release-tarballs
-            passed: [ compile-bosh-dev-release-jammy ]
+            passed: [ create-bosh-candidate-release-compiled ]
           - get: bosh-release
-            resource: bosh-compiled-candidate-jammy
+            resource: bosh-candidate-release-tarballs
+            passed: [ create-bosh-candidate-release-compiled ]
+          - get: bosh-candidate-release-compiled
             trigger: true
-            passed: [ compile-bosh-dev-release-jammy ]
+            passed: [ create-bosh-candidate-release-compiled ]
           - get: bosh-deployment
           - get: docker-cpi-image
       - do:
           - put: brats-terraform
             params:
-              env_name: brats-ubuntu-jammy-((branch_name))
+              env_name: *brats_env_name
               terraform_source: bosh-ci/ci/shared/brats/terraform
-              vars: &brats-terraform-jammy-vars
+              vars: &brats-terraform-vars
                 aws_access_key_id: ((brats_rds_terraform_aws_access_key.username))
                 aws_secret_access_key: ((brats_rds_terraform_aws_access_key.password))
                 database_name: brats
@@ -649,46 +653,46 @@ jobs:
               GCP_POSTGRES_EXTERNAL_DB_USER: ((brats_database_user.username))
               GCP_POSTGRES_EXTERNAL_DB_PASSWORD: ((brats_database_user.password))
               GCP_POSTGRES_EXTERNAL_DB_NAME: brats
-              STEMCELL_OS: ubuntu-jammy
+              STEMCELL_OS: ubuntu-noble
         ensure:
           put: brats-terraform
           no_get: true
           params:
-            env_name: brats-ubuntu-jammy-((branch_name))
+            env_name: *brats_env_name
             terraform_source: bosh-ci/ci/shared/brats/terraform
-            vars: *brats-terraform-jammy-vars
+            vars: *brats-terraform-vars
             action: destroy
 
-  - name: brats-performance-ubuntu-jammy
+  - name: brats-performance
     serial: true
     plan:
       - in_parallel:
           - get: bosh-ci
           - get: integration-image
           - get: bosh
-            passed: [ compile-bosh-dev-release-jammy ]
+            passed: [ create-bosh-candidate-release-compiled ]
           - get: bosh-release
-            resource: bosh-compiled-candidate-jammy
+            resource: bosh-candidate-release-compiled
             trigger: true
           - get: cf-deployment
           - get: docker-cpi-image
           - get: stemcell
             resource: warden-stemcell
-            passed: [ compile-bosh-dev-release-jammy ]
+            passed: [ create-bosh-candidate-release-compiled ]
       - do:
           - task: test-brats-performance
             image: docker-cpi-image
             file: bosh-ci/ci/shared/brats/test-performance.yml
             privileged: true
 
-  - name: brats-utils-ubuntu-jammy
+  - name: brats-utils
     serial: true
     plan:
       - in_parallel:
           - get: bosh-ci
           - get: integration-image
           - get: bosh
-            passed: [ compile-bosh-dev-release-jammy ]
+            passed: [ create-bosh-candidate-release-compiled ]
       - do:
           - task: test-brats-utils
             file: bosh-ci/ci/shared/brats/test-utils.yml
@@ -701,15 +705,15 @@ jobs:
           - get: bosh-ci
           - get: integration-image
           - get: bosh
-            passed: [ compile-bosh-dev-release-jammy ]
+            passed: [ create-bosh-candidate-release-compiled ]
           - get: stemcell
             resource: warden-stemcell
           - get: bosh-candidate-release-tarballs
-            passed: [ compile-bosh-dev-release-jammy ]
+            passed: [ create-bosh-candidate-release-compiled ]
           - get: bosh-release
-            resource: bosh-compiled-candidate-jammy
+            resource: bosh-candidate-release-compiled
             trigger: true
-            passed: [ compile-bosh-dev-release-jammy ]
+            passed: [ create-bosh-candidate-release-compiled ]
           - get: bosh-disaster-recovery-acceptance-tests
           - get: bosh-deployment
           - get: bbr-cli-binary
@@ -731,27 +735,27 @@ jobs:
               - get: bosh-ci
               - get: integration-image
               - get: bosh
-                passed: [ compile-bosh-dev-release-jammy ]
+                passed: [ create-bosh-candidate-release-compiled ]
               - get: stemcell
-                resource: gcp-ubuntu-jammy
+                resource: gcp-stemcell
               - get: bosh-deployment
               - get: bosh-cli
                 params:
                   globs:
                     - "bosh-cli-*-linux-amd64"
               - get: bosh-release
-                resource: bosh-compiled-candidate-jammy
+                resource: bosh-candidate-release-compiled
                 trigger: true
-                passed: [ compile-bosh-dev-release-jammy ]
+                passed: [ create-bosh-candidate-release-compiled ]
               - get: last-released-bosh-release
               - get: zookeeper-release
           - put: terraform
             resource: gcp-terraform
             params:
-              env_name: upgrade-postgres-ubuntu-jammy
+              env_name: upgrade-postgres
               terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
               vars:
-                name: upgrade-postgres-ubuntu-jammy
+                name: upgrade-postgres
       - do:
           - task: deploy-previous-version
             image: integration-image
@@ -804,10 +808,10 @@ jobs:
               no_get: true
               params:
                 action: destroy
-                env_name: upgrade-postgres-ubuntu-jammy
+                env_name: upgrade-postgres
                 terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
                 vars:
-                  name: upgrade-postgres-ubuntu-jammy
+                  name: upgrade-postgres
             - task: cleanup-leftover-environments
               file: bosh-ci/ci/tasks/cleanup-leftovers.yml
               image: integration-image
@@ -839,27 +843,27 @@ jobs:
               - get: bosh-ci
               - get: integration-image
               - get: bosh
-                passed: [ compile-bosh-dev-release-jammy ]
+                passed: [ create-bosh-candidate-release-compiled ]
               - get: stemcell
-                resource: gcp-ubuntu-jammy
+                resource: gcp-stemcell
               - get: bosh-deployment
               - get: bosh-cli
                 params:
                   globs:
                     - "bosh-cli-*-linux-amd64"
               - get: bosh-release
-                resource: bosh-compiled-candidate-jammy
+                resource: bosh-candidate-release-compiled
                 trigger: true
-                passed: [ compile-bosh-dev-release-jammy ]
+                passed: [ create-bosh-candidate-release-compiled ]
               - get: last-released-bosh-release
               - get: zookeeper-release
           - put: terraform
             resource: gcp-terraform
             params:
-              env_name: upgrade-mysql-ubuntu-jammy
+              env_name: upgrade-mysql
               terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
               vars:
-                name: upgrade-mysql-ubuntu-jammy
+                name: upgrade-mysql
                 create_mysql_db: true
       - do:
           - task: deploy-previous-version
@@ -915,10 +919,10 @@ jobs:
               no_get: true
               params:
                 action: destroy
-                env_name: upgrade-mysql-ubuntu-jammy
+                env_name: upgrade-mysql
                 terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
                 vars:
-                  name: upgrade-mysql-ubuntu-jammy
+                  name: upgrade-mysql
             - task: cleanup-leftover-environments
               file: bosh-ci/ci/tasks/cleanup-leftovers.yml
               image: integration-image
@@ -947,8 +951,8 @@ jobs:
           - get: bosh
             trigger: true
             passed:
-              - bats-ubuntu-jammy
-              - brats-acceptance-ubuntu-jammy
+              - bats
+              - brats-acceptance
               - bosh-disaster-recovery-acceptance-tests
               - upgrade-postgres
               - upgrade-mysql
@@ -1751,7 +1755,7 @@ resources:
     type: git
     source:
       uri: git@github.com:cloudfoundry/bosh.git
-      branch: ((branch_name))
+      branch: *branch_name
       private_key: ((github_deploy_key_bosh.private_key))
       ignore_paths:
         - ci
@@ -1760,6 +1764,7 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh.git
+      branch: *branch_name
       paths:
         - ci
 
@@ -1767,6 +1772,7 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh.git
+      branch: *branch_name
       paths:
         - ci/dockerfiles
 
@@ -1798,12 +1804,12 @@ resources:
       json_key: ((bosh_director_oss_ci_service_account_json))
       versioned_file: "bosh-dev-release.tgz"
 
-  - name: bosh-compiled-candidate-jammy
+  - name: bosh-candidate-release-compiled
     type: gcs-resource
     source:
-      bucket: bosh-director-oss-ci-compiled-candidate-jammy
+      bucket: bosh-ci-candidate-compiled-releases
       json_key: ((bosh_director_oss_ci_service_account_json))
-      regexp: "bosh-.*dev\\.(\\d+).*jammy.*.tgz"
+      regexp: "bosh-.*dev\\.(\\d+).*noble.*.tgz"
 
   - name: bosh-disaster-recovery-acceptance-tests
     type: git
@@ -1890,12 +1896,12 @@ resources:
     source:
       uri: https://github.com/cloudfoundry/cf-deployment
 
-  - name: gcp-ubuntu-jammy
+  - name: gcp-stemcell
     type: bosh-io-stemcell
     source:
-      name: bosh-google-kvm-ubuntu-jammy-go_agent
+      name: bosh-google-kvm-ubuntu-noble
 
-  - name: gcp-ubuntu-jammy-fips
+  - name: gcp-stemcell-fips
     type: bosh-io-stemcell
     source:
       name: bosh-google-kvm-ubuntu-jammy-fips-go_agent
@@ -1906,7 +1912,7 @@ resources:
   - name: warden-stemcell
     type: bosh-io-stemcell
     source:
-      name: bosh-warden-boshlite-ubuntu-jammy-go_agent
+      name: bosh-warden-boshlite-ubuntu-noble
 
   - name: bosh-agent
     type: git
@@ -1936,7 +1942,7 @@ resources:
     type: docker-image
     source:
       repository: ghcr.io/cloudfoundry/bosh/integration
-      tag: ((branch_name))
+      tag: *branch_name
       username: ((github_read_write_packages.username))
       password: ((github_read_write_packages.password))
 
@@ -1952,7 +1958,7 @@ resources:
     type: docker-image
     source:
       repository: ghcr.io/cloudfoundry/bosh/main-mysql-8.0
-      tag: ((branch_name))
+      tag: *branch_name
       username: ((github_read_write_packages.username))
       password: ((github_read_write_packages.password))
 
@@ -1960,7 +1966,7 @@ resources:
     type: docker-image
     source:
       repository: ghcr.io/cloudfoundry/bosh/main-postgres-13
-      tag: ((branch_name))
+      tag: *branch_name
       username: ((github_read_write_packages.username))
       password: ((github_read_write_packages.password))
 
@@ -1968,7 +1974,7 @@ resources:
     type: docker-image
     source:
       repository: ghcr.io/cloudfoundry/bosh/main-postgres-15
-      tag: ((branch_name))
+      tag: *branch_name
       username: ((github_read_write_packages.username))
       password: ((github_read_write_packages.password))
 
@@ -1976,7 +1982,7 @@ resources:
     type: docker-image
     source:
       repository: ghcr.io/cloudfoundry/bosh/docker-cpi
-      tag: ((branch_name))
+      tag: *branch_name
       username: ((github_read_write_packages.username))
       password: ((github_read_write_packages.password))
 
