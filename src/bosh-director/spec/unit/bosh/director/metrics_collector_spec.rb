@@ -355,14 +355,21 @@ module Bosh::Director
         end
 
         context 'when the health monitor returns a non-json response' do
+          let(:logger) { double(Logging::Logger) }
+          
           before do
+            allow(config).to receive(:metrics_server_logger).and_return(logger)
+            allow(logger).to receive(:info)
             stub_request(:get, "127.0.0.1:12345/unresponsive_agents")
-              .to_return(status: 200, body: JSON.dump("bad response"))
+              .to_return(status: 200, body: "not valid json {")
             stub_request(:get, "127.0.0.1:12345/unhealthy_agents")
-              .to_return(status: 200, body: JSON.dump("bad response"))
+              .to_return(status: 200, body: "not valid json {")
           end
 
-          it 'does not emit the vm metrics' do
+          it 'does not emit the vm metrics and logs a warning' do
+            expect(logger).to receive(:warn).with(/Failed to parse JSON response from \/unresponsive_agents/)
+            expect(logger).to receive(:warn).with(/Failed to parse JSON response from \/unhealthy_agents/)
+            
             metrics_collector.start
             metric = Prometheus::Client.registry.get(:bosh_unresponsive_agents)
             expect(metric.values).to be_empty
