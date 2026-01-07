@@ -39,9 +39,9 @@ EOF
    bosh int ./certs.yml --path=/client_docker_tls/private_key > ./key.pem
     # generate certs in json format
     #
-   ruby -e 'puts File.read("./ca.pem").split("\n").join("\\n")' > $certs_dir/ca_json_safe.pem
-   ruby -e 'puts File.read("./cert.pem").split("\n").join("\\n")' > $certs_dir/client_certificate_json_safe.pem
-   ruby -e 'puts File.read("./key.pem").split("\n").join("\\n")' > $certs_dir/client_private_key_json_safe.pem
+   ruby -e 'puts File.read("./ca.pem").split("\n").join("\\n")' > "${certs_dir}/ca_json_safe.pem"
+   ruby -e 'puts File.read("./cert.pem").split("\n").join("\\n")' > "${certs_dir}/client_certificate_json_safe.pem"
+   ruby -e 'puts File.read("./key.pem").split("\n").join("\\n")' > "${certs_dir}/client_private_key_json_safe.pem"
   popd > /dev/null
 }
 
@@ -52,13 +52,14 @@ function sanitize_cgroups() {
 
   mount -o remount,rw /sys/fs/cgroup
 
+  # shellcheck disable=SC2034
   sed -e 1d /proc/cgroups | while read sys hierarchy num enabled; do
     if [ "$enabled" != "1" ]; then
       # subsystem disabled; skip
       continue
     fi
 
-    grouping="$(cat /proc/self/cgroup | cut -d: -f2 | grep "\\<$sys\\>")"
+    grouping="$(cut -d: -f2 < /proc/self/cgroup | grep "\\<$sys\\>")"
     if [ -z "$grouping" ]; then
       # subsystem not mounted anywhere; mount it on its own
       grouping="$sys"
@@ -133,9 +134,6 @@ EOF
 
   service docker start
 
-  export DOCKER_TLS_VERIFY=1
-  export DOCKER_CERT_PATH="${certs_dir}"
-
   rc=1
   for i in $(seq 1 100); do
     echo "waiting for docker to come up... (${i})"
@@ -171,10 +169,20 @@ function main() {
     exit 1
   fi
 
-  export DOCKER_HOST="tcp://${OUTER_CONTAINER_IP}:4243"
-
   local certs_dir
   certs_dir=$(mktemp -d)
+
+  export DOCKER_HOST="tcp://${OUTER_CONTAINER_IP}:4243"
+  export DOCKER_TLS_VERIFY=1
+  export DOCKER_CERT_PATH="${certs_dir}"
+  cat <<EOF > "${local_bosh_dir}/docker-env"
+export DOCKER_HOST="tcp://${OUTER_CONTAINER_IP}:4243"
+export DOCKER_TLS_VERIFY=1
+export DOCKER_CERT_PATH="${certs_dir}"
+
+EOF
+  echo "Source '${local_bosh_dir}/docker-env' to run docker" >&2
+
   start_docker "${certs_dir}"
 
   local local_bosh_dir
@@ -193,33 +201,37 @@ function main() {
 
       mkdir -p ${local_bosh_dir}
 
-      additional_ops_files=""
-      if [ "$(lsb_release -cs)" != "jammy" ]; then
-        additional_ops_files="-o /usr/local/noble-updates.yml"
-      fi
+      cat <<EOF > "${local_bosh_dir}/docker_tls.json"
+{
+  "ca": "$(cat "${certs_dir}/ca_json_safe.pem")",
+  "certificate": "$(cat "${certs_dir}/client_certificate_json_safe.pem")",
+  "private_key": "$(cat "${certs_dir}/client_private_key_json_safe.pem")"
+}
 
-      command bosh int bosh.yml \
+EOF
+
+      bosh int bosh.yml \
         -o docker/cpi.yml \
         -o jumpbox-user.yml \
         -o /usr/local/local-releases.yml \
-        ${additional_ops_files} \
         -v director_name=docker \
         -v internal_cidr=10.245.0.0/16 \
         -v internal_gw=10.245.0.1 \
         -v internal_ip="${BOSH_DIRECTOR_IP}" \
         -v docker_host="${DOCKER_HOST}" \
-        -v network=director_network \
-        -v docker_tls="{\"ca\": \"$(cat "${certs_dir}/ca_json_safe.pem")\",\"certificate\": \"$(cat "${certs_dir}/client_certificate_json_safe.pem")\",\"private_key\": \"$(cat "${certs_dir}/client_private_key_json_safe.pem")\"}" \
-        ${@} > "${local_bosh_dir}/bosh-director.yml"
+        -v network="${docker_network_name}" \
+        -v docker_tls="$(cat "${local_bosh_dir}/docker_tls.json")" \
+        "${@}" > "${local_bosh_dir}/bosh-director.yml"
 
-      command bosh create-env "${local_bosh_dir}/bosh-director.yml" \
-              --vars-store="${local_bosh_dir}/creds.yml" \
-              --state="${local_bosh_dir}/state.json"
+      bosh create-env "${local_bosh_dir}/bosh-director.yml" \
+        --vars-store="${local_bosh_dir}/creds.yml" \
+        --state="${local_bosh_dir}/state.json"
 
-      bosh int "${local_bosh_dir}/creds.yml" --path /director_ssl/ca > "${local_bosh_dir}/ca.crt"
-      bosh -e "${BOSH_DIRECTOR_IP}" --ca-cert "${local_bosh_dir}/ca.crt" alias-env "${BOSH_ENVIRONMENT}"
-
+      bosh int "${local_bosh_dir}/creds.yml" --path /director_ssl/ca \
+        > "${local_bosh_dir}/ca.crt"
       bosh_client_secret="$(bosh int "${local_bosh_dir}/creds.yml" --path /admin_password)"
+
+      bosh -e "${BOSH_DIRECTOR_IP}" --ca-cert "${local_bosh_dir}/ca.crt" alias-env "${BOSH_ENVIRONMENT}"
 
       cat <<EOF > "${local_bosh_dir}/env"
       export BOSH_ENVIRONMENT="${BOSH_ENVIRONMENT}"
@@ -228,11 +240,12 @@ function main() {
       export BOSH_CA_CERT="${local_bosh_dir}/ca.crt"
 
 EOF
+      echo "Source '${local_bosh_dir}/env' to run bosh" >&2
       source "${local_bosh_dir}/env"
 
-      bosh -n update-cloud-config docker/cloud-config.yml -v network=director_network
+      bosh -n update-cloud-config docker/cloud-config.yml -v network="${docker_network_name}"
 
   popd > /dev/null
 }
 
-main ${@}
+main "${@}"
