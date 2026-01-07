@@ -403,18 +403,13 @@ jobs:
           - get: bosh-ci
           - get: bosh
             passed: [ candidate-release ]
+          - get: bosh-deployment
           - get: release
             resource: bosh-candidate-release-tarballs
             passed: [ candidate-release ]
             trigger: true
-          - get: stemcell
-            resource: warden-stemcell
-            trigger: true
-          - get: docker-cpi-image
       - task: export-release
-        file: bosh-ci/ci/tasks/export-release.yml
-        image: docker-cpi-image
-        privileged: true
+        file: bosh-deployment/ci/tasks/shared/bosh-agent-compile.yml
       - put: bosh-candidate-release-compiled
         params:
           file: "compiled-release/*.tgz"
@@ -672,7 +667,6 @@ jobs:
           - get: docker-cpi-image
           - get: stemcell
             resource: warden-stemcell
-            passed: [ create-bosh-candidate-release-compiled ]
       - do:
           - task: test-brats-performance
             image: docker-cpi-image
