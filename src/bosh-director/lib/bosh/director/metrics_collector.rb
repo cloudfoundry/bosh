@@ -154,7 +154,12 @@ module Bosh
         response = Net::HTTP.get_response('127.0.0.1', endpoint, @config.health_monitor_port)
         return unless response.is_a?(Net::HTTPSuccess)
 
-        deployment_counts = JSON.parse(response.body) rescue nil
+        begin
+          deployment_counts = JSON.parse(response.body)
+        rescue JSON::ParserError => e
+          @logger.warn("Failed to parse JSON response from #{endpoint}: #{e.message}")
+          return
+        end
         return unless deployment_counts.is_a?(Hash)
 
         existing_deployment_names = gauge.values.map do |key, _|
