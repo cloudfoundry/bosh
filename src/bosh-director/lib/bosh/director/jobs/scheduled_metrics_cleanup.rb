@@ -29,8 +29,7 @@ module Bosh::Director
         'clean up stale metrics files'
       end
 
-      def initialize(params = {})
-        super
+      def initialize(params = {}) # rubocop:disable Lint/MissingSuper
         @retention_days = params['retention_days']
         @metrics_dir = Config.metrics_dir
       end
