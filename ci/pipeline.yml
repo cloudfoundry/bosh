@@ -510,11 +510,12 @@ jobs:
           - in_parallel:
               - get: bosh-ci
               - get: integration-image
-              - get: bosh-candidate-release-tarballs
-                passed: [ create-bosh-candidate-release-compiled ]
+                # NOTE: because FIPS is still Jammy based the non-compiled release is used
               - get: bosh-release
-                resource: bosh-candidate-release-compiled
+                resource: bosh-candidate-release-tarballs
                 trigger: true
+                passed: [ create-bosh-candidate-release-compiled ]
+              - get: bosh-candidate-release-compiled
                 passed: [ create-bosh-candidate-release-compiled ]
               - get: stemcell
                 resource: gcp-stemcell-fips

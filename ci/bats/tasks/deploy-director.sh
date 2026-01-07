@@ -50,4 +50,9 @@ bosh-cli create-env \
   --vars-store director-creds.yml \
   director.yml
 
-cat bosh-release/version
+version_file="bosh-release/version"
+if [ -f "${version_file}" ]; then
+  cat "${version_file}"
+else
+  echo "Version file '${version_file}' was not present"
+fi
