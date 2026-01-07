@@ -37,10 +37,10 @@ RUN \
   wget -q -O /usr/local/releases/uaa.tgz "${UAA_RELEASE_URL}" && \
   wget -q -O /usr/local/releases/credhub.tgz "${CREDHUB_RELEASE_URL}"
 
-COPY local-releases.yml /usr/local/releases/local-releases.yml
-
+COPY local-releases.yml /usr/local/local-releases.yml
 COPY start-bosh.sh /usr/local/bin/start-bosh
 RUN chmod +x /usr/local/bin/start-bosh
+
 COPY template-renderer.rb /tmp/template-renderer.rb
 COPY install-garden.rb /tmp/install-garden.rb
 RUN ruby /tmp/install-garden.rb /usr/local/releases/garden-runc.tgz
