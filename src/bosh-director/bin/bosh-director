@@ -29,7 +29,7 @@ route_configuration = Bosh::Director::Api::RouteConfiguration.new(config)
 rack_app = Puma::Rack::Builder.app do
   use Rack::CommonLogger
   if config.metrics_server_enabled
-    Prometheus::Client.config.data_store = Prometheus::Client::DataStores::DirectFileStore.new(dir: '/var/vcap/store/director/metrics')
+    Prometheus::Client.config.data_store = Prometheus::Client::DataStores::DirectFileStore.new(dir: config.metrics_dir)
     use Bosh::Director::StripDeploymentsMiddlewareCollector
     use Prometheus::Middleware::Exporter
   end
