@@ -20,16 +20,6 @@
   path: /releases/name=bpm/sha1
 
 - type: replace
-  path: /releases/name=bosh-docker-cpi/version
-  value: latest
-
-- type: remove
-  path: /releases/name=bosh-docker-cpi/url
-
-- type: remove
-  path: /releases/name=bosh-docker-cpi/sha1
-
-- type: replace
   path: /releases/name=os-conf/version
   value: latest
 
@@ -38,3 +28,13 @@
 
 - type: remove
   path: /releases/name=os-conf/sha1
+
+- type: replace
+  path: /releases/name=bosh-docker-cpi/version
+  value: latest
+
+- type: remove
+  path: /releases/name=bosh-docker-cpi/url
+
+- type: remove
+  path: /releases/name=bosh-docker-cpi/sha1

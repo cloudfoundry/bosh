@@ -172,6 +172,10 @@ function main() {
   local certs_dir
   certs_dir=$(mktemp -d)
 
+  local local_bosh_dir
+  local_bosh_dir="/tmp/local-bosh/director"
+  mkdir -p ${local_bosh_dir}
+
   export DOCKER_HOST="tcp://${OUTER_CONTAINER_IP}:4243"
   export DOCKER_TLS_VERIFY=1
   export DOCKER_CERT_PATH="${certs_dir}"
@@ -185,9 +189,6 @@ EOF
 
   start_docker "${certs_dir}"
 
-  local local_bosh_dir
-  local_bosh_dir="/tmp/local-bosh/director"
-
   local docker_network_name="director_network"
   if docker network ls | grep -q "${docker_network_name}"; then
     echo "A docker network named '${docker_network_name}' already exists, skipping creation" >&2
@@ -198,8 +199,6 @@ EOF
   pushd "${BOSH_DEPLOYMENT_PATH:-/usr/local/bosh-deployment}" > /dev/null
       export BOSH_DIRECTOR_IP="10.245.0.3"
       export BOSH_ENVIRONMENT="docker-director"
-
-      mkdir -p ${local_bosh_dir}
 
       cat <<EOF > "${local_bosh_dir}/docker_tls.json"
 {

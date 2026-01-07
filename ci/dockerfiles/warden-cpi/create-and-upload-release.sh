@@ -35,7 +35,7 @@ pushd "${BOSH_DEPLOYMENT_PATH}" > /dev/null
 
   mkdir -p "${inner_bosh_dir}"
 
-  export BOSH_DIRECTOR_IP="10.245.0.$((10+$node_number))"
+  export BOSH_DIRECTOR_IP="10.245.0.$((10 + node_number))"
 
   bosh upload-release "$(bosh int bosh.yml -o misc/source-releases/bosh.yml --path /releases/name=bpm/url)" \
     --sha1 "$(bosh int bosh.yml -o misc/source-releases/bosh.yml --path /releases/name=bpm/sha1)"

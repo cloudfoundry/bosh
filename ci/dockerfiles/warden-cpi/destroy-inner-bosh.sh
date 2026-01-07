@@ -2,7 +2,7 @@
 
 set -e
 
-pushd ${BOSH_DEPLOYMENT_PATH} > /dev/null
+pushd "${BOSH_DEPLOYMENT_PATH}" > /dev/null
   node_number=$1
   inner_bosh_dir="/tmp/inner-bosh/director"
   deployment_name="bosh"

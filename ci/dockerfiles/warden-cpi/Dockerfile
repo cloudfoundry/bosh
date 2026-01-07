@@ -41,12 +41,10 @@ COPY local-releases.yml /usr/local/local-releases.yml
 COPY start-bosh.sh /usr/local/bin/start-bosh
 RUN chmod +x /usr/local/bin/start-bosh
 
+RUN mkdir -p /var/vcap/sys/log/warden_cpi/
+RUN useradd -ms /bin/bash vcap
+
 COPY template-renderer.rb /tmp/template-renderer.rb
 COPY install-garden.rb /tmp/install-garden.rb
 RUN ruby /tmp/install-garden.rb /usr/local/releases/garden-runc.tgz
-
-RUN mkdir -p /var/vcap/sys/log/warden_cpi/
-
-RUN useradd -ms /bin/bash vcap
-
 RUN rm -rf /tmp/*
