@@ -29,8 +29,9 @@ RUN docker_gpg="/etc/apt/trusted.gpg.d/docker.gpg" \
 RUN sed -i 's/\(ulimit -Hn [0-9]*\)/#\1/' /etc/init.d/docker
 
 COPY bosh-deployment /usr/local/bosh-deployment/
-RUN curl -o /usr/local/bosh.tgz "$(bosh int /usr/local/bosh-deployment/bosh.yml --path /releases/name=bosh/url)" \
-    && curl -o /usr/local/bpm.tgz "$(bosh int /usr/local/bosh-deployment/bosh.yml --path /releases/name=bpm/url)"
+RUN mkdir -p /usr/local/releases \
+    && curl -o /usr/local/releases/bosh.tgz "$(bosh int /usr/local/bosh-deployment/bosh.yml --path /releases/name=bosh/url)" \
+    && curl -o /usr/local/releases/bpm.tgz "$(bosh int /usr/local/bosh-deployment/bosh.yml --path /releases/name=bpm/url)"
 
 COPY local-releases.yml /usr/local/local-releases.yml
 COPY start-bosh.sh /usr/local/bin/start-bosh

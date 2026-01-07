@@ -8,7 +8,7 @@ bosh_release_path=""
 
 src_dir="${script_dir}/../../../"
 
-default_stemcell_path="${src_dir}/../stemcell/*.tgz"
+default_stemcell_path="$(ls "${src_dir}/../stemcell/*.tgz")"
 stemcell="${CANDIDATE_STEMCELL_TARBALL_PATH:-$default_stemcell_path}"
 
 pushd "${bosh_path}" > /dev/null
@@ -21,7 +21,7 @@ popd > /dev/null
 
 export bosh_release_path
 
-pushd ${BOSH_DEPLOYMENT_PATH} > /dev/null
+pushd "${BOSH_DEPLOYMENT_PATH}" > /dev/null
   inner_bosh_dir="/tmp/inner-bosh/director"
 
   export BOSH_DIRECTOR_IP="10.245.0.34"
@@ -44,9 +44,9 @@ pushd ${BOSH_DEPLOYMENT_PATH} > /dev/null
     -o "${BOSH_DEPLOYMENT_PATH}/misc/source-releases/bosh.yml" \
     -o "${BOSH_DEPLOYMENT_PATH}/local-bosh-release-tarball.yml" \
     -v local_bosh_release="${bosh_release_path}" \
-    ${@} > "${inner_bosh_dir}/bosh-director.yml"
+    "${@}" > "${inner_bosh_dir}/bosh-director.yml"
 
-  bosh upload-stemcell ${stemcell}
+  bosh upload-stemcell "${stemcell}"
 
   deployment_name="--deployment=bosh"
   if [[ "${1}" = "--deployment="* ]]; then
@@ -64,12 +64,14 @@ pushd ${BOSH_DEPLOYMENT_PATH} > /dev/null
   bosh int "${inner_bosh_dir}/creds.yml" --path /jumpbox_ssh/private_key > "${inner_bosh_dir}/jumpbox_private_key.pem"
   chmod 600 "${inner_bosh_dir}/jumpbox_private_key.pem"
 
+  bosh_client_secret="$(bosh int "${inner_bosh_dir}/creds.yml" --path /admin_password)"
+
   cat <<EOF > "${inner_bosh_dir}/bosh"
 #!/bin/bash
 
 export BOSH_ENVIRONMENT="${BOSH_ENVIRONMENT}"
 export BOSH_CLIENT=admin
-export BOSH_CLIENT_SECRET=`bosh int "${inner_bosh_dir}/creds.yml" --path /admin_password`
+export BOSH_CLIENT_SECRET=${bosh_client_secret}
 export BOSH_CA_CERT="${inner_bosh_dir}/ca.crt"
 
 $(which bosh) "\$@"
