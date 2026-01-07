@@ -134,7 +134,7 @@ module Bosh::Monitor
     def failing_instances
       agents_hash = {}
       @deployment_name_to_deployments.each do |name, deployment|
-        agents_hash[name] = deployment.agents.count { |agent| agent.job_state == 'failing' }
+        agents_hash[name] = deployment.agents.count { |agent| agent.job_state == "failing" }
       end
 
       agents_hash
@@ -143,7 +143,7 @@ module Bosh::Monitor
     def stopped_instances
       agents_hash = {}
       @deployment_name_to_deployments.each do |name, deployment|
-        agents_hash[name] = deployment.agents.count { |agent| agent.job_state == 'stopped' }
+        agents_hash[name] = deployment.agents.count { |agent| agent.job_state == "stopped" }
       end
 
       agents_hash

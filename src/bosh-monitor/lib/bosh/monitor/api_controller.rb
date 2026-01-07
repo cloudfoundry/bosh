@@ -41,7 +41,7 @@ module Bosh::Monitor
       end
     end
 
-    get "/unhealthy_agents" do
+    get '/unhealthy_agents' do
       if @instance_manager.director_initial_deployment_sync_done
         JSON.generate(@instance_manager.unhealthy_agents)
       else

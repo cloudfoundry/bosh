@@ -37,14 +37,14 @@ module Bosh::Director
         .to_return(status: 200, body: JSON.dump("flaky_deployment" => 1, "good_deployment" => 0))
       stub_request(:get, /unhealthy_agents/)
         .to_return(status: 200, body: JSON.dump("flaky_deployment" => 2, "good_deployment" => 0))
-        stub_request(:get, /total_available_agents/)
-          .to_return(status: 200, body: JSON.dump("flaky_deployment" => 3, "good_deployment" => 2))
-        stub_request(:get, /failing_instances/)
-          .to_return(status: 200, body: JSON.dump("flaky_deployment" => 1, "good_deployment" => 0))
-        stub_request(:get, /stopped_instances/)
-          .to_return(status: 200, body: JSON.dump("flaky_deployment" => 0, "good_deployment" => 0))
-        stub_request(:get, /unknown_instances/)
-          .to_return(status: 200, body: JSON.dump("flaky_deployment" => 0, "good_deployment" => 1))
+      stub_request(:get, /total_available_agents/)
+        .to_return(status: 200, body: JSON.dump("flaky_deployment" => 3, "good_deployment" => 2))
+      stub_request(:get, /failing_instances/)
+        .to_return(status: 200, body: JSON.dump("flaky_deployment" => 1, "good_deployment" => 0))
+      stub_request(:get, /stopped_instances/)
+        .to_return(status: 200, body: JSON.dump("flaky_deployment" => 0, "good_deployment" => 0))
+      stub_request(:get, /unknown_instances/)
+        .to_return(status: 200, body: JSON.dump("flaky_deployment" => 0, "good_deployment" => 1))
     end
 
     after do
