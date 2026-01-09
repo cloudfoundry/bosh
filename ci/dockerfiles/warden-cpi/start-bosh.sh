@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
 set -e
+if [[ -n "${DEBUG:-}" ]]; then
+  set -x
+  export BOSH_LOG_LEVEL=debug
+fi
 
 local_bosh_dir="/tmp/local-bosh/director"
 
