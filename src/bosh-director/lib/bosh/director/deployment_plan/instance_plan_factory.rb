@@ -18,6 +18,7 @@ module Bosh
           @instance_repo = instance_repo
           @recreate_deployment = options.fetch('recreate', false)
           @recreate_persistent_disks = options.fetch('recreate_persistent_disks', false)
+          @recreate_vm_created_before = options.fetch('recreate_vm_created_before', nil)
           @states_by_existing_instance = states_by_existing_instance
           @index_assigner = index_assigner
           @link_provider_intents = link_provider_intents
@@ -38,6 +39,7 @@ module Bosh
             instance: instance,
             skip_drain: @deployment_plan.skip_drain.for_job(existing_instance_model.job),
             recreate_deployment: @recreate_deployment,
+            recreate_vm_created_before: @recreate_vm_created_before,
             use_dns_addresses: @use_dns_addresses,
             use_short_dns_addresses: @use_short_dns_addresses,
             use_link_dns_addresses: @use_link_dns_addresses,
@@ -59,6 +61,7 @@ module Bosh
             skip_drain: @deployment_plan.skip_drain.for_job(desired_instance.instance_group.name),
             recreate_deployment: @recreate_deployment,
             recreate_persistent_disks: @recreate_persistent_disks,
+            recreate_vm_created_before: @recreate_vm_created_before,
             use_dns_addresses: @use_dns_addresses,
             use_short_dns_addresses: @use_short_dns_addresses,
             use_link_dns_addresses: @use_link_dns_addresses,
@@ -78,6 +81,7 @@ module Bosh
             instance: instance,
             skip_drain: @deployment_plan.skip_drain.for_job(desired_instance.instance_group.name),
             recreate_deployment: @recreate_deployment,
+            recreate_vm_created_before: @recreate_vm_created_before,
             use_dns_addresses: @use_dns_addresses,
             use_short_dns_addresses: @use_short_dns_addresses,
             use_link_dns_addresses: @use_link_dns_addresses,
