@@ -1345,6 +1345,7 @@ module Bosh::Director::DeploymentPlan
 
         it 'should log the change reason' do
           expect(per_spec_logger).to receive(:debug).with('recreation_requested? job deployment is configured with "recreate" state')
+          expect(per_spec_logger).to receive(:debug).with('should_recreate_based_on_vm_age? no recreate_vm_created_before filter, will recreate')
           instance_plan.recreation_requested?
         end
       end
@@ -1370,6 +1371,172 @@ module Bosh::Director::DeploymentPlan
 
         it 'should return true' do
           expect(instance_plan.recreation_requested?).to be_truthy
+        end
+      end
+
+      context 'with recreate_vm_created_before filter' do
+        let(:old_vm_created_at) { Time.parse('2025-01-01T00:00:00Z') }
+        let(:new_vm_created_at) { Time.parse('2026-06-01T00:00:00Z') }
+        let(:threshold_timestamp) { '2026-01-01T00:00:00Z' }
+
+        context 'when deployment is being recreated' do
+          context 'and VM is older than threshold' do
+            let(:instance_plan) do
+              existing_instance.update(update_completed: true)
+              existing_instance.active_vm.update(created_at: old_vm_created_at)
+              InstancePlan.new(
+                existing_instance: existing_instance,
+                desired_instance: desired_instance,
+                instance: instance,
+                network_plans: network_plans,
+                recreate_deployment: true,
+                recreate_vm_created_before: threshold_timestamp,
+                variables_interpolator: variables_interpolator,
+              )
+            end
+
+            it 'should return true' do
+              expect(instance_plan.recreation_requested?).to be_truthy
+            end
+          end
+
+          context 'and VM is newer than threshold' do
+            let(:instance_plan) do
+              existing_instance.update(update_completed: true)
+              existing_instance.active_vm.update(created_at: new_vm_created_at)
+              InstancePlan.new(
+                existing_instance: existing_instance,
+                desired_instance: desired_instance,
+                instance: instance,
+                network_plans: network_plans,
+                recreate_deployment: true,
+                recreate_vm_created_before: threshold_timestamp,
+                variables_interpolator: variables_interpolator,
+              )
+            end
+
+            it 'should return false' do
+              expect(instance_plan.recreation_requested?).to be_falsey
+            end
+          end
+
+          context 'and VM is newer than threshold but instance is dirty' do
+            let(:instance_plan) do
+              existing_instance.update(update_completed: false)
+              existing_instance.active_vm.update(created_at: new_vm_created_at)
+              InstancePlan.new(
+                existing_instance: existing_instance,
+                desired_instance: desired_instance,
+                instance: instance,
+                network_plans: network_plans,
+                recreate_deployment: true,
+                recreate_vm_created_before: threshold_timestamp,
+                variables_interpolator: variables_interpolator,
+              )
+            end
+
+            it 'should return true because dirty instances always get recreated' do
+              expect(instance_plan.recreation_requested?).to be_truthy
+            end
+          end
+
+          context 'and no threshold is specified' do
+            let(:instance_plan) do
+              existing_instance.active_vm.update(created_at: new_vm_created_at)
+              InstancePlan.new(
+                existing_instance: existing_instance,
+                desired_instance: desired_instance,
+                instance: instance,
+                network_plans: network_plans,
+                recreate_deployment: true,
+                variables_interpolator: variables_interpolator,
+              )
+            end
+
+            it 'should return true (default behavior)' do
+              expect(instance_plan.recreation_requested?).to be_truthy
+            end
+          end
+        end
+
+        context 'when instance virtual_state is recreate' do
+          let(:instance_state) { 'recreate' }
+
+          context 'and VM is older than threshold' do
+            let(:instance_plan) do
+              existing_instance.update(update_completed: true)
+              existing_instance.active_vm.update(created_at: old_vm_created_at)
+              InstancePlan.new(
+                existing_instance: existing_instance,
+                desired_instance: desired_instance,
+                instance: instance,
+                network_plans: network_plans,
+                recreate_vm_created_before: threshold_timestamp,
+                variables_interpolator: variables_interpolator,
+              )
+            end
+
+            it 'should return true' do
+              expect(instance_plan.recreation_requested?).to be_truthy
+            end
+          end
+
+          context 'and VM is newer than threshold' do
+            let(:instance_plan) do
+              existing_instance.update(update_completed: true)
+              existing_instance.active_vm.update(created_at: new_vm_created_at)
+              InstancePlan.new(
+                existing_instance: existing_instance,
+                desired_instance: desired_instance,
+                instance: instance,
+                network_plans: network_plans,
+                recreate_vm_created_before: threshold_timestamp,
+                variables_interpolator: variables_interpolator,
+              )
+            end
+
+            it 'should return false' do
+              expect(instance_plan.recreation_requested?).to be_falsey
+            end
+          end
+
+          context 'and VM is newer than threshold but instance is dirty' do
+            let(:instance_plan) do
+              existing_instance.update(update_completed: false)
+              existing_instance.active_vm.update(created_at: new_vm_created_at)
+              InstancePlan.new(
+                existing_instance: existing_instance,
+                desired_instance: desired_instance,
+                instance: instance,
+                network_plans: network_plans,
+                recreate_vm_created_before: threshold_timestamp,
+                variables_interpolator: variables_interpolator,
+              )
+            end
+
+            it 'should return true because dirty instances always get recreated' do
+              expect(instance_plan.recreation_requested?).to be_truthy
+            end
+          end
+        end
+
+        context 'when existing instance has no active VM' do
+          let(:instance_plan) do
+            existing_instance.active_vm.update(active: false)
+            InstancePlan.new(
+              existing_instance: existing_instance,
+              desired_instance: desired_instance,
+              instance: instance,
+              network_plans: network_plans,
+              recreate_deployment: true,
+              recreate_vm_created_before: threshold_timestamp,
+              variables_interpolator: variables_interpolator,
+            )
+          end
+
+          it 'should return true (no VM to check age against)' do
+            expect(instance_plan.recreation_requested?).to be_truthy
+          end
         end
       end
     end

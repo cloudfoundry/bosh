@@ -392,6 +392,30 @@ module Bosh::Director
             end
           end
 
+          context 'with the "recreate_vm_created_before" param' do
+            it 'passes a valid RFC 3339 timestamp' do
+              expect_any_instance_of(DeploymentManager)
+                .to receive(:create_deployment)
+                .with(
+                  anything,
+                  anything,
+                  anything,
+                  anything,
+                  anything,
+                  hash_including('recreate_vm_created_before' => '2026-01-01T00:00:00Z'),
+                  anything,
+                ).and_return(OpenStruct.new(id: 1))
+              post '/?recreate_vm_created_before=2026-01-01T00:00:00Z', asset_content('test_conf.yaml'), 'CONTENT_TYPE' => 'text/yaml'
+              expect(last_response).to be_redirect
+            end
+
+            it 'returns 400 for invalid RFC 3339 timestamp' do
+              post '/?recreate_vm_created_before=invalid-timestamp', asset_content('test_conf.yaml'), 'CONTENT_TYPE' => 'text/yaml'
+              expect(last_response.status).to eq(400)
+              expect(last_response.body).to include('Invalid RFC 3339 timestamp')
+            end
+          end
+
           context 'updates using a manifest with deployment name' do
             it 'calls create deployment with deployment name' do
               expect_any_instance_of(DeploymentManager)
@@ -834,6 +858,51 @@ module Bosh::Director
                 { 'job_states' => { 'dea' => { 'state' => 'recreate' } } }
               end
               it_behaves_like 'recreates with configs'
+            end
+
+            context 'with recreate_vm_created_before parameter' do
+              it 'passes a valid RFC 3339 timestamp' do
+                deployment = Models::Deployment.create(name: 'foo', manifest: YAML.dump({ 'foo' => 'bar' }))
+                Models::Instance.create(
+                  deployment: deployment,
+                  job: 'dea',
+                  index: '0',
+                  uuid: '0B949287-CDED-4761-9002-FC4035E11B21',
+                  state: 'started',
+                  variable_set: Models::VariableSet.create(deployment: deployment),
+                )
+
+                expect_any_instance_of(DeploymentManager)
+                  .to receive(:create_deployment)
+                  .with(
+                    anything,
+                    anything,
+                    anything,
+                    anything,
+                    anything,
+                    hash_including('recreate_vm_created_before' => '2026-01-01T00:00:00Z'),
+                    anything,
+                  ).and_return(OpenStruct.new(id: 1))
+
+                put '/foo/jobs/dea?state=recreate&recreate_vm_created_before=2026-01-01T00:00:00Z', '', 'CONTENT_TYPE' => 'text/yaml'
+                expect(last_response).to be_redirect
+              end
+
+              it 'returns 400 for invalid RFC 3339 timestamp' do
+                deployment = Models::Deployment.create(name: 'foo', manifest: YAML.dump({ 'foo' => 'bar' }))
+                Models::Instance.create(
+                  deployment: deployment,
+                  job: 'dea',
+                  index: '0',
+                  uuid: '0B949287-CDED-4761-9002-FC4035E11B21',
+                  state: 'started',
+                  variable_set: Models::VariableSet.create(deployment: deployment),
+                )
+
+                put '/foo/jobs/dea?state=recreate&recreate_vm_created_before=invalid-timestamp', '', 'CONTENT_TYPE' => 'text/yaml'
+                expect(last_response.status).to eq(400)
+                expect(last_response.body).to include('Invalid RFC 3339 timestamp')
+              end
             end
           end
 

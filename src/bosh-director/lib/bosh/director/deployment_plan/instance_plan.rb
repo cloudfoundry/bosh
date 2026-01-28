@@ -13,6 +13,7 @@ module Bosh
                        skip_drain: false,
                        recreate_deployment: false,
                        recreate_persistent_disks: false,
+                       recreate_vm_created_before: nil,
                        use_dns_addresses: false,
                        use_short_dns_addresses: false,
                        use_link_dns_addresses: false,
@@ -27,6 +28,7 @@ module Bosh
           @skip_drain = skip_drain
           @recreate_deployment = recreate_deployment
           @recreate_persistent_disks = recreate_persistent_disks
+          @recreate_vm_created_before = recreate_vm_created_before
           @use_dns_addresses = use_dns_addresses
           @use_short_dns_addresses = use_short_dns_addresses
           @use_link_dns_addresses = use_link_dns_addresses
@@ -124,13 +126,20 @@ module Bosh
         def recreation_requested?
           if @recreate_deployment
             @logger.debug("#{__method__} job deployment is configured with \"recreate\" state")
-            true
-          elsif unresponsive_agent?
-            @logger.debug("#{__method__} instance should be recreated because of unresponsive agent")
-            true
-          else
-            @instance.virtual_state.recreate?
+            return should_recreate_based_on_vm_age?
           end
+
+          if unresponsive_agent?
+            @logger.debug("#{__method__} instance should be recreated because of unresponsive agent")
+            return true
+          end
+
+          if @instance.virtual_state.recreate?
+            @logger.debug("#{__method__} instance virtual_state is \"recreate\"")
+            return should_recreate_based_on_vm_age?
+          end
+
+          false
         end
 
         def recreate_persistent_disks_requested?
@@ -432,6 +441,38 @@ module Bosh
         end
 
         private
+
+        def should_recreate_based_on_vm_age?
+          # If no filter specified, always recreate
+          unless @recreate_vm_created_before
+            @logger.debug("#{__method__} no recreate_vm_created_before filter, will recreate")
+            return true
+          end
+
+          # If instance is dirty (previous update failed), always recreate
+          # This handles the retry scenario where a recreated VM failed to start
+          if @instance.dirty?
+            @logger.debug("#{__method__} instance is dirty (update_completed=false), will recreate despite age filter")
+            return true
+          end
+
+          # If no existing VM or no created_at, treat as should recreate
+          vm_created_at = @existing_instance&.active_vm&.created_at
+          unless vm_created_at
+            @logger.debug("#{__method__} no existing VM or created_at, will recreate")
+            return true
+          end
+
+          # Compare VM age against threshold
+          threshold_time = Time.rfc3339(@recreate_vm_created_before)
+          if vm_created_at < threshold_time
+            @logger.debug("#{__method__} VM created at #{vm_created_at} is older than threshold #{threshold_time}, will recreate")
+            true
+          else
+            @logger.debug("#{__method__} VM created at #{vm_created_at} is newer than threshold #{threshold_time}, skipping recreation")
+            false
+          end
+        end
 
         def remove_dns_record_name_from_network_settings(network_settings)
           return network_settings if network_settings.nil?
