@@ -265,6 +265,10 @@ module Bosh::Director
         File.dirname(@log_file_path) if @log_file_path
       end
 
+      def metrics_dir
+        File.join(@base_dir, 'metrics')
+      end
+
       def local_dns_enabled?
         !!@local_dns_enabled
       end
