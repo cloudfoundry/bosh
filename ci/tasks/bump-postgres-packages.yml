@@ -15,6 +15,6 @@ run:
 params:
   PRIVATE_YML:
   MAJOR_VERSION:
-  GIT_USER_NAME: CI Bot
-  GIT_USER_EMAIL: cf-bosh-eng@pivotal.io
+  GIT_USER_NAME:
+  GIT_USER_EMAIL:
 
