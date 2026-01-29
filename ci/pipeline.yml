@@ -974,8 +974,8 @@ jobs:
         input_mapping:
           release_repo: bosh
         params:
-          GIT_USER_NAME: CI Bot
-          GIT_USER_EMAIL: ci@localhost
+          GIT_USER_NAME: CF-Bosh CI-Bot
+          GIT_USER_EMAIL: cf-bosh-ci-bot@localhost
           PRIVATE_YML: |
             blobstore:
               options:
@@ -1273,8 +1273,8 @@ jobs:
           output-repo: bosh-out
         params:
           GEM_DIRS: src
-          GIT_USER_NAME: CI Bot
-          GIT_USER_EMAIL: cf-bosh-eng@pivotal.io
+          GIT_USER_NAME: CF-Bosh CI-Bot
+          GIT_USER_EMAIL: cf-bosh-ci-bot@localhost
           PACKAGE: ruby-3.3
           VENDOR: true
           VENDOR_PATH: vendor/cache
@@ -1372,8 +1372,8 @@ jobs:
         output_mapping:
           bosh: bosh-out
         params:
-          GIT_USER_NAME: CI Bot
-          GIT_USER_EMAIL: cf-bosh-eng@pivotal.io
+          GIT_USER_NAME: CF-Bosh CI-Bot
+          GIT_USER_EMAIL: cf-bosh-ci-bot@localhost
           PRIVATE_YML: |
             blobstore:
               options:
@@ -1388,6 +1388,8 @@ jobs:
         output_mapping:
           bosh: bosh-out
         params:
+          GIT_USER_NAME: CF-Bosh CI-Bot
+          GIT_USER_EMAIL: cf-bosh-ci-bot@localhost
           MAJOR_VERSION: 13
           PRIVATE_YML: |
             blobstore:
@@ -1403,6 +1405,8 @@ jobs:
         output_mapping:
           bosh: bosh-out
         params:
+          GIT_USER_NAME: CF-Bosh CI-Bot
+          GIT_USER_EMAIL: cf-bosh-ci-bot@localhost
           MAJOR_VERSION: 15
           PRIVATE_YML: |
             blobstore:
@@ -1416,8 +1420,8 @@ jobs:
         output_mapping:
           bosh-release: bosh-out
         params:
-          GIT_USER_NAME: CI Bot
-          GIT_USER_EMAIL: cf-bosh-eng@pivotal.io
+          GIT_USER_NAME: CF-Bosh CI-Bot
+          GIT_USER_EMAIL: cf-bosh-ci-bot@localhost
           PACKAGE: ruby-3.3
           PACKAGE_PREFIX: "director"
           PRIVATE_YML: |
@@ -1436,8 +1440,8 @@ jobs:
           bosh: bosh-out
         params:
           BLOBSTORE_TYPE: dav
-          GIT_USER_NAME: CI Bot
-          GIT_USER_EMAIL: cf-bosh-eng@pivotal.io
+          GIT_USER_NAME: CF-Bosh CI-Bot
+          GIT_USER_EMAIL: cf-bosh-ci-bot@localhost
           PRIVATE_YML: |
             blobstore:
               options:
@@ -1453,8 +1457,8 @@ jobs:
           bosh: bosh-out
         params:
           BLOBSTORE_TYPE: gcs
-          GIT_USER_NAME: CI Bot
-          GIT_USER_EMAIL: cf-bosh-eng@pivotal.io
+          GIT_USER_NAME: CF-Bosh CI-Bot
+          GIT_USER_EMAIL: cf-bosh-ci-bot@localhost
           PRIVATE_YML: |
             blobstore:
               options:
@@ -1470,8 +1474,8 @@ jobs:
           bosh: bosh-out
         params:
           BLOBSTORE_TYPE: s3
-          GIT_USER_NAME: CI Bot
-          GIT_USER_EMAIL: cf-bosh-eng@pivotal.io
+          GIT_USER_NAME: CF-Bosh CI-Bot
+          GIT_USER_EMAIL: cf-bosh-ci-bot@localhost
           PRIVATE_YML: |
             blobstore:
               options:
@@ -1487,8 +1491,8 @@ jobs:
           bosh: bosh-out
         params:
           BLOBSTORE_TYPE: azure-storage
-          GIT_USER_NAME: CI Bot
-          GIT_USER_EMAIL: cf-bosh-eng@pivotal.io
+          GIT_USER_NAME: CF-Bosh CI-Bot
+          GIT_USER_EMAIL: cf-bosh-ci-bot@localhost
           PRIVATE_YML: |
             blobstore:
               options:
@@ -1502,8 +1506,8 @@ jobs:
         output_mapping:
           bosh: bosh-out
         params:
-          GIT_USER_NAME: CI Bot
-          GIT_USER_EMAIL: cf-bosh-eng@pivotal.io
+          GIT_USER_NAME: CF-Bosh CI-Bot
+          GIT_USER_EMAIL: cf-bosh-ci-bot@localhost
           PRIVATE_YML: |
             blobstore:
               options:
@@ -1517,8 +1521,8 @@ jobs:
         output_mapping:
           bosh: bosh-out
         params:
-          GIT_USER_NAME: CI Bot
-          GIT_USER_EMAIL: cf-bosh-eng@pivotal.io
+          GIT_USER_NAME: CF-Bosh CI-Bot
+          GIT_USER_EMAIL: cf-bosh-ci-bot@localhost
           PRIVATE_YML: |
             blobstore:
               options:
