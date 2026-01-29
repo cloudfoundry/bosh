@@ -49,6 +49,15 @@ module Bosh::Director
         options['fix'] = true if params['fix'] == 'true'
         options['dry_run'] = true if params['dry_run'] == 'true'
 
+        if params['recreate_vm_created_before']
+          begin
+            Time.rfc3339(params['recreate_vm_created_before'])
+            options['recreate_vm_created_before'] = params['recreate_vm_created_before']
+          rescue ArgumentError
+            raise ValidationInvalidValue, "Invalid RFC 3339 timestamp for recreate_vm_created_before: #{params['recreate_vm_created_before']}"
+          end
+        end
+
         if (request.content_length.nil? || request.content_length.to_i == 0) && params['state']
           manifest = deployment.manifest
           latest_cloud_configs = deployment.cloud_configs
@@ -417,6 +426,15 @@ module Bosh::Director
         options['max_in_flight'] = params[:max_in_flight] if params['max_in_flight']
         options['scopes'] = token_scopes
         options['force_latest_variables'] = true if params['force_latest_variables'] == 'true'
+
+        if params['recreate_vm_created_before']
+          begin
+            Time.rfc3339(params['recreate_vm_created_before'])
+            options['recreate_vm_created_before'] = params['recreate_vm_created_before']
+          rescue ArgumentError
+            raise ValidationInvalidValue, "Invalid RFC 3339 timestamp for recreate_vm_created_before: #{params['recreate_vm_created_before']}"
+          end
+        end
 
         # since authorizer does not look at manifest payload for deployment name
         @deployment = Models::Deployment[name: deployment_name]
