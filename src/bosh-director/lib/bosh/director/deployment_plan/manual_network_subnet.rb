@@ -81,7 +81,7 @@ module Bosh::Director
 
           restricted_ips.replace(deduplicated_ips)
 
-          static_ips.each do |ip|
+          each_ip(static_property, false) do |ip|
             if ip_in_array?(ip, restricted_ips)
               raise NetworkStaticIpOutOfRange, "Static IP '#{ip}' is in network '#{network_name}' reserved range"
             end
