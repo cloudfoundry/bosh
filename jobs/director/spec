@@ -75,6 +75,9 @@ properties:
   director.workers:
     description: Number of director workers
     default: 3
+  director.dynamic_disks_workers:
+    description: Number of director workers dedicated for dynamic disks jobs
+    default: 0
   director.enable_dedicated_status_worker:
     description: "Separate worker for 'bosh vms' and 'bosh ssh'"
     default: false

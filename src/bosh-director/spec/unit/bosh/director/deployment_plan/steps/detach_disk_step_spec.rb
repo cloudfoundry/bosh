@@ -15,12 +15,14 @@ module Bosh::Director
         let(:agent_client) do
           instance_double(AgentClient, list_disk: [disk&.disk_cid], remove_persistent_disk: nil)
         end
+        let(:job) { instance_double(Bosh::Director::Jobs::BaseJob, username: 'user', task_id: 42) }
 
         before do
           allow(AgentClient).to receive(:with_agent_id).with(vm.agent_id, vm.instance.name).and_return(agent_client)
           allow(CloudFactory).to receive(:create).and_return(cloud_factory)
           allow(cloud_factory).to receive(:get).with(disk&.cpi, 25).once.and_return(cloud)
           allow(cloud).to receive(:detach_disk)
+          allow(Config).to receive(:current_job).and_return(job)
         end
 
         it 'sends remove_persistent_disk method to agent' do
@@ -29,8 +31,9 @@ module Bosh::Director
           step.perform(report)
         end
 
-        it 'calls out to cpi associated with disk to detach disk' do
+        it 'calls out to cpi associated with disk to detach disk with vm lock' do
           expect(cloud_factory).to receive(:get).with(disk&.cpi, 25).once.and_return(cloud)
+          expect(step).to receive(:with_vm_lock).with(vm.cid).and_yield
           expect(cloud).to receive(:detach_disk).with(vm.cid, disk.disk_cid)
 
           step.perform(report)
@@ -38,6 +41,7 @@ module Bosh::Director
 
         it 'logs notification of detaching' do
           expect(per_spec_logger).to receive(:info).with("Detaching disk #{disk.disk_cid}")
+          expect(per_spec_logger).to receive(:info).with("Acquiring VM lock on #{vm.cid}")
 
           step.perform(report)
         end
