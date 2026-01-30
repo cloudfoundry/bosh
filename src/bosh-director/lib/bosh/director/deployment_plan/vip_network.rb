@@ -50,12 +50,19 @@ module Bosh::Director
           raise NetworkReservationVipDefaultProvided, "Can't provide any defaults since this is a VIP network"
         end
 
-        {
+        config = {
           'type' => 'vip',
           'ip' => to_ipaddr(reservation.ip).base_addr,
           'cloud_properties' => @cloud_properties,
           'prefix' => @prefix
         }
+
+        nic_group = reservation.nic_group
+        unless nic_group.nil?
+          config['nic_group'] = nic_group.to_s
+        end
+
+        config
       end
 
       def vip?
