@@ -96,17 +96,22 @@ module Bosh::Director::DeploymentPlan
         addresses_we_cant_allocate.delete_if { |ipaddr| ipaddr.ipv6? }
       end
 
-      addresses_we_cant_allocate.reject! do |ip|
-        addresses_we_cant_allocate.any? do |other_ip|
-          includes = other_ip.include?(ip)
-          includes && other_ip.prefix < ip.prefix
+      # Sort by address first, then by prefix (smaller prefix = larger block = earlier)
+      sorted_ips = addresses_we_cant_allocate.sort_by { |ip| [ip.to_i, ip.prefix] }
+
+      # Remove IPs contained within larger CIDR blocks
+      sorted_ips = sorted_ips.reject.with_index do |ip, index|
+        sorted_ips[0...index].any? do |other_ip|
+          other_ip.prefix < ip.prefix && other_ip.include?(ip)
+        rescue StandardError
+          false
         end
       end
 
-      ip_address_cidr = find_next_available_ip(addresses_we_cant_allocate, first_range_address, subnet.prefix)
+      ip_address_cidr = find_next_available_ip(sorted_ips, first_range_address, subnet.prefix)
 
-      if !(subnet.range == ip_address_cidr || subnet.range.include?(ip_address_cidr))
-       raise NoMoreIPsAvailableAndStopRetrying
+      unless subnet.range == ip_address_cidr || subnet.range.include?(ip_address_cidr)
+        raise NoMoreIPsAvailableAndStopRetrying
       end
 
       save_ip(ip_address_cidr, reservation, false)
@@ -114,31 +119,34 @@ module Bosh::Director::DeploymentPlan
       ip_address_cidr
     end
 
-    def find_next_available_ip(addresses_we_cant_allocate, first_range_address, prefix)
+    def find_next_available_ip(sorted_blocking_ips, first_range_address, prefix)
       # Remove IPs that are below subnet range
-      filtered_ips = addresses_we_cant_allocate.sort_by { |ip| ip.to_i }.reject { |ip| ip.to_i < first_range_address.to_i }
+      filtered_ips = sorted_blocking_ips.reject { |ip| ip.to_i < first_range_address.to_i }
 
       current_ip = to_ipaddr(first_range_address.to_i + 1)
-      found = false
 
-      while found == false
+      loop do
         current_prefix = to_ipaddr("#{current_ip.base_addr}/#{prefix}")
 
-        if filtered_ips.any? { |ip| current_prefix.include?(ip) }
-          filtered_ips.reject! { |ip| ip.to_i < current_prefix.to_i }
-          actual_ip_prefix = filtered_ips.first.count
-          if actual_ip_prefix > current_prefix.count
-            current_ip = to_ipaddr(current_ip.to_i + actual_ip_prefix)
-          else
-            current_ip = to_ipaddr(current_ip.to_i + current_prefix.count)
-          end
-        else
-          found_cidr = current_prefix
-          found = true
+        # Check both directions for overlap: candidate includes blocking IP, or blocking IP includes candidate
+        blocking_ip = filtered_ips.find do |ip|
+          (current_prefix.include?(ip) rescue false) ||
+          (ip.include?(current_prefix) rescue false)
         end
-      end
 
-      found_cidr
+        return current_prefix if blocking_ip.nil?
+
+        if blocking_ip.count > current_prefix.count
+          # Blocking range is larger, skip past its entire range
+          current_ip = to_ipaddr(blocking_ip.to_i + blocking_ip.count)
+        else
+          # Blocking IP is smaller or same size, try next aligned position
+          current_ip = to_ipaddr(current_prefix.to_i + current_prefix.count)
+        end
+
+        # Clean up blocking IPs that we've passed
+        filtered_ips.reject! { |ip| ip.to_i + ip.count <= current_ip.to_i }
+      end
     end
 
     def try_to_allocate_vip_ip(reservation, subnet)
