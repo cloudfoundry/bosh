@@ -145,7 +145,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         # Clean up blocking IPs that we've passed
-        filtered_ips.reject! { |ip| ip.to_i + ip.count <= current_ip.to_i }
+        filtered_ips.reject! { |ip| ip.to_i + ip.count < current_ip.to_i }
       end
     end
 
