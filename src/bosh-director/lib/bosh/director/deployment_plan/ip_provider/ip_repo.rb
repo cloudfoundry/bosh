@@ -97,7 +97,8 @@ module Bosh::Director::DeploymentPlan
       end
 
       # Sort by address first, then by prefix (smaller prefix = larger block = earlier)
-      sorted_ips = addresses_we_cant_allocate.sort_by { |ip| [ip.to_i, ip.prefix] }
+      uniq_ips = addresses_we_cant_allocate.uniq
+      sorted_ips = uniq_ips.sort_by { |ip| [ip.to_i, ip.prefix] }
 
       # Remove IPs contained within larger CIDR blocks
       sorted_ips = sorted_ips.reject.with_index do |ip, index|
