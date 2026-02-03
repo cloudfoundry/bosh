@@ -8,6 +8,8 @@ module Bosh::Director::Blobstore
       allow(Dir).to receive(:tmpdir).and_return(base_dir)
       allow(SecureRandom).to receive_messages(uuid: 'FAKE_UUID')
       allow(Kernel).to receive(:system).with('/var/vcap/packages/s3cli/bin/s3cli', '--v', out: '/dev/null', err: '/dev/null').and_return(true)
+      # Stub for the new storage-cli executable
+      allow(Kernel).to receive(:system).with('/var/vcap/packages/storage-cli/bin/storage-cli', 'version', out: '/dev/null', err: '/dev/null').and_return(true)
     end
 
     let(:options) do
@@ -121,7 +123,7 @@ module Bosh::Director::Blobstore
         end
       end
 
-      context 'when swift_auth_account is provided' do
+      context 'when swift_temp_url_key is provided' do
         it 'adds it to the config file' do
           described_class.new(options.merge(
             {
@@ -132,6 +134,48 @@ module Bosh::Director::Blobstore
           expect(JSON.parse(stored_config_file[0])['swift_temp_url_key']).to eq('the_swift_temp_url_key')
         end
       end
+
+      context 'when use_storage_cli is true' do
+        let(:storage_cli_path) { '/var/vcap/packages/storage-cli/bin/storage-cli' }
+        let(:storage_options) do
+          {
+            use_storage_cli: true,
+            storage_cli_path: storage_cli_path,
+            storage_provider: 'gcs',
+            bucket_name: 'storage-bucket',
+          }
+        end
+
+        it 'validates the storage-cli path using "version" instead of "--v"' do
+          expect(Kernel).to receive(:system).with(storage_cli_path, 'version', out: '/dev/null', err: '/dev/null').and_return(true)
+          described_class.new(storage_options)
+        end
+
+        it 'raises error if storage-cli is not found' do
+          allow(Kernel).to receive(:system).with(storage_cli_path, 'version', out: '/dev/null', err: '/dev/null').and_return(false)
+          expect { described_class.new(storage_options) }.to raise_error(
+            Bosh::Director::Blobstore::BlobstoreError, /Cannot find storage-cli executable/
+          )
+        end
+
+        it 'creates config file using storage_cli_config_path if provided' do
+          storage_config_path = Dir.mktmpdir
+          described_class.new(storage_options.merge(storage_cli_config_path: storage_config_path))
+          expect(File.exist?(File.join(storage_config_path, 'blobstore-config'))).to eq(true)
+        end
+
+        it 'uses the -s provider flag in commands' do
+          allow(Open3).to receive(:capture3).and_return([nil, nil, success_exit_status])
+          cli_client = described_class.new(storage_options)
+
+          expect(Open3).to receive(:capture3).with(
+            storage_cli_path, '-s', 'gcs', '-c', anything, 'delete', object_id.to_s
+          )
+          cli_client.delete(object_id)
+        end
+      end
+
+      # --- END OF NEW TESTS ---
     end
 
     describe '#delete' do
