@@ -1,4 +1,4 @@
-s3cli package
+storage-cli package
 ============
 This package is used for communicating with s3 blobstores
 
