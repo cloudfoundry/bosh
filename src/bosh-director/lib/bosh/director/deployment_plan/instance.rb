@@ -1,9 +1,19 @@
 require 'securerandom'
+require 'active_support/core_ext/string/inquiry'
 
 module Bosh::Director
   module DeploymentPlan
     # Represents a single Instance Group instance.
     class Instance
+      RESTART = 'restart'.freeze
+      RECREATE = 'recreate'.freeze
+      STARTED = 'started'.freeze
+
+      VIRTUAL_STATE_TO_STATE = {
+        RECREATE => STARTED,
+        RESTART => STARTED
+      }
+
       # @return [Integer] Instance index
       attr_reader :index
 
@@ -24,9 +34,6 @@ module Bosh::Director
       # @return [Bosh::Director::Models::VariableSet]
       attr_accessor :desired_variable_set
       attr_reader :previous_variable_set
-
-      # @return [String] job state
-      attr_reader :virtual_state
 
       attr_reader :availability_zone
 
@@ -259,7 +266,7 @@ module Bosh::Director
       end
 
       def current_job_state
-        @current_state['job_state']
+        @current_state['job_state'].to_s.inquiry
       end
 
       def current_networks
@@ -297,14 +304,11 @@ module Bosh::Director
       end
 
       def state
-        case @virtual_state
-        when 'recreate'
-          'started'
-        when 'restart'
-          'started'
-        else
-          @virtual_state
-        end
+        VIRTUAL_STATE_TO_STATE.fetch(virtual_state, virtual_state)
+      end
+
+      def virtual_state
+        @virtual_state.to_s.inquiry
       end
 
       ##

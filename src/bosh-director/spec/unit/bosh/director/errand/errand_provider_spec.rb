@@ -29,10 +29,11 @@ module Bosh::Director
       let(:template_blob_cache) { instance_double(Bosh::Director::Core::Templates::TemplateBlobCache) }
       let(:runner) { instance_double(Errand::Runner) }
       let(:errand_step) { instance_double(Errand::LifecycleErrandStep) }
+      let(:current_job_state) { 'dummy'}
       let(:instance) do
         instance_double(
           DeploymentPlan::Instance,
-          current_job_state: double(:current_job_state),
+          current_job_state: current_job_state.inquiry,
           uuid: instance_model.uuid,
           model: instance_model,
         )

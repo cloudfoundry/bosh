@@ -1,6 +1,22 @@
 module Bosh::Director
   class InstanceUpdater
     class UpdateProcedure
+      STARTED = 'started'.freeze
+      STOPPED = 'stopped'.freeze
+      DETACHED = 'detached'.freeze
+
+      RECREATE = 'recreate'.freeze
+      CREATE = 'create'.freeze
+      START = 'start'.freeze
+      STOP = 'stop'.freeze
+      UPDATE = 'update'.freeze
+
+      VIRTUAL_STATE_TO_ACTION_MAPPING = {
+        STARTED => START,
+        STOPPED => STOP,
+        DETACHED => STOP,
+      }
+
       attr_reader :instance, :instance_plan, :options, :instance_report, :action, :context
 
       def initialize(instance,
@@ -178,21 +194,13 @@ module Bosh::Director
 
       def calculate_action
         if restarting?
-          names = {
-            'started' => 'start',
-            'stopped' => 'stop',
-            'detached' => 'stop',
-          }
-
-          raw_name = instance_plan.instance.virtual_state
-          return names[raw_name] if names.key? raw_name
-
-          return raw_name
+          return VIRTUAL_STATE_TO_ACTION_MAPPING.fetch(instance_plan.instance.virtual_state,
+                                                       instance_plan.instance.virtual_state)
         end
 
-        return 'create' if instance_plan.new?
+        return CREATE if instance_plan.new?
 
-        @needs_recreate ? 'recreate' : 'update'
+        @needs_recreate ? RECREATE : UPDATE
       end
 
       def restarting?
