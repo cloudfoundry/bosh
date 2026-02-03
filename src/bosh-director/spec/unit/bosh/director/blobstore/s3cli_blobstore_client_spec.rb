@@ -123,7 +123,7 @@ module Bosh::Director::Blobstore
         end
       end
 
-      context 'when swift_temp_url_key is provided' do
+      context 'when swift_auth_account is provided' do
         it 'adds it to the config file' do
           described_class.new(options.merge(
             {
@@ -174,8 +174,6 @@ module Bosh::Director::Blobstore
           cli_client.delete(object_id)
         end
       end
-
-      # --- END OF NEW TESTS ---
     end
 
     describe '#delete' do
