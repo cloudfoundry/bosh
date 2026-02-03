@@ -5,11 +5,11 @@ module Bosh::Director
   module DeploymentPlan
     # Represents a single Instance Group instance.
     class Instance
-      RESTART = 'restart'.freeze
       RECREATE = 'recreate'.freeze
+      RESTART = 'restart'.freeze
       STARTED = 'started'.freeze
 
-      VIRTUAL_STATE_TO_STATE = {
+      VIRTUAL_STATE_TO_STATE_MAPPING = {
         RECREATE => STARTED,
         RESTART => STARTED
       }
@@ -304,7 +304,7 @@ module Bosh::Director
       end
 
       def state
-        VIRTUAL_STATE_TO_STATE.fetch(virtual_state, virtual_state)
+        VIRTUAL_STATE_TO_STATE_MAPPING.fetch(virtual_state, virtual_state)
       end
 
       def virtual_state
