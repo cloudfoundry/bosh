@@ -1617,6 +1617,12 @@ resources:
       access_key_id: ((bosh_s3cli_pipeline_aws_access_key.username))
       secret_access_key: ((bosh_s3cli_pipeline_aws_access_key.password))
 
+  - name: bosh-blobstore-storage-cli-s3
+    type: s3
+    source:
+      regexp: storage-cli-(.*)-linux-amd64
+      bucket: capi-release-blobs
+
   - name: bosh-blobstore-azure-storage
     type: s3
     source:
