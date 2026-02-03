@@ -136,6 +136,7 @@ describe 'health_monitor: 1', type: :integration, hm: true do
           'vitals' => anything,
           'teams' => ['ateam'],
           'metrics' => anything,
+          'number_of_processes' => anything,
       }
 
       heartbeat_hashes_excluding_compilation = heartbeat_hashes.select do |hash|

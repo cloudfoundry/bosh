@@ -56,6 +56,7 @@ describe Bosh::Monitor::Events::Heartbeat do
         },
       },
       teams: %w[ateam bteam],
+      number_of_processes: 5,
       metrics: [
         { name: 'system.load.1m', value: '0.2', timestamp: 1320196099, tags: { 'job' => 'mysql_node', 'index' => '0', 'id' => 'instance_id_abc' } },
         { name: 'system.cpu.user', value: '22.3', timestamp: 1320196099, tags: { 'job' => 'mysql_node', 'index' => '0', 'id' => 'instance_id_abc' } },
