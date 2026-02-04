@@ -11,12 +11,15 @@ module Bosh::Director::Models
     many_to_one :variable_set, class: 'Bosh::Director::Models::VariableSet'
     many_to_many :links, :class => 'Bosh::Director::Models::Links::Link', :join_table => :instances_links
 
+    VALID_INSTANCE_STATES = [Bosh::Director::INSTANCE_STATE_STARTED,
+                             Bosh::Director::INSTANCE_STATE_STOPPED,
+                             Bosh::Director::INSTANCE_STATE_DETACHED]
     def validate
       validates_presence [:deployment_id, :job, :index, :state]
       validates_unique [:deployment_id, :job, :index]
       validates_unique [:vms].sort.first
       validates_integer :index
-      validates_includes %w(started stopped detached), :state
+      validates_includes VALID_INSTANCE_STATES, :state
     end
 
     def managed_persistent_disk
@@ -154,11 +157,11 @@ module Bosh::Director::Models
     end
 
     def expects_vm?
-      lifecycle == 'service' && ['started', 'stopped'].include?(self.state)
+      lifecycle == 'service' && (started? || stopped?)
     end
 
     def has_important_vm?
-      active_vm != nil && state != 'stopped' && !ignore
+      active_vm != nil && !stopped? && !ignore
     end
 
     def most_recent_inactive_vm
@@ -181,12 +184,16 @@ module Bosh::Director::Models
       active_vm&.nats_config_sha1
     end
 
+    def started?
+      state == Bosh::Director::INSTANCE_STATE_STARTED
+    end
+
     def stopped?
-      state == 'stopped'
+      state == Bosh::Director::INSTANCE_STATE_STOPPED
     end
 
     def detached?
-      state == 'detached'
+      state == Bosh::Director::INSTANCE_STATE_DETACHED
     end
 
     private

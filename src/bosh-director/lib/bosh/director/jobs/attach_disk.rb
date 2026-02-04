@@ -53,7 +53,7 @@ module Bosh::Director
               'Attaching disks to ignored instances is not allowed.'
         end
 
-        if instance.state != 'detached' && instance.state != 'stopped'
+        unless instance.detached? || instance.stopped?
           raise AttachDiskInvalidInstanceState, "Instance '#{@job_name}/#{@instance_id}' in deployment '#{@deployment_name}' must be in 'bosh stopped' state"
         end
       end
@@ -66,7 +66,7 @@ module Bosh::Director
           @cloud_properties = previous_persistent_disk.cloud_properties
         end
 
-        if instance.state == 'stopped'
+        if instance.stopped?
           @disk_manager.detach_disk(previous_persistent_disk)
         end
 
@@ -88,7 +88,7 @@ module Bosh::Director
           )
         end
 
-        if instance.state == 'stopped'
+        if instance.stopped?
           @disk_manager.attach_disk(disk, instance.deployment.tags)
         end
       end

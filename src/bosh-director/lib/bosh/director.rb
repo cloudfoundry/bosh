@@ -1,5 +1,11 @@
 module Bosh
   module Director
+    INSTANCE_STATE_STARTED = 'started'.freeze
+    INSTANCE_STATE_STOPPED = 'stopped'.freeze
+    INSTANCE_STATE_DETACHED = 'detached'.freeze
+
+    INSTANCE_VIRTUAL_STATE_RESTART = 'restart'.freeze
+    INSTANCE_VIRTUAL_STATE_RECREATE = 'recreate'.freeze
   end
 end
 

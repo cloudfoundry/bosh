@@ -14,7 +14,13 @@ module Bosh::Director
       # recreate and restart are two virtual states
       # (both set  target instance state to "started" and set
       # appropriate instance spec modifiers)
-      VALID_STATES = %w[started stopped detached recreate restart].freeze
+      VALID_STATES = [
+        Bosh::Director::INSTANCE_STATE_STARTED,
+        Bosh::Director::INSTANCE_STATE_STOPPED,
+        Bosh::Director::INSTANCE_STATE_DETACHED,
+        Bosh::Director::INSTANCE_VIRTUAL_STATE_RESTART,
+        Bosh::Director::INSTANCE_VIRTUAL_STATE_RECREATE,
+      ].freeze
 
       # @return [String] Instance group name
       attr_reader :name
@@ -159,7 +165,7 @@ module Bosh::Director
                                                      .select(&:needs_duplicate_vm?)
                                                      .reject(&:new?)
                                                      .reject(&:should_be_ignored?)
-                                                     .reject { |plan| plan.instance.state == 'detached' }
+                                                     .reject { |plan| plan.instance.detached? }
       end
 
       def add_job(job_to_add)
@@ -370,7 +376,7 @@ module Bosh::Director
 
       def instance_plans_with_missing_vms
         needed_instance_plans.reject do |instance_plan|
-          instance_plan.instance.vm_created? || instance_plan.instance.state == 'detached'
+          instance_plan.instance.vm_created? || instance_plan.instance.detached?
         end
       end
 

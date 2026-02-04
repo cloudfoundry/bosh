@@ -5,13 +5,9 @@ module Bosh::Director
   module DeploymentPlan
     # Represents a single Instance Group instance.
     class Instance
-      RECREATE = 'recreate'.freeze
-      RESTART = 'restart'.freeze
-      STARTED = 'started'.freeze
-
       VIRTUAL_STATE_TO_STATE_MAPPING = {
-        RECREATE => STARTED,
-        RESTART => STARTED
+        Bosh::Director::INSTANCE_VIRTUAL_STATE_RESTART => Bosh::Director::INSTANCE_STATE_STARTED,
+        Bosh::Director::INSTANCE_VIRTUAL_STATE_RECREATE => Bosh::Director::INSTANCE_STATE_STARTED
       }
 
       # @return [Integer] Instance index
@@ -311,6 +307,18 @@ module Bosh::Director
         @virtual_state.to_s.inquiry
       end
 
+      def started?
+        state == Bosh::Director::INSTANCE_STATE_STARTED
+      end
+
+      def stopped?
+        state == Bosh::Director::INSTANCE_STATE_STOPPED
+      end
+
+      def detached?
+        state == Bosh::Director::INSTANCE_STATE_DETACHED
+      end
+
       ##
       # Checks if the target VM already has the same set of trusted SSL certificates
       # as the director currently wants to install on all managed VMs. This will
@@ -385,7 +393,7 @@ module Bosh::Director
         }
 
         Models::Instance.find_or_create(conditions) do |model|
-          model.state = 'started'
+          model.state = Bosh::Director::INSTANCE_STATE_STARTED
           model.compilation = @compilation
           model.uuid = SecureRandom.uuid
           model.variable_set_id = @deployment_model.current_variable_set.id

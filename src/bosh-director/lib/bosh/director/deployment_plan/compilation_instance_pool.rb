@@ -168,7 +168,7 @@ module Bosh::Director
         instance = Instance.create_from_instance_group(
           compile_instance_group,
           0,
-          'started',
+          Bosh::Director::INSTANCE_STATE_STARTED,
           @deployment_plan.model,
           {},
           availability_zone,
