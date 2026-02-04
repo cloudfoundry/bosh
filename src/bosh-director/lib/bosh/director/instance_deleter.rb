@@ -78,7 +78,7 @@ module Bosh::Director
     end
 
     def stop(instance_plan)
-      Stopper.stop(intent: @stop_intent, instance_plan: instance_plan, target_state: 'stopped', logger: @logger)
+      Stopper.stop(intent: @stop_intent, instance_plan: instance_plan, target_state: Bosh::Director::INSTANCE_STATE_STOPPED, logger: @logger)
     end
 
     # FIXME: why do we hate dependency injection?

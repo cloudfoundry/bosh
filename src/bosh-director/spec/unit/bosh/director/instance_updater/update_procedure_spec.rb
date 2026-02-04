@@ -90,6 +90,8 @@ module Bosh::Director
           name: instance_name,
           vms: instance_vms,
           managed_persistent_disk: persistent_disk,
+          stopped?: instance_model_state == 'stopped',
+          detached?: instance_model_state == 'detached',
         )
       end
 
@@ -102,6 +104,9 @@ module Bosh::Director
           model: instance_model,
           update_instance_settings: nil,
           update_state: nil,
+          detached?: instance_state == 'detached',
+          stopped?: instance_state == 'stopped',
+          started?: instance_state == 'started',
         )
       end
 

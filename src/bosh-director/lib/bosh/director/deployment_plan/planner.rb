@@ -260,7 +260,7 @@ module Bosh::Director
           if instance_group.service?
             instance_groups << instance_group
           elsif instance_group.errand?
-            if instance_group.instances.any?(&:vm_created?) || instance_group.instances.any? { |i| i.model.state == 'detached' }
+            if instance_group.instances.any?(&:vm_created?) || instance_group.instances.any? { |i| i.model.detached? }
               instance_groups << instance_group
             end
           end

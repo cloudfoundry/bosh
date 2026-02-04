@@ -1358,7 +1358,7 @@ module Bosh::Director::DeploymentPlan
       end
 
       context 'when instance is not being recreated' do
-        let(:instance_state) { 'stopped' }
+        let(:instance_state) { Bosh::Director::INSTANCE_STATE_STOPPED }
 
         it 'should return false when desired instance is in any another state' do
           expect(instance_plan.recreation_requested?).to be_falsey

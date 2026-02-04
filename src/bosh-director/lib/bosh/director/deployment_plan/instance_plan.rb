@@ -186,15 +186,15 @@ module Bosh
         end
 
         def state_changed?
-          if instance.state.detached? && existing_instance.state != instance.state
+          if instance.detached? && existing_instance.state != instance.state
             @logger.debug("Instance '#{instance}' needs to be detached")
             return true
           end
 
           return true if unresponsive_agent?
 
-          if instance.state.stopped? && instance.current_job_state.running? ||
-              instance.state.started? && !instance.current_job_state.running?
+          if (instance.stopped? && instance.current_job_state.running?) ||
+             (instance.started? && !instance.current_job_state.running?)
             @logger.debug("Instance state is '#{instance.state}' and agent reports '#{instance.current_job_state}'")
             return true
           end
