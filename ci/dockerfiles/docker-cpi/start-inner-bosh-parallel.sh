@@ -4,19 +4,13 @@ set -euo pipefail
 set -x
 
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-src_dir="${script_dir}/../../../"
 node_number=${1}
 
-pushd ${BOSH_DEPLOYMENT_PATH} > /dev/null
-  inner_bosh_dir="/tmp/inner-bosh/director/$node_number"
-  mkdir -p ${inner_bosh_dir}
+pushd "${BOSH_DEPLOYMENT_PATH}" > /dev/null
+  inner_bosh_dir="/tmp/inner-bosh/director/${node_number}"
+  mkdir -p "${inner_bosh_dir}"
 
-  export BOSH_DIRECTOR_IP="10.245.0.$((10+$node_number))"
-
-  additional_ops_files=""
-  if [ "$(lsb_release -cs)" != "jammy" ]; then
-    additional_ops_files="-o /usr/local/noble-updates.yml"
-  fi
+  export BOSH_DIRECTOR_IP="10.245.0.$((10 + node_number))"
 
   bosh int bosh.yml \
     -o "$script_dir/inner-bosh-ops.yml" \
@@ -31,16 +25,16 @@ pushd ${BOSH_DEPLOYMENT_PATH} > /dev/null
     -o "${BOSH_DEPLOYMENT_PATH}/misc/source-releases/bosh.yml" \
     -o "$script_dir/latest-bosh-release.yml" \
     -o "$script_dir/deployment-name.yml" \
-    ${additional_ops_files} \
-    -v deployment_name="bosh-$node_number" \
-    ${@:2} > "${inner_bosh_dir}/bosh-director.yml"
+    -v deployment_name="bosh-${node_number}" \
+    "${@:2}" > "${inner_bosh_dir}/bosh-director.yml"
 
-  bosh -n deploy -d "bosh-$node_number" "${inner_bosh_dir}/bosh-director.yml" --vars-store="${inner_bosh_dir}/creds.yml"
+  bosh -n deploy -d "bosh-${node_number}" "${inner_bosh_dir}/bosh-director.yml" --vars-store="${inner_bosh_dir}/creds.yml"
 
   # set up inner director
   export BOSH_ENVIRONMENT="docker-inner-director-${node_number}"
   export BOSH_CONFIG="${inner_bosh_dir}/config"
-  export BOSH_CLIENT_SECRET=$(bosh int "${inner_bosh_dir}/creds.yml" --path /admin_password)
+  BOSH_CLIENT_SECRET=$(bosh int "${inner_bosh_dir}/creds.yml" --path /admin_password)
+  export BOSH_CLIENT_SECRET
 
   bosh int "${inner_bosh_dir}/creds.yml" --path /director_ssl/ca > "${inner_bosh_dir}/ca.crt"
   bosh -e "${BOSH_DIRECTOR_IP}" --ca-cert "${inner_bosh_dir}/ca.crt" alias-env "${BOSH_ENVIRONMENT}"
@@ -64,7 +58,7 @@ EOF
 
   "${inner_bosh_dir}/bosh" -n update-cloud-config \
     "$script_dir/inner-bosh-cloud-config.yml" \
-    -v node_number="$((${node_number} * 4))" \
+    -v node_number="$((node_number * 4))" \
     -v network=director_network
 
 popd > /dev/null

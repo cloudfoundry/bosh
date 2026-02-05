@@ -61,7 +61,7 @@ module Bosh
         def unresponsive_agent?
           return false if @instance.nil?
 
-          @instance.current_job_state == 'unresponsive'
+          @instance.current_job_state.unresponsive?
         end
 
         ##
@@ -120,7 +120,7 @@ module Bosh
         end
 
         def restart_requested?
-          @instance.virtual_state == 'restart'
+          @instance.virtual_state.restart?
         end
 
         def recreation_requested?
@@ -132,6 +132,8 @@ module Bosh
           if unresponsive_agent?
             @logger.debug("#{__method__} instance should be recreated because of unresponsive agent")
             return true
+          else
+            return @instance.virtual_state.recreate?
           end
 
           if @instance.virtual_state == 'recreate'
@@ -195,16 +197,15 @@ module Bosh
         end
 
         def state_changed?
-          if instance.state == 'detached' &&
-             existing_instance.state != instance.state
+          if instance.detached? && existing_instance.state != instance.state
             @logger.debug("Instance '#{instance}' needs to be detached")
             return true
           end
 
           return true if unresponsive_agent?
 
-          if instance.state == 'stopped' && instance.current_job_state == 'running' ||
-             instance.state == 'started' && instance.current_job_state != 'running'
+          if (instance.stopped? && instance.current_job_state.running?) ||
+             (instance.started? && !instance.current_job_state.running?)
             @logger.debug("Instance state is '#{instance.state}' and agent reports '#{instance.current_job_state}'")
             return true
           end
@@ -408,15 +409,11 @@ module Bosh
         end
 
         def already_detached?
-          return false if new?
-
-          @existing_instance.state == 'detached'
+          new? ? false : @existing_instance.detached?
         end
 
         def needs_disk?
-          instance_group = @desired_instance.instance_group
-
-          instance_group.persistent_disk_collection.needs_disk?
+          @desired_instance.instance_group.persistent_disk_collection.needs_disk?
         end
 
         def persist_current_spec

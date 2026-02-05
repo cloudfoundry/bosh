@@ -1111,7 +1111,15 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
   end
 
   describe '#unignored_instance_plans_needing_duplicate_vm' do
-    let(:instance_plan_instance) { instance_double(Bosh::Director::DeploymentPlan::Instance, vm_created?: true, state: 'started') }
+    let(:instance_state) { 'started' }
+    let(:instance_plan_instance) do
+      instance_double(Bosh::Director::DeploymentPlan::Instance,
+                      vm_created?: true,
+                      state: instance_state,
+                      detached?: instance_state == 'detached',
+                      started?: instance_state == 'started',
+      )
+    end
     let(:instance_plan) do
       instance_double(Bosh::Director::DeploymentPlan::InstancePlan, instance: instance_plan_instance, new?: false, needs_duplicate_vm?: true, should_be_ignored?: false)
     end
@@ -1128,9 +1136,7 @@ describe Bosh::Director::DeploymentPlan::InstanceGroup do
     end
 
     context 'when instance group contains detached instance plan' do
-      before do
-        allow(instance_plan_instance).to receive(:state).and_return('detached')
-      end
+      let(:instance_state) { 'detached' }
 
       it 'should filter detached instance plans' do
         expect(instance_group.unignored_instance_plans_needing_duplicate_vm).to be_empty

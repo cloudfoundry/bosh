@@ -1,6 +1,18 @@
 module Bosh::Director
   class InstanceUpdater
     class UpdateProcedure
+      RECREATE = 'recreate'.freeze
+      CREATE = 'create'.freeze
+      START = 'start'.freeze
+      STOP = 'stop'.freeze
+      UPDATE = 'update'.freeze
+
+      VIRTUAL_STATE_TO_ACTION_MAPPING = {
+        Bosh::Director::INSTANCE_STATE_STARTED => START,
+        Bosh::Director::INSTANCE_STATE_STOPPED => STOP,
+        Bosh::Director::INSTANCE_STATE_DETACHED => STOP,
+      }
+
       attr_reader :instance, :instance_plan, :options, :instance_report, :action, :context
 
       def initialize(instance,
@@ -62,7 +74,7 @@ module Bosh::Director
           handle_not_detached_instance_plan
 
           # desired state
-          if instance.state == 'stopped'
+          if instance.stopped?
             # Command issued: `bosh stop`
             update_instance
             return
@@ -71,12 +83,12 @@ module Bosh::Director
           handle_detached_instance_if_detached
         end
 
-        converge_vm if instance.state != 'detached'
+        converge_vm unless instance.detached?
         update_instance
         update_dns_if_changed
         update_vm_disk_metadata
 
-        return if instance.state == 'detached'
+        return if instance.detached?
 
         @rendered_templates_persister.persist(instance_plan)
         apply_state
@@ -103,19 +115,19 @@ module Bosh::Director
           @rendered_templates_persister.persist(instance_plan)
         end
 
-        unless instance_plan.needs_shutting_down? || instance.state == 'detached'
+        unless instance_plan.needs_shutting_down? || instance.detached?
           DeploymentPlan::Steps::PrepareInstanceStep.new(instance_plan).perform(instance_report)
         end
 
         # current state
-        return unless instance.model.state != 'stopped'
+        return if instance.model.stopped?
 
         stop
         take_snapshot
       end
 
       def handle_detached_instance_if_detached
-        return unless instance.state == 'detached'
+        return unless instance.detached?
 
         # Command issued: `bosh stop --hard`
         @logger.info("Detaching instance #{instance}")
@@ -133,7 +145,7 @@ module Bosh::Director
       def update_vm_disk_metadata
         return unless instance_plan.changes.include?(:tags)
         return if instance_plan.new? || @needs_recreate
-        return if instance.state == 'detached' # disks will get a metadata update when attaching again
+        return if instance.detached? # disks will get a metadata update when attaching again
 
         @logger.debug("Updating instance #{instance} VM and disk metadata with tags")
         tags = instance_plan.tags
@@ -172,27 +184,19 @@ module Bosh::Director
       end
 
       def deleting_vm?
-        @needs_recreate || instance_plan.needs_shutting_down? || instance.state == 'detached' ||
+        @needs_recreate || instance_plan.needs_shutting_down? || instance.detached? ||
           (instance_plan.should_create_swap_delete? && instance_plan.instance.model.vms.count > 1)
       end
 
       def calculate_action
         if restarting?
-          names = {
-            'started' => 'start',
-            'stopped' => 'stop',
-            'detached' => 'stop',
-          }
-
-          raw_name = instance_plan.instance.virtual_state
-          return names[raw_name] if names.key? raw_name
-
-          return raw_name
+          return VIRTUAL_STATE_TO_ACTION_MAPPING.fetch(instance_plan.instance.virtual_state,
+                                                       instance_plan.instance.virtual_state)
         end
 
-        return 'create' if instance_plan.new?
+        return CREATE if instance_plan.new?
 
-        @needs_recreate ? 'recreate' : 'update'
+        @needs_recreate ? RECREATE : UPDATE
       end
 
       def restarting?

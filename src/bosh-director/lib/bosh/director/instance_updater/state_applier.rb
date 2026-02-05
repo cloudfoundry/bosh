@@ -17,7 +17,7 @@ module Bosh::Director
       @instance.update_templates(@instance_plan.templates)
       @rendered_job_templates_cleaner.clean
 
-      start(update_config, wait_for_running) if @instance.state == 'started'
+      start(update_config, wait_for_running) if @instance.started?
     end
 
     private

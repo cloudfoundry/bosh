@@ -106,7 +106,7 @@ module Bosh::Director
         instance_plan = DeploymentPlan::InstancePlanFromDB.create_from_instance_model(
           instance_model,
           deployment_plan,
-          'started',
+          Bosh::Director::INSTANCE_STATE_STARTED,
           @logger,
         )
 
@@ -145,14 +145,14 @@ module Bosh::Director
 
         DeploymentPlan::Steps::DeleteVmStep.new(true, false, Config.enable_virtual_delete_vms).perform(instance_report)
         @logger.debug("Setting instance #{@instance_id} state to detached")
-        instance_model.update(state: 'detached')
+        instance_model.update(state: Bosh::Director::INSTANCE_STATE_DETACHED)
       end
 
       def stop(instance_model, instance_plan)
         task_checkpoint
 
         intent = @options['hard'] ? :delete_vm : :keep_vm
-        target_state = @options['hard'] ? 'detached' : 'stopped'
+        target_state = @options['hard'] ? Bosh::Director::INSTANCE_STATE_DETACHED : Bosh::Director::INSTANCE_STATE_STOPPED
         parent_event = add_event('stop', instance_model)
 
         Stopper.stop(intent: intent, instance_plan: instance_plan, target_state: target_state, logger: @logger)

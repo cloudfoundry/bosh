@@ -42,6 +42,33 @@ module Bosh
           labels: %i[name],
           docstring: 'Number of unresponsive agents per deployment',
         )
+
+        @unhealthy_agents = Prometheus::Client.registry.gauge(
+          :bosh_unhealthy_agents,
+          labels: %i[name],
+          docstring: 'Number of unhealthy agents (job_state == running AND number_of_processes == 0) per deployment',
+        )
+        @total_available_agents = Prometheus::Client.registry.gauge(
+          :bosh_total_available_agents,
+          labels: %i[name],
+          docstring: 'Number of total available agents (all agents, no criteria) per deployment',
+        )
+        @failing_instances = Prometheus::Client.registry.gauge(
+          :bosh_failing_instances,
+          labels: %i[name],
+          docstring: 'Number of failing instances (job_state == "failing") per deployment',
+        )
+        @stopped_instances = Prometheus::Client.registry.gauge(
+          :bosh_stopped_instances,
+          labels: %i[name],
+          docstring: 'Number of instances (job_state == "stopped") per deployment',
+        )
+
+        @unknown_instances = Prometheus::Client.registry.gauge(
+          :bosh_unknown_instances,
+          labels: %i[name],
+          docstring: 'Number of instances with unknown job_state per deployment',
+        )
         @scheduler = Rufus::Scheduler.new
       end
 
@@ -115,26 +142,40 @@ module Bosh
       end
 
       def populate_vm_metrics
-        response = Net::HTTP.get_response('127.0.0.1', '/unresponsive_agents', @config.health_monitor_port)
+        fetch_and_update_gauge('/unresponsive_agents', @unresponsive_agents)
+        fetch_and_update_gauge('/unhealthy_agents', @unhealthy_agents)
+        fetch_and_update_gauge('/total_available_agents', @total_available_agents)
+        fetch_and_update_gauge('/failing_instances', @failing_instances)
+        fetch_and_update_gauge('/stopped_instances', @stopped_instances)
+        fetch_and_update_gauge('/unknown_instances', @unknown_instances)
+      end
+
+      def fetch_and_update_gauge(endpoint, gauge)
+        response = Net::HTTP.get_response('127.0.0.1', endpoint, @config.health_monitor_port)
         return unless response.is_a?(Net::HTTPSuccess)
 
-        unresponsive_agent_counts = JSON.parse(response.body)
-        return unless unresponsive_agent_counts.is_a?(Hash)
+        begin
+          deployment_counts = JSON.parse(response.body)
+        rescue JSON::ParserError => e
+          @logger.warn("Failed to parse JSON response from #{endpoint}: #{e.message}")
+          return
+        end
+        return unless deployment_counts.is_a?(Hash)
 
-        existing_deployment_names = @unresponsive_agents.values.map do |key, _|
+        existing_deployment_names = gauge.values.map do |key, _|
           # The keys within the Prometheus::Client::Metric#values method are actually hashes. So the
           # data returned from values looks like:
           # { { name: "deployment_a"} => 10, { name: "deployment_b "} => 0, ... }
           key[:name]
         end
 
-        unresponsive_agent_counts.each do |deployment, count|
-          @unresponsive_agents.set(count, labels: { name: deployment })
+        deployment_counts.each do |deployment, count|
+          gauge.set(count, labels: { name: deployment })
         end
 
-        removed_deployments = existing_deployment_names - unresponsive_agent_counts.keys
+        removed_deployments = existing_deployment_names - deployment_counts.keys
         removed_deployments.each do |deployment|
-          @unresponsive_agents.set(0, labels: { name: deployment })
+          gauge.set(0, labels: { name: deployment })
         end
       end
 

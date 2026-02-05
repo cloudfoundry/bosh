@@ -77,8 +77,8 @@ module Bosh::Director
       end
 
       def needs_shutdown?(instance_plan, target_state)
-        target_state == 'stopped' ||
-          target_state == 'detached' ||
+        target_state == Bosh::Director::INSTANCE_STATE_STOPPED ||
+          target_state == Bosh::Director::INSTANCE_STATE_DETACHED ||
           instance_plan.needs_shutting_down? ||
           instance_plan.persistent_disk_changed?
       end

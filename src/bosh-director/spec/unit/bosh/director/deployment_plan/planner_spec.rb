@@ -300,6 +300,7 @@ module Bosh::Director
 
           context 'with errand not running' do
             before do
+              instance_state = 'started'
               allow(job2)
                 .to receive(:instances)
                 .and_return(
@@ -307,7 +308,7 @@ module Bosh::Director
                     instance_double(
                       'Bosh::Director::DeploymentPlan::Instance',
                       vm_created?: false,
-                      model: instance_double('Bosh::Director::Models::Instance', state: 'started'),
+                      model: instance_double('Bosh::Director::Models::Instance', state: instance_state, detached?: instance_state == 'detached'),
                     ),
                   ],
                 )

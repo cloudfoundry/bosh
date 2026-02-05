@@ -34,7 +34,7 @@ module Bosh::Director
         rendered_templates_archive: nil,
         configuration_hash: { 'fake-spec' => true },
         template_hashes: [],
-        current_job_state: current_job_state,
+        current_job_state: current_job_state.inquiry,
         deployment_model: deployment_model,
       )
     end

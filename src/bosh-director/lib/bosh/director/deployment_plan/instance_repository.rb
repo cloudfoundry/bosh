@@ -120,7 +120,7 @@ module Bosh::Director::DeploymentPlan
       instance = Instance.create_from_instance_group(
         desired_instance.instance_group,
         index,
-        'started',
+        Bosh::Director::INSTANCE_STATE_STARTED,
         desired_instance.deployment.model,
         nil,
         desired_instance.az,

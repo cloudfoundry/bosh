@@ -22,7 +22,7 @@ export BOSH_DIRECTOR_RELEASE_PATH="${bosh_ci_parent_dir}/bosh"
 export CF_DEPLOYMENT_RELEASE_PATH="${bosh_ci_parent_dir}/cf-deployment"
 CANDIDATE_STEMCELL_TARBALL_PATH="$(find "${bosh_ci_parent_dir}/stemcell" -maxdepth 1 -path '*.tgz')"
 export CANDIDATE_STEMCELL_TARBALL_PATH
-export STEMCELL_OS=ubuntu-jammy
+export STEMCELL_OS=ubuntu-noble
 
 DOCKER_CERTS="$(bosh int /tmp/local-bosh/director/bosh-director.yml --path /instance_groups/0/properties/docker_cpi/docker/tls)"
 export DOCKER_CERTS

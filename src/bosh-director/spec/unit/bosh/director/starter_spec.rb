@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'active_support/core_ext/string/inquiry'
 
 module Bosh::Director
   describe Starter do
@@ -19,7 +20,7 @@ module Bosh::Director
     let(:instance) do
       instance_double(
         DeploymentPlan::Instance,
-        current_job_state: current_job_state,
+        current_job_state: current_job_state.inquiry,
       )
     end
 

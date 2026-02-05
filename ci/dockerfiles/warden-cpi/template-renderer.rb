@@ -6,13 +6,14 @@ require "yaml"
 
 class Hash
   def recursive_merge!(other)
-    self.merge!(other) do |_, old_value, new_value|
-      if old_value.class == Hash && new_value.class == Hash
+    merge!(other) do |_, old_value, new_value|
+      if old_value.instance_of?(Hash) && new_value.instance_of?(Hash)
         old_value.recursive_merge!(new_value)
       else
         new_value
       end
     end
+
     self
   end
 end
@@ -26,20 +27,21 @@ class TemplateEvaluationContext
     @name = spec["job"]["name"] if spec["job"].is_a?(Hash)
     @index = spec["index"]
 
-    if !spec['job_properties'].nil?
-      properties1 = spec['job_properties']
-    else
-      properties1 = spec['global_properties'].recursive_merge!(spec['cluster_properties'])
-    end
+    properties1 =
+      if !spec["job_properties"].nil?
+        spec["job_properties"]
+      else
+        spec["global_properties"].recursive_merge!(spec["cluster_properties"])
+      end
 
     properties = {}
-    spec['default_properties'].each do |name, value|
+    spec["default_properties"].each do |name, value|
       copy_property(properties, properties1, name, value)
     end
 
-    @properties = openstruct(properties)
+    @properties = open_struct(properties)
     @raw_properties = properties
-    @spec = openstruct(spec)
+    @spec = open_struct(spec)
   end
 
   def get_binding
@@ -62,14 +64,16 @@ class TemplateEvaluationContext
     values = names.map do |name|
       value = lookup_property(@raw_properties, name)
       return ActiveElseBlock.new(self) if value.nil?
+
       value
     end
 
-    yield *values
+    yield(*values)
+
     InactiveElseBlock.new
   end
 
-  def if_link(name)
+  def if_link(_name)
     false
   end
 
@@ -94,13 +98,13 @@ class TemplateEvaluationContext
     dst_ref[keys[-1]] = src_ref.nil? ? default : src_ref
   end
 
-  def openstruct(object)
+  def open_struct(object)
     case object
     when Hash
-      mapped = object.inject({}) { |h, (k,v)| h[k] = openstruct(v); h }
+      mapped = object.each_with_object({}) { |(k, v), h| h[k] = open_struct(v) }
       OpenStruct.new(mapped)
     when Array
-      object.map { |item| openstruct(item) }
+      object.map { |item| open_struct(item) }
     else
       object
     end
@@ -142,9 +146,10 @@ class TemplateEvaluationContext
   end
 
   class InactiveElseBlock
-    def else; end
+    def else
+    end
 
-    def else_if_p(*names)
+    def else_if_p(*_names)
       InactiveElseBlock.new
     end
   end
@@ -152,7 +157,7 @@ end
 
 # todo do not use JSON in releases
 class << JSON
-  alias dump_array_or_hash dump
+  alias_method :dump_array_or_hash, :dump
 
   def dump(*args)
     arg = args[0]
@@ -170,28 +175,26 @@ class ERBRenderer
   end
 
   def render(src_path, dst_path)
-    erb = ERB.new(File.read(src_path), safe_level = nil, trim_mode = "-")
+    erb = ERB.new(File.read(src_path), trim_mode: "-")
     erb.filename = src_path
 
-    File.open(dst_path, "w") do |f|
-      f.write(erb.result(@context.get_binding))
-    end
+    File.write(dst_path, erb.result(@context.get_binding))
 
-  rescue Exception => e
+  rescue Exception => e # rubocop:disable Lint/RescueException
     name = "#{@context.name}/#{@context.index}"
 
-    line_i = e.backtrace.index { |l| l.include?(erb.filename) }
-    line_num = line_i ? e.backtrace[line_i].split(':')[1] : "unknown"
+    line_i = e.backtrace&.index { |l| l.include?(erb.filename) }
+    line_num = line_i ? e.backtrace[line_i].split(":")[1] : "unknown"
     location = "(line #{line_num}: #{e.inspect})"
 
     raise("Error filling in template '#{src_path}' for #{name} #{location}")
   end
 end
 
-if $0 == __FILE__
+if $PROGRAM_NAME == __FILE__
   context_path, src_path, dst_path = *ARGV
 
-  context_hash = JSON.load(File.read(context_path))
+  context_hash = JSON.parse(File.read(context_path))
   context = TemplateEvaluationContext.new(context_hash)
 
   renderer = ERBRenderer.new(context)

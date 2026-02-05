@@ -82,6 +82,7 @@ def make_heartbeat(attrs = {})
       },
     },
     teams: %w[ateam bteam],
+    number_of_processes: 5,
   }
   Bosh::Monitor::Events::Heartbeat.new(defaults.merge(attrs))
 end

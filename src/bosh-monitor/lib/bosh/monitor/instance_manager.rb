@@ -121,6 +121,56 @@ module Bosh::Monitor
       agents_hash
     end
 
+    def unhealthy_agents
+      agents_hash = {}
+      @deployment_name_to_deployments.each do |name, deployment|
+        agents_hash[name] = deployment.agents.count do |agent|
+          agent.job_state && agent.job_state == "running" && agent.number_of_processes == 0
+        end
+      end
+
+      agents_hash
+    end
+    def failing_instances
+      agents_hash = {}
+      @deployment_name_to_deployments.each do |name, deployment|
+        agents_hash[name] = deployment.agents.count { |agent| agent.job_state == "failing" }
+      end
+
+      agents_hash
+    end
+
+    def stopped_instances
+      agents_hash = {}
+      @deployment_name_to_deployments.each do |name, deployment|
+        agents_hash[name] = deployment.agents.count { |agent| agent.job_state == "stopped" }
+      end
+
+      agents_hash
+    end
+
+    def unknown_instances
+      agents_hash = {}
+      @deployment_name_to_deployments.each do |name, deployment|
+        agents_hash[name] = deployment.agents.count { |agent| agent.job_state.nil? }
+      end
+
+      agents_hash
+    end
+
+    def total_available_agents
+      agents_hash = {}
+      @deployment_name_to_deployments.each do |name, deployment|
+        # Count all agents for the deployment (no additional criteria)
+        agents_hash[name] = deployment.agents.count
+      end
+
+      # Include unmanaged (rogue) agents in the aggregate under 'unmanaged'
+      agents_hash['unmanaged'] = @unmanaged_agents.keys.size
+
+      agents_hash
+    end
+
     def analyze_agents
       @logger.info('Analyzing agents...')
       started = Time.now
@@ -325,7 +375,11 @@ module Bosh::Monitor
         message['instance_id'] = agent.instance_id
         message['teams'] = deployment ? deployment.teams : []
 
-        return if message['instance_id'].nil? || message['job'].nil? || message['deployment'].nil?
+        # Store job_state and number_of_processes on the agent for unhealthy detection
+        agent.job_state = message["job_state"]
+        agent.number_of_processes = message["number_of_processes"]
+
+        return if message["instance_id"].nil? || message["job"].nil? || message["deployment"].nil?
       end
 
       @processor.process(:heartbeat, message)
