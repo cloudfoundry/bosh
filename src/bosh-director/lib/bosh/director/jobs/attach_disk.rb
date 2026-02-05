@@ -53,7 +53,7 @@ module Bosh::Director
               'Attaching disks to ignored instances is not allowed.'
         end
 
-        unless instance.detached? || instance.stopped?
+        if !instance.detached? && !instance.stopped?
           raise AttachDiskInvalidInstanceState, "Instance '#{@job_name}/#{@instance_id}' in deployment '#{@deployment_name}' must be in 'bosh stopped' state"
         end
       end

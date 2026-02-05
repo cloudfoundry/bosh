@@ -18,8 +18,8 @@ module Bosh::Director
         Bosh::Director::INSTANCE_STATE_STARTED,
         Bosh::Director::INSTANCE_STATE_STOPPED,
         Bosh::Director::INSTANCE_STATE_DETACHED,
-        Bosh::Director::INSTANCE_VIRTUAL_STATE_RESTART,
         Bosh::Director::INSTANCE_VIRTUAL_STATE_RECREATE,
+        Bosh::Director::INSTANCE_VIRTUAL_STATE_RESTART,
       ].freeze
 
       # @return [String] Instance group name
