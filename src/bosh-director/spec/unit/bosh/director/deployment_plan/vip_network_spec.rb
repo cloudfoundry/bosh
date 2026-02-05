@@ -58,6 +58,43 @@ describe Bosh::Director::DeploymentPlan::VipNetwork do
       )
     end
 
+    it 'should include nic_group when specified on reservation' do
+      reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, @network, '0.0.0.1', 1)
+
+      expect(@network.network_settings(reservation, [])).to eq(
+        'type' => 'vip',
+        'ip' => '0.0.0.1',
+        'cloud_properties' => {
+          'foz' => 'baz',
+        },
+        'prefix' => '32',
+        'nic_group' => '1',
+      )
+    end
+
+    it 'should convert nic_group to string when specified' do
+      reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, @network, '0.0.0.1', 5)
+
+      settings = @network.network_settings(reservation, [])
+      expect(settings['nic_group']).to eq('5')
+      expect(settings['nic_group']).to be_a(String)
+    end
+
+    it 'should omit nic_group when not specified on reservation' do
+      reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, @network, '0.0.0.1', nil)
+
+      settings = @network.network_settings(reservation, [])
+      expect(settings).not_to have_key('nic_group')
+    end
+
+    it 'should include nic_group 0 explicitly when specified' do
+      reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, @network, '0.0.0.1', 0)
+
+      settings = @network.network_settings(reservation, [])
+      expect(settings['nic_group']).to eq('0')
+      expect(settings).to have_key('nic_group')
+    end
+
     it 'should fail if there are any defaults' do
       reservation = Bosh::Director::DesiredNetworkReservation.new_static(instance_model, @network, '0.0.0.1')
 
