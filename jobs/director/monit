@@ -7,8 +7,17 @@ check process director
 <% (1..(p('director.workers'))).each do |index| %>
 check process worker_<%= index %>
   with pidfile /var/vcap/sys/run/director/worker_<%= index %>.pid
-  start program "/var/vcap/jobs/director/bin/worker_ctl start <%= index %>"
-  stop program "/var/vcap/jobs/director/bin/worker_ctl stop <%= index %>"
+  start program "/var/vcap/jobs/director/bin/worker_ctl start worker_<%= index %>"
+  stop program "/var/vcap/jobs/director/bin/worker_ctl stop worker_<%= index %>"
+  group vcap
+  depends on director
+<% end %>
+
+<% (1..(p('director.dynamic_disks_workers'))).each do |index| %>
+check process dynamic_disks_worker_<%= index %>
+  with pidfile /var/vcap/sys/run/director/dynamic_disks_worker_<%= index %>.pid
+  start program "/var/vcap/jobs/director/bin/worker_ctl start dynamic_disks_worker_<%= index %> dynamic_disks"
+  stop program "/var/vcap/jobs/director/bin/worker_ctl stop dynamic_disks_worker_<%= index %> dynamic_disks"
   group vcap
   depends on director
 <% end %>

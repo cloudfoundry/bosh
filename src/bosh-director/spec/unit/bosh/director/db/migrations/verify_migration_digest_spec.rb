@@ -24,6 +24,10 @@ module Bosh::Director
           filename: '20250618102610_migrate_ip_address_representation_from_integer_to_cidr_notation.rb',
           sha1: '83f219a46b0943b5e27355cb3792e639c7507707',
         },
+        {
+          filename: '20250623223600_add_dynamic_disks.rb',
+          sha1: '25e2bb3567fbc1c853b078920989699bca95277d',
+        },
       ]
     end
 

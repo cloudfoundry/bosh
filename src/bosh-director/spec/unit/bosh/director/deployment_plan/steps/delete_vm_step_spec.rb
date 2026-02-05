@@ -58,11 +58,12 @@ module Bosh
 
             it 'deletes the instances vm and stores an event' do
               expect(job).to receive(:event_manager).twice.and_return(event_manager)
-              expect(job).to receive(:username).twice.and_return('fake-username')
-              expect(job).to receive(:task_id).twice.and_return('fake-task-id')
+              expect(job).to receive(:username).exactly(4).times.and_return('fake-username')
+              expect(job).to receive(:task_id).exactly(3).times.and_return('fake-task-id')
 
               expect(per_spec_logger).to receive(:info).with('Deleting VM')
-              expect(Config).to receive(:current_job).and_return(job).exactly(6).times
+              expect(per_spec_logger).to receive(:info).with('Acquiring VM lock on vm-cid')
+              expect(Config).to receive(:current_job).and_return(job).exactly(9).times
               expect(Models::LocalDnsRecord.all).to eq([local_dns_record])
               expect(cloud).to receive(:delete_vm).with('vm-cid')
 
@@ -100,6 +101,7 @@ module Bosh
             context 'when vm has already been deleted from the IaaS' do
               it 'should log a warning' do
                 expect(per_spec_logger).to receive(:info).with('Deleting VM')
+                expect(per_spec_logger).to receive(:info).with('Acquiring VM lock on vm-cid')
                 expect(per_spec_logger).to receive(:warn)
                   .with("VM '#{vm_model.cid}' might have already been deleted from the cloud")
                 expect(cloud).to receive(:delete_vm).with(vm_model.cid).and_raise Bosh::Clouds::VMNotFound
@@ -131,11 +133,12 @@ module Bosh
               it 'creates requests a cloud instance with that stemcell api version' do
                 expect(cloud_factory).to receive(:get).with('cpi1', 25).and_return(cloud)
                 expect(job).to receive(:event_manager).twice.and_return(event_manager)
-                expect(job).to receive(:username).twice.and_return('fake-username')
-                expect(job).to receive(:task_id).twice.and_return('fake-task-id')
+                expect(job).to receive(:username).exactly(4).times.and_return('fake-username')
+                expect(job).to receive(:task_id).exactly(3).times.and_return('fake-task-id')
 
                 expect(per_spec_logger).to receive(:info).with('Deleting VM')
-                expect(Config).to receive(:current_job).and_return(job).exactly(6).times
+                expect(per_spec_logger).to receive(:info).with('Acquiring VM lock on vm-cid')
+                expect(Config).to receive(:current_job).and_return(job).exactly(9).times
                 expect(Models::LocalDnsRecord.all).to eq([local_dns_record])
                 expect(cloud).to receive(:delete_vm).with('vm-cid')
 
@@ -146,6 +149,7 @@ module Bosh
             context 'when trying to delete VM mutiple times' do
               it 'deletes the instances vm and stores an event' do
                 expect(per_spec_logger).to receive(:info).with('Deleting VM').twice
+                expect(per_spec_logger).to receive(:info).with('Acquiring VM lock on vm-cid').twice
                 expect(Models::LocalDnsRecord.all).to eq([local_dns_record])
                 expect(cloud).to receive(:delete_vm).with('vm-cid').twice
 

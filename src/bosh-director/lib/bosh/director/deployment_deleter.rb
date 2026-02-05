@@ -8,7 +8,7 @@ module Bosh::Director
       @variables_interpolator = ConfigServer::VariablesInterpolator.new
     end
 
-    def delete(deployment_model, instance_deleter, vm_deleter)
+    def delete(deployment_model, instance_deleter, vm_deleter, disk_deleter)
       instance_plans = deployment_model.instances.map do |instance_model|
         DeploymentPlan::InstancePlan.new(
           existing_instance: instance_model,
@@ -39,6 +39,11 @@ module Bosh::Director
         event_log_stage.advance_and_track(property.name) do
           property.destroy
         end
+      end
+
+      event_log_stage.advance_and_track('Deleting dynamic disks') do
+        @logger.info('Deleting dynamic disks')
+        disk_deleter.delete_dynamic_disks(deployment_model, event_log_stage, max_threads: @max_threads)
       end
 
       if Config.network_lifecycle_enabled?
