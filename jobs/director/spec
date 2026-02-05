@@ -282,6 +282,12 @@ properties:
     description: Client certificate for mutual TLS connections to an external metrics server
   director.metrics_server.tls.private_key:
     description: Client private key for mutual TLS connections to an external metrics server
+  director.metrics_server.file_retention_days:
+    description: 'Number of days to retain metric binary files in /var/vcap/store/director/metrics. Older files are automatically cleaned up by a scheduled job. Set to 0 to disable cleanup.'
+    default: 7
+  director.metrics_server.cleanup_schedule:
+    description: 'RufusScheduler cron formatted schedule for cleanup of stale metrics files'
+    default: '0 0 0 * * * UTC'  # once every day at midnight UTC
 
   # NATs
   nats.address:
