@@ -92,9 +92,8 @@ module Bosh::Director
             end
           else
             matching_instances.collect do |target_instance|
-              if target_instance.current_job_state.nil?
-                Config.event_log.warn("Skipping instance: #{target_instance} " \
-                                      'no matching VM reference was found')
+              if target_instance.current_job_state.to_s.empty?
+                Config.event_log.warn("Skipping instance: #{target_instance} no matching VM reference was found")
                 nil
               else
                 Errand::LifecycleServiceStep.new(runner, target_instance, @logger)
