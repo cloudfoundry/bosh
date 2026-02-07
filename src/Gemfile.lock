@@ -210,7 +210,7 @@ GEM
     openssl (4.0.0)
     ostruct (0.6.3)
     parallel (1.27.0)
-    parallel_tests (5.5.0)
+    parallel_tests (5.6.0)
       parallel
     parser (3.3.10.1)
       ast (~> 2.4.1)
@@ -220,7 +220,7 @@ GEM
     prometheus-client (4.2.5)
       base64
     protocol-hpack (1.5.1)
-    protocol-http (0.58.1)
+    protocol-http (0.59.0)
     protocol-http1 (0.37.0)
       protocol-http (~> 0.58)
     protocol-http2 (0.24.0)
