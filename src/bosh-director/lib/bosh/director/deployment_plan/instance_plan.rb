@@ -13,7 +13,7 @@ module Bosh
                        skip_drain: false,
                        recreate_deployment: false,
                        recreate_persistent_disks: false,
-                       recreate_vm_created_before: nil,
+                       recreate_vms_created_before: nil,
                        use_dns_addresses: false,
                        use_short_dns_addresses: false,
                        use_link_dns_addresses: false,
@@ -28,7 +28,7 @@ module Bosh
           @skip_drain = skip_drain
           @recreate_deployment = recreate_deployment
           @recreate_persistent_disks = recreate_persistent_disks
-          @recreate_vm_created_before = recreate_vm_created_before
+          @recreate_vms_created_before = recreate_vms_created_before
           @use_dns_addresses = use_dns_addresses
           @use_short_dns_addresses = use_short_dns_addresses
           @use_link_dns_addresses = use_link_dns_addresses
@@ -444,8 +444,8 @@ module Bosh
 
         def should_recreate_based_on_vm_age?
           # If no filter specified, always recreate
-          unless @recreate_vm_created_before
-            @logger.debug("#{__method__} no recreate_vm_created_before filter, will recreate")
+          unless @recreate_vms_created_before
+            @logger.debug("#{__method__} no recreate_vms_created_before filter, will recreate")
             return true
           end
 
@@ -464,7 +464,7 @@ module Bosh
           end
 
           # Compare VM age against threshold
-          threshold_time = Time.rfc3339(@recreate_vm_created_before)
+          threshold_time = Time.rfc3339(@recreate_vms_created_before)
           if vm_created_at < threshold_time
             @logger.debug("#{__method__} VM created at #{vm_created_at} is older than threshold #{threshold_time}, will recreate")
             true

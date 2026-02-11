@@ -45,7 +45,7 @@ module Bosh::Director
         @variables_interpolator,
         @deployment_plan.link_provider_intents,
         'recreate' => @deployment_plan.recreate,
-        'recreate_vm_created_before' => @deployment_plan.recreate_vm_created_before,
+        'recreate_vms_created_before' => @deployment_plan.recreate_vms_created_before,
         'use_dns_addresses' => @deployment_plan.use_dns_addresses?,
         'use_short_dns_addresses' => @deployment_plan.use_short_dns_addresses?,
         'use_link_dns_addresses' => @deployment_plan.use_link_dns_names?,

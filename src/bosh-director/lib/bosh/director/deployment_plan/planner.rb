@@ -44,7 +44,7 @@ module Bosh::Director
       attr_reader :recreate_persistent_disks
 
       # @return [String, nil] ISO 8601 timestamp - only recreate VMs created before this time
-      attr_reader :recreate_vm_created_before
+      attr_reader :recreate_vms_created_before
 
       attr_writer :cloud_planner
 
@@ -105,7 +105,7 @@ module Bosh::Director
         @is_deploy_action = !!options['is_deploy_action']
         @recreate = !!options['recreate']
         @recreate_persistent_disks = options['recreate_persistent_disks'] == true
-        @recreate_vm_created_before = options['recreate_vm_created_before']
+        @recreate_vms_created_before = options['recreate_vms_created_before']
         @fix = !!options['fix']
 
         @skip_drain = SkipDrain.new(options['skip_drain'])

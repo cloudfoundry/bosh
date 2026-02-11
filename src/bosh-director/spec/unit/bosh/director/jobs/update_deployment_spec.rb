@@ -73,7 +73,7 @@ module Bosh::Director
             model: deployment_model,
             link_provider_intents: [],
             stemcells: {},
-            recreate_vm_created_before: nil,
+            recreate_vms_created_before: nil,
           )
         end
         let(:assembler) { instance_double(DeploymentPlan::Assembler, bind_models: nil) }
@@ -1026,7 +1026,7 @@ Unable to render instance groups for deployment. Errors are:
           end
         end
 
-        describe '#warn_if_recreate_vm_created_before_is_future' do
+        describe '#warn_if_recreate_vms_created_before_is_future' do
           let(:manifest) { instance_double(Bosh::Director::Manifest) }
 
           before do
@@ -1039,14 +1039,14 @@ Unable to render instance groups for deployment. Errors are:
             let(:future_timestamp) { '2099-01-01T00:00:00Z' }
 
             it 'emits a warning to the event log' do
-              allow(planner).to receive(:recreate_vm_created_before).and_return(future_timestamp)
+              allow(planner).to receive(:recreate_vms_created_before).and_return(future_timestamp)
 
               expect(Config.event_log).to receive(:warn).with(
-                "The recreate_vm_created_before timestamp '#{future_timestamp}' is in the future. " \
+                "The recreate_vms_created_before timestamp '#{future_timestamp}' is in the future. " \
                 'No VMs will be filtered by age - all VMs marked for recreation will be recreated.',
               )
 
-              job.send(:warn_if_recreate_vm_created_before_is_future)
+              job.send(:warn_if_recreate_vms_created_before_is_future)
             end
           end
 
@@ -1054,21 +1054,21 @@ Unable to render instance groups for deployment. Errors are:
             let(:past_timestamp) { '2000-01-01T00:00:00Z' }
 
             it 'does not emit a warning' do
-              allow(planner).to receive(:recreate_vm_created_before).and_return(past_timestamp)
+              allow(planner).to receive(:recreate_vms_created_before).and_return(past_timestamp)
 
               expect(Config.event_log).not_to receive(:warn)
 
-              job.send(:warn_if_recreate_vm_created_before_is_future)
+              job.send(:warn_if_recreate_vms_created_before_is_future)
             end
           end
 
           context 'when timestamp is not specified' do
             it 'does not emit a warning' do
-              allow(planner).to receive(:recreate_vm_created_before).and_return(nil)
+              allow(planner).to receive(:recreate_vms_created_before).and_return(nil)
 
               expect(Config.event_log).not_to receive(:warn)
 
-              job.send(:warn_if_recreate_vm_created_before_is_future)
+              job.send(:warn_if_recreate_vms_created_before_is_future)
             end
           end
         end

@@ -49,12 +49,14 @@ module Bosh::Director
         options['fix'] = true if params['fix'] == 'true'
         options['dry_run'] = true if params['dry_run'] == 'true'
 
-        if params['recreate_vm_created_before']
+        if params['recreate_vms_created_before']
+          raise ValidationInvalidValue, "Must pass state=recreate when specifying recreate_vms_created_before" unless params['state'] == 'recreate'
+
           begin
-            Time.rfc3339(params['recreate_vm_created_before'])
-            options['recreate_vm_created_before'] = params['recreate_vm_created_before']
+            Time.rfc3339(params['recreate_vms_created_before'])
+            options['recreate_vms_created_before'] = params['recreate_vms_created_before']
           rescue ArgumentError
-            raise ValidationInvalidValue, "Invalid RFC 3339 timestamp for recreate_vm_created_before: #{params['recreate_vm_created_before']}"
+            raise ValidationInvalidValue, "Invalid RFC 3339 timestamp for recreate_vms_created_before: #{params['recreate_vms_created_before']}"
           end
         end
 
@@ -427,12 +429,14 @@ module Bosh::Director
         options['scopes'] = token_scopes
         options['force_latest_variables'] = true if params['force_latest_variables'] == 'true'
 
-        if params['recreate_vm_created_before']
+        if params['recreate_vms_created_before']
+          raise ValidationInvalidValue, "Must pass recreate=true when specifying recreate_vms_created_before" unless options['recreate']
+
           begin
-            Time.rfc3339(params['recreate_vm_created_before'])
-            options['recreate_vm_created_before'] = params['recreate_vm_created_before']
+            Time.rfc3339(params['recreate_vms_created_before'])
+            options['recreate_vms_created_before'] = params['recreate_vms_created_before']
           rescue ArgumentError
-            raise ValidationInvalidValue, "Invalid RFC 3339 timestamp for recreate_vm_created_before: #{params['recreate_vm_created_before']}"
+            raise ValidationInvalidValue, "Invalid RFC 3339 timestamp for recreate_vms_created_before: #{params['recreate_vms_created_before']}"
           end
         end
 

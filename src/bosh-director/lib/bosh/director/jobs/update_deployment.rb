@@ -42,7 +42,7 @@ module Bosh::Director
             prepare_deployment
 
             warn_if_any_ignored_instances
-            warn_if_recreate_vm_created_before_is_future
+            warn_if_recreate_vms_created_before_is_future
 
             next_releases, next_stemcells = get_stemcells_and_releases
 
@@ -465,15 +465,15 @@ module Bosh::Director
         @event_log.warn('You have ignored instances. They will not be changed.')
       end
 
-      def warn_if_recreate_vm_created_before_is_future
-        timestamp = deployment_plan.recreate_vm_created_before
+      def warn_if_recreate_vms_created_before_is_future
+        timestamp = deployment_plan.recreate_vms_created_before
         return unless timestamp
 
         threshold_time = Time.rfc3339(timestamp)
         return unless threshold_time > Time.now
 
         @event_log.warn(
-          "The recreate_vm_created_before timestamp '#{timestamp}' is in the future. " \
+          "The recreate_vms_created_before timestamp '#{timestamp}' is in the future. " \
           'No VMs will be filtered by age - all VMs marked for recreation will be recreated.',
         )
       end

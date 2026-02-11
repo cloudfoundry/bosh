@@ -110,7 +110,7 @@ module Bosh
                 'is_deploy_action' => false,
                 'recreate' => false,
                 'recreate_persistent_disks' => false,
-                'recreate_vm_created_before' => nil,
+                'recreate_vms_created_before' => nil,
                 'fix' => false,
                 'skip_drain' => nil,
                 'job_states' => {},

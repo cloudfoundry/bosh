@@ -1345,7 +1345,7 @@ module Bosh::Director::DeploymentPlan
 
         it 'should log the change reason' do
           expect(per_spec_logger).to receive(:debug).with('recreation_requested? job deployment is configured with "recreate" state')
-          expect(per_spec_logger).to receive(:debug).with('should_recreate_based_on_vm_age? no recreate_vm_created_before filter, will recreate')
+          expect(per_spec_logger).to receive(:debug).with('should_recreate_based_on_vm_age? no recreate_vms_created_before filter, will recreate')
           instance_plan.recreation_requested?
         end
       end
@@ -1374,10 +1374,10 @@ module Bosh::Director::DeploymentPlan
         end
       end
 
-      context 'with recreate_vm_created_before filter' do
+      context 'with recreate_vms_created_before filter' do
         let(:old_vm_created_at) { Time.parse('2025-01-01T00:00:00Z') }
         let(:new_vm_created_at) { Time.parse('2026-06-01T00:00:00Z') }
-        let(:threshold_timestamp) { '2026-01-01T00:00:00Z' }
+        let(:threshold_timestamp) { '2026-01-03T00:00:00Z' }
 
         context 'when deployment is being recreated' do
           context 'and VM is older than threshold' do
@@ -1390,7 +1390,7 @@ module Bosh::Director::DeploymentPlan
                 instance: instance,
                 network_plans: network_plans,
                 recreate_deployment: true,
-                recreate_vm_created_before: threshold_timestamp,
+                recreate_vms_created_before: threshold_timestamp,
                 variables_interpolator: variables_interpolator,
               )
             end
@@ -1410,7 +1410,7 @@ module Bosh::Director::DeploymentPlan
                 instance: instance,
                 network_plans: network_plans,
                 recreate_deployment: true,
-                recreate_vm_created_before: threshold_timestamp,
+                recreate_vms_created_before: threshold_timestamp,
                 variables_interpolator: variables_interpolator,
               )
             end
@@ -1430,7 +1430,7 @@ module Bosh::Director::DeploymentPlan
                 instance: instance,
                 network_plans: network_plans,
                 recreate_deployment: true,
-                recreate_vm_created_before: threshold_timestamp,
+                recreate_vms_created_before: threshold_timestamp,
                 variables_interpolator: variables_interpolator,
               )
             end
@@ -1471,7 +1471,7 @@ module Bosh::Director::DeploymentPlan
                 desired_instance: desired_instance,
                 instance: instance,
                 network_plans: network_plans,
-                recreate_vm_created_before: threshold_timestamp,
+                recreate_vms_created_before: threshold_timestamp,
                 variables_interpolator: variables_interpolator,
               )
             end
@@ -1490,7 +1490,7 @@ module Bosh::Director::DeploymentPlan
                 desired_instance: desired_instance,
                 instance: instance,
                 network_plans: network_plans,
-                recreate_vm_created_before: threshold_timestamp,
+                recreate_vms_created_before: threshold_timestamp,
                 variables_interpolator: variables_interpolator,
               )
             end
@@ -1509,7 +1509,7 @@ module Bosh::Director::DeploymentPlan
                 desired_instance: desired_instance,
                 instance: instance,
                 network_plans: network_plans,
-                recreate_vm_created_before: threshold_timestamp,
+                recreate_vms_created_before: threshold_timestamp,
                 variables_interpolator: variables_interpolator,
               )
             end
@@ -1529,7 +1529,7 @@ module Bosh::Director::DeploymentPlan
               instance: instance,
               network_plans: network_plans,
               recreate_deployment: true,
-              recreate_vm_created_before: threshold_timestamp,
+              recreate_vms_created_before: threshold_timestamp,
               variables_interpolator: variables_interpolator,
             )
           end
