@@ -50,6 +50,7 @@ module Bosh::Director
         allow(deployment_plan).to receive(:use_link_dns_names?).and_return(false)
         allow(deployment_plan).to receive(:randomize_az_placement?).and_return(false)
         allow(deployment_plan).to receive(:recreate_persistent_disks?).and_return(false)
+        allow(deployment_plan).to receive(:recreate_vms_created_before).and_return(nil)
         allow(deployment_plan).to receive(:link_provider_intents).and_return([])
       end
 
@@ -104,6 +105,7 @@ module Bosh::Director
         it 'passes tags to instance plan factory' do
           expected_options = {
             'recreate' => false,
+            'recreate_vms_created_before' => nil,
             'recreate_persistent_disks' => false,
             'tags' => { 'key1' => 'value1' },
             'use_dns_addresses' => false,
@@ -134,6 +136,7 @@ module Bosh::Director
           it 'passes use_dns_addresses, use_short_dns_addresses and randomize_az_placement feature flags to instance plan factory' do
             expected_options = {
               'recreate' => false,
+              'recreate_vms_created_before' => nil,
               'recreate_persistent_disks' => false,
               'tags' => {},
               'use_dns_addresses' => true,
@@ -161,6 +164,7 @@ module Bosh::Director
             it 'passes use_short_dns_addresses to instance plan factory' do
               expected_options = {
                 'recreate' => false,
+                'recreate_vms_created_before' => nil,
                 'recreate_persistent_disks' => false,
                 'tags' => {},
                 'use_dns_addresses' => true,
@@ -191,6 +195,7 @@ module Bosh::Director
           it 'passes use_dns_addresses, use_short_dns_addresses and randomize_az_placement to instance plan factory' do
             expected_options = {
               'recreate' => false,
+              'recreate_vms_created_before' => nil,
               'recreate_persistent_disks' => false,
               'tags' => {},
               'use_dns_addresses' => false,

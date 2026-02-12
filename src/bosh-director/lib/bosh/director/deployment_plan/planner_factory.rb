@@ -65,6 +65,7 @@ module Bosh
             'is_deploy_action' => !!options['deploy'],
             'recreate' => !!options['recreate'],
             'recreate_persistent_disks' => options['recreate_persistent_disks'] == true,
+            'recreate_vms_created_before' => options['recreate_vms_created_before'],
             'fix' => !!options['fix'],
             'skip_drain' => options['skip_drain'],
             'job_states' => options['job_states'] || {},
