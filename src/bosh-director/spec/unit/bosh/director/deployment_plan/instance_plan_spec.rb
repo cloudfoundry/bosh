@@ -1344,8 +1344,7 @@ module Bosh::Director::DeploymentPlan
         end
 
         it 'should log the change reason' do
-          expect(per_spec_logger).to receive(:debug).with('recreation_requested? job deployment is configured with "recreate" state')
-          expect(per_spec_logger).to receive(:debug).with('should_recreate_based_on_vm_age? no recreate_vms_created_before filter, will recreate')
+          expect(per_spec_logger).to receive(:debug).with('recreation_requested? recreate requested and no age threshold provided, will recreate')
           instance_plan.recreation_requested?
         end
       end
@@ -1381,9 +1380,12 @@ module Bosh::Director::DeploymentPlan
 
         context 'when deployment is being recreated' do
           context 'and VM is older than threshold' do
-            let(:instance_plan) do
+            before do
               existing_instance.update(update_completed: true)
               existing_instance.active_vm.update(created_at: old_vm_created_at)
+            end
+
+            let(:instance_plan) do
               InstancePlan.new(
                 existing_instance: existing_instance,
                 desired_instance: desired_instance,
@@ -1401,9 +1403,12 @@ module Bosh::Director::DeploymentPlan
           end
 
           context 'and VM is newer than threshold' do
-            let(:instance_plan) do
+            before do
               existing_instance.update(update_completed: true)
               existing_instance.active_vm.update(created_at: new_vm_created_at)
+            end
+
+            let(:instance_plan) do
               InstancePlan.new(
                 existing_instance: existing_instance,
                 desired_instance: desired_instance,
@@ -1421,9 +1426,12 @@ module Bosh::Director::DeploymentPlan
           end
 
           context 'and VM is newer than threshold but instance is dirty' do
-            let(:instance_plan) do
+            before do
               existing_instance.update(update_completed: false)
               existing_instance.active_vm.update(created_at: new_vm_created_at)
+            end
+
+            let(:instance_plan) do
               InstancePlan.new(
                 existing_instance: existing_instance,
                 desired_instance: desired_instance,
@@ -1441,8 +1449,11 @@ module Bosh::Director::DeploymentPlan
           end
 
           context 'and no threshold is specified' do
-            let(:instance_plan) do
+            before do
               existing_instance.active_vm.update(created_at: new_vm_created_at)
+            end
+
+            let(:instance_plan) do
               InstancePlan.new(
                 existing_instance: existing_instance,
                 desired_instance: desired_instance,
@@ -1463,9 +1474,12 @@ module Bosh::Director::DeploymentPlan
           let(:instance_state) { 'recreate' }
 
           context 'and VM is older than threshold' do
-            let(:instance_plan) do
+            before do
               existing_instance.update(update_completed: true)
               existing_instance.active_vm.update(created_at: old_vm_created_at)
+            end
+
+            let(:instance_plan) do
               InstancePlan.new(
                 existing_instance: existing_instance,
                 desired_instance: desired_instance,
@@ -1482,9 +1496,12 @@ module Bosh::Director::DeploymentPlan
           end
 
           context 'and VM is newer than threshold' do
-            let(:instance_plan) do
+            before do
               existing_instance.update(update_completed: true)
               existing_instance.active_vm.update(created_at: new_vm_created_at)
+            end
+
+            let(:instance_plan) do
               InstancePlan.new(
                 existing_instance: existing_instance,
                 desired_instance: desired_instance,
@@ -1501,9 +1518,12 @@ module Bosh::Director::DeploymentPlan
           end
 
           context 'and VM is newer than threshold but instance is dirty' do
-            let(:instance_plan) do
+            before do
               existing_instance.update(update_completed: false)
               existing_instance.active_vm.update(created_at: new_vm_created_at)
+            end
+
+            let(:instance_plan) do
               InstancePlan.new(
                 existing_instance: existing_instance,
                 desired_instance: desired_instance,
@@ -1521,8 +1541,11 @@ module Bosh::Director::DeploymentPlan
         end
 
         context 'when existing instance has no active VM' do
-          let(:instance_plan) do
+          before do
             existing_instance.active_vm.update(active: false)
+          end
+
+          let(:instance_plan) do
             InstancePlan.new(
               existing_instance: existing_instance,
               desired_instance: desired_instance,
