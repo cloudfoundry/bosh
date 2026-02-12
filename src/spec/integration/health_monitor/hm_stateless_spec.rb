@@ -140,7 +140,7 @@ describe 'health_monitor: 1', type: :integration, hm: true do
       }
 
       heartbeat_hashes_excluding_compilation = heartbeat_hashes.select do |hash|
-        hash['job'] !=~ /^compilation\-/
+        hash['job'] !~ /^compilation\-/
       end
 
       expect(heartbeat_hashes_excluding_compilation.length).to be > 0
