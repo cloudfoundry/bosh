@@ -162,6 +162,16 @@ params['scheduled_jobs'] << {
   'schedule' => p('director.tasks_cleanup_schedule')
 }
 
+if p('director.metrics_server.enabled')
+  params['scheduled_jobs'] << {
+    'command' => 'ScheduledMetricsCleanup',
+    'schedule' => p('director.metrics_server.cleanup_schedule'),
+    'params' => [{
+      'retention_days' => p('director.metrics_server.file_retention_days')
+    }]
+  }
+end
+
 params['record_events'] = p('director.events.record_events')
 if params['record_events']
   params['scheduled_jobs'] << {
