@@ -54,6 +54,18 @@ function sanitize_cgroups() {
   mountpoint -q /sys/fs/cgroup || \
     mount -t tmpfs -o uid=0,gid=0,mode=0755 cgroup /sys/fs/cgroup
 
+  if [ -f /sys/fs/cgroup/cgroup.controllers ]; then
+    # cgroups v2: enable nesting (based on moby/moby hack/dind)
+    mkdir -p /sys/fs/cgroup/init
+    # Loop to handle races from concurrent process creation (e.g. docker exec)
+    while ! {
+      xargs -rn1 < /sys/fs/cgroup/cgroup.procs > /sys/fs/cgroup/init/cgroup.procs 2>/dev/null || :
+      sed -e 's/ / +/g' -e 's/^/+/' < /sys/fs/cgroup/cgroup.controllers \
+        > /sys/fs/cgroup/cgroup.subtree_control
+    }; do true; done
+    return
+  fi
+
   mount -o remount,rw /sys/fs/cgroup
 
   # shellcheck disable=SC2034
@@ -106,10 +118,12 @@ function start_docker() {
 
   sanitize_cgroups
 
-  # ensure systemd cgroup is present
-  mkdir -p /sys/fs/cgroup/systemd
-  if ! mountpoint -q /sys/fs/cgroup/systemd ; then
-    mount -t cgroup -o none,name=systemd cgroup /sys/fs/cgroup/systemd
+  # ensure systemd cgroup is present (cgroups v1 only)
+  if [ ! -f /sys/fs/cgroup/cgroup.controllers ]; then
+    mkdir -p /sys/fs/cgroup/systemd
+    if ! mountpoint -q /sys/fs/cgroup/systemd ; then
+      mount -t cgroup -o none,name=systemd cgroup /sys/fs/cgroup/systemd
+    fi
   fi
 
   # check for /proc/sys being mounted readonly, as systemd does
