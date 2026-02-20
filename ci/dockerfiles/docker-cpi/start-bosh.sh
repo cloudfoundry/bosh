@@ -116,18 +116,7 @@ function start_docker() {
   mkdir -p /var/log
   mkdir -p /var/run
 
-  # Let Docker/containerd know they're running inside a container
-  export container=docker
-
-  # Mount securityfs for AppArmor support inside the container
-  if [ -d /sys/kernel/security ] && ! mountpoint -q /sys/kernel/security; then
-    mount -t securityfs none /sys/kernel/security || true
-  fi
-
   sanitize_cgroups
-
-  # Make mount propagation shared for Docker-in-Docker compatibility
-  mount --make-rshared / 2>/dev/null || true
 
   # ensure systemd cgroup is present (cgroups v1 only)
   if [ ! -f /sys/fs/cgroup/cgroup.controllers ]; then
@@ -155,8 +144,7 @@ function start_docker() {
   "tlscacert": "${certs_dir}/ca.pem",
   "mtu": ${mtu},
   "data-root": "/scratch/docker",
-  "tlsverify": true,
-  "default-cgroupns-mode": "host"
+  "tlsverify": true
 }
 EOF
 
