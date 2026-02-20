@@ -155,7 +155,8 @@ function start_docker() {
   "tlscacert": "${certs_dir}/ca.pem",
   "mtu": ${mtu},
   "data-root": "/scratch/docker",
-  "tlsverify": true
+  "tlsverify": true,
+  "default-cgroupns-mode": "host"
 }
 EOF
 
