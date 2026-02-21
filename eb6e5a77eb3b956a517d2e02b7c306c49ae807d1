@@ -1,0 +1,23 @@
+ci/dockerfiles/docker-cpi/gcp-internal-dns-ops.yml
+  056a8f961ed113d7 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "eb6e5a77eb3b956a517d2e02b7c306c49ae807d1",
+  "prompts": {
+    "056a8f961ed113d7": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "1a3d575a-270d-427e-bccc-2d6c75fcc444",
+        "model": "claude-4.6-opus-high"
+      },
+      "human_author": "aram price <aram.price@broadcom.com>",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 1,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
