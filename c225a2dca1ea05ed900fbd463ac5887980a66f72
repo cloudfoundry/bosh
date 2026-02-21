@@ -1,0 +1,23 @@
+ci/dockerfiles/docker-cpi/start-bosh.sh
+  6d6f8ef6fdff80b6 121-123
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "c225a2dca1ea05ed900fbd463ac5887980a66f72",
+  "prompts": {
+    "6d6f8ef6fdff80b6": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "95a9357e-e141-4acc-8760-0fc7012d2934",
+        "model": "claude-4.6-opus-high"
+      },
+      "human_author": "aram price <aram.price@broadcom.com>",
+      "messages": [],
+      "total_additions": 3,
+      "total_deletions": 0,
+      "accepted_lines": 3,
+      "overriden_lines": 0
+    }
+  }
+}
