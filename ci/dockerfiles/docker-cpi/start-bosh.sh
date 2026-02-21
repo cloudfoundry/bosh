@@ -118,6 +118,9 @@ function start_docker() {
 
   sanitize_cgroups
 
+  # systemd inside nested Docker containers requires shared mount propagation
+  mount --make-rshared /
+
   # ensure systemd cgroup is present (cgroups v1 only)
   if [ ! -f /sys/fs/cgroup/cgroup.controllers ]; then
     mkdir -p /sys/fs/cgroup/systemd
