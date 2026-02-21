@@ -1,0 +1,21 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.4",
+  "base_commit_sha": "8c3a89d4b8ee685f020c76188aa38d1c1ffb7919",
+  "prompts": {
+    "056a8f961ed113d7": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "1a3d575a-270d-427e-bccc-2d6c75fcc444",
+        "model": "claude-4.6-opus-high"
+      },
+      "human_author": "aram price <aram.price@broadcom.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
