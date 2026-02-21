@@ -13,9 +13,7 @@ else
 fi
 export BOSH_DEPLOYMENT_PATH
 
-if [ ! -f /tmp/local-bosh/director/env ]; then
-  source "${bosh_ci_dir}/ci/dockerfiles/docker-cpi/start-bosh.sh" -o "${bosh_ci_dir}/ci/dockerfiles/docker-cpi/gcp-internal-dns-ops.yml"
-fi
+[ -f /tmp/local-bosh/director/env ] || source "${bosh_ci_dir}/ci/dockerfiles/docker-cpi/start-bosh.sh"
 source /tmp/local-bosh/director/env
 
 bosh int /tmp/local-bosh/director/creds.yml --path /jumpbox_ssh/private_key > /tmp/jumpbox_ssh_key.pem
