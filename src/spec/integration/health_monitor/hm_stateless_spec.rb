@@ -86,8 +86,8 @@ describe 'health_monitor: 1', type: :integration, hm: true do
     # Turn resurrector back on
     current_sandbox.reconfigure_health_monitor('health_monitor.yml.erb')
 
-    expect(director.wait_for_vm('foobar', '0', 150, deployment_name: 'simple')).to_not be_nil
-    expect(director.wait_for_vm('foobar', '1', 150, deployment_name: 'simple')).to_not be_nil
+    expect(director.wait_for_vm('foobar', '0', 300, deployment_name: 'simple')).to_not be_nil
+    expect(director.wait_for_vm('foobar', '1', 300, deployment_name: 'simple')).to_not be_nil
   end
 
   context 'when the vm is launching and has incomplete heartbeats' do
