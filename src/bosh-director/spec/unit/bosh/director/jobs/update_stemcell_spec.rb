@@ -359,7 +359,7 @@ describe Bosh::Director::Jobs::UpdateStemcell do
 
           subject.perform
 
-          stemcells = Bosh::Director::Models::Stemcell.where(name: 'jeos', version: '5').order(:name).all
+          stemcells = Bosh::Director::Models::Stemcell.where(name: 'jeos', version: '5').order(:cpi).all
 
           expect(stemcells.count).to eq(2)
           expect(stemcells[0]).not_to be_nil
