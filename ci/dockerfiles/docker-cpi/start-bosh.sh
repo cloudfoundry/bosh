@@ -146,6 +146,7 @@ function start_docker() {
   "tlskey": "${certs_dir}/server-key.pem",
   "tlscacert": "${certs_dir}/ca.pem",
   "mtu": ${mtu},
+  "dns": ["8.8.8.8", "8.8.4.4"],
   "data-root": "/scratch/docker",
   "tlsverify": true
 }
