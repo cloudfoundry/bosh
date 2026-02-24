@@ -17,8 +17,6 @@ source /tmp/local-bosh/director/env
 bosh int /tmp/local-bosh/director/creds.yml --path /jumpbox_ssh/private_key > /tmp/jumpbox_ssh_key.pem
 chmod 400 /tmp/jumpbox_ssh_key.pem
 
-export BOSH_DIRECTOR_IP="10.245.0.3"
-
 BOSH_BINARY_PATH=$(which bosh)
 export BOSH_BINARY_PATH
 BOSH_DIRECTOR_TARBALL_PATH="$(find "${bosh_ci_parent_dir}/bosh-release" -maxdepth 1 -path '*.tgz')"

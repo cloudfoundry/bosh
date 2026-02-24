@@ -260,6 +260,7 @@ EOF
   bosh -e "${BOSH_DIRECTOR_IP}" --ca-cert "${local_bosh_dir}/ca.crt" alias-env "${BOSH_ENVIRONMENT}"
 
   cat <<EOF > "${local_bosh_dir}/env"
+  export BOSH_DIRECTOR_IP="${BOSH_DIRECTOR_IP}"
   export BOSH_ENVIRONMENT="${BOSH_ENVIRONMENT}"
   export BOSH_CLIENT=admin
   export BOSH_CLIENT_SECRET=${bosh_client_secret}
