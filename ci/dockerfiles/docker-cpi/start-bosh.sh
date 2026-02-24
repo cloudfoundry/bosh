@@ -121,9 +121,6 @@ function stop_docker() {
 function start_docker() {
   local certs_dir
   certs_dir="${1}"
-  # docker will fail starting with the new iptables. it throws:
-  # iptables v1.8.7 (nf_tables): Could not fetch rule set generation id: ....
-  update-alternatives --set iptables /usr/sbin/iptables-legacy
   generate_certs "${certs_dir}"
   mkdir -p /var/log
   mkdir -p /var/run
