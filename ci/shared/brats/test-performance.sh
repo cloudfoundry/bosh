@@ -10,10 +10,16 @@ if [[ -n "${DEBUG:-}" ]]; then
   export BOSH_LOG_PATH="${BOSH_LOG_PATH:-${REPO_PARENT}/bosh-debug.log}"
 fi
 
-source "${REPO_ROOT}/ci/dockerfiles/docker-cpi/start-bosh.sh"
-source /tmp/local-bosh/director/env
+overridden_bosh_deployment="${REPO_PARENT}/bosh-deployment"
+if [[ -e "${overridden_bosh_deployment}/bosh.yml" ]];then
+  BOSH_DEPLOYMENT_PATH=${overridden_bosh_deployment}
+else
+  BOSH_DEPLOYMENT_PATH="/usr/local/bosh-deployment"
+fi
+export BOSH_DEPLOYMENT_PATH
 
-export BOSH_DEPLOYMENT_PATH="/usr/local/bosh-deployment"
+[ -f /tmp/local-bosh/director/env ] || source "${REPO_ROOT}/ci/dockerfiles/docker-cpi/start-bosh.sh"
+source /tmp/local-bosh/director/env
 
 bosh int /tmp/local-bosh/director/creds.yml --path /jumpbox_ssh/private_key > /tmp/jumpbox_ssh_key.pem
 chmod 400 /tmp/jumpbox_ssh_key.pem
