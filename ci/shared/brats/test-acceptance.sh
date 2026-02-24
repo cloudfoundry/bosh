@@ -1,77 +1,62 @@
 #!/usr/bin/env bash
 set -eu -o pipefail
 
-bosh_ci_dir="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../" && pwd)")"
-bosh_ci_parent_dir="$(realpath "${bosh_ci_dir}/..")"
+REPO_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../../.." && pwd )"
+REPO_PARENT="$( cd "${REPO_ROOT}/.." && pwd )"
 
-OVERRIDDEN_BOSH_DEPLOYMENT="${bosh_ci_parent_dir}/bosh-deployment"
+if [[ -n "${DEBUG:-}" ]]; then
+  set -x
+  export BOSH_LOG_LEVEL=debug
+  export BOSH_LOG_PATH="${BOSH_LOG_PATH:-${REPO_PARENT}/bosh-debug.log}"
+fi
 
-if [[ -e "${OVERRIDDEN_BOSH_DEPLOYMENT}/bosh.yml" ]];then
-  BOSH_DEPLOYMENT_PATH=${OVERRIDDEN_BOSH_DEPLOYMENT}
+overridden_bosh_deployment="${REPO_PARENT}/bosh-deployment"
+if [[ -e "${overridden_bosh_deployment}/bosh.yml" ]];then
+  BOSH_DEPLOYMENT_PATH=${overridden_bosh_deployment}
 else
   BOSH_DEPLOYMENT_PATH="/usr/local/bosh-deployment"
 fi
-export BOSH_DEPLOYMENT_PATH
 
-[ -f /tmp/local-bosh/director/env ] || source "${bosh_ci_dir}/ci/dockerfiles/docker-cpi/start-bosh.sh"
-source /tmp/local-bosh/director/env
+OUTER_BOSH_ENV_PATH="/tmp/local-bosh/director/bosh-env"
+if [ ! -f "${OUTER_BOSH_ENV_PATH}" ]; then
+  "${REPO_ROOT}/ci/dockerfiles/docker-cpi/start-bosh.sh"
+fi
+# shellcheck disable=SC1090
+source "${OUTER_BOSH_ENV_PATH}"
 
 bosh int /tmp/local-bosh/director/creds.yml --path /jumpbox_ssh/private_key > /tmp/jumpbox_ssh_key.pem
 chmod 400 /tmp/jumpbox_ssh_key.pem
 
-export BOSH_DIRECTOR_IP="10.245.0.3"
+DOCKER_CERTS="$(bosh int /tmp/local-bosh/director/bosh-director.yml --path /instance_groups/0/properties/docker_cpi/docker/tls)"
+DOCKER_HOST="$(bosh int /tmp/local-bosh/director/bosh-director.yml --path /instance_groups/name=bosh/properties/docker_cpi/docker/host)"
 
 BOSH_BINARY_PATH=$(which bosh)
-export BOSH_BINARY_PATH
-export BOSH_RELEASE="${bosh_ci_dir}/src/spec/assets/dummy-release.tgz"
-export BOSH_DIRECTOR_RELEASE_PATH="${bosh_ci_parent_dir}/bosh-release"
-DNS_RELEASE_PATH="$(find "${bosh_ci_parent_dir}/bosh-dns-release" -maxdepth 1 -path '*.tgz')"
-export DNS_RELEASE_PATH
-CANDIDATE_STEMCELL_TARBALL_PATH="$(find "${bosh_ci_parent_dir}/stemcell" -maxdepth 1 -path '*.tgz')"
-export CANDIDATE_STEMCELL_TARBALL_PATH
-export BOSH_DNS_ADDON_OPS_FILE_PATH="${BOSH_DEPLOYMENT_PATH}/misc/dns-addon.yml"
+DIRECTOR_STEMCELL_TARBALL_PATH="$(find "${REPO_PARENT}/director-stemcell" -maxdepth 1 -path '*.tgz')"
+CANDIDATE_STEMCELL_TARBALL_PATH="$(find "${REPO_PARENT}/stemcell" -maxdepth 1 -path '*.tgz')"
 
-export OUTER_BOSH_ENV_PATH="/tmp/local-bosh/director/env"
+BOSH_DIRECTOR_RELEASE_PATH="${REPO_PARENT}/bosh-release"
 
-DOCKER_CERTS="$(bosh int /tmp/local-bosh/director/bosh-director.yml --path /instance_groups/0/properties/docker_cpi/docker/tls)"
-export DOCKER_CERTS
-DOCKER_HOST="$(bosh int /tmp/local-bosh/director/bosh-director.yml --path /instance_groups/name=bosh/properties/docker_cpi/docker/host)"
-export DOCKER_HOST
+BOSH_RELEASE="${REPO_ROOT}/src/spec/assets/dummy-release.tgz"
 
-bosh -n update-cloud-config \
-  "${BOSH_DEPLOYMENT_PATH}/docker/cloud-config.yml" \
-  -o "${bosh_ci_dir}/ci/dockerfiles/docker-cpi/outer-cloud-config-ops.yml" \
-  -v network=director_network
-
-bosh -n upload-stemcell "${CANDIDATE_STEMCELL_TARBALL_PATH}"
-
-apt-get update
-apt-get install -y mysql-client postgresql-client
+DNS_RELEASE_PATH="$(find "${REPO_PARENT}/bosh-dns-release" -maxdepth 1 -path '*.tgz')"
 
 if [ -d database-metadata ]; then
+  apt-get update
+  apt-get install -y mysql-client postgresql-client
+
   RDS_MYSQL_EXTERNAL_DB_HOST="$(jq -r .aws_mysql_endpoint database-metadata/metadata | cut -d':' -f1)"
-  export RDS_MYSQL_EXTERNAL_DB_HOST
   RDS_POSTGRES_EXTERNAL_DB_HOST="$(jq -r .aws_postgres_endpoint database-metadata/metadata | cut -d':' -f1)"
-  export RDS_POSTGRES_EXTERNAL_DB_HOST
   GCP_MYSQL_EXTERNAL_DB_HOST="$(jq -r .gcp_mysql_endpoint database-metadata/metadata)"
-  export GCP_MYSQL_EXTERNAL_DB_HOST
   GCP_POSTGRES_EXTERNAL_DB_HOST="$(jq -r .gcp_postgres_endpoint database-metadata/metadata)"
-  export GCP_POSTGRES_EXTERNAL_DB_HOST
   GCP_MYSQL_EXTERNAL_DB_CA="$(jq -r .gcp_mysql_ca database-metadata/metadata)"
-  export GCP_MYSQL_EXTERNAL_DB_CA
   GCP_MYSQL_EXTERNAL_DB_CLIENT_CERTIFICATE="$(jq -r .gcp_mysql_client_cert database-metadata/metadata)"
-  export GCP_MYSQL_EXTERNAL_DB_CLIENT_CERTIFICATE
   GCP_MYSQL_EXTERNAL_DB_CLIENT_PRIVATE_KEY="$(jq -r .gcp_mysql_client_key database-metadata/metadata)"
-  export GCP_MYSQL_EXTERNAL_DB_CLIENT_PRIVATE_KEY
   GCP_POSTGRES_EXTERNAL_DB_CA="$(jq -r .gcp_postgres_ca database-metadata/metadata)"
-  export GCP_POSTGRES_EXTERNAL_DB_CA
   GCP_POSTGRES_EXTERNAL_DB_CLIENT_CERTIFICATE="$(jq -r .gcp_postgres_client_cert database-metadata/metadata)"
-  export GCP_POSTGRES_EXTERNAL_DB_CLIENT_CERTIFICATE
   GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY="$(jq -r .gcp_postgres_client_key database-metadata/metadata)"
-  export GCP_POSTGRES_EXTERNAL_DB_CLIENT_PRIVATE_KEY
 fi
 
-brats_env_file="${bosh_ci_parent_dir}/brats-env.sh"
+brats_env_file="${REPO_PARENT}/brats-env.sh"
 {
   echo "export OUTER_BOSH_ENV_PATH=\"${OUTER_BOSH_ENV_PATH}\""
   echo "export DOCKER_CERTS=\"${DOCKER_CERTS}\""
@@ -82,12 +67,16 @@ brats_env_file="${bosh_ci_parent_dir}/brats-env.sh"
   echo "export BOSH_DIRECTOR_IP=\"${BOSH_DIRECTOR_IP}\""
 
   echo "export BOSH_DEPLOYMENT_PATH=\"${BOSH_DEPLOYMENT_PATH}\""
-  echo "export BOSH_RELEASE=\"${BOSH_RELEASE}\""
   echo "export BOSH_DIRECTOR_RELEASE_PATH=\"${BOSH_DIRECTOR_RELEASE_PATH}\""
-  echo "export DNS_RELEASE_PATH=\"${DNS_RELEASE_PATH}\""
+
+  echo "export DIRECTOR_STEMCELL_OS=\"${DIRECTOR_STEMCELL_OS}\""
+  echo "export DIRECTOR_STEMCELL_TARBALL_PATH=\"${DIRECTOR_STEMCELL_TARBALL_PATH}\""
+
+  echo "export STEMCELL_OS=\"${STEMCELL_OS}\""
   echo "export CANDIDATE_STEMCELL_TARBALL_PATH=\"${CANDIDATE_STEMCELL_TARBALL_PATH}\""
 
-  echo "export BOSH_DNS_ADDON_OPS_FILE_PATH=\"${BOSH_DNS_ADDON_OPS_FILE_PATH}\""
+  echo "export BOSH_RELEASE=\"${BOSH_RELEASE}\""
+  echo "export DNS_RELEASE_PATH=\"${DNS_RELEASE_PATH}\""
 
   echo "export RDS_MYSQL_EXTERNAL_DB_HOST=\"${RDS_MYSQL_EXTERNAL_DB_HOST:-}\""
 
@@ -107,10 +96,21 @@ brats_env_file="${bosh_ci_parent_dir}/brats-env.sh"
   echo "source "${OUTER_BOSH_ENV_PATH}
 } > "${brats_env_file}"
 
-echo "# The required BRATS environment can be loaded by running the following:"
-echo "# 'source ${brats_env_file}'"
+echo "Source '${brats_env_file}' load the required BRATs environment" >&2
 
-pushd "${bosh_ci_dir}/src/brats/acceptance"
+# shellcheck disable=SC1090
+source "${brats_env_file}"
+
+bosh -n upload-stemcell "${DIRECTOR_STEMCELL_TARBALL_PATH}"
+bosh -n upload-stemcell "${CANDIDATE_STEMCELL_TARBALL_PATH}"
+
+bosh -n update-cloud-config \
+  "${BOSH_DEPLOYMENT_PATH}/docker/cloud-config.yml" \
+  -o "${REPO_ROOT}/ci/dockerfiles/docker-cpi/outer-cloud-config-ops.yml" \
+  -o "${REPO_ROOT}/ci/dockerfiles/docker-cpi/gcp-internal-dns-ops.yml" \
+  -v network=director_network
+
+pushd "${REPO_ROOT}/src/brats/acceptance"
   go run github.com/onsi/ginkgo/v2/ginkgo \
     -r -v --race --timeout=24h \
     --randomize-suites --randomize-all \

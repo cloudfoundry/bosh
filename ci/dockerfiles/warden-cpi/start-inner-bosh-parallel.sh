@@ -11,6 +11,7 @@ pushd "${BOSH_DEPLOYMENT_PATH}" > /dev/null
 
   export BOSH_DIRECTOR_IP="10.245.0.$((10 + node_number))"
 
+  # shellcheck disable=SC2068
   bosh int bosh.yml \
     -o bosh-lite.yml \
     -o "$script_dir/inner-bosh-ops.yml" \
@@ -23,7 +24,7 @@ pushd "${BOSH_DEPLOYMENT_PATH}" > /dev/null
     -o "$script_dir/latest-bosh-release.yml" \
     -o "$script_dir/deployment-name.yml" \
     -v deployment_name="bosh-${node_number}" \
-    "${@:2}" > "${inner_bosh_dir}/bosh-director.yml"
+    ${@:2} > "${inner_bosh_dir}/bosh-director.yml"
 
   bosh -n deploy -d "bosh-${node_number}" "${inner_bosh_dir}/bosh-director.yml" --vars-store="${inner_bosh_dir}/creds.yml"
 

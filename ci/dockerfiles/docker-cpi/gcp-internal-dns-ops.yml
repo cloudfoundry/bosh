@@ -1,3 +1,6 @@
+# Add internal GCP DNS
 - path: /networks/name=default/subnets/0/dns?
   type: replace
-  value: [169.254.169.254] #GCP's internal DNS
+  value:
+  - 8.8.8.8
+  - 169.254.169.254 # GCP internal DNS

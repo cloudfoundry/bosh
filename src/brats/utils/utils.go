@@ -25,6 +25,8 @@ const (
 
 	mysqlDbCmd    = "mysql"
 	postgresDBCmd = "psql"
+
+	skipCleanupEnvVar = "BRATS_SKIP_CLEANUP"
 )
 
 func repoRoot() string {
@@ -292,6 +294,10 @@ func LoadEnvOrDefault(envName string, envDefault string) string {
 	return envValue
 }
 
+func SkipCleanup() bool {
+	return len(LoadEnvOrDefault(skipCleanupEnvVar, "")) > 0
+}
+
 func AssetPath(filename string) string {
 	path, err := filepath.Abs("../assets/" + filename)
 	Expect(err).ToNot(HaveOccurred())
@@ -399,6 +405,7 @@ func OuterBoshQuiet(args ...string) *gexec.Session {
 }
 
 func Bosh(args ...string) *gexec.Session {
+	By(fmt.Sprintf("Bosh '%s %s'", boshBinaryPath, strings.Join(args, " ")))
 	return ExecCommand(boshBinaryPath, args...)
 }
 
@@ -448,6 +455,39 @@ func InnerBoshWithExternalDBOptions(dbConfig *ExternalDBConfig) []string {
 	}
 
 	return options
+}
+
+func SuiteCleanup() {
+	if SkipCleanup() {
+		return
+	}
+	StopInnerBosh()
+}
+
+func CleanupInnerBoshDeployments() {
+	By("cleaning up deployments")
+	if SkipCleanup() {
+		By(fmt.Sprintf("%s is set, skipping cleanup", skipCleanupEnvVar))
+		return
+	}
+
+	if !InnerBoshExists() {
+		By("InnerBosh is not present, skipping cleanup")
+		return
+	}
+
+	deploymentsCmdSession := Bosh("deployments", "--column=name")
+	Eventually(deploymentsCmdSession, 1*time.Minute).Should(gexec.Exit())
+	deployments := strings.Fields(string(deploymentsCmdSession.Out.Contents()))
+
+	for _, deploymentName := range deployments {
+		By(fmt.Sprintf("deleting deployment %v", deploymentName))
+		if deploymentName == "" {
+			continue
+		}
+		deleteDeploymentCmdSession := Bosh("delete-deployment", "-n", "-d", deploymentName)
+		Eventually(deleteDeploymentCmdSession, 5*time.Minute).Should(gexec.Exit())
+	}
 }
 
 func StemcellOS() string                     { return stemcellOS }

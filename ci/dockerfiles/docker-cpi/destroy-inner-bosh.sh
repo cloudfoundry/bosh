@@ -1,26 +1,30 @@
 #!/usr/bin/env bash
+set -eu -o pipefail
 
-set -e
+REPO_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../../.." && pwd )"
+REPO_PARENT="$( cd "${REPO_ROOT}/.." && pwd )"
 
-pushd ${BOSH_DEPLOYMENT_PATH} > /dev/null
-  node_number=$1
-  inner_bosh_dir="/tmp/inner-bosh/director"
-  deployment_name="bosh"
+if [[ -n "${DEBUG:-}" ]]; then
+  set -x
+  export BOSH_LOG_LEVEL=debug
+  export BOSH_LOG_PATH="${BOSH_LOG_PATH:-${REPO_PARENT}/bosh-debug.log}"
+fi
 
-  if [[ -n "$node_number" ]]; then
-    inner_bosh_dir="/tmp/inner-bosh/director/${node_number}"
-    deployment_name="bosh-$node_number"
-  fi
+node_number=${1}
+deployment_name="bosh-${node_number}"
 
-  if [ ! -e "${inner_bosh_dir}/bosh" ]; then
-    exit
-  fi
+inner_bosh_dir="/tmp/inner-bosh/director/${node_number}"
+inner_bosh_cmd="${inner_bosh_dir}/bosh"
 
-  "${inner_bosh_dir}/bosh" deployments --column=name \
-    | awk '{ print $1 }' \
-    | xargs -n1 -I {} -- "${inner_bosh_dir}/bosh" -n -d {} delete-deployment --force
+if [ ! -e "${inner_bosh_cmd}" ]; then
+  echo "No '${inner_bosh_cmd}' found, exiting" >&2
+  exit
+fi
 
-  bosh -n delete-deployment -d "$deployment_name"
+"${inner_bosh_cmd}" deployments --column=name \
+  | awk '{ print $1 }' \
+  | xargs -n1 -I {} -- "${inner_bosh_cmd}" -n -d {} delete-deployment --force
 
-  rm -fr "${inner_bosh_dir}"
-popd > /dev/null
+bosh -n delete-deployment -d "${deployment_name}"
+
+rm -fr "${inner_bosh_dir}"

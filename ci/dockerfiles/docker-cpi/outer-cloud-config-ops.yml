@@ -1,4 +1,4 @@
-#outter bosh
+# outer bosh
 ---
 - type: replace
   path: /networks/name=default/subnets/0/static?
