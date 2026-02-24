@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -eu -o pipefail
 
+if [[ -n "${DEBUG:-}" ]]; then
+  set -x
+  export BOSH_LOG_LEVEL=debug
+fi
+
 bosh_ci_dir="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../" && pwd)")"
 bosh_ci_parent_dir="$(realpath "${bosh_ci_dir}/..")"
 
