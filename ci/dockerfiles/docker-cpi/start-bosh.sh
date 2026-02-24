@@ -5,6 +5,7 @@ set -e
 if [[ -n "${DEBUG:-}" ]]; then
   set -x
   export BOSH_LOG_LEVEL=debug
+  export BOSH_LOG_PATH="${BOSH_LOG_PATH:-${PWD}/bosh-debug.log}"
 fi
 
 REPO_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../.." && pwd )"
