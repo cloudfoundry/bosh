@@ -5,6 +5,7 @@ inputs:
   - name: bosh-ci
   - name: bosh
     optional: true
+  - name: director-stemcell
   - name: stemcell
   - name: bosh-release
   - name: cf-deployment
@@ -15,4 +16,3 @@ params:
 
 run:
   path: bosh-ci/ci/shared/brats/test-performance.sh
-

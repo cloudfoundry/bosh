@@ -1,14 +1,6 @@
 - type: replace
-  path: /releases/-
-  value:
-    name: bosh-docker-cpi
-    version: "0.0.20"
-    url: "https://bosh.io/d/github.com/cloudfoundry/bosh-docker-cpi-release?v=0.0.20"
-    sha1: "ec287512ba68dcfb7f8cedad35d226f7551e0558"
-
-- type: replace
   path: /releases/name=bosh/version?
-  value: create
+  value: latest
 
 - type: replace
   path: /stemcells?
@@ -51,36 +43,20 @@
 - type: replace
   path: /update?
   value:
-    canary_watch_time: 60000-300000
-    update_watch_time: 60000-300000
+    canary_watch_time: 120000-600000
+    update_watch_time: 120000-600000
     serial: false
     canaries: 1
     max_in_flight: 1
 
 - type: replace
-  path: /instance_groups/name=bosh/jobs/-
+  path: /instance_groups/name=bosh/properties/docker_cpi/agent/blobstore
   value:
-    name: docker_cpi
-    release: bosh-docker-cpi
-
-- type: replace
-  path: /instance_groups/name=bosh/properties/docker_cpi?
-  value:
-    docker:
-      host: ((docker_host))
-      tls: ((docker_tls))
-    agent:
-      mbus: nats://((internal_ip)):4222
-      blobstore:
-        provider: dav
-        options:
-          endpoint: http://((internal_ip)):25250
-          user: agent
-          password: ((blobstore_agent_password))
-
-- type: replace
-  path: /instance_groups/name=bosh/properties/director/cpi_job?
-  value: docker_cpi
+    provider: dav
+    options:
+      endpoint: "http://((internal_ip)):25250"
+      user: agent
+      password: ((blobstore_agent_password))
 
 - type: replace
   path: /instance_groups/name=bosh/properties/director/local_dns?/enabled?
@@ -117,8 +93,8 @@
   value:
     - provider: dav
       options:
-        endpoint: 'https://((internal_ip)):25250'
-        user: 'agent'
+        endpoint: "https://((internal_ip)):25250"
+        user: agent
         password: ((blobstore_agent_password))
         tls:
           cert:

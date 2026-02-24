@@ -1,10 +1,20 @@
 #!/usr/bin/env bash
+set -eu -o pipefail
 
-set -e
+REPO_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../../.." && pwd )"
+REPO_PARENT="$( cd "${REPO_ROOT}/.." && pwd )"
+
 if [[ -n "${DEBUG:-}" ]]; then
   set -x
   export BOSH_LOG_LEVEL=debug
+  export BOSH_LOG_PATH="${BOSH_LOG_PATH:-${REPO_PARENT}/bosh-debug.log}"
 fi
+
+BOSH_DEPLOYMENT_PATH="${BOSH_DEPLOYMENT_PATH:-/usr/local/bosh-deployment}"
+
+BOSH_DIRECTOR_IP="10.245.0.3"
+BOSH_ENVIRONMENT="docker-director"
+
 
 function generate_certs() {
   local certs_dir
@@ -68,8 +78,7 @@ function sanitize_cgroups() {
 
   mount -o remount,rw /sys/fs/cgroup
 
-  # shellcheck disable=SC2034
-  sed -e 1d /proc/cgroups | while read -r sys hierarchy num enabled; do
+  sed -e 1d /proc/cgroups | while read -r sys enabled; do
     if [ "$enabled" != "1" ]; then
       # subsystem disabled; skip
       continue
@@ -102,19 +111,19 @@ function sanitize_cgroups() {
   done
 }
 
-function stop_docker() {
-  service docker stop
-}
-
 function start_docker() {
   local certs_dir
   certs_dir="${1}"
-  # docker will fail starting with the new iptables. it throws:
-  # iptables v1.8.7 (nf_tables): Could not fetch rule set generation id: ....
-  update-alternatives --set iptables /usr/sbin/iptables-legacy
   generate_certs "${certs_dir}"
   mkdir -p /var/log
   mkdir -p /var/run
+
+  # Raise inotify limits so nested containers running systemd don't exhaust
+  # file descriptors. Systemd and containerd's cgroup-v2 event monitor both
+  # use inotify; the default max_user_instances (128) was too low.
+  sysctl -w fs.inotify.max_user_instances=1024
+  sysctl -w fs.inotify.max_user_watches=524288
+  sysctl -w net.ipv4.ip_forward=1
 
   sanitize_cgroups
 
@@ -134,8 +143,9 @@ function start_docker() {
     mount -o remount,rw /proc/sys
   fi
 
+  gcp_internal_dns="169.254.169.254"
   local mtu
-  mtu=$(cat "/sys/class/net/$(ip route get 169.254.169.254|awk '{ print $5 }')/mtu")
+  mtu=$(cat "/sys/class/net/$(ip route get "${gcp_internal_dns}"|awk '{ print $5 }')/mtu")
 
   [[ ! -d /etc/docker ]] && mkdir /etc/docker
   cat <<EOF > /etc/docker/daemon.json
@@ -146,13 +156,12 @@ function start_docker() {
   "tlskey": "${certs_dir}/server-key.pem",
   "tlscacert": "${certs_dir}/ca.pem",
   "mtu": ${mtu},
-  "dns": ["8.8.8.8", "8.8.4.4"],
+  "dns": ["8.8.8.8", "${gcp_internal_dns}"],
   "data-root": "/scratch/docker",
-  "tlsverify": true
+  "tlsverify": true,
+  "ip-forward-no-drop": true
 }
 EOF
-
-  trap stop_docker EXIT
 
   service docker start
 
@@ -180,7 +189,7 @@ function main() {
   OUTER_CONTAINER_IP=$(
     ip addr \
     | grep 'inet ' \
-    | grep -v -E ' (127\.|172\.|10\.245)' \
+    | grep eth0 \
     | cut -d/ -f 1 \
     | cut -d' ' -f6
   )
@@ -198,75 +207,76 @@ function main() {
   local_bosh_dir="/tmp/local-bosh/director"
   mkdir -p ${local_bosh_dir}
 
-  export DOCKER_HOST="tcp://${OUTER_CONTAINER_IP}:4243"
-  export DOCKER_TLS_VERIFY=1
-  export DOCKER_CERT_PATH="${certs_dir}"
-  cat <<EOF > "${local_bosh_dir}/docker-env"
-export DOCKER_HOST="tcp://${OUTER_CONTAINER_IP}:4243"
-export DOCKER_TLS_VERIFY=1
-export DOCKER_CERT_PATH="${certs_dir}"
-
-EOF
-  echo "Source '${local_bosh_dir}/docker-env' to run docker" >&2
+  docker_env_file="${local_bosh_dir}/docker-env"
+  {
+    echo "export DOCKER_HOST=\"tcp://${OUTER_CONTAINER_IP}:4243\""
+    echo "export DOCKER_TLS_VERIFY=\"1\""
+    echo "export DOCKER_CERT_PATH=\"${certs_dir}\""
+  } > "${docker_env_file}"
+  echo "Source '${docker_env_file}' to run docker" >&2
+  source "${local_bosh_dir}/docker-env"
 
   start_docker "${certs_dir}"
 
   local docker_network_name="director_network"
+  local docker_network_cidr="10.245.0.0/16"
   if docker network ls | grep -q "${docker_network_name}"; then
     echo "A docker network named '${docker_network_name}' already exists, skipping creation" >&2
   else
-    docker network create -d bridge --subnet=10.245.0.0/16 "${docker_network_name}"
+    docker network create -d bridge --subnet="${docker_network_cidr}" "${docker_network_name}"
   fi
 
-  pushd "${BOSH_DEPLOYMENT_PATH:-/usr/local/bosh-deployment}" > /dev/null
-      export BOSH_DIRECTOR_IP="10.245.0.3"
-      export BOSH_ENVIRONMENT="docker-director"
-
-      cat <<EOF > "${local_bosh_dir}/docker_tls.json"
+  docker_tls_json="${local_bosh_dir}/docker_tls.json"
+  cat <<EOF > "${docker_tls_json}"
 {
   "ca": "$(cat "${certs_dir}/ca_json_safe.pem")",
   "certificate": "$(cat "${certs_dir}/client_certificate_json_safe.pem")",
   "private_key": "$(cat "${certs_dir}/client_private_key_json_safe.pem")"
 }
-
 EOF
 
-      bosh int bosh.yml \
-        -o docker/cpi.yml \
-        -o jumpbox-user.yml \
-        -o /usr/local/local-releases.yml \
-        -v director_name=docker \
-        -v internal_cidr=10.245.0.0/16 \
-        -v internal_gw=10.245.0.1 \
-        -v internal_ip="${BOSH_DIRECTOR_IP}" \
-        -v docker_host="${DOCKER_HOST}" \
-        -v network="${docker_network_name}" \
-        -v docker_tls="$(cat "${local_bosh_dir}/docker_tls.json")" \
-        "${@}" > "${local_bosh_dir}/bosh-director.yml"
+  # shellcheck disable=SC2068
+  bosh int "${BOSH_DEPLOYMENT_PATH}/bosh.yml" \
+    -o "${BOSH_DEPLOYMENT_PATH}/docker/cpi.yml" \
+    -o "${BOSH_DEPLOYMENT_PATH}/jumpbox-user.yml" \
+    -o /usr/local/local-releases.yml \
+    -v director_name=docker \
+    -v internal_cidr="${docker_network_cidr}" \
+    -v internal_gw=10.245.0.1 \
+    -v internal_ip="${BOSH_DIRECTOR_IP}" \
+    -v docker_host="${DOCKER_HOST}" \
+    -v network="${docker_network_name}" \
+    -v docker_tls="$(cat "${docker_tls_json}")" \
+    ${@} > "${local_bosh_dir}/bosh-director.yml"
 
-      bosh create-env "${local_bosh_dir}/bosh-director.yml" \
-        --vars-store="${local_bosh_dir}/creds.yml" \
-        --state="${local_bosh_dir}/state.json"
+  bosh create-env "${local_bosh_dir}/bosh-director.yml" \
+      --vars-store="${local_bosh_dir}/creds.yml" \
+      --state="${local_bosh_dir}/state.json"
 
-      bosh int "${local_bosh_dir}/creds.yml" --path /director_ssl/ca \
-        > "${local_bosh_dir}/ca.crt"
-      bosh_client_secret="$(bosh int "${local_bosh_dir}/creds.yml" --path /admin_password)"
+  bosh int "${local_bosh_dir}/creds.yml" --path /director_ssl/ca > "${local_bosh_dir}/ca.crt"
+  bosh_client_secret="$(bosh int "${local_bosh_dir}/creds.yml" --path /admin_password)"
 
-      bosh -e "${BOSH_DIRECTOR_IP}" --ca-cert "${local_bosh_dir}/ca.crt" alias-env "${BOSH_ENVIRONMENT}"
+  bosh -e "${BOSH_DIRECTOR_IP}" --ca-cert "${local_bosh_dir}/ca.crt" alias-env "${BOSH_ENVIRONMENT}"
 
-      cat <<EOF > "${local_bosh_dir}/env"
-      export BOSH_ENVIRONMENT="${BOSH_ENVIRONMENT}"
-      export BOSH_CLIENT=admin
-      export BOSH_CLIENT_SECRET=${bosh_client_secret}
-      export BOSH_CA_CERT="${local_bosh_dir}/ca.crt"
+  bosh_env_file="${local_bosh_dir}/bosh-env"
+  {
+    echo "source \"${docker_env_file}\""
+    echo "export BOSH_DIRECTOR_IP=\"${BOSH_DIRECTOR_IP}\""
+    echo "export BOSH_ENVIRONMENT=\"${BOSH_ENVIRONMENT}\""
+    echo "export BOSH_CLIENT=\"admin\""
+    echo "export BOSH_CLIENT_SECRET=\"${bosh_client_secret}\""
+    echo "export BOSH_CA_CERT=\"${local_bosh_dir}/ca.crt\""
+  } > "${bosh_env_file}"
 
-EOF
-      echo "Source '${local_bosh_dir}/env' to run bosh" >&2
-      source "${local_bosh_dir}/env"
+  echo "Source '${bosh_env_file}' to run bosh" >&2
+  # shellcheck disable=SC1090
+  source "${bosh_env_file}"
 
-      bosh -n update-cloud-config docker/cloud-config.yml -v network="${docker_network_name}"
-
-  popd > /dev/null
+  bosh -n update-cloud-config \
+    "${BOSH_DEPLOYMENT_PATH}/docker/cloud-config.yml" \
+    -o "${REPO_ROOT}/ci/dockerfiles/docker-cpi/gcp-internal-dns-ops.yml" \
+    -v network="${docker_network_name}"
 }
 
-main "${@}"
+# shellcheck disable=SC2068
+main ${@}

@@ -3,69 +3,91 @@ name: dns-with-templates
 
 update:
   canaries: 1
-  max_in_flight: 10
   canary_watch_time: 1000-30000
+  max_in_flight: 10
   update_watch_time: 1000-30000
 
-instance_groups:
-- name: test-agent
-  instances: 1
-  azs: [z1]
-  jobs:
-  - name: query-with-az-filter
-    release: linked-templates
-  - name: query-all
-    release: linked-templates
-  - name: query-individual-instance
-    release: linked-templates
-  vm_type: default
-  stemcell: default
-  networks:
-  - name: default
 
-- name: provider
-  jobs:
-  - name: link-provider
-    release: linked-templates
-  instances: 3
-  azs: [z1,z2]
-  vm_type: default
-  stemcell: default
-  networks:
-  - name: default
+addons:
+  - name: bosh-dns
+    jobs:
+      - name: bosh-dns
+        release: bosh-dns
+        properties:
+          configure_systemd_resolved: true
+          disable_recursors: true
+          override_nameserver: false
+          api:
+            client:
+              tls: ((dns_api_client_tls))
+            server:
+              tls: ((dns_api_server_tls))
+
+instance_groups:
+  - name: test-agent
+    azs:
+      - z1
+    instances: 1
+    jobs:
+      - name: query-with-az-filter
+        release: linked-templates
+      - name: query-all
+        release: linked-templates
+      - name: query-individual-instance
+        release: linked-templates
+    networks:
+      - name: default
+    stemcell: default
+    vm_type: default
+  - name: provider
+    instances: 3
+    azs:
+      - z1
+      - z2
+    jobs:
+      - name: link-provider
+        release: linked-templates
+    networks:
+      - name: default
+    stemcell: default
+    vm_type: default
 
 releases:
-- name: bosh-dns
-  version: latest
-  url: file://((dns-release-path))
-- name: linked-templates
-  version: latest
-  url: file://((linked-template-release-path))
+  - name: bosh-dns
+    url: file://((dns-release-path))
+    version: latest
+  - name: linked-templates
+    url: file://((linked-template-release-path))
+    version: latest
 
 stemcells:
-- alias: default
-  os: ((stemcell-os))
-  version: latest
+  - alias: default
+    os: ((stemcell-os))
+    version: latest
 
 variables:
-- name: dns_api_tls_ca
-  type: certificate
-  options:
-    is_ca: true
-    common_name: dns-api-tls-ca
+  - name: dns_api_tls_ca
+    type: certificate
+    options:
+      common_name: dns-api-tls-ca
+      is_ca: true
 
-- name: dns_api_server_tls
-  type: certificate
-  options:
-    ca: dns_api_tls_ca
-    common_name: api.bosh-dns
-    extended_key_usage:
-      - server_auth
+  - name: dns_api_server_tls
+    type: certificate
+    options:
+      alternative_names:
+        - api.bosh-dns
+      ca: dns_api_tls_ca
+      common_name: api.bosh-dns
+      extended_key_usage:
+        - server_auth
 
-- name: dns_api_client_tls
-  type: certificate
-  options:
-    ca: dns_api_tls_ca
-    common_name: api.bosh-dns
-    extended_key_usage:
-    - client_auth
+  - name: dns_api_client_tls
+    type: certificate
+    options:
+      alternative_names:
+        - api.bosh-dns
+      ca: dns_api_tls_ca
+      common_name: api.bosh-dns
+      extended_key_usage:
+        - client_auth

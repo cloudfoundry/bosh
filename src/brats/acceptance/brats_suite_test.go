@@ -1,16 +1,11 @@
 package acceptance_test
 
 import (
-	"fmt"
-	"strings"
+	"brats/utils"
 	"testing"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gexec"
-
-	"brats/utils"
 )
 
 func TestBrats(t *testing.T) {
@@ -29,7 +24,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	utils.CreateAndUploadBOSHRelease()
 	utils.StartInnerBosh()
 
-	return nil
+	return []byte{}
 }, func(data []byte) {
 	utils.Bootstrap()
 	boshRelease = utils.AssertEnvExists("BOSH_RELEASE")
@@ -38,25 +33,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 })
 
 var _ = AfterSuite(func() {
-	utils.StopInnerBosh()
+	utils.SuiteCleanup()
 })
 
 var _ = AfterEach(func() {
-	if !utils.InnerBoshExists() {
-		return
-	}
-
-	By("cleaning up deployments")
-	session := utils.Bosh("deployments", "--column=name")
-	Eventually(session, 1*time.Minute).Should(gexec.Exit())
-	deployments := strings.Fields(string(session.Out.Contents()))
-
-	for _, deploymentName := range deployments {
-		By(fmt.Sprintf("deleting deployment %v", deploymentName))
-		if deploymentName == "" {
-			continue
-		}
-		session := utils.Bosh("delete-deployment", "-n", "-d", deploymentName)
-		Eventually(session, 5*time.Minute).Should(gexec.Exit())
-	}
+	utils.CleanupInnerBoshDeployments()
 })

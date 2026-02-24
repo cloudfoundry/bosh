@@ -1,45 +1,44 @@
 #!/usr/bin/env bash
+set -eu -o pipefail
 
-set -e
+REPO_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../../.." && pwd )"
+REPO_PARENT="$( cd "${REPO_ROOT}/.." && pwd )"
 
-script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-bosh_path="${bosh_release_path:-${script_dir}/../../../}"
-bosh_release_path=""
-src_dir="${script_dir}/../../../"
+if [[ -n "${DEBUG:-}" ]]; then
+  set -x
+  export BOSH_LOG_LEVEL=debug
+  export BOSH_LOG_PATH="${BOSH_LOG_PATH:-${REPO_PARENT}/bosh-debug.log}"
+fi
 
-pushd "${bosh_path}" > /dev/null
+BOSH_DEPLOYMENT_PATH="${BOSH_DEPLOYMENT_PATH:-/usr/local/bosh-deployment}"
+
+pushd "${REPO_PARENT}/bosh"
   if [[ ! -e $(find . -maxdepth 1 -name "*.tgz") ]]; then
     bosh reset-release
     bosh create-release --force --tarball release.tgz
   fi
 
   bosh_release_path="$(realpath "$(find . -maxdepth 1 -name "*.tgz")")"
-popd > /dev/null
+popd
 
 bosh upload-release "${bosh_release_path}" --name=bosh
 
-
-pushd "${src_dir}/src/brats/assets/linked-templates-release" > /dev/null
+pushd "${REPO_ROOT}/src/brats/assets/linked-templates-release"
   if [[ ! -e $(find . -maxdepth 1 -name "*.tgz") ]]; then
     bosh reset-release
     bosh create-release --force --tarball release.tgz
   fi
-popd > /dev/null
+popd
 
-pushd "${BOSH_DEPLOYMENT_PATH}" > /dev/null
-  inner_bosh_dir="/tmp/inner-bosh/director/$node_number"
-  node_number=$1
-  if [[ -n "$node_number" ]]; then
-    inner_bosh_dir="/tmp/inner-bosh/director/${node_number}"
-  fi
+pushd "${BOSH_DEPLOYMENT_PATH}"
+  node_number="${1}"
 
-  mkdir -p "${inner_bosh_dir}"
-
-  export BOSH_DIRECTOR_IP="10.245.0.$((10+$node_number))"
+  export BOSH_DIRECTOR_IP="10.245.0.$((10+node_number))"
 
   bosh upload-release "$(bosh int bosh.yml -o misc/source-releases/bosh.yml --path /releases/name=bpm/url)" \
     --sha1 "$(bosh int bosh.yml -o misc/source-releases/bosh.yml --path /releases/name=bpm/sha1)"
   bosh upload-release "$(bosh int bosh.yml -o jumpbox-user.yml --path /releases/name=os-conf/url)" \
     --sha1 "$(bosh int bosh.yml -o jumpbox-user.yml --path /releases/name=os-conf/sha1)"
-  bosh upload-release https://bosh.io/d/github.com/cloudfoundry/bosh-docker-cpi-release?v=0.0.20 --sha1 ec287512ba68dcfb7f8cedad35d226f7551e0558
-popd > /dev/null
+  bosh upload-release "$(bosh int bosh.yml -o docker/cpi.yml --path /releases/name=bosh-docker-cpi/url)" \
+    --sha1 "$(bosh int bosh.yml -o docker/cpi.yml --path /releases/name=bosh-docker-cpi/sha1)"
+popd

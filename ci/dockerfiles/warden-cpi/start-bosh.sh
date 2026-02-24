@@ -4,6 +4,7 @@ set -e
 if [[ -n "${DEBUG:-}" ]]; then
   set -x
   export BOSH_LOG_LEVEL=debug
+  export BOSH_LOG_PATH="${BOSH_LOG_PATH:-${PWD}/bosh-debug.log}"
 fi
 
 local_bosh_dir="/tmp/local-bosh/director"
@@ -27,6 +28,7 @@ pushd "${BOSH_DEPLOYMENT_PATH:-/usr/local/bosh-deployment}" > /dev/null
   mkdir -p ${local_bosh_dir}
 
   # shellcheck disable=SC2086
+  # shellcheck disable=SC2068
   bosh int bosh.yml \
     -o bosh-lite.yml \
     -o warden/cpi.yml \
@@ -40,7 +42,7 @@ pushd "${BOSH_DEPLOYMENT_PATH:-/usr/local/bosh-deployment}" > /dev/null
     -v internal_cidr=192.168.56.0/24 \
     -v outbound_network_name=NatNetwork \
     -v garden_host=127.0.0.1 \
-    "${@}" > "${local_bosh_dir}/bosh-director.yml"
+    ${@} > "${local_bosh_dir}/bosh-director.yml"
 
   bosh create-env "${local_bosh_dir}/bosh-director.yml" \
        --vars-store="${local_bosh_dir}/creds.yml" \

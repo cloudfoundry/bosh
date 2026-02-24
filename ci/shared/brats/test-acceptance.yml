@@ -6,6 +6,7 @@ inputs:
   - name: bosh
     optional: true
   - name: bosh-dns-release
+  - name: director-stemcell
   - name: stemcell
   - name: bosh-release
   - name: database-metadata

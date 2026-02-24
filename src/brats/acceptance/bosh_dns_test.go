@@ -2,7 +2,6 @@ package acceptance_test
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -84,7 +83,6 @@ var _ = Describe("BoshDns", func() {
 			opFilePath := utils.AssetPath("op-enable-short-dns-addresses.yml")
 
 			session := utils.Bosh("deploy", "-n", "-d", deploymentName, manifestPath,
-				"-o", os.Getenv("BOSH_DNS_ADDON_OPS_FILE_PATH"),
 				"-o", opFilePath,
 				"-v", fmt.Sprintf("dns-release-path=%s", dnsReleasePath),
 				"-v", fmt.Sprintf("stemcell-os=%s", utils.StemcellOS()),
@@ -150,7 +148,6 @@ var _ = Describe("BoshDns", func() {
 	Context("When deploying vms across different azs", func() {
 		BeforeEach(func() {
 			session := utils.Bosh("deploy", "-n", "-d", deploymentName, manifestPath,
-				"-o", os.Getenv("BOSH_DNS_ADDON_OPS_FILE_PATH"),
 				"-v", fmt.Sprintf("dns-release-path=%s", dnsReleasePath),
 				"-v", fmt.Sprintf("stemcell-os=%s", utils.StemcellOS()),
 				"-v", fmt.Sprintf("linked-template-release-path=%s", linkedTemplateReleasePath),

@@ -1,47 +1,92 @@
 #!/usr/bin/env bash
 set -eu -o pipefail
 
-bosh_ci_dir="$(realpath "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../" && pwd)")"
-bosh_ci_parent_dir="$(realpath "${bosh_ci_dir}/..")"
+REPO_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../../.." && pwd )"
+REPO_PARENT="$( cd "${REPO_ROOT}/.." && pwd )"
 
-export BOSH_DEPLOYMENT_PATH="/usr/local/bosh-deployment"
+if [[ -n "${DEBUG:-}" ]]; then
+  set -x
+  export BOSH_LOG_LEVEL=debug
+  export BOSH_LOG_PATH="${BOSH_LOG_PATH:-${REPO_PARENT}/bosh-debug.log}"
+fi
 
-source "${bosh_ci_dir}/ci/dockerfiles/docker-cpi/start-bosh.sh"
-source /tmp/local-bosh/director/env
+overridden_bosh_deployment="${REPO_PARENT}/bosh-deployment"
+if [[ -e "${overridden_bosh_deployment}/bosh.yml" ]];then
+  BOSH_DEPLOYMENT_PATH=${overridden_bosh_deployment}
+else
+  BOSH_DEPLOYMENT_PATH="/usr/local/bosh-deployment"
+fi
+
+OUTER_BOSH_ENV_PATH="/tmp/local-bosh/director/bosh-env"
+if [ ! -f "${OUTER_BOSH_ENV_PATH}" ]; then
+  "${REPO_ROOT}/ci/dockerfiles/docker-cpi/start-bosh.sh"
+fi
+# shellcheck disable=SC1090
+source "${OUTER_BOSH_ENV_PATH}"
 
 bosh int /tmp/local-bosh/director/creds.yml --path /jumpbox_ssh/private_key > /tmp/jumpbox_ssh_key.pem
 chmod 400 /tmp/jumpbox_ssh_key.pem
 
-export BOSH_DIRECTOR_IP="10.245.0.3"
+DOCKER_CERTS="$(bosh int /tmp/local-bosh/director/bosh-director.yml --path /instance_groups/0/properties/docker_cpi/docker/tls)"
+DOCKER_HOST="$(bosh int /tmp/local-bosh/director/bosh-director.yml --path /instance_groups/name=bosh/properties/docker_cpi/docker/host)"
 
 BOSH_BINARY_PATH=$(which bosh)
-export BOSH_BINARY_PATH
-BOSH_DIRECTOR_TARBALL_PATH="$(find "${bosh_ci_parent_dir}/bosh-release" -maxdepth 1 -path '*.tgz')"
-export BOSH_DIRECTOR_TARBALL_PATH
-export BOSH_DIRECTOR_RELEASE_PATH="${bosh_ci_parent_dir}/bosh"
-export CF_DEPLOYMENT_RELEASE_PATH="${bosh_ci_parent_dir}/cf-deployment"
-CANDIDATE_STEMCELL_TARBALL_PATH="$(find "${bosh_ci_parent_dir}/stemcell" -maxdepth 1 -path '*.tgz')"
-export CANDIDATE_STEMCELL_TARBALL_PATH
-export STEMCELL_OS=ubuntu-noble
+DIRECTOR_STEMCELL_TARBALL_PATH="$(find "${REPO_PARENT}/director-stemcell" -maxdepth 1 -path '*.tgz')"
+CANDIDATE_STEMCELL_TARBALL_PATH="$(find "${REPO_PARENT}/stemcell" -maxdepth 1 -path '*.tgz')"
 
-DOCKER_CERTS="$(bosh int /tmp/local-bosh/director/bosh-director.yml --path /instance_groups/0/properties/docker_cpi/docker/tls)"
-export DOCKER_CERTS
-DOCKER_HOST="$(bosh int /tmp/local-bosh/director/bosh-director.yml --path /instance_groups/name=bosh/properties/docker_cpi/docker/host)"
-export DOCKER_HOST
+BOSH_DIRECTOR_RELEASE_PATH="${REPO_PARENT}/bosh-release"
+BOSH_DIRECTOR_TARBALL_PATH="$(find "${BOSH_DIRECTOR_RELEASE_PATH}" -maxdepth 1 -path '*.tgz')"
+BOSH_DIRECTOR_RELEASE_PATH="${REPO_PARENT}/bosh"
+
+CF_DEPLOYMENT_RELEASE_PATH="${REPO_PARENT}/cf-deployment"
+
+brats_env_file="${REPO_PARENT}/brats-env.sh"
+{
+  echo "export OUTER_BOSH_ENV_PATH=\"${OUTER_BOSH_ENV_PATH}\""
+  echo "export DOCKER_CERTS=\"${DOCKER_CERTS}\""
+  echo "export DOCKER_HOST=\"${DOCKER_HOST}\""
+
+  echo "export BOSH_BINARY_PATH=\"${BOSH_BINARY_PATH}\""
+
+  echo "export BOSH_DIRECTOR_IP=\"${BOSH_DIRECTOR_IP}\""
+
+  echo "export BOSH_DEPLOYMENT_PATH=\"${BOSH_DEPLOYMENT_PATH}\""
+  echo "export BOSH_DIRECTOR_RELEASE_PATH=\"${BOSH_DIRECTOR_RELEASE_PATH}\""
+  echo "export BOSH_DIRECTOR_TARBALL_PATH=\"${BOSH_DIRECTOR_TARBALL_PATH}\""
+
+  echo "export DIRECTOR_STEMCELL_OS=\"${DIRECTOR_STEMCELL_OS}\""
+  echo "export DIRECTOR_STEMCELL_TARBALL_PATH=\"${DIRECTOR_STEMCELL_TARBALL_PATH}\""
+
+  echo "export STEMCELL_OS=\"${STEMCELL_OS}\""
+  echo "export CANDIDATE_STEMCELL_TARBALL_PATH=\"${CANDIDATE_STEMCELL_TARBALL_PATH}\""
+
+  echo "export CF_DEPLOYMENT_RELEASE_PATH=\"${CF_DEPLOYMENT_RELEASE_PATH}\""
+
+  echo "# load outer-bosh env"
+  echo "source "${OUTER_BOSH_ENV_PATH}
+} > "${brats_env_file}"
+
+echo "Source '${brats_env_file}' load the required BRATs environment" >&2
+
+# shellcheck disable=SC1090
+source "${brats_env_file}"
+
+bosh -n upload-stemcell "${DIRECTOR_STEMCELL_TARBALL_PATH}"
+bosh -n upload-stemcell "${CANDIDATE_STEMCELL_TARBALL_PATH}"
 
 bosh -n update-cloud-config \
   "${BOSH_DEPLOYMENT_PATH}/docker/cloud-config.yml" \
-  -o "${bosh_ci_dir}/ci/dockerfiles/docker-cpi/outer-cloud-config-ops.yml" \
+  -o "${REPO_ROOT}/ci/dockerfiles/docker-cpi/outer-cloud-config-ops.yml" \
+  -o "${REPO_ROOT}/ci/dockerfiles/docker-cpi/gcp-internal-dns-ops.yml" \
   -v network=director_network
 
-bosh -n upload-stemcell "${CANDIDATE_STEMCELL_TARBALL_PATH}"
-bosh upload-release /usr/local/bpm.tgz
-bosh upload-release "$(bosh int ${BOSH_DEPLOYMENT_PATH}/docker/cpi.yml --path /name=cpi/value/url)" \
-  --sha1 "$(bosh int ${BOSH_DEPLOYMENT_PATH}/docker/cpi.yml --path /name=cpi/value/sha1)"
-bosh upload-release "$(bosh int ${BOSH_DEPLOYMENT_PATH}/jumpbox-user.yml --path /release=os-conf/value/url)" \
-  --sha1 "$(bosh int ${BOSH_DEPLOYMENT_PATH}/jumpbox-user.yml --path /release=os-conf/value/sha1)"
+bosh upload-release /usr/local/releases/bpm.tgz
+bosh upload-release "$(bosh int "${BOSH_DEPLOYMENT_PATH}/docker/cpi.yml" --path /name=cpi/value/url)" \
+  --sha1 "$(bosh int "${BOSH_DEPLOYMENT_PATH}/docker/cpi.yml" --path /name=cpi/value/sha1)"
+bosh upload-release "$(bosh int "${BOSH_DEPLOYMENT_PATH}/jumpbox-user.yml" --path /release=os-conf/value/url)" \
+  --sha1 "$(bosh int "${BOSH_DEPLOYMENT_PATH}/jumpbox-user.yml" --path /release=os-conf/value/sha1)"
 
-pushd "${bosh_ci_dir}/src/brats/performance"
+pushd "${REPO_ROOT}/src/brats/performance"
   go run github.com/onsi/ginkgo/v2/ginkgo \
     -r -v --race --timeout=24h \
     --randomize-suites --randomize-all \
