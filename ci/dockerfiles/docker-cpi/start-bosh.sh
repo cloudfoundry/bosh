@@ -9,7 +9,7 @@ if [[ -n "${DEBUG:-}" ]]; then
 fi
 
 REPO_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../.." && pwd )"
-CI_ROOT="$( cd "${REPO_ROOT}/.." && pwd )"
+REPO_PARENT="$( cd "${REPO_ROOT}/.." && pwd )"
 
 BOSH_DEPLOYMENT_PATH="${BOSH_DEPLOYMENT_PATH:-/usr/local/bosh-deployment}"
 
