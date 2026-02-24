@@ -38,7 +38,7 @@ bosh -n update-cloud-config \
   -v network=director_network
 
 bosh -n upload-stemcell "${CANDIDATE_STEMCELL_TARBALL_PATH}"
-bosh upload-release /usr/local/bpm.tgz
+bosh upload-release /usr/local/releases/bpm.tgz
 bosh upload-release "$(bosh int ${BOSH_DEPLOYMENT_PATH}/docker/cpi.yml --path /name=cpi/value/url)" \
   --sha1 "$(bosh int ${BOSH_DEPLOYMENT_PATH}/docker/cpi.yml --path /name=cpi/value/sha1)"
 bosh upload-release "$(bosh int ${BOSH_DEPLOYMENT_PATH}/jumpbox-user.yml --path /release=os-conf/value/url)" \
