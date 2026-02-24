@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -eu -o pipefail
 
+REPO_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../../.." && pwd )"
+REPO_PARENT="$( cd "${REPO_ROOT}/.." && pwd )"
+
 if [[ -n "${DEBUG:-}" ]]; then
   set -x
   export BOSH_LOG_LEVEL=debug
-  export BOSH_LOG_PATH="${BOSH_LOG_PATH:-${PWD}/bosh-debug.log}"
+  export BOSH_LOG_PATH="${BOSH_LOG_PATH:-${REPO_PARENT}/bosh-debug.log}"
 fi
-
-REPO_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../.." && pwd )"
-REPO_PARENT="$( cd "${REPO_ROOT}/.." && pwd )"
 
 source "${REPO_ROOT}/ci/dockerfiles/docker-cpi/start-bosh.sh"
 source /tmp/local-bosh/director/env
