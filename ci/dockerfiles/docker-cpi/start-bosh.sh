@@ -146,6 +146,8 @@ function start_docker() {
   mtu=$(cat "/sys/class/net/$(ip route get "${DNS_IP}"|awk '{ print $5 }')/mtu")
 
   [[ ! -d /etc/docker ]] && mkdir /etc/docker
+  sysctl -w net.ipv4.ip_forward=1
+
   cat <<EOF > /etc/docker/daemon.json
 {
   "hosts": ["${DOCKER_HOST}"],
@@ -223,6 +225,10 @@ EOF
     echo "A docker network named '${docker_network_name}' already exists, skipping creation" >&2
   else
     docker network create -d bridge --subnet="${docker_network_cidr}" "${docker_network_name}"
+  fi
+
+  if ! iptables -t nat -C POSTROUTING -s "${docker_network_cidr}" -j MASQUERADE 2>/dev/null; then
+    iptables -t nat -A POSTROUTING -s "${docker_network_cidr}" -j MASQUERADE
   fi
 
   cat <<EOF > "${local_bosh_dir}/docker_tls.json"
