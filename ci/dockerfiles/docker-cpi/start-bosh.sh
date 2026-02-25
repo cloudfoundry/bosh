@@ -158,7 +158,8 @@ function start_docker() {
   "mtu": ${mtu},
   "dns": ["8.8.8.8", "8.8.4.4"],
   "data-root": "/scratch/docker",
-  "tlsverify": true
+  "tlsverify": true,
+  "ip-forward-no-drop": true
 }
 EOF
 
