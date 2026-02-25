@@ -21,32 +21,34 @@ export BOSH_DEPLOYMENT_PATH
 [ -f /tmp/local-bosh/director/env ] || source "${REPO_ROOT}/ci/dockerfiles/docker-cpi/start-bosh.sh"
 source /tmp/local-bosh/director/env
 
-bosh int /tmp/local-bosh/director/creds.yml --path /jumpbox_ssh/private_key > /tmp/jumpbox_ssh_key.pem
-chmod 400 /tmp/jumpbox_ssh_key.pem
-
-BOSH_BINARY_PATH=$(which bosh)
-export BOSH_BINARY_PATH
-export BOSH_RELEASE="${REPO_ROOT}/src/spec/assets/dummy-release.tgz"
-export BOSH_DIRECTOR_RELEASE_PATH="${REPO_PARENT}/bosh-release"
-DNS_RELEASE_PATH="$(find "${REPO_PARENT}/bosh-dns-release" -maxdepth 1 -path '*.tgz')"
-export DNS_RELEASE_PATH
-CANDIDATE_STEMCELL_TARBALL_PATH="$(find "${REPO_PARENT}/stemcell" -maxdepth 1 -path '*.tgz')"
-export CANDIDATE_STEMCELL_TARBALL_PATH
-export BOSH_DNS_ADDON_OPS_FILE_PATH="${BOSH_DEPLOYMENT_PATH}/misc/dns-addon.yml"
-
 export OUTER_BOSH_ENV_PATH="/tmp/local-bosh/director/env"
-
-DOCKER_CERTS="$(bosh int /tmp/local-bosh/director/bosh-director.yml --path /instance_groups/0/properties/docker_cpi/docker/tls)"
-export DOCKER_CERTS
-DOCKER_HOST="$(bosh int /tmp/local-bosh/director/bosh-director.yml --path /instance_groups/name=bosh/properties/docker_cpi/docker/host)"
-export DOCKER_HOST
 
 bosh -n update-cloud-config \
   "${BOSH_DEPLOYMENT_PATH}/docker/cloud-config.yml" \
   -o "${REPO_ROOT}/ci/dockerfiles/docker-cpi/outer-cloud-config-ops.yml" \
   -v network=director_network
 
+bosh int /tmp/local-bosh/director/creds.yml --path /jumpbox_ssh/private_key > /tmp/jumpbox_ssh_key.pem
+chmod 400 /tmp/jumpbox_ssh_key.pem
+
+DOCKER_CERTS="$(bosh int /tmp/local-bosh/director/bosh-director.yml --path /instance_groups/0/properties/docker_cpi/docker/tls)"
+export DOCKER_CERTS
+DOCKER_HOST="$(bosh int /tmp/local-bosh/director/bosh-director.yml --path /instance_groups/name=bosh/properties/docker_cpi/docker/host)"
+export DOCKER_HOST
+
+BOSH_BINARY_PATH=$(which bosh)
+export BOSH_BINARY_PATH
+CANDIDATE_STEMCELL_TARBALL_PATH="$(find "${REPO_PARENT}/stemcell" -maxdepth 1 -path '*.tgz')"
+export CANDIDATE_STEMCELL_TARBALL_PATH
+export STEMCELL_OS=ubuntu-noble
+
 bosh -n upload-stemcell "${CANDIDATE_STEMCELL_TARBALL_PATH}"
+
+export BOSH_RELEASE="${REPO_ROOT}/src/spec/assets/dummy-release.tgz"
+export BOSH_DIRECTOR_RELEASE_PATH="${REPO_PARENT}/bosh-release"
+DNS_RELEASE_PATH="$(find "${REPO_PARENT}/bosh-dns-release" -maxdepth 1 -path '*.tgz')"
+export DNS_RELEASE_PATH
+export BOSH_DNS_ADDON_OPS_FILE_PATH="${BOSH_DEPLOYMENT_PATH}/misc/dns-addon.yml"
 
 apt-get update
 apt-get install -y mysql-client postgresql-client
