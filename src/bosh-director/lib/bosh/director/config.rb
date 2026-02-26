@@ -565,6 +565,10 @@ module Bosh::Director
       hash.fetch('metrics_server', {}).fetch('enabled', false)
     end
 
+    def metrics_dir
+      File.join(hash['dir'], 'metrics')
+    end
+
     def health_monitor_port
       hash.fetch('health_monitor', {}).fetch('port', 25923)
     end
