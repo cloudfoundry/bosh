@@ -5,7 +5,8 @@ module Bosh::Director
     let!(:deployment) { FactoryBot.create(:models_deployment, name: 'deployment') }
     let(:jobs) { [%w[job1 job1index0], %w[job1 job1index1], %w[job2 job2index0]] }
     let(:resolutions) do
-      { Models::DeploymentProblem.all[0].id.to_s => :recreate_vm, Models::DeploymentProblem.all[1].id.to_s => :recreate_vm }
+      problems = Models::DeploymentProblem.order(:id).all
+      { problems[0].id.to_s => :recreate_vm, problems[1].id.to_s => :recreate_vm }
     end
     let(:fix_stateful_jobs) { true }
     let(:scan_and_fix) { described_class.new('deployment', jobs, fix_stateful_jobs) }
@@ -173,7 +174,7 @@ module Bosh::Director
 
         it 'should not list it as a resolution' do
           res = scan_and_fix.resolutions(jobs)
-          expect(res).to eq(Models::DeploymentProblem.all[0].id.to_s => :recreate_vm)
+          expect(res).to eq(Models::DeploymentProblem.order(:id).first.id.to_s => :recreate_vm)
         end
       end
     end
