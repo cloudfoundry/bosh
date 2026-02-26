@@ -259,6 +259,7 @@ EOF
 
 EOF
 
+  # shellcheck disable=SC2068
   bosh int "${BOSH_DEPLOYMENT_PATH}/bosh.yml" \
     -o "${BOSH_DEPLOYMENT_PATH}/docker/cpi.yml" \
     -o "${BOSH_DEPLOYMENT_PATH}/jumpbox-user.yml" \
@@ -270,7 +271,7 @@ EOF
     -v docker_host="${DOCKER_HOST}" \
     -v network="${docker_network_name}" \
     -v docker_tls="$(cat "${local_bosh_dir}/docker_tls.json")" \
-    "${@}" > "${local_bosh_dir}/bosh-director.yml"
+    ${@} > "${local_bosh_dir}/bosh-director.yml"
 
   bosh create-env "${local_bosh_dir}/bosh-director.yml" \
       --vars-store="${local_bosh_dir}/creds.yml" \
@@ -322,4 +323,5 @@ EOF
 
 }
 
-main "${@}"
+# shellcheck disable=SC2068
+main ${@}
