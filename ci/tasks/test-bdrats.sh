@@ -18,15 +18,28 @@ if [[ -e ${OVERRIDDEN_BOSH_DEPLOYMENT}/bosh.yml ]];then
   export BOSH_DEPLOYMENT_PATH=${OVERRIDDEN_BOSH_DEPLOYMENT}
 fi
 
+STEMCELL_PATH="${PWD}/stemcell/$(basename stemcell/*.tgz)"
+STEMCELL_SHA1=$(sha1sum "${STEMCELL_PATH}" | awk '{print $1}')
+
+cat > "${BOSH_DEPLOYMENT_PATH}/local-stemcell.yml" <<'OPSEOF'
+- name: stemcell
+  path: /resource_pools/name=vms/stemcell?
+  type: replace
+  value:
+    url: ((local_stemcell_url))
+    sha1: ((local_stemcell_sha1))
+OPSEOF
+
 source start-bosh \
   -o bbr.yml \
   -o local-bosh-release-tarball.yml \
   -o hm/disable.yml \
-  -v local_bosh_release="${BOSH_RELEASE_PATH}"
+  -v local_bosh_release="${BOSH_RELEASE_PATH}"\
+  -v local_stemcell_url="file://${STEMCELL_PATH}" \
+  -v local_stemcell_sha1="${STEMCELL_SHA1}"
 
 source /tmp/local-bosh/director/env
 
-STEMCELL_PATH="${PWD}/stemcell/$(basename stemcell/*.tgz)"
 BOSH_SSH_KEY="$(bosh int /tmp/local-bosh/director/creds.yml --path /jumpbox_ssh/private_key --json | jq .Blocks[0])"
 BOSH_HOST="${BOSH_ENVIRONMENT}"
 
