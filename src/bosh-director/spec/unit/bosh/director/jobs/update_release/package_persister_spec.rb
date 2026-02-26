@@ -94,7 +94,7 @@ module Bosh::Director
             expect(BlobUtil).to_not receive(:copy_blob)
 
             persist_packages(manifest_compiled_packages, true)
-            packages = Models::Package.all
+            packages = Models::Package.order(:name).all
             expect(packages.length).to eq(2)
             packages[0].tap do |p|
               expect(p.sha1).to eq(nil)
@@ -211,7 +211,7 @@ module Bosh::Director
                 expect(BlobUtil).to receive(:copy_blob).and_return('copied-blob-id')
 
                 persist_packages(manifest_compiled_packages, true)
-                new_package = Models::Package.all.select { |pkg| pkg.name == package_name_2 }.last
+                new_package = Models::Package.where(name: package_name_2, version: 'fake-version-2').first
                 new_package.tap do |p|
                   expect(p.sha1).to eq(nil)
                   expect(p.compiled_packages.length).to eq(1)

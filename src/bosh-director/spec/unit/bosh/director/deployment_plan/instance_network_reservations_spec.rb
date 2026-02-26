@@ -223,7 +223,7 @@ module Bosh::Director
 
           it 'creates reservations from the last VM associated with an instance' do
             reservations = DeploymentPlan::InstanceNetworkReservations.create_from_db(instance_model, deployment, per_spec_logger)
-            expect(reservations.map(&:nic_group)).to eq([1, 2])
+            expect(reservations.map(&:nic_group)).to contain_exactly(1, 2)
           end
         end
       end
