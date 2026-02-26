@@ -279,6 +279,11 @@ EOF
   local director_container
   director_container=$(docker ps --filter "network=${docker_network_name}" --format '{{.ID}}' | head -1)
   if [ -n "$director_container" ]; then
+    # The docker-cpi unmounts Docker's /etc/resolv.conf bind-mount and systemd-resolved
+    # on Noble does not reliably write a replacement. Ensure DNS is configured so the
+    # director can resolve external hosts (needed for remote release downloads).
+    docker exec "$director_container" bash -c 'if ! grep -q nameserver /etc/resolv.conf 2>/dev/null; then printf "nameserver 8.8.8.8\nnameserver 8.8.4.4\n" > /etc/resolv.conf; fi'
+
     echo "=== DIRECTOR CONTAINER DIAGNOSTICS ==="
     echo "--- resolv.conf ---"
     docker exec "$director_container" cat /etc/resolv.conf 2>&1 || true
@@ -286,8 +291,6 @@ EOF
     docker exec "$director_container" ip route 2>&1 || true
     echo "--- ping 8.8.8.8 (DNS) ---"
     docker exec "$director_container" ping -c1 -W3 8.8.8.8 2>&1 || true
-    echo "--- ping 10.245.0.1 (gateway) ---"
-    docker exec "$director_container" ping -c1 -W3 10.245.0.1 2>&1 || true
     echo "--- DNS lookup bosh.io ---"
     docker exec "$director_container" getent hosts bosh.io 2>&1 || true
     echo "--- curl https://bosh.io/ ---"
