@@ -124,6 +124,20 @@ module Bosh::Director
       end
     end
 
+    describe :with_vm_lock do
+      it 'creates a lock for the given vm cid' do
+        lock = double(:lock)
+        allow(Lock).to receive(:new).with('lock:vm:bar', timeout: 5).and_return(lock)
+        expect(lock).to receive(:lock).and_yield
+
+        called = false
+        @test_instance.with_vm_lock('bar', timeout: 5) do
+          called = true
+        end
+        expect(called).to be(true)
+      end
+    end
+
     describe :with_release_lock do
       it 'creates a lock for the given name' do
         lock = double(:lock)

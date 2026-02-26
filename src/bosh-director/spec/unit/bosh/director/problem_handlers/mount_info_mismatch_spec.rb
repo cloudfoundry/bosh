@@ -11,6 +11,7 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
   let(:manifest) do
     { 'tags' => { 'mytag' => 'myvalue' } }
   end
+  let(:current_job) { instance_double(Bosh::Director::Jobs::CloudCheck::ApplyResolutions, username: 'user', task_id: 42) }
 
   before(:each) do
     @agent = double('agent')
@@ -37,6 +38,7 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
     allow(Bosh::Director::AZCloudFactory).to receive(:create_from_deployment).and_return(az_cloud_factory)
     allow(Bosh::Director::CloudFactory).to receive(:create).and_return(base_cloud_factory)
     allow(az_cloud_factory).to receive(:get_for_az).with('az1', 25).and_return(cloud)
+    allow(Bosh::Director::Config).to receive(:current_job).and_return(current_job)
   end
 
   it 'registers under inactive_disk type' do
@@ -96,6 +98,7 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
           end
 
           it 'attaches disk and reboots the vm' do
+            expect(@handler).to receive(:with_vm_lock).twice.with(@instance.vm_cid).and_yield
             expect(cloud).to receive(:attach_disk).with(@instance.vm_cid, @disk.disk_cid)
             expect(cloud).to receive(:reboot_vm).with(@instance.vm_cid)
             expect(cloud_for_update_metadata).to_not receive(:attach_disk)
@@ -107,6 +110,7 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
           end
 
           it 'sets disk metadata with deployment information' do
+            expect(@handler).to receive(:with_vm_lock).twice.with(@instance.vm_cid).and_yield
             expect(cloud).to receive(:attach_disk).with(@instance.vm_cid, @disk.disk_cid)
             expect(cloud).to receive(:reboot_vm).with(@instance.vm_cid)
             expect(cloud_for_update_metadata).to_not receive(:attach_disk)
@@ -144,6 +148,7 @@ describe Bosh::Director::ProblemHandlers::MountInfoMismatch do
           end
 
           it 'attaches disk and reboots the vm' do
+            expect(@handler).to receive(:with_vm_lock).twice.with(@instance.vm_cid).and_yield
             expect(cloud).to receive(:attach_disk).with(@instance.vm_cid, @disk.disk_cid).and_return(disk_hint)
             expect(cloud).to receive(:reboot_vm).with(@instance.vm_cid)
             expect(cloud_for_update_metadata).to_not receive(:attach_disk)

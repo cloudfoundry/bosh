@@ -76,7 +76,7 @@ module Bosh::Director
           expect(cloud).to receive(:delete_vm).with(vm_cid)
           expect do
             job.perform
-          end.to change { Bosh::Director::Models::Event.count }.by(2)
+          end.to change { Bosh::Director::Models::Event.count }.by(4)
 
           event1 = Bosh::Director::Models::Event.order_by(:id).first
           expect(event1.user).to eq(task.username)

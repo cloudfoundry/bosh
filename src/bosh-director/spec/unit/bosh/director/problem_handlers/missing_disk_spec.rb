@@ -92,12 +92,13 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
 
             it_ignores_cloud_disk_errors
 
-            it 'deactivates, unmounts, detaches, deletes snapshots, deletes disk reference' do
+            it 'deactivates, unmounts, detaches with VM lock, deletes snapshots, deletes disk reference' do
               expect(agent_client).to receive(:unmount_disk) do
                 db_disk = Bosh::Director::Models::PersistentDisk[disk.id]
                 expect(db_disk.active).to be(false)
               end.ordered
 
+              expect(handler).to receive(:with_vm_lock).with('vm-cid').and_yield.ordered
               expect(cloud).to receive(:detach_disk).with('vm-cid', 'disk-cid').ordered
 
               handler.apply_resolution(:delete_disk_reference)
@@ -115,6 +116,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
               end
 
               it 'detaches disk, deletes snapshots, deletes disk reference' do
+                expect(handler).to receive(:with_vm_lock).with('vm-cid').and_yield.ordered
                 expect(cloud).to receive(:detach_disk).with('vm-cid', 'disk-cid').ordered
 
                 handler.apply_resolution(:delete_disk_reference)
@@ -132,6 +134,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
               end
 
               it 'raises the error' do
+                expect(handler).to_not receive(:with_vm_lock).with('vm-cid').and_yield.ordered
                 expect(cloud).to_not receive(:detach_disk).with('vm-cid', 'disk-cid').ordered
                 expect(cloud).to_not receive(:delete_snapshot).with('snapshot-cid').ordered
 
@@ -155,6 +158,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
             it 'deactivates, detaches, deletes snapshots, deletes disk reference' do
               expect(agent_client).to_not receive(:unmount_disk)
 
+              expect(handler).to receive(:with_vm_lock).with('vm-cid').and_yield.ordered
               expect(cloud).to receive(:detach_disk).with('vm-cid', 'disk-cid') do
                 db_disk = Bosh::Director::Models::PersistentDisk[disk.id]
                 expect(db_disk.active).to be(false)
@@ -177,6 +181,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
 
           it 'detaches disk, deletes snapshots, deletes disk reference' do
             expect(agent_client).to_not receive(:unmount_disk)
+            expect(handler).to receive(:with_vm_lock).with('vm-cid').and_yield.ordered
             expect(cloud).to receive(:detach_disk).ordered
 
             handler.apply_resolution(:delete_disk_reference)
@@ -197,6 +202,7 @@ describe Bosh::Director::ProblemHandlers::MissingDisk do
 
         it 'deletes snapshots, deletes disk reference' do
           expect(agent_client).to_not receive(:unmount_disk)
+          expect(handler).to_not receive(:with_vm_lock)
           expect(cloud).to_not receive(:detach_disk)
 
           handler.apply_resolution(:delete_disk_reference)

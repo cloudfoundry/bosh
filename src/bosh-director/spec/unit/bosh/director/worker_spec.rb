@@ -12,7 +12,7 @@ end
 
 module Bosh::Director
   describe Worker do
-    subject(:worker) { Worker.new(config, 0) }
+    subject(:worker) { Worker.new(config, "worker_1") }
 
     let(:config) { Config.load_hash(SpecHelper.director_config_hash) }
 
@@ -111,7 +111,7 @@ module Bosh::Director
         expect(event.user).to eq('_director')
         expect(event.action).to eq('start')
         expect(event.object_type).to eq('worker')
-        expect(event.object_name).to eq('worker_0')
+        expect(event.object_name).to eq('worker_1')
         expect(event.context).to eq({})
       end
     end

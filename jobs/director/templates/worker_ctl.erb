@@ -1,10 +1,10 @@
 #!/bin/bash
 
-INDEX=$2
+NAME=$2
 
 RUN_DIR=/var/vcap/sys/run/director
 LOG_DIR=/var/vcap/sys/log/director
-PIDFILE=$RUN_DIR/worker_$INDEX.pid
+PIDFILE=${RUN_DIR}/${NAME}.pid
 RUNAS=vcap
 
 # Postgres
@@ -25,9 +25,9 @@ export LANG=en_US.UTF-8
 
 export TMPDIR=/var/vcap/data/director/tmp
 
-export QUEUE="normal,urgent"
+export QUEUE="${3:-normal,urgent}"
 <% if (p('director.enable_dedicated_status_worker')) && (p('director.workers') > 1) %>
-if [ $INDEX -eq 1 ]; then
+if [ "${NAME}" = "worker_1" ]; then
   export QUEUE="urgent"
 fi
 <% end %>
@@ -49,15 +49,15 @@ case $1 in
 
     exec chpst -u $RUNAS:$RUNAS \
       /var/vcap/packages/director/bin/bosh-director-worker \
-      -c /var/vcap/jobs/director/config/director.yml -i $INDEX \
-      >>$LOG_DIR/worker_$INDEX.stdout.log \
-      2>>$LOG_DIR/worker_$INDEX.stderr.log
+      -c /var/vcap/jobs/director/config/director.yml -n $NAME \
+      >>$LOG_DIR/${NAME}.stdout.log \
+      2>>$LOG_DIR/${NAME}.stderr.log
     ;;
 
   stop)
     PID=$(head -1 $PIDFILE)
     kill_process $PID # prevent the parent from fork()ing new children
-    for CHILD in $(list_child_processes $INDEX); do
+    for CHILD in $(list_child_processes $NAME); do
       kill_process $CHILD
     done
     rm -f $PIDFILE
