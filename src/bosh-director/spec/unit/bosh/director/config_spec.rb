@@ -549,6 +549,14 @@ describe Bosh::Director::Config do
     end
   end
 
+  describe '#metrics_dir' do
+    subject(:config) { Bosh::Director::Config.new(test_config) }
+
+    it 'returns the metrics directory path based on the dir config' do
+      expect(config.metrics_dir).to eq('/tmp/boshdir/metrics')
+    end
+  end
+
   describe 'director_stemcell_owner deletagion' do
     let(:director_stemcell_owner) do
       double(
