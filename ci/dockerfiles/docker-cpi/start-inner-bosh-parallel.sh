@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
+set -eu -o pipefail
 
-set -euo pipefail
-set -x
+REPO_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../../.." && pwd )"
+REPO_PARENT="$( cd "${REPO_ROOT}/.." && pwd )"
 
-script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+if [[ -n "${DEBUG:-}" ]]; then
+  set -x
+  export BOSH_LOG_LEVEL=debug
+  export BOSH_LOG_PATH="${BOSH_LOG_PATH:-${REPO_PARENT}/bosh-debug.log}"
+fi
+
 node_number=${1}
 
 pushd "${BOSH_DEPLOYMENT_PATH}" > /dev/null
@@ -13,9 +19,9 @@ pushd "${BOSH_DEPLOYMENT_PATH}" > /dev/null
   export BOSH_DIRECTOR_IP="10.245.0.$((10 + node_number))"
 
   bosh int bosh.yml \
-    -o "$script_dir/inner-bosh-ops.yml" \
-    -o jumpbox-user.yml \
-    -o experimental/bpm.yml \
+    -o "${REPO_ROOT}/ci/dockerfiles/docker-cpi/inner-bosh-ops.yml" \
+    -o "${BOSH_DEPLOYMENT_PATH}/jumpbox-user.yml" \
+    -o "${BOSH_DEPLOYMENT_PATH}/experimental/bpm.yml" \
     -v director_name=docker-inner \
     -v internal_ip="${BOSH_DIRECTOR_IP}" \
     -v docker_host="${DOCKER_HOST}" \
@@ -23,8 +29,8 @@ pushd "${BOSH_DEPLOYMENT_PATH}" > /dev/null
     -v docker_tls="${DOCKER_CERTS}" \
     -v stemcell_os="${STEMCELL_OS}" \
     -o "${BOSH_DEPLOYMENT_PATH}/misc/source-releases/bosh.yml" \
-    -o "$script_dir/latest-bosh-release.yml" \
-    -o "$script_dir/deployment-name.yml" \
+    -o "${REPO_ROOT}/ci/dockerfiles/docker-cpi/latest-bosh-release.yml" \
+    -o "${REPO_ROOT}/ci/dockerfiles/docker-cpi/deployment-name.yml" \
     -v deployment_name="bosh-${node_number}" \
     "${@:2}" > "${inner_bosh_dir}/bosh-director.yml"
 
@@ -42,7 +48,9 @@ pushd "${BOSH_DEPLOYMENT_PATH}" > /dev/null
   bosh int "${inner_bosh_dir}/creds.yml" --path /jumpbox_ssh/private_key > "${inner_bosh_dir}/jumpbox_private_key.pem"
   chmod 600 "${inner_bosh_dir}/jumpbox_private_key.pem"
 
-  cat <<EOF > "${inner_bosh_dir}/bosh"
+  inner_bosh_script="${inner_bosh_dir}/bosh"
+
+  cat <<EOF > "${inner_bosh_script}"
 #!/bin/bash
 
 export BOSH_CONFIG="${BOSH_CONFIG}"
@@ -56,8 +64,8 @@ EOF
 
   chmod +x "${inner_bosh_dir}/bosh"
 
-  "${inner_bosh_dir}/bosh" -n update-cloud-config \
-    "$script_dir/inner-bosh-cloud-config.yml" \
+  "${inner_bosh_script}" -n update-cloud-config \
+    "${REPO_ROOT}/ci/dockerfiles/docker-cpi/inner-bosh-cloud-config.yml" \
     -v node_number="$((node_number * 4))" \
     -v network=director_network
 
