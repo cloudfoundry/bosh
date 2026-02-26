@@ -158,7 +158,8 @@ function start_docker() {
   "mtu": ${mtu},
   "dns": ["8.8.8.8", "8.8.4.4"],
   "data-root": "/scratch/docker",
-  "tlsverify": true
+  "tlsverify": true,
+  "ip-forward-no-drop": true
 }
 EOF
 
@@ -231,6 +232,24 @@ EOF
     iptables -t nat -A POSTROUTING -s "${docker_network_cidr}" -j MASQUERADE
   fi
 
+  iptables -P FORWARD ACCEPT 2>/dev/null || true
+  iptables -I DOCKER-USER -j ACCEPT 2>/dev/null || true
+
+  echo "=== NETWORKING DIAGNOSTICS (post docker-network-create) ==="
+  echo "--- iptables FORWARD chain ---"
+  iptables -L FORWARD -n -v 2>&1 || true
+  echo "--- iptables DOCKER-FORWARD chain ---"
+  iptables -L DOCKER-FORWARD -n -v 2>&1 || true
+  echo "--- iptables DOCKER-USER chain ---"
+  iptables -L DOCKER-USER -n -v 2>&1 || true
+  echo "--- iptables nat POSTROUTING ---"
+  iptables -t nat -L POSTROUTING -n -v 2>&1 || true
+  echo "--- ip route ---"
+  ip route 2>&1 || true
+  echo "--- sysctl ip_forward ---"
+  sysctl net.ipv4.ip_forward 2>&1 || true
+  echo "=== END NETWORKING DIAGNOSTICS ==="
+
   cat <<EOF > "${local_bosh_dir}/docker_tls.json"
 {
   "ca": "$(cat "${certs_dir}/ca_json_safe.pem")",
@@ -256,6 +275,27 @@ EOF
   bosh create-env "${local_bosh_dir}/bosh-director.yml" \
       --vars-store="${local_bosh_dir}/creds.yml" \
       --state="${local_bosh_dir}/state.json"
+
+  local director_container
+  director_container=$(docker ps --filter "network=${docker_network_name}" --format '{{.ID}}' | head -1)
+  if [ -n "$director_container" ]; then
+    echo "=== DIRECTOR CONTAINER DIAGNOSTICS ==="
+    echo "--- resolv.conf ---"
+    docker exec "$director_container" cat /etc/resolv.conf 2>&1 || true
+    echo "--- ip route ---"
+    docker exec "$director_container" ip route 2>&1 || true
+    echo "--- ping 8.8.8.8 (DNS) ---"
+    docker exec "$director_container" ping -c1 -W3 8.8.8.8 2>&1 || true
+    echo "--- ping 10.245.0.1 (gateway) ---"
+    docker exec "$director_container" ping -c1 -W3 10.245.0.1 2>&1 || true
+    echo "--- DNS lookup bosh.io ---"
+    docker exec "$director_container" getent hosts bosh.io 2>&1 || true
+    echo "--- curl https://bosh.io/ ---"
+    docker exec "$director_container" curl -sI --connect-timeout 5 https://bosh.io/ 2>&1 || true
+    echo "=== END DIRECTOR CONTAINER DIAGNOSTICS ==="
+  else
+    echo "WARNING: could not find director container on ${docker_network_name}" >&2
+  fi
 
   bosh int "${local_bosh_dir}/creds.yml" --path /director_ssl/ca > "${local_bosh_dir}/ca.crt"
   bosh_client_secret="$(bosh int "${local_bosh_dir}/creds.yml" --path /admin_password)"
