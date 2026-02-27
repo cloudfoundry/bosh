@@ -69,12 +69,17 @@ module Bosh::Director
             end
           end
 
-          restricted_ips.reject! do |ip|
-            restricted_ips.any? do |other_ip|
-              includes = other_ip.include?(ip)
-              includes && other_ip.prefix < ip.prefix
+          sorted_restricted_ips = restricted_ips.to_a.sort_by { |ip| [ip.to_i, ip.prefix] }
+
+          deduplicated_ips = sorted_restricted_ips.reject.with_index do |ip, index|
+            sorted_restricted_ips[0...index].any? do |other_ip|
+              other_ip.prefix < ip.prefix && other_ip.include?(ip)
+            rescue StandardError
+              false
             end
           end
+
+          restricted_ips.replace(deduplicated_ips)
 
           each_ip(static_property, false) do |ip|
             if ip_in_array?(ip, restricted_ips)
