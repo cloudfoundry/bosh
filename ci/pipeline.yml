@@ -615,6 +615,8 @@ jobs:
           - get: bosh-dns-release
           - get: stemcell
             resource: warden-stemcell
+          - get: director-stemcell
+            resource: warden-stemcell
           - get: bosh-candidate-release-tarballs
             passed: [ create-bosh-candidate-release-compiled ]
           - get: bosh-release
@@ -680,6 +682,8 @@ jobs:
           - get: docker-cpi-image
           - get: stemcell
             resource: warden-stemcell
+          - get: director-stemcell
+            resource: warden-stemcell-jammy
       - do:
           - task: test-brats-performance
             image: docker-cpi-image
@@ -1825,6 +1829,11 @@ resources:
     type: bosh-io-stemcell
     source:
       name: bosh-warden-boshlite-ubuntu-noble
+
+  - name: warden-stemcell-jammy
+    type: bosh-io-stemcell
+    source:
+      name: bosh-warden-boshlite-ubuntu-jammy-go_agent
 
   - name: bosh-agent
     type: git
