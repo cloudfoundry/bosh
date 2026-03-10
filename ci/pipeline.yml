@@ -28,8 +28,8 @@ groups:
       - create-bosh-candidate-release-compiled
       - bats
       - bats-cleanup-leftovers
-      - bats-fips
-      - bats-fips-cleanup-leftovers
+      - fips-bats
+      - fips-bats-cleanup-leftovers
       - brats-acceptance
       - brats-utils
       - brats-performance
@@ -514,9 +514,10 @@ jobs:
           LEFTOVERS_PREFIX: bats
           GCP_JSON_KEY: ((gcp_json_key))
 
-  - name: bats-fips
+  - name: fips-bats
+    old_name: bats-fips
     serial: true
-    serial_groups: [ bats-fips ]
+    serial_groups: [ fips-bats ]
     plan:
       - do:
           - in_parallel:
@@ -542,10 +543,11 @@ jobs:
           - put: terraform
             resource: gcp-terraform
             params:
-              env_name: bats-fips
+              # NOTE: prefix must not start with "bats" to avoid being deleted by the bats cleanup-leftovers job
+              env_name: fips-bats
               terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
               vars:
-                name: bats-fips
+                name: fips-bats
           - do:
               - task: deploy-director
                 file: bosh-ci/ci/bats/tasks/deploy-director.yml
@@ -577,20 +579,22 @@ jobs:
               no_get: true
               params:
                 action: destroy
-                env_name: bats-fips
+                env_name: fips-bats
                 terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
                 vars:
-                  name: bats-fips
+                  name: fips-bats
             - task: cleanup-leftover-environments
               file: bosh-ci/ci/tasks/cleanup-leftovers.yml
               image: integration-image
               params:
-                LEFTOVERS_PREFIX: bats-fips
+                # NOTE: prefix must not start with "bats" to avoid being deleted by the bats cleanup-leftovers job
+                LEFTOVERS_PREFIX: fips-bats
                 GCP_JSON_KEY: ((gcp_json_key))
 
-  - name: bats-fips-cleanup-leftovers
+  - name: fips-bats-cleanup-leftovers
+    old_name: bats-fips-cleanup-leftovers
     serial: true
-    serial_groups: [ bats-fips ]
+    serial_groups: [ fips-bats ]
     plan:
       - in_parallel:
           - get: bosh-ci
@@ -601,7 +605,8 @@ jobs:
         file: bosh-ci/ci/tasks/cleanup-leftovers.yml
         image: integration-image
         params:
-          LEFTOVERS_PREFIX: bats-fips
+          # NOTE: prefix must not start with "bats" to avoid being deleted by the bats cleanup-leftovers job
+          LEFTOVERS_PREFIX: fips-bats
           GCP_JSON_KEY: ((gcp_json_key))
 
   - name: brats-acceptance
@@ -614,6 +619,8 @@ jobs:
             passed: [ create-bosh-candidate-release-compiled ]
           - get: bosh-dns-release
           - get: stemcell
+            resource: warden-stemcell
+          - get: director-stemcell
             resource: warden-stemcell
           - get: bosh-candidate-release-tarballs
             passed: [ create-bosh-candidate-release-compiled ]
@@ -655,6 +662,7 @@ jobs:
               GCP_POSTGRES_EXTERNAL_DB_USER: ((brats_database_user.username))
               GCP_POSTGRES_EXTERNAL_DB_PASSWORD: ((brats_database_user.password))
               GCP_POSTGRES_EXTERNAL_DB_NAME: brats
+              DIRECTOR_STEMCELL_OS: ubuntu-noble
               STEMCELL_OS: ubuntu-noble
         ensure:
           put: brats-terraform
@@ -679,12 +687,17 @@ jobs:
           - get: cf-deployment
           - get: docker-cpi-image
           - get: stemcell
+            resource: warden-stemcell-jammy
+          - get: director-stemcell
             resource: warden-stemcell
       - do:
           - task: test-brats-performance
             image: docker-cpi-image
             file: bosh-ci/ci/shared/brats/test-performance.yml
             privileged: true
+            params:
+              DIRECTOR_STEMCELL_OS: ubuntu-noble
+              STEMCELL_OS: ubuntu-jammy
 
   - name: brats-utils
     serial: true
@@ -1825,6 +1838,11 @@ resources:
     type: bosh-io-stemcell
     source:
       name: bosh-warden-boshlite-ubuntu-noble
+
+  - name: warden-stemcell-jammy
+    type: bosh-io-stemcell
+    source:
+      name: bosh-warden-boshlite-ubuntu-jammy-go_agent
 
   - name: bosh-agent
     type: git
