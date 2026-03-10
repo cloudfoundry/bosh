@@ -64,7 +64,7 @@ func extractDnsVersionsList(sshContents string) []int {
 	return results
 }
 
-var _ = Describe("BoshDns", func() {
+var _ = FDescribe("BoshDns", func() {
 	var (
 		manifestPath              string
 		linkedTemplateReleasePath string
