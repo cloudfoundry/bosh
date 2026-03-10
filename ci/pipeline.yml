@@ -657,6 +657,7 @@ jobs:
               GCP_POSTGRES_EXTERNAL_DB_USER: ((brats_database_user.username))
               GCP_POSTGRES_EXTERNAL_DB_PASSWORD: ((brats_database_user.password))
               GCP_POSTGRES_EXTERNAL_DB_NAME: brats
+              DIRECTOR_STEMCELL_OS: ubuntu-noble
               STEMCELL_OS: ubuntu-noble
         ensure:
           put: brats-terraform
@@ -681,14 +682,17 @@ jobs:
           - get: cf-deployment
           - get: docker-cpi-image
           - get: stemcell
-            resource: warden-stemcell
-          - get: director-stemcell
             resource: warden-stemcell-jammy
+          - get: director-stemcell
+            resource: warden-stemcell
       - do:
           - task: test-brats-performance
             image: docker-cpi-image
             file: bosh-ci/ci/shared/brats/test-performance.yml
             privileged: true
+            params:
+              DIRECTOR_STEMCELL_OS: ubuntu-noble
+              STEMCELL_OS: ubuntu-jammy
 
   - name: brats-utils
     serial: true
