@@ -39,6 +39,9 @@ groups:
       - upgrade-mysql
       - upgrade-mysql-cleanup-leftovers
       - delivery
+      - ap-experiment-brats-acceptance
+#      - ap-experiment-brats-acceptance-slow
+#      - ap-experiment-brats-performance
 
   - name: cut-release
     jobs:
@@ -693,6 +696,130 @@ jobs:
             params:
               DIRECTOR_STEMCELL_OS: ubuntu-noble
               STEMCELL_OS: ubuntu-jammy
+
+  - name: ap-experiment-brats-acceptance
+    serial: true
+    plan:
+      - in_parallel:
+          - get: bosh
+            resource: bosh-ci-fix-brats
+            trigger: true
+          - get: bosh-ci
+            resource: bosh-ci-fix-brats
+          - get: bosh-release
+            resource: bosh-candidate-release-tarballs
+          - get: bosh-dns-release
+          - get: bosh-candidate-release-tarballs
+          - get: bosh-candidate-release-compiled
+            trigger: true
+          - get: bosh-deployment
+          - get: docker-cpi-image
+          - get: director-stemcell
+            resource: warden-stemcell
+          - get: stemcell
+            resource: warden-stemcell
+      - do:
+          - task: test-brats-acceptance
+            file: bosh-ci/ci/shared/brats/test-acceptance.yml
+            image: docker-cpi-image
+            privileged: true
+            params:
+              DIRECTOR_STEMCELL_OS: ubuntu-noble
+              STEMCELL_OS: ubuntu-noble
+#              BOSH_LOG_LEVEL: debug
+#              BOSH_LOG_PATH: /tmp/bosh-debug.log
+
+#  - name: ap-experiment-brats-acceptance-slow
+#    serial: true
+#    plan:
+#      - in_parallel:
+#          - get: bosh
+#            resource: bosh-ci-fix-brats
+#            trigger: true
+#          - get: bosh-ci
+#            resource: bosh-ci-fix-brats
+#          - get: bosh-release
+#            resource: bosh-candidate-release-tarballs
+#          - get: bosh-dns-release
+#          - get: bosh-candidate-release-tarballs
+#          - get: bosh-candidate-release-compiled
+#            trigger: true
+#          - get: bosh-deployment
+#          - get: docker-cpi-image
+#          - get: director-stemcell
+#            resource: warden-stemcell
+#          - get: stemcell
+#            resource: warden-stemcell
+#      - do:
+#          - put: brats-terraform
+#            params:
+#              env_name: *brats_env_name
+#              terraform_source: bosh-ci/ci/shared/brats/terraform
+#              vars: &brats-terraform-vars
+#                aws_access_key_id: ((brats_rds_terraform_aws_access_key.username))
+#                aws_secret_access_key: ((brats_rds_terraform_aws_access_key.password))
+#                database_name: brats
+#                database_username: ((brats_database_user.username))
+#                database_password: ((brats_database_user.password))
+#          - task: test-brats-acceptance
+#            file: bosh-ci/ci/shared/brats/test-acceptance.yml
+#            image: docker-cpi-image
+#            input_mapping:
+#              database-metadata: brats-terraform
+#            privileged: true
+#            params:
+#              RDS_MYSQL_EXTERNAL_DB_USER: ((brats_database_user.username))
+#              RDS_MYSQL_EXTERNAL_DB_PASSWORD: ((brats_database_user.password))
+#              RDS_MYSQL_EXTERNAL_DB_NAME: brats
+#              RDS_POSTGRES_EXTERNAL_DB_USER: ((brats_database_user.username))
+#              RDS_POSTGRES_EXTERNAL_DB_PASSWORD: ((brats_database_user.password))
+#              RDS_POSTGRES_EXTERNAL_DB_NAME: brats
+#              GCP_MYSQL_EXTERNAL_DB_USER: ((brats_database_user.username))
+#              GCP_MYSQL_EXTERNAL_DB_PASSWORD: ((brats_database_user.password))
+#              GCP_MYSQL_EXTERNAL_DB_NAME: brats
+#              GCP_POSTGRES_EXTERNAL_DB_USER: ((brats_database_user.username))
+#              GCP_POSTGRES_EXTERNAL_DB_PASSWORD: ((brats_database_user.password))
+#              GCP_POSTGRES_EXTERNAL_DB_NAME: brats
+#              DIRECTOR_STEMCELL_OS: ubuntu-noble
+#              STEMCELL_OS: ubuntu-noble
+#              BOSH_LOG_LEVEL: debug
+#              BOSH_LOG_PATH: bosh-debug.log
+#        ensure:
+#          put: brats-terraform
+#          no_get: true
+#          params:
+#            env_name: *brats_env_name
+#            terraform_source: bosh-ci/ci/shared/brats/terraform
+#            vars: *brats-terraform-vars
+#            action: destroy
+#
+#  - name: ap-experiment-brats-performance
+#    serial: true
+#    plan:
+#      - in_parallel:
+#          - get: bosh
+#            resource: bosh-ci-fix-brats
+#            trigger: true
+#          - get: bosh-ci
+#            resource: bosh-ci-fix-brats
+#          - get: bosh-release
+#            resource: bosh-candidate-release-compiled
+#          - get: cf-deployment
+#          - get: docker-cpi-image
+#          - get: director-stemcell
+#            resource: warden-stemcell
+#          - get: stemcell
+#            resource: warden-stemcell-jammy
+#      - do:
+#          - task: test-brats-performance
+#            image: docker-cpi-image
+#            file: bosh-ci/ci/shared/brats/test-performance.yml
+#            privileged: true
+#            params:
+#              DIRECTOR_STEMCELL_OS: ubuntu-noble
+#              STEMCELL_OS: ubuntu-jammy
+#              BOSH_LOG_LEVEL: debug
+#              BOSH_LOG_PATH: bosh-debug.log
 
   - name: brats-utils
     serial: true
@@ -1679,6 +1806,13 @@ resources:
       private_key: ((github_deploy_key_bosh.private_key))
       ignore_paths:
         - ci
+
+  - name: bosh-ci-fix-brats
+    type: git
+    source:
+      uri: git@github.com:cloudfoundry/bosh.git
+      branch: ci-fix-brats
+      private_key: ((github_deploy_key_bosh.private_key))
 
   - name: bosh-ci
     type: git
