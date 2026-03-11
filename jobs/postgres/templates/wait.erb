@@ -1,0 +1,24 @@
+#!/bin/bash
+# Wait for postgres to be ready and the configured role to exist
+# Usage: /var/vcap/jobs/postgres/bin/wait [timeout_seconds]
+
+TIMEOUT=${1:-30}
+PACKAGE_DIR=/var/vcap/packages/postgres-15
+HOST='<%= p("postgres.listen_address") %>'
+PORT='<%= p("postgres.port") %>'
+USER='<%= p("postgres.user") %>'
+
+export LD_LIBRARY_PATH="$PACKAGE_DIR/lib:$LD_LIBRARY_PATH"
+
+echo "Waiting for postgres role '$USER' to be ready..."
+for i in $(seq 1 $TIMEOUT); do
+  if $PACKAGE_DIR/bin/psql -h "$HOST" -p "$PORT" -U vcap -d postgres -tAc \
+     "SELECT 1 FROM pg_roles WHERE rolname='$USER'" 2>/dev/null | grep -q 1; then
+    echo "postgres role '$USER' is ready"
+    exit 0
+  fi
+  sleep 1
+done
+
+echo "ERROR: postgres role '$USER' not ready after $TIMEOUT seconds"
+exit 1

@@ -4,6 +4,13 @@ set -e
 
 source /var/vcap/jobs/director/env
 
+# Wait for local postgres job to be ready (if present)
+if [ -x /var/vcap/jobs/postgres/bin/wait ]; then
+  /var/vcap/jobs/postgres/bin/wait
+elif [ -x /var/vcap/jobs/postgres-13/bin/wait ]; then
+  /var/vcap/jobs/postgres-13/bin/wait
+fi
+
 /var/vcap/packages/director/bin/bosh-director-migrate \
   -c /var/vcap/jobs/director/config/director.yml
 
