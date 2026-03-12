@@ -96,5 +96,99 @@ describe Bosh::Monitor::Runner do
         end
       end
     end
+
+    describe 'NATS connection retries' do
+      before do
+        # Use a short retry interval for tests
+        stub_const('Bosh::Monitor::Runner::DEFAULT_NATS_CONNECTION_RETRY_INTERVAL', 0.01)
+      end
+
+      context 'when NATS connection fails with ConnectError' do
+        it 'retries the connection until it succeeds' do
+          attempt = 0
+          allow(nats).to receive(:connect) do
+            attempt += 1
+            raise NATS::IO::ConnectError, 'connection refused' if attempt < 3
+          end
+
+          runner.connect_to_mbus
+
+          expect(nats).to have_received(:connect).exactly(3).times
+        end
+
+        it 'logs retry attempts' do
+          attempt = 0
+          allow(nats).to receive(:connect) do
+            attempt += 1
+            raise NATS::IO::ConnectError, 'connection refused' if attempt < 2
+          end
+
+          runner.connect_to_mbus
+
+          expect(logger).to have_received(:info).with(/Waiting for NATS to become available \(attempt 2\/\d+\): connection refused/)
+        end
+      end
+
+      context 'when NATS connection fails with AuthError (subclass of ConnectError)' do
+        it 'retries the connection' do
+          attempt = 0
+          allow(nats).to receive(:connect) do
+            attempt += 1
+            raise NATS::IO::AuthError, 'authorization violation' if attempt < 3
+          end
+
+          runner.connect_to_mbus
+
+          expect(nats).to have_received(:connect).exactly(3).times
+        end
+      end
+
+      context 'when timeout is exceeded' do
+        before do
+          stub_const('Bosh::Monitor::Runner::DEFAULT_NATS_CONNECTION_WAIT_TIMEOUT', 0.02)
+        end
+
+        it 'raises the last connection error' do
+          allow(nats).to receive(:connect).and_raise(NATS::IO::ConnectError, 'connection refused')
+
+          expect do
+            runner.connect_to_mbus
+          end.to raise_error(NATS::IO::ConnectError, 'connection refused')
+        end
+      end
+
+      context 'when connection_wait_timeout is configured in mbus config' do
+        before do
+          Bosh::Monitor.mbus.connection_wait_timeout = 0.02
+        end
+
+        after do
+          Bosh::Monitor.mbus.delete_field(:connection_wait_timeout) if Bosh::Monitor.mbus.respond_to?(:connection_wait_timeout)
+        end
+
+        it 'uses the configured timeout' do
+          allow(nats).to receive(:connect).and_raise(NATS::IO::ConnectError, 'connection refused')
+
+          expect do
+            runner.connect_to_mbus
+          end.to raise_error(NATS::IO::ConnectError, 'connection refused')
+
+          # With 0.02s timeout and 0.01s interval, we expect 2 attempts
+          expect(nats).to have_received(:connect).exactly(2).times
+        end
+      end
+
+      context 'when non-ConnectError occurs' do
+        it 'does not retry and raises immediately' do
+          allow(nats).to receive(:connect).and_raise(StandardError, 'unexpected error')
+
+          expect do
+            runner.connect_to_mbus
+          end.to raise_error(StandardError, 'unexpected error')
+
+          expect(nats).to have_received(:connect).once
+        end
+      end
+    end
   end
 end

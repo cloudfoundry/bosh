@@ -43,6 +43,7 @@ PATH
     bosh-monitor (0.0.0)
       async
       async-http
+      bosh-common
       cf-uaa-lib
       dogapi
       io-stream
