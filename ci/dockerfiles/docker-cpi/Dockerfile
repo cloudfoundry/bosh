@@ -28,11 +28,16 @@ RUN docker_gpg="/etc/apt/trusted.gpg.d/docker.gpg" \
 # running `ulimit -Hn 1048576` will succeed.. The issue happens when we want to raise the ulimit.
 RUN sed -i 's/\(ulimit -Hn [0-9]*\)/#\1/' /etc/init.d/docker
 
+
 COPY bosh-deployment /usr/local/bosh-deployment/
+
+RUN mkdir -p /usr/local/ops-files
+COPY gcp-internal-dns-ops.yml /usr/local/ops-files/gcp-internal-dns-ops.yml
+COPY local-releases.yml /usr/local/ops-files/local-releases.yml
+
 RUN mkdir -p /usr/local/releases \
     && curl -o /usr/local/releases/bosh.tgz "$(bosh int /usr/local/bosh-deployment/bosh.yml --path /releases/name=bosh/url)" \
     && curl -o /usr/local/releases/bpm.tgz "$(bosh int /usr/local/bosh-deployment/bosh.yml --path /releases/name=bpm/url)"
 
-COPY local-releases.yml /usr/local/local-releases.yml
 COPY start-bosh.sh /usr/local/bin/start-bosh
 RUN chmod +x /usr/local/bin/start-bosh

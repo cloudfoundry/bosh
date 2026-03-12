@@ -239,7 +239,7 @@ EOF
   bosh int "${BOSH_DEPLOYMENT_PATH}/bosh.yml" \
     -o "${BOSH_DEPLOYMENT_PATH}/docker/cpi.yml" \
     -o "${BOSH_DEPLOYMENT_PATH}/jumpbox-user.yml" \
-    -o /usr/local/local-releases.yml \
+    -o /usr/local/ops-files/local-releases.yml \
     -v director_name=docker \
     -v internal_cidr="${docker_network_cidr}" \
     -v internal_gw=10.245.0.1 \
@@ -274,7 +274,7 @@ EOF
 
   bosh -n update-cloud-config \
     "${BOSH_DEPLOYMENT_PATH}/docker/cloud-config.yml" \
-    -o "${REPO_ROOT}/ci/dockerfiles/docker-cpi/gcp-internal-dns-ops.yml" \
+    -o /usr/local/ops-files/gcp-internal-dns-ops.yml" \
     -v network="${docker_network_name}"
 }
 
