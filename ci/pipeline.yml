@@ -1378,6 +1378,7 @@ jobs:
               globs: [ nats-server-v*-linux-amd64.tar.gz ]
       - task: bump-nginx-packages
         file: nginx-release/ci/shared/bump-nginx-package.yml
+        image: integration-image
         input_mapping:
           input_repo: bosh
         output_mapping:
