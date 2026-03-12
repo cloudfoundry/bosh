@@ -3,14 +3,6 @@ module Bosh
   end
 end
 
-begin
-rescue LoadError
-  unless defined? Fiber
-    warn 'FATAL: HealthMonitor requires Ruby implementation that supports fibers'
-    exit 1
-  end
-end
-
 require 'ostruct'
 
 require 'async'
