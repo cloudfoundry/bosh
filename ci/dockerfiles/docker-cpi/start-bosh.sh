@@ -274,7 +274,7 @@ EOF
 
   bosh -n update-cloud-config \
     "${BOSH_DEPLOYMENT_PATH}/docker/cloud-config.yml" \
-    -o /usr/local/ops-files/gcp-internal-dns-ops.yml" \
+    -o "/usr/local/ops-files/gcp-internal-dns-ops.yml" \
     -v network="${docker_network_name}"
 }
 
