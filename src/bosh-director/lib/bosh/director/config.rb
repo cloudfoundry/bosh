@@ -542,6 +542,14 @@ module Bosh::Director
       logger
     end
 
+    def scheduler_logger
+      logger = Logging::Logger.new('Scheduler')
+      logging_config = hash.fetch('logging', {})
+      logger.add_appenders(Logging.appenders.stdout('SchedulerIO', layout: ThreadFormatter.layout))
+      logger.level = Logging.levelify(logging_config.fetch('level', 'debug'))
+      logger
+    end
+
     def metrics_server_logger
       logger = Logging::Logger.new('MetricsServer')
       logging_config = hash.fetch('logging', {})

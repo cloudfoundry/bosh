@@ -1,7 +1,8 @@
 #!/usr/bin/env ruby
 
-require 'bosh/director'
-require 'bosh/director/scheduler'
+require 'optparse'
+require 'bosh/director/config'
+require 'db_migrator'
 
 config_file = ::File.expand_path('../../config/bosh-director.yml', __FILE__)
 
@@ -14,6 +15,20 @@ end
 opts.parse!(ARGV.dup)
 
 config = Bosh::Director::Config.load_file(config_file)
+
+# Wait for migrations to complete before loading models and starting scheduler
+# This prevents race conditions during bosh create-env when director migrations
+# may still be running
+begin
+  DBMigrator.new(config.db).ensure_migrated!
+rescue DBMigrator::MigrationsNotCurrentError => e
+  config.scheduler_logger.error("Scheduler start failed: #{e.message}")
+  raise e
+end
+
+require 'bosh/director'
+require 'bosh/director/scheduler'
+
 Bosh::Director::App.new(config)
 
 scheduler = Bosh::Director::Scheduler.new(config.scheduled_jobs)
