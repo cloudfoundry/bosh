@@ -3,6 +3,8 @@ end
 # Helpers
 require 'nats_sync/yaml_helper'
 
+require 'bosh/common'
+
 require 'nats_sync/config'
 require 'nats_sync/runner'
 require 'nats_sync/users_sync'

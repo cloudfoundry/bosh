@@ -7,5 +7,6 @@ dependencies:
 files:
 - nats/nats-server-v*-linux-amd64.tar.gz
 - bosh-nats-sync/**/*
+- bosh-common/**/*
 - vendor/cache/*.gem
 - vendor/cache/extensions/**

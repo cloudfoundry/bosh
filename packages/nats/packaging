@@ -17,10 +17,15 @@ gem 'json', '~>2'
 gem 'bosh-nats-sync'
 EOF
 
-pushd bosh-nats-sync/ > /dev/null
-  gem build bosh-nats-sync
-  mv *.gem ../vendor/cache
-popd > /dev/null
+for gemspec in $( find . -maxdepth 2 -name *.gemspec ); do
+  gem_name="$( basename "$( dirname "$gemspec" )" )"
+  gem_spec="$( basename "$gemspec" )"
+
+  pushd "$gem_name"
+    gem build "$gem_spec"
+    mv *.gem ../vendor/cache
+  popd > /dev/null
+done
 
 bosh_bundle_local
 

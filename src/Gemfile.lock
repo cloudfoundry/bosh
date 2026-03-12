@@ -61,6 +61,7 @@ PATH
   remote: bosh-nats-sync
   specs:
     bosh-nats-sync (0.0.0)
+      bosh-common
       cf-uaa-lib
       json
       logging

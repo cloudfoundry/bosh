@@ -93,3 +93,7 @@ properties:
   nats-sync.intervals.poll_user_sync:
     description: Interval (in seconds) to get the list of managed VMs from Bosh Director
     default: 10
+
+  nats-sync.director.connection_wait_timeout:
+    description: Timeout in seconds to wait for director API to become available during nats-sync startup.
+    default: 60

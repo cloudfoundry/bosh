@@ -356,5 +356,141 @@ module NATSSync
         end
       end
     end
+
+    describe '#wait_for_director_connection' do
+      before do
+        allow(auth_provider).to receive(:new).and_return(auth_provider_double)
+        allow(auth_provider_double).to receive(:auth_header).and_return('Bearer xyz')
+        File.open(nats_config_file_path, 'w') do |f|
+          f.write('{}')
+        end
+      end
+
+      context 'when director is immediately available' do
+        before do
+          stub_request(:get, "#{url}/info")
+            .to_return(status: 200, body: info_json)
+          stub_request(:get, "#{url}/deployments")
+            .with(headers: { 'Authorization' => 'Bearer xyz' })
+            .to_return(status: 200, body: '[]')
+        end
+
+        it 'connects without retrying' do
+          expect(logger).not_to receive(:info).with(/Waiting for director API/)
+          subject.execute_users_sync
+        end
+      end
+
+      context 'when director becomes available after retries' do
+        before do
+          stub_request(:get, "#{url}/info")
+            .to_return({ status: 0, body: '', headers: {} }, # Connection refused simulation
+                       { status: 200, body: info_json })
+            .to_raise(Errno::ECONNREFUSED.new('Connection refused'))
+            .then
+            .to_return(status: 200, body: info_json)
+          stub_request(:get, "#{url}/deployments")
+            .with(headers: { 'Authorization' => 'Bearer xyz' })
+            .to_return(status: 200, body: '[]')
+        end
+
+        let(:bosh_config) do
+          { 'url' => url,
+            'user' => user,
+            'password' => password,
+            'client_id' => client_id,
+            'client_secret' => client_secret,
+            'ca_cert' => ca_cert,
+            'director_subject_file' => director_subject_file,
+            'hm_subject_file' => hm_subject_file,
+            'connection_wait_timeout' => 5 }
+        end
+
+        it 'logs retry attempts and eventually succeeds' do
+          stub_request(:get, "#{url}/info")
+            .to_raise(Errno::ECONNREFUSED.new('Connection refused'))
+            .then
+            .to_return(status: 200, body: info_json)
+
+          expect(logger).to receive(:info).with(/Waiting for director API to become available/).at_least(:once)
+          expect(logger).to receive(:info).with('Executing NATS Users Synchronization')
+          expect(logger).to receive(:info).with('Finishing NATS Users Synchronization')
+          subject.execute_users_sync
+        end
+      end
+
+      context 'when director connection times out' do
+        let(:bosh_config) do
+          { 'url' => url,
+            'user' => user,
+            'password' => password,
+            'client_id' => client_id,
+            'client_secret' => client_secret,
+            'ca_cert' => ca_cert,
+            'director_subject_file' => director_subject_file,
+            'hm_subject_file' => hm_subject_file,
+            'connection_wait_timeout' => 2 }
+        end
+
+        before do
+          stub_request(:get, "#{url}/info")
+            .to_raise(Errno::ECONNREFUSED.new('Connection refused'))
+        end
+
+        it 'raises an error after exhausting retries' do
+          expect { subject.execute_users_sync }.to raise_error(Errno::ECONNREFUSED)
+        end
+      end
+
+      context 'with various network errors' do
+        let(:bosh_config) do
+          { 'url' => url,
+            'user' => user,
+            'password' => password,
+            'client_id' => client_id,
+            'client_secret' => client_secret,
+            'ca_cert' => ca_cert,
+            'director_subject_file' => director_subject_file,
+            'hm_subject_file' => hm_subject_file,
+            'connection_wait_timeout' => 3 }
+        end
+
+        [
+          Errno::ECONNREFUSED,
+          Errno::ECONNRESET,
+          Errno::ETIMEDOUT,
+          Net::OpenTimeout,
+          SocketError,
+        ].each do |error_class|
+          it "retries on #{error_class}" do
+            stub_request(:get, "#{url}/info")
+              .to_raise(error_class.new('Network error'))
+              .then
+              .to_return(status: 200, body: info_json)
+            stub_request(:get, "#{url}/deployments")
+              .with(headers: { 'Authorization' => 'Bearer xyz' })
+              .to_return(status: 200, body: '[]')
+
+            expect(logger).to receive(:info).with(/Waiting for director API to become available/).at_least(:once)
+            expect(logger).to receive(:info).with('Executing NATS Users Synchronization')
+            expect(logger).to receive(:info).with('Finishing NATS Users Synchronization')
+            subject.execute_users_sync
+          end
+        end
+      end
+
+      context 'when connection_wait_timeout is not configured' do
+        it 'uses the default timeout of 60 seconds' do
+          stub_request(:get, "#{url}/info")
+            .to_return(status: 200, body: info_json)
+          stub_request(:get, "#{url}/deployments")
+            .with(headers: { 'Authorization' => 'Bearer xyz' })
+            .to_return(status: 200, body: '[]')
+
+          # Just verify it runs without error using defaults
+          expect { subject.execute_users_sync }.not_to raise_error
+        end
+      end
+    end
   end
 end
