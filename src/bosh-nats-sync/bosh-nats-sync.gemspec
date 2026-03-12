@@ -21,6 +21,7 @@ Gem::Specification.new do |spec|
   spec.executables   = ['bosh-nats-sync']
   spec.require_paths = ['lib']
 
+  spec.add_dependency 'bosh-common'
   spec.add_dependency 'cf-uaa-lib'
   spec.add_dependency 'json'
   spec.add_dependency 'logging'

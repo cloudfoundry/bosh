@@ -6,6 +6,19 @@ require 'nats_sync/nats_auth_config'
 module NATSSync
   class UsersSync
     HTTP_SUCCESS = "200"
+    DEFAULT_DIRECTOR_CONNECTION_WAIT_TIMEOUT = 60
+    DEFAULT_DIRECTOR_CONNECTION_RETRY_INTERVAL = 1
+
+    DIRECTOR_CONNECTION_ERRORS = [
+      Errno::ECONNREFUSED,
+      Errno::ECONNRESET,
+      Errno::ETIMEDOUT,
+      Errno::EHOSTUNREACH,
+      Errno::ENETUNREACH,
+      Net::OpenTimeout,
+      Net::ReadTimeout,
+      SocketError,
+    ].freeze
 
     def initialize(nats_config_file_path, bosh_config, nats_server_executable, nats_server_pid_file)
       @nats_config_file_path = nats_config_file_path
@@ -19,6 +32,7 @@ module NATSSync
       vms = []
       overwriteable_config_file = true
       begin
+        wait_for_director_connection
         vms = query_all_running_vms
       rescue RuntimeError => e
         NATSSync.logger.error "Could not query all running vms: #{e.message}"
@@ -54,6 +68,25 @@ module NATSSync
     end
 
     private
+
+    def wait_for_director_connection
+      timeout = @bosh_config['connection_wait_timeout'] || DEFAULT_DIRECTOR_CONNECTION_WAIT_TIMEOUT
+      max_attempts = (timeout / DEFAULT_DIRECTOR_CONNECTION_RETRY_INTERVAL).to_i
+      max_attempts = 1 if max_attempts < 1
+
+      Bosh::Common.retryable(
+        sleep: DEFAULT_DIRECTOR_CONNECTION_RETRY_INTERVAL,
+        tries: max_attempts,
+        on: DIRECTOR_CONNECTION_ERRORS,
+      ) do |attempt, exception|
+        if exception
+          NATSSync.logger.info("Waiting for director API to become available (attempt #{attempt}/#{max_attempts}): #{exception.message}")
+        end
+        # Make a lightweight request to verify director is reachable
+        bosh_api_response_body('/info', auth: false)
+        true
+      end
+    end
 
     def user_file_overwritable?
       JSON.parse(File.read(@nats_config_file_path)).empty?

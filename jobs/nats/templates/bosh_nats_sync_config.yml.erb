@@ -9,6 +9,7 @@ director = {
   'ca_cert' => '/var/vcap/jobs/nats/config/uaa.pem',
   'director_subject_file' => '/var/vcap/data/nats/director-subject',
   'hm_subject_file' => '/var/vcap/data/nats/hm-subject',
+  'connection_wait_timeout' => p('nats-sync.director.connection_wait_timeout'),
 }
 
 params = {
