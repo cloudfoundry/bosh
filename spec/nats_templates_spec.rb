@@ -16,11 +16,14 @@ RSpec.describe 'bosh_nats_sync_config.yml.erb' do
               'client_secret' => 'my-client-secret',
               'user' => 'my-user',
               'password' => 'my-password'
-            },
+            }
           },
           'nats-sync' => {
             'intervals' => {
-              'poll_user_sync' => "sync-me",
+              'poll_user_sync' => 'sync-me'
+            },
+            'director' => {
+              'connection_wait_timeout' => 60
             }
           }
         }
@@ -38,6 +41,7 @@ RSpec.describe 'bosh_nats_sync_config.yml.erb' do
           ca_cert: "/var/vcap/jobs/nats/config/uaa.pem"
           director_subject_file: "/var/vcap/data/nats/director-subject"
           hm_subject_file: "/var/vcap/data/nats/hm-subject"
+          connection_wait_timeout: 60
         intervals:
           poll_user_sync: sync-me
         nats:
@@ -66,9 +70,9 @@ describe 'nats.cfg.erb' do
             'ping_max_outstanding' => 10,
             'auth_timeout' => 10,
             'tls' => {
-              'timeout' => 10,
+              'timeout' => 10
             },
-            'max_payload_mb' => '1.5',
+            'max_payload_mb' => '1.5'
           }
         }
       }

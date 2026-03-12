@@ -9,11 +9,11 @@ RSpec.describe 'director.yml.erb' do
             'foo' => 'bar'
           }
         },
-        'agent_wait_timeout' => 600,
+        'agent_wait_timeout' => 600
       },
       'blobstore' => {
         'address' => '10.10.0.7',
-        'port' => 25251,
+        'port' => 25_251,
         'agent' => { 'user' => 'agent', 'password' => '75d1605f59b60' },
         'director' => {
           'user' => 'user',
@@ -25,12 +25,12 @@ RSpec.describe 'director.yml.erb' do
             'ca' => '-----BEGIN CERTIFICATE-----'
           }
         },
-        'enable_signed_urls' => false,
+        'enable_signed_urls' => false
       },
       'hm' => {
         'http' => {
-          'port' => 12345,
-        },
+          'port' => 12_345
+        }
       },
       'nats' => {
         'address' => '10.10.0.7',
@@ -38,7 +38,7 @@ RSpec.describe 'director.yml.erb' do
       },
       'director' => {
         'name' => 'vpc-bosh-idora',
-        'backend_port' => 25556,
+        'backend_port' => 25_556,
         'max_tasks' => 100,
         'max_threads' => 32,
         'puma_workers' => 3,
@@ -56,24 +56,24 @@ RSpec.describe 'director.yml.erb' do
         'local_dns' => {
           'enabled' => true,
           'include_index' => false,
-          'use_dns_addresses' => true,
+          'use_dns_addresses' => true
         },
         'ignore_missing_gateway' => false,
         'disks' => {
           'max_orphaned_age_in_days' => 3,
-          'cleanup_schedule' => '0 0,30 * * * * UTC',
+          'cleanup_schedule' => '0 0,30 * * * * UTC'
         },
         'networks' => {
           'enable_cpi_management' => false,
           'max_orphaned_age_in_days' => 3,
-          'cleanup_schedule' => '0 0,30 * * * * UTC',
+          'cleanup_schedule' => '0 0,30 * * * * UTC'
         },
         'vms' => {
-          'cleanup_schedule' => '0 0,30 * * * * UTC',
+          'cleanup_schedule' => '0 0,30 * * * * UTC'
         },
         'events' => {
           'record_events' => false,
-          'max_events' => 10000,
+          'max_events' => 10_000,
           'cleanup_schedule' => '0 * * * * * UTC'
         },
         'tasks_cleanup_schedule' => '0 0 */7 * * * UTC',
@@ -85,12 +85,13 @@ RSpec.describe 'director.yml.erb' do
           'port' => 3306,
           'database' => 'bosh',
           'connection_options' => {},
+          'connection_wait_timeout' => 30,
           'tls' => {
             'enabled' => false,
             'cert' => {
               'ca' => 'config/db/ca.pem'
             }
-          },
+          }
         },
         'config_server' => {
           'enabled' => false
@@ -102,8 +103,8 @@ RSpec.describe 'director.yml.erb' do
         'cpi_api_test_max_version' => 2,
         'metrics_server' => {
           'enabled' => false,
-          'port' => 9091,
-        },
+          'port' => 9091
+        }
       }
     }
   end
@@ -202,7 +203,7 @@ RSpec.describe 'director.yml.erb' do
           end
 
           it 'is a scheduled task' do
-            expect(parsed_yaml['scheduled_jobs'].map{ |v| v['command'] }).to include('ScheduledEventsCleanup')
+            expect(parsed_yaml['scheduled_jobs'].map { |v| v['command'] }).to include('ScheduledEventsCleanup')
           end
         end
 
@@ -212,7 +213,7 @@ RSpec.describe 'director.yml.erb' do
           end
 
           it 'is not a scheduled task' do
-            expect(parsed_yaml['scheduled_jobs'].map{ |v| v['command'] }).to_not include('ScheduledEventsCleanup')
+            expect(parsed_yaml['scheduled_jobs'].map { |v| v['command'] }).to_not include('ScheduledEventsCleanup')
           end
         end
       end
@@ -220,10 +221,11 @@ RSpec.describe 'director.yml.erb' do
       context 'dns blob cleanup' do
         it 'is a scheduled task with correct params' do
           expect(parsed_yaml['scheduled_jobs']).to include({
-            'command' => 'ScheduledDnsBlobsCleanup',
-            'schedule' => '0 0,30 * * * * UTC',
-            'params' => [{'max_blob_age' => 3600, 'num_dns_blobs_to_keep' => 10}]
-          })
+                                                             'command' => 'ScheduledDnsBlobsCleanup',
+                                                             'schedule' => '0 0,30 * * * * UTC',
+                                                             'params' => [{ 'max_blob_age' => 3600,
+                                                                            'num_dns_blobs_to_keep' => 10 }]
+                                                           })
         end
       end
 
@@ -232,7 +234,7 @@ RSpec.describe 'director.yml.erb' do
           expect(parsed_yaml['scheduled_jobs']).to include(
             'command' => 'ScheduledOrphanedNetworkCleanup',
             'schedule' => '0 0,30 * * * * UTC',
-            'params' => [{ 'max_orphaned_age_in_days' => 3 }],
+            'params' => [{ 'max_orphaned_age_in_days' => 3 }]
           )
         end
       end
@@ -248,7 +250,7 @@ RSpec.describe 'director.yml.erb' do
                 'client_id' => 'fake-client-id',
                 'client_secret' => 'fake-client-secret',
                 'ca_cert' => 'fake-ca-cert'
-              },
+              }
             }
           end
 
@@ -268,9 +270,11 @@ RSpec.describe 'director.yml.erb' do
             it 'throws an error when uaa properties are not defined' do
               merged_manifest_properties['director']['config_server'] = {
                 'enabled' => true,
-                'url' => 'https://config-server-host',
+                'url' => 'https://config-server-host'
               }
-              expect { parsed_yaml['config_server'] }.to raise_error(/Can't find property '\["director.config_server.uaa.url"\]'/)
+              expect do
+                parsed_yaml['config_server']
+              end.to raise_error(/Can't find property '\["director.config_server.uaa.url"\]'/)
             end
 
             it 'throws an error when uaa url is not defined' do
@@ -280,7 +284,10 @@ RSpec.describe 'director.yml.erb' do
                 'uaa' => {}
               }
 
-              expect { parsed_yaml['config_server'] }.to raise_error(Bosh::Common::Template::UnknownProperty, "Can't find property '[\"director.config_server.uaa.url\"]'")
+              expect do
+                parsed_yaml['config_server']
+              end.to raise_error(Bosh::Common::Template::UnknownProperty,
+                                 "Can't find property '[\"director.config_server.uaa.url\"]'")
             end
 
             it 'throws an error when uaa client id is not defined' do
@@ -294,7 +301,10 @@ RSpec.describe 'director.yml.erb' do
                 }
               }
 
-              expect { parsed_yaml['config_server'] }.to raise_error(Bosh::Common::Template::UnknownProperty, "Can't find property '[\"director.config_server.uaa.client_id\"]'")
+              expect do
+                parsed_yaml['config_server']
+              end.to raise_error(Bosh::Common::Template::UnknownProperty,
+                                 "Can't find property '[\"director.config_server.uaa.client_id\"]'")
             end
 
             it 'throws an error when uaa client secret is not defined' do
@@ -308,7 +318,10 @@ RSpec.describe 'director.yml.erb' do
                 }
               }
 
-              expect { parsed_yaml['config_server'] }.to raise_error(Bosh::Common::Template::UnknownProperty, "Can't find property '[\"director.config_server.uaa.client_secret\"]'")
+              expect do
+                parsed_yaml['config_server']
+              end.to raise_error(Bosh::Common::Template::UnknownProperty,
+                                 "Can't find property '[\"director.config_server.uaa.client_secret\"]'")
             end
 
             it 'does not throw any error when all the uaa properties are defined' do
@@ -334,7 +347,7 @@ RSpec.describe 'director.yml.erb' do
           end
 
           it 'parses correctly' do
-            expect(parsed_yaml['config_server']).to eq({"enabled"=>false})
+            expect(parsed_yaml['config_server']).to eq({ 'enabled' => false })
           end
         end
       end
@@ -512,7 +525,7 @@ RSpec.describe 'director.yml.erb' do
 
       it 'should contain the director certificate expiry path' do
         expect(parsed_yaml['director_certificate_expiry_json_path']).to(
-          eq('/var/vcap/jobs/director/config/certificate_expiry.json'),
+          eq('/var/vcap/jobs/director/config/certificate_expiry.json')
         )
       end
     end
@@ -542,13 +555,13 @@ RSpec.describe 'director.yml.erb' do
     context 'when agent env properties are provided' do
       before do
         merged_manifest_properties['director']['cpi_job'] = 'test-cpi'
-        merged_manifest_properties['agent']['env']['bosh'] = {'foo' => 'bar'}
-        merged_manifest_properties['agent']['env']['abc'] = {'foo' => 'bar'}
+        merged_manifest_properties['agent']['env']['bosh'] = { 'foo' => 'bar' }
+        merged_manifest_properties['agent']['env']['abc'] = { 'foo' => 'bar' }
         merged_manifest_properties['agent']['agent_wait_timeout'] = 'some-timeout'
       end
 
       it 'configures the cpi correctly with agent.env.bosh properties' do
-        expect(parsed_yaml['agent']['env']['bosh']).to eq({'foo' => 'bar'})
+        expect(parsed_yaml['agent']['env']['bosh']).to eq({ 'foo' => 'bar' })
       end
 
       it 'ignores non-supported agent.env properties' do
@@ -572,7 +585,7 @@ RSpec.describe 'director.yml.erb' do
 
       it 'configures agent env correctly' do
         expect(parsed_yaml['agent']['env']['bosh']).to_not eq(nil)
-        expect(parsed_yaml['agent']['env']['bosh']).to eq({'foo' => 'bar'})
+        expect(parsed_yaml['agent']['env']['bosh']).to eq({ 'foo' => 'bar' })
       end
     end
 
@@ -614,9 +627,10 @@ RSpec.describe 'director.yml.erb' do
     subject(:parsed_yaml) do
       binding = Bosh::Common::Template::EvaluationContext.new(
         {
-          'job' => {'name' => 'i_like_bosh'},
+          'job' => { 'name' => 'i_like_bosh' },
           'properties' => merged_manifest_properties
-        }, nil).get_binding
+        }, nil
+      ).get_binding
       YAML.load(ERB.new(erb_yaml).result(binding))
     end
 
@@ -712,7 +726,7 @@ RSpec.describe 'director.yml.erb' do
 
         let(:cpi_config) do
           {
-            'preferred_api_version' => preferred_api_version,
+            'preferred_api_version' => preferred_api_version
           }
         end
 
