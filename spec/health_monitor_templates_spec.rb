@@ -6,13 +6,13 @@ RSpec.describe 'health_monitor.yml.erb' do
       'properties' => {
         'hm' => {
           'http' => {
-            'port' => 8081,
+            'port' => 8081
           },
           'director_account' => {
             'user' => 'admin',
             'password' => 'admin_password',
             'client_id' => 'fake_id',
-            'client_secret' => 'fake_secret',
+            'client_secret' => 'fake_secret'
           },
           'intervals' => {
             'prune_events' => 60,
@@ -22,7 +22,7 @@ RSpec.describe 'health_monitor.yml.erb' do
             'analyze_agents' => 64,
             'agent_timeout' => 65,
             'rogue_agent_alert' => 66,
-            'analyze_instances' => 64,
+            'analyze_instances' => 64
           },
           'loglevel' => 'INFO',
           # plugins
@@ -34,15 +34,18 @@ RSpec.describe 'health_monitor.yml.erb' do
           'riemann_enabled' => false,
           'graphite_enabled' => false,
           'consul_event_forwarder_enabled' => false,
+          'nats' => {
+            'connection_wait_timeout' => 60
+          }
         },
         'event_nats_enabled' => false,
         'nats' => {
           'address' => '0.0.0.0',
-          'port' => 4222,
+          'port' => 4222
         },
         'director' => {
           'address' => '0.0.0.0',
-          'port' => 25555,
+          'port' => 25_555
         }
       }
     }
@@ -91,23 +94,23 @@ RSpec.describe 'health_monitor.yml.erb' do
       context 'email' do
         before do
           deployment_manifest_fragment['properties']['hm'].merge!({
-              'email_notifications' => true,
-              'email_recipients' => [
-                'nobody@example.com',
-                'somebody@example.com',
-              ],
-              'smtp' => {
-                'from' => 'bosh@example.com',
-                'host' => '127.0.0.90',
-                'port' => 25,
-                'domain' => 'example.com',
-                'tls' => true,
-                'auth' => 'tls',
-                'user' => 'my-user',
-                'password' => 'my-password',
-                'interval' => 300,
-              }
-            })
+                                                                    'email_notifications' => true,
+                                                                    'email_recipients' => [
+                                                                      'nobody@example.com',
+                                                                      'somebody@example.com'
+                                                                    ],
+                                                                    'smtp' => {
+                                                                      'from' => 'bosh@example.com',
+                                                                      'host' => '127.0.0.90',
+                                                                      'port' => 25,
+                                                                      'domain' => 'example.com',
+                                                                      'tls' => true,
+                                                                      'auth' => 'tls',
+                                                                      'user' => 'my-user',
+                                                                      'password' => 'my-password',
+                                                                      'interval' => 300
+                                                                    }
+                                                                  })
         end
 
         it 'should render' do
@@ -131,13 +134,13 @@ RSpec.describe 'health_monitor.yml.erb' do
       context 'tsdb' do
         before do
           deployment_manifest_fragment['properties']['hm'].merge!({
-              'tsdb_enabled' => true,
-              'tsdb' => {
-                'address' => '127.0.0.91',
-                'port' => 4223,
-                'max_retries' => 1,
-              },
-            })
+                                                                    'tsdb_enabled' => true,
+                                                                    'tsdb' => {
+                                                                      'address' => '127.0.0.91',
+                                                                      'port' => 4223,
+                                                                      'max_retries' => 1
+                                                                    }
+                                                                  })
         end
 
         it 'should render' do
@@ -155,13 +158,13 @@ RSpec.describe 'health_monitor.yml.erb' do
       context 'resurrector' do
         before do
           deployment_manifest_fragment['properties']['hm'].merge!({
-              'resurrector_enabled' => true,
-              'resurrector' => {
-                'minimum_down_jobs' => 7,
-                'percent_threshold' => 70,
-                'time_threshold' => 700,
-              },
-            })
+                                                                    'resurrector_enabled' => true,
+                                                                    'resurrector' => {
+                                                                      'minimum_down_jobs' => 7,
+                                                                      'percent_threshold' => 70,
+                                                                      'time_threshold' => 700
+                                                                    }
+                                                                  })
         end
 
         it 'should render' do
@@ -180,12 +183,12 @@ RSpec.describe 'health_monitor.yml.erb' do
       context 'pagerduty' do
         before do
           deployment_manifest_fragment['properties']['hm'].merge!({
-              'pagerduty_enabled' => true,
-              'pagerduty' => {
-                'service_key' => 'abcde',
-                'http_proxy' => 'http://localhost:3142',
-              },
-            })
+                                                                    'pagerduty_enabled' => true,
+                                                                    'pagerduty' => {
+                                                                      'service_key' => 'abcde',
+                                                                      'http_proxy' => 'http://localhost:3142'
+                                                                    }
+                                                                  })
         end
 
         it 'should render' do
@@ -202,14 +205,15 @@ RSpec.describe 'health_monitor.yml.erb' do
       context 'datadog' do
         before do
           deployment_manifest_fragment['properties']['hm'].merge!({
-              'datadog_enabled' => true,
-              'datadog' => {
-                'api_key' => 'abcdef',
-                'application_key' => 'dog-key',
-                'pagerduty_service_name' => 'pager-name',
-                'custom_tags' => { 'env' => 'prod', 'region' => 'eu' },
-              },
-            })
+                                                                    'datadog_enabled' => true,
+                                                                    'datadog' => {
+                                                                      'api_key' => 'abcdef',
+                                                                      'application_key' => 'dog-key',
+                                                                      'pagerduty_service_name' => 'pager-name',
+                                                                      'custom_tags' => { 'env' => 'prod',
+                                                                                         'region' => 'eu' }
+                                                                    }
+                                                                  })
         end
 
         it 'should render' do
@@ -228,12 +232,12 @@ RSpec.describe 'health_monitor.yml.erb' do
       context 'riemann' do
         before do
           deployment_manifest_fragment['properties']['hm'].merge!({
-              'riemann_enabled' => true,
-              'riemann' => {
-                'host' => '127.0.0.1',
-                'port' => '5555',
-              },
-            })
+                                                                    'riemann_enabled' => true,
+                                                                    'riemann' => {
+                                                                      'host' => '127.0.0.1',
+                                                                      'port' => '5555'
+                                                                    }
+                                                                  })
         end
 
         it 'should render' do
@@ -250,14 +254,14 @@ RSpec.describe 'health_monitor.yml.erb' do
       context 'graphite' do
         before do
           deployment_manifest_fragment['properties']['hm'].merge!({
-              'graphite_enabled' => true,
-              'graphite' => {
-                'address' => '192.0.2.1',
-                'port' => 12345,
-                'prefix' => 'my-prefix',
-                'max_retries' => 1,
-              },
-            })
+                                                                    'graphite_enabled' => true,
+                                                                    'graphite' => {
+                                                                      'address' => '192.0.2.1',
+                                                                      'port' => 12_345,
+                                                                      'prefix' => 'my-prefix',
+                                                                      'max_retries' => 1
+                                                                    }
+                                                                  })
         end
 
         it 'should render' do
@@ -267,7 +271,7 @@ RSpec.describe 'health_monitor.yml.erb' do
           expect(plugin['name']).to eq('graphite')
           expect(plugin['events']).to be_a(Array)
           expect(plugin['options']['host']).to eq('192.0.2.1')
-          expect(plugin['options']['port']).to eq(12345)
+          expect(plugin['options']['port']).to eq(12_345)
           expect(plugin['options']['prefix']).to eq('my-prefix')
           expect(plugin['options']['max_retries']).to eq(1)
         end
@@ -276,19 +280,19 @@ RSpec.describe 'health_monitor.yml.erb' do
       context 'consul_event_forwarder' do
         before do
           deployment_manifest_fragment['properties']['hm'].merge!({
-              'consul_event_forwarder_enabled' => true,
-              'consul_event_forwarder' => {
-                'host' => '192.0.2.2',
-                'port' => 2345,
-                'protocol' => 'http',
-                'ttl_note' => 'none',
-                'events' => false,
-                'heartbeats_as_alerts' => true,
-                'namespace' => 'myns',
-                'params' => true,
-                'ttl' => 60,
-              }
-            })
+                                                                    'consul_event_forwarder_enabled' => true,
+                                                                    'consul_event_forwarder' => {
+                                                                      'host' => '192.0.2.2',
+                                                                      'port' => 2345,
+                                                                      'protocol' => 'http',
+                                                                      'ttl_note' => 'none',
+                                                                      'events' => false,
+                                                                      'heartbeats_as_alerts' => true,
+                                                                      'namespace' => 'myns',
+                                                                      'params' => true,
+                                                                      'ttl' => 60
+                                                                    }
+                                                                  })
         end
 
         it 'should render' do
@@ -298,7 +302,7 @@ RSpec.describe 'health_monitor.yml.erb' do
           expect(plugin['name']).to eq('consul_event_forwarder')
           expect(plugin['events']).to be_a(Array)
           expect(plugin['name']).to eq('consul_event_forwarder')
-          expect(plugin['events']).to eq(['alert', 'heartbeat'])
+          expect(plugin['events']).to eq(%w[alert heartbeat])
           expect(plugin['options']['host']).to eq('192.0.2.2')
           expect(plugin['options']['port']).to eq(2345)
           expect(plugin['options']['protocol']).to eq('http')
