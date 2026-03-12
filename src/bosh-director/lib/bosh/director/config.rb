@@ -297,6 +297,9 @@ module Bosh::Director
         @agent_wait_timeout ||= 600
       end
 
+      DEFAULT_DB_CONNECTION_WAIT_TIMEOUT = 30
+      DEFAULT_DB_CONNECTION_RETRY_INTERVAL = 0.5
+
       def configure_db(db_config)
         connection_config = db_config.dup
         custom_connection_options = connection_config.delete('connection_options') do
@@ -304,6 +307,9 @@ module Bosh::Director
         end
         tls_options = connection_config.delete('tls') do
           {}
+        end
+        connection_wait_timeout = connection_config.delete('connection_wait_timeout') do
+          DEFAULT_DB_CONNECTION_WAIT_TIMEOUT
         end
 
         if tls_options.fetch('enabled', false)
@@ -341,9 +347,10 @@ module Bosh::Director
         connection_config = connection_config.merge(custom_connection_options)
 
         Sequel.default_timezone = :utc
-        db = Sequel.connect(connection_config)
 
-        Bosh::Common.retryable(sleep: 0.5, tries: 20, on: [Exception]) do
+        db = wait_for_db_connection(connection_config, connection_wait_timeout)
+
+        Bosh::Common.retryable(sleep: DEFAULT_DB_CONNECTION_RETRY_INTERVAL, tries: 20, on: [Exception]) do
           db.extension :connection_validator
           true
         end
@@ -355,6 +362,25 @@ module Bosh::Director
           db.log_connection_info = true
         end
 
+        db
+      end
+
+      def wait_for_db_connection(connection_config, timeout)
+        max_attempts = (timeout / DEFAULT_DB_CONNECTION_RETRY_INTERVAL).to_i
+        max_attempts = 1 if max_attempts < 1
+
+        db = nil
+        Bosh::Common.retryable(
+          sleep: DEFAULT_DB_CONNECTION_RETRY_INTERVAL,
+          tries: max_attempts,
+          on: [Sequel::DatabaseConnectionError, Sequel::DatabaseError],
+        ) do |attempt, exception|
+          if exception
+            logger&.info("Waiting for database to become available (attempt #{attempt}/#{max_attempts}): #{exception.message}")
+          end
+          db = Sequel.connect(connection_config)
+          true
+        end
         db
       end
 

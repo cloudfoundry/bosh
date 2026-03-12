@@ -1230,6 +1230,86 @@ describe Bosh::Director::Config do
         end
       end
     end
+
+    describe 'database connection retries' do
+      let(:parameters) { { 'host' => '127.0.0.1', 'port' => 5432 } }
+
+      it 'connects successfully on first try' do
+        expect(Sequel).to receive(:connect).once.and_return(database)
+        described_class.configure_db(parameters)
+      end
+
+      it 'retries connection on Sequel::DatabaseConnectionError' do
+        call_count = 0
+        allow(Sequel).to receive(:connect) do
+          call_count += 1
+          raise Sequel::DatabaseConnectionError, 'connection refused' if call_count < 3
+          database
+        end
+
+        described_class.configure_db(parameters)
+        expect(call_count).to eq(3)
+      end
+
+      it 'retries connection on Sequel::DatabaseError' do
+        call_count = 0
+        allow(Sequel).to receive(:connect) do
+          call_count += 1
+          raise Sequel::DatabaseError, 'role "director" does not exist' if call_count < 3
+          database
+        end
+
+        described_class.configure_db(parameters)
+        expect(call_count).to eq(3)
+      end
+
+      it 'logs informative messages while waiting for database' do
+        call_count = 0
+        allow(Sequel).to receive(:connect) do
+          call_count += 1
+          raise Sequel::DatabaseConnectionError, 'connection refused' if call_count < 2
+          database
+        end
+
+        logger = instance_double(Logger)
+        allow(described_class).to receive(:logger).and_return(logger)
+        expect(logger).to receive(:info).with(/Waiting for database to become available.*connection refused/)
+
+        described_class.configure_db(parameters)
+      end
+
+      it 'raises error after exhausting retries' do
+        allow(Sequel).to receive(:connect).and_raise(Sequel::DatabaseConnectionError, 'connection refused')
+
+        # With default 30 second timeout and 0.5 second interval = 60 attempts
+        parameters_with_short_timeout = parameters.merge('connection_wait_timeout' => 1)
+
+        expect {
+          described_class.configure_db(parameters_with_short_timeout)
+        }.to raise_error(Sequel::DatabaseConnectionError, /connection refused/)
+      end
+
+      it 'uses custom connection_wait_timeout from config' do
+        call_count = 0
+        allow(Sequel).to receive(:connect) do
+          call_count += 1
+          raise Sequel::DatabaseConnectionError, 'connection refused' if call_count < 5
+          database
+        end
+
+        # With 3 second timeout and 0.5 second interval = 6 attempts max
+        parameters_with_timeout = parameters.merge('connection_wait_timeout' => 3)
+        described_class.configure_db(parameters_with_timeout)
+        expect(call_count).to eq(5)
+      end
+
+      it 'does not pass connection_wait_timeout to Sequel.connect' do
+        parameters_with_timeout = parameters.merge('connection_wait_timeout' => 60)
+
+        expect(Sequel).to receive(:connect).with(parameters).and_return(database)
+        described_class.configure_db(parameters_with_timeout)
+      end
+    end
   end
 
   # TODO: this can be deleted once the CPI api version no longer needs to be specified in the spec

@@ -347,6 +347,9 @@ properties:
   director.db.tls.skip_host_verify:
     description: Skip host verification for Server CA certificate. Must be true if database is hosted on GCP.
     default: false
+  director.db.connection_wait_timeout:
+    description: Timeout in seconds to wait for database to become available during director startup. Useful when database is co-located and may start slowly.
+    default: 30
 
   # DNS
   dns.domain_name:

@@ -64,6 +64,7 @@ director_db = {
   'port' => p('director.db.port'),
   'database' => p('director.db.database'),
   'connection_options' => p('director.db.connection_options'),
+  'connection_wait_timeout' => p('director.db.connection_wait_timeout'),
   'tls' => {
     'enabled' => p('director.db.tls.enabled', false),
     'skip_host_verify' => p('director.db.tls.skip_host_verify', false),
