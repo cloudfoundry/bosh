@@ -4,6 +4,9 @@ module Bosh::Monitor
   class Runner
     include YamlHelper
 
+    DEFAULT_NATS_CONNECTION_WAIT_TIMEOUT = 60
+    DEFAULT_NATS_CONNECTION_RETRY_INTERVAL = 1
+
     def self.run(config_file)
       new(config_file).run
     end
@@ -49,7 +52,7 @@ module Bosh::Monitor
       add_periodic_timer(@intervals.log_stats) { log_stats }
       add_periodic_timer(@intervals.resurrection_config) { update_resurrection_config }
 
-      Async do |task|
+      Async do |_task|
         sleep(@intervals.poll_grace_period)
         add_periodic_timer(@intervals.analyze_agents) { analyze_agents }
         add_periodic_timer(@intervals.analyze_instances) { analyze_instances }
@@ -101,7 +104,7 @@ module Bosh::Monitor
         end
       end
 
-      Bosh::Monitor.nats.connect(options)
+      wait_for_nats_connection(options)
       @logger.info("Connected to NATS at '#{@mbus.endpoint}'")
     end
 
@@ -149,8 +152,26 @@ module Bosh::Monitor
 
     private
 
-    def add_periodic_timer(interval, &block)
-      Async do |task|
+    def wait_for_nats_connection(options)
+      timeout = @mbus.connection_wait_timeout || DEFAULT_NATS_CONNECTION_WAIT_TIMEOUT
+      max_attempts = (timeout / DEFAULT_NATS_CONNECTION_RETRY_INTERVAL).to_i
+      max_attempts = 1 if max_attempts < 1
+
+      Bosh::Common.retryable(
+        sleep: DEFAULT_NATS_CONNECTION_RETRY_INTERVAL,
+        tries: max_attempts,
+        on: [NATS::IO::ConnectError],
+      ) do |attempt, exception|
+        if exception
+          @logger.info("Waiting for NATS to become available (attempt #{attempt}/#{max_attempts}): #{exception.message}")
+        end
+        Bosh::Monitor.nats.connect(options)
+        true
+      end
+    end
+
+    def add_periodic_timer(interval)
+      Async do |_task|
         loop do
           sleep(interval)
           yield

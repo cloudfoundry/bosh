@@ -67,6 +67,9 @@ properties:
       should be "default.hm.bosh-internal"
   nats.tls.health_monitor.private_key:
     description: Private Key for establishing mutual TLS with NATS
+  hm.nats.connection_wait_timeout:
+    description: Timeout in seconds to wait for NATS to become available during health monitor startup. Useful when NATS sync hasn't propagated credentials yet.
+    default: 60
 
   #
   # Bosh Director options (to get the list of managed VMs)

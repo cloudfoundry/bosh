@@ -4,7 +4,6 @@ module Bosh
 end
 
 begin
-  require 'fiber'
 rescue LoadError
   unless defined? Fiber
     warn 'FATAL: HealthMonitor requires Ruby implementation that supports fibers'
@@ -13,7 +12,6 @@ rescue LoadError
 end
 
 require 'ostruct'
-require 'set'
 
 require 'async'
 require 'async/http'
@@ -24,6 +22,8 @@ require 'puma'
 require 'puma/configuration'
 require 'sinatra'
 require 'securerandom'
+
+require 'bosh/common'
 
 # Helpers
 require 'bosh/monitor/yaml_helper'
