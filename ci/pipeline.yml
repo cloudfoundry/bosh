@@ -495,6 +495,8 @@ jobs:
               file: bosh-ci/ci/tasks/cleanup-leftovers.yml
               image: integration-image
               params:
+                # NOTE: leftovers uses substring matching. This filter must not match
+                # other env filters (e.g. bats-fips) or persistent GCS buckets in the project.
                 LEFTOVERS_FILTER: bats
                 GCP_JSON_KEY: ((gcp_json_key))
 
@@ -511,6 +513,8 @@ jobs:
         file: bosh-ci/ci/tasks/cleanup-leftovers.yml
         image: integration-image
         params:
+          # NOTE: leftovers uses substring matching. This filter must not match
+          # other env filters (e.g. bats-fips) or persistent GCS buckets in the project.
           LEFTOVERS_FILTER: bats
           GCP_JSON_KEY: ((gcp_json_key))
 
@@ -543,11 +547,10 @@ jobs:
           - put: terraform
             resource: gcp-terraform
             params:
-              # NOTE: filter must not contain "bats" to avoid being deleted by the bats cleanup-leftovers job
-              env_name: fips
+              env_name: fips-director
               terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
               vars:
-                name: fips
+                name: fips-director
           - do:
               - task: deploy-director
                 file: bosh-ci/ci/bats/tasks/deploy-director.yml
@@ -579,16 +582,18 @@ jobs:
               no_get: true
               params:
                 action: destroy
-                env_name: fips
+                env_name: fips-director
                 terraform_source: bosh-ci/ci/bats/iaas/gcp/terraform
                 vars:
-                  name: fips
+                  name: fips-director
             - task: cleanup-leftover-environments
               file: bosh-ci/ci/tasks/cleanup-leftovers.yml
               image: integration-image
               params:
-                # NOTE: filter must not contain "bats" to avoid being deleted by the bats cleanup-leftovers job
-                LEFTOVERS_FILTER: fips
+                # NOTE: leftovers uses substring matching. This filter must not be a
+                # substring of other env filters or persistent GCS buckets in the project
+                # (e.g. "fips" alone would match bosh-core-stemcells-candidate-fips).
+                LEFTOVERS_FILTER: fips-director
                 GCP_JSON_KEY: ((gcp_json_key))
 
   - name: bats-fips-cleanup-leftovers
@@ -605,8 +610,10 @@ jobs:
         file: bosh-ci/ci/tasks/cleanup-leftovers.yml
         image: integration-image
         params:
-          # NOTE: filter must not contain "bats" to avoid being deleted by the bats cleanup-leftovers job
-          LEFTOVERS_FILTER: fips
+          # NOTE: leftovers uses substring matching. This filter must not be a
+          # substring of other env filters or persistent GCS buckets in the project
+          # (e.g. "fips" alone would match bosh-core-stemcells-candidate-fips).
+          LEFTOVERS_FILTER: fips-director
           GCP_JSON_KEY: ((gcp_json_key))
 
   - name: brats-acceptance
