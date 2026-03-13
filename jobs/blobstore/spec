@@ -81,3 +81,6 @@ properties:
     default: false
   blobstore.secret:
     description: Secret used to sign the HMAC pre-signed URLs
+  blobstore.use_storage_cli:
+    description: "When true, use storage-cli instead of s3cli for S3 operations"
+    default: false
