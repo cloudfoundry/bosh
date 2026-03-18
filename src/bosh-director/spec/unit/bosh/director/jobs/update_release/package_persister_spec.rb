@@ -86,7 +86,7 @@ module Bosh::Director
             ['fake-name-1.tgz', 'fake-name-2.tgz'].each do |name|
               tgz = "#{release_dir}/compiled_packages/#{name}"
               allow(Bosh::Common::Exec).to receive(:sh).with(
-                "tar -tzf #{tgz} 2>&1",
+                "tar -tf #{tgz} 2>&1",
                 on_error: :return,
               ).and_return(instance_double(Bosh::Common::Exec::Result, failed?: false))
               expect(BlobUtil).to receive(:create_blob).with(tgz).and_return(1)
@@ -167,7 +167,7 @@ module Bosh::Director
                 ['fake-name-2.tgz'].each do |name|
                   tgz = "#{release_dir}/compiled_packages/#{name}"
                   allow(Bosh::Common::Exec).to receive(:sh).with(
-                    "tar -tzf #{tgz} 2>&1",
+                    "tar -tf #{tgz} 2>&1",
                     on_error: :return,
                   ).and_return(instance_double(Bosh::Common::Exec::Result, failed?: false))
                   expect(BlobUtil).to receive(:create_blob).with(tgz).and_return(1)
@@ -203,7 +203,7 @@ module Bosh::Director
                 ['fake-name-1.tgz', 'fake-name-2.tgz'].each do |name|
                   tgz = "#{release_dir}/compiled_packages/#{name}"
                   allow(Bosh::Common::Exec).to receive(:sh).with(
-                    "tar -tzf #{tgz} 2>&1",
+                    "tar -tf #{tgz} 2>&1",
                     on_error: :return,
                   ).and_return(instance_double(Bosh::Common::Exec::Result, failed?: false))
                 end
@@ -261,7 +261,7 @@ module Bosh::Director
             it "creates packages that don't already exist" do
               tgz = "#{release_dir}/packages/fake-name-2.tgz"
               allow(Bosh::Common::Exec).to receive(:sh).with(
-                "tar -tzf #{tgz} 2>&1",
+                "tar -tf #{tgz} 2>&1",
                 on_error: :return,
               ).and_return(instance_double(Bosh::Common::Exec::Result, failed?: false))
               expect(BlobUtil).to receive(:create_blob).with(tgz).and_return(1)
