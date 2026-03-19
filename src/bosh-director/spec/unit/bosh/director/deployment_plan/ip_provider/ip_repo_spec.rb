@@ -290,12 +290,12 @@ module Bosh::Director
           end
 
           it 'clears similar ips with smaller prefix' do
-            network_spec['subnets'].first['reserved'] = ['192.168.1.0 - 192.168.1.12']
+            network_spec['subnets'].first['reserved'] = ['192.168.1.2 - 192.168.1.31']
             network_spec['subnets'].first['range'] = '192.168.1.0/24'
-            save_ip(cidr_ip('192.168.1.8'))
+            save_ip(cidr_ip('192.168.1.20'))
 
             ip_address = ip_repo.allocate_dynamic_ip(reservation, subnet)
-            expected_ip_address = cidr_ip('192.168.1.13')
+            expected_ip_address = cidr_ip('192.168.1.32')
             expect(ip_address).to eq(expected_ip_address)
           end
         end

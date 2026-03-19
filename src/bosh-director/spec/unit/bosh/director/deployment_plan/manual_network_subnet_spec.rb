@@ -32,7 +32,7 @@ include Bosh::Director::IpUtil
     end
 
     it 'should create a subnet spec with restricted_ips in cidr format' do
-      allow(Bosh::Director::Config).to receive(:director_ips).and_return([to_ipaddr('10.0.3.11').to_s])
+      allow(Bosh::Director::Config).to receive(:director_ips).and_return([to_ipaddr('10.0.3.150').to_s])
 
       subnet = make_subnet(
         {
@@ -40,20 +40,28 @@ include Bosh::Director::IpUtil
           'gateway' => '10.0.3.1',
           'range' => '10.0.3.0/24',
           'reserved' => [
-           '10.0.3.0 - 10.0.3.35',
-           '10.0.3.242 - 10.0.3.255']
+           '10.0.3.64 - 10.0.3.99',
+           '10.0.3.200 - 10.0.3.215']
         },
         [],
       )
 
-      expected_restricted_ips = Set.new([to_ipaddr('10.0.3.0/27'), to_ipaddr('10.0.3.32/30'), to_ipaddr('10.0.3.242/31'), to_ipaddr('10.0.3.244/30'), to_ipaddr('10.0.3.248/29') ])
+      expected_restricted_ips = Set.new([
+        to_ipaddr('10.0.3.0/32'),
+        to_ipaddr('10.0.3.1/32'),
+        to_ipaddr('10.0.3.255/32'),
+        to_ipaddr('10.0.3.150/32'),
+        to_ipaddr('10.0.3.64/27'),
+        to_ipaddr('10.0.3.96/30'),
+        to_ipaddr('10.0.3.200/29'),
+        to_ipaddr('10.0.3.208/29'),
+      ])
 
       expect(subnet.range.to_s).to eq('10.0.3.0/24')
       expect(subnet.netmask).to eq('255.255.255.0')
       expect(subnet.gateway).to eq('10.0.3.1')
       expect(subnet.dns).to eq(['10.0.0.2'])
       expect(subnet.restricted_ips).to eq(expected_restricted_ips)
-
     end
 
     it 'should create valid subnet spec for managed networks' do
