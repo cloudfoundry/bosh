@@ -492,6 +492,121 @@ module Bosh::Director
             it_behaves_like :retries_on_race_condition
           end
         end
+
+        context 'when handling CIDR blocks and overlapping ranges' do
+          def save_ip_string(ip_string)
+            ip_addr = to_ipaddr(ip_string)
+            Bosh::Director::Models::IpAddress.new(
+              address_str: ip_addr.to_s,
+              network_name: 'my-manual-network',
+              instance: instance_model,
+              task_id: Bosh::Director::Config.current_job.task_id
+            ).save
+          end
+
+          context 'when database has individual IPs that are contained in a reserved CIDR block' do
+            it 'deduplicates and skips the entire CIDR block' do
+              network_spec['subnets'].first['range'] = '10.0.11.32/27'
+              network_spec['subnets'].first['gateway'] = '10.0.11.33'
+              network_spec['subnets'].first['reserved'] = ['10.0.11.32 - 10.0.11.35', '10.0.11.63']
+              network_spec['subnets'].first['static'] = ['10.0.11.36', '10.0.11.37', '10.0.11.38', '10.0.11.39', '10.0.11.40']
+
+              # Simulate database IPs that overlap with reserved range
+              save_ip_string('10.0.11.32/32')
+              save_ip_string('10.0.11.33/32')
+
+              # Should skip entire /30 block (32-35) and statics (36-40), allocate 41
+              ip_address = ip_repo.allocate_dynamic_ip(reservation, subnet)
+              expect(ip_address).to eq(cidr_ip('10.0.11.41'))
+            end
+          end
+
+          context 'when multiple overlapping CIDR blocks exist' do
+            it 'deduplicates to largest block only' do
+              network_spec['subnets'].first['range'] = '192.168.1.0/24'
+              network_spec['subnets'].first['gateway'] = '192.168.1.1'
+              network_spec['subnets'].first['reserved'] = [
+                '192.168.1.0 - 192.168.1.15',  # /28
+                '192.168.1.0 - 192.168.1.3',   # /30
+                '192.168.1.4 - 192.168.1.7',   # /30
+                '192.168.1.8',                  # /32
+              ]
+
+              # Should skip entire /28 block (0-15), allocate 16
+              ip_address = ip_repo.allocate_dynamic_ip(reservation, subnet)
+              expect(ip_address).to eq(cidr_ip('192.168.1.16'))
+            end
+          end
+
+          context 'when nested CIDR blocks exist' do
+            it 'deduplicates to outermost block' do
+              network_spec['subnets'].first['range'] = '192.168.1.0/24'
+              network_spec['subnets'].first['gateway'] = '192.168.1.1'
+              network_spec['subnets'].first['reserved'] = [
+                '192.168.1.0/24',  # Entire range
+                '192.168.1.0/26',  # First quarter
+                '192.168.1.0/28',  # First 16
+              ]
+
+              # Should skip entire /24 block
+              ip_address = ip_repo.allocate_dynamic_ip(reservation, subnet)
+              expect(ip_address).to be_nil
+            end
+          end
+
+          context 'when adjacent non-overlapping CIDR blocks exist' do
+            it 'preserves all blocks and skips each correctly' do
+              network_spec['subnets'].first['range'] = '10.0.0.0/24'
+              network_spec['subnets'].first['gateway'] = '10.0.0.1'
+              network_spec['subnets'].first['reserved'] = [
+                '10.0.0.0 - 10.0.0.3',   # /30 (0-3)
+                '10.0.0.4 - 10.0.0.7',   # /30 (4-7)
+                '10.0.0.8 - 10.0.0.11',  # /30 (8-11)
+              ]
+
+              # Should skip all three /30 blocks, allocate 12
+              ip_address = ip_repo.allocate_dynamic_ip(reservation, subnet)
+              expect(ip_address).to eq(cidr_ip('10.0.0.12'))
+            end
+          end
+
+          context 'when large CIDR block contains scattered individual IPs' do
+            it 'deduplicates scattered IPs within the block' do
+              network_spec['subnets'].first['range'] = '10.1.1.0/24'
+              network_spec['subnets'].first['gateway'] = '10.1.1.1'
+              network_spec['subnets'].first['reserved'] = ['10.1.1.0/24']
+              network_spec['subnets'].first['static'] = []
+
+              # Save individual IPs that are all within the /24
+              save_ip_string('10.1.1.5/32')
+              save_ip_string('10.1.1.50/32')
+              save_ip_string('10.1.1.100/32')
+              save_ip_string('10.1.1.200/32')
+
+              # Should skip entire /24, no IPs available
+              ip_address = ip_repo.allocate_dynamic_ip(reservation, subnet)
+              expect(ip_address).to be_nil
+            end
+          end
+
+          context 'when handling AWS reserved IP ranges' do
+            it 'correctly skips reserved ranges with database IPs' do
+              network_spec['subnets'].first['range'] = '10.0.11.32/27'
+              network_spec['subnets'].first['gateway'] = '10.0.11.33'
+              network_spec['subnets'].first['reserved'] = ['10.0.11.32 - 10.0.11.35', '10.0.11.63']
+              network_spec['subnets'].first['static'] = []
+
+              # Simulate AWS reserved range scenario with partial database state
+              save_ip_string('10.0.11.32/32')
+              save_ip_string('10.0.11.33/32')
+              save_ip_string('10.0.11.34/32')
+
+              # Should deduplicate /32s, keep /30, skip entire reserved range (32-35)
+              ip_address = ip_repo.allocate_dynamic_ip(reservation, subnet)
+              expect(ip_address).to eq(cidr_ip('10.0.11.36'))
+            end
+          end
+        end
       end
 
       describe :allocate_vip_ip do
