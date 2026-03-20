@@ -40,6 +40,31 @@ module Bosh::Director
           end
         end
 
+        context 'when user has both bosh.dynamic-disks.create and bosh.dynamic-disks.attach scopes' do
+          before { authorize 'dynamic-disks-provider', 'dynamic-disks-provider' }
+
+          it 'enqueues a ProvideDynamicDisk task' do
+            expect_any_instance_of(Bosh::Director::JobQueue).to receive(:enqueue).with(
+              'dynamic-disks-provider',
+              Jobs::DynamicDisks::ProvideDynamicDisk,
+              'provide dynamic disk',
+              [instance_id, disk_name, disk_pool_name, disk_size, metadata],
+            ).and_call_original
+
+            post '/provide', content, { 'CONTENT_TYPE' => 'application/json' }
+
+            expect_redirect_to_queued_task(last_response)
+          end
+        end
+
+        context 'when user has only bosh.dynamic-disks.create scope' do
+          before { basic_authorize('dynamic-disks-creator', 'dynamic-disks-creator') }
+
+          it 'forbids access' do
+            expect(post('/provide', content, {'CONTENT_TYPE' => 'application/json'}).status).to eq(401)
+          end
+        end
+
         context 'user has admin permissions' do
           before { authorize 'admin', 'admin' }
 
@@ -153,12 +178,12 @@ module Bosh::Director
           end
         end
 
-        context 'when user has bosh.dynamic_disks.update scope' do
-          before { basic_authorize('dynamic-disks-updater', 'dynamic-disks-updater') }
+        context 'when user has bosh.dynamic-disks.detach scope' do
+          before { basic_authorize('dynamic-disks-detacher', 'dynamic-disks-detacher') }
 
-          it 'enqueues a ProvideDynamicDisk task' do
+          it 'enqueues a DetachDynamicDisk task' do
             expect_any_instance_of(Bosh::Director::JobQueue).to receive(:enqueue).with(
-              'dynamic-disks-updater',
+              'dynamic-disks-detacher',
               Jobs::DynamicDisks::DetachDynamicDisk,
               'detach dynamic disk',
               ['disk_name'],
@@ -197,15 +222,7 @@ module Bosh::Director
           end
         end
 
-        context 'when user has bosh.dynamic_disks.update scope' do
-          before { basic_authorize('dynamic-disks-updater', 'dynamic-disks-updater') }
-
-          it 'forbids access' do
-            expect(delete('/disk_name').status).to eq(401)
-          end
-        end
-
-        context 'when user has bosh.dynamic_disks.delete scope' do
+        context 'when user has bosh.dynamic-disks.delete scope' do
           before { authorize 'dynamic-disks-deleter', 'dynamic-disks-deleter' }
 
           it 'enqueues a ProvideDynamicDisk task' do

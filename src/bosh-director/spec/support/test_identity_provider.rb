@@ -39,8 +39,11 @@ module Support
         'director-reader' => ["bosh.#{@uuid_provider.uuid}.read"],
         'dev-team-member' => ['bosh.teams.dev.admin'],
         'dev-team-read-member' => ['bosh.teams.dev.read'],
-        'dynamic-disks-updater' => ['bosh.dynamic_disks.update'],
-        'dynamic-disks-deleter' => ['bosh.dynamic_disks.delete'],
+        'dynamic-disks-provider' => ['bosh.dynamic-disks.create', 'bosh.dynamic-disks.attach'],
+        'dynamic-disks-creator' => ['bosh.dynamic-disks.create'],
+        'dynamic-disks-attacher' => ['bosh.dynamic-disks.attach'],
+        'dynamic-disks-detacher' => ['bosh.dynamic-disks.detach'],
+        'dynamic-disks-deleter' => ['bosh.dynamic-disks.delete'],
         'outsider' => ['uaa.admin'],
       }
     end
