@@ -30,10 +30,11 @@ module Bosh::Director
             force: @force,
             stop_intent: :delete_deployment,
           )
+          disk_deleter = DiskDeleter.new(logger, disk_manager, force: @force)
           deployment_deleter = DeploymentDeleter.new(Config.event_log, logger, Config.max_threads)
 
           vm_deleter = Bosh::Director::VmDeleter.new(logger, @force, Config.enable_virtual_delete_vms)
-          deployment_deleter.delete(deployment_model, instance_deleter, vm_deleter)
+          deployment_deleter.delete(deployment_model, instance_deleter, vm_deleter, disk_deleter)
           add_event(parent_id)
 
           "/deployments/#{@deployment_name}"

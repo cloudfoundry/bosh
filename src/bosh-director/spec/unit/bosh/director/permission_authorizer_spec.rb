@@ -328,6 +328,96 @@ module Bosh::Director
           it_behaves_like :admin_read_team_admin_scopes
         end
 
+        shared_examples :dynamic_disk_scope do |scope_string|
+          it "allows #{scope_string} scope" do
+            expect(subject.is_granted?(acl_subject, acl_right, [scope_string])).to eq(true)
+          end
+
+          it 'allows bosh.admin scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.admin'])).to eq(true)
+          end
+
+          it 'allows bosh.X.admin scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.fake-director-uuid.admin'])).to eq(true)
+          end
+
+          it 'denies others' do
+            expect(subject.is_granted?(acl_subject, acl_right, [
+              'bosh.unexpected-uuid.admin',
+              'bosh.read',
+              'bosh.teams.anything.admin',
+              'bosh.teams.anything.read',
+              'bosh.fake-director-uuid.read',
+              'bosh.unexpected-uuid.read',
+              'bosh.teams.security.unexpected',
+            ])).to eq(false)
+          end
+        end
+
+        describe 'checking create_dynamic_disks rights' do
+          let(:acl_right) { :create_dynamic_disks }
+          it_behaves_like :dynamic_disk_scope, 'bosh.dynamic-disks.create'
+        end
+
+        describe 'checking attach_dynamic_disks rights' do
+          let(:acl_right) { :attach_dynamic_disks }
+          it_behaves_like :dynamic_disk_scope, 'bosh.dynamic-disks.attach'
+        end
+
+        describe 'checking detach_dynamic_disks rights' do
+          let(:acl_right) { :detach_dynamic_disks }
+          it_behaves_like :dynamic_disk_scope, 'bosh.dynamic-disks.detach'
+        end
+
+        describe 'checking list_dynamic_disks rights' do
+          let(:acl_right) { :list_dynamic_disks }
+          it_behaves_like :dynamic_disk_scope, 'bosh.dynamic-disks.list'
+        end
+
+        describe 'checking delete_dynamic_disks rights' do
+          let(:acl_right) { :delete_dynamic_disks }
+          it_behaves_like :dynamic_disk_scope, 'bosh.dynamic-disks.delete'
+        end
+
+        describe 'checking provide_dynamic_disks rights' do
+          let(:acl_right) { :provide_dynamic_disks }
+
+          it 'allows bosh.admin scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.admin'])).to eq(true)
+          end
+
+          it 'allows bosh.X.admin scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.fake-director-uuid.admin'])).to eq(true)
+          end
+
+          it 'allows when user has both create and attach scopes' do
+            expect(subject.is_granted?(acl_subject, acl_right, [
+              'bosh.dynamic-disks.create',
+              'bosh.dynamic-disks.attach',
+            ])).to eq(true)
+          end
+
+          it 'denies when user has only create scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.dynamic-disks.create'])).to eq(false)
+          end
+
+          it 'denies when user has only attach scope' do
+            expect(subject.is_granted?(acl_subject, acl_right, ['bosh.dynamic-disks.attach'])).to eq(false)
+          end
+
+          it 'denies others' do
+            expect(subject.is_granted?(acl_subject, acl_right, [
+              'bosh.unexpected-uuid.admin',
+              'bosh.read',
+              'bosh.teams.anything.admin',
+              'bosh.teams.anything.read',
+              'bosh.fake-director-uuid.read',
+              'bosh.unexpected-uuid.read',
+              'bosh.teams.security.unexpected',
+            ])).to eq(false)
+          end
+        end
+
         describe 'checking for invalid rights' do
           let(:acl_right) { :what_I_fancy }
 

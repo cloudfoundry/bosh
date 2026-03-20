@@ -12,6 +12,7 @@ module Bosh::Director::Models
     many_to_many :release_versions
     one_to_many  :job_instances, :class => 'Bosh::Director::Models::Instance'
     one_to_many  :instances
+    one_to_many  :dynamic_disks
     one_to_many  :properties, :class => "Bosh::Director::Models::DeploymentProperty"
     one_to_many  :problems, :class => "Bosh::Director::Models::DeploymentProblem"
     one_to_many  :link_consumers, :class => 'Bosh::Director::Models::Links::LinkConsumer'

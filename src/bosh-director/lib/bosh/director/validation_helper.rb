@@ -43,6 +43,14 @@ module Bosh::Director
         raise ValidationViolatedMax, validation_message.invalid_max(options, property, result)
       end
 
+      if options[:min_length] && result.length < options[:min_length]
+        raise ValidationViolatedMin, validation_message.invalid_min_length(options, property, result)
+      end
+
+      if options[:max_length] && result.length > options[:max_length]
+        raise ValidationViolatedMax, validation_message.invalid_max_length(options, property, result)
+      end
+
       result
     end
   end
@@ -58,6 +66,14 @@ module Bosh::Director
 
     def invalid_min(options, property, result)
       "'#{property}' value (#{result.inspect}) should be greater than #{options[:min].inspect}"
+    end
+
+    def invalid_max_length(options, property, result)
+      "'#{property}' length (#{result.length.inspect}) should be less than #{options[:max_length].inspect}"
+    end
+
+    def invalid_min_length(options, property, result)
+      "'#{property}' length (#{result.length.inspect}) should be greater than #{options[:min_length].inspect}"
     end
   end
 

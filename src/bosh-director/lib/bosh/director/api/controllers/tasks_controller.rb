@@ -101,9 +101,11 @@ module Bosh::Director
       get '/:id', scope: :list_tasks do
         task = @task_manager.find_task(params[:id])
         if !@permission_authorizer.is_granted?(task, :read, token_scopes)
+          formatted = @permission_authorizer.list_expected_scope(task, :read, token_scopes).map do |predicate|
+            predicate.length > 1 ? "(#{predicate.join(' AND ')})" : predicate.first
+          end
           raise UnauthorizedToAccessDeployment,
-            'One of the following scopes is required to access this task: ' +
-              @permission_authorizer.list_expected_scope(task, :read, token_scopes).join(', ')
+            "One of the following scopes is required to access this task: #{formatted.join(', ')}"
         end
 
         if task_timeout?(task)
