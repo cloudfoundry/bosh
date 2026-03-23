@@ -1568,17 +1568,17 @@ jobs:
 
 resource_types:
   - name: terraform
-    type: docker-image
+    type: registry-image
     source:
       repository: ljfranklin/terraform-resource
 
   - name: gcs-resource
-    type: docker-image
+    type: registry-image
     source:
       repository: frodenas/gcs-resource
 
   - name: pivnet
-    type: docker-image
+    type: registry-image
     check_every: 168h
     source:
       repository: pivotalcf/pivnet-resource
@@ -1587,12 +1587,12 @@ resource_types:
       password: ((dockerhub_password))
 
   - name: http-resource
-    type: docker-image
+    type: registry-image
     source:
       repository: aequitas/http-resource
 
   - name: semver
-    type: docker-image
+    type: registry-image
     source:
       repository: concourse/semver-resource
       tag: "1.6"
@@ -1601,7 +1601,7 @@ resource_types:
     source:
       repository: foundationalinfrastructure/bosh-io-stemcell-resource
       tag: v1.2.1
-    type: docker-image
+    type: registry-image
 
 resources:
   - name: mariadb-connector-c-resource
