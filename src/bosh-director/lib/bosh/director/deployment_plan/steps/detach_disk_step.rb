@@ -2,6 +2,8 @@ module Bosh::Director
   module DeploymentPlan
     module Steps
       class DetachDiskStep
+        include LockHelper
+
         def initialize(disk)
           @disk = disk
           @logger = Config.logger
@@ -18,7 +20,7 @@ module Bosh::Director
           cloud_factory = CloudFactory.create
           cloud = cloud_factory.get(@disk.cpi, instance_active_vm.stemcell_api_version)
           @logger.info("Detaching disk #{@disk.disk_cid}")
-          cloud.detach_disk(@disk.instance.vm_cid, @disk.disk_cid)
+          with_vm_lock(@disk.instance.vm_cid) { cloud.detach_disk(@disk.instance.vm_cid, @disk.disk_cid) }
         rescue Bosh::Clouds::DiskNotAttached
           if @disk.active
             raise CloudDiskNotAttached,

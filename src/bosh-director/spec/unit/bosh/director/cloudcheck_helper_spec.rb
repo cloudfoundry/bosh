@@ -119,7 +119,8 @@ module Bosh::Director
         expect(cloud_factory).to receive(:get).with(instance.active_vm.cpi).and_return(cloud)
       end
 
-      it 'reboots the vm on success' do
+      it 'reboots the vm on success with vm lock' do
+        expect(test_problem_handler).to receive(:with_vm_lock).with(vm.cid).and_yield
         allow(agent_client).to receive(:wait_until_ready)
         test_problem_handler.reboot_vm(instance)
       end

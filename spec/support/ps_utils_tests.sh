@@ -39,14 +39,14 @@ function test_kill_process {
 function test_list_child_processes {
   function ps {
     cat <<EOF
-21 ruby /var/vcap/packages/director/bin/bosh-director-worker -c /var/vcap/jobs/director/config/director.yml -i 1
-22 ruby /var/vcap/packages/director/bin/bosh-director-worker -c /var/vcap/jobs/director/config/director.yml -i 2
-23 ruby /var/vcap/packages/director/bin/bosh-director-worker -c /var/vcap/jobs/director/config/director.yml -i 2
+21 ruby /var/vcap/packages/director/bin/bosh-director-worker -c /var/vcap/jobs/director/config/director.yml -n worker-1
+22 ruby /var/vcap/packages/director/bin/bosh-director-worker -c /var/vcap/jobs/director/config/director.yml -n worker-2
+23 ruby /var/vcap/packages/director/bin/bosh-director-worker -c /var/vcap/jobs/director/config/director.yml -n worker-2
 1     init
 EOF
   }
 
-  CHILD_PID=$(list_child_processes 2)
+  CHILD_PID=$(list_child_processes worker-2)
 
   if [ "$CHILD_PID" = "22
 23" ]; then

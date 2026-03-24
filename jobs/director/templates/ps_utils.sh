@@ -22,7 +22,7 @@ function kill_process {
 function list_child_processes {
   ps -eo pid,command |
     grep bosh-director-worker |
-    grep -- "-i $1" |
+    grep -- "-n $1" |
     awk '{print $1}' |
     grep -v ^$1$
 }
