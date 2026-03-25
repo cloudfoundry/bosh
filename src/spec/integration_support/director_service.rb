@@ -37,7 +37,7 @@ module IntegrationSupport
 
       @worker_processes = (0..2).map do |index|
         Service.new(
-          @command_builder.array_for("bundle exec bosh-director-worker -c #{@director_config} -i #{index}"),
+          @command_builder.array_for("bundle exec bosh-director-worker -c #{@director_config} -n worker_#{index}"),
           { output: "#{@base_log_path}.worker_#{index}.out", env: { 'QUEUE' => 'normal,urgent' } },
           @logger,
         )
