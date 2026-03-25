@@ -35,7 +35,21 @@ describe 'cli: events', type: :integration do
     expect(stable_data).to all(include('task_id' => /[0-9]{1,3}|-|^$/))
     expect(stable_data).to all(include('id' => /[0-9]{1,3} <- [0-9]{1,3}|[0-9]{1,3}|^$/))
 
-    expect(flexible_data).to contain_exactly(
+    vm_lock_events = flexible_data.select { |e| e['object_type'] == 'lock' && e['object_name'].match?(/\Alock:vm:/) }
+    non_vm_lock_data = flexible_data.reject { |e| e['object_type'] == 'lock' && e['object_name'].match?(/\Alock:vm:/) }
+
+    expect(vm_lock_events).to all(include(
+      'object_type' => 'lock',
+      'object_name' => /\Alock:vm:[0-9]{1,6}\z/,
+      'action' => /acquire|release/,
+      'context' => '',
+      'deployment' => '',
+      'instance' => '',
+      'error' => '',
+    ))
+    expect(vm_lock_events.count { |e| e['action'] == 'acquire' }).to eq(vm_lock_events.count { |e| e['action'] == 'release' })
+
+    expect(non_vm_lock_data).to contain_exactly(
       {'action' => 'start', 'object_type' => 'worker', 'object_name' => 'worker_0', 'deployment' => '', 'instance' => '', 'context' => '', 'error' => ''},
       {'action' => 'start', 'object_type' => 'worker', 'object_name' => 'worker_1', 'deployment' => '', 'instance' => '', 'context' => '', 'error' => ''},
       {'action' => 'start', 'object_type' => 'worker', 'object_name' => 'worker_2', 'deployment' => '', 'instance' => '', 'context' => '', 'error' => ''},
