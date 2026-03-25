@@ -429,7 +429,7 @@ module Bosh
               subject.perform(report)
             end.to change { Models::Event.count }.from(0).to(2)
 
-            event1 = Models::Event.first
+            event1 = Models::Event.order(:id).first
             expect(event1.user).to eq('user')
             expect(event1.action).to eq('create')
             expect(event1.object_type).to eq('vm')
