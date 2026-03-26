@@ -48,6 +48,63 @@ module Bosh::Director
       end
     end
 
+    # Called by RecreateHandler after disks are detached but before VM deletion.
+    # Attempts to update disk types via CPI while disks are already in a detached state.
+    # If the CPI doesn't support update_disk, changes are left for the post-recreation
+    # update_persistent_disk call to handle via the standard copy path.
+    def update_detached_disks(instance_plan)
+      return unless Config.enable_cpi_update_disk
+      return unless instance_plan.persistent_disk_changed?
+
+      instance_model = instance_plan.instance.model
+      new_disks = instance_plan.desired_instance.instance_group.persistent_disk_collection
+      old_disks = instance_model.active_persistent_disks
+
+      changed_disk_pairs = DeploymentPlan::PersistentDiskCollection.changed_disk_pairs(
+        old_disks,
+        instance_plan.instance.previous_variable_set,
+        new_disks,
+        instance_plan.instance.desired_variable_set,
+      )
+
+      changed_disk_pairs.each do |disk_pair|
+        new_disk = disk_pair[:new]
+        old_disk = disk_pair[:old]
+
+        next unless new_disk && old_disk && new_disk.managed? && old_disk.managed?
+
+        old_disk_model = old_disk.model
+        next if old_disk_model.nil?
+
+        active_vm = old_disk_model.instance.active_vm
+        if active_vm.nil?
+          @logger.warn("No active VM for disk '#{old_disk_model.disk_cid}', skipping CPI update")
+          next
+        end
+
+        begin
+          cloud = cloud_for_cpi(active_vm.cpi)
+          @logger.info("Updating detached disk '#{old_disk_model.disk_cid}' via CPI")
+          new_disk_cid = cloud.update_disk(old_disk_model.disk_cid, new_disk.size, new_disk.cloud_properties)
+
+          updates = { size: new_disk.size, cloud_properties: new_disk.cloud_properties }
+          if new_disk_cid && new_disk_cid != old_disk_model.disk_cid
+            @logger.info("Disk CID changed from '#{old_disk_model.disk_cid}' to '#{new_disk_cid}'")
+            updates[:disk_cid] = new_disk_cid
+          end
+
+          old_disk_model.update(updates)
+          @logger.info("Successfully updated detached disk '#{old_disk_model.disk_cid}'")
+        rescue Bosh::Clouds::NotImplemented, Bosh::Clouds::NotSupported => e
+          # Only catch "not available" errors. Other CPI errors (e.g. partial failures during
+          # snapshot-based migration) must propagate — the CPI may have replaced the disk and
+          # swallowing the error would lose the new disk CID.
+          @logger.info("CPI does not support update_disk for '#{old_disk_model.disk_cid}': #{e.message}. " \
+                       "Will use copy path after VM recreation.")
+        end
+      end
+    end
+
     def attach_disks_if_needed(instance_plan)
       unless instance_plan.needs_disk?
         @logger.warn('Skipping disk attachment, instance no longer needs disk')
@@ -249,24 +306,33 @@ module Bosh::Director
         return
       end
 
+      if old_disk_model.size == new_disk.size && old_disk_model.cloud_properties == new_disk.cloud_properties
+        @logger.info("Disk '#{old_disk_model.disk_cid}' already matches desired state, skipping CPI update")
+        return
+      end
+
       @logger.info("Starting IaaS native update of disk '#{old_disk_model.disk_cid}' with new size '#{new_disk.size}' and cloud properties '#{new_disk.cloud_properties}'")
       detach_disk(old_disk_model)
 
       begin
         cloud = cloud_for_cpi(old_disk_model.instance.active_vm.cpi)
-        cloud.update_disk(old_disk_model.disk_cid, new_disk.size, new_disk.cloud_properties)
+        new_disk_cid = cloud.update_disk(old_disk_model.disk_cid, new_disk.size, new_disk.cloud_properties)
       rescue Bosh::Clouds::NotImplemented, Bosh::Clouds::NotSupported => e
         @logger.info("IaaS native update not possible for disk #{old_disk_model.disk_cid}. Falling back to creating new disk.\n#{e.message}")
         attach_disk(old_disk_model, instance_plan.tags)
         update_disk(instance_plan, new_disk, old_disk)
-
         return
+      end
+
+      updates = { size: new_disk.size, cloud_properties: new_disk.cloud_properties }
+      if new_disk_cid && new_disk_cid != old_disk_model.disk_cid
+        @logger.info("Disk CID changed from '#{old_disk_model.disk_cid}' to '#{new_disk_cid}' after IaaS update")
+        updates[:disk_cid] = new_disk_cid
       end
 
       attach_disk(old_disk_model, instance_plan.tags)
 
-      old_disk_model.update(size: new_disk.size)
-      old_disk_model.update(cloud_properties: new_disk.cloud_properties)
+      old_disk_model.update(updates)
       @logger.info("Finished IaaS native update of disk '#{old_disk_model.disk_cid}'")
     end
 
