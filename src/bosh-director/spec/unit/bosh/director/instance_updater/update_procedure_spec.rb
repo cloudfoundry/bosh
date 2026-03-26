@@ -71,6 +71,7 @@ module Bosh::Director
           dns_changed?: dns_changed?,
           already_detached?: already_detached?,
           needs_shutting_down?: needs_shutting_down?,
+          unresponsive_agent?: false,
           instance: instance,
           existing_instance: nil,
           should_create_swap_delete?: should_create_swap_delete?,
@@ -449,6 +450,12 @@ module Bosh::Director
                 it 'recreates the vm' do
                   expect(recreate_handler).to have_received(:perform)
                   expect(instance).to_not have_received(:update_instance_settings)
+                end
+
+                it 'passes disk_manager to RecreateHandler' do
+                  expect(InstanceUpdater::RecreateHandler).to have_received(:new).with(
+                    anything, anything, anything, anything, anything, anything, disk_manager: disk_manager,
+                  )
                 end
               end
 

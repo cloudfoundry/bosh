@@ -229,6 +229,21 @@ module Bosh::Director
           end
         end
 
+        context 'when disk already matches desired state' do
+          let(:persistent_disk) do
+            FactoryBot.create(:models_persistent_disk,
+              disk_cid: 'disk123', size: 4096, name: disk_name,
+              cloud_properties: { 'new' => 'properties' }, active: true, cpi: 'my-cpi')
+          end
+
+          it 'skips the CPI update entirely' do
+            disk_manager.update_persistent_disk(instance_plan)
+
+            expect(cloud).to_not have_received(:update_disk)
+            expect(cloud).to_not have_received(:detach_disk)
+          end
+        end
+
         context 'when update_disk is not implemented' do
           it 'falls back to manually copying disk' do
             allow(cloud).to receive(:update_disk).and_raise(Bosh::Clouds::NotImplemented)
@@ -256,6 +271,39 @@ module Bosh::Director
             expect(cloud).to have_received(:create_disk).with(3072, { 'new' => 'properties' }, 'vm234')
             expect(cloud).to have_received(:attach_disk).with('vm234', 'disk123')
             expect(cloud).to have_received(:attach_disk).with('vm234', 'new-disk-cid')
+          end
+        end
+
+        context 'when CPI returns a new disk CID' do
+          it 'updates the disk_cid in the database' do
+            allow(cloud).to receive(:update_disk).and_return('new-disk-cid-from-cpi')
+
+            disk_manager.update_persistent_disk(instance_plan)
+
+            model = Models::PersistentDisk.where(instance_id: instance_model.id, active: true).first
+            expect(model.disk_cid).to eq('new-disk-cid-from-cpi')
+          end
+        end
+
+        context 'when CPI returns the same disk CID' do
+          it 'does not change the disk_cid in the database' do
+            allow(cloud).to receive(:update_disk).and_return('disk123')
+
+            disk_manager.update_persistent_disk(instance_plan)
+
+            model = Models::PersistentDisk.where(instance_id: instance_model.id, active: true).first
+            expect(model.disk_cid).to eq('disk123')
+          end
+        end
+
+        context 'when CPI returns nil (in-place update)' do
+          it 'does not change the disk_cid in the database' do
+            allow(cloud).to receive(:update_disk).and_return(nil)
+
+            disk_manager.update_persistent_disk(instance_plan)
+
+            model = Models::PersistentDisk.where(instance_id: instance_model.id, active: true).first
+            expect(model.disk_cid).to eq('disk123')
           end
         end
       end
@@ -750,6 +798,113 @@ module Bosh::Director
             .and_return(false)
           disk_manager.update_persistent_disk(instance_plan)
           expect(Models::PersistentDisk.first.cloud_properties).to eq(cloud_properties)
+        end
+      end
+    end
+
+    describe '#update_detached_disks' do
+      before do
+        allow(cloud_factory).to receive(:get).with('my-cpi', nil).and_return(cloud)
+        allow(cloud_factory).to receive(:get).with('my-cpi').and_return(cloud)
+      end
+
+      let(:enable_cpi_update_disk) { true }
+      let(:job_persistent_disk_size) { 4096 }
+      # Desired cloud_properties — intentionally different from initial so every
+      # DB assertion can distinguish "was updated" from "was not updated".
+      let(:cloud_properties) { { 'new' => 'properties' } }
+      # Override the initial disk to start with different cloud_properties than desired.
+      let(:persistent_disk) do
+        FactoryBot.create(:models_persistent_disk,
+          disk_cid: 'disk123', size: 2048, name: disk_name,
+          cloud_properties: { 'old' => 'properties' }, active: true, cpi: 'my-cpi')
+      end
+
+      context 'when CPI update succeeds' do
+        it 'calls update_disk without detaching or attaching' do
+          disk_manager.update_detached_disks(instance_plan)
+
+          expect(cloud).to have_received(:update_disk).with('disk123', 4096, { 'new' => 'properties' })
+          expect(cloud).to_not have_received(:detach_disk)
+          expect(cloud).to_not have_received(:attach_disk)
+          expect(agent_client).to_not have_received(:mount_disk)
+        end
+
+        it 'updates disk size and cloud properties in the db' do
+          disk_manager.update_detached_disks(instance_plan)
+
+          model = Models::PersistentDisk.where(disk_cid: 'disk123').first
+          expect(model.size).to eq(4096)
+          expect(model.cloud_properties).to eq({ 'new' => 'properties' })
+        end
+      end
+
+      context 'when CPI returns a new disk CID' do
+        it 'updates the disk_cid in the database' do
+          allow(cloud).to receive(:update_disk).and_return('new-cid-from-cpi')
+
+          disk_manager.update_detached_disks(instance_plan)
+
+          model = Models::PersistentDisk.where(instance_id: instance_model.id, active: true).first
+          expect(model.disk_cid).to eq('new-cid-from-cpi')
+        end
+      end
+
+      context 'when CPI returns nil (in-place update)' do
+        it 'does not change the disk_cid' do
+          allow(cloud).to receive(:update_disk).and_return(nil)
+
+          disk_manager.update_detached_disks(instance_plan)
+
+          model = Models::PersistentDisk.where(instance_id: instance_model.id, active: true).first
+          expect(model.disk_cid).to eq('disk123')
+        end
+      end
+
+      context 'when CPI raises NotImplemented' do
+        it 'does not modify the disk in the db' do
+          allow(cloud).to receive(:update_disk).and_raise(Bosh::Clouds::NotImplemented)
+
+          disk_manager.update_detached_disks(instance_plan)
+
+          expect(cloud).to have_received(:update_disk)
+          model = Models::PersistentDisk.where(disk_cid: 'disk123').first
+          expect(model.size).to eq(2048)
+          expect(model.cloud_properties).to eq({ 'old' => 'properties' })
+        end
+      end
+
+      context 'when CPI raises NotSupported' do
+        it 'does not modify the disk in the db' do
+          allow(cloud).to receive(:update_disk).and_raise(Bosh::Clouds::NotSupported)
+
+          disk_manager.update_detached_disks(instance_plan)
+
+          model = Models::PersistentDisk.where(disk_cid: 'disk123').first
+          expect(model.size).to eq(2048)
+          expect(model.cloud_properties).to eq({ 'old' => 'properties' })
+        end
+      end
+
+      context 'when enable_cpi_update_disk is disabled' do
+        let(:enable_cpi_update_disk) { false }
+
+        it 'does nothing' do
+          disk_manager.update_detached_disks(instance_plan)
+
+          expect(cloud).to_not have_received(:update_disk)
+        end
+      end
+
+      context 'when disk has not changed' do
+        # Both size and cloud_properties match the initial disk state — no change.
+        let(:job_persistent_disk_size) { 2048 }
+        let(:cloud_properties) { { 'old' => 'properties' } }
+
+        it 'does nothing' do
+          disk_manager.update_detached_disks(instance_plan)
+
+          expect(cloud).to_not have_received(:update_disk)
         end
       end
     end
