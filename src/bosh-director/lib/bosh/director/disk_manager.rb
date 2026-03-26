@@ -88,7 +88,8 @@ module Bosh::Director
           new_disk_cid = cloud.update_disk(old_disk_model.disk_cid, new_disk.size, new_disk.cloud_properties)
 
           updates = { size: new_disk.size, cloud_properties: new_disk.cloud_properties }
-          if new_disk_cid != old_disk_model.disk_cid
+          if new_disk_cid && new_disk_cid != old_disk_model.disk_cid
+            @logger.info("Disk CID changed from '#{old_disk_model.disk_cid}' to '#{new_disk_cid}'")
             updates[:disk_cid] = new_disk_cid
           end
 
@@ -324,7 +325,8 @@ module Bosh::Director
       end
 
       updates = { size: new_disk.size, cloud_properties: new_disk.cloud_properties }
-      if new_disk_cid != old_disk_model.disk_cid
+      if new_disk_cid && new_disk_cid != old_disk_model.disk_cid
+        @logger.info("Disk CID changed from '#{old_disk_model.disk_cid}' to '#{new_disk_cid}' after IaaS update")
         updates[:disk_cid] = new_disk_cid
       end
 

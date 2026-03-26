@@ -295,6 +295,17 @@ module Bosh::Director
             expect(model.disk_cid).to eq('disk123')
           end
         end
+
+        context 'when CPI returns nil (in-place update)' do
+          it 'does not change the disk_cid in the database' do
+            allow(cloud).to receive(:update_disk).and_return(nil)
+
+            disk_manager.update_persistent_disk(instance_plan)
+
+            model = Models::PersistentDisk.where(instance_id: instance_model.id, active: true).first
+            expect(model.disk_cid).to eq('disk123')
+          end
+        end
       end
 
       context 'when `enable_cpi_update_disk` is disabled' do
@@ -836,6 +847,17 @@ module Bosh::Director
 
           model = Models::PersistentDisk.where(instance_id: instance_model.id, active: true).first
           expect(model.disk_cid).to eq('new-cid-from-cpi')
+        end
+      end
+
+      context 'when CPI returns nil (in-place update)' do
+        it 'does not change the disk_cid' do
+          allow(cloud).to receive(:update_disk).and_return(nil)
+
+          disk_manager.update_detached_disks(instance_plan)
+
+          model = Models::PersistentDisk.where(instance_id: instance_model.id, active: true).first
+          expect(model.disk_cid).to eq('disk123')
         end
       end
 
