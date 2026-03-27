@@ -84,8 +84,12 @@ module Bosh::Director
 
         begin
           cloud = cloud_for_cpi(active_vm.cpi)
+          resolved_cloud_properties = @variables_interpolator.interpolate_with_versioning(
+            new_disk.cloud_properties,
+            instance_plan.instance.desired_variable_set,
+          )
           @logger.info("Updating detached disk '#{old_disk_model.disk_cid}' via CPI")
-          new_disk_cid = cloud.update_disk(old_disk_model.disk_cid, new_disk.size, new_disk.cloud_properties)
+          new_disk_cid = cloud.update_disk(old_disk_model.disk_cid, new_disk.size, resolved_cloud_properties)
 
           updates = { size: new_disk.size, cloud_properties: new_disk.cloud_properties }
           if new_disk_cid && new_disk_cid != old_disk_model.disk_cid
@@ -316,7 +320,11 @@ module Bosh::Director
 
       begin
         cloud = cloud_for_cpi(old_disk_model.instance.active_vm.cpi)
-        new_disk_cid = cloud.update_disk(old_disk_model.disk_cid, new_disk.size, new_disk.cloud_properties)
+        resolved_cloud_properties = @variables_interpolator.interpolate_with_versioning(
+          new_disk.cloud_properties,
+          instance_plan.instance.desired_variable_set,
+        )
+        new_disk_cid = cloud.update_disk(old_disk_model.disk_cid, new_disk.size, resolved_cloud_properties)
       rescue Bosh::Clouds::NotImplemented, Bosh::Clouds::NotSupported => e
         @logger.info("IaaS native update not possible for disk #{old_disk_model.disk_cid}. Falling back to creating new disk.\n#{e.message}")
         attach_disk(old_disk_model, instance_plan.tags)

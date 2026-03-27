@@ -178,6 +178,12 @@ module Bosh::Director
           { 'new' => 'properties' }
         end
 
+        before do
+          allow(variables_interpolator).to receive(:interpolate_with_versioning)
+            .with(anything, anything)
+            .and_return(cloud_properties)
+        end
+
         context 'when disk size and properties change' do
           it 'updates the disk via cpi' do
             disk_manager.update_persistent_disk(instance_plan)
@@ -806,6 +812,9 @@ module Bosh::Director
       before do
         allow(cloud_factory).to receive(:get).with('my-cpi', nil).and_return(cloud)
         allow(cloud_factory).to receive(:get).with('my-cpi').and_return(cloud)
+        allow(variables_interpolator).to receive(:interpolate_with_versioning)
+          .with(anything, anything)
+          .and_return(cloud_properties)
       end
 
       let(:enable_cpi_update_disk) { true }
