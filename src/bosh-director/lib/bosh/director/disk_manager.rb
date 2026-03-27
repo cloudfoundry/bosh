@@ -338,9 +338,11 @@ module Bosh::Director
         updates[:disk_cid] = new_disk_cid
       end
 
-      attach_disk(old_disk_model, instance_plan.tags)
-
+      # Persist the updated CID (and size/cloud_properties) BEFORE reattaching.
+      # The CPI may have replaced the disk (e.g. GCP snapshot-based type change),
+      # so attach_disk must read the new CID from the model, not the stale one.
       old_disk_model.update(updates)
+      attach_disk(old_disk_model, instance_plan.tags)
       @logger.info("Finished IaaS native update of disk '#{old_disk_model.disk_cid}'")
     end
 

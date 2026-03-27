@@ -289,6 +289,14 @@ module Bosh::Director
             model = Models::PersistentDisk.where(instance_id: instance_model.id, active: true).first
             expect(model.disk_cid).to eq('new-disk-cid-from-cpi')
           end
+
+          it 'persists the new CID before reattaching so attach uses the correct disk' do
+            allow(cloud).to receive(:update_disk).and_return('new-disk-cid-from-cpi')
+
+            disk_manager.update_persistent_disk(instance_plan)
+
+            expect(cloud).to have_received(:attach_disk).with('vm234', 'new-disk-cid-from-cpi')
+          end
         end
 
         context 'when CPI returns the same disk CID' do
