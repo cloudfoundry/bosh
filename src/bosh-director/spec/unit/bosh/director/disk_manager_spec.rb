@@ -913,6 +913,24 @@ module Bosh::Director
         end
       end
 
+      context 'when there is no active VM for the disk' do
+        before do
+          instance_model.active_vm.destroy
+          instance_model.reload
+        end
+
+        it 'logs a warning and skips the update' do
+          expect(per_spec_logger).to receive(:warn).with(/No active VM for disk/)
+
+          disk_manager.update_detached_disks(instance_plan)
+
+          expect(cloud).to_not have_received(:update_disk)
+          model = Models::PersistentDisk.where(disk_cid: 'disk123').first
+          expect(model.size).to eq(2048)
+          expect(model.cloud_properties).to eq({ 'old' => 'properties' })
+        end
+      end
+
       context 'when disk has not changed' do
         # Both size and cloud_properties match the initial disk state — no change.
         let(:job_persistent_disk_size) { 2048 }
