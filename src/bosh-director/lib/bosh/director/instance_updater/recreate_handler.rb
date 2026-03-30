@@ -2,7 +2,7 @@ module Bosh::Director
   class InstanceUpdater
     class RecreateHandler
       attr_reader :instance, :instance_plan, :instance_report, :new_vm, :instance_model, :deleted_vm, :deleted_vm_id
-      def initialize(logger, vm_creator, ip_provider, instance_plan, instance_report, instance)
+      def initialize(logger, vm_creator, ip_provider, instance_plan, instance_report, instance, disk_manager: nil)
         @logger = logger
         @vm_creator = vm_creator
         @ip_provider = ip_provider
@@ -12,6 +12,7 @@ module Bosh::Director
         @instance_model = instance_plan.instance.model
         @new_vm = instance_model.most_recent_inactive_vm || instance_model.active_vm
         @instance = instance
+        @disk_manager = disk_manager
       end
 
       def perform
@@ -22,6 +23,7 @@ module Bosh::Director
           delete_vm
         else
           detach_disks
+          update_detached_disks
           @delete_vm_first = true
         end
 
@@ -53,6 +55,12 @@ module Bosh::Director
       def detach_disks
         DeploymentPlan::Steps::UnmountInstanceDisksStep.new(instance_model).perform(instance_report)
         DeploymentPlan::Steps::DetachInstanceDisksStep.new(instance_model).perform(instance_report)
+      end
+
+      def update_detached_disks
+        return unless @disk_manager
+
+        @disk_manager.update_detached_disks(instance_plan)
       end
 
       def attach_disks
