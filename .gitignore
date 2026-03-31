@@ -1,6 +1,7 @@
 .DS_Store
 .bundle
 .idea
+*.iml
 
 **/*/private.yml
 .blobs
