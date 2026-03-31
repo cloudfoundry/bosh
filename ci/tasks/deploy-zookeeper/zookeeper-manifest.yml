@@ -12,7 +12,7 @@ stemcells:
     version: latest
 
 update:
-  canaries: 2
+  canaries: 1
   max_in_flight: 1
   canary_watch_time: 5000-60000
   update_watch_time: 5000-60000
@@ -20,7 +20,7 @@ update:
 instance_groups:
   - name: zookeeper
     azs: [z1, z2, z3]
-    instances: 5
+    instances: 3
     jobs:
       - name: zookeeper
         release: zookeeper
