@@ -86,7 +86,9 @@ module Bosh::Director
       let(:non_existent_cc_id) { 99999999 }
 
       it 'calls initialize with the models it finds by id' do
-        expect(Bosh::Director::CloudConfig::CloudConfigsConsolidator).to receive(:new).with([cc_model_1, cc_model_2])
+        expect(Bosh::Director::CloudConfig::CloudConfigsConsolidator).to receive(:new) do |args|
+          expect(args).to contain_exactly(cc_model_1, cc_model_2)
+        end
 
         Bosh::Director::CloudConfig::CloudConfigsConsolidator.create_from_model_ids(
           [
