@@ -249,5 +249,27 @@ describe 'global networking', type: :integration do
       expect(second_deploy_instances.first.ips).to eq(first_deploy_instances.first.ips)
       expect(second_deploy_instances.first.vm_cid).to eq(first_deploy_instances.first.vm_cid)
     end
+
+    it 'does not allocate IPs within a CIDR reserved range' do
+      cloud_config_hash = SharedSupport::DeploymentManifestHelper.simple_cloud_config
+      cloud_config_hash['networks'].first['subnets'] = [
+        {
+          'range' => '192.168.1.0/24',
+          'gateway' => '192.168.1.1',
+          'dns' => [],
+          'static' => [],
+          'reserved' => ['192.168.1.0/28'],
+          'cloud_properties' => {},
+        }
+      ]
+
+      manifest_hash = SharedSupport::DeploymentManifestHelper.deployment_manifest(name: 'my-deploy', instances: 2)
+
+      upload_cloud_config(cloud_config_hash: cloud_config_hash)
+      deploy_simple_manifest(manifest_hash: manifest_hash)
+
+      deployed_ips = director.instances(deployment_name: 'my-deploy').map(&:ips).flatten
+      expect(deployed_ips).to match_array(['192.168.1.16', '192.168.1.17'])
+    end
   end
 end
