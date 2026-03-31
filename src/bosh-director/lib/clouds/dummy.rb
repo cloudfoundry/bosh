@@ -298,6 +298,7 @@ module Bosh
         disk_info['size'] = new_size
         disk_info['cloud_properties'] = cloud_properties
         File.write(disk_info_file, JSON.generate(disk_info))
+        nil
       end
 
       SET_VM_METADATA_SCHEMA = Membrane::SchemaParser.parse { {vm_cid: String, metadata: Hash} }
