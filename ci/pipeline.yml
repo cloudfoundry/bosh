@@ -1466,7 +1466,7 @@ jobs:
       - get: bosh
       - get: golang-release
       - get: integration-image
-      - task: bump-deps
+      - task: bump-brats-deps
         file: golang-release/ci/tasks/shared/bump-deps.yml
         input_mapping:
           input_repo: bosh
@@ -1474,6 +1474,14 @@ jobs:
           output_repo: bosh-out
         params:
           SOURCE_PATH: src/brats/
+      - task: bump-bosh-monitor-deps
+        file: golang-release/ci/tasks/shared/bump-deps.yml
+        input_mapping:
+          input_repo: bosh-out
+        output_mapping:
+          output_repo: bosh-out
+        params:
+          SOURCE_PATH: src/bosh-monitor/
       - task: lint-brats
         file: bosh-ci/ci/tasks/lint-brats.yml
         image: integration-image
@@ -1491,6 +1499,8 @@ jobs:
           - get: bosh-ci
           - get: integration-image
           - get: bosh
+          - get: golang-release
+            trigger: true
           - get: nginx-release
             trigger: true
           - get: mariadb-connector-c-resource
@@ -1595,6 +1605,22 @@ jobs:
                 credentials_source: static
                 json_key: '((gcp_json_key))'
           RUBY_VERSION_PATH: src/.ruby-version
+      - task: bump-golang-package
+        file: golang-release/ci/tasks/shared/bump-golang-package.yml
+        input_mapping:
+          input_repo: bosh-out
+        output_mapping:
+          output_repo: bosh-out
+        params:
+          GIT_USER_NAME: *git_user_name
+          GIT_USER_EMAIL: *git_user_email
+          PACKAGES: '["golang-1.26-linux"]'
+          PACKAGES_TO_REMOVE: '[]'
+          PRIVATE_YML: |
+            blobstore:
+              options:
+                credentials_source: static
+                json_key: '((gcp_json_key))'
       - task: bump-bosh-blobstore-dav
         file: bosh-ci/ci/tasks/bump-blobstore-cli.yml
         image: integration-image
