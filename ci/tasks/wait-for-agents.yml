@@ -1,0 +1,11 @@
+---
+platform: linux
+
+inputs:
+- name: director-state
+- name: bosh-ci
+- name: bosh-cli
+- name: bosh-deployment
+
+run:
+  path: bosh-ci/ci/tasks/wait-for-agents.sh

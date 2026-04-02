@@ -804,16 +804,9 @@ jobs:
               GCP_JSON_KEY: ((gcp_json_key))
               DEPLOY_ARGS: |-
                 -o bosh-deployment/external-ip-not-recommended.yml
-          - task: sleep-300-seconds
+          - task: wait-for-agents
             image: integration-image
-            config:
-              platform: linux
-              run:
-                path: /bin/sh
-                args:
-                  - -exc
-                  - |
-                    sleep 300
+            file: bosh-ci/ci/tasks/wait-for-agents.yml
           - task: recreate-zookeeper
             image: integration-image
             file: bosh-ci/ci/tasks/deploy-zookeeper.yml
@@ -915,16 +908,9 @@ jobs:
               DEPLOY_ARGS: |-
                 -o bosh-deployment/external-ip-not-recommended.yml
                 -o bosh-deployment/misc/external-db.yml
-          - task: sleep-300-seconds
+          - task: wait-for-agents
             image: integration-image
-            config:
-              platform: linux
-              run:
-                path: /bin/sh
-                args:
-                  - -exc
-                  - |
-                    sleep 300
+            file: bosh-ci/ci/tasks/wait-for-agents.yml
           - task: recreate-zookeeper
             image: integration-image
             file: bosh-ci/ci/tasks/deploy-zookeeper.yml
