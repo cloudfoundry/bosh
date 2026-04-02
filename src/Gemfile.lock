@@ -38,26 +38,6 @@ PATH
       unix-crypt
 
 PATH
-  remote: bosh-monitor
-  specs:
-    bosh-monitor (0.0.0)
-      async
-      async-http
-      bosh-common
-      cf-uaa-lib
-      dogapi
-      io-stream
-      logging
-      nats-pure
-      net-smtp
-      openssl
-      ostruct
-      puma
-      riemann-client
-      securerandom
-      sinatra
-
-PATH
   remote: bosh-nats-sync
   specs:
     bosh-nats-sync (0.0.0)
@@ -348,7 +328,6 @@ DEPENDENCIES
   async-rspec
   bosh-common!
   bosh-director!
-  bosh-monitor!
   bosh-nats-sync!
   bundle-audit
   factory_bot

@@ -109,10 +109,14 @@ describe 'health_monitor: 1', type: :integration, hm: true do
       while Time.now < start_time + 60
         heartbeat_hashes = []
         health_monitor.read_log.split("\n").inject(heartbeat_hashes) do |lines, line|
-          match_data = /I, \[.* \#\d*\]  INFO : (\{\"kind\"\:\"heartbeat\".*)/.match(line)
+          # Go slog text format: msg="[plugin:logger] {\"kind\":\"heartbeat\",...}"
+          match_data = /msg="\[plugin:logger\] (\{.*\})"/.match(line)
           begin
-            lines << JSON.parse(match_data[1]) if match_data
-          rescue => JSON::ParserError
+            if match_data
+              json_str = match_data[1].gsub('\\"', '"').gsub('\\\\', '\\')
+              lines << JSON.parse(json_str)
+            end
+          rescue JSON::ParserError
             # Do not add to the array if it isn't valid JSON
           end
           lines
