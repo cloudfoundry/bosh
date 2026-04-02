@@ -1,26 +1,30 @@
 set -e
 
-mkdir -p ${BOSH_INSTALL_TARGET}/{bin,gem_home}
-
-source /var/vcap/packages/director-ruby-3.4/bosh/compile.env
-
-cat > Gemfile <<EOF
-# Explicitly require vendored version to avoid requiring builtin json gem
-gem 'json', '~>2'
-gem 'bosh-monitor'
-EOF
-
-for gemspec in $( find . -maxdepth 2 -name *.gemspec ); do
-  gem_name="$( basename "$( dirname "$gemspec" )" )"
-  gem_spec="$( basename "$gemspec" )"
-
-  pushd "$gem_name"
-    gem build "$gem_spec"
-    mv *.gem ../vendor/cache
-  popd > /dev/null
+# Use the Go toolchain from a vendored golang BOSH package if available.
+# When the golang-1.26-linux package is present, source its compile.env
+# to set PATH/GOROOT/etc. the same way other BOSH releases do.
+for pkg in "${BOSH_PACKAGES_DIR}"/golang-*; do
+  if [ -f "${pkg}/bosh/compile.env" ]; then
+    # shellcheck disable=SC1091
+    source "${pkg}/bosh/compile.env"
+    break
+  fi
 done
 
-bosh_bundle_local
+if ! command -v go >/dev/null 2>&1; then
+  echo "ERROR: Go toolchain not found." >&2
+  echo "  Add a golang-* BOSH package as a dependency in packages/health_monitor/spec" >&2
+  echo "  or ensure 'go' is available on PATH." >&2
+  exit 1
+fi
 
-cp Gemfile ${BOSH_INSTALL_TARGET}
-cp Gemfile.lock ${BOSH_INSTALL_TARGET}
+echo "Using $(go version)"
+mkdir -p "${BOSH_INSTALL_TARGET}/bin"
+
+cd bosh-monitor
+go build -o "${BOSH_INSTALL_TARGET}/bin/bosh-monitor" .
+
+for plugin_dir in cmd/plugins/hm-*; do
+  plugin_name="$(basename "${plugin_dir}")"
+  go build -o "${BOSH_INSTALL_TARGET}/bin/${plugin_name}" "./${plugin_dir}"
+done

@@ -18,6 +18,7 @@ require 'integration_support/config_server_service'
 require 'integration_support/director_service'
 require 'integration_support/nginx_service'
 require 'integration_support/gnatsd_manager'
+require 'integration_support/bosh_monitor_manager'
 require 'integration_support/bosh_agent'
 require 'integration_support/uaa_service'
 require 'integration_support/verify_multidigest_manager'
@@ -151,6 +152,7 @@ module IntegrationSupport
       IntegrationSupport::ConfigServerService.install
       IntegrationSupport::VerifyMultidigestManager.install
       IntegrationSupport::GnatsdManager.install
+      IntegrationSupport::BoshMonitorManager.build
 
       FileUtils.rm_rf(integration_spec_base_dir)
 
@@ -638,9 +640,13 @@ module IntegrationSupport
     end
 
     def setup_heath_monitor
+      IntegrationSupport::BoshMonitorManager.build
       @health_monitor_process = Service.new(
-        %W[bosh-monitor -c #{sandbox_path(HM_CONFIG)}],
-        {output: "#{logs_path}/health_monitor.out"},
+        %W[#{IntegrationSupport::BoshMonitorManager.executable_path} -c #{sandbox_path(HM_CONFIG)}],
+        {
+          output: "#{logs_path}/health_monitor.out",
+          env: { 'PATH' => "#{IntegrationSupport::Constants::INTEGRATION_BIN_DIR}:#{ENV['PATH']}" },
+        },
         @logger,
       )
     end
