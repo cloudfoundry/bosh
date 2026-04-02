@@ -131,5 +131,102 @@ module Bosh::Director
         end
       end
     end
+
+    describe '#overlaps?' do
+      context 'when two /32 IPs are the same' do
+        it 'returns true' do
+          a = IpAddrOrCidr.new('10.0.0.1')
+          b = IpAddrOrCidr.new('10.0.0.1')
+          expect(a.overlaps?(b)).to be true
+        end
+      end
+
+      context 'when two /32 IPs are different' do
+        it 'returns false' do
+          a = IpAddrOrCidr.new('10.0.0.1')
+          b = IpAddrOrCidr.new('10.0.0.2')
+          expect(a.overlaps?(b)).to be false
+        end
+      end
+
+      context 'when a /32 is inside a CIDR block' do
+        it 'returns true (IP inside block)' do
+          ip = IpAddrOrCidr.new('192.168.1.5')
+          block = IpAddrOrCidr.new('192.168.1.0/25')
+          expect(ip.overlaps?(block)).to be true
+          expect(block.overlaps?(ip)).to be true
+        end
+      end
+
+      context 'when a /32 is outside a CIDR block' do
+        it 'returns false' do
+          ip = IpAddrOrCidr.new('192.168.2.1')
+          block = IpAddrOrCidr.new('192.168.1.0/25')
+          expect(ip.overlaps?(block)).to be false
+          expect(block.overlaps?(ip)).to be false
+        end
+      end
+
+      context 'when two CIDR blocks overlap partially' do
+        it 'returns true' do
+          a = IpAddrOrCidr.new('192.168.1.0/30')
+          b = IpAddrOrCidr.new('192.168.1.2/30')
+          expect(a.overlaps?(b)).to be true
+        end
+      end
+
+      context 'when two CIDR blocks are adjacent but non-overlapping' do
+        it 'returns false' do
+          a = IpAddrOrCidr.new('192.168.1.0/30')
+          b = IpAddrOrCidr.new('192.168.1.4/30')
+          expect(a.overlaps?(b)).to be false
+          expect(b.overlaps?(a)).to be false
+        end
+      end
+
+      context 'when a smaller block is nested inside a larger block' do
+        it 'returns true' do
+          outer = IpAddrOrCidr.new('10.0.0.0/24')
+          inner = IpAddrOrCidr.new('10.0.0.128/25')
+          expect(outer.overlaps?(inner)).to be true
+          expect(inner.overlaps?(outer)).to be true
+        end
+      end
+
+      context 'when CIDR blocks are completely disjoint' do
+        it 'returns false' do
+          a = IpAddrOrCidr.new('10.0.0.0/24')
+          b = IpAddrOrCidr.new('10.0.1.0/24')
+          expect(a.overlaps?(b)).to be false
+        end
+      end
+
+      context 'with the exact scenario that triggers the IPAddr coercion bug' do
+        it 'correctly detects overlap between /32 and /25' do
+          ip32 = IpAddrOrCidr.new('192.168.1.0')
+          block25 = IpAddrOrCidr.new('192.168.1.0/25')
+          expect(ip32.overlaps?(block25)).to be true
+
+          # A /32 NOT in the /25 range
+          ip_outside = IpAddrOrCidr.new('192.168.1.200')
+          expect(ip_outside.overlaps?(block25)).to be false
+        end
+      end
+
+      context 'with IPv6 addresses' do
+        it 'detects overlapping IPv6 ranges' do
+          a = IpAddrOrCidr.new('fd00::/64')
+          b = IpAddrOrCidr.new('fd00::1')
+          expect(a.overlaps?(b)).to be true
+          expect(b.overlaps?(a)).to be true
+        end
+
+        it 'returns false for non-overlapping IPv6 ranges' do
+          a = IpAddrOrCidr.new('fd00::/64')
+          b = IpAddrOrCidr.new('fd01::1')
+          expect(a.overlaps?(b)).to be false
+        end
+      end
+    end
   end
 end

@@ -492,6 +492,201 @@ module Bosh::Director
             it_behaves_like :retries_on_race_condition
           end
         end
+
+        context 'when handling CIDR blocks and overlapping ranges' do
+          def save_ip_string(ip_string)
+            ip_addr = to_ipaddr(ip_string)
+            Bosh::Director::Models::IpAddress.new(
+              address_str: ip_addr.to_s,
+              network_name: 'my-manual-network',
+              instance: instance_model,
+              task_id: Bosh::Director::Config.current_job.task_id
+            ).save
+          end
+
+          context 'when database has individual IPs that are contained in a reserved CIDR block' do
+            it 'deduplicates and skips the entire CIDR block' do
+              network_spec['subnets'].first['range'] = '10.0.11.32/27'
+              network_spec['subnets'].first['gateway'] = '10.0.11.33'
+              network_spec['subnets'].first['reserved'] = ['10.0.11.32 - 10.0.11.35', '10.0.11.63']
+              network_spec['subnets'].first['static'] = ['10.0.11.36', '10.0.11.37', '10.0.11.38', '10.0.11.39', '10.0.11.40']
+
+              save_ip_string('10.0.11.32/32')
+              save_ip_string('10.0.11.33/32')
+
+              ip_address = ip_repo.allocate_dynamic_ip(reservation, subnet)
+              expect(ip_address).to eq(cidr_ip('10.0.11.41'))
+            end
+          end
+
+          context 'when multiple overlapping CIDR blocks exist' do
+            it 'deduplicates to largest block only' do
+              network_spec['subnets'].first['range'] = '192.168.1.0/24'
+              network_spec['subnets'].first['gateway'] = '192.168.1.1'
+              network_spec['subnets'].first['reserved'] = [
+                '192.168.1.0 - 192.168.1.15',
+                '192.168.1.0 - 192.168.1.3',
+                '192.168.1.4 - 192.168.1.7',
+                '192.168.1.8',
+              ]
+
+              ip_address = ip_repo.allocate_dynamic_ip(reservation, subnet)
+              expect(ip_address).to eq(cidr_ip('192.168.1.16'))
+            end
+          end
+
+          context 'when nested CIDR blocks exist' do
+            it 'deduplicates to outermost block' do
+              network_spec['subnets'].first['range'] = '192.168.1.0/24'
+              network_spec['subnets'].first['gateway'] = '192.168.1.1'
+              network_spec['subnets'].first['reserved'] = [
+                '192.168.1.0/24',
+                '192.168.1.0/26',
+                '192.168.1.0/28',
+              ]
+
+              ip_address = ip_repo.allocate_dynamic_ip(reservation, subnet)
+              expect(ip_address).to be_nil
+            end
+          end
+
+          context 'when adjacent non-overlapping CIDR blocks exist' do
+            it 'preserves all blocks and skips each correctly' do
+              network_spec['subnets'].first['range'] = '10.0.0.0/24'
+              network_spec['subnets'].first['gateway'] = '10.0.0.1'
+              network_spec['subnets'].first['reserved'] = [
+                '10.0.0.0 - 10.0.0.3',
+                '10.0.0.4 - 10.0.0.7',
+                '10.0.0.8 - 10.0.0.11',
+              ]
+
+              ip_address = ip_repo.allocate_dynamic_ip(reservation, subnet)
+              expect(ip_address).to eq(cidr_ip('10.0.0.12'))
+            end
+          end
+
+          context 'when large CIDR block contains scattered individual IPs' do
+            it 'deduplicates scattered IPs within the block' do
+              network_spec['subnets'].first['range'] = '10.1.1.0/24'
+              network_spec['subnets'].first['gateway'] = '10.1.1.1'
+              network_spec['subnets'].first['reserved'] = ['10.1.1.0/24']
+              network_spec['subnets'].first['static'] = []
+
+              save_ip_string('10.1.1.5/32')
+              save_ip_string('10.1.1.50/32')
+              save_ip_string('10.1.1.100/32')
+              save_ip_string('10.1.1.200/32')
+
+              ip_address = ip_repo.allocate_dynamic_ip(reservation, subnet)
+              expect(ip_address).to be_nil
+            end
+          end
+
+          context 'when handling AWS reserved IP ranges' do
+            it 'correctly skips reserved ranges with database IPs' do
+              network_spec['subnets'].first['range'] = '10.0.11.32/27'
+              network_spec['subnets'].first['gateway'] = '10.0.11.33'
+              network_spec['subnets'].first['reserved'] = ['10.0.11.32 - 10.0.11.35', '10.0.11.63']
+              network_spec['subnets'].first['static'] = []
+
+              save_ip_string('10.0.11.32/32')
+              save_ip_string('10.0.11.33/32')
+              save_ip_string('10.0.11.34/32')
+
+              ip_address = ip_repo.allocate_dynamic_ip(reservation, subnet)
+              expect(ip_address).to eq(cidr_ip('10.0.11.36'))
+            end
+          end
+
+          context 'when candidate block lands inside a reserved CIDR that started before it' do
+            it 'does not allocate an address inside the reserved range' do
+              # Reserved: 10.0.0.130/23 covers 10.0.130.0 - 10.0.131.255 (512 IPs).
+              # Walking forward from 10.0.129.0/24: that first candidate overlaps
+              # the /23, so we advance by 512, landing at 10.0.131.0.  But .131.0
+              # is still inside the /23.  The pruning step must NOT discard the /23
+              # just because its base (.130.0) < new candidate base (.131.0).
+              # The first address outside the reserved range is 10.0.132.0.
+              network_spec['subnets'].first['range'] = '10.0.128.0/21'
+              network_spec['subnets'].first['gateway'] = '10.0.128.1'
+              network_spec['subnets'].first['reserved'] = [
+                '10.0.128.0 - 10.0.129.255',
+                '10.0.130.0 - 10.0.131.255',
+                '10.0.132.0 - 10.0.133.0',
+              ]
+              network_spec['subnets'].first['static'] = []
+
+              ip_address = ip_repo.allocate_dynamic_ip(reservation, subnet)
+              expect(ip_address).to eq(cidr_ip('10.0.133.1'))
+            end
+          end
+        end
+
+        context 'when allocating dynamic IPs from an IPv6 subnet' do
+          let(:ipv6_network_spec) do
+            {
+              'name' => 'my-manual-network',
+              'subnets' => [
+                {
+                  'range' => '2001:db8::/120',
+                  'gateway' => '2001:db8::1',
+                  'dns' => [],
+                  'static' => [],
+                  'reserved' => [],
+                  'cloud_properties' => {},
+                  'az' => 'az-1',
+                },
+              ],
+            }
+          end
+
+          let(:ipv6_network) do
+            ManualNetwork.parse(
+              ipv6_network_spec,
+              availability_zones,
+              per_spec_logger,
+            )
+          end
+
+          let(:ipv6_subnet) do
+            ManualNetworkSubnet.parse(
+              ipv6_network.name,
+              ipv6_network_spec['subnets'].first,
+              availability_zones,
+            )
+          end
+
+          let(:ipv6_reservation) { Bosh::Director::DesiredNetworkReservation.new_dynamic(instance_model, ipv6_network) }
+
+          it 'returns the first available IPv6 address' do
+            ip_address = ip_repo.allocate_dynamic_ip(ipv6_reservation, ipv6_subnet)
+            expect(ip_address).to eq(cidr_ip('2001:db8::2'))
+          end
+
+          it 'allocates sequential IPv6 addresses' do
+            first = ip_repo.allocate_dynamic_ip(ipv6_reservation, ipv6_subnet)
+            second = ip_repo.allocate_dynamic_ip(ipv6_reservation, ipv6_subnet)
+            expect(first).to eq(cidr_ip('2001:db8::2'))
+            expect(second).to eq(cidr_ip('2001:db8::3'))
+          end
+
+          context 'when there are reserved IPv6 ranges' do
+            it 'skips reserved addresses' do
+              ipv6_network_spec['subnets'].first['reserved'] = ['2001:db8::2 - 2001:db8::4']
+
+              ip_address = ip_repo.allocate_dynamic_ip(ipv6_reservation, ipv6_subnet)
+              expect(ip_address).to eq(cidr_ip('2001:db8::5'))
+            end
+          end
+
+          context 'when there are reserved IPv6 CIDR blocks' do
+            it 'skips the entire CIDR block' do
+              ipv6_network_spec['subnets'].first['reserved'] = ['2001:db8::/124']
+
+              ip_address = ip_repo.allocate_dynamic_ip(ipv6_reservation, ipv6_subnet)
+              expect(ip_address).to eq(cidr_ip('2001:db8::10'))
+            end
+          end
+        end
       end
 
       describe :allocate_vip_ip do

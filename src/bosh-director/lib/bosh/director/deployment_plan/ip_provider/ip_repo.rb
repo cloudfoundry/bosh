@@ -106,7 +106,7 @@ module Bosh::Director::DeploymentPlan
       ip_address_cidr = find_next_available_ip(addresses_we_cant_allocate, first_range_address, subnet.prefix)
 
       if !(subnet.range == ip_address_cidr || subnet.range.include?(ip_address_cidr))
-       raise NoMoreIPsAvailableAndStopRetrying
+        raise NoMoreIPsAvailableAndStopRetrying
       end
 
       save_ip(ip_address_cidr, reservation, false)
@@ -123,12 +123,12 @@ module Bosh::Director::DeploymentPlan
 
       while found == false
         current_prefix = to_ipaddr("#{current_ip.base_addr}/#{prefix}")
+        filtered_ips.reject! { |ip| ip.to_range.last.to_i < current_prefix.to_i }
 
-        if filtered_ips.any? { |ip| current_prefix.include?(ip) }
-          filtered_ips.reject! { |ip| ip.to_i < current_prefix.to_i }
-          actual_ip_prefix = filtered_ips.first.count
-          if actual_ip_prefix > current_prefix.count
-            current_ip = to_ipaddr(current_ip.to_i + actual_ip_prefix)
+        blocking_ip = filtered_ips.first
+        if blocking_ip&.overlaps?(current_prefix)
+          if blocking_ip.count > current_prefix.count
+            current_ip = to_ipaddr(blocking_ip.to_i + blocking_ip.count)
           else
             current_ip = to_ipaddr(current_ip.to_i + current_prefix.count)
           end

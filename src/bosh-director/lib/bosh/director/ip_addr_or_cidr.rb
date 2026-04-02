@@ -84,6 +84,14 @@ module Bosh
         Bosh::Director::IpAddrOrCidr.new(@ipaddr.to_range.first.to_i)
       end
 
+      def overlaps?(other)
+        my_first = @ipaddr.to_range.first.to_i
+        my_last = @ipaddr.to_range.last.to_i
+        other_first = other.to_range.first.to_i
+        other_last = other.to_range.last.to_i
+        my_first <= other_last && other_first <= my_last
+      end
+
       private
 
       def max_addresses
