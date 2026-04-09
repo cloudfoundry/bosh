@@ -228,5 +228,70 @@ module Bosh::Director
         end
       end
     end
+
+    describe '#eql? and #hash' do
+      context 'when two objects have the same base address and prefix' do
+        it 'eql? returns true' do
+          a = IpAddrOrCidr.new('10.0.11.32/30')
+          b = IpAddrOrCidr.new('10.0.11.32/30')
+          expect(a.eql?(b)).to be true
+        end
+
+        it 'hash values are equal' do
+          a = IpAddrOrCidr.new('10.0.11.32/30')
+          b = IpAddrOrCidr.new('10.0.11.32/30')
+          expect(a.hash).to eq(b.hash)
+        end
+
+        it 'can be used as the same Set element' do
+          a = IpAddrOrCidr.new('10.0.11.32/30')
+          b = IpAddrOrCidr.new('10.0.11.32/30')
+          expect(Set.new([a, b]).size).to eq(1)
+        end
+      end
+
+      context 'when two objects have the same base address but different prefixes' do
+        it 'eql? returns false' do
+          a = IpAddrOrCidr.new('10.0.11.32/30')
+          b = IpAddrOrCidr.new('10.0.11.32/32')
+          expect(a.eql?(b)).to be false
+        end
+
+        it 'hash values are different' do
+          a = IpAddrOrCidr.new('10.0.11.32/30')
+          b = IpAddrOrCidr.new('10.0.11.32/32')
+          expect(a.hash).not_to eq(b.hash)
+        end
+
+        it 'are stored as distinct elements in a Set' do
+          a = IpAddrOrCidr.new('10.0.11.32/30')
+          b = IpAddrOrCidr.new('10.0.11.32/32')
+          expect(Set.new([a, b]).size).to eq(2)
+        end
+      end
+
+      context 'when using objects with different base addresses' do
+        it 'eql? returns false' do
+          a = IpAddrOrCidr.new('10.0.11.32/30')
+          b = IpAddrOrCidr.new('10.0.11.36/30')
+          expect(a.eql?(b)).to be false
+        end
+      end
+
+      context 'hash contract (eql? implies equal hash)' do
+        it 'is satisfied for equal objects' do
+          a = IpAddrOrCidr.new('192.168.1.0/24')
+          b = IpAddrOrCidr.new('192.168.1.0/24')
+          expect(a.eql?(b)).to be true
+          expect(a.hash).to eq(b.hash)
+        end
+
+        it 'is satisfied for unequal objects (different prefix)' do
+          a = IpAddrOrCidr.new('192.168.1.0/24')
+          b = IpAddrOrCidr.new('192.168.1.0/32')
+          expect(a.eql?(b)).to be false
+        end
+      end
+    end
   end
 end
