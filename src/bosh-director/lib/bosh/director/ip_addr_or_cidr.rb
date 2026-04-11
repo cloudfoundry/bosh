@@ -44,11 +44,11 @@ module Bosh
       end
 
       def eql?(other)
-        self == other
+        other.is_a?(IpAddrOrCidr) && @ipaddr.to_i == other.to_i && @ipaddr.prefix == other.prefix
       end
 
       def hash
-        @ipaddr.hash
+        [@ipaddr.to_i, @ipaddr.prefix].hash
       end
 
       def count

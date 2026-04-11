@@ -116,7 +116,7 @@ module Bosh::Director::DeploymentPlan
 
     def find_next_available_ip(addresses_we_cant_allocate, first_range_address, prefix)
       # Remove IPs that are below subnet range
-      filtered_ips = addresses_we_cant_allocate.sort_by { |ip| ip.to_i }.reject { |ip| ip.to_i < first_range_address.to_i }
+      filtered_ips = addresses_we_cant_allocate.sort_by { |ip| [ip.to_i, ip.prefix] }.reject { |ip| ip.to_i < first_range_address.to_i }
 
       current_ip = to_ipaddr(first_range_address.to_i + 1)
       found = false
