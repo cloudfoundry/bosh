@@ -1043,6 +1043,7 @@ jobs:
             input_repo: bosh
             version: current-version
           params:
+            ENABLE_GIT_LFS: true
             SEVERITY: CRITICAL,HIGH
           on_success:
             do:
