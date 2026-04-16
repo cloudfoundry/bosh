@@ -32,17 +32,15 @@ module Bosh::Monitor
   end
 
   class UAAToken
+    include Bosh::Monitor::SSLHelpers
+
     EXPIRATION_DEADLINE_IN_SECONDS = 60
 
     def initialize(client_id, client_secret, uaa_url, ca_cert_file_path, logger)
       options = {}
 
-      if File.exist?(ca_cert_file_path) && !File.read(ca_cert_file_path).strip.empty?
-        options[:ssl_ca_file] = ca_cert_file_path
-      else
-        cert_store = OpenSSL::X509::Store.new
-        cert_store.set_default_paths
-        options[:ssl_cert_store] = cert_store
+      if configured_ca_cert?(ca_cert_file_path.to_s)
+        options[:ssl_ca_file] = ca_cert_file_path.to_s
       end
 
       @uaa_token_issuer = CF::UAA::TokenIssuer.new(

@@ -86,7 +86,7 @@ module Bosh::Monitor
                   title: 'Scan unresponsive VMs',
                   summary: 'Notifying Director to scan instances: '\
                   "#{pretty_str(jobs_to_instances_resurrection_enabled)}; #{state.summary}")
-            send_http_put_request(url.to_s, request)
+            send_http_put_request(url.to_s, request, @director_options['ca_cert'])
           end
 
           unless jobs_to_instances_resurrection_disabled.empty?
@@ -116,7 +116,7 @@ module Bosh::Monitor
           'Content-Type' => 'application/json',
         }
         url.query = URI.encode_www_form({ deployment: deployment_name, state: 'queued,processing', verbose: 2 })
-        body, status = send_http_get_request_synchronous(url.to_s, headers)
+        body, status = send_http_get_request_synchronous(url.to_s, @director_options['ca_cert'], headers)
 
         # Getting the current tasks may fail. In a situation where the director is already dealing with lots of scan and fix tasks,
         # we may want to postpone adding another one to the queue to give the director time to deal with the currently scheduled tasks.
@@ -142,7 +142,7 @@ module Bosh::Monitor
 
         url = @uri.dup
         url.path = '/info'
-        body, status = send_http_get_request_synchronous(url.to_s)
+        body, status = send_http_get_request_synchronous(url.to_s, @director_options['ca_cert'])
         return nil if status != 200
 
         @director_info = JSON.parse(body)

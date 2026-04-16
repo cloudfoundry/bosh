@@ -65,7 +65,7 @@ module Bosh::Monitor
 
         request[:proxy] = options['http_proxy'] if options['http_proxy']
 
-        send_http_post_request(@url.to_s, request)
+        send_http_post_request(@url.to_s, request, @director_options['ca_cert'])
       end
 
       private
@@ -79,7 +79,7 @@ module Bosh::Monitor
 
         director_info_url = @url.dup
         director_info_url.path = '/info'
-        body, status = send_http_get_request_synchronous(director_info_url.to_s)
+        body, status = send_http_get_request_synchronous(director_info_url.to_s, @director_options['ca_cert'])
         return nil if status != 200
 
         @director_info = JSON.parse(body)

@@ -1,5 +1,6 @@
 require 'base64'
 require 'net/http'
+require 'openssl'
 require 'open3'
 require 'nats_sync/nats_auth_config'
 
@@ -113,9 +114,8 @@ module NATSSync
       parsed_uri = parsed_uri_for(api_path: api_path)
 
       response =
-        Net::HTTP.new("#{parsed_uri.host}", parsed_uri.port).tap do |http|
-          http.use_ssl = use_ssl(parsed_uri: parsed_uri)
-          http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        Net::HTTP.new("#{parsed_uri.host}", parsed_uri.port).tap do |net_http|
+          configure_tls(net_http: net_http, parsed_uri: parsed_uri)
         end.get(parsed_uri.request_uri, build_headers(auth: auth))
 
       NATSSync.logger.debug(response.inspect)
@@ -126,8 +126,24 @@ module NATSSync
       response.body
     end
 
-    def use_ssl(parsed_uri:)
-      parsed_uri.scheme == 'https'
+    def configure_tls(net_http:, parsed_uri:)
+      return unless parsed_uri.scheme == 'https'
+
+      net_http.use_ssl = true
+      net_http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+
+      ca_path = @bosh_config['ca_cert'].to_s
+      if ca_path_valid?(ca_path)
+        net_http.ca_file = ca_path
+      end
+    end
+
+    def ca_path_valid?(path)
+      return false if path.strip.empty?
+
+      File.file?(path) && !File.zero?(path)
+    rescue SystemCallError
+      false
     end
 
     def query_all_deployments

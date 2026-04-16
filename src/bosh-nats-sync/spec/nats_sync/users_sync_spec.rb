@@ -492,5 +492,86 @@ module NATSSync
         end
       end
     end
+
+    describe 'HTTPS director API (TLS for Net::HTTP)' do
+      let(:url) { 'https://127.0.0.1:25555' }
+      let(:deployments_json) { '[]' }
+
+      before do
+        allow(auth_provider).to receive(:new).and_return(auth_provider_double)
+        allow(auth_provider_double).to receive(:auth_header).and_return('Bearer xyz')
+        File.open(nats_config_file_path, 'w') { |f| f.write('{}') }
+        stub_request(:get, "#{url}/info")
+          .to_return(status: 200, body: info_json)
+        stub_request(:get, "#{url}/deployments")
+          .with(headers: { 'Authorization' => 'Bearer xyz' })
+          .to_return(status: 200, body: deployments_json)
+      end
+
+      context 'when ca_cert points to a non-empty PEM file' do
+        let(:ca_tempfile) do
+          Tempfile.new(['director-ca', '.pem']).tap do |f|
+            f.write("-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----\n")
+            f.close
+          end
+        end
+
+        let(:bosh_config) do
+          {
+            'url' => url,
+            'user' => user,
+            'password' => password,
+            'client_id' => client_id,
+            'client_secret' => client_secret,
+            'ca_cert' => ca_tempfile.path,
+            'director_subject_file' => director_subject_file,
+            'hm_subject_file' => hm_subject_file,
+          }
+        end
+
+        after do
+          ca_tempfile.unlink
+        end
+
+        it 'uses VERIFY_PEER and the configured CA file for each director request' do
+          allow_any_instance_of(Net::HTTP).to receive(:get).and_wrap_original do |original, *args|
+            http = original.receiver
+            expect(http.use_ssl?).to be(true)
+            expect(http.verify_mode).to eq(OpenSSL::SSL::VERIFY_PEER)
+            expect(http.ca_file).to eq(ca_tempfile.path)
+            original.call(*args)
+          end
+
+          subject.execute_users_sync
+        end
+      end
+
+      context 'when ca_cert is missing' do
+        let(:bosh_config) do
+          {
+            'url' => url,
+            'user' => user,
+            'password' => password,
+            'client_id' => client_id,
+            'client_secret' => client_secret,
+            'ca_cert' => '/nonexistent/bosh/nats_sync_ca.pem',
+            'director_subject_file' => director_subject_file,
+            'hm_subject_file' => hm_subject_file,
+          }
+        end
+
+        it 'uses VERIFY_PEER and leaves ca_file unset so OpenSSL uses the default CA store' do
+          allow_any_instance_of(Net::HTTP).to receive(:get).and_wrap_original do |original, *args|
+            http = original.receiver
+            expect(http.use_ssl?).to be(true)
+            expect(http.verify_mode).to eq(OpenSSL::SSL::VERIFY_PEER)
+            expect(http.ca_file).to be_nil
+            original.call(*args)
+          end
+
+          subject.execute_users_sync
+        end
+      end
+    end
   end
 end

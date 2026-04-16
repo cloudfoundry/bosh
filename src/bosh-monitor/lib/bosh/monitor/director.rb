@@ -1,7 +1,10 @@
 require 'async/http/internet/instance'
+require 'openssl'
 
 module Bosh::Monitor
   class Director
+    include SSLHelpers
+
     def initialize(options, logger)
       @options = options
       @logger = logger
@@ -54,9 +57,13 @@ module Bosh::Monitor
       headers = {}
       headers['authorization'] = auth_provider.auth_header unless options.fetch(:no_login, false)
 
-      ssl_context = OpenSSL::SSL::SSLContext.new
-      ssl_context.set_params(verify_mode: OpenSSL::SSL::VERIFY_NONE)
-      async_endpoint = Async::HTTP::Endpoint.parse(parsed_endpoint.to_s, ssl_context: ssl_context)
+      async_endpoint =
+        if parsed_endpoint.scheme == 'https'
+          ssl_context = ssl_context_for_peer_verification(@options['ca_cert'].to_s)
+          Async::HTTP::Endpoint.parse(parsed_endpoint.to_s, ssl_context: ssl_context)
+        else
+          Async::HTTP::Endpoint.parse(parsed_endpoint.to_s)
+        end
       response = Async::HTTP::Internet.send(method.to_sym, async_endpoint, headers)
 
       body   = response.read
@@ -74,7 +81,7 @@ module Bosh::Monitor
     def info
       body, status = perform_request(:get, '/info', no_login: true)
 
-      raise DirectorError, "Cannot get status from director at #{http.req.uri}: #{status} #{body}" if status != 200
+      raise DirectorError, "Cannot get status from director at #{endpoint}/info: #{status} #{body}" if status != 200
 
       parse_json(body, Hash)
     end
