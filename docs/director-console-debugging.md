@@ -2,13 +2,6 @@
 
 ## SSH to the Director VM
 
-For director version <= 265.x
-
-```bash
-sudo su
-/var/vcap/jobs/director/bin/director_ctl console 
-```
-
 For director version >= 266.x
 
 ```bash
