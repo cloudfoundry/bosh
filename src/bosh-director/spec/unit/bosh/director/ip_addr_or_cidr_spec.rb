@@ -61,7 +61,7 @@ module Bosh::Director
     end
 
     describe '#to_s' do
-      context 'IPv4' do
+      context 'IPv4 CIDR network' do
         let(:input) { '192.168.0.0/24' }
 
         it 'returns a string representing the IP' do
@@ -69,8 +69,24 @@ module Bosh::Director
         end
       end
 
-      context 'IPv6' do
+      context 'IPv6 CIDR network' do
         let(:input) { 'fd00::/8' }
+
+        it 'returns a string representing the IP' do
+          expect(ip_addr_or_cidr.to_s).to eq(input)
+        end
+      end
+
+      context 'IPv4 single-host CIDR' do
+        let(:input) { '10.20.0.32/32' }
+
+        it 'returns a string representing the IP' do
+          expect(ip_addr_or_cidr.to_s).to eq(input)
+        end
+      end
+
+      context 'IPv6 single-host CIDR' do
+        let(:input) { '2001:db8:85a3:7334:8a2e::/128' }
 
         it 'returns a string representing the IP' do
           expect(ip_addr_or_cidr.to_s).to eq(input)
@@ -114,23 +130,7 @@ module Bosh::Director
       end
     end
 
-    describe '#to_s' do
-      context 'IPv4' do
-        let(:input) { '10.20.0.32/32' }
 
-        it 'returns a string representing the IP' do
-          expect(ip_addr_or_cidr.to_s).to eq(input)
-        end
-      end
-
-      context 'IPv6' do
-        let(:input) { '2001:db8:85a3:7334:8a2e::/128' }
-
-        it 'returns a string representing the IP' do
-          expect(ip_addr_or_cidr.to_s).to eq(input)
-        end
-      end
-    end
 
     describe '#overlaps?' do
       context 'when two /32 IPs are the same' do
