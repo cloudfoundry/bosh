@@ -35,6 +35,18 @@ module NATSSync
     let(:client_id) { 'client_id' }
     let(:client_secret) { 'client_secret' }
     let(:ca_cert) { 'ca_cert' }
+    let(:sample_director_subject) do
+      file = Tempfile.new('director_subject')
+      file.write(director_subject)
+      file.flush
+      file.path
+    end
+    let(:sample_hm_subject) do
+      file = Tempfile.new('hm_subject')
+      file.write(hm_subject)
+      file.flush
+      file.path
+    end
     let(:director_subject_file) { sample_director_subject }
     let(:hm_subject_file) { sample_hm_subject }
     let(:director_subject) { 'C=USA, O=Cloud Foundry, CN=default.director.bosh-internal' }
