@@ -316,7 +316,7 @@ module NATSSync
           end
         end
 
-        describe 'when there are running vms in Bosh and there are is no subject information for hm or the director' do
+        describe 'when there are running vms in Bosh and there is no subject information for hm or the director' do
           let(:director_subject_file) { '/file/nonexistent1' }
           let(:hm_subject_file) { '/file/nonexistent2' }
 
