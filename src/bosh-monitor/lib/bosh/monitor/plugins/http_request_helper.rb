@@ -2,53 +2,36 @@ require 'async/http'
 require 'async/http/internet/instance'
 require 'async/http/proxy'
 require 'net/http'
-require 'openssl'
 
 module Bosh::Monitor::Plugins
   module HttpRequestHelper
-    include Bosh::Monitor::SSLHelpers
-
-    def send_http_put_request(uri, request, ca_cert = nil)
+    def send_http_put_request(uri, request)
       logger.debug("sending HTTP PUT to: #{uri}")
-      process_async_http_request(
-        method: :put,
-        uri: uri,
-        headers: request.fetch(:head, {}),
-        body: request.fetch(:body, nil),
-        proxy: request.fetch(:proxy, nil),
-        ca_cert: ca_cert,
-      )
+      process_async_http_request(method: :put, uri: uri, headers: request.fetch(:head, {}), body: request.fetch(:body, nil), proxy: request.fetch(:proxy, nil))
     end
 
-    def send_http_post_request(uri, request, ca_cert = nil)
+    def send_http_post_request(uri, request)
       logger.debug("sending HTTP POST to: #{uri}")
-      process_async_http_request(
-        method: :post,
-        uri: uri,
-        headers: request.fetch(:head, {}),
-        body: request.fetch(:body, nil),
-        proxy: request.fetch(:proxy, nil),
-        ca_cert: ca_cert,
-      )
+      process_async_http_request(method: :post, uri: uri, headers: request.fetch(:head, {}), body: request.fetch(:body, nil), proxy: request.fetch(:proxy, nil))
     end
 
-    def send_http_get_request_synchronous(uri, ca_cert = nil, headers = nil)
+    def send_http_get_request_synchronous(uri, headers = nil)
       parsed_uri = URI.parse(uri.to_s)
 
       # we are interested in response, so send sync request
       logger.debug("Sending GET request to #{parsed_uri}")
 
-      net_http = sync_client(parsed_uri, ca_cert)
+      net_http = sync_client(parsed_uri, OpenSSL::SSL::VERIFY_NONE)
 
       response = net_http.get(parsed_uri.request_uri, headers)
 
       [response.body, response.code.to_i]
     end
 
-    def send_http_post_request_synchronous_with_tls_verify_peer(uri, request, ca_cert = nil)
+    def send_http_post_request_synchronous_with_tls_verify_peer(uri, request)
       parsed_uri = URI.parse(uri.to_s)
 
-      net_http = sync_client(parsed_uri, ca_cert, request.fetch(:proxy, nil))
+      net_http = sync_client(parsed_uri, OpenSSL::SSL::VERIFY_PEER)
 
       response = net_http.post(parsed_uri.request_uri, request[:body])
 
@@ -57,40 +40,27 @@ module Bosh::Monitor::Plugins
 
     private
 
-    def resolved_proxy_uri(parsed_uri, explicit_proxy_string)
-      explicit = explicit_proxy_string.to_s.strip
-      return URI.parse(explicit) unless explicit.empty?
-
-      parsed_uri.find_proxy
-    end
-
-    def sync_client(parsed_uri, ca_cert, explicit_proxy = nil)
+    def sync_client(parsed_uri, ssl_verify_mode)
       net_http = Net::HTTP.new(parsed_uri.host, parsed_uri.port)
-      if parsed_uri.scheme == 'https'
-        net_http.use_ssl = true
-        configure_net_http_tls!(net_http, ca_cert)
-      end
+      net_http.use_ssl = (parsed_uri.scheme == 'https')
+      net_http.verify_mode = ssl_verify_mode
 
-      unless (proxy_uri = resolved_proxy_uri(parsed_uri, explicit_proxy)).nil?
-        net_http.proxy_address = proxy_uri.host
-        net_http.proxy_port = proxy_uri.port
-        net_http.proxy_user = proxy_uri.user
-        net_http.proxy_pass = proxy_uri.password
+      env_proxy = parsed_uri.find_proxy
+      unless env_proxy.nil?
+        net_http.proxy_address = env_proxy.host
+        net_http.proxy_port = env_proxy.port
+        net_http.proxy_user = env_proxy.user
+        net_http.proxy_pass = env_proxy.password
       end
 
       net_http
     end
 
-    def configure_net_http_tls!(net_http, ca_cert_path)
-      net_http.verify_mode = OpenSSL::SSL::VERIFY_PEER
-      net_http.ca_file = ca_cert_path.to_s if configured_ca_cert?(ca_cert_path)
-    end
-
-    def process_async_http_request(method:, uri:, headers: {}, body: nil, proxy: nil, ca_cert: nil)
+    def process_async_http_request(method:, uri:, headers: {}, body: nil, proxy: nil)
       name = self.class.name
       started = Time.now
 
-      endpoint = create_async_endpoint(uri: uri, proxy: proxy, ca_cert: ca_cert)
+      endpoint = create_async_endpoint(uri: uri, proxy: proxy)
       response = Async::HTTP::Internet.send(method, endpoint, headers, body)
 
       # Explicitly read the response stream to ensure the connection fully closes
@@ -105,19 +75,17 @@ module Bosh::Monitor::Plugins
       response.close if response
     end
 
-    def create_async_endpoint(uri:, proxy:, ca_cert: nil)
+    def create_async_endpoint(uri:, proxy:)
       parsed_uri = URI.parse(uri.to_s)
+      env_proxy = parsed_uri.find_proxy
 
-      endpoint =
-        if parsed_uri.scheme == 'https'
-          ssl_context = ssl_context_for_peer_verification(ca_cert)
-          Async::HTTP::Endpoint.parse(uri.to_s, ssl_context: ssl_context)
-        else
-          Async::HTTP::Endpoint.parse(uri.to_s)
-        end
+      ssl_context = OpenSSL::SSL::SSLContext.new
+      ssl_context.set_params(verify_mode: OpenSSL::SSL::VERIFY_NONE)
+      endpoint = Async::HTTP::Endpoint.parse(uri).with(ssl_context: ssl_context)
 
-      unless (proxy_uri = resolved_proxy_uri(parsed_uri, proxy)).nil?
-        client = Async::HTTP::Client.new(Async::HTTP::Endpoint.parse(proxy_uri.to_s))
+      if proxy || env_proxy
+        proxy_uri = proxy || "http://#{env_proxy.host}:#{env_proxy.port}"
+        client = Async::HTTP::Client.new(Async::HTTP::Endpoint.parse(proxy_uri))
         proxy = Async::HTTP::Proxy.new(client, "#{parsed_uri.host}:#{parsed_uri.port}")
         endpoint = proxy.wrap_endpoint(endpoint)
       end

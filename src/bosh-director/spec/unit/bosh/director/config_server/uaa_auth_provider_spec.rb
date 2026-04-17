@@ -23,8 +23,8 @@ describe Bosh::Director::ConfigServer::UAAAuthProvider do
   let(:expiration_time) { Time.now.to_i + 3600 }
 
   before do
-    allow(File).to receive(:file?).with('fake-ca-cert-path').and_return(true)
-    allow(File).to receive(:zero?).with('fake-ca-cert-path').and_return(false)
+    allow(File).to receive(:exist?).with('fake-ca-cert-path').and_return(true)
+    allow(File).to receive(:read).with('fake-ca-cert-path').and_return('test')
 
     allow(CF::UAA::TokenIssuer).to receive(:new).with(
       uaa_url, 'fake-client', 'fake-client-secret', { :ssl_ca_file => 'fake-ca-cert-path' }

@@ -166,7 +166,7 @@ module Bosh::Monitor::Plugins
             },
             body: '{"jobs":{"j1":["i1","i2"],"j2":["i3","i4"]}}',
           }
-          expect(plugin).to receive(:send_http_put_request).with(request_url, request_data, 'ca-cert')
+          expect(plugin).to receive(:send_http_put_request).with(request_url, request_data)
 
           plugin.process(alert)
         end
@@ -184,8 +184,8 @@ module Bosh::Monitor::Plugins
           before do
             token_issuer = instance_double(CF::UAA::TokenIssuer)
 
-            allow(File).to receive(:file?).with('ca-cert').and_return(true)
-            allow(File).to receive(:zero?).with('ca-cert').and_return(false)
+            allow(File).to receive(:exist?).with('ca-cert').and_return(true)
+            allow(File).to receive(:read).with('ca-cert').and_return('test')
 
             allow(CF::UAA::TokenIssuer).to receive(:new).with(
               'uaa-url', 'client-id', 'client-secret', { ssl_ca_file: 'ca-cert' }
@@ -206,7 +206,7 @@ module Bosh::Monitor::Plugins
               },
               body: '{"jobs":{"j1":["i1","i2"],"j2":["i3","i4"]}}',
             }
-            expect(plugin).to receive(:send_http_put_request).with(request_url, request_data, 'ca-cert')
+            expect(plugin).to receive(:send_http_put_request).with(request_url, request_data)
 
             plugin.process(alert)
           end
@@ -287,7 +287,7 @@ module Bosh::Monitor::Plugins
               },
               body: '{"jobs":{"j2":["i3","i4"]}}',
             }
-            expect(plugin).to receive(:send_http_put_request).with(request_url, request_data, 'ca-cert')
+            expect(plugin).to receive(:send_http_put_request).with(request_url, request_data)
 
             plugin.process(alert)
           end

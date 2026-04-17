@@ -23,16 +23,21 @@ describe Bosh::Director::ConfigServer::AuthHTTPClient do
 
   describe '#initialize' do
     context 'ssl is setup' do
-      shared_examples 'does not configure cert_store' do
+      shared_examples 'cert_store' do
+        store_double = nil
+
         before do
           allow(http_client).to receive(:use_ssl=).with(true)
           allow(http_client).to receive(:verify_mode=).with(OpenSSL::SSL::VERIFY_PEER)
+
+          store_double = instance_double(OpenSSL::X509::Store)
+          allow(store_double).to receive(:set_default_paths)
+          allow(OpenSSL::X509::Store).to receive(:new).and_return(store_double)
         end
 
-        it 'does not set cert_store, falling back to default trust store' do
-          expect(http_client).not_to receive(:cert_store=)
-          expect(http_client).not_to receive(:ca_file=)
-          expect(OpenSSL::X509::Store).not_to receive(:new)
+        it 'uses default cert_store' do
+          expect(http_client).to receive(:cert_store=)
+          expect(store_double).to receive(:set_default_paths)
 
           subject
         end
@@ -43,17 +48,17 @@ describe Bosh::Director::ConfigServer::AuthHTTPClient do
           config_server_hash['ca_cert_path'] = nil
         end
 
-        it_behaves_like 'does not configure cert_store'
+        it_behaves_like 'cert_store'
       end
 
       context 'ca_cert file exists and is empty' do
         before do
           config_server_hash['ca_cert_path'] = '/root/cert.crt'
-          allow(File).to receive(:file?).with('/root/cert.crt').and_return(true)
-          allow(File).to receive(:zero?).with('/root/cert.crt').and_return(true)
+          allow(File).to receive(:exist?).and_return(true)
+          allow(File).to receive(:read).and_return('')
         end
 
-        it_behaves_like 'does not configure cert_store'
+        it_behaves_like 'cert_store'
       end
     end
   end
@@ -62,6 +67,7 @@ describe Bosh::Director::ConfigServer::AuthHTTPClient do
     before do
       allow(http_client).to receive(:use_ssl=).with(true)
       allow(http_client).to receive(:verify_mode=).with(OpenSSL::SSL::VERIFY_PEER)
+      allow(http_client).to receive(:cert_store=)
     end
 
     it 'should add "Authorization" header and call through to actual http client' do
@@ -91,6 +97,7 @@ describe Bosh::Director::ConfigServer::AuthHTTPClient do
     before do
       allow(http_client).to receive(:use_ssl=).with(true)
       allow(http_client).to receive(:verify_mode=).with(OpenSSL::SSL::VERIFY_PEER)
+      allow(http_client).to receive(:cert_store=)
     end
 
     it 'should add "Authorization" header and call through to actual http client' do

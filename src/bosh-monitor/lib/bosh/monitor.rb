@@ -19,7 +19,6 @@ require 'bosh/common'
 
 # Helpers
 require 'bosh/monitor/yaml_helper'
-require 'bosh/monitor/ssl_helpers'
 
 # Basic blocks
 require 'bosh/monitor/agent'

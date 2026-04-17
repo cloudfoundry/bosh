@@ -53,8 +53,12 @@ module Bosh::Director::ConfigServer
     end
 
     def set_cert_store(ca_cert_path)
-      if ca_cert_path && File.file?(ca_cert_path) && !File.zero?(ca_cert_path)
+      if ca_cert_path && File.exist?(ca_cert_path) && !File.read(ca_cert_path).strip.empty?
         @http.ca_file = ca_cert_path
+      else
+        cert_store = OpenSSL::X509::Store.new
+        cert_store.set_default_paths
+        @http.cert_store = cert_store
       end
     end
   end

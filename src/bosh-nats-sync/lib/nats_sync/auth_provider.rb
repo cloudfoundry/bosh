@@ -35,8 +35,12 @@ module NATSSync
     def initialize(client_id, client_secret, uaa_url, ca_cert_file_path)
       options = {}
 
-      if File.file?(ca_cert_file_path) && !File.zero?(ca_cert_file_path)
+      if File.exist?(ca_cert_file_path) && !File.read(ca_cert_file_path).strip.empty?
         options[:ssl_ca_file] = ca_cert_file_path
+      else
+        cert_store = OpenSSL::X509::Store.new
+        cert_store.set_default_paths
+        options[:ssl_cert_store] = cert_store
       end
 
       @uaa_token_issuer = CF::UAA::TokenIssuer.new(

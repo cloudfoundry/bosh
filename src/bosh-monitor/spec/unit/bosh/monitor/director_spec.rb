@@ -99,8 +99,8 @@ describe 'Bosh::Monitor::Director' do
     before do
       token_issuer = instance_double(CF::UAA::TokenIssuer)
 
-      allow(File).to receive(:file?).with('fake-ca-cert').and_return(true)
-      allow(File).to receive(:zero?).with('fake-ca-cert').and_return(false)
+      allow(File).to receive(:exist?).with('fake-ca-cert').and_return(true)
+      allow(File).to receive(:read).with('fake-ca-cert').and_return('test')
 
       allow(CF::UAA::TokenIssuer).to receive(:new).with(
         'http://localhost:8080/uaa',

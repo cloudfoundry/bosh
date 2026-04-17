@@ -100,41 +100,18 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
         allow(Net::HTTP).to receive(:new).and_return(http_client)
         allow(http_client).to receive(:use_ssl=).and_call_original
         allow(http_client).to receive(:verify_mode=).and_call_original
-        allow(http_client).to receive(:ca_file=).and_call_original
         allow(http_client).to receive(:proxy_address=)
         allow(http_client).to receive(:proxy_port=)
         allow(http_client).to receive(:proxy_user=)
         allow(http_client).to receive(:proxy_pass=)
       end
 
-      it 'configures TLS with VERIFY_PEER (system CAs applied on connect)' do
+      it 'configures the SSL Verify mode' do
         send_http_get_request_synchronous(some_uri)
 
         expect(Net::HTTP).to have_received(:new).with(some_uri.host, some_uri.port)
         expect(http_client).to have_received(:use_ssl=).with(true)
-        expect(http_client).to have_received(:verify_mode=).with(OpenSSL::SSL::VERIFY_PEER)
-        expect(http_client).not_to have_received(:ca_file=)
-      end
-
-      context 'when ca_cert is passed' do
-        let(:ca_file) do
-          f = Tempfile.new('http-helper-ca')
-          f.write("-----BEGIN CERTIFICATE-----\nabc\n-----END CERTIFICATE-----\n")
-          f.flush
-          f
-        end
-
-        after do
-          ca_file.close!
-        end
-
-        it 'sets Net::HTTP ca_file to the configured bundle' do
-          send_http_get_request_synchronous(some_uri, ca_file.path)
-
-          expect(http_client).to have_received(:use_ssl=).with(true)
-          expect(http_client).to have_received(:verify_mode=).with(OpenSSL::SSL::VERIFY_PEER)
-          expect(http_client).to have_received(:ca_file=).with(ca_file.path)
-        end
+        expect(http_client).to have_received(:verify_mode=).with(OpenSSL::SSL::VERIFY_NONE)
       end
 
       context 'when URI#find_proxy is nil' do
@@ -187,14 +164,14 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
         end
 
         it 'sends a get request with custom headers' do
-          body, status = send_http_get_request_synchronous(some_uri, nil, custom_headers)
+          body, status = send_http_get_request_synchronous(some_uri, custom_headers)
 
           expect(status).to eq(200)
           expect(body).to eq(some_uri_response)
         end
 
         it 'logs the request' do
-          send_http_get_request_synchronous(some_uri, nil, custom_headers)
+          send_http_get_request_synchronous(some_uri, custom_headers)
 
           expect(logger).to have_received(:debug).with("Sending GET request to #{some_uri}")
         end
@@ -231,39 +208,18 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
         allow(Net::HTTP).to receive(:new).and_return(http_client)
         allow(http_client).to receive(:use_ssl=).and_call_original
         allow(http_client).to receive(:verify_mode=).and_call_original
-        allow(http_client).to receive(:ca_file=).and_call_original
         allow(http_client).to receive(:proxy_address=)
         allow(http_client).to receive(:proxy_port=)
         allow(http_client).to receive(:proxy_user=)
         allow(http_client).to receive(:proxy_pass=)
       end
 
-      it 'configures TLS with VERIFY_PEER (system CAs applied on connect)' do
+      it 'configures the SSL Verify mode' do
         send_http_post_request_synchronous_with_tls_verify_peer(some_uri, request)
 
         expect(Net::HTTP).to have_received(:new).with(some_uri.host, some_uri.port)
         expect(http_client).to have_received(:use_ssl=).with(true)
         expect(http_client).to have_received(:verify_mode=).with(OpenSSL::SSL::VERIFY_PEER)
-        expect(http_client).not_to have_received(:ca_file=)
-      end
-
-      context 'when ca_cert is provided' do
-        let(:ca_file) do
-          f = Tempfile.new('http-helper-post-ca')
-          f.write("-----BEGIN CERTIFICATE-----\nabc\n-----END CERTIFICATE-----\n")
-          f.flush
-          f
-        end
-
-        after { ca_file.close! }
-
-        it 'sets Net::HTTP ca_file to the configured bundle' do
-          send_http_post_request_synchronous_with_tls_verify_peer(some_uri, request, ca_file.path)
-
-          expect(http_client).to have_received(:use_ssl=).with(true)
-          expect(http_client).to have_received(:verify_mode=).with(OpenSSL::SSL::VERIFY_PEER)
-          expect(http_client).to have_received(:ca_file=).with(ca_file.path)
-        end
       end
 
       context 'when URI#find_proxy is nil' do
@@ -289,27 +245,10 @@ describe Bosh::Monitor::Plugins::HttpRequestHelper do
           expect(http_client).to have_received(:proxy_pass=).with(proxy_uri.password)
         end
       end
-
-      context 'when request[:proxy] is set' do
-        let(:proxy_uri) { URI.parse('https://env-proxy.example.com:8080') }
-        let(:explicit_proxy) { 'https://explicit-proxy.local:9999' }
-        let(:request) do
-          { body: 'send_http_post_sync_request request body', proxy: explicit_proxy }
-        end
-
-        it 'uses the explicit proxy from the request instead of URI#find_proxy' do
-          send_http_post_request_synchronous_with_tls_verify_peer(some_uri, request)
-
-          expect(http_client).to have_received(:proxy_address=).with('explicit-proxy.local')
-          expect(http_client).to have_received(:proxy_port=).with(9999)
-          expect(http_client).to have_received(:proxy_user=).with(nil)
-          expect(http_client).to have_received(:proxy_pass=).with(nil)
-        end
-      end
     end
 
     context 'making the request' do
-      it 'sends a post request' do
+      it 'sends a get request' do
         body, status = send_http_post_request_synchronous_with_tls_verify_peer(some_uri, request)
 
         expect(status).to eq(200)

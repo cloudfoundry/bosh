@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'Bosh::Monitor::Plugins::EventLogger' do
+describe 'Bosh::Monitor::Plugins::Resurrector' do
   include Support::UaaHelpers
 
   let(:options) do
@@ -58,7 +58,7 @@ describe 'Bosh::Monitor::Plugins::EventLogger' do
           '"object_name":"foo","deployment":"d","instance":"j/i",' \
           "\"context\":{\"message\":\"Alert. Alert @ #{time.utc}, severity 2: Alert\"}}",
         }
-        expect(plugin).to receive(:send_http_post_request).with(request_url, request_data, 'ca-cert')
+        expect(plugin).to receive(:send_http_post_request).with(request_url, request_data)
         plugin.process(alert)
       end
 
@@ -74,8 +74,8 @@ describe 'Bosh::Monitor::Plugins::EventLogger' do
 
         before do
           token_issuer = instance_double(CF::UAA::TokenIssuer)
-          allow(File).to receive(:file?).with('ca-cert').and_return(true)
-          allow(File).to receive(:zero?).with('ca-cert').and_return(false)
+          allow(File).to receive(:exist?).with('ca-cert').and_return(true)
+          allow(File).to receive(:read).with('ca-cert').and_return('test')
           allow(CF::UAA::TokenIssuer).to receive(:new).with(
             'uaa-url', 'client-id', 'client-secret', { ssl_ca_file: 'ca-cert' }
           ).and_return(token_issuer)
@@ -97,7 +97,7 @@ describe 'Bosh::Monitor::Plugins::EventLogger' do
             '"object_type":"alert","object_name":"foo","deployment":"d",' \
             "\"instance\":\"j/i\",\"context\":{\"message\":\"Alert. Alert @ #{time.utc}, severity 2: Alert\"}}",
           }
-          expect(plugin).to receive(:send_http_post_request).with(request_url, request_data, 'ca-cert')
+          expect(plugin).to receive(:send_http_post_request).with(request_url, request_data)
           plugin.process(alert)
         end
       end
