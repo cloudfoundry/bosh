@@ -25,7 +25,7 @@ module Bosh
                 az_names = subnet_for_ip.availability_zone_names.nil? ? [nil] : subnet_for_ip.availability_zone_names
                 filtered_az_names = az_names.select { |static_ip_az_name| desired_az_names.include?(static_ip_az_name) }.uniq
                 networks_to_static_ips[job_network.name] ||= []
-                networks_to_static_ips[job_network.name] << StaticIpToAzs.new(static_ip, filtered_az_names)
+                networks_to_static_ips[job_network.name] << StaticIpToAzs.new(static_ip, filtered_az_names, false, subnet_for_ip.cloud_properties)
               end
             end
 
@@ -88,6 +88,10 @@ module Bosh
             unclaimed_networks_to_static_ips[network.name].first
           end
 
+          def next_ip_for_network_with_cloud_properties(network, cloud_properties)
+            unclaimed_networks_to_static_ips[network.name].find { |s| s.cloud_properties == cloud_properties }
+          end
+
           def claim_in_az(ip, az_name)
             @networks_to_static_ips.each do |_, static_ips_to_azs|
               static_ips_to_azs.each do |static_ip_to_azs|
@@ -113,11 +117,17 @@ module Bosh
             unclaimed_networks_to_static_ips[network.name].find { |static_ip_to_azs| static_ip_to_azs.az_names.include?(az_name) }
           end
 
+          def find_by_network_az_and_cloud_properties(network, az_name, cloud_properties)
+            unclaimed_networks_to_static_ips[network.name].find do |static_ip_to_azs|
+              static_ip_to_azs.az_names.include?(az_name) && static_ip_to_azs.cloud_properties == cloud_properties
+            end
+          end
+
           def unclaimed_networks_to_static_ips
             Hash[@networks_to_static_ips.map { |network_name, static_ips_to_azs| [network_name, static_ips_to_azs.reject(&:claimed)] }]
           end
 
-          class StaticIpToAzs < Struct.new(:ip, :az_names, :claimed); end
+          class StaticIpToAzs < Struct.new(:ip, :az_names, :claimed, :cloud_properties); end
         end
       end
     end

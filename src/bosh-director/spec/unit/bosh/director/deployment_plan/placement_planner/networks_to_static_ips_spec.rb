@@ -154,6 +154,48 @@ module Bosh::Director
             end
           end
         end
+
+        describe '#create stores cloud_properties' do
+          let(:deployment_subnets) do
+            [
+              ManualNetworkSubnet.new(
+                'network_A',
+                IPAddr.new('192.168.1.0/24'),
+                nil, nil, { 'subnet' => 'subnet-aaa' }, nil, ['zone_1'], [],
+                [to_ipaddr('192.168.1.10')],
+              ),
+              ManualNetworkSubnet.new(
+                'network_A',
+                IPAddr.new('192.168.2.0/24'),
+                nil, nil, { 'subnet' => 'subnet-bbb' }, nil, ['zone_1'], [],
+                [to_ipaddr('192.168.2.10')],
+              ),
+            ]
+          end
+          let(:deployment_network) { ManualNetwork.new('network_A', deployment_subnets, '32', nil) }
+          let(:job_networks) do
+            [FactoryBot.build(:deployment_plan_job_network, name: 'network_A', static_ips: ['192.168.1.10', '192.168.2.10'], deployment_network: deployment_network)]
+          end
+          let(:desired_azs) { [AvailabilityZone.new('zone_1', {})] }
+
+          it 'records cloud_properties from the containing subnet' do
+            nsi = PlacementPlanner::NetworksToStaticIps.create(job_networks, desired_azs, 'fake-job')
+            ip1 = nsi.next_ip_for_network(job_networks[0])
+            expect(ip1.cloud_properties).to eq({ 'subnet' => 'subnet-aaa' })
+          end
+
+          it 'finds IPs filtered by cloud_properties' do
+            nsi = PlacementPlanner::NetworksToStaticIps.create(job_networks, desired_azs, 'fake-job')
+            result = nsi.find_by_network_az_and_cloud_properties(job_networks[0], 'zone_1', { 'subnet' => 'subnet-bbb' })
+            expect(result.ip).to eq('192.168.2.10')
+          end
+
+          it 'returns nil when no IP matches the cloud_properties' do
+            nsi = PlacementPlanner::NetworksToStaticIps.create(job_networks, desired_azs, 'fake-job')
+            result = nsi.find_by_network_az_and_cloud_properties(job_networks[0], 'zone_1', { 'subnet' => 'subnet-xxx' })
+            expect(result).to be_nil
+          end
+        end
       end
     end
   end
