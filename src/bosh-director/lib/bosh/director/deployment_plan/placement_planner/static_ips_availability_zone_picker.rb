@@ -123,9 +123,13 @@ module Bosh
                                    @networks_to_static_ips.next_ip_for_network(network)
                                  end
               if static_ip_to_azs.nil?
+                if sibling_cloud_props
+                  raise Bosh::Director::NetworkReservationError,
+                        "Failed to find a static IP for network '#{network.name}' on a matching subnet " \
+                        "in nic_group '#{network.nic_group}'"
+                end
                 raise Bosh::Director::NetworkReservationError,
-                      "Failed to find a static IP for network '#{network.name}' on a matching subnet " \
-                      "in nic_group '#{network.nic_group}'"
+                      'Failed to distribute static IPs to satisfy existing instance reservations'
               end
               if static_ip_to_azs.az_names.size == 1
                 az_name = static_ip_to_azs.az_names.first
@@ -290,6 +294,7 @@ module Bosh
 
             instance_plan.network_plans.each do |plan|
               sibling_network = @job_networks.find { |jn| jn.deployment_network == plan.reservation.network }
+              next if sibling_network == network
               next unless sibling_network&.nic_group == network.nic_group
               next unless plan.reservation.ip
 
