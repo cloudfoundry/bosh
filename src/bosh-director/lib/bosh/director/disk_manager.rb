@@ -99,6 +99,9 @@ module Bosh::Director
 
           old_disk_model.update(updates)
           @logger.info("Successfully updated detached disk '#{old_disk_model.disk_cid}'")
+        rescue Bosh::Clouds::InsufficientPermissions => e
+          @logger.info("CPI update_disk for '#{old_disk_model.disk_cid}' could not be performed due to insufficient permissions: #{e.message}. " \
+                       "Will use copy path after VM recreation.")
         rescue Bosh::Clouds::NotImplemented, Bosh::Clouds::NotSupported => e
           # Only catch "not available" errors. Other CPI errors (e.g. partial failures during
           # snapshot-based migration) must propagate — the CPI may have replaced the disk and
@@ -325,7 +328,7 @@ module Bosh::Director
           instance_plan.instance.desired_variable_set,
         )
         new_disk_cid = cloud.update_disk(old_disk_model.disk_cid, new_disk.size, resolved_cloud_properties)
-      rescue Bosh::Clouds::NotImplemented, Bosh::Clouds::NotSupported => e
+      rescue Bosh::Clouds::NotImplemented, Bosh::Clouds::NotSupported, Bosh::Clouds::InsufficientPermissions => e
         @logger.info("IaaS native update not possible for disk #{old_disk_model.disk_cid}. Falling back to creating new disk.\n#{e.message}")
         attach_disk(old_disk_model, instance_plan.tags)
         update_disk(instance_plan, new_disk, old_disk)
