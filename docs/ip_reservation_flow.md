@@ -47,7 +47,7 @@ range.
 After these existing reservations are created, the IPs are reserved.
 
 3. Next we try to bind existing network reservations to our desired network in the reservation reconciler. An
-existing reservation can be reconciled with a desired reservation in the following scenarios:
+   existing reservation can be reconciled with a desired reservation in the following scenarios:
   * the reservations are both dynamic reservations
   * the reservations both static reservations and reserve the same IP
   * the reservations are both VIP reservations

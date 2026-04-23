@@ -15,9 +15,9 @@ The Agent on each VM sends periodic heartbeats to the BOSH Monitor via the messa
 
 The message syntax is as follows:
 
-| *Subject* | *Payload* |
-|-----------|-----------|
-| hm.agent.heartbeat.\<agent_id\> | none |
+| *Subject*                       | *Payload* |
+|---------------------------------|-----------|
+| hm.agent.heartbeat.\<agent_id\> | none      |
 
 ## Alert Events
 
@@ -39,21 +39,21 @@ Alerts are processed by a number of plugins that register to receive incoming al
 
 Among the included plugins are:
 - Event Logger - Logs all events
-- Resurrector - Restarts VMs that have stopped heartbeating
+- Resurrector - Restarts VMs that have stopped sending heartbeat
 - PagerDuty - Sends various events to PagerDuty.com using their API
 - DataDog - Sends various events to DataDog.com using their API
-- Emailer - Sends configurable Emails on events reciept
+- Emailer - Sends configurable Emails on events receipt
 - Consul Event Forwarder - Sends heartbeats as events and TTL checks to a consul cluster
 - EventLogger - Stores events in Director DB
-- Json Emitter - Sends metrics in json format to any binaries in /var/vcap/jobs/*/bin/bosh-monitor
+- JSON Emitter - Sends metrics in JSON format to any binaries in /var/vcap/jobs/*/bin/bosh-monitor
   
 Plugins should conform to the following interface:
 
-| *Method* | *Arguments* | *Description* |
-|----------|-------------|---------------|
-| *validate_options* | | Validates the plugin configuration options |
-| *run* | | Initializes the plugin process |
-| *process* | event | Processes an event (Bosh::Monitor::Events::Heartbeat or Bosh::Monitor::Events::Alert) |
+| *Method*           | *Arguments* | *Description*                                                                         |
+|--------------------|-------------|---------------------------------------------------------------------------------------|
+| *validate_options* |             | Validates the plugin configuration options                                            |
+| *run*              |             | Initializes the plugin process                                                        |
+| *process*          | event       | Processes an event (Bosh::Monitor::Events::Heartbeat or Bosh::Monitor::Events::Alert) |
 
 The event processor handles deduping duplicate events.
 
@@ -66,7 +66,7 @@ The Agent Monitor listens for heartbeat events on the message bus and handles th
 - If the Agent is known to the Monitor then the last heartbeat timestamp gets updated.
 - If the Agent is unknown to the Monitor then it is recorded with a flag that marks it as a "rogue agent".
 
-No analysis is performed when a heatbeat is received. The Agent Analyzer process and Director Monitor polling are asynchronous to heartbeat event processing by the Agent Monitor.
+No analysis is performed when a heartbeat is received. The Agent Analyzer process and Director Monitor polling are asynchronous to heartbeat event processing by the Agent Monitor.
 
 ## Director Monitor - Agent Discovery
 
@@ -74,9 +74,9 @@ The Director Monitor polls the Director periodically via HTTP to get the list of
 
 The message syntax is as follows:
 
-| *Method* | *Endpoint* | *Response* |
-|----------|------------|------------|
-| /deployments/\<deployment_name\>/vms | GET | JSON including agent ids, job names and indices for all managed VMs |
+| *Method*                             | *Endpoint* | *Response*                                                          |
+|--------------------------------------|------------|---------------------------------------------------------------------|
+| /deployments/\<deployment_name\>/vms | GET        | JSON including agent ids, job names and indices for all managed VMs |
 
 - If a new agent is discovered via polling then it is recorded by the Monitor as part of the managed deployment.
 - If a "rogue agent" is discovered via polling then its "rogue agent" flag is cleared.
@@ -95,21 +95,21 @@ Both known VM agents and rogue agents may send "Agent Missing" alerts, but they 
 
 The Monitor subscribes to Agent alerts of the following format:
 
-| *Subject* | *Payload* |
-|-----------|-----------|
+| *Subject*                   | *Payload*                                                                                    |
+|-----------------------------|----------------------------------------------------------------------------------------------|
 | hm.agent.alert.\<agent_id\> | JSON containing the following keys: id, service, event, action, description, timestamp, tags |
 
 BOSH Agent is responsible for mapping any underlying supervisor alert format to the expected JSON payload and sending it to BOSH Monitor.
 
 The Monitor is responsible for interpreting the JSON payload and mapping it to a sequence of Monitor & Plugin actions, possibly generating new alerts that bypass the message bus. Malformed payloads are ignored.
 
-Job name and index are not part of alerts from the Agent, those are looked up in the Director. If heartbeat came from a rogue agent and we have no job name and/or index then we note that fact in the alert description but don't try to be too worried about that (service name and agent id should be enough). We might consider including agent IP address as a part of heartbeat so we can track down rogue agents.
+Job name and index are not part of alerts from the Agent, those are looked up in the Director. If heartbeat came from a rogue agent, and we have no job name and/or index then we note that fact in the alert description but don't try to be too worried about that (service name and agent id should be enough). We might consider including agent IP address as a part of heartbeat so we can track down rogue agents.
 
 ## Authoring new health monitoring plugins
 
 There are many existing ways to communicate health alerts to the external world. If you need an additional method then you can create new `bosh-monitor` plugins.
 
-The following instructures are for developing/testing your new plugin into a new single-server BOSH:
+The following infrastructures are for developing/testing your new plugin into a new single-server BOSH:
 
 1. Clone bosh repo and install dependencies
 
@@ -126,34 +126,34 @@ The following instructures are for developing/testing your new plugin into a new
     rspec
     ```
 
-2. Create a `plugin.rb` for your plugin extension https://github.com/cloudfoundry/bosh/tree/master/bosh-monitor/lib/bosh/monitor/plugins
-3. Create a matching test file for your plugin extension `spec.rb` https://github.com/cloudfoundry/bosh/tree/master/bosh-monitor/spec/unit/bosh/monitor/plugins
-4. Write tests and make them pass
+3. Create a `plugin.rb` for your plugin extension https://github.com/cloudfoundry/bosh/tree/master/bosh-monitor/lib/bosh/monitor/plugins
+4. Create a matching test file for your plugin extension `spec.rb` https://github.com/cloudfoundry/bosh/tree/master/bosh-monitor/spec/unit/bosh/monitor/plugins
+5. Write tests and make them pass
 
     ```
     rspec
     ```
 
-5. Allow configuration to be passed into the `health_monitor` job template to activate and configure your plugin https://github.com/cloudfoundry/bosh/blob/master/release/jobs/health_monitor/spec and https://github.com/cloudfoundry/bosh/blob/master/release/jobs/health_monitor/templates/health_monitor.yml.erb
-6. Write / update tests in https://github.com/cloudfoundry/bosh/blob/master/release/spec/health_monitor.yml.erb_spec.rb and make them pass.
-7. Run the rake task to create a bosh release of your modified `bosh`
+6. Allow configuration to be passed into the `health_monitor` job template to activate and configure your plugin https://github.com/cloudfoundry/bosh/blob/master/release/jobs/health_monitor/spec and https://github.com/cloudfoundry/bosh/blob/master/release/jobs/health_monitor/templates/health_monitor.yml.erb
+7. Write / update tests in https://github.com/cloudfoundry/bosh/blob/master/release/spec/health_monitor.yml.erb_spec.rb and make them pass.
+8. Run the rake task to create a bosh release of your modified `bosh`
 
     ```
     rake release:create_dev_release
     ```
 
-8. Upload to your director
+9. Upload to your director
 
     ```
     rake release:upload_dev_release
     ```
 
-9. Construct a deployment manifest to deploy a new bosh https://github.com/cloudfoundry/bosh/blob/master/release/examples/bosh-openstack-solo.yml
-10. Deploy
+10. Construct a deployment manifest to deploy a new bosh https://github.com/cloudfoundry/bosh/blob/master/release/examples/bosh-openstack-solo.yml
+11. Deploy
 
     ```
     bosh deployment path/to/manifest.yml
     bosh deploy
     ```
 
-11. Externally test your plugin -> external thing
+12. Externally test your plugin -> external thing
