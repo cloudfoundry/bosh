@@ -23,9 +23,21 @@ module Bosh::Director
       def initialize(options)
         super(options)
 
-        @s3cli_path = @options.fetch(:s3cli_path)
-        unless Kernel.system(@s3cli_path.to_s, '--v', out: '/dev/null', err: '/dev/null')
-          raise BlobstoreError, 'Cannot find s3cli executable. Please specify s3cli_path parameter'
+        @use_storage_cli = @options.fetch(:use_storage_cli, false)
+
+        if @use_storage_cli
+          @cli_path = @options.fetch(:storage_cli_path)
+          @storage_provider = @options.fetch(:storage_provider, 's3')
+          @base_command = [@cli_path.to_s, '-s', @storage_provider.to_s]
+          unless Kernel.system(@cli_path.to_s, 'version', out: '/dev/null', err: '/dev/null')
+            raise BlobstoreError, "Cannot find storage-cli executable at #{@cli_path}"
+          end
+        else
+          @cli_path = @options.fetch(:s3cli_path)
+          @base_command = [@cli_path.to_s]
+          unless Kernel.system(@cli_path.to_s, '--v', out: '/dev/null', err: '/dev/null')
+            raise BlobstoreError, 'Cannot find s3cli executable. Please specify s3cli_path parameter'
+          end
         end
 
         @s3cli_options = {
@@ -54,7 +66,8 @@ module Bosh::Director
           @options[:credentials_source] = 'none'
         end
 
-        @config_file = write_config_file(@s3cli_options, @options.fetch(:s3cli_config_path, nil))
+        config_path = @use_storage_cli ? @options.fetch(:storage_cli_config_path, nil) : @options.fetch(:s3cli_config_path, nil)
+        @config_file = write_config_file(@s3cli_options, config_path)
       end
 
       def redacted_credential_properties_list
@@ -82,7 +95,7 @@ module Bosh::Director
       # @param [File] file file to store the retrived object in
       def get_file(object_id, file)
         begin
-          out, err, status = Open3.capture3(@s3cli_path.to_s, '-c', @config_file.to_s, 'get', object_id.to_s, file.path.to_s)
+          out, err, status = Open3.capture3(*@base_command, '-c', @config_file.to_s, 'get', object_id.to_s, file.path.to_s)
         rescue Exception => e
           raise BlobstoreError, e.inspect
         end
@@ -96,7 +109,7 @@ module Bosh::Director
       # @param [String] object_id object id to delete
       def delete_object(object_id)
         begin
-          out, err, status = Open3.capture3(@s3cli_path.to_s, '-c', @config_file.to_s, 'delete', object_id.to_s)
+          out, err, status = Open3.capture3(*@base_command, '-c', @config_file.to_s, 'delete', object_id.to_s)
         rescue Exception => e
           raise BlobstoreError, e.inspect
         end
@@ -105,7 +118,7 @@ module Bosh::Director
 
       def object_exists?(object_id)
         begin
-          out, err, status = Open3.capture3(@s3cli_path.to_s, '-c', @config_file.to_s, 'exists', object_id.to_s)
+          out, err, status = Open3.capture3(*@base_command, '-c', @config_file.to_s, 'exists', object_id.to_s)
           return true if status.exitstatus.zero?
           return false if status.exitstatus == 3
         rescue Exception => e
@@ -117,7 +130,7 @@ module Bosh::Director
       def sign_url(object_id, verb, duration)
         begin
           out, err, status = Open3.capture3(
-            @s3cli_path.to_s,
+            *@base_command,
             '-c',
             @config_file.to_s,
             'sign',
@@ -144,7 +157,7 @@ module Bosh::Director
       # @return [void]
       def store_in_s3(path, oid)
         begin
-          out, err, status = Open3.capture3(@s3cli_path.to_s, '-c', @config_file.to_s, 'put', path.to_s, oid.to_s)
+          out, err, status = Open3.capture3(*@base_command, '-c', @config_file.to_s, 'put', path.to_s, oid.to_s)
         rescue Exception => e
           raise BlobstoreError, e.inspect
         end

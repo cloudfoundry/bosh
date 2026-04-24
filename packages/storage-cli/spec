@@ -1,0 +1,4 @@
+---
+name: storage-cli
+files:
+- storage-cli/storage-cli-*-linux-amd64 # The binary from github.com/cloudfoundry/storage-cli
