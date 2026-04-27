@@ -1,12 +1,12 @@
 require 'spec_helper'
 
-describe 'Bosh::Monitor::Plugins::Resurrector' do
+describe Bosh::Monitor::Plugins::EventLogger do
   include Support::UaaHelpers
 
   let(:options) do
     {
       'director' => {
-        'endpoint' => 'http://foo.bar.com:25555',
+        'endpoint' => 'https://foo.bar.com:25555',
         'user' => 'user',
         'password' => 'password',
         'client_id' => 'client-id',
@@ -16,7 +16,7 @@ describe 'Bosh::Monitor::Plugins::Resurrector' do
     }
   end
   let(:plugin) { Bosh::Monitor::Plugins::EventLogger.new(options) }
-  let(:uri) { 'http://foo.bar.com:25555' }
+  let(:uri) { 'https://foo.bar.com:25555' }
   let(:status_uri) { "#{uri}/info" }
 
   before do
