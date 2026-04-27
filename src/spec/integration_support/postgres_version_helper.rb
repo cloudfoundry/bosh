@@ -8,7 +8,7 @@ module IntegrationSupport
         return unless env_db == 'postgresql'
 
         unless local_major_version == release_major_version
-          raise "Postgres major version mismatch: jobs/postgres?spec.yml: #{local_version}; local: #{release_version}."
+          raise "Postgres major version mismatch: jobs/postgres/spec: #{local_version}; local: #{release_version}."
         end
       end
 
@@ -28,7 +28,7 @@ module IntegrationSupport
         @release_version ||= begin
           postgres_release_config =
             YAML.load_file(
-              File.join(IntegrationSupport::Constants::BOSH_REPO_ROOT, 'jobs', 'postgres', 'spec.yml'),
+              File.join(IntegrationSupport::Constants::BOSH_REPO_ROOT, 'jobs', 'postgres', 'spec'),
               permitted_classes: [Symbol],
               aliases: true,
             )
