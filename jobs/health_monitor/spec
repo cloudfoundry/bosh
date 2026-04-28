@@ -9,6 +9,7 @@ templates:
   nats_client_certificate.pem.erb: config/nats_client_certificate.pem
   nats_client_private_key.erb: config/nats_client_private_key
   director_ca_cert.pem.erb: config/director_ca_cert.pem
+  uaa_ca_cert.pem.erb: config/uaa_ca_cert.pem
 
 packages:
   - health_monitor
@@ -93,6 +94,9 @@ properties:
     default: ''
   hm.director_account.ca_cert:
     description: File containing Director's TLS Cert's Certificate Authority (CA)
+    default: null
+  hm.director_account.uaa_ca_cert:
+    description: File containing UAA's TLS Cert's Certificate Authority (CA)
     default: null
 
   #

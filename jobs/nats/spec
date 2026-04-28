@@ -14,6 +14,7 @@ templates:
   nats_director_client_certificate.pem.erb: config/nats_director_client_certificate.pem
   nats_hm_client_certificate.pem.erb: config/nats_hm_client_certificate.pem
   director_ca_cert.pem.erb: config/director_ca_cert.pem
+  uaa_ca_cert.pem.erb: config/uaa_ca_cert.pem
 
 packages:
   - nats
@@ -88,6 +89,9 @@ properties:
     default: ''
   nats.director_account.ca_cert:
     description: File containing Director's TLS Cert's Certificate Authority (CA)
+    default: null
+  nats.director_account.uaa_ca_cert:
+    description: File containing UAA's TLS Cert's Certificate Authority (CA)
     default: null
 
   nats-sync.intervals.poll_user_sync:
