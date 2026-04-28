@@ -10,6 +10,7 @@ module Bosh::Monitor
       @client_id = config['client_id'].to_s
       @client_secret = config['client_secret'].to_s
       @director_ca_cert = config['director_ca_cert'].to_s
+      @uaa_ca_cert = config['uaa_ca_cert'].to_s
 
       @logger = logger
     end
@@ -26,8 +27,17 @@ module Bosh::Monitor
     private
 
     def uaa_token_header(uaa_url)
-      @uaa_token ||= UAAToken.new(@client_id, @client_secret, uaa_url, @director_ca_cert, @logger)
+      @uaa_token ||= UAAToken.new(@client_id, @client_secret, uaa_url, ca_file_path, @logger)
       @uaa_token.auth_header
+    end
+
+    def ca_file_path
+      uaa = @uaa_ca_cert.to_s
+      if !uaa.empty? && File.exist?(uaa) && !File.read(uaa).strip.empty?
+        uaa
+      else
+        @director_ca_cert.to_s
+      end
     end
   end
 

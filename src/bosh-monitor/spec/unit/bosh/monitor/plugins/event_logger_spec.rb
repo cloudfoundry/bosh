@@ -12,6 +12,7 @@ describe Bosh::Monitor::Plugins::EventLogger do
         'client_id' => 'client-id',
         'client_secret' => 'client-secret',
         'director_ca_cert' => 'ca-cert',
+        'uaa_ca_cert' => '',
       },
     }
   end

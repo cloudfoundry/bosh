@@ -2,7 +2,7 @@ require 'uaa'
 
 module NATSSync
   class AuthProvider
-    def initialize(auth_info, config)
+    def initialize(auth_info, config, logger)
       @auth_info = auth_info.fetch('user_authentication', {})
 
       @user = config['user'].to_s
@@ -10,6 +10,9 @@ module NATSSync
       @client_id = config['client_id'].to_s
       @client_secret = config['client_secret'].to_s
       @director_ca_cert = config['director_ca_cert'].to_s
+      @uaa_ca_cert = config['uaa_ca_cert'].to_s
+
+      @logger = logger
     end
 
     def auth_header
@@ -18,21 +21,30 @@ module NATSSync
         return uaa_token_header(uaa_url)
       end
 
-      'Basic ' + Base64.encode64(@user + ':' + @password)
+      "Basic #{Base64.encode64("#{@user}:#{@password}").strip}"
     end
 
     private
 
     def uaa_token_header(uaa_url)
-      @uaa_token ||= UAAToken.new(@client_id, @client_secret, uaa_url, @director_ca_cert)
+      @uaa_token ||= UAAToken.new(@client_id, @client_secret, uaa_url, ca_file_path, @logger)
       @uaa_token.auth_header
+    end
+
+    def ca_file_path
+      uaa = @uaa_ca_cert.to_s
+      if !uaa.empty? && File.exist?(uaa) && !File.read(uaa).strip.empty?
+        uaa
+      else
+        @director_ca_cert.to_s
+      end
     end
   end
 
   class UAAToken
     EXPIRATION_DEADLINE_IN_SECONDS = 60
 
-    def initialize(client_id, client_secret, uaa_url, ca_cert_file_path)
+    def initialize(client_id, client_secret, uaa_url, ca_cert_file_path, logger)
       options = {}
 
       if File.exist?(ca_cert_file_path) && !File.read(ca_cert_file_path).strip.empty?
@@ -49,6 +61,7 @@ module NATSSync
         client_secret,
         options,
       )
+      @logger = logger
     end
 
     def auth_header
@@ -70,7 +83,7 @@ module NATSSync
       @uaa_token = @uaa_token_issuer.client_credentials_grant
       @token_data = decode
     rescue StandardError => e
-      NATSSync.logger.error("Failed to obtain token from UAA: #{e.inspect}")
+      @logger.error("Failed to obtain token from UAA: #{e.inspect}")
     end
 
     def decode

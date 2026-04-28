@@ -16,6 +16,7 @@ describe 'Bosh::Monitor::Director' do
         'client_id' => 'hm',
         'client_secret' => 'secret',
         'director_ca_cert' => 'fake-ca-cert',
+        'uaa_ca_cert' => '',
       }, double(:logger)
     )
   end

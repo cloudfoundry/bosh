@@ -26,6 +26,7 @@ module NATSSync
         'client_id' => client_id,
         'client_secret' => client_secret,
         'director_ca_cert' => director_ca_cert,
+        'uaa_ca_cert' => uaa_ca_cert,
         'director_subject_file' => director_subject_file,
         'hm_subject_file' => hm_subject_file }
     end
@@ -35,6 +36,7 @@ module NATSSync
     let(:client_id) { 'client_id' }
     let(:client_secret) { 'client_secret' }
     let(:director_ca_cert) { 'ca_cert' }
+    let(:uaa_ca_cert) { 'uaa_ca_cert' }
     let(:director_subject_file) { sample_director_subject }
     let(:hm_subject_file) { sample_hm_subject }
     let(:director_subject) { 'C=USA, O=Cloud Foundry, CN=default.director.bosh-internal' }
@@ -401,6 +403,7 @@ module NATSSync
             'client_id' => client_id,
             'client_secret' => client_secret,
             'director_ca_cert' => director_ca_cert,
+            'uaa_ca_cert' => uaa_ca_cert,
             'director_subject_file' => director_subject_file,
             'hm_subject_file' => hm_subject_file,
             'connection_wait_timeout' => 5 }
@@ -427,6 +430,7 @@ module NATSSync
             'client_id' => client_id,
             'client_secret' => client_secret,
             'director_ca_cert' => director_ca_cert,
+            'uaa_ca_cert' => uaa_ca_cert,
             'director_subject_file' => director_subject_file,
             'hm_subject_file' => hm_subject_file,
             'connection_wait_timeout' => 2 }
@@ -450,6 +454,7 @@ module NATSSync
             'client_id' => client_id,
             'client_secret' => client_secret,
             'director_ca_cert' => director_ca_cert,
+            'uaa_ca_cert' => uaa_ca_cert,
             'director_subject_file' => director_subject_file,
             'hm_subject_file' => hm_subject_file,
             'connection_wait_timeout' => 3 }
