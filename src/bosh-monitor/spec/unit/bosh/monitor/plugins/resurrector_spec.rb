@@ -11,7 +11,7 @@ module Bosh::Monitor::Plugins
           'password' => 'password',
           'client_id' => 'client-id',
           'client_secret' => 'client-secret',
-          'ca_cert' => 'ca-cert',
+          'director_ca_cert' => 'ca-cert',
         },
       }
     end

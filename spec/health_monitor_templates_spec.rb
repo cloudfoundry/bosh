@@ -70,7 +70,7 @@ RSpec.describe 'health_monitor.yml.erb' do
       expect(parsed_yaml['director']['password']).to eq('admin_password')
       expect(parsed_yaml['director']['client_id']).to eq('fake_id')
       expect(parsed_yaml['director']['client_secret']).to eq('fake_secret')
-      expect(parsed_yaml['director']['ca_cert']).to be_a(String)
+      expect(parsed_yaml['director']['director_ca_cert']).to be_a(String)
       expect(parsed_yaml['intervals']['prune_events']).to eq(60)
       expect(parsed_yaml['intervals']['poll_director']).to eq(61)
       expect(parsed_yaml['intervals']['poll_grace_period']).to eq(62)
