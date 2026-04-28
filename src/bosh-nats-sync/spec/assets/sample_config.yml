@@ -6,7 +6,7 @@ director:
   password: admin
   client_id: client_id
   client_secret: client_secret
-  ca_cert: ca_cert
+  director_ca_cert: director_ca_cert
   director_subject_file: /var/vcap/data/nats/director-subject
   hm_subject_file: /var/vcap/data/nats/hm-subject
 

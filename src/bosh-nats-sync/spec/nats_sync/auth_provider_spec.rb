@@ -64,9 +64,9 @@ describe NATSSync::AuthProvider do
 
     let(:logger) { spy('Logger') }
 
-    context 'user provides ca_cert' do
+    context 'user provides director_ca_cert' do
       before do
-        config['ca_cert'] = 'fake-ca-cert-path'
+        config['director_ca_cert'] = 'fake-ca-cert-path'
 
         allow(File).to receive(:exist?).with('fake-ca-cert-path').and_return(true)
         allow(File).to receive(:read).with('fake-ca-cert-path').and_return('test')
@@ -80,7 +80,7 @@ describe NATSSync::AuthProvider do
       it_behaves_like :auth_provider_shared_tests
     end
 
-    context 'user has not provided ca_cert' do
+    context 'user has not provided director_ca_cert' do
       let(:cert_store) { instance_double(OpenSSL::X509::Store) }
 
       before do

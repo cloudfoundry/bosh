@@ -38,7 +38,7 @@ RSpec.describe 'bosh_nats_sync_config.yml.erb' do
           password: my-password
           client_id: my-client
           client_secret: my-client-secret
-          ca_cert: "/var/vcap/jobs/nats/config/uaa.pem"
+          director_ca_cert: "/var/vcap/jobs/nats/config/director_ca_cert.pem"
           director_subject_file: "/var/vcap/data/nats/director-subject"
           hm_subject_file: "/var/vcap/data/nats/hm-subject"
           connection_wait_timeout: 60
