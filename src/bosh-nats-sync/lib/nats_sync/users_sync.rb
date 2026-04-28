@@ -154,7 +154,7 @@ module NATSSync
 
     def build_headers(auth: true)
       if auth
-        auth_header = "#{NATSSync::AuthProvider.new(info, @bosh_config).auth_header}"
+        auth_header = "#{NATSSync::AuthProvider.new(info, @bosh_config, NATSSync.logger).auth_header}"
         NATSSync.logger.debug 'auth_header is empty, next REST call could fail' if auth_header.empty?
 
         { 'Authorization' => auth_header }

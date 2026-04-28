@@ -35,7 +35,8 @@ end
 describe NATSSync::AuthProvider do
   include Support::UaaHelpers
 
-  subject(:auth_provider) { described_class.new(auth_info, config) }
+  subject(:auth_provider) { described_class.new(auth_info, config, logger) }
+  let(:logger) { double(:logger) }
   let(:user) { 'fake-user' }
   let(:password) { 'secret-password' }
   let(:config) do
@@ -80,6 +81,60 @@ describe NATSSync::AuthProvider do
       it_behaves_like :auth_provider_shared_tests
     end
 
+    context 'user provides uaa_ca_cert with a non-empty file' do
+      before do
+        config['director_ca_cert'] = 'fake-dir-cert-path'
+        config['uaa_ca_cert'] = 'fake-uaa-cert-path'
+
+        allow(File).to receive(:exist?).with('fake-uaa-cert-path').and_return(true)
+        allow(File).to receive(:read).with('fake-uaa-cert-path').and_return('uaa-pem')
+
+        allow(CF::UAA::TokenIssuer).to receive(:new).with(
+          'uaa-url', 'fake-client', 'fake-client-secret', { ssl_ca_file: 'fake-uaa-cert-path' }
+        ).and_return(token_issuer)
+        allow(token_issuer).to receive(:client_credentials_grant).and_return(first_token, second_token)
+      end
+
+      it_behaves_like :auth_provider_shared_tests
+    end
+
+    context 'user provides uaa_ca_cert but file is empty' do
+      before do
+        config['director_ca_cert'] = 'fake-dir-cert-path'
+        config['uaa_ca_cert'] = 'fake-uaa-cert-path'
+
+        allow(File).to receive(:exist?).with('fake-uaa-cert-path').and_return(true)
+        allow(File).to receive(:read).with('fake-uaa-cert-path').and_return("  \n")
+        allow(File).to receive(:exist?).with('fake-dir-cert-path').and_return(true)
+        allow(File).to receive(:read).with('fake-dir-cert-path').and_return('dir-pem')
+
+        allow(CF::UAA::TokenIssuer).to receive(:new).with(
+          'uaa-url', 'fake-client', 'fake-client-secret', { ssl_ca_file: 'fake-dir-cert-path' }
+        ).and_return(token_issuer)
+        allow(token_issuer).to receive(:client_credentials_grant).and_return(first_token, second_token)
+      end
+
+      it_behaves_like :auth_provider_shared_tests
+    end
+
+    context 'user provides uaa_ca_cert but file is missing' do
+      before do
+        config['director_ca_cert'] = 'fake-dir-cert-path'
+        config['uaa_ca_cert'] = 'fake-uaa-cert-path'
+
+        allow(File).to receive(:exist?).with('fake-uaa-cert-path').and_return(false)
+        allow(File).to receive(:exist?).with('fake-dir-cert-path').and_return(true)
+        allow(File).to receive(:read).with('fake-dir-cert-path').and_return('dir-pem')
+
+        allow(CF::UAA::TokenIssuer).to receive(:new).with(
+          'uaa-url', 'fake-client', 'fake-client-secret', { ssl_ca_file: 'fake-dir-cert-path' }
+        ).and_return(token_issuer)
+        allow(token_issuer).to receive(:client_credentials_grant).and_return(first_token, second_token)
+      end
+
+      it_behaves_like :auth_provider_shared_tests
+    end
+
     context 'user has not provided director_ca_cert' do
       let(:cert_store) { instance_double(OpenSSL::X509::Store) }
 
@@ -102,7 +157,7 @@ describe NATSSync::AuthProvider do
     end
 
     it 'returns Basic authentication string with username and password' do
-      expect(auth_provider.auth_header).to eq(base64_user_password(user, password))
+      expect(auth_provider.auth_header).to eq(base64_user_password(user, password).strip)
     end
   end
 
