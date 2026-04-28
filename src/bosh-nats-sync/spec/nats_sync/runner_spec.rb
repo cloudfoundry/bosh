@@ -17,7 +17,7 @@ describe NATSSync::Runner do
   describe 'when the runner is created with the sample config file' do
     let(:director_config) do
       { 'url' => 'http://127.0.0.1:25555', 'user' => 'admin', 'password' => 'admin', 'client_id' => 'client_id',
-        'client_secret' => 'client_secret', 'ca_cert' => 'ca_cert',
+        'client_secret' => 'client_secret', 'director_ca_cert' => 'director_ca_cert',
         'director_subject_file' => '/var/vcap/data/nats/director-subject',
         'hm_subject_file' => '/var/vcap/data/nats/hm-subject',
       }
