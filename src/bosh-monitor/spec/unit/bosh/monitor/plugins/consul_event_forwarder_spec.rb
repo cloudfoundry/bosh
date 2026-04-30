@@ -94,7 +94,7 @@ describe Bosh::Monitor::Plugins::ConsulEventForwarder do
       end
       it 'it should not forward events if options are invalid' do
         subject.run
-        expect(subject).to_not receive(:send_http_put_request).with(alert_uri, event_request)
+        expect(subject).to_not receive(:send_http_put_request).with(uri: alert_uri, request: event_request)
         subject.process(alert)
       end
     end
@@ -105,7 +105,7 @@ describe Bosh::Monitor::Plugins::ConsulEventForwarder do
       end
       it 'should successully hand the alert off to http forwarder' do
         subject.run
-        expect(subject).to receive(:send_http_put_request).with(alert_uri, event_request)
+        expect(subject).to receive(:send_http_put_request).with(uri: alert_uri, request: event_request)
         subject.process(alert)
       end
     end
@@ -117,7 +117,7 @@ describe Bosh::Monitor::Plugins::ConsulEventForwarder do
     end
     it 'should forward events when events are enabled' do
       subject.run
-      expect(subject).to receive(:send_http_put_request).with(alert_uri, event_request)
+      expect(subject).to receive(:send_http_put_request).with(uri: alert_uri, request: event_request)
       subject.process(alert)
     end
   end
@@ -136,42 +136,42 @@ describe Bosh::Monitor::Plugins::ConsulEventForwarder do
 
     it 'should send a put request to the register endpoint the first time an event is encountered' do
       subject.run
-      expect(subject).to receive(:send_http_put_request).with(register_uri, register_request)
+      expect(subject).to receive(:send_http_put_request).with(uri: register_uri, request: register_request)
       subject.process(heartbeat)
     end
 
     it 'should properly send namespaced job name when namespace used' do
       options.merge!('namespace' => namespace)
       subject.run
-      expect(subject).to receive(:send_http_put_request).with(register_uri, register_request_with_namespace)
+      expect(subject).to receive(:send_http_put_request).with(uri: register_uri, request: register_request_with_namespace)
       subject.process(heartbeat)
     end
 
     it 'should properly change the required port when a port is passed in options' do
       options.merge!('port' => new_port)
       subject.run
-      expect(subject).to receive(:send_http_put_request).with(register_uri_with_port, register_request)
+      expect(subject).to receive(:send_http_put_request).with(uri: register_uri_with_port, request: register_request)
       subject.process(heartbeat)
     end
 
     it 'should properly change the protocol when a port is passed in options' do
       options.merge!('protocol' => new_protocol)
       subject.run
-      expect(subject).to receive(:send_http_put_request).with(register_uri_with_protocol, register_request)
+      expect(subject).to receive(:send_http_put_request).with(uri: register_uri_with_protocol, request: register_request)
       subject.process(heartbeat)
     end
 
     it 'should properly provide params when params are passed in options' do
       options.merge!('params' => new_params)
       subject.run
-      expect(subject).to receive(:send_http_put_request).with(register_uri_with_params, register_request)
+      expect(subject).to receive(:send_http_put_request).with(uri: register_uri_with_params, request: register_request)
       subject.process(heartbeat)
     end
 
     it 'should send a put request to the ttl endpoint the second time an event is encountered' do
       subject.run
       subject.process(heartbeat)
-      expect(subject).to receive(:send_http_put_request).with(ttl_pass_uri, heartbeat_request)
+      expect(subject).to receive(:send_http_put_request).with(uri: ttl_pass_uri, request: heartbeat_request)
       subject.process(heartbeat)
     end
 
@@ -180,7 +180,7 @@ describe Bosh::Monitor::Plugins::ConsulEventForwarder do
 
       subject.run
       subject.process(heartbeat)
-      expect(subject).to receive(:send_http_put_request).with(ttl_fail_uri, heartbeat_request)
+      expect(subject).to receive(:send_http_put_request).with(uri: ttl_fail_uri, request: heartbeat_request)
       subject.process(heartbeat)
     end
 
@@ -189,7 +189,7 @@ describe Bosh::Monitor::Plugins::ConsulEventForwarder do
 
       subject.run
       subject.process(heartbeat)
-      expect(subject).to receive(:send_http_put_request).with(ttl_fail_uri, heartbeat_request)
+      expect(subject).to receive(:send_http_put_request).with(uri: ttl_fail_uri, request: heartbeat_request)
       subject.process(heartbeat)
     end
 
@@ -198,7 +198,7 @@ describe Bosh::Monitor::Plugins::ConsulEventForwarder do
 
       subject.process(heartbeat)
 
-      expect(subject).to_not receive(:send_http_put_request).with(register_uri, register_request)
+      expect(subject).to_not receive(:send_http_put_request).with(uri: register_uri, request: register_request)
       subject.process(heartbeat)
     end
 
@@ -211,7 +211,7 @@ describe Bosh::Monitor::Plugins::ConsulEventForwarder do
 
         subject.process(heartbeat)
 
-        expect(subject).to_not receive(:send_http_put_request).with(alert_uri, event_request)
+        expect(subject).to_not receive(:send_http_put_request).with(uri: alert_uri, request: event_request)
         subject.process(alert)
       end
     end
@@ -234,8 +234,8 @@ describe Bosh::Monitor::Plugins::ConsulEventForwarder do
 
         subject.process(heartbeat)
 
-        expect(subject).to_not receive(:send_http_put_request).with(alert_uri, event_request)
-        expect(subject).to receive(:send_http_put_request).with(ttl_pass_uri, heartbeat_request)
+        expect(subject).to_not receive(:send_http_put_request).with(uri: alert_uri, request: event_request)
+        expect(subject).to receive(:send_http_put_request).with(uri: ttl_pass_uri, request: heartbeat_request)
         subject.process(heartbeat)
       end
 
@@ -246,8 +246,8 @@ describe Bosh::Monitor::Plugins::ConsulEventForwarder do
 
           subject.process(heartbeat)
 
-          expect(subject).to receive(:send_http_put_request).with(heartbeat_alert_uri, heartbeat_request)
-          expect(subject).to receive(:send_http_put_request).with(ttl_pass_uri, heartbeat_request)
+          expect(subject).to receive(:send_http_put_request).with(uri: heartbeat_alert_uri, request: heartbeat_request)
+          expect(subject).to receive(:send_http_put_request).with(uri: ttl_pass_uri, request: heartbeat_request)
           subject.process(heartbeat)
         end
       end

@@ -55,7 +55,9 @@ module Bosh::Monitor
       headers['authorization'] = auth_provider.auth_header unless options.fetch(:no_login, false)
 
       ssl_context = OpenSSL::SSL::SSLContext.new
-      ssl_context.set_params(verify_mode: OpenSSL::SSL::VERIFY_NONE)
+      ssl_params = { verify_mode: OpenSSL::SSL::VERIFY_PEER }
+      ssl_params[:ca_file] = director_ca_cert_path if director_ca_cert_path
+      ssl_context.set_params(ssl_params)
       async_endpoint = Async::HTTP::Endpoint.parse(parsed_endpoint.to_s, ssl_context: ssl_context)
       response = Async::HTTP::Internet.send(method.to_sym, async_endpoint, headers)
 
@@ -74,13 +76,23 @@ module Bosh::Monitor
     def info
       body, status = perform_request(:get, '/info', no_login: true)
 
-      raise DirectorError, "Cannot get status from director at #{http.req.uri}: #{status} #{body}" if status != 200
+      raise DirectorError, "Cannot get status from director at #{endpoint}/info: #{status} #{body}" if status != 200
 
       parse_json(body, Hash)
     end
 
     def auth_provider
       @auth_provider ||= AuthProvider.new(info, @options, @logger)
+    end
+
+    def director_ca_cert_path
+      return @director_ca_cert_path if defined?(@director_ca_cert_path)
+
+      path = @options['director_ca_cert'].to_s
+      @director_ca_cert_path =
+        if !path.empty? && File.exist?(path) && !File.read(path).strip.empty?
+          path
+        end
     end
   end
 end
