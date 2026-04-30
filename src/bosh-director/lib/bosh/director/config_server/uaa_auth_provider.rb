@@ -8,23 +8,24 @@ module Bosh::Director::ConfigServer
       @client_secret = config['client_secret'].to_s
       @url = config['url'].to_s
       @ca_cert_path = config['ca_cert_path'].to_s
+      @public_key = config['public_key'].to_s
 
       @logger = logger
     end
 
     def get_token
-      UAAToken.new(@client_id, @client_secret, @url, @ca_cert_path, @logger)
+      UAAToken.new(@client_id, @client_secret, @url, @ca_cert_path, @public_key, @logger)
     end
   end
 
   private
 
   class UAAToken
-    def initialize(client_id, client_secret, uaa_url, ca_cert_path, logger)
+    def initialize(client_id, client_secret, uaa_url, ca_cert_file_path, uaa_public_key, logger)
       options = {}
 
-      if File.exist?(ca_cert_path) && !File.read(ca_cert_path).strip.empty?
-        options[:ssl_ca_file] = ca_cert_path
+      if File.exist?(ca_cert_file_path) && !File.read(ca_cert_file_path).strip.empty?
+        options[:ssl_ca_file] = ca_cert_file_path
       else
         cert_store = OpenSSL::X509::Store.new
         cert_store.set_default_paths
@@ -38,6 +39,7 @@ module Bosh::Director::ConfigServer
         client_secret,
         options,
       )
+      @uaa_public_key = uaa_public_key.to_s
       @logger = logger
     end
 
@@ -62,10 +64,10 @@ module Bosh::Director::ConfigServer
     end
 
     def fetch
-      @uaa_token = retryable.retryer do
-        @uaa_token_issuer.client_credentials_grant
-      end
-      @token_data = decode
+      token = retryable.retryer { @uaa_token_issuer.client_credentials_grant }
+      token_data = decode_token(token)
+      @uaa_token = token
+      @token_data = token_data
     rescue CF::UAA::SSLException => e
       error_message = "Failed to obtain valid token from UAA: Invalid SSL Cert for '#{@uaa_url}'"
       @logger.error("#{error_message}. Error thrown: #{e.inspect}")
@@ -76,12 +78,17 @@ module Bosh::Director::ConfigServer
       raise Bosh::Director::UAAAuthorizationError, error_message
     end
 
-    def decode
-      access_token = @uaa_token.info['access_token'] || @uaa_token.info[:access_token]
-      CF::UAA::TokenCoder.decode(
-        access_token,
-        {verify: false},
-        nil, nil)
+    def decode_token(token)
+      access_token = token.info['access_token'] || token.info[:access_token]
+      CF::UAA::TokenCoder.decode(access_token, decode_options)
+    end
+
+    def decode_options
+      if @uaa_public_key.strip.empty?
+        { verify: false }
+      else
+        { pkey: @uaa_public_key, verify: true }
+      end
     end
   end
 end

@@ -149,6 +149,61 @@ describe NATSSync::AuthProvider do
 
       it_behaves_like :auth_provider_shared_tests
     end
+
+    context 'token decoding' do
+      let(:cert_store) { instance_double(OpenSSL::X509::Store) }
+
+      before do
+        allow(OpenSSL::X509::Store).to receive(:new).and_return(cert_store)
+        allow(cert_store).to receive(:set_default_paths)
+        allow(CF::UAA::TokenIssuer).to receive(:new).and_return(token_issuer)
+        allow(token_issuer).to receive(:client_credentials_grant).and_return(first_token, second_token)
+      end
+
+      context 'when uaa_public_key is not configured' do
+        it 'decodes UAA tokens without verifying the signature' do
+          expect(CF::UAA::TokenCoder).to receive(:decode).with(anything, { verify: false }).and_call_original
+          auth_provider.auth_header
+        end
+      end
+
+      context 'when uaa_public_key is configured' do
+        let(:uaa_public_key) { "-----BEGIN PUBLIC KEY-----\nfake-public-key\n-----END PUBLIC KEY-----" }
+
+        before do
+          config['uaa_public_key'] = uaa_public_key
+        end
+
+        it 'decodes UAA tokens with signature verification using the configured public key' do
+          expect(CF::UAA::TokenCoder).to receive(:decode)
+            .with(anything, { pkey: uaa_public_key, verify: true })
+            .and_return('exp' => Time.now.to_i + 3600)
+          auth_provider.auth_header
+        end
+
+        context 'when token signature verification fails' do
+          before do
+            allow(CF::UAA::TokenCoder).to receive(:decode)
+              .and_raise(CF::UAA::InvalidSignature, 'Signature verification failed')
+            allow(logger).to receive(:error)
+          end
+
+          it 'logs the verification error' do
+            expect(logger).to receive(:error).with(/Signature verification failed/)
+            auth_provider.auth_header
+          end
+
+          it 'returns nil without exposing the unverified token' do
+            expect(auth_provider.auth_header).to be_nil
+          end
+
+          it 'does not raise on subsequent calls' do
+            auth_provider.auth_header
+            expect { auth_provider.auth_header }.not_to raise_error
+          end
+        end
+      end
+    end
   end
 
   context 'when director is in non-UAA mode' do

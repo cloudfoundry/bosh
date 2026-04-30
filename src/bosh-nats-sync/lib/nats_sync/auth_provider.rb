@@ -11,6 +11,7 @@ module NATSSync
       @client_secret = config['client_secret'].to_s
       @director_ca_cert = config['director_ca_cert'].to_s
       @uaa_ca_cert = config['uaa_ca_cert'].to_s
+      @uaa_public_key = config['uaa_public_key'].to_s
 
       @logger = logger
     end
@@ -27,7 +28,7 @@ module NATSSync
     private
 
     def uaa_token_header(uaa_url)
-      @uaa_token ||= UAAToken.new(@client_id, @client_secret, uaa_url, ca_file_path, @logger)
+      @uaa_token ||= UAAToken.new(@client_id, @client_secret, uaa_url, ca_file_path, @uaa_public_key, @logger)
       @uaa_token.auth_header
     end
 
@@ -44,7 +45,7 @@ module NATSSync
   class UAAToken
     EXPIRATION_DEADLINE_IN_SECONDS = 60
 
-    def initialize(client_id, client_secret, uaa_url, ca_cert_file_path, logger)
+    def initialize(client_id, client_secret, uaa_url, ca_cert_file_path, uaa_public_key, logger)
       options = {}
 
       if File.exist?(ca_cert_file_path) && !File.read(ca_cert_file_path).strip.empty?
@@ -61,6 +62,7 @@ module NATSSync
         client_secret,
         options,
       )
+      @uaa_public_key = uaa_public_key.to_s
       @logger = logger
     end
 
@@ -80,19 +82,27 @@ module NATSSync
     end
 
     def fetch
-      @uaa_token = @uaa_token_issuer.client_credentials_grant
-      @token_data = decode
+      token = @uaa_token_issuer.client_credentials_grant
+      token_data = decode_token(token)
+      @uaa_token = token
+      @token_data = token_data
     rescue StandardError => e
-      @logger.error("Failed to obtain token from UAA: #{e.inspect}")
+      @logger.error("Failed to obtain or decode token from UAA: #{e.inspect}")
+      @uaa_token = nil
+      @token_data = nil
     end
 
-    def decode
-      access_token = @uaa_token.info['access_token'] || @uaa_token.info[:access_token]
-      CF::UAA::TokenCoder.decode(
-        access_token,
-        { verify: false },
-        nil, nil
-      )
+    def decode_token(token)
+      access_token = token.info['access_token'] || token.info[:access_token]
+      CF::UAA::TokenCoder.decode(access_token, decode_options)
+    end
+
+    def decode_options
+      if @uaa_public_key.strip.empty?
+        { verify: false }
+      else
+        { pkey: @uaa_public_key, verify: true }
+      end
     end
   end
 end

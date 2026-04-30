@@ -265,7 +265,8 @@ RSpec.describe 'director.yml.erb' do
                 'url' => 'fake-uaa-url',
                 'client_id' => 'fake-client-id',
                 'client_secret' => 'fake-client-secret',
-                'ca_cert' => 'fake-ca-cert'
+                'ca_cert' => 'fake-ca-cert',
+                'public_key' => ''
               }
             }
           end
@@ -280,6 +281,20 @@ RSpec.describe 'director.yml.erb' do
             expect(parsed_yaml['config_server']['uaa']['client_id']).to eq('fake-client-id')
             expect(parsed_yaml['config_server']['uaa']['client_secret']).to eq('fake-client-secret')
             expect(parsed_yaml['config_server']['uaa']['ca_cert_path']).to eq('/var/vcap/jobs/director/config/uaa_server_ca.cert')
+            expect(parsed_yaml['config_server']['uaa']['public_key']).to eq('')
+          end
+
+          context 'when uaa public_key is set' do
+            before do
+              merged_manifest_properties['director']['config_server']['uaa']['public_key'] =
+                "-----BEGIN PUBLIC KEY-----\nfake-public-key\n-----END PUBLIC KEY-----"
+            end
+
+            it 'passes the public_key through to the config_server uaa config' do
+              expect(parsed_yaml['config_server']['uaa']['public_key']).to eq(
+                "-----BEGIN PUBLIC KEY-----\nfake-public-key\n-----END PUBLIC KEY-----",
+              )
+            end
           end
 
           describe 'UAA properties' do
@@ -348,7 +363,8 @@ RSpec.describe 'director.yml.erb' do
                   'url' => 'https://something.com',
                   'client_id' => 'id',
                   'client_secret' => 'secret',
-                  'ca_cert_path' => '/var/some/path'
+                  'ca_cert_path' => '/var/some/path',
+                  'public_key' => ''
                 }
               }
 

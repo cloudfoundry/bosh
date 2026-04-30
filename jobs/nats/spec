@@ -93,6 +93,9 @@ properties:
   nats.director_account.uaa_ca_cert:
     description: File containing UAA's TLS Cert's Certificate Authority (CA)
     default: null
+  nats.director_account.uaa_public_key:
+    description: PEM-encoded UAA JWT signing public key
+    default: ''
 
   nats-sync.intervals.poll_user_sync:
     description: Interval (in seconds) to get the list of managed VMs from Bosh Director

@@ -15,7 +15,8 @@ RSpec.describe 'bosh_nats_sync_config.yml.erb' do
               'client_id' => 'my-client',
               'client_secret' => 'my-client-secret',
               'user' => 'my-user',
-              'password' => 'my-password'
+              'password' => 'my-password',
+              'uaa_public_key' => ''
             }
           },
           'nats-sync' => {
@@ -40,6 +41,7 @@ RSpec.describe 'bosh_nats_sync_config.yml.erb' do
           client_secret: my-client-secret
           director_ca_cert: "/var/vcap/jobs/nats/config/director_ca_cert.pem"
           uaa_ca_cert: "/var/vcap/jobs/nats/config/uaa_ca_cert.pem"
+          uaa_public_key: ''
           director_subject_file: "/var/vcap/data/nats/director-subject"
           hm_subject_file: "/var/vcap/data/nats/hm-subject"
           connection_wait_timeout: 60
@@ -53,6 +55,77 @@ RSpec.describe 'bosh_nats_sync_config.yml.erb' do
 
 
       HEREDOC
+    end
+  end
+
+  context 'when uaa_public_key contains a multiline PEM' do
+    it_should_behave_like 'a rendered file' do
+      let(:file_name) { 'jobs/nats/templates/bosh_nats_sync_config.yml.erb' }
+      let(:pem_public_key) do
+        <<~PEM
+          -----BEGIN PUBLIC KEY-----
+          MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2a2rwplBQLF29amygykE
+          MmYz0+Kcj3bKBp29hNX/O2jMNfMZNmBpNMpHWsuHuEoNdmN6VkHX/YBTRLFJzO8
+          -----END PUBLIC KEY-----
+        PEM
+      end
+      let(:properties) do
+        {
+          'properties' => {
+            'director' => {
+              'address' => '10.9.9.20',
+              'port' => '25555'
+            },
+            'nats' => {
+              'director_account' => {
+                'client_id' => 'my-client',
+                'client_secret' => 'my-client-secret',
+                'user' => 'my-user',
+                'password' => 'my-password',
+                'uaa_public_key' => pem_public_key
+              }
+            },
+            'nats-sync' => {
+              'intervals' => {
+                'poll_user_sync' => 'sync-me'
+              },
+              'director' => {
+                'connection_wait_timeout' => 60
+              }
+            }
+          }
+        }
+      end
+      let(:expected_content) do
+        <<~HEREDOC
+          ---
+          director:
+            url: https://10.9.9.20:25555
+            user: my-user
+            password: my-password
+            client_id: my-client
+            client_secret: my-client-secret
+            director_ca_cert: "/var/vcap/jobs/nats/config/director_ca_cert.pem"
+            uaa_ca_cert: "/var/vcap/jobs/nats/config/uaa_ca_cert.pem"
+            uaa_public_key: |
+              -----BEGIN PUBLIC KEY-----
+              MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2a2rwplBQLF29amygykE
+              MmYz0+Kcj3bKBp29hNX/O2jMNfMZNmBpNMpHWsuHuEoNdmN6VkHX/YBTRLFJzO8
+              -----END PUBLIC KEY-----
+            director_subject_file: "/var/vcap/data/nats/director-subject"
+            hm_subject_file: "/var/vcap/data/nats/hm-subject"
+            connection_wait_timeout: 60
+          intervals:
+            poll_user_sync: sync-me
+          nats:
+            config_file_path: "/var/vcap/data/nats/auth.json"
+            nats_server_executable: "/var/vcap/packages/nats/bin/nats-server"
+            nats_server_pid_file: "/var/vcap/sys/run/bpm/nats/nats.pid"
+          logfile: "/var/vcap/sys/log/nats/bosh-nats-sync.log"
+
+
+        HEREDOC
+      end
     end
   end
 end
