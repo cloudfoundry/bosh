@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 	"time"
 
@@ -21,8 +22,8 @@ import (
 )
 
 const (
-	httpSuccess                          = 200
-	defaultDirectorConnectionWaitTimeout = 60
+	httpSuccess                            = 200
+	defaultDirectorConnectionWaitTimeout   = 60
 	defaultDirectorConnectionRetryInterval = 1 * time.Second
 )
 
@@ -32,18 +33,18 @@ func DefaultCommandRunner(executable string, args ...string) ([]byte, error) {
 	cmd := exec.Command(executable, args...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return output, fmt.Errorf("cannot execute: %s %s, Error: %s", executable, strings.Join(args, " "), string(output))
+		return output, fmt.Errorf("cannot execute: %s %s, Error: %s: %w", executable, strings.Join(args, " "), string(output), err)
 	}
 	return output, nil
 }
 
 type UsersSync struct {
-	NATSConfigFilePath    string
-	BoshConfig            config.DirectorConfig
-	NATSServerExecutable  string
-	NATSServerPIDFile     string
-	Logger                *slog.Logger
-	CommandRunner         CommandRunner
+	NATSConfigFilePath   string
+	BoshConfig           config.DirectorConfig
+	NATSServerExecutable string
+	NATSServerPIDFile    string
+	Logger               *slog.Logger
+	CommandRunner        CommandRunner
 }
 
 func (u *UsersSync) getCommandRunner() CommandRunner {
@@ -114,8 +115,14 @@ func (u *UsersSync) withDirectorConnection(fn func() error) error {
 		maxAttempts = 1
 	}
 
+	deadline := time.Now().Add(time.Duration(timeout) * time.Second)
+
 	var lastErr error
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		if time.Now().After(deadline) {
+			break
+		}
+
 		_, lastErr = u.boshAPIResponseBody("/info", false)
 		if lastErr == nil {
 			return fn()
@@ -222,7 +229,7 @@ func (u *UsersSync) boshAPIResponseBody(apiPath string, auth bool) ([]byte, erro
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -252,11 +259,11 @@ func (u *UsersSync) buildHTTPClient() *http.Client {
 }
 
 func (u *UsersSync) directorCACertPool() (*x509.CertPool, bool) {
-	path := u.BoshConfig.DirectorCACert
-	if path == "" {
+	certPath := u.BoshConfig.DirectorCACert
+	if certPath == "" {
 		return nil, false
 	}
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(certPath)
 	if err != nil || len(strings.TrimSpace(string(data))) == 0 {
 		return nil, false
 	}
@@ -305,7 +312,7 @@ func (u *UsersSync) queryAllDeployments() ([]string, error) {
 }
 
 func (u *UsersSync) getVMsByDeployment(deploymentName string) ([]natsauthconfig.VM, error) {
-	body, err := u.boshAPIResponseBody(fmt.Sprintf("/deployments/%s/vms", deploymentName), true)
+	body, err := u.boshAPIResponseBody(path.Join("/deployments", url.PathEscape(deploymentName), "vms"), true)
 	if err != nil {
 		return nil, err
 	}

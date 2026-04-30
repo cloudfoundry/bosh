@@ -1,10 +1,17 @@
 package authprovider_test
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"log/slog"
+	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -16,6 +23,28 @@ import (
 	"bosh-nats-sync/pkg/authprovider"
 	"bosh-nats-sync/pkg/config"
 )
+
+// generateTestCACertPEM creates a minimal self-signed CA certificate PEM for use in tests.
+func generateTestCACertPEM() []byte {
+	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		panic(err)
+	}
+	tmpl := &x509.Certificate{
+		SerialNumber:          big.NewInt(1),
+		Subject:               pkix.Name{CommonName: "test-ca"},
+		NotBefore:             time.Now().Add(-time.Hour),
+		NotAfter:              time.Now().Add(10 * 365 * 24 * time.Hour),
+		IsCA:                  true,
+		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
+		BasicConstraintsValid: true,
+	}
+	der, err := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &priv.PublicKey, priv)
+	if err != nil {
+		panic(err)
+	}
+	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})
+}
 
 var _ = Describe("AuthProvider", func() {
 	var logger *slog.Logger
@@ -123,7 +152,7 @@ var _ = Describe("AuthProvider", func() {
 		})
 
 		Context("when getting token fails", func() {
-			It("returns empty string without error", func() {
+			It("returns an error so callers can handle transient auth failures", func() {
 				info := authprovider.InfoResponse{
 					UserAuthentication: &authprovider.UserAuthentication{
 						Type:    "uaa",
@@ -137,7 +166,8 @@ var _ = Describe("AuthProvider", func() {
 				provider := authprovider.New(info, cfg, logger)
 
 				header, err := provider.AuthHeader()
-				Expect(err).NotTo(HaveOccurred())
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("failed to obtain token from UAA"))
 				Expect(header).To(BeEmpty())
 			})
 		})
@@ -147,9 +177,9 @@ var _ = Describe("AuthProvider", func() {
 				tmpFile, err := os.CreateTemp("", "director_ca_cert_*.pem")
 				Expect(err).NotTo(HaveOccurred())
 				defer os.Remove(tmpFile.Name())
-				_, err = tmpFile.WriteString("fake-cert-content")
+				_, err = tmpFile.Write(generateTestCACertPEM())
 				Expect(err).NotTo(HaveOccurred())
-				tmpFile.Close()
+				Expect(tmpFile.Close()).To(Succeed())
 
 				info := authprovider.InfoResponse{
 					UserAuthentication: &authprovider.UserAuthentication{
@@ -172,14 +202,17 @@ var _ = Describe("AuthProvider", func() {
 
 		Context("CA file selection between director_ca_cert and uaa_ca_cert", func() {
 			var (
-				dirCertPath string
-				uaaCertPath string
+				dirCertPath  string
+				uaaCertPath  string
+				validCertPEM []byte
 			)
 
 			BeforeEach(func() {
+				validCertPEM = generateTestCACertPEM()
+
 				dirFile, err := os.CreateTemp("", "director_ca_cert_*.pem")
 				Expect(err).NotTo(HaveOccurred())
-				_, err = dirFile.WriteString("director-pem")
+				_, err = dirFile.Write(validCertPEM)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(dirFile.Close()).To(Succeed())
 				dirCertPath = dirFile.Name()
@@ -196,7 +229,7 @@ var _ = Describe("AuthProvider", func() {
 			})
 
 			It("prefers uaa_ca_cert when the file exists and has non-empty content", func() {
-				Expect(os.WriteFile(uaaCertPath, []byte("uaa-pem"), 0o600)).To(Succeed())
+				Expect(os.WriteFile(uaaCertPath, validCertPEM, 0o600)).To(Succeed())
 
 				info := authprovider.InfoResponse{
 					UserAuthentication: &authprovider.UserAuthentication{
@@ -304,6 +337,6 @@ var _ = Describe("AuthProvider", func() {
 
 var _ = Describe("Token expiration deadline", func() {
 	It("is 60 seconds", func() {
-		Expect(60 * time.Second).To(Equal(60 * time.Second))
+		Expect(authprovider.ExpirationDeadline).To(Equal(60 * time.Second))
 	})
 })

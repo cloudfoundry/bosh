@@ -3,7 +3,7 @@ package natsauthconfig
 import "fmt"
 
 type VM struct {
-	AgentID                 string `json:"agent_id"`
+	AgentID                  string `json:"agent_id"`
 	PermanentNATSCredentials bool   `json:"permanent_nats_credentials"`
 }
 

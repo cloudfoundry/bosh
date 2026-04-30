@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -35,7 +36,7 @@ func NewWithCommandRunner(cfg *config.Config, logger *slog.Logger, cmdRunner use
 	}
 }
 
-func (r *Runner) Run() {
+func (r *Runner) Run() error {
 	defer close(r.stopped)
 
 	r.logger.Info("Nats Sync starting...")
@@ -50,18 +51,20 @@ func (r *Runner) Run() {
 		r.config.NATS.NATSServerPIDFile,
 		cmdRunner,
 	); err != nil {
-		r.logger.Error("Failed to reload NATS server config on startup", "error", err)
-		return
+		return fmt.Errorf("failed to reload NATS server config on startup: %w", err)
 	}
 
 	interval := time.Duration(r.config.Intervals.PollUserSync) * time.Second
+	if interval <= 0 {
+		return fmt.Errorf("PollUserSync interval must be positive, got %d", r.config.Intervals.PollUserSync)
+	}
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-r.stopCh:
-			return
+			return nil
 		case <-ticker.C:
 			r.syncNATSUsers(cmdRunner)
 		}

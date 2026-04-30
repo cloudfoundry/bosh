@@ -40,5 +40,8 @@ func main() {
 		r.Stop()
 	}()
 
-	r.Run()
+	if err := r.Run(); err != nil {
+		logger.Error("Fatal error, shutting down", "error", err)
+		os.Exit(1)
+	}
 }

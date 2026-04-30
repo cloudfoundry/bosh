@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"context"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -52,6 +53,20 @@ var _ = Describe("Config", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("incorrect file format"))
 		})
+
+		It("returns an error when poll_user_sync is zero or missing", func() {
+			tmpFile, err := os.CreateTemp("", "bad_config_*.yml")
+			Expect(err).NotTo(HaveOccurred())
+			defer os.Remove(tmpFile.Name())
+
+			_, err = tmpFile.WriteString("intervals:\n  poll_user_sync: 0\n")
+			Expect(err).NotTo(HaveOccurred())
+			tmpFile.Close()
+
+			_, err = config.Load(tmpFile.Name())
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("intervals.poll_user_sync must be a positive integer"))
+		})
 	})
 
 	Describe("NewLogger", func() {
@@ -82,13 +97,18 @@ var _ = Describe("Config", func() {
 			cfg := &config.Config{LogFile: logPath}
 			logger := config.NewLogger(cfg)
 
-			Expect(logger.Enabled(nil, slog.LevelInfo)).To(BeTrue())
-			Expect(logger.Enabled(nil, slog.LevelDebug)).To(BeFalse())
+			Expect(logger.Enabled(context.Background(), slog.LevelInfo)).To(BeTrue())
+			Expect(logger.Enabled(context.Background(), slog.LevelDebug)).To(BeFalse())
 		})
 
 		It("falls back to stdout when no log file is specified", func() {
 			cfg := &config.Config{}
 			logger := config.NewLogger(cfg)
+			Expect(logger).NotTo(BeNil())
+		})
+
+		It("falls back to stdout when cfg is nil", func() {
+			logger := config.NewLogger(nil)
 			Expect(logger).NotTo(BeNil())
 		})
 	})

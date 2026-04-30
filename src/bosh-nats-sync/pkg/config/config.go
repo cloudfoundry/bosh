@@ -49,21 +49,22 @@ func Load(path string) (*Config, error) {
 		return nil, fmt.Errorf("incorrect file format in '%s': %w", path, err)
 	}
 
+	if cfg.Intervals.PollUserSync <= 0 {
+		return nil, fmt.Errorf("intervals.poll_user_sync must be a positive integer, got %d", cfg.Intervals.PollUserSync)
+	}
+
 	return &cfg, nil
 }
 
 func NewLogger(cfg *Config) *slog.Logger {
-	var handler slog.Handler
 	opts := &slog.HandlerOptions{Level: slog.LevelInfo}
 
-	if cfg.LogFile != "" {
+	if cfg != nil && cfg.LogFile != "" {
 		f, err := os.OpenFile(cfg.LogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 		if err == nil {
-			handler = slog.NewTextHandler(f, opts)
-			return slog.New(handler)
+			return slog.New(slog.NewTextHandler(f, opts))
 		}
 	}
 
-	handler = slog.NewTextHandler(os.Stdout, opts)
-	return slog.New(handler)
+	return slog.New(slog.NewTextHandler(os.Stdout, opts))
 }

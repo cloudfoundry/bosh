@@ -2,11 +2,8 @@
 name: nats
 
 dependencies:
-- director-ruby-3.4
+- golang-1.26-linux
 
 files:
 - nats/nats-server-v*-linux-amd64.tar.gz
-- bosh-nats-sync/**/*
-- bosh-common/**/*
-- vendor/cache/*.gem
-- vendor/cache/extensions/**
+- src/bosh-nats-sync/**/*
