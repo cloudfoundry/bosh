@@ -140,7 +140,7 @@ var _ = Describe("Runner", func() {
 
 	Describe("exception handling", func() {
 		Context("when startup reload fails", func() {
-			It("logs the error and exits Run() without starting the sync loop", func() {
+			It("returns an error and exits Run() without starting the sync loop", func() {
 				startupFailRunner := func(executable string, args ...string) ([]byte, error) {
 					return nil, fmt.Errorf("cannot execute: reload failed on startup")
 				}
@@ -148,13 +148,15 @@ var _ = Describe("Runner", func() {
 				r := runner.NewWithCommandRunner(cfg, logger, startupFailRunner)
 
 				done := make(chan struct{})
+				var runErr error
 				go func() {
-					r.Run()
+					runErr = r.Run()
 					close(done)
 				}()
 
 				Eventually(done, 2*time.Second).Should(BeClosed())
-				Expect(logBuf.String()).To(ContainSubstring("reload failed on startup"))
+				Expect(runErr).To(HaveOccurred())
+				Expect(runErr.Error()).To(ContainSubstring("reload failed on startup"))
 			})
 		})
 
@@ -190,14 +192,23 @@ var _ = Describe("Runner", func() {
 					},
 				}
 
+				var reloadCount int32
 				failCmdRunner := func(executable string, args ...string) ([]byte, error) {
+					n := atomic.AddInt32(&reloadCount, 1)
+					if n == 1 {
+						return []byte("ok"), nil // startup reload succeeds
+					}
 					return nil, fmt.Errorf("cannot execute: reload failed")
 				}
 
 				r := runner.NewWithCommandRunner(failCfg, logger, failCmdRunner)
 
-				go r.Run()
-				time.Sleep(2500 * time.Millisecond)
+				done := make(chan struct{})
+				go func() {
+					r.Run()
+					close(done)
+				}()
+				Eventually(done, 5*time.Second).Should(BeClosed())
 
 				logOutput := logBuf.String()
 				Expect(logOutput).To(ContainSubstring("reload failed"))

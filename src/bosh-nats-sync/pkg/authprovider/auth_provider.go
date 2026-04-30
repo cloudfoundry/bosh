@@ -86,8 +86,7 @@ func (a *AuthProvider) uaaTokenHeader(uaaURL string) (string, error) {
 
 	tok, err := a.cfg.Token(a.ctx)
 	if err != nil {
-		a.logger.Error("Failed to obtain token from UAA", "error", err)
-		return "", nil
+		return "", fmt.Errorf("failed to obtain token from UAA: %w", err)
 	}
 	a.token = tok
 	return formatBearer(tok), nil
@@ -99,14 +98,20 @@ func (a *AuthProvider) buildHTTPClient() (*http.Client, error) {
 	caCertPath := a.CAFilePath()
 	if caCertPath != "" {
 		data, err := os.ReadFile(caCertPath)
-		if err == nil && len(strings.TrimSpace(string(data))) > 0 {
+		if err != nil {
+			return nil, fmt.Errorf("failed to read CA cert file %q: %w", caCertPath, err)
+		}
+		if len(strings.TrimSpace(string(data))) > 0 {
 			pool := x509.NewCertPool()
-			pool.AppendCertsFromPEM(data)
+			if !pool.AppendCertsFromPEM(data) {
+				return nil, fmt.Errorf("failed to parse CA certificate from %q", caCertPath)
+			}
 			tlsCfg.RootCAs = pool
 		}
 	}
 
 	return &http.Client{
+		Timeout:   30 * time.Second,
 		Transport: &http.Transport{TLSClientConfig: tlsCfg},
 	}, nil
 }

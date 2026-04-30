@@ -503,10 +503,17 @@ var _ = Describe("UsersSync", func() {
 			BeforeEach(func() {
 				requestCount = 0
 				mux := http.NewServeMux()
+				// On the first /info request, abort the connection (simulates a transient
+				// network error that isConnectionError() will detect and retry). Subsequent
+				// requests succeed so withDirectorConnection() eventually proceeds.
 				mux.HandleFunc("/info", func(w http.ResponseWriter, r *http.Request) {
 					requestCount++
 					if requestCount <= 1 {
-						w.WriteHeader(http.StatusServiceUnavailable)
+						hj, ok := w.(http.Hijacker)
+						if ok {
+							conn, _, _ := hj.Hijack()
+							conn.Close()
+						}
 						return
 					}
 					w.WriteHeader(http.StatusOK)
@@ -542,10 +549,11 @@ var _ = Describe("UsersSync", func() {
 				}
 			})
 
-			It("eventually succeeds", func() {
+			It("eventually succeeds after retrying", func() {
 				sync = createSync()
 				err := sync.Execute()
 				Expect(err).NotTo(HaveOccurred())
+				Expect(requestCount).To(BeNumerically(">=", 2))
 			})
 		})
 

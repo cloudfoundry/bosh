@@ -13,9 +13,9 @@ func strPtr(s string) *string { return &s }
 
 var _ = Describe("NatsAuthConfig", func() {
 	var (
-		vms              []natsauthconfig.VM
-		directorSubject  *string
-		hmSubject        *string
+		vms             []natsauthconfig.VM
+		directorSubject *string
+		hmSubject       *string
 	)
 
 	BeforeEach(func() {
