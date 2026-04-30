@@ -167,7 +167,7 @@ module Bosh::Monitor::Plugins
             },
             body: '{"jobs":{"j1":["i1","i2"],"j2":["i3","i4"]}}',
           }
-          expect(plugin).to receive(:send_http_put_request).with(request_url, request_data)
+          expect(plugin).to receive(:send_http_put_request).with(uri: request_url, request: request_data, ca_cert_path: 'ca-cert')
 
           plugin.process(alert)
         end
@@ -207,7 +207,7 @@ module Bosh::Monitor::Plugins
               },
               body: '{"jobs":{"j1":["i1","i2"],"j2":["i3","i4"]}}',
             }
-            expect(plugin).to receive(:send_http_put_request).with(request_url, request_data)
+            expect(plugin).to receive(:send_http_put_request).with(uri: request_url, request: request_data, ca_cert_path: 'ca-cert')
 
             plugin.process(alert)
           end
@@ -288,7 +288,7 @@ module Bosh::Monitor::Plugins
               },
               body: '{"jobs":{"j2":["i3","i4"]}}',
             }
-            expect(plugin).to receive(:send_http_put_request).with(request_url, request_data)
+            expect(plugin).to receive(:send_http_put_request).with(uri: request_url, request: request_data, ca_cert_path: 'ca-cert')
 
             plugin.process(alert)
           end

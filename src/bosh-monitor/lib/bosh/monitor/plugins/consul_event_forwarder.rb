@@ -116,7 +116,7 @@ module Bosh::Monitor
 
         request = { body: body }
 
-        send_http_put_request(uri, request)
+        send_http_put_request(uri: uri, request: request)
 
         # if a registration request returns without error we log it
         # we don't want to send extra registrations

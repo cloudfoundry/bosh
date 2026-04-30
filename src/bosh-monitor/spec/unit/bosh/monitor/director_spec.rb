@@ -24,6 +24,103 @@ describe 'Bosh::Monitor::Director' do
   let(:deployments) { [{ 'name' => 'a' }, { 'name' => 'b' }] }
   let(:resurrection_config) { [{ 'content' => '--- {}', 'id' => '1', 'type' => 'resurrection', 'name' => 'some-name' }] }
 
+  describe 'TLS verification when talking to the director' do
+    let(:ssl_context) { OpenSSL::SSL::SSLContext.new }
+
+    before do
+      allow(OpenSSL::SSL::SSLContext).to receive(:new).and_return(ssl_context)
+      allow(ssl_context).to receive(:set_params).and_call_original
+      stub_request(:get, 'http://localhost:8080/director/info')
+        .to_return(body: json_dump({}), status: 200)
+      stub_request(:get, 'http://localhost:8080/director/deployments?exclude_configs=true&exclude_releases=true&exclude_stemcells=true')
+        .to_return(body: json_dump([]), status: 200)
+    end
+
+    context 'when director_ca_cert is a usable file' do
+      let(:ca_cert_file) do
+        Tempfile.new('director-ca-cert').tap do |f|
+          f.write('fake-ca-cert')
+          f.close
+        end
+      end
+
+      after do
+        FileUtils.rm_f(ca_cert_file.path)
+      end
+
+      subject(:director) do
+        Bosh::Monitor::Director.new(
+          {
+            'endpoint' => 'http://localhost:8080/director',
+            'user' => 'admin',
+            'password' => 'admin',
+            'client_id' => 'hm',
+            'client_secret' => 'secret',
+            'director_ca_cert' => ca_cert_file.path,
+            'uaa_ca_cert' => '',
+          }, double(:logger)
+        )
+      end
+
+      it 'verifies the peer with the configured ca_file' do
+        director.deployments
+
+        expect(ssl_context).to have_received(:set_params).with(
+          verify_mode: OpenSSL::SSL::VERIFY_PEER,
+          ca_file: ca_cert_file.path,
+        ).at_least(:once)
+      end
+    end
+
+    context 'when director_ca_cert is not configured' do
+      subject(:director) do
+        Bosh::Monitor::Director.new(
+          {
+            'endpoint' => 'http://localhost:8080/director',
+            'user' => 'admin',
+            'password' => 'admin',
+            'client_id' => 'hm',
+            'client_secret' => 'secret',
+            'director_ca_cert' => '',
+            'uaa_ca_cert' => '',
+          }, double(:logger)
+        )
+      end
+
+      it 'verifies the peer using system default CAs' do
+        director.deployments
+
+        expect(ssl_context).to have_received(:set_params)
+          .with(verify_mode: OpenSSL::SSL::VERIFY_PEER)
+          .at_least(:once)
+      end
+    end
+
+    context 'when director_ca_cert points to a non-existent file' do
+      subject(:director) do
+        Bosh::Monitor::Director.new(
+          {
+            'endpoint' => 'http://localhost:8080/director',
+            'user' => 'admin',
+            'password' => 'admin',
+            'client_id' => 'hm',
+            'client_secret' => 'secret',
+            'director_ca_cert' => '/no/such/director-ca-cert',
+            'uaa_ca_cert' => '',
+          }, double(:logger)
+        )
+      end
+
+      it 'verifies the peer using system default CAs' do
+        director.deployments
+
+        expect(ssl_context).to have_received(:set_params)
+          .with(verify_mode: OpenSSL::SSL::VERIFY_PEER)
+          .at_least(:once)
+      end
+    end
+  end
+
   context 'when director is running in non-UAA mode' do
     before do
       stub_request(:get, 'http://localhost:8080/director/info')
