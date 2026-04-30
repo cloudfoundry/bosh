@@ -98,6 +98,9 @@ properties:
   hm.director_account.uaa_ca_cert:
     description: File containing UAA's TLS Cert's Certificate Authority (CA)
     default: null
+  hm.director_account.uaa_public_key:
+    description: PEM-encoded UAA JWT signing public key
+    default: ''
 
   #
   # Health Monitor Plugins options

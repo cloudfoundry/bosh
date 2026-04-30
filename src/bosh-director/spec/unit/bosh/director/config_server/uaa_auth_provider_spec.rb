@@ -99,6 +99,35 @@ describe Bosh::Director::ConfigServer::UAAAuthProvider do
     end
   end
 
+  context 'token decoding' do
+    context 'when public_key is not configured' do
+      it 'decodes UAA tokens without verifying the signature' do
+        expect(CF::UAA::TokenCoder).to receive(:decode).with(anything, { verify: false }).and_call_original
+        token.auth_header
+      end
+    end
+
+    context 'when public_key is configured' do
+      let(:uaa_public_key) { "-----BEGIN PUBLIC KEY-----\nfake-public-key\n-----END PUBLIC KEY-----" }
+      let(:config) do
+        {
+          'client_id' => 'fake-client',
+          'client_secret' => 'fake-client-secret',
+          'url' => uaa_url,
+          'ca_cert_path' => 'fake-ca-cert-path',
+          'public_key' => uaa_public_key,
+        }
+      end
+
+      it 'decodes UAA tokens with signature verification using the configured public key' do
+        expect(CF::UAA::TokenCoder).to receive(:decode)
+          .with(anything, { pkey: uaa_public_key, verify: true })
+          .and_return('exp' => Time.now.to_i + 3600)
+        token.auth_header
+      end
+    end
+  end
+
   context 'should gracefully handle connection errors' do
     context 'when getting token fails due to a connection error' do
       let(:client_credentials_grant_error) {Errno::ECONNREFUSED.new('')}

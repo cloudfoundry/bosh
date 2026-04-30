@@ -12,7 +12,8 @@ RSpec.describe 'health_monitor.yml.erb' do
             'user' => 'admin',
             'password' => 'admin_password',
             'client_id' => 'fake_id',
-            'client_secret' => 'fake_secret'
+            'client_secret' => 'fake_secret',
+            'uaa_public_key' => ''
           },
           'intervals' => {
             'prune_events' => 60,
@@ -72,6 +73,7 @@ RSpec.describe 'health_monitor.yml.erb' do
       expect(parsed_yaml['director']['client_secret']).to eq('fake_secret')
       expect(parsed_yaml['director']['director_ca_cert']).to be_a(String)
       expect(parsed_yaml['director']['uaa_ca_cert']).to be_a(String)
+      expect(parsed_yaml['director']['uaa_public_key']).to eq('')
       expect(parsed_yaml['intervals']['prune_events']).to eq(60)
       expect(parsed_yaml['intervals']['poll_director']).to eq(61)
       expect(parsed_yaml['intervals']['poll_grace_period']).to eq(62)
@@ -89,6 +91,19 @@ RSpec.describe 'health_monitor.yml.erb' do
       expect(parsed_yaml['plugins'][1]['name']).to eq('event_logger')
       expect(parsed_yaml['plugins'][1]['events']).to be_a(Array)
       expect(parsed_yaml['plugins'][1]['options']['director']).to eq(parsed_yaml['director'])
+    end
+
+    context 'when hm.director_account.uaa_public_key is set' do
+      before do
+        deployment_manifest_fragment['properties']['hm']['director_account']['uaa_public_key'] =
+          "-----BEGIN PUBLIC KEY-----\nfake-public-key\n-----END PUBLIC KEY-----"
+      end
+
+      it 'passes the uaa_public_key through to the director config' do
+        expect(parsed_yaml['director']['uaa_public_key']).to eq(
+          "-----BEGIN PUBLIC KEY-----\nfake-public-key\n-----END PUBLIC KEY-----",
+        )
+      end
     end
 
     context 'plugin is enabled' do

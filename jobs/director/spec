@@ -251,6 +251,9 @@ properties:
     description: 'UAA client secret to access Config Server'
   director.config_server.uaa.ca_cert:
     description: 'CA cert to trust when communicating with UAA'
+  director.config_server.uaa.public_key:
+    description: PEM-encoded UAA JWT signing public key
+    default: ''
 
   # Director User Management
   director.user_management.provider:

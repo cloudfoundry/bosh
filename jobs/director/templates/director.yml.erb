@@ -101,7 +101,8 @@ if config_server['enabled']
     'url' => p('director.config_server.uaa.url'),
     'client_id' => p('director.config_server.uaa.client_id'),
     'client_secret' => p('director.config_server.uaa.client_secret'),
-    'ca_cert_path' => '/var/vcap/jobs/director/config/uaa_server_ca.cert'
+    'ca_cert_path' => '/var/vcap/jobs/director/config/uaa_server_ca.cert',
+    'public_key' => p('director.config_server.uaa.public_key')
  }
 end
 params['config_server'] = config_server
