@@ -59,7 +59,7 @@ describe Bosh::Monitor::Plugins::EventLogger do
           '"object_name":"foo","deployment":"d","instance":"j/i",' \
           "\"context\":{\"message\":\"Alert. Alert @ #{time.utc}, severity 2: Alert\"}}",
         }
-        expect(plugin).to receive(:send_http_post_request).with(request_url, request_data)
+        expect(plugin).to receive(:send_http_post_request).with(uri: request_url, request: request_data, ca_cert_path: 'ca-cert')
         plugin.process(alert)
       end
 
@@ -98,7 +98,7 @@ describe Bosh::Monitor::Plugins::EventLogger do
             '"object_type":"alert","object_name":"foo","deployment":"d",' \
             "\"instance\":\"j/i\",\"context\":{\"message\":\"Alert. Alert @ #{time.utc}, severity 2: Alert\"}}",
           }
-          expect(plugin).to receive(:send_http_post_request).with(request_url, request_data)
+          expect(plugin).to receive(:send_http_post_request).with(uri: request_url, request: request_data, ca_cert_path: 'ca-cert')
           plugin.process(alert)
         end
       end

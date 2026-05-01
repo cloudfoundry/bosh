@@ -115,7 +115,8 @@ module NATSSync
       response =
         Net::HTTP.new("#{parsed_uri.host}", parsed_uri.port).tap do |http|
           http.use_ssl = use_ssl(parsed_uri: parsed_uri)
-          http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+          http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+          http.ca_file = director_ca_cert if usable_director_ca_cert?
         end.get(parsed_uri.request_uri, build_headers(auth: auth))
 
       NATSSync.logger.debug(response.inspect)
@@ -128,6 +129,15 @@ module NATSSync
 
     def use_ssl(parsed_uri:)
       parsed_uri.scheme == 'https'
+    end
+
+    def director_ca_cert
+      @bosh_config['director_ca_cert'].to_s
+    end
+
+    def usable_director_ca_cert?
+      path = director_ca_cert
+      !path.empty? && File.exist?(path) && !File.read(path).strip.empty?
     end
 
     def query_all_deployments
