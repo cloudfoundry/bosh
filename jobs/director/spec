@@ -442,6 +442,12 @@ properties:
     description: swift_auth_account of swift storage account
   blobstore.swift_temp_url_key:
     description: swift_temp_url_key of swift storage account
+  blobstore.request_checksum_calculation_enabled:
+    description: Whether to calculate checksums for requests to S3
+  blobstore.response_checksum_calculation_enabled:
+    description: Whether to calculate checksums for responses from S3
+  blobstore.uploader_request_checksum_calculation_enabled:
+    description: Whether to calculate checksums for uploader requests to S3
 
   director.ignore_missing_gateway:
     description: Allow gateway to be omitted from subnet configuration. Bosh lite vms(containers) do not require gateway.

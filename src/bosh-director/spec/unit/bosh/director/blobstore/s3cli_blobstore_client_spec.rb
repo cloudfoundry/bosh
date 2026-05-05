@@ -121,7 +121,7 @@ module Bosh::Director::Blobstore
         end
       end
 
-      context 'when swift_auth_account is provided' do
+      context 'when swift_temp_url_key is provided' do
         it 'adds it to the config file' do
           described_class.new(options.merge(
             {
@@ -130,6 +130,23 @@ module Bosh::Director::Blobstore
           )
 
           expect(JSON.parse(stored_config_file[0])['swift_temp_url_key']).to eq('the_swift_temp_url_key')
+        end
+      end
+
+      context 'when checksum properties are provided' do
+        it 'adds them to the config file' do
+          described_class.new(options.merge(
+            {
+              request_checksum_calculation_enabled: false,
+              response_checksum_calculation_enabled: false,
+              uploader_request_checksum_calculation_enabled: false,
+            })
+          )
+
+          config = JSON.parse(stored_config_file[0])
+          expect(config['request_checksum_calculation_enabled']).to eq(false)
+          expect(config['response_checksum_calculation_enabled']).to eq(false)
+          expect(config['uploader_request_checksum_calculation_enabled']).to eq(false)
         end
       end
     end

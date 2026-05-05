@@ -45,6 +45,9 @@ module Bosh::Director
           assume_role_arn: @options[:assume_role_arn],
           swift_auth_account: @options[:swift_auth_account],
           swift_temp_url_key: @options[:swift_temp_url_key],
+          request_checksum_calculation_enabled: @options[:request_checksum_calculation_enabled],
+          response_checksum_calculation_enabled: @options[:response_checksum_calculation_enabled],
+          uploader_request_checksum_calculation_enabled: @options[:uploader_request_checksum_calculation_enabled],
         }
 
         @s3cli_options.reject! { |_k, v| v.nil? }
