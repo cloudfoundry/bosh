@@ -1,0 +1,133 @@
+name: bosh
+version: 282.1.10
+commit_hash: f239f784aa
+uncommitted_changes: false
+jobs:
+- name: blobstore
+  version: 7c6329737dd040f19f312a33dad50ac26bdea137646dc469215ce4fc0933a53a
+  fingerprint: 7c6329737dd040f19f312a33dad50ac26bdea137646dc469215ce4fc0933a53a
+  sha1: sha256:e4bb9a84adcb2f1acbe011ac8eaa78bb595cbbbf4ea2001e128964b2706b8662
+  packages:
+  - nginx
+- name: director
+  version: 64fd20bfb2c4532d01d95febc79e583198019bbf1c980ca01f4c7f8cd6007447
+  fingerprint: 64fd20bfb2c4532d01d95febc79e583198019bbf1c980ca01f4c7f8cd6007447
+  sha1: sha256:22838e5e49eea92c76ac0a41d907f943e2a8baea76a94852ef54a0e9cc797860
+  packages:
+  - director
+  - nginx
+  - libpq
+  - mysql
+  - director-ruby-3.3
+  - s3cli
+  - azure-storage-cli
+  - davcli
+  - bosh-gcscli
+  - verify_multidigest
+- name: health_monitor
+  version: 31330d808a34b495c033734f25028fabfa5d64d4f67070b949ffd7afe60dbcca
+  fingerprint: 31330d808a34b495c033734f25028fabfa5d64d4f67070b949ffd7afe60dbcca
+  sha1: sha256:ed8bb3dd6959cbc03d32eba3b6576924e38ddd3eaa7990d358370f1c5838f8e5
+  packages:
+  - health_monitor
+  - director-ruby-3.3
+- name: nats
+  version: 104beb8410812bd276fe1cbb6ed384e1ca14fab0d4f0a4e1d9fadcf5973d403e
+  fingerprint: 104beb8410812bd276fe1cbb6ed384e1ca14fab0d4f0a4e1d9fadcf5973d403e
+  sha1: sha256:93cd8fb5bbe63f170217c8654623648f696f9035bfdb6a90c77cec3df0fb8245
+  packages:
+  - nats
+  - director-ruby-3.3
+- name: postgres
+  version: f5bd7a0524e7df161b7797dfe633e17d1f7019906f38b6b82b5f997d1e09f0b1
+  fingerprint: f5bd7a0524e7df161b7797dfe633e17d1f7019906f38b6b82b5f997d1e09f0b1
+  sha1: sha256:513957a6e1f28029da00233c52bb47f220be3fd2e032a4815c68d0874496cd34
+  packages:
+  - postgres-15
+  - postgres-13
+- name: postgres-13
+  version: 749b79ebf3893e24379b6d12a89e25f69076da15961c3fe324772273f7f06661
+  fingerprint: 749b79ebf3893e24379b6d12a89e25f69076da15961c3fe324772273f7f06661
+  sha1: sha256:d42ecffc582f7eb6641bca8364f75aa6ba8fd1050ca4798cdb2b66a0d84ee828
+  packages:
+  - postgres-13
+packages:
+- name: azure-storage-cli
+  version: 3460b9632b92cda7ff1a8efcd02cad3f1da3d653120be2f0cec624c09a372597
+  fingerprint: 3460b9632b92cda7ff1a8efcd02cad3f1da3d653120be2f0cec624c09a372597
+  sha1: sha256:678513c685554dff1c8fdeb270c2053aa88df9ba535379e991e331df710aa853
+  dependencies: []
+- name: bosh-gcscli
+  version: df9b9ffba40f2361616b2938dbf0aa5bea28759120f6e76dc08f61c81f3657a9
+  fingerprint: df9b9ffba40f2361616b2938dbf0aa5bea28759120f6e76dc08f61c81f3657a9
+  sha1: sha256:d170dc5f9e23b5ccfa42d684be879dab781fdf48a83dd8e59d3ec773bd917422
+  dependencies: []
+- name: davcli
+  version: de580fd3b7472492fad730704ed66fd8e93c7a290878d8e1403da909a3552308
+  fingerprint: de580fd3b7472492fad730704ed66fd8e93c7a290878d8e1403da909a3552308
+  sha1: sha256:f9de4e86b84c599edc13e9fc77b69477605448aad44f4bccca34ac0fffef2952
+  dependencies: []
+- name: director
+  version: 2be7811581f5c7a7587783dbecffe23825f817cc651c7e58ea35bbf3e56ddf2e
+  fingerprint: 2be7811581f5c7a7587783dbecffe23825f817cc651c7e58ea35bbf3e56ddf2e
+  sha1: sha256:9e569852cd15bcd719b399f20e9962bb7fd7a50dc2768107ae02c6366d595936
+  dependencies:
+  - libpq
+  - mysql
+  - director-ruby-3.3
+- name: director-ruby-3.3
+  version: 4206d54bf0de5cc869c1f72605ee068d3b38a505266b4024252fb82437d42df6
+  fingerprint: 4206d54bf0de5cc869c1f72605ee068d3b38a505266b4024252fb82437d42df6
+  sha1: sha256:71b6da57a2141254261109a0dc5cfa5f1089cd4caa692b6031387cf41e7136a1
+  dependencies: []
+- name: health_monitor
+  version: f1fc6d5129f1d099572a00922d0f7448f147d41ca99f1f6b9f41da79f398f7fe
+  fingerprint: f1fc6d5129f1d099572a00922d0f7448f147d41ca99f1f6b9f41da79f398f7fe
+  sha1: sha256:7457b7b20ef6d10d1e987376132ba885d1cc61969fb81570036cfe16d0268690
+  dependencies:
+  - director-ruby-3.3
+- name: libpq
+  version: a3d5cd5742dbfa1adf2d5c66c4bae26e9d42a0bf8d55a92d6f97213f08392c47
+  fingerprint: a3d5cd5742dbfa1adf2d5c66c4bae26e9d42a0bf8d55a92d6f97213f08392c47
+  sha1: sha256:439c3026a7ef15e701ab8215ffc8c40a8a6077f627b65ff5d5cb425d7111f326
+  dependencies: []
+- name: mysql
+  version: d945e475d4fd4c5553e0e4b2223c7299e15983eb9b1c655b9d08e44c1b0160c4
+  fingerprint: d945e475d4fd4c5553e0e4b2223c7299e15983eb9b1c655b9d08e44c1b0160c4
+  sha1: sha256:2204f810b5616034d9645a747d01dcda1a41c845ab84da5d8195c23b8d94ce90
+  dependencies: []
+- name: nats
+  version: 0d76178a2036d83a8946a370bda756931e21dd6ee08ba071bc8ad45a83a9ac7b
+  fingerprint: 0d76178a2036d83a8946a370bda756931e21dd6ee08ba071bc8ad45a83a9ac7b
+  sha1: sha256:fd0f91649ad692027e36a21a4c8450d193312cd78e0cb3bf8e905170add41f36
+  dependencies:
+  - director-ruby-3.3
+- name: nginx
+  version: d2f89f94a8defe386ba16e5e62f4ffc2ebe2cf243f9a28799526e8e588cb0b2f
+  fingerprint: d2f89f94a8defe386ba16e5e62f4ffc2ebe2cf243f9a28799526e8e588cb0b2f
+  sha1: sha256:e3e2543da178a569a3100f140e75b0c4e06f5da8f6f778fbbdf6b2c1a7bdb555
+  dependencies: []
+- name: postgres-13
+  version: 12398586c63c4c806902e0fad1725b920a5458c2b1699f4f541e6090339ea43b
+  fingerprint: 12398586c63c4c806902e0fad1725b920a5458c2b1699f4f541e6090339ea43b
+  sha1: sha256:50b385c77c9974cc9587ce782668f316f821c5e0e0502bd5d64ea586c50cc471
+  dependencies: []
+- name: postgres-15
+  version: c1be6daf978923fb2629786257c01d74f7c3294a279dfa31768585d1d89a3fa8
+  fingerprint: c1be6daf978923fb2629786257c01d74f7c3294a279dfa31768585d1d89a3fa8
+  sha1: sha256:dd9afd448d59c77a5feaad5a5ef15a3a95619cd689e9be3f3d75a2eebad75703
+  dependencies: []
+- name: s3cli
+  version: c756de904c8f26affcace6099d4887c2847097ff602474cbd57241a0348f5f03
+  fingerprint: c756de904c8f26affcace6099d4887c2847097ff602474cbd57241a0348f5f03
+  sha1: sha256:b1b947409cbcab97aaa82e64f58b0a51481b66d0b91366a90453672e235037f8
+  dependencies: []
+- name: verify_multidigest
+  version: 93092ae7666a42671d61bbce56f4b61833e5f6bc31f068dc396a37687065005a
+  fingerprint: 93092ae7666a42671d61bbce56f4b61833e5f6bc31f068dc396a37687065005a
+  sha1: sha256:684dcf74959f76ed98975cc7c0d2913da4aabb749ea71ff0a4da580cc837654f
+  dependencies: []
+license:
+  version: b0a1a1a04d5fd335d7a6d345e7f40b17a3d80b5753a0e3963a9157dc6f9ee250
+  fingerprint: b0a1a1a04d5fd335d7a6d345e7f40b17a3d80b5753a0e3963a9157dc6f9ee250
+  sha1: sha256:6ad3993b985f59c400b807d354eb3dc743f0faa0673255baa42b4437804c15cd
