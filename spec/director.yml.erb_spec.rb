@@ -141,6 +141,22 @@ RSpec.describe 'director.yml.erb' do
         end
       end
 
+      context 'when using s3 blobstore with checksum properties' do
+        before do
+          merged_manifest_properties['blobstore']['provider'] = 's3'
+          merged_manifest_properties['blobstore']['bucket_name'] = 'bucket'
+          merged_manifest_properties['blobstore']['request_checksum_calculation_enabled'] = false
+          merged_manifest_properties['blobstore']['response_checksum_calculation_enabled'] = false
+          merged_manifest_properties['blobstore']['uploader_request_checksum_calculation_enabled'] = false
+        end
+
+        it 'should configure the checksum properties' do
+          expect(parsed_yaml['blobstore']['options']['request_checksum_calculation_enabled']).to eq(false)
+          expect(parsed_yaml['blobstore']['options']['response_checksum_calculation_enabled']).to eq(false)
+          expect(parsed_yaml['blobstore']['options']['uploader_request_checksum_calculation_enabled']).to eq(false)
+        end
+      end
+
       context 'when using the verify-multidigest binary' do
         it 'should configure the paths' do
           expect(parsed_yaml['verify_multidigest_path']).to eq('/var/vcap/packages/verify_multidigest/bin/verify-multidigest')
