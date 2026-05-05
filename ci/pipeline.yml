@@ -696,7 +696,7 @@ jobs:
           - get: cf-deployment
           - get: docker-cpi-image
           - get: stemcell
-            resource: warden-stemcell-jammy
+            resource: warden-stemcell
           - get: director-stemcell
             resource: warden-stemcell
       - do:
@@ -706,7 +706,7 @@ jobs:
             privileged: true
             params:
               DIRECTOR_STEMCELL_OS: ubuntu-noble
-              STEMCELL_OS: ubuntu-jammy
+              STEMCELL_OS: ubuntu-noble
 
   - name: brats-utils
     serial: true
@@ -1833,11 +1833,6 @@ resources:
     type: bosh-io-stemcell
     source:
       name: bosh-warden-boshlite-ubuntu-noble
-
-  - name: warden-stemcell-jammy
-    type: bosh-io-stemcell
-    source:
-      name: bosh-warden-boshlite-ubuntu-jammy-go_agent
 
   - name: bosh-agent
     type: git
