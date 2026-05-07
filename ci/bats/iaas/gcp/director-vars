@@ -4,7 +4,6 @@
 exec jq '{
   "project_id": .project_id,
   "zone": .zone,
-  "preemptible": true,
   "tags": ["bosh-director"],
   "director_name": "director",
   "internal_cidr": .internal_cidr,
