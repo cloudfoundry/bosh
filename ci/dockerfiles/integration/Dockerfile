@@ -119,8 +119,8 @@ RUN cd /tmp  \
     && ruby-install --jobs=${NUM_CPUS} --cleanup --system ruby ${RUBY_VERSION} \
       -- --disable-install-doc --disable-install-rdoc \
     && gem update --system \
-    && bundle config --global path "${GEM_HOME}" \
-    && bundle config --global bin "${GEM_HOME}/bin"
+    && bundle config set --global path "${GEM_HOME}" \
+    && bundle config set --global bin "${GEM_HOME}/bin"
 ENV PATH=${GEM_HOME}/bin:${PATH}
 
 
