@@ -41,7 +41,6 @@ cpi: google
 properties:
   availability_zone: "$(terraform_output "zone")"
   zone: "$(terraform_output "zone")"
-  preemptible: true
   pool_size: 1
   instances: 1
   second_static_ip: "$(terraform_output "second_static_ip_first_network")"
