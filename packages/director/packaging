@@ -26,10 +26,10 @@ gem 'mysql2'
 gem 'pg'
 EOF
 
-bundle config build.mysql2 \
+bundle config set build.mysql2 \
   --with-mysql-config=$mysqlclient_dir/bin/mariadb_config-wrapper.sh
 
-bundle config build.pg \
+bundle config set build.pg \
   --with-pg-lib=$libpq_dir/lib \
   --with-pg-include=$libpq_dir/include
 
