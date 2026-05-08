@@ -31,6 +31,24 @@ bosh-cli update-cloud-config "bosh-deployment/${CPI}/cloud-config.yml" \
 
 bosh-cli upload-stemcell stemcell/*.tgz
 
+# Disable the resurrector for the remainder of this director's lifetime.
+# The director is ephemeral and is torn down at the end of the CI job, so
+# resurrection is not re-enabled after this point.
+#
+# Without this, a race condition causes persistent disks to disappear:
+#   1. bosh deploy --recreate (attempt 1) times out on get_state for an agent
+#   2. The 60-second retry delay begins
+#   3. The BOSH Health Monitor sees unresponsive agents and triggers the resurrector
+#   4. The resurrector calls delete_vm — the GCP CPI deletes the VM and, due to the
+#      way GCP handles attached disks during force-deletion, the persistent disk is also
+#      removed from GCP
+#   5. bosh deploy --recreate (attempt 2) finds no VM CID ("Creating missing vms") and
+#      fails immediately with DiskNotFound for every instance
+#
+# With the resurrector off, VMs survive the retry window so attempt 2 can proceed
+# against the same instances (stop → delete VM → create VM → reattach disk → start).
+bosh-cli update-resurrection off
+
 MAX_DEPLOY_ATTEMPTS=${MAX_DEPLOY_ATTEMPTS:-3}
 DEPLOY_RETRY_DELAY=${DEPLOY_RETRY_DELAY:-60}
 
