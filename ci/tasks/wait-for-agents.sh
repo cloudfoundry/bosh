@@ -68,7 +68,7 @@ if [ "${phase1_success}" != "true" ]; then
 fi
 
 # Phase 2: verify live agent responsiveness and ZK process health.
-# bosh instances --processes sends a live list_processes to each agent via NATS.
+# bosh instances --ps sends a live list_processes to each agent via NATS.
 # This confirms the agent can handle live director commands (the same code-path that
 # bosh deploy --recreate exercises during "Preparing deployment" with get_state).
 # It also confirms that the ZK process itself is up inside each instance — preventing
@@ -81,7 +81,7 @@ echo "Phase 2: Waiting up to ${PROC_TOTAL_TIMEOUT}s for ZK processes to be healt
 
 for j in $(seq 1 "${PROC_MAX_ATTEMPTS}"); do
   set +e
-  instances_json=$(bosh-cli -d zookeeper instances --processes --json)
+  instances_json=$(bosh-cli -d zookeeper instances --ps --json)
   proc_exit=$?
   set -e
 
@@ -97,7 +97,7 @@ for j in $(seq 1 "${PROC_MAX_ATTEMPTS}"); do
       exit 0
     fi
   else
-    echo "  Attempt $j/${PROC_MAX_ATTEMPTS}: bosh instances --processes failed (agent may not be fully ready)"
+    echo "  Attempt $j/${PROC_MAX_ATTEMPTS}: bosh instances --ps failed (agent may not be fully ready)"
   fi
 
   sleep "${PROC_SLEEP_INTERVAL}"
@@ -105,5 +105,5 @@ done
 
 echo "ERROR: Not all ZK processes became healthy within ${PROC_TOTAL_TIMEOUT}s."
 echo "Final instance state:"
-bosh-cli -d zookeeper instances --processes || true
+bosh-cli -d zookeeper instances --ps || true
 exit 1
