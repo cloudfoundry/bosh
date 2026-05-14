@@ -112,8 +112,11 @@ bosh -n update-cloud-config \
 
 if [ -n "${BRATS_DNS_MANIFEST_OPS_FILES:-}" ]; then
   DNS_MANIFEST="${REPO_ROOT}/src/brats/assets/dns-with-templates-manifest.yml"
-  # shellcheck disable=SC2086
-  bosh int "${DNS_MANIFEST}" ${BRATS_DNS_MANIFEST_OPS_FILES} > /tmp/brats-dns-manifest-modified.yml
+  # Run from REPO_PARENT so relative ops-file paths resolve against the Concourse build root
+  pushd "${REPO_PARENT}"
+    # shellcheck disable=SC2086
+    bosh int "${DNS_MANIFEST}" ${BRATS_DNS_MANIFEST_OPS_FILES} > /tmp/brats-dns-manifest-modified.yml
+  popd
   cp /tmp/brats-dns-manifest-modified.yml "${DNS_MANIFEST}"
 fi
 
