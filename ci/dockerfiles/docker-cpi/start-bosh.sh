@@ -235,11 +235,12 @@ function main() {
 }
 EOF
 
-  # shellcheck disable=SC2068
+  # shellcheck disable=SC2068,SC2086
   bosh int "${BOSH_DEPLOYMENT_PATH}/bosh.yml" \
     -o "${BOSH_DEPLOYMENT_PATH}/docker/cpi.yml" \
     -o "${BOSH_DEPLOYMENT_PATH}/jumpbox-user.yml" \
     -o /usr/local/ops-files/local-releases.yml \
+    ${ADDITIONAL_DIRECTOR_OPS_FILES:-} \
     -v director_name=docker \
     -v internal_cidr="${docker_network_cidr}" \
     -v internal_gw=10.245.0.1 \
