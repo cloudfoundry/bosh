@@ -532,7 +532,7 @@ RSpec.describe 'director.yml.erb' do
       end
 
       it 'should contain the version' do
-        expect(parsed_yaml['version']).to eq('282.1.11')
+        expect(parsed_yaml['version']).to eq('282.1.12')
       end
 
       it 'should contain the audit log path' do
