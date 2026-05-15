@@ -13,6 +13,8 @@ inputs:
     optional: true
   - name: bosh-deployment
     optional: true
+  - name: dns-ops-file-source
+    optional: true
 
 run:
   path: bosh-ci/ci/shared/brats/test-acceptance.sh
