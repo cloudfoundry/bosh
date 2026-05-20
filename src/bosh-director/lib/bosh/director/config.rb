@@ -7,6 +7,7 @@ require 'tmpdir'
 require 'bosh/common'
 
 require 'bosh/director/thread_formatter'
+require 'bosh/director/sequel_logging_fix'
 
 module Bosh::Director
 
