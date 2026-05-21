@@ -115,8 +115,22 @@ module Bosh
           def create_network_plan_with_az(instance_plan, network, instance_plans)
             desired_instance = instance_plan.desired_instance
             instance = instance_plan.instance
+            sibling_cloud_props = nic_group_sibling_cloud_properties(instance_plan, network)
             if desired_instance.az.nil?
-              static_ip_to_azs = @networks_to_static_ips.next_ip_for_network(network)
+              static_ip_to_azs = if sibling_cloud_props
+                                   @networks_to_static_ips.next_ip_for_network_with_cloud_properties(network, sibling_cloud_props)
+                                 else
+                                   @networks_to_static_ips.next_ip_for_network(network)
+                                 end
+              if static_ip_to_azs.nil?
+                if sibling_cloud_props
+                  raise Bosh::Director::NetworkReservationError,
+                        "Failed to find a static IP for network '#{network.name}' on a matching subnet " \
+                        "in nic_group '#{network.nic_group}'"
+                end
+                raise Bosh::Director::NetworkReservationError,
+                      'Failed to distribute static IPs to satisfy existing instance reservations'
+              end
               if static_ip_to_azs.az_names.size == 1
                 az_name = static_ip_to_azs.az_names.first
                 @logger.debug("Assigning az '#{az_name}' to instance '#{instance}'")
@@ -126,9 +140,18 @@ module Bosh
               end
               desired_instance.az = to_az(az_name)
             else
-              static_ip_to_azs = @networks_to_static_ips.find_by_network_and_az(network, desired_instance.availability_zone)
+              static_ip_to_azs = if sibling_cloud_props
+                                   @networks_to_static_ips.find_by_network_az_and_cloud_properties(network, desired_instance.availability_zone, sibling_cloud_props)
+                                 else
+                                   @networks_to_static_ips.find_by_network_and_az(network, desired_instance.availability_zone)
+                                 end
             end
             if static_ip_to_azs.nil?
+              if sibling_cloud_props
+                raise Bosh::Director::NetworkReservationError,
+                      "Failed to find a static IP for network '#{network.name}' on a matching subnet " \
+                      "in nic_group '#{network.nic_group}' in availability zone '#{desired_instance.availability_zone}'"
+              end
               raise Bosh::Director::NetworkReservationError,
                     'Failed to distribute static IPs to satisfy existing instance reservations'
             end
@@ -264,6 +287,21 @@ module Bosh
 
           def to_az(az_name)
             @desired_azs.to_a.find { |az| az.name == az_name }
+          end
+
+          def nic_group_sibling_cloud_properties(instance_plan, network)
+            return nil unless network.nic_group
+
+            instance_plan.network_plans.each do |plan|
+              sibling_network = @job_networks.find { |jn| jn.deployment_network == plan.reservation.network }
+              next if sibling_network == network
+              next unless sibling_network&.nic_group == network.nic_group
+              next unless plan.reservation.ip
+
+              subnet = plan.reservation.network.find_subnet_containing(plan.reservation.ip)
+              return subnet.cloud_properties if subnet
+            end
+            nil
           end
 
           def instance_name(existing_instance_model)

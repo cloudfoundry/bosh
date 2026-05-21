@@ -68,6 +68,12 @@ module Bosh::Director::DeploymentPlan
       spec['azs'] = zone_names if zone_names
       spec
     end
+
+    def make_subnet_spec_with_cloud_props(range, static_ips, zone_names, cloud_properties)
+      spec = make_subnet_spec(range, static_ips, zone_names)
+      spec['cloud_properties'] = cloud_properties
+      spec
+    end
     let(:networks_spec) do
       [
         { 'name' => 'a',
@@ -920,6 +926,101 @@ module Bosh::Director::DeploymentPlan
                   'an attempt was made to modify the networks. This operation is not allowed.',
                 )
               end
+            end
+          end
+        end
+
+        context 'when networks share a nic_group with multiple subnets per AZ' do
+          let(:desired_instance_count) { 2 }
+          let(:instance_group_networks) do
+            [
+              { 'name' => 'a', 'static_ips' => %w[192.168.1.10 192.168.2.10], 'default' => %w[dns gateway], 'nic_group' => '1' },
+              { 'name' => 'b', 'static_ips' => %w[10.10.1.10 10.10.2.10], 'nic_group' => '1' },
+            ]
+          end
+          let(:networks_spec) do
+            [
+              { 'name' => 'a',
+                'subnets' => [
+                  make_subnet_spec_with_cloud_props('192.168.1.0/24', ['192.168.1.10 - 192.168.1.14'], ['zone1'], { 'subnet' => 'subnet-aaa' }),
+                  make_subnet_spec_with_cloud_props('192.168.2.0/24', ['192.168.2.10 - 192.168.2.14'], ['zone1'], { 'subnet' => 'subnet-bbb' }),
+                ] },
+              { 'name' => 'b',
+                'subnets' => [
+                  make_subnet_spec_with_cloud_props('10.10.1.0/24', ['10.10.1.10 - 10.10.1.14'], ['zone1'], { 'subnet' => 'subnet-aaa' }),
+                  make_subnet_spec_with_cloud_props('10.10.2.0/24', ['10.10.2.10 - 10.10.2.14'], ['zone1'], { 'subnet' => 'subnet-bbb' }),
+                ] },
+            ]
+          end
+          let(:instance_group_availability_zones) { ['zone1'] }
+
+          context 'when existing instances have IPs on one network and a second nic_group network is added' do
+            let(:existing_instances) do
+              [
+                existing_instance_with_az_and_ips('zone1', ['192.168.1.10/32']),
+                existing_instance_with_az_and_ips('zone1', ['192.168.2.10/32']),
+              ]
+            end
+
+            it 'assigns the new network IP on the same cloud subnet as the existing sibling' do
+              expect(new_instance_plans).to eq([])
+              expect(obsolete_instance_plans).to eq([])
+              expect(existing_instance_plans.size).to eq(2)
+
+              existing_instance_plans.each do |plan|
+                a_ip = plan.network_plans.find { |np| np.reservation.network.name == 'a' }.reservation.ip
+                b_ip = plan.network_plans.find { |np| np.reservation.network.name == 'b' }.reservation.ip
+
+                a_subnet = planner.networks.find { |n| n.name == 'a' }.find_subnet_containing(a_ip)
+                b_subnet = planner.networks.find { |n| n.name == 'b' }.find_subnet_containing(b_ip)
+
+                expect(a_subnet.cloud_properties).to eq(b_subnet.cloud_properties),
+                  "Expected IPs #{a_ip} and #{b_ip} to be on same cloud subnet, " \
+                  "got #{a_subnet.cloud_properties} vs #{b_subnet.cloud_properties}"
+              end
+            end
+          end
+
+          context 'when no matching IP is available on the sibling cloud subnet' do
+            let(:instance_group_networks) do
+              [
+                { 'name' => 'a', 'static_ips' => ['192.168.1.10'], 'default' => %w[dns gateway], 'nic_group' => '1' },
+                { 'name' => 'b', 'static_ips' => ['10.10.2.10'], 'nic_group' => '1' },
+              ]
+            end
+            let(:desired_instance_count) { 1 }
+            let(:existing_instances) do
+              [
+                existing_instance_with_az_and_ips('zone1', ['192.168.1.10/32']),
+              ]
+            end
+
+            it 'raises an error instead of silently assigning a mismatched subnet' do
+              expect { instance_plans }.to raise_error(
+                Bosh::Director::NetworkReservationError,
+                /Failed to find a static IP for network 'b' on a matching subnet in nic_group '1'/,
+              )
+            end
+          end
+
+          context 'when nic_group is not used' do
+            let(:instance_group_networks) do
+              [
+                { 'name' => 'a', 'static_ips' => %w[192.168.1.10 192.168.2.10], 'default' => %w[dns gateway] },
+                { 'name' => 'b', 'static_ips' => %w[10.10.1.10 10.10.2.10] },
+              ]
+            end
+            let(:existing_instances) do
+              [
+                existing_instance_with_az_and_ips('zone1', ['192.168.1.10/32']),
+                existing_instance_with_az_and_ips('zone1', ['192.168.2.10/32']),
+              ]
+            end
+
+            it 'assigns IPs without cloud subnet constraint (existing behavior)' do
+              expect(existing_instance_plans.size).to eq(2)
+              expect(new_instance_plans).to eq([])
+              expect(obsolete_instance_plans).to eq([])
             end
           end
         end
