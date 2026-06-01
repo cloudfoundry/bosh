@@ -48,6 +48,7 @@ module Bosh::Director
           request_checksum_calculation_enabled: @options[:request_checksum_calculation_enabled],
           response_checksum_calculation_enabled: @options[:response_checksum_calculation_enabled],
           uploader_request_checksum_calculation_enabled: @options[:uploader_request_checksum_calculation_enabled],
+          multipart_upload: @options[:multipart_upload],
         }
 
         @s3cli_options.reject! { |_k, v| v.nil? }

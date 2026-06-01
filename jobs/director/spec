@@ -448,6 +448,8 @@ properties:
     description: Whether to calculate checksums for responses from S3
   blobstore.uploader_request_checksum_calculation_enabled:
     description: Whether to calculate checksums for uploader requests to S3
+  blobstore.multipart_upload_enabled:
+    description: Whether to use multipart uploads to S3
 
   director.ignore_missing_gateway:
     description: Allow gateway to be omitted from subnet configuration. Bosh lite vms(containers) do not require gateway.
