@@ -14,10 +14,10 @@ mysql/mariadb-connector-c-3.4.8-src.tar.gz:
   size: 1380411
   object_id: 31e2e6c6-eefe-4512-68bd-757a7c27b044
   sha: sha256:156aed3b49f857d0ac74fb76f1982968bcbfd8382da3f5b6ae71f616729920d7
-nats/nats-server-v2.14.1-linux-amd64.tar.gz:
-  size: 6822940
-  object_id: baefa873-003e-4beb-6566-7446171c73fc
-  sha: sha256:4638c389af67d4c747f5b3e6a9d363bfe8f6b86de37d7c4ee3a36b283a5c2ce2
+nats/nats-server-v2.14.2-linux-amd64.tar.gz:
+  size: 6823789
+  object_id: 9e4d08fc-d79f-43aa-5be0-89a457e15ba3
+  sha: sha256:b3e7b14eb10c895fd90c2dacdb6b65bd3208adcc9524dd7689ba2c1024e6b97a
 postgres/postgresql-10.23.tar.gz:
   size: 25493839
   object_id: 1549746f-1e8d-4ce5-5585-36eca41ab528
