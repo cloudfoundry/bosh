@@ -149,6 +149,19 @@ module Bosh::Director::Blobstore
           expect(config['uploader_request_checksum_calculation_enabled']).to eq(false)
         end
       end
+
+      context 'when multipart_upload is provided' do
+        it 'adds it to the config file' do
+          described_class.new(options.merge(
+            {
+              multipart_upload: false,
+            })
+          )
+
+          config = JSON.parse(stored_config_file[0])
+          expect(config['multipart_upload']).to eq(false)
+        end
+      end
     end
 
     describe '#delete' do

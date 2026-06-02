@@ -262,6 +262,10 @@ if p('blobstore.provider') == 's3'
   if_p('blobstore.uploader_request_checksum_calculation_enabled') do |uploader_request_checksum_calculation_enabled|
      blobstore_options['uploader_request_checksum_calculation_enabled'] = uploader_request_checksum_calculation_enabled
   end
+
+  if_p('blobstore.multipart_upload_enabled') do |multipart_upload_enabled|
+     blobstore_options['multipart_upload'] = multipart_upload_enabled
+  end
 elsif p('blobstore.provider') == 'gcs'
     blobstore_options = {
     'bucket_name' => p('blobstore.bucket_name'),
