@@ -88,9 +88,14 @@ resource "google_compute_firewall" "bosh-internal" {
   target_tags = ["bosh-deployed", "test-stemcells-bats", "test-stemcells-ipv4"]
 }
 
+resource "random_id" "mysql_db_name_suffix" {
+  count       = var.create_mysql_db ? 1 : 0
+  byte_length = 4
+}
+
 resource "google_sql_database_instance" "mysql-db" {
   count            = var.create_mysql_db ? 1 : 0
-  name             = "${var.name}-mysql-db"
+  name             = "${var.name}-mysql-db-${random_id.mysql_db_name_suffix[0].hex}"
   database_version = "MYSQL_8_0"
   region           = var.region
   deletion_protection = false
