@@ -35,11 +35,24 @@ fi
 
 "bosh-ci/ci/bats/iaas/${BAT_INFRASTRUCTURE}/director-vars" > director-vars.json
 
+# Name the director after its per-env terraform network (e.g. bats, fips-director,
+# upgrade-postgres, upgrade-mysql). The GCP CPI derives VM network tags from the
+# director name, so a per-env name keeps the "bats" substring off VMs in the
+# upgrade/fips jobs and prevents the bats job's `leftovers --filter bats` cleanup
+# from deleting them. Falls back to bats-director if metadata is unavailable.
+director_name="bats-director"
+if [[ -e environment/metadata ]]; then
+  network_name="$(jq -r '.network // empty' environment/metadata)"
+  if [[ -n "${network_name}" ]]; then
+    director_name="${network_name}"
+  fi
+fi
+
 bosh-cli interpolate bosh-deployment/bosh.yml \
   -o "bosh-deployment/${BAT_INFRASTRUCTURE}/cpi.yml" \
   -o bosh-deployment/jumpbox-user.yml \
   -o bosh-deployment/local-bosh-release-tarball.yml \
-  -v director_name=bats-director \
+  -v director_name="${director_name}" \
   -v local_bosh_release="$(realpath bosh-release/*.tgz)" \
   --vars-file director-vars.json \
   $DEPLOY_ARGS \
