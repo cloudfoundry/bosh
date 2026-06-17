@@ -44,6 +44,7 @@ module Support
         'dynamic-disks-attacher' => ['bosh.dynamic-disks.attach'],
         'dynamic-disks-detacher' => ['bosh.dynamic-disks.detach'],
         'dynamic-disks-deleter' => ['bosh.dynamic-disks.delete'],
+        'dynamic-disks-lister' => ['bosh.dynamic-disks.list'],
         'outsider' => ['uaa.admin'],
       }
     end
