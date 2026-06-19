@@ -26,8 +26,6 @@ export BOSH_ENVIRONMENT
 export BOSH_CA_CERT
 export BOSH_CLIENT_SECRET
 
-set +e
-
 bosh-cli deployments --column name --json \
   | jq -r ".Tables[0].Rows[].name" \
   | xargs -n1 -I % bosh-cli -n -d '%' delete-deployment --force
