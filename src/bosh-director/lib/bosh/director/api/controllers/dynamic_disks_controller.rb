@@ -6,7 +6,7 @@ module Bosh::Director
       include ValidationHelper
 
       get '/', scope: :list_dynamic_disks do
-        disks = Models::DynamicDisk.all.map do |disk|
+        disks = Models::DynamicDisk.eager(:deployment, vm: :instance).all.map do |disk|
           {
             name: disk.name,
             disk_cid: disk.disk_cid,
