@@ -292,6 +292,113 @@ var _ = Describe("AuthProvider", func() {
 				Expect(provider.CAFilePath()).To(Equal(dirCertPath))
 			})
 		})
+
+		// Mirrors Ruby spec: 'user has not provided director_ca_cert'
+		// When neither director_ca_cert nor uaa_ca_cert is set, CAFilePath() returns ""
+		// and buildHTTPClient sets tls.Config{RootCAs: nil}, which makes Go use the
+		// system trust store — the equivalent of Ruby's
+		// OpenSSL::X509::Store.new.tap(&:set_default_paths).
+		Context("when no CA cert is provided (system trust store)", func() {
+			makeInfo := func() authprovider.InfoResponse {
+				return authprovider.InfoResponse{
+					UserAuthentication: &authprovider.UserAuthentication{
+						Type:    "uaa",
+						Options: authprovider.UAAOptions{URL: uaaServer.URL},
+					},
+				}
+			}
+			makeCfg := func() config.DirectorConfig {
+				return config.DirectorConfig{
+					ClientID:     "fake-client",
+					ClientSecret: "fake-client-secret",
+					// No DirectorCACert or UAACACert configured.
+				}
+			}
+
+			It("CAFilePath returns an empty string, indicating the system trust store will be used", func() {
+				provider := authprovider.New(makeInfo(), makeCfg(), logger)
+				Expect(provider.CAFilePath()).To(BeEmpty())
+			})
+
+			It("returns auth header provided by UAA", func() {
+				provider := authprovider.New(makeInfo(), makeCfg(), logger)
+
+				header, err := provider.AuthHeader()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(header).To(Equal("Bearer token-1"))
+			})
+
+			It("reuses the same token for subsequent requests", func() {
+				provider := authprovider.New(makeInfo(), makeCfg(), logger)
+
+				header1, err := provider.AuthHeader()
+				Expect(err).NotTo(HaveOccurred())
+				header2, err := provider.AuthHeader()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(header1).To(Equal(header2))
+				Expect(tokenCounter).To(Equal(1))
+			})
+
+			Context("when token is about to expire", func() {
+				BeforeEach(func() {
+					expiresIn = 30
+				})
+
+				It("obtains a new token", func() {
+					provider := authprovider.New(makeInfo(), makeCfg(), logger)
+
+					header1, err := provider.AuthHeader()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(header1).To(Equal("Bearer token-1"))
+
+					header2, err := provider.AuthHeader()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(header2).To(Equal("Bearer token-2"))
+				})
+			})
+
+			Context("when getting token fails", func() {
+				It("returns an error", func() {
+					info := authprovider.InfoResponse{
+						UserAuthentication: &authprovider.UserAuthentication{
+							Type:    "uaa",
+							Options: authprovider.UAAOptions{URL: "http://127.0.0.1:1"},
+						},
+					}
+					provider := authprovider.New(info, makeCfg(), logger)
+
+					header, err := provider.AuthHeader()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("failed to obtain token from UAA"))
+					Expect(header).To(BeEmpty())
+				})
+			})
+
+			// Stronger than the Ruby test: verifies that the HTTP client built for
+			// UAA token requests does NOT use InsecureSkipVerify. When no CA cert is
+			// configured the client uses tls.Config{RootCAs: nil} (system trust store),
+			// so a self-signed test-server cert that isn't in the system store must
+			// cause a TLS error — not silently succeed.
+			It("does not skip TLS verification when connecting to a TLS UAA server", func() {
+				tlsUAAServer := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					fmt.Fprint(w, `{"access_token":"tls-token","token_type":"bearer","expires_in":3600}`)
+				}))
+				defer tlsUAAServer.Close()
+
+				info := authprovider.InfoResponse{
+					UserAuthentication: &authprovider.UserAuthentication{
+						Type:    "uaa",
+						Options: authprovider.UAAOptions{URL: tlsUAAServer.URL},
+					},
+				}
+				provider := authprovider.New(info, makeCfg(), logger)
+
+				_, err := provider.AuthHeader()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("failed to obtain token from UAA"))
+			})
+		})
 	})
 
 	Context("when director is in non-UAA mode", func() {
