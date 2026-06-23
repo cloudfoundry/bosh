@@ -25,12 +25,13 @@ type managedProcess struct {
 	stdin io.WriteCloser
 }
 
-func main() {
-	pluginlib.Run(func(ctx context.Context, rawOpts json.RawMessage, events <-chan *pluginlib.EventEnvelope, cmds chan<- *pluginlib.Command) error {
-		var opts jsonOptions
-		if err := json.Unmarshal(rawOpts, &opts); err != nil {
-			return fmt.Errorf("failed to parse options: %w", err)
-		}
+func main() { pluginlib.Run(runJSON) }
+
+func runJSON(ctx context.Context, rawOpts json.RawMessage, events <-chan *pluginlib.EventEnvelope, cmds chan<- *pluginlib.Command) error {
+	var opts jsonOptions
+	if err := json.Unmarshal(rawOpts, &opts); err != nil {
+		return fmt.Errorf("failed to parse options: %w", err)
+	}
 
 		if opts.Glob == "" {
 			opts.Glob = "/var/vcap/jobs/*/bin/bosh-monitor/*"
@@ -139,5 +140,4 @@ func main() {
 				mu.Unlock()
 			}
 		}
-	})
 }

@@ -13,22 +13,24 @@ import (
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/cmd/plugins/pluginlib"
 )
 
-const apiURI = "https://events.pagerduty.com/generic/2010-04-15/create_event.json"
+// apiURI is a var so tests can override it with an httptest.Server address.
+var apiURI = "https://events.pagerduty.com/generic/2010-04-15/create_event.json"
 
 type pagerdutyOptions struct {
 	ServiceKey string `json:"service_key"`
 	HTTPProxy  string `json:"http_proxy"`
 }
 
-func main() {
-	pluginlib.Run(func(ctx context.Context, rawOpts json.RawMessage, events <-chan *pluginlib.EventEnvelope, cmds chan<- *pluginlib.Command) error {
-		var opts pagerdutyOptions
-		if err := json.Unmarshal(rawOpts, &opts); err != nil {
-			return fmt.Errorf("invalid options: %w", err)
-		}
-		if opts.ServiceKey == "" {
-			return fmt.Errorf("service_key required")
-		}
+func main() { pluginlib.Run(runPagerduty) }
+
+func runPagerduty(ctx context.Context, rawOpts json.RawMessage, events <-chan *pluginlib.EventEnvelope, cmds chan<- *pluginlib.Command) error {
+	var opts pagerdutyOptions
+	if err := json.Unmarshal(rawOpts, &opts); err != nil {
+		return fmt.Errorf("invalid options: %w", err)
+	}
+	if opts.ServiceKey == "" {
+		return fmt.Errorf("service_key required")
+	}
 
 		cmds <- pluginlib.LogCommand("info", "Pagerduty delivery agent is running...")
 
@@ -70,17 +72,19 @@ func main() {
 					"details":      eventToHash(event),
 				})
 
-				go func() {
-					resp, err := client.Post(apiURI, "application/json", bytes.NewReader(payload))
-					if err != nil {
-						cmds <- pluginlib.LogCommand("error", fmt.Sprintf("Error sending pagerduty event: %v", err))
-						return
+			go func(c context.Context, pl []byte) {
+				resp, err := client.Post(apiURI, "application/json", bytes.NewReader(pl))
+				if err != nil {
+					select {
+					case cmds <- pluginlib.LogCommand("error", fmt.Sprintf("Error sending pagerduty event: %v", err)):
+					case <-c.Done():
 					}
-					_ = resp.Body.Close()
-				}()
+					return
+				}
+				_ = resp.Body.Close()
+			}(ctx, payload)
 			}
 		}
-	})
 }
 
 func eventShortDescription(e *pluginlib.EventData) string {

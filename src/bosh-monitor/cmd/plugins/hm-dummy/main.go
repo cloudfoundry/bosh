@@ -8,25 +8,25 @@ import (
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/cmd/plugins/pluginlib"
 )
 
-func main() {
-	pluginlib.Run(func(ctx context.Context, rawOpts json.RawMessage, events <-chan *pluginlib.EventEnvelope, cmds chan<- *pluginlib.Command) error {
-		cmds <- pluginlib.LogCommand("info", "Dummy delivery agent is running...")
+func main() { pluginlib.Run(runDummy) }
 
-		count := 0
-		for {
-			select {
-			case <-ctx.Done():
+func runDummy(ctx context.Context, rawOpts json.RawMessage, events <-chan *pluginlib.EventEnvelope, cmds chan<- *pluginlib.Command) error {
+	cmds <- pluginlib.LogCommand("info", "Dummy delivery agent is running...")
+
+	count := 0
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case env, ok := <-events:
+			if !ok {
 				return nil
-			case env, ok := <-events:
-				if !ok {
-					return nil
-				}
-				if env.Event == nil {
-					continue
-				}
-				count++
-				cmds <- pluginlib.LogCommand("info", fmt.Sprintf("Processing event! (total: %d)", count))
 			}
+			if env.Event == nil {
+				continue
+			}
+			count++
+			cmds <- pluginlib.LogCommand("info", fmt.Sprintf("Processing event! (total: %d)", count))
 		}
-	})
+	}
 }
