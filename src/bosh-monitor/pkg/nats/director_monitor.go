@@ -9,13 +9,20 @@ type DirectorAlertProcessor interface {
 	Process(kind string, data map[string]interface{}) error
 }
 
+// DirectorAlertSubscriber is the subset of the NATS client used by
+// DirectorMonitor. Using an interface here lets tests inject a fake without
+// requiring a live NATS connection.
+type DirectorAlertSubscriber interface {
+	SubscribeDirectorAlerts(handler func(payload string)) error
+}
+
 type DirectorMonitor struct {
-	client    *Client
+	client    DirectorAlertSubscriber
 	logger    *slog.Logger
 	processor DirectorAlertProcessor
 }
 
-func NewDirectorMonitor(client *Client, processor DirectorAlertProcessor, logger *slog.Logger) *DirectorMonitor {
+func NewDirectorMonitor(client DirectorAlertSubscriber, processor DirectorAlertProcessor, logger *slog.Logger) *DirectorMonitor {
 	return &DirectorMonitor{
 		client:    client,
 		logger:    logger,
@@ -24,23 +31,25 @@ func NewDirectorMonitor(client *Client, processor DirectorAlertProcessor, logger
 }
 
 func (dm *DirectorMonitor) Subscribe() error {
-	return dm.client.SubscribeDirectorAlerts(func(payload string) {
-		dm.logger.Debug("Received director alert", "payload", payload)
+	return dm.client.SubscribeDirectorAlerts(dm.handleAlert)
+}
 
-		var alert map[string]interface{}
-		if err := json.Unmarshal([]byte(payload), &alert); err != nil {
-			dm.logger.Error("Failed to parse director alert", "error", err)
-			return
-		}
+func (dm *DirectorMonitor) handleAlert(payload string) {
+	dm.logger.Debug("Received director alert", "payload", payload)
 
-		if !dm.validPayload(alert) {
-			return
-		}
+	var alert map[string]interface{}
+	if err := json.Unmarshal([]byte(payload), &alert); err != nil {
+		dm.logger.Error("Failed to parse director alert", "error", err)
+		return
+	}
 
-		if err := dm.processor.Process("alert", alert); err != nil {
-			dm.logger.Error("Failed to process director alert", "error", err)
-		}
-	})
+	if !dm.validPayload(alert) {
+		return
+	}
+
+	if err := dm.processor.Process("alert", alert); err != nil {
+		dm.logger.Error("Failed to process director alert", "error", err)
+	}
 }
 
 func (dm *DirectorMonitor) validPayload(payload map[string]interface{}) bool {
