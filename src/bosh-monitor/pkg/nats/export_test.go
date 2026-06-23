@@ -11,3 +11,9 @@ var ConnectFunc = &connectFunc
 // RetryWait is a pointer to the retryWait variable so tests can set a
 // sub-millisecond interval and keep the retry suite fast.
 var RetryWait = &retryWait
+
+// HandleAlert exposes the unexported handleAlert method so external test
+// packages can drive alert processing without a live NATS connection.
+func HandleAlert(dm *DirectorMonitor, payload string) {
+	dm.handleAlert(payload)
+}
