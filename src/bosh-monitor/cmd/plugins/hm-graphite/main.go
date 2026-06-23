@@ -19,15 +19,16 @@ type graphiteOptions struct {
 	MaxRetries int    `json:"max_retries"`
 }
 
-func main() {
-	pluginlib.Run(func(ctx context.Context, rawOpts json.RawMessage, events <-chan *pluginlib.EventEnvelope, cmds chan<- *pluginlib.Command) error {
-		var opts graphiteOptions
-		if err := json.Unmarshal(rawOpts, &opts); err != nil {
-			return fmt.Errorf("invalid options: %w", err)
-		}
-		if opts.Host == "" || opts.Port == 0 {
-			return fmt.Errorf("host and port required")
-		}
+func main() { pluginlib.Run(runGraphite) }
+
+func runGraphite(ctx context.Context, rawOpts json.RawMessage, events <-chan *pluginlib.EventEnvelope, cmds chan<- *pluginlib.Command) error {
+	var opts graphiteOptions
+	if err := json.Unmarshal(rawOpts, &opts); err != nil {
+		return fmt.Errorf("invalid options: %w", err)
+	}
+	if opts.Host == "" || opts.Port == 0 {
+		return fmt.Errorf("host and port required")
+	}
 
 		cmds <- pluginlib.LogCommand("info", "Graphite delivery agent is running...")
 
@@ -86,7 +87,6 @@ func main() {
 				_ = conn.Close()
 			}
 		}
-	})
 }
 
 func getMetricPrefix(opts graphiteOptions, event *pluginlib.EventData) string {

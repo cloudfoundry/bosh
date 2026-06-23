@@ -11,6 +11,11 @@ import (
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/cmd/plugins/pluginlib"
 )
 
+// datadogSeriesURLTemplate and datadogEventsURLTemplate are vars so tests can
+// override them to point at an httptest.Server.
+var datadogSeriesURLTemplate = "https://api.datadoghq.com/api/v1/series?api_key=%s"
+var datadogEventsURLTemplate = "https://api.datadoghq.com/api/v1/events?api_key=%s"
+
 type datadogOptions struct {
 	APIKey               string            `json:"api_key"`
 	ApplicationKey       string            `json:"application_key"`
@@ -18,15 +23,16 @@ type datadogOptions struct {
 	CustomTags           map[string]string `json:"custom_tags"`
 }
 
-func main() {
-	pluginlib.Run(func(ctx context.Context, rawOpts json.RawMessage, events <-chan *pluginlib.EventEnvelope, cmds chan<- *pluginlib.Command) error {
-		var opts datadogOptions
-		if err := json.Unmarshal(rawOpts, &opts); err != nil {
-			return fmt.Errorf("invalid options: %w", err)
-		}
-		if opts.APIKey == "" || opts.ApplicationKey == "" {
-			return fmt.Errorf("api_key and application_key required")
-		}
+func main() { pluginlib.Run(runDatadog) }
+
+func runDatadog(ctx context.Context, rawOpts json.RawMessage, events <-chan *pluginlib.EventEnvelope, cmds chan<- *pluginlib.Command) error {
+	var opts datadogOptions
+	if err := json.Unmarshal(rawOpts, &opts); err != nil {
+		return fmt.Errorf("invalid options: %w", err)
+	}
+	if opts.APIKey == "" || opts.ApplicationKey == "" {
+		return fmt.Errorf("api_key and application_key required")
+	}
 
 		cmds <- pluginlib.LogCommand("info", "DataDog plugin is running...")
 
@@ -44,20 +50,19 @@ func main() {
 					continue
 				}
 
-				switch env.Event.Kind {
-				case "heartbeat":
-					if env.Event.InstanceID != "" {
-						go processHeartbeat(client, opts, env.Event, cmds)
-					}
-				case "alert":
-					go processAlert(client, opts, env.Event, cmds)
+			switch env.Event.Kind {
+			case "heartbeat":
+				if env.Event.InstanceID != "" {
+					go processHeartbeat(ctx, client, opts, env.Event, cmds)
 				}
+			case "alert":
+				go processAlert(ctx, client, opts, env.Event, cmds)
+			}
 			}
 		}
-	})
 }
 
-func processHeartbeat(client *http.Client, opts datadogOptions, event *pluginlib.EventData, cmds chan<- *pluginlib.Command) {
+func processHeartbeat(ctx context.Context, client *http.Client, opts datadogOptions, event *pluginlib.EventData, cmds chan<- *pluginlib.Command) {
 	tags := []string{
 		fmt.Sprintf("job:%s", event.Job),
 		fmt.Sprintf("index:%s", event.Index),
@@ -82,17 +87,20 @@ func processHeartbeat(client *http.Client, opts datadogOptions, event *pluginlib
 	}
 
 	payload, _ := json.Marshal(map[string]interface{}{"series": series})
-	url := fmt.Sprintf("https://api.datadoghq.com/api/v1/series?api_key=%s", opts.APIKey)
+	url := fmt.Sprintf(datadogSeriesURLTemplate, opts.APIKey)
 
 	resp, err := client.Post(url, "application/json", bytes.NewReader(payload))
 	if err != nil {
-		cmds <- pluginlib.LogCommand("warn", fmt.Sprintf("Could not emit points to Datadog: %v", err))
+		select {
+		case cmds <- pluginlib.LogCommand("warn", fmt.Sprintf("Could not emit points to Datadog: %v", err)):
+		case <-ctx.Done():
+		}
 		return
 	}
 	_ = resp.Body.Close()
 }
 
-func processAlert(client *http.Client, opts datadogOptions, event *pluginlib.EventData, cmds chan<- *pluginlib.Command) {
+func processAlert(ctx context.Context, client *http.Client, opts datadogOptions, event *pluginlib.EventData, cmds chan<- *pluginlib.Command) {
 	normalPriority := map[int]bool{1: true, 2: true, 3: true}
 
 	priority := "low"
@@ -127,10 +135,13 @@ func processAlert(client *http.Client, opts datadogOptions, event *pluginlib.Eve
 		"alert_type":    alertType,
 	})
 
-	url := fmt.Sprintf("https://api.datadoghq.com/api/v1/events?api_key=%s", opts.APIKey)
+	url := fmt.Sprintf(datadogEventsURLTemplate, opts.APIKey)
 	resp, err := client.Post(url, "application/json", bytes.NewReader(payload))
 	if err != nil {
-		cmds <- pluginlib.LogCommand("warn", fmt.Sprintf("Could not emit event to Datadog: %v", err))
+		select {
+		case cmds <- pluginlib.LogCommand("warn", fmt.Sprintf("Could not emit event to Datadog: %v", err)):
+		case <-ctx.Done():
+		}
 		return
 	}
 	_ = resp.Body.Close()

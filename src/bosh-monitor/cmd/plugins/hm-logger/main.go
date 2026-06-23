@@ -13,35 +13,35 @@ type options struct {
 	Format string `json:"format"`
 }
 
-func main() {
-	pluginlib.Run(func(ctx context.Context, rawOpts json.RawMessage, events <-chan *pluginlib.EventEnvelope, cmds chan<- *pluginlib.Command) error {
-		var opts options
-		if err := json.Unmarshal(rawOpts, &opts); err != nil {
-			return fmt.Errorf("failed to parse options: %w", err)
-		}
+func main() { pluginlib.Run(runLogger) }
 
-		cmds <- pluginlib.LogCommand("info", "Logging delivery agent is running...")
+func runLogger(ctx context.Context, rawOpts json.RawMessage, events <-chan *pluginlib.EventEnvelope, cmds chan<- *pluginlib.Command) error {
+	var opts options
+	if err := json.Unmarshal(rawOpts, &opts); err != nil {
+		return fmt.Errorf("failed to parse options: %w", err)
+	}
 
-		for {
-			select {
-			case <-ctx.Done():
+	cmds <- pluginlib.LogCommand("info", "Logging delivery agent is running...")
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case env, ok := <-events:
+			if !ok {
 				return nil
-			case env, ok := <-events:
-				if !ok {
-					return nil
-				}
-				if env.Event == nil {
-					continue
-				}
-				if opts.Format == "json" {
-					data, _ := json.Marshal(env.Event)
-					cmds <- pluginlib.LogCommand("info", string(data))
-				} else {
-					cmds <- pluginlib.LogCommand("info", fmt.Sprintf("[%s] %s", kindUpper(env.Event.Kind), eventSummary(env.Event)))
-				}
+			}
+			if env.Event == nil {
+				continue
+			}
+			if opts.Format == "json" {
+				data, _ := json.Marshal(env.Event)
+				cmds <- pluginlib.LogCommand("info", string(data))
+			} else {
+				cmds <- pluginlib.LogCommand("info", fmt.Sprintf("[%s] %s", kindUpper(env.Event.Kind), eventSummary(env.Event)))
 			}
 		}
-	})
+	}
 }
 
 func kindUpper(kind string) string {

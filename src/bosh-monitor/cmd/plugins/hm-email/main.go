@@ -19,10 +19,11 @@ type emailOptions struct {
 	Interval   float64                `json:"interval"`
 }
 
-func main() {
-	pluginlib.Run(func(ctx context.Context, rawOpts json.RawMessage, events <-chan *pluginlib.EventEnvelope, cmds chan<- *pluginlib.Command) error {
-		var opts emailOptions
-		if err := json.Unmarshal(rawOpts, &opts); err != nil {
+func main() { pluginlib.Run(runEmail) }
+
+func runEmail(ctx context.Context, rawOpts json.RawMessage, events <-chan *pluginlib.EventEnvelope, cmds chan<- *pluginlib.Command) error {
+	var opts emailOptions
+	if err := json.Unmarshal(rawOpts, &opts); err != nil {
 			return fmt.Errorf("invalid options: %w", err)
 		}
 
@@ -90,7 +91,6 @@ func main() {
 				mu.Unlock()
 			}
 		}
-	})
 }
 
 func eventToPlainText(e *pluginlib.EventData) string {

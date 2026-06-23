@@ -31,14 +31,17 @@ type consulOptions struct {
 }
 
 func main() {
-	pluginlib.Run(func(ctx context.Context, rawOpts json.RawMessage, events <-chan *pluginlib.EventEnvelope, cmds chan<- *pluginlib.Command) error {
-		var opts consulOptions
-		if err := json.Unmarshal(rawOpts, &opts); err != nil {
-			return fmt.Errorf("invalid options: %w", err)
-		}
-		if opts.Host == "" || opts.Port == 0 || opts.Protocol == "" {
-			return fmt.Errorf("host, port, and protocol required")
-		}
+	pluginlib.Run(runConsul)
+}
+
+func runConsul(ctx context.Context, rawOpts json.RawMessage, events <-chan *pluginlib.EventEnvelope, cmds chan<- *pluginlib.Command) error {
+	var opts consulOptions
+	if err := json.Unmarshal(rawOpts, &opts); err != nil {
+		return fmt.Errorf("invalid options: %w", err)
+	}
+	if opts.Host == "" || opts.Port == 0 || opts.Protocol == "" {
+		return fmt.Errorf("host, port, and protocol required")
+	}
 
 		cmds <- pluginlib.LogCommand("info", "Consul Event Forwarder plugin is running...")
 
@@ -80,7 +83,6 @@ func main() {
 				}
 			}
 		}
-	})
 }
 
 func forwardThisEvent(opts consulOptions, event *pluginlib.EventData) bool {

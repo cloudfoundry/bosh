@@ -9,11 +9,12 @@ import (
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/cmd/plugins/pluginlib"
 )
 
-func main() {
-	pluginlib.Run(func(ctx context.Context, rawOpts json.RawMessage, events <-chan *pluginlib.EventEnvelope, cmds chan<- *pluginlib.Command) error {
-		cmds <- pluginlib.LogCommand("info", "Event logger is running...")
+func main() { pluginlib.Run(runEventLogger) }
 
-		for {
+func runEventLogger(ctx context.Context, rawOpts json.RawMessage, events <-chan *pluginlib.EventEnvelope, cmds chan<- *pluginlib.Command) error {
+	cmds <- pluginlib.LogCommand("info", "Event logger is running...")
+
+	for {
 			select {
 			case <-ctx.Done():
 				return nil
@@ -59,10 +60,9 @@ func main() {
 				reqID := fmt.Sprintf("event-%s-%d", event.ID, time.Now().UnixNano())
 
 				cmds <- pluginlib.LogCommand("info", fmt.Sprintf("(Event logger) notifying director about event: %s", event.ID))
-				cmds <- pluginlib.HTTPRequestCommand(reqID, "POST", "/events",
-					map[string]string{"Content-Type": "application/json"},
-					string(body))
-			}
+			cmds <- pluginlib.HTTPRequestCommand(reqID, "POST", "/events",
+				map[string]string{"Content-Type": "application/json"},
+				string(body))
 		}
-	})
+	}
 }

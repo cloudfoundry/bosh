@@ -15,15 +15,16 @@ type riemannOptions struct {
 	Port int    `json:"port"`
 }
 
-func main() {
-	pluginlib.Run(func(ctx context.Context, rawOpts json.RawMessage, events <-chan *pluginlib.EventEnvelope, cmds chan<- *pluginlib.Command) error {
-		var opts riemannOptions
-		if err := json.Unmarshal(rawOpts, &opts); err != nil {
-			return fmt.Errorf("invalid options: %w", err)
-		}
-		if opts.Host == "" || opts.Port == 0 {
-			return fmt.Errorf("host and port required")
-		}
+func main() { pluginlib.Run(runRiemann) }
+
+func runRiemann(ctx context.Context, rawOpts json.RawMessage, events <-chan *pluginlib.EventEnvelope, cmds chan<- *pluginlib.Command) error {
+	var opts riemannOptions
+	if err := json.Unmarshal(rawOpts, &opts); err != nil {
+		return fmt.Errorf("invalid options: %w", err)
+	}
+	if opts.Host == "" || opts.Port == 0 {
+		return fmt.Errorf("host and port required")
+	}
 
 		cmds <- pluginlib.LogCommand("info", "Riemann delivery agent is running...")
 
@@ -52,7 +53,6 @@ func main() {
 				}
 			}
 		}
-	})
 }
 
 func processHeartbeat(addr string, event *pluginlib.EventData, cmds chan<- *pluginlib.Command) {
