@@ -39,25 +39,26 @@ type Envelope struct {
 
 // EventData is the serialized event sent inside an envelope.
 type EventData struct {
-	Kind       string                 `json:"kind"`
-	ID         string                 `json:"id"`
-	Severity   int                    `json:"severity,omitempty"`
-	Category   string                 `json:"category,omitempty"`
-	Title      string                 `json:"title,omitempty"`
-	Summary    string                 `json:"summary,omitempty"`
-	Source     string                 `json:"source,omitempty"`
-	Deployment string                 `json:"deployment,omitempty"`
-	CreatedAt  int64                  `json:"created_at,omitempty"`
-	Timestamp  int64                  `json:"timestamp,omitempty"`
-	AgentID    string                 `json:"agent_id,omitempty"`
-	Job        string                 `json:"job,omitempty"`
-	Index      string                 `json:"index,omitempty"`
-	InstanceID string                 `json:"instance_id,omitempty"`
-	JobState   string                 `json:"job_state,omitempty"`
-	Vitals     map[string]interface{} `json:"vitals,omitempty"`
-	Metrics    []MetricData           `json:"metrics,omitempty"`
-	Teams      []string               `json:"teams,omitempty"`
-	Attributes map[string]interface{} `json:"attributes,omitempty"`
+	Kind              string                 `json:"kind"`
+	ID                string                 `json:"id"`
+	Severity          int                    `json:"severity,omitempty"`
+	Category          string                 `json:"category,omitempty"`
+	Title             string                 `json:"title,omitempty"`
+	Summary           string                 `json:"summary,omitempty"`
+	Source            string                 `json:"source,omitempty"`
+	Deployment        string                 `json:"deployment,omitempty"`
+	CreatedAt         int64                  `json:"created_at,omitempty"`
+	Timestamp         int64                  `json:"timestamp,omitempty"`
+	AgentID           string                 `json:"agent_id,omitempty"`
+	Job               string                 `json:"job,omitempty"`
+	Index             string                 `json:"index,omitempty"`
+	InstanceID        string                 `json:"instance_id,omitempty"`
+	JobState          string                 `json:"job_state,omitempty"`
+	Vitals            map[string]interface{} `json:"vitals,omitempty"`
+	Metrics           []MetricData           `json:"metrics,omitempty"`
+	Teams             []string               `json:"teams,omitempty"`
+	NumberOfProcesses interface{}            `json:"number_of_processes,omitempty"`
+	Attributes        map[string]interface{} `json:"attributes,omitempty"`
 }
 
 // MetricData is a serialized metric inside an event.
