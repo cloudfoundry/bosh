@@ -10,5 +10,5 @@ source /var/vcap/packages/golang-1.26-linux/bosh/compile.env
 unset GOPATH
 export GO111MODULE=on
 
-cd src/bosh-nats-sync
+cd bosh-nats-sync
 CGO_ENABLED=0 go build -mod=vendor -o "${BOSH_INSTALL_TARGET}/bin/bosh-nats-sync" ./cmd/bosh-nats-sync
