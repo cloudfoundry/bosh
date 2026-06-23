@@ -106,20 +106,24 @@ describe 'health_monitor: 1', type: :integration, hm: true do
       deploy_simple_manifest(manifest_hash: deployment_hash, env: team_client_env, include_credentials: false)
 
       start_time = Time.now
+      heartbeat_hashes = []
       while Time.now < start_time + 60
         heartbeat_hashes = []
-        health_monitor.read_log.split("\n").inject(heartbeat_hashes) do |lines, line|
+        health_monitor.read_log.split("\n").each do |line|
           # Go slog text format: msg="[plugin:logger] {\"kind\":\"heartbeat\",...}"
           match_data = /msg="\[plugin:logger\] (\{.*\})"/.match(line)
+          next unless match_data
+
           begin
-            if match_data
-              json_str = match_data[1].gsub('\\"', '"').gsub('\\\\', '\\')
-              lines << JSON.parse(json_str)
+            json_str = match_data[1].gsub('\\"', '"').gsub('\\\\', '\\')
+            parsed = JSON.parse(json_str)
+            # Collect only complete heartbeats from non-compilation jobs
+            if parsed['kind'] == 'heartbeat' && parsed['job'] !~ /^compilation\-/
+              heartbeat_hashes << parsed
             end
           rescue JSON::ParserError
             # Do not add to the array if it isn't valid JSON
           end
-          lines
         end
 
         break if !heartbeat_hashes.empty?
@@ -143,13 +147,9 @@ describe 'health_monitor: 1', type: :integration, hm: true do
           'number_of_processes' => anything,
       }
 
-      heartbeat_hashes_excluding_compilation = heartbeat_hashes.select do |hash|
-        hash['kind'] == 'heartbeat' && hash['job'] !~ /^compilation\-/
-      end
-
-      expect(heartbeat_hashes_excluding_compilation.length).to be > 0
-      heartbeat_hashes_excluding_compilation.each do |heartbeat_hash|
-        expect(heartbeat_hash).to match(expected_hash)
+      expect(heartbeat_hashes.length).to be > 0
+      heartbeat_hashes.each do |heartbeat_hash|
+        expect(heartbeat_hash).to include(expected_hash)
       end
     end
   end
