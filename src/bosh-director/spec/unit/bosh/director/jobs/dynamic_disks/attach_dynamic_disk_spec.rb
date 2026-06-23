@@ -131,6 +131,69 @@ module Bosh::Director
         end
       end
 
+      context 'AZ mismatch between disk and target VM' do
+        let!(:disk) do
+          FactoryBot.create(
+            :models_dynamic_disk,
+            name: disk_name,
+            disk_cid: disk_cid,
+            deployment: instance.deployment,
+            availability_zone: 'z1',
+          )
+        end
+
+        before do
+          allow(instance).to receive(:availability_zone).and_return('z2')
+          instance.update(availability_zone: 'z2')
+        end
+
+        it 'raises an error when disk AZ does not match VM AZ' do
+          expect { attach_dynamic_disk_job.perform }.to raise_error(
+            /disk `#{disk_name}` is in AZ `z1` but instance `#{instance.uuid}` is in AZ `z2`/,
+          )
+        end
+      end
+
+      context 'AZ match between disk and target VM' do
+        let!(:disk) do
+          FactoryBot.create(
+            :models_dynamic_disk,
+            name: disk_name,
+            disk_cid: disk_cid,
+            deployment: instance.deployment,
+            availability_zone: instance.availability_zone,
+          )
+        end
+
+        it 'attaches successfully when AZs match' do
+          expect(attach_dynamic_disk_job).to receive(:with_vm_lock).with(vm.cid, timeout: Jobs::Helpers::DynamicDiskHelpers::VM_LOCK_TIMEOUT).and_yield
+          expect(cloud).to receive(:attach_disk).with(vm.cid, disk_cid).and_return(disk_hint)
+          expect(agent_client).to receive(:add_dynamic_disk).with(disk_cid, disk_hint)
+
+          expect { attach_dynamic_disk_job.perform }.not_to raise_error
+        end
+      end
+
+      context 'when disk has no AZ set (created before AZ tracking)' do
+        let!(:disk) do
+          FactoryBot.create(
+            :models_dynamic_disk,
+            name: disk_name,
+            disk_cid: disk_cid,
+            deployment: instance.deployment,
+            availability_zone: nil,
+          )
+        end
+
+        it 'skips AZ check and attaches successfully' do
+          expect(attach_dynamic_disk_job).to receive(:with_vm_lock).with(vm.cid, timeout: Jobs::Helpers::DynamicDiskHelpers::VM_LOCK_TIMEOUT).and_yield
+          expect(cloud).to receive(:attach_disk).with(vm.cid, disk_cid).and_return(disk_hint)
+          expect(agent_client).to receive(:add_dynamic_disk).with(disk_cid, disk_hint)
+
+          expect { attach_dynamic_disk_job.perform }.not_to raise_error
+        end
+      end
+
       context 'when disk does not exist' do
         it 'raises an error' do
           expect { attach_dynamic_disk_job.perform }.to raise_error("disk `#{disk_name}` not found")

@@ -14,7 +14,9 @@ module Bosh::Director
             instance: disk.vm&.instance&.name,
             availability_zone: disk.availability_zone,
             size: disk.size,
+            disk_pool_name: disk.disk_pool_name,
             cpi: disk.cpi,
+            metadata: disk.metadata,
           }
         end
         json_encode(disks)
@@ -23,17 +25,18 @@ module Bosh::Director
       post '/', scope: :create_dynamic_disks, consumes: :json do
         request_hash = JSON.parse(request.body.read)
 
-        instance_id = safe_property(request_hash, 'instance_id', class: String, min_length: 1)
-        disk_name = safe_property(request_hash, 'disk_name', class: String, min_length: 1)
-        disk_pool_name = safe_property(request_hash, 'disk_pool_name', class: String, min_length: 1)
-        disk_size = safe_property(request_hash, 'disk_size', class: Integer, min: 1)
-        metadata = safe_property(request_hash, 'metadata', class: Hash, optional: true)
+        deployment_name = safe_property(request_hash, 'deployment_name', class: String, min_length: 1)
+        az              = safe_property(request_hash, 'az', class: String, min_length: 1)
+        disk_name       = safe_property(request_hash, 'disk_name', class: String, min_length: 1)
+        disk_pool_name  = safe_property(request_hash, 'disk_pool_name', class: String, min_length: 1)
+        disk_size       = safe_property(request_hash, 'disk_size', class: Integer, min: 1)
+        metadata        = safe_property(request_hash, 'metadata', class: Hash, optional: true)
 
         task = JobQueue.new.enqueue(
           current_user,
           Jobs::DynamicDisks::CreateDynamicDisk,
           'create dynamic disk',
-          [instance_id, disk_name, disk_pool_name, disk_size, metadata],
+          [deployment_name, az, disk_name, disk_pool_name, disk_size, metadata],
         )
 
         redirect "/tasks/#{task.id}"

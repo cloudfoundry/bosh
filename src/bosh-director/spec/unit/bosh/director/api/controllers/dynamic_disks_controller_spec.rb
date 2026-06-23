@@ -16,6 +16,8 @@ module Bosh::Director
       before { App.new(config) }
 
       let(:instance_id) { 'fake-instance-id' }
+      let(:deployment_name) { 'fake-deployment' }
+      let(:az) { 'z1' }
       let(:disk_pool_name) { 'fake_disk_pool_name' }
       let(:disk_name) { 'fake_disk_name' }
       let(:disk_size) { 1000 }
@@ -241,6 +243,8 @@ module Bosh::Director
                 disk_cid: 'cid-a',
                 deployment: deployment,
                 size: 1024,
+                disk_pool_name: 'large',
+                metadata: { 'env' => 'prod' },
               )
             end
             let!(:disk2) do
@@ -249,16 +253,30 @@ module Bosh::Director
                 disk_cid: 'cid-b',
                 deployment: deployment,
                 size: 2048,
+                disk_pool_name: 'small',
               )
             end
 
-            it 'returns all dynamic disks' do
+            it 'returns all dynamic disks including disk_pool_name and metadata' do
               get '/'
               expect(last_response.status).to eq(200)
               body = JSON.parse(last_response.body)
               expect(body.size).to eq(2)
-              expect(body).to include(hash_including('name' => 'disk-a', 'disk_cid' => 'cid-a', 'deployment' => 'my-deployment', 'size' => 1024))
-              expect(body).to include(hash_including('name' => 'disk-b', 'disk_cid' => 'cid-b', 'deployment' => 'my-deployment', 'size' => 2048))
+              expect(body).to include(hash_including(
+                'name' => 'disk-a',
+                'disk_cid' => 'cid-a',
+                'deployment' => 'my-deployment',
+                'size' => 1024,
+                'disk_pool_name' => 'large',
+                'metadata' => { 'env' => 'prod' },
+              ))
+              expect(body).to include(hash_including(
+                'name' => 'disk-b',
+                'disk_cid' => 'cid-b',
+                'deployment' => 'my-deployment',
+                'size' => 2048,
+                'disk_pool_name' => 'small',
+              ))
             end
           end
         end
@@ -277,11 +295,12 @@ module Bosh::Director
       describe 'POST', '/' do
         let(:content) do
           JSON.generate({
-            'instance_id' => instance_id,
-            'disk_pool_name' => disk_pool_name,
-            'disk_name' => disk_name,
-            'disk_size' => disk_size,
-            'metadata' => metadata,
+            'deployment_name' => deployment_name,
+            'az'              => az,
+            'disk_pool_name'  => disk_pool_name,
+            'disk_name'       => disk_name,
+            'disk_size'       => disk_size,
+            'metadata'        => metadata,
           })
         end
 
@@ -301,7 +320,7 @@ module Bosh::Director
               'dynamic-disks-creator',
               Jobs::DynamicDisks::CreateDynamicDisk,
               'create dynamic disk',
-              [instance_id, disk_name, disk_pool_name, disk_size, metadata],
+              [deployment_name, az, disk_name, disk_pool_name, disk_size, metadata],
             ).and_call_original
 
             post '/', content, { 'CONTENT_TYPE' => 'application/json' }
@@ -326,12 +345,32 @@ module Bosh::Director
               'admin',
               Jobs::DynamicDisks::CreateDynamicDisk,
               'create dynamic disk',
-              [instance_id, disk_name, disk_pool_name, disk_size, metadata],
+              [deployment_name, az, disk_name, disk_pool_name, disk_size, metadata],
             ).and_call_original
 
             post '/', content, { 'CONTENT_TYPE' => 'application/json' }
 
             expect_redirect_to_queued_task(last_response)
+          end
+
+          context 'when deployment_name is missing' do
+            let(:deployment_name) { nil }
+
+            it 'raises an error' do
+              post '/', content, { 'CONTENT_TYPE' => 'application/json' }
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['description']).to include('deployment_name')
+            end
+          end
+
+          context 'when az is missing' do
+            let(:az) { nil }
+
+            it 'raises an error' do
+              post '/', content, { 'CONTENT_TYPE' => 'application/json' }
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['description']).to include('az')
+            end
           end
 
           context 'when disk_name is nil' do
@@ -340,7 +379,7 @@ module Bosh::Director
             it 'raises an error' do
               post '/', content, { 'CONTENT_TYPE' => 'application/json' }
               expect(last_response.status).to eq(400)
-              expect(JSON.parse(last_response.body)['description']).to include("disk_name")
+              expect(JSON.parse(last_response.body)['description']).to include('disk_name')
             end
           end
 
@@ -350,7 +389,7 @@ module Bosh::Director
             it 'raises an error' do
               post '/', content, { 'CONTENT_TYPE' => 'application/json' }
               expect(last_response.status).to eq(400)
-              expect(JSON.parse(last_response.body)['description']).to include("disk_size")
+              expect(JSON.parse(last_response.body)['description']).to include('disk_size')
             end
           end
         end

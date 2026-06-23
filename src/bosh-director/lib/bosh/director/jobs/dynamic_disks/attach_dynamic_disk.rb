@@ -32,6 +32,12 @@ module Bosh::Director
           raise "disk `#{@disk_name}` is already attached to a different vm `#{disk_model.vm.cid}`"
         end
 
+        disk_az = disk_model.availability_zone
+        vm_az   = vm.instance.availability_zone
+        unless disk_az.nil? || vm_az.nil? || disk_az == vm_az
+          raise "disk `#{@disk_name}` is in AZ `#{disk_az}` but instance `#{@instance_id}` is in AZ `#{vm_az}`"
+        end
+
         cloud = Bosh::Director::CloudFactory.create.get(disk_model.cpi, vm.stemcell_api_version)
         disk_hint = with_vm_lock(vm.cid, timeout: VM_LOCK_TIMEOUT) { cloud.attach_disk(vm.cid, disk_model.disk_cid) }
         disk_model.update(vm_id: vm.id, availability_zone: vm.instance.availability_zone, disk_hint: disk_hint)

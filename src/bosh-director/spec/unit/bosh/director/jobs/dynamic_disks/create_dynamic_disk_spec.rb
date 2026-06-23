@@ -8,9 +8,11 @@ module Bosh::Director
     let(:disk_cloud_properties) { { 'fake-disk-cloud-property-key' => 'fake-disk-cloud-property-value' } }
     let(:disk_size) { 1000 }
     let(:metadata) { { 'fake-key' => 'fake-value' } }
+    let(:az) { 'z1' }
 
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
-    let(:instance) { FactoryBot.create(:models_instance) }
+    let(:deployment) { FactoryBot.create(:models_deployment) }
+    let(:instance) { FactoryBot.create(:models_instance, deployment: deployment, availability_zone: az) }
     let!(:vm) { FactoryBot.create(:models_vm, instance: instance, active: true) }
 
     let(:task_result) { TaskDBWriter.new(:result_output, task.id) }
@@ -20,7 +22,9 @@ module Bosh::Director
       JSON.parse(Models::Task.first(id: 42).result_output)
     end
 
-    let(:create_dynamic_disk_job) { Jobs::DynamicDisks::CreateDynamicDisk.new(instance.uuid, disk_name, disk_pool_name, disk_size, metadata) }
+    let(:create_dynamic_disk_job) do
+      Jobs::DynamicDisks::CreateDynamicDisk.new(deployment.name, az, disk_name, disk_pool_name, disk_size, metadata)
+    end
 
     let!(:cloud_config) do
       FactoryBot.create(:models_config_cloud, content: YAML.dump(
@@ -53,22 +57,23 @@ module Bosh::Director
 
     describe '#perform' do
       context 'when disk does not exist' do
-        it 'creates the disk without attaching it to a VM' do
+        it 'creates the disk using a VM from the requested AZ as hint and stores the AZ' do
           expected_cloud_properties = disk_cloud_properties.merge('name' => disk_name)
           expect(cloud).to receive(:create_disk).with(disk_size, expected_cloud_properties, vm.cid).and_return(disk_cid)
 
           result = create_dynamic_disk_job.perform
 
-          expect(result).to eq("created disk `#{disk_name}` in deployment `#{instance.deployment.name}`")
+          expect(result).to eq("created disk `#{disk_name}` in deployment `#{deployment.name}` in AZ `#{az}`")
           expect(parsed_task_result).to eq({ 'disk_cid' => disk_cid })
 
           model = Models::DynamicDisk.where(disk_cid: disk_cid).first
           expect(model).not_to be_nil
           expect(model.name).to eq(disk_name)
           expect(model.size).to eq(disk_size)
-          expect(model.deployment_id).to eq(instance.deployment.id)
+          expect(model.deployment_id).to eq(deployment.id)
           expect(model.disk_pool_name).to eq(disk_pool_name)
           expect(model.cpi).to eq(vm.cpi)
+          expect(model.availability_zone).to eq(az)
           expect(model.vm).to be_nil
         end
       end
@@ -79,8 +84,9 @@ module Bosh::Director
             :models_dynamic_disk,
             name: disk_name,
             disk_cid: disk_cid,
-            deployment: vm.instance.deployment,
+            deployment: deployment,
             disk_pool_name: disk_pool_name,
+            availability_zone: az,
           )
         end
 
@@ -118,24 +124,42 @@ module Bosh::Director
           ))
         end
 
-        it 'raises an error' do
-          expect { create_dynamic_disk_job.perform }.to raise_error("Could not find disk pool by name `#{disk_pool_name}`")
+        it 'raises an error before calling create_disk' do
+          expect(cloud).not_to receive(:create_disk)
+          expect { create_dynamic_disk_job.perform }.to raise_error(/Could not find disk pool by name/)
         end
       end
 
-      context 'when instance cannot be found' do
-        let(:create_dynamic_disk_job) { Jobs::DynamicDisks::CreateDynamicDisk.new('unknown-instance-id', disk_name, disk_pool_name, disk_size, metadata) }
+      context 'when deployment cannot be found' do
+        let(:create_dynamic_disk_job) do
+          Jobs::DynamicDisks::CreateDynamicDisk.new('unknown-deployment', az, disk_name, disk_pool_name, disk_size, metadata)
+        end
 
         it 'raises an error' do
-          expect { create_dynamic_disk_job.perform }.to raise_error("instance `unknown-instance-id` not found")
+          expect { create_dynamic_disk_job.perform }.to raise_error('deployment `unknown-deployment` not found')
         end
       end
 
-      context 'when there is no active VM for the instance' do
-        let(:vm) { FactoryBot.create(:models_vm, instance: instance, active: false) }
+      context 'when no active VM exists in the requested AZ' do
+        let!(:vm) { FactoryBot.create(:models_vm, instance: instance, active: false) }
 
         it 'raises an error' do
-          expect { create_dynamic_disk_job.perform }.to raise_error("no active vm found for instance `#{instance.uuid}`")
+          expect { create_dynamic_disk_job.perform }.to raise_error(
+            "no active VM found in deployment `#{deployment.name}` in AZ `#{az}`",
+          )
+        end
+      end
+
+      context 'when VM exists in a different AZ' do
+        let(:other_az) { 'z2' }
+        let(:create_dynamic_disk_job) do
+          Jobs::DynamicDisks::CreateDynamicDisk.new(deployment.name, other_az, disk_name, disk_pool_name, disk_size, metadata)
+        end
+
+        it 'raises an error when no VM found in requested AZ' do
+          expect { create_dynamic_disk_job.perform }.to raise_error(
+            "no active VM found in deployment `#{deployment.name}` in AZ `#{other_az}`",
+          )
         end
       end
     end

@@ -9,8 +9,9 @@ module Bosh::Director
         :create_dynamic_disk
       end
 
-      def initialize(instance_id, disk_name, disk_pool_name, disk_size, metadata)
-        @instance_id = instance_id
+      def initialize(deployment_name, az, disk_name, disk_pool_name, disk_size, metadata)
+        @deployment_name = deployment_name
+        @az = az
         @disk_name = disk_name
         @disk_pool_name = disk_pool_name
         @disk_size = disk_size
@@ -21,24 +22,28 @@ module Bosh::Director
         disk_model = Models::DynamicDisk.find(name: @disk_name)
         raise "disk `#{@disk_name}` already exists" unless disk_model.nil?
 
-        instance = Models::Instance.find(uuid: @instance_id)
-        raise "instance `#{@instance_id}` not found" if instance.nil?
+        deployment = Models::Deployment.find(name: @deployment_name)
+        raise "deployment `#{@deployment_name}` not found" if deployment.nil?
 
-        vm = instance.active_vm
-        raise "no active vm found for instance `#{@instance_id}`" if vm.nil?
+        # Find an active VM in the requested AZ to use as the hint for create_disk.
+        # The IaaS uses the VM's location to determine which AZ/datastore to place the disk in.
+        vm = find_active_vm_in_az(deployment, @az)
+        raise "no active VM found in deployment `#{@deployment_name}` in AZ `#{@az}`" if vm.nil?
 
-        cloud_properties = find_disk_cloud_properties(instance, @disk_pool_name)
         cloud = Bosh::Director::CloudFactory.create.get(vm.cpi)
 
+        cloud_properties = find_disk_cloud_properties(deployment, @disk_pool_name)
         cloud_properties['name'] = @disk_name
+
         disk_cid = cloud.create_disk(@disk_size, cloud_properties, vm.cid)
         disk_model = Models::DynamicDisk.create(
           name: @disk_name,
           disk_cid: disk_cid,
-          deployment_id: instance.deployment.id,
+          deployment_id: deployment.id,
           size: @disk_size,
           disk_pool_name: @disk_pool_name,
           cpi: vm.cpi,
+          availability_zone: @az,
         )
 
         if !@metadata.nil? && disk_model.metadata != @metadata
@@ -51,7 +56,16 @@ module Bosh::Director
         task_result.write(JSON.generate(disk_info))
         task_result.write("\n")
 
-        "created disk `#{@disk_name}` in deployment `#{instance.deployment.name}`"
+        "created disk `#{@disk_name}` in deployment `#{deployment.name}` in AZ `#{@az}`"
+      end
+
+      private
+
+      def find_active_vm_in_az(deployment, az)
+        deployment.instances
+          .select { |i| i.availability_zone == az }
+          .flat_map { |i| i.vms.select(&:active) }
+          .first
       end
     end
   end
