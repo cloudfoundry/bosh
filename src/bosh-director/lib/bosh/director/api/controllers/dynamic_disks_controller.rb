@@ -44,12 +44,13 @@ module Bosh::Director
 
         request_hash = JSON.parse(request.body.read)
         instance_id = safe_property(request_hash, 'instance_id', class: String, min_length: 1)
+        metadata = safe_property(request_hash, 'metadata', class: Hash, optional: true)
 
         task = JobQueue.new.enqueue(
           current_user,
           Jobs::DynamicDisks::AttachDynamicDisk,
           'attach dynamic disk',
-          [disk_name, instance_id],
+          [disk_name, instance_id, metadata],
         )
 
         redirect "/tasks/#{task.id}"

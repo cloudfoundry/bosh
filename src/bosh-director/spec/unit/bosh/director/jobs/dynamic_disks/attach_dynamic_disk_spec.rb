@@ -5,6 +5,7 @@ module Bosh::Director
     let(:disk_name) { 'fake-disk-name' }
     let(:disk_cid) { 'fake-disk-cid' }
     let(:disk_hint) { { 'id' => 'fake-disk-id' } }
+    let(:metadata) { nil }
 
     let(:agent_client) { instance_double(AgentClient) }
     let(:cloud) { instance_double(Bosh::Clouds::ExternalCpi) }
@@ -12,7 +13,7 @@ module Bosh::Director
     let(:instance) { FactoryBot.create(:models_instance) }
     let!(:vm) { FactoryBot.create(:models_vm, instance: instance, active: true) }
 
-    let(:attach_dynamic_disk_job) { Jobs::DynamicDisks::AttachDynamicDisk.new(disk_name, instance.uuid) }
+    let(:attach_dynamic_disk_job) { Jobs::DynamicDisks::AttachDynamicDisk.new(disk_name, instance.uuid, metadata) }
     let(:cloud_factory) { instance_double(CloudFactory, get: cloud) }
 
     before do
@@ -21,6 +22,7 @@ module Bosh::Director
       allow(Config).to receive(:preferred_cpi_api_version).and_return(2)
       allow(CloudFactory).to receive(:create).and_return(cloud_factory)
       allow(AgentClient).to receive(:with_agent_id).with(vm.agent_id, instance.name).and_return(agent_client)
+      allow(cloud).to receive(:respond_to?).with(:set_disk_metadata).and_return(false)
     end
 
     describe 'DJ job class expectations' do
@@ -52,6 +54,39 @@ module Bosh::Director
           disk.reload
           expect(disk.vm).to eq(vm)
           expect(disk.availability_zone).to eq(vm.instance.availability_zone)
+        end
+
+        context 'when metadata is provided and CPI supports set_disk_metadata' do
+          let(:metadata) { { 'fake-key' => 'fake-value' } }
+
+          it 'sets disk metadata after attaching' do
+            expect(attach_dynamic_disk_job).to receive(:with_vm_lock).with(vm.cid, timeout: Jobs::Helpers::DynamicDiskHelpers::VM_LOCK_TIMEOUT).and_yield
+            expect(cloud).to receive(:attach_disk).with(vm.cid, disk_cid).and_return(disk_hint)
+            expect(cloud).to receive(:respond_to?).with(:set_disk_metadata).and_return(true)
+            expect(cloud).to receive(:set_disk_metadata).with(
+              disk_cid,
+              hash_including('fake-key' => 'fake-value'),
+            )
+            expect(agent_client).to receive(:add_dynamic_disk).with(disk_cid, disk_hint)
+
+            attach_dynamic_disk_job.perform
+
+            disk.reload
+            expect(disk.metadata).to eq(metadata)
+          end
+        end
+
+        context 'when metadata is nil' do
+          let(:metadata) { nil }
+
+          it 'does not call set_disk_metadata' do
+            expect(attach_dynamic_disk_job).to receive(:with_vm_lock).with(vm.cid, timeout: Jobs::Helpers::DynamicDiskHelpers::VM_LOCK_TIMEOUT).and_yield
+            expect(cloud).to receive(:attach_disk).with(vm.cid, disk_cid).and_return(disk_hint)
+            expect(cloud).not_to receive(:set_disk_metadata)
+            expect(agent_client).to receive(:add_dynamic_disk).with(disk_cid, disk_hint)
+
+            attach_dynamic_disk_job.perform
+          end
         end
       end
 

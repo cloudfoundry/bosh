@@ -84,13 +84,10 @@ module Bosh::Director
           )
         end
 
-        it 'returns the existing disk without calling create_disk' do
+        it 'raises an error without calling create_disk' do
           expect(cloud).not_to receive(:create_disk)
 
-          result = create_dynamic_disk_job.perform
-
-          expect(result).to eq("created disk `#{disk_name}` in deployment `#{instance.deployment.name}`")
-          expect(parsed_task_result).to eq({ 'disk_cid' => disk_cid })
+          expect { create_dynamic_disk_job.perform }.to raise_error("disk `#{disk_name}` already exists")
         end
       end
 

@@ -10,9 +10,10 @@ module Bosh::Director
         :attach_dynamic_disk
       end
 
-      def initialize(disk_name, instance_id)
+      def initialize(disk_name, instance_id, metadata = nil)
         @disk_name = disk_name
         @instance_id = instance_id
+        @metadata = metadata
       end
 
       def perform
@@ -34,6 +35,11 @@ module Bosh::Director
         cloud = Bosh::Director::CloudFactory.create.get(disk_model.cpi, vm.stemcell_api_version)
         disk_hint = with_vm_lock(vm.cid, timeout: VM_LOCK_TIMEOUT) { cloud.attach_disk(vm.cid, disk_model.disk_cid) }
         disk_model.update(vm_id: vm.id, availability_zone: vm.instance.availability_zone, disk_hint: disk_hint)
+
+        if !@metadata.nil? && disk_model.metadata != @metadata
+          MetadataUpdater.build.update_dynamic_disk_metadata(cloud, disk_model, @metadata)
+          disk_model.update(metadata: @metadata)
+        end
 
         agent_client = AgentClient.with_agent_id(vm.agent_id, instance.name)
         agent_client.add_dynamic_disk(disk_model.disk_cid, disk_model.disk_hint)

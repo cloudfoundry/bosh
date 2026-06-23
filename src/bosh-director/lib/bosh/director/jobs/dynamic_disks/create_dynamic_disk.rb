@@ -18,6 +18,9 @@ module Bosh::Director
       end
 
       def perform
+        disk_model = Models::DynamicDisk.find(name: @disk_name)
+        raise "disk `#{@disk_name}` already exists" unless disk_model.nil?
+
         instance = Models::Instance.find(uuid: @instance_id)
         raise "instance `#{@instance_id}` not found" if instance.nil?
 
@@ -27,19 +30,16 @@ module Bosh::Director
         cloud_properties = find_disk_cloud_properties(instance, @disk_pool_name)
         cloud = Bosh::Director::CloudFactory.create.get(vm.cpi)
 
-        disk_model = Models::DynamicDisk.find(name: @disk_name)
-        if disk_model.nil?
-          cloud_properties['name'] = @disk_name
-          disk_cid = cloud.create_disk(@disk_size, cloud_properties, vm.cid)
-          disk_model = Models::DynamicDisk.create(
-            name: @disk_name,
-            disk_cid: disk_cid,
-            deployment_id: instance.deployment.id,
-            size: @disk_size,
-            disk_pool_name: @disk_pool_name,
-            cpi: vm.cpi,
-          )
-        end
+        cloud_properties['name'] = @disk_name
+        disk_cid = cloud.create_disk(@disk_size, cloud_properties, vm.cid)
+        disk_model = Models::DynamicDisk.create(
+          name: @disk_name,
+          disk_cid: disk_cid,
+          deployment_id: instance.deployment.id,
+          size: @disk_size,
+          disk_pool_name: @disk_pool_name,
+          cpi: vm.cpi,
+        )
 
         if !@metadata.nil? && disk_model.metadata != @metadata
           MetadataUpdater.build.update_dynamic_disk_metadata(cloud, disk_model, @metadata)

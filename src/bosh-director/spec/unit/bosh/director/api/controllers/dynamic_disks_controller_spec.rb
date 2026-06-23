@@ -357,7 +357,7 @@ module Bosh::Director
       end
 
       describe 'POST', '/:disk_name/attach' do
-        let(:content) { JSON.generate({ 'instance_id' => instance_id }) }
+        let(:content) { JSON.generate({ 'instance_id' => instance_id, 'metadata' => metadata }) }
 
         context 'when user is reader' do
           before { basic_authorize('reader', 'reader') }
@@ -375,7 +375,7 @@ module Bosh::Director
               'dynamic-disks-attacher',
               Jobs::DynamicDisks::AttachDynamicDisk,
               'attach dynamic disk',
-              ['disk_name', instance_id],
+              ['disk_name', instance_id, metadata],
             ).and_call_original
 
             post '/disk_name/attach', content, { 'CONTENT_TYPE' => 'application/json' }
@@ -400,12 +400,29 @@ module Bosh::Director
               'admin',
               Jobs::DynamicDisks::AttachDynamicDisk,
               'attach dynamic disk',
-              ['disk_name', instance_id],
+              ['disk_name', instance_id, metadata],
             ).and_call_original
 
             post '/disk_name/attach', content, { 'CONTENT_TYPE' => 'application/json' }
 
             expect_redirect_to_queued_task(last_response)
+          end
+
+          context 'when metadata is omitted from the body' do
+            let(:content) { JSON.generate({ 'instance_id' => instance_id }) }
+
+            it 'enqueues an AttachDynamicDisk task with nil metadata' do
+              expect_any_instance_of(Bosh::Director::JobQueue).to receive(:enqueue).with(
+                'admin',
+                Jobs::DynamicDisks::AttachDynamicDisk,
+                'attach dynamic disk',
+                ['disk_name', instance_id, nil],
+              ).and_call_original
+
+              post '/disk_name/attach', content, { 'CONTENT_TYPE' => 'application/json' }
+
+              expect_redirect_to_queued_task(last_response)
+            end
           end
 
           context 'when instance_id is missing from the body' do
