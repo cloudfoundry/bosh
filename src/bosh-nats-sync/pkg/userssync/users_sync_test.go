@@ -3,6 +3,7 @@ package userssync_test
 import (
 	"encoding/json"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -775,3 +776,79 @@ var _ = Describe("UsersSync", func() {
 		})
 	})
 })
+
+// Mirrors Ruby spec: spec/nats_sync/users_sync_spec.rb
+//
+//	context 'with various network errors' do
+//	  [ Errno::ECONNREFUSED, Errno::ECONNRESET, Errno::ETIMEDOUT,
+//	    Net::OpenTimeout, SocketError ].each do |error_class|
+//	    it "retries on #{error_class}"
+//	  end
+//	end
+//
+// In Go the retry gate is isConnectionError, which matches connection-class
+// errors by substring.  The table below verifies every string pattern in the
+// function, annotated with the Ruby error class it corresponds to.
+var _ = DescribeTable("isConnectionError",
+	func(err error, shouldRetry bool) {
+		Expect(userssync.IsConnectionError(err)).To(Equal(shouldRetry))
+	},
+
+	// ── errors that must trigger a retry ──────────────────────────────────
+
+	// Ruby: Errno::ECONNREFUSED
+	Entry("connection refused",
+		errors.New("dial tcp 127.0.0.1:25555: connect: connection refused"), true),
+
+	// Ruby: Errno::ECONNRESET
+	Entry("connection reset by peer",
+		errors.New("read tcp 127.0.0.1:12345->127.0.0.1:25555: read: connection reset by peer"), true),
+
+	// Ruby: Errno::ETIMEDOUT
+	Entry("connection timed out",
+		errors.New("dial tcp 127.0.0.1:25555: connect: connection timed out"), true),
+
+	// Ruby: Net::OpenTimeout — Go surfaces this as an i/o timeout
+	Entry("i/o timeout (Net::OpenTimeout read-side)",
+		errors.New("read tcp 127.0.0.1:25555: i/o timeout"), true),
+
+	// Ruby: Net::OpenTimeout — Go surfaces this via context deadline
+	Entry("context deadline exceeded (Net::OpenTimeout connect-side)",
+		errors.New(`get "http://127.0.0.1:25555/info": context deadline exceeded (Client.Timeout exceeded while awaiting headers)`), true),
+
+	// Ruby: SocketError — DNS resolution failure
+	Entry("no such host (SocketError)",
+		errors.New("dial tcp: lookup director.example.com on 8.8.8.8:53: no such host"), true),
+
+	// Ruby: Errno::EHOSTUNREACH (also in DIRECTOR_CONNECTION_ERRORS)
+	Entry("host is unreachable (Errno::EHOSTUNREACH)",
+		errors.New("dial tcp: connect: host is unreachable"), true),
+
+	// Ruby: Errno::ENETUNREACH (also in DIRECTOR_CONNECTION_ERRORS)
+	Entry("network is unreachable (Errno::ENETUNREACH)",
+		errors.New("dial tcp: connect: network is unreachable"), true),
+
+	// Go-specific: bare EOF when the server closes the connection mid-response
+	// (surfaces as Errno::ECONNRESET on the Ruby side)
+	Entry("EOF",
+		errors.New("EOF"), true),
+
+	// Go-specific: partial response body truncated
+	Entry("unexpected EOF",
+		errors.New("unexpected EOF"), true),
+
+	// ── errors that must NOT trigger a retry ──────────────────────────────
+
+	// HTTP-level application errors are not connection errors
+	Entry("HTTP 401 unauthorized",
+		errors.New("cannot access: /info, Status Code: 401, Unauthorized"), false),
+
+	Entry("HTTP 500 internal server error",
+		errors.New("cannot access: /info, Status Code: 500, Internal Server Error"), false),
+
+	Entry("generic application error",
+		errors.New("failed to parse response body"), false),
+
+	// nil means no error occurred — must not be treated as retryable
+	Entry("nil error", nil, false),
+)
