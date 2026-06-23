@@ -32,6 +32,12 @@ const (
 	DefaultRetryInterval         = 1
 )
 
+// connectFunc is the nats.Connect implementation; overridden in tests.
+var connectFunc = nats.Connect
+
+// retryWait is the sleep duration between connection attempts; overridden in tests.
+var retryWait = time.Duration(DefaultRetryInterval) * time.Second
+
 func NewClient(logger *slog.Logger) *Client {
 	return &Client{logger: logger}
 }
@@ -63,13 +69,13 @@ func (c *Client) Connect(cfg Config) error {
 			}),
 		}
 
-		conn, err := nats.Connect(cfg.Endpoint, opts...)
+		conn, err := connectFunc(cfg.Endpoint, opts...)
 		if err != nil {
 			lastErr = err
 			if attempt < maxAttempts {
 				c.logger.Info("Waiting for NATS to become available",
 					"attempt", attempt+1, "max_attempts", maxAttempts, "error", err)
-				time.Sleep(time.Duration(DefaultRetryInterval) * time.Second)
+				time.Sleep(retryWait)
 			}
 			continue
 		}
