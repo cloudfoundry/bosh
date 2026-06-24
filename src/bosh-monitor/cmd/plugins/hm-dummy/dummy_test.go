@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cloudfoundry/bosh/src/bosh-monitor/cmd/plugins/plugintestutil"
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/cmd/plugins/pluginlib"
+	"github.com/cloudfoundry/bosh/src/bosh-monitor/cmd/plugins/plugintestutil"
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/pluginproto"
 )
 

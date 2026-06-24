@@ -26,33 +26,33 @@ func runRiemann(ctx context.Context, rawOpts json.RawMessage, events <-chan *plu
 		return fmt.Errorf("host and port required")
 	}
 
-		cmds <- pluginlib.LogCommand("info", "Riemann delivery agent is running...")
+	cmds <- pluginlib.LogCommand("info", "Riemann delivery agent is running...")
 
-		addr := fmt.Sprintf("%s:%d", opts.Host, opts.Port)
+	addr := fmt.Sprintf("%s:%d", opts.Host, opts.Port)
 
-		for {
-			select {
-			case <-ctx.Done():
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case env, ok := <-events:
+			if !ok {
 				return nil
-			case env, ok := <-events:
-				if !ok {
-					return nil
-				}
-				if env.Event == nil {
-					continue
-				}
+			}
+			if env.Event == nil {
+				continue
+			}
 
-				event := env.Event
-				switch event.Kind {
-				case "heartbeat":
-					if event.InstanceID != "" {
-						processHeartbeat(addr, event, cmds)
-					}
-				case "alert":
-					processAlert(addr, event, cmds)
+			event := env.Event
+			switch event.Kind {
+			case "heartbeat":
+				if event.InstanceID != "" {
+					processHeartbeat(addr, event, cmds)
 				}
+			case "alert":
+				processAlert(addr, event, cmds)
 			}
 		}
+	}
 }
 
 func processHeartbeat(addr string, event *pluginlib.EventData, cmds chan<- *pluginlib.Command) {

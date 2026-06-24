@@ -18,7 +18,7 @@ import (
 // captureProcessor records every call to Process() and can optionally
 // return a configured error.
 type captureProcessor struct {
-	calls    []capturedCall
+	calls     []capturedCall
 	returnErr error
 }
 

@@ -3,14 +3,13 @@ package main
 import (
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	"github.com/cloudfoundry/bosh/src/bosh-monitor/cmd/plugins/plugintestutil"
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/cmd/plugins/pluginlib"
+	"github.com/cloudfoundry/bosh/src/bosh-monitor/cmd/plugins/plugintestutil"
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/pluginproto"
 )
 
@@ -42,7 +41,7 @@ func TestPagerdutyAlertPost(t *testing.T) {
 
 	received := make(chan []byte, 1)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		body, _ := ioutil.ReadAll(r.Body)
+		body, _ := io.ReadAll(r.Body)
 		received <- body
 		w.WriteHeader(200)
 	}))
@@ -99,7 +98,7 @@ func TestPagerdutyHeartbeatPost(t *testing.T) {
 
 	received := make(chan []byte, 1)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		body, _ := ioutil.ReadAll(r.Body)
+		body, _ := io.ReadAll(r.Body)
 		received <- body
 		w.WriteHeader(200)
 	}))

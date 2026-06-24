@@ -34,21 +34,21 @@ func runDatadog(ctx context.Context, rawOpts json.RawMessage, events <-chan *plu
 		return fmt.Errorf("api_key and application_key required")
 	}
 
-		cmds <- pluginlib.LogCommand("info", "DataDog plugin is running...")
+	cmds <- pluginlib.LogCommand("info", "DataDog plugin is running...")
 
-		client := &http.Client{Timeout: 30 * time.Second}
+	client := &http.Client{Timeout: 30 * time.Second}
 
-		for {
-			select {
-			case <-ctx.Done():
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case env, ok := <-events:
+			if !ok {
 				return nil
-			case env, ok := <-events:
-				if !ok {
-					return nil
-				}
-				if env.Event == nil {
-					continue
-				}
+			}
+			if env.Event == nil {
+				continue
+			}
 
 			switch env.Event.Kind {
 			case "heartbeat":
@@ -58,8 +58,8 @@ func runDatadog(ctx context.Context, rawOpts json.RawMessage, events <-chan *plu
 			case "alert":
 				go processAlert(ctx, client, opts, env.Event, cmds)
 			}
-			}
 		}
+	}
 }
 
 func processHeartbeat(ctx context.Context, client *http.Client, opts datadogOptions, event *pluginlib.EventData, cmds chan<- *pluginlib.Command) {
