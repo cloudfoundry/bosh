@@ -13,7 +13,7 @@ templates:
 
 packages:
   - health_monitor
-  - director-ruby-3.3
+  - director-ruby-3.4
 
 properties:
   #
