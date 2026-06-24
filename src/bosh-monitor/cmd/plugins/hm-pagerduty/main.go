@@ -32,45 +32,45 @@ func runPagerduty(ctx context.Context, rawOpts json.RawMessage, events <-chan *p
 		return fmt.Errorf("service_key required")
 	}
 
-		cmds <- pluginlib.LogCommand("info", "Pagerduty delivery agent is running...")
+	cmds <- pluginlib.LogCommand("info", "Pagerduty delivery agent is running...")
 
-		transport := &http.Transport{
-			TLSClientConfig: &tls.Config{},
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{},
+	}
+	if opts.HTTPProxy != "" {
+		if proxyURL, err := url.Parse(opts.HTTPProxy); err == nil {
+			transport.Proxy = http.ProxyURL(proxyURL)
+		} else {
+			cmds <- pluginlib.LogCommand("warn", fmt.Sprintf("Invalid http_proxy URL: %v", err))
 		}
-		if opts.HTTPProxy != "" {
-			if proxyURL, err := url.Parse(opts.HTTPProxy); err == nil {
-				transport.Proxy = http.ProxyURL(proxyURL)
-			} else {
-				cmds <- pluginlib.LogCommand("warn", fmt.Sprintf("Invalid http_proxy URL: %v", err))
-			}
-		}
-		client := &http.Client{
-			Timeout:   30 * time.Second,
-			Transport: transport,
-		}
+	}
+	client := &http.Client{
+		Timeout:   30 * time.Second,
+		Transport: transport,
+	}
 
-		for {
-			select {
-			case <-ctx.Done():
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case env, ok := <-events:
+			if !ok {
 				return nil
-			case env, ok := <-events:
-				if !ok {
-					return nil
-				}
-				if env.Event == nil {
-					continue
-				}
+			}
+			if env.Event == nil {
+				continue
+			}
 
-				event := env.Event
-				shortDesc := eventShortDescription(event)
+			event := env.Event
+			shortDesc := eventShortDescription(event)
 
-				payload, _ := json.Marshal(map[string]interface{}{
-					"service_key":  opts.ServiceKey,
-					"event_type":   "trigger",
-					"incident_key": event.ID,
-					"description":  shortDesc,
-					"details":      eventToHash(event),
-				})
+			payload, _ := json.Marshal(map[string]interface{}{
+				"service_key":  opts.ServiceKey,
+				"event_type":   "trigger",
+				"incident_key": event.ID,
+				"description":  shortDesc,
+				"details":      eventToHash(event),
+			})
 
 			go func(c context.Context, pl []byte) {
 				resp, err := client.Post(apiURI, "application/json", bytes.NewReader(pl))
@@ -83,8 +83,8 @@ func runPagerduty(ctx context.Context, rawOpts json.RawMessage, events <-chan *p
 				}
 				_ = resp.Body.Close()
 			}(ctx, payload)
-			}
 		}
+	}
 }
 
 func eventShortDescription(e *pluginlib.EventData) string {

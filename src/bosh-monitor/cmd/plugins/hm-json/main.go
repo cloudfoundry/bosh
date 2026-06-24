@@ -33,111 +33,111 @@ func runJSON(ctx context.Context, rawOpts json.RawMessage, events <-chan *plugin
 		return fmt.Errorf("failed to parse options: %w", err)
 	}
 
-		if opts.Glob == "" {
-			opts.Glob = "/var/vcap/jobs/*/bin/bosh-monitor/*"
+	if opts.Glob == "" {
+		opts.Glob = "/var/vcap/jobs/*/bin/bosh-monitor/*"
+	}
+	if opts.CheckInterval == 0 {
+		opts.CheckInterval = 60
+	}
+	if opts.RestartWait == 0 {
+		opts.RestartWait = 1
+	}
+
+	var mu sync.Mutex
+	processes := make(map[string]*managedProcess)
+
+	var startProcess func(bin string)
+	startProcess = func(bin string) {
+		cmd := exec.Command(bin)
+		stdin, err := cmd.StdinPipe()
+		if err != nil {
+			cmds <- pluginlib.LogCommand("error", fmt.Sprintf("JSON Plugin: Failed to get stdin for %s: %v", bin, err))
+			return
 		}
-		if opts.CheckInterval == 0 {
-			opts.CheckInterval = 60
+		stderr, _ := cmd.StderrPipe() //nolint:errcheck
+
+		if err := cmd.Start(); err != nil {
+			cmds <- pluginlib.LogCommand("error", fmt.Sprintf("JSON Plugin: Failed to start %s: %v", bin, err))
+			return
 		}
-		if opts.RestartWait == 0 {
-			opts.RestartWait = 1
-		}
 
-		var mu sync.Mutex
-		processes := make(map[string]*managedProcess)
+		proc := &managedProcess{cmd: cmd, stdin: stdin}
+		mu.Lock()
+		processes[bin] = proc
+		mu.Unlock()
 
-		var startProcess func(bin string)
-		startProcess = func(bin string) {
-			cmd := exec.Command(bin)
-			stdin, err := cmd.StdinPipe()
-			if err != nil {
-				cmds <- pluginlib.LogCommand("error", fmt.Sprintf("JSON Plugin: Failed to get stdin for %s: %v", bin, err))
-				return
-			}
-			stderr, _ := cmd.StderrPipe() //nolint:errcheck
+		cmds <- pluginlib.LogCommand("info", fmt.Sprintf("JSON Plugin: Started process %s", bin))
 
-			if err := cmd.Start(); err != nil {
-				cmds <- pluginlib.LogCommand("error", fmt.Sprintf("JSON Plugin: Failed to start %s: %v", bin, err))
-				return
-			}
-
-			proc := &managedProcess{cmd: cmd, stdin: stdin}
-			mu.Lock()
-			processes[bin] = proc
-			mu.Unlock()
-
-			cmds <- pluginlib.LogCommand("info", fmt.Sprintf("JSON Plugin: Started process %s", bin))
-
-			if stderr != nil {
-				go func() {
-					scanner := bufio.NewScanner(stderr)
-					for scanner.Scan() {
-						cmds <- pluginlib.LogCommand("warn", fmt.Sprintf("JSON Plugin [%s stderr]: %s", bin, scanner.Text()))
-					}
-				}()
-			}
-
+		if stderr != nil {
 			go func() {
-				_ = cmd.Wait()
-				mu.Lock()
-				delete(processes, bin)
-				mu.Unlock()
-				cmds <- pluginlib.LogCommand("warn", fmt.Sprintf("JSON Plugin: Process %s exited, restarting...", bin))
-				time.Sleep(time.Duration(opts.RestartWait) * time.Second)
-				startProcess(bin)
+				scanner := bufio.NewScanner(stderr)
+				for scanner.Scan() {
+					cmds <- pluginlib.LogCommand("warn", fmt.Sprintf("JSON Plugin [%s stderr]: %s", bin, scanner.Text()))
+				}
 			}()
 		}
 
-		discoverAndStart := func() {
-			matches, _ := filepath.Glob(opts.Glob) //nolint:errcheck
-			mu.Lock()
-			for _, bin := range matches {
-				if _, exists := processes[bin]; !exists {
-					go startProcess(bin)
-				}
-			}
-			mu.Unlock()
-		}
-
-		discoverAndStart()
 		go func() {
-			ticker := time.NewTicker(time.Duration(opts.CheckInterval) * time.Second)
-			defer ticker.Stop()
-			for {
-				select {
-				case <-ctx.Done():
-					return
-				case <-ticker.C:
-					discoverAndStart()
-				}
-			}
+			_ = cmd.Wait()
+			mu.Lock()
+			delete(processes, bin)
+			mu.Unlock()
+			cmds <- pluginlib.LogCommand("warn", fmt.Sprintf("JSON Plugin: Process %s exited, restarting...", bin))
+			time.Sleep(time.Duration(opts.RestartWait) * time.Second)
+			startProcess(bin)
 		}()
+	}
 
+	discoverAndStart := func() {
+		matches, _ := filepath.Glob(opts.Glob) //nolint:errcheck
+		mu.Lock()
+		for _, bin := range matches {
+			if _, exists := processes[bin]; !exists {
+				go startProcess(bin)
+			}
+		}
+		mu.Unlock()
+	}
+
+	discoverAndStart()
+	go func() {
+		ticker := time.NewTicker(time.Duration(opts.CheckInterval) * time.Second)
+		defer ticker.Stop()
 		for {
 			select {
 			case <-ctx.Done():
-				mu.Lock()
-				for _, proc := range processes {
-					_ = proc.stdin.Close()
-					_ = proc.cmd.Process.Kill()
-				}
-				mu.Unlock()
-				return nil
-			case env, ok := <-events:
-				if !ok {
-					return nil
-				}
-				if env.Event == nil {
-					continue
-				}
-				data, _ := json.Marshal(env.Event) //nolint:errcheck
-				data = append(data, '\n')
-
-				mu.Lock()
-				for _, proc := range processes {
-					_, _ = proc.stdin.Write(data)
-				}
-				mu.Unlock()
+				return
+			case <-ticker.C:
+				discoverAndStart()
 			}
 		}
+	}()
+
+	for {
+		select {
+		case <-ctx.Done():
+			mu.Lock()
+			for _, proc := range processes {
+				_ = proc.stdin.Close()
+				_ = proc.cmd.Process.Kill()
+			}
+			mu.Unlock()
+			return nil
+		case env, ok := <-events:
+			if !ok {
+				return nil
+			}
+			if env.Event == nil {
+				continue
+			}
+			data, _ := json.Marshal(env.Event) //nolint:errcheck
+			data = append(data, '\n')
+
+			mu.Lock()
+			for _, proc := range processes {
+				_, _ = proc.stdin.Write(data)
+			}
+			mu.Unlock()
+		}
+	}
 }

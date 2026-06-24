@@ -43,46 +43,46 @@ func runConsul(ctx context.Context, rawOpts json.RawMessage, events <-chan *plug
 		return fmt.Errorf("host, port, and protocol required")
 	}
 
-		cmds <- pluginlib.LogCommand("info", "Consul Event Forwarder plugin is running...")
+	cmds <- pluginlib.LogCommand("info", "Consul Event Forwarder plugin is running...")
 
-		client := &http.Client{Timeout: 10 * time.Second}
-		checklist := make(map[string]bool)
-		useTTL := opts.TTL != ""
+	client := &http.Client{Timeout: 10 * time.Second}
+	checklist := make(map[string]bool)
+	useTTL := opts.TTL != ""
 
-		for {
-			select {
-			case <-ctx.Done():
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case env, ok := <-events:
+			if !ok {
 				return nil
-			case env, ok := <-events:
-				if !ok {
-					return nil
-				}
-				if env.Event == nil {
-					continue
-				}
+			}
+			if env.Event == nil {
+				continue
+			}
 
-				event := env.Event
+			event := env.Event
 
-				if forwardThisEvent(opts, event) {
-					notifyConsul(client, opts, event, "event", nil, cmds)
-				}
+			if forwardThisEvent(opts, event) {
+				notifyConsul(client, opts, event, "event", nil, cmds)
+			}
 
-				if forwardThisTTL(useTTL, event) {
-					label := labelForTTL(opts, event)
-					if !checklist[label] {
-						regPayload := map[string]interface{}{
-							"name":  label,
-							"notes": opts.TTLNote,
-							"ttl":   opts.TTL,
-						}
-						notifyConsul(client, opts, event, "register", regPayload, cmds)
-						checklist[label] = true
-					} else {
-						notifyConsul(client, opts, event, "ttl", nil, cmds)
+			if forwardThisTTL(useTTL, event) {
+				label := labelForTTL(opts, event)
+				if !checklist[label] {
+					regPayload := map[string]interface{}{
+						"name":  label,
+						"notes": opts.TTLNote,
+						"ttl":   opts.TTL,
 					}
+					notifyConsul(client, opts, event, "register", regPayload, cmds)
+					checklist[label] = true
+				} else {
+					notifyConsul(client, opts, event, "ttl", nil, cmds)
 				}
 			}
 		}
+	}
 }
 
 func forwardThisEvent(opts consulOptions, event *pluginlib.EventData) bool {

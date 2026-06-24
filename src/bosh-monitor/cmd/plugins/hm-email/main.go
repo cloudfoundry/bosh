@@ -24,73 +24,73 @@ func main() { pluginlib.Run(runEmail) }
 func runEmail(ctx context.Context, rawOpts json.RawMessage, events <-chan *pluginlib.EventEnvelope, cmds chan<- *pluginlib.Command) error {
 	var opts emailOptions
 	if err := json.Unmarshal(rawOpts, &opts); err != nil {
-			return fmt.Errorf("invalid options: %w", err)
-		}
+		return fmt.Errorf("invalid options: %w", err)
+	}
 
-		if len(opts.Recipients) == 0 {
-			return fmt.Errorf("recipients required")
-		}
-		if opts.SMTP == nil {
-			return fmt.Errorf("smtp options required")
-		}
+	if len(opts.Recipients) == 0 {
+		return fmt.Errorf("recipients required")
+	}
+	if opts.SMTP == nil {
+		return fmt.Errorf("smtp options required")
+	}
 
-		interval := 10.0
-		if opts.Interval > 0 {
-			interval = opts.Interval
-		}
+	interval := 10.0
+	if opts.Interval > 0 {
+		interval = opts.Interval
+	}
 
-		var mu sync.Mutex
-		queues := make(map[string][]string)
+	var mu sync.Mutex
+	queues := make(map[string][]string)
 
-		go func() {
-			ticker := time.NewTicker(time.Duration(interval * float64(time.Second)))
-			defer ticker.Stop()
-			for {
-				select {
-				case <-ctx.Done():
-					return
-				case <-ticker.C:
-					mu.Lock()
-					for kind, queue := range queues {
-						if len(queue) == 0 {
-							continue
-						}
-						subject := fmt.Sprintf("%d %s(s) from BOSH Health Monitor", len(queue), kind)
-						body := strings.Join(queue, "\n")
-						queues[kind] = nil
-
-						go func(subj, bod string) {
-							if err := sendEmail(opts, subj, bod); err != nil {
-								cmds <- pluginlib.LogCommand("error", fmt.Sprintf("Failed to send email: %v", err))
-							} else {
-								cmds <- pluginlib.LogCommand("debug", "Email sent")
-							}
-						}(subject, body)
-					}
-					mu.Unlock()
-				}
-			}
-		}()
-
-		cmds <- pluginlib.LogCommand("info", "Email plugin is running...")
-
+	go func() {
+		ticker := time.NewTicker(time.Duration(interval * float64(time.Second)))
+		defer ticker.Stop()
 		for {
 			select {
 			case <-ctx.Done():
-				return nil
-			case env, ok := <-events:
-				if !ok {
-					return nil
-				}
-				if env.Event == nil {
-					continue
-				}
-				text := eventToPlainText(env.Event)
+				return
+			case <-ticker.C:
 				mu.Lock()
-				queues[env.Event.Kind] = append(queues[env.Event.Kind], text)
+				for kind, queue := range queues {
+					if len(queue) == 0 {
+						continue
+					}
+					subject := fmt.Sprintf("%d %s(s) from BOSH Health Monitor", len(queue), kind)
+					body := strings.Join(queue, "\n")
+					queues[kind] = nil
+
+					go func(subj, bod string) {
+						if err := sendEmail(opts, subj, bod); err != nil {
+							cmds <- pluginlib.LogCommand("error", fmt.Sprintf("Failed to send email: %v", err))
+						} else {
+							cmds <- pluginlib.LogCommand("debug", "Email sent")
+						}
+					}(subject, body)
+				}
 				mu.Unlock()
 			}
 		}
+	}()
+
+	cmds <- pluginlib.LogCommand("info", "Email plugin is running...")
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case env, ok := <-events:
+			if !ok {
+				return nil
+			}
+			if env.Event == nil {
+				continue
+			}
+			text := eventToPlainText(env.Event)
+			mu.Lock()
+			queues[env.Event.Kind] = append(queues[env.Event.Kind], text)
+			mu.Unlock()
+		}
+	}
 }
 
 func eventToPlainText(e *pluginlib.EventData) string {

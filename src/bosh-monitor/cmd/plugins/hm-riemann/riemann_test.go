@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cloudfoundry/bosh/src/bosh-monitor/cmd/plugins/plugintestutil"
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/cmd/plugins/pluginlib"
+	"github.com/cloudfoundry/bosh/src/bosh-monitor/cmd/plugins/plugintestutil"
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/pluginproto"
 )
 
@@ -42,7 +42,7 @@ func startTCPListener(t *testing.T) (string, <-chan []byte) {
 // Ruby: "validates options" — missing host or port → error
 func TestRiemannMissingOptions(t *testing.T) {
 	for _, opts := range []map[string]interface{}{
-		{"host": "127.0.0.1"}, // missing port
+		{"host": "127.0.0.1"},   // missing port
 		{"port": float64(5555)}, // missing host
 	} {
 		stdinR, stdinW := io.Pipe()
