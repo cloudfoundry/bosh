@@ -16,12 +16,28 @@ import (
 	"github.com/cloudfoundry/bosh/src/bosh-monitor/pkg/server"
 )
 
+// natsClient is the subset of *hmNats.Client used by the runner.
+// Expressed as an interface so tests can inject a fake without needing a
+// live NATS server.
+type natsClient interface {
+	Connect(cfg hmNats.Config) error
+	Subscribe(handler hmNats.MessageHandler) error
+	SubscribeDirectorAlerts(handler func(payload string)) error
+	Close()
+}
+
+// newNATSClient creates the concrete NATS client used in production.
+// Tests replace this with a factory that returns a fake.
+var newNATSClient = func(logger *slog.Logger) natsClient {
+	return hmNats.NewClient(logger)
+}
+
 type Runner struct {
 	cfg    *config.Config
 	logger *slog.Logger
 	cancel context.CancelFunc
 
-	natsClient      *hmNats.Client
+	natsClient      natsClient
 	directorClient  *director.Client
 	instanceManager *instance.Manager
 	eventProcessor  *processor.EventProcessor
@@ -35,6 +51,13 @@ func New(cfg *config.Config, logger *slog.Logger) *Runner {
 	return &Runner{
 		cfg:    cfg,
 		logger: logger,
+	}
+}
+
+// Stop cancels the runner's context, causing Run to return.
+func (r *Runner) Stop() {
+	if r.cancel != nil {
+		r.cancel()
 	}
 }
 
@@ -72,7 +95,7 @@ func (r *Runner) Run(ctx context.Context) error {
 
 	r.eventProcessor.EnablePruning(r.cfg.Intervals.PruneEvents)
 
-	r.natsClient = hmNats.NewClient(r.logger)
+	r.natsClient = newNATSClient(r.logger)
 	natsCfg := hmNats.Config{
 		Endpoint:              r.cfg.Mbus.Endpoint,
 		ServerCAPath:          r.cfg.Mbus.ServerCAPath,
