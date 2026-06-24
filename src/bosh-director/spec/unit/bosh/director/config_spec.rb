@@ -435,7 +435,6 @@ describe Bosh::Director::Config do
       it 'returns the sha1 of the blobstore config' do
         described_class.configure(test_config)
         expect(described_class.blobstore_config_fingerprint).to eq('d8500dc13f23babb7f83d8ebd5995416544df6c1')
-
       end
     end
 

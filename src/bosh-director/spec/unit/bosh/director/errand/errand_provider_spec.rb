@@ -410,7 +410,7 @@ module Bosh::Director
             it 'only creates an errand for the requested slug' do
               expect do
                 subject.get(deployment_name, 'errand-job-name', keep_alive, instance_slugs)
-              end.to raise_error('No instances match selection criteria: [{"group"=>"bogus-group-name", "id"=>"0"}]')
+              end.to raise_error("No instances match selection criteria: [#{{ "group" => "bogus-group-name", "id" => "0" }}]") # rubocop:disable Lint/LiteralInInterpolation
             end
           end
         end

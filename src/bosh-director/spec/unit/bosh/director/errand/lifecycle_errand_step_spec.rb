@@ -105,13 +105,13 @@ module Bosh::Director
 
     describe '#state_hash' do
       it 'returns digest of instance uuid, configuration_hash, and package_spec' do
-        expect(errand_step.state_hash).to eq(::Digest::SHA1.hexdigest('321-cbaabc123{"successful"=>"package_spec"}'))
+        expect(errand_step.state_hash).to eq(::Digest::SHA1.hexdigest("321-cbaabc123#{{ "successful" => "package_spec" }}")) # rubocop:disable Lint/LiteralInInterpolation
       end
 
       describe 'when the instance configuration hash is nil' do
         let(:instance_configuration_hash) { nil }
         it 'returns digest of instance uuid, and package_spec' do
-          expect(errand_step.state_hash).to eq(::Digest::SHA1.hexdigest('321-cba{"successful"=>"package_spec"}'))
+          expect(errand_step.state_hash).to eq(::Digest::SHA1.hexdigest("321-cba#{{ "successful" => "package_spec" }}")) # rubocop:disable Lint/LiteralInInterpolation
         end
       end
     end

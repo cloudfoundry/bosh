@@ -83,14 +83,16 @@ module Bosh
 
           it 'logs the migrated manifests' do
             planner
+            # rubocop:disable Lint/LiteralInInterpolation
             expected_deployment_manifest_log = <<~LOGMESSAGE
               Deployment manifest:
-              {"name"=>"simple", "releases"=>[{"name"=>"bosh-release", "version"=>"0.1-dev"}], "stemcells"=>[{"name"=>"ubuntu-stemcell", "version"=>"1", "alias"=>"default", "os"=>"stemcell-os"}], "update"=>{"canaries"=>2, "canary_watch_time"=>4000, "max_in_flight"=>1, "update_watch_time"=>20}, "instance_groups"=>[{"name"=>"foobar", "stemcell"=>"default", "vm_type"=>"a", "instances"=>3, "networks"=>[{"name"=>"a"}], "jobs"=>[{"name"=>"foobar", "release"=>"bosh-release", "properties"=>{}}]}]}
+              #{{ "name" => "simple", "releases" => [{ "name" => "bosh-release", "version" => "0.1-dev" }], "stemcells" => [{ "name" => "ubuntu-stemcell", "version" => "1", "alias" => "default", "os" => "stemcell-os" }], "update" => { "canaries" => 2, "canary_watch_time" => 4000, "max_in_flight" => 1, "update_watch_time" => 20 }, "instance_groups" => [{ "name" => "foobar", "stemcell" => "default", "vm_type" => "a", "instances" => 3, "networks" => [{ "name" => "a" }], "jobs" => [{ "name" => "foobar", "release" => "bosh-release", "properties" => {} }] }] }}
             LOGMESSAGE
             expected_cloud_manifest_log = <<~LOGMESSAGE
               Cloud config manifest:
-              {"networks"=>[{"name"=>"a", "subnets"=>[{"range"=>"192.168.1.0/24", "gateway"=>"192.168.1.1", "dns"=>["192.168.1.1", "192.168.1.2"], "static"=>["192.168.1.10"], "reserved"=>[], "cloud_properties"=>{}}]}], "compilation"=>{"workers"=>1, "network"=>"a", "cloud_properties"=>{}}, "vm_types"=>[{"name"=>"a", "cloud_properties"=>{}}]}
+              #{{ "networks" => [{ "name" => "a", "subnets" => [{ "range" => "192.168.1.0/24", "gateway" => "192.168.1.1", "dns" => ["192.168.1.1", "192.168.1.2"], "static" => ["192.168.1.10"], "reserved" => [], "cloud_properties" => {} }] }], "compilation" => { "workers" => 1, "network" => "a", "cloud_properties" => {} }, "vm_types" => [{ "name" => "a", "cloud_properties" => {} }] }}
             LOGMESSAGE
+            # rubocop:enable Lint/LiteralInInterpolation
             expect(logger_io.string).to include(expected_deployment_manifest_log)
             expect(logger_io.string).to include(expected_cloud_manifest_log)
           end

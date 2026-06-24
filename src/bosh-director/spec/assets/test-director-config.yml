@@ -41,12 +41,13 @@ cloud:
   plugin: dummy
   properties:
     dir: ...
-     # to be added
+    # to be added
 user_management:
   provider: local
   local:
     users:
-    - {name: admin, password: admin}
+      - name: admin
+        password: admin
 config_server:
   enabled: false
 record_events: true
@@ -57,12 +58,12 @@ agent:
   env:
     bosh:
       blobstores:
-      - provider: 'local'
-        options:
-          'blobstore_path': /path/to/blobstore
-      - provider: 'local'
-        options:
-          'blobstore_path': /path/to/blobstore
+        - provider: 'local'
+          options:
+            'blobstore_path': /path/to/blobstore
+        - provider: 'local'
+          options:
+            'blobstore_path': /path/to/blobstore
 cpi:
   max_supported_api_version: 2
   preferred_api_version: 2

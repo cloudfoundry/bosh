@@ -32,7 +32,7 @@ module Bosh::Director
           end
 
           it 'errors' do
-            expect { release }.to raise_error ValidationMissingField, "Required property 'name' was not specified in object ({\"version\"=>\"42\"})"
+            expect { release }.to raise_error ValidationMissingField, "Required property 'name' was not specified in object (#{{ "version" => "42" }})" # rubocop:disable Lint/LiteralInInterpolation
           end
         end
 
@@ -42,7 +42,7 @@ module Bosh::Director
           end
 
           it 'errors' do
-            expect { release }.to raise_error ValidationMissingField, "Required property 'version' was not specified in object ({\"name\"=>\"blarg\"})"
+            expect { release }.to raise_error ValidationMissingField, "Required property 'version' was not specified in object (#{{ "name" => "blarg" }})" # rubocop:disable Lint/LiteralInInterpolation
           end
         end
 

@@ -22,7 +22,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
       expect do
         Bosh::Director::DeploymentPlan::Stemcell.parse(valid_spec)
       end.to raise_error(Bosh::Director::ValidationMissingField,
-                         "Required property 'version' was not specified in object ({\"name\"=>\"stemcell-name\"})")
+                         "Required property 'version' was not specified in object (#{{ "name" => "stemcell-name" }})") # rubocop:disable Lint/LiteralInInterpolation
     end
 
     context 'os and name' do
@@ -48,7 +48,7 @@ describe Bosh::Director::DeploymentPlan::Stemcell do
           valid_spec.delete('os')
           expect { Bosh::Director::DeploymentPlan::Stemcell.parse(valid_spec) }.to raise_error(
             Bosh::Director::ValidationMissingField,
-            "Required property 'os' or 'name' was not specified in object ({\"version\"=>\"0.5.2\"})",
+            "Required property 'os' or 'name' was not specified in object (#{{ "version" => "0.5.2" }})", # rubocop:disable Lint/LiteralInInterpolation
           )
         end
       end

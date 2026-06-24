@@ -85,7 +85,7 @@ module Bosh::Director
               parsed_deployment.stemcells
             end.to raise_error Bosh::Director::ValidationMissingField,
                                "Required property 'alias' was not specified in object " \
-                               '({"name"=>"bosh-aws-xen-hvm-ubuntu-trusty-go_agent", "version"=>"1234"})'
+                               "(#{{ "name" => "bosh-aws-xen-hvm-ubuntu-trusty-go_agent", "version" => "1234" }})" # rubocop:disable Lint/LiteralInInterpolation
           end
         end
 
