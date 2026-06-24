@@ -363,8 +363,28 @@ module Bosh::Director
             end
           end
 
+          context 'when deployment_name is empty' do
+            let(:deployment_name) { '' }
+
+            it 'raises an error' do
+              post '/', content, { 'CONTENT_TYPE' => 'application/json' }
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['description']).to include('deployment_name')
+            end
+          end
+
           context 'when az is missing' do
             let(:az) { nil }
+
+            it 'raises an error' do
+              post '/', content, { 'CONTENT_TYPE' => 'application/json' }
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['description']).to include('az')
+            end
+          end
+
+          context 'when az is empty' do
+            let(:az) { '' }
 
             it 'raises an error' do
               post '/', content, { 'CONTENT_TYPE' => 'application/json' }
@@ -380,6 +400,46 @@ module Bosh::Director
               post '/', content, { 'CONTENT_TYPE' => 'application/json' }
               expect(last_response.status).to eq(400)
               expect(JSON.parse(last_response.body)['description']).to include('disk_name')
+            end
+          end
+
+          context 'when disk_name is empty' do
+            let(:disk_name) { '' }
+
+            it 'raises an error' do
+              post '/', content, { 'CONTENT_TYPE' => 'application/json' }
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['description']).to include('disk_name')
+            end
+          end
+
+          context 'when disk_pool_name is nil' do
+            let(:disk_pool_name) { nil }
+
+            it 'raises an error' do
+              post '/', content, { 'CONTENT_TYPE' => 'application/json' }
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['description']).to include('disk_pool_name')
+            end
+          end
+
+          context 'when disk_pool_name is empty' do
+            let(:disk_pool_name) { '' }
+
+            it 'raises an error' do
+              post '/', content, { 'CONTENT_TYPE' => 'application/json' }
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['description']).to include('disk_pool_name')
+            end
+          end
+
+          context 'when disk_size is nil' do
+            let(:disk_size) { nil }
+
+            it 'raises an error' do
+              post '/', content, { 'CONTENT_TYPE' => 'application/json' }
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['description']).to include('disk_size')
             end
           end
 

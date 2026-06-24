@@ -26,10 +26,13 @@ module Bosh::Director
         vm = instance.active_vm
         raise "no active vm found for instance `#{@instance_id}`" if vm.nil?
 
+        already_attached_same_vm = false
         unless disk_model.vm.nil?
-          return "disk `#{@disk_name}` is already attached to vm `#{disk_model.vm.cid}`" if disk_model.vm.id == vm.id
-
-          raise "disk `#{@disk_name}` is already attached to a different vm `#{disk_model.vm.cid}`"
+          if disk_model.vm.id == vm.id
+            already_attached_same_vm = true
+          else
+            raise "disk `#{@disk_name}` is already attached to a different vm `#{disk_model.vm.cid}`"
+          end
         end
 
         disk_az = disk_model.availability_zone
@@ -39,8 +42,11 @@ module Bosh::Director
         end
 
         cloud = Bosh::Director::CloudFactory.create.get(disk_model.cpi, vm.stemcell_api_version)
-        disk_hint = with_vm_lock(vm.cid, timeout: VM_LOCK_TIMEOUT) { cloud.attach_disk(vm.cid, disk_model.disk_cid) }
-        disk_model.update(vm_id: vm.id, availability_zone: vm.instance.availability_zone, disk_hint: disk_hint)
+
+        unless already_attached_same_vm
+          disk_hint = with_vm_lock(vm.cid, timeout: VM_LOCK_TIMEOUT) { cloud.attach_disk(vm.cid, disk_model.disk_cid) }
+          disk_model.update(vm_id: vm.id, availability_zone: vm.instance.availability_zone, disk_hint: disk_hint)
+        end
 
         if !@metadata.nil? && disk_model.metadata != @metadata
           MetadataUpdater.build.update_dynamic_disk_metadata(cloud, disk_model, @metadata)

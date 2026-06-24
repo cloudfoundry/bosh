@@ -32,19 +32,24 @@ module Bosh::Director
 
         cloud = Bosh::Director::CloudFactory.create.get(vm.cpi)
 
-        cloud_properties = find_disk_cloud_properties(deployment, @disk_pool_name)
+        cloud_properties = find_disk_cloud_properties(deployment, @disk_pool_name).clone
         cloud_properties['name'] = @disk_name
 
         disk_cid = cloud.create_disk(@disk_size, cloud_properties, vm.cid)
-        disk_model = Models::DynamicDisk.create(
-          name: @disk_name,
-          disk_cid: disk_cid,
-          deployment_id: deployment.id,
-          size: @disk_size,
-          disk_pool_name: @disk_pool_name,
-          cpi: vm.cpi,
-          availability_zone: @az,
-        )
+        begin
+          disk_model = Models::DynamicDisk.create(
+            name: @disk_name,
+            disk_cid: disk_cid,
+            deployment_id: deployment.id,
+            size: @disk_size,
+            disk_pool_name: @disk_pool_name,
+            cpi: vm.cpi,
+            availability_zone: @az,
+          )
+        rescue
+          cloud.delete_disk(disk_cid)
+          raise
+        end
 
         if !@metadata.nil? && disk_model.metadata != @metadata
           MetadataUpdater.build.update_dynamic_disk_metadata(cloud, disk_model, @metadata)

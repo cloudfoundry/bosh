@@ -76,6 +76,16 @@ module Bosh::Director
           expect(model.availability_zone).to eq(az)
           expect(model.vm).to be_nil
         end
+
+        context 'when DB write fails after IaaS disk creation' do
+          it 'deletes the IaaS disk and re-raises' do
+            expect(cloud).to receive(:create_disk).and_return(disk_cid)
+            allow(Models::DynamicDisk).to receive(:create).and_raise(Sequel::Error, 'DB failure')
+            expect(cloud).to receive(:delete_disk).with(disk_cid)
+
+            expect { create_dynamic_disk_job.perform }.to raise_error(Sequel::Error, 'DB failure')
+          end
+        end
       end
 
       context 'when disk already exists in the database' do

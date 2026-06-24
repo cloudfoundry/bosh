@@ -98,16 +98,17 @@ module Bosh::Director
             disk_cid: disk_cid,
             deployment: instance.deployment,
             vm: vm,
+            disk_hint: disk_hint,
           )
         end
 
-        it 'returns a success message without re-attaching (idempotent)' do
+        it 'skips CPI attach but still notifies the agent (idempotent retry)' do
           expect(cloud).not_to receive(:attach_disk)
-          expect(agent_client).not_to receive(:add_dynamic_disk)
+          expect(agent_client).to receive(:add_dynamic_disk).with(disk_cid, disk_hint)
 
           result = attach_dynamic_disk_job.perform
 
-          expect(result).to eq("disk `#{disk_name}` is already attached to vm `#{vm.cid}`")
+          expect(result).to eq("attached disk `#{disk_name}` to vm `#{vm.cid}` in deployment `#{instance.deployment.name}`")
         end
       end
 
