@@ -4,7 +4,8 @@ anchors:
   - &brats_env_name brats-bosh-main
   - &ubuntu_base ubuntu:noble
   - &integration_image ghcr.io/cloudfoundry/bosh/integration
-  - &director_ruby_version ruby-3.3
+  - &director_ruby_version ruby-3.4
+  - &director_ruby_package director-ruby-3.4
   - &git_user_name CF-Bosh CI-Bot
   - &git_user_email cf-bosh-ci-bot@localhost
 
@@ -1065,7 +1066,7 @@ jobs:
             version: current-version
           params:
             PACKAGES:
-              - director-ruby-3.3
+              - *director_ruby_package
               - nginx
           on_success:
             do:
