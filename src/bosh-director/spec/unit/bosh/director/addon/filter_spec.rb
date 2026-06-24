@@ -19,8 +19,7 @@ module Bosh::Director
               addon_include.applies?('anything', [], instance_group)
             end.to raise_error(
               AddonIncompleteFilterJobSection,
-              'Job {"name"=>"", "release"=>"release_name"} in runtime '\
-              "config's #{type} section must have both name and release.",
+              "Job #{{ "name" => "", "release" => "release_name" }} in runtime config's #{type} section must have both name and release.", # rubocop:disable Lint/LiteralInInterpolation
             )
           end
         end
@@ -35,8 +34,7 @@ module Bosh::Director
               addon_include.applies?('anything', [], instance_group)
             end.to raise_error(
               AddonIncompleteFilterJobSection,
-              'Job {"name"=>"job-name", "release"=>""} in runtime '\
-              "config's #{type} section must have both name and release.",
+              "Job #{{ "name" => "job-name", "release" => "" }} in runtime config's #{type} section must have both name and release.", # rubocop:disable Lint/LiteralInInterpolation
             )
           end
         end
@@ -51,7 +49,7 @@ module Bosh::Director
               expect do
                 addon_include.applies?('anything', [], instance_group)
               end.to raise_error AddonIncompleteFilterStemcellSection,
-                                 "Stemcell {\"os\"=>\"\"} in runtime config's #{type} section must have an os name."
+                                 "Stemcell #{{"os" => ""}} in runtime config's #{type} section must have an os name." # rubocop:disable Lint/LiteralInInterpolation
             end
           end
 

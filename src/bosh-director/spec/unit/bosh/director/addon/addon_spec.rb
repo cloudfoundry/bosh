@@ -439,7 +439,7 @@ module Bosh::Director
           end
 
           it 'errors' do
-            error_string = "Required property 'name' was not specified in object ({\"jobs\"=>[\"addon-name\"]})"
+            error_string = "Required property 'name' was not specified in object (#{{ "jobs" => ["addon-name"] }})" # rubocop:disable Lint/LiteralInInterpolation
             expect { Addon.parse(addon_hash) }.to raise_error(ValidationMissingField, error_string)
           end
         end

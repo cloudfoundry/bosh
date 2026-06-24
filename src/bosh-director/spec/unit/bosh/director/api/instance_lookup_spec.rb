@@ -60,7 +60,7 @@ module Bosh::Director
           it 'raises' do
             expect {
               instance_lookup.by_filter(id: 987654321)
-            }.to raise_error(InstanceNotFound, "No instances matched {:id=>987654321}")
+            }.to raise_error(InstanceNotFound, "No instances matched #{{ :id => 987654321 }}") # rubocop:disable Lint/LiteralInInterpolation
           end
         end
       end

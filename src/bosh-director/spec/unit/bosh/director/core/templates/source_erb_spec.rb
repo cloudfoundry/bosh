@@ -36,14 +36,15 @@ module Bosh::Director::Core::Templates
           allow(logger).to receive(:debug)
         end
 
-        let(:original_error) { "undefined method `no_method' for nil" }
+        # Ruby 3.3 uses `method_name'; Ruby 3.4+ uses 'method_name'
+        let(:original_error) { "undefined method [`|']no_method' for nil" }
 
         let(:expected_message) do
-          "Error filling in template 'source-filename.erb' (line 1: #{original_error})"
+          /Error filling in template 'source-filename.erb' \(line 1: #{original_error}\)/
         end
 
         it 'logs the error and the new message with the original backtrace' do
-          expect(logger).to receive(:debug).with("#<NoMethodError: #{original_error}>")
+          expect(logger).to receive(:debug).with(/#<NoMethodError: #{original_error}>/)
           expect(logger).to receive(:debug) do |message|
             expect(message).to include(expected_message)
             expect(message).to include("fake-job-name/source-filename.erb:1:in 'get_binding'")

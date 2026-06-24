@@ -22,7 +22,7 @@ module Bosh::Director::DeploymentPlan
           ReleaseVersionExportedFrom.parse('version' => '0.5.2')
         end.to raise_error(
           Bosh::Director::ValidationMissingField,
-          "Required property 'os' was not specified in object ({\"version\"=>\"0.5.2\"})",
+          "Required property 'os' was not specified in object (#{{ "version" => "0.5.2" }})", # rubocop:disable Lint/LiteralInInterpolation
         )
       end
 
@@ -31,7 +31,7 @@ module Bosh::Director::DeploymentPlan
           ReleaseVersionExportedFrom.parse('os' => 'stemcell-os')
         end.to raise_error(
           Bosh::Director::ValidationMissingField,
-          "Required property 'version' was not specified in object ({\"os\"=>\"stemcell-os\"})",
+          "Required property 'version' was not specified in object (#{{ "os" => "stemcell-os" }})", # rubocop:disable Lint/LiteralInInterpolation
         )
       end
     end

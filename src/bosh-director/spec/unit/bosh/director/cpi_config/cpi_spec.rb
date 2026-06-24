@@ -19,7 +19,7 @@ module Bosh::Director
           end
 
           it 'errors' do
-            expect { cpi }.to raise_error ValidationMissingField, "Required property 'name' was not specified in object ({\"type\"=>\"cpi-type\"})"
+            expect { cpi }.to raise_error ValidationMissingField, "Required property 'name' was not specified in object (#{{ "type" => "cpi-type" }})" # rubocop:disable Lint/LiteralInInterpolation
           end
         end
 
@@ -29,7 +29,7 @@ module Bosh::Director
           end
 
           it 'errors' do
-            expect { cpi }.to raise_error ValidationMissingField, "Required property 'type' was not specified in object ({\"name\"=>\"cpi-name\"})"
+            expect { cpi }.to raise_error ValidationMissingField, "Required property 'type' was not specified in object (#{{ "name" => "cpi-name" }})" # rubocop:disable Lint/LiteralInInterpolation
           end
         end
 

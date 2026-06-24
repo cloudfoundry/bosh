@@ -355,7 +355,7 @@ module Bosh::Director::DeploymentPlan
 
             it 'should log the change' do
               expect(per_spec_logger).to receive(:debug)
-                .with('cloud_properties_changed? changed FROM: {"a"=>"b"} TO: {"abcd"=>"wera", "baz"=>"bang", "a"=>"b"}')
+                .with("cloud_properties_changed? changed FROM: #{{ 'a' => 'b' }} TO: #{{ 'abcd' => 'wera', 'baz' => 'bang', 'a' => 'b' }}") # rubocop:disable Lint/LiteralInInterpolation
               instance.cloud_properties_changed?
             end
           end

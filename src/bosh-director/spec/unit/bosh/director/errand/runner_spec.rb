@@ -328,7 +328,7 @@ module Bosh::Director
         end
 
         context 'when agent does not support run_errand command' do
-          let(:error) { RpcRemoteException.new('unknown message {"method"=>"run_errand", "error"=>"details"}') }
+          let(:error) { RpcRemoteException.new("unknown message #{{ "method" => "run_errand", "error" => "details" }}") } # rubocop:disable Lint/LiteralInInterpolation
 
           before do
             allow(agent_client).to receive(:run_errand).with('fake-job-name').and_raise(error)
@@ -343,14 +343,14 @@ module Bosh::Director
             expect(task_result).to_not receive(:write)
             expect {
               subject.run(instance)
-            }.to raise_error(Bosh::Director::RpcRemoteException, /unknown message {"method"=>"run_errand", "error"=>"details"}/)
+            }.to raise_error(Bosh::Director::RpcRemoteException, /unknown message #{{ "method" => "run_errand", "error" => "details" }}/)# rubocop:disable Lint/LiteralInInterpolation
           end
 
           it 'does not try to fetch logs from the agent because we did not run errand' do
             expect(logs_fetcher).to_not receive(:fetch)
             expect {
               subject.run(instance)
-            }.to raise_error(Bosh::Director::RpcRemoteException, /unknown message {"method"=>"run_errand", "error"=>"details"}/)
+            }.to raise_error(Bosh::Director::RpcRemoteException, /unknown message #{{ "method" => "run_errand", "error" => "details" }}/) # rubocop:disable Lint/LiteralInInterpolation
           end
         end
 

@@ -133,7 +133,7 @@ module Bosh::Director
         context 'and agent succeeds within retry count' do
           it 'retries broadcasting to failed agents' do
             expect(per_spec_logger).to receive(:info).with('agent_broadcaster: sync_dns: sending to 2 agents ["agent-1", "agent-2"]')
-            expect(per_spec_logger).to receive(:error).with('agent_broadcaster: sync_dns[agent-2]: received unexpected response {"value"=>"unsynced"}')
+            expect(per_spec_logger).to receive(:error).with("agent_broadcaster: sync_dns[agent-2]: received unexpected response #{{ "value" => "unsynced" }}") # rubocop:disable Lint/LiteralInInterpolation
             expect(per_spec_logger).to receive(:info).with('agent_broadcaster: sync_dns: attempted 2 agents in 10ms (1 successful, 1 failed, 0 unresponsive)')
 
             expect(AgentClient).to receive(:with_agent_id)

@@ -300,7 +300,7 @@ lines',
 
         expect do
           bosh_runner.run("deploy #{deployment_manifest.path}", deployment_name: 'simple')
-        end.to raise_error(/Required stemcell {"name"=>"ubuntu-stemcell", "version"=>"1"} not found for cpi/)
+        end.to raise_error(/Required stemcell #{{ "name" => "ubuntu-stemcell", "version" => "1" }} not found for cpi/) # rubocop:disable Lint/LiteralInInterpolation
 
         bosh_runner.run("upload-stemcell --fix #{stemcell_filename}")
 

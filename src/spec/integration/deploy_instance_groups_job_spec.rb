@@ -74,8 +74,7 @@ describe 'deploy instance_groups job', type: :integration do
 
     instance = director.instance('foobar', '0')
     template = instance.read_job_template('foobar', 'bin/foobar_ctl')
-    expected_rendered_template = '"test_property={"q2GB"=>"foo", "q428GB"=>"foo", ' \
-      '"q46GB"=>"foo", "q4GB"=>"foo", "q64GB"=>"foo", "q82GB"=>"foo", "q8GB"=>"foo"}"'
+    expected_rendered_template = "\"test_property=#{{ "q2GB" => "foo", "q428GB" => "foo", "q46GB" => "foo", "q4GB" => "foo", "q64GB" => "foo", "q82GB" => "foo", "q8GB" => "foo" }}\""
     expect(template).to include(expected_rendered_template)
 
     output = deploy(manifest_hash: manifest_hash)
