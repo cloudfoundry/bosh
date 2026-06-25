@@ -1,6 +1,7 @@
 package userssync_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"encoding/pem"
 	"errors"
@@ -383,8 +384,13 @@ var _ = Describe("UsersSync", func() {
 					ds := directorSubject
 					hs := hmSubject
 					cfg := natsauthconfig.CreateConfig(vms, &ds, &hs)
-					data, _ := json.Marshal(cfg)
-					os.WriteFile(natsConfigFilePath, data, 0644)
+					// Use the same HTML-escape-free encoding that writeNATSConfigFile uses,
+					// so the hash matches and Execute() correctly skips the reload.
+					var buf bytes.Buffer
+					enc := json.NewEncoder(&buf)
+					enc.SetEscapeHTML(false)
+					_ = enc.Encode(cfg)
+					os.WriteFile(natsConfigFilePath, bytes.TrimRight(buf.Bytes(), "\n"), 0644)
 				})
 
 				It("does not reload the NATS process", func() {
@@ -839,6 +845,18 @@ var _ = Describe("UsersSync", func() {
 			data, _ := os.ReadFile(natsConfigFilePath)
 			Expect(string(data)).NotTo(ContainSubstring("f0oBar"))
 			Expect(string(data)).To(ContainSubstring("users"))
+		})
+
+		// Regression test: json.Marshal HTML-escapes '>' as '\u003e', which the
+		// NATS config parser rejects with "Invalid escape character 'u'".
+		// The fix uses json.NewEncoder with SetEscapeHTML(false).
+		It("writes '>' literally (not as \\u003e) so NATS can parse the config", func() {
+			Expect(bootstrapSync.Bootstrap()).To(Succeed())
+
+			data, _ := os.ReadFile(natsConfigFilePath)
+			Expect(string(data)).To(ContainSubstring("director.>"),
+				"expected literal '>' but got HTML-escaped '\\u003e'")
+			Expect(string(data)).NotTo(ContainSubstring(`\u003e`))
 		})
 
 		It("sends a SIGHUP to reload the NATS server after writing the config", func() {
