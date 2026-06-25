@@ -554,6 +554,11 @@ func (m *Manager) analyzeDeploymentAgents() int {
 		}
 
 		if len(jobsToInstances) > 0 {
+			// Include the total agent count (regular + instances-with-no-VM) so the
+			// resurrector plugin can compute an accurate meltdown percentage, mirroring
+			// the Ruby AlertTracker#state_for which sums get_agents_for_deployment and
+			// get_deleted_agents_for_deployment.
+			totalAgentCount := len(deployment.Agents()) + len(deployment.InstanceIDToAgent())
 			if err := m.processor.Process("alert", map[string]interface{}{
 				"severity":             2,
 				"category":             "deployment_health",
@@ -562,6 +567,7 @@ func (m *Manager) analyzeDeploymentAgents() int {
 				"created_at":           time.Now().Unix(),
 				"deployment":           deployment.Name(),
 				"jobs_to_instance_ids": jobsToInstances,
+				"total_agent_count":    totalAgentCount,
 			}); err != nil {
 				m.logger.Error("Failed to process deployment health alert", "error", err)
 			}
