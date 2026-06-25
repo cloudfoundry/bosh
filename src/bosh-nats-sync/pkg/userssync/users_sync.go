@@ -104,6 +104,31 @@ func ReloadNATSServerConfig(executable, pidFile string, runner CommandRunner) er
 	return err
 }
 
+// Bootstrap writes the initial NATS authorization config with only the
+// director and health-monitor subjects read from their subject files on disk.
+// It is called once at startup before the periodic sync loop so that
+// health_monitor and the director can authenticate against NATS immediately,
+// without waiting for bosh_nats_sync to successfully query the director API.
+func (u *UsersSync) Bootstrap() error {
+	directorSubject := readSubjectFile(u.BoshConfig.DirectorSubjectFile)
+	hmSubject := readSubjectFile(u.BoshConfig.HMSubjectFile)
+
+	if directorSubject == nil && hmSubject == nil {
+		u.Logger.Info("Bootstrap: no subject files found, skipping initial NATS config write")
+		return nil
+	}
+
+	u.Logger.Info("Bootstrap: writing initial NATS config with director/HM subjects")
+	if err := u.writeNATSConfigFile(nil, directorSubject, hmSubject); err != nil {
+		return fmt.Errorf("bootstrap: failed to write NATS config: %w", err)
+	}
+	if err := ReloadNATSServerConfig(u.NATSServerExecutable, u.NATSServerPIDFile, u.getCommandRunner()); err != nil {
+		return fmt.Errorf("bootstrap: failed to reload NATS server config: %w", err)
+	}
+	u.Logger.Info("Bootstrap: NATS config written and server reloaded")
+	return nil
+}
+
 func (u *UsersSync) withDirectorConnection(fn func() error) error {
 	timeout := u.BoshConfig.ConnectionWaitTimeout
 	if timeout <= 0 {

@@ -775,6 +775,113 @@ var _ = Describe("UsersSync", func() {
 			Expect(err).To(HaveOccurred())
 		})
 	})
+
+	// Mirrors the BOSH startup race: pre-start writes a fooBar token placeholder
+	// to auth.json and the hm-subject / director-subject files, then bosh-nats-sync
+	// starts. Bootstrap() must overwrite the placeholder with real user credentials
+	// immediately, without querying the director, so that health_monitor can
+	// authenticate against NATS before the director finishes starting up.
+	Describe("Bootstrap", func() {
+		var (
+			bootstrapSync     *userssync.UsersSync
+			bootstrapCmdCalls []string
+			bootstrapCmdErr   error
+		)
+
+		BeforeEach(func() {
+			bootstrapCmdCalls = nil
+			bootstrapCmdErr = nil
+
+			// Simulate the fooBar token placeholder written by pre-start.
+			os.WriteFile(natsConfigFilePath, []byte(`{"authorization":{"token":"f0oBar"}}`), 0644)
+
+			// boshConfig is only populated in inner BeforeEach blocks elsewhere,
+			// so we build it explicitly here with the subject files from the
+			// outer BeforeEach.
+			bootstrapSync = &userssync.UsersSync{
+				NATSConfigFilePath: natsConfigFilePath,
+				BoshConfig: config.DirectorConfig{
+					URL:                 "http://127.0.0.1:1", // unreachable; Bootstrap must not contact it
+					DirectorSubjectFile: directorSubjectFile,
+					HMSubjectFile:       hmSubjectFile,
+				},
+				NATSServerExecutable: natsExecutable,
+				NATSServerPIDFile:    natsServerPIDFile,
+				Logger:               logger,
+				CommandRunner: func(executable string, args ...string) ([]byte, error) {
+					bootstrapCmdCalls = append(bootstrapCmdCalls, fmt.Sprintf("%s %s", executable, strings.Join(args, " ")))
+					return []byte("ok"), bootstrapCmdErr
+				},
+			}
+		})
+
+		It("writes the director and HM users to the NATS config without querying the director", func() {
+			err := bootstrapSync.Bootstrap()
+			Expect(err).NotTo(HaveOccurred())
+
+			data, readErr := os.ReadFile(natsConfigFilePath)
+			Expect(readErr).NotTo(HaveOccurred())
+
+			var cfg natsauthconfig.AuthorizationConfig
+			Expect(json.Unmarshal(data, &cfg)).To(Succeed())
+
+			subjects := make([]string, 0, len(cfg.Authorization.Users))
+			for _, u := range cfg.Authorization.Users {
+				subjects = append(subjects, u.User)
+			}
+			Expect(subjects).To(ContainElement(ContainSubstring("director.bosh-internal")))
+			Expect(subjects).To(ContainElement(ContainSubstring("hm.bosh-internal")))
+		})
+
+		It("overwrites the fooBar token placeholder left by pre-start", func() {
+			Expect(bootstrapSync.Bootstrap()).To(Succeed())
+
+			data, _ := os.ReadFile(natsConfigFilePath)
+			Expect(string(data)).NotTo(ContainSubstring("f0oBar"))
+			Expect(string(data)).To(ContainSubstring("users"))
+		})
+
+		It("sends a SIGHUP to reload the NATS server after writing the config", func() {
+			Expect(bootstrapSync.Bootstrap()).To(Succeed())
+
+			Expect(bootstrapCmdCalls).To(HaveLen(1))
+			Expect(bootstrapCmdCalls[0]).To(ContainSubstring("--signal"))
+			Expect(bootstrapCmdCalls[0]).To(ContainSubstring("reload="))
+		})
+
+		It("skips the write when neither subject file exists", func() {
+			bootstrapSync.BoshConfig.DirectorSubjectFile = "/nonexistent"
+			bootstrapSync.BoshConfig.HMSubjectFile = "/nonexistent"
+
+			err := bootstrapSync.Bootstrap()
+			Expect(err).NotTo(HaveOccurred())
+
+			// Config must remain unchanged (no SIGHUP either).
+			data, _ := os.ReadFile(natsConfigFilePath)
+			Expect(string(data)).To(ContainSubstring("f0oBar"))
+			Expect(bootstrapCmdCalls).To(BeEmpty())
+		})
+
+		It("returns an error when the NATS reload fails", func() {
+			bootstrapCmdErr = fmt.Errorf("reload failed")
+
+			err := bootstrapSync.Bootstrap()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("reload failed"))
+		})
+
+		It("includes only the HM user when the director subject file is missing", func() {
+			bootstrapSync.BoshConfig.DirectorSubjectFile = "/nonexistent"
+
+			Expect(bootstrapSync.Bootstrap()).To(Succeed())
+
+			data, _ := os.ReadFile(natsConfigFilePath)
+			var cfg natsauthconfig.AuthorizationConfig
+			Expect(json.Unmarshal(data, &cfg)).To(Succeed())
+			Expect(cfg.Authorization.Users).To(HaveLen(1))
+			Expect(cfg.Authorization.Users[0].User).To(ContainSubstring("hm.bosh-internal"))
+		})
+	})
 })
 
 // Mirrors Ruby spec: spec/nats_sync/users_sync_spec.rb
