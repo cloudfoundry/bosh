@@ -1281,17 +1281,16 @@ jobs:
       - in_parallel:
           - get: bosh-ci
           - get: bosh-ci-dockerfiles
+          - get: ubuntu-registry-image
           - get: integration-image
             trigger: true
-          - get: integration-image-oci
-            resource: integration-image
             params:
               format: oci
           - get: bosh-deployment
             trigger: true
       - task: copy-dependencies
         file: bosh-ci/ci/tasks/prepare-build-context-for-container-cpi-image.yml
-        image: integration-image
+        image: ubuntu-registry-image
         params:
           CONTAINER_CPI_TYPE: docker-cpi
       - task: build-image
@@ -1304,12 +1303,12 @@ jobs:
               repository: concourse/oci-build-task
           inputs:
             - name: docker-build-context
-            - name: integration-image-oci
+            - name: integration-image
           outputs:
             - name: image
           params:
             CONTEXT: docker-build-context
-            IMAGE_ARG_BASE_IMAGE: integration-image-oci/image.tar
+            IMAGE_ARG_BASE_IMAGE: integration-image/image.tar
           run:
             path: build
       - put: docker-cpi-image
@@ -1324,17 +1323,16 @@ jobs:
       - in_parallel:
           - get: bosh-ci
           - get: bosh-ci-dockerfiles
+          - get:  ubuntu-registry-image
           - get: integration-image
             trigger: true
-          - get: integration-image-oci
-            resource: integration-image
             params:
               format: oci
           - get: bosh-deployment
             trigger: true
       - task: copy-dependencies
         file: bosh-ci/ci/tasks/prepare-build-context-for-container-cpi-image.yml
-        image: integration-image
+        image: ubuntu-registry-image
         params:
           CONTAINER_CPI_TYPE: warden-cpi
       - task: build-image
@@ -1347,12 +1345,12 @@ jobs:
               repository: concourse/oci-build-task
           inputs:
             - name: docker-build-context
-            - name: integration-image-oci
+            - name: integration-image
           outputs:
             - name: image
           params:
             CONTEXT: docker-build-context
-            IMAGE_ARG_BASE_IMAGE: integration-image-oci/image.tar
+            IMAGE_ARG_BASE_IMAGE: integration-image/image.tar
           run:
             path: build
       - put: warden-cpi-image
