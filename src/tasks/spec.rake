@@ -5,7 +5,7 @@ namespace :spec do
     require 'integration_support/sandbox'
     IntegrationSupport::Sandbox.setup
 
-    rspec_opts = ['--format documentation']
+    rspec_opts = []
     rspec_opts += ENV.fetch('RSPEC_TAGS', '').split(',').map { |t| "--tag #{t}" }
 
     paths = ENV.fetch('SPEC_PATH', 'spec').split(',').join(' ')
