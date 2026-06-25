@@ -166,7 +166,19 @@ func runResurrector(ctx context.Context, rawOpts json.RawMessage, events <-chan 
 			}
 
 			unhealthy := tracker.unhealthyCount()
-			total := unhealthy * 10 // approximation; real count would come from server
+			// Use total_agent_count from the alert when available (added by
+			// manager.go to mirror Ruby's AlertTracker#state_for which sums
+			// get_agents_for_deployment + get_deleted_agents_for_deployment).
+			// Fall back to unhealthy*10 for alerts from older versions.
+			total := unhealthy * 10
+			if tac, ok := event.Attributes["total_agent_count"]; ok {
+				switch v := tac.(type) {
+				case float64:
+					total = int(v)
+				case int:
+					total = v
+				}
+			}
 			state := &deploymentState{
 				deployment:     deployment,
 				agentCount:     total,
