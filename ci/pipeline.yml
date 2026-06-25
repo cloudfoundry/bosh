@@ -1187,6 +1187,8 @@ jobs:
       - get: integration-image
         trigger: true
         passed: [ build-integration ]
+        params:
+          format: oci
       - task: build-image
         privileged: true
         config:
@@ -1197,12 +1199,13 @@ jobs:
               repository: concourse/oci-build-task
           inputs:
             - name: bosh-ci-dockerfiles
+            - name: integration-image
           outputs:
             - name: image
           params:
             CONTEXT: bosh-ci-dockerfiles/ci/dockerfiles/main-postgres
             BUILD_ARG_DB_VERSION: "13"
-            BUILD_ARG_BASE_IMAGE: &integration_image ghcr.io/cloudfoundry/bosh/integration
+            IMAGE_ARG_BASE_IMAGE: integration-image/image.tar
           run:
             path: build
       - put: integration-postgres-13-image
@@ -1218,6 +1221,8 @@ jobs:
       - get: integration-image
         trigger: true
         passed: [ build-integration ]
+        params:
+          format: oci
       - task: build-image
         privileged: true
         config:
@@ -1228,12 +1233,13 @@ jobs:
               repository: concourse/oci-build-task
           inputs:
             - name: bosh-ci-dockerfiles
+            - name: integration-image
           outputs:
             - name: image
           params:
             CONTEXT: bosh-ci-dockerfiles/ci/dockerfiles/main-postgres
             BUILD_ARG_DB_VERSION: "15"
-            BUILD_ARG_BASE_IMAGE: *integration_image
+            IMAGE_ARG_BASE_IMAGE: integration-image/image.tar
           run:
             path: build
       - put: integration-postgres-15-image
@@ -1249,6 +1255,8 @@ jobs:
       - get: integration-image
         trigger: true
         passed: [ build-integration ]
+        params:
+          format: oci
       - task: build-image
         privileged: true
         config:
@@ -1259,11 +1267,12 @@ jobs:
               repository: concourse/oci-build-task
           inputs:
             - name: bosh-ci-dockerfiles
+            - name: integration-image
           outputs:
             - name: image
           params:
             CONTEXT: bosh-ci-dockerfiles/ci/dockerfiles/main-mysql
-            BUILD_ARG_BASE_IMAGE: *integration_image
+            IMAGE_ARG_BASE_IMAGE: integration-image/image.tar
           run:
             path: build
       - put: integration-mysql-8-0-image
@@ -1280,6 +1289,10 @@ jobs:
           - get: bosh-ci-dockerfiles
           - get: integration-image
             trigger: true
+          - get: integration-image-oci
+            resource: integration-image
+            params:
+              format: oci
           - get: bosh-deployment
             trigger: true
       - task: copy-dependencies
@@ -1297,11 +1310,12 @@ jobs:
               repository: concourse/oci-build-task
           inputs:
             - name: docker-build-context
+            - name: integration-image-oci
           outputs:
             - name: image
           params:
             CONTEXT: docker-build-context
-            BUILD_ARG_BASE_IMAGE: *integration_image
+            IMAGE_ARG_BASE_IMAGE: integration-image-oci/image.tar
           run:
             path: build
       - put: docker-cpi-image
@@ -1318,6 +1332,10 @@ jobs:
           - get: bosh-ci-dockerfiles
           - get: integration-image
             trigger: true
+          - get: integration-image-oci
+            resource: integration-image
+            params:
+              format: oci
           - get: bosh-deployment
             trigger: true
       - task: copy-dependencies
@@ -1335,11 +1353,12 @@ jobs:
               repository: concourse/oci-build-task
           inputs:
             - name: docker-build-context
+            - name: integration-image-oci
           outputs:
             - name: image
           params:
             CONTEXT: docker-build-context
-            BUILD_ARG_BASE_IMAGE: *integration_image
+            IMAGE_ARG_BASE_IMAGE: integration-image-oci/image.tar
           run:
             path: build
       - put: warden-cpi-image
