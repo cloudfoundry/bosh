@@ -54,6 +54,10 @@ groups:
       - build-docker-cpi
       - build-warden-cpi
 
+  - name: all
+    jobs:
+      - "*"
+
 jobs:
   - name: gate
     serial_groups:
