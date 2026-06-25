@@ -42,15 +42,12 @@ groups:
       - bump-patch
       - finalize-release
 
-  - name: ci-images
+  - name: container-images
     jobs:
       - build-main-postgres-13
       - build-main-postgres-15
       - build-main-mysql-8-0
       - build-integration
-
-  - name: container-cpi-images
-    jobs:
       - build-docker-cpi
       - build-warden-cpi
 
