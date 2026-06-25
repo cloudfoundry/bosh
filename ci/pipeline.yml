@@ -1183,7 +1183,6 @@ jobs:
       - get: bosh-ci-dockerfiles
       - get: integration-image
         trigger: true
-        passed: [ build-integration ]
         params:
           format: oci
       - task: build-image
@@ -1217,7 +1216,6 @@ jobs:
       - get: bosh-ci-dockerfiles
       - get: integration-image
         trigger: true
-        passed: [ build-integration ]
         params:
           format: oci
       - task: build-image
@@ -1251,7 +1249,6 @@ jobs:
       - get: bosh-ci-dockerfiles
       - get: integration-image
         trigger: true
-        passed: [ build-integration ]
         params:
           format: oci
       - task: build-image
