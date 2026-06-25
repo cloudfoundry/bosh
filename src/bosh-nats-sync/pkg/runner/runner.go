@@ -46,13 +46,11 @@ func (r *Runner) Run() error {
 		cmdRunner = userssync.DefaultCommandRunner
 	}
 
-	if err := userssync.ReloadNATSServerConfig(
-		r.config.NATS.NATSServerExecutable,
-		r.config.NATS.NATSServerPIDFile,
-		cmdRunner,
-	); err != nil {
-		return fmt.Errorf("failed to reload NATS server config on startup: %w", err)
-	}
+	// Bootstrap: write the initial NATS config from on-disk subject files
+	// immediately, before the director is queried.  This replaces the
+	// placeholder token written by pre-start so that health_monitor and the
+	// director can authenticate against NATS during director startup.
+	r.bootstrapNATSConfig(cmdRunner)
 
 	interval := time.Duration(r.config.Intervals.PollUserSync) * time.Second
 	if interval <= 0 {
@@ -78,6 +76,20 @@ func (r *Runner) Stop() {
 		close(r.stopCh)
 	}
 	<-r.stopped
+}
+
+func (r *Runner) bootstrapNATSConfig(cmdRunner userssync.CommandRunner) {
+	sync := &userssync.UsersSync{
+		NATSConfigFilePath:   r.config.NATS.ConfigFilePath,
+		BoshConfig:           r.config.Director,
+		NATSServerExecutable: r.config.NATS.NATSServerExecutable,
+		NATSServerPIDFile:    r.config.NATS.NATSServerPIDFile,
+		Logger:               r.logger,
+		CommandRunner:        cmdRunner,
+	}
+	if err := sync.Bootstrap(); err != nil {
+		r.logger.Error("Bootstrap failed, health_monitor may not connect to NATS until next sync", "error", err)
+	}
 }
 
 func (r *Runner) syncNATSUsers(cmdRunner userssync.CommandRunner) {
