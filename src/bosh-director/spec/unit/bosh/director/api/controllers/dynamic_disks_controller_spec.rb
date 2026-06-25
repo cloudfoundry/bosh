@@ -16,6 +16,8 @@ module Bosh::Director
       before { App.new(config) }
 
       let(:instance_id) { 'fake-instance-id' }
+      let(:deployment_name) { 'fake-deployment' }
+      let(:az) { 'z1' }
       let(:disk_pool_name) { 'fake_disk_pool_name' }
       let(:disk_name) { 'fake_disk_name' }
       let(:disk_size) { 1000 }
@@ -209,6 +211,327 @@ module Bosh::Director
             post '/disk_name/detach'
 
             expect_redirect_to_queued_task(last_response)
+          end
+        end
+      end
+
+      describe 'GET', '/' do
+        context 'when user is reader' do
+          before { basic_authorize('reader', 'reader') }
+
+          it 'forbids access' do
+            expect(get('/').status).to eq(401)
+          end
+        end
+
+        context 'when user has bosh.dynamic-disks.list scope' do
+          before { basic_authorize('dynamic-disks-lister', 'dynamic-disks-lister') }
+
+          context 'when there are no dynamic disks' do
+            it 'returns an empty list' do
+              get '/'
+              expect(last_response.status).to eq(200)
+              expect(JSON.parse(last_response.body)).to eq([])
+            end
+          end
+
+          context 'when dynamic disks exist' do
+            let!(:deployment) { FactoryBot.create(:models_deployment, name: 'my-deployment') }
+            let!(:disk1) do
+              FactoryBot.create(:models_dynamic_disk,
+                name: 'disk-a',
+                disk_cid: 'cid-a',
+                deployment: deployment,
+                size: 1024,
+                disk_pool_name: 'large',
+                metadata: { 'env' => 'prod' },
+              )
+            end
+            let!(:disk2) do
+              FactoryBot.create(:models_dynamic_disk,
+                name: 'disk-b',
+                disk_cid: 'cid-b',
+                deployment: deployment,
+                size: 2048,
+                disk_pool_name: 'small',
+              )
+            end
+
+            it 'returns all dynamic disks including disk_pool_name and metadata' do
+              get '/'
+              expect(last_response.status).to eq(200)
+              body = JSON.parse(last_response.body)
+              expect(body.size).to eq(2)
+              expect(body).to include(hash_including(
+                'name' => 'disk-a',
+                'disk_cid' => 'cid-a',
+                'deployment' => 'my-deployment',
+                'size' => 1024,
+                'disk_pool_name' => 'large',
+                'metadata' => { 'env' => 'prod' },
+              ))
+              expect(body).to include(hash_including(
+                'name' => 'disk-b',
+                'disk_cid' => 'cid-b',
+                'deployment' => 'my-deployment',
+                'size' => 2048,
+                'disk_pool_name' => 'small',
+              ))
+            end
+          end
+        end
+
+        context 'when user has admin permissions' do
+          before { authorize 'admin', 'admin' }
+
+          it 'returns a list of dynamic disks' do
+            get '/'
+            expect(last_response.status).to eq(200)
+            expect(JSON.parse(last_response.body)).to eq([])
+          end
+        end
+      end
+
+      describe 'POST', '/' do
+        let(:content) do
+          JSON.generate({
+            'deployment_name' => deployment_name,
+            'az'              => az,
+            'disk_pool_name'  => disk_pool_name,
+            'disk_name'       => disk_name,
+            'disk_size'       => disk_size,
+            'metadata'        => metadata,
+          })
+        end
+
+        context 'when user is reader' do
+          before { basic_authorize('reader', 'reader') }
+
+          it 'forbids access' do
+            expect(post('/', content, { 'CONTENT_TYPE' => 'application/json' }).status).to eq(401)
+          end
+        end
+
+        context 'when user has bosh.dynamic-disks.create scope' do
+          before { basic_authorize('dynamic-disks-creator', 'dynamic-disks-creator') }
+
+          it 'enqueues a CreateDynamicDisk task' do
+            expect_any_instance_of(Bosh::Director::JobQueue).to receive(:enqueue).with(
+              'dynamic-disks-creator',
+              Jobs::DynamicDisks::CreateDynamicDisk,
+              'create dynamic disk',
+              [deployment_name, az, disk_name, disk_pool_name, disk_size, metadata],
+            ).and_call_original
+
+            post '/', content, { 'CONTENT_TYPE' => 'application/json' }
+
+            expect_redirect_to_queued_task(last_response)
+          end
+        end
+
+        context 'when user has only bosh.dynamic-disks.attach scope (not create)' do
+          before { basic_authorize('dynamic-disks-attacher', 'dynamic-disks-attacher') }
+
+          it 'forbids access' do
+            expect(post('/', content, { 'CONTENT_TYPE' => 'application/json' }).status).to eq(401)
+          end
+        end
+
+        context 'when user has admin permissions' do
+          before { authorize 'admin', 'admin' }
+
+          it 'enqueues a CreateDynamicDisk task' do
+            expect_any_instance_of(Bosh::Director::JobQueue).to receive(:enqueue).with(
+              'admin',
+              Jobs::DynamicDisks::CreateDynamicDisk,
+              'create dynamic disk',
+              [deployment_name, az, disk_name, disk_pool_name, disk_size, metadata],
+            ).and_call_original
+
+            post '/', content, { 'CONTENT_TYPE' => 'application/json' }
+
+            expect_redirect_to_queued_task(last_response)
+          end
+
+          context 'when deployment_name is missing' do
+            let(:deployment_name) { nil }
+
+            it 'raises an error' do
+              post '/', content, { 'CONTENT_TYPE' => 'application/json' }
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['description']).to include('deployment_name')
+            end
+          end
+
+          context 'when deployment_name is empty' do
+            let(:deployment_name) { '' }
+
+            it 'raises an error' do
+              post '/', content, { 'CONTENT_TYPE' => 'application/json' }
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['description']).to include('deployment_name')
+            end
+          end
+
+          context 'when az is missing' do
+            let(:az) { nil }
+
+            it 'raises an error' do
+              post '/', content, { 'CONTENT_TYPE' => 'application/json' }
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['description']).to include('az')
+            end
+          end
+
+          context 'when az is empty' do
+            let(:az) { '' }
+
+            it 'raises an error' do
+              post '/', content, { 'CONTENT_TYPE' => 'application/json' }
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['description']).to include('az')
+            end
+          end
+
+          context 'when disk_name is nil' do
+            let(:disk_name) { nil }
+
+            it 'raises an error' do
+              post '/', content, { 'CONTENT_TYPE' => 'application/json' }
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['description']).to include('disk_name')
+            end
+          end
+
+          context 'when disk_name is empty' do
+            let(:disk_name) { '' }
+
+            it 'raises an error' do
+              post '/', content, { 'CONTENT_TYPE' => 'application/json' }
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['description']).to include('disk_name')
+            end
+          end
+
+          context 'when disk_pool_name is nil' do
+            let(:disk_pool_name) { nil }
+
+            it 'raises an error' do
+              post '/', content, { 'CONTENT_TYPE' => 'application/json' }
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['description']).to include('disk_pool_name')
+            end
+          end
+
+          context 'when disk_pool_name is empty' do
+            let(:disk_pool_name) { '' }
+
+            it 'raises an error' do
+              post '/', content, { 'CONTENT_TYPE' => 'application/json' }
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['description']).to include('disk_pool_name')
+            end
+          end
+
+          context 'when disk_size is nil' do
+            let(:disk_size) { nil }
+
+            it 'raises an error' do
+              post '/', content, { 'CONTENT_TYPE' => 'application/json' }
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['description']).to include('disk_size')
+            end
+          end
+
+          context 'when disk_size is 0' do
+            let(:disk_size) { 0 }
+
+            it 'raises an error' do
+              post '/', content, { 'CONTENT_TYPE' => 'application/json' }
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['description']).to include('disk_size')
+            end
+          end
+        end
+      end
+
+      describe 'POST', '/:disk_name/attach' do
+        let(:content) { JSON.generate({ 'instance_id' => instance_id, 'metadata' => metadata }) }
+
+        context 'when user is reader' do
+          before { basic_authorize('reader', 'reader') }
+
+          it 'forbids access' do
+            expect(post('/disk_name/attach', content, { 'CONTENT_TYPE' => 'application/json' }).status).to eq(401)
+          end
+        end
+
+        context 'when user has bosh.dynamic-disks.attach scope' do
+          before { basic_authorize('dynamic-disks-attacher', 'dynamic-disks-attacher') }
+
+          it 'enqueues an AttachDynamicDisk task' do
+            expect_any_instance_of(Bosh::Director::JobQueue).to receive(:enqueue).with(
+              'dynamic-disks-attacher',
+              Jobs::DynamicDisks::AttachDynamicDisk,
+              'attach dynamic disk',
+              ['disk_name', instance_id, metadata],
+            ).and_call_original
+
+            post '/disk_name/attach', content, { 'CONTENT_TYPE' => 'application/json' }
+
+            expect_redirect_to_queued_task(last_response)
+          end
+        end
+
+        context 'when user has only bosh.dynamic-disks.create scope (not attach)' do
+          before { basic_authorize('dynamic-disks-creator', 'dynamic-disks-creator') }
+
+          it 'forbids access' do
+            expect(post('/disk_name/attach', content, { 'CONTENT_TYPE' => 'application/json' }).status).to eq(401)
+          end
+        end
+
+        context 'when user has admin permissions' do
+          before { authorize 'admin', 'admin' }
+
+          it 'enqueues an AttachDynamicDisk task' do
+            expect_any_instance_of(Bosh::Director::JobQueue).to receive(:enqueue).with(
+              'admin',
+              Jobs::DynamicDisks::AttachDynamicDisk,
+              'attach dynamic disk',
+              ['disk_name', instance_id, metadata],
+            ).and_call_original
+
+            post '/disk_name/attach', content, { 'CONTENT_TYPE' => 'application/json' }
+
+            expect_redirect_to_queued_task(last_response)
+          end
+
+          context 'when metadata is omitted from the body' do
+            let(:content) { JSON.generate({ 'instance_id' => instance_id }) }
+
+            it 'enqueues an AttachDynamicDisk task with nil metadata' do
+              expect_any_instance_of(Bosh::Director::JobQueue).to receive(:enqueue).with(
+                'admin',
+                Jobs::DynamicDisks::AttachDynamicDisk,
+                'attach dynamic disk',
+                ['disk_name', instance_id, nil],
+              ).and_call_original
+
+              post '/disk_name/attach', content, { 'CONTENT_TYPE' => 'application/json' }
+
+              expect_redirect_to_queued_task(last_response)
+            end
+          end
+
+          context 'when instance_id is missing from the body' do
+            let(:content) { JSON.generate({}) }
+
+            it 'raises an error' do
+              post '/disk_name/attach', content, { 'CONTENT_TYPE' => 'application/json' }
+              expect(last_response.status).to eq(400)
+              expect(JSON.parse(last_response.body)['description']).to include("instance_id")
+            end
           end
         end
       end

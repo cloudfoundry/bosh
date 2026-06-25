@@ -3,8 +3,9 @@ module Bosh::Director
     module DynamicDiskHelpers
       VM_LOCK_TIMEOUT = 60
 
-      def find_disk_cloud_properties(instance, disk_pool_name)
-        teams = instance.deployment.teams
+      def find_disk_cloud_properties(deployment_or_instance, disk_pool_name)
+        deployment = deployment_or_instance.is_a?(Models::Deployment) ? deployment_or_instance : deployment_or_instance.deployment
+        teams = deployment.teams
         configs = Models::Config.latest_set_for_teams('cloud', *teams)
         raise 'No cloud configs provided' if configs.empty?
 
