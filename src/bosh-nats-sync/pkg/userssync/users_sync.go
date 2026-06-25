@@ -1,6 +1,7 @@
 package userssync
 
 import (
+	"bytes"
 	"crypto/md5"
 	"crypto/tls"
 	"crypto/x509"
@@ -368,9 +369,17 @@ func (u *UsersSync) queryAllRunningVMs() ([]natsauthconfig.VM, error) {
 
 func (u *UsersSync) writeNATSConfigFile(vms []natsauthconfig.VM, directorSubject, hmSubject *string) error {
 	cfg := natsauthconfig.CreateConfig(vms, directorSubject, hmSubject)
-	data, err := json.Marshal(cfg)
-	if err != nil {
+	// Use SetEscapeHTML(false) so that '>' in NATS subjects (e.g. "director.>")
+	// is written literally rather than as the \u003e Unicode escape that
+	// json.Marshal emits by default.  NATS's config parser does not support \u
+	// escapes and rejects the file with a parse error if they are present.
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	enc.SetEscapeHTML(false)
+	if err := enc.Encode(cfg); err != nil {
 		return err
 	}
-	return os.WriteFile(u.NATSConfigFilePath, data, 0644)
+	// Encode appends a trailing newline; strip it so the on-disk format stays
+	// consistent with what existing tests and hash comparisons expect.
+	return os.WriteFile(u.NATSConfigFilePath, bytes.TrimRight(buf.Bytes(), "\n"), 0644)
 }
