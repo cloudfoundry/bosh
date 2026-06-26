@@ -156,7 +156,7 @@ module Bosh
 
       REBOOT_VM_SCHEMA = Membrane::SchemaParser.parse { {vm_cid: String} }
       def reboot_vm(vm_cid)
-        validate_and_record_inputs(__method__, vm_cid)
+        validate_and_record_inputs(REBOOT_VM_SCHEMA, __method__, vm_cid)
         raise NotImplemented, 'Dummy CPI does not implement reboot_vm'
       end
 
