@@ -10,7 +10,8 @@ jobs:
         - common:parallel
         - monitor:parallel
         - nats_sync:parallel
-        - release
+        - release:parallel
+        - integration_support:parallel
     steps:
     - uses: actions/checkout@v7
       with: { lfs: true}
