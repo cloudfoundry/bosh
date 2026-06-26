@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-ENV['BUNDLE_GEMFILE'] ||= File.expand_path('../../Gemfile', __dir__)
+ENV['BUNDLE_GEMFILE'] ||= File.expand_path('../../../Gemfile', __dir__)
 require 'bundler/setup'
 
 require 'json'
@@ -8,8 +8,8 @@ require 'stringio'
 require 'yaml'
 require 'cloud'
 
-require_relative '../lib/clouds/dummy'
-require_relative '../lib/clouds/dummy_v2'
+require_relative '../clouds/dummy'
+require_relative '../clouds/dummy_v2'
 
 module Logging
   def self.appenders

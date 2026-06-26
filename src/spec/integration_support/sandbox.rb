@@ -6,7 +6,7 @@ require 'securerandom'
 require 'tmpdir'
 require 'tempfile'
 
-require 'clouds/dummy'
+require 'integration_support/clouds/dummy'
 
 require 'integration_support/constants'
 require 'integration_support/service'
@@ -268,7 +268,7 @@ module IntegrationSupport
       )
 
       # Note that this is not the same object
-      # as dummy cpi used inside bosh-director process
+      # as dummy cpi used as the external CPI subprocess
       @cpi = Bosh::Clouds::Dummy.new(
         {
           'dir' => cloud_storage_dir,
@@ -558,7 +558,7 @@ module IntegrationSupport
     def external_cpi_config
       {
         name: 'test-cpi',
-        exec_path: File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_DIR, 'bosh-director', 'bin', 'dummy_cpi'),
+        exec_path: File.join(IntegrationSupport::Constants::BOSH_REPO_SRC_DIR, 'spec', 'integration_support', 'bin', 'dummy_cpi'),
         job_path: sandbox_path(EXTERNAL_CPI),
         config_path: sandbox_path(EXTERNAL_CPI_CONFIG),
         env_path: @env_path,
