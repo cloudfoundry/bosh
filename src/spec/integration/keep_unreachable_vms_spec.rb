@@ -37,7 +37,7 @@ describe 'keep unreachable vms', type: :integration do
         deploy_simple_manifest(manifest_hash: manifest, failure_expected: true)
 
         task_logs = bosh_runner.run('task 4', failure_expected: true)
-        expect(task_logs).to include("Unknown CPI error 'IP Address 192.168.1.2 in network 'a' is already in use")
+        expect(task_logs).to include("IP Address 192.168.1.2 in network 'a' is already in use")
       end
     end
 
@@ -52,7 +52,7 @@ describe 'keep unreachable vms', type: :integration do
         deploy_simple_manifest(manifest_hash: manifest, failure_expected: true)
 
         task_logs = bosh_runner.run('task 4', failure_expected: true)
-        expect(task_logs).to include("Unknown CPI error 'IP Address 192.168.1.2 in network 'a' is already in use")
+        expect(task_logs).to include("IP Address 192.168.1.2 in network 'a' is already in use")
       end
     end
   end

@@ -679,7 +679,8 @@ module Bosh
         def next_create_vm_cmd
           @logger.debug('Reading create_vm configuration')
           ip_address = File.read(always_path) if File.exist?(always_path)
-          azs_to_ip = File.exist?(azs_path) ? JSON.load(File.read(azs_path)) : {}
+          azs_content = File.exist?(azs_path) ? File.read(azs_path) : nil
+          azs_to_ip = azs_content.to_s.strip.empty? ? {} : JSON.parse(azs_content)
           failed = File.exist?(failed_path)
           CreateVmCommand.new(ip_address, azs_to_ip, failed)
         end

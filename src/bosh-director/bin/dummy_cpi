@@ -4,6 +4,7 @@ ENV['BUNDLE_GEMFILE'] ||= File.expand_path('../../Gemfile', __dir__)
 require 'bundler/setup'
 
 require 'json'
+require 'stringio'
 require 'yaml'
 require 'cloud'
 
@@ -72,13 +73,13 @@ begin
           end
 
   result = dummy.send(command, *arguments)
-rescue StandardError => e
+rescue StandardError, ScriptError => e
   error = {
-    'type' => e.message,
-    'message' => "#{e.message}\n#{e.backtrace.join("\n")}",
+    'type' => e.class.to_s,
+    'message' => "#{e.message}\n#{e.backtrace&.join("\n")}",
     'ok_to_retry' => false,
   }
 end
 
-response = { 'result' => result, 'error' => error, 'log' => log_buffer.string }
+response = { 'result' => result, 'error' => error, 'log' => log_buffer&.string }
 print response.to_json

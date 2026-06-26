@@ -7,6 +7,7 @@ module IntegrationSupport
     let(:env_path) { 'DUMMY_PATH' }
     let(:gem_home) { 'DUMMY_GEM_HOME' }
     let(:gem_path) { 'DUMMY_GEM_PATH' }
+    let(:bundle_path) { 'DUMMY_BUNDLE_PATH' }
 
     subject(:sandbox) do
       Sandbox.new(
@@ -17,6 +18,7 @@ module IntegrationSupport
         env_path: env_path,
         gem_home: gem_home,
         gem_path: gem_path,
+        bundle_path: bundle_path,
         command_builder_class: ShellCommandBuilder,
         log_level: 'DEBUG',
         log_to_stdout: false,
@@ -71,6 +73,7 @@ module IntegrationSupport
           expect(external_cpi_config[:env_path]).to eq(env_path)
           expect(external_cpi_config[:gem_home]).to eq(gem_home)
           expect(external_cpi_config[:gem_path]).to eq(gem_path)
+          expect(external_cpi_config[:bundle_path]).to eq(bundle_path)
         end
       end
     end
