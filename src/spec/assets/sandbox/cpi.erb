@@ -2,8 +2,11 @@
 
 read -r INPUT
 
-export PATH=<%= external_cpi_config[:env_path] %>:$PATH
-export GEM_HOME=<%= external_cpi_config[:gem_home] %>:$GEM_HOME
-export GEM_PATH=<%= external_cpi_config[:gem_path] %>:$GEM_PATH
+export PATH="<%= external_cpi_config[:env_path] %>${PATH:+:$PATH}"
+export GEM_HOME="<%= external_cpi_config[:gem_home] %>"
+export GEM_PATH="<%= external_cpi_config[:gem_path] %>${GEM_PATH:+:$GEM_PATH}"
+<% if external_cpi_config[:bundle_path] %>
+export BUNDLE_PATH="<%= external_cpi_config[:bundle_path] %>"
+<% end %>
 
-echo $INPUT | <%= external_cpi_config[:exec_path] %> <%= external_cpi_config[:config_path] %>
+echo "${INPUT}" | "<%= external_cpi_config[:exec_path] %>" "<%= external_cpi_config[:config_path] %>"

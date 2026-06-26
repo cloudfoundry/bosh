@@ -196,6 +196,10 @@ module Bosh::Director
         cpi_suffix = " (cpi: #{cpi})" unless cpi.blank?
         logger.info("info method is not supported by cpi #{cpi_suffix}")
         return true
+      rescue Bosh::Clouds::ExternalCpi::InvalidResponse => e
+        cpi_suffix = " (cpi: #{cpi})" unless cpi.blank?
+        logger.warn("CPI info call returned invalid response#{cpi_suffix}: #{e.message}")
+        return true
       end
     end
   end

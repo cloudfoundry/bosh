@@ -183,6 +183,7 @@ module IntegrationSupport
         env_path: ENV['PATH'],
         gem_home: ENV['GEM_HOME'],
         gem_path: ENV['GEM_PATH'],
+        bundle_path: ENV['BUNDLE_PATH'],
         command_builder_class: command_builder_class,
         log_level: log_level,
         log_to_stdout: log_to_stdout,
@@ -198,6 +199,7 @@ module IntegrationSupport
                    env_path:,
                    gem_home:,
                    gem_path:,
+                   bundle_path: nil,
                    command_builder_class:,
                    log_level:,
                    log_to_stdout:,
@@ -213,6 +215,7 @@ module IntegrationSupport
       @env_path = env_path
       @gem_home = gem_home
       @gem_path = gem_path
+      @bundle_path = bundle_path
 
       @command_builder_class = command_builder_class
 
@@ -561,6 +564,7 @@ module IntegrationSupport
         env_path: @env_path,
         gem_home: @gem_home,
         gem_path: @gem_path,
+        bundle_path: @bundle_path.to_s.strip.empty? ? nil : @bundle_path,
         dummy_cpi_api_version: @dummy_cpi_api_version,
       }
     end
