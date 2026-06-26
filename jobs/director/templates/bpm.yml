@@ -39,6 +39,40 @@ config = {
   "processes" => [director_config, nginx_config, scheduler_config, sync_dns_config, metrics_server_config],
 }
 
+(1..(p('director.workers'))).each do |index|
+  queue = "normal,urgent"
+  if p('director.enable_dedicated_status_worker') && p('director.workers') > 1 && index == 1
+    queue = "urgent"
+  end
+  config["processes"] << {
+    "name" => "worker_#{index}",
+    "executable" => "/var/vcap/jobs/director/bin/worker",
+    "args" => ["worker_#{index}"],
+    "ephemeral_disk" => true,
+    "persistent_disk" => true,
+    "env" => {
+      "QUEUE" => queue,
+      "RUBY_THREAD_VM_STACK_SIZE" => "15000000",
+      "RUBY_THREAD_MACHINE_STACK_SIZE" => "15000000",
+    }
+  }
+end
+
+(1..(p('director.dynamic_disks_workers'))).each do |index|
+  config["processes"] << {
+    "name" => "dynamic_disks_worker_#{index}",
+    "executable" => "/var/vcap/jobs/director/bin/worker",
+    "args" => ["dynamic_disks_worker_#{index}"],
+    "ephemeral_disk" => true,
+    "persistent_disk" => true,
+    "env" => {
+      "QUEUE" => "dynamic_disks",
+      "RUBY_THREAD_VM_STACK_SIZE" => "15000000",
+      "RUBY_THREAD_MACHINE_STACK_SIZE" => "15000000",
+    }
+  }
+end
+
 YAML.dump(config)
 
 %>

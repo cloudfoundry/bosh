@@ -1,0 +1,14 @@
+#!/bin/bash
+
+source /var/vcap/jobs/director/env
+
+POSTGRES_PACKAGE="postgres-13"
+PATH=/var/vcap/packages/${POSTGRES_PACKAGE}/bin:$PATH
+LD_LIBRARY_PATH=/var/vcap/packages/libpq/lib:${LD_LIBRARY_PATH:-}
+PATH=/var/vcap/packages/mysql/bin:$PATH
+LD_LIBRARY_PATH=/var/vcap/packages/mysql/lib/mysql:${LD_LIBRARY_PATH:-}
+export PATH LD_LIBRARY_PATH LANG=en_US.UTF-8
+
+exec /var/vcap/packages/director/bin/bosh-director-worker \
+  -c /var/vcap/jobs/director/config/director.yml \
+  -n "$1"

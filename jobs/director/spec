@@ -40,7 +40,7 @@ templates:
   trigger-one-time-sync-dns: bin/trigger-one-time-sync-dns
   uaa_server_ca.cert.erb: config/uaa_server_ca.cert
   utils.sh: helpers/utils.sh
-  worker_ctl.erb: bin/worker_ctl
+  worker: bin/worker
 
 packages:
 - director
