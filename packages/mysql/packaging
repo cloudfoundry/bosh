@@ -8,8 +8,10 @@ tar xzf mysql/mariadb-connector-c-*-src.tar.gz
 cd mariadb-connector-c-*-src
 cmake \
   -DCMAKE_INSTALL_PREFIX=${BOSH_INSTALL_TARGET} \
-  -DDEFAULT_SSL_VERIFY_SERVER_CERT=0
-# ^ Needed for mariadb-connector-c >3.4.0 due to changes in default TLS mode. May be removable if mysql2 gem gets updated: https://github.com/brianmario/mysql2/issues/1379
+  -DDEFAULT_SSL_VERIFY_SERVER_CERT=0 \
+  -DCMAKE_C_FLAGS="${CFLAGS:+${CFLAGS} }-Wno-error=discarded-qualifiers"
+# ^ DDEFAULT_SSL_VERIFY_SERVER_CERT: needed for mariadb-connector-c >3.4.0 due to changes in default TLS mode. May be removable if mysql2 gem gets updated: https://github.com/brianmario/mysql2/issues/1379
+# ^ CMAKE_C_FLAGS: GCC 15 promotes -Wdiscarded-qualifiers to an error; two const-qualifier discards in mariadb_lib.c trigger it.
 
 make
 make install

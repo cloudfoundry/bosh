@@ -1,5 +1,12 @@
 <%=
 
+cpi_job = p('director.cpi_job')
+cpi_volume_entry = cpi_job.to_s.empty? ? nil : {
+  "path" => "/var/vcap/jobs/#{cpi_job}",
+  "allow_executions" => true,
+}
+extra_volumes = p('director.cpi_additional_volumes')
+
 director_config = {
   "name" => "director",
   "executable" => "/var/vcap/jobs/director/bin/director",
@@ -38,6 +45,50 @@ metrics_server_config = {
 config = {
   "processes" => [director_config, nginx_config, scheduler_config, sync_dns_config, metrics_server_config],
 }
+
+(1..(p('director.workers'))).each do |index|
+  queue = "normal,urgent"
+  if p('director.enable_dedicated_status_worker') && p('director.workers') > 1 && index == 1
+    queue = "urgent"
+  end
+  worker = {
+    "name" => "worker_#{index}",
+    "executable" => "/var/vcap/jobs/director/bin/worker",
+    "args" => ["worker_#{index}"],
+    "ephemeral_disk" => true,
+    "persistent_disk" => true,
+    "env" => {
+      "QUEUE" => queue,
+      "RUBY_THREAD_VM_STACK_SIZE" => "15000000",
+      "RUBY_THREAD_MACHINE_STACK_SIZE" => "15000000",
+    }
+  }
+  worker_cpi_volumes = (cpi_volume_entry ? [cpi_volume_entry.dup] : []) + extra_volumes.map(&:dup)
+  unless worker_cpi_volumes.empty?
+    worker["unsafe"] = {"unrestricted_volumes" => worker_cpi_volumes}
+  end
+  config["processes"] << worker
+end
+
+(1..(p('director.dynamic_disks_workers'))).each do |index|
+  worker = {
+    "name" => "dynamic_disks_worker_#{index}",
+    "executable" => "/var/vcap/jobs/director/bin/worker",
+    "args" => ["dynamic_disks_worker_#{index}"],
+    "ephemeral_disk" => true,
+    "persistent_disk" => true,
+    "env" => {
+      "QUEUE" => "dynamic_disks",
+      "RUBY_THREAD_VM_STACK_SIZE" => "15000000",
+      "RUBY_THREAD_MACHINE_STACK_SIZE" => "15000000",
+    }
+  }
+  worker_cpi_volumes = (cpi_volume_entry ? [cpi_volume_entry.dup] : []) + extra_volumes.map(&:dup)
+  unless worker_cpi_volumes.empty?
+    worker["unsafe"] = {"unrestricted_volumes" => worker_cpi_volumes}
+  end
+  config["processes"] << worker
+end
 
 YAML.dump(config)
 

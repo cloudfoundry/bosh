@@ -32,7 +32,6 @@ templates:
   nginx.conf.erb: config/nginx.conf
   post-start.erb: bin/post-start
   pre-start.erb: bin/pre-start
-  ps_utils.sh: bin/ps_utils.sh
   scheduler: bin/scheduler
   sync-dns: bin/sync-dns
   task_logrotate.cron: config/task_logrotate.cron
@@ -40,7 +39,7 @@ templates:
   trigger-one-time-sync-dns: bin/trigger-one-time-sync-dns
   uaa_server_ca.cert.erb: config/uaa_server_ca.cert
   utils.sh: helpers/utils.sh
-  worker_ctl.erb: bin/worker_ctl
+  worker: bin/worker
 
 packages:
 - director
@@ -462,6 +461,17 @@ properties:
   # Cpi
   director.cpi_job:
     description: Name of cpi job (null to use bundled cpi gems)
+  director.cpi_additional_volumes:
+    description: |
+      Additional BPM unrestricted_volume entries to mount in worker processes so the
+      CPI binary can access paths outside the standard BOSH directories. Required when
+      the CPI communicates over a Unix socket that is bind-mounted into the VM (e.g.
+      Docker CPI connecting to the Docker daemon socket at /var/run/docker.sock):
+        - path: /var/run/docker.sock
+          mount_only: true
+      Each entry must have at least a 'path' key and may include 'mount_only',
+      'writable', and 'allow_executions' as supported by BPM unrestricted_volumes.
+    default: []
   agent.nats.address:
     description: Address for agent to connect to nats
   agent.env.bosh:
