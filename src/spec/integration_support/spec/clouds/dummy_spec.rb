@@ -183,7 +183,7 @@ describe Bosh::Clouds::Dummy do
     end
 
     it 'writes agent settings to disk' do
-      vm_cid = create_test_vm(agent_id: 'my-agent')
+      create_test_vm(agent_id: 'my-agent')
       agent_settings_file = File.join(tmpdir, 'agent-base-dir-my-agent', 'bosh', 'dummy-cpi-agent-env.json')
       expect(File.exist?(agent_settings_file)).to be(true)
       settings = JSON.parse(File.read(agent_settings_file))
@@ -243,7 +243,7 @@ describe Bosh::Clouds::Dummy do
     it 'raises NotImplemented' do
       expect {
         dummy.reboot_vm('some-vm-cid')
-      }.to raise_error(Bosh::Clouds::Dummy::NotImplemented, /does not implement reboot_vm/)
+      }.to raise_error(Bosh::Clouds::NotImplemented, /does not implement reboot_vm/)
     end
   end
 
@@ -416,7 +416,7 @@ describe Bosh::Clouds::Dummy do
     end
 
     it 'persists snapshot metadata' do
-      snapshot_id = dummy.snapshot_disk(disk_id, { 'label' => 'backup' })
+      dummy.snapshot_disk(disk_id, { 'label' => 'backup' })
       expect(dummy.all_snapshots.size).to eq(1)
       snapshot_file = dummy.all_snapshots.first
       metadata = JSON.parse(File.read(snapshot_file))
